@@ -1,18 +1,38 @@
-# Nice Spaceship — Project Guide
+# NICE™ — Project Guide
+
+## Branding
+- **NICE** = Neural Intelligence Command Engine (the product)
+- **NICE SPACESHIP** = the company (all caps)
+- Product domain: `nicespaceship.ai`
+- Company domain: `nicespaceship.com`
 
 ## Housekeeping
 At the start of each session, run `git worktree prune` and delete any stale `claude/*` branches (local and remote) that have no uncommitted work. Keep the repo clean.
 
 ## Project Overview
-**Nice Spaceship** is an Agentic Intelligence & Engineering company website with **NICE™** (an SPA dashboard for managing AI agents). Static HTML deployed on Vercel via GitHub (`NiceSpaceship/nicespaceship.com`). Domain: `nicespaceship.com`.
+**NICE™** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Vercel via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
+
+## Supabase
+- Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
+- Region: `us-west-1`
+- 308 blueprints seeded (261 agents + 43 spaceships + 4 special)
+
+## XP Progression System
+| Class | Slots | Max Rarity | Rank | XP |
+|-------|-------|------------|------|-----|
+| Class 1 | 6 | Common | Ensign | 0 |
+| Class 2 | 8 | Rare | Lieutenant | 25,000 |
+| Class 3 | 10 | Epic | Commander | 100,000 |
+| Class 4 | 12 | Legendary | Captain | 200,000 |
+| Class 5 | Unlimited | Mythic | Subscription only | — |
+
+- All cards visible to browse; activation gated by XP rank
+- Custom blueprints start Common, evolve through milestones
+- Mythic = milestone-only (even subscribers must earn it)
 
 ## File Architecture
 ```
-├── index.html              # Landing page (Mission Control HUD)
-├── atm.html                # NICE™ product deep-dive
-├── solutions.html          # 5 service pillars
-├── academy.html            # AI Engineering Academy (Flight Simulator)
-├── contact.html            # Contact form (Formspree: xbdzrjnn)
+├── index.html              # Landing page (redirects to /app/)
 ├── assets/
 │   └── logo.svg            # Vector logo (inline in nav/footer with fill="currentColor")
 ├── public/
@@ -215,6 +235,6 @@ cd desktop && npm install && npm start
 
 ## Deployment
 - **Platform**: Vercel (auto-deploy from `main` branch)
-- **Repo**: `github.com/NiceSpaceship/nicespaceship.com`
+- **Repo**: `github.com/nicespaceship/nice`
 - **Forms**: Formspree endpoint `xbdzrjnn`
 - **PWA**: Service Worker v6 with offline fallback, periodic sync (12h), push notifications
