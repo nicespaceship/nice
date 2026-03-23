@@ -1,0 +1,52 @@
+{
+  "ignoreCommand": "exit 0",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/pricing", "destination": "/app/#/wallet", "statusCode": 301 },
+    { "source": "/pricing.html", "destination": "/app/#/wallet", "statusCode": 301 },
+    { "source": "/contact", "destination": "/app/", "statusCode": 301 },
+    { "source": "/contact.html", "destination": "/app/", "statusCode": 301 },
+    { "source": "/blueprints", "destination": "/app/#/blueprints", "statusCode": 301 },
+    { "source": "/blueprints.html", "destination": "/app/#/blueprints", "statusCode": 301 },
+    { "source": "/nice", "destination": "/app/", "statusCode": 301 },
+    { "source": "/nice.html", "destination": "/app/", "statusCode": 301 },
+    { "source": "/academy", "destination": "/app/", "statusCode": 301 },
+    { "source": "/academy.html", "destination": "/app/", "statusCode": 301 },
+    { "source": "/account", "destination": "/app/", "statusCode": 301 },
+    { "source": "/account.html", "destination": "/app/", "statusCode": 301 }
+  ],
+  "rewrites": [
+    { "source": "/app/(.*)", "destination": "/app/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://*.vercel-scripts.com https://*.vercel-insights.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.vercel-insights.com; img-src 'self' data: https:; frame-ancestors 'self'" }
+      ]
+    },
+    {
+      "source": "/app/js/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/app/css/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/public/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "nice-spaceship-desktop",
+  "version": "3.5.0",
+  "description": "NICE Desktop — Mission Control for AI Agent Fleets",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac --win --linux"
+  },
+  "dependencies": {
+    "electron": "^32.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.nicespaceship.app",
+    "productName": "NICE",
+    "files": [
+      "main.js",
+      "preload.js",
+      "../app/**/*",
+      "../public/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity"
+    }
+  }
+}

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="spaceship">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NICE Component Catalog (DEV ONLY)</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Fira+Code:wght@300;400;500&family=Share+Tech+Mono&family=Press+Start+2P&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../public/css/theme.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+  <style>
+    body { background: var(--bg); color: var(--text); font-family: var(--font-b); padding: 24px; }
+    .cat-banner { background: #f59e0b; color: #000; padding: 8px 16px; font-weight: 700; font-size: 0.85rem; margin-bottom: 24px; border-radius: var(--radius); text-align: center; letter-spacing: 0.1em; }
+    .cat-section { margin-bottom: 48px; }
+    .cat-section h2 { font-family: var(--font-h); font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .cat-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 16px; }
+    .cat-label { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-m); letter-spacing: 0.08em; margin-bottom: 8px; }
+    .theme-bar { position: sticky; top: 0; z-index: 100; background: var(--bg-alt); padding: 12px 16px; border-bottom: 1px solid var(--border); margin: -24px -24px 24px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .theme-bar span { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-m); margin-right: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="cat-banner">DEV ONLY &mdash; Component Catalog for NICE UI</div>
+
+<!-- Theme Switcher -->
+<div class="theme-bar">
+  <span>THEME:</span>
+  <button class="db d-sp" onclick="document.documentElement.setAttribute('data-theme','spaceship')">Spaceship</button>
+  <button class="db d-iv" onclick="document.documentElement.setAttribute('data-theme','robotech')">Robotech</button>
+  <button class="db d-nv" onclick="document.documentElement.setAttribute('data-theme','navigator')">Navigator</button>
+  <button class="db d-sl" onclick="document.documentElement.setAttribute('data-theme','solar')">Solar</button>
+  <button class="db d-mx" onclick="document.documentElement.setAttribute('data-theme','matrix')">Matrix</button>
+  <button class="db d-rt" onclick="document.documentElement.setAttribute('data-theme','retro')">Retro</button>
+  <button class="db d-lc" onclick="document.documentElement.setAttribute('data-theme','lcars')">LCARS</button>
+  <button class="db d-px" onclick="document.documentElement.setAttribute('data-theme','pixel')">Pixel</button>
+</div>
+
+<!-- Buttons -->
+<div class="cat-section">
+  <h2>Buttons</h2>
+  <p class="cat-label">PRIMARY</p>
+  <div class="cat-row">
+    <button class="btn btn-primary btn-xs">XS Primary</button>
+    <button class="btn btn-primary btn-sm">SM Primary</button>
+    <button class="btn btn-primary">Default Primary</button>
+    <button class="btn btn-primary" disabled>Disabled</button>
+  </div>
+  <p class="cat-label">OUTLINE / DEFAULT</p>
+  <div class="cat-row">
+    <button class="btn btn-xs">XS Outline</button>
+    <button class="btn btn-sm">SM Outline</button>
+    <button class="btn">Default Outline</button>
+  </div>
+  <p class="cat-label">SOLID (MARKETING)</p>
+  <div class="cat-row">
+    <button class="btn btn-solid">Solid Button</button>
+  </div>
+</div>
+
+<!-- Status Badges -->
+<div class="cat-section">
+  <h2>Status Badges</h2>
+  <div class="cat-row">
+    <span class="task-status-badge badge-queued">queued</span>
+    <span class="task-status-badge badge-running">running</span>
+    <span class="task-status-badge badge-completed">completed</span>
+    <span class="task-status-badge badge-failed">failed</span>
+  </div>
+  <p class="cat-label">PRIORITY TAGS</p>
+  <div class="cat-row">
+    <span class="task-priority-tag priority-low">low</span>
+    <span class="task-priority-tag priority-medium">medium</span>
+    <span class="task-priority-tag priority-high">high</span>
+    <span class="task-priority-tag priority-critical">critical</span>
+  </div>
+  <p class="cat-label">STATUS DOTS</p>
+  <div class="cat-row" style="align-items:center;">
+    <span class="status-dot dot-g"></span> Active
+    <span class="status-dot dot-a"></span> Warning
+    <span class="status-dot dot-r"></span> Error
+    <span class="status-dot dot-off"></span> Offline
+  </div>
+</div>
+
+<!-- Form Inputs -->
+<div class="cat-section">
+  <h2>Form Inputs</h2>
+  <div style="max-width:400px;display:flex;flex-direction:column;gap:16px;">
+    <div class="auth-field">
+      <label>Text Input</label>
+      <input type="text" placeholder="Enter text..." />
+    </div>
+    <div class="auth-field">
+      <label>Password Input</label>
+      <input type="password" placeholder="Password..." />
+    </div>
+    <div class="auth-field">
+      <label>Select</label>
+      <select class="filter-select">
+        <option>Option 1</option>
+        <option>Option 2</option>
+        <option>Option 3</option>
+      </select>
+    </div>
+    <div class="search-box">
+      <input type="text" class="search-input" placeholder="Search..." />
+    </div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="cat-section">
+  <h2>Cards / Panels</h2>
+  <div class="cat-row">
+    <div class="widget-card" style="width:280px;padding:20px;">
+      <h3 style="margin-bottom:8px;">Widget Card</h3>
+      <p style="color:var(--text-muted);font-size:0.85rem;">This is a standard widget card used in the dashboard.</p>
+    </div>
+    <div class="panel hud" style="width:280px;padding:20px;">
+      <h3 style="margin-bottom:8px;">HUD Panel</h3>
+      <p style="color:var(--text-muted);font-size:0.85rem;">Marketing-style panel with HUD border treatment.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="cat-section">
+  <h2>Modal</h2>
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('demo-modal').classList.add('open')">Open Demo Modal</button>
+  <div class="modal-overlay" id="demo-modal">
+    <div class="modal-box" style="max-width:420px;">
+      <div class="modal-hdr">
+        <h3 class="modal-title">Modal Title</h3>
+        <button class="modal-close" onclick="document.getElementById('demo-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>This is a demo modal. It uses the standard modal-overlay + modal-box pattern.</p>
+        <div style="margin-top:16px;display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm">Confirm</button>
+          <button class="btn btn-sm" onclick="document.getElementById('demo-modal').classList.remove('open')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="cat-section">
+  <h2>Toast Notifications</h2>
+  <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">Toasts are rendered by the Notify module at runtime. Shown here as static examples:</p>
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:360px;">
+    <div style="background:var(--panel-bg);border:1px solid var(--border);border-left:3px solid #22c55e;padding:12px 16px;border-radius:var(--radius);font-size:0.85rem;">
+      <strong style="color:#22c55e;">Success</strong> &mdash; Operation completed.
+    </div>
+    <div style="background:var(--panel-bg);border:1px solid var(--border);border-left:3px solid #ef4444;padding:12px 16px;border-radius:var(--radius);font-size:0.85rem;">
+      <strong style="color:#ef4444;">Error</strong> &mdash; Something went wrong.
+    </div>
+    <div style="background:var(--panel-bg);border:1px solid var(--border);border-left:3px solid #f59e0b;padding:12px 16px;border-radius:var(--radius);font-size:0.85rem;">
+      <strong style="color:#f59e0b;">Warning</strong> &mdash; Check your configuration.
+    </div>
+    <div style="background:var(--panel-bg);border:1px solid var(--border);border-left:3px solid var(--accent);padding:12px 16px;border-radius:var(--radius);font-size:0.85rem;">
+      <strong style="color:var(--accent);">Info</strong> &mdash; System notification.
+    </div>
+  </div>
+</div>
+
+<!-- Side Badge -->
+<div class="cat-section">
+  <h2>Badges</h2>
+  <div class="cat-row" style="align-items:center;">
+    <span class="side-badge">3</span>
+    <span class="side-badge badge-warn">!</span>
+    <span class="mod-badge">COMING SOON</span>
+    <span style="background:var(--accent);color:var(--bg);padding:2px 8px;border-radius:var(--radius);font-size:0.7rem;font-weight:600;">NEW</span>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#12121f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle star field -->
+  <circle cx="120" cy="80" r="1.2" fill="#ffffff" opacity="0.4"/>
+  <circle cx="350" cy="150" r="0.8" fill="#ffffff" opacity="0.3"/>
+  <circle cx="780" cy="60" r="1" fill="#ffffff" opacity="0.5"/>
+  <circle cx="1050" cy="120" r="1.4" fill="#ffffff" opacity="0.3"/>
+  <circle cx="200" cy="400" r="0.9" fill="#ffffff" opacity="0.25"/>
+  <circle cx="950" cy="500" r="1.1" fill="#ffffff" opacity="0.35"/>
+  <circle cx="500" cy="550" r="0.7" fill="#ffffff" opacity="0.2"/>
+  <circle cx="1100" cy="350" r="1" fill="#ffffff" opacity="0.3"/>
+  <circle cx="80" cy="280" r="0.8" fill="#ffffff" opacity="0.4"/>
+  <circle cx="680" cy="580" r="1.2" fill="#ffffff" opacity="0.2"/>
+  <circle cx="420" cy="50" r="0.6" fill="#ffffff" opacity="0.35"/>
+  <circle cx="900" cy="250" r="0.9" fill="#ffffff" opacity="0.25"/>
+
+  <!-- Glow behind spaceship icon -->
+  <ellipse cx="600" cy="230" rx="80" ry="80" fill="url(#glow)"/>
+
+  <!-- Abstract spaceship icon -->
+  <g transform="translate(600, 220)">
+    <!-- Main hull (diamond/arrow shape) -->
+    <polygon points="0,-55 30,-10 18,40 -18,40 -30,-10" fill="url(#accent)" opacity="0.95"/>
+    <!-- Cockpit window -->
+    <ellipse cx="0" cy="-15" rx="8" ry="10" fill="#0a0a0f" opacity="0.7"/>
+    <ellipse cx="0" cy="-15" rx="5" ry="7" fill="#818cf8" opacity="0.4"/>
+    <!-- Wings -->
+    <polygon points="-30,-10 -55,25 -18,30" fill="#6366f1" opacity="0.7"/>
+    <polygon points="30,-10 55,25 18,30" fill="#6366f1" opacity="0.7"/>
+    <!-- Engine glow -->
+    <ellipse cx="0" cy="45" rx="10" ry="5" fill="#818cf8" opacity="0.8"/>
+    <ellipse cx="0" cy="52" rx="6" ry="12" fill="#a5b4fc" opacity="0.4"/>
+    <ellipse cx="0" cy="60" rx="3" ry="10" fill="#c7d2fe" opacity="0.2"/>
+  </g>
+
+  <!-- Decorative ring around icon -->
+  <circle cx="600" cy="220" r="70" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.25"/>
+  <circle cx="600" cy="220" r="85" fill="none" stroke="#6366f1" stroke-width="0.5" opacity="0.12"/>
+
+  <!-- Main title -->
+  <text x="600" y="360" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="56" font-weight="700" fill="#ffffff" letter-spacing="2">Nice Spaceship</text>
+
+  <!-- Accent line -->
+  <rect x="500" y="380" width="200" height="2" rx="1" fill="#6366f1" opacity="0.6"/>
+
+  <!-- Subtitle -->
+  <text x="600" y="425" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="400" fill="#a1a1aa" letter-spacing="3">HELM&#x2122; &#x2014; Mission Control for AI Agent Fleets</text>
+
+  <!-- URL -->
+  <text x="600" y="575" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="400" fill="#6366f1" opacity="0.6" letter-spacing="2">nicespaceship.com</text>
+
+  <!-- Border accent -->
+  <rect x="0" y="0" width="1200" height="3" fill="#6366f1" opacity="0.5"/>
+  <rect x="0" y="627" width="1200" height="3" fill="#6366f1" opacity="0.3"/>
+</svg>

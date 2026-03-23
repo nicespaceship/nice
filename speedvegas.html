@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="spaceship" data-sv-theme="speedvegas">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpeedVegas — Drive the World's Greatest Supercars in Las Vegas</title>
+  <meta name="description" content="Las Vegas's most exhilarating supercar driving experience. Ferrari, Lamborghini, McLaren and 20+ exotic cars on a private 2-mile track. Agentic operations powered by Nice Spaceship NICE SPACESHIP™." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;700;900&family=Exo+2:wght@400;600;700;900&family=Fira+Code:wght@300;400;500&family=Inter:wght@300;400;500;600;700;900&family=Michroma&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./public/css/theme.css" />
+  <style>
+
+    /* ══════════════════════════════════════════════════════
+       SPEEDVEGAS — MOTORSPORT DESIGN SYSTEM
+       ══════════════════════════════════════════════════════ */
+
+    /* ── Theme Variables ──────────────────────────────── */
+    :root,
+    html[data-sv-theme="speedvegas"] {
+      --sv-bg:      #060606;
+      --sv-bg2:     #0d0d0d;
+      --sv-bg3:     #161616;
+      --sv-red:     #e81828;
+      --sv-red2:    #ff3344;
+      --sv-gold:    #c8a028;
+      --sv-text:    #f0f0f0;
+      --sv-muted:   #787878;
+      --sv-border:  rgba(232,24,40,0.20);
+      --sv-border2: rgba(232,24,40,0.08);
+      --sv-glow:    rgba(232,24,40,0.12);
+      --sv-glow2:   rgba(232,24,40,0.05);
+      --sv-font-h:  'Rajdhani', sans-serif;
+    }
+    html[data-sv-theme="carbon"] {
+      --sv-bg:      #050507;
+      --sv-bg2:     #0a0a0e;
+      --sv-bg3:     #101016;
+      --sv-red:     #b8c8e0;
+      --sv-red2:    #d8e8f8;
+      --sv-gold:    #6080a8;
+      --sv-text:    #e4e8f0;
+      --sv-muted:   #60708a;
+      --sv-border:  rgba(184,200,224,0.16);
+      --sv-border2: rgba(184,200,224,0.06);
+      --sv-glow:    rgba(184,200,224,0.08);
+      --sv-glow2:   rgba(184,200,224,0.04);
+      --sv-font-h:  'Michroma', sans-serif;
+    }
+    html[data-sv-theme="ferrari"] {
+      --sv-bg:      #080203;
+      --sv-bg2:     #100306;
+      --sv-bg3:     #18050a;
+      --sv-red:     #e01818;
+      --sv-red2:    #f5be00;
+      --sv-gold:    #f0b800;
+      --sv-text:    #f5f0ee;
+      --sv-muted:   #886860;
+      --sv-border:  rgba(224,24,24,0.22);
+      --sv-border2: rgba(224,24,24,0.08);
+      --sv-glow:    rgba(224,24,24,0.12);
+      --sv-glow2:   rgba(224,24,24,0.05);
+      --sv-font-h:  'Cinzel', serif;
+    }
+    html[data-sv-theme="lamborghini"] {
+      --sv-bg:      #060504;
+      --sv-bg2:     #0e0c08;
+      --sv-bg3:     #18140e;
+      --sv-red:     #f0a800;
+      --sv-red2:    #ffcc00;
+      --sv-gold:    #c88800;
+      --sv-text:    #f4f0e4;
+      --sv-muted:   #806840;
+      --sv-border:  rgba(240,168,0,0.20);
+      --sv-border2: rgba(240,168,0,0.07);
+      --sv-glow:    rgba(240,168,0,0.12);
+      --sv-glow2:   rgba(240,168,0,0.05);
+      --sv-font-h:  'Exo 2', sans-serif;
+    }
+
+    /* ── Theme: SpeedVegas Official ─────────────────── */
+    html[data-sv-theme="speedvegas"] {
+      --sv-bg:      #ffffff;
+      --sv-bg2:     #f8f8f8;
+      --sv-bg3:     #f0f0f0;
+      --sv-red:     #ffc107;      /* PRIMARY: SpeedVegas amber */
+      --sv-red2:    #dc3545;      /* HOVER: red accent */
+      --sv-gold:    #dc3545;      /* SECONDARY: red */
+      --sv-text:    #0a0a0a;
+      --sv-muted:   #5a5a5a;
+      --sv-border:  rgba(255,193,7,0.30);
+      --sv-border2: rgba(255,193,7,0.10);
+      --sv-glow:    rgba(255,193,7,0.18);
+      --sv-glow2:   rgba(255,193,7,0.07);
+      --sv-btn-text:#0a0a0a;
+      --sv-font-h:  'Bebas Neue', 'Rajdhani', sans-serif;
+    }
+    /* SpeedVegas: Bebas Neue tuning — wider tracking, no italic */
+    html[data-sv-theme="speedvegas"] .sv-h2 { letter-spacing: 0.04em; font-weight: 400; }
+    html[data-sv-theme="speedvegas"] .sv-hero-title { letter-spacing: 0.05em; }
+    /* SpeedVegas: amber em/label highlights on white bg */
+    html[data-sv-theme="speedvegas"] .sv-h2 em  { color: #ffc107; }
+    html[data-sv-theme="speedvegas"] .sv-label  { color: #0a0a0a; letter-spacing: 0.5em; }
+    html[data-sv-theme="speedvegas"] .sv-hero-eyebrow { color: #0a0a0a; }
+    html[data-sv-theme="speedvegas"] .sv-hero-eyebrow::before { background: #ffc107; }
+    html[data-sv-theme="speedvegas"] .sv-car-tier { color: #0a0a0a; }
+
+    /* ── Theme: White Out ────────────────────────────── */
+    html[data-sv-theme="white-out"] {
+      --sv-bg:      #ffffff;
+      --sv-bg2:     #f4f4f4;
+      --sv-bg3:     #eaeaea;
+      --sv-red:     #111111;
+      --sv-red2:    #333333;
+      --sv-gold:    #555555;
+      --sv-text:    #0a0a0a;
+      --sv-muted:   #777777;
+      --sv-border:  rgba(0,0,0,0.12);
+      --sv-border2: rgba(0,0,0,0.05);
+      --sv-glow:    rgba(0,0,0,0.08);
+      --sv-glow2:   rgba(0,0,0,0.03);
+      --sv-nav-bg:  rgba(255,255,255,0.95);
+      --sv-btn-text:#111111;
+      --sv-font-h:  'Raleway', sans-serif;
+    }
+
+    /* ── Theme: Grand Prix (F1 French Tricolor) ──────── */
+    html[data-sv-theme="grand-prix"] {
+      --sv-bg:      #f7f8fc;
+      --sv-bg2:     #eef0f8;
+      --sv-bg3:     #e4e8f4;
+      --sv-red:     #002395;
+      --sv-red2:    #ed2939;      /* hover → French red */
+      --sv-gold:    #ed2939;      /* secondary → French red */
+      --sv-text:    #08091a;
+      --sv-muted:   #5a5e80;
+      --sv-border:  rgba(0,35,149,0.14);
+      --sv-border2: rgba(0,35,149,0.05);
+      --sv-glow:    rgba(237,41,57,0.10);
+      --sv-glow2:   rgba(0,35,149,0.04);
+      --sv-nav-bg:  rgba(247,248,252,0.96);
+      --sv-btn-text:#ffffff;
+      --sv-font-h:  'Titillium Web', sans-serif;
+    }
+    /* Grand Prix: red rule + em highlights */
+    html[data-sv-theme="grand-prix"] .sv-rule             { background: linear-gradient(90deg, #002395 50%, #ed2939 100%); }
+    html[data-sv-theme="grand-prix"] .sv-h2 em            { color: #ed2939; }
+    html[data-sv-theme="grand-prix"] .sv-hero-eyebrow::before { background: #ed2939; }
+    html[data-sv-theme="grand-prix"] .sv-btn-primary:hover { background: #ed2939; }
+    /* Grand Prix: Titillium Web tuning */
+    html[data-sv-theme="grand-prix"] .sv-h2  { font-weight: 700; letter-spacing: 0.02em; }
+
+    /* Ferrari: Cinzel tuning — slightly wider tracking, refined */
+    html[data-sv-theme="ferrari"] .sv-h2     { font-weight: 700; letter-spacing: 0.06em; }
+    html[data-sv-theme="ferrari"] .sv-hero-title { letter-spacing: 0.08em; }
+
+    /* Lamborghini: Exo 2 tuning — bold, tight, aggressive */
+    html[data-sv-theme="lamborghini"] .sv-h2 { font-weight: 900; letter-spacing: 0.01em; }
+
+    /* Carbon: Michroma renders wide — scale down to match visual weight of other themes */
+    html[data-sv-theme="carbon"] .sv-h2        { font-weight: 400; letter-spacing: 0.04em; font-size: 0.78em; }
+    html[data-sv-theme="carbon"] .sv-hero-title { font-size: 0.76em; }
+    html[data-sv-theme="carbon"] .sv-car-name   { font-size: 0.82rem; }
+
+    /* ── Reset & Base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .sv-page {
+      background: var(--sv-bg);
+      color: var(--sv-text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Checkered flag micro-pattern (very subtle) */
+    .sv-page::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(45deg, var(--sv-border2) 25%, transparent 25%),
+        linear-gradient(-45deg, var(--sv-border2) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, var(--sv-border2) 75%),
+        linear-gradient(-45deg, transparent 75%, var(--sv-border2) 75%);
+      background-size: 8px 8px;
+      background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+      opacity: 0.35;
+    }
+
+    /* Full-page canvas background */
+    #sv-bg-canvas {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 1;
+    }
+
+    .sv-inner {
+      max-width: 1240px; margin: 0 auto; padding: 0 48px;
+      position: relative; z-index: 2;
+    }
+    @media (max-width: 768px) { .sv-inner { padding: 0 24px; } }
+    @media (max-width: 480px) { .sv-inner { padding: 0 16px; } }
+
+    .sv-sec { padding: 100px 0; position: relative; z-index: 2; }
+    .sv-sec-alt { background: var(--sv-bg2); }
+    .sv-sec-dark { background: var(--sv-bg3); }
+
+    /* Red diagonal rule between sections */
+    .sv-rule {
+      display: block; height: 2px; width: 48px;
+      background: var(--sv-red); margin-bottom: 28px;
+    }
+
+    .sv-label {
+      display: inline-block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; letter-spacing: 0.5em; text-transform: uppercase;
+      color: var(--sv-red); margin-bottom: 14px; opacity: 0.9;
+    }
+    .sv-h2 {
+      font-family: var(--sv-font-h);
+      font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700;
+      color: var(--sv-text); line-height: 1.05; margin-bottom: 18px;
+      text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    .sv-h2 em { font-style: normal; color: var(--sv-red); }
+    .sv-body { font-size: 0.9rem; color: var(--sv-muted); line-height: 1.85; max-width: 600px; }
+
+    /* ── Buttons ──────────────────────────────────────── */
+    .sv-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-family: var(--sv-font-h); font-size: 1rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none;
+      padding: 14px 32px; cursor: pointer; border: none; transition: all 0.2s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+    .sv-btn-primary { background: var(--sv-red); color: var(--sv-btn-text, #fff); }
+    .sv-btn-primary:hover { background: var(--sv-red2); transform: translateY(-2px); box-shadow: 0 8px 32px var(--sv-glow); }
+    .sv-btn-outline {
+      background: transparent; color: var(--sv-red); border: 1px solid var(--sv-border);
+      clip-path: none; padding: 13px 28px;
+    }
+    .sv-btn-outline:hover { background: var(--sv-glow2); border-color: var(--sv-red); }
+
+    /* ── NAV ──────────────────────────────────────────── */
+    .sv-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--sv-nav-bg, rgba(6,6,6,0.92)); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--sv-border);
+    }
+    .sv-nav-inner {
+      max-width: 1240px; margin: 0 auto; padding: 0 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+    }
+    @media (max-width: 768px) { .sv-nav-inner { padding: 0 24px; } }
+
+    .sv-nav-brand {
+      display: flex; align-items: center; gap: 14px; text-decoration: none;
+    }
+    .sv-nav-logo {
+      width: 38px; height: 38px;
+      background: var(--sv-red);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--sv-font-h); font-weight: 700; font-size: 0.85rem;
+      color: #fff; letter-spacing: 0.05em;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+    }
+    .sv-nav-name {
+      font-family: var(--sv-font-h); font-size: 1.1rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--sv-text);
+    }
+    .sv-nav-name span { color: var(--sv-red); }
+
+    .sv-nav-links {
+      display: flex; align-items: center; gap: 32px; list-style: none;
+    }
+    .sv-nav-links a {
+      font-family: var(--sv-font-h); font-size: 0.85rem; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase; text-decoration: none;
+      color: var(--sv-muted); transition: color 0.2s;
+    }
+    .sv-nav-links a:hover { color: var(--sv-red); }
+
+    .sv-nav-cta {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .sv-nav-book {
+      font-family: var(--sv-font-h); font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none;
+      padding: 9px 22px; background: var(--sv-red); color: var(--sv-btn-text, #fff);
+      transition: background 0.2s;
+    }
+    .sv-nav-book:hover { background: var(--sv-red2); }
+    .sv-ns-badge {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.15em; color: var(--sv-muted); opacity: 0.6;
+    }
+    @media (max-width: 900px) { .sv-nav-links { display: none; } }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .sv-hero {
+      position: relative; min-height: 100vh;
+      display: flex; align-items: center;
+      overflow: hidden; padding-top: 68px;
+      background: var(--sv-bg);
+    }
+
+    /* Red speed streak overlay */
+    .sv-hero-streak {
+      position: absolute; top: 0; right: 0; width: 55%; height: 100%;
+      background: linear-gradient(135deg, transparent 0%, rgba(232,24,40,0.04) 100%);
+      clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%);
+    }
+    /* Diagonal red accent bar */
+    .sv-hero-bar {
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--sv-red) 0%, transparent 70%);
+    }
+    /* Bottom rule */
+    .sv-hero-rule {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+      background: var(--sv-border);
+    }
+
+    /* Tire track texture marks */
+    .sv-hero-track {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0, transparent 14px,
+        rgba(232,24,40,0.04) 14px, rgba(232,24,40,0.04) 16px
+      );
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+    }
+
+    .sv-hero-inner {
+      position: relative; z-index: 2;
+      max-width: 1240px; margin: 0 auto; padding: 80px 48px 60px;
+      width: 100%;
+    }
+    @media (max-width: 768px) { .sv-hero-inner { padding: 60px 24px 40px; } }
+
+    .sv-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 16px; margin-bottom: 20px;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.55em; text-transform: uppercase; color: var(--sv-red);
+    }
+    .sv-hero-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--sv-red); flex-shrink: 0; }
+
+    .sv-hero h1 {
+      font-family: var(--sv-font-h); font-weight: 700; text-transform: uppercase;
+      font-size: clamp(4rem, 12vw, 10rem); line-height: 0.88;
+      color: var(--sv-text); letter-spacing: -0.01em; margin-bottom: 0;
+    }
+    .sv-hero h1 em { display: block; font-style: normal; color: var(--sv-red); }
+
+    .sv-hero-tagline {
+      font-family: var(--sv-font-h); font-size: clamp(1rem, 2.5vw, 1.5rem);
+      font-weight: 400; letter-spacing: 0.08em; color: var(--sv-muted);
+      text-transform: uppercase; margin-top: 18px; margin-bottom: 36px;
+    }
+    .sv-hero-tagline strong { color: var(--sv-text); font-weight: 600; }
+
+    .sv-cta-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 72px; }
+
+    /* Hero stats bar */
+    .sv-hero-stats {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      border-top: 1px solid var(--sv-border);
+      border-left: 1px solid var(--sv-border);
+    }
+    @media (max-width: 700px) { .sv-hero-stats { grid-template-columns: repeat(3, 1fr); } }
+    .sv-hero-stat {
+      padding: 20px 16px;
+      border-right: 1px solid var(--sv-border);
+      border-bottom: 1px solid var(--sv-border);
+    }
+    .sv-stat-val {
+      font-family: var(--sv-font-h); font-size: 1.8rem; font-weight: 700;
+      color: var(--sv-red); line-height: 1; margin-bottom: 4px;
+    }
+    .sv-stat-lbl {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.52rem;
+      letter-spacing: 0.25em; text-transform: uppercase; color: var(--sv-muted);
+    }
+
+    /* ── TICKER BAR ───────────────────────────────────── */
+    .sv-ticker {
+      background: var(--sv-red); overflow: hidden; height: 32px;
+      display: flex; align-items: center;
+      position: relative; z-index: 2;
+    }
+    .sv-ticker-track {
+      display: flex; animation: svTick 28s linear infinite; white-space: nowrap;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.25em; color: rgba(255,255,255,0.9);
+    }
+    .sv-ticker-item { padding: 0 40px; }
+    @keyframes svTick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ── EXPERIENCES ──────────────────────────────────── */
+    .sv-exp-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 2px; margin-top: 56px;
+    }
+    @media (max-width: 800px) { .sv-exp-grid { grid-template-columns: 1fr; } }
+
+    .sv-exp-card {
+      background: var(--sv-bg3); border: 1px solid var(--sv-border);
+      padding: 36px 28px; position: relative; overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .sv-exp-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--sv-red); transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .sv-exp-card:hover { border-color: var(--sv-red); box-shadow: 0 0 32px var(--sv-glow); }
+    .sv-exp-card:hover::before { transform: scaleX(1); }
+
+    .sv-exp-num {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.3em; color: var(--sv-red); margin-bottom: 16px;
+    }
+    .sv-exp-icon {
+      width: 56px; height: 56px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--sv-border);
+    }
+    .sv-exp-title {
+      font-family: var(--sv-font-h); font-size: 1.5rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--sv-text);
+      margin-bottom: 8px;
+    }
+    .sv-exp-subtitle {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.25em; text-transform: uppercase; color: var(--sv-red);
+      margin-bottom: 16px; opacity: 0.8;
+    }
+    .sv-exp-desc { font-size: 0.85rem; color: var(--sv-muted); line-height: 1.75; margin-bottom: 24px; }
+    .sv-exp-from {
+      font-family: var(--sv-font-h); font-size: 1.2rem; font-weight: 600;
+      color: var(--sv-text);
+    }
+    .sv-exp-from span { color: var(--sv-muted); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; }
+    .sv-exp-tag {
+      display: inline-block; font-family: 'Share Tech Mono', monospace;
+      font-size: 0.52rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--sv-muted); border: 1px solid var(--sv-border);
+      padding: 3px 8px; margin-right: 4px; margin-top: 8px;
+    }
+
+    /* Car SVG illustration slot */
+    .sv-exp-art {
+      width: 100%; height: 112px; margin: 20px 0;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    /* Vehicle float animation */
+    @keyframes svExpFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    .sv-exp-art > svg { animation: svExpFloat 4s ease-in-out infinite; }
+    .sv-exp-card:nth-child(2) .sv-exp-art > svg { animation-delay: 1.1s; }
+    .sv-exp-card:nth-child(3) .sv-exp-art > svg { animation-delay: 2.2s; }
+    /* Speed line pulse */
+    @keyframes svSpeedPulse { 0%,100%{opacity:0.12;transform:translateX(0)} 50%{opacity:0.42;transform:translateX(-7px)} }
+    .sv-spd { animation: svSpeedPulse 2.4s ease-in-out infinite; }
+    .sv-spd:nth-of-type(2) { animation-delay: 0.4s; }
+    .sv-spd:nth-of-type(3) { animation-delay: 0.8s; }
+    /* Dust cloud pulse (off-road) */
+    @keyframes svDustPulse { 0%,100%{opacity:0.04;transform:scale(1)} 50%{opacity:0.10;transform:scale(1.18)} }
+    .sv-dust { animation: svDustPulse 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+    /* ── THE FLEET ────────────────────────────────────── */
+    .sv-fleet-header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px; margin-bottom: 40px;
+    }
+    .sv-tier-legend {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    }
+    .sv-tier-pip {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--sv-muted);
+    }
+    .sv-tier-pip::before {
+      content: ''; width: 8px; height: 8px;
+      background: var(--sv-tier-color, var(--sv-red));
+    }
+
+    .sv-fleet-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1px; background: var(--sv-border2);
+    }
+    .sv-car-card {
+      background: var(--sv-bg); padding: 22px 20px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .sv-car-card:hover { background: var(--sv-bg3); }
+    .sv-car-card::after {
+      content: ''; position: absolute; top: 0; left: 0; width: 0; height: 2px;
+      background: var(--sv-red); transition: width 0.25s;
+    }
+    .sv-car-card:hover::after { width: 100%; }
+
+    .sv-car-header { display: flex; align-items: center; justify-content: space-between; }
+    .sv-car-tier {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.2em; padding: 3px 9px; border: 1px solid;
+      text-transform: uppercase;
+    }
+    .sv-car-tier[data-tier="T1"] { color: #aaa; border-color: rgba(170,170,170,0.3); }
+    .sv-car-tier[data-tier="T2"] { color: #60c0ff; border-color: rgba(96,192,255,0.3); }
+    .sv-car-tier[data-tier="T3"] { color: #60e060; border-color: rgba(96,224,96,0.3); }
+    .sv-car-tier[data-tier="T4"] { color: #ffd060; border-color: rgba(255,208,96,0.3); }
+    .sv-car-tier[data-tier="T5"] { color: #ff9040; border-color: rgba(255,144,64,0.3); }
+    .sv-car-tier[data-tier="T6"] { color: var(--sv-red); border-color: var(--sv-border); }
+
+    .sv-car-status {
+      width: 7px; height: 7px; border-radius: 50%;
+    }
+    .sv-car-status.active { background: #40dd60; box-shadow: 0 0 6px rgba(64,221,96,0.5); }
+    .sv-car-status.inactive { background: #dd4040; }
+    .sv-car-status.garage { background: #ffa040; }
+
+    .sv-car-name {
+      font-family: var(--sv-font-h); font-size: 0.95rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--sv-text);
+      line-height: 1.2;
+    }
+    .sv-car-price {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+      letter-spacing: 0.12em; color: var(--sv-red); margin-top: auto;
+    }
+    .sv-car-brand {
+      height: 18px; opacity: 0.22; margin-bottom: 6px;
+      display: flex; align-items: center;
+    }
+    .sv-car-brand svg { height: 18px; width: auto; color: var(--sv-text); }
+    .sv-car-card:hover .sv-car-brand { opacity: 0.55; }
+
+    /* ── GUEST JOURNEY ────────────────────────────────── */
+    .sv-journey-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; margin-top: 56px; border: 1px solid var(--sv-border);
+    }
+    @media (max-width: 900px) { .sv-journey-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .sv-journey-grid { grid-template-columns: 1fr; } }
+
+    .sv-step {
+      padding: 28px 22px; border-right: 1px solid var(--sv-border);
+      border-bottom: 1px solid var(--sv-border);
+      position: relative;
+    }
+    .sv-step:last-child { border-right: none; }
+    .sv-step-num {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.3em; color: var(--sv-red); margin-bottom: 12px;
+    }
+    .sv-step-icon {
+      width: 36px; height: 36px; margin-bottom: 14px;
+      border: 1px solid var(--sv-border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--sv-muted);
+    }
+    .sv-step-title {
+      font-family: var(--sv-font-h); font-size: 1rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em; color: var(--sv-text);
+      margin-bottom: 8px;
+    }
+    .sv-step-desc { font-size: 0.78rem; color: var(--sv-muted); line-height: 1.7; }
+
+    /* Arrow connector */
+    .sv-step::after {
+      content: '›'; position: absolute; right: -12px; top: 50%;
+      transform: translateY(-50%); color: var(--sv-red); font-size: 1.4rem;
+      z-index: 3;
+    }
+    .sv-step:nth-child(4n)::after,
+    .sv-step:last-child::after { display: none; }
+    @media (max-width: 900px) {
+      .sv-step:nth-child(2n)::after { display: none; }
+    }
+    @media (max-width: 500px) {
+      .sv-step::after { display: none; }
+    }
+
+    /* ── NS OPERATIONS SECTION ────────────────────────── */
+    .sv-ops-intro {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 72px;
+      align-items: start; margin-bottom: 72px;
+    }
+    @media (max-width: 800px) { .sv-ops-intro { grid-template-columns: 1fr; gap: 40px; } }
+
+    .sv-erp-stack {
+      background: var(--sv-bg3); border: 1px solid var(--sv-border);
+      padding: 28px;
+    }
+    .sv-erp-title {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.4em; text-transform: uppercase; color: var(--sv-muted);
+      margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--sv-border);
+    }
+    .sv-erp-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--sv-border2);
+      font-size: 0.82rem;
+    }
+    .sv-erp-row:last-child { border-bottom: none; }
+    .sv-erp-name { color: var(--sv-muted); }
+    .sv-erp-status {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 2px 8px; border: 1px solid;
+    }
+    .sv-erp-status.replaced { color: #dd4040; border-color: rgba(221,64,64,0.3); }
+    .sv-erp-status.integrated { color: #60c060; border-color: rgba(96,192,96,0.3); }
+    .sv-erp-status.augmented { color: #60a0ff; border-color: rgba(96,160,255,0.3); }
+
+    /* NS Agent cards in ops section */
+    .sv-agent-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+      background: var(--sv-border2);
+    }
+    @media (max-width: 900px) { .sv-agent-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .sv-agent-grid { grid-template-columns: 1fr; } }
+
+    .sv-agent-card {
+      background: var(--sv-bg2); padding: 28px 22px;
+      position: relative; overflow: hidden;
+      transition: background 0.2s;
+    }
+    .sv-agent-card:hover { background: var(--sv-bg3); }
+    .sv-agent-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 0;
+      background: var(--sv-red); transition: height 0.3s;
+    }
+    .sv-agent-card:hover::before { height: 100%; }
+
+    .sv-agent-num {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.25em; color: var(--sv-red); margin-bottom: 12px;
+      opacity: 0.8;
+    }
+    .sv-agent-icon {
+      width: 40px; height: 40px; margin-bottom: 16px;
+      border: 1px solid var(--sv-border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--sv-muted);
+    }
+    .sv-agent-name {
+      font-family: var(--sv-font-h); font-size: 1.05rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--sv-text);
+      margin-bottom: 6px;
+    }
+    .sv-agent-role {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--sv-red);
+      margin-bottom: 12px; opacity: 0.75;
+    }
+    .sv-agent-desc { font-size: 0.8rem; color: var(--sv-muted); line-height: 1.7; margin-bottom: 16px; }
+    .sv-agent-cap {
+      font-size: 0.75rem; color: var(--sv-muted); display: flex;
+      align-items: flex-start; gap: 8px; margin-bottom: 5px;
+    }
+    .sv-agent-cap::before { content: '◆'; color: var(--sv-red); font-size: 0.45rem; margin-top: 5px; flex-shrink: 0; }
+
+    .sv-agent-stats {
+      display: flex; gap: 0; border-top: 1px solid var(--sv-border); margin-top: 16px;
+      padding-top: 14px;
+    }
+    .sv-agent-stat { flex: 1; text-align: center; padding: 0 4px; border-right: 1px solid var(--sv-border2); }
+    .sv-agent-stat:last-child { border-right: none; }
+    .sv-agent-stat-val {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.72rem;
+      color: var(--sv-red); display: block; margin-bottom: 2px;
+    }
+    .sv-agent-stat-key {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.45rem;
+      letter-spacing: 0.15em; text-transform: uppercase; color: var(--sv-muted);
+    }
+
+    /* ── FLEET BLUEPRINT CARD ─────────────────────────── */
+    .sv-fleet-bp {
+      border: 1px solid var(--sv-border); background: var(--sv-bg3);
+      padding: 40px; margin-top: 56px; position: relative;
+      box-shadow: 0 0 48px var(--sv-glow2);
+    }
+    .sv-fleet-bp::before {
+      content: 'NS-F19'; position: absolute; top: 20px; right: 24px;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.3em; color: var(--sv-red); opacity: 0.4;
+    }
+    .sv-fleet-bp-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 24px; margin-bottom: 32px;
+    }
+    .sv-fleet-bp-name {
+      font-family: var(--sv-font-h); font-size: 1.8rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--sv-text);
+    }
+    .sv-fleet-bp-rarity {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.25em; padding: 5px 14px; border: 1px solid var(--sv-red);
+      color: var(--sv-red); text-transform: uppercase;
+      animation: fleetPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes fleetPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .sv-fleet-bp-agents {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .sv-fleet-agent-chip {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.55rem;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      border: 1px solid var(--sv-border); color: var(--sv-muted);
+      padding: 5px 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .sv-fleet-agent-chip::before { content: ''; width: 6px; height: 6px; background: var(--sv-red); border-radius: 50%; }
+    .sv-fleet-bp-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--sv-border);
+    }
+    @media (max-width: 600px) { .sv-fleet-bp-stats { grid-template-columns: repeat(2, 1fr); } }
+    .sv-fleet-bp-stat {
+      padding: 18px 16px; border-right: 1px solid var(--sv-border);
+    }
+    .sv-fleet-bp-stat:last-child { border-right: none; }
+    .sv-fleet-bp-stat-val {
+      font-family: var(--sv-font-h); font-size: 1.5rem; font-weight: 700;
+      color: var(--sv-red); line-height: 1; margin-bottom: 4px;
+    }
+    .sv-fleet-bp-stat-key {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.5rem;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--sv-muted);
+    }
+
+    /* ── FINAL CTA ────────────────────────────────────── */
+    .sv-cta-sec {
+      background: var(--sv-bg);
+      border-top: 1px solid var(--sv-border);
+      padding: 100px 0;
+      position: relative; overflow: hidden; z-index: 2;
+    }
+    .sv-cta-glow {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, var(--sv-glow2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .sv-cta-inner {
+      max-width: 1240px; margin: 0 auto; padding: 0 48px;
+      text-align: center; position: relative; z-index: 1;
+    }
+    @media (max-width: 768px) { .sv-cta-inner { padding: 0 24px; } }
+    .sv-cta-h2 {
+      font-family: var(--sv-font-h); font-size: clamp(2.5rem, 7vw, 5rem);
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+      color: var(--sv-text); line-height: 1; margin-bottom: 20px;
+    }
+    .sv-cta-h2 em { color: var(--sv-red); font-style: normal; }
+    .sv-cta-sub {
+      font-size: 0.9rem; color: var(--sv-muted); max-width: 480px;
+      margin: 0 auto 40px; line-height: 1.85;
+    }
+    .sv-cta-row { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+
+    /* ── NS POWERED FOOTER STRIP ──────────────────────── */
+    .sv-ns-strip {
+      background: var(--sv-bg2); border-top: 1px solid var(--sv-border);
+      padding: 24px 48px; display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      position: relative; z-index: 2;
+    }
+    @media (max-width: 768px) { .sv-ns-strip { padding: 20px 24px; } }
+    .sv-ns-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.3em; text-transform: uppercase; color: var(--sv-muted);
+    }
+    .sv-ns-label strong { color: var(--sv-text); }
+    .sv-ns-link {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--sv-red); text-decoration: none;
+      border: 1px solid var(--sv-border); padding: 6px 16px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .sv-ns-link:hover { background: var(--sv-glow2); border-color: var(--sv-red); }
+
+    /* ── HUD (Theme Switcher) ─────────────────────────── */
+    .sv-hud {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
+    }
+    .sv-hud-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.5rem;
+      letter-spacing: 0.3em; text-transform: uppercase; color: var(--sv-muted);
+      text-align: right; margin-bottom: 2px;
+    }
+    .sv-hud-row { display: flex; gap: 5px; }
+    .sv-hud-btn {
+      width: 22px; height: 22px; border: 1px solid var(--sv-border);
+      cursor: pointer; background: var(--sv-bg3); transition: transform 0.15s;
+      position: relative;
+    }
+    .sv-hud-btn:hover, .sv-hud-btn.active { transform: scale(1.25); border-color: var(--sv-red); }
+    .sv-hud-btn[data-sv-id="race-red"]    { background: #e81828; }
+    .sv-hud-btn[data-sv-id="carbon"]      { background: linear-gradient(135deg, #1a1a2a 50%, #b8c8e0 50%); }
+    .sv-hud-btn[data-sv-id="ferrari"]     { background: linear-gradient(135deg, #e01818 50%, #f5be00 50%); }
+    .sv-hud-btn[data-sv-id="lamborghini"] { background: #f0a800; }
+    .sv-hud-btn[data-sv-id="speedvegas"]  { background: linear-gradient(135deg, #111111 50%, #ffc107 50%); border-color: rgba(255,193,7,0.6); }
+    .sv-hud-btn[data-sv-id="white-out"]   { background: linear-gradient(135deg, #ffffff 50%, #111111 50%); border-color: rgba(0,0,0,0.25); }
+    .sv-hud-btn[data-sv-id="grand-prix"]  { background: linear-gradient(to right, #002395 33.33%, #ffffff 33.33%, #ffffff 66.66%, #ed2939 66.66%); border-color: rgba(0,35,149,0.4); }
+
+  </style>
+</head>
+<body>
+
+<!-- SVG ICON SYMBOLS -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="icon-car" viewBox="0 0 24 24">
+    <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M5 17H3v-6l2-5h11l3 5v6h-2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M9 17h6" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="icon-flag" viewBox="0 0 24 24">
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="4" y1="22" x2="4" y2="15" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="icon-timer" viewBox="0 0 24 24">
+    <circle cx="12" cy="13" r="8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 9v4l2.5 2.5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M5 3l2 2M19 3l-2 2M9 3h6" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="icon-helmet" viewBox="0 0 24 24">
+    <path d="M12 2a9 9 0 0 1 9 9v4H3v-4a9 9 0 0 1 9-9z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M3 15h18v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-1z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M8 15v-3a4 4 0 0 1 4-4v0a4 4 0 0 1 4 4v3" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="icon-key" viewBox="0 0 24 24">
+    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="icon-task" viewBox="0 0 24 24">
+    <path d="M9 11l3 3L22 4" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="icon-monitor" viewBox="0 0 24 24">
+    <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="8" y1="21" x2="16" y2="21" stroke-width="1.75" stroke-linecap="round"/>
+    <line x1="12" y1="17" x2="12" y2="21" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="icon-analytics" viewBox="0 0 24 24">
+    <line x1="18" y1="20" x2="18" y2="10" stroke-width="1.75" stroke-linecap="round"/>
+    <line x1="12" y1="20" x2="12" y2="4"  stroke-width="1.75" stroke-linecap="round"/>
+    <line x1="6"  y1="20" x2="6"  y2="14" stroke-width="1.75" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="icon-video" viewBox="0 0 24 24">
+    <polygon points="23 7 16 12 23 17 23 7" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="1" y="5" width="15" height="14" rx="2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="icon-agent" viewBox="0 0 24 24">
+    <rect x="7" y="8" width="10" height="8" rx="2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M9 2h6M12 2v6" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="9.5" cy="12" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none"/>
+    <path d="M9 16v2M15 16v2M3 12h4M17 12h4" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="icon-fleet" viewBox="0 0 24 24">
+    <rect x="2" y="3" width="6" height="6" rx="1" stroke-width="1.75"/>
+    <rect x="9" y="3" width="6" height="6" rx="1" stroke-width="1.75"/>
+    <rect x="16" y="3" width="6" height="6" rx="1" stroke-width="1.75"/>
+    <rect x="2" y="12" width="6" height="6" rx="1" stroke-width="1.75"/>
+    <rect x="9" y="12" width="6" height="6" rx="1" stroke-width="1.75"/>
+    <rect x="16" y="12" width="6" height="6" rx="1" stroke-width="1.75"/>
+  </symbol>
+  <!-- Car brand logo symbols -->
+  <symbol id="brand-porsche" viewBox="0 0 120 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">PORSCHE</text>
+  </symbol>
+  <symbol id="brand-ferrari" viewBox="0 0 120 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">FERRARI</text>
+  </symbol>
+  <symbol id="brand-lamborghini" viewBox="0 0 180 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="22" fill="currentColor" letter-spacing="2">LAMBORGHINI</text>
+  </symbol>
+  <symbol id="brand-mclaren" viewBox="0 0 130 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">McLAREN</text>
+  </symbol>
+  <symbol id="brand-corvette" viewBox="0 0 140 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">CORVETTE</text>
+  </symbol>
+  <symbol id="brand-nissan" viewBox="0 0 110 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">NISSAN</text>
+  </symbol>
+  <symbol id="brand-ford" viewBox="0 0 80 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">FORD</text>
+  </symbol>
+  <symbol id="brand-acura" viewBox="0 0 100 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">ACURA</text>
+  </symbol>
+  <symbol id="brand-audi" viewBox="0 0 80 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="26" fill="currentColor" letter-spacing="2">AUDI</text>
+  </symbol>
+  <symbol id="brand-mercedes" viewBox="0 0 160 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="22" fill="currentColor" letter-spacing="1">MERCEDES-AMG</text>
+  </symbol>
+  <symbol id="brand-aston" viewBox="0 0 160 40">
+    <text x="0" y="30" font-family="'Rajdhani',sans-serif" font-weight="700" font-size="22" fill="currentColor" letter-spacing="1">ASTON MARTIN</text>
+  </symbol>
+
+  <symbol id="icon-comms" viewBox="0 0 24 24">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.27 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6 6l.62-.62a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+</svg>
+
+<canvas id="sv-bg-canvas"></canvas>
+
+<div class="sv-page" id="sv-root">
+
+  <!-- NAV -->
+  <nav class="sv-nav">
+    <div class="sv-nav-inner">
+      <a href="#home" class="sv-nav-brand">
+        <div class="sv-nav-logo">SV</div>
+        <div>
+          <div class="sv-nav-name">Speed<span>Vegas</span></div>
+          <div class="sv-ns-badge">Powered by Nice Spaceship NICE SPACESHIP™</div>
+        </div>
+      </a>
+      <ul class="sv-nav-links">
+        <li><a href="#experiences">Experiences</a></li>
+        <li><a href="#fleet">The Fleet</a></li>
+        <li><a href="#journey">Journey</a></li>
+        <li><a href="#operations">Operations</a></li>
+      </ul>
+      <div class="sv-nav-cta">
+        <a href="#book" class="sv-nav-book">Book Now</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- TICKER -->
+  <div class="sv-ticker" style="position:fixed;top:68px;left:0;right:0;z-index:99;">
+    <div class="sv-ticker-track">
+      <span class="sv-ticker-item">◆ LIVE TRACK STATUS: NOMINAL</span>
+      <span class="sv-ticker-item">◆ FLEET READY: 18 OF 20 CARS ACTIVE</span>
+      <span class="sv-ticker-item">◆ TODAY'S SESSIONS: 142 DRIVERS</span>
+      <span class="sv-ticker-item">◆ FASTEST LAP TODAY: 1:08.4 — FERRARI F8 TRIBUTO</span>
+      <span class="sv-ticker-item">◆ AGENTIC OPS: NICE SPACESHIP™ v3.5 ONLINE</span>
+      <span class="sv-ticker-item">◆ NEXT SESSION: 12 MINUTES</span>
+      <span class="sv-ticker-item">◆ LIVE TRACK STATUS: NOMINAL</span>
+      <span class="sv-ticker-item">◆ FLEET READY: 18 OF 20 CARS ACTIVE</span>
+      <span class="sv-ticker-item">◆ TODAY'S SESSIONS: 142 DRIVERS</span>
+      <span class="sv-ticker-item">◆ FASTEST LAP TODAY: 1:08.4 — FERRARI F8 TRIBUTO</span>
+      <span class="sv-ticker-item">◆ AGENTIC OPS: NICE SPACESHIP™ v3.5 ONLINE</span>
+      <span class="sv-ticker-item">◆ NEXT SESSION: 12 MINUTES</span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="sv-hero" id="home">
+    <div class="sv-hero-bar"></div>
+    <div class="sv-hero-streak"></div>
+    <div class="sv-hero-track"></div>
+    <div class="sv-hero-rule"></div>
+    <div class="sv-hero-inner">
+      <div class="sv-hero-eyebrow">Las Vegas, Nevada · Private 2-Mile Racetrack</div>
+      <h1>Speed<em>Vegas</em></h1>
+      <div class="sv-hero-tagline"><strong>Drive the world's greatest supercars.</strong> One lap changes everything.</div>
+      <div class="sv-cta-row">
+        <a href="#book" class="sv-btn sv-btn-primary">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><use href="#icon-flag"/></svg>
+          Book Your Session
+        </a>
+        <a href="#fleet" class="sv-btn sv-btn-outline">View the Fleet</a>
+      </div>
+      <div class="sv-hero-stats">
+        <div class="sv-hero-stat">
+          <div class="sv-stat-val">20+</div>
+          <div class="sv-stat-lbl">Exotic Cars</div>
+        </div>
+        <div class="sv-hero-stat">
+          <div class="sv-stat-val">T1–T6</div>
+          <div class="sv-stat-lbl">Experience Tiers</div>
+        </div>
+        <div class="sv-hero-stat">
+          <div class="sv-stat-val">2mi</div>
+          <div class="sv-stat-lbl">Private Track</div>
+        </div>
+        <div class="sv-hero-stat">
+          <div class="sv-stat-val">★★★★★</div>
+          <div class="sv-stat-lbl">TripAdvisor</div>
+        </div>
+        <div class="sv-hero-stat">
+          <div class="sv-stat-val">3</div>
+          <div class="sv-stat-lbl">Experience Types</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCES -->
+  <section class="sv-sec sv-sec-alt" id="experiences">
+    <div class="sv-inner">
+      <span class="sv-label">01 · Experiences</span>
+      <h2 class="sv-h2">Choose Your <em>Thrill</em></h2>
+      <span class="sv-rule"></span>
+      <p class="sv-body">Three ways to feel the rush. Every experience is led by a professional driving instructor on our private closed circuit — no road traffic, no limits.</p>
+
+      <div class="sv-exp-grid">
+
+        <!-- Supercars -->
+        <div class="sv-exp-card">
+          <div class="sv-exp-num">EXP::01</div>
+          <div class="sv-exp-icon">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-car"/></svg>
+          </div>
+          <!-- Supercar SVG silhouette -->
+          <div class="sv-exp-art">
+            <!-- Lamborghini Gallardo / Huracán profile — low, mid-engine, rear wing -->
+            <svg viewBox="0 0 320 100" style="width:100%;max-width:290px;color:var(--sv-red);" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="164" cy="96" rx="140" ry="2.5" fill="currentColor" opacity="0.07"/>
+              <!-- Main body: very long hood, tiny greenhouse pushed far back, wide rear haunches -->
+              <path d="M20 88 L32 84 L48 76 Q74 60 116 50 L134 46 L154 22 Q176 12 212 12 L236 14 L258 34 Q276 50 284 68 L288 88 Z" fill="currentColor" opacity="0.55"/>
+              <!-- Windshield (steeply raked) -->
+              <path d="M136 46 L156 22 Q176 12 212 12 L232 14 L224 26 Q200 32 166 38 Z" fill="currentColor" opacity="0.18"/>
+              <!-- Rear quarter window -->
+              <path d="M112 50 L134 36 L136 36 L136 46 Z" fill="currentColor" opacity="0.15"/>
+              <!-- Front splitter (extends aggressively forward) -->
+              <path d="M10 88 L26 84 L48 78 L48 88 Z" fill="currentColor" opacity="0.80"/>
+              <!-- Rear wing: blade + two vertical mounts -->
+              <rect x="255" y="26" width="36" height="4" rx="1.5" fill="currentColor" opacity="0.78"/>
+              <line x1="262" y1="30" x2="260" y2="46" stroke="currentColor" stroke-width="2.5" opacity="0.68"/>
+              <line x1="282" y1="30" x2="280" y2="46" stroke="currentColor" stroke-width="2.5" opacity="0.68"/>
+              <!-- Rear diffuser -->
+              <path d="M284 72 L300 64 L306 78 L298 88 Z" fill="currentColor" opacity="0.44"/>
+              <!-- Side intake (mid-engine vents near rear) -->
+              <path d="M222 16 L234 14 L256 34 L240 38 Z" fill="currentColor" opacity="0.14"/>
+              <!-- Wheel arch lines -->
+              <path d="M46 88 Q62 68 84 64 Q104 60 118 70 Q124 76 124 88" stroke="currentColor" stroke-width="0.8" fill="none" opacity="0.22"/>
+              <path d="M212 88 Q228 68 250 64 Q270 60 282 72 Q286 78 287 86" stroke="currentColor" stroke-width="0.8" fill="none" opacity="0.22"/>
+              <!-- Door crease / body line -->
+              <path d="M136 46 Q178 42 232 36" stroke="currentColor" stroke-width="0.8" fill="none" opacity="0.20"/>
+              <!-- Speed lines -->
+              <line class="sv-spd" x1="0" y1="54" x2="22" y2="54" stroke="currentColor" stroke-width="1.4"/>
+              <line class="sv-spd" x1="0" y1="48" x2="14" y2="48" stroke="currentColor" stroke-width="0.9"/>
+              <line class="sv-spd" x1="0" y1="60" x2="11" y2="60" stroke="currentColor" stroke-width="0.7"/>
+              <!-- FRONT WHEEL -->
+              <circle cx="84" cy="90" r="16" fill="var(--sv-bg)" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="84" cy="90" r="9" fill="currentColor" opacity="0.13"/>
+              <circle cx="84" cy="90" r="3.5" fill="currentColor" opacity="0.65"/>
+              <g><animateTransform attributeName="transform" type="rotate" from="0 84 90" to="360 84 90" dur="1.8s" repeatCount="indefinite"/>
+                <line x1="84" y1="78" x2="84" y2="90" stroke="currentColor" stroke-width="1.4" opacity="0.45"/>
+                <line x1="95" y1="81" x2="84" y2="90" stroke="currentColor" stroke-width="1.4" opacity="0.45"/>
+                <line x1="91" y1="93" x2="84" y2="90" stroke="currentColor" stroke-width="1.4" opacity="0.45"/>
+                <line x1="77" y1="93" x2="84" y2="90" stroke="currentColor" stroke-width="1.4" opacity="0.45"/>
+                <line x1="73" y1="81" x2="84" y2="90" stroke="currentColor" stroke-width="1.4" opacity="0.45"/>
+              </g>
+              <!-- REAR WHEEL (slightly larger — driven axle) -->
+              <circle cx="250" cy="90" r="17" fill="var(--sv-bg)" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="250" cy="90" r="10" fill="currentColor" opacity="0.13"/>
+              <circle cx="250" cy="90" r="4" fill="currentColor" opacity="0.65"/>
+              <g><animateTransform attributeName="transform" type="rotate" from="0 250 90" to="360 250 90" dur="1.5s" repeatCount="indefinite"/>
+                <line x1="250" y1="77" x2="250" y2="90" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="262" y1="81" x2="250" y2="90" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="258" y1="94" x2="250" y2="90" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="242" y1="94" x2="250" y2="90" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="238" y1="81" x2="250" y2="90" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+              </g>
+            </svg>
+          </div>
+          <div class="sv-exp-title">Supercar Laps</div>
+          <div class="sv-exp-subtitle">Ferrari · Lamborghini · McLaren · Porsche</div>
+          <div class="sv-exp-desc">Get behind the wheel of a multi-hundred-thousand-dollar exotic on our 2-mile private circuit. Your professional instructor rides along, guiding your every move.</div>
+          <div class="sv-exp-from">$99 <span>/ lap from</span></div>
+          <div>
+            <span class="sv-exp-tag">T1–T6 Tiers</span>
+            <span class="sv-exp-tag">Instructor Led</span>
+            <span class="sv-exp-tag">1–5 Laps</span>
+          </div>
+        </div>
+
+        <!-- Go-Karts -->
+        <div class="sv-exp-card">
+          <div class="sv-exp-num">EXP::02</div>
+          <div class="sv-exp-icon">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-flag"/></svg>
+          </div>
+          <div class="sv-exp-art">
+            <!-- Racing kart with helmeted driver — front nose, rear engine pod, spinning wheels -->
+            <svg viewBox="0 0 320 100" style="width:100%;max-width:290px;color:var(--sv-red);" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="165" cy="97" rx="118" ry="2.5" fill="currentColor" opacity="0.07"/>
+              <!-- Rear engine pod (rises above main body) -->
+              <path d="M238 52 L252 46 L268 50 L272 64 L272 84 L238 84 Z" fill="currentColor" opacity="0.48"/>
+              <!-- Main kart chassis / body -->
+              <path d="M54 82 L66 72 L88 66 Q116 60 150 60 L238 60 L238 84 L54 84 Z" fill="currentColor" opacity="0.55"/>
+              <!-- Front nose fairing -->
+              <path d="M36 84 L50 76 L66 70 L66 84 Z" fill="currentColor" opacity="0.46"/>
+              <!-- Front bumper tube (curved) -->
+              <path d="M24 82 Q26 90 36 92 L56 92 L56 84 L38 84 Q30 84 28 80 Z" stroke="currentColor" stroke-width="2.5" opacity="0.50"/>
+              <!-- Rear bumper -->
+              <path d="M268 74 L280 76 L280 84 L270 84 Z" fill="currentColor" opacity="0.36"/>
+              <!-- Open cockpit cutout -->
+              <path d="M150 60 L154 48 L220 46 L224 60 Z" fill="var(--sv-bg)" opacity="0.55"/>
+              <!-- Steering column -->
+              <line x1="159" y1="58" x2="152" y2="50" stroke="currentColor" stroke-width="1.5" opacity="0.46"/>
+              <!-- Steering wheel -->
+              <circle cx="148" cy="46" r="10" stroke="currentColor" stroke-width="1.6" opacity="0.48"/>
+              <line x1="138" y1="46" x2="158" y2="46" stroke="currentColor" stroke-width="1" opacity="0.30"/>
+              <line x1="148" y1="36" x2="148" y2="56" stroke="currentColor" stroke-width="1" opacity="0.30"/>
+              <!-- Driver torso / race suit -->
+              <path d="M166 60 L172 44 L210 44 L218 60 Z" fill="currentColor" opacity="0.46"/>
+              <!-- Arms reaching to wheel -->
+              <path d="M172 50 Q162 46 150 46 Q145 45 144 47 L148 44 Q163 41 174 47 Z" fill="currentColor" opacity="0.36"/>
+              <!-- Driver neck -->
+              <path d="M176 44 L180 36 L196 36 L200 44 Z" fill="currentColor" opacity="0.40"/>
+              <!-- NICEET (full-face, most recognisable kart feature) -->
+              <circle cx="186" cy="22" r="23" fill="currentColor" opacity="0.62"/>
+              <!-- Visor (lighter zone) -->
+              <path d="M166 19 Q170 6 186 4 Q202 2 206 19 Z" fill="currentColor" opacity="0.20"/>
+              <!-- Visor border line -->
+              <path d="M165 19 Q169 5 186 3 Q203 1 207 19" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
+              <!-- Chin curve -->
+              <path d="M167 27 Q176 36 186 38 Q196 36 205 27" stroke="currentColor" stroke-width="1" opacity="0.28"/>
+              <!-- Speed lines -->
+              <line class="sv-spd" x1="0" y1="66" x2="24" y2="66" stroke="currentColor" stroke-width="1.4"/>
+              <line class="sv-spd" x1="0" y1="60" x2="15" y2="60" stroke="currentColor" stroke-width="0.9"/>
+              <line class="sv-spd" x1="0" y1="72" x2="12" y2="72" stroke="currentColor" stroke-width="0.7"/>
+              <!-- FRONT WHEEL (smaller — kart front axle) -->
+              <circle cx="72" cy="90" r="14" fill="var(--sv-bg)" stroke="currentColor" stroke-width="2.5"/>
+              <circle cx="72" cy="90" r="7.5" fill="currentColor" opacity="0.13"/>
+              <circle cx="72" cy="90" r="3" fill="currentColor" opacity="0.65"/>
+              <g><animateTransform attributeName="transform" type="rotate" from="0 72 90" to="360 72 90" dur="1.4s" repeatCount="indefinite"/>
+                <line x1="72" y1="78" x2="72" y2="90" stroke="currentColor" stroke-width="1.3" opacity="0.45"/>
+                <line x1="82" y1="82" x2="72" y2="90" stroke="currentColor" stroke-width="1.3" opacity="0.45"/>
+                <line x1="78" y1="93" x2="72" y2="90" stroke="currentColor" stroke-width="1.3" opacity="0.45"/>
+                <line x1="66" y1="93" x2="72" y2="90" stroke="currentColor" stroke-width="1.3" opacity="0.45"/>
+                <line x1="62" y1="82" x2="72" y2="90" stroke="currentColor" stroke-width="1.3" opacity="0.45"/>
+              </g>
+              <!-- REAR WHEEL (larger — kart rear drive) -->
+              <circle cx="258" cy="88" r="19" fill="var(--sv-bg)" stroke="currentColor" stroke-width="3"/>
+              <circle cx="258" cy="88" r="11" fill="currentColor" opacity="0.12"/>
+              <circle cx="258" cy="88" r="4.5" fill="currentColor" opacity="0.62"/>
+              <g><animateTransform attributeName="transform" type="rotate" from="0 258 88" to="360 258 88" dur="1.1s" repeatCount="indefinite"/>
+                <line x1="258" y1="75" x2="258" y2="88" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="270" y1="79" x2="258" y2="88" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="266" y1="92" x2="258" y2="88" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="250" y1="92" x2="258" y2="88" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+                <line x1="246" y1="79" x2="258" y2="88" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+              </g>
+            </svg>
+          </div>
+          <div class="sv-exp-title">Vegas SuperKarts</div>
+          <div class="sv-exp-subtitle">VSK · Electric &amp; Gas · All Ages 7+</div>
+          <div class="sv-exp-desc">High-performance go-karts on a dedicated circuit. Race solo or compete head-to-head. Real lap timing, real competition, real fun — for all skill levels.</div>
+          <div class="sv-exp-from">$45 <span>/ session from</span></div>
+          <div>
+            <span class="sv-exp-tag">Ages 7+</span>
+            <span class="sv-exp-tag">Group Races</span>
+            <span class="sv-exp-tag">Live Timing</span>
+          </div>
+        </div>
+
+        <!-- Off-Road -->
+        <div class="sv-exp-card">
+          <div class="sv-exp-num">EXP::03</div>
+          <div class="sv-exp-icon">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-timer"/></svg>
+          </div>
+          <div class="sv-exp-art">
+            <!-- Vegas Off-Road Baja pre-runner race truck: roll cage, light bar, massive rear tires -->
+            <svg viewBox="0 0 320 100" style="width:100%;max-width:290px;color:var(--sv-red);" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="160" cy="97" rx="130" ry="2.5" fill="currentColor" opacity="0.07"/>
+              <!-- ROLL CAGE (visible above cab — most distinctive pre-runner feature) -->
+              <path d="M150 44 L150 20 Q152 14 158 13 L230 11 Q236 11 238 17 L238 44" stroke="currentColor" stroke-width="2.5" opacity="0.62"/>
+              <!-- Cage X-brace diagonals -->
+              <line x1="150" y1="20" x2="196" y2="44" stroke="currentColor" stroke-width="1.2" opacity="0.24"/>
+              <line x1="238" y1="17" x2="192" y2="44" stroke="currentColor" stroke-width="1.2" opacity="0.24"/>
+              <!-- LIGHT BAR on cage roof -->
+              <rect x="162" y="9" width="62" height="5" rx="2" fill="currentColor" opacity="0.58"/>
+              <circle cx="170" cy="11" r="2" fill="currentColor" opacity="0.75"/>
+              <circle cx="180" cy="11" r="2" fill="currentColor" opacity="0.75"/>
+              <circle cx="194" cy="11" r="2" fill="currentColor" opacity="0.75"/>
+              <circle cx="208" cy="11" r="2" fill="currentColor" opacity="0.75"/>
+              <circle cx="218" cy="11" r="2" fill="currentColor" opacity="0.75"/>
+              <!-- HOOD (long pickup-style, slopes down to front) -->
+              <path d="M28 74 L40 60 L64 50 L150 46 L150 74 Z" fill="currentColor" opacity="0.50"/>
+              <!-- CAB body -->
+              <rect x="150" y="44" width="88" height="30" fill="currentColor" opacity="0.46"/>
+              <!-- SHORT BED / rear body -->
+              <path d="M238 54 L262 54 L274 64 L274 74 L238 74 Z" fill="currentColor" opacity="0.42"/>
+              <!-- Open window — show cage mesh through it -->
+              <rect x="156" y="46" width="76" height="26" rx="1" fill="var(--sv-bg)" opacity="0.60"/>
+              <line x1="168" y1="46" x2="168" y2="72" stroke="currentColor" stroke-width="0.7" opacity="0.22"/>
+              <line x1="180" y1="46" x2="180" y2="72" stroke="currentColor" stroke-width="0.7" opacity="0.22"/>
+              <line x1="192" y1="46" x2="192" y2="72" stroke="currentColor" stroke-width="0.7" opacity="0.22"/>
+              <line x1="204" y1="46" x2="204" y2="72" stroke="currentColor" stroke-width="0.7" opacity="0.22"/>
+              <line x1="216" y1="46" x2="216" y2="72" stroke="currentColor" stroke-width="0.7" opacity="0.22"/>
+              <line x1="156" y1="56" x2="232" y2="56" stroke="currentColor" stroke-width="0.7" opacity="0.22"/>
+              <line x1="156" y1="64" x2="232" y2="64" stroke="currentColor" stroke-width="0.7" opacity="0.22"/>
+              <!-- Race number plate on door -->
+              <rect x="162" y="52" width="19" height="13" rx="1" stroke="currentColor" stroke-width="1" opacity="0.42"/>
+              <!-- Brush guard / front protection bars -->
+              <line x1="28" y1="58" x2="18" y2="64" stroke="currentColor" stroke-width="2" opacity="0.46"/>
+              <line x1="28" y1="65" x2="18" y2="69" stroke="currentColor" stroke-width="1.5" opacity="0.38"/>
+              <line x1="28" y1="71" x2="18" y2="73" stroke="currentColor" stroke-width="1.5" opacity="0.30"/>
+              <line x1="18" y1="62" x2="18" y2="75" stroke="currentColor" stroke-width="2" opacity="0.46"/>
+              <!-- Skid plate under hood -->
+              <rect x="44" y="74" width="104" height="4" rx="1" fill="currentColor" opacity="0.34"/>
+              <!-- Rear shock absorbers (visible external shocks, classic pre-runner look) -->
+              <line x1="254" y1="54" x2="258" y2="40" stroke="currentColor" stroke-width="2.5" opacity="0.46"/>
+              <line x1="262" y1="54" x2="266" y2="40" stroke="currentColor" stroke-width="2.5" opacity="0.36"/>
+              <!-- Rear fender flare (massive — covers big tire) -->
+              <path d="M224 54 L230 74 L278 74 L276 60 Z" fill="currentColor" opacity="0.24"/>
+              <!-- Speed lines -->
+              <line class="sv-spd" x1="0" y1="52" x2="22" y2="52" stroke="currentColor" stroke-width="1.4"/>
+              <line class="sv-spd" x1="0" y1="58" x2="14" y2="58" stroke="currentColor" stroke-width="0.9"/>
+              <line class="sv-spd" x1="0" y1="46" x2="11" y2="46" stroke="currentColor" stroke-width="0.7"/>
+              <!-- FRONT WHEEL (truck-size, 8-bolt) -->
+              <circle cx="88" cy="82" r="18" fill="var(--sv-bg)" stroke="currentColor" stroke-width="3"/>
+              <circle cx="88" cy="82" r="11" fill="currentColor" opacity="0.13"/>
+              <circle cx="88" cy="82" r="5" fill="currentColor" opacity="0.60"/>
+              <g><animateTransform attributeName="transform" type="rotate" from="0 88 82" to="360 88 82" dur="1.6s" repeatCount="indefinite"/>
+                <line x1="88" y1="69" x2="88" y2="82" stroke="currentColor" stroke-width="1.5" opacity="0.44"/>
+                <line x1="100" y1="73" x2="88" y2="82" stroke="currentColor" stroke-width="1.5" opacity="0.44"/>
+                <line x1="96" y1="86" x2="88" y2="82" stroke="currentColor" stroke-width="1.5" opacity="0.44"/>
+                <line x1="80" y1="86" x2="88" y2="82" stroke="currentColor" stroke-width="1.5" opacity="0.44"/>
+                <line x1="76" y1="73" x2="88" y2="82" stroke="currentColor" stroke-width="1.5" opacity="0.44"/>
+              </g>
+              <!-- REAR WHEEL (MASSIVE — Baja pre-runner defining feature) -->
+              <circle cx="248" cy="78" r="24" fill="var(--sv-bg)" stroke="currentColor" stroke-width="3.5"/>
+              <circle cx="248" cy="78" r="15" fill="currentColor" opacity="0.10"/>
+              <circle cx="248" cy="78" r="6" fill="currentColor" opacity="0.58"/>
+              <g><animateTransform attributeName="transform" type="rotate" from="0 248 78" to="360 248 78" dur="1.3s" repeatCount="indefinite"/>
+                <line x1="248" y1="62" x2="248" y2="78" stroke="currentColor" stroke-width="1.8" opacity="0.44"/>
+                <line x1="263" y1="67" x2="248" y2="78" stroke="currentColor" stroke-width="1.8" opacity="0.44"/>
+                <line x1="258" y1="84" x2="248" y2="78" stroke="currentColor" stroke-width="1.8" opacity="0.44"/>
+                <line x1="238" y1="84" x2="248" y2="78" stroke="currentColor" stroke-width="1.8" opacity="0.44"/>
+                <line x1="233" y1="67" x2="248" y2="78" stroke="currentColor" stroke-width="1.8" opacity="0.44"/>
+              </g>
+              <!-- Dust clouds at rear (animated) -->
+              <circle class="sv-dust" cx="284" cy="84" r="9" fill="currentColor" opacity="0.06"/>
+              <circle class="sv-dust" cx="296" cy="78" r="7" fill="currentColor" opacity="0.05"/>
+              <circle class="sv-dust" cx="305" cy="88" r="11" fill="currentColor" opacity="0.04"/>
+            </svg>
+          </div>
+          <div class="sv-exp-title">Vegas Off-Road</div>
+          <div class="sv-exp-subtitle">VOR · 4x4 · ATV · Desert Terrain</div>
+          <div class="sv-exp-desc">Conquer the Nevada desert in purpose-built off-road vehicles. Expert guides, genuine terrain, and the kind of adventure you can't find on any racetrack.</div>
+          <div class="sv-exp-from">$129 <span>/ person from</span></div>
+          <div>
+            <span class="sv-exp-tag">Desert Terrain</span>
+            <span class="sv-exp-tag">4x4 & ATV</span>
+            <span class="sv-exp-tag">Guided Tours</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- THE FLEET -->
+  <section class="sv-sec" id="fleet">
+    <div class="sv-inner">
+      <div class="sv-fleet-header">
+        <div>
+          <span class="sv-label">02 · The Fleet</span>
+          <h2 class="sv-h2">20+ Exotics. <em>All Real.</em></h2>
+          <span class="sv-rule"></span>
+          <p class="sv-body">Every car is production-spec. Real supercars. Real horsepower. Maintained by our in-house technicians and tracked in real-time by our fleet intelligence agent.</p>
+        </div>
+        <div>
+          <div class="sv-tier-legend">
+            <div class="sv-tier-pip" style="--sv-tier-color:#aaa;">T1 Entry</div>
+            <div class="sv-tier-pip" style="--sv-tier-color:#60c0ff;">T2 Sport</div>
+            <div class="sv-tier-pip" style="--sv-tier-color:#60e060;">T3 Super</div>
+            <div class="sv-tier-pip" style="--sv-tier-color:#ffd060;">T4 Elite</div>
+            <div class="sv-tier-pip" style="--sv-tier-color:#ff9040;">T5 Hyper</div>
+            <div class="sv-tier-pip" style="--sv-tier-color:var(--sv-red);">T6 Apex</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sv-fleet-grid">
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T1">T1</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-porsche"/></svg></div><div class="sv-car-name">718 Cayman GT4</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2021 · 420 HP</div><div class="sv-car-price">From $99 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T2">T2</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 140 40"><use href="#brand-corvette"/></svg></div><div class="sv-car-name">C8 Z51</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2020 · 495 HP</div><div class="sv-car-price">From $149 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T2">T2</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 110 40"><use href="#brand-nissan"/></svg></div><div class="sv-car-name">GT-R</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2017 · 565 HP</div><div class="sv-car-price">From $149 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T2">T2</span><span class="sv-car-status inactive"></span></div><div class="sv-car-brand"><svg viewBox="0 0 80 40"><use href="#brand-ford"/></svg></div><div class="sv-car-name">Shelby GT500</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2020 · 760 HP</div><div class="sv-car-price">From $149 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T2">T2</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 100 40"><use href="#brand-acura"/></svg></div><div class="sv-car-name">NSX</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2016 · 573 HP Hybrid</div><div class="sv-car-price">From $179 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T2">T2</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 80 40"><use href="#brand-audi"/></svg></div><div class="sv-car-name">R8 V10</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2017 · 610 HP</div><div class="sv-car-price">From $179 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T2">T2</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 160 40"><use href="#brand-mercedes"/></svg></div><div class="sv-car-name">AMG GT R</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2017 · 577 HP</div><div class="sv-car-price">From $179 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T2">T2</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 160 40"><use href="#brand-aston"/></svg></div><div class="sv-car-name">Vantage</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2022 · 503 HP</div><div class="sv-car-price">From $179 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T3">T3</span><span class="sv-car-status garage"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-porsche"/></svg></div><div class="sv-car-name">718 Cayman GT4 RS</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2024 · 500 HP</div><div class="sv-car-price">From $229 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T4">T4</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-ferrari"/></svg></div><div class="sv-car-name">488 GTB</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2016 · 661 HP Twin-Turbo</div><div class="sv-car-price">From $299 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T4">T4</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 180 40"><use href="#brand-lamborghini"/></svg></div><div class="sv-car-name">Huracán</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2015 · 610 HP V10</div><div class="sv-car-price">From $299 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T4">T4</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-porsche"/></svg></div><div class="sv-car-name">992 GT3</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2021 · 502 HP Naturally Aspirated</div><div class="sv-car-price">From $299 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T4">T4</span><span class="sv-car-status inactive"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-porsche"/></svg></div><div class="sv-car-name">991 GT3 RS</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2016 · 520 HP</div><div class="sv-car-price">From $329 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T4">T4</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 140 40"><use href="#brand-corvette"/></svg></div><div class="sv-car-name">C8 Z06</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2023 · 670 HP Flat-Plane V8</div><div class="sv-car-price">From $279 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T5">T5</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-ferrari"/></svg></div><div class="sv-car-name">F8 Tributo</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2020 · 710 HP Twin-Turbo</div><div class="sv-car-price">From $399 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T5">T5</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 180 40"><use href="#brand-lamborghini"/></svg></div><div class="sv-car-name">Huracán Tecnica</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2023 · 640 HP V10</div><div class="sv-car-price">From $399 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T5">T5</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-porsche"/></svg></div><div class="sv-car-name">992 GT3 RS</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2024 · 525 HP / Aero Kit</div><div class="sv-car-price">From $429 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T6">T6</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 180 40"><use href="#brand-lamborghini"/></svg></div><div class="sv-car-name">Huracán STO</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2021 · 631 HP Super Trofeo</div><div class="sv-car-price">From $499 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T6">T6</span><span class="sv-car-status garage"></span></div><div class="sv-car-brand"><svg viewBox="0 0 120 40"><use href="#brand-ferrari"/></svg></div><div class="sv-car-name">488 Pista</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2019 · 710 HP Track-Focused</div><div class="sv-car-price">From $549 / lap</div></div>
+        <div class="sv-car-card"><div class="sv-car-header"><span class="sv-car-tier" data-tier="T6">T6</span><span class="sv-car-status active"></span></div><div class="sv-car-brand"><svg viewBox="0 0 130 40"><use href="#brand-mclaren"/></svg></div><div class="sv-car-name">570 GT4</div><div style="font-size:0.72rem;color:var(--sv-muted);font-family:'Share Tech Mono',monospace;margin-top:2px;">2022 · 562 HP Race-Spec</div><div class="sv-car-price">From $499 / lap</div></div>
+      </div>
+
+      <!-- Fleet status legend -->
+      <div style="display:flex;gap:24px;margin-top:20px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:0.2em;color:var(--sv-muted);text-transform:uppercase;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#40dd60;display:inline-block;"></span>Active
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:0.2em;color:var(--sv-muted);text-transform:uppercase;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#ffa040;display:inline-block;"></span>In Garage
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:0.2em;color:var(--sv-muted);text-transform:uppercase;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#dd4040;display:inline-block;"></span>Scheduled Maintenance
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:0.2em;color:var(--sv-red);text-transform:uppercase;margin-left:auto;">
+          Fleet status monitored by NS-037 Fleet Intelligence Agent · Updated in real-time
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUEST JOURNEY -->
+  <section class="sv-sec sv-sec-alt" id="journey">
+    <div class="sv-inner">
+      <span class="sv-label">03 · Your Experience</span>
+      <h2 class="sv-h2">The Full <em>Journey</em></h2>
+      <span class="sv-rule"></span>
+      <p class="sv-body">From the moment you arrive to the moment you relive your session on video — every touchpoint is orchestrated. Our agents handle the operations so every guest stays in the moment.</p>
+
+      <div class="sv-journey-grid">
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::01</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-task"/></svg>
+          </div>
+          <div class="sv-step-title">Arrival &amp; Check-In</div>
+          <div class="sv-step-desc">Arrive at SpeedVegas. The booking agent confirms your reservation, validates walk-ins, and logs arrival time. No queues — your profile is ready.</div>
+        </div>
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::02</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-key"/></svg>
+          </div>
+          <div class="sv-step-title">Registration &amp; Waiver</div>
+          <div class="sv-step-desc">Digital waiver signing, driver's license scan, and wristband issuance — all handled and stored automatically. Your USB video key is linked to your profile.</div>
+        </div>
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::03</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-agent"/></svg>
+          </div>
+          <div class="sv-step-title">Technical Briefing</div>
+          <div class="sv-step-desc">Professional safety and driving technique briefing. The guest journey agent schedules your slot automatically and alerts staff when you're ready to advance.</div>
+        </div>
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::04</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-car"/></svg>
+          </div>
+          <div class="sv-step-title">Discovery Laps</div>
+          <div class="sv-step-desc">Two guided laps in a Porsche Macan S with your instructor. Completion is tracked and triggers automatic progression to pit lane assignment.</div>
+        </div>
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::05</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-monitor"/></svg>
+          </div>
+          <div class="sv-step-title">Pit Lane Assignment</div>
+          <div class="sv-step-desc">The pit lane ops agent automatically matches you with your car and instructor. The digital pit board updates in real-time — no manual coordination needed.</div>
+        </div>
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::06</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-helmet"/></svg>
+          </div>
+          <div class="sv-step-title">Helmet &amp; Drive</div>
+          <div class="sv-step-desc">Fitted for your helmet, then released to your designated supercar. Your USB key links to the car's onboard recording system. Every lap, captured.</div>
+        </div>
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::07</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-timer"/></svg>
+          </div>
+          <div class="sv-step-title">Lap Timing &amp; Data</div>
+          <div class="sv-step-desc">RaceFacer records every lap in real-time. The lap time intelligence agent compiles your performance data and prepares your personalized session report.</div>
+        </div>
+        <div class="sv-step">
+          <div class="sv-step-num">STEP::08</div>
+          <div class="sv-step-icon">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-video"/></svg>
+          </div>
+          <div class="sv-step-title">Checkout &amp; Video</div>
+          <div class="sv-step-desc">Return your USB key and helmet. Purchase your in-car video, photos, and add-ons via POS. Your performance report is emailed automatically within minutes.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NS-POWERED OPERATIONS -->
+  <section class="sv-sec" id="operations">
+    <div class="sv-inner">
+      <span class="sv-label">04 · Agentic Operations</span>
+      <h2 class="sv-h2">Powered by Nice Spaceship <em>NICE SPACESHIP™</em></h2>
+      <span class="sv-rule"></span>
+
+      <div class="sv-ops-intro">
+        <div>
+          <p class="sv-body" style="margin-bottom:24px;">SpeedVegas runs on a complex operational stack — booking systems, track timing, fleet management, HR, and accounting — historically stitched together with custom code costing over <strong style="color:var(--sv-text);">$2M and $10K/month</strong> in maintenance.</p>
+          <p class="sv-body" style="margin-bottom:24px;">Nice Spaceship's NICE SPACESHIP™ replaces that fragmented ERP with six specialized agents that handle the critical handoffs, data flows, and customer touchpoints automatically.</p>
+          <p class="sv-body">The biggest win: the manual coordination between <strong style="color:var(--sv-text);">Booking → Pit Lane → Timing</strong> — previously requiring staff at every step — now flows through a single agentic orchestration layer.</p>
+        </div>
+        <div>
+          <div class="sv-erp-stack">
+            <div class="sv-erp-title">Previous ERP Stack → Agent Mapping</div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">BookNow / Salesforce (CRM, Booking, POS)</span>
+              <span class="sv-erp-status replaced">Replaced</span>
+            </div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">Custom BackOffice ($10K/mo dev)</span>
+              <span class="sv-erp-status replaced">Replaced</span>
+            </div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">RaceFacer / APEX Timing</span>
+              <span class="sv-erp-status integrated">Integrated</span>
+            </div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">Fleetio (Fleet Management)</span>
+              <span class="sv-erp-status integrated">Integrated</span>
+            </div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">Sage Intacct (Accounting)</span>
+              <span class="sv-erp-status integrated">Integrated</span>
+            </div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">ADP / Paycom (HR)</span>
+              <span class="sv-erp-status augmented">Augmented</span>
+            </div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">Mailchimp / SendGrid (Marketing)</span>
+              <span class="sv-erp-status replaced">Replaced</span>
+            </div>
+            <div class="sv-erp-row">
+              <span class="sv-erp-name">AWS S3 / CloudFront (Video)</span>
+              <span class="sv-erp-status integrated">Integrated</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 Agent Cards -->
+      <div class="sv-agent-grid">
+
+        <div class="sv-agent-card">
+          <div class="sv-agent-num">NS-033 · NICE SPACESHIP™ v3.5</div>
+          <div class="sv-agent-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-task"/></svg>
+          </div>
+          <div class="sv-agent-name">Race Booking Agent</div>
+          <div class="sv-agent-role">Automation · Operations</div>
+          <div class="sv-agent-desc">Real-time slot booking with instant availability updates, automated waiver collection, digital license capture, and upsell suggestions based on customer history.</div>
+          <div class="sv-agent-cap">Online reservations + walk-in processing</div>
+          <div class="sv-agent-cap">1,000 bookings/month · 1.5s response</div>
+          <div class="sv-agent-cap">RaceFacer, POS, CRM integrated</div>
+          <div class="sv-agent-stats">
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">1.5s</span><span class="sv-agent-stat-key">SPD</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">99%</span><span class="sv-agent-stat-key">ACC</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">1K</span><span class="sv-agent-stat-key">CAP</span></div>
+          </div>
+        </div>
+
+        <div class="sv-agent-card">
+          <div class="sv-agent-num">NS-034 · NICE SPACESHIP™ v3.5</div>
+          <div class="sv-agent-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-monitor"/></svg>
+          </div>
+          <div class="sv-agent-name">Pit Lane Ops Agent</div>
+          <div class="sv-agent-role">Operations · Track</div>
+          <div class="sv-agent-desc">Automatically assigns drivers to cars and instructors as check-ins occur. Pushes real-time updates to the digital pit board. Eliminates all manual coordination between front desk and track staff.</div>
+          <div class="sv-agent-cap">Auto driver/car/instructor matching</div>
+          <div class="sv-agent-cap">200 sessions/day · Real-time sync</div>
+          <div class="sv-agent-cap">Digital pit board + RaceFacer integrated</div>
+          <div class="sv-agent-stats">
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">0.8s</span><span class="sv-agent-stat-key">SPD</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">99%</span><span class="sv-agent-stat-key">ACC</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">∞</span><span class="sv-agent-stat-key">CAP</span></div>
+          </div>
+        </div>
+
+        <div class="sv-agent-card">
+          <div class="sv-agent-num">NS-035 · NICE SPACESHIP™ v3.5</div>
+          <div class="sv-agent-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-timer"/></svg>
+          </div>
+          <div class="sv-agent-name">Lap Time Intelligence</div>
+          <div class="sv-agent-role">Analytics · Performance</div>
+          <div class="sv-agent-desc">Pulls real-time timing data from RaceFacer, computes sector analysis, and auto-generates each driver's personalized performance report — delivered to their inbox before they leave the parking lot.</div>
+          <div class="sv-agent-cap">RaceFacer + APEX Timing integration</div>
+          <div class="sv-agent-cap">Per-lap sector analysis + best line data</div>
+          <div class="sv-agent-cap">Reports emailed within 5 min of session end</div>
+          <div class="sv-agent-stats">
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">4.2s</span><span class="sv-agent-stat-key">SPD</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">98%</span><span class="sv-agent-stat-key">ACC</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">∞</span><span class="sv-agent-stat-key">CAP</span></div>
+          </div>
+        </div>
+
+        <div class="sv-agent-card">
+          <div class="sv-agent-num">NS-036 · NICE SPACESHIP™ v3.5</div>
+          <div class="sv-agent-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-video"/></svg>
+          </div>
+          <div class="sv-agent-name">Video Sales Agent</div>
+          <div class="sv-agent-role">Content · Revenue</div>
+          <div class="sv-agent-desc">Surfaces in-car video upsell at the POS checkout, delivers digital copies via AWS CloudFront, and triggers a 48-hour follow-up email with a clip preview to drive post-visit purchases.</div>
+          <div class="sv-agent-cap">USB + digital video delivery</div>
+          <div class="sv-agent-cap">POS integration + email sequences</div>
+          <div class="sv-agent-cap">AWS S3/CloudFront + checkout hook</div>
+          <div class="sv-agent-stats">
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">3.0s</span><span class="sv-agent-stat-key">SPD</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">95%</span><span class="sv-agent-stat-key">ACC</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">∞</span><span class="sv-agent-stat-key">CAP</span></div>
+          </div>
+        </div>
+
+        <div class="sv-agent-card">
+          <div class="sv-agent-num">NS-037 · NICE SPACESHIP™ v3.5</div>
+          <div class="sv-agent-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-analytics"/></svg>
+          </div>
+          <div class="sv-agent-name">Fleet Intelligence Agent</div>
+          <div class="sv-agent-role">Analytics · Fleet</div>
+          <div class="sv-agent-desc">Monitors all 20+ vehicles in Fleetio, surfaces maintenance alerts before they cause downtime, tracks availability conflicts, and provides a daily fleet health digest to operations leadership.</div>
+          <div class="sv-agent-cap">Fleetio integration + predictive alerts</div>
+          <div class="sv-agent-cap">20+ vehicles monitored continuously</div>
+          <div class="sv-agent-cap">Daily fleet health digest + incident log</div>
+          <div class="sv-agent-stats">
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">1.2s</span><span class="sv-agent-stat-key">SPD</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">99%</span><span class="sv-agent-stat-key">ACC</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">∞</span><span class="sv-agent-stat-key">CAP</span></div>
+          </div>
+        </div>
+
+        <div class="sv-agent-card">
+          <div class="sv-agent-num">NS-038 · NICE SPACESHIP™ v3.5</div>
+          <div class="sv-agent-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-comms"/></svg>
+          </div>
+          <div class="sv-agent-name">Race Marketing Agent</div>
+          <div class="sv-agent-role">Content · Growth</div>
+          <div class="sv-agent-desc">Triggers post-visit email sequences with lap data, return-visit offers, and review requests. Segments the CRM by recency and spend, runs A/B tested campaigns, and re-engages lapsed drivers with personalized upgrade offers.</div>
+          <div class="sv-agent-cap">Post-visit drip sequences automated</div>
+          <div class="sv-agent-cap">Review request + re-engagement flows</div>
+          <div class="sv-agent-cap">CRM segmentation + A/B campaigns</div>
+          <div class="sv-agent-stats">
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">3.5s</span><span class="sv-agent-stat-key">SPD</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">93%</span><span class="sv-agent-stat-key">ACC</span></div>
+            <div class="sv-agent-stat"><span class="sv-agent-stat-val">50K</span><span class="sv-agent-stat-key">CAP</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fleet Blueprint Card -->
+      <div class="sv-fleet-bp">
+        <div class="sv-fleet-bp-header">
+          <div>
+            <div class="sv-label" style="margin-bottom:10px;">Fleet Blueprint</div>
+            <div class="sv-fleet-bp-name">SpeedVegas Race Operations</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.25em;color:var(--sv-muted);margin-top:6px;text-transform:uppercase;">Entertainment · Motorsport · Hospitality</div>
+          </div>
+          <div class="sv-fleet-bp-rarity">EPIC</div>
+        </div>
+        <div style="font-size:0.85rem;color:var(--sv-muted);line-height:1.75;max-width:680px;margin-bottom:28px;">
+          Six synchronized agents covering every operational layer of the SpeedVegas experience — from the first booking click to the post-visit performance report. Built to replace a $2M+ custom ERP with a single deployable fleet on NICE SPACESHIP™.
+        </div>
+        <div class="sv-fleet-bp-agents">
+          <div class="sv-fleet-agent-chip">NS-033 Race Booking</div>
+          <div class="sv-fleet-agent-chip">NS-034 Pit Lane Ops</div>
+          <div class="sv-fleet-agent-chip">NS-035 Lap Intelligence</div>
+          <div class="sv-fleet-agent-chip">NS-036 Video Sales</div>
+          <div class="sv-fleet-agent-chip">NS-037 Fleet Monitor</div>
+          <div class="sv-fleet-agent-chip">NS-038 Race Marketing</div>
+        </div>
+        <div class="sv-fleet-bp-stats">
+          <div class="sv-fleet-bp-stat">
+            <div class="sv-fleet-bp-stat-val">6</div>
+            <div class="sv-fleet-bp-stat-key">Agents</div>
+          </div>
+          <div class="sv-fleet-bp-stat">
+            <div class="sv-fleet-bp-stat-val">12K</div>
+            <div class="sv-fleet-bp-stat-key">Tasks/Month</div>
+          </div>
+          <div class="sv-fleet-bp-stat">
+            <div class="sv-fleet-bp-stat-val">99.9%</div>
+            <div class="sv-fleet-bp-stat-key">Uptime</div>
+          </div>
+          <div class="sv-fleet-bp-stat">
+            <div class="sv-fleet-bp-stat-val">$499</div>
+            <div class="sv-fleet-bp-stat-key">Per Month</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BOOK NOW CTA -->
+  <section class="sv-cta-sec" id="book">
+    <div class="sv-cta-glow"></div>
+    <div class="sv-cta-inner">
+      <div class="sv-label" style="display:block;margin-bottom:16px;">Ready to Drive</div>
+      <div class="sv-cta-h2">Start Your <em>Engine.</em></div>
+      <p class="sv-cta-sub">Select your exotic, choose your tier, book your session. Our agents handle everything from confirmation to your post-lap performance report.</p>
+      <div class="sv-cta-row">
+        <a href="https://speedvegas.com" target="_blank" rel="noopener" class="sv-btn sv-btn-primary">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><use href="#icon-flag"/></svg>
+          Book at SpeedVegas
+        </a>
+        <a href="./app/#/blueprints" class="sv-btn sv-btn-outline">View Blueprint Library</a>
+      </div>
+
+      <!-- Metrics strip -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--sv-border);margin-top:64px;max-width:800px;margin-left:auto;margin-right:auto;">
+        <div style="padding:20px;border-right:1px solid var(--sv-border);text-align:center;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--sv-red);">$30K+</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--sv-muted);margin-top:4px;">Annual Savings</div>
+        </div>
+        <div style="padding:20px;border-right:1px solid var(--sv-border);text-align:center;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--sv-red);">11</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--sv-muted);margin-top:4px;">Journey Steps Automated</div>
+        </div>
+        <div style="padding:20px;border-right:1px solid var(--sv-border);text-align:center;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--sv-red);">6</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--sv-muted);margin-top:4px;">Agents Deployed</div>
+        </div>
+        <div style="padding:20px;text-align:center;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--sv-red);">1-2yr</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--sv-muted);margin-top:4px;">Payback Period</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NS POWERED FOOTER STRIP -->
+  <div class="sv-ns-strip">
+    <div class="sv-ns-label">
+      This demo was built by <strong>Nice Spaceship</strong> · Agentic Intelligence &amp; Engineering
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:0.52rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--sv-muted);">Powered by NICE SPACESHIP™ v3.5</span>
+      <a href="./projects.html" class="sv-ns-link">More Demos →</a>
+      <a href="./index.html" class="sv-ns-link">nicespaceship.com →</a>
+    </div>
+  </div>
+
+  <!-- HUD (Theme Switcher) -->
+  <div class="sv-hud">
+    <div class="sv-hud-label">SV THEME</div>
+    <div class="sv-hud-row">
+      <button class="sv-hud-btn active" data-sv-id="speedvegas"  title="SpeedVegas"          onclick="SvTheme.set('speedvegas')"></button>
+      <button class="sv-hud-btn"        data-sv-id="race-red"    title="Race Red"            onclick="SvTheme.set('race-red')"></button>
+      <button class="sv-hud-btn"        data-sv-id="carbon"      title="Carbon Night"        onclick="SvTheme.set('carbon')"></button>
+      <button class="sv-hud-btn"        data-sv-id="ferrari"     title="Ferrari Rosso"       onclick="SvTheme.set('ferrari')"></button>
+      <button class="sv-hud-btn"        data-sv-id="lamborghini" title="Lamborghini Arancio" onclick="SvTheme.set('lamborghini')"></button>
+      <button class="sv-hud-btn"        data-sv-id="white-out"   title="White Out"           onclick="SvTheme.set('white-out')"></button>
+      <button class="sv-hud-btn"        data-sv-id="grand-prix"  title="Grand Prix"          onclick="SvTheme.set('grand-prix')"></button>
+    </div>
+  </div>
+
+</div><!-- /sv-page -->
+
+<script>
+/* ══════════════════════════════════════════════════
+   SPEEDVEGAS — THEME SWITCHER
+══════════════════════════════════════════════════ */
+const SvTheme = (() => {
+  const THEMES = ['speedvegas','race-red','carbon','ferrari','lamborghini','white-out','grand-prix'];
+  function set(name) {
+    if (!THEMES.includes(name)) return;
+    document.documentElement.setAttribute('data-sv-theme', name);
+    localStorage.setItem('sv-theme', name);
+    document.querySelectorAll('.sv-hud-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector('.sv-hud-btn[data-sv-id="' + name + '"]');
+    if (btn) btn.classList.add('active');
+  }
+  function init() {
+    const saved = localStorage.getItem('sv-theme') || 'speedvegas';
+    set(saved);
+  }
+  return { set, init };
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   SPEEDVEGAS — RACING ANIMATION SYSTEM
+   Track map · Race cars · Vegas neons · Speed lines · Streaks
+══════════════════════════════════════════════════════════════ */
+const SvBackground = (() => {
+  'use strict';
+
+  /* ── Track path (from SpeedVegas circuit map SVG) ──────── */
+  const TRACK_D = 'M349.33 109.94c26.65,-37.8 67.47,-66.48 108.42,-85.78 22.68,-10.7 47.02,-4.07 39.86,23.68l-13.88 53.78c-7.37,28.57 -36.72,46.11 -65.97,42.32 -8.5,-1.1 -11.36,0.76 -15.61,8.24 -10.75,18.94 -26.3,31.45 -40.8,41.22 -23.09,15.55 -37.38,41.3 -39.53,74.13 -1.5,22.88 -10.21,39.67 -31.3,52.24 -11.94,7.11 -15.8,19.26 -12.36,33.58 2.85,11.83 -10.66,25.39 -39.28,40.99 -33,17.98 -45.62,43.05 -50.98,72.03l-17.47 94.47c-2.44,13.16 -8.3,21.06 -26.37,23.23 -38.96,4.67 -55.06,35.72 -47.47,70.71 9.3,42.88 -49.65,62.94 -64.87,15.2 -13.14,-41.21 -10.65,-85.97 9.21,-124.39 7.43,-14.36 19.7,-19.29 35.72,-15.45 10.65,2.54 17.29,-2.68 23.11,-12.99l133.19 -236.25c13.38,-23.72 26.53,-43.5 38.34,-60.24l78.04 -110.72z';
+  const SVG_W = 518.08, SVG_H = 714.16;
+  const TRACK_N = 720;  /* sample resolution */
+
+  /* ── State ─────────────────────────────────────────────── */
+  let cvs, ctx, W, H, tick = 0;
+  let trackPts = [];            /* sampled [x,y] in SVG space */
+  let trackPath2D = null;       /* Path2D, rebuilt on resize  */
+  let lastW = 0, lastH = 0;
+  let lapFlash = 0;             /* frames of start/finish flash */
+
+  /* Race cars: pos 0-1, spd, col type, trail history */
+  const CARS = [
+    { pos:0.00, spd:0.00112, col:'P', trail:[], tN:32 },
+    { pos:0.26, spd:0.00096, col:'S', trail:[], tN:26 },
+    { pos:0.52, spd:0.00128, col:'W', trail:[], tN:20 },
+    { pos:0.74, spd:0.00088, col:'P', trail:[], tN:16 },
+  ];
+
+  let lines = [];                       /* horizontal speed lines */
+  let streaks = [], nextStreak = 80;    /* fast cross-screen streaks */
+  let neons   = [], nextNeon   = 160;   /* Vegas neon burst glows   */
+  const NEON_PALETTE = ['#ff0099','#00ffcc','#ff6b00','#aa00ff','#ffff00','#00ccff'];
+
+  /* ── Theme colors ──────────────────────────────────────── */
+  function getColors() {
+    const t = document.documentElement.getAttribute('data-sv-theme') || 'speedvegas';
+    const m = {
+      'speedvegas':  ['#ffc107','#dc3545', true ],
+      'race-red':    ['#e81828','#ff4455', false],
+      'carbon':      ['#b8c8e0','#6090c0', false],
+      'ferrari':     ['#e01818','#f5be00', false],
+      'lamborghini': ['#f0a800','#ffcc00', false],
+      'white-out':   ['#222222','#666666', true ],
+      'grand-prix':  ['#002395','#ed2939', true ],
+    };
+    return m[t] || m['speedvegas'];
+  }
+
+  function rgb(hex) {
+    return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+  }
+
+  /* ── Track sampling ─────────────────────────────────────── */
+  function sampleTrack() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns,'svg');
+    svg.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none';
+    const p = document.createElementNS(ns,'path');
+    p.setAttribute('d', TRACK_D);
+    svg.appendChild(p);
+    document.body.appendChild(svg);
+    const len = p.getTotalLength();
+    for (let i = 0; i < TRACK_N; i++) {
+      const pt = p.getPointAtLength((i / TRACK_N) * len);
+      trackPts.push([pt.x, pt.y]);
+    }
+    document.body.removeChild(svg);
+  }
+
+  /* ── SVG → Canvas coordinate transform ─────────────────── */
+  function toCanvas(pt) {
+    const MARG = 0.09;
+    const aspect = SVG_W / SVG_H;
+    const aw = W * (1 - MARG * 2), ah = H * (1 - MARG * 2);
+    let s, ox, oy;
+    if (aw / ah > aspect) {
+      s  = ah / SVG_H;
+      ox = (W - SVG_W * s) / 2;
+      oy = H * MARG;
+    } else {
+      s  = aw / SVG_W;
+      ox = W * MARG;
+      oy = (H - SVG_H * s) / 2;
+    }
+    return [ox + pt[0] * s, oy + pt[1] * s];
+  }
+
+  /* Cached Path2D — rebuilds only on resize */
+  function getPath2D() {
+    if (trackPath2D && lastW === W && lastH === H) return trackPath2D;
+    trackPath2D = new Path2D();
+    const [x0, y0] = toCanvas(trackPts[0]);
+    trackPath2D.moveTo(x0, y0);
+    for (let i = 1; i < TRACK_N; i++) {
+      const [x, y] = toCanvas(trackPts[i]);
+      trackPath2D.lineTo(x, y);
+    }
+    trackPath2D.closePath();
+    lastW = W; lastH = H;
+    return trackPath2D;
+  }
+
+  function carPoint(progress) {
+    const idx = Math.floor(((progress % 1 + 1) % 1) * TRACK_N);
+    return toCanvas(trackPts[idx]);
+  }
+
+  /* ── Draw: Track circuit ────────────────────────────────── */
+  function drawTrack(P, isLight) {
+    if (!trackPts.length) return;
+    const tp = getPath2D();
+    const [pr, pg, pb] = rgb(P);
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+    /* Outer glow band */
+    ctx.strokeStyle = isLight ? 'rgba(0,0,0,0.03)' : `rgba(${pr},${pg},${pb},0.05)`;
+    ctx.lineWidth = 30;
+    ctx.stroke(tp);
+
+    /* Asphalt surface */
+    ctx.strokeStyle = isLight ? 'rgba(0,0,0,0.055)' : 'rgba(255,255,255,0.045)';
+    ctx.lineWidth = 13;
+    ctx.stroke(tp);
+
+    /* Track edge — accent-tinted crisp line */
+    ctx.strokeStyle = isLight
+      ? `rgba(0,0,0,0.15)`
+      : `rgba(${pr},${pg},${pb},0.13)`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke(tp);
+
+    /* Start/finish checkered patch */
+    const [x0, y0] = toCanvas(trackPts[0]);
+    const [x1, y1] = toCanvas(trackPts[6]);
+    const dx = x1 - x0, dy = y1 - y0;
+    const l = Math.sqrt(dx*dx + dy*dy) || 1;
+    const nx = -dy/l*7, ny = dx/l*7;
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 2; j++) {
+        ctx.fillStyle = (i+j)%2===0
+          ? (isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.40)')
+          : `rgba(${pr},${pg},${pb},0.40)`;
+        const bx = x0 + dx/l*i*5 + nx*(j-0.5);
+        const by = y0 + dy/l*i*5 + ny*(j-0.5);
+        ctx.fillRect(bx-2.5, by-2.5, 5, 5);
+      }
+    }
+
+    /* Turn-number markers: faint circles at sampled corner positions */
+    const TURNS = [0.09, 0.19, 0.31, 0.40, 0.50, 0.60, 0.72, 0.83, 0.91];
+    TURNS.forEach((t, i) => {
+      const [mx, my] = carPoint(t);
+      const pulse = 0.25 + 0.12 * Math.sin(tick * 0.018 + i * 0.9);
+      ctx.beginPath();
+      ctx.arc(mx, my, 5, 0, Math.PI*2);
+      ctx.strokeStyle = isLight
+        ? `rgba(0,0,0,${pulse * 0.3})`
+        : `rgba(${pr},${pg},${pb},${pulse * 0.25})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  }
+
+  /* ── Draw: Race cars ──────────────────────────────────────── */
+  function drawCars(P, S, isLight) {
+    for (const car of CARS) {
+      const prev = car.pos;
+      car.pos = (car.pos - car.spd + 1) % 1;
+      /* Lap complete → trigger start/finish flash */
+      if (prev < 0.05 && car.pos > 0.95) lapFlash = 35;
+
+      const [cx, cy] = carPoint(car.pos);
+      car.trail.unshift([cx, cy]);
+      if (car.trail.length > car.tN) car.trail.pop();
+
+      const col = car.col === 'P' ? P : car.col === 'S' ? S : (isLight ? '#333333' : '#ffffff');
+      const [cr, cg, cb] = rgb(col);
+
+      /* Fading trail dots */
+      for (let i = car.trail.length - 1; i >= 1; i--) {
+        const a = (1 - i / car.trail.length) * 0.52;
+        const r = 0.8 + (1 - i / car.trail.length) * 2.8;
+        ctx.beginPath();
+        ctx.arc(car.trail[i][0], car.trail[i][1], r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
+        ctx.fill();
+      }
+
+      /* Outer glow corona */
+      const [hx, hy] = car.trail[0];
+      const grd = ctx.createRadialGradient(hx, hy, 0, hx, hy, 15);
+      grd.addColorStop(0, `rgba(${cr},${cg},${cb},0.32)`);
+      grd.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+      ctx.beginPath();
+      ctx.arc(hx, hy, 15, 0, Math.PI*2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      /* Car dot */
+      ctx.beginPath();
+      ctx.arc(hx, hy, 4, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},0.95)`;
+      ctx.fill();
+      /* Bright white core */
+      ctx.beginPath();
+      ctx.arc(hx, hy, 1.6, 0, Math.PI*2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+  }
+
+  /* ── Draw: Lap flash ──────────────────────────────────────── */
+  function drawLapFlash() {
+    if (lapFlash <= 0) return;
+    lapFlash--;
+    const a = (lapFlash / 35) * 0.10;
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.fillRect(0, 0, W, H);
+    /* Checkered sweep at start/finish */
+    const [x0, y0] = toCanvas(trackPts[0]);
+    const prog = 1 - lapFlash / 35;
+    const grd = ctx.createRadialGradient(x0, y0, 0, x0, y0, 60 * prog);
+    grd.addColorStop(0, `rgba(255,255,255,${0.35 * (1-prog)})`);
+    grd.addColorStop(1, `rgba(255,255,255,0)`);
+    ctx.beginPath();
+    ctx.arc(x0, y0, 60 * prog, 0, Math.PI*2);
+    ctx.fillStyle = grd;
+    ctx.fill();
+  }
+
+  /* ── Draw: Horizontal speed lines ────────────────────────── */
+  function drawLines(P) {
+    const [pr, pg, pb] = rgb(P);
+    for (const l of lines) {
+      l.x -= l.spd;
+      if (l.x + l.len < 0) {
+        l.x = W + 20; l.y = Math.random() * H;
+        l.len = 50 + Math.random() * 160;
+        l.al  = 0.02 + Math.random() * 0.05;
+      }
+      const g = ctx.createLinearGradient(l.x, l.y, l.x + l.len, l.y);
+      g.addColorStop(0,   `rgba(${pr},${pg},${pb},0)`);
+      g.addColorStop(0.5, `rgba(${pr},${pg},${pb},${l.al})`);
+      g.addColorStop(1,   `rgba(${pr},${pg},${pb},0)`);
+      ctx.strokeStyle = g; ctx.lineWidth = l.w;
+      ctx.beginPath();
+      ctx.moveTo(l.x, l.y); ctx.lineTo(l.x + l.len, l.y);
+      ctx.stroke();
+    }
+  }
+
+  /* ── Draw: Fast car streaks across screen ────────────────── */
+  function drawStreaks(P, S) {
+    streaks = streaks.filter(s => s.life < s.maxLife);
+    for (const s of streaks) {
+      s.x += s.spd; s.life++;
+      const t = s.life / s.maxLife;
+      const a = s.al * Math.sin(t * Math.PI);
+      const [r, g, b] = rgb(s.alt ? S : P);
+      const grd = ctx.createLinearGradient(s.x, s.y, s.x + s.len, s.y);
+      grd.addColorStop(0,    `rgba(${r},${g},${b},0)`);
+      grd.addColorStop(0.15, `rgba(${r},${g},${b},${a})`);
+      grd.addColorStop(0.55, `rgba(255,255,255,${a * 0.28})`);
+      grd.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+      ctx.strokeStyle = grd; ctx.lineWidth = s.w;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + s.len, s.y); ctx.stroke();
+      /* sub-trails */
+      for (let i = 1; i <= 2; i++) {
+        ctx.globalAlpha = a * 0.18 / i;
+        ctx.lineWidth   = s.w * 0.4;
+        ctx.beginPath(); ctx.moveTo(s.x+10, s.y + i*4); ctx.lineTo(s.x + s.len*0.7, s.y + i*4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(s.x+10, s.y - i*4); ctx.lineTo(s.x + s.len*0.7, s.y - i*4); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ── Draw: Vegas neon glow bursts ────────────────────────── */
+  function drawNeons(P, S) {
+    neons = neons.filter(n => n.life < n.maxLife);
+    for (const n of neons) {
+      n.life++; n.r = Math.min(n.r + 1.4, n.maxR);
+      const t  = n.life / n.maxLife;
+      const a  = n.al * Math.sin(t * Math.PI);
+      const [nr, ng, nb] = rgb(n.col);
+      const grd = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+      grd.addColorStop(0,   `rgba(${nr},${ng},${nb},${a})`);
+      grd.addColorStop(0.4, `rgba(${nr},${ng},${nb},${a * 0.30})`);
+      grd.addColorStop(1,   `rgba(${nr},${ng},${nb},0)`);
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+      ctx.fillStyle = grd; ctx.fill();
+    }
+  }
+
+  /* ── Resize / Init ────────────────────────────────────────── */
+  function resize() {
+    W = cvs.width  = window.innerWidth;
+    H = cvs.height = window.innerHeight;
+    trackPath2D = null; /* force Path2D rebuild */
+  }
+
+  function init() {
+    cvs = document.getElementById('sv-bg-canvas');
+    if (!cvs) return;
+    ctx = cvs.getContext('2d');
+    resize();
+    sampleTrack();
+    /* Seed speed lines spread across viewport */
+    for (let i = 0; i < 55; i++) {
+      lines.push({ x:-Math.random()*W, y:Math.random()*H, len:50+Math.random()*160,
+        spd:5+Math.random()*11, al:0.02+Math.random()*0.05, w:0.4+Math.random()*1 });
+    }
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(frame);
+  }
+
+  /* ── Main animation frame ────────────────────────────────── */
+  function frame() {
+    tick++;
+    ctx.clearRect(0, 0, W, H);
+    const [P, S, isLight] = getColors();
+    const [pr, pg, pb] = rgb(P);
+
+    /* 1 — Circuit track */
+    if (trackPts.length) drawTrack(P, isLight);
+
+    /* 2 — Horizontal speed lines */
+    ctx.save();
+    drawLines(P);
+    ctx.restore();
+
+    /* 3 — Fast car streaks */
+    nextStreak--;
+    if (nextStreak <= 0) {
+      streaks.push({ x:-600, y:50+Math.random()*(H-100),
+        len:280+Math.random()*260, spd:22+Math.random()*22,
+        al:0.14+Math.random()*0.14, w:1.5+Math.random()*2,
+        life:0, maxLife:80+Math.random()*40, alt:Math.random()<0.4 });
+      nextStreak = 75 + Math.random() * 110;
+    }
+    ctx.save();
+    drawStreaks(P, S);
+    ctx.restore();
+
+    /* 4 — Vegas neon pulses */
+    nextNeon--;
+    if (nextNeon <= 0) {
+      const palCol = NEON_PALETTE[Math.floor(Math.random()*NEON_PALETTE.length)];
+      const col = Math.random()<0.35 ? P : Math.random()<0.5 ? S : palCol;
+      neons.push({ x:Math.random()*W, y:Math.random()*H,
+        r:0, maxR:55+Math.random()*110,
+        al:0.04+Math.random()*0.07, life:0, maxLife:65+Math.random()*80, col });
+      nextNeon = 90 + Math.random() * 140;
+    }
+    ctx.save();
+    drawNeons(P, S);
+    ctx.restore();
+
+    /* 5 — Race cars on track */
+    if (trackPts.length) drawCars(P, S, isLight);
+
+    /* 6 — Start/finish lap flash */
+    drawLapFlash();
+
+    /* 7 — Engine heat pulse (subtle radial glow) */
+    if (tick % 4 === 0) {
+      const pulse = 0.007 + 0.003 * Math.sin(tick * 0.022);
+      const grd = ctx.createRadialGradient(W*0.5, H*0.42, 0, W*0.5, H*0.42, W*0.55);
+      grd.addColorStop(0, `rgba(${pr},${pg},${pb},${pulse})`);
+      grd.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  return { init };
+})();
+
+/* ── Init ──────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  SvTheme.init();
+  SvBackground.init();
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href').slice(1);
+      const el = document.getElementById(id);
+      if (el) {
+        e.preventDefault();
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+});
+</script>
+
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

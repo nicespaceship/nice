@@ -1,0 +1,56 @@
+/* ═══════════════════════════════════════════════════════════════════
+   NICE — State Store
+   Simple pub/sub reactive state for the app.
+═══════════════════════════════════════════════════════════════════ */
+
+/**
+ * @typedef {Object} StateStore
+ * @property {function(string): *} get — Retrieve a value by key
+ * @property {function(string, *): void} set — Set a value and notify subscribers synchronously
+ * @property {function(string, *): void} setBatched — Set a value and batch notifications per animation frame
+ * @property {function(string, function(*): void): void} on — Subscribe to changes for a key; fires immediately if data exists
+ * @property {function(string, function(*): void): void} off — Unsubscribe a listener from a key
+ */
+
+const State = (() => {
+  const _data = {};
+  const _subs = {};
+  let _pendingFlush = null;
+  const _pendingKeys = new Set();
+
+  function get(key) { return _data[key]; }
+
+  function set(key, val) {
+    _data[key] = val;
+    (_subs[key] || []).forEach(fn => fn(val));
+  }
+
+  /* Batch multiple rapid sets and fire listeners once per frame */
+  function setBatched(key, val) {
+    _data[key] = val;
+    _pendingKeys.add(key);
+    if (!_pendingFlush) {
+      _pendingFlush = requestAnimationFrame(() => {
+        _pendingKeys.forEach(k => {
+          (_subs[k] || []).forEach(fn => fn(_data[k]));
+        });
+        _pendingKeys.clear();
+        _pendingFlush = null;
+      });
+    }
+  }
+
+  function on(key, fn) {
+    if (!_subs[key]) _subs[key] = [];
+    _subs[key].push(fn);
+    // Fire immediately if data exists
+    if (_data[key] !== undefined) fn(_data[key]);
+  }
+
+  function off(key, fn) {
+    if (!_subs[key]) return;
+    _subs[key] = _subs[key].filter(f => f !== fn);
+  }
+
+  return { get, set, setBatched, on, off };
+})();

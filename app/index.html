@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="spaceship">
+<head>
+  <meta charset="UTF-8" />
+  <base href="/app/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#080808" />
+  <meta name="description" content="NICE™ — Mission control for your AI agent fleet. Build, deploy, and manage AI agents with blueprints, workflows, and real-time analytics." />
+  <meta property="og:title" content="NICE™ — Mission Control for AI Agents" />
+  <meta property="og:description" content="Build, deploy, and manage your AI agent fleet. Blueprints, workflows, analytics, and more." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nicespaceship.ai/app/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="NICE™ — Mission Control for AI Agents" />
+  <meta name="twitter:description" content="Build, deploy, and manage your AI agent fleet with NICE™ by Nice Spaceship." />
+  <title>NICE™ — Mission Control</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="dns-prefetch" href="https://txprptdrnsansjfoysjx.supabase.co" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Fira+Code:wght@300;400;500&family=Share+Tech+Mono&family=Press+Start+2P&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../public/css/theme.css" />
+  <link rel="stylesheet" href="./css/app.css" />
+</head>
+<body>
+
+<!-- SVG ICON SYMBOLS -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="icon-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+  <symbol id="icon-agent" viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="8" rx="2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2h6M12 2v6" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none"/><path d="M9 16v2M15 16v2M3 12h4M17 12h4" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="icon-spaceship" viewBox="0 0 1240.37 1240.21"><path fill="currentColor" stroke="none" d="M962.08,762.91c-3.6,3.81-23,22.39-23.4,25.12s1.65,9.46,1.81,12.8c6.2,134.27-22.47,251.36-96.57,363.41-10.14,15.32-44.07,64.4-57.7,72.3-10.64,6.16-17.08,4.1-26.74-2.68l-205.91-206.08-2.61-1.47c-13.79,3.14-27.33,7.97-41.2,10.78-12.14,2.46-39.23,7.32-50.52,5.02-5.43-1.11-8.8-8.83-13.02-7.63-56.83,48.42-130.21,76.33-203.49,88.59-23.32,3.9-79.67,11.72-100.43,4.99-28.92-9.37-32.15-31.74-31.74-58.17,1.36-87.99,28.47-185.28,80.14-256.85,2.24-3.1,15.39-18.18,15.71-19.38.7-2.69-7.89-8.08-8.8-14.88-1.33-9.98,3.07-34.86,5.18-45.64,2.91-14.86,7.64-29.47,11.6-44.06L6.97,481.35c-6.58-10.16-9.77-14.46-3.86-25.92,4.89-9.48,28.96-27.24,38.49-34.51,113.03-86.2,243.65-127.64,386.44-121.64,5.01.21,23.34,2.94,26.44,1.52,117.49-117.68,260.78-215.29,420.81-265.18,95.99-29.93,217.05-45.19,316.54-29.13,13.03,2.1,32.43,2.67,37.16,16.84,5.97,17.89,9.64,56.02,10.55,75.45,12,255.12-107.2,483.74-277.46,664.12ZM842.3,261.63c-101.28,8.13-152.88,125.4-90.22,205.62,56.08,71.8,169.37,61.28,211.94-18.9,46.73-88.01-22.45-194.69-121.72-186.72ZM276.84,862.98c-1.02-.92-3.11-5.35-5.37-4.22-.87.43-8.43,11.31-9.79,13.25-32.97,47.21-49,105.67-56.19,162.31,1.77,1.77,42.17-6.13,48.04-7.46,31.2-7.03,64.74-18.77,92.63-34.37,4.52-2.53,34.5-21.3,35.27-23.8.34-1.12-.09-2.12-.89-2.92-35.52-32.96-67.86-70.35-103.71-102.79Z"/></symbol>
+  <symbol id="icon-learning" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="icon-profile" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="icon-task" viewBox="0 0 24 24"><rect x="3" y="5" width="16" height="16" rx="2"/><path d="M7 13l3 3 7-7"/><path d="M8 3v4M16 3v4"/></symbol>
+  <symbol id="icon-blueprint" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke-opacity="0.5"/><rect x="9" y="9" width="6" height="6" stroke-opacity="0.9"/></symbol>
+  <symbol id="icon-analytics" viewBox="0 0 24 24"><path d="M3 20h18"/><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+  <symbol id="icon-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="icon-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="icon-comms" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20"/><path d="M12 6a6 6 0 1 0 0 12"/><path d="M12 10a2 2 0 1 0 0 4"/><line x1="12" y1="2" x2="12" y2="22"/><path d="M2 12h4M18 12h4"/></symbol>
+  <symbol id="icon-network" viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><circle cx="4" cy="19" r="3"/><circle cx="20" cy="19" r="3"/><path d="M12 8v4M12 12l-5.5 5M12 12l5.5 5"/></symbol>
+  <symbol id="icon-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+  <symbol id="icon-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+  <symbol id="icon-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><polyline points="6,8 10,12 14,9 18,13"/></symbol>
+  <symbol id="icon-build" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="icon-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+  <symbol id="icon-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+  <symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+  <symbol id="icon-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="icon-note" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
+  <symbol id="icon-palette" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="14" r="1.5" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="icon-workflow" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/><path d="M6 9v3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9"/><path d="M12 15v-3"/></symbol>
+  <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="icon-stations" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="icon-log" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></symbol>
+  <symbol id="icon-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+  <symbol id="icon-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="icon-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="icon-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="icon-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+  <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
+  <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+  <symbol id="icon-wallet" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="15" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1.5" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<!-- Skip to content (a11y) -->
+<a href="#app-view" class="skip-to-content">Skip to main content</a>
+
+<!-- MATRIX RAIN CANVAS -->
+<canvas id="matrix-canvas"></canvas>
+
+<!-- Hidden page title for router / screen readers -->
+<span id="app-page-title" class="sr-only" aria-live="polite">Bridge</span>
+
+<!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
+<aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
+  <!-- Sidebar Header: Logo + User -->
+  <div class="side-header">
+    <a href="#" class="app-brand" id="nice-brand-btn">
+      <span class="app-brand-text">NICE</span>
+    </a>
+    <div class="side-header-actions">
+      <button class="side-toggle-btn" id="sidebar-toggle" title="Toggle sidebar" aria-label="Toggle sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+      </button>
+      <span class="hud-alert-badge" id="hud-alert-badge" role="status" style="display:none"></span><button class="app-hdr-btn" id="btn-hud" aria-label="HUD">HUD</button>
+    </div>
+  </div>
+
+  <!-- HUD PANEL (inline, slides open pushing nav down) -->
+  <div class="app-hud-panel" id="app-hud-panel">
+    <div class="hud-row" style="justify-content:space-between">
+      <span class="dock-lbl">THEME <span class="dock-lbl-sep">|</span> <span id="active-theme-name" class="dock-lbl-val"></span></span>
+      <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode" onclick="Theme.toggleDarkLight()">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-sun"/></svg>
+      </button>
+    </div>
+    <div class="hud-row" id="theme-dock-btns">
+      <!-- Rendered dynamically by Theme.renderDock() -->
+    </div>
+    <div class="hud-row-sep"></div>
+    <div class="hud-row">
+      <span class="dock-lbl">FONT</span>
+      <button class="fb fb-auto"  data-fid="auto"  data-tip="Auto"    onclick="Font.set('auto')"  aria-label="Auto">A</button>
+      <button class="fb fb-clean" data-fid="clean" data-tip="Inter"   onclick="Font.set('clean')" aria-label="Inter">A</button>
+      <button class="fb fb-space" data-fid="space" data-tip="Orbitron" onclick="Font.set('space')" aria-label="Orbitron">A</button>
+      <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani" onclick="Font.set('tac')"  aria-label="Rajdhani">A</button>
+      <button class="fb fb-code"  data-fid="code"  data-tip="Fira"    onclick="Font.set('code')"  aria-label="Fira Code">A</button>
+      <button class="fb fb-serif" data-fid="serif" data-tip="Playfair" onclick="Font.set('serif')" aria-label="Playfair">A</button>
+      <button class="fb fb-mono"  data-fid="mono"  data-tip="Share"   onclick="Font.set('mono')"  aria-label="Share Tech">A</button>
+      <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"   onclick="Font.set('pixel')" aria-label="Pixel">A</button>
+    </div>
+  </div>
+
+  <nav class="app-side-nav">
+    <a href="#/" class="side-link active" data-view="home">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-monitor"/></svg>
+      <span data-skin-nav="home">Bridge</span>
+    </a>
+    <a href="#/blueprints" class="side-link" data-view="blueprints">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-blueprint"/></svg>
+      <span data-skin-nav="blueprints">Blueprints</span>
+    </a>
+    <a href="#/log" class="side-link" data-view="log">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-log"/></svg>
+      <span data-skin-nav="log">Log</span>
+    </a>
+  </nav>
+  <div id="sidebar-favorites" class="sidebar-favorites"></div>
+  <div class="side-footer">
+    <div id="sidebar-presence"></div>
+    <div class="side-footer-row">
+      <a href="#/profile" class="side-user-card" id="hdr-user">
+        <span class="side-user-top">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-profile"/></svg>
+          <span class="hdr-username" id="hdr-username">Pilot</span>
+        </span>
+        <span class="hdr-user-badge" id="hdr-user-badge">ENSIGN</span>
+      </a>
+      <button class="side-more-btn" id="side-more-btn" aria-label="More options" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
+    </div>
+    <div class="side-popover" id="side-popover">
+      <a href="#/settings" class="side-popover-item" data-view="settings">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-settings"/></svg>
+        <span>Settings</span>
+      </a>
+<a href="#/wallet" class="side-popover-item" data-view="wallet">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-wallet"/></svg>
+        <span>Wallet</span>
+      </a>
+      <a href="#/security" class="side-popover-item" data-view="security">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
+        <span>Security</span>
+      </a>
+      <button class="side-popover-item" id="btn-logout">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Log Out</span>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Alert dropdown (body-level for z-index) -->
+<div class="hud-alert-dropdown" id="hud-alert-dropdown">
+  <div class="hud-alert-hdr">
+    <span class="hud-alert-title">Alerts</span>
+    <button class="hud-alert-mark" id="hud-alert-mark-all">Mark all read</button>
+  </div>
+  <div class="hud-alert-list" id="hud-alert-list">
+    <p class="hud-alert-empty">No alerts.</p>
+  </div>
+</div>
+
+<!-- Sidebar overlay for mobile -->
+<div class="app-sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Icon rail (desktop/tablet — hidden on mobile) -->
+<!-- Mobile top bar (hamburger + logo, hidden on desktop) -->
+<div class="app-mobile-bar" id="app-mobile-bar">
+  <button class="mobile-bar-btn" id="mobile-sidebar-toggle" aria-label="Toggle menu">
+    <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-menu"/></svg>
+  </button>
+  <span class="app-brand-text">NICE</span>
+  <a href="#/profile" class="mobile-bar-btn" aria-label="Profile">
+    <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-profile"/></svg>
+  </a>
+</div>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="app-main" role="main">
+  <div class="app-view-content" id="app-view" aria-live="polite">
+    <!-- Views rendered here by router -->
+  </div>
+  <!-- Monitor: AI response overlay that takes over the viewport -->
+  <div class="nice-monitor" id="nice-monitor" aria-live="polite">
+    <div class="nice-monitor-inner">
+      <button class="nice-monitor-back" id="nice-monitor-back" aria-label="Back to dashboard">&larr; Back</button>
+      <div class="nice-monitor-content" id="nice-monitor-content"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ PREVIEW PANEL (slide-out right) ═══ -->
+<div class="preview-drag-handle" id="preview-drag-handle" title="Drag to resize"></div>
+<div class="preview-panel" id="preview-panel">
+  <div class="preview-header">
+    <div class="preview-tabs">
+      <button class="preview-tab active" data-tab="browser">Browser</button>
+      <button class="preview-tab" data-tab="output">Output</button>
+      <button class="preview-tab" data-tab="console">Console</button>
+    </div>
+    <div class="preview-actions">
+      <button class="preview-nav-btn" id="preview-back" aria-label="Back" title="Back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="preview-nav-btn" id="preview-forward" aria-label="Forward" title="Forward">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+      </button>
+      <button class="preview-nav-btn" id="preview-refresh" aria-label="Refresh" title="Refresh">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+      <input class="preview-url" id="preview-url" type="text" placeholder="Enter URL..." autocomplete="off" />
+      <div class="preview-viewport-group">
+        <button class="preview-viewport-btn" data-viewport="mobile" title="Mobile (375px)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+        </button>
+        <button class="preview-viewport-btn" data-viewport="tablet" title="Tablet (768px)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+        </button>
+        <button class="preview-viewport-btn active" data-viewport="desktop" title="Desktop (100%)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </button>
+      </div>
+      <button class="preview-close" id="preview-close" aria-label="Close preview">&times;</button>
+    </div>
+  </div>
+  <div class="preview-body">
+    <div class="preview-iframe-wrap">
+      <iframe class="preview-iframe" id="preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Preview"></iframe>
+    </div>
+    <div class="preview-output" id="preview-output" style="display:none"></div>
+    <div class="preview-console" id="preview-console" style="display:none">
+      <div class="preview-console-header">
+        <span>Console</span>
+        <button class="preview-console-clear-btn" id="preview-console-clear">Clear</button>
+      </div>
+      <div class="preview-console-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BOTTOM TAB BAR (Mobile) ═══ -->
+<nav class="app-tabbar" id="app-tabbar" role="tablist" aria-label="Quick navigation">
+  <a href="#/" class="tab active" data-tab="home">
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-monitor"/></svg>
+    <span>Bridge</span>
+  </a>
+  <a href="#/blueprints" class="tab" data-tab="blueprints">
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-blueprint"/></svg>
+    <span>Blueprints</span>
+  </a>
+  <a href="#/log" class="tab" data-tab="log">
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-log"/></svg>
+    <span>Log</span>
+  </a>
+  <a href="#/dock" class="tab" data-tab="dock">
+    <svg class="icon icon-tab" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-spaceship"/></svg>
+    <span>Dock</span>
+  </a>
+</nav>
+
+<!-- ═══ AUTH MODAL ═══ -->
+<div class="modal-overlay" id="modal-auth" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3 class="modal-title" id="auth-modal-title">Sign In</h3>
+      <button class="modal-close" onclick="NICE.closeModal('modal-auth')" aria-label="Close">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="auth-modal-body">
+      <!-- Auth form rendered by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="./js/lib/state.js"></script>
+<script defer src="./js/lib/utils.js"></script>
+<script defer src="./js/lib/skin.js"></script>
+<script defer src="./js/lib/skin-packs.js"></script>
+<script defer src="./js/lib/rate-limiter.js"></script>
+<script defer src="./js/lib/supabase.js"></script>
+<script defer src="./js/lib/offline-queue.js"></script>
+<script defer src="./js/lib/router.js"></script>
+<script defer src="./js/lib/card-renderer.js"></script>
+<script defer src="./js/views/home.js"></script>
+<script defer src="./js/views/profile.js"></script>
+<script defer src="./js/views/alerts.js"></script>
+<script defer src="./js/views/agents.js"></script>
+<script defer src="./js/views/agent-builder.js"></script>
+<script defer src="./js/views/spaceship-builder.js"></script>
+<script defer src="./js/views/missions.js"></script>
+<script defer src="./js/views/spaceships.js"></script>
+<script defer src="./js/views/blueprints.js"></script>
+<script defer src="./js/views/analytics.js"></script>
+<script defer src="./js/views/cost.js"></script>
+<script defer src="./js/views/vault.js"></script>
+<script defer src="./js/views/security.js"></script>
+<script defer src="./js/views/settings.js"></script>
+<script defer src="./js/views/wallet.js"></script>
+<script defer src="./js/views/audit-log.js"></script>
+<script defer src="./js/views/theme-creator.js"></script>
+<script defer src="./js/views/workflows.js"></script>
+<script defer src="./js/lib/preview-panel.js"></script>
+<script defer src="./js/views/prompt-panel.js"></script>
+<script defer src="./js/views/log-view.js"></script>
+<script defer src="./js/views/dock-view.js"></script>
+<script defer src="./js/views/ship-log-view.js"></script>
+<script defer src="./js/lib/audit-log.js"></script>
+<script defer src="./js/lib/data-io.js"></script>
+<script defer src="./js/lib/activity-feed.js"></script>
+<script defer src="./js/lib/quick-notes.js"></script>
+<script defer src="./js/lib/favorites.js"></script>
+<script defer src="./js/lib/notify.js"></script>
+<script defer src="./js/lib/message-bar.js"></script>
+<script defer src="./js/lib/gamification.js"></script>
+<script defer src="./js/lib/command-palette.js"></script>
+<script defer src="./js/lib/keyboard.js"></script>
+<script defer src="./js/lib/blueprint-store.js"></script>
+<script defer src="./js/lib/llm-config.js"></script>
+<script defer src="./js/lib/prompt-builder.js"></script>
+<script defer src="./js/lib/tool-registry.js"></script>
+<script defer src="./js/lib/agent-executor.js"></script>
+<script defer src="./js/lib/ship-log.js"></script>
+<script defer src="./js/lib/mission-router.js"></script>
+<script defer src="./js/lib/mission-runner.js"></script>
+<script defer src="./js/lib/workflow-engine.js"></script>
+<script defer src="./js/lib/subscription.js"></script>
+<script defer src="./js/lib/fuel-modal.js"></script>
+<script defer src="./js/lib/upgrade-modal.js"></script>
+<script defer src="./js/lib/setup-wizard.js"></script>
+<script defer src="./js/lib/ship-setup-wizard.js"></script>
+<script defer src="./js/lib/onboarding.js"></script>
+<script defer src="./js/lib/auth-modal.js"></script>
+<script defer src="./js/lib/tutorial-mission.js"></script>
+<script defer src="./js/nice.js"></script>
+
+<!-- Screen reader announcer (a11y) -->
+<div id="sr-announcer" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+<div class="side-picker-popup" id="bp-create-picker">
+  <a href="#/blueprints/agents/new" class="side-picker-item">Agent</a>
+  <a href="#/blueprints/spaceships/new" class="side-picker-item">Spaceship</a>
+</div>
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+</body>
+</html>

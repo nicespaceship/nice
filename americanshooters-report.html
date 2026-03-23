@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="spaceship">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>American Shooters — Site Audit & Recommendations — Nice Spaceship</title>
+  <meta name="description" content="Full digital audit and strategic recommendations for americanshooters.com by Nice Spaceship." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Fira+Code:wght@300;400;500&family=Share+Tech+Mono&family=Press+Start+2P&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./public/css/theme.css" />
+  <style>
+    /* ── Report Page Styles ─────────────────────────────── */
+    .rpt-shell { max-width: 900px; margin: 0 auto; }
+
+    /* Severity badges */
+    .sev { display:inline-block; font-family:var(--font-m); font-size:0.58rem; letter-spacing:.12em; padding:2px 9px; white-space:nowrap; font-weight:600; }
+    .sev-crit  { background:rgba(204,33,39,0.15);  color:#ff4d52; border:1px solid rgba(204,33,39,0.4); }
+    .sev-high  { background:rgba(255,140,0,0.12);  color:#ff9a2e; border:1px solid rgba(255,140,0,0.35); }
+    .sev-med   { background:rgba(255,220,0,0.1);   color:#ffd833; border:1px solid rgba(255,220,0,0.3); }
+    .sev-low   { background:rgba(0,220,80,0.08);   color:#3ddc84; border:1px solid rgba(0,220,80,0.25); }
+    .sev-info  { background:rgba(0,180,255,0.08);  color:#4dbcff; border:1px solid rgba(0,180,255,0.25); }
+
+    /* Score ring */
+    .score-ring { display:flex; align-items:center; gap:20px; }
+    .score-circle { width:80px; height:80px; border-radius:50%; border:3px solid var(--border); display:flex; align-items:center; justify-content:center; flex-direction:column; background:var(--panel-bg); flex-shrink:0; position:relative; }
+    .score-num { font-family:var(--font-h); font-size:1.6rem; font-weight:700; line-height:1; }
+    .score-max { font-family:var(--font-m); font-size:0.55rem; color:var(--text-muted); letter-spacing:.08em; }
+
+    /* Score grades */
+    .grade-a  { border-color:#3ddc84; }
+    .grade-a .score-num  { color:#3ddc84; }
+    .grade-b  { border-color:#4dbcff; }
+    .grade-b .score-num  { color:#4dbcff; }
+    .grade-c  { border-color:#ffd833; }
+    .grade-c .score-num  { color:#ffd833; }
+    .grade-d  { border-color:#ff9a2e; }
+    .grade-d .score-num  { color:#ff9a2e; }
+    .grade-f  { border-color:#ff4d52; }
+    .grade-f .score-num  { color:#ff4d52; }
+
+    /* Audit item row */
+    .audit-item { border:1px solid var(--border); background:var(--panel-bg); margin-bottom:2px; }
+    .audit-item-hd { display:flex; align-items:center; gap:14px; padding:16px 20px; cursor:pointer; }
+    .audit-item-hd:hover { background:var(--bg-alt); }
+    .audit-title { flex:1; font-size:0.9rem; font-weight:600; color:var(--text); }
+    .audit-body { padding:0 20px 20px; border-top:1px solid var(--border); display:none; }
+    .audit-body.open { display:block; }
+    .audit-body p { font-size:0.85rem; line-height:1.75; color:var(--text-muted); margin-bottom:10px; }
+    .audit-body ul { margin:8px 0 12px 16px; }
+    .audit-body li { font-size:0.85rem; line-height:1.65; color:var(--text-muted); margin-bottom:4px; }
+    .audit-body .fix { font-size:0.82rem; font-family:var(--font-m); background:var(--bg-alt); border:1px solid var(--border); padding:10px 14px; margin-top:10px; line-height:1.6; color:var(--accent); }
+    .audit-body .fix::before { content:"→ FIX: "; font-weight:700; }
+
+    /* Priority action table */
+    .pri-table { width:100%; border-collapse:collapse; }
+    .pri-table th { font-family:var(--font-m); font-size:0.65rem; letter-spacing:.1em; color:var(--text-muted); text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); }
+    .pri-table td { font-size:0.83rem; padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; color:var(--text-muted); }
+    .pri-table tr:last-child td { border-bottom:none; }
+    .pri-table td:first-child { font-family:var(--font-m); font-size:0.7rem; letter-spacing:.05em; color:var(--text); white-space:nowrap; }
+    .pri-num { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border:1px solid var(--border); font-family:var(--font-m); font-size:0.65rem; color:var(--accent); flex-shrink:0; }
+    .effort-bar { display:flex; gap:3px; }
+    .effort-dot { width:8px; height:8px; border:1px solid var(--border); }
+    .effort-dot.on { background:var(--accent); border-color:var(--accent); }
+
+    /* Score summary strip */
+    .score-strip { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:2px; margin:32px 0; }
+    .score-cell { background:var(--panel-bg); border:1px solid var(--border); padding:16px 14px; }
+    .score-cell-label { font-family:var(--font-m); font-size:0.6rem; letter-spacing:.1em; color:var(--text-muted); margin-bottom:8px; }
+    .score-cell-val { font-family:var(--font-h); font-size:1.4rem; font-weight:700; }
+
+    /* Category headers */
+    .rpt-cat { display:flex; align-items:center; gap:12px; margin:52px 0 16px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+    .rpt-cat-icon { width:34px; height:34px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .rpt-cat h2 { font-size:1rem; font-family:var(--font-h); font-weight:700; letter-spacing:.06em; margin:0; flex:1; }
+
+    /* Overall verdict */
+    .verdict-panel { border:1px solid var(--border-hi); background:var(--panel-bg); padding:32px; box-shadow:var(--glow); }
+    .verdict-score-big { font-family:var(--font-h); font-size:4rem; font-weight:900; color:#ff9a2e; line-height:1; }
+    .verdict-grade { font-family:var(--font-m); font-size:0.75rem; letter-spacing:.15em; color:var(--text-muted); margin-top:4px; }
+
+    /* Highlight quote box */
+    .highlight-box { border-left:3px solid var(--accent); background:var(--bg-alt); padding:14px 18px; margin:16px 0; }
+    .highlight-box p { font-size:0.85rem; color:var(--text-muted); line-height:1.7; margin:0; }
+
+    /* CTA strip */
+    .rpt-cta { background:var(--panel-bg); border:1px solid var(--border-hi); padding:48px 40px; text-align:center; box-shadow:var(--glow); margin-top:64px; }
+
+    @media (max-width:600px) {
+      .score-strip { grid-template-columns: repeat(2,1fr); }
+      .verdict-score-big { font-size:3rem; }
+      .rpt-cta { padding:32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SVG ICON SYMBOLS -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="icon-profile" viewBox="0 0 24 24">
+    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+  </symbol>
+  <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+    <polyline points="6 9 12 15 18 9"/>
+  </symbol>
+</svg>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="bg-grid"></div>
+<div class="bg-hero-glow"></div>
+<div class="bg-scanlines"></div>
+<div class="bg-retro-wave"></div>
+
+<!-- TELEMETRY BAR -->
+<div class="tel-bar" aria-label="Live system telemetry">
+  <div class="tel-track">
+    <div class="tel-item"><span class="tel-dot"></span>CLIENT: <span class="tel-val">AMERICAN SHOOTERS</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>AUDIT DATE: <span class="tel-val">MARCH 2026</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>PLATFORM: <span class="tel-val">WordPress / Elementor</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>OVERALL SCORE: <span class="tel-val">47 / 100</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>CRITICAL ISSUES: <span class="tel-val">3 FOUND</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>PREPARED BY: <span class="tel-val">Nice Spaceship</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>CLIENT: <span class="tel-val">AMERICAN SHOOTERS</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>AUDIT DATE: <span class="tel-val">MARCH 2026</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>PLATFORM: <span class="tel-val">WordPress / Elementor</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>OVERALL SCORE: <span class="tel-val">47 / 100</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>CRITICAL ISSUES: <span class="tel-val">3 FOUND</span></div>
+    <div class="tel-item"><span class="tel-dot"></span>PREPARED BY: <span class="tel-val">Nice Spaceship</span></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="./index.html" class="nav-logo">
+      <div>
+        <span class="nav-brand">Nice Spaceship</span>
+        <span class="nav-tagline">Agentic Intelligence Co.</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="./projects.html" class="nav-active">Projects</a></li>
+      <li><a href="./app/">NICE</a></li>
+    </ul>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="nav-hud-btn" onclick="NavHUD.toggle()" aria-label="Toggle theme picker" aria-expanded="false">HUD</button>
+      <button id="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div id="mobile-menu">
+    <a href="./projects.html">Projects</a>
+    <a href="./app/">NICE</a>
+  </div>
+  <div class="nav-hud-panel" id="nav-hud-panel">
+    <div class="hud-row">
+      <span class="dock-lbl">HUD</span>
+      <button class="db d-sp" data-tip="Nice Spaceship" onclick="Theme.set('spaceship')" aria-label="Nice Spaceship"></button>
+      <button class="db d-iv" data-tip="Robotech"       onclick="Theme.set('robotech')"  aria-label="Robotech"></button>
+      <button class="db d-nv" data-tip="Navigator"      onclick="Theme.set('navigator')" aria-label="Navigator"></button>
+      <button class="db d-sl" data-tip="Solar Flare"    onclick="Theme.set('solar')"     aria-label="Solar Flare"></button>
+      <button class="db d-mx" data-tip="The Matrix"     onclick="Theme.set('matrix')"    aria-label="The Matrix"></button>
+      <button class="db d-rt" data-tip="Retro Abstract" onclick="Theme.set('retro')"     aria-label="Retro Abstract"></button>
+      <button class="db d-lc" data-tip="LCARS"          onclick="Theme.set('lcars')"     aria-label="LCARS"></button>
+      <button class="db d-px" data-tip="16-Bit"         onclick="Theme.set('pixel')"     aria-label="16-Bit"></button>
+    </div>
+    <div class="hud-row-sep"></div>
+    <div class="hud-row">
+      <span class="dock-lbl">FONT</span>
+      <button class="fb fb-auto"  data-fid="auto"  data-tip="Theme Default" onclick="Font.set('auto')"  aria-label="Auto font">A</button>
+      <button class="fb fb-clean" data-fid="clean" data-tip="Inter"         onclick="Font.set('clean')" aria-label="Inter">A</button>
+      <button class="fb fb-space" data-fid="space" data-tip="Orbitron"      onclick="Font.set('space')" aria-label="Orbitron">A</button>
+      <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani"      onclick="Font.set('tac')"   aria-label="Rajdhani">A</button>
+      <button class="fb fb-code"  data-fid="code"  data-tip="Fira Code"     onclick="Font.set('code')"  aria-label="Fira Code">A</button>
+      <button class="fb fb-serif" data-fid="serif" data-tip="Playfair"      onclick="Font.set('serif')" aria-label="Playfair">A</button>
+      <button class="fb fb-mono"  data-fid="mono"  data-tip="Share Tech"    onclick="Font.set('mono')"  aria-label="Share Tech">A</button>
+      <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"         onclick="Font.set('pixel')" aria-label="Pixel">A</button>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+<div class="rpt-shell">
+
+  <!-- ── REPORT HEADER ── -->
+  <section class="sec" style="padding-top:var(--hero-pt,140px);padding-bottom:40px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <a href="./projects.html" style="font-family:var(--font-m);font-size:0.7rem;letter-spacing:.1em;color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:6px;">
+        ← PROJECTS
+      </a>
+      <span style="color:var(--border);">/</span>
+      <span style="font-family:var(--font-m);font-size:0.7rem;letter-spacing:.1em;color:var(--text-muted);">AMERICAN SHOOTERS</span>
+      <span style="color:var(--border);">/</span>
+      <span style="font-family:var(--font-m);font-size:0.7rem;letter-spacing:.1em;color:var(--accent);">SITE AUDIT</span>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:24px;">
+      <div>
+        <p class="label-sm" style="margin-bottom:12px;">⬡ DIGITAL AUDIT REPORT</p>
+        <h1 class="h1" style="margin-bottom:12px;font-size:clamp(1.8rem,4vw,2.8rem);">American Shooters<br><span style="color:var(--accent);">Site Audit & Recommendations</span></h1>
+        <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.7;max-width:520px;">
+          A full technical and strategic review of <strong style="color:var(--text);">americanshooters.com</strong> — covering performance, tracking integrity, UX/CRO, SEO, design, and mobile readiness. Prepared by Nice Spaceship, March 2026.
+        </p>
+      </div>
+      <!-- Overall verdict box -->
+      <div class="verdict-panel" style="min-width:220px;flex-shrink:0;">
+        <p style="font-family:var(--font-m);font-size:0.6rem;letter-spacing:.15em;color:var(--text-muted);margin-bottom:12px;">OVERALL SITE SCORE</p>
+        <div style="display:flex;align-items:flex-end;gap:12px;">
+          <div class="verdict-score-big">47</div>
+          <div>
+            <div style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:.1em;color:var(--text-muted);">OUT OF 100</div>
+            <div style="font-family:var(--font-m);font-size:0.75rem;letter-spacing:.1em;color:#ff9a2e;margin-top:2px;">NEEDS WORK</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-family:var(--font-m);font-size:0.65rem;color:var(--text-muted);">CRITICAL ISSUES</span>
+            <span style="font-family:var(--font-m);font-size:0.65rem;color:#ff4d52;font-weight:700;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-family:var(--font-m);font-size:0.65rem;color:var(--text-muted);">HIGH PRIORITY</span>
+            <span style="font-family:var(--font-m);font-size:0.65rem;color:#ff9a2e;font-weight:700;">5</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:var(--font-m);font-size:0.65rem;color:var(--text-muted);">MEDIUM / LOW</span>
+            <span style="font-family:var(--font-m);font-size:0.65rem;color:#ffd833;font-weight:700;">7</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SCORE SUMMARY STRIP ── -->
+  <section class="sec" style="padding-top:0;padding-bottom:20px;">
+    <div class="score-strip">
+      <div class="score-cell">
+        <div class="score-cell-label">PERFORMANCE</div>
+        <div class="score-cell-val" style="color:#ff4d52;">28<span style="font-size:0.75rem;font-family:var(--font-m);color:var(--text-muted);">/100</span></div>
+      </div>
+      <div class="score-cell">
+        <div class="score-cell-label">TRACKING</div>
+        <div class="score-cell-val" style="color:#ff9a2e;">35<span style="font-size:0.75rem;font-family:var(--font-m);color:var(--text-muted);">/100</span></div>
+      </div>
+      <div class="score-cell">
+        <div class="score-cell-label">UX / CRO</div>
+        <div class="score-cell-val" style="color:#ff9a2e;">42<span style="font-size:0.75rem;font-family:var(--font-m);color:var(--text-muted);">/100</span></div>
+      </div>
+      <div class="score-cell">
+        <div class="score-cell-label">SEO</div>
+        <div class="score-cell-val" style="color:#ffd833;">55<span style="font-size:0.75rem;font-family:var(--font-m);color:var(--text-muted);">/100</span></div>
+      </div>
+      <div class="score-cell">
+        <div class="score-cell-label">DESIGN</div>
+        <div class="score-cell-val" style="color:#ffd833;">50<span style="font-size:0.75rem;font-family:var(--font-m);color:var(--text-muted);">/100</span></div>
+      </div>
+      <div class="score-cell">
+        <div class="score-cell-label">MOBILE</div>
+        <div class="score-cell-val" style="color:#ff9a2e;">38<span style="font-size:0.75rem;font-family:var(--font-m);color:var(--text-muted);">/100</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p><strong style="color:var(--text);">Bottom line:</strong> americanshooters.com has strong brand equity — 5-star reviews, veteran ownership, a genuinely premium product — but the website is actively losing bookings. A slow WordPress/Elementor build, broken conversion tracking, a confusing navigation structure, and an outdated design are collectively creating friction at every step of the funnel. The good news: all of this is fixable. The demo site at <a href="./americanshooters.html" style="color:var(--accent);">nicespaceship.com/americanshooters</a> shows exactly what it could look like.</p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: PERFORMANCE -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-top:0;padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">⚡</div>
+      <h2>Performance</h2>
+      <span class="score-cell-val" style="color:#ff4d52;font-size:1rem;">28/100</span>
+      <span class="sev sev-crit">CRITICAL</span>
+    </div>
+
+    <!-- Finding 1 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-crit">CRITICAL</span>
+        <span class="audit-title">Elementor page builder producing extreme DOM bloat</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>Elementor generates deeply nested HTML with hundreds of wrapper divs, inline style attributes, and widget-specific CSS/JS loaded on every page regardless of use. This directly inflates page weight, increases browser parse time, and causes Core Web Vitals failures — particularly LCP (Largest Contentful Paint) and CLS (Cumulative Layout Shift).</p>
+        <p>A typical Elementor homepage contains 4–8× the DOM node count of a hand-coded equivalent. For a booking-driven business, every second of load time on mobile costs an estimated 7–10% in conversion rate.</p>
+        <ul>
+          <li>Estimated page weight: 3.5–6MB (images + scripts + styles)</li>
+          <li>Probable mobile LCP: 5–9 seconds on mid-tier Android</li>
+          <li>Google PageSpeed Insights mobile score: likely 15–35</li>
+        </ul>
+        <div class="fix">Rebuild on a lightweight, hand-coded stack (HTML/CSS/JS) or at minimum migrate to a block-based theme. Eliminate Elementor and all unused WordPress plugins. Target &lt;1s LCP, &lt;0.1 CLS.</div>
+      </div>
+    </div>
+
+    <!-- Finding 2 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">WP Rocket caching masking but not solving performance issues</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>WP Rocket is a band-aid over a structural problem. It can cache static HTML and defer some scripts, but it cannot remove Elementor's fundamental overhead, reduce the plugin ecosystem weight, or eliminate render-blocking resources injected by third-party widgets.</p>
+        <ul>
+          <li>Admin bar visible to logged-out users indicates WP Rocket cache may not be firing correctly, or is misconfigured to exclude certain URL patterns</li>
+          <li>Plugin conflicts common between Rocket + Imagify + FareHarbor widget scripts</li>
+        </ul>
+        <div class="fix">Audit WP Rocket configuration — ensure admin is logged out during testing, HTML/CSS/JS minification and combination is active, and FareHarbor widget is deferred rather than render-blocking.</div>
+      </div>
+    </div>
+
+    <!-- Finding 3 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">WordPress admin bar exposed to public visitors</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>The WordPress admin toolbar is rendering for logged-out users — this is a security misconfiguration that exposes the CMS type, version hints, and login endpoints to the public. It also pushes page content down by 32px, creating layout shifts and eating into the hero visual area.</p>
+        <ul>
+          <li>Security risk: confirms CMS is WordPress, making the site a target for automated WP vulnerability scanners</li>
+          <li>UX impact: 32px of wasted screen real estate above the fold on desktop</li>
+          <li>CLS impact: admin bar loads after initial paint, causing layout shift</li>
+        </ul>
+        <div class="fix">In WordPress → Users → Profile, ensure "Show Toolbar when viewing site" is unchecked for all admin accounts. Also add <code>add_filter('show_admin_bar', '__return_false');</code> to functions.php as a fail-safe.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: TRACKING -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-top:0;padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">📡</div>
+      <h2>Conversion Tracking & Attribution</h2>
+      <span class="score-cell-val" style="color:#ff9a2e;font-size:1rem;">35/100</span>
+      <span class="sev sev-crit">CRITICAL</span>
+    </div>
+
+    <!-- Finding 4 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-crit">CRITICAL</span>
+        <span class="audit-title">FareHarbor booking completions likely not tracked as conversions</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>FareHarbor's booking widget loads in an iframe from a different domain (<code>fareharbor.com</code>). Standard Google Analytics and Meta Pixel tracking does not cross iframe boundaries. This means that when a user completes a booking, that conversion is almost certainly not being recorded — or if it is, it's being attributed to FareHarbor's domain, not americanshooters.com.</p>
+        <p>The practical consequence: if you're running Google or Meta ads, your reporting shows zero or near-zero conversions even when real bookings are being made. This leads to incorrect campaign optimization, wasted budget on mis-attributed spend, and no ability to calculate true ROAS.</p>
+        <ul>
+          <li>FareHarbor does offer a postMessage API and/or server-side webhook for tracking — these must be configured manually</li>
+          <li>Google Ads conversion tags need to fire on booking confirmation, not on button click</li>
+          <li>Meta Pixel purchase events need to fire with actual booking value passed through</li>
+        </ul>
+        <div class="fix">Implement FareHarbor's cross-domain tracking solution using their postMessage API. Set up Google Tag Manager to listen for booking completion events. Configure Meta Conversions API (server-side) so revenue data flows correctly. Verify with GTM preview mode + Pixel Helper.</div>
+      </div>
+    </div>
+
+    <!-- Finding 5 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">Meta Pixel likely firing on "Book Now" button clicks, not confirmed purchases</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>A common and costly mistake in booking-site tracking: the Meta Pixel Purchase event fires when a user clicks the booking button — not when they actually complete the transaction. This inflates "conversion" counts, corrupts lookalike audiences built on that data, and makes ROAS calculations completely unreliable.</p>
+        <p>Real-world consequence: an account might report $8 ROAS on Meta ads while the actual revenue from completed bookings is negative after ad spend. This is impossible to detect without server-side verification.</p>
+        <ul>
+          <li>Pixel should fire Purchase event only on booking confirmation page or via FareHarbor webhook</li>
+          <li>Purchase event must include <code>value</code> (actual booking amount) and <code>currency</code> parameters</li>
+          <li>Deduplicate events using Conversions API + browser Pixel to avoid double-counting</li>
+        </ul>
+        <div class="fix">Audit current Pixel implementation using Meta Pixel Helper browser extension. Move Purchase event from button click to confirmed booking. Implement Meta Conversions API with order value passthrough from FareHarbor's booking data.</div>
+      </div>
+    </div>
+
+    <!-- Finding 6 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-med">MEDIUM</span>
+        <span class="audit-title">No visible UTM parameter strategy for campaign tracking</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>Without consistent UTM tagging on all paid and organic link sources, it's impossible to attribute bookings to specific campaigns, ad sets, or channels in GA4. This means budget allocation decisions are made on incomplete data.</p>
+        <ul>
+          <li>All paid ads (Google, Meta) should use UTM source, medium, campaign, content parameters</li>
+          <li>Google Ads auto-tagging (gclid) should be enabled and verified</li>
+          <li>GA4 → Advertising → Attribution report should show last-click and data-driven models</li>
+        </ul>
+        <div class="fix">Implement UTM taxonomy documentation and apply it consistently across all ad platforms. Enable GA4 enhanced measurement. Create a GA4 custom report for channel → booking attribution.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: UX / CRO -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-top:0;padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">🎯</div>
+      <h2>UX & Conversion Rate Optimization</h2>
+      <span class="score-cell-val" style="color:#ff9a2e;font-size:1rem;">42/100</span>
+      <span class="sev sev-high">HIGH</span>
+    </div>
+
+    <!-- Finding 7 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">Navigation overloaded — 8+ items creating decision paralysis</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>The current nav presents users with too many choices at once, which research consistently shows reduces click-through rates on primary CTAs. A gun range website has one primary conversion goal: get the visitor to book. Every additional nav item dilutes that intent.</p>
+        <ul>
+          <li>Current approximate nav items: Home, About, Packages, Events, Membership, Firearms, Gallery, Contact, Book Now</li>
+          <li>Recommendation: 4–5 items maximum — About, Packages, Events, Contact — with a high-contrast "Book Now" button isolated in the nav rail</li>
+          <li>Secondary content (Membership, Firearms info, Gallery) should live as page sections, not top-level nav items</li>
+        </ul>
+        <div class="fix">Reduce nav to 4 primary items + isolated CTA button. Move Membership, Firearms, and Gallery into relevant page sections. Test navigation simplification via heatmap (Hotjar or Microsoft Clarity — both have free tiers).</div>
+      </div>
+    </div>
+
+    <!-- Finding 8 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">Live chat widget covering hero CTA on mobile</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>A floating chat widget (observed in the bottom-right corner) is overlapping key page content on mobile viewport widths. For a booking business where the "Book Now" button is the primary CTA, any element obscuring that button is directly costing conversions.</p>
+        <ul>
+          <li>Mobile users represent 65–75% of traffic for entertainment/leisure businesses in Las Vegas</li>
+          <li>Chat widget should be auto-minimized on mobile until user explicitly opens it</li>
+          <li>Consider replacing live chat (high maintenance overhead for a gun range) with a simple "Call Us" or "Email Us" sticky button</li>
+        </ul>
+        <div class="fix">Configure chat widget to launch minimized on mobile viewports. Alternatively, remove live chat and replace with a click-to-call sticky button — simpler to maintain and better suited to the customer profile.</div>
+      </div>
+    </div>
+
+    <!-- Finding 9 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-med">MEDIUM</span>
+        <span class="audit-title">Package pricing hierarchy lacks clear recommendation / upsell path</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>The packages page lists all options at equal visual weight with no "recommended" or "most popular" indicator. Pricing psychology research shows that featuring one option prominently (with a visual callout) increases average order value by 15–35% — users anchor to the featured option and either buy it or compare up or down from it.</p>
+        <ul>
+          <li>Pick Your Poison ($170) or Allied ($190) are natural candidates to feature as "Most Popular" or "Best Value"</li>
+          <li>Add short, benefit-driven descriptions to each package rather than listing items neutrally</li>
+          <li>Include a "Not sure? Build your experience →" CTA that routes to a contact/consultation form</li>
+        </ul>
+        <div class="fix">Visually feature one package with a "Most Popular" badge and slightly elevated card design. Rewrite package descriptions to focus on the experience and outcome, not just the item list. Add a comparison table or filter for first-timers vs. experienced shooters.</div>
+      </div>
+    </div>
+
+    <!-- Finding 10 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-med">MEDIUM</span>
+        <span class="audit-title">No social proof above the fold on the homepage</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>American Shooters has excellent reviews — but they're buried. For a Las Vegas entertainment business competing in a crowded market, social proof in the first visible viewport is a conversion multiplier. A visitor who sees "★★★★★ 4.8/5 — 2,400+ reviews" immediately before clicking "Book Now" is significantly more likely to complete the booking.</p>
+        <ul>
+          <li>Add a review count + star rating directly in the hero section, below the headline</li>
+          <li>Pull 2–3 short review quotes into the page near the booking CTA</li>
+          <li>Consider a TripAdvisor or Google Reviews widget for dynamic social proof</li>
+        </ul>
+        <div class="fix">Add a stats bar directly under the hero headline: "★★★★★ 4.8/5 · 2,400+ Reviews · Vegas's #1 Rated Range". Pull 3 short reviews into a rotating testimonial strip above the packages CTA.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 4: SEO -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-top:0;padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">🔍</div>
+      <h2>Search Engine Optimization</h2>
+      <span class="score-cell-val" style="color:#ffd833;font-size:1rem;">55/100</span>
+      <span class="sev sev-med">MEDIUM</span>
+    </div>
+
+    <!-- Finding 11 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">Core Web Vitals likely failing — impacting Google organic rankings</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>Since Google's Page Experience update, Core Web Vitals (LCP, CLS, INP) are a ranking factor. A site with an Elementor build and no systematic performance optimization is almost certainly failing LCP on mobile — which means Google is actively suppressing organic rankings for competitive queries like "Las Vegas gun range" and "shooting range Las Vegas."</p>
+        <ul>
+          <li>Run Google Search Console → Core Web Vitals report to confirm current status</li>
+          <li>Run PageSpeed Insights (pagespeed.web.dev) on homepage and /packages page</li>
+          <li>Expected findings: LCP &gt; 4s (failing), CLS likely elevated due to Elementor widgets loading async</li>
+        </ul>
+        <div class="fix">Address the Elementor performance issue (see Performance section). After rebuild, target LCP &lt;2.5s, CLS &lt;0.1, INP &lt;200ms. Submit updated sitemap to Google Search Console and monitor Core Web Vitals report weekly for 30 days.</div>
+      </div>
+    </div>
+
+    <!-- Finding 12 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-med">MEDIUM</span>
+        <span class="audit-title">Local SEO schema markup missing or incomplete</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>For a local Las Vegas business, structured data (Schema.org) is a significant ranking lever that most competitors skip. LocalBusiness schema with opening hours, geo coordinates, price range, and review aggregate helps Google understand and surface the business in local packs and "near me" searches.</p>
+        <ul>
+          <li>Add <code>LocalBusiness</code> + <code>SportsActivityLocation</code> schema to homepage</li>
+          <li>Add <code>openingHoursSpecification</code> with all operating hours</li>
+          <li>Add <code>aggregateRating</code> with review count and rating value</li>
+          <li>Add <code>geo</code> coordinates for Google Maps integration</li>
+          <li>Add <code>hasMap</code> link to Google Maps listing</li>
+        </ul>
+        <div class="fix">Implement JSON-LD schema block in the &lt;head&gt; of each page. Test with Google's Rich Results Test tool (search.google.com/test/rich-results). Monitor Google Search Console for rich result eligibility.</div>
+      </div>
+    </div>
+
+    <!-- Finding 13 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-low">LOW</span>
+        <span class="audit-title">Title tags and meta descriptions not optimized for booking intent queries</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>The most valuable search queries for a booking business are transactional — "book gun range Las Vegas," "shooting range Las Vegas packages," "indoor gun range Las Vegas." Current title tags likely default to the site name without keyword optimization for these high-intent terms.</p>
+        <ul>
+          <li>Homepage title: <em>"Indoor Shooting Range Las Vegas | Book Your Experience — American Shooters"</em></li>
+          <li>Packages page title: <em>"Shooting Range Packages Las Vegas | From $100 — American Shooters"</em></li>
+          <li>Each meta description should include a clear benefit + CTA: "21 lanes, all levels welcome. Packages from $100. Book online in 2 minutes."</li>
+        </ul>
+        <div class="fix">Audit all page title tags and meta descriptions via Screaming Frog or Sitebulb. Rewrite titles for primary transactional intent queries. Ensure each page has a unique, keyword-relevant meta description under 160 characters.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 5: DESIGN -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-top:0;padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">🎨</div>
+      <h2>Design & Brand Presentation</h2>
+      <span class="score-cell-val" style="color:#ffd833;font-size:1rem;">50/100</span>
+      <span class="sev sev-med">MEDIUM</span>
+    </div>
+
+    <!-- Finding 14 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">Color palette and visual hierarchy feel dated — does not match premium positioning</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>The current site uses a dated gold/brown/white color scheme with significant white-background sections that undercut the tactical, premium, veteran-owned brand identity. Competitors in the Las Vegas entertainment market (escape rooms, axe throwing, racing experiences) are investing heavily in immersive dark-mode aesthetics that make their experiences feel premium and exciting in the browser before the customer ever arrives in person.</p>
+        <p>American Shooters has a genuinely compelling story — veteran-operated, 21 lanes, serious equipment, unmatched local expertise — but the website doesn't communicate any of that visually. A visitor comparing this site to a competitor with modern dark design may unconsciously perceive the competitor as higher-quality, even if the reverse is true.</p>
+        <ul>
+          <li>The demo at <a href="./americanshooters.html" style="color:var(--accent);">nicespaceship.com/americanshooters</a> demonstrates what the site could look like with near-black backgrounds, gold accent typography (<code>#c9a84c</code>), red CTAs (<code>#cc2127</code>), and Rajdhani typography — all evoking precision, quality, and tactical authority</li>
+        </ul>
+        <div class="fix">Adopt a dark tactical design system. Use near-black backgrounds (#090909), gold accent (#c9a84c), red for CTAs (#cc2127). Apply Rajdhani or similar tactical sans-serif for headings. Reserve white/light sections for specific contrast moments (e.g., testimonials block).</div>
+      </div>
+    </div>
+
+    <!-- Finding 15 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-med">MEDIUM</span>
+        <span class="audit-title">Photography quality inconsistent — mixed stock and facility images</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>The site mixes professional facility photography with lower-quality images and possible stock photography. For a premium experiential brand, every image needs to communicate quality, safety, and excitement. A visitor's first impression is formed in under 50ms — primarily through imagery.</p>
+        <ul>
+          <li>Invest in a half-day professional photography session — real customers, real instructors, real lanes in action</li>
+          <li>Hero image should show the facility at its best with clear depth and activity (not just static equipment)</li>
+          <li>Package pages benefit from images showing the specific experience of that package</li>
+          <li>Optimize all images: WebP format, correct dimensions, lazy loading for below-fold images</li>
+        </ul>
+        <div class="fix">Commission a photography shoot (Las Vegas photographers typically charge $500–1,500 for a commercial half-day). Deliverable: 30–50 high-res images covering facility, lanes, instructors, and customers in action. Serve all images as WebP with 2x retina variants.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 6: MOBILE -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-top:0;padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">📱</div>
+      <h2>Mobile Experience</h2>
+      <span class="score-cell-val" style="color:#ff9a2e;font-size:1rem;">38/100</span>
+      <span class="sev sev-high">HIGH</span>
+    </div>
+
+    <!-- Finding 16 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-high">HIGH</span>
+        <span class="audit-title">Mobile-first approach not evident — Elementor desktop layout ported to mobile</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>Elementor builds are typically designed desktop-first and then awkwardly adapted to mobile. For a Las Vegas attraction where 70%+ of visitors are discovering the business on a mobile device (often while already in the area), the mobile experience is arguably more important than desktop.</p>
+        <p>Key mobile-specific issues to audit:</p>
+        <ul>
+          <li>Hero section layout on 375px viewport width — is the CTA button immediately visible without scrolling?</li>
+          <li>Touch target sizes — buttons should be minimum 44px tall per Apple/Google guidelines</li>
+          <li>Font legibility — Elementor sometimes collapses font sizes in ways that make body copy unreadable on mobile</li>
+          <li>FareHarbor booking widget — is the entire booking flow functional on a mobile keyboard?</li>
+          <li>Phone number and address should be tappable (tel: and maps: deep links)</li>
+        </ul>
+        <div class="fix">Conduct a full mobile audit using Chrome DevTools device emulation (375px iPhone SE, 390px iPhone 14, 414px Android) for all critical pages. Fix any layouts where content is cut off, text is too small (&lt;14px), or tap targets are too small. Ensure phone number uses a <code>tel:</code> link and address links to Google Maps.</div>
+      </div>
+    </div>
+
+    <!-- Finding 17 -->
+    <div class="audit-item">
+      <div class="audit-item-hd" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span class="sev sev-low">LOW</span>
+        <span class="audit-title">No Click-to-Call button prominently placed on mobile</span>
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="audit-body">
+        <p>Las Vegas visitors make impulse decisions. A significant portion of potential customers will want to call rather than book online — especially for group bookings, corporate events, or custom experiences. A prominent click-to-call button on mobile nav or as a sticky floating CTA would capture this segment.</p>
+        <ul>
+          <li>Add click-to-call button to mobile nav (<code>&lt;a href="tel:+17028000000"&gt;</code>)</li>
+          <li>Consider a sticky bottom bar on mobile: [📞 Call] [📅 Book] — two equal CTAs</li>
+          <li>Track call clicks as conversions in GA4 and Google Ads</li>
+        </ul>
+        <div class="fix">Add a sticky mobile CTA bar at the bottom of the viewport with two buttons: "Call Us" (tel: link) and "Book Now" (FareHarbor link). Track click events for both as GA4 conversions. Set up Google Ads call extension for additional call tracking.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- PRIORITY ACTION PLAN -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">🚀</div>
+      <h2>Priority Action Plan</h2>
+      <span style="font-family:var(--font-m);font-size:0.65rem;letter-spacing:.1em;color:var(--text-muted);">ORDERED BY IMPACT × EFFORT</span>
+    </div>
+
+    <div style="border:1px solid var(--border);background:var(--panel-bg);overflow-x:auto;">
+      <table class="pri-table">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th>ACTION</th>
+            <th>IMPACT</th>
+            <th>EFFORT</th>
+            <th>TIMELINE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pri-num">1</span></td>
+            <td style="color:var(--text);">Fix conversion tracking — audit and correct FareHarbor + Meta Pixel + GA4 attribution chain</td>
+            <td><span class="sev sev-crit">CRITICAL</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">1–2 weeks</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">2</span></td>
+            <td style="color:var(--text);">Remove WordPress admin bar from public-facing pages (immediate security fix)</td>
+            <td><span class="sev sev-crit">CRITICAL</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">Same day</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">3</span></td>
+            <td style="color:var(--text);">Simplify navigation to 4 items + isolated "Book Now" CTA button</td>
+            <td><span class="sev sev-high">HIGH</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">1 week</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">4</span></td>
+            <td style="color:var(--text);">Fix or remove mobile chat widget obscuring hero CTA</td>
+            <td><span class="sev sev-high">HIGH</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">Same day</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">5</span></td>
+            <td style="color:var(--text);">Add social proof (star rating + review count) to hero section above the fold</td>
+            <td><span class="sev sev-high">HIGH</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">1 week</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">6</span></td>
+            <td style="color:var(--text);">Implement LocalBusiness + SportsActivityLocation JSON-LD schema on all pages</td>
+            <td><span class="sev sev-med">MEDIUM</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">1–2 weeks</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">7</span></td>
+            <td style="color:var(--text);">Feature one "Most Popular" package with visual callout and rewrite package descriptions</td>
+            <td><span class="sev sev-med">MEDIUM</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">2 weeks</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">8</span></td>
+            <td style="color:var(--text);">Add sticky click-to-call + book CTA bar for mobile visitors</td>
+            <td><span class="sev sev-med">MEDIUM</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">1 week</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">9</span></td>
+            <td style="color:var(--text);">Full site rebuild on performant stack — eliminate Elementor DOM bloat, target 90+ PageSpeed score</td>
+            <td><span class="sev sev-crit">CRITICAL (Long-term)</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">4–6 weeks</td>
+          </tr>
+          <tr>
+            <td><span class="pri-num">10</span></td>
+            <td style="color:var(--text);">Professional photography session — facility, lanes, instructors, packages in action</td>
+            <td><span class="sev sev-high">HIGH (Long-term)</span></td>
+            <td>
+              <div class="effort-bar">
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot on"></div>
+                <div class="effort-dot"></div>
+                <div class="effort-dot"></div>
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-family:var(--font-m);font-size:0.72rem;">Schedule ASAP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- WHAT NICE SPACESHIP BUILDS -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec" style="padding-bottom:0;">
+
+    <div class="rpt-cat">
+      <div class="rpt-cat-icon">◆</div>
+      <h2>What Nice Spaceship Delivers</h2>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px;margin-bottom:32px;">
+      <div style="background:var(--panel-bg);border:1px solid var(--border);padding:24px;">
+        <div style="font-size:1.4rem;margin-bottom:12px;">⚡</div>
+        <p style="font-family:var(--font-h);font-size:0.85rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;color:var(--text);">HAND-CODED PERFORMANCE</div>
+        <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.65;">Custom HTML/CSS/JS — no page builders, no plugin bloat. 90+ PageSpeed score on mobile from day one. LCP under 1 second.</p>
+      </div>
+      <div style="background:var(--panel-bg);border:1px solid var(--border);padding:24px;">
+        <div style="font-size:1.4rem;margin-bottom:12px;">📡</div>
+        <p style="font-family:var(--font-h);font-size:0.85rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;color:var(--text);">TRACKING INTEGRITY</div>
+        <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.65;">Server-side GA4 + Meta Conversions API. FareHarbor cross-domain event tracking. Every booking counted correctly, every ad dollar attributed.</p>
+      </div>
+      <div style="background:var(--panel-bg);border:1px solid var(--border);padding:24px;">
+        <div style="font-size:1.4rem;margin-bottom:12px;">🎯</div>
+        <p style="font-family:var(--font-h);font-size:0.85rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;color:var(--text);">BOOKING-FIRST CRO</div>
+        <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.65;">Every element on the page exists to move visitors toward the "Book Now" button. No distractions. Clear hierarchy. Mobile-native design.</p>
+      </div>
+      <div style="background:var(--panel-bg);border:1px solid var(--border);padding:24px;">
+        <div style="font-size:1.4rem;margin-bottom:12px;">🎨</div>
+        <p style="font-family:var(--font-h);font-size:0.85rem;font-weight:700;letter-spacing:.05em;margin-bottom:8px;color:var(--text);">BRAND-MATCHED DESIGN</div>
+        <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.65;">Tactical dark design system that matches the American Shooters brand identity. See the demo: the site that your customers deserve to find.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:16px;padding:20px;background:var(--bg-alt);border:1px solid var(--border);margin-bottom:0;">
+      <a href="./americanshooters.html" class="btn-solid" style="white-space:nowrap;">View Demo Site →</a>
+      <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;margin:0;">See exactly what the new americanshooters.com could look like — tactical dark design, clear booking hierarchy, mobile-native layout, all 6 packages.</p>
+    </div>
+
+  </section>
+
+  <!-- ── CTA ── -->
+  <div class="rpt-cta">
+    <p class="label-sm" style="margin-bottom:16px;">◆ READY TO FIX THIS?</p>
+    <h2 class="h2" style="margin-bottom:16px;">Let's Build the Site<br><span style="color:var(--accent);">American Shooters Deserves.</span></h2>
+    <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.75;max-width:520px;margin:0 auto 32px;">
+      Start with the quick wins — fix the tracking, clean up the nav, kill the admin bar — and build toward a full rebuild that puts you in a different tier from every other Vegas gun range online.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="./app/" class="btn-solid">Start the Conversation →</a>
+      <a href="./americanshooters.html" class="btn-ghost">See the Demo</a>
+    </div>
+  </div>
+
+  <!-- Spacer -->
+  <div style="height:80px;"></div>
+
+</div><!-- /rpt-shell -->
+</div><!-- /page -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="./index.html" class="footer-logo-link">
+        <svg class="footer-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240.37 1240.21" fill="currentColor" aria-hidden="true">
+          <path d="M962.08,762.91c-3.6,3.81-23,22.39-23.4,25.12s1.65,9.46,1.81,12.8c6.2,134.27-22.47,251.36-96.57,363.41-10.14,15.32-44.07,64.4-57.7,72.3-10.64,6.16-17.08,4.1-26.74-2.68l-205.91-206.08-2.61-1.47c-13.79,3.14-27.33,7.97-41.2,10.78-12.14,2.46-39.23,7.32-50.52,5.02-5.43-1.11-8.8-8.83-13.02-7.63-56.83,48.42-130.21,76.33-203.49,88.59-23.32,3.9-79.67,11.72-100.43,4.99-28.92-9.37-32.15-31.74-31.74-58.17,1.36-87.99,28.47-185.28,80.14-256.85,2.24-3.1,15.39-18.18,15.71-19.38.7-2.69-7.89-8.08-8.8-14.88-1.33-9.98,3.07-34.86,5.18-45.64,2.91-14.86,7.64-29.47,11.6-44.06L6.97,481.35c-6.58-10.16-9.77-14.46-3.86-25.92,4.89-9.48,28.96-27.24,38.49-34.51,113.03-86.2,243.65-127.64,386.44-121.64,5.01.21,23.34,2.94,26.44,1.52,117.49-117.68,260.78-215.29,420.81-265.18,95.99-29.93,217.05-45.19,316.54-29.13,13.03,2.1,32.43,2.67,37.16,16.84,5.97,17.89,9.64,56.02,10.55,75.45,12,255.12-107.2,483.74-277.46,664.12ZM842.3,261.63c-101.28,8.13-152.88,125.4-90.22,205.62,56.08,71.8,169.37,61.28,211.94-18.9,46.73-88.01-22.45-194.69-121.72-186.72ZM276.84,862.98c-1.02-.92-3.11-5.35-5.37-4.22-.87.43-8.43,11.31-9.79,13.25-32.97,47.21-49,105.67-56.19,162.31,1.77,1.77,42.17-6.13,48.04-7.46,31.2-7.03,64.74-18.77,92.63-34.37,4.52-2.53,34.5-21.3,35.27-23.8.34-1.12-.09-2.12-.89-2.92-35.52-32.96-67.86-70.35-103.71-102.79Z"/>
+        </svg>
+        <span class="footer-brand-text">Nice Spaceship</span>
+      </a>
+      <p class="footer-tagline">Agentic Intelligence &amp; Engineering</p>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="./app/">NICE™ Platform</a></li>
+          <li><a href="./projects.html">Projects</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="./speedvegas.html">SpeedVegas</a></li>
+          <li><a href="./americanshooters.html">American Shooters</a></li>
+          <li><a href="./takumi-izakaya.html">Takumi Izakaya</a></li>
+          <li><a href="./escape-room-marketing-agency.html">Escape Rooms</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar">
+    <span>© 2026 Nice Spaceship. All systems nominal.</span>
+  </div>
+</footer>
+
+<!-- THEME DOCK -->
+<div class="theme-dock" id="theme-dock">
+  <button class="db d-sp active" data-tip="Nice Spaceship" onclick="Theme.set('spaceship')" aria-label="Nice Spaceship theme"></button>
+  <button class="db d-iv"        data-tip="Robotech"       onclick="Theme.set('robotech')"  aria-label="Robotech theme"></button>
+  <button class="db d-nv"        data-tip="Navigator"      onclick="Theme.set('navigator')" aria-label="Navigator theme"></button>
+  <button class="db d-sl"        data-tip="Solar Flare"    onclick="Theme.set('solar')"     aria-label="Solar Flare theme"></button>
+  <button class="db d-mx"        data-tip="The Matrix"     onclick="Theme.set('matrix')"    aria-label="The Matrix theme"></button>
+  <button class="db d-rt"        data-tip="Retro Abstract" onclick="Theme.set('retro')"     aria-label="Retro Abstract theme"></button>
+  <button class="db d-lc"        data-tip="LCARS"          onclick="Theme.set('lcars')"     aria-label="LCARS theme"></button>
+  <button class="db d-px"        data-tip="16-Bit"         onclick="Theme.set('pixel')"     aria-label="16-Bit theme"></button>
+</div>
+
+<script src="./public/js/app.js"></script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

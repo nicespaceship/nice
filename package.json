@@ -1,0 +1,21 @@
+{
+  "name": "nice-spaceship",
+  "version": "3.5.0",
+  "private": true,
+  "description": "NICE — Mission Control for AI Agent Fleets",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "serve": "npx serve . -l 3000",
+    "build": "node scripts/build.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "@playwright/test": "1.58.2",
+    "@vitest/coverage-v8": "4.1.0",
+    "esbuild": "0.27.4",
+    "jsdom": "25.0.1",
+    "vitest": "4.1.0"
+  }
+}
