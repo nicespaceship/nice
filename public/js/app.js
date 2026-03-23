@@ -6,7 +6,7 @@
 /* ─────────────────────────────────────────────────────────────────
    SUPABASE CLIENT (shared across all pages via app.js)
 ───────────────────────────────────────────────────────────────── */
-const _SB_URL = 'https://txprptdrnsansjfoysjx.supabase.co';
+const _SB_URL = 'https://zacllshbgmnwsmliteqx.supabase.co';
 const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cHJwdGRybnNhbnNqZm95c2p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODAzNTYsImV4cCI6MjA4ODY1NjM1Nn0.SW6_480FohkwaxVX-y8ddT5UkjWE9ZMch1W7A2Ji1Zc';
 const _sbApp = (typeof supabase !== 'undefined')
   ? supabase.createClient(_SB_URL, _SB_KEY)

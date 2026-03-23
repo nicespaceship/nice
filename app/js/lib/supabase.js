@@ -16,8 +16,8 @@
  */
 
 const SB = (() => {
-  const URL  = 'https://txprptdrnsansjfoysjx.supabase.co';
-  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cHJwdGRybnNhbnNqZm95c2p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODAzNTYsImV4cCI6MjA4ODY1NjM1Nn0.SW6_480FohkwaxVX-y8ddT5UkjWE9ZMch1W7A2Ji1Zc';
+  const URL  = 'https://zacllshbgmnwsmliteqx.supabase.co';
+  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphY2xsc2hiZ21ud3NtbGl0ZXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTAwOTcsImV4cCI6MjA4OTg2NjA5N30.JzkhFbUMUVByEz1m6j2R4D8bXWMhPO2F0YxIqxYGq28';
 
   let _client = null;
   let _online = navigator.onLine ?? true;
