@@ -1,5 +1,6 @@
 {
-  "ignoreCommand": "exit 0",
+  "buildCommand": null,
+  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
