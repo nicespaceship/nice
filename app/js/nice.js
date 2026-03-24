@@ -16,7 +16,7 @@ const Theme = (() => {
   const THEMES = [
     { id:'spaceship', name:'Nice Spaceship', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
       data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
-    { id:'robotech', name:'Robotech', builtin:true, accent:'#f8f8f8', preview:['#f8f8f8','#080808','#444444'],
+    { id:'robotech', name:'Pod', builtin:true, accent:'#f8f8f8', preview:['#f8f8f8','#080808','#444444'],
       data:{ colors:{ '--bg':'#f8f8f8','--bg2':'#efefef','--surface':'#e4e4e4','--surface2':'#d8d8d8','--border':'#c8c8c8','--border-hi':'#888888','--accent':'#080808','--accent2':'#444444','--text':'#0f0f0f','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(239,239,239,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
     { id:'navigator', name:'Navigator', builtin:true, accent:'#00e5ff', preview:['#02090f','#00e5ff','#0099bb'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(0,200,240,0.05)','--surface2':'rgba(0,200,240,0.09)','--border':'rgba(0,229,255,0.25)','--border-hi':'rgba(0,229,255,0.6)','--accent':'#00e5ff','--accent2':'#0099bb','--text':'#cce8f0','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' } },
