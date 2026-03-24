@@ -811,7 +811,7 @@
   text-align:left; cursor:pointer; transition:all .2s;
 }
 .sch-slot-default:hover { background:rgba(34,197,94,.12); border-color:#22c55e; }
-.bridge-slot-empty { border-style:dashed; opacity:.7; }
+.bridge-slot-empty { border-style:dashed; border-color:rgba(255,60,60,.25); }
 .bridge-slot-empty .bridge-slot-label { color:var(--text-muted); opacity:.6; }
 
 /* Mission Feed */
