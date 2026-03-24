@@ -2876,39 +2876,67 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   CAPTAIN'S LOG (Audit Log)
+   CAPTAIN'S LOG (Mission Control treatment)
 ═══════════════════════════════════════════════════════════════════ */
 .log-wrap { max-width:var(--width-large); margin:0; }
-.log-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
-.log-title { font-family:var(--font-h); font-size:1.5rem; color:var(--text); margin:0 0 4px; }
-.log-sub { color:var(--text-muted); font-size:.82rem; margin:0; }
-.log-count { color:var(--text-muted); font-size:.78rem; font-family:var(--font-m); white-space:nowrap; }
+.log-count { color:var(--text-muted); font-size:.7rem; font-family:var(--font-m); white-space:nowrap; letter-spacing:.05em; }
 
-.log-filter-bar { display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap; }
-.log-cat-filters { display:flex; gap:4px; flex-wrap:wrap; }
-.log-cat-btn {
-  padding:4px 10px; background:none; border:1px solid var(--border); border-radius:var(--radius);
-  color:var(--text-muted); font-family:var(--font-m); font-size:.6rem; letter-spacing:.06em;
-  cursor:pointer; transition:all .2s; text-transform:uppercase;
+/* ── Gauge Strip ── */
+.log-gauge-strip {
+  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;
+  padding:10px 12px; border:1px solid var(--border); background:var(--panel-bg); border-radius:var(--radius);
 }
-.log-cat-btn:hover { border-color:var(--text); color:var(--text); }
-.log-cat-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(99,102,241,.08); }
+.log-gauge {
+  flex:1; min-width:80px; display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:8px 6px; border:1px solid var(--border); border-radius:var(--radius);
+  background:none; cursor:pointer; transition:all .2s; color:var(--text-muted);
+}
+.log-gauge:hover { border-color:var(--log-cat-color,var(--accent)); color:var(--log-cat-color,var(--accent)); }
+.log-gauge-active { border-color:var(--log-cat-color,var(--accent)) !important; color:var(--log-cat-color) !important;
+  background:color-mix(in srgb, var(--log-cat-color) 6%, var(--panel-bg));
+  box-shadow:0 0 10px color-mix(in srgb, var(--log-cat-color) 15%, transparent); }
+.log-gauge-icon { font-size:.9rem; }
+.log-gauge-num { font-family:var(--font-h); font-size:.9rem; font-weight:700; }
+.log-gauge-label { font-family:var(--font-m); font-size:.4rem; letter-spacing:.1em; text-transform:uppercase; }
+.log-gauge-bar { width:100%; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.log-gauge-fill { height:100%; background:var(--log-cat-color,var(--accent)); border-radius:2px; transition:width .4s ease; }
+
+/* ── Toolbar ── */
+.log-toolbar { display:flex; gap:8px; margin-bottom:14px; align-items:center; }
+.log-toolbar .search-box { flex:1; max-width:300px; }
+
+/* ── Timeline ── */
+.log-timeline { display:flex; flex-direction:column; gap:0; }
+.log-date-group { margin-bottom:12px; }
+.log-date-label {
+  font-family:var(--font-m); font-size:.52rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--text-muted); padding:8px 0 6px 40px; border-bottom:1px solid var(--border); margin-bottom:4px;
+}
+.log-date-entries { display:flex; flex-direction:column; gap:0; position:relative; }
+
+/* Timeline connector line */
+.log-entry { display:flex; gap:10px; padding:8px 12px; position:relative; transition:background .15s; border-radius:var(--radius); }
+.log-entry:hover { background:var(--surface,rgba(255,255,255,.03)); }
+.log-entry-line { position:absolute; left:25px; top:0; bottom:0; width:1px; opacity:.15; }
+.log-entry-dot { position:absolute; left:22px; top:14px; width:7px; height:7px; border-radius:50%;
+  border:1.5px solid; background:var(--bg); z-index:1; }
+.log-entry-icon { flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; background:rgba(255,255,255,.04); margin-left:16px; }
+.log-entry-body { flex:1; min-width:0; }
+.log-entry-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+.log-entry-badge { font-family:var(--font-m); font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; }
+.log-entry-time { font-family:var(--font-m); font-size:.62rem; color:var(--text-muted); }
+.log-entry-desc { font-size:.8rem; color:var(--text); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.log-empty { text-align:center; padding:40px 20px; color:var(--text-muted); font-size:.85rem; }
+
+/* Entry appear animation */
+.log-entry-anim { animation:log-entry-in .3s ease both; }
+@keyframes log-entry-in { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:none; } }
+
+/* Keep filter-input for other views */
 .filter-input { background:var(--surface,var(--bg)); border:1px solid var(--border); color:var(--text);
   padding:6px 10px; border-radius:var(--radius); font-size:.82rem; font-family:var(--font-m); flex:1; min-width:120px; max-width:300px; }
 .filter-input:focus { border-color:var(--accent); outline:none; }
-
-.log-timeline { display:flex; flex-direction:column; gap:2px; }
-.log-entry { display:flex; gap:10px; padding:10px 12px; border-radius:var(--radius);
-  border:1px solid transparent; transition:border-color .15s; }
-.log-entry:hover { border-color:var(--border); background:var(--surface,rgba(255,255,255,.03)); }
-.log-entry-icon { flex-shrink:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center;
-  border-radius:50%; background:rgba(255,255,255,.04); }
-.log-entry-body { flex:1; min-width:0; }
-.log-entry-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
-.log-entry-badge { font-family:var(--font-m); font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; }
-.log-entry-time { font-family:var(--font-m); font-size:.7rem; color:var(--text-muted); }
-.log-entry-desc { font-size:.82rem; color:var(--text); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.log-empty { text-align:center; padding:40px 20px; color:var(--text-muted); font-size:.85rem; }
 
 /* ═══════════════════════════════════════════════════════════════════
    COMMAND PALETTE — Data Separator
@@ -2920,13 +2948,17 @@
    RESPONSIVE — Phase 1 additions
 ═══════════════════════════════════════════════════════════════════ */
 @media (max-width:768px) {
-  .log-header { flex-direction:column; gap:8px; }
-  .log-filter-bar { flex-direction:column; }
-  .log-filter-bar .filter-select, .log-filter-bar .filter-input { width:100%; }
+  .log-toolbar { flex-direction:column; }
+  .log-toolbar .search-box { max-width:100%; }
+  .log-gauge-strip { gap:6px; }
+  .log-gauge { min-width:60px; padding:6px 4px; }
 }
 @media (max-width:480px) {
-  .log-entry { padding:8px; gap:8px; }
-  .log-entry-icon { width:24px; height:24px; }
+  .log-entry { padding:6px 8px; gap:6px; }
+  .log-entry-icon { width:24px; height:24px; margin-left:10px; }
+  .log-entry-line { left:19px; }
+  .log-entry-dot { left:16px; }
+  .log-date-label { padding-left:30px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
