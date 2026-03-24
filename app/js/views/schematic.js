@@ -145,17 +145,42 @@ const SchematicView = (() => {
       });
     }
 
-    // Slot swap dropdowns
-    el.querySelectorAll('.sch-slot-swap-select').forEach(select => {
-      select.addEventListener('change', () => {
-        const slotId = select.dataset.slotId;
-        const newBpId = select.value;
-        if (!newBpId) return;
-        _assignToSlot(shipId, slotId, newBpId);
+    // Searchable agent dropdowns
+    const allAgents = _getAvailableAgents(_getSlotMap());
+    el.querySelectorAll('.sch-search-drop').forEach(drop => {
+      const input = drop.querySelector('.sch-search-input');
+      const list = drop.querySelector('.sch-search-list');
+      const slotId = drop.dataset.slotId;
+
+      function showResults(query) {
+        const q = (query || '').toLowerCase();
+        const filtered = q ? allAgents.filter(a => a.name.toLowerCase().includes(q)) : allAgents.slice(0, 20);
+        if (!filtered.length) {
+          list.innerHTML = '<div class="sch-search-empty">No agents found</div>';
+        } else {
+          list.innerHTML = filtered.map(a =>
+            `<div class="sch-search-item" data-id="${_esc(a.id)}">${_esc(a.name)}</div>`
+          ).join('');
+        }
+        list.style.display = 'block';
+      }
+
+      input.addEventListener('focus', () => showResults(input.value));
+      input.addEventListener('input', () => showResults(input.value));
+      input.addEventListener('click', e => e.stopPropagation());
+
+      list.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.sch-search-item');
+        if (!item) return;
+        _assignToSlot(shipId, slotId, item.dataset.id);
         render(el);
       });
-      // Prevent click from bubbling to the slot prompt handler
-      select.addEventListener('click', e => e.stopPropagation());
+
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!drop.contains(e.target)) list.style.display = 'none';
+      }, { once: false });
     });
 
     // Slot remove buttons
@@ -328,10 +353,11 @@ const SchematicView = (() => {
       const bp = _resolveBp(bpId);
       const RC = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
 
-      // Build agent options for dropdown
-      const options = allAgents.map(a =>
-        `<option value="${_esc(a.id)}" ${a.id === bpId ? 'selected' : ''}>${_esc(a.name)}</option>`
-      ).join('');
+      const placeholder = bp ? 'Swap Agent...' : 'Assign Agent...';
+      const searchDropdown = `<div class="sch-search-drop" data-slot-id="${slot.id}">
+        <input type="text" class="sch-search-input" placeholder="${placeholder}" autocomplete="off" />
+        <div class="sch-search-list"></div>
+      </div>`;
 
       if (bp) {
         const bpRarity = _getBpRarity(bp);
@@ -344,10 +370,7 @@ const SchematicView = (() => {
             </div>
             <span class="bridge-slot-name">${_esc(bp.name)}</span>
             <div class="bridge-slot-swap">
-              <select class="sch-slot-swap-select" data-slot-id="${slot.id}">
-                <option value="">— Swap Agent —</option>
-                ${options}
-              </select>
+              ${searchDropdown}
               <button class="btn btn-sm sch-slot-remove" data-slot-id="${slot.id}" title="Remove agent">✕</button>
             </div>
           </div>`;
@@ -356,10 +379,7 @@ const SchematicView = (() => {
         <div class="bridge-slot bridge-slot-empty" data-slot-id="${slot.id}">
           <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
           <div class="bridge-slot-swap">
-            <select class="sch-slot-swap-select" data-slot-id="${slot.id}">
-              <option value="">— Assign Agent —</option>
-              ${options}
-            </select>
+            ${searchDropdown}
           </div>
         </div>`;
     }).join('');
