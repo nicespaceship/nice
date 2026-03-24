@@ -653,7 +653,7 @@
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty)::before {
   content:''; position:absolute;
   inset:-6px;
-  border:0.5px dashed var(--accent,#fff);
+  border:0.5px dashed #22c55e;
   border-radius:10px;
   opacity:.2;
   pointer-events:none;
@@ -670,20 +670,20 @@
   z-index:4;
   background:conic-gradient(
     from var(--sch-notch-angle, 0deg),
-    var(--accent,#fff) 0deg,
-    var(--accent,#fff) 8deg,
+    #22c55e 0deg,
+    #22c55e 8deg,
     transparent 8deg,
     transparent 90deg,
-    var(--accent,#fff) 90deg,
-    var(--accent,#fff) 92deg,
+    #22c55e 90deg,
+    #22c55e 92deg,
     transparent 92deg,
     transparent 180deg,
-    var(--accent,#fff) 180deg,
-    var(--accent,#fff) 184deg,
+    #22c55e 180deg,
+    #22c55e 184deg,
     transparent 184deg,
     transparent 270deg,
-    var(--accent,#fff) 270deg,
-    var(--accent,#fff) 274deg,
+    #22c55e 270deg,
+    #22c55e 274deg,
     transparent 274deg,
     transparent 360deg
   );
