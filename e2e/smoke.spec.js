@@ -39,8 +39,8 @@ test.describe('NICE Smoke Tests', () => {
     const sidebar = page.locator('#app-sidebar');
     await page.locator('#sidebar-toggle').click({ timeout: 5000 });
     await expect(sidebar).toHaveClass(/open/, { timeout: 3000 });
-    await page.locator('.side-link[data-view="home"]').click({ force: true, timeout: 3000 });
-    await expect(page.locator('#app-page-title')).toHaveText('NICE SPACESHIP', { timeout: 5000 });
+    await page.locator('.side-link[data-view="blueprints"]').click({ force: true, timeout: 3000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
   });
 
   test('all main views render without error', async ({ page }) => {
@@ -678,8 +678,8 @@ test.describe('NICE Blueprint Drawer', () => {
       State.set('user', { id: 'drawer-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
     });
 
-    // Navigate to bridge (blueprints tab)
-    await page.evaluate(() => { window.location.hash = '#/bridge'; });
+    // Navigate to bridge blueprints tab
+    await page.evaluate(() => { window.location.hash = '#/bridge?tab=blueprints'; });
     await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
 
     // Wait for grid to render
@@ -710,7 +710,7 @@ test.describe('NICE Blueprint Drawer', () => {
       State.set('user', { id: 'drawer-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
     });
 
-    await page.evaluate(() => { window.location.hash = '#/bridge'; });
+    await page.evaluate(() => { window.location.hash = '#/bridge?tab=blueprints'; });
     await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
     await expect(page.locator('.tcg-card').first()).toBeVisible({ timeout: 5000 });
 
