@@ -250,7 +250,9 @@
   height:24px;
   background:#cc99ff;
   border-radius:0 0 40px 0;
+  z-index:1;
 }
+[data-theme="lcars"] .side-header { z-index:5; }
 [data-theme="lcars"] .side-header .app-brand-text { color:#000; font-size:1.4rem; }
 [data-theme="lcars"] .side-header-actions button,
 [data-theme="lcars"] .side-header-actions .app-hdr-btn,
@@ -328,6 +330,7 @@
 /* HUD panel — LCARS styled */
 [data-theme="lcars"] .app-hud-panel {
   background:#000; border:2px solid #666688; border-radius:0 0 24px 0; margin:0;
+  position:relative; z-index:10;
 }
 [data-theme="lcars"] .app-hud-panel .dock-lbl { color:#ff9966; }
 [data-theme="lcars"] .app-hud-panel .dock-lbl a { color:#ff9966; }
