@@ -494,6 +494,15 @@
 [data-theme="lcars"] .bp-view-btn:hover { background:#ffcc99; color:#000; }
 [data-theme="lcars"] .bp-view-btn svg { stroke:#000; }
 
+/* Card action buttons */
+[data-theme="lcars"] .c-btn {
+  border-radius:24px; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+}
+[data-theme="lcars"] .c-btn.bp-activated {
+  background:#ff9966; color:#000; border-color:#ff9966;
+}
+[data-theme="lcars"] .c-btn.bp-activated:hover { background:#cc4444; color:#000; border-color:#cc4444; }
+
 [data-theme="lcars"] .filter-select {
   border-radius:24px; border:2px solid #666688; background:#000; color:#ff9966;
   font-weight:700; text-transform:uppercase;
