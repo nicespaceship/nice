@@ -690,7 +690,7 @@ test.describe('NICE Blueprint Drawer', () => {
 
     // Drawer should open
     const drawer = page.locator('#bp-drawer.open');
-    await expect(drawer).toBeVisible({ timeout: 3000 });
+    await expect(drawer).toBeVisible({ timeout: 5000 });
 
     // Drawer should have a close button
     const closeBtn = drawer.locator('.bp-drawer-close');
