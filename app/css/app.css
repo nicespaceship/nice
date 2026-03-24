@@ -745,8 +745,8 @@
 .schematic-wired .schematic-card-slot .tcg-mini-name { position:relative; z-index:1; order:-1; margin-bottom:auto; padding-top:4px; }
 .schematic-wired .schematic-card-slot .tcg-mini-badge { position:relative; z-index:1; margin-top:auto; margin-bottom:4px; }
 .schematic-wired .schematic-empty-slot { background:transparent; }
-.schematic-card-empty { opacity:.5; cursor:default; }
-.schematic-empty-slot { padding:4px 6px; border:3px solid var(--border); border-radius:8px; background:var(--panel-bg); aspect-ratio:5/7; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+.schematic-card-empty { opacity:.6; cursor:default; }
+.schematic-empty-slot { padding:4px 6px; border:3px solid rgba(255,60,60,.4); border-radius:8px; background:transparent; aspect-ratio:5/7; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow:0 0 8px rgba(255,60,60,.1); }
 .schematic-card-role { font-family:var(--font-m); font-size:.36rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
 .schematic-card-rarity { font-family:var(--font-m); font-size:.32rem; letter-spacing:.1em; font-weight:600; }
 .schematic-slot-label { font-family:var(--font-m); font-size:.36rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; text-align:center; margin-top:2px; }
