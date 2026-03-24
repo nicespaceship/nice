@@ -638,7 +638,7 @@
 .bridge-hero-schematic svg { width:100%; height:auto; }
 
 /* Schematic Wired Layout */
-.schematic-wired { position:relative; display:flex; align-items:stretch; width:100%; gap:0; overflow:hidden; }
+.schematic-wired { position:relative; display:flex; align-items:stretch; width:100%; gap:0; overflow:visible; }
 .schematic-wired > .sch-radar-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
 .schematic-col { display:flex; flex-direction:column; gap:6px; justify-content:center; flex:0 0 100px; z-index:2; position:relative; }
 .schematic-center { z-index:1; }
@@ -649,7 +649,7 @@
 .schematic-center { flex:1; min-width:40px; }
 .schematic-svg { position:absolute; inset:0; z-index:0; pointer-events:none; }
 .schematic-card-slot { cursor:pointer; }
-.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; outline:0.25px solid var(--accent,#fff); outline-offset:3px; }
+.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; outline:0.25px solid var(--accent,#fff); outline-offset:3px; overflow:visible; }
 .schematic-wired .schematic-card-slot .tcg-mini-art {
   background:transparent; position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%); z-index:0; width:76px; height:76px;
