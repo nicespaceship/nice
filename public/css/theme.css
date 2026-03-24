@@ -184,32 +184,229 @@
 
 /* LCARS — Star Trek */
 [data-theme="lcars"] {
-  --bg:           #000012;
-  --bg2:          #080020;
-  --surface:      rgba(200,120,80,0.07);
-  --surface2:     rgba(180,140,255,0.07);
+  --bg:           #000000;
+  --bg2:          #000000;
+  --surface:      rgba(255,153,102,0.06);
+  --surface2:     rgba(204,153,255,0.06);
   --border:       #cc7744;
   --border-hi:    #ff9966;
-  --accent:       #ff9966;
-  --accent2:      #bb88ff;
-  --text:         #ffeecc;
-  --fg:           #ffeecc;
-  --text-muted:   rgba(255,220,180,0.55);
-  --text-dim:     rgba(255,180,120,0.22);
-  --glow:         0 0 14px rgba(255,120,80,0.22);
-  --glow-hi:      0 0 28px rgba(200,140,255,0.4);
-  --font-d:       'Orbitron', sans-serif;
-  --font-h:       'Share Tech Mono', monospace;
-  --font-b:       'Inter', sans-serif;
-  --font-m:       'Fira Code', monospace;
-  --radius:       20px;
+  --accent:       #ff9966;  /* butterscotch */
+  --accent2:      #cc99ff;  /* african-violet */
+  --text:         #ff9966;
+  --fg:           #ff9966;
+  --text-muted:   #cc99ff;
+  --text-dim:     rgba(255,153,102,0.18);
+  --glow:         none;
+  --glow-hi:      none;
+  --font-d:       'Antonio', sans-serif;
+  --font-h:       'Antonio', sans-serif;
+  --font-b:       'Antonio', sans-serif;
+  --font-m:       'Share Tech Mono', monospace;
+  --radius:       24px;
   --scan:         0;
-  --border-width: 1px;
-  --nav-bg:       rgba(0,0,18,0.98);
-  --panel-bg:     rgba(0,0,18,0.97);
-  --hero-grad:    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(200,100,60,0.1) 0%, transparent 70%);
+  --border-width: 0px;
+  --nav-bg:       #000000;
+  --panel-bg:     #000000;
+  --hero-grad:    none;
   --bg-pattern:   none;
+  /* LCARS palette extras */
+  --lcars-orange:    #ff9966;
+  --lcars-peach:     #ffaa90;
+  --lcars-sunflower: #ffcc99;
+  --lcars-violet:    #cc99ff;
+  --lcars-lilac:     #cc55ff;
+  --lcars-blue:      #99ccff;
+  --lcars-sky:       #aaaaff;
+  --lcars-gold:      #ffaa00;
+  --lcars-red:       #cc4444;
+  --lcars-gray:      #666688;
 }
+
+/* ── LCARS Layout Overrides ── */
+
+/* Sidebar — thick colored bars */
+[data-theme="lcars"] .app-sidebar {
+  background:#000;
+  border-right:none;
+  border-radius:0;
+}
+[data-theme="lcars"] .app-sidebar.open {
+  border-right:4px solid #cc99ff;
+}
+[data-theme="lcars"] .side-link {
+  border-radius:0 24px 24px 0;
+  margin:2px 8px 2px 0;
+  padding:8px 16px 8px 12px;
+  background:#ff9966;
+  color:#000;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:.7rem;
+  border:none;
+  transition:background .15s;
+}
+[data-theme="lcars"] .side-link:hover {
+  background:#ffcc99;
+}
+[data-theme="lcars"] .side-link.active {
+  background:#cc99ff;
+  color:#000;
+}
+[data-theme="lcars"] .side-link svg { display:none; }
+[data-theme="lcars"] .side-header {
+  background:#cc99ff;
+  border-radius:0 0 24px 0;
+  padding:12px 16px;
+  margin:0 8px 4px 0;
+}
+[data-theme="lcars"] .side-header .app-brand-text { color:#000; }
+[data-theme="lcars"] .side-footer {
+  background:#99ccff;
+  border-radius:0 24px 0 0;
+  margin:4px 8px 0 0;
+  padding:8px 12px;
+}
+[data-theme="lcars"] .side-footer * { color:#000; }
+
+/* Top nav bar */
+[data-theme="lcars"] .app-topbar {
+  background:#000;
+  border-bottom:4px solid #ff9966;
+}
+
+/* Panels & cards — LCARS elbows */
+[data-theme="lcars"] .widget-card,
+[data-theme="lcars"] .tc-section,
+[data-theme="lcars"] .detail-section {
+  border:none;
+  border-left:6px solid #ff9966;
+  border-radius:0 0 0 24px;
+  background:rgba(255,153,102,0.04);
+}
+[data-theme="lcars"] .widget-card:nth-child(even),
+[data-theme="lcars"] .tc-section:nth-child(even) {
+  border-left-color:#cc99ff;
+  background:rgba(204,153,255,0.04);
+}
+[data-theme="lcars"] .widget-card:nth-child(3n),
+[data-theme="lcars"] .tc-section:nth-child(3n) {
+  border-left-color:#99ccff;
+  background:rgba(153,204,255,0.04);
+}
+
+/* Buttons — pill-shaped LCARS */
+[data-theme="lcars"] .btn {
+  border-radius:24px;
+  background:#ff9966;
+  color:#000;
+  border:none;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+}
+[data-theme="lcars"] .btn:hover {
+  background:#ffcc99;
+  box-shadow:none;
+}
+[data-theme="lcars"] .btn-primary {
+  background:#cc99ff;
+  color:#000;
+}
+[data-theme="lcars"] .btn-primary:hover {
+  background:#ddbbff;
+}
+
+/* Tab bars — LCARS colored segments */
+[data-theme="lcars"] .bp-type-tab,
+[data-theme="lcars"] .bridge-hero-tab,
+[data-theme="lcars"] .log-view-tab {
+  border-radius:24px;
+  background:#666688;
+  color:#000;
+  border:none;
+  font-weight:700;
+  text-transform:uppercase;
+  padding:6px 16px;
+  margin:2px;
+}
+[data-theme="lcars"] .bp-type-tab.active,
+[data-theme="lcars"] .bridge-hero-tab.active,
+[data-theme="lcars"] .log-view-tab.active {
+  background:#ff9966;
+  color:#000;
+  border-bottom:none;
+}
+[data-theme="lcars"] .bp-type-tab:hover,
+[data-theme="lcars"] .bridge-hero-tab:hover,
+[data-theme="lcars"] .log-view-tab:hover {
+  background:#ffcc99;
+  color:#000;
+}
+
+/* Mission cards */
+[data-theme="lcars"] .mc-card {
+  border:none;
+  border-left:4px solid #ff9966;
+  border-radius:0 0 0 20px;
+  background:rgba(255,153,102,0.05);
+}
+[data-theme="lcars"] .mc-card-running {
+  border-left-color:#cc99ff;
+}
+[data-theme="lcars"] .mc-card-completed {
+  border-left-color:#99ccff;
+}
+[data-theme="lcars"] .mc-card-failed {
+  border-left-color:#cc4444;
+}
+
+/* Pipeline nodes */
+[data-theme="lcars"] .mc-pipe-node {
+  border-radius:24px;
+  background:#666688;
+  color:#ffeecc;
+  border:none;
+}
+[data-theme="lcars"] .mc-pipe-node:hover,
+[data-theme="lcars"] .mc-pipe-active {
+  background:#ff9966;
+  color:#000;
+}
+
+/* Gauge strip */
+[data-theme="lcars"] .mc-gauge,
+[data-theme="lcars"] .log-gauge {
+  border-radius:24px;
+  border-color:#666688;
+}
+
+/* Schematic cards */
+[data-theme="lcars"] .schematic-wired .tcg-card-mini {
+  border-color:#ff9966;
+  border-radius:20px;
+}
+
+/* Input fields */
+[data-theme="lcars"] input[type="text"],
+[data-theme="lcars"] select,
+[data-theme="lcars"] .search-input,
+[data-theme="lcars"] .filter-select {
+  border-radius:24px;
+  border:2px solid #666688;
+  background:#000;
+  color:#ff9966;
+}
+[data-theme="lcars"] input[type="text"]:focus,
+[data-theme="lcars"] .search-input:focus {
+  border-color:#cc99ff;
+}
+
+/* Scrollbar */
+[data-theme="lcars"] ::-webkit-scrollbar { width:8px; }
+[data-theme="lcars"] ::-webkit-scrollbar-track { background:#000; }
+[data-theme="lcars"] ::-webkit-scrollbar-thumb { background:#666688; border-radius:24px; }
+[data-theme="lcars"] ::-webkit-scrollbar-thumb:hover { background:#ff9966; }
 
 /* 16-Bit Pixel */
 [data-theme="pixel"] {
