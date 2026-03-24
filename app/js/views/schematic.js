@@ -87,15 +87,32 @@ const SchematicView = (() => {
       });
     });
 
-    // Slot click → open detail
+    // Slot click → prefill prompt with @AgentName
     el.querySelectorAll('.bridge-slot-filled, .schematic-card-slot[data-bp-id]').forEach(slot => {
+      slot.style.cursor = 'pointer';
       slot.addEventListener('click', () => {
         const bpId = slot.dataset.bpId;
-        if (bpId && typeof BlueprintsView !== 'undefined' && BlueprintsView.openDrawer) {
-          BlueprintsView.openDrawer(bpId);
+        if (!bpId) return;
+        const bp = _resolveBp(bpId);
+        const name = bp?.name || bpId.replace(/^bp-/, '').replace(/-/g, ' ');
+        if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
+          PromptPanel.show();
+          PromptPanel.prefill('@' + name + ' ');
         }
       });
     });
+
+    // Core click → prefill prompt with spaceship name
+    const coreHit = el.querySelector('.sch-core-hit');
+    if (coreHit) {
+      coreHit.addEventListener('click', () => {
+        const shipName = activeShip?.name || 'Ship';
+        if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
+          PromptPanel.show();
+          PromptPanel.prefill('@' + shipName + ' ');
+        }
+      });
+    }
 
     // Ship switcher
     el.querySelectorAll('.bridge-hero-switch').forEach(btn => {
@@ -239,7 +256,8 @@ const SchematicView = (() => {
       '<animate attributeName="r" values="42;54;42" dur="2.5s" repeatCount="indefinite"/>' +
       '<animate attributeName="opacity" values=".05;.12;.05" dur="2.5s" repeatCount="indefinite"/>' +
     '</circle>' +
-    '<circle cx="' + rcx + '" cy="' + rcy + '" r="21" fill="var(--accent,#fff)" opacity=".9"/>';
+    '<circle cx="' + rcx + '" cy="' + rcy + '" r="21" fill="var(--accent,#fff)" opacity=".9"/>' +
+    '<circle class="sch-core-hit" cx="' + rcx + '" cy="' + rcy + '" r="50" fill="transparent" style="cursor:pointer;pointer-events:all"/>';
 
     svgEl.innerHTML = paths + reactor + dots;
   }
