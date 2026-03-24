@@ -395,8 +395,8 @@ const SetupWizard = (() => {
       `;
       actions.querySelector('#wiz-goto-ship').addEventListener('click', () => {
         close();
-        if (typeof Router !== 'undefined') Router.navigate('#/blueprints/spaceships/' + shipId);
-        else location.hash = '#/blueprints/spaceships/' + shipId;
+        if (typeof Router !== 'undefined') Router.navigate('#/bridge/spaceships/' + shipId);
+        else location.hash = '#/bridge/spaceships/' + shipId;
       });
     }).catch(err => {
       body.innerHTML = `

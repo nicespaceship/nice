@@ -78,7 +78,9 @@ const ShipSetupWizard = (() => {
     const progress = _overlay.querySelector('.wizard-progress');
 
     progress.innerHTML = Array.from({ length: STEP_COUNT }, (_, i) =>
-      `<span class="wizard-dot${i === n ? ' active' : ''}${i < n ? ' done' : ''}">${i < n ? '✓' : STEP_LABELS[i]}</span>`
+      `<span class="wizard-step-wrap${i === n ? ' active' : ''}${i < n ? ' done' : ''}">` +
+        `<span class="wizard-dot">${i < n ? '✓' : i + 1}</span>` +
+      `</span>`
     ).join('');
 
     renderers[n](body, actions);
@@ -94,9 +96,20 @@ const ShipSetupWizard = (() => {
   }
 
   function _getAgentCatalog() {
-    let agents = [];
-    if (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) agents = [...BlueprintsView.SEED];
-    return agents;
+    // Prefer BlueprintStore (full 261 agents from DB) over small static SEED
+    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.listAgents) {
+      const all = BlueprintStore.listAgents();
+      if (all.length) return [...all];
+    }
+    if (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED && BlueprintsView.SEED.length) return [...BlueprintsView.SEED];
+    return [];
+  }
+
+  /** Ensure catalog is loaded before rendering dropdowns */
+  async function _ensureCatalog() {
+    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.ensureCatalogLoaded) {
+      await BlueprintStore.ensureCatalogLoaded();
+    }
   }
 
   function _canSlot(slotMaxRarity, agentRarity) {
@@ -118,13 +131,13 @@ const ShipSetupWizard = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     STEP 0 — Name Your Orchestrator
+     STEP 0 — Name Your Spaceship
   ═══════════════════════════════════════════════════════════════ */
   function _renderStepName(body, actions) {
     const sc = _getShipClass();
     const bpName = _blueprint.name || 'Orchestrator';
     body.innerHTML = `
-      <h2 class="wizard-title">Name Your Orchestrator</h2>
+      <h2 class="wizard-title">Name Your Spaceship</h2>
       <p class="wizard-subtitle">Give your <strong>${_esc(bpName)}</strong> a name — your business or project.</p>
       <input type="text" class="wizard-input" id="ship-wiz-name" placeholder="e.g. ${_esc(bpName)}" maxlength="60" value="${_esc(_data.shipName)}" autofocus>
       <div class="ship-wizard-bp-preview">
@@ -229,8 +242,10 @@ const ShipSetupWizard = (() => {
     let html = '<div class="ship-wizard-slots">';
     for (let i = 0; i < sc.slots.length; i++) {
       const slot = sc.slots[i];
+      // Ship rarity = max agent rarity the ship can accept
+      const shipRarity = _blueprint.rarity || 'Common';
       const compatible = agents
-        .filter(a => _canSlot(slot.maxRarity, _agentRarity(a)))
+        .filter(a => _canSlot(shipRarity, _agentRarity(a)))
         .sort((a, b) => {
           const ro = { Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
           return (ro[_agentRarity(b)] || 0) - (ro[_agentRarity(a)] || 0);
@@ -238,8 +253,6 @@ const ShipSetupWizard = (() => {
 
       // Check both index-based and slot.id-based assignments
       const currentVal = _data.slotAssignments[i] || _data.slotAssignments[slot.id] || '';
-      const rarityColor = RARITY_COLORS[slot.maxRarity] || '#888';
-
       // For auto-created crew, show their name as an option
       const crewMember = crew[i];
       const hasNewAgent = currentVal.startsWith?.('__new__');
@@ -248,7 +261,6 @@ const ShipSetupWizard = (() => {
       html += `<div class="ship-wizard-slot">
         <div class="ship-wizard-slot-info">
           <span class="ship-wizard-slot-label">${_esc(slot.label)}</span>
-          <span class="ship-wizard-slot-rarity" style="color:${rarityColor}">${slot.maxRarity}</span>
         </div>
         <div class="ship-wizard-slot-select">
           <select data-slot="${i}">
@@ -282,26 +294,32 @@ const ShipSetupWizard = (() => {
   }
 
   /* ── AI Setup: pre-fill then show dropdowns ── */
-  function _renderAutoFill(container) {
+  async function _renderAutoFill(container) {
+    container.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Loading agents...</p>';
+    await _ensureCatalog();
+
     const sc = _getShipClass();
     const crew = _blueprint.crew || _blueprint.nodes || [];
 
+    // Use blueprint crew first (e.g. Picard, Riker, Worf for Enterprise)
     if (crew.length > 0) {
       for (let i = 0; i < sc.slots.length; i++) {
-        const crewMember = crew[i];
-        if (crewMember) {
-          _data.slotAssignments[i] = `__new__${crewMember.label}`;
+        if (crew[i]) {
+          _data.slotAssignments[i] = `__new__${crew[i].label}`;
         }
       }
-    } else {
-      _fallbackAssign();
     }
+
+    // Fill any remaining empty slots with best-match catalog agents
+    _fallbackAssign();
 
     _renderSlotDropdowns(container);
   }
 
   /* ── Manual: empty dropdowns ── */
-  function _renderManualCrew(container) {
+  async function _renderManualCrew(container) {
+    container.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Loading agents...</p>';
+    await _ensureCatalog();
     _renderSlotDropdowns(container);
   }
 
@@ -309,14 +327,18 @@ const ShipSetupWizard = (() => {
   function _fallbackAssign() {
     const sc = _getShipClass();
     const agents = _getAgentCatalog();
+    const shipRarity = _blueprint.rarity || 'Common';
     const used = new Set();
 
     for (let i = 0; i < sc.slots.length; i++) {
+      // Skip slots that already have assignments (e.g. from blueprint crew)
+      if (_data.slotAssignments[i]) continue;
+
       const slot = sc.slots[i];
       const label = (slot.label || '').toLowerCase();
       const match = agents.find(a => {
         if (used.has(a.id)) return false;
-        if (!_canSlot(slot.maxRarity, _agentRarity(a))) return false;
+        if (!_canSlot(shipRarity, _agentRarity(a))) return false;
         const cat = (a.category || a.config?.role || '').toLowerCase();
         const name = (a.name || '').toLowerCase();
         return cat.includes(label) || name.includes(label) || label.includes(cat);
@@ -325,11 +347,7 @@ const ShipSetupWizard = (() => {
         _data.slotAssignments[i] = match.id;
         used.add(match.id);
       } else {
-        // No role match — just pick the next compatible agent
-        const any = agents.find(a => {
-          if (used.has(a.id)) return false;
-          return _canSlot(slot.maxRarity, _agentRarity(a));
-        });
+        const any = agents.find(a => !used.has(a.id) && _canSlot(shipRarity, _agentRarity(a)));
         if (any) {
           _data.slotAssignments[i] = any.id;
           used.add(any.id);
@@ -369,7 +387,7 @@ const ShipSetupWizard = (() => {
 
       body.innerHTML = `
         <div class="wizard-success">
-          <div class="wizard-success-icon">&#128640;</div>
+          <div class="wizard-success-icon"><svg width="48" height="48" viewBox="0 0 1240.37 1240.21" fill="currentColor"><path d="M962.08,762.91c-3.6,3.81-23,22.39-23.4,25.12s1.65,9.46,1.81,12.8c6.2,134.27-22.47,251.36-96.57,363.41-10.14,15.32-44.07,64.4-57.7,72.3-10.64,6.16-17.08,4.1-26.74-2.68l-205.91-206.08-2.61-1.47c-13.79,3.14-27.33,7.97-41.2,10.78-12.14,2.46-39.23,7.32-50.52,5.02-5.43-1.11-8.8-8.83-13.02-7.63-56.83,48.42-130.21,76.33-203.49,88.59-23.32,3.9-79.67,11.72-100.43,4.99-28.92-9.37-32.15-31.74-31.74-58.17,1.36-87.99,28.47-185.28,80.14-256.85,2.24-3.1,15.39-18.18,15.71-19.38.7-2.69-7.89-8.08-8.8-14.88-1.33-9.98,3.07-34.86,5.18-45.64,2.91-14.86,7.64-29.47,11.6-44.06L6.97,481.35c-6.58-10.16-9.77-14.46-3.86-25.92,4.89-9.48,28.96-27.24,38.49-34.51,113.03-86.2,243.65-127.64,386.44-121.64,5.01.21,23.34,2.94,26.44,1.52,117.49-117.68,260.78-215.29,420.81-265.18,95.99-29.93,217.05-45.19,316.54-29.13,13.03,2.1,32.43,2.67,37.16,16.84,5.97,17.89,9.64,56.02,10.55,75.45,12,255.12-107.2,483.74-277.46,664.12ZM842.3,261.63c-101.28,8.13-152.88,125.4-90.22,205.62,56.08,71.8,169.37,61.28,211.94-18.9,46.73-88.01-22.45-194.69-121.72-186.72ZM276.84,862.98c-1.02-.92-3.11-5.35-5.37-4.22-.87.43-8.43,11.31-9.79,13.25-32.97,47.21-49,105.67-56.19,162.31,1.77,1.77,42.17-6.13,48.04-7.46,31.2-7.03,64.74-18.77,92.63-34.37,4.52-2.53,34.5-21.3,35.27-23.8.34-1.12-.09-2.12-.89-2.92-35.52-32.96-67.86-70.35-103.71-102.79Z"/></svg></div>
           <h2 class="wizard-title">${_esc(_data.shipName || _blueprint.name)} is Deployed!</h2>
           <p class="wizard-subtitle">${filledCount} of ${sc.slots.length} agent stations filled.</p>
           ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned!</p>' : ''}
@@ -381,14 +399,14 @@ const ShipSetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="ship-wiz-close">Close</button>
-        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View Orchestrator</button>
+        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View Spaceship Schematic</button>
       `;
       actions.querySelector('#ship-wiz-close').addEventListener('click', close);
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {
         close();
         localStorage.setItem('nice-mc-ship', 'bp-' + _blueprint.id);
-        if (typeof Router !== 'undefined') Router.navigate('#/');
-        else location.hash = '#/';
+        if (typeof Router !== 'undefined') Router.navigate('#/bridge?tab=schematic');
+        else location.hash = '#/bridge?tab=schematic';
       });
     }).catch(err => {
       body.innerHTML = `

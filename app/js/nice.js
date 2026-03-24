@@ -630,7 +630,6 @@ const NICE = (() => {
       if (user) {
         _migrateLocalSpaceships(user);
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
-        _triggerWelcomeEmail(user);
       }
       if (typeof AuditLog !== 'undefined') {
         AuditLog.log('auth', { description: user ? 'Signed in as ' + (user.email || 'user') : 'Signed out' });
@@ -646,19 +645,6 @@ const NICE = (() => {
       State.set('user', null);
       _updateAuthUI(null);
     });
-  }
-
-  /* ── Welcome email (once per user) ── */
-  async function _triggerWelcomeEmail(user) {
-    if (!user || !SB.isReady()) return;
-    const key = 'nice-welcome-sent-' + user.id;
-    if (localStorage.getItem(key)) return;
-    localStorage.setItem(key, '1');
-    try {
-      await SB.functions.invoke('onboarding-email', {
-        body: { type: 'welcome', user_id: user.id },
-      });
-    } catch { /* non-critical */ }
   }
 
   /* ── Migrate localStorage spaceship slots to Supabase user_spaceships ── */
@@ -716,36 +702,39 @@ const NICE = (() => {
   /* ── Register routes ── */
   function _initRoutes() {
     // 4 primary zones
-    Router.on('/', HomeView);                       // Bridge
-    Router.on('/blueprints', BlueprintsView);        // Blueprints
-    Router.on('/log', LogView);                      // Log
+    Router.on('/', HomeView);                       // NICE (chat home)
+    Router.on('/bridge', BlueprintsView);            // Bridge
     Router.on('/dock', { title: 'Bridge', render: () => { location.hash = '#/'; } });
 
-    // Blueprints sub-routes
-    Router.on('/blueprints/agents', BlueprintsView);
-    Router.on('/blueprints/agents/new', AgentBuilderView);
-    Router.on('/blueprints/agents/:id', AgentDetailView);
-    Router.on('/blueprints/spaceships', BlueprintsView);
-    Router.on('/blueprints/spaceships/new', SpaceshipBuilderView);
-    Router.on('/blueprints/spaceships/:id', SpaceshipDetailView);
+    // Bridge sub-routes
+    Router.on('/bridge/agents', BlueprintsView);
+    Router.on('/bridge/agents/new', AgentBuilderView);
+    Router.on('/bridge/agents/:id', AgentDetailView);
+    Router.on('/bridge/spaceships', BlueprintsView);
+    Router.on('/bridge/spaceships/new', SpaceshipBuilderView);
+    Router.on('/bridge/spaceships/:id', SpaceshipDetailView);
 
-    // Legacy redirects → primary zones
-    Router.on('/agents', { title: 'Blueprints', render: () => { location.hash = '#/blueprints/agents'; } });
+    // Legacy redirects → bridge
+    Router.on('/blueprints', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
+    Router.on('/blueprints/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
+    Router.on('/blueprints/spaceships', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=spaceship'; } });
+    Router.on('/agents', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=agent'; } });
     Router.on('/agents/new', AgentBuilderView);
     Router.on('/agents/:id', AgentDetailView);
-    Router.on('/spaceships', { title: 'Blueprints', render: () => { location.hash = '#/blueprints/spaceships'; } });
+    Router.on('/spaceships', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=spaceship'; } });
     Router.on('/spaceships/new', SpaceshipBuilderView);
     Router.on('/spaceships/:id', SpaceshipDetailView);
-    Router.on('/missions', { title: 'Bridge', render: () => { location.hash = '#/'; } });
+    Router.on('/log', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
+    Router.on('/missions', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
     if (typeof MissionDetailView !== 'undefined') Router.on('/missions/:id', MissionDetailView);
-    Router.on('/analytics', { title: 'Log', render: () => { location.hash = '#/log?tab=operations'; } });
-    Router.on('/cost', { title: 'Log', render: () => { location.hash = '#/log?tab=operations'; } });
+    Router.on('/analytics', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
+    Router.on('/cost', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
     Router.on('/board', { title: 'Bridge', render: () => { location.hash = '#/'; } });
-    Router.on('/workflows', { title: 'Log', render: () => { location.hash = '#/log'; } });
+    Router.on('/workflows', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
 
     // Ecosystem routes (kept)
-    Router.on('/connectors', { title: 'Blueprints', render: () => { location.hash = '#/blueprints'; } });
-    Router.on('/integrations', { title: 'Blueprints', render: () => { location.hash = '#/blueprints'; } });
+    Router.on('/connectors', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
+    Router.on('/integrations', { title: 'Integrations', render: () => { location.hash = '#/security?tab=integrations'; } });
     Router.on('/vault', { title: 'Vault', render: () => { location.hash = '#/security?tab=vault'; } });
     Router.on('/security', SecurityView);
     Router.on('/profile', ProfileView);
@@ -1278,18 +1267,21 @@ const NICE = (() => {
     // Gamification DB sync (merge localStorage with Supabase)
     if (typeof Gamification !== 'undefined' && Gamification.initFromDB) Gamification.initFromDB();
 
-    // Floating prompt panel (route-aware: only on agent/ship/missions/comms views)
+    // Floating prompt panel (route-aware)
     if (typeof PromptPanel !== 'undefined') {
       PromptPanel.init();
       PromptPanel.syncRoute();
-      window.addEventListener('hashchange', () => PromptPanel.syncRoute());
-      // Brand logo click → show prompt bar
+      window.addEventListener('hashchange', () => {
+        PromptPanel.syncRoute();
+        // On home route, hide floating bar (HomeView embeds it inline)
+        const path = (location.hash || '#/').replace('#', '') || '/';
+        if (path === '/') PromptPanel.hide();
+      });
+      // Brand logo click → navigate to home (chat)
       const brandBtn = document.getElementById('nice-brand-btn');
       if (brandBtn) brandBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        PromptPanel.show();
-        const input = document.querySelector('#nice-ai-input');
-        if (input) input.focus();
+        location.hash = '#/';
       });
     }
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.init();
@@ -1299,13 +1291,6 @@ const NICE = (() => {
     Router.init(appView);
 
     // Sidebar gamification removed — rank & resources shown in Home view widgets
-
-    // Show onboarding for first-time users, then tutorial mission
-    if (typeof Onboarding !== 'undefined' && !Onboarding.isComplete()) {
-      setTimeout(() => Onboarding.start(), 800);
-    } else if (typeof TutorialMission !== 'undefined' && !TutorialMission.isComplete()) {
-      setTimeout(() => TutorialMission.start(), 1000);
-    }
 
     // Activity feed
     if (typeof ActivityFeed !== 'undefined') ActivityFeed.init();

@@ -226,16 +226,9 @@ const SettingsView = (() => {
           </div>
         </div>
 
-        <!-- Onboarding -->
+        <!-- Shortcuts -->
         <div class="settings-section">
-          <h3 class="settings-section-title">Onboarding</h3>
-          <div class="settings-row">
-            <div class="settings-row-info">
-              <span class="settings-row-name">App Tour</span>
-              <span class="settings-row-desc">Replay the guided tour of NICE features.</span>
-            </div>
-            <button class="btn btn-sm" id="btn-replay-tour">Replay Tour</button>
-          </div>
+          <h3 class="settings-section-title">Shortcuts</h3>
           <div class="settings-row">
             <div class="settings-row-info">
               <span class="settings-row-name">Keyboard Shortcuts</span>
@@ -404,14 +397,6 @@ const SettingsView = (() => {
 
     // Check for Stripe return
     if (typeof FuelModal !== 'undefined') FuelModal.checkReturn();
-
-    // Replay onboarding tour
-    document.getElementById('btn-replay-tour')?.addEventListener('click', () => {
-      if (typeof Onboarding !== 'undefined') {
-        localStorage.removeItem(Onboarding.STORAGE_KEY);
-        Onboarding.start();
-      }
-    });
 
     // Show keyboard shortcuts
     document.getElementById('btn-show-shortcuts')?.addEventListener('click', () => {

@@ -98,7 +98,7 @@ const MessageBar = (() => {
     msgs.push({
       text: 'Agent fleet standing by for mission assignments.',
       icon: '#icon-agent',
-      route: '#/blueprints/agents',
+      route: '#/bridge/agents',
       type: 'system',
       priority: 3,
     });

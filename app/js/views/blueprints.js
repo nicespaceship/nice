@@ -4,7 +4,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const BlueprintsView = (() => {
-  const title = 'Blueprints';
+  const title = 'Bridge';
   const _esc = Utils.esc;
 
   const RARITY_COLORS = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
@@ -274,18 +274,22 @@ const BlueprintsView = (() => {
 
     el.innerHTML = `
       <div class="bp-wrap">
-        ${embedded ? '' : `<div class="bp-header">
-          <div>
-            <h1 class="bp-title">Blueprints</h1>
-            <p class="bp-sub">Browse and manage your orchestrator and agent blueprints.</p>
-          </div>
-        </div>`}
 
-        <!-- Type Tabs: Spaceships | Agents -->
+        <!-- Type Tabs -->
         <div class="bp-type-tabs" id="bp-type-tabs">
+          <button class="bp-type-tab" data-tab="schematic">Schematic</button>
           <button class="bp-type-tab active" data-tab="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-type-tab" data-tab="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
+          <button class="bp-type-tab" data-tab="missions">Missions</button>
+          <button class="bp-type-tab" data-tab="operations">Operations</button>
+          <button class="bp-type-tab" data-tab="log">Log</button>
         </div>
+
+        <!-- Log tab content (rendered by LogView sub-modules) -->
+        <div id="bp-log-content" style="display:none"></div>
+
+        <!-- Schematic content (rendered by DockView when active) -->
+        <div id="bp-schematic-content" style="display:none"></div>
 
 
         <div class="bp-search-row">
@@ -333,20 +337,26 @@ const BlueprintsView = (() => {
 
     `;
 
-    // Detect active tab from hash route for route consolidation
+    // Detect active tab from hash route or query param
     const _hash = (window.location.hash || '').split('?')[0];
-    if (_hash === '#/agents' || _hash === '#/blueprints/agents') _activeTab = 'agent';
-    else if (_hash === '#/spaceships' || _hash === '#/blueprints/spaceships') _activeTab = 'spaceship';
+    const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
+    const _tabParam = _hashParams.get('tab');
+    const validTabs = ['schematic', 'spaceship', 'agent', 'missions', 'operations', 'log'];
+    if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
+    else if (_hash === '#/agents' || _hash === '#/bridge/agents') _activeTab = 'agent';
+    else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') _activeTab = 'spaceship';
+    else if (_hash === '#/log') _activeTab = 'missions';
     else _activeTab = 'spaceship';
 
     // Highlight the correct tab button
-    if (_activeTab !== 'agent') {
-      document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.bp-type-tab[data-tab="${_activeTab}"]`)?.classList.add('active');
-    }
+    document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.bp-type-tab[data-tab="${_activeTab}"]`)?.classList.add('active');
+
+    // Show/hide schematic vs catalog UI
+    _toggleSchematicView();
 
     _bindEvents();
-    _applyFilters(); // async — renders activated section + paginated grid
+    if (['spaceship', 'agent'].includes(_activeTab)) _applyFilters(); // async — renders activated section + paginated grid
     _loadCommunityBlueprints();
     _handleDeepLink();
   }
@@ -823,20 +833,14 @@ const BlueprintsView = (() => {
     if (!el) return;
     el.style.display = 'flex';
     let buttons;
-    if (_activeTab === 'spaceship') {
-      buttons = [
-        { val: 'all', label: 'All' },
-      ];
-    } else {
-      buttons = [
-        { val: 'all', label: 'All' },
-        { val: 'Common', label: 'Common' },
-        { val: 'Rare', label: 'Rare' },
-        { val: 'Epic', label: 'Epic' },
-        { val: 'Legendary', label: 'Legendary' },
-        { val: 'Mythic', label: 'Mythic' },
-      ];
-    }
+    buttons = [
+      { val: 'all', label: 'All' },
+      { val: 'Common', label: 'Common' },
+      { val: 'Rare', label: 'Rare' },
+      { val: 'Epic', label: 'Epic' },
+      { val: 'Legendary', label: 'Legendary' },
+      { val: 'Mythic', label: 'Mythic' },
+    ];
     el.innerHTML = buttons.map((b, i) =>
       `<button class="bp-rarity-btn${i === 0 ? ' active' : ''}" data-rarity="${b.val}" aria-pressed="${i === 0 ? 'true' : 'false'}">${b.label}</button>`
     ).join('');
@@ -1153,6 +1157,56 @@ const BlueprintsView = (() => {
     } catch(e) { /* UI already updated optimistically */ }
   }
 
+  /* ── Toggle between schematic and catalog views ── */
+  function _toggleSchematicView() {
+    const schematicEl = document.getElementById('bp-schematic-content');
+    const logEl = document.getElementById('bp-log-content');
+    const searchRow = document.querySelector('.bp-search-row');
+    const resultBar = document.getElementById('bp-result-bar');
+    const activatedWrap = document.getElementById('bp-activated-wrap');
+    const grid = document.getElementById('bp-grid');
+    const loadMore = document.getElementById('bp-load-more');
+
+    const isLogTab = ['missions', 'operations', 'log'].includes(_activeTab);
+    const isCatalogTab = ['spaceship', 'agent'].includes(_activeTab);
+    const isSchematic = _activeTab === 'schematic';
+
+    // Catalog UI (search, filters, grid)
+    const catalogDisplay = isCatalogTab ? '' : 'none';
+    if (searchRow) searchRow.style.display = catalogDisplay;
+    if (resultBar) resultBar.style.display = catalogDisplay;
+    if (activatedWrap) activatedWrap.style.display = catalogDisplay;
+    if (grid) grid.style.display = catalogDisplay;
+    if (loadMore) loadMore.style.display = catalogDisplay;
+
+    // Schematic
+    if (schematicEl) {
+      schematicEl.style.display = isSchematic ? '' : 'none';
+      if (isSchematic && typeof SchematicView !== 'undefined') SchematicView.render(schematicEl);
+      if (!isSchematic && typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
+    }
+
+    // Log tabs (Missions, Operations, Log)
+    if (logEl) {
+      logEl.style.display = isLogTab ? '' : 'none';
+      if (isLogTab) {
+        _renderLogTab(logEl);
+      }
+    }
+  }
+
+  function _renderLogTab(el) {
+    if (_activeTab === 'missions' && typeof MissionsView !== 'undefined') {
+      MissionsView.render(el);
+    } else if (_activeTab === 'operations' && typeof AnalyticsView !== 'undefined') {
+      AnalyticsView.render(el);
+    } else if (_activeTab === 'log' && typeof AuditLogView !== 'undefined') {
+      AuditLogView.render(el);
+    } else {
+      el.innerHTML = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
+    }
+  }
+
   function _bindEvents() {
     // Type tabs (Agent / Spaceship)
     document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
@@ -1161,11 +1215,11 @@ const BlueprintsView = (() => {
       document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       _activeTab = tab.dataset.tab;
-      _colSort = { key: null, dir: 'asc' }; // reset column sort on tab change
-      // Rebuild rarity/tier filter buttons per tab
+      _colSort = { key: null, dir: 'asc' };
+      _toggleSchematicView();
+      if (_activeTab === 'schematic' || ['missions', 'operations', 'log'].includes(_activeTab)) return;
       _updateRarityFilters();
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
-  
       _applyFilters();
     });
 
@@ -1215,7 +1269,7 @@ const BlueprintsView = (() => {
       || (typeof BlueprintStore !== 'undefined' && (BlueprintStore.getAgent(bpId) || BlueprintStore.getAgent(rawId) || BlueprintStore.getSpaceship(bpId) || BlueprintStore.getSpaceship(rawId)))
       || null;
     if (!bp) return;
-    const url = window.location.origin + '/app/#/blueprints?bp=' + encodeURIComponent(bpId);
+    const url = window.location.origin + '/app/#/bridge?bp=' + encodeURIComponent(bpId);
 
     // Always copy to clipboard (fallback for non-secure contexts)
     try {
@@ -1794,7 +1848,7 @@ const BlueprintsView = (() => {
         return `<div class="bp-drawer-deps">
           <span class="bp-deps-icon">&#9888;</span>
           Needs ${needed} agents. You have ${activeAgents}.
-          <a href="#/blueprints?tab=agent" class="bp-deps-link" onclick="document.getElementById('bp-drawer')?.classList.remove('open');document.getElementById('bp-drawer-overlay')?.classList.remove('open')">Browse Agent Blueprints &rarr;</a>
+          <a href="#/bridge?tab=agent" class="bp-deps-link" onclick="document.getElementById('bp-drawer')?.classList.remove('open');document.getElementById('bp-drawer-overlay')?.classList.remove('open')">Browse Agent Blueprints &rarr;</a>
         </div>`;
       }
     } else if (type === 'fleet') {
@@ -1805,7 +1859,7 @@ const BlueprintsView = (() => {
         return `<div class="bp-drawer-deps">
           <span class="bp-deps-icon">&#9888;</span>
           Needs ${neededShips} spaceships. You have ${activeShips}.
-          <a href="#/blueprints?tab=spaceship" class="bp-deps-link" onclick="document.getElementById('bp-drawer')?.classList.remove('open');document.getElementById('bp-drawer-overlay')?.classList.remove('open')">Browse Spaceship Blueprints &rarr;</a>
+          <a href="#/bridge?tab=spaceship" class="bp-deps-link" onclick="document.getElementById('bp-drawer')?.classList.remove('open');document.getElementById('bp-drawer-overlay')?.classList.remove('open')">Browse Spaceship Blueprints &rarr;</a>
         </div>`;
       }
     }

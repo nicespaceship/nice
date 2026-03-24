@@ -121,7 +121,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `Gamification`    | `gamification.js`    | XP system, ranks, ship classes, achievements               |
 | `CommandPalette`  | `command-palette.js` | Cmd+K fuzzy search overlay (routes + live data)            |
 | `Keyboard`        | `keyboard.js`        | Global keyboard shortcuts & chord system                   |
-| `Onboarding`      | `onboarding.js`      | First-run guided tour (8 steps)                            |
+| `McpBridge`       | `mcp-bridge.js`      | Bridges MCP connections to ToolRegistry for agents         |
 
 ### View Modules (`app/js/views/`)
 | View              | File                 | Route(s)                        | Title            |
@@ -148,7 +148,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 ```
 state.js → supabase.js → router.js → [21 view scripts] →
 audit-log.js → data-io.js → activity-feed.js → notify.js → gamification.js →
-command-palette.js → keyboard.js → onboarding.js → nice.js
+command-palette.js → keyboard.js → mcp-bridge.js → nice.js
 ```
 
 ### Key localStorage Keys
@@ -161,7 +161,7 @@ command-palette.js → keyboard.js → onboarding.js → nice.js
 | `nice-widget-order`   | Home dashboard widget order       |
 | `nice-workflows`      | Saved workflow definitions        |
 | `nice-custom-themes`  | Custom theme definitions          |
-| `nice-onboarding-done`| Tour completion flag              |
+| `nice-mcp-connections`| MCP connection cache              |
 | `nice-budget`         | Cost tracker budget data          |
 
 ## Gamification System

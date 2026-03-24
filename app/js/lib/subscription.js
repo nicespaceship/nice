@@ -111,7 +111,7 @@ const Subscription = (() => {
       }
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Spaceship Upgraded!', message: `Upgraded to ${(planId || '').charAt(0).toUpperCase() + (planId || '').slice(1)} class.`, type: 'success' });
       if (typeof Gamification !== 'undefined') Gamification.addXP('upgrade_spaceship');
-      if (typeof Router !== 'undefined') Router.navigate('#/blueprints/spaceships/' + spaceshipId);
+      if (typeof Router !== 'undefined') Router.navigate('#/bridge/spaceships/' + spaceshipId);
       return;
     }
 
@@ -143,7 +143,7 @@ const Subscription = (() => {
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Spaceship Upgraded!', message: `Upgraded to ${(planId || '').charAt(0).toUpperCase() + (planId || '').slice(1)} class (demo mode).`, type: 'success' });
       if (typeof Gamification !== 'undefined') Gamification.addXP('upgrade_spaceship');
       if (typeof UpgradeModal !== 'undefined') UpgradeModal.close();
-      if (typeof Router !== 'undefined') Router.navigate('#/blueprints/spaceships/' + spaceshipId);
+      if (typeof Router !== 'undefined') Router.navigate('#/bridge/spaceships/' + spaceshipId);
     }
   }
 

@@ -26,10 +26,17 @@ const AgentExecutor = (() => {
     const onStep     = opts.onStep || null;
     const startMs    = Date.now();
 
-    // Resolve available tools
+    // Load MCP tools into ToolRegistry (account-level, all agents get them)
+    let mcpToolIds = [];
+    if (typeof McpBridge !== 'undefined') {
+      mcpToolIds = McpBridge.loadTools();
+    }
+
+    // Resolve available tools (explicit + MCP)
+    const allToolIds = [...toolIds, ...mcpToolIds];
     const availableTools = [];
     if (typeof ToolRegistry !== 'undefined') {
-      toolIds.forEach(id => {
+      allToolIds.forEach(id => {
         const tool = ToolRegistry.get(id);
         if (tool) availableTools.push(tool);
       });

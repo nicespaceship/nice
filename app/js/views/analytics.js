@@ -379,7 +379,7 @@ const AnalyticsView = (() => {
     if (!wrap) return;
 
     if (!agents.length) {
-      wrap.innerHTML = '<p class="text-muted" style="font-size:.82rem;padding:12px">No agents added yet. Visit the <a href="#/blueprints">Blueprint Catalog</a> to get started.</p>';
+      wrap.innerHTML = '<p class="text-muted" style="font-size:.82rem;padding:12px">No agents added yet. Visit the <a href="#/bridge">Blueprint Catalog</a> to get started.</p>';
       return;
     }
 
@@ -408,7 +408,7 @@ const AnalyticsView = (() => {
           ${rows.map(r => `
             <tr>
               <td>
-                <a href="#/blueprints/agents/${r.agent.id}" class="ana-agent-link">${_esc(r.agent.name)}</a>
+                <a href="#/bridge/agents/${r.agent.id}" class="ana-agent-link">${_esc(r.agent.name)}</a>
               </td>
               <td><span class="status-dot ${r.agent.status === 'active' ? 'dot-g' : r.agent.status === 'error' ? 'dot-r' : 'dot-a'}"></span> ${r.agent.status || 'idle'}</td>
               <td>${r.total}</td>
@@ -683,7 +683,7 @@ const AnalyticsView = (() => {
           ${rows.map(r => `
             <tr>
               <td>
-                <a href="#/blueprints/agents/${r.agent.id}" class="ana-agent-link">
+                <a href="#/bridge/agents/${r.agent.id}" class="ana-agent-link">
                   <span class="status-dot ${r.agent.status === 'active' ? 'dot-g' : 'dot-a'}"></span>
                   ${_esc(r.agent.name)}
                 </a>

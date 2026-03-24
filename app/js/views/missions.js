@@ -680,7 +680,7 @@ const MissionDetailView = (() => {
             <div class="detail-section">
               <h3 class="detail-section-title">Assigned Agent</h3>
               ${agent ? `
-                <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="Router.navigate('#/blueprints/agents/${agent.id}')">
+                <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="Router.navigate('#/bridge/agents/${agent.id}')">
                   <div class="agent-avatar" style="background:${_agentColor(agent.role)}">${_esc(agentInitials)}</div>
                   <div>
                     <div style="font-weight:600;font-size:.82rem">${_esc(agent.name)}</div>

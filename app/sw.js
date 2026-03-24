@@ -26,7 +26,6 @@ const PRECACHE_ASSETS = [
   '/app/js/lib/gamification.js',
   '/app/js/lib/command-palette.js',
   '/app/js/lib/keyboard.js',
-  '/app/js/lib/onboarding.js',
   '/app/js/lib/audit-log.js',
   '/app/js/lib/data-io.js',
   '/app/js/lib/activity-feed.js',
@@ -39,7 +38,6 @@ const PRECACHE_ASSETS = [
   '/app/js/lib/auth-modal.js',
   '/app/js/lib/blueprint-store.js',
   '/app/js/lib/message-bar.js',
-  '/app/js/lib/tutorial-mission.js',
   // View modules
   '/app/js/views/home.js',
   '/app/js/views/profile.js',

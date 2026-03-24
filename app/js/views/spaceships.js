@@ -58,7 +58,7 @@ const SpaceshipsView = (() => {
             ${_SHIP_VIEW_MODES.map(m => `<button class="mc-dock-view-btn${_viewMode === m.id ? ' active' : ''}" data-view-mode="${m.id}" title="${m.tip}" aria-label="${m.tip} view">${m.icon}</button>`).join('')}
           </div>
           <button class="btn btn-sm" id="btn-import-ship-key" title="Import Spaceship Key">Import Spaceship Key</button>
-          <a href="#/blueprints" class="btn btn-sm">Blueprint Catalog</a>
+          <a href="#/bridge" class="btn btn-sm">Blueprint Catalog</a>
           <button class="btn btn-primary btn-sm" id="btn-wizard-setup">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
             New Spaceship
@@ -191,7 +191,7 @@ const SpaceshipsView = (() => {
           <h2>No Spaceships Yet</h2>
           <p>Assemble your agents into launchable spaceships.</p>
           <div class="app-empty-acts">
-            <a href="#/blueprints?tab=spaceship" class="btn btn-primary btn-sm">Browse Spaceship Blueprints</a>
+            <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse Spaceship Blueprints</a>
             <button class="btn btn-sm btn-wizard-setup">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-zap"/></svg>
               Guided Setup
@@ -399,7 +399,7 @@ const SpaceshipsView = (() => {
     }
 
     if (agents.length === 0) {
-      picker.innerHTML = `<p class="text-muted" style="font-size:.78rem">No agents available. <a href="#/blueprints/agents/new" style="color:var(--accent)">Build one first.</a></p>`;
+      picker.innerHTML = `<p class="text-muted" style="font-size:.78rem">No agents available. <a href="#/bridge/agents/new" style="color:var(--accent)">Build one first.</a></p>`;
     } else {
       picker.innerHTML = agents.map(a => `
         <label class="fleet-agent-chip">
@@ -862,7 +862,7 @@ const SpaceshipDetailView = (() => {
       el.innerHTML = `
         <div class="detail-wrap">
           <div class="detail-back">
-            <a href="#/blueprints/spaceships" class="btn btn-sm">
+            <a href="#/bridge/spaceships" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
               Back to Spaceships
             </a>
@@ -946,7 +946,7 @@ const SpaceshipDetailView = (() => {
         <div class="app-empty">
           <h2>Spaceship Not Found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/blueprints/spaceships" class="btn btn-sm">Back to Spaceships</a></div>
+          <div class="app-empty-acts"><a href="#/bridge/spaceships" class="btn btn-sm">Back to Spaceships</a></div>
         </div>
       `;
     }
@@ -971,7 +971,7 @@ const SpaceshipDetailView = (() => {
       const agentRarity = a.rarity || (typeof Gamification !== 'undefined' ? Gamification.calcAgentRarity(a).name : 'Common');
       return allowedRarities.has(agentRarity);
     });
-    if (!activated.length) return '<p class="text-muted" style="font-size:.78rem">No agents added. <a href="#/blueprints" style="color:var(--accent)">Browse the Blueprint Catalog.</a></p>';
+    if (!activated.length) return '<p class="text-muted" style="font-size:.78rem">No agents added. <a href="#/bridge" style="color:var(--accent)">Browse the Blueprint Catalog.</a></p>';
     return activated.map(a => {
       // Prefer blueprint's declared rarity over computed rarity
       const rarity = a.rarity

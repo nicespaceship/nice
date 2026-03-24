@@ -34,8 +34,8 @@ const CommandPalette = (() => {
   }
 
   const ACTIONS = [
-    { label: 'Create Agent',    action: () => Router.navigate('#/blueprints/agents/new'),  keywords: 'new create agent build',         icon: '#icon-plus' },
-    { label: 'New Spaceship',   action: () => Router.navigate('#/blueprints/spaceships'),  keywords: 'new create spaceship fleet',     icon: '#icon-spaceship' },
+    { label: 'Create Agent',    action: () => Router.navigate('#/bridge/agents/new'),  keywords: 'new create agent build',         icon: '#icon-plus' },
+    { label: 'New Spaceship',   action: () => Router.navigate('#/bridge/spaceships'),  keywords: 'new create spaceship fleet',     icon: '#icon-spaceship' },
     { label: 'Toggle Theme',    action: _cycleTheme,                            keywords: 'theme dark light switch hud',    icon: '#icon-settings' },
     { label: 'Keyboard Shortcuts', action: () => { if (typeof Keyboard !== 'undefined') Keyboard.showHelp(); }, keywords: 'keyboard shortcuts help keys', icon: '#icon-build' },
     { label: 'Setup Wizard',       action: () => { if (typeof SetupWizard !== 'undefined') SetupWizard.open(); }, keywords: 'setup wizard guided questionnaire new spaceship', icon: '#icon-zap' },

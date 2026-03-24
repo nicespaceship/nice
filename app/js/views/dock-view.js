@@ -78,7 +78,7 @@ const DockView = (() => {
     if (!container) return;
 
     if (!ships.length) {
-      container.innerHTML = '<p class="text-muted">No ships deployed. Visit <a href="#/blueprints">Blueprints</a> to activate a spaceship.</p>';
+      container.innerHTML = '<p class="text-muted">No ships deployed. Visit <a href="#/bridge">Blueprints</a> to activate a spaceship.</p>';
       return;
     }
 

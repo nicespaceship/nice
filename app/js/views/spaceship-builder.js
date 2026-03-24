@@ -45,7 +45,7 @@ const SpaceshipBuilderView = (() => {
         <div class="app-empty">
           <h2>Spaceship Not Found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/blueprints?tab=spaceship" class="btn btn-sm">Back to Blueprints</a></div>
+          <div class="app-empty-acts"><a href="#/bridge?tab=spaceship" class="btn btn-sm">Back to Blueprints</a></div>
         </div>`;
     }
   }
@@ -57,7 +57,7 @@ const SpaceshipBuilderView = (() => {
     el.innerHTML = `
       <div class="builder-wrap">
         <div class="detail-back">
-          <a href="#/blueprints?tab=spaceship" class="btn btn-sm">
+          <a href="#/bridge?tab=spaceship" class="btn btn-sm">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
             Back to Blueprints
           </a>
@@ -257,7 +257,7 @@ const SpaceshipBuilderView = (() => {
           BlueprintStore.activateShip(created.id);
         }
       }
-      Router.navigate('#/blueprints?tab=spaceship');
+      Router.navigate('#/bridge?tab=spaceship');
     } catch (err) {
       errEl.textContent = err.message || 'Failed to save spaceship.';
       btn.disabled = false;

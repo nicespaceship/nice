@@ -8,12 +8,8 @@ import AxeBuilder from '@axe-core/playwright';
  */
 
 test.describe('NICE Smoke Tests', () => {
-  // Dismiss the onboarding tour before each test
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
-      localStorage.setItem('nice-tour-completed', 'true');
-    });
+    // no-op — onboarding removed
   });
 
   test('app loads and shows home view', async ({ page }) => {
@@ -23,24 +19,12 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('sidebar navigation works', async ({ page }) => {
-    // Set flags before page load to prevent tutorial overlay
-    await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', '1');
-      localStorage.setItem('nice-tutorial-done', '1');
-    });
     await page.goto('./');
     await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 10000 });
-    // Remove any overlays blocking interaction
-    await page.evaluate(() => {
-      document.querySelectorAll('.onb-overlay, .onb-backdrop, .tut-mission-overlay').forEach(el => el.remove());
-    });
     // Open sidebar and navigate to Bridge
     const sidebar = page.locator('#app-sidebar');
     await page.locator('#sidebar-toggle').click({ timeout: 5000 });
     await expect(sidebar).toHaveClass(/open/, { timeout: 3000 });
-    await page.evaluate(() => {
-      document.querySelectorAll('.onb-overlay, .onb-backdrop, .tut-mission-overlay, #onboarding-overlay, #tutorial-overlay').forEach(el => el.remove());
-    });
     await page.locator('.side-link[data-view="home"]').click({ force: true, timeout: 3000 });
     await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
   });
@@ -224,7 +208,7 @@ test.describe('NICE Smoke Tests', () => {
 test.describe('NICE Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
+
       localStorage.setItem('nice-tour-completed', 'true');
     });
   });
@@ -283,7 +267,7 @@ test.describe('NICE Accessibility', () => {
 test.describe('NICE Feature Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
+
       localStorage.setItem('nice-tour-completed', 'true');
     });
   });
@@ -313,8 +297,6 @@ test.describe('NICE Feature Tests', () => {
     });
 
     await page.evaluate(() => {
-      document.getElementById('onboarding-overlay')?.remove();
-      document.getElementById('tutorial-overlay')?.remove();
       document.querySelectorAll('.achievement-unlock, .notify-toast').forEach(el => el.remove());
       window.location.hash = '#/log';
     });
@@ -504,9 +486,9 @@ test.describe('NICE Feature Tests', () => {
 test.describe('NICE Stripe Integration', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
+
       localStorage.setItem('nice-tour-completed', 'true');
-      localStorage.setItem('nice-tutorial-done', 'true');
+
     });
   });
 
@@ -591,7 +573,7 @@ test.describe('NICE Stripe Integration', () => {
 test.describe('NICE Auth Flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
+
       localStorage.setItem('nice-tour-completed', 'true');
     });
   });
@@ -633,7 +615,7 @@ test.describe('NICE Auth Flow', () => {
 test.describe('NICE Performance', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
+
       localStorage.setItem('nice-tour-completed', 'true');
     });
   });
@@ -691,7 +673,7 @@ test.describe('NICE Performance', () => {
 test.describe('NICE Blueprint Drawer', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
+
       localStorage.setItem('nice-tour-completed', 'true');
     });
   });
@@ -702,7 +684,7 @@ test.describe('NICE Blueprint Drawer', () => {
 
     // Inject mock user so blueprints view renders, also dismiss first-mission tour
     await page.evaluate(() => {
-      localStorage.setItem('nice-tutorial-done', 'true');
+
       State.set('user', { id: 'drawer-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
     });
 
@@ -735,7 +717,7 @@ test.describe('NICE Blueprint Drawer', () => {
 
     // Inject mock user
     await page.evaluate(() => {
-      localStorage.setItem('nice-tutorial-done', 'true');
+
       State.set('user', { id: 'drawer-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
     });
 
@@ -757,7 +739,7 @@ test.describe('NICE Blueprint Drawer', () => {
 test.describe('NICE Focus Management', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('nice-onboarding-done', 'true');
+
       localStorage.setItem('nice-tour-completed', 'true');
     });
   });

@@ -53,7 +53,7 @@ const Router = (() => {
     return params;
   }
 
-  /* Parse query params after hash path (e.g. #/blueprints?bp=code-reviewer) */
+  /* Parse query params after hash path (e.g. #/bridge?bp=code-reviewer) */
   function hashQuery() {
     const params = {};
     const hash = window.location.hash.replace(/^#/, '');

@@ -54,9 +54,7 @@ const SCRIPTS = [
   'app/js/lib/mission-router.js',
   'app/js/lib/mission-runner.js',
   'app/js/lib/fuel-modal.js',
-  'app/js/lib/onboarding.js',
   'app/js/lib/auth-modal.js',
-  'app/js/lib/tutorial-mission.js',
   'app/js/nice.js',
 ];
 

@@ -42,7 +42,7 @@ const AgentBuilderView = (() => {
         <div class="app-empty">
           <h2>Agent Not Found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/blueprints/agents" class="btn btn-sm">Back to Agents</a></div>
+          <div class="app-empty-acts"><a href="#/bridge/agents" class="btn btn-sm">Back to Agents</a></div>
         </div>
       `;
     }
@@ -56,7 +56,7 @@ const AgentBuilderView = (() => {
     el.innerHTML = `
       <div class="builder-wrap">
         <div class="detail-back">
-          <a href="#/blueprints/agents" class="btn btn-sm">
+          <a href="#/bridge/agents" class="btn btn-sm">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
             Back to Agents
           </a>
@@ -281,7 +281,7 @@ const AgentBuilderView = (() => {
           Gamification.checkAchievements();
         }
       }
-      Router.navigate('#/blueprints/agents');
+      Router.navigate('#/bridge/agents');
     } catch (err) {
       errEl.textContent = err.message || 'Failed to save agent.';
       btn.disabled = false;

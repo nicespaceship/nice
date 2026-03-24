@@ -92,17 +92,18 @@ const SecurityView = (() => {
     const user = State.get('user');
     if (!user) return _authPrompt(el, 'security settings');
 
-    // Support ?tab=vault from redirect or direct nav
+    // Support ?tab= from redirect or direct nav
     const hashParts = (window.location.hash || '').split('?');
     const urlParams = new URLSearchParams(hashParts[1] || '');
-    if (urlParams.get('tab') === 'vault') _activeTab = 'vault';
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['overview','vault','integrations'].includes(tabParam)) _activeTab = tabParam;
 
     el.innerHTML = `
       <div class="security-wrap">
         <!-- Header -->
         <div class="security-header">
           <div>
-            <h1 class="security-title">Security & Vault</h1>
+            <h1 class="security-title">Security & Integrations</h1>
             <p class="security-sub">Monitor threats, manage permissions, secrets, and compliance across your fleet.</p>
           </div>
         </div>
@@ -117,6 +118,10 @@ const SecurityView = (() => {
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-key"/></svg>
             Vault
           </button>
+          <button class="security-tab ${_activeTab === 'integrations' ? 'security-tab--active' : ''}" data-sec-tab="integrations">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-integrations"/></svg>
+            Integrations
+          </button>
         </div>
 
         <!-- Tab Content -->
@@ -129,6 +134,7 @@ const SecurityView = (() => {
         _activeTab = btn.dataset.secTab;
         el.querySelectorAll('.security-tab').forEach(t => t.classList.remove('security-tab--active'));
         btn.classList.add('security-tab--active');
+        history.replaceState(null, '', '#/security?tab=' + _activeTab);
         _renderTabContent(el);
       });
     });
@@ -139,18 +145,17 @@ const SecurityView = (() => {
   function _renderTabContent(el) {
     const container = el.querySelector('#sec-tab-content');
     if (!container) return;
-    if (_activeTab === 'vault') {
-      _renderVaultTab(container);
-    } else {
-      _renderOverviewTab(container);
-    }
-  }
-
-  function _renderVaultTab(container) {
-    if (typeof VaultView !== 'undefined') {
-      VaultView.render(container);
-    } else {
-      container.innerHTML = '<p class="text-muted">Vault module not loaded.</p>';
+    switch (_activeTab) {
+      case 'vault':
+        if (typeof VaultView !== 'undefined') VaultView.render(container);
+        else container.innerHTML = '<p class="text-muted">Vault module not loaded.</p>';
+        break;
+      case 'integrations':
+        if (typeof IntegrationsView !== 'undefined') IntegrationsView.render(container);
+        else container.innerHTML = '<p class="text-muted">Integrations module not loaded.</p>';
+        break;
+      default:
+        _renderOverviewTab(container);
     }
   }
 
@@ -233,7 +238,7 @@ const SecurityView = (() => {
               </div>
             `).join('') : `
               <div class="security-card security-card-empty">
-                <p class="text-muted">No agents found. Create agents in the <a href="#/blueprints/agents">Agents</a> view to manage permissions.</p>
+                <p class="text-muted">No agents found. Create agents in the <a href="#/bridge/agents">Agents</a> view to manage permissions.</p>
               </div>
             `}
           </div>

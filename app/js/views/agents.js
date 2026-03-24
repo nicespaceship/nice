@@ -46,8 +46,8 @@ const AgentsView = (() => {
             ${_AGENT_VIEW_MODES.map(m => `<button class="mc-dock-view-btn${_viewMode === m.id ? ' active' : ''}" data-view-mode="${m.id}" title="${m.tip}" aria-label="${m.tip} view">${m.icon}</button>`).join('')}
           </div>
           <button class="btn btn-sm" id="btn-import-soul" title="Import Agent Key">Import Agent Key</button>
-          <a href="#/blueprints" class="btn btn-sm">Blueprint Catalog</a>
-          <a href="#/blueprints/agents/new" class="btn btn-primary btn-sm">
+          <a href="#/bridge" class="btn btn-sm">Blueprint Catalog</a>
+          <a href="#/bridge/agents/new" class="btn btn-primary btn-sm">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
             New Agent
           </a>
@@ -151,8 +151,8 @@ const AgentsView = (() => {
           <h2>No Agents Yet</h2>
           <p>Create your first agent to start automating missions.</p>
           <div class="app-empty-acts">
-            <a href="#/blueprints?tab=agent" class="btn btn-primary btn-sm">Browse Agent Blueprints</a>
-            <a href="#/blueprints/agents/new" class="btn btn-sm">
+            <a href="#/bridge?tab=agent" class="btn btn-primary btn-sm">Browse Agent Blueprints</a>
+            <a href="#/bridge/agents/new" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
               Create Agent
             </a>
@@ -170,7 +170,7 @@ const AgentsView = (() => {
       card.addEventListener('click', (e) => {
         if (e.target.closest('.c-btn')) return;
         if (e.target.closest('.agent-action-btn')) return;
-        Router.navigate('#/blueprints/agents/' + card.dataset.id);
+        Router.navigate('#/bridge/agents/' + card.dataset.id);
       });
     });
 
@@ -557,11 +557,11 @@ const AgentDetailView = (() => {
       el.innerHTML = `
         <div class="detail-wrap">
           <div class="detail-back">
-            <a href="#/blueprints/agents" class="btn btn-sm">
+            <a href="#/bridge/agents" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
               Back to Agents
             </a>
-            <a href="#/blueprints/agents/new?edit=${id}" class="btn btn-sm">
+            <a href="#/bridge/agents/new?edit=${id}" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-build"/></svg>
               Edit
             </a>
@@ -675,7 +675,7 @@ const AgentDetailView = (() => {
         <div class="app-empty">
           <h2>Agent Not Found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/blueprints/agents" class="btn btn-sm">Back to Agents</a></div>
+          <div class="app-empty-acts"><a href="#/bridge/agents" class="btn btn-sm">Back to Agents</a></div>
         </div>
       `;
     }

@@ -1,6 +1,6 @@
 /**
  * HomeView integration tests
- * Tests dashboard rendering, widget display, and graceful State handling.
+ * Tests Claude-style chat home page rendering.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -50,30 +50,18 @@ globalThis.SB = {
 // Mock Router
 globalThis.Router = { navigate: vi.fn(), path: () => '/', on: () => {}, init: () => {} };
 
-// Mock modules that HomeView may reference
-globalThis.Gamification = {
-  getRank: () => ({ name: 'Ensign' }), getXP: () => 0,
-  getCurrentClass: () => ({ id: 'class-1', maxRarity: 'Common', slots: Array.from({length:6}, (_,i) => ({ id:i, maxRarity:'Common', label:'Agent '+i })) }), getSpaceshipClass: () => ({ id: 'class-1', maxRarity: 'Common', slots: Array.from({length:6}, (_,i) => ({ id:i, maxRarity:'Common', label:'Agent '+i })) }),
-  renderResourceBar: () => '<div class="resource-bar"></div>',
-  renderRankBadge: () => '<span class="rank-badge">Ensign</span>',
-  addXP: () => {}, checkAchievements: () => {}, unlockAchievement: () => {},
-  getStreak: () => ({ current: 0, best: 0 }),
-  calcAgentRarity: () => ({ name: 'Common' }),
-  canSlotAccept: () => true,
-  _toStardate: () => '2026.072',
-  SPACESHIP_CLASSES: [], RARITY_THRESHOLDS: [],
+// Mock Utils
+globalThis.Utils = {
+  esc: (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+  timeAgo: () => 'just now',
 };
-globalThis.AuditLog = { log: () => {}, getEntries: () => [], count: () => 0 };
-globalThis.BlueprintStore = {
-  listAgents: () => [], listSpaceships: () => [], getAgent: () => null, getSpaceship: () => null, init: () => {},
-  // Activation API
-  activateAgent: () => {}, deactivateAgent: () => {}, isAgentActivated: () => false,
-  getActivatedAgentIds: () => [], getActivatedAgents: () => [],
-  activateShip: () => {}, deactivateShip: () => {}, isShipActivated: () => false,
-  getActivatedShipIds: () => [], getActivatedShips: () => [],
-  getShipState: () => null, saveShipState: () => {},
-  deactivateAllAgents: () => {}, deactivateAllShips: () => {},
+
+// Mock PromptPanel
+globalThis.PromptPanel = {
+  init: () => {}, show: () => {}, hide: () => {}, syncRoute: () => {},
+  prefill: () => {}, toggle: () => {}, destroy: () => {},
 };
+
 globalThis.Notify = { send: () => {}, init: () => {} };
 
 // Load HomeView
@@ -94,8 +82,8 @@ beforeEach(() => {
 loadScriptGlobal('views/home.js');
 
 describe('HomeView', () => {
-  it('has a title property', () => {
-    expect(HomeView.title).toBe('Bridge');
+  it('has title "NICE"', () => {
+    expect(HomeView.title).toBe('NICE SPACESHIP');
   });
 
   it('renders without crashing when State is empty', () => {
@@ -105,81 +93,86 @@ describe('HomeView', () => {
     expect(el.innerHTML.length).toBeGreaterThan(0);
   });
 
-  it('renders welcome text for authenticated user', () => {
+  it('renders greeting with display name', () => {
     const el = document.getElementById('test-el');
     State.set('user', { id: 'u1', email: 'pilot@test.com', user_metadata: { display_name: 'TestPilot' } });
     HomeView.render(el);
-    expect(el.innerHTML.length).toBeGreaterThan(100);
+    expect(el.innerHTML).toContain('TestPilot');
   });
 
-  it('handles missing agents gracefully', () => {
+  it('handles missing user gracefully', () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'a@b.com' });
-    // agents is undefined in State
     expect(() => HomeView.render(el)).not.toThrow();
   });
 
-  it('handles missing missions gracefully', () => {
+  it('renders the chat-home container', () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'a@b.com' });
-    // missions is undefined
-    expect(() => HomeView.render(el)).not.toThrow();
-  });
-
-  it('handles missing spaceships gracefully', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'a@b.com' });
-    expect(() => HomeView.render(el)).not.toThrow();
-  });
-
-  it('renders the bridge stats strip', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'a@b.com' });
     HomeView.render(el);
-    const stats = el.querySelector('.bridge-stats');
-    expect(stats).toBeTruthy();
+    const wrap = el.querySelector('.chat-home');
+    expect(wrap).toBeTruthy();
   });
 
-  it('renders the bridge hero and feed panels', () => {
+  it('shows greeting in empty state', () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'a@b.com' });
     HomeView.render(el);
-    const hero = el.querySelector('.bridge-hero');
-    expect(hero).toBeTruthy();
-    const feed = el.querySelector('.bridge-feed');
+    const greeting = el.querySelector('.chat-home-greeting');
+    expect(greeting).toBeTruthy();
+    expect(greeting.textContent).toMatch(/Good (morning|afternoon|evening)/);
+  });
+
+  it('renders quick action pills', () => {
+    const el = document.getElementById('test-el');
+    HomeView.render(el);
+    const pills = el.querySelectorAll('.chat-pill');
+    expect(pills.length).toBe(6);
+  });
+
+  it('renders conversation when messages exist', () => {
+    mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
+      { role: 'user', text: 'hello', ts: Date.now() },
+      { role: 'assistant', text: 'Hi there', agent: 'NICE', ts: Date.now() },
+    ]));
+    const el = document.getElementById('test-el');
+    HomeView.render(el);
+    const feed = el.querySelector('.chat-home-feed');
     expect(feed).toBeTruthy();
-  });
-
-  it('contains quick action buttons', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'a@b.com' });
-    HomeView.render(el);
-    // Should have some actionable buttons
-    const buttons = el.querySelectorAll('button, a[href]');
-    expect(buttons.length).toBeGreaterThan(0);
+    expect(feed.innerHTML).toContain('hello');
   });
 
   it('renders for user without display_name', () => {
     const el = document.getElementById('test-el');
     State.set('user', { id: 'u1', email: 'someone@example.com' });
     expect(() => HomeView.render(el)).not.toThrow();
-    expect(el.innerHTML.length).toBeGreaterThan(100);
+    expect(el.innerHTML).toContain('someone');
   });
 
-  it('has a destroy method or handles teardown', () => {
-    // destroy is optional but should not throw if called
-    if (HomeView.destroy) {
-      expect(() => HomeView.destroy()).not.toThrow();
-    } else {
-      expect(true).toBe(true);
-    }
+  it('has a destroy method that does not throw', () => {
+    expect(() => HomeView.destroy()).not.toThrow();
   });
 
-  it('renders the bridge-wrap container', () => {
+  it('contains quick action buttons', () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'a@b.com' });
     HomeView.render(el);
-    const wrap = el.querySelector('.bridge-wrap');
-    expect(wrap).toBeTruthy();
+    const buttons = el.querySelectorAll('button');
+    expect(buttons.length).toBeGreaterThan(0);
+  });
+
+  it('shows new chat button when messages exist', () => {
+    mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
+      { role: 'user', text: 'test', ts: Date.now() },
+    ]));
+    const el = document.getElementById('test-el');
+    HomeView.render(el);
+    const newBtn = el.querySelector('#chat-home-new');
+    expect(newBtn).toBeTruthy();
+  });
+
+  it('pills have data-prefill attributes', () => {
+    const el = document.getElementById('test-el');
+    HomeView.render(el);
+    const pills = el.querySelectorAll('.chat-pill');
+    pills.forEach(p => {
+      expect(p.dataset.prefill).toBeTruthy();
+    });
   });
 });

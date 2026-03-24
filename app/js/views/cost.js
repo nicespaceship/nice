@@ -381,7 +381,7 @@ const CostView = (() => {
           ${rows.map(r => `
             <tr>
               <td>
-                <a href="#/blueprints/agents/${r.agent.id}" class="ana-agent-link">
+                <a href="#/bridge/agents/${r.agent.id}" class="ana-agent-link">
                   <span class="status-dot ${r.agent.status === 'active' ? 'dot-g' : 'dot-a'}"></span>
                   ${_esc(r.agent.name)}
                 </a>

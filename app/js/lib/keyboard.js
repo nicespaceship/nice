@@ -11,10 +11,10 @@ const Keyboard = (() => {
   const SHORTCUTS = [
     // Navigation chords: G + letter
     { chord: ['g', 'h'], label: 'Go Bridge', action: () => Router.navigate('#/') },
-    { chord: ['g', 'a'], label: 'Go Agents',       action: () => Router.navigate('#/blueprints/agents') },
-    { chord: ['g', 's'], label: 'Go Shipyard',     action: () => Router.navigate('#/blueprints/spaceships') },
+    { chord: ['g', 'a'], label: 'Go Agents',       action: () => Router.navigate('#/bridge/agents') },
+    { chord: ['g', 's'], label: 'Go Shipyard',     action: () => Router.navigate('#/bridge/spaceships') },
     { chord: ['g', 'm'], label: 'Go Missions',     action: () => Router.navigate('#/missions') },
-    { chord: ['g', 'b'], label: 'Go Blueprints',   action: () => Router.navigate('#/blueprints') },
+    { chord: ['g', 'b'], label: 'Go Blueprints',   action: () => Router.navigate('#/bridge') },
     { chord: ['g', 'n'], label: 'Go Analytics',    action: () => Router.navigate('#/analytics') },
     { chord: ['g', 'c'], label: 'Go Comms',        action: () => Router.navigate('#/comms') },
     { chord: ['g', 'v'], label: 'Go Vault',        action: () => Router.navigate('#/vault') },
@@ -24,7 +24,7 @@ const Keyboard = (() => {
     { chord: ['g', 'r'], label: 'Go Missions', action: () => Router.navigate('#/missions') },
     { chord: ['g', 'l'], label: 'Go Captain\'s Log', action: () => Router.navigate('#/log') },
     // Creation chords: N + letter
-    { chord: ['n', 'a'], label: 'New Agent',        action: () => Router.navigate('#/blueprints/agents/new') },
+    { chord: ['n', 'a'], label: 'New Agent',        action: () => Router.navigate('#/bridge/agents/new') },
     // Single key
     { chord: ['?'],      label: 'Show Shortcuts',   action: () => Keyboard.showHelp() },
     // Modifier shortcuts (handled separately in _handleKey, listed here for help overlay)

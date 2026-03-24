@@ -608,16 +608,16 @@ const PromptPanel = (() => {
   // Order matters — more specific keywords must come before generic ones
   const _NAV_INTENTS = [
     // Blueprint tabs (specific before generic)
-    { keywords: ['spaceship blueprint', 'ship blueprint', 'browse spaceship', 'saas blueprint'], route: '#/blueprints?tab=spaceship', label: 'Spaceship Blueprints' },
-    { keywords: ['agent blueprint', 'browse agent'], route: '#/blueprints?tab=agent', label: 'Agent Blueprints' },
-    { keywords: ['blueprint', 'terminal', 'catalog', 'browse blueprint', 'add agent'], route: '#/blueprints', label: 'Blueprints' },
+    { keywords: ['spaceship blueprint', 'ship blueprint', 'browse spaceship', 'saas blueprint'], route: '#/bridge?tab=spaceship', label: 'Spaceship Blueprints' },
+    { keywords: ['agent blueprint', 'browse agent'], route: '#/bridge?tab=agent', label: 'Agent Blueprints' },
+    { keywords: ['blueprint', 'terminal', 'catalog', 'browse blueprint', 'add agent'], route: '#/bridge', label: 'Blueprints' },
     // Home
     { keywords: ['bridge', 'home', 'dashboard', 'main', 'go home'], route: '#/', label: 'Bridge' },
     // Agents (specific before generic)
-    { keywords: ['create agent', 'new agent', 'build agent', 'add agent'], route: '#/blueprints/agents/new', label: 'Agent Builder' },
-    { keywords: ['agent', 'my agent', 'view agent', 'manage agent', 'show agent'], route: '#/blueprints/agents', label: 'Agents' },
+    { keywords: ['create agent', 'new agent', 'build agent', 'add agent'], route: '#/bridge/agents/new', label: 'Agent Builder' },
+    { keywords: ['agent', 'my agent', 'view agent', 'manage agent', 'show agent'], route: '#/bridge/agents', label: 'Agents' },
     // Spaceships & Fleets
-    { keywords: ['shipyard', 'spaceship', 'my ship', 'show ship', 'view ship'], route: '#/blueprints/spaceships', label: 'Shipyard' },
+    { keywords: ['shipyard', 'spaceship', 'my ship', 'show ship', 'view ship'], route: '#/bridge/spaceships', label: 'Shipyard' },
     // Missions
     { keywords: ['mission board', 'board'], route: '#/missions', label: 'Missions' },
     { keywords: ['new mission', 'create mission', 'start mission'], route: '#/missions', label: 'Missions' },
@@ -628,7 +628,7 @@ const PromptPanel = (() => {
     // Workflows
     { keywords: ['workflow', 'automation', 'automate'], route: '#/workflows', label: 'Workflows' },
     // MCP Connectors (blueprints with mcp config)
-    { keywords: ['connector', 'mcp', 'connect', 'api key', 'tool', 'service'], route: '#/blueprints', label: 'Blueprints' },
+    { keywords: ['connector', 'mcp', 'connect', 'api key', 'tool', 'service'], route: '#/bridge', label: 'Blueprints' },
     // Comms
     { keywords: ['comms', 'communication', 'message', 'notification', 'broadcast'], route: '#/comms', label: 'Comms Hub' },
     // Wallet & Tokens
@@ -877,9 +877,9 @@ const PromptPanel = (() => {
     }
 
     if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower)) return { type: 'action', action: 'create-mission' };
-    if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower)) return { type: 'navigate', route: '#/blueprints/agents/new', label: 'Agent Builder' };
+    if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower)) return { type: 'navigate', route: '#/bridge/agents/new', label: 'Agent Builder' };
     if (/^(create|new|add|build|make)\s+(a\s+)?workflow/i.test(lower)) return { type: 'navigate', route: '#/workflows', label: 'Workflows' };
-    if (/^(create|new|add|build|make)\s+(a\s+)?(spaceship|ship)/i.test(lower)) return { type: 'navigate', route: '#/blueprints/spaceships', label: 'Shipyard' };
+    if (/^(create|new|add|build|make)\s+(a\s+)?(spaceship|ship)/i.test(lower)) return { type: 'navigate', route: '#/bridge/spaceships', label: 'Shipyard' };
     if (/^(setup|guided setup|wizard)/i.test(lower)) return { type: 'action', action: 'setup-wizard' };
     if (/^(export|download)\s+(data|backup)/i.test(lower)) return { type: 'action', action: 'export-data' };
 
@@ -890,7 +890,7 @@ const PromptPanel = (() => {
       return { type: 'agent-op', op: 'run-mission', text: 'Opening Missions to start a new run.' };
     }
     if (/^(deploy|launch)\s+agent\s*/i.test(lower)) {
-      setTimeout(() => { window.location.hash = '#/blueprints/agents'; }, 300);
+      setTimeout(() => { window.location.hash = '#/bridge/agents'; }, 300);
       return { type: 'agent-op', op: 'deploy-agent', text: 'Opening Agents view. Select an agent to deploy.' };
     }
 
@@ -942,7 +942,7 @@ const PromptPanel = (() => {
         setTimeout(() => {
           _hideMonitor();
           if (typeof SetupWizard !== 'undefined') SetupWizard.open();
-          else window.location.hash = '#/blueprints/spaceships';
+          else window.location.hash = '#/bridge/spaceships';
         }, 800);
         return { text: 'Launching the Guided Setup Wizard.', agent: null };
       }
@@ -1009,11 +1009,11 @@ const PromptPanel = (() => {
   /* ── Contextual suggestion chips ── */
   const _ROUTE_SUGGESTIONS = {
     '#/':           ['How many agents do I have?', 'Show missions', 'What\'s my rank?', 'Switch to cyberpunk'],
-    '#/blueprints/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
-    '#/blueprints/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
+    '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
+    '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
     '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
-    '#/blueprints/spaceships': ['Guided setup', 'Deploy a ship', 'How many ships?', 'Browse blueprints'],
-    '#/blueprints': ['Search blueprints for', 'Find agent named', 'Deploy a ship', 'What\'s popular?'],
+    '#/bridge/spaceships': ['Guided setup', 'Deploy a ship', 'How many ships?', 'Browse blueprints'],
+    '#/bridge': ['Search blueprints for', 'Find agent named', 'Deploy a ship', 'What\'s popular?'],
     '#/workflows':  ['Create a new workflow', 'How many workflows?', 'Open missions'],
     '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
     '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
@@ -1146,18 +1146,18 @@ STRICT RULES FOR ACTIONS:
 
 Available routes:
 - #/ — Bridge (home dashboard)
-- #/blueprints — Blueprint Catalog (all blueprints, embedded in Bridge)
-- #/blueprints?tab=agent — Agent Blueprints tab
-- #/blueprints?tab=spaceship — Spaceship Blueprints tab
-- Add &search=TERM to any blueprint route to pre-fill the search box (e.g. #/blueprints?tab=spaceship&search=SaaS)
-- #/blueprints/agents — View added agents
-- #/blueprints/agents/new — Build a custom agent
-- #/blueprints/spaceships — Shipyard (view/deploy spaceships)
+- #/bridge — Blueprint Catalog (all blueprints, embedded in Bridge)
+- #/bridge?tab=agent — Agent Blueprints tab
+- #/bridge?tab=spaceship — Spaceship Blueprints tab
+- Add &search=TERM to any blueprint route to pre-fill the search box (e.g. #/bridge?tab=spaceship&search=SaaS)
+- #/bridge/agents — View added agents
+- #/bridge/agents/new — Build a custom agent
+- #/bridge/spaceships — Shipyard (view/deploy spaceships)
 - #/missions — Missions
 - #/analytics — Operations dashboard
 - #/cost — Cost & token tracker
 - #/workflows — Workflow automation
-- #/blueprints — Browse and activate agent & spaceship blueprints (includes MCP connectors)
+- #/bridge — Browse and activate agent & spaceship blueprints (includes MCP connectors)
 - #/comms — Comms Hub (notifications & broadcasts)
 - #/wallet — Wallet (token balance & purchases)
 - #/vault — Security vault
@@ -1827,7 +1827,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               </button>
               <button class="nice-ai-send-btn" id="nice-ai-send" aria-label="Send" title="Send message">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
               </button>
             </div>
           </div>
@@ -2362,6 +2362,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   function syncRoute() {
     _updateRouteContext();
+    // On home route, HomeView embeds the panel inline — don't show floating
+    const path = (location.hash || '#/').replace('#', '') || '/';
+    if (path === '/') return;
+    // On all other routes, show the floating prompt bar
+    show();
   }
 
   return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute };
