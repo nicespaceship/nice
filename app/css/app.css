@@ -1037,7 +1037,7 @@
 }
 .search-input {
   background:none; border:none; color:var(--text); font-family:var(--font-b);
-  font-size:.78rem; outline:none; width:200px;
+  font-size:.78rem; outline:none; width:200px; padding-left:6px;
 }
 .search-input::placeholder { color:var(--text-dim); }
 .filter-select {
