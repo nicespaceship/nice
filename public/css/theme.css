@@ -325,6 +325,19 @@
 /* Sidebar favorites */
 [data-theme="lcars"] .sidebar-favorites { padding-top:4px; }
 
+/* HUD panel — LCARS styled */
+[data-theme="lcars"] .app-hud-panel {
+  background:#000; border:2px solid #666688; border-radius:0 0 24px 0; margin:0;
+}
+[data-theme="lcars"] .app-hud-panel .dock-lbl { color:#ff9966; }
+[data-theme="lcars"] .app-hud-panel .dock-lbl a { color:#ff9966; }
+[data-theme="lcars"] .app-hud-panel .dock-lbl-val { color:#cc99ff; }
+[data-theme="lcars"] .app-hud-panel .db { border-radius:50%; border:2px solid #666688; }
+[data-theme="lcars"] .app-hud-panel .db.active { border-color:#ff9966; }
+[data-theme="lcars"] .app-hud-panel .fb { color:#ff9966; border-color:#666688; border-radius:24px; }
+[data-theme="lcars"] .app-hud-panel .fb.active { background:#ff9966; color:#000; }
+[data-theme="lcars"] .hud-row-sep { border-color:#666688; }
+
 /* Top bar across content area */
 [data-theme="lcars"] .app-topbar {
   background:#000;
