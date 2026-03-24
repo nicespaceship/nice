@@ -2798,9 +2798,16 @@
   background:var(--bg); color:var(--text); border:1px solid var(--border);
   border-radius:var(--radius); padding:4px 8px; font-size:.72rem; font-family:var(--font-m);
 }
+/* Radar/Sonar canvas behind schematic */
+.sch-radar-canvas {
+  position:absolute; inset:0; width:100%; height:100%;
+  z-index:0; pointer-events:none; border-radius:inherit;
+}
+.mc-schematic-body { overflow:hidden; border-radius:var(--radius); }
+
 .mc-schematic-hud { position:relative; width:100%; min-height:120px; }
-.mc-schematic-svg { display:block; width:100%; height:auto; }
-.mc-schematic-slots { position:absolute; inset:0; pointer-events:none; }
+.mc-schematic-svg { display:block; width:100%; height:auto; position:relative; z-index:1; }
+.mc-schematic-slots { position:absolute; inset:0; pointer-events:none; z-index:2; }
 
 /* Slot base */
 .mc-slot {

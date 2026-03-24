@@ -151,6 +151,178 @@ const DockView = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════════
+     RADAR / SONAR BACKGROUND CANVAS
+  ═══════════════════════════════════════════════════════════════════ */
+  let _radarRaf = 0;
+
+  function _initRadarCanvas(cvs) {
+    if (!cvs) return;
+    cancelAnimationFrame(_radarRaf);
+
+    const ctx = cvs.getContext('2d');
+    const body = cvs.parentElement;
+    let W, H;
+
+    function resize() {
+      const r = body.getBoundingClientRect();
+      W = cvs.width  = Math.round(r.width  * (window.devicePixelRatio > 1 ? 1.5 : 1));
+      H = cvs.height = Math.round(r.height * (window.devicePixelRatio > 1 ? 1.5 : 1));
+    }
+    resize();
+
+    // Read accent colour from CSS
+    const cs = getComputedStyle(document.documentElement);
+    const raw = (cs.getPropertyValue('--accent') || '#7eb8ff').trim();
+    function hexToRgb(h) {
+      h = h.replace('#', '');
+      if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      const n = parseInt(h, 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    const [ar, ag, ab] = hexToRgb(raw);
+
+    // Stars (micro particles)
+    const STAR_N = 40;
+    let stars = [];
+    function makeStars() {
+      stars = [];
+      for (let i = 0; i < STAR_N; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.2 + 0.3,
+          a: Math.random() * 0.5 + 0.1,
+          speed: Math.random() * 0.12 + 0.02,
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+    makeStars();
+
+    // Radar sweep state
+    let sweepAngle = 0;
+    const cx = () => W / 2;
+    const cy = () => H / 2;
+
+    // Ping blips (random sonar-like pings)
+    let pings = [];
+    let nextPing = 0;
+
+    function draw(t) {
+      ctx.clearRect(0, 0, W, H);
+      const CX = cx(), CY = cy();
+      const maxR = Math.max(W, H) * 0.6;
+
+      // ── Grid ───────────────────────────────
+      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.04)`;
+      ctx.lineWidth = 0.5;
+      const gridSize = 20;
+      for (let x = gridSize; x < W; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = gridSize; y < H; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+
+      // ── Concentric rings (sonar) ──────────
+      const ringCount = 5;
+      for (let i = 1; i <= ringCount; i++) {
+        const r = (maxR / ringCount) * i;
+        const pulse = 0.03 + 0.02 * Math.sin(t * 0.001 + i * 1.2);
+        ctx.beginPath();
+        ctx.arc(CX, CY, r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${ar},${ag},${ab},${pulse})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+
+      // ── Radar sweep ────────────────────────
+      sweepAngle += 0.008;
+      const sweepLen = maxR * 1.1;
+      const sx = CX + Math.cos(sweepAngle) * sweepLen;
+      const sy = CY + Math.sin(sweepAngle) * sweepLen;
+
+      // Sweep trail (arc gradient)
+      const trailAngle = 0.5; // radians of trail
+      const grad = ctx.createConicGradient(sweepAngle - trailAngle, CX, CY);
+      grad.addColorStop(0, `rgba(${ar},${ag},${ab},0)`);
+      grad.addColorStop(trailAngle / (Math.PI * 2), `rgba(${ar},${ag},${ab},0.06)`);
+      grad.addColorStop((trailAngle + 0.01) / (Math.PI * 2), `rgba(${ar},${ag},${ab},0)`);
+
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.arc(CX, CY, sweepLen, sweepAngle - trailAngle, sweepAngle);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Sweep line
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.lineTo(sx, sy);
+      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.12)`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+
+      // ── Sonar pings (expanding rings) ─────
+      if (t > nextPing) {
+        pings.push({
+          x: CX + (Math.random() - 0.5) * W * 0.6,
+          y: CY + (Math.random() - 0.5) * H * 0.6,
+          r: 0, maxR: 30 + Math.random() * 25,
+          life: 1,
+        });
+        nextPing = t + 2000 + Math.random() * 3000;
+      }
+      for (let i = pings.length - 1; i >= 0; i--) {
+        const p = pings[i];
+        p.r += 0.3;
+        p.life = 1 - p.r / p.maxR;
+        if (p.life <= 0) { pings.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${ar},${ag},${ab},${p.life * 0.15})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // blip dot
+        if (p.life > 0.8) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${ar},${ag},${ab},${p.life * 0.5})`;
+          ctx.fill();
+        }
+      }
+
+      // ── Micro stars ────────────────────────
+      for (const s of stars) {
+        s.phase += 0.015;
+        const twinkle = 0.5 + 0.5 * Math.sin(s.phase);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${ar},${ag},${ab},${s.a * twinkle})`;
+        ctx.fill();
+        s.y += s.speed;
+        if (s.y > H + 2) { s.y = -2; s.x = Math.random() * W; }
+      }
+
+      // ── Crosshair at centre ────────────────
+      const chLen = 8;
+      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.08)`;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(CX - chLen, CY); ctx.lineTo(CX + chLen, CY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(CX, CY - chLen); ctx.lineTo(CX, CY + chLen); ctx.stroke();
+
+      _radarRaf = requestAnimationFrame(draw);
+    }
+
+    _radarRaf = requestAnimationFrame(draw);
+
+    // Handle resize
+    const ro = new ResizeObserver(() => { resize(); makeStars(); });
+    ro.observe(body);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
      SCHEMATIC (extracted from home.js)
   ═══════════════════════════════════════════════════════════════════ */
 
@@ -184,12 +356,16 @@ const DockView = (() => {
         </div>
       </div>
       <div class="mc-schematic-body" style="position:relative;width:100%;aspect-ratio:3/${shipClass.id === 'class-1' || shipClass.id === 'class-2' ? '1' : shipClass.id === 'class-3' ? '1.5' : '2'}">
+        <canvas class="sch-radar-canvas" aria-hidden="true"></canvas>
         ${_renderSchematicSVG(shipClass, slotMap)}
         <div class="mc-schematic-slots">
           ${_renderSchematicSlots(shipClass, slotMap)}
         </div>
       </div>
     `;
+
+    // Start radar background
+    _initRadarCanvas(container.querySelector('.sch-radar-canvas'));
 
     // Undock buttons
     container.querySelectorAll('.mc-slot-undock').forEach(btn => {
@@ -557,7 +733,7 @@ const DockView = (() => {
     el.innerHTML = `<div class="auth-gate"><h2>Sign in to view ${viewName}</h2><p>Create an account or sign in to access this feature.</p><button class="btn btn-primary" onclick="NICE.openModal('modal-auth')">Sign In</button></div>`;
   }
 
-  function destroy() {}
+  function destroy() { cancelAnimationFrame(_radarRaf); _radarRaf = 0; }
 
   return { title, render, destroy, renderSchematicSVG: _renderSchematicSVG, getSlotMap: _getSlotMap, getShipId: _getShipId };
 })();
