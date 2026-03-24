@@ -1549,7 +1549,8 @@
 .bp-rarity-btn:hover { color:var(--text); border-color:var(--border-hi); }
 .bp-rarity-btn.active { color:var(--accent); border-color:var(--accent); background:rgba(var(--accent-rgb,100,100,100),0.08); }
 .bp-search-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.bp-search-row .search-box { height:30px; padding:0 12px 0 5px; display:flex; align-items:center; }
+.bp-search-row .search-box { height:30px; padding:0 12px; display:flex; align-items:center; gap:8px; }
+.bp-search-row .search-box .search-input { margin-left:5px; }
 .bp-search-row .filter-select { padding-right:28px; }
 .bp-search-row .search-box .search-input { width:260px; height:100%; }
 .bp-search-row .filter-select { height:30px; display:flex; align-items:center; }
