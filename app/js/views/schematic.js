@@ -44,13 +44,26 @@ const SchematicView = (() => {
       `<button class="bridge-hero-tab ${_heroView === t.id ? 'active' : ''}" data-view="${t.id}">${t.label}</button>`
     ).join('');
 
+    // Ship selector dropdown
+    const shipOptions = activatedShips.map(s =>
+      `<option value="${_esc(s.id)}" ${s.id === activeShip.id ? 'selected' : ''}>${_esc(s.name || 'Unnamed Ship')}</option>`
+    ).join('');
+    const shipSelectHTML = `<select class="sch-ship-select" id="sch-ship-select">${shipOptions}</select>`;
+    const switchBtnHTML = activatedShips.length > 1
+      ? `<button class="btn btn-sm sch-switch-btn" id="sch-switch-btn">Switch Spaceship</button>`
+      : '';
+
     const headerHTML = `
       <div class="bridge-hero-header">
         <div class="bridge-hero-info">
           <span class="bridge-hero-name">${_esc(activeShip.name || 'Unnamed Ship')}</span>
           <span class="bridge-hero-meta">${shipClass.name} (${filledCount}/${totalSlots}) <span style="color:${statusColor}">${status}</span></span>
         </div>
-        <div class="bridge-hero-tabs">${tabsHTML}</div>
+        <div class="bridge-hero-controls">
+          ${switchBtnHTML}
+          ${shipSelectHTML}
+          <div class="bridge-hero-tabs">${tabsHTML}</div>
+        </div>
       </div>
     `;
 
@@ -62,12 +75,7 @@ const SchematicView = (() => {
       viewHTML = _renderHeroSlots(shipClass, slotMap, activeShip);
     }
 
-    // Ship switcher
-    const switcherHTML = activatedShips.length > 1
-      ? `<button class="btn btn-sm bridge-hero-switch" style="margin-top:8px">Switch Ship</button>`
-      : '';
-
-    el.innerHTML = `<div class="bridge-hero-wrap">${headerHTML}<div class="bridge-hero-content">${viewHTML}</div>${switcherHTML}</div>`;
+    el.innerHTML = `<div class="bridge-hero-wrap">${headerHTML}<div class="bridge-hero-content">${viewHTML}</div></div>`;
 
     if (_heroView === 'schematic') {
       requestAnimationFrame(() => {
@@ -114,15 +122,25 @@ const SchematicView = (() => {
       });
     }
 
-    // Ship switcher
-    el.querySelectorAll('.bridge-hero-switch').forEach(btn => {
-      btn.addEventListener('click', () => {
+    // Ship selector dropdown
+    const shipSelect = el.querySelector('#sch-ship-select');
+    if (shipSelect) {
+      shipSelect.addEventListener('change', () => {
+        localStorage.setItem('nice-mc-ship', shipSelect.value);
+        render(el);
+      });
+    }
+
+    // Switch spaceship button (cycles to next)
+    const switchBtn = el.querySelector('#sch-switch-btn');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
         const currentIdx = activatedShips.findIndex(s => s.id === (activeShip?.id));
         const nextIdx = (currentIdx + 1) % activatedShips.length;
         localStorage.setItem('nice-mc-ship', activatedShips[nextIdx].id);
         render(el);
       });
-    });
+    }
   }
 
   function _renderHeroSchematic(shipClass, slotMap) {

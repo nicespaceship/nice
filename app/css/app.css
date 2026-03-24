@@ -621,7 +621,15 @@
 .bridge-hero-info { display:flex; flex-direction:column; gap:2px; }
 .bridge-hero-name { font-size:.85rem; font-weight:600; color:var(--text); }
 .bridge-hero-meta { font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); }
+.bridge-hero-controls { display:flex; align-items:center; gap:8px; }
 .bridge-hero-tabs { display:flex; gap:4px; }
+.sch-ship-select {
+  background:var(--bg); color:var(--text); border:1px solid var(--border);
+  border-radius:var(--radius); padding:4px 8px; font-size:.72rem;
+  font-family:var(--font-m); cursor:pointer;
+}
+.sch-ship-select:focus { border-color:var(--accent); outline:none; }
+.sch-switch-btn { font-size:.65rem; padding:4px 10px; white-space:nowrap; }
 .bridge-hero-tab { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:4px 10px; font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); cursor:pointer; transition:all .15s; }
 .bridge-hero-tab:hover { color:var(--text); border-color:var(--text-muted); }
 .bridge-hero-tab.active { color:var(--accent); border-color:var(--accent); background:rgba(255,255,255,.03); }
@@ -738,6 +746,7 @@
 /* Bridge responsive — stack on mobile */
 @media (max-width:768px) {
   .bridge-hero-header { flex-direction:column; gap:8px; align-items:flex-start; }
+  .bridge-hero-controls { flex-wrap:wrap; }
   .bridge-hero-content { min-height:150px; }
 }
 
