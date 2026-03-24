@@ -90,12 +90,12 @@ describe('MissionsView', () => {
     expect(el.innerHTML.length).toBeGreaterThan(0);
   });
 
-  it('renders mission list container', () => {
+  it('renders mission feed container', () => {
     const el = document.getElementById('test-el');
     State.set('user', { id: 'u1', email: 'p@test.com' });
     MissionsView.render(el);
-    const list = el.querySelector('#tasks-list');
-    expect(list).toBeTruthy();
+    const feed = el.querySelector('#mc-feed');
+    expect(feed).toBeTruthy();
   });
 
   it('renders the new mission button', () => {
@@ -125,14 +125,12 @@ describe('MissionsView', () => {
     expect(prioritySelect).toBeTruthy();
   });
 
-  it('renders status filter dropdown', () => {
+  it('renders pipeline visualizer', () => {
     const el = document.getElementById('test-el');
     State.set('user', { id: 'u1', email: 'p@test.com' });
     MissionsView.render(el);
-    const filter = el.querySelector('#task-filter');
-    expect(filter).toBeTruthy();
-    const options = filter.querySelectorAll('option');
-    expect(options.length).toBeGreaterThanOrEqual(4);
+    const pipeline = el.querySelector('#mc-pipeline');
+    expect(pipeline).toBeTruthy();
   });
 
   it('renders search input', () => {
@@ -143,12 +141,12 @@ describe('MissionsView', () => {
     expect(search).toBeTruthy();
   });
 
-  it('renders stats bar with counters', () => {
+  it('renders gauge strip', () => {
     const el = document.getElementById('test-el');
     State.set('user', { id: 'u1', email: 'p@test.com' });
     MissionsView.render(el);
-    const total = el.querySelector('#ts-total');
-    expect(total).toBeTruthy();
+    const gauges = el.querySelector('#mc-gauge-strip');
+    expect(gauges).toBeTruthy();
   });
 
   it('loads seed missions when DB is unavailable', async () => {
@@ -193,12 +191,12 @@ describe('MissionsView', () => {
     }
   });
 
-  it('renders mission rows with status badges after data loads', async () => {
+  it('renders mission cards after data loads', async () => {
     const el = document.getElementById('test-el');
     State.set('user', { id: 'u1', email: 'p@test.com' });
     MissionsView.render(el);
     await new Promise(r => setTimeout(r, 50));
-    const badges = el.querySelectorAll('.task-status-badge');
-    expect(badges.length).toBeGreaterThan(0);
+    const cards = el.querySelectorAll('.mc-card');
+    expect(cards.length).toBeGreaterThan(0);
   });
 });

@@ -1,95 +1,71 @@
 /* ═══════════════════════════════════════════════════════════════════
-   NICE — Missions View
-   Live mission queue with status, progress, and agent assignment.
+   NICE — Missions View  (Mission Control redesign)
+   Unified card grid with gauge strip, pipeline visualizer,
+   animated progress, transition flashes, and batch operations.
 ═══════════════════════════════════════════════════════════════════ */
 
 const MissionsView = (() => {
   const title = 'Missions';
-  let _channel = null;
-  let _viewMode = 'list'; // 'list' or 'board'
-  let _boardCompact = false;
 
   const STATUSES   = ['queued','running','completed','failed'];
   const PRIORITIES = ['low','medium','high','critical'];
-  const BOARD_COLUMNS = [
-    { status: 'queued',    label: 'Queued',    color: 'var(--text-muted)' },
-    { status: 'running',   label: 'Running',   color: '#6366f1' },
-    { status: 'completed', label: 'Completed', color: '#22c55e' },
-    { status: 'failed',    label: 'Failed',    color: '#ef4444' },
-  ];
+  const STATUS_META = {
+    queued:    { label: 'Queued',    color: '#f59e0b', icon: '◷' },
+    running:   { label: 'Running',   color: '#6366f1', icon: '⚡' },
+    completed: { label: 'Completed', color: '#22c55e', icon: '✓' },
+    failed:    { label: 'Failed',    color: '#ef4444', icon: '✕' },
+  };
 
-  function _skeletonRows(count) {
-    const row = `<div class="skeleton-list-row">
-      <div class="skeleton-line sk-badge"></div>
-      <div style="flex:1"><div class="skeleton-line sk-title"></div></div>
-      <div class="skeleton-line sk-sub" style="width:80px"></div>
-    </div>`;
-    return `<div class="skeleton-list">${row.repeat(count || 5)}</div>`;
-  }
+  /* ── State ── */
+  let _el = null;
+  let _channel = null;
+  let _filterStatus = '';
+  let _prevStatuses = {};   // for transition animations
+  let _selected = new Set(); // batch selection
 
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
-  let _el = null;
-  let _filterAgent = '';
+  function _skeletonRows(n) {
+    const r = `<div class="skeleton-list-row"><div class="skeleton-line sk-badge"></div><div style="flex:1"><div class="skeleton-line sk-title"></div></div></div>`;
+    return `<div class="skeleton-list">${r.repeat(n || 5)}</div>`;
+  }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     RENDER
+  ═══════════════════════════════════════════════════════════════════ */
   function render(el) {
     _el = el;
     const user = State.get('user');
     if (!user) return _authPrompt(el, 'missions');
-    const agents = State.get('agents') || [];
 
     el.innerHTML = `
-      <div class="tasks-wrap">
+      <div class="mc-missions">
+        <!-- Toolbar -->
         <div class="view-topbar">
           <div class="view-topbar-l">
             <div class="search-box">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
               <input type="text" id="task-search" class="search-input" placeholder="Search missions..." />
             </div>
-            <select id="task-filter" class="filter-select">
-              <option value="">All Status</option>
-              <option value="queued">Queued</option>
-              <option value="running">Running</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-            </select>
-            ${_viewMode === 'board' ? `
-              <select id="mb-filter-agent" class="filter-select">
-                <option value="">All Agents</option>
-                ${agents.map(r => `<option value="${r.id}" ${_filterAgent === r.id ? 'selected' : ''}>${_esc(r.name)}</option>`).join('')}
-              </select>
-            ` : ''}
           </div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <div class="btn-group" style="display:flex;gap:0">
-              <button class="btn btn-xs ${_viewMode === 'list' ? 'btn-primary' : ''}" id="btn-view-list" title="List view">
-                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-task"/></svg>
-              </button>
-              <button class="btn btn-xs ${_viewMode === 'board' ? 'btn-primary' : ''}" id="btn-view-board" title="Board view">
-                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-dashboard"/></svg>
-              </button>
-            </div>
-            ${_viewMode === 'board' ? `<button class="btn btn-xs" id="mb-toggle-compact">${_boardCompact ? 'Expand' : 'Compact'}</button>` : ''}
-            <button class="btn btn-primary btn-sm" id="btn-new-task">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-              New Mission
-            </button>
-          </div>
+          <button class="btn btn-primary btn-sm" id="btn-new-task">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
+            New Mission
+          </button>
         </div>
 
-        <!-- Task Stats Bar -->
-        <div class="task-stats-bar" id="task-stats">
-          <div class="task-stat"><span class="task-stat-num" id="ts-total">0</span><span class="task-stat-label">Total</span></div>
-          <div class="task-stat"><span class="task-stat-num hl" id="ts-running">0</span><span class="task-stat-label">Running</span></div>
-          <div class="task-stat"><span class="task-stat-num" id="ts-queued">0</span><span class="task-stat-label">Queued</span></div>
-          <div class="task-stat"><span class="task-stat-num" id="ts-completed">0</span><span class="task-stat-label">Done</span></div>
-          <div class="task-stat"><span class="task-stat-num" id="ts-failed">0</span><span class="task-stat-label">Failed</span></div>
-        </div>
+        <!-- Gauge Strip -->
+        <div class="mc-gauge-strip" id="mc-gauge-strip"></div>
 
-        <div id="tasks-list" class="tasks-list">
-          ${_skeletonRows(6)}
-        </div>
+        <!-- Pipeline -->
+        <div class="mc-pipeline" id="mc-pipeline"></div>
+
+        <!-- Mission Feed -->
+        <div class="mc-feed" id="mc-feed">${_skeletonRows(6)}</div>
+
+        <!-- Batch Bar -->
+        <div class="mc-batch-bar" id="mc-batch-bar" style="display:none"></div>
       </div>
 
       <!-- New Task Modal -->
@@ -109,9 +85,7 @@ const MissionsView = (() => {
               </div>
               <div class="auth-field">
                 <label for="t-agent">Assign to Agent</label>
-                <select id="t-agent" class="filter-select builder-select">
-                  <option value="">Unassigned</option>
-                </select>
+                <select id="t-agent" class="filter-select builder-select"><option value="">Unassigned</option></select>
               </div>
               <div class="auth-field">
                 <label for="t-priority">Priority</label>
@@ -130,13 +104,316 @@ const MissionsView = (() => {
     _loadMissions();
     _bindEvents();
     _subscribeRealtime();
-
-    // Auto-refresh when MissionRunner updates missions in State
     State.on('missions', _onMissionsChanged);
   }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     GAUGE STRIP (SVG ring gauges)
+  ═══════════════════════════════════════════════════════════════════ */
+  function _renderGauges(missions) {
+    const strip = document.getElementById('mc-gauge-strip');
+    if (!strip) return;
+    const total = missions.length || 1;
+    const counts = { queued: 0, running: 0, completed: 0, failed: 0 };
+    missions.forEach(m => { if (counts[m.status] !== undefined) counts[m.status]++; });
+
+    const R = 28, C = Math.PI * 2 * R;
+    function gauge(status, count) {
+      const meta = STATUS_META[status];
+      const pct = count / total;
+      const offset = C - (C * pct);
+      const isRunning = status === 'running' && count > 0;
+      return `
+        <div class="mc-gauge ${isRunning ? 'mc-gauge-live' : ''}" data-status="${status}">
+          <svg viewBox="0 0 70 70" class="mc-gauge-svg">
+            <circle cx="35" cy="35" r="${R}" fill="none" stroke="var(--border)" stroke-width="4"/>
+            <circle cx="35" cy="35" r="${R}" fill="none" stroke="${meta.color}" stroke-width="4"
+              stroke-dasharray="${C}" stroke-dashoffset="${offset}" stroke-linecap="round"
+              transform="rotate(-90 35 35)" style="transition:stroke-dashoffset .6s ease"/>
+          </svg>
+          <div class="mc-gauge-inner">
+            <span class="mc-gauge-num" style="color:${meta.color}">${count}</span>
+          </div>
+          <span class="mc-gauge-label">${meta.label}</span>
+        </div>`;
+    }
+
+    const liveHTML = counts.running > 0
+      ? '<div class="mc-live-badge"><span class="mc-live-dot"></span> LIVE</div>'
+      : '';
+
+    strip.innerHTML = `
+      <div class="mc-gauges">${STATUSES.map(s => gauge(s, counts[s])).join('')}</div>
+      ${liveHTML}
+    `;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     PIPELINE VISUALIZER
+  ═══════════════════════════════════════════════════════════════════ */
+  function _renderPipeline(missions) {
+    const pipe = document.getElementById('mc-pipeline');
+    if (!pipe) return;
+    const counts = { queued: 0, running: 0, completed: 0, failed: 0 };
+    missions.forEach(m => { if (counts[m.status] !== undefined) counts[m.status]++; });
+
+    const nodes = ['queued', 'running', 'completed'];
+    const nodesHTML = nodes.map((s, i) => {
+      const meta = STATUS_META[s];
+      const active = _filterStatus === s ? 'mc-pipe-active' : '';
+      const isRunning = s === 'running' && counts.running > 0;
+      return `
+        ${i > 0 ? '<div class="mc-pipe-line"><div class="mc-pipe-flow"></div></div>' : ''}
+        <button class="mc-pipe-node ${active} ${isRunning ? 'mc-pipe-running' : ''}" data-status="${s}" style="--pipe-color:${meta.color}">
+          <span class="mc-pipe-icon">${meta.icon}</span>
+          <span class="mc-pipe-count">${counts[s]}</span>
+          <span class="mc-pipe-label">${meta.label}</span>
+        </button>`;
+    }).join('');
+
+    // Failed branch
+    const failMeta = STATUS_META.failed;
+    const failActive = _filterStatus === 'failed' ? 'mc-pipe-active' : '';
+    const failHTML = counts.failed > 0 ? `
+      <div class="mc-pipe-branch">
+        <div class="mc-pipe-line-v"></div>
+        <button class="mc-pipe-node mc-pipe-fail ${failActive}" data-status="failed" style="--pipe-color:${failMeta.color}">
+          <span class="mc-pipe-icon">${failMeta.icon}</span>
+          <span class="mc-pipe-count">${counts.failed}</span>
+          <span class="mc-pipe-label">Failed</span>
+        </button>
+      </div>` : '';
+
+    pipe.innerHTML = `
+      <div class="mc-pipe-row">
+        ${nodesHTML}
+      </div>
+      ${failHTML}
+    `;
+
+    // Pipeline filter clicks
+    pipe.querySelectorAll('.mc-pipe-node').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const s = btn.dataset.status;
+        _filterStatus = (_filterStatus === s) ? '' : s;
+        _applyFilters();
+        _renderPipeline(State.get('missions') || []);
+      });
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     MISSION FEED (unified card grid)
+  ═══════════════════════════════════════════════════════════════════ */
+  function _renderFeed(missions) {
+    const feed = document.getElementById('mc-feed');
+    if (!feed) return;
+
+    if (!missions || !missions.length) {
+      feed.innerHTML = `
+        <div class="app-empty">
+          <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
+          <h2>No Missions Yet</h2>
+          <p>Create a mission and assign it to an agent.</p>
+          <div class="app-empty-acts">
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-new-task').classList.add('open')">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg> Create Mission
+            </button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const agents = State.get('agents') || [];
+    const agentMap = {};
+    agents.forEach(a => { agentMap[a.id] = a; });
+
+    // Sort: running first, then queued, then completed/failed by date
+    const order = { running: 0, queued: 1, failed: 2, completed: 3 };
+    const sorted = [...missions].sort((a, b) => (order[a.status] ?? 4) - (order[b.status] ?? 4) || new Date(b.created_at) - new Date(a.created_at));
+
+    feed.innerHTML = `<div class="mc-card-grid">${sorted.map(m => _renderCard(m, agentMap)).join('')}</div>`;
+
+    // Detect transitions and animate
+    _detectTransitions(missions);
+
+    // Card clicks
+    feed.querySelectorAll('.mc-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.mc-card-check') || e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn')) return;
+        Router.navigate('#/missions/' + card.dataset.id);
+      });
+    });
+
+    // Run/Retry
+    feed.addEventListener('click', async (e) => {
+      const runBtn = e.target.closest('.task-run-btn');
+      const retryBtn = e.target.closest('.task-retry-btn');
+      const btn = runBtn || retryBtn;
+      if (!btn || typeof MissionRunner === 'undefined') return;
+      const missionId = btn.dataset.id;
+      btn.disabled = true; btn.textContent = '...';
+      if (retryBtn) { try { await SB.db('tasks').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {} }
+      await MissionRunner.run(missionId);
+      _loadMissions();
+    });
+
+    // Batch checkboxes
+    feed.querySelectorAll('.mc-card-check').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const id = cb.dataset.id;
+        cb.checked ? _selected.add(id) : _selected.delete(id);
+        _renderBatchBar();
+      });
+    });
+  }
+
+  function _renderCard(m, agentMap) {
+    const agent = agentMap[m.agent_id];
+    const agentName = agent?.name || m.agent_name || 'Unassigned';
+    const initials = agentName.slice(0, 2).toUpperCase();
+    const meta = STATUS_META[m.status] || STATUS_META.queued;
+    const progress = m.progress || 0;
+    const isRunning = m.status === 'running';
+    const ageClass = _missionAgeClass(m.created_at);
+    const checked = _selected.has(m.id) ? 'checked' : '';
+    const eta = isRunning ? _estimateETA(m) : '';
+
+    let actionsHTML = '';
+    if (m.status === 'queued' && m.agent_id) {
+      actionsHTML = `<button class="btn btn-primary btn-xs task-run-btn" data-id="${m.id}">⚡ Run</button>`;
+    } else if (m.status === 'failed' && m.agent_id) {
+      actionsHTML = `<button class="btn btn-xs task-retry-btn" data-id="${m.id}">↻ Retry</button>`;
+    }
+
+    return `
+      <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}">
+        <div class="mc-card-top">
+          <input type="checkbox" class="mc-card-check" data-id="${m.id}" ${checked} />
+          <span class="mc-card-status" style="color:${meta.color}">${meta.icon}</span>
+          <span class="mc-card-pri priority-${m.priority}">${m.priority}</span>
+        </div>
+        <div class="mc-card-title">${_esc(m.title)}</div>
+        <div class="mc-card-agent">
+          <span class="mc-card-avatar" style="background:${_agentColor(agent?.role)}">${initials}</span>
+          <span>${_esc(agentName)}</span>
+        </div>
+        ${isRunning ? `
+          <div class="mc-progress">
+            <div class="mc-progress-track">
+              <div class="mc-progress-bar" style="width:${progress}%">
+                <div class="mc-progress-shimmer"></div>
+              </div>
+            </div>
+            <span class="mc-progress-pct">${progress}%</span>
+          </div>
+          ${eta ? `<div class="mc-eta">${eta}</div>` : ''}
+        ` : ''}
+        <div class="mc-card-footer">
+          <span class="mc-card-time">${_timeAgo(m.created_at)}</span>
+          ${actionsHTML}
+        </div>
+      </div>`;
+  }
+
+  function _agentColor(role) {
+    const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6' };
+    return colors[role] || 'var(--accent)';
+  }
+
+  function _missionAgeClass(createdAt) {
+    if (!createdAt) return 'mc-age-fresh';
+    const days = (Date.now() - new Date(createdAt).getTime()) / 86400000;
+    if (days < 1) return 'mc-age-fresh';
+    if (days < 3) return 'mc-age-stale';
+    return 'mc-age-overdue';
+  }
+
+  function _estimateETA(m) {
+    if (!m.created_at || !m.progress || m.progress <= 0) return '';
+    const elapsed = Date.now() - new Date(m.created_at).getTime();
+    const rate = m.progress / elapsed; // %/ms
+    if (rate <= 0) return '';
+    const remaining = (100 - m.progress) / rate;
+    if (remaining < 60000) return '~' + Math.round(remaining / 1000) + 's remaining';
+    if (remaining < 3600000) return '~' + Math.round(remaining / 60000) + 'm remaining';
+    return '~' + Math.round(remaining / 3600000) + 'h remaining';
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TRANSITION ANIMATIONS
+  ═══════════════════════════════════════════════════════════════════ */
+  function _detectTransitions(missions) {
+    missions.forEach(m => {
+      const prev = _prevStatuses[m.id];
+      if (prev && prev !== m.status) {
+        const card = document.querySelector(`.mc-card[data-id="${m.id}"]`);
+        if (!card) return;
+        if (m.status === 'completed') {
+          card.classList.add('mc-flash-complete');
+          setTimeout(() => card.classList.remove('mc-flash-complete'), 3000);
+        } else if (m.status === 'failed') {
+          card.classList.add('mc-flash-fail');
+          setTimeout(() => card.classList.remove('mc-flash-fail'), 1500);
+        }
+      }
+      _prevStatuses[m.id] = m.status;
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     BATCH OPERATIONS
+  ═══════════════════════════════════════════════════════════════════ */
+  function _renderBatchBar() {
+    const bar = document.getElementById('mc-batch-bar');
+    if (!bar) return;
+    if (_selected.size === 0) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    bar.innerHTML = `
+      <span class="mc-batch-count">${_selected.size} selected</span>
+      <button class="btn btn-xs mc-batch-act" data-action="completed">✓ Complete</button>
+      <button class="btn btn-xs mc-batch-act" data-action="failed">✕ Fail</button>
+      <button class="btn btn-xs mc-batch-act" data-action="queued">↩ Re-queue</button>
+      <button class="btn btn-xs mc-batch-clear">Clear</button>
+    `;
+    bar.querySelectorAll('.mc-batch-act').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        _selected.forEach(id => _updateMissionStatus(id, action));
+        _selected.clear();
+        _renderBatchBar();
+      });
+    });
+    bar.querySelector('.mc-batch-clear')?.addEventListener('click', () => {
+      _selected.clear();
+      _renderBatchBar();
+      _applyFilters();
+    });
+  }
+
+  function _updateMissionStatus(missionId, newStatus) {
+    const missions = State.get('missions') || [];
+    const mission = missions.find(m => m.id === missionId);
+    if (!mission || mission.status === newStatus) return;
+    const oldStatus = mission.status;
+    mission.status = newStatus;
+    if (newStatus === 'completed') {
+      mission.completed_at = new Date().toISOString();
+      if (typeof Gamification !== 'undefined') Gamification.addMissionXP(mission);
+    }
+    State.set('missions', missions);
+    if (typeof AuditLog !== 'undefined') {
+      AuditLog.log('mission', { description: `Mission "${mission.title}" ${oldStatus} → ${newStatus}`, missionId, oldStatus, newStatus });
+    }
+    if (typeof SB !== 'undefined') SB.db('tasks').update(missionId, { status: newStatus }).catch(() => {});
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     DATA LOADING / EVENTS
+  ═══════════════════════════════════════════════════════════════════ */
   function _onMissionsChanged(missions) {
-    _updateStats(missions);
+    _renderGauges(missions);
+    _renderPipeline(missions);
     _applyFilters();
   }
 
@@ -145,451 +422,112 @@ const MissionsView = (() => {
     const user = State.get('user');
     let dbError = false;
     if (user) {
-      try {
-        missions = await SB.db('tasks').list({ userId: user.id, orderBy: 'created_at' });
-      } catch (err) {
-        dbError = true;
-        console.warn('Supabase tasks unavailable, using seed data:', err.message);
-      }
+      try { missions = await SB.db('tasks').list({ userId: user.id, orderBy: 'created_at' }); }
+      catch (err) { dbError = true; console.warn('Supabase tasks unavailable:', err.message); }
     }
     if (!user || (dbError && !missions.length)) missions = _seedMissions();
+    // Snapshot statuses for transition detection
+    missions.forEach(m => { if (!_prevStatuses[m.id]) _prevStatuses[m.id] = m.status; });
     State.set('missions', missions);
-    _renderMissions(missions);
-    _updateStats(missions);
+    _renderGauges(missions);
+    _renderPipeline(missions);
+    _renderFeed(missions);
   }
 
   function _seedMissions() {
     const now = Date.now();
     return [
-      { id:'st1', title:'Scrape competitor pricing', agent_id:'sa1', agent_name:'ResearchBot', status:'completed', priority:'high', created_at:new Date(now - 86400000).toISOString(), completed_at:new Date(now - 82800000).toISOString() },
-      { id:'st2', title:'Review PR #142', agent_id:'sa2', agent_name:'CodePilot', status:'running', priority:'medium', created_at:new Date(now - 7200000).toISOString() },
-      { id:'st3', title:'Generate weekly report', agent_id:'sa3', agent_name:'DataCrunch', status:'queued', priority:'low', created_at:new Date(now - 3600000).toISOString() },
-      { id:'st4', title:'Write blog post draft', agent_id:'sa4', agent_name:'ContentWriter', status:'completed', priority:'medium', created_at:new Date(now - 172800000).toISOString(), completed_at:new Date(now - 162000000).toISOString() },
-      { id:'st5', title:'Deploy staging environment', agent_id:'sa5', agent_name:'OpsMonitor', status:'failed', priority:'high', created_at:new Date(now - 43200000).toISOString() },
-      { id:'st6', title:'Analyze user feedback', agent_id:'sa1', agent_name:'ResearchBot', status:'running', priority:'medium', created_at:new Date(now - 1800000).toISOString() },
-      { id:'st7', title:'Fix auth redirect bug', agent_id:'sa6', agent_name:'BugHunter', status:'failed', priority:'high', created_at:new Date(now - 259200000).toISOString() },
-      { id:'st8', title:'Update API documentation', agent_id:'sa4', agent_name:'ContentWriter', status:'completed', priority:'low', created_at:new Date(now - 345600000).toISOString(), completed_at:new Date(now - 340000000).toISOString() },
+      { id:'st1', title:'Scrape competitor pricing', agent_id:'sa1', agent_name:'ResearchBot', status:'completed', priority:'high', progress:100, created_at:new Date(now - 86400000).toISOString(), completed_at:new Date(now - 82800000).toISOString() },
+      { id:'st2', title:'Review PR #142', agent_id:'sa2', agent_name:'CodePilot', status:'running', priority:'medium', progress:45, created_at:new Date(now - 7200000).toISOString() },
+      { id:'st3', title:'Generate weekly report', agent_id:'sa3', agent_name:'DataCrunch', status:'queued', priority:'low', progress:0, created_at:new Date(now - 3600000).toISOString() },
+      { id:'st4', title:'Write blog post draft', agent_id:'sa4', agent_name:'ContentWriter', status:'completed', priority:'medium', progress:100, created_at:new Date(now - 172800000).toISOString(), completed_at:new Date(now - 162000000).toISOString() },
+      { id:'st5', title:'Deploy staging environment', agent_id:'sa5', agent_name:'OpsMonitor', status:'failed', priority:'high', progress:60, created_at:new Date(now - 43200000).toISOString() },
+      { id:'st6', title:'Analyze user feedback', agent_id:'sa1', agent_name:'ResearchBot', status:'running', priority:'medium', progress:72, created_at:new Date(now - 1800000).toISOString() },
+      { id:'st7', title:'Fix auth redirect bug', agent_id:'sa6', agent_name:'BugHunter', status:'failed', priority:'high', progress:30, created_at:new Date(now - 259200000).toISOString() },
+      { id:'st8', title:'Update API documentation', agent_id:'sa4', agent_name:'ContentWriter', status:'completed', priority:'low', progress:100, created_at:new Date(now - 345600000).toISOString(), completed_at:new Date(now - 340000000).toISOString() },
     ];
   }
 
-  function _renderMissions(missions) {
-    const list = document.getElementById('tasks-list');
-    if (!list) return;
-
-    if (!missions || missions.length === 0) {
-      list.innerHTML = `
-        <div class="app-empty">
-          <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
-          <h2>No Missions Yet</h2>
-          <p>Create a mission and assign it to an agent.</p>
-          <div class="app-empty-acts">
-            <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-new-task').classList.add('open')">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-              Create Mission
-            </button>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    // Get agents for name lookup
-    const agents = State.get('agents') || [];
-    const agentMap = {};
-    agents.forEach(a => { agentMap[a.id] = a; });
-
-    list.innerHTML = missions.map(t => {
-      const agent = agentMap[t.agent_id];
-      const agentName = agent ? agent.name : 'Unassigned';
-      const progress = t.progress || 0;
-
-      return `
-        <div class="task-row task-row-clickable" data-id="${t.id}">
-          <div class="task-row-main">
-            <span class="task-status-badge badge-${t.status}">${t.status}</span>
-            <div class="task-row-info">
-              <span class="task-row-title">${_esc(t.title)}</span>
-              <span class="task-row-agent">${_esc(agentName)}</span>
-            </div>
-            <span class="task-priority-tag priority-${t.priority}">${t.priority}</span>
-            <span class="task-row-time">${_timeAgo(t.created_at)}</span>
-          </div>
-          ${t.status === 'running' ? `
-            <div class="task-progress">
-              <div class="task-progress-bar" style="width:${progress}%"></div>
-            </div>
-          ` : ''}
-          ${t.status === 'queued' && t.agent_id ? `
-            <div class="task-actions">
-              <button class="btn btn-primary btn-xs task-run-btn" data-id="${t.id}">
-                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-zap"/></svg> Run
-              </button>
-            </div>
-          ` : ''}
-          ${t.status === 'failed' && t.agent_id ? `
-            <div class="task-actions">
-              <button class="btn btn-primary btn-xs task-retry-btn" data-id="${t.id}">
-                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-refresh"/></svg> Retry
-              </button>
-            </div>
-          ` : ''}
-          ${t.result ? `<div class="task-result"><pre>${_esc(t.result).slice(0, 500)}</pre></div>` : ''}
-        </div>
-      `;
-    }).join('');
-  }
-
-  /* ── Board (Kanban) Rendering ── */
-
-  function _renderBoard(missions) {
-    const list = document.getElementById('tasks-list');
-    if (!list) return;
-    if (!missions) missions = [];
-    const agents = State.get('agents') || [];
-    list.innerHTML = `
-      <div class="mb-board" id="mb-board">
-        ${BOARD_COLUMNS.map(col => {
-          const colMissions = _getBoardFiltered(missions, col.status);
-          return `
-            <div class="mb-col" data-status="${col.status}">
-              <div class="mb-col-header" style="border-color:${col.color}">
-                <span class="mb-col-title">${col.label}</span>
-                <span class="mb-col-count">${colMissions.length}</span>
-              </div>
-              <div class="mb-col-body" data-status="${col.status}">
-                ${colMissions.length === 0 ? '<div class="mb-empty">No missions</div>' :
-                  colMissions.map(m => _renderBoardCard(m, agents)).join('')}
-              </div>
-            </div>`;
-        }).join('')}
-      </div>`;
-
-    _initDnD();
-    _initCardClick();
-  }
-
-  function _getBoardFiltered(missions, status) {
-    let filtered = missions.filter(m => m.status === status);
-    if (_filterAgent) filtered = filtered.filter(m => m.agent_id === _filterAgent);
-    return filtered;
-  }
-
-  function _renderBoardCard(mission, agents) {
-    const agent = agents.find(r => r.id === mission.agent_id);
-    const agentName = agent ? agent.name : 'Unassigned';
-    const priority = mission.priority || 'normal';
-    const priorityClass = priority === 'high' ? 'pri-high' : priority === 'low' ? 'pri-low' : 'pri-normal';
-    const ageClass = _missionAgeClass(mission.created_at);
-
-    if (_boardCompact) {
-      return `
-        <div class="mb-card mb-card-compact ${ageClass}" draggable="true" data-id="${mission.id}" data-status="${mission.status}">
-          <span class="mb-card-title">${_esc(mission.title)}</span>
-          <span class="mb-card-pri ${priorityClass}">${priority}</span>
-        </div>`;
-    }
-
-    return `
-      <div class="mb-card ${ageClass}" draggable="true" data-id="${mission.id}" data-status="${mission.status}">
-        <div class="mb-card-top">
-          <span class="mb-card-title">${_esc(mission.title)}</span>
-          <span class="mb-card-pri ${priorityClass}">${priority}</span>
-        </div>
-        <div class="mb-card-meta">
-          <span class="mb-card-agent">${_esc(agentName)}</span>
-          <span class="mb-card-date">${_timeAgo(mission.created_at)}</span>
-        </div>
-      </div>`;
-  }
-
-  function _missionAgeClass(createdAt) {
-    if (!createdAt) return 'mission-fresh';
-    const ageMs = Date.now() - new Date(createdAt).getTime();
-    const ageDays = ageMs / 86400000;
-    if (ageDays < 1) return 'mission-fresh';
-    if (ageDays < 3) return 'mission-stale';
-    return 'mission-overdue';
-  }
-
-  function _initDnD() {
-    const board = document.getElementById('mb-board');
-    if (!board) return;
-
-    board.querySelectorAll('.mb-card').forEach(card => {
-      card.addEventListener('dragstart', (e) => {
-        card.classList.add('mb-dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', card.dataset.id);
-      });
-      card.addEventListener('dragend', () => {
-        card.classList.remove('mb-dragging');
-        board.querySelectorAll('.mb-col-body').forEach(b => b.classList.remove('mb-drop-target'));
-      });
-    });
-
-    board.querySelectorAll('.mb-col-body').forEach(colBody => {
-      colBody.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        colBody.classList.add('mb-drop-target');
-      });
-      colBody.addEventListener('dragleave', () => {
-        colBody.classList.remove('mb-drop-target');
-      });
-      colBody.addEventListener('drop', (e) => {
-        e.preventDefault();
-        colBody.classList.remove('mb-drop-target');
-        const missionId = e.dataTransfer.getData('text/plain');
-        const newStatus = colBody.dataset.status;
-        _updateMissionStatus(missionId, newStatus);
-      });
-    });
-  }
-
-  function _updateMissionStatus(missionId, newStatus) {
-    const missions = State.get('missions') || [];
-    const mission = missions.find(m => m.id === missionId);
-    if (!mission || mission.status === newStatus) return;
-
-    const oldStatus = mission.status;
-    mission.status = newStatus;
-    State.set('missions', missions);
-
-    if (newStatus === 'completed' && typeof Gamification !== 'undefined') {
-      Gamification.addMissionXP(mission);
-    }
-    if (typeof AuditLog !== 'undefined') {
-      AuditLog.log('mission', {
-        description: `Mission "${mission.title}" moved from ${oldStatus} to ${newStatus}`,
-        missionId, oldStatus, newStatus,
-      });
-    }
-    if (typeof SB !== 'undefined') {
-      SB.db('tasks').update(missionId, { status: newStatus }).catch(() => {});
-    }
-  }
-
-  function _initCardClick() {
-    const board = document.getElementById('mb-board');
-    if (!board) return;
-    board.addEventListener('click', (e) => {
-      const card = e.target.closest('.mb-card');
-      if (!card || card.classList.contains('mb-dragging')) return;
-      Router.navigate('#/missions/' + card.dataset.id);
-    });
-  }
-
-  function _updateStats(missions) {
-    if (!missions) return;
-    const total     = missions.length;
-    const running   = missions.filter(t => t.status === 'running').length;
-    const queued    = missions.filter(t => t.status === 'queued').length;
-    const completed = missions.filter(t => t.status === 'completed').length;
-    const failed    = missions.filter(t => t.status === 'failed').length;
-
-    const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    el('ts-total', total);
-    el('ts-running', running);
-    el('ts-queued', queued);
-    el('ts-completed', completed);
-    el('ts-failed', failed);
+  function _applyFilters() {
+    const q = (document.getElementById('task-search')?.value || '').toLowerCase();
+    let missions = State.get('missions') || [];
+    if (q) missions = missions.filter(t => t.title.toLowerCase().includes(q));
+    if (_filterStatus) missions = missions.filter(t => t.status === _filterStatus);
+    _renderFeed(missions);
   }
 
   function _bindEvents() {
-    // View mode toggle
-    document.getElementById('btn-view-list')?.addEventListener('click', () => {
-      if (_viewMode === 'list') return;
-      _viewMode = 'list';
-      if (_el) render(_el);
-    });
-    document.getElementById('btn-view-board')?.addEventListener('click', () => {
-      if (_viewMode === 'board') return;
-      _viewMode = 'board';
-      if (_el) render(_el);
-    });
-
-    // Board-specific controls
-    document.getElementById('mb-toggle-compact')?.addEventListener('click', () => {
-      _boardCompact = !_boardCompact;
-      if (_el) render(_el);
-    });
-    document.getElementById('mb-filter-agent')?.addEventListener('change', (e) => {
-      _filterAgent = e.target.value;
-      const missions = State.get('missions') || [];
-      _renderBoard(missions);
-      _updateStats(missions);
-    });
-
-    // New mission button
     document.getElementById('btn-new-task')?.addEventListener('click', _openNewMission);
     document.getElementById('close-task-modal')?.addEventListener('click', () => {
       document.getElementById('modal-new-task')?.classList.remove('open');
     });
-
-    // Close modal on overlay click
     document.getElementById('modal-new-task')?.addEventListener('click', (e) => {
       if (e.target.id === 'modal-new-task') e.target.classList.remove('open');
     });
-
-    // Task form submit
     document.getElementById('task-form')?.addEventListener('submit', _createMission);
-
-    // Search & filter
     document.getElementById('task-search')?.addEventListener('input', _applyFilters);
-    document.getElementById('task-filter')?.addEventListener('change', _applyFilters);
-
-    // Row click → detail view (delegated, list mode only)
-    document.getElementById('tasks-list')?.addEventListener('click', (e) => {
-      if (_viewMode === 'board') return;
-      if (e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn')) return;
-      const row = e.target.closest('.task-row');
-      if (row) Router.navigate('#/missions/' + row.dataset.id);
-    });
-
-    // Run / Retry buttons (delegated)
-    document.getElementById('tasks-list')?.addEventListener('click', async (e) => {
-      const runBtn = e.target.closest('.task-run-btn');
-      const retryBtn = e.target.closest('.task-retry-btn');
-      const btn = runBtn || retryBtn;
-      if (!btn || typeof MissionRunner === 'undefined') return;
-
-      const missionId = btn.dataset.id;
-      btn.disabled = true;
-      btn.textContent = 'Running...';
-
-      if (retryBtn) {
-        try { await SB.db('tasks').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {}
-      }
-
-      await MissionRunner.run(missionId);
-      _loadMissions();
-    });
   }
 
   async function _openNewMission() {
-    // Populate agent dropdown from multiple sources
     const select = document.getElementById('t-agent');
     if (select) {
       let agents = State.get('agents') || [];
-
-      // Also pull from BlueprintStore activated agents
-      if (agents.length === 0 && typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedAgents) {
-        agents = BlueprintStore.getActivatedAgents().map(a => ({
-          id: a.id, name: a.name, status: 'active'
-        }));
+      if (!agents.length && typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedAgents) {
+        agents = BlueprintStore.getActivatedAgents().map(a => ({ id: a.id, name: a.name, status: 'active' }));
       }
-
-      // Also pull from blueprint catalog if still empty
-      if (agents.length === 0 && typeof BlueprintStore !== 'undefined') {
+      if (!agents.length && typeof BlueprintStore !== 'undefined') {
         await BlueprintStore.ensureCatalogLoaded();
-        agents = BlueprintStore.listAgents().map(a => ({
-          id: a.id, name: a.name, status: a.rarity || 'available'
-        }));
+        agents = BlueprintStore.listAgents().map(a => ({ id: a.id, name: a.name, status: a.rarity || 'available' }));
       }
-
-      _populateAgentSelect(select, agents);
+      select.innerHTML = '<option value="">Unassigned</option>' +
+        agents.map(a => `<option value="${a.id}">${_esc(a.name)}${a.status ? ' (' + a.status + ')' : ''}</option>`).join('');
     }
     document.getElementById('modal-new-task')?.classList.add('open');
-  }
-
-  function _populateAgentSelect(select, agents) {
-    select.innerHTML = '<option value="">Unassigned</option>' +
-      agents.map(a => `<option value="${a.id}">${_esc(a.name)}${a.status ? ' (' + a.status + ')' : ''}</option>`).join('');
   }
 
   async function _createMission(e) {
     e.preventDefault();
     const errEl = document.getElementById('task-error');
-    const btn   = document.getElementById('task-submit-btn');
-    errEl.textContent = '';
-    btn.disabled = true;
-    btn.textContent = 'Creating...';
+    const btn = document.getElementById('task-submit-btn');
+    errEl.textContent = ''; btn.disabled = true; btn.textContent = 'Creating...';
 
-    const user     = State.get('user');
-    const title    = document.getElementById('t-title').value.trim();
+    const user = State.get('user');
+    const mTitle = document.getElementById('t-title').value.trim();
     const agentVal = document.getElementById('t-agent').value || null;
     const priority = document.getElementById('t-priority').value;
 
-    if (!title) {
-      errEl.textContent = 'Mission title is required.';
-      btn.disabled = false;
-      btn.textContent = 'Create Mission';
-      return;
-    }
+    if (!mTitle) { errEl.textContent = 'Mission title is required.'; btn.disabled = false; btn.textContent = 'Create Mission'; return; }
 
-    // Resolve agent — UUID goes to agent_id, non-UUID goes to agent_name only
-    const isUUID = agentVal && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(agentVal);
+    const isUUID = agentVal && /^[0-9a-f]{8}-/i.test(agentVal);
     const agentId = isUUID ? agentVal : null;
-    // Resolve agent name from dropdown
     const agentSelect = document.getElementById('t-agent');
     const agentName = agentSelect?.selectedOptions[0]?.textContent?.replace(/\s*\(.*\)$/, '') || null;
 
     try {
-      const isRealUser = user?.id && /^[0-9a-f]{8}-/i.test(user.id);
+      const isReal = user?.id && /^[0-9a-f]{8}-/i.test(user.id);
       let created = null;
-
-      if (isRealUser) {
-        created = await SB.db('tasks').create({
-          user_id:  user.id,
-          agent_id: agentId,
-          agent_name: agentName,
-          title,
-          status:   'queued',
-          priority,
-          progress: 0,
-          result:   null,
-        });
+      if (isReal) {
+        created = await SB.db('tasks').create({ user_id: user.id, agent_id: agentId, agent_name: agentName, title: mTitle, status: 'queued', priority, progress: 0, result: null });
       }
-
-      // Always store locally in State
-      const localMission = created || {
-        id: 'mission-' + Date.now(),
-        title, agent_id: agentId, agent_name: agentName,
-        status: 'queued', priority, progress: 0,
-        created_at: new Date().toISOString(),
-      };
+      const local = created || { id: 'mission-' + Date.now(), title: mTitle, agent_id: agentId, agent_name: agentName, status: 'queued', priority, progress: 0, created_at: new Date().toISOString() };
       const missions = State.get('missions') || [];
-      missions.unshift(localMission);
+      missions.unshift(local);
       State.set('missions', missions);
-
       document.getElementById('modal-new-task')?.classList.remove('open');
       document.getElementById('task-form')?.reset();
-      _applyFilters();
-
-      // Auto-run if an agent is assigned
-      if (agentVal && created && created.id && typeof MissionRunner !== 'undefined') {
-        MissionRunner.run(created.id);
-      }
-
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Created', message: title, type: 'system' });
-    } catch (err) {
-      errEl.textContent = err.message || 'Failed to create mission.';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Create Mission';
-    }
+      if (agentVal && created?.id && typeof MissionRunner !== 'undefined') MissionRunner.run(created.id);
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Created', message: mTitle, type: 'system' });
+    } catch (err) { errEl.textContent = err.message || 'Failed to create mission.'; }
+    finally { btn.disabled = false; btn.textContent = 'Create Mission'; }
   }
 
-  function _applyFilters() {
-    const q = (document.getElementById('task-search')?.value || '').toLowerCase();
-    const f = document.getElementById('task-filter')?.value || '';
-    let missions = State.get('missions') || [];
-    if (q) missions = missions.filter(t => t.title.toLowerCase().includes(q));
-    if (f) missions = missions.filter(t => t.status === f);
-    if (_viewMode === 'board') {
-      _renderBoard(missions);
-    } else {
-      _renderMissions(missions);
-    }
-  }
-
-  function _subscribeRealtime() {
-    _channel = SB.realtime.subscribe('tasks', () => { _loadMissions(); });
-  }
+  function _subscribeRealtime() { _channel = SB.realtime.subscribe('tasks', () => _loadMissions()); }
 
   function destroy() {
     if (_channel) { SB.realtime.unsubscribe(_channel); _channel = null; }
     State.off('missions', _onMissionsChanged);
+    _selected.clear();
+    _prevStatuses = {};
   }
 
   return { title, render, destroy };
@@ -599,7 +537,7 @@ const MissionsView = (() => {
 const MissionDetailView = (() => {
   const title = 'Mission Detail';
   const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let _channel = null;
+  let _detailChannel = null;
 
   function render(el, params) {
     const user = State.get('user');
@@ -760,7 +698,7 @@ const MissionDetailView = (() => {
 
       _bindDetailEvents(el, id, mission);
 
-      _channel = SB.realtime.subscribe('tasks', (payload) => {
+      _detailChannel = SB.realtime.subscribe('tasks', (payload) => {
         if (payload.new?.id === id || payload.old?.id === id) _loadMission(el, id);
       });
     } catch (err) {
@@ -810,7 +748,7 @@ const MissionDetailView = (() => {
   }
 
   function destroy() {
-    if (_channel) { SB.realtime.unsubscribe(_channel); _channel = null; }
+    if (_detailChannel) { SB.realtime.unsubscribe(_detailChannel); _detailChannel = null; }
   }
 
   return { title, render, destroy };
