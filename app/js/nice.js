@@ -119,12 +119,20 @@ const Theme = (() => {
     btn.innerHTML = `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${icon}"/></svg>`;
   }
 
-  function renderDock() {
+  function renderDock(filterIds) {
     const container = document.getElementById('theme-dock-btns');
     if (!container) return;
 
-    // Show all themes in the dock
-    container.innerHTML = THEMES.map(t => {
+    // Use saved selection or show all
+    let dockIds = filterIds;
+    if (!dockIds) {
+      try { dockIds = JSON.parse(localStorage.getItem('nice-hud-dock-themes')); } catch {}
+    }
+    const themes = (Array.isArray(dockIds) && dockIds.length)
+      ? THEMES.filter(t => dockIds.includes(t.id))
+      : THEMES;
+
+    container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
       return `<button class="db" data-theme-id="${t.id}" data-tip="${t.name}" style="background:${accent}" onclick="Theme.set('${t.id}')" aria-label="${t.name}" title="${t.name}"></button>`;
     }).join('');

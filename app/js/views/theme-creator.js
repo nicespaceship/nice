@@ -262,6 +262,15 @@ const ThemeCreatorView = (() => {
           <div class="tc-code-msg" id="tc-code-msg"></div>
         </div>
 
+        <!-- HUD Dock Selection -->
+        <div class="tc-section">
+          <h2 class="tc-panel-title">HUD Dock Themes</h2>
+          <p class="tc-sub" style="margin:0 0 10px">Select which themes appear in the HUD quick-switch dock.</p>
+          <div class="tc-dock-grid" id="tc-dock-grid">
+            ${_renderDockSelection()}
+          </div>
+        </div>
+
         <!-- Actions Bar -->
         <div class="tc-actions">
           <button class="btn btn-sm btn-primary" id="tc-save">Save Settings</button>
@@ -290,6 +299,7 @@ const ThemeCreatorView = (() => {
     `;
 
     _bindEvents(el);
+    _bindDockSelection(el);
   }
 
   function _bindEvents(el) {
@@ -548,6 +558,48 @@ const ThemeCreatorView = (() => {
         document.documentElement.style.setProperty(key, value);
       }
     } catch { /* ignore */ }
+  }
+
+  /* ── HUD Dock Selection ── */
+  const DOCK_STORAGE_KEY = 'nice-hud-dock-themes';
+
+  function _getDockSelection() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DOCK_STORAGE_KEY));
+      if (Array.isArray(saved) && saved.length) return saved;
+    } catch {}
+    // Default: all themes
+    return Theme.THEMES.map(t => t.id);
+  }
+
+  function _saveDockSelection(ids) {
+    localStorage.setItem(DOCK_STORAGE_KEY, JSON.stringify(ids));
+    // Re-render the HUD dock with only selected themes
+    Theme.renderDock(ids);
+  }
+
+  function _renderDockSelection() {
+    const selected = _getDockSelection();
+    return Theme.THEMES.map(t => {
+      const accent = t.accent || (t.preview && t.preview[1]) || '#888';
+      const checked = selected.includes(t.id) ? 'checked' : '';
+      return `
+        <label class="tc-dock-item" title="${t.name}">
+          <input type="checkbox" class="tc-dock-check" data-theme-id="${t.id}" ${checked} />
+          <span class="tc-dock-swatch" style="background:${accent}"></span>
+          <span class="tc-dock-name">${t.name}</span>
+        </label>`;
+    }).join('');
+  }
+
+  function _bindDockSelection(el) {
+    el.querySelectorAll('.tc-dock-check').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const ids = [];
+        el.querySelectorAll('.tc-dock-check:checked').forEach(c => ids.push(c.dataset.themeId));
+        _saveDockSelection(ids);
+      });
+    });
   }
 
   return { title, render, destroy, restoreSaved };
