@@ -630,8 +630,10 @@
 .bridge-hero-schematic svg { width:100%; height:auto; }
 
 /* Schematic Wired Layout */
-.schematic-wired { position:relative; display:flex; align-items:stretch; width:100%; gap:0; }
-.schematic-col { display:flex; flex-direction:column; gap:6px; justify-content:center; flex:0 0 100px; z-index:1; position:relative; }
+.schematic-wired { position:relative; display:flex; align-items:stretch; width:100%; gap:0; overflow:hidden; }
+.schematic-wired > .sch-radar-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+.schematic-col { display:flex; flex-direction:column; gap:6px; justify-content:center; flex:0 0 100px; z-index:2; position:relative; }
+.schematic-center { z-index:1; }
 .schematic-col-right { align-items:flex-start; }
 .schematic-col-left { align-items:flex-end; }
 .schematic-col .schematic-card-slot:nth-child(even) { transform:translateX(110px); }

@@ -70,7 +70,13 @@ const SchematicView = (() => {
     el.innerHTML = `<div class="bridge-hero-wrap">${headerHTML}<div class="bridge-hero-content">${viewHTML}</div>${switcherHTML}</div>`;
 
     if (_heroView === 'schematic') {
-      requestAnimationFrame(_wireSchematic);
+      requestAnimationFrame(() => {
+        _wireSchematic();
+        const cvs = el.querySelector('.sch-radar-canvas');
+        if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
+          DockView._initRadar(cvs);
+        }
+      });
     }
 
     // Tab click handlers
@@ -139,6 +145,7 @@ const SchematicView = (() => {
     const svg = '<svg class="schematic-svg" preserveAspectRatio="none"></svg>';
 
     return '<div class="schematic-wired">' +
+      '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
       '<div class="schematic-center">' + svg + '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
@@ -346,6 +353,10 @@ const SchematicView = (() => {
   function destroy() {
     clearTimeout(_resizeTimer);
     window.removeEventListener('resize', _onResize);
+    // Clean up radar canvas from DockView
+    if (typeof DockView !== 'undefined' && DockView.destroy) {
+      try { cancelAnimationFrame(DockView._radarRaf); } catch(e) {}
+    }
   }
 
   // Redraw schematic on resize (listener added/removed per lifecycle)

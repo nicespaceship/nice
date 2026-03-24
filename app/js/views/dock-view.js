@@ -740,5 +740,5 @@ const DockView = (() => {
 
   function destroy() { cancelAnimationFrame(_radarRaf); _radarRaf = 0; }
 
-  return { title, render, destroy, renderSchematicSVG: _renderSchematicSVG, getSlotMap: _getSlotMap, getShipId: _getShipId };
+  return { title, render, destroy, renderSchematicSVG: _renderSchematicSVG, getSlotMap: _getSlotMap, getShipId: _getShipId, _initRadar: _initRadarCanvas };
 })();
