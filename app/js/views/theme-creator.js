@@ -580,8 +580,8 @@ const ThemeCreatorView = (() => {
 
   function _renderDockSelection() {
     const selected = _getDockSelection();
-    // Show all themes but limit selection to 11
-    return Theme.THEMES.map(t => {
+    const sorted = [...Theme.THEMES].sort((a, b) => a.name.localeCompare(b.name));
+    return sorted.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
       const checked = selected.includes(t.id) ? 'checked' : '';
       return `
