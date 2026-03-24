@@ -653,7 +653,7 @@
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty)::before {
   content:''; position:absolute;
   inset:-6px;
-  border:0.5px dashed #22c55e;
+  border:1.5px dashed #22c55e;
   border-radius:10px;
   opacity:.2;
   pointer-events:none;
