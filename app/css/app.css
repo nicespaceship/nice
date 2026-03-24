@@ -64,12 +64,6 @@
   font-family:var(--font-d); font-size:1.8rem; font-weight:700;
   letter-spacing:.18em; color:var(--accent);
 }
-.app-brand-sub {
-  display:block; font-family:var(--font-m); font-size:.42rem;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--text-muted);
-  margin-top:2px;
-}
-.app-brand { display:flex; flex-direction:column; }
 .app-hdr-btn {
   background:none; border:var(--border-width) solid var(--border);
   color:var(--text-muted); cursor:pointer; padding:5px 8px;
@@ -462,7 +456,6 @@
 .app-sidebar:not(.open) .side-link span,
 .app-sidebar:not(.open) .side-group-toggle,
 .app-sidebar:not(.open) .app-brand-text,
-.app-sidebar:not(.open) .app-brand-sub,
 .app-sidebar:not(.open) .side-footer .hdr-username,
 .app-sidebar:not(.open) .side-footer .hdr-user-badge,
 .app-sidebar:not(.open) .side-footer .side-more-btn,
