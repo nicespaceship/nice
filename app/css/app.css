@@ -61,8 +61,8 @@
   text-decoration:none; color:var(--accent);
 }
 .app-brand-text {
-  font-family:var(--font-d); font-size:.9rem; font-weight:700;
-  letter-spacing:.14em; color:var(--accent);
+  font-family:var(--font-d); font-size:1.3rem; font-weight:700;
+  letter-spacing:.18em; color:var(--accent);
 }
 .app-hdr-btn {
   background:none; border:var(--border-width) solid var(--border);
@@ -282,7 +282,7 @@
   padding:16px 16px 12px; flex-shrink:0;
   border-bottom:var(--border-width) solid var(--border);
 }
-.side-header .app-brand-text { font-size:1rem; }
+.side-header .app-brand-text { font-size:1.3rem; }
 .side-header-actions { display:flex; align-items:center; gap:6px; }
 .app-sidebar.open .side-toggle-btn { order:1; }
 .side-header .app-hdr-menu { display:none; }
