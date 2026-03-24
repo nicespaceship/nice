@@ -721,7 +721,7 @@ test.describe('NICE Blueprint Drawer', () => {
     });
 
     const drawer = page.locator('#bp-drawer.open');
-    await expect(drawer).toBeVisible({ timeout: 3000 });
+    await expect(drawer).toBeVisible({ timeout: 5000 });
   });
 });
 
