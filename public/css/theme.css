@@ -471,6 +471,34 @@
   border-color:#666688;
 }
 
+/* Blueprints — sub-tabs, rarity filters, view buttons */
+[data-theme="lcars"] .bp-sub-tab {
+  border-radius:24px; background:#666688; color:#000; border:none;
+  font-weight:700; text-transform:uppercase; letter-spacing:.1em; padding:6px 16px; margin:2px;
+}
+[data-theme="lcars"] .bp-sub-tab.active { background:#ff9966; color:#000; }
+[data-theme="lcars"] .bp-sub-tab:hover { background:#ffcc99; color:#000; }
+[data-theme="lcars"] .bp-tab-count { color:#000; opacity:.6; }
+
+[data-theme="lcars"] .bp-rarity-btn {
+  border-radius:24px; background:#666688; color:#000; border:none;
+  font-weight:700; text-transform:uppercase; letter-spacing:.08em; padding:4px 12px; font-size:.65rem;
+}
+[data-theme="lcars"] .bp-rarity-btn.active { background:#cc99ff; color:#000; }
+[data-theme="lcars"] .bp-rarity-btn:hover { background:#ffcc99; color:#000; }
+
+[data-theme="lcars"] .bp-view-btn {
+  border-radius:24px; background:#666688; color:#000; border:none; padding:4px 8px;
+}
+[data-theme="lcars"] .bp-view-btn.active { background:#99ccff; color:#000; }
+[data-theme="lcars"] .bp-view-btn:hover { background:#ffcc99; color:#000; }
+[data-theme="lcars"] .bp-view-btn svg { stroke:#000; }
+
+[data-theme="lcars"] .filter-select {
+  border-radius:24px; border:2px solid #666688; background:#000; color:#ff9966;
+  font-weight:700; text-transform:uppercase;
+}
+
 /* Schematic — reactor core + lines */
 [data-theme="lcars"] .schematic-svg circle[fill="var(--accent,#fff)"] { fill:#ff9966; }
 [data-theme="lcars"] .schematic-svg path[stroke="var(--accent,#fff)"] { stroke:#ff9966; }
