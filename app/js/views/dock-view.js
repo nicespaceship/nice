@@ -154,10 +154,17 @@ const DockView = (() => {
      RADAR / SONAR BACKGROUND CANVAS
   ═══════════════════════════════════════════════════════════════════ */
   let _radarRaf = 0;
+  let _radarRo = null;
+
+  function _stopRadar() {
+    cancelAnimationFrame(_radarRaf);
+    _radarRaf = 0;
+    if (_radarRo) { _radarRo.disconnect(); _radarRo = null; }
+  }
 
   function _initRadarCanvas(cvs) {
     if (!cvs) return;
-    cancelAnimationFrame(_radarRaf);
+    _stopRadar();
 
     const ctx = cvs.getContext('2d');
     const body = cvs.parentElement;
@@ -165,23 +172,26 @@ const DockView = (() => {
 
     function resize() {
       const r = body.getBoundingClientRect();
-      if (r.width < 1 || r.height < 1) return; // not laid out yet
+      if (r.width < 1 || r.height < 1) return;
       W = cvs.width  = Math.round(r.width);
       H = cvs.height = Math.round(r.height);
     }
-    // Defer to let aspect-ratio resolve
     requestAnimationFrame(() => { resize(); });
 
-    // Read accent colour from CSS
-    const cs = getComputedStyle(document.documentElement);
-    const raw = (cs.getPropertyValue('--accent') || '#7eb8ff').trim();
+    // Read accent colour from CSS (re-read each frame for theme switches)
     function hexToRgb(h) {
       h = h.replace('#', '');
       if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
       const n = parseInt(h, 16);
-      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      return isNaN(n) ? [126, 184, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
     }
-    const [ar, ag, ab] = hexToRgb(raw);
+    let ar = 126, ag = 184, ab = 255;
+    let _lastAccent = '';
+    function refreshAccent() {
+      const raw = (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#7eb8ff').trim();
+      if (raw !== _lastAccent) { _lastAccent = raw; [ar, ag, ab] = hexToRgb(raw); }
+    }
+    refreshAccent();
 
     // Stars (micro particles)
     const STAR_N = 40;
@@ -201,17 +211,18 @@ const DockView = (() => {
     }
     makeStars();
 
-    // Radar sweep state
-    let sweepAngle = 0;
     const cx = () => W / 2;
     const cy = () => H / 2;
 
-    // Ping blips (random sonar-like pings)
+    // Ping blips
     let pings = [];
     let nextPing = 0;
 
+    let _accentFrame = 0;
     function draw(t) {
       if (W < 1 || H < 1) { resize(); _radarRaf = requestAnimationFrame(draw); return; }
+      // Re-read accent every ~60 frames (~1s) for theme switches
+      if (++_accentFrame % 60 === 0) refreshAccent();
       ctx.clearRect(0, 0, W, H);
       const CX = cx(), CY = cy();
       const maxR = Math.max(W, H) * 0.6;
@@ -292,9 +303,9 @@ const DockView = (() => {
 
     _radarRaf = requestAnimationFrame(draw);
 
-    // Handle resize
-    const ro = new ResizeObserver(() => { resize(); makeStars(); });
-    ro.observe(body);
+    // Handle resize (stored for cleanup)
+    _radarRo = new ResizeObserver(() => { resize(); makeStars(); });
+    _radarRo.observe(body);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -708,7 +719,7 @@ const DockView = (() => {
     el.innerHTML = `<div class="auth-gate"><h2>Sign in to view ${viewName}</h2><p>Create an account or sign in to access this feature.</p><button class="btn btn-primary" onclick="NICE.openModal('modal-auth')">Sign In</button></div>`;
   }
 
-  function destroy() { cancelAnimationFrame(_radarRaf); _radarRaf = 0; }
+  function destroy() { _stopRadar(); }
 
-  return { title, render, destroy, renderSchematicSVG: _renderSchematicSVG, getSlotMap: _getSlotMap, getShipId: _getShipId, _initRadar: _initRadarCanvas };
+  return { title, render, destroy, renderSchematicSVG: _renderSchematicSVG, getSlotMap: _getSlotMap, getShipId: _getShipId, _initRadar: _initRadarCanvas, _stopRadar };
 })();

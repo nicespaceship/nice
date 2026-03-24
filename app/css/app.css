@@ -634,19 +634,15 @@
 .bridge-hero-tab:hover { color:var(--text); border-color:var(--text-muted); }
 .bridge-hero-tab.active { color:var(--accent); border-color:var(--accent); background:rgba(255,255,255,.03); }
 .bridge-hero-content { padding:12px; min-height:200px; display:flex; align-items:center; justify-content:center; }
-.bridge-hero-schematic { width:100%; max-width:500px; margin:0 auto; }
-.bridge-hero-schematic svg { width:100%; height:auto; }
-
 /* Schematic Wired Layout */
 .schematic-wired { position:relative; display:flex; align-items:stretch; width:100%; gap:0; overflow:visible; }
 .schematic-wired > .sch-radar-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
 .schematic-col { display:flex; flex-direction:column; gap:6px; justify-content:center; flex:0 0 100px; z-index:2; position:relative; }
-.schematic-center { z-index:1; }
 .schematic-col-right { align-items:flex-start; }
 .schematic-col-left { align-items:flex-end; }
 .schematic-col .schematic-card-slot:nth-child(even) { transform:translateX(110px); }
 .schematic-col-right .schematic-card-slot:nth-child(even) { transform:translateX(-110px); }
-.schematic-center { flex:1; min-width:40px; }
+.schematic-center { flex:1; min-width:40px; z-index:1; }
 .schematic-svg { position:absolute; inset:0; z-index:0; pointer-events:none; }
 .schematic-card-slot { cursor:pointer; }
 .schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; overflow:visible; }
@@ -754,9 +750,6 @@
 .schematic-card-role { font-family:var(--font-m); font-size:.36rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
 .schematic-card-rarity { font-family:var(--font-m); font-size:.32rem; letter-spacing:.1em; font-weight:600; }
 .schematic-slot-label { font-family:var(--font-m); font-size:.36rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; text-align:center; margin-top:2px; }
-.schematic-wired .tcg-mini-art { width:38px; height:38px; }
-.schematic-wired .tcg-mini-name { max-width:70px; font-size:.46rem; }
-.schematic-wired .tcg-mini-badge { font-size:.34rem; padding:1px 4px; }
 @media (max-width:600px) {
   .schematic-wired { flex-direction:column; gap:4px; align-items:center; }
   .schematic-col { flex-direction:row; flex-wrap:wrap; flex:none; justify-content:center; gap:4px; }

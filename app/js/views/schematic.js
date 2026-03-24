@@ -67,15 +67,18 @@ const SchematicView = (() => {
       </div>
     `;
 
-    if (_heroView === 'card') _heroView = 'slots';
     let viewHTML = '';
     if (_heroView === 'schematic') {
-      viewHTML = _renderHeroSchematic(shipClass, slotMap, activeShip);
+      viewHTML = _renderHeroSchematic(shipClass, slotMap);
     } else {
       viewHTML = _renderHeroSlots(shipClass, slotMap, activeShip);
     }
 
     el.innerHTML = `<div class="bridge-hero-wrap">${headerHTML}<div class="bridge-hero-content">${viewHTML}</div></div>`;
+
+    // Add resize listener per render (removed in destroy)
+    window.removeEventListener('resize', _onResize);
+    window.addEventListener('resize', _onResize);
 
     if (_heroView === 'schematic') {
       requestAnimationFrame(() => {
@@ -146,7 +149,6 @@ const SchematicView = (() => {
   function _renderHeroSchematic(shipClass, slotMap) {
     const slots = shipClass.slots || [];
     const CR = typeof CardRenderer !== 'undefined' ? CardRenderer : null;
-    const RC = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
 
     const crew = slots.map((slot, i) => {
       const bpId = slotMap[String(slot.id)] || null;
@@ -385,14 +387,11 @@ const SchematicView = (() => {
   function destroy() {
     clearTimeout(_resizeTimer);
     window.removeEventListener('resize', _onResize);
-    // Clean up radar canvas from DockView
-    if (typeof DockView !== 'undefined' && DockView.destroy) {
-      try { cancelAnimationFrame(DockView._radarRaf); } catch(e) {}
+    // Clean up radar canvas
+    if (typeof DockView !== 'undefined' && DockView._stopRadar) {
+      DockView._stopRadar();
     }
   }
-
-  // Redraw schematic on resize (listener added/removed per lifecycle)
-  window.addEventListener('resize', _onResize);
 
   return { render, destroy };
 })();
