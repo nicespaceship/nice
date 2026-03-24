@@ -41,12 +41,6 @@ const MissionsView = (() => {
 
     el.innerHTML = `
       <div class="tasks-wrap">
-        <div class="log-header">
-          <div>
-            <h1 class="log-title">Missions</h1>
-            <p class="log-sub">Live mission queue with status, progress, and agent assignment.</p>
-          </div>
-        </div>
         <div class="view-topbar">
           <div class="view-topbar-l">
             <div class="search-box">
@@ -473,27 +467,34 @@ const MissionsView = (() => {
   }
 
   async function _openNewMission() {
-    // Populate agent dropdown
+    // Populate agent dropdown from multiple sources
     const select = document.getElementById('t-agent');
     if (select) {
-      const agents = State.get('agents') || [];
-      if (agents.length === 0) {
-        try {
-          const user = State.get('user');
-          const fresh = await SB.db('user_agents').list({ userId: user.id });
-          State.set('agents', fresh);
-          _populateAgentSelect(select, fresh);
-        } catch(e) { /* ignore */ }
-      } else {
-        _populateAgentSelect(select, agents);
+      let agents = State.get('agents') || [];
+
+      // Also pull from BlueprintStore activated agents
+      if (agents.length === 0 && typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedAgents) {
+        agents = BlueprintStore.getActivatedAgents().map(a => ({
+          id: a.id, name: a.name, status: 'active'
+        }));
       }
+
+      // Also pull from blueprint catalog if still empty
+      if (agents.length === 0 && typeof BlueprintStore !== 'undefined') {
+        await BlueprintStore.ensureCatalogLoaded();
+        agents = BlueprintStore.listAgents().map(a => ({
+          id: a.id, name: a.name, status: a.rarity || 'available'
+        }));
+      }
+
+      _populateAgentSelect(select, agents);
     }
     document.getElementById('modal-new-task')?.classList.add('open');
   }
 
   function _populateAgentSelect(select, agents) {
     select.innerHTML = '<option value="">Unassigned</option>' +
-      agents.map(a => `<option value="${a.id}">${_esc(a.name)} (${a.status})</option>`).join('');
+      agents.map(a => `<option value="${a.id}">${_esc(a.name)}${a.status ? ' (' + a.status + ')' : ''}</option>`).join('');
   }
 
   async function _createMission(e) {
@@ -506,7 +507,7 @@ const MissionsView = (() => {
 
     const user     = State.get('user');
     const title    = document.getElementById('t-title').value.trim();
-    const agentId  = document.getElementById('t-agent').value || null;
+    const agentVal = document.getElementById('t-agent').value || null;
     const priority = document.getElementById('t-priority').value;
 
     if (!title) {
@@ -516,24 +517,51 @@ const MissionsView = (() => {
       return;
     }
 
+    // Resolve agent — UUID goes to agent_id, non-UUID goes to agent_name only
+    const isUUID = agentVal && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(agentVal);
+    const agentId = isUUID ? agentVal : null;
+    // Resolve agent name from dropdown
+    const agentSelect = document.getElementById('t-agent');
+    const agentName = agentSelect?.selectedOptions[0]?.textContent?.replace(/\s*\(.*\)$/, '') || null;
+
     try {
-      const created = await SB.db('tasks').create({
-        user_id:  user.id,
-        agent_id: agentId,
-        title,
-        status:   'queued',
-        priority,
-        progress: 0,
-        result:   null,
-      });
+      const isRealUser = user?.id && /^[0-9a-f]{8}-/i.test(user.id);
+      let created = null;
+
+      if (isRealUser) {
+        created = await SB.db('tasks').create({
+          user_id:  user.id,
+          agent_id: agentId,
+          agent_name: agentName,
+          title,
+          status:   'queued',
+          priority,
+          progress: 0,
+          result:   null,
+        });
+      }
+
+      // Always store locally in State
+      const localMission = created || {
+        id: 'mission-' + Date.now(),
+        title, agent_id: agentId, agent_name: agentName,
+        status: 'queued', priority, progress: 0,
+        created_at: new Date().toISOString(),
+      };
+      const missions = State.get('missions') || [];
+      missions.unshift(localMission);
+      State.set('missions', missions);
+
       document.getElementById('modal-new-task')?.classList.remove('open');
       document.getElementById('task-form')?.reset();
-      _loadMissions();
+      _applyFilters();
 
       // Auto-run if an agent is assigned
-      if (agentId && created && created.id && typeof MissionRunner !== 'undefined') {
+      if (agentVal && created && created.id && typeof MissionRunner !== 'undefined') {
         MissionRunner.run(created.id);
       }
+
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Created', message: title, type: 'system' });
     } catch (err) {
       errEl.textContent = err.message || 'Failed to create mission.';
     } finally {
@@ -570,6 +598,7 @@ const MissionsView = (() => {
 /* ── Mission Detail View ── */
 const MissionDetailView = (() => {
   const title = 'Mission Detail';
+  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let _channel = null;
 
   function render(el, params) {
@@ -790,6 +819,7 @@ const MissionDetailView = (() => {
 /* ── Shared Mission Report View ── */
 const SharedReportView = (() => {
   const title = 'Mission Report';
+  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function render(el, params) {
     const missionId = (params.id || '').replace('report-', '');

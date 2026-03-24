@@ -44,20 +44,13 @@ const AuditLogView = (() => {
 
     el.innerHTML = `
       <div class="log-wrap">
-        <div class="log-header">
-          <div>
-            <h1 class="log-title">Log</h1>
-            <p class="log-sub">Complete record of all actions and events.</p>
-          </div>
-          <span class="log-count" id="log-count"></span>
-        </div>
-
         <div class="log-filter-bar">
-          <select id="log-filter-cat" class="filter-select">
-            ${CATEGORIES.map(c => `<option value="${c.value}">${c.label}</option>`).join('')}
-          </select>
           <input type="text" id="log-filter-search" class="filter-input" placeholder="Search events..." />
-          <button class="btn btn-sm btn-danger" id="log-clear">Clear Log</button>
+          <div class="log-cat-filters" id="log-cat-filters">
+            ${CATEGORIES.map((c, i) => `<button class="log-cat-btn${i === 0 ? ' active' : ''}" data-cat="${c.value}">${c.label}</button>`).join('')}
+          </div>
+          <span class="log-count" id="log-count" style="margin-left:auto"></span>
+          <button class="btn btn-sm btn-danger" id="log-clear" style="margin-left:20px">Clear Log</button>
         </div>
 
         <div class="log-timeline" id="log-timeline">
@@ -68,7 +61,13 @@ const AuditLogView = (() => {
 
     _loadEntries();
 
-    document.getElementById('log-filter-cat')?.addEventListener('change', _loadEntries);
+    document.getElementById('log-cat-filters')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.log-cat-btn');
+      if (!btn) return;
+      document.querySelectorAll('.log-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _loadEntries();
+    });
     document.getElementById('log-filter-search')?.addEventListener('input', _debounce(_loadEntries, 200));
     document.getElementById('log-clear')?.addEventListener('click', () => {
       if (!confirm('Clear the entire Captain\'s Log? This cannot be undone.')) return;
@@ -78,7 +77,7 @@ const AuditLogView = (() => {
   }
 
   function _loadEntries() {
-    const cat = document.getElementById('log-filter-cat')?.value || 'all';
+    const cat = document.querySelector('.log-cat-btn.active')?.dataset.cat || 'all';
     const search = document.getElementById('log-filter-search')?.value || '';
     const entries = AuditLog.getEntries({ action: cat, search: search, limit: 200 });
 

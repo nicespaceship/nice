@@ -421,6 +421,7 @@ nav:not(.app-side-nav) {
 /* Name bar */
 .tcg-name-bar { padding:10px 14px; display:flex; align-items:center; justify-content:flex-start; background:var(--surface); border-bottom:1px solid var(--border); gap:6px; border-radius:3px 3px 0 0; }
 .tcg-name  { font-family:var(--font-h); font-size:1.1rem; font-weight:700; letter-spacing:.04em; color:var(--text); line-height:1.2; text-align:left; }
+.tcg-subtitle { margin-left:auto; font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
 .tcg-name[contenteditable="true"] { cursor:text; outline:none; border-bottom:1px dashed var(--accent); min-width:40px; }
 .tcg-name[contenteditable="true"]:focus { border-bottom:1px solid var(--accent); background:rgba(var(--accent-rgb, 59,130,246),.08); }
 .tcg-rarity{ font-size:0.56rem; font-family:var(--font-m); color:var(--accent); letter-spacing:.12em; white-space:nowrap; flex-shrink:0; }
@@ -497,6 +498,15 @@ nav:not(.app-side-nav) {
 .bp-type-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 .bp-tab-count { font-size:.55rem; padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); }
 .bp-type-tab.active .bp-tab-count { border-color:var(--accent); color:var(--accent); }
+/* Sub-tabs (Spaceships / Agents within Blueprints tab) */
+.bp-sub-tabs { display:flex; gap:4px; margin-bottom:8px; }
+.bp-sub-tab {
+  padding:5px 14px; background:none; border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--text-muted); font-family:var(--font-b); font-size:.75rem; cursor:pointer; transition:all .2s;
+}
+.bp-sub-tab:hover { border-color:var(--text); color:var(--text); }
+.bp-sub-tab.active { border-color:var(--accent); color:var(--accent); background:rgba(99,102,241,.08); }
+.bp-sub-tab .bp-tab-count { font-size:.5rem; }
 /* Overlay section (instance data: member lists, health bars, perf stats) */
 .tcg-overlay { padding:4px 14px; font-size:.7rem; color:var(--text-muted); }
 /* Assigned state (dock cards already slotted) */

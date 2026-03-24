@@ -405,8 +405,9 @@ const ShipSetupWizard = (() => {
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {
         close();
         localStorage.setItem('nice-mc-ship', 'bp-' + _blueprint.id);
-        if (typeof Router !== 'undefined') Router.navigate('#/bridge?tab=schematic');
-        else location.hash = '#/bridge?tab=schematic';
+        // Navigate to schematic — use temporary hash to force re-render
+        location.hash = '#/_reload';
+        setTimeout(() => { location.hash = '#/bridge?tab=schematic'; }, 50);
       });
     }).catch(err => {
       body.innerHTML = `

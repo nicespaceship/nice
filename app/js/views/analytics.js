@@ -26,25 +26,18 @@ const AnalyticsView = (() => {
 
     el.innerHTML = `
       <div class="ana-wrap">
-        <div class="log-header">
-          <div>
-            <h1 class="log-title">Operations</h1>
-            <p class="log-sub">Mission analytics, cost tracking, and commander progress.</p>
-          </div>
-          <button class="btn btn-sm" id="ana-export-pdf">Export Report</button>
+        <div class="ana-top-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <select id="ana-range" class="filter-select">
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+          </select>
+          <button class="btn btn-sm" id="ana-export-pdf" style="margin-left:auto">Export Report</button>
         </div>
 
         <!-- ═══ 1. Mission Operations ═══ -->
         <div class="ana-section">
           <h3 class="ana-section-title">Mission Operations</h3>
-          <div class="ana-header" style="padding:0;border:none;margin-bottom:12px">
-            <div></div>
-            <select id="ana-range" class="filter-select">
-              <option value="7">Last 7 Days</option>
-              <option value="30">Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
-            </select>
-          </div>
           <div class="ana-stats" id="ana-mission-stats"></div>
           <div class="ana-charts">
             <div class="ana-chart-panel">

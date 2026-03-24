@@ -371,9 +371,12 @@ const CardRenderer = (() => {
     const shipRole = _cl.role || bp.category || (bp.desc || bp.description || '').split(/[—–.]/)[0]?.trim() || '';
     const nameEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="name"' : '';
 
+    const subtitle = bp.subtitle || (bp.metadata && bp.metadata.subtitle) || '';
+
     return `<div class="tcg-card ${clickClass}" data-id="${bp.id}" data-type="spaceship" data-rarity="${rarityName.toLowerCase()}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}>
       <div class="tcg-name-bar">
         <span class="tcg-name"${nameEditable}>${_esc(displayName)}</span>
+        ${subtitle ? `<span class="tcg-subtitle">${_esc(subtitle)}</span>` : ''}
         ${statusDot}
       </div>
       <div class="tcg-art">

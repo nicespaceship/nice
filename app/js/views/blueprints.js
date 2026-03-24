@@ -241,7 +241,8 @@ const BlueprintsView = (() => {
   /* ── Spaceship data comes from Supabase via BlueprintStore ── */
   const SPACESHIP_SEED = [];
 
-  let _activeTab = 'spaceship';
+  let _activeTab = 'blueprints';
+  let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship' or 'agent'
   let _viewMode = localStorage.getItem('nice-bp-view') || 'card';
   if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = 'card';
   let _colSort = { key: null, dir: 'asc' }; // column header sort state
@@ -278,11 +279,16 @@ const BlueprintsView = (() => {
         <!-- Type Tabs -->
         <div class="bp-type-tabs" id="bp-type-tabs">
           <button class="bp-type-tab" data-tab="schematic">Schematic</button>
-          <button class="bp-type-tab active" data-tab="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
-          <button class="bp-type-tab" data-tab="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
+          <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
           <button class="bp-type-tab" data-tab="missions">Missions</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
+        </div>
+
+        <!-- Blueprints sub-tabs (Spaceships / Agents) -->
+        <div class="bp-sub-tabs" id="bp-sub-tabs">
+          <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
+          <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -341,22 +347,25 @@ const BlueprintsView = (() => {
     const _hash = (window.location.hash || '').split('?')[0];
     const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
     const _tabParam = _hashParams.get('tab');
-    const validTabs = ['schematic', 'spaceship', 'agent', 'missions', 'operations', 'log'];
+    const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'log'];
     if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-    else if (_hash === '#/agents' || _hash === '#/bridge/agents') _activeTab = 'agent';
-    else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') _activeTab = 'spaceship';
+    else if (_tabParam === 'spaceship' || _tabParam === 'agent') { _activeTab = 'blueprints'; _subTab = _tabParam; }
+    else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
+    else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
     else if (_hash === '#/log') _activeTab = 'missions';
-    else _activeTab = 'spaceship';
+    else _activeTab = 'blueprints';
 
-    // Highlight the correct tab button
+    // Highlight the correct tab + sub-tab buttons
     document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`.bp-type-tab[data-tab="${_activeTab}"]`)?.classList.add('active');
+    document.querySelectorAll('.bp-sub-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.bp-sub-tab[data-sub="${_subTab}"]`)?.classList.add('active');
 
-    // Show/hide schematic vs catalog UI
+    // Show/hide sections based on active tab
     _toggleSchematicView();
 
     _bindEvents();
-    if (['spaceship', 'agent'].includes(_activeTab)) _applyFilters(); // async — renders activated section + paginated grid
+    if (_activeTab === 'blueprints') _applyFilters(); // async — renders activated section + paginated grid
     _loadCommunityBlueprints();
     _handleDeepLink();
   }
@@ -517,7 +526,7 @@ const BlueprintsView = (() => {
 
     if (_viewMode === 'list') {
       let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
-      if (_activeTab === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
+      if (_subTab === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
       const _si = (key) => _colSort.key === key ? (_colSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
       const header = `<div class="bpl-row bpl-header">
         <span class="bpl-rarity"></span>
@@ -818,7 +827,7 @@ const BlueprintsView = (() => {
 
   function _getAllBlueprints() {
 
-    if (_activeTab === 'spaceship') {
+    if (_subTab === 'spaceship') {
       return (typeof BlueprintStore !== 'undefined') ? BlueprintStore.listSpaceships() : [...SPACESHIP_SEED];
     }
     if (_remoteBlueprints.length) {
@@ -853,10 +862,10 @@ const BlueprintsView = (() => {
     if (typeof BlueprintStore === 'undefined') { wrap.innerHTML = ''; return; }
 
     let type, label, activated;
-    if (_activeTab === 'agent') {
+    if (_subTab === 'agent') {
       type = 'agent'; label = 'AGENTS';
       activated = BlueprintStore.getActivatedAgents ? BlueprintStore.getActivatedAgents() : [];
-    } else if (_activeTab === 'spaceship') {
+    } else if (_subTab === 'spaceship') {
       type = 'spaceship'; label = 'SPACESHIPS';
       activated = BlueprintStore.getActivatedShips ? BlueprintStore.getActivatedShips() : [];
 
@@ -949,7 +958,7 @@ const BlueprintsView = (() => {
 
     try {
       const result = await BlueprintStore.searchCatalog({
-        type: _activeTab === 'spaceship' ? 'spaceship' : 'agent',
+        type: _subTab === 'spaceship' ? 'spaceship' : 'agent',
         query: q,
         rarity: rarity !== 'all' ? rarity : null,
         sort: sort,
@@ -1007,12 +1016,12 @@ const BlueprintsView = (() => {
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
     if (rarity !== 'all') {
-      if (_activeTab === 'spaceship') list = list.filter(b => b.recommended_class === rarity);
+      if (_subTab === 'spaceship') list = list.filter(b => b.recommended_class === rarity);
       else list = list.filter(b => (b.rarity || 'Common') === rarity);
     }
 
     if (sort === 'popular') {
-      if (_activeTab === 'spaceship') {
+      if (_subTab === 'spaceship') {
         list.sort((a, b) => (parseInt(b.stats?.crew, 10) || 0) - (parseInt(a.stats?.crew, 10) || 0));
       } else {
         list.sort((a, b) => (_connCount(b) || b.downloads || 0) - (_connCount(a) || a.downloads || 0));
@@ -1167,12 +1176,16 @@ const BlueprintsView = (() => {
     const grid = document.getElementById('bp-grid');
     const loadMore = document.getElementById('bp-load-more');
 
+    const subTabs = document.getElementById('bp-sub-tabs');
     const isLogTab = ['missions', 'operations', 'log'].includes(_activeTab);
-    const isCatalogTab = ['spaceship', 'agent'].includes(_activeTab);
+    const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
+    // Sub-tabs (Spaceships/Agents) — only show when Blueprints tab active
+    if (subTabs) subTabs.style.display = isBlueprintsTab ? '' : 'none';
+
     // Catalog UI (search, filters, grid)
-    const catalogDisplay = isCatalogTab ? '' : 'none';
+    const catalogDisplay = isBlueprintsTab ? '' : 'none';
     if (searchRow) searchRow.style.display = catalogDisplay;
     if (resultBar) resultBar.style.display = catalogDisplay;
     if (activatedWrap) activatedWrap.style.display = catalogDisplay;
@@ -1208,7 +1221,7 @@ const BlueprintsView = (() => {
   }
 
   function _bindEvents() {
-    // Type tabs (Agent / Spaceship)
+    // Main tabs
     document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
       const tab = e.target.closest('.bp-type-tab');
       if (!tab) return;
@@ -1217,7 +1230,20 @@ const BlueprintsView = (() => {
       _activeTab = tab.dataset.tab;
       _colSort = { key: null, dir: 'asc' };
       _toggleSchematicView();
-      if (_activeTab === 'schematic' || ['missions', 'operations', 'log'].includes(_activeTab)) return;
+      if (_activeTab !== 'blueprints') return;
+      _updateRarityFilters();
+      if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
+      _applyFilters();
+    });
+
+    // Sub-tabs (Spaceships / Agents within Blueprints)
+    document.getElementById('bp-sub-tabs')?.addEventListener('click', (e) => {
+      const tab = e.target.closest('.bp-sub-tab');
+      if (!tab) return;
+      document.querySelectorAll('.bp-sub-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      _subTab = tab.dataset.sub;
+      _colSort = { key: null, dir: 'asc' };
       _updateRarityFilters();
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
       _applyFilters();

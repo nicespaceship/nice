@@ -2362,9 +2362,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   function syncRoute() {
     _updateRouteContext();
-    // On home route, HomeView embeds the panel inline — don't show floating
     const path = (location.hash || '#/').replace('#', '') || '/';
+    // On home route, HomeView embeds the panel inline — don't show floating
     if (path === '/') return;
+    // On bridge route, start with prompt bar hidden
+    if (path.startsWith('/bridge')) { hide(); return; }
     // On all other routes, show the floating prompt bar
     show();
   }

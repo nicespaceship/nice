@@ -2651,8 +2651,16 @@
 .log-count { color:var(--text-muted); font-size:.78rem; font-family:var(--font-m); white-space:nowrap; }
 
 .log-filter-bar { display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap; }
+.log-cat-filters { display:flex; gap:4px; flex-wrap:wrap; }
+.log-cat-btn {
+  padding:4px 10px; background:none; border:1px solid var(--border); border-radius:var(--radius);
+  color:var(--text-muted); font-family:var(--font-m); font-size:.6rem; letter-spacing:.06em;
+  cursor:pointer; transition:all .2s; text-transform:uppercase;
+}
+.log-cat-btn:hover { border-color:var(--text); color:var(--text); }
+.log-cat-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(99,102,241,.08); }
 .filter-input { background:var(--surface,var(--bg)); border:1px solid var(--border); color:var(--text);
-  padding:6px 10px; border-radius:var(--radius); font-size:.82rem; font-family:var(--font-m); flex:1; min-width:120px; }
+  padding:6px 10px; border-radius:var(--radius); font-size:.82rem; font-family:var(--font-m); flex:1; min-width:120px; max-width:300px; }
 .filter-input:focus { border-color:var(--accent); outline:none; }
 
 .log-timeline { display:flex; flex-direction:column; gap:2px; }
