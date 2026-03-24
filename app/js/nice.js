@@ -338,6 +338,55 @@ const NICE = (() => {
         });
       }
     }
+
+    // ── Missions folder (collapsible) ──
+    _initMissionsFolder();
+  }
+
+  function _initMissionsFolder() {
+    const toggle = document.getElementById('side-missions-toggle');
+    const folder = document.getElementById('side-missions-folder');
+    if (toggle && folder) {
+      // Restore open state
+      if (localStorage.getItem('nice-missions-folder') !== '0') folder.classList.add('open');
+      toggle.addEventListener('click', () => {
+        folder.classList.toggle('open');
+        localStorage.setItem('nice-missions-folder', folder.classList.contains('open') ? '1' : '0');
+      });
+    }
+
+    // Populate missions list from State
+    _renderMissionsFolderList();
+    State.on('missions', _renderMissionsFolderList);
+  }
+
+  function _renderMissionsFolderList() {
+    const list = document.getElementById('side-missions-list');
+    if (!list) return;
+    const missions = State.get('missions') || [];
+    const STATUS_COLORS = { queued:'#f59e0b', running:'#6366f1', completed:'#22c55e', failed:'#ef4444' };
+
+    // Show running first, then queued, limit to 10
+    const sorted = [...missions]
+      .sort((a, b) => {
+        const order = { running:0, queued:1, failed:2, completed:3 };
+        return (order[a.status] ?? 4) - (order[b.status] ?? 4);
+      })
+      .slice(0, 10);
+
+    if (!sorted.length) {
+      list.innerHTML = '<div class="side-folder-item" style="opacity:.4;cursor:default">No missions</div>';
+      return;
+    }
+
+    list.innerHTML = sorted.map(m => {
+      const color = STATUS_COLORS[m.status] || '#888';
+      const title = (m.title || 'Untitled').slice(0, 30);
+      return `<a href="#/missions/${m.id}" class="side-folder-item" title="${m.title}">
+        <span class="side-folder-dot" style="background:${color}"></span>
+        ${title}
+      </a>`;
+    }).join('');
   }
 
   /* ── Mobile swipe gesture for sidebar ── */

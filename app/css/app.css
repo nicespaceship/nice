@@ -342,6 +342,48 @@
 .side-link.active { background:var(--surface2); color:var(--accent); }
 .side-link.active svg { color:var(--accent); }
 .side-group .side-link.active { background:transparent; }
+/* Sidebar Folder (collapsible) */
+.side-folder { display:flex; flex-direction:column; }
+.side-folder-toggle {
+  display:flex; align-items:center; gap:10px; padding:10px 12px; width:100%;
+  background:none; border:none; color:var(--text-muted); font-family:var(--font-b);
+  font-size:.78rem; border-radius:var(--radius); cursor:pointer;
+  transition:background .15s, color .15s;
+}
+.side-folder-toggle:hover { background:var(--surface); color:var(--text); }
+.side-folder-chevron {
+  margin-left:auto; width:14px; height:14px; transition:transform .2s;
+}
+.side-folder.open .side-folder-chevron { transform:rotate(180deg); }
+.side-folder-body {
+  display:none; flex-direction:column; padding-left:22px;
+  max-height:240px; overflow-y:auto;
+}
+.side-folder.open .side-folder-body { display:flex; }
+.side-folder-item {
+  display:flex; align-items:center; gap:6px; padding:5px 10px;
+  color:var(--text-muted); font-size:.7rem; font-family:var(--font-b);
+  text-decoration:none; border-radius:var(--radius);
+  transition:background .15s, color .15s; cursor:pointer;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.side-folder-item:hover { background:var(--surface); color:var(--text); }
+.side-folder-item .side-folder-dot {
+  width:6px; height:6px; border-radius:50%; flex-shrink:0;
+}
+.side-folder-add {
+  display:flex; align-items:center; gap:6px; padding:6px 10px 6px 22px;
+  background:none; border:none; color:var(--text-muted); font-family:var(--font-m);
+  font-size:.6rem; letter-spacing:.08em; text-transform:uppercase;
+  cursor:pointer; transition:color .15s; opacity:.7;
+}
+.side-folder-add:hover { color:var(--accent); opacity:1; }
+/* Hide folder content when sidebar collapsed */
+.app-sidebar:not(.open) .side-folder-body,
+.app-sidebar:not(.open) .side-folder-add,
+.app-sidebar:not(.open) .side-folder-toggle span,
+.app-sidebar:not(.open) .side-folder-chevron { display:none; }
+
 .side-badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--accent); color:var(--bg); font-family:var(--font-m); font-size:.55rem; font-weight:700; margin-left:auto; line-height:1; }
 .side-badge.badge-warn { background:#f59e0b; }
 .side-badge.badge-danger { background:#ef4444; }
