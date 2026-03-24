@@ -529,6 +529,11 @@
   background:#000;
   color:#ff9966;
 }
+[data-theme="lcars"] .search-box {
+  background:#000;
+  border-color:#666688;
+  border-radius:24px;
+}
 [data-theme="lcars"] input[type="text"]:focus,
 [data-theme="lcars"] .search-input:focus {
   border-color:#cc99ff;
