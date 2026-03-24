@@ -642,7 +642,39 @@
 .schematic-svg { position:absolute; inset:0; z-index:0; pointer-events:none; }
 .schematic-card-slot { cursor:pointer; }
 .schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; }
-.schematic-wired .schematic-card-slot .tcg-mini-art { background:transparent; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:76px; height:76px; }
+.schematic-wired .schematic-card-slot .tcg-mini-art {
+  background:transparent; position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%); z-index:0; width:76px; height:76px;
+}
+/* Power node aura — pulsing glow behind the animation */
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-mini-art::before {
+  content:''; position:absolute; top:50%; left:50%;
+  width:90px; height:90px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:radial-gradient(circle, var(--accent,#fff) 0%, transparent 70%);
+  opacity:0;
+  animation:sch-aura-pulse 2.5s ease-in-out infinite;
+  pointer-events:none;
+}
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-mini-art::after {
+  content:''; position:absolute; top:50%; left:50%;
+  width:60px; height:60px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:radial-gradient(circle, var(--accent,#fff) 0%, transparent 65%);
+  opacity:0;
+  animation:sch-aura-core 2s ease-in-out infinite 0.4s;
+  pointer-events:none;
+}
+@keyframes sch-aura-pulse {
+  0%, 100% { opacity:.04; transform:translate(-50%,-50%) scale(1); }
+  50%      { opacity:.12; transform:translate(-50%,-50%) scale(1.3); }
+}
+@keyframes sch-aura-core {
+  0%, 100% { opacity:.06; transform:translate(-50%,-50%) scale(1); }
+  50%      { opacity:.18; transform:translate(-50%,-50%) scale(1.1); }
+}
 .schematic-wired .schematic-card-slot .tcg-card-mini { flex-direction:column; }
 .schematic-wired .schematic-card-slot .tcg-mini-name { position:relative; z-index:1; order:-1; margin-bottom:auto; padding-top:4px; }
 .schematic-wired .schematic-card-slot .tcg-mini-badge { position:relative; z-index:1; margin-top:auto; margin-bottom:4px; }
