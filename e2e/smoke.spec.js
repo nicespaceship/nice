@@ -714,14 +714,25 @@ test.describe('NICE Blueprint Drawer', () => {
     await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
     await expect(page.locator('.tcg-card').first()).toBeVisible({ timeout: 5000 });
 
-    // Open drawer via public API using first card's ID
-    await page.evaluate(() => {
-      const firstId = document.querySelector('.tcg-card[data-id]')?.dataset.id;
-      if (firstId) BlueprintsView.openDrawer(firstId);
+    // Open drawer via public API using first card's ID and wait for .open class
+    const opened = await page.evaluate(() => {
+      return new Promise(resolve => {
+        const firstId = document.querySelector('.tcg-card[data-id]')?.dataset.id;
+        if (!firstId) return resolve(false);
+        BlueprintsView.openDrawer(firstId);
+        // Wait for the drawer to get .open class
+        const check = (tries) => {
+          const el = document.querySelector('#bp-drawer.open');
+          if (el) return resolve(true);
+          if (tries > 20) return resolve(false);
+          requestAnimationFrame(() => check(tries + 1));
+        };
+        check(0);
+      });
     });
 
-    const drawer = page.locator('#bp-drawer.open');
-    await expect(drawer).toBeVisible({ timeout: 5000 });
+    expect(opened).toBe(true);
+    await expect(page.locator('#bp-drawer.open')).toBeVisible({ timeout: 3000 });
   });
 });
 
