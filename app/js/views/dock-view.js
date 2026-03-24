@@ -239,36 +239,6 @@ const DockView = (() => {
         ctx.stroke();
       }
 
-      // ── Radar sweep ────────────────────────
-      sweepAngle += 0.008;
-      const sweepLen = maxR * 1.1;
-      const sx = CX + Math.cos(sweepAngle) * sweepLen;
-      const sy = CY + Math.sin(sweepAngle) * sweepLen;
-
-      // Sweep trail (multiple fading lines)
-      const trailSteps = 20;
-      const trailSpan = 0.5;
-      for (let ti = 0; ti < trailSteps; ti++) {
-        const a = sweepAngle - (trailSpan * ti / trailSteps);
-        const alpha = 0.08 * (1 - ti / trailSteps);
-        const ex = CX + Math.cos(a) * sweepLen;
-        const ey = CY + Math.sin(a) * sweepLen;
-        ctx.beginPath();
-        ctx.moveTo(CX, CY);
-        ctx.lineTo(ex, ey);
-        ctx.strokeStyle = `rgba(${ar},${ag},${ab},${alpha})`;
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
-      }
-
-      // Sweep line (brightest)
-      ctx.beginPath();
-      ctx.moveTo(CX, CY);
-      ctx.lineTo(sx, sy);
-      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.15)`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
       // ── Sonar pings (expanding rings) ─────
       if (t > nextPing) {
         pings.push({
