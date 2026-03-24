@@ -224,59 +224,96 @@
 
 /* ── LCARS Layout Overrides ── */
 
-/* Sidebar — thick colored bars */
+/* Sidebar — colored bars with elbows */
 [data-theme="lcars"] .app-sidebar {
   background:#000;
   border-right:none;
   border-radius:0;
 }
 [data-theme="lcars"] .app-sidebar.open {
-  border-right:4px solid #cc99ff;
+  border-right:none;
+}
+
+/* Top elbow: horizontal bar that curves into sidebar */
+[data-theme="lcars"] .side-header {
+  background:#cc99ff;
+  border-radius:0 0 0 0;
+  padding:14px 16px;
+  margin:0;
+  position:relative;
+}
+/* Elbow curve — bottom-right corner */
+[data-theme="lcars"] .side-header::after {
+  content:'';
+  position:absolute; bottom:-24px; left:0; right:0;
+  height:24px;
+  background:#cc99ff;
+  border-radius:0 0 40px 0;
+}
+[data-theme="lcars"] .side-header .app-brand-text { color:#000; font-size:1.4rem; }
+[data-theme="lcars"] .side-header-actions button,
+[data-theme="lcars"] .side-header-actions .app-hdr-btn,
+[data-theme="lcars"] .side-header-actions .side-toggle-btn { color:#000; }
+[data-theme="lcars"] .side-header-actions svg { stroke:#000; }
+
+/* Sidebar nav links — pill buttons */
+[data-theme="lcars"] .side-nav {
+  padding-top:28px; /* clear the elbow */
 }
 [data-theme="lcars"] .side-link {
   border-radius:0 24px 24px 0;
-  margin:2px 8px 2px 0;
-  padding:8px 16px 8px 12px;
+  margin:3px 10px 3px 0;
+  padding:7px 16px 7px 12px;
   background:#ff9966;
   color:#000;
   font-weight:700;
   text-transform:uppercase;
   letter-spacing:.12em;
-  font-size:.7rem;
+  font-size:.68rem;
   border:none;
   transition:background .15s;
+  position:relative;
 }
+[data-theme="lcars"] .side-link:nth-child(even) { background:#ffcc99; }
+[data-theme="lcars"] .side-link:nth-child(3n) { background:#ffaa90; }
 [data-theme="lcars"] .side-link:hover {
-  background:#ffcc99;
+  background:#ffeecc;
 }
 [data-theme="lcars"] .side-link.active {
   background:#cc99ff;
   color:#000;
 }
 [data-theme="lcars"] .side-link svg { display:none; }
-[data-theme="lcars"] .side-header {
-  background:#cc99ff;
-  border-radius:0 0 24px 0;
-  padding:12px 16px;
-  margin:0 8px 4px 0;
-}
-[data-theme="lcars"] .side-header .app-brand-text { color:#000; }
-[data-theme="lcars"] .side-header-actions button,
-[data-theme="lcars"] .side-header-actions .app-hdr-btn,
-[data-theme="lcars"] .side-header-actions .side-toggle-btn { color:#000; }
-[data-theme="lcars"] .side-header-actions svg { stroke:#000; }
+[data-theme="lcars"] .side-link .side-link-label { margin-left:0; }
+
+/* Bottom elbow */
 [data-theme="lcars"] .side-footer {
   background:#99ccff;
-  border-radius:0 24px 0 0;
-  margin:4px 8px 0 0;
+  border-radius:0;
+  margin:0;
   padding:8px 12px;
+  position:relative;
+}
+[data-theme="lcars"] .side-footer::before {
+  content:'';
+  position:absolute; top:-24px; left:0; right:0;
+  height:24px;
+  background:#99ccff;
+  border-radius:0 40px 0 0;
 }
 [data-theme="lcars"] .side-footer * { color:#000; }
 
-/* Top nav bar */
+/* Top bar across content area */
 [data-theme="lcars"] .app-topbar {
   background:#000;
-  border-bottom:4px solid #ff9966;
+  border-bottom:none;
+  position:relative;
+}
+[data-theme="lcars"] .app-topbar::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0;
+  height:6px;
+  background:linear-gradient(90deg, #ff9966 0%, #ff9966 30%, #000 30.5%, #000 31%, #cc99ff 31%, #cc99ff 60%, #000 60.5%, #000 61%, #99ccff 61%, #99ccff 100%);
 }
 
 /* Panels & cards — LCARS elbows */
