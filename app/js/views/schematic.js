@@ -192,6 +192,15 @@ const SchematicView = (() => {
         render(el);
       });
     });
+
+    // Default/recommended agent buttons
+    el.querySelectorAll('.sch-slot-default').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _assignToSlot(shipId, btn.dataset.slotId, btn.dataset.bpId);
+        render(el);
+      });
+    });
   }
 
   function _assignToSlot(shipId, slotId, bpId) {
@@ -359,6 +368,12 @@ const SchematicView = (() => {
         <div class="sch-search-list"></div>
       </div>`;
 
+      // Get recommended/default agent for this slot from ship crew data
+      const defaultAgent = _getDefaultAgent(activeShip, slot.id);
+      const defaultBtn = (!bp && defaultAgent)
+        ? `<button class="btn btn-sm sch-slot-default" data-slot-id="${slot.id}" data-bp-id="${_esc(defaultAgent.id)}" title="Assign ${_esc(defaultAgent.name)}">⚡ ${_esc(defaultAgent.name)}</button>`
+        : '';
+
       if (bp) {
         const bpRarity = _getBpRarity(bp);
         const bpRarityColor = RC[bpRarity] || '#94a3b8';
@@ -378,6 +393,7 @@ const SchematicView = (() => {
       return `
         <div class="bridge-slot bridge-slot-empty" data-slot-id="${slot.id}">
           <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
+          ${defaultBtn}
           <div class="bridge-slot-swap">
             ${searchDropdown}
           </div>
@@ -407,6 +423,25 @@ const SchematicView = (() => {
     // Sort alphabetically
     agents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     return agents;
+  }
+
+  function _getDefaultAgent(activeShip, slotIdx) {
+    if (!activeShip) return null;
+    const shipId = activeShip.id;
+    const rawId = shipId ? shipId.replace(/^bp-/, '') : '';
+    const ship = (typeof BlueprintStore !== 'undefined')
+      ? (BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId))
+      : null;
+    if (!ship || !ship.crew || !ship.crew[slotIdx]) return null;
+    const crew = ship.crew[slotIdx];
+    const name = crew.label || crew.name || null;
+    if (!name) return null;
+    // Try to find a matching blueprint by name
+    const allAgents = _getAvailableAgents({});
+    const match = allAgents.find(a => a.name.toLowerCase() === name.toLowerCase());
+    if (match) return match;
+    // Return the __new__ placeholder
+    return { id: '__new__' + name, name };
   }
 
   /* ── Helpers ── */
