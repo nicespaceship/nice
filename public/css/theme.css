@@ -290,8 +290,8 @@
 [data-theme="lcars"] .side-link svg { display:none; }
 [data-theme="lcars"] .side-link .side-link-label { margin-left:0; }
 
-/* Fill empty sidebar space with colored bar */
-[data-theme="lcars"] .app-side-nav::after {
+/* Fill empty sidebar space with colored bar — only when open */
+[data-theme="lcars"] .app-sidebar.open .app-side-nav::after {
   content:'';
   display:block;
   flex:1;
@@ -300,6 +300,8 @@
   border-radius:0 24px 24px 0;
   min-height:120px;
 }
+/* Hide filler when sidebar collapsed */
+[data-theme="lcars"] .app-sidebar:not(.open) .app-side-nav::after { display:none; }
 
 /* Bottom elbow */
 [data-theme="lcars"] .side-footer {
@@ -541,6 +543,24 @@
 [data-theme="lcars"] .search-input:focus {
   border-color:#cc99ff;
 }
+
+/* Prompt panel */
+[data-theme="lcars"] .nice-ai-input-container {
+  border:2px solid #666688; border-radius:24px; background:#000;
+}
+[data-theme="lcars"] .nice-ai-input-container:focus-within { border-color:#ff9966; }
+[data-theme="lcars"] .nice-ai-input { color:#ff9966; }
+[data-theme="lcars"] .nice-ai-input::placeholder { color:#666688; }
+[data-theme="lcars"] .nice-ai-chip {
+  border-radius:24px; background:#666688; color:#000; border:none;
+  font-weight:700; text-transform:uppercase;
+}
+[data-theme="lcars"] .nice-ai-chip:hover { background:#ff9966; }
+[data-theme="lcars"] .chat-pill {
+  border-radius:24px; background:#666688; color:#000; border:none;
+  font-weight:700; text-transform:uppercase;
+}
+[data-theme="lcars"] .chat-pill:hover { background:#ff9966; color:#000; }
 
 /* Scrollbar */
 [data-theme="lcars"] ::-webkit-scrollbar { width:8px; }
