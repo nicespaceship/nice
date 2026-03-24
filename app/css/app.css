@@ -1499,8 +1499,6 @@
 .task-result pre { font-family:var(--font-m); font-size:.68rem; color:var(--text-muted); white-space:pre-wrap; word-break:break-word; margin:0; }
 .task-actions { display:flex; gap:6px; padding:6px 0 2px; }
 .btn-xs { padding:3px 10px; font-size:.65rem; }
-.task-row-clickable { cursor:pointer; transition:background .15s; }
-.task-row-clickable:hover { background:var(--bg-alt); }
 .mission-result-content { background:var(--surface, var(--bg-alt)); border:1px solid var(--border); border-radius:var(--radius); padding:14px; max-height:400px; overflow:auto; }
 .mission-result-content pre { font-family:var(--font-m); font-size:.72rem; color:var(--text); white-space:pre-wrap; word-break:break-word; margin:0; line-height:1.6; }
 
@@ -3633,56 +3631,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    MISSION BOARD (Kanban)
 ═══════════════════════════════════════════════════════════════════ */
-.mb-wrap { padding:24px 0; }
-.mb-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
-.mb-title { font-family:var(--font-h); font-size:1.5rem; color:var(--text); margin:0 0 4px; }
-.mb-sub { color:var(--text-muted); font-size:.82rem; margin:0; }
-.mb-controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-
-.mb-board {
-  display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;
-  min-height:400px;
-}
-
-.mb-col {
-  display:flex; flex-direction:column;
-  border:1px solid var(--border); border-radius:var(--radius);
-  background:var(--panel-bg,rgba(255,255,255,.02));
-}
-.mb-col-header {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px 12px; border-bottom:2px solid var(--border);
-}
-.mb-col-title { font-family:var(--font-h); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
-.mb-col-count { font-family:var(--font-m); font-size:.7rem; color:var(--text-muted); background:rgba(255,255,255,.05);
-  padding:2px 6px; border-radius:8px; }
-
-.mb-col-body { flex:1; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:100px; transition:background .15s; }
-.mb-col-body.mb-drop-target { background:rgba(255,255,255,.05); outline:2px dashed var(--accent); outline-offset:-4px; }
-
-.mb-card {
-  padding:10px; border:1px solid var(--border); border-radius:var(--radius);
-  background:var(--surface,var(--bg)); cursor:grab; transition:border-color .15s, opacity .15s, transform .1s;
-}
-.mb-card:hover { border-color:var(--accent); }
-.mb-card.mb-dragging { opacity:.4; transform:scale(.95); }
-.mb-card-compact { padding:6px 10px; display:flex; justify-content:space-between; align-items:center; }
-
-.mb-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:4px; }
-.mb-card-title { font-size:.82rem; color:var(--text); font-weight:500; }
-.mb-card-pri {
-  font-family:var(--font-m); font-size:.62rem; text-transform:uppercase; padding:2px 6px;
-  border-radius:3px; letter-spacing:.04em; white-space:nowrap;
-}
-.pri-high { background:rgba(239,68,68,.15); color:#ef4444; }
-.pri-normal { background:rgba(255,255,255,.05); color:var(--text-muted); }
-.pri-low { background:rgba(34,197,94,.1); color:#22c55e; }
-
-.mb-card-meta { display:flex; justify-content:space-between; font-size:.72rem; color:var(--text-muted); }
-.mb-card-agent { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-
-.mb-empty { text-align:center; padding:20px 8px; color:var(--text-muted); font-size:.78rem; }
-
 @media (max-width:900px) {
   .mc-card-grid { grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); }
   .mc-pipe-node { padding:8px 12px; min-width:60px; }
@@ -3709,7 +3657,7 @@
     -webkit-tap-highlight-color: rgba(255,255,255,.08);
   }
   .side-link:active, .tab:active, .btn:active,
-  .cmd-result:active, .mb-card:active {
+  .cmd-result:active {
     transform: scale(.97);
     transition: transform .08s ease;
   }
@@ -3763,7 +3711,7 @@
 /* Prevent horizontal overflow everywhere on mobile */
 @media (max-width:768px) {
   .app-main { overflow-x:hidden; }
-  .bridge-wrap, .log-wrap, .log-view-wrap, .dock-wrap, .mb-wrap, .tc-wrap, .wfe-wrap,
+  .bridge-wrap, .log-wrap, .log-view-wrap, .dock-wrap, .tc-wrap, .wfe-wrap,
   .agents-wrap, .fleet-wrap, .bp-wrap, .ana-wrap,
   .missions-wrap { overflow-x:hidden; max-width:100vw; }
 
@@ -3771,8 +3719,6 @@
   .filter-select, .filter-input { max-width:100%; box-sizing:border-box; }
 
   /* Mission board cards: easier grab on mobile */
-  .mb-card { padding:14px; }
-  .mb-card-title { font-size:.88rem; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════

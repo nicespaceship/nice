@@ -428,10 +428,8 @@ const MissionsView = (() => {
     if (!user || (dbError && !missions.length)) missions = _seedMissions();
     // Snapshot statuses for transition detection
     missions.forEach(m => { if (!_prevStatuses[m.id]) _prevStatuses[m.id] = m.status; });
+    // State.set triggers _onMissionsChanged which renders gauges/pipeline/feed
     State.set('missions', missions);
-    _renderGauges(missions);
-    _renderPipeline(missions);
-    _renderFeed(missions);
   }
 
   function _seedMissions() {

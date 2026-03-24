@@ -238,10 +238,11 @@
 /* Top elbow: horizontal bar that curves into sidebar */
 [data-theme="lcars"] .side-header {
   background:#cc99ff;
-  border-radius:0 0 0 0;
+  border-radius:0;
   padding:14px 16px;
   margin:0;
   position:relative;
+  z-index:5;
 }
 /* Elbow curve — bottom-right corner */
 [data-theme="lcars"] .side-header::after {
@@ -252,7 +253,6 @@
   border-radius:0 0 40px 0;
   z-index:1;
 }
-[data-theme="lcars"] .side-header { z-index:5; }
 [data-theme="lcars"] .side-header .app-brand-text { color:#000; font-size:1.4rem; }
 [data-theme="lcars"] .side-header-actions button,
 [data-theme="lcars"] .side-header-actions .app-hdr-btn,
@@ -1343,15 +1343,6 @@ nav:not(.app-side-nav) {
 [data-theme="pixel"] .p-desc  { font-size: 0.52rem; line-height: 2.1; }
 
 /* LCARS section bar */
-.lcars-bar {
-  border-left: 5px solid var(--accent); padding-left: 18px;
-  margin-bottom: 12px;
-  transition: border-color 0.4s;
-}
-[data-theme="lcars"] .lcars-bar {
-  border-left: 40px solid var(--accent); border-radius: 40px 0 0 40px; padding-left: 20px;
-}
-.lcars-bar h2, .lcars-bar h3 { font-family: var(--font-d); text-transform: uppercase; letter-spacing: 0.1em; transition: font-family 0.01s; }
 
 /* In-page progress / meter bar */
 .meter-bar { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; transition: background 0.4s; }

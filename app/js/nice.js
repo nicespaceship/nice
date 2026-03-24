@@ -10,7 +10,7 @@ const Theme = (() => {
   const BUILTIN = ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel'];
 
   // CSS var keys to clear when switching themes
-  const VAR_KEYS = ['--bg','--bg2','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--text-muted','--glow','--panel-bg','--font-h','--font-d','--font-b','--radius'];
+  const VAR_KEYS = ['--bg','--bg2','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--nav-bg','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
