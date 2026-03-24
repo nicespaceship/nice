@@ -649,7 +649,68 @@
 .schematic-center { flex:1; min-width:40px; }
 .schematic-svg { position:absolute; inset:0; z-index:0; pointer-events:none; }
 .schematic-card-slot { cursor:pointer; }
-.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; outline:0.25px solid var(--accent,#fff); outline-offset:3px; overflow:visible; }
+.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; overflow:visible; }
+/* Rotating outer border with notch */
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty) {
+  position:relative;
+}
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty)::before {
+  content:''; position:absolute;
+  inset:-6px;
+  border:0.5px dashed var(--accent,#fff);
+  border-radius:10px;
+  opacity:.2;
+  pointer-events:none;
+  z-index:3;
+}
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty)::after {
+  content:'';
+  position:absolute;
+  width:calc(100% + 12px);
+  height:calc(100% + 12px);
+  top:-6px; left:-6px;
+  border-radius:10px;
+  pointer-events:none;
+  z-index:4;
+  background:conic-gradient(
+    from var(--sch-notch-angle, 0deg),
+    var(--accent,#fff) 0deg,
+    var(--accent,#fff) 8deg,
+    transparent 8deg,
+    transparent 90deg,
+    var(--accent,#fff) 90deg,
+    var(--accent,#fff) 92deg,
+    transparent 92deg,
+    transparent 180deg,
+    var(--accent,#fff) 180deg,
+    var(--accent,#fff) 184deg,
+    transparent 184deg,
+    transparent 270deg,
+    var(--accent,#fff) 270deg,
+    var(--accent,#fff) 274deg,
+    transparent 274deg,
+    transparent 360deg
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite:exclude;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  padding:0.5px;
+  opacity:.3;
+  animation:sch-border-spin 6s linear infinite;
+}
+@property --sch-notch-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes sch-border-spin {
+  to { --sch-notch-angle: 360deg; }
+}
 .schematic-wired .schematic-card-slot .tcg-mini-art {
   background:transparent; position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%); z-index:0; width:76px; height:76px;
