@@ -568,8 +568,8 @@ const ThemeCreatorView = (() => {
       const saved = JSON.parse(localStorage.getItem(DOCK_STORAGE_KEY));
       if (Array.isArray(saved) && saved.length) return saved;
     } catch {}
-    // Default: first 11 themes
-    return Theme.THEMES.slice(0, 11).map(t => t.id);
+    // Default 11
+    return ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel','cyberpunk','ocean','sunset'];
   }
 
   function _saveDockSelection(ids) {
