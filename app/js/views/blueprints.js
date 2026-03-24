@@ -241,7 +241,7 @@ const BlueprintsView = (() => {
   /* ── Spaceship data comes from Supabase via BlueprintStore ── */
   const SPACESHIP_SEED = [];
 
-  let _activeTab = 'blueprints';
+  let _activeTab = 'schematic';
   let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship' or 'agent'
   let _viewMode = localStorage.getItem('nice-bp-view') || 'card';
   if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = 'card';
@@ -353,7 +353,7 @@ const BlueprintsView = (() => {
     else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
     else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
     else if (_hash === '#/log') _activeTab = 'missions';
-    else _activeTab = 'blueprints';
+    else _activeTab = 'schematic';
 
     // Highlight the correct tab + sub-tab buttons
     document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
