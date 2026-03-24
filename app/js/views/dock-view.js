@@ -161,14 +161,16 @@ const DockView = (() => {
 
     const ctx = cvs.getContext('2d');
     const body = cvs.parentElement;
-    let W, H;
+    let W = 0, H = 0;
 
     function resize() {
       const r = body.getBoundingClientRect();
-      W = cvs.width  = Math.round(r.width  * (window.devicePixelRatio > 1 ? 1.5 : 1));
-      H = cvs.height = Math.round(r.height * (window.devicePixelRatio > 1 ? 1.5 : 1));
+      if (r.width < 1 || r.height < 1) return; // not laid out yet
+      W = cvs.width  = Math.round(r.width);
+      H = cvs.height = Math.round(r.height);
     }
-    resize();
+    // Defer to let aspect-ratio resolve
+    requestAnimationFrame(() => { resize(); });
 
     // Read accent colour from CSS
     const cs = getComputedStyle(document.documentElement);
@@ -209,6 +211,7 @@ const DockView = (() => {
     let nextPing = 0;
 
     function draw(t) {
+      if (W < 1 || H < 1) { resize(); _radarRaf = requestAnimationFrame(draw); return; }
       ctx.clearRect(0, 0, W, H);
       const CX = cx(), CY = cy();
       const maxR = Math.max(W, H) * 0.6;
@@ -242,26 +245,28 @@ const DockView = (() => {
       const sx = CX + Math.cos(sweepAngle) * sweepLen;
       const sy = CY + Math.sin(sweepAngle) * sweepLen;
 
-      // Sweep trail (arc gradient)
-      const trailAngle = 0.5; // radians of trail
-      const grad = ctx.createConicGradient(sweepAngle - trailAngle, CX, CY);
-      grad.addColorStop(0, `rgba(${ar},${ag},${ab},0)`);
-      grad.addColorStop(trailAngle / (Math.PI * 2), `rgba(${ar},${ag},${ab},0.06)`);
-      grad.addColorStop((trailAngle + 0.01) / (Math.PI * 2), `rgba(${ar},${ag},${ab},0)`);
+      // Sweep trail (multiple fading lines)
+      const trailSteps = 20;
+      const trailSpan = 0.5;
+      for (let ti = 0; ti < trailSteps; ti++) {
+        const a = sweepAngle - (trailSpan * ti / trailSteps);
+        const alpha = 0.08 * (1 - ti / trailSteps);
+        const ex = CX + Math.cos(a) * sweepLen;
+        const ey = CY + Math.sin(a) * sweepLen;
+        ctx.beginPath();
+        ctx.moveTo(CX, CY);
+        ctx.lineTo(ex, ey);
+        ctx.strokeStyle = `rgba(${ar},${ag},${ab},${alpha})`;
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
 
-      ctx.beginPath();
-      ctx.moveTo(CX, CY);
-      ctx.arc(CX, CY, sweepLen, sweepAngle - trailAngle, sweepAngle);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Sweep line
+      // Sweep line (brightest)
       ctx.beginPath();
       ctx.moveTo(CX, CY);
       ctx.lineTo(sx, sy);
-      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.12)`;
-      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.15)`;
+      ctx.lineWidth = 1;
       ctx.stroke();
 
       // ── Sonar pings (expanding rings) ─────
