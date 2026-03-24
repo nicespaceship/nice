@@ -350,9 +350,12 @@ const NICE = (() => {
       // Restore open state
       if (localStorage.getItem('nice-missions-folder') !== '0') folder.classList.add('open');
       toggle.addEventListener('click', () => {
-        folder.classList.toggle('open');
-        localStorage.setItem('nice-missions-folder', folder.classList.contains('open') ? '1' : '0');
+        const isOpen = folder.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        localStorage.setItem('nice-missions-folder', isOpen ? '1' : '0');
       });
+      // Set initial aria state
+      if (folder.classList.contains('open')) toggle.setAttribute('aria-expanded', 'true');
     }
 
     // Populate missions list from State
