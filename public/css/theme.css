@@ -290,6 +290,17 @@
 [data-theme="lcars"] .side-link svg { display:none; }
 [data-theme="lcars"] .side-link .side-link-label { margin-left:0; }
 
+/* Fill empty sidebar space with colored bar */
+[data-theme="lcars"] .app-side-nav::after {
+  content:'';
+  display:block;
+  flex:1;
+  margin:4px 10px 4px 0;
+  background:linear-gradient(180deg, #ff9966 0%, #ff9966 30%, #000 30.5%, #000 32%, #ffcc99 32%, #ffcc99 55%, #000 55.5%, #000 57%, #ffaa90 57%, #ffaa90 75%, #000 75.5%, #000 77%, #cc99ff 77%, #cc99ff 100%);
+  border-radius:0 24px 24px 0;
+  min-height:120px;
+}
+
 /* Bottom elbow */
 [data-theme="lcars"] .side-footer {
   background:#99ccff;
@@ -459,6 +470,11 @@
   border-radius:24px;
   border-color:#666688;
 }
+
+/* Schematic — reactor core + lines */
+[data-theme="lcars"] .schematic-svg circle[fill="var(--accent,#fff)"] { fill:#ff9966; }
+[data-theme="lcars"] .schematic-svg path[stroke="var(--accent,#fff)"] { stroke:#ff9966; }
+[data-theme="lcars"] .schematic-svg line[stroke="var(--accent,#fff)"] { stroke:#ff9966; }
 
 /* Schematic cards */
 [data-theme="lcars"] .schematic-wired .tcg-card-mini {
