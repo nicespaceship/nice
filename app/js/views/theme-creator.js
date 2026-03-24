@@ -264,8 +264,8 @@ const ThemeCreatorView = (() => {
 
         <!-- HUD Dock Selection -->
         <div class="tc-section">
-          <h2 class="tc-panel-title">HUD Dock Themes</h2>
-          <p class="tc-sub" style="margin:0 0 10px">Select which themes appear in the HUD quick-switch dock.</p>
+          <h2 class="tc-panel-title">HUD Dock Themes <span id="tc-dock-count" style="font-size:.6em;color:var(--text-muted);font-weight:400">${_getDockSelection().length}/11</span></h2>
+          <p class="tc-sub" style="margin:0 0 10px">Select up to 11 themes for the HUD quick-switch dock.</p>
           <div class="tc-dock-grid" id="tc-dock-grid">
             ${_renderDockSelection()}
           </div>
@@ -568,8 +568,8 @@ const ThemeCreatorView = (() => {
       const saved = JSON.parse(localStorage.getItem(DOCK_STORAGE_KEY));
       if (Array.isArray(saved) && saved.length) return saved;
     } catch {}
-    // Default: all themes
-    return Theme.THEMES.map(t => t.id);
+    // Default: first 11 themes
+    return Theme.THEMES.slice(0, 11).map(t => t.id);
   }
 
   function _saveDockSelection(ids) {
@@ -580,6 +580,7 @@ const ThemeCreatorView = (() => {
 
   function _renderDockSelection() {
     const selected = _getDockSelection();
+    // Show all themes but limit selection to 11
     return Theme.THEMES.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
       const checked = selected.includes(t.id) ? 'checked' : '';
@@ -593,11 +594,20 @@ const ThemeCreatorView = (() => {
   }
 
   function _bindDockSelection(el) {
+    const MAX_DOCK = 11;
     el.querySelectorAll('.tc-dock-check').forEach(cb => {
       cb.addEventListener('change', () => {
+        const checked = el.querySelectorAll('.tc-dock-check:checked');
+        if (checked.length > MAX_DOCK) {
+          cb.checked = false;
+          return;
+        }
         const ids = [];
-        el.querySelectorAll('.tc-dock-check:checked').forEach(c => ids.push(c.dataset.themeId));
+        checked.forEach(c => ids.push(c.dataset.themeId));
         _saveDockSelection(ids);
+        // Update counter
+        const counter = el.querySelector('#tc-dock-count');
+        if (counter) counter.textContent = `${ids.length}/${MAX_DOCK}`;
       });
     });
   }

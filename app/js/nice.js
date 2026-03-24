@@ -130,7 +130,7 @@ const Theme = (() => {
     }
     const themes = (Array.isArray(dockIds) && dockIds.length)
       ? THEMES.filter(t => dockIds.includes(t.id))
-      : THEMES;
+      : THEMES.slice(0, 11);
 
     container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
