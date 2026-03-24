@@ -184,6 +184,15 @@ const ThemeCreatorView = (() => {
           </div>
         </div>
 
+        <!-- HUD Dock Selection -->
+        <div class="tc-section">
+          <h2 class="tc-panel-title">HUD Dock Themes <span id="tc-dock-count" style="font-size:.6em;color:var(--text-muted);font-weight:400">${_getDockSelection().length}/11</span></h2>
+          <p class="tc-sub" style="margin:0 0 10px">Select up to 11 themes for the HUD quick-switch dock.</p>
+          <div class="tc-dock-grid" id="tc-dock-grid">
+            ${_renderDockSelection()}
+          </div>
+        </div>
+
         <!-- Colors -->
         <div class="tc-section">
           <h2 class="tc-panel-title">Colors</h2>
@@ -260,15 +269,6 @@ const ThemeCreatorView = (() => {
             <button class="btn btn-xs" id="tc-code-apply" title="Apply pasted code">Apply</button>
           </div>
           <div class="tc-code-msg" id="tc-code-msg"></div>
-        </div>
-
-        <!-- HUD Dock Selection -->
-        <div class="tc-section">
-          <h2 class="tc-panel-title">HUD Dock Themes <span id="tc-dock-count" style="font-size:.6em;color:var(--text-muted);font-weight:400">${_getDockSelection().length}/11</span></h2>
-          <p class="tc-sub" style="margin:0 0 10px">Select up to 11 themes for the HUD quick-switch dock.</p>
-          <div class="tc-dock-grid" id="tc-dock-grid">
-            ${_renderDockSelection()}
-          </div>
         </div>
 
         <!-- Actions Bar -->
