@@ -61,7 +61,7 @@
   text-decoration:none; color:var(--accent);
 }
 .app-brand-text {
-  font-family:var(--font-d); font-size:1.5rem; font-weight:700;
+  font-family:var(--font-d); font-size:1.8rem; font-weight:700;
   letter-spacing:.18em; color:var(--accent);
 }
 .app-hdr-btn {
