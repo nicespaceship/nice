@@ -229,6 +229,7 @@
   background:#000;
   border-right:none;
   border-radius:0;
+  overflow:visible;
 }
 [data-theme="lcars"] .app-sidebar.open {
   border-right:none;
@@ -257,8 +258,9 @@
 [data-theme="lcars"] .side-header-actions svg { stroke:#000; }
 
 /* Sidebar nav links — pill buttons */
-[data-theme="lcars"] .side-nav {
+[data-theme="lcars"] .app-side-nav {
   padding-top:28px; /* clear the elbow */
+  flex:1;
 }
 [data-theme="lcars"] .side-link {
   border-radius:0 24px 24px 0;
@@ -302,6 +304,26 @@
   border-radius:0 40px 0 0;
 }
 [data-theme="lcars"] .side-footer * { color:#000; }
+
+/* Popover menu items — LCARS pill style */
+[data-theme="lcars"] .side-popover {
+  background:#000; border:2px solid #666688; border-radius:24px;
+}
+[data-theme="lcars"] .side-popover-item {
+  color:#ff9966; border-radius:24px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:.65rem;
+}
+[data-theme="lcars"] .side-popover-item:hover { background:#ff9966; color:#000; }
+[data-theme="lcars"] .side-popover-item svg { display:none; }
+
+/* User card in footer */
+[data-theme="lcars"] .side-user-card { color:#000; }
+[data-theme="lcars"] .side-user-card svg { stroke:#000; }
+[data-theme="lcars"] .hdr-user-badge { background:#ffaa00; color:#000; border-color:#ffaa00; }
+[data-theme="lcars"] .side-more-btn { color:#000; }
+[data-theme="lcars"] .side-more-btn svg { stroke:#000; }
+
+/* Sidebar favorites */
+[data-theme="lcars"] .sidebar-favorites { padding-top:4px; }
 
 /* Top bar across content area */
 [data-theme="lcars"] .app-topbar {
