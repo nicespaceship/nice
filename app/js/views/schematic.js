@@ -194,24 +194,18 @@ const SchematicView = (() => {
       let d;
 
       if (isStacked) {
-        const edgeY = isLeft
-          ? cardRect.bottom - cRect.top
-          : cardRect.top - cRect.top;
-        const cpOff = Math.abs(rcy - edgeY) * 0.55;
-        const cp1y = isLeft ? edgeY + cpOff : edgeY - cpOff;
+        const cpOff = Math.abs(rcy - cardCy) * 0.55;
+        const cp1y = isLeft ? cardCy + cpOff : cardCy - cpOff;
         const cp2y = isLeft ? rcy - cpOff * 0.3 : rcy + cpOff * 0.3;
-        d = 'M' + cardCx + ',' + edgeY +
+        d = 'M' + cardCx + ',' + cardCy +
           ' C' + cardCx + ',' + cp1y +
           ' ' + rcx + ',' + cp2y +
           ' ' + rcx + ',' + rcy;
       } else {
-        const edgeX = isLeft
-          ? cardRect.right - cRect.left
-          : cardRect.left - cRect.left;
-        const cpOff = Math.abs(rcx - edgeX) * 0.55;
-        const cp1x = isLeft ? edgeX + cpOff : edgeX - cpOff;
+        const cpOff = Math.abs(rcx - cardCx) * 0.55;
+        const cp1x = isLeft ? cardCx + cpOff : cardCx - cpOff;
         const cp2x = isLeft ? rcx - cpOff * 0.3 : rcx + cpOff * 0.3;
-        d = 'M' + edgeX + ',' + cardCy +
+        d = 'M' + cardCx + ',' + cardCy +
           ' C' + cp1x + ',' + cardCy +
           ' ' + cp2x + ',' + rcy +
           ' ' + rcx + ',' + rcy;
