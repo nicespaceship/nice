@@ -641,7 +641,8 @@
 .schematic-center { flex:1; min-width:40px; }
 .schematic-svg { position:absolute; inset:0; z-index:0; pointer-events:none; }
 .schematic-card-slot { cursor:pointer; }
-.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:4px; gap:3px; }
+.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:4px; gap:3px; background:transparent; }
+.schematic-wired .schematic-empty-slot { background:transparent; }
 .schematic-card-empty { opacity:.5; cursor:default; }
 .schematic-empty-slot { padding:4px 6px; border:3px solid var(--border); border-radius:8px; background:var(--panel-bg); aspect-ratio:5/7; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
 .schematic-card-role { font-family:var(--font-m); font-size:.36rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
