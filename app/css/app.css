@@ -770,14 +770,23 @@
 
 /* Crew Slots */
 .bridge-crew-list { display:flex; flex-direction:column; gap:2px; width:100%; }
-.bridge-slot { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); cursor:default; transition:background .15s; }
+.bridge-slot { display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:var(--radius); cursor:default; transition:background .15s; border:1px solid var(--border); margin-bottom:4px; }
 .bridge-slot-filled { cursor:pointer; }
-.bridge-slot-filled:hover { background:var(--surface,var(--bg-alt,rgba(255,255,255,.05))); }
-.bridge-slot-label { font-family:var(--font-m); font-size:.55rem; letter-spacing:.1em; color:var(--text-muted); min-width:60px; }
-.bridge-slot-name { font-size:.8rem; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bridge-slot-filled:hover { background:var(--surface,var(--bg-alt,rgba(255,255,255,.05))); border-color:var(--border-hi,var(--border)); }
+.bridge-slot-top { display:flex; align-items:center; justify-content:space-between; }
+.bridge-slot-label { font-family:var(--font-m); font-size:.55rem; letter-spacing:.1em; color:var(--text-muted); }
+.bridge-slot-name { font-size:.8rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .bridge-slot-rarity { font-family:var(--font-m); font-size:.55rem; letter-spacing:.05em; }
-.bridge-slot-dock { font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--accent); text-decoration:none; }
-.bridge-slot-dock:hover { text-decoration:underline; }
+.bridge-slot-swap { display:flex; gap:6px; align-items:center; margin-top:4px; }
+.sch-slot-swap-select {
+  flex:1; background:var(--bg); color:var(--text); border:1px solid var(--border);
+  border-radius:var(--radius); padding:4px 8px; font-size:.68rem;
+  font-family:var(--font-m); cursor:pointer;
+}
+.sch-slot-swap-select:focus { border-color:var(--accent); outline:none; }
+.sch-slot-remove { font-size:.7rem; padding:3px 8px; color:var(--text-muted); border:1px solid var(--border); border-radius:var(--radius); }
+.sch-slot-remove:hover { color:#f44; border-color:#f44; }
+.bridge-slot-empty { border-style:dashed; opacity:.7; }
 .bridge-slot-empty .bridge-slot-label { color:var(--text-muted); opacity:.6; }
 
 /* Mission Feed */

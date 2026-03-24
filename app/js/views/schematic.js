@@ -144,6 +144,43 @@ const SchematicView = (() => {
         render(el);
       });
     }
+
+    // Slot swap dropdowns
+    el.querySelectorAll('.sch-slot-swap-select').forEach(select => {
+      select.addEventListener('change', () => {
+        const slotId = select.dataset.slotId;
+        const newBpId = select.value;
+        if (!newBpId) return;
+        _assignToSlot(shipId, slotId, newBpId);
+        render(el);
+      });
+      // Prevent click from bubbling to the slot prompt handler
+      select.addEventListener('click', e => e.stopPropagation());
+    });
+
+    // Slot remove buttons
+    el.querySelectorAll('.sch-slot-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const slotId = btn.dataset.slotId;
+        _assignToSlot(shipId, slotId, null);
+        render(el);
+      });
+    });
+  }
+
+  function _assignToSlot(shipId, slotId, bpId) {
+    if (!shipId || typeof BlueprintStore === 'undefined') return;
+    const current = BlueprintStore.getShipState(shipId) || {};
+    const assignments = { ...(current.slot_assignments || {}) };
+    if (bpId) {
+      assignments[String(slotId)] = bpId;
+    } else {
+      delete assignments[String(slotId)];
+    }
+    const agentIds = Object.values(assignments).filter(Boolean);
+    const status = agentIds.length > 0 ? 'deployed' : 'docked';
+    BlueprintStore.saveShipState(shipId, { slot_assignments: assignments, agent_ids: agentIds, status });
   }
 
   function _renderHeroSchematic(shipClass, slotMap) {
@@ -283,25 +320,47 @@ const SchematicView = (() => {
   }
 
   function _renderHeroSlots(shipClass, slotMap, activeShip) {
+    // Get all available agent blueprints for swap dropdowns
+    const allAgents = _getAvailableAgents(slotMap);
+
     const slotsHTML = shipClass.slots.map(slot => {
       const bpId = slotMap[String(slot.id)] || null;
       const bp = _resolveBp(bpId);
+      const RC = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+
+      // Build agent options for dropdown
+      const options = allAgents.map(a =>
+        `<option value="${_esc(a.id)}" ${a.id === bpId ? 'selected' : ''}>${_esc(a.name)}</option>`
+      ).join('');
 
       if (bp) {
         const bpRarity = _getBpRarity(bp);
-        const RC = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
         const bpRarityColor = RC[bpRarity] || '#94a3b8';
         return `
-          <div class="bridge-slot bridge-slot-filled" data-bp-id="${bp.id}">
-            <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
+          <div class="bridge-slot bridge-slot-filled" data-slot-id="${slot.id}" data-bp-id="${bp.id}">
+            <div class="bridge-slot-top">
+              <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
+              <span class="bridge-slot-rarity" style="color:${bpRarityColor}">[${bpRarity.charAt(0)}]</span>
+            </div>
             <span class="bridge-slot-name">${_esc(bp.name)}</span>
-            <span class="bridge-slot-rarity" style="color:${bpRarityColor}">[${bpRarity.charAt(0)}]</span>
+            <div class="bridge-slot-swap">
+              <select class="sch-slot-swap-select" data-slot-id="${slot.id}">
+                <option value="">— Swap Agent —</option>
+                ${options}
+              </select>
+              <button class="btn btn-sm sch-slot-remove" data-slot-id="${slot.id}" title="Remove agent">✕</button>
+            </div>
           </div>`;
       }
       return `
-        <div class="bridge-slot bridge-slot-empty">
+        <div class="bridge-slot bridge-slot-empty" data-slot-id="${slot.id}">
           <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
-          <a href="#/bridge?tab=agent" class="bridge-slot-dock">+ ASSIGN</a>
+          <div class="bridge-slot-swap">
+            <select class="sch-slot-swap-select" data-slot-id="${slot.id}">
+              <option value="">— Assign Agent —</option>
+              ${options}
+            </select>
+          </div>
         </div>`;
     }).join('');
 
@@ -313,6 +372,21 @@ const SchematicView = (() => {
       <div class="bridge-crew-list">${slotsHTML}</div>
       <div class="bridge-crew-card">${cardHTML}</div>
     </div>`;
+  }
+
+  function _getAvailableAgents(slotMap) {
+    const agents = [];
+    // From BlueprintStore
+    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.listAgents) {
+      agents.push(...BlueprintStore.listAgents());
+    }
+    // From BlueprintsView SEED as fallback
+    if (!agents.length && typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) {
+      agents.push(...BlueprintsView.SEED.filter(b => b.type === 'agent'));
+    }
+    // Sort alphabetically
+    agents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    return agents;
   }
 
   /* ── Helpers ── */
