@@ -790,9 +790,10 @@
 .sch-search-list {
   display:none; position:absolute; top:100%; left:0; right:0;
   max-height:180px; overflow-y:auto; z-index:50;
-  background:var(--bg); border:1px solid var(--border);
+  background:var(--bg,#080808); border:1px solid var(--border);
   border-radius:var(--radius); margin-top:2px;
-  box-shadow:0 4px 16px rgba(0,0,0,.3);
+  box-shadow:0 4px 16px rgba(0,0,0,.6);
+  backdrop-filter:blur(12px);
 }
 .sch-search-item {
   padding:6px 10px; font-size:.7rem; cursor:pointer;
