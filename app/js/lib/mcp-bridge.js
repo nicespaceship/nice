@@ -102,13 +102,14 @@ const McpBridge = (() => {
       throw new Error(data.error);
     }
 
-    // Update connection in State with discovered tools
+    // Update connection in State with discovered tools (clone to avoid mutation)
     const connections = State.get('mcp_connections') || [];
-    const conn = connections.find(c => c.id === connectionId);
-    if (conn && data?.tools) {
-      conn.available_tools = data.tools.map(t => t.name);
-      conn.status = 'connected';
-      State.set('mcp_connections', connections);
+    if (data?.tools) {
+      const updated = connections.map(c => c.id === connectionId
+        ? { ...c, available_tools: data.tools.map(t => t.name), status: 'connected' }
+        : c
+      );
+      State.set('mcp_connections', updated);
     }
 
     return data?.tools || [];

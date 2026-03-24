@@ -1253,7 +1253,7 @@ const NICE = (() => {
     _registerSW();
     Notify.init();
 
-    // Initialize command palette, keyboard shortcuts, onboarding
+    // Initialize command palette and keyboard shortcuts
     if (typeof CommandPalette !== 'undefined') CommandPalette.init();
     if (typeof Keyboard !== 'undefined') Keyboard.init();
 

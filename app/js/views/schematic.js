@@ -121,7 +121,6 @@ const SchematicView = (() => {
       const bp = c.bp;
       const label = c.slot.label || '';
       const rarity = c.slot.maxRarity || 'Common';
-      const rarityColor = RC[rarity] || '#94a3b8';
       if (bp && CR) {
         return '<div class="schematic-card-slot schematic-card-' + side + '" data-slot-idx="' + c.index + '" data-bp-id="' + bp.id + '">' +
           CR.render('agent', 'mini', bp) +
@@ -339,15 +338,18 @@ const SchematicView = (() => {
     return Gamification.calcAgentRarity(bp).name;
   }
 
-  function destroy() {
-    clearTimeout(_resizeTimer);
-  }
-
-  // Redraw schematic on resize
-  window.addEventListener('resize', () => {
+  function _onResize() {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(_wireSchematic, 150);
-  });
+  }
+
+  function destroy() {
+    clearTimeout(_resizeTimer);
+    window.removeEventListener('resize', _onResize);
+  }
+
+  // Redraw schematic on resize (listener added/removed per lifecycle)
+  window.addEventListener('resize', _onResize);
 
   return { render, destroy };
 })();

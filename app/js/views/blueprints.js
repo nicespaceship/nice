@@ -32,8 +32,8 @@ const BlueprintsView = (() => {
       const ch = _SERIAL_CHARS[idx];
       speeds.push(ch >= '0' && ch <= '9' ? +ch : (ch.charCodeAt(0) - 65) % 10);
     }
-    var raw = chars.join('');
-    var code = raw.replace(/(.{4})(?=.)/g, '$1-');
+    const raw = chars.join('');
+    const code = raw.replace(/(.{4})(?=.)/g, '$1-');
     return { code: code, raw: raw, speeds: speeds };
   }
 

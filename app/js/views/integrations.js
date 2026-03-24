@@ -7,7 +7,6 @@
 const IntegrationsView = (() => {
   const title = 'Integrations';
   const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const _timeAgo = typeof Utils !== 'undefined' ? Utils.timeAgo : () => '';
 
   /* ── API Service Catalog ──────────────────────────────────────── */
   const API_CATALOG = [
@@ -312,8 +311,7 @@ const IntegrationsView = (() => {
       auth_type: catalog.auth, available_tools: catalog.tools,
       status: 'connected', catalog_id: catalogId, created_at: new Date().toISOString(),
     };
-    conns.push(conn);
-    State.set('mcp_connections', conns);
+    State.set('mcp_connections', [...conns, conn]);
 
     const user = State.get('user');
     if (user) {
@@ -332,7 +330,7 @@ const IntegrationsView = (() => {
     let conns = State.get('mcp_connections') || [];
     conns = conns.filter(c => c.id !== connId);
     State.set('mcp_connections', conns);
-    if (!connId.startsWith('mc')) SB.db('mcp_connections').remove(connId).catch(() => {});
+    if (connId.includes('-')) SB.db('mcp_connections').remove(connId).catch(() => {});
     render(el);
     if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Disconnected', message: 'Connection removed.', type: 'system' });
   }
@@ -351,8 +349,7 @@ const IntegrationsView = (() => {
       available_tools: [], status: 'connected', catalog_id: null, created_at: new Date().toISOString(),
     };
     const conns = State.get('mcp_connections') || [];
-    conns.push(conn);
-    State.set('mcp_connections', conns);
+    State.set('mcp_connections', [...conns, conn]);
     const user = State.get('user');
     if (user) {
       SB.db('mcp_connections').create({ user_id: user.id, spaceship_id: 'account', name, server_url: url, transport, auth_type: auth, available_tools: [], status: 'connected' }).catch(() => {});
@@ -405,7 +402,7 @@ const IntegrationsView = (() => {
     let apis = State.get('api_connections') || [];
     apis = apis.filter(c => c.id !== connId);
     State.set('api_connections', apis);
-    if (!connId.startsWith('ac')) SB.db('api_connections').remove(connId).catch(() => {});
+    if (connId.includes('-')) SB.db('api_connections').remove(connId).catch(() => {});
     render(el);
     if (typeof Notify !== 'undefined') Notify.send({ title: 'API Disconnected', message: 'Connection removed.', type: 'system' });
   }

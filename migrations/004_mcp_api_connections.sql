@@ -42,18 +42,12 @@ create index if not exists idx_api_connections_user on api_connections(user_id);
 alter table mcp_connections enable row level security;
 alter table api_connections enable row level security;
 
-create policy "Users see own MCP connections"
-  on mcp_connections for select
-  using (auth.uid() = user_id);
-
 create policy "Users manage own MCP connections"
   on mcp_connections for all
-  using (auth.uid() = user_id);
-
-create policy "Users see own API connections"
-  on api_connections for select
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 create policy "Users manage own API connections"
   on api_connections for all
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

@@ -12,28 +12,58 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
  *   { action: 'discover' | 'invoke', connectionId: string, tool?: string, input?: object }
  */
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://nicespaceship.ai",
+  "https://www.nicespaceship.ai",
+  "http://localhost:3000",
+  "http://localhost:5173",
+];
 
-function jsonResponse(body: unknown, status = 200) {
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
+
+/** Block requests to private/reserved IPs (SSRF protection) */
+function isPrivateUrl(urlStr: string): boolean {
+  try {
+    const u = new URL(urlStr);
+    const host = u.hostname;
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
+    if (host.startsWith("10.") || host.startsWith("192.168.")) return true;
+    if (host.startsWith("172.")) {
+      const second = parseInt(host.split(".")[1], 10);
+      if (second >= 16 && second <= 31) return true;
+    }
+    if (host === "169.254.169.254") return true; // cloud metadata
+    if (host.endsWith(".internal") || host.endsWith(".local")) return true;
+    return false;
+  } catch {
+    return true; // invalid URL = blocked
+  }
+}
+
+function jsonResponse(body: unknown, status = 200, req?: Request) {
+  const cors = req ? getCorsHeaders(req) : { "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0], "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
     // ── Auth ──────────────────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return jsonResponse({ error: "Missing authorization" }, 401);
+    if (!authHeader) return jsonResponse({ error: "Missing authorization" }, 401, req);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -42,13 +72,13 @@ Deno.serve(async (req: Request) => {
     );
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return jsonResponse({ error: "Unauthorized" }, 401);
+    if (!user) return jsonResponse({ error: "Unauthorized" }, 401, req);
 
     // ── Parse request ────────────────────────────────────────────
     const { action, connectionId, tool, input } = await req.json();
 
     if (!action || !connectionId) {
-      return jsonResponse({ error: "action and connectionId are required" }, 400);
+      return jsonResponse({ error: "action and connectionId are required" }, 400, req);
     }
 
     // ── Load MCP connection ──────────────────────────────────────
@@ -60,11 +90,15 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (connErr || !conn) {
-      return jsonResponse({ error: "MCP connection not found" }, 404);
+      return jsonResponse({ error: "MCP connection not found" }, 404, req);
     }
 
     if (!conn.server_url) {
-      return jsonResponse({ error: "MCP server URL not configured" }, 400);
+      return jsonResponse({ error: "MCP server URL not configured" }, 400, req);;
+    }
+
+    if (isPrivateUrl(conn.server_url as string)) {
+      return jsonResponse({ error: "MCP server URL points to a private address" }, 400, req);
     }
 
     // ── Build auth headers for MCP server ────────────────────────
@@ -86,15 +120,16 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "invoke") {
-      if (!tool) return jsonResponse({ error: "tool name is required for invoke" }, 400);
+      if (!tool) return jsonResponse({ error: "tool name is required for invoke" }, 400, req);
       return await handleInvoke(conn, mcpHeaders, tool, input || {});
     }
 
-    return jsonResponse({ error: `Unknown action: ${action}` }, 400);
+    return jsonResponse({ error: `Unknown action: ${action}` }, 400, req);
 
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[mcp-gateway] Error:", err);
-    return jsonResponse({ error: err.message || "Internal error" }, 500);
+    const message = err instanceof Error ? err.message : "Internal error";
+    return jsonResponse({ error: message }, 500, req);
   }
 });
 
@@ -113,17 +148,20 @@ async function handleDiscover(
   };
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
     const res = await fetch(conn.server_url as string, {
       method: "POST",
       headers,
       body: JSON.stringify(rpcBody),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
-      const errText = await res.text();
       return jsonResponse({
         error: `MCP server returned ${res.status}`,
-        detail: errText,
       }, 502);
     }
 
@@ -132,7 +170,6 @@ async function handleDiscover(
     if (rpcResponse.error) {
       return jsonResponse({
         error: "MCP server error",
-        detail: rpcResponse.error,
       }, 502);
     }
 
@@ -158,7 +195,7 @@ async function handleDiscover(
       count: tools.length,
     });
 
-  } catch (err) {
+  } catch (err: unknown) {
     // Update status to error
     await supabase
       .from("mcp_connections")
@@ -167,7 +204,6 @@ async function handleDiscover(
 
     return jsonResponse({
       error: "Failed to connect to MCP server",
-      detail: err.message,
     }, 502);
   }
 }
@@ -192,17 +228,20 @@ async function handleInvoke(
   };
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
     const res = await fetch(conn.server_url as string, {
       method: "POST",
       headers,
       body: JSON.stringify(rpcBody),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
-      const errText = await res.text();
       return jsonResponse({
         error: `MCP server returned ${res.status}`,
-        detail: errText,
       }, 502);
     }
 
@@ -211,7 +250,6 @@ async function handleInvoke(
     if (rpcResponse.error) {
       return jsonResponse({
         error: "MCP tool error",
-        detail: rpcResponse.error,
       }, 502);
     }
 
@@ -227,10 +265,9 @@ async function handleInvoke(
       raw: rpcResponse.result,
     });
 
-  } catch (err) {
+  } catch (err: unknown) {
     return jsonResponse({
       error: `Failed to invoke tool "${toolName}"`,
-      detail: err.message,
     }, 502);
   }
 }

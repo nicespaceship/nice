@@ -215,16 +215,12 @@ const PromptPanel = (() => {
   function _showMonitor() {
     if (!_appMain) return;
     _appMain.classList.add('monitor-active');
-    _updateResumeBtn();
   }
 
   function _hideMonitor() {
     if (!_appMain) return;
     _appMain.classList.remove('monitor-active');
-    _updateResumeBtn();
   }
-
-  function _updateResumeBtn() {}
 
   function _isMonitorActive() {
     return _appMain?.classList.contains('monitor-active') || false;
@@ -236,16 +232,16 @@ const PromptPanel = (() => {
     'spaceship': 'spaceship', 'robotech': 'robotech', 'navigator': 'navigator',
     'solar': 'solar', 'matrix': 'matrix', 'retro': 'retro', 'lcars': 'lcars',
     'pixel': 'pixel', '16-bit pixel': 'pixel', '16-bit': 'pixel',
-    'cyberpunk neon': 'theme-cyberpunk', 'cyberpunk': 'theme-cyberpunk', 'neon': 'theme-cyberpunk',
-    'ocean depths': 'theme-ocean', 'ocean': 'theme-ocean',
-    'sunset gradient': 'theme-sunset', 'sunset': 'theme-sunset',
-    'holo chrome': 'theme-holo', 'holo': 'theme-holo', 'holographic': 'theme-holo',
-    'synthwave': 'theme-synthwave',
-    'arctic': 'theme-arctic',
-    'volcanic': 'theme-volcanic', 'molten': 'theme-volcanic', 'lava': 'theme-volcanic',
-    'steampunk': 'theme-steampunk',
-    'forest': 'theme-forest', 'jungle': 'theme-forest',
-    'ultraviolet': 'theme-ultraviolet', 'uv': 'theme-ultraviolet',
+    'cyberpunk neon': 'cyberpunk', 'cyberpunk': 'cyberpunk', 'neon': 'cyberpunk',
+    'ocean depths': 'ocean', 'ocean': 'ocean',
+    'sunset gradient': 'sunset', 'sunset': 'sunset',
+    'holo chrome': 'holo', 'holo': 'holo', 'holographic': 'holo',
+    'synthwave': 'synthwave',
+    'arctic': 'arctic',
+    'volcanic': 'volcanic', 'molten': 'volcanic', 'lava': 'volcanic',
+    'steampunk': 'steampunk',
+    'forest': 'forest', 'jungle': 'forest',
+    'ultraviolet': 'ultraviolet', 'uv': 'ultraviolet',
   };
   const _THEME_NAMES = Object.keys(_THEME_MAP);
 
@@ -2242,7 +2238,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       if (voiceSel) voiceSel.style.display = '';
     }
     // Restore resume button if there's a prior conversation
-    _updateResumeBtn();
     // Start hidden — shown when user clicks a card or triggers prompt
     hide();
   }
