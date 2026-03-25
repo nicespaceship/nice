@@ -130,7 +130,7 @@ const Theme = (() => {
     }
     const themes = (Array.isArray(dockIds) && dockIds.length)
       ? THEMES.filter(t => dockIds.includes(t.id))
-      : THEMES.filter(t => ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel','cyberpunk','ocean','sunset'].includes(t.id));
+      : THEMES.filter(t => ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel','cyberpunk','steampunk','sunset'].includes(t.id));
 
     container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
