@@ -77,14 +77,7 @@
   50% { border-color: #444; }
 }
 
-/* Subtle scan line */
-[data-theme="spaceship"] .app-main::after {
-  content: '';
-  position: fixed; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
-  animation: ns-scanline 8s linear infinite;
-  pointer-events: none; z-index: 1;
-}
+/* Scan line removed — was distracting on content pages */
 
 /* Sidebar — dark steel */
 [data-theme="spaceship"] .app-sidebar {
