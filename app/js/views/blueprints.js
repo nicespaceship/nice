@@ -1865,19 +1865,7 @@ const BlueprintsView = (() => {
      ═══════════════════════════════════════════════ */
 
   function _getDependencyHints(bp, type) {
-    if (type === 'spaceship') {
-      const cls = _getShipSlots(bp.recommended_class);
-      const needed = cls.slots.length;
-      const activeAgents = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedAgentIds)
-        ? BlueprintStore.getActivatedAgentIds().length : (State.get('agents') || []).length;
-      if (activeAgents < needed) {
-        return `<div class="bp-drawer-deps">
-          <span class="bp-deps-icon">&#9888;</span>
-          Needs ${needed} agents. You have ${activeAgents}.
-          <a href="#/bridge?tab=agent" class="bp-deps-link" onclick="document.getElementById('bp-drawer')?.classList.remove('open');document.getElementById('bp-drawer-overlay')?.classList.remove('open')">Browse Agent Blueprints &rarr;</a>
-        </div>`;
-      }
-    } else if (type === 'fleet') {
+    if (type === 'fleet') {
       const neededShips = parseInt(bp.stats?.ships, 10) || 0;
       const activeShips = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedShipIds)
         ? BlueprintStore.getActivatedShipIds().length : (State.get('spaceships') || []).length;
