@@ -6,7 +6,7 @@
    Bump CACHE_VERSION to force a full cache refresh on deploy.
 ═══════════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 13;
+const CACHE_VERSION = 14;
 const CACHE_NAME = `nice-v${CACHE_VERSION}`;
 const DATA_CACHE = `nice-v${CACHE_VERSION}-data`;
 
