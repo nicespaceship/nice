@@ -398,6 +398,57 @@ const NICE = (() => {
     }).join('');
   }
 
+  /* ── Ship → Theme auto-switching ── */
+  const SHIP_THEME_MAP = {
+    'ncc-1701-d': 'lcars',
+    'uss-enterprise': 'lcars',
+  };
+
+  function _initShipThemeWatcher() {
+    // Check on init
+    _checkShipTheme();
+
+    // Watch for ship changes via storage events and periodic check
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'nice-mc-ship') _checkShipTheme();
+    });
+
+    // Also poll when BlueprintStore state changes
+    if (typeof State !== 'undefined') {
+      State.on('activated_ships', _checkShipTheme);
+    }
+  }
+
+  function _checkShipTheme() {
+    const shipId = localStorage.getItem('nice-mc-ship');
+    if (!shipId) return;
+
+    // Resolve ship blueprint to get name
+    let shipName = '';
+    if (typeof BlueprintStore !== 'undefined') {
+      const rawId = shipId.replace(/^bp-/, '');
+      const ship = BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId);
+      if (ship) shipName = (ship.name || '').toLowerCase();
+    }
+
+    // Also check the ID itself
+    const idLower = shipId.toLowerCase();
+
+    // Match against known ship-theme associations
+    for (const [pattern, themeId] of Object.entries(SHIP_THEME_MAP)) {
+      if (idLower.includes(pattern) || shipName.includes(pattern)) {
+        const current = localStorage.getItem('ns-theme');
+        if (current !== themeId) {
+          Theme.set(themeId);
+          if (typeof Notify !== 'undefined') {
+            Notify.send({ title: 'Theme Activated', message: `LCARS interface engaged.`, type: 'system' });
+          }
+        }
+        return;
+      }
+    }
+  }
+
   /* ── Mobile swipe gesture for sidebar ── */
   function _initSwipeGesture(sidebar, overlay) {
     if (!sidebar || !overlay) return;
@@ -1333,6 +1384,9 @@ const NICE = (() => {
 
     // Blueprint store (loads seeds immediately, fetches DB in background)
     if (typeof BlueprintStore !== 'undefined') BlueprintStore.init();
+
+    // Ship-themed auto-switching
+    _initShipThemeWatcher();
 
     // Gamification DB sync (merge localStorage with Supabase)
     if (typeof Gamification !== 'undefined' && Gamification.initFromDB) Gamification.initFromDB();

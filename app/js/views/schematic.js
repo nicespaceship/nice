@@ -130,6 +130,7 @@ const SchematicView = (() => {
     if (shipSelect) {
       shipSelect.addEventListener('change', () => {
         localStorage.setItem('nice-mc-ship', shipSelect.value);
+        window.dispatchEvent(new StorageEvent('storage', { key: 'nice-mc-ship', newValue: shipSelect.value }));
         render(el);
       });
     }
@@ -140,7 +141,9 @@ const SchematicView = (() => {
       switchBtn.addEventListener('click', () => {
         const currentIdx = activatedShips.findIndex(s => s.id === (activeShip?.id));
         const nextIdx = (currentIdx + 1) % activatedShips.length;
-        localStorage.setItem('nice-mc-ship', activatedShips[nextIdx].id);
+        const nextId = activatedShips[nextIdx].id;
+        localStorage.setItem('nice-mc-ship', nextId);
+        window.dispatchEvent(new StorageEvent('storage', { key: 'nice-mc-ship', newValue: nextId }));
         render(el);
       });
     }
