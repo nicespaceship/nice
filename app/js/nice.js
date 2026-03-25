@@ -7,7 +7,7 @@
    MODULE: Theme Engine (reused from main site)
 ───────────────────────────────────────────────────────────────── */
 const Theme = (() => {
-  const BUILTIN = ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel','steampunk'];
+  const BUILTIN = ['spaceship','robotech','navigator','matrix','lcars','steampunk'];
 
   // CSS var keys to clear when switching themes
   const VAR_KEYS = ['--bg','--bg2','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--nav-bg','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
@@ -130,7 +130,7 @@ const Theme = (() => {
     }
     const themes = (Array.isArray(dockIds) && dockIds.length)
       ? THEMES.filter(t => dockIds.includes(t.id))
-      : THEMES.filter(t => ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel','cyberpunk','steampunk','sunset'].includes(t.id));
+      : THEMES.filter(t => ['spaceship','robotech','navigator','matrix','lcars','steampunk'].includes(t.id));
 
     container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
