@@ -157,7 +157,7 @@ const MissionsView = (() => {
     const counts = { queued: 0, running: 0, completed: 0, failed: 0 };
     missions.forEach(m => { if (counts[m.status] !== undefined) counts[m.status]++; });
 
-    const nodes = ['queued', 'running', 'completed'];
+    const nodes = ['queued', 'running', 'completed', 'failed'];
     const nodesHTML = nodes.map((s, i) => {
       const meta = STATUS_META[s];
       const active = _filterStatus === s ? 'mc-pipe-active' : '';
@@ -171,25 +171,7 @@ const MissionsView = (() => {
         </button>`;
     }).join('');
 
-    // Failed branch
-    const failMeta = STATUS_META.failed;
-    const failActive = _filterStatus === 'failed' ? 'mc-pipe-active' : '';
-    const failHTML = counts.failed > 0 ? `
-      <div class="mc-pipe-branch">
-        <div class="mc-pipe-line-v"></div>
-        <button class="mc-pipe-node mc-pipe-fail ${failActive}" data-status="failed" style="--pipe-color:${failMeta.color}">
-          <span class="mc-pipe-icon">${failMeta.icon}</span>
-          <span class="mc-pipe-count">${counts.failed}</span>
-          <span class="mc-pipe-label">Failed</span>
-        </button>
-      </div>` : '';
-
-    pipe.innerHTML = `
-      <div class="mc-pipe-row">
-        ${nodesHTML}
-      </div>
-      ${failHTML}
-    `;
+    pipe.innerHTML = `<div class="mc-pipe-row">${nodesHTML}</div>`;
 
     // Pipeline filter clicks
     pipe.querySelectorAll('.mc-pipe-node').forEach(btn => {
