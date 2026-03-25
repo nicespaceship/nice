@@ -7,7 +7,7 @@
    MODULE: Theme Engine (reused from main site)
 ───────────────────────────────────────────────────────────────── */
 const Theme = (() => {
-  const BUILTIN = ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel'];
+  const BUILTIN = ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel','steampunk'];
 
   // CSS var keys to clear when switching themes
   const VAR_KEYS = ['--bg','--bg2','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--nav-bg','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
