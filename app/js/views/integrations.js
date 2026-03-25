@@ -10,27 +10,104 @@ const IntegrationsView = (() => {
 
   /* ── API Service Catalog ──────────────────────────────────────── */
   const API_CATALOG = [
-    { id:'stripe',    name:'Stripe',    desc:'Payments, invoices, customers',   icon:'wallet' },
-    { id:'openai',    name:'OpenAI',    desc:'GPT, DALL-E, Whisper APIs',       icon:'cpu' },
-    { id:'anthropic', name:'Anthropic', desc:'Claude API, completions',         icon:'cpu' },
-    { id:'twilio',    name:'Twilio',    desc:'SMS, voice, messaging',           icon:'chat' },
-    { id:'sendgrid',  name:'SendGrid',  desc:'Transactional & marketing email', icon:'mail' },
-    { id:'github',    name:'GitHub',    desc:'Repos, Actions, API access',      icon:'code' },
-    { id:'aws',       name:'AWS',       desc:'S3, Lambda, SES, and more',       icon:'cloud' },
-    { id:'custom',    name:'Custom',    desc:'Add any API key manually',        icon:'plus' },
+    /* LLM Providers */
+    { id:'openai',      name:'OpenAI',         desc:'GPT, DALL-E, Whisper APIs',         icon:'cpu',       cat:'llm' },
+    { id:'anthropic',   name:'Anthropic',      desc:'Claude API, completions',            icon:'cpu',       cat:'llm' },
+    { id:'google-ai',   name:'Google AI',      desc:'Gemini, PaLM, Vertex AI',            icon:'cpu',       cat:'llm' },
+    { id:'groq',        name:'Groq',           desc:'Ultra-fast LLM inference',            icon:'cpu',       cat:'llm' },
+    { id:'mistral',     name:'Mistral AI',     desc:'Open-weight models, cost-effective',  icon:'cpu',       cat:'llm' },
+    { id:'cohere',      name:'Cohere',         desc:'Enterprise NLP, embeddings, RAG',     icon:'cpu',       cat:'llm' },
+    { id:'together',    name:'Together AI',    desc:'Open source model hosting',           icon:'cpu',       cat:'llm' },
+    { id:'huggingface', name:'Hugging Face',   desc:'Inference API, 1000s of models',      icon:'cpu',       cat:'llm' },
+    /* Payments & Billing */
+    { id:'stripe',      name:'Stripe',         desc:'Payments, invoices, customers',       icon:'wallet',    cat:'payments' },
+    { id:'paypal',      name:'PayPal',         desc:'Payments, checkout, transfers',       icon:'wallet',    cat:'payments' },
+    { id:'square',      name:'Square',         desc:'Point-of-sale, payments',             icon:'wallet',    cat:'payments' },
+    /* Cloud & Infrastructure */
+    { id:'aws',         name:'AWS',            desc:'S3, Lambda, SES, and more',           icon:'cloud',     cat:'cloud' },
+    { id:'gcp',         name:'Google Cloud',   desc:'GCS, Cloud Functions, BigQuery',      icon:'cloud',     cat:'cloud' },
+    { id:'azure',       name:'Azure',          desc:'Blob Storage, Functions, Cosmos DB',  icon:'cloud',     cat:'cloud' },
+    { id:'vercel',      name:'Vercel',         desc:'Deployments, serverless, edge',       icon:'cloud',     cat:'cloud' },
+    /* Communication */
+    { id:'twilio',      name:'Twilio',         desc:'SMS, voice, messaging',               icon:'chat',      cat:'comms' },
+    { id:'sendgrid',    name:'SendGrid',       desc:'Transactional & marketing email',     icon:'mail',      cat:'comms' },
+    { id:'discord',     name:'Discord',        desc:'Bots, webhooks, community',           icon:'chat',      cat:'comms' },
+    { id:'telegram',    name:'Telegram',       desc:'Bot API, messaging automation',       icon:'chat',      cat:'comms' },
+    { id:'whatsapp',    name:'WhatsApp',       desc:'Business API, customer engagement',   icon:'chat',      cat:'comms' },
+    /* Data & Vector DBs */
+    { id:'pinecone',    name:'Pinecone',       desc:'Managed vector database for RAG',     icon:'database',  cat:'data' },
+    { id:'weaviate',    name:'Weaviate',       desc:'Vector search, semantic queries',     icon:'database',  cat:'data' },
+    { id:'snowflake',   name:'Snowflake',      desc:'Cloud data warehouse',                icon:'database',  cat:'data' },
+    { id:'bigquery',    name:'BigQuery',       desc:'Serverless data warehouse',           icon:'database',  cat:'data' },
+    { id:'mongodb',     name:'MongoDB',        desc:'Document database, Atlas cloud',      icon:'database',  cat:'data' },
+    { id:'postgres',    name:'PostgreSQL',     desc:'Direct PostgreSQL connections',        icon:'database',  cat:'data' },
+    { id:'elasticsearch',name:'Elasticsearch', desc:'Full-text search & analytics',        icon:'database',  cat:'data' },
+    /* CRM & Business */
+    { id:'salesforce',  name:'Salesforce',     desc:'CRM, leads, deals, reporting',        icon:'target',    cat:'crm' },
+    { id:'hubspot',     name:'HubSpot',        desc:'CRM, marketing automation',           icon:'target',    cat:'crm' },
+    { id:'zendesk',     name:'Zendesk',        desc:'Support tickets, customer service',   icon:'clipboard', cat:'crm' },
+    { id:'intercom',    name:'Intercom',       desc:'Customer messaging platform',         icon:'chat',      cat:'crm' },
+    { id:'pipedrive',   name:'Pipedrive',      desc:'Sales pipeline management',           icon:'target',    cat:'crm' },
+    /* DevOps & Code */
+    { id:'github',      name:'GitHub',         desc:'Repos, Actions, API access',          icon:'code',      cat:'dev' },
+    { id:'gitlab',      name:'GitLab',         desc:'Git platform, CI/CD pipelines',       icon:'code',      cat:'dev' },
+    { id:'bitbucket',   name:'Bitbucket',      desc:'Atlassian git, Pipelines',            icon:'code',      cat:'dev' },
+    { id:'sentry',      name:'Sentry',         desc:'Error tracking, performance',         icon:'alert',     cat:'dev' },
+    { id:'datadog',     name:'Datadog',        desc:'Metrics, logs, APM',                  icon:'chart',     cat:'dev' },
+    { id:'pagerduty',   name:'PagerDuty',      desc:'Incident management, alerting',       icon:'alert',     cat:'dev' },
+    /* Automation */
+    { id:'zapier',      name:'Zapier',         desc:'Connect 5000+ apps, workflows',       icon:'zap',       cat:'auto' },
+    { id:'make',        name:'Make',           desc:'Visual workflow automation',           icon:'zap',       cat:'auto' },
+    /* Custom */
+    { id:'custom',      name:'Custom',         desc:'Add any API key manually',            icon:'plus',      cat:'other' },
   ];
 
   /* ── MCP Server Catalog ───────────────────────────────────────── */
   const MCP_CATALOG = [
-    { id:'google',   name:'Google Workspace', desc:'Gmail, Drive, Calendar, Docs',  icon:'mail',      tools:['gmail','drive','calendar','docs'],          transport:'streamable-http', auth:'oauth' },
-    { id:'slack',    name:'Slack',            desc:'Channels, DMs, threads',        icon:'chat',      tools:['channels','messages','threads'],             transport:'streamable-http', auth:'oauth' },
-    { id:'github',   name:'GitHub',           desc:'Repos, PRs, Issues, Actions',   icon:'code',      tools:['repos','pull_requests','issues','actions'],  transport:'streamable-http', auth:'oauth' },
-    { id:'notion',   name:'Notion',           desc:'Pages, databases, blocks',      icon:'file',      tools:['pages','databases','search'],                transport:'streamable-http', auth:'oauth' },
-    { id:'stripe',   name:'Stripe',           desc:'Payments, invoices, customers', icon:'wallet',    tools:['payments','invoices','customers','products'], transport:'streamable-http', auth:'api_key' },
-    { id:'supabase', name:'Supabase',         desc:'Database, auth, storage, edge', icon:'database',  tools:['sql','auth','storage','edge_functions'],     transport:'streamable-http', auth:'api_key' },
-    { id:'figma',    name:'Figma',            desc:'Designs, components, comments', icon:'palette',   tools:['files','components','comments','variables'], transport:'streamable-http', auth:'oauth' },
-    { id:'linear',   name:'Linear',           desc:'Issues, projects, cycles',      icon:'target',    tools:['issues','projects','cycles','teams'],        transport:'streamable-http', auth:'oauth' },
-    { id:'jira',     name:'Jira',             desc:'Issues, sprints, boards',       icon:'clipboard', tools:['issues','sprints','boards','projects'],      transport:'streamable-http', auth:'oauth' },
+    /* Productivity & Workspace */
+    { id:'google',       name:'Google Workspace',  desc:'Gmail, Drive, Calendar, Docs',       icon:'mail',      tools:['gmail','drive','calendar','docs'],            transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'slack',        name:'Slack',             desc:'Channels, DMs, threads',             icon:'chat',      tools:['channels','messages','threads'],              transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'notion',       name:'Notion',            desc:'Pages, databases, blocks',           icon:'file',      tools:['pages','databases','search'],                 transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'confluence',   name:'Confluence',        desc:'Wiki, documentation, spaces',        icon:'file',      tools:['pages','spaces','search','comments'],         transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'ms-teams',     name:'Microsoft Teams',   desc:'Chat, channels, meetings',           icon:'chat',      tools:['messages','channels','teams','meetings'],     transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'sharepoint',   name:'SharePoint',        desc:'Sites, documents, lists',            icon:'file',      tools:['sites','documents','lists','search'],         transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'onedrive',     name:'OneDrive',          desc:'Files, folders, sharing',            icon:'file',      tools:['files','folders','sharing','search'],          transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'box',          name:'Box',               desc:'Secure cloud content management',    icon:'file',      tools:['files','folders','metadata','search'],         transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    /* Code & DevOps */
+    { id:'github',       name:'GitHub',            desc:'Repos, PRs, Issues, Actions',        icon:'code',      tools:['repos','pull_requests','issues','actions'],   transport:'streamable-http', auth:'oauth',   cat:'dev' },
+    { id:'gitlab',       name:'GitLab',            desc:'Repos, merge requests, CI/CD',       icon:'code',      tools:['repos','merge_requests','pipelines','issues'],transport:'streamable-http', auth:'oauth',   cat:'dev' },
+    { id:'bitbucket',    name:'Bitbucket',         desc:'Repos, PRs, Pipelines',              icon:'code',      tools:['repos','pull_requests','pipelines'],          transport:'streamable-http', auth:'oauth',   cat:'dev' },
+    { id:'azure-devops', name:'Azure DevOps',      desc:'Boards, repos, pipelines',           icon:'code',      tools:['work_items','repos','pipelines','boards'],    transport:'streamable-http', auth:'oauth',   cat:'dev' },
+    { id:'vercel',       name:'Vercel',            desc:'Deployments, domains, logs',          icon:'cloud',     tools:['deployments','projects','domains','logs'],    transport:'streamable-http', auth:'api_key', cat:'dev' },
+    { id:'sentry',       name:'Sentry',            desc:'Errors, performance, releases',      icon:'alert',     tools:['issues','events','releases','performance'],   transport:'streamable-http', auth:'api_key', cat:'dev' },
+    /* Data & Databases */
+    { id:'supabase',     name:'Supabase',          desc:'Database, auth, storage, edge',      icon:'database',  tools:['sql','auth','storage','edge_functions'],      transport:'streamable-http', auth:'api_key', cat:'data' },
+    { id:'stripe',       name:'Stripe',            desc:'Payments, invoices, customers',      icon:'wallet',    tools:['payments','invoices','customers','products'], transport:'streamable-http', auth:'api_key', cat:'data' },
+    { id:'snowflake',    name:'Snowflake',         desc:'Data warehouse queries, stages',     icon:'database',  tools:['sql','stages','tasks','streams'],             transport:'streamable-http', auth:'api_key', cat:'data' },
+    { id:'bigquery',     name:'BigQuery',          desc:'Serverless analytics, datasets',     icon:'database',  tools:['sql','datasets','tables','jobs'],             transport:'streamable-http', auth:'oauth',   cat:'data' },
+    { id:'pinecone',     name:'Pinecone',          desc:'Vector search, embeddings, RAG',     icon:'database',  tools:['upsert','query','delete','describe'],         transport:'streamable-http', auth:'api_key', cat:'data' },
+    { id:'weaviate',     name:'Weaviate',          desc:'Vector DB, semantic search',         icon:'database',  tools:['objects','search','schema','batch'],           transport:'streamable-http', auth:'api_key', cat:'data' },
+    { id:'elasticsearch',name:'Elasticsearch',     desc:'Full-text search, analytics',        icon:'database',  tools:['search','index','aggregate','mappings'],       transport:'streamable-http', auth:'api_key', cat:'data' },
+    /* Design */
+    { id:'figma',        name:'Figma',             desc:'Designs, components, variables',     icon:'palette',   tools:['files','components','comments','variables'],  transport:'streamable-http', auth:'oauth',   cat:'design' },
+    /* Project Management */
+    { id:'linear',       name:'Linear',            desc:'Issues, projects, cycles, teams',    icon:'target',    tools:['issues','projects','cycles','teams'],         transport:'streamable-http', auth:'oauth',   cat:'pm' },
+    { id:'jira',         name:'Jira',              desc:'Issues, sprints, boards, projects',  icon:'clipboard', tools:['issues','sprints','boards','projects'],       transport:'streamable-http', auth:'oauth',   cat:'pm' },
+    { id:'asana',        name:'Asana',             desc:'Tasks, projects, portfolios',        icon:'clipboard', tools:['tasks','projects','sections','portfolios'],   transport:'streamable-http', auth:'oauth',   cat:'pm' },
+    /* CRM & Support */
+    { id:'salesforce',   name:'Salesforce',        desc:'CRM, leads, accounts, reports',      icon:'target',    tools:['leads','accounts','opportunities','reports'], transport:'streamable-http', auth:'oauth',   cat:'crm' },
+    { id:'hubspot',      name:'HubSpot',           desc:'CRM, contacts, deals, marketing',    icon:'target',    tools:['contacts','deals','companies','marketing'],   transport:'streamable-http', auth:'oauth',   cat:'crm' },
+    { id:'zendesk',      name:'Zendesk',           desc:'Tickets, users, knowledge base',     icon:'clipboard', tools:['tickets','users','articles','search'],        transport:'streamable-http', auth:'oauth',   cat:'crm' },
+    { id:'intercom',     name:'Intercom',          desc:'Conversations, contacts, articles',  icon:'chat',      tools:['conversations','contacts','articles','tags'], transport:'streamable-http', auth:'api_key', cat:'crm' },
+    /* Monitoring & Observability */
+    { id:'datadog',      name:'Datadog',           desc:'Metrics, logs, traces, dashboards',  icon:'chart',     tools:['metrics','logs','monitors','dashboards'],     transport:'streamable-http', auth:'api_key', cat:'ops' },
+    { id:'pagerduty',    name:'PagerDuty',         desc:'Incidents, escalations, on-call',    icon:'alert',     tools:['incidents','services','schedules','alerts'],  transport:'streamable-http', auth:'api_key', cat:'ops' },
+    /* Communication */
+    { id:'discord',      name:'Discord',           desc:'Guilds, channels, messages, bots',   icon:'chat',      tools:['messages','channels','guilds','members'],     transport:'streamable-http', auth:'api_key', cat:'comms' },
+    { id:'telegram',     name:'Telegram',          desc:'Messages, groups, bot commands',     icon:'chat',      tools:['messages','groups','bot_commands','files'],   transport:'streamable-http', auth:'api_key', cat:'comms' },
+    /* Automation */
+    { id:'zapier',       name:'Zapier',            desc:'Triggers, actions, 5000+ apps',      icon:'zap',       tools:['triggers','actions','zaps','search'],         transport:'streamable-http', auth:'api_key', cat:'auto' },
+    { id:'make',         name:'Make',              desc:'Scenarios, modules, data stores',    icon:'zap',       tools:['scenarios','modules','connections','hooks'],   transport:'streamable-http', auth:'api_key', cat:'auto' },
   ];
 
   /* ── Demo seed data ───────────────────────────────────────────── */
