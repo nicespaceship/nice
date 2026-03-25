@@ -66,6 +66,531 @@
   --bg-pattern:   none;
 }
 
+/* ═══ NICE SPACESHIP — Premium Dark Command Center ═══════════════════ */
+
+@keyframes ns-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes ns-pulse-border {
+  0%, 100% { border-color: #2a2a2a; }
+  50% { border-color: #444; }
+}
+
+/* Subtle scan line */
+[data-theme="spaceship"] .app-main::after {
+  content: '';
+  position: fixed; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  animation: ns-scanline 8s linear infinite;
+  pointer-events: none; z-index: 1;
+}
+
+/* Sidebar — dark steel */
+[data-theme="spaceship"] .app-sidebar {
+  background: #0a0a0a;
+  border-right: 1px solid #1e1e1e;
+}
+[data-theme="spaceship"] .side-header {
+  background: transparent;
+  border-bottom: 1px solid #1e1e1e;
+}
+[data-theme="spaceship"] .side-header::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+[data-theme="spaceship"] .side-header .app-brand-text {
+  color: #fff;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+}
+[data-theme="spaceship"] .side-link {
+  border-radius: 0;
+  margin: 1px 0;
+  padding: 8px 14px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  font-size: .55rem;
+  color: #666;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+}
+[data-theme="spaceship"] .side-link:hover {
+  color: #ccc;
+  background: rgba(255,255,255,0.03);
+  border-left-color: #444;
+}
+[data-theme="spaceship"] .side-link.active {
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+  border-left-color: #fff;
+}
+[data-theme="spaceship"] .side-link svg { opacity: 0.4; }
+[data-theme="spaceship"] .side-link.active svg { opacity: 1; }
+[data-theme="spaceship"] .side-footer {
+  background: transparent;
+  border-top: 1px solid #1e1e1e;
+}
+[data-theme="spaceship"] .hdr-user-badge {
+  background: transparent; color: #888; border-color: #444;
+}
+
+/* Topbar — razor-thin accent line */
+[data-theme="spaceship"] .app-topbar {
+  background: rgba(8,8,8,0.97);
+  border-bottom: none;
+  position: relative;
+}
+[data-theme="spaceship"] .app-topbar::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #444 30%, #666 50%, #444 70%, transparent 100%);
+}
+
+/* Panels — brushed steel */
+[data-theme="spaceship"] .widget-card,
+[data-theme="spaceship"] .tc-section,
+[data-theme="spaceship"] .detail-section {
+  border: 1px solid #1e1e1e;
+  border-radius: 0;
+  background: rgba(12,12,12,0.95);
+  position: relative;
+}
+[data-theme="spaceship"] .widget-card::before,
+[data-theme="spaceship"] .tc-section::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  pointer-events: none;
+}
+
+/* Buttons — minimalist command */
+[data-theme="spaceship"] .btn {
+  border: 1px solid #333;
+  border-radius: 0;
+  background: transparent;
+  color: #ccc;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: .6rem;
+}
+[data-theme="spaceship"] .btn:hover {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  box-shadow: none;
+}
+[data-theme="spaceship"] .btn-primary {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+[data-theme="spaceship"] .btn-primary:hover {
+  background: #ccc;
+  border-color: #ccc;
+}
+
+/* Tabs — clean underline */
+[data-theme="spaceship"] .bp-type-tab,
+[data-theme="spaceship"] .bridge-hero-tab,
+[data-theme="spaceship"] .log-view-tab {
+  border-radius: 0;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: #666;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .55rem;
+}
+[data-theme="spaceship"] .bp-type-tab.active,
+[data-theme="spaceship"] .bridge-hero-tab.active,
+[data-theme="spaceship"] .log-view-tab.active {
+  color: #fff;
+  border-color: #fff;
+  background: rgba(255,255,255,0.05);
+  border-bottom: none;
+}
+[data-theme="spaceship"] .bp-type-tab:hover,
+[data-theme="spaceship"] .bridge-hero-tab:hover,
+[data-theme="spaceship"] .log-view-tab:hover {
+  color: #ccc;
+  border-color: #444;
+}
+
+/* Sub-tabs & filters */
+[data-theme="spaceship"] .bp-sub-tab {
+  border-radius: 0; border: 1px solid #2a2a2a;
+  background: transparent; color: #666;
+  font-family: 'Orbitron', sans-serif; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .08em; font-size: .55rem;
+}
+[data-theme="spaceship"] .bp-sub-tab.active { color: #fff; border-color: #fff; background: rgba(255,255,255,0.05); }
+[data-theme="spaceship"] .bp-rarity-btn {
+  border-radius: 0; border: 1px solid #2a2a2a;
+  background: transparent; color: #555;
+  font-family: 'Orbitron', sans-serif; font-size: .5rem;
+}
+[data-theme="spaceship"] .bp-rarity-btn.active { color: #fff; border-color: #666; background: rgba(255,255,255,0.05); }
+[data-theme="spaceship"] .bp-view-btn {
+  border-radius: 0; border: 1px solid #2a2a2a; background: transparent;
+}
+[data-theme="spaceship"] .bp-view-btn.active { border-color: #666; background: rgba(255,255,255,0.05); }
+
+/* Mission cards */
+[data-theme="spaceship"] .mc-card {
+  border: 1px solid #1e1e1e;
+  border-left: 2px solid #444;
+  border-radius: 0;
+  background: rgba(12,12,12,0.9);
+}
+[data-theme="spaceship"] .mc-card-running { border-left-color: #fff; }
+[data-theme="spaceship"] .mc-card-completed { border-left-color: #666; }
+[data-theme="spaceship"] .mc-card-failed { border-left-color: #aa3333; }
+
+/* Pipeline nodes */
+[data-theme="spaceship"] .mc-pipe-node {
+  border-radius: 0; border: 1px solid #2a2a2a;
+  background: transparent; color: #666;
+}
+[data-theme="spaceship"] .mc-pipe-node:hover,
+[data-theme="spaceship"] .mc-pipe-active {
+  background: #fff; color: #000; border-color: #fff;
+}
+
+/* Inputs */
+[data-theme="spaceship"] input[type="text"],
+[data-theme="spaceship"] .search-input {
+  border-radius: 0; border: 1px solid #2a2a2a;
+  background: #0a0a0a; color: #ccc;
+  font-family: 'Orbitron', sans-serif; font-size: .65rem;
+}
+[data-theme="spaceship"] input[type="text"]:focus,
+[data-theme="spaceship"] .search-input:focus { border-color: #666; }
+[data-theme="spaceship"] select {
+  border-radius: 0; border: 1px solid #2a2a2a; color: #ccc;
+  background: #0a0a0a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none; -webkit-appearance: none;
+}
+[data-theme="spaceship"] .filter-select {
+  border-radius: 0; border: 1px solid #2a2a2a; color: #ccc;
+  background: #0a0a0a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none; -webkit-appearance: none;
+}
+[data-theme="spaceship"] .search-box { background: #0a0a0a; border-color: #2a2a2a; border-radius: 0; }
+
+/* Prompt panel */
+[data-theme="spaceship"] .nice-ai-input-container {
+  border: 1px solid #2a2a2a; border-radius: 0;
+  background: rgba(10,10,10,0.95);
+}
+[data-theme="spaceship"] .nice-ai-input-container:focus-within { border-color: #555; }
+[data-theme="spaceship"] .nice-ai-input { color: #ccc; }
+[data-theme="spaceship"] .nice-ai-input::placeholder { color: #444; }
+[data-theme="spaceship"] .nice-ai-chip {
+  border-radius: 0; border: 1px solid #2a2a2a;
+  background: transparent; color: #666;
+  font-family: 'Orbitron', sans-serif; text-transform: uppercase; font-size: .5rem;
+}
+[data-theme="spaceship"] .nice-ai-chip:hover { border-color: #555; color: #ccc; }
+[data-theme="spaceship"] .chat-pill {
+  border-radius: 0; border: 1px solid #2a2a2a;
+  background: transparent; color: #666;
+}
+[data-theme="spaceship"] .chat-pill:hover { border-color: #555; color: #ccc; }
+
+/* Schematic */
+[data-theme="spaceship"] .schematic-wired .tcg-card-mini { border-radius: 0; }
+
+/* HUD */
+[data-theme="spaceship"] .app-hud-panel {
+  background: rgba(10,10,10,0.97); border: 1px solid #1e1e1e; border-radius: 0;
+}
+[data-theme="spaceship"] .app-hud-panel .dock-lbl { color: #555; }
+[data-theme="spaceship"] .app-hud-panel .dock-lbl-val { color: #888; }
+[data-theme="spaceship"] .app-hud-panel .db { border: 1px solid #2a2a2a; }
+[data-theme="spaceship"] .app-hud-panel .db.active { border-color: #fff; }
+[data-theme="spaceship"] .app-hud-panel .fb { border-radius: 0; border-color: #2a2a2a; color: #555; }
+[data-theme="spaceship"] .app-hud-panel .fb.active { background: rgba(255,255,255,0.05); color: #fff; }
+
+/* Scrollbar */
+[data-theme="spaceship"] ::-webkit-scrollbar { width: 4px; }
+[data-theme="spaceship"] ::-webkit-scrollbar-track { background: #080808; }
+[data-theme="spaceship"] ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 0; }
+[data-theme="spaceship"] ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+/* Popover */
+[data-theme="spaceship"] .side-popover { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 0; }
+[data-theme="spaceship"] .side-popover-item {
+  color: #888; font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase; letter-spacing: .1em; font-size: .55rem;
+}
+[data-theme="spaceship"] .side-popover-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+/* Sidebar folder */
+[data-theme="spaceship"] .side-folder-toggle { color: #555; border-color: #1e1e1e; }
+[data-theme="spaceship"] .side-folder-body { border-left-color: #1e1e1e; }
+[data-theme="spaceship"] .side-mission-item { color: #555; }
+[data-theme="spaceship"] .side-mission-item:hover { background: rgba(255,255,255,0.03); color: #ccc; }
+
+/* ═══ POD — Premium Light Command Center ═════════════════════════════ */
+
+@keyframes pod-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Sidebar — crisp white */
+[data-theme="robotech"] .app-sidebar {
+  background: #f4f4f4;
+  border-right: 1px solid #ddd;
+}
+[data-theme="robotech"] .side-header {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+[data-theme="robotech"] .side-header .app-brand-text {
+  color: #111;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+}
+[data-theme="robotech"] .side-link {
+  border-radius: 0;
+  margin: 1px 0;
+  padding: 8px 14px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: .55rem;
+  color: #999;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+}
+[data-theme="robotech"] .side-link:hover {
+  color: #444;
+  background: rgba(0,0,0,0.03);
+  border-left-color: #ccc;
+}
+[data-theme="robotech"] .side-link.active {
+  color: #111;
+  background: rgba(0,0,0,0.04);
+  border-left-color: #111;
+}
+[data-theme="robotech"] .side-link svg { opacity: 0.3; }
+[data-theme="robotech"] .side-link.active svg { opacity: 0.8; }
+[data-theme="robotech"] .side-footer {
+  background: #fff;
+  border-top: 1px solid #ddd;
+}
+[data-theme="robotech"] .hdr-user-badge {
+  background: #111; color: #fff; border-color: #111;
+}
+
+/* Topbar — clean line */
+[data-theme="robotech"] .app-topbar {
+  background: #fff;
+  border-bottom: none;
+  position: relative;
+}
+[data-theme="robotech"] .app-topbar::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #ccc 30%, #999 50%, #ccc 70%, transparent 100%);
+}
+
+/* Panels — white cards with subtle shadow */
+[data-theme="robotech"] .widget-card,
+[data-theme="robotech"] .tc-section,
+[data-theme="robotech"] .detail-section {
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Buttons — ink on paper */
+[data-theme="robotech"] .btn {
+  border: 1px solid #ccc;
+  border-radius: 0;
+  background: transparent;
+  color: #333;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: .6rem;
+}
+[data-theme="robotech"] .btn:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+  box-shadow: none;
+}
+[data-theme="robotech"] .btn-primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+[data-theme="robotech"] .btn-primary:hover {
+  background: #333;
+  border-color: #333;
+}
+
+/* Tabs */
+[data-theme="robotech"] .bp-type-tab,
+[data-theme="robotech"] .bridge-hero-tab,
+[data-theme="robotech"] .log-view-tab {
+  border-radius: 0;
+  border: 1px solid #ddd;
+  background: transparent;
+  color: #999;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .55rem;
+}
+[data-theme="robotech"] .bp-type-tab.active,
+[data-theme="robotech"] .bridge-hero-tab.active,
+[data-theme="robotech"] .log-view-tab.active {
+  color: #111;
+  border-color: #111;
+  background: rgba(0,0,0,0.03);
+  border-bottom: none;
+}
+[data-theme="robotech"] .bp-type-tab:hover,
+[data-theme="robotech"] .bridge-hero-tab:hover,
+[data-theme="robotech"] .log-view-tab:hover {
+  color: #444;
+  border-color: #aaa;
+}
+
+/* Sub-tabs & filters */
+[data-theme="robotech"] .bp-sub-tab {
+  border-radius: 0; border: 1px solid #ddd;
+  background: transparent; color: #999;
+  font-family: 'Orbitron', sans-serif; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .08em; font-size: .55rem;
+}
+[data-theme="robotech"] .bp-sub-tab.active { color: #111; border-color: #111; background: rgba(0,0,0,0.03); }
+[data-theme="robotech"] .bp-rarity-btn {
+  border-radius: 0; border: 1px solid #ddd;
+  background: transparent; color: #aaa;
+  font-family: 'Orbitron', sans-serif; font-size: .5rem;
+}
+[data-theme="robotech"] .bp-rarity-btn.active { color: #111; border-color: #888; background: rgba(0,0,0,0.03); }
+[data-theme="robotech"] .bp-view-btn {
+  border-radius: 0; border: 1px solid #ddd; background: transparent;
+}
+[data-theme="robotech"] .bp-view-btn.active { border-color: #888; background: rgba(0,0,0,0.03); }
+[data-theme="robotech"] .bp-view-btn svg { stroke: #999; }
+[data-theme="robotech"] .bp-view-btn.active svg { stroke: #111; }
+
+/* Mission cards */
+[data-theme="robotech"] .mc-card {
+  border: 1px solid #e0e0e0;
+  border-left: 2px solid #ccc;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+[data-theme="robotech"] .mc-card-running { border-left-color: #111; }
+[data-theme="robotech"] .mc-card-completed { border-left-color: #888; }
+[data-theme="robotech"] .mc-card-failed { border-left-color: #cc3333; }
+
+/* Pipeline nodes */
+[data-theme="robotech"] .mc-pipe-node {
+  border-radius: 0; border: 1px solid #ddd;
+  background: transparent; color: #999;
+}
+[data-theme="robotech"] .mc-pipe-node:hover,
+[data-theme="robotech"] .mc-pipe-active {
+  background: #111; color: #fff; border-color: #111;
+}
+
+/* Inputs */
+[data-theme="robotech"] input[type="text"],
+[data-theme="robotech"] .search-input {
+  border-radius: 0; border: 1px solid #ddd;
+  background: #fff; color: #222;
+  font-family: 'Orbitron', sans-serif; font-size: .65rem;
+}
+[data-theme="robotech"] input[type="text"]:focus,
+[data-theme="robotech"] .search-input:focus { border-color: #888; }
+[data-theme="robotech"] select {
+  border-radius: 0; border: 1px solid #ddd; color: #222;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none; -webkit-appearance: none;
+}
+[data-theme="robotech"] .filter-select {
+  border-radius: 0; border: 1px solid #ddd; color: #222;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none; -webkit-appearance: none;
+}
+[data-theme="robotech"] .search-box { background: #fff; border-color: #ddd; border-radius: 0; }
+
+/* Prompt panel */
+[data-theme="robotech"] .nice-ai-input-container {
+  border: 1px solid #ddd; border-radius: 0;
+  background: #fff;
+}
+[data-theme="robotech"] .nice-ai-input-container:focus-within { border-color: #888; }
+[data-theme="robotech"] .nice-ai-input { color: #222; }
+[data-theme="robotech"] .nice-ai-input::placeholder { color: #bbb; }
+[data-theme="robotech"] .nice-ai-chip {
+  border-radius: 0; border: 1px solid #ddd;
+  background: transparent; color: #888;
+  font-family: 'Orbitron', sans-serif; text-transform: uppercase; font-size: .5rem;
+}
+[data-theme="robotech"] .nice-ai-chip:hover { border-color: #888; color: #333; background: rgba(0,0,0,0.03); }
+[data-theme="robotech"] .chat-pill {
+  border-radius: 0; border: 1px solid #ddd;
+  background: transparent; color: #888;
+}
+[data-theme="robotech"] .chat-pill:hover { border-color: #888; color: #333; }
+
+/* Schematic */
+[data-theme="robotech"] .schematic-wired .tcg-card-mini { border-radius: 0; border-color: #ccc; }
+
+/* HUD */
+[data-theme="robotech"] .app-hud-panel {
+  background: #fff; border: 1px solid #ddd; border-radius: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+[data-theme="robotech"] .app-hud-panel .dock-lbl { color: #999; }
+[data-theme="robotech"] .app-hud-panel .dock-lbl-val { color: #444; }
+[data-theme="robotech"] .app-hud-panel .db { border: 1px solid #ddd; }
+[data-theme="robotech"] .app-hud-panel .db.active { border-color: #111; box-shadow: 0 0 4px rgba(0,0,0,0.15); }
+[data-theme="robotech"] .app-hud-panel .fb { border-radius: 0; border-color: #ddd; color: #999; }
+[data-theme="robotech"] .app-hud-panel .fb.active { background: rgba(0,0,0,0.04); color: #111; }
+
+/* Scrollbar */
+[data-theme="robotech"] ::-webkit-scrollbar { width: 4px; }
+[data-theme="robotech"] ::-webkit-scrollbar-track { background: #f4f4f4; }
+[data-theme="robotech"] ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 0; }
+[data-theme="robotech"] ::-webkit-scrollbar-thumb:hover { background: #888; }
+
+/* Popover */
+[data-theme="robotech"] .side-popover { background: #fff; border: 1px solid #ddd; border-radius: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+[data-theme="robotech"] .side-popover-item {
+  color: #666; font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase; letter-spacing: .1em; font-size: .55rem;
+}
+[data-theme="robotech"] .side-popover-item:hover { background: rgba(0,0,0,0.04); color: #111; }
+
+/* Sidebar folder */
+[data-theme="robotech"] .side-folder-toggle { color: #888; border-color: #ddd; }
+[data-theme="robotech"] .side-folder-body { border-left-color: #ddd; }
+[data-theme="robotech"] .side-mission-item { color: #888; }
+[data-theme="robotech"] .side-mission-item:hover { background: rgba(0,0,0,0.03); color: #333; }
+
 /* Navigator — cyan HUD */
 [data-theme="navigator"] {
   --bg:           #02090f;
@@ -2783,7 +3308,6 @@ select.contact-input { appearance:none;cursor:pointer; }
 
 /* ── BG Grid hidden on matrix + robotech ── */
 [data-theme="matrix"]   .bg-grid,
-[data-theme="robotech"] .bg-grid { opacity: 0 !important; }
 
 /* ═══════════════════════════════════════════════════════
    SOLUTIONS: ATM→FLEET WORKFLOW DIAGRAM
