@@ -153,34 +153,126 @@
   --bg-pattern:   none;
 }
 
-/* Retro Abstract — 70s */
+/* Retro — Vintage Sci-Fi (60s NASA / analog gauges) */
 [data-theme="retro"] {
-  --bg:           #1a0f08;
-  --bg2:          #221408;
-  --surface:      rgba(0,180,150,0.06);
-  --surface2:     rgba(230,100,50,0.07);
-  --border:       rgba(0,195,155,0.28);
-  --border-hi:    rgba(230,110,60,0.5);
-  --accent:       #00c8a0;
-  --accent2:      #e86c3a;
-  --text:         #f2e8d8;
-  --fg:           #f2e8d8;
-  --text-muted:   rgba(242,232,216,0.55);
-  --text-dim:     rgba(242,232,216,0.22);
-  --glow:         0 0 18px rgba(0,195,155,0.2);
-  --glow-hi:      0 0 30px rgba(230,100,50,0.4);
-  --font-d:       'Orbitron', sans-serif;
-  --font-h:       'Playfair Display', serif;
-  --font-b:       'Inter', sans-serif;
-  --font-m:       'Fira Code', monospace;
-  --radius:       4px;
-  --scan:         0;
+  --bg:           #0e0e0a;
+  --bg2:          #16160f;
+  --surface:      rgba(180,160,100,0.05);
+  --surface2:     rgba(160,60,40,0.06);
+  --border:       rgba(180,160,100,0.22);
+  --border-hi:    rgba(200,180,120,0.5);
+  --accent:       #c8a848;
+  --accent2:      #b83c28;
+  --text:         #e8e0c8;
+  --fg:           #e8e0c8;
+  --text-muted:   rgba(200,190,160,0.55);
+  --text-dim:     rgba(200,190,160,0.2);
+  --glow:         0 0 12px rgba(200,168,72,0.15);
+  --glow-hi:      0 0 24px rgba(200,168,72,0.3);
+  --font-d:       'Space Mono', monospace;
+  --font-h:       'Space Mono', monospace;
+  --font-b:       'IBM Plex Sans', sans-serif;
+  --font-m:       'Space Mono', monospace;
+  --radius:       2px;
+  --scan:         0.03;
   --border-width: 1px;
-  --nav-bg:       rgba(20,10,4,0.98);
-  --panel-bg:     rgba(26,15,8,0.97);
-  --hero-grad:    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(0,160,120,0.1) 0%, rgba(220,80,30,0.05) 60%, transparent 100%);
-  --bg-pattern:   radial-gradient(circle at 2px 2px, rgba(242,232,216,0.04) 1px, transparent 0);
+  --nav-bg:       rgba(14,14,10,0.98);
+  --panel-bg:     rgba(16,16,12,0.97);
+  --hero-grad:    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(200,168,72,0.06) 0%, transparent 60%);
+  --bg-pattern:   repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(200,190,160,0.015) 3px, rgba(200,190,160,0.015) 4px);
 }
+
+/* ── Retro Vintage Sci-Fi Overrides ── */
+
+/* Sidebar — mission control panel feel */
+[data-theme="retro"] .app-sidebar {
+  border-right:1px solid rgba(200,168,72,0.15);
+}
+[data-theme="retro"] .side-header {
+  border-bottom:2px solid rgba(200,168,72,0.2);
+}
+[data-theme="retro"] .app-brand-text {
+  letter-spacing:.3em;
+  text-transform:uppercase;
+}
+
+/* Panels — instrument panel borders */
+[data-theme="retro"] .widget-card,
+[data-theme="retro"] .tc-section,
+[data-theme="retro"] .detail-section {
+  border:1px solid rgba(180,160,100,0.15);
+  border-top:2px solid #c8a848;
+}
+
+/* Buttons — analog toggle style */
+[data-theme="retro"] .btn {
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-weight:600;
+  border:1px solid rgba(200,168,72,0.3);
+}
+[data-theme="retro"] .btn-primary {
+  background:rgba(200,168,72,0.12);
+  border-color:#c8a848;
+  color:#c8a848;
+}
+[data-theme="retro"] .btn-primary:hover {
+  background:rgba(200,168,72,0.25);
+}
+
+/* Tabs — underline indicator style */
+[data-theme="retro"] .bp-type-tab,
+[data-theme="retro"] .bridge-hero-tab,
+[data-theme="retro"] .log-view-tab {
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  font-weight:600;
+}
+[data-theme="retro"] .bp-type-tab.active,
+[data-theme="retro"] .bridge-hero-tab.active,
+[data-theme="retro"] .log-view-tab.active {
+  border-bottom:2px solid #c8a848;
+  color:#c8a848;
+}
+
+/* Cards — mission briefing style */
+[data-theme="retro"] .mc-card {
+  border:1px solid rgba(180,160,100,0.15);
+  border-top:2px solid rgba(200,168,72,0.3);
+}
+[data-theme="retro"] .mc-card-running {
+  border-top-color:#b83c28;
+}
+
+/* Gauges — analog meter colors */
+[data-theme="retro"] .mc-gauge-svg circle:last-child {
+  filter:brightness(0.9) saturate(0.8);
+}
+
+/* Status colors — muted vintage */
+[data-theme="retro"] .badge-queued { border-color:#c8a848; color:#c8a848; }
+[data-theme="retro"] .badge-running { border-color:#b83c28; color:#b83c28; }
+[data-theme="retro"] .badge-completed { border-color:#5a8a50; color:#5a8a50; }
+[data-theme="retro"] .badge-failed { border-color:#8b3030; color:#8b3030; }
+
+/* Inputs — typewriter feel */
+[data-theme="retro"] input[type="text"],
+[data-theme="retro"] .search-input,
+[data-theme="retro"] .filter-select,
+[data-theme="retro"] select {
+  border:1px solid rgba(200,168,72,0.2);
+  letter-spacing:.05em;
+}
+[data-theme="retro"] input:focus,
+[data-theme="retro"] .search-input:focus {
+  border-color:#c8a848;
+}
+
+/* Schematic — warm reactor */
+[data-theme="retro"] .schematic-svg circle[fill="var(--accent,#fff)"] { fill:#c8a848; }
+
+/* Log timeline — amber dots */
+[data-theme="retro"] .log-entry-dot { border-color:#c8a848; }
 
 /* LCARS — Star Trek */
 [data-theme="lcars"] {
