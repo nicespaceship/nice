@@ -130,6 +130,11 @@ const IntegrationsView = (() => {
     const mcps = State.get('mcp_connections') || _loadMcps();
     const totalTools = mcps.reduce((sum, c) => sum + (c.available_tools || []).length, 0);
 
+    /* Derive unique categories */
+    const mcpCats = [...new Set(MCP_CATALOG.map(m => m.cat))];
+    const apiCats = [...new Set(API_CATALOG.map(a => a.cat))];
+    const catLabels = { llm:'LLM', payments:'Payments', cloud:'Cloud', comms:'Comms', data:'Data', crm:'CRM', dev:'DevOps', auto:'Automation', other:'Other', workspace:'Workspace', design:'Design', pm:'Project Mgmt', ops:'Monitoring' };
+
     el.innerHTML = `
       <div class="integrations-wrap">
         <!-- Stats Bar -->
@@ -162,36 +167,26 @@ const IntegrationsView = (() => {
             </h3>
             <p class="integrations-section-desc">Connect MCP servers so all your agents can use their tools.</p>
           </div>
+          <div class="intg-toolbar">
+            <div class="search-box" style="flex:1;max-width:280px">
+              <svg class="icon icon-sm search-icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+              <input type="text" class="search-input" id="intg-mcp-search" placeholder="Search MCP servers..." style="width:100%">
+            </div>
+            <div class="intg-filters" id="intg-mcp-filters">
+              <button class="pill-btn pill-btn--active" data-cat="all">All</button>
+              ${mcpCats.map(c => `<button class="pill-btn" data-cat="${c}">${catLabels[c] || c}</button>`).join('')}
+            </div>
+            <div class="intg-view-toggle">
+              <button class="pill-btn pill-btn--active" data-view="grid" id="mcp-view-grid" title="Grid view">
+                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              </button>
+              <button class="pill-btn" data-view="list" id="mcp-view-list" title="List view">
+                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="mcp-catalog-grid" id="intg-mcp-grid">
-            ${MCP_CATALOG.map(mcp => {
-              const conn = mcps.find(c => c.catalog_id === mcp.id);
-              const connected = !!conn;
-              return `
-                <div class="mcp-catalog-card ${connected ? 'mcp-catalog-card--connected' : ''}">
-                  <div class="mcp-catalog-top">
-                    <div class="mcp-catalog-icon">
-                      <svg class="icon icon-md" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${mcp.icon}"/></svg>
-                    </div>
-                    <div class="mcp-catalog-info">
-                      <span class="mcp-catalog-name">${mcp.name}</span>
-                      <span class="mcp-catalog-desc">${mcp.desc}</span>
-                    </div>
-                  </div>
-                  <div class="mcp-catalog-tools">
-                    ${mcp.tools.map(t => `<span class="mcp-tool-pill">${t}</span>`).join('')}
-                  </div>
-                  <div class="mcp-catalog-footer">
-                    <span class="mcp-catalog-transport mono">${mcp.transport}</span>
-                    ${connected
-                      ? `<button class="btn btn-sm mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}">
-                          <span class="status-dot dot-g"></span> Connected
-                        </button>`
-                      : `<button class="btn btn-sm btn-primary mcp-connect-btn" data-catalog-id="${mcp.id}">Connect</button>`
-                    }
-                  </div>
-                </div>
-              `;
-            }).join('')}
+            ${_renderMcpCards(MCP_CATALOG, mcps, 'grid')}
           </div>
           <div style="margin-top:12px">
             <button class="btn btn-sm" id="btn-add-custom-mcp">
@@ -210,29 +205,26 @@ const IntegrationsView = (() => {
             </h3>
             <p class="integrations-section-desc">Direct API key integrations. Keys are encrypted and stored in the Vault.</p>
           </div>
+          <div class="intg-toolbar">
+            <div class="search-box" style="flex:1;max-width:280px">
+              <svg class="icon icon-sm search-icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+              <input type="text" class="search-input" id="intg-api-search" placeholder="Search APIs..." style="width:100%">
+            </div>
+            <div class="intg-filters" id="intg-api-filters">
+              <button class="pill-btn pill-btn--active" data-cat="all">All</button>
+              ${apiCats.map(c => `<button class="pill-btn" data-cat="${c}">${catLabels[c] || c}</button>`).join('')}
+            </div>
+            <div class="intg-view-toggle">
+              <button class="pill-btn pill-btn--active" data-view="grid" id="api-view-grid" title="Grid view">
+                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              </button>
+              <button class="pill-btn" data-view="list" id="api-view-list" title="List view">
+                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="api-catalog-grid" id="intg-api-grid">
-            ${API_CATALOG.map(svc => {
-              const conn = apis.find(c => c.service === svc.id);
-              const connected = !!conn;
-              return `
-                <div class="api-catalog-card ${connected ? 'api-catalog-card--connected' : ''}" data-service="${svc.id}">
-                  <div class="api-catalog-icon">
-                    <svg class="icon icon-md" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${svc.icon}"/></svg>
-                  </div>
-                  <div class="api-catalog-info">
-                    <span class="api-catalog-name">${svc.name}</span>
-                    <span class="api-catalog-desc">${svc.desc}</span>
-                  </div>
-                  <div class="api-catalog-action">
-                    ${connected
-                      ? `<button class="btn btn-sm api-disconnect-btn" data-service="${svc.id}" data-conn-id="${conn.id}">Disconnect</button>`
-                      : `<button class="btn btn-sm btn-primary api-connect-btn" data-service="${svc.id}">Connect</button>`
-                    }
-                  </div>
-                  ${connected ? `<span class="api-catalog-status"><span class="status-dot dot-g"></span> Active</span>` : ''}
-                </div>
-              `;
-            }).join('')}
+            ${_renderApiCards(API_CATALOG, apis, 'grid')}
           </div>
         </div>
       </div>
@@ -308,7 +300,105 @@ const IntegrationsView = (() => {
       </div>
     `;
 
-    _bindEvents(el);
+    _bindEvents(el, apis, mcps);
+  }
+
+  /* ── Card Renderers ──────────────────────────────────────────── */
+  function _renderMcpCards(catalog, mcps, viewMode) {
+    return catalog.map(mcp => {
+      const conn = mcps.find(c => c.catalog_id === mcp.id);
+      const connected = !!conn;
+      if (viewMode === 'list') {
+        return `<div class="intg-list-row ${connected ? 'intg-list-row--connected' : ''}" data-cat="${mcp.cat}">
+          <div class="intg-list-icon"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${mcp.icon}"/></svg></div>
+          <span class="intg-list-name">${mcp.name}</span>
+          <span class="intg-list-desc">${mcp.desc}</span>
+          <span class="intg-list-cat mono">${mcp.cat}</span>
+          <span class="intg-list-transport mono">${mcp.transport}</span>
+          ${connected
+            ? `<button class="btn btn-xs mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`
+            : `<button class="btn btn-xs btn-primary mcp-connect-btn" data-catalog-id="${mcp.id}">Connect</button>`
+          }
+        </div>`;
+      }
+      return `<div class="mcp-catalog-card ${connected ? 'mcp-catalog-card--connected' : ''}" data-cat="${mcp.cat}">
+        <div class="mcp-catalog-top">
+          <div class="mcp-catalog-icon"><svg class="icon icon-md" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${mcp.icon}"/></svg></div>
+          <div class="mcp-catalog-info">
+            <span class="mcp-catalog-name">${mcp.name}</span>
+            <span class="mcp-catalog-desc">${mcp.desc}</span>
+          </div>
+        </div>
+        <div class="mcp-catalog-tools">${mcp.tools.map(t => `<span class="mcp-tool-pill">${t}</span>`).join('')}</div>
+        <div class="mcp-catalog-footer">
+          <span class="mcp-catalog-transport mono">${mcp.transport}</span>
+          ${connected
+            ? `<button class="btn btn-sm mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`
+            : `<button class="btn btn-sm btn-primary mcp-connect-btn" data-catalog-id="${mcp.id}">Connect</button>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function _renderApiCards(catalog, apis, viewMode) {
+    return catalog.map(svc => {
+      const conn = apis.find(c => c.service === svc.id);
+      const connected = !!conn;
+      if (viewMode === 'list') {
+        return `<div class="intg-list-row ${connected ? 'intg-list-row--connected' : ''}" data-service="${svc.id}" data-cat="${svc.cat}">
+          <div class="intg-list-icon"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${svc.icon}"/></svg></div>
+          <span class="intg-list-name">${svc.name}</span>
+          <span class="intg-list-desc">${svc.desc}</span>
+          <span class="intg-list-cat mono">${svc.cat}</span>
+          ${connected
+            ? `<button class="btn btn-xs api-disconnect-btn" data-service="${svc.id}" data-conn-id="${conn.id}">Disconnect</button>`
+            : `<button class="btn btn-xs btn-primary api-connect-btn" data-service="${svc.id}">Connect</button>`
+          }
+          ${connected ? `<span class="status-dot dot-g"></span>` : ''}
+        </div>`;
+      }
+      return `<div class="api-catalog-card ${connected ? 'api-catalog-card--connected' : ''}" data-service="${svc.id}" data-cat="${svc.cat}">
+        <div class="api-catalog-icon"><svg class="icon icon-md" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${svc.icon}"/></svg></div>
+        <div class="api-catalog-info">
+          <span class="api-catalog-name">${svc.name}</span>
+          <span class="api-catalog-desc">${svc.desc}</span>
+        </div>
+        <div class="api-catalog-action">
+          ${connected
+            ? `<button class="btn btn-sm api-disconnect-btn" data-service="${svc.id}" data-conn-id="${conn.id}">Disconnect</button>`
+            : `<button class="btn btn-sm btn-primary api-connect-btn" data-service="${svc.id}">Connect</button>`
+          }
+        </div>
+        ${connected ? `<span class="api-catalog-status"><span class="status-dot dot-g"></span> Active</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Filter & View Logic ─────────────────────────────────────── */
+  let _mcpView = 'grid', _apiView = 'grid', _mcpCat = 'all', _apiCat = 'all', _mcpQ = '', _apiQ = '';
+
+  function _applyFilters(section, el, apis, mcps) {
+    if (section === 'mcp' || section === 'both') {
+      let filtered = MCP_CATALOG;
+      if (_mcpCat !== 'all') filtered = filtered.filter(m => m.cat === _mcpCat);
+      if (_mcpQ) filtered = filtered.filter(m => (m.name + ' ' + m.desc).toLowerCase().includes(_mcpQ));
+      const grid = el.querySelector('#intg-mcp-grid');
+      if (grid) {
+        grid.className = _mcpView === 'list' ? 'intg-list-container' : 'mcp-catalog-grid';
+        grid.innerHTML = _renderMcpCards(filtered, mcps, _mcpView);
+      }
+    }
+    if (section === 'api' || section === 'both') {
+      let filtered = API_CATALOG;
+      if (_apiCat !== 'all') filtered = filtered.filter(a => a.cat === _apiCat);
+      if (_apiQ) filtered = filtered.filter(a => (a.name + ' ' + a.desc).toLowerCase().includes(_apiQ));
+      const grid = el.querySelector('#intg-api-grid');
+      if (grid) {
+        grid.className = _apiView === 'list' ? 'intg-list-container' : 'api-catalog-grid';
+        grid.innerHTML = _renderApiCards(filtered, apis, _apiView);
+      }
+    }
   }
 
   /* ── Data Loading ─────────────────────────────────────────────── */
@@ -335,22 +425,50 @@ const IntegrationsView = (() => {
   }
 
   /* ── Events ───────────────────────────────────────────────────── */
-  function _bindEvents(el) {
-    // MCP connect/disconnect
-    el.querySelectorAll('.mcp-connect-btn').forEach(btn => {
-      btn.addEventListener('click', () => _connectMcp(btn.dataset.catalogId, el));
-    });
-    el.querySelectorAll('.mcp-disconnect-btn').forEach(btn => {
-      btn.addEventListener('click', () => _disconnectMcp(btn.dataset.connId, el));
+  function _bindEvents(el, apis, mcps) {
+    // Delegate connect/disconnect clicks (works for both grid and list)
+    el.addEventListener('click', (e) => {
+      const mcpConn = e.target.closest('.mcp-connect-btn');
+      if (mcpConn) return _connectMcp(mcpConn.dataset.catalogId, el);
+      const mcpDisc = e.target.closest('.mcp-disconnect-btn');
+      if (mcpDisc) return _disconnectMcp(mcpDisc.dataset.connId, el);
+      const apiConn = e.target.closest('.api-connect-btn');
+      if (apiConn) return _openApiModal(apiConn.dataset.service);
+      const apiDisc = e.target.closest('.api-disconnect-btn');
+      if (apiDisc) return _disconnectApi(apiDisc.dataset.connId, el);
     });
 
-    // API connect/disconnect
-    el.querySelectorAll('.api-connect-btn').forEach(btn => {
-      btn.addEventListener('click', () => _openApiModal(btn.dataset.service));
+    // Search inputs
+    document.getElementById('intg-mcp-search')?.addEventListener('input', (e) => {
+      _mcpQ = e.target.value.toLowerCase().trim();
+      _applyFilters('mcp', el, apis, mcps);
     });
-    el.querySelectorAll('.api-disconnect-btn').forEach(btn => {
-      btn.addEventListener('click', () => _disconnectApi(btn.dataset.connId, el));
+    document.getElementById('intg-api-search')?.addEventListener('input', (e) => {
+      _apiQ = e.target.value.toLowerCase().trim();
+      _applyFilters('api', el, apis, mcps);
     });
+
+    // Category filter pills
+    document.getElementById('intg-mcp-filters')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pill-btn');
+      if (!btn) return;
+      _mcpCat = btn.dataset.cat;
+      el.querySelectorAll('#intg-mcp-filters .pill-btn').forEach(b => b.classList.toggle('pill-btn--active', b.dataset.cat === _mcpCat));
+      _applyFilters('mcp', el, apis, mcps);
+    });
+    document.getElementById('intg-api-filters')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pill-btn');
+      if (!btn) return;
+      _apiCat = btn.dataset.cat;
+      el.querySelectorAll('#intg-api-filters .pill-btn').forEach(b => b.classList.toggle('pill-btn--active', b.dataset.cat === _apiCat));
+      _applyFilters('api', el, apis, mcps);
+    });
+
+    // View toggle (grid/list)
+    document.getElementById('mcp-view-grid')?.addEventListener('click', () => { _mcpView = 'grid'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, apis, mcps); });
+    document.getElementById('mcp-view-list')?.addEventListener('click', () => { _mcpView = 'list'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, apis, mcps); });
+    document.getElementById('api-view-grid')?.addEventListener('click', () => { _apiView = 'grid'; _toggleViewBtns('api', el); _applyFilters('api', el, apis, mcps); });
+    document.getElementById('api-view-list')?.addEventListener('click', () => { _apiView = 'list'; _toggleViewBtns('api', el); _applyFilters('api', el, apis, mcps); });
 
     // Custom MCP modal
     document.getElementById('btn-add-custom-mcp')?.addEventListener('click', () => {
@@ -373,6 +491,12 @@ const IntegrationsView = (() => {
       if (e.target.id === 'modal-add-api') e.target.classList.remove('open');
     });
     document.getElementById('api-connect-form')?.addEventListener('submit', (e) => _connectApi(e, el));
+  }
+
+  function _toggleViewBtns(section, el) {
+    const view = section === 'mcp' ? _mcpView : _apiView;
+    el.querySelector(`#${section}-view-grid`)?.classList.toggle('pill-btn--active', view === 'grid');
+    el.querySelector(`#${section}-view-list`)?.classList.toggle('pill-btn--active', view === 'list');
   }
 
   /* ── MCP Actions ──────────────────────────────────────────────── */
