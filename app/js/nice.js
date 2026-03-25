@@ -404,17 +404,33 @@ const NICE = (() => {
   ];
 
   function _initShipThemeWatcher() {
-    // Check on init (delay to let BlueprintStore load)
+    // Check on init (delay to let BlueprintStore load seeds)
     setTimeout(_checkShipTheme, 500);
+    setTimeout(_checkShipTheme, 2000); // retry after DB fetch
 
     // Watch for ship changes
     window.addEventListener('storage', (e) => {
       if (e.key === 'nice-mc-ship') setTimeout(_checkShipTheme, 100);
     });
+
+    // Re-check when blueprints/ships state updates
+    if (typeof State !== 'undefined') {
+      State.on('blueprints_loaded', _checkShipTheme);
+    }
+    // Also re-check when activated ships change
+    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.onReady) {
+      BlueprintStore.onReady(_checkShipTheme);
+    }
   }
 
   function _checkShipTheme() {
-    const shipId = localStorage.getItem('nice-mc-ship');
+    let shipId = localStorage.getItem('nice-mc-ship');
+
+    // If no explicit ship selected, use the first activated ship
+    if (!shipId && typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedShips) {
+      const ships = BlueprintStore.getActivatedShips();
+      if (ships.length) shipId = ships[0].id;
+    }
     if (!shipId) return;
 
     // Build a search string from ID + ship name
