@@ -202,8 +202,15 @@ const MatrixRain = (() => {
     drops = Array(cols).fill(1);
   }
 
-  function _draw() {
-    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  let _lastDraw = 0;
+  const _drawInterval = 80; // ms between frames (higher = slower rain)
+
+  function _draw(time) {
+    _raf = requestAnimationFrame(_draw);
+    if (time - _lastDraw < _drawInterval) return;
+    _lastDraw = time;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#00ff41';
     ctx.font = '15px monospace';
@@ -213,7 +220,6 @@ const MatrixRain = (() => {
       if (drops[i] * 18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
       drops[i]++;
     }
-    _raf = requestAnimationFrame(_draw);
   }
 
   function toggle(on) {
