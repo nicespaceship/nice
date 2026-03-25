@@ -64,6 +64,21 @@ const VaultView = (() => {
         </div>
 
         <!-- Secret List -->
+        <h3 class="vault-section-title">Secrets</h3>
+        <div class="intg-toolbar">
+          <div class="search-box" style="flex:1;max-width:260px">
+            <svg class="icon icon-sm search-icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+            <input type="text" class="search-input" id="vault-search" placeholder="Search secrets..." style="width:100%">
+          </div>
+          <div class="bp-rarity-filters" id="vault-type-filters">
+            <button class="bp-rarity-btn active" data-type="all">All</button>
+            <button class="bp-rarity-btn" data-type="api_key">API Key</button>
+            <button class="bp-rarity-btn" data-type="oauth_token">OAuth</button>
+            <button class="bp-rarity-btn" data-type="database_url">Database</button>
+            <button class="bp-rarity-btn" data-type="webhook">Webhook</button>
+            <button class="bp-rarity-btn" data-type="ssh_key">SSH</button>
+          </div>
+        </div>
         <div class="vault-list" id="vault-list">
           <div class="loading-state"><p>Loading secrets...</p></div>
         </div>
@@ -111,6 +126,31 @@ const VaultView = (() => {
     _bindEvents();
     _bindProviderEvents();
     _bindCertEvents();
+    _bindVaultFilters();
+  }
+
+  /* ── Vault Search & Filter ────────────────────────────────── */
+  let _vaultQ = '', _vaultType = 'all';
+
+  function _bindVaultFilters() {
+    document.getElementById('vault-search')?.addEventListener('input', (e) => {
+      _vaultQ = e.target.value.toLowerCase().trim();
+      _filterVault();
+    });
+    document.getElementById('vault-type-filters')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.bp-rarity-btn');
+      if (!btn) return;
+      _vaultType = btn.dataset.type;
+      document.querySelectorAll('#vault-type-filters .bp-rarity-btn').forEach(b => b.classList.toggle('active', b.dataset.type === _vaultType));
+      _filterVault();
+    });
+  }
+
+  function _filterVault() {
+    let secrets = State.get('vault_secrets') || [];
+    if (_vaultType !== 'all') secrets = secrets.filter(s => s.service === _vaultType);
+    if (_vaultQ) secrets = secrets.filter(s => (s.name + ' ' + s.service + ' ' + s.masked).toLowerCase().includes(_vaultQ));
+    _renderSecrets(secrets);
   }
 
   /* ── Certificate Verification ───────────────────────────────── */

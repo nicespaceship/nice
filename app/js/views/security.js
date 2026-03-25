@@ -222,6 +222,17 @@ const SecurityView = (() => {
             Agent Permissions
           </h3>
           <p class="text-muted" style="margin:0 0 12px">Control what each agent can access and do.</p>
+          <div class="intg-toolbar">
+            <div class="search-box" style="flex:1;max-width:260px">
+              <svg class="icon icon-sm search-icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+              <input type="text" class="search-input" id="sec-agent-search" placeholder="Search agents..." style="width:100%">
+            </div>
+            <div class="bp-rarity-filters">
+              <button class="bp-rarity-btn active" data-status="all" id="sec-status-all">All</button>
+              <button class="bp-rarity-btn" data-status="active" id="sec-status-active">Active</button>
+              <button class="bp-rarity-btn" data-status="idle" id="sec-status-idle">Idle</button>
+            </div>
+          </div>
           <div class="security-grid" id="sec-agent-grid">
             ${agents.length ? agents.map(a => `
               <div class="security-card">
