@@ -662,20 +662,20 @@
 [data-theme="lcars"] ::-webkit-scrollbar-thumb { background:#666688; border-radius:24px; }
 [data-theme="lcars"] ::-webkit-scrollbar-thumb:hover { background:#ff9966; }
 
-/* 16-Bit Pixel */
+/* 16-Bit Pixel — NES/SNES */
 [data-theme="pixel"] {
-  --bg:           #0f0f23;
-  --bg2:          #1a1a3e;
-  --surface:      #1a1a3e;
-  --surface2:     #22224e;
-  --border:       #5555aa;
-  --border-hi:    #ffff00;
-  --accent:       #ffff00;
-  --accent2:      #ff4444;
-  --text:         #ffffff;
-  --fg:           #ffffff;
-  --text-muted:   #aaaacc;
-  --text-dim:     #44446a;
+  --bg:           #101020;
+  --bg2:          #181830;
+  --surface:      #1e1e3a;
+  --surface2:     #282850;
+  --border:       #4040aa;
+  --border-hi:    #fccc00;
+  --accent:       #fccc00;
+  --accent2:      #e83030;
+  --text:         #f8f8f8;
+  --fg:           #f8f8f8;
+  --text-muted:   #8888bb;
+  --text-dim:     #383860;
   --glow:         none;
   --glow-hi:      none;
   --font-d:       'Press Start 2P', monospace;
@@ -685,11 +685,181 @@
   --radius:       0px;
   --scan:         0;
   --border-width: 4px;
-  --nav-bg:       #0f0f23;
-  --panel-bg:     #1a1a3e;
+  --nav-bg:       #101020;
+  --panel-bg:     #181830;
   --hero-grad:    none;
   --bg-pattern:   none;
 }
+
+/* ── Pixel NES/SNES Overrides ── */
+
+/* Sidebar — chunky 8-bit frame */
+[data-theme="pixel"] .app-sidebar {
+  border-right:4px solid #4040aa;
+}
+[data-theme="pixel"] .side-header {
+  border-bottom:4px solid #fccc00;
+}
+[data-theme="pixel"] .side-link {
+  border:3px solid transparent;
+  border-radius:0;
+}
+[data-theme="pixel"] .side-link:hover {
+  border-color:#4040aa;
+  background:#1e1e3a;
+}
+[data-theme="pixel"] .side-link.active {
+  border-color:#fccc00;
+  background:#282850;
+  color:#fccc00;
+  box-shadow:4px 4px 0 #383860;
+}
+
+/* Panels — NES dialog box */
+[data-theme="pixel"] .widget-card,
+[data-theme="pixel"] .tc-section,
+[data-theme="pixel"] .detail-section,
+[data-theme="pixel"] .mc-card {
+  border:4px solid #4040aa;
+  border-radius:0;
+  box-shadow:4px 4px 0 #0a0a18;
+}
+[data-theme="pixel"] .widget-card:hover,
+[data-theme="pixel"] .mc-card:hover {
+  border-color:#fccc00;
+  box-shadow:6px 6px 0 #0a0a18;
+  transform:translate(-2px, -2px);
+}
+
+/* Buttons — 8-bit chunky */
+[data-theme="pixel"] .btn {
+  border:3px solid #fccc00;
+  border-radius:0;
+  text-transform:uppercase;
+  box-shadow:3px 3px 0 #383860;
+  transition:transform .1s, box-shadow .1s;
+}
+[data-theme="pixel"] .btn:hover {
+  background:#fccc00;
+  color:#101020;
+  box-shadow:1px 1px 0 #383860;
+  transform:translate(2px, 2px);
+}
+[data-theme="pixel"] .btn:active {
+  box-shadow:0 0 0 #383860;
+  transform:translate(3px, 3px);
+}
+[data-theme="pixel"] .btn-primary {
+  background:#e83030;
+  border-color:#e83030;
+  color:#f8f8f8;
+  box-shadow:3px 3px 0 #601010;
+}
+[data-theme="pixel"] .btn-primary:hover {
+  background:#ff5050;
+  box-shadow:1px 1px 0 #601010;
+  transform:translate(2px, 2px);
+  color:#f8f8f8;
+}
+
+/* Tabs — selector highlight */
+[data-theme="pixel"] .bp-type-tab,
+[data-theme="pixel"] .bridge-hero-tab,
+[data-theme="pixel"] .log-view-tab,
+[data-theme="pixel"] .bp-sub-tab {
+  border:3px solid #4040aa;
+  border-radius:0;
+  text-transform:uppercase;
+}
+[data-theme="pixel"] .bp-type-tab.active,
+[data-theme="pixel"] .bridge-hero-tab.active,
+[data-theme="pixel"] .log-view-tab.active,
+[data-theme="pixel"] .bp-sub-tab.active {
+  border-color:#fccc00;
+  background:#282850;
+  color:#fccc00;
+  box-shadow:3px 3px 0 #0a0a18;
+}
+
+/* Rarity filters */
+[data-theme="pixel"] .bp-rarity-btn {
+  border:3px solid #4040aa;
+  border-radius:0;
+}
+[data-theme="pixel"] .bp-rarity-btn.active {
+  border-color:#fccc00;
+  background:#282850;
+  color:#fccc00;
+}
+
+/* View mode buttons */
+[data-theme="pixel"] .bp-view-btn {
+  border:3px solid #4040aa;
+  border-radius:0;
+}
+[data-theme="pixel"] .bp-view-btn.active {
+  border-color:#fccc00;
+  background:#282850;
+}
+
+/* Mission pipeline — pixel blocks */
+[data-theme="pixel"] .mc-pipe-node {
+  border:3px solid #4040aa;
+  border-radius:0;
+  box-shadow:3px 3px 0 #0a0a18;
+}
+[data-theme="pixel"] .mc-pipe-active {
+  border-color:#fccc00 !important;
+  box-shadow:3px 3px 0 #383860;
+}
+
+/* Gauges */
+[data-theme="pixel"] .mc-gauge,
+[data-theme="pixel"] .log-gauge {
+  border:3px solid #4040aa;
+  border-radius:0;
+}
+
+/* Status colors — bright NES palette */
+[data-theme="pixel"] .badge-queued { border-color:#fccc00; color:#fccc00; border-width:2px; }
+[data-theme="pixel"] .badge-running { border-color:#30a0e8; color:#30a0e8; border-width:2px; }
+[data-theme="pixel"] .badge-completed { border-color:#30c830; color:#30c830; border-width:2px; }
+[data-theme="pixel"] .badge-failed { border-color:#e83030; color:#e83030; border-width:2px; }
+
+/* Inputs — pixel text fields */
+[data-theme="pixel"] input[type="text"],
+[data-theme="pixel"] .search-input,
+[data-theme="pixel"] .search-box,
+[data-theme="pixel"] select {
+  border:3px solid #4040aa;
+  border-radius:0;
+  background:#101020;
+}
+[data-theme="pixel"] input:focus,
+[data-theme="pixel"] .search-input:focus {
+  border-color:#fccc00;
+}
+
+/* Schematic cards — pixel frame */
+[data-theme="pixel"] .schematic-wired .tcg-card-mini {
+  border:3px solid #4040aa;
+  border-radius:0;
+}
+
+/* Scrollbar — chunky */
+[data-theme="pixel"] ::-webkit-scrollbar { width:10px; }
+[data-theme="pixel"] ::-webkit-scrollbar-track { background:#101020; }
+[data-theme="pixel"] ::-webkit-scrollbar-thumb { background:#4040aa; border-radius:0; }
+[data-theme="pixel"] ::-webkit-scrollbar-thumb:hover { background:#fccc00; }
+
+/* Mission cards — bright left borders */
+[data-theme="pixel"] .mc-card { border-left:4px solid #4040aa; }
+[data-theme="pixel"] .mc-card-running { border-left-color:#30a0e8; }
+[data-theme="pixel"] .mc-card-completed { border-left-color:#30c830; }
+[data-theme="pixel"] .mc-card-failed { border-left-color:#e83030; }
+[data-theme="pixel"] .mc-age-fresh { border-left-color:#30c830; }
+[data-theme="pixel"] .mc-age-stale { border-left-color:#fccc00; }
+[data-theme="pixel"] .mc-age-overdue { border-left-color:#e83030; }
 
 /* ─────────────────────────────────────────────────────────────────
    MODULE: BASE
