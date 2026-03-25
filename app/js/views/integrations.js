@@ -173,14 +173,14 @@ const IntegrationsView = (() => {
               <input type="text" class="search-input" id="intg-mcp-search" placeholder="Search MCP servers..." style="width:100%">
             </div>
             <div class="intg-filters" id="intg-mcp-filters">
-              <button class="pill-btn pill-btn--active" data-cat="all">All</button>
-              ${mcpCats.map(c => `<button class="pill-btn" data-cat="${c}">${catLabels[c] || c}</button>`).join('')}
+              <button class="bp-rarity-btn active" data-cat="all">All</button>
+              ${mcpCats.map(c => `<button class="bp-rarity-btn" data-cat="${c}">${catLabels[c] || c}</button>`).join('')}
             </div>
             <div class="intg-view-toggle">
-              <button class="pill-btn pill-btn--active" data-view="grid" id="mcp-view-grid" title="Grid view">
+              <button class="bp-rarity-btn active" data-view="grid" id="mcp-view-grid" title="Grid view">
                 <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               </button>
-              <button class="pill-btn" data-view="list" id="mcp-view-list" title="List view">
+              <button class="bp-rarity-btn" data-view="list" id="mcp-view-list" title="List view">
                 <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
             </div>
@@ -211,14 +211,14 @@ const IntegrationsView = (() => {
               <input type="text" class="search-input" id="intg-api-search" placeholder="Search APIs..." style="width:100%">
             </div>
             <div class="intg-filters" id="intg-api-filters">
-              <button class="pill-btn pill-btn--active" data-cat="all">All</button>
-              ${apiCats.map(c => `<button class="pill-btn" data-cat="${c}">${catLabels[c] || c}</button>`).join('')}
+              <button class="bp-rarity-btn active" data-cat="all">All</button>
+              ${apiCats.map(c => `<button class="bp-rarity-btn" data-cat="${c}">${catLabels[c] || c}</button>`).join('')}
             </div>
             <div class="intg-view-toggle">
-              <button class="pill-btn pill-btn--active" data-view="grid" id="api-view-grid" title="Grid view">
+              <button class="bp-rarity-btn active" data-view="grid" id="api-view-grid" title="Grid view">
                 <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               </button>
-              <button class="pill-btn" data-view="list" id="api-view-list" title="List view">
+              <button class="bp-rarity-btn" data-view="list" id="api-view-list" title="List view">
                 <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
             </div>
@@ -450,17 +450,17 @@ const IntegrationsView = (() => {
 
     // Category filter pills
     document.getElementById('intg-mcp-filters')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.pill-btn');
+      const btn = e.target.closest('.bp-rarity-btn');
       if (!btn) return;
       _mcpCat = btn.dataset.cat;
-      el.querySelectorAll('#intg-mcp-filters .pill-btn').forEach(b => b.classList.toggle('pill-btn--active', b.dataset.cat === _mcpCat));
+      el.querySelectorAll('#intg-mcp-filters .bp-rarity-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === _mcpCat));
       _applyFilters('mcp', el, apis, mcps);
     });
     document.getElementById('intg-api-filters')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.pill-btn');
+      const btn = e.target.closest('.bp-rarity-btn');
       if (!btn) return;
       _apiCat = btn.dataset.cat;
-      el.querySelectorAll('#intg-api-filters .pill-btn').forEach(b => b.classList.toggle('pill-btn--active', b.dataset.cat === _apiCat));
+      el.querySelectorAll('#intg-api-filters .bp-rarity-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === _apiCat));
       _applyFilters('api', el, apis, mcps);
     });
 
@@ -495,8 +495,8 @@ const IntegrationsView = (() => {
 
   function _toggleViewBtns(section, el) {
     const view = section === 'mcp' ? _mcpView : _apiView;
-    el.querySelector(`#${section}-view-grid`)?.classList.toggle('pill-btn--active', view === 'grid');
-    el.querySelector(`#${section}-view-list`)?.classList.toggle('pill-btn--active', view === 'list');
+    el.querySelector(`#${section}-view-grid`)?.classList.toggle('active', view === 'grid');
+    el.querySelector(`#${section}-view-list`)?.classList.toggle('active', view === 'list');
   }
 
   /* ── MCP Actions ──────────────────────────────────────────────── */
