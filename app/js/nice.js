@@ -399,67 +399,25 @@ const NICE = (() => {
   }
 
   /* ── Ship → Theme auto-switching ── */
-  const SHIP_THEME_MAP = [
-    { match: ['ncc-1701', 'enterprise'], theme: 'lcars' },
-  ];
-
+  /* Ship-theme: switching ships triggers theme check via storage event */
   function _initShipThemeWatcher() {
-    // Check on init (delay to let BlueprintStore load seeds)
-    setTimeout(_checkShipTheme, 500);
-    setTimeout(_checkShipTheme, 2000); // retry after DB fetch
-
-    // Watch for ship changes
     window.addEventListener('storage', (e) => {
-      if (e.key === 'nice-mc-ship') setTimeout(_checkShipTheme, 100);
+      if (e.key === 'nice-mc-ship') _checkShipTheme(e.newValue);
     });
-
-    // Re-check when blueprints/ships state updates
-    if (typeof State !== 'undefined') {
-      State.on('blueprints_loaded', _checkShipTheme);
-    }
-    // Also re-check when activated ships change
-    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.onReady) {
-      BlueprintStore.onReady(_checkShipTheme);
-    }
   }
 
-  function _checkShipTheme() {
-    let shipId = localStorage.getItem('nice-mc-ship');
-
-    // If no explicit ship selected, use the first activated ship
-    if (!shipId && typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedShips) {
-      const ships = BlueprintStore.getActivatedShips();
-      if (ships.length) shipId = ships[0].id;
-    }
+  function _checkShipTheme(shipId) {
     if (!shipId) return;
-
-    // Build a search string from ID + ship name
     let search = shipId.toLowerCase();
-
-    // Try to resolve ship name from multiple sources
     if (typeof BlueprintStore !== 'undefined') {
       const rawId = shipId.replace(/^bp-/, '');
       const ship = BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId);
       if (ship) search += ' ' + (ship.name || '').toLowerCase();
-
-      // Also check activated ships list
-      const activated = BlueprintStore.getActivatedShips ? BlueprintStore.getActivatedShips() : [];
-      const active = activated.find(s => s.id === shipId);
-      if (active) search += ' ' + (active.name || '').toLowerCase();
     }
-
-    // Match against ship-theme associations
-    for (const entry of SHIP_THEME_MAP) {
-      const matched = entry.match.some(pattern => search.includes(pattern));
-      if (matched) {
-        const current = localStorage.getItem('ns-theme');
-        if (current !== entry.theme) {
-          Theme.set(entry.theme);
-          if (typeof Notify !== 'undefined') {
-            Notify.send({ title: 'Theme Activated', message: 'LCARS interface engaged.', type: 'system' });
-          }
-        }
-        return;
+    if (search.includes('enterprise') || search.includes('ncc-1701')) {
+      if (localStorage.getItem('ns-theme') !== 'lcars') {
+        Theme.set('lcars');
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Theme Activated', message: 'LCARS interface engaged.', type: 'system' });
       }
     }
   }

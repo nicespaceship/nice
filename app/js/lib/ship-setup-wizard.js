@@ -592,6 +592,16 @@ const ShipSetupWizard = (() => {
       AuditLog.log({ type: 'ship_setup_wizard', detail: `Deployed ${_data.shipName} (${_blueprint.name}) with ${resolvedAgentIds.length} agents` });
     }
 
+    // Ship-theme auto-switch (e.g. Enterprise → LCARS)
+    const shipName = (_data.shipName || _blueprint.name || '').toLowerCase();
+    const shipId = (_blueprint.id || '').toLowerCase();
+    if (shipName.includes('enterprise') || shipName.includes('ncc-1701') || shipId.includes('enterprise') || shipId.includes('ncc-1701')) {
+      if (typeof Theme !== 'undefined') {
+        Theme.set('lcars');
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Theme Activated', message: 'LCARS interface engaged.', type: 'system' });
+      }
+    }
+
     // Refresh + callback
     if (typeof BlueprintsView !== 'undefined' && BlueprintsView._applyFilters) {
       try { BlueprintsView._applyFilters(); } catch {}
