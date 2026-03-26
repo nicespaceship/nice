@@ -8,9 +8,6 @@ const VaultView = (() => {
   const _esc = Utils.esc;
 
   function render(el) {
-    const user = State.get('user');
-    if (!user) return _authPrompt(el, 'the secure vault');
-
     // Hydrate from localStorage if not yet in state
     if (!State.get('llm_connections')) {
       try { State.set('llm_connections', JSON.parse(localStorage.getItem('nice-llm-connections') || '{}')); } catch { State.set('llm_connections', {}); }
