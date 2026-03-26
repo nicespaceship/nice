@@ -7,7 +7,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
  *   tools/list  — returns available Gmail tools
  *   tools/call  — executes a Gmail tool (search, read, labels)
  *
- * Auth: Uses GOOGLE_ACCESS_TOKEN from Supabase secrets.
+ * Auth: Google Workspace service account (GOOGLE_SERVICE_ACCOUNT secret).
+ *       Signs JWT, exchanges for access token, impersonates GOOGLE_IMPERSONATE_EMAIL.
+ *       Scopes: Gmail (readonly), Calendar (readonly), Drive (readonly).
  * Called by: mcp-gateway edge function (proxied from NICE agents)
  */
 
@@ -75,16 +77,100 @@ const TOOLS = [
   },
 ];
 
-/* ── Gmail API Helpers ───────────────────────────────────────── */
+/* ── Google Service Account Auth (JWT → Access Token) ────────── */
 
-function getAccessToken(): string {
-  const token = Deno.env.get("GOOGLE_ACCESS_TOKEN");
-  if (!token) throw new Error("GOOGLE_ACCESS_TOKEN not configured");
-  return token;
+const GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token";
+const GOOGLE_SCOPES = [
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/drive.readonly",
+].join(" ");
+
+// Cache access token (valid for 1 hour)
+let _cachedToken: { token: string; expires: number } | null = null;
+
+function base64url(data: Uint8Array): string {
+  return btoa(String.fromCharCode(...data))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
+function base64urlStr(str: string): string {
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  const pemBody = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s/g, "");
+  const binaryDer = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+  return crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+}
+
+async function getAccessToken(): Promise<string> {
+  // Return cached token if still valid (with 5min buffer)
+  if (_cachedToken && _cachedToken.expires > Date.now() + 300_000) {
+    return _cachedToken.token;
+  }
+
+  const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT");
+  if (!saJson) throw new Error("GOOGLE_SERVICE_ACCOUNT secret not configured");
+
+  const sa = JSON.parse(saJson);
+  const impersonateEmail = Deno.env.get("GOOGLE_IMPERSONATE_EMAIL") || "ben@nicespaceship.com";
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Build JWT header + payload
+  const header = base64urlStr(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = base64urlStr(
+    JSON.stringify({
+      iss: sa.client_email,
+      sub: impersonateEmail,
+      scope: GOOGLE_SCOPES,
+      aud: GOOGLE_TOKEN_URI,
+      iat: now,
+      exp: now + 3600,
+    })
+  );
+
+  // Sign with RS256
+  const key = await importPrivateKey(sa.private_key);
+  const sigInput = new TextEncoder().encode(`${header}.${payload}`);
+  const sigBuffer = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, sigInput);
+  const signature = base64url(new Uint8Array(sigBuffer));
+
+  const assertion = `${header}.${payload}.${signature}`;
+
+  // Exchange JWT for access token
+  const res = await fetch(GOOGLE_TOKEN_URI, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${assertion}`,
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Google token exchange failed (${res.status}): ${err}`);
+  }
+
+  const data = await res.json();
+  _cachedToken = { token: data.access_token, expires: Date.now() + data.expires_in * 1000 };
+  return data.access_token;
+}
+
+/* ── Gmail API Helpers ───────────────────────────────────────── */
+
 async function gmailFetch(path: string): Promise<Response> {
-  const token = getAccessToken();
+  const token = await getAccessToken();
   const res = await fetch(`${GMAIL_API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
