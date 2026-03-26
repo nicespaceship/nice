@@ -5,7 +5,8 @@
       "name": "serve (static)",
       "runtimeExecutable": "node",
       "runtimeArgs": ["server.js"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     },
     {
       "name": "python (static)",
