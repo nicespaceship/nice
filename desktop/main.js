@@ -72,7 +72,9 @@ function createTray() {
 function navigateTo(hash) {
   if (!mainWindow) createWindow();
   mainWindow.show();
-  mainWindow.webContents.executeJavaScript(`window.location.hash = '${hash}';`);
+  // Sanitize hash to prevent JS injection via executeJavaScript
+  const safeHash = hash.replace(/[^#/\w-]/g, '');
+  mainWindow.webContents.executeJavaScript(`window.location.hash = ${JSON.stringify(safeHash)};`);
 }
 
 // Desktop notifications bridge

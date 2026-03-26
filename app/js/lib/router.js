@@ -73,7 +73,7 @@ const Router = (() => {
       const m = p.match(route.regex);
       if (m) {
         const params = {};
-        route.keys.forEach((key, i) => { params[key] = m[i + 1]; });
+        route.keys.forEach((key, i) => { try { params[key] = decodeURIComponent(m[i + 1]); } catch { params[key] = m[i + 1]; } });
         return { view: route.view, params };
       }
     }

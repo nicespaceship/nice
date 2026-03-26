@@ -6,6 +6,12 @@
 const Gamification = (() => {
   const STORAGE_KEY = 'nice-xp';
 
+  /** Safe localStorage write — catches QuotaExceededError */
+  function _store(key, val) {
+    try { localStorage.setItem(key, val); }
+    catch (e) { console.warn('[Gamification] localStorage write failed:', key, e.name); }
+  }
+
   /* ── Crew Ranks (slots = max crew slots unlocked at this rank) ── */
   const RANKS = [
     { name: 'Ensign',            xp: 0,       badge: '⬡',     slots: 6,  classId: 'class-1', maxRarity: 'Common' },
@@ -254,7 +260,7 @@ const Gamification = (() => {
     const current = getXP();
     const newXP = current + amount;
     const oldRank = getRank(current);
-    localStorage.setItem(STORAGE_KEY, String(newXP));
+    _store(STORAGE_KEY, String(newXP));
 
     // Sync to DB
     _syncXPtoDB(newXP);
@@ -285,7 +291,7 @@ const Gamification = (() => {
     const current = getXP();
     const newXP = current + amount;
     const oldRank = getRank(current);
-    localStorage.setItem(STORAGE_KEY, String(newXP));
+    _store(STORAGE_KEY, String(newXP));
     _syncXPtoDB(newXP);
     _updateStreak();
     const newRank = getRank(newXP);
@@ -316,7 +322,7 @@ const Gamification = (() => {
       const raw = localStorage.getItem('nice-achievements');
       if (raw) {
         const migrated = raw.replace(/first-robot/g, 'first-agent').replace(/robot-army/g, 'agent-army');
-        if (migrated !== raw) localStorage.setItem('nice-achievements', migrated);
+        if (migrated !== raw) _store('nice-achievements', migrated);
       }
     } catch {}
 
@@ -329,14 +335,14 @@ const Gamification = (() => {
       // Merge XP: take the higher value
       const localXP = getXP();
       const dbXP = stats.xp || 0;
-      if (dbXP > localXP) localStorage.setItem(STORAGE_KEY, String(dbXP));
+      if (dbXP > localXP) _store(STORAGE_KEY, String(dbXP));
       else if (localXP > dbXP) _syncXPtoDB(localXP);
       // Merge achievements: union of both sets
       const localAch = getUnlockedAchievements();
       let dbAch = [];
       try { dbAch = typeof stats.achievements === 'string' ? JSON.parse(stats.achievements) : (stats.achievements || []); } catch {}
       const merged = _mergeAchievements(localAch, dbAch);
-      localStorage.setItem(ACH_STORAGE, JSON.stringify(merged));
+      _store(ACH_STORAGE, JSON.stringify(merged));
       if (merged.length !== dbAch.length) _syncAchievementsToDB(merged);
     } catch { /* non-critical */ }
   }
@@ -511,7 +517,7 @@ const Gamification = (() => {
     const ach = ACHIEVEMENTS.find(a => a.id === id);
     if (!ach) return false;
     unlocked.push({ id, unlockedAt: new Date().toISOString() });
-    localStorage.setItem(ACH_STORAGE, JSON.stringify(unlocked));
+    _store(ACH_STORAGE, JSON.stringify(unlocked));
     _syncAchievementsToDB(unlocked);
     _showAchievementUnlock(ach);
     return true;
@@ -687,7 +693,7 @@ const Gamification = (() => {
   }
 
   function _saveAgentStats(stats) {
-    localStorage.setItem(AGENT_STATS_KEY, JSON.stringify(stats));
+    _store(AGENT_STATS_KEY, JSON.stringify(stats));
   }
 
   function recordAgentMission(agentId, opts) {
@@ -835,8 +841,8 @@ const Gamification = (() => {
       streak = 1;
     }
 
-    localStorage.setItem('nice-streak', String(streak));
-    localStorage.setItem('nice-last-active', today);
+    _store('nice-streak', String(streak));
+    _store('nice-last-active', today);
   }
 
   function getStreak() {
