@@ -315,7 +315,7 @@ const NICE = (() => {
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
           popover.classList.remove('open');
-          if (typeof SB !== 'undefined') await SB.auth().signOut();
+          if (typeof SB !== 'undefined') await SB.auth.signOut();
           window.location.reload();
         });
       }
