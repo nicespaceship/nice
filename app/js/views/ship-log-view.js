@@ -63,16 +63,16 @@ const ShipLogView = (() => {
     for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= thresholds[i]) { rankIdx = i; break; } }
     const rank = ranks[rankIdx];
 
-    const tokens = parseInt(localStorage.getItem('nice-tokens') || '0', 10);
     const agents = (State.get('agents') || []).length;
     const ships = (State.get('spaceships') || []).length;
+    const connections = Object.keys(State.get('llm_connections') || {}).length;
 
     el.innerHTML = `
       <div class="task-stat"><span class="task-stat-num">${rank}</span><span class="task-stat-label">Rank</span></div>
       <div class="task-stat"><span class="task-stat-num hl">${xp.toLocaleString()}</span><span class="task-stat-label">XP</span></div>
-      <div class="task-stat"><span class="task-stat-num">${tokens.toLocaleString()}</span><span class="task-stat-label">Tokens</span></div>
       <div class="task-stat"><span class="task-stat-num">${agents}</span><span class="task-stat-label">Agents</span></div>
       <div class="task-stat"><span class="task-stat-num">${ships}</span><span class="task-stat-label">Ships</span></div>
+      <div class="task-stat"><span class="task-stat-num">${connections}</span><span class="task-stat-label">LLMs</span></div>
     `;
   }
 

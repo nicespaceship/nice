@@ -100,19 +100,11 @@ const SecurityView = (() => {
 
     el.innerHTML = `
       <div class="security-wrap">
-        <!-- Header -->
-        <div class="security-header">
-          <div>
-            <h1 class="security-title">Security & Integrations</h1>
-            <p class="security-sub">Monitor threats, manage permissions, secrets, and compliance across your fleet.</p>
-          </div>
-        </div>
-
         <!-- Tabs -->
         <div class="security-tabs">
           <button class="security-tab ${_activeTab === 'overview' ? 'security-tab--active' : ''}" data-sec-tab="overview">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
-            Overview
+            Security
           </button>
           <button class="security-tab ${_activeTab === 'vault' ? 'security-tab--active' : ''}" data-sec-tab="vault">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-key"/></svg>

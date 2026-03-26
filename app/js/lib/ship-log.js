@@ -142,12 +142,12 @@ const ShipLog = (() => {
       };
     }
 
-    // 3c. Token check — block if empty
-    const tokensOk = await _checkTokens();
-    if (!tokensOk) {
+    // 3c. LLM connection check
+    const connections = typeof State !== 'undefined' ? State.get('llm_connections') || {} : {};
+    if (!Object.keys(connections).length) {
       return {
         agent: agentName, agentId,
-        content: 'Tokens depleted. Purchase more tokens to continue running missions.',
+        content: 'No LLM providers connected. Connect a provider in the Vault to run missions.',
         metadata: { source: 'system', model: 'none', tokens_used: 0 },
       };
     }
@@ -173,9 +173,6 @@ const ShipLog = (() => {
       };
       response = response.content;
 
-      // Deduct tokens for real LLM calls
-      const user = typeof State !== 'undefined' ? State.get('user') : null;
-      if (user) _deductTokens(user.id, tokensUsed, metadata.model, agentId, spaceshipId);
     } catch (e) {
       console.warn('[ShipLog] LLM call failed, using mock:', e.message || e);
       response = _mockResponse(agentBlueprint, prompt);
@@ -220,7 +217,7 @@ const ShipLog = (() => {
       ? PromptBuilder.build(blueprint)
       : `You are ${blueprint ? blueprint.name : 'NICE AI'}, a ${role} agent. ${blueprint && blueprint.flavor ? blueprint.flavor : 'Provide helpful, concise responses.'}`;
 
-    const messages = [];
+    const messages = [{ role: 'system', content: systemPrompt }];
     if (context && context.length) {
       context.forEach(entry => {
         messages.push({
@@ -232,169 +229,24 @@ const ShipLog = (() => {
     messages.push({ role: 'user', content: prompt });
 
     return {
+      model:       config.model || 'claude-4-sonnet',
       messages,
-      systemPrompt,
-      config: {
-        model:       config.model || 'claude-haiku-4-5-20251001',
-        temperature: config.temperature || 0.7,
-        max_tokens:  config.max_tokens || 1024,
-      },
-      agentId: blueprint ? blueprint.id : undefined,
+      temperature: config.temperature || 0.7,
+      max_tokens:  config.max_tokens || 1024,
     };
   }
 
-  /* ── Real LLM call via Supabase Edge Function (non-streaming) ── */
+  /* ── Real LLM call via llm-proxy Edge Function ── */
   async function _callLLM(blueprint, prompt, context, config) {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
     const params = _buildLLMParams(blueprint, prompt, context, config);
-    const { data, error } = await SB.functions.invoke('nice-ai', { body: params });
+    const { data, error } = await SB.functions.invoke('llm-proxy', { body: params });
 
     if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Edge function error');
     if (!data || data.error) throw new Error(data?.error || 'Empty response from edge function');
 
     return data;
-  }
-
-  /* ── Streaming LLM call — parses Anthropic SSE and calls onChunk ── */
-  async function _callLLMStream(blueprint, prompt, context, config, onChunk) {
-    if (typeof SB === 'undefined' || !SB.functions || !SB.functions.invokeStream) {
-      throw new Error('SB.functions.invokeStream not available');
-    }
-
-    const params = _buildLLMParams(blueprint, prompt, context, config);
-    params.config.stream = true;
-
-    const body = await SB.functions.invokeStream('nice-ai', params);
-    if (!body) throw new Error('No stream body returned');
-
-    const reader = body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = '';
-    let model = config.model || 'claude-haiku-4-5-20251001';
-    let usage = null;
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') continue;
-        try {
-          const evt = JSON.parse(jsonStr);
-          if (evt.type === 'content_block_delta' && evt.delta && evt.delta.text) {
-            fullText += evt.delta.text;
-            onChunk(evt.delta.text);
-          }
-          if (evt.type === 'message_start' && evt.message) {
-            model = evt.message.model || model;
-          }
-          if (evt.type === 'message_delta' && evt.usage) {
-            usage = evt.usage;
-          }
-        } catch { /* skip unparseable lines */ }
-      }
-    }
-
-    return { content: fullText, model, usage };
-  }
-
-  /* ── Token management ── */
-  async function _checkTokens() {
-    // Flagship (unlimited tokens) always passes
-    if (typeof Subscription !== 'undefined' && Subscription.isUnlimitedTokens()) return true;
-    if (typeof SB === 'undefined' || !SB.isReady()) return true; // allow when offline
-    try {
-      if (typeof Subscription !== 'undefined') {
-        const balance = await Subscription.getTokenBalance();
-        return balance > 0;
-      }
-      const user = typeof State !== 'undefined' ? State.get('user') : null;
-      if (!user) return true;
-      const profile = await SB.db('profiles').get(user.id);
-      return profile && (profile.fuel_balance == null || profile.fuel_balance > 0);
-    } catch { return true; }
-  }
-
-  async function _deductTokens(userId, tokensUsed, model, agentId, spaceshipId) {
-    if (typeof SB === 'undefined' || !SB.isReady() || !userId) return;
-
-    // Flagship (unlimited tokens) skips deduction
-    if (typeof Subscription !== 'undefined' && Subscription.isUnlimitedTokens()) return;
-
-    try {
-      const tokenCost = Math.max(1, Math.ceil(tokensUsed / 1000));
-
-      // Use Subscription module for deduction + ledger entry
-      if (typeof Subscription !== 'undefined') {
-        const success = await Subscription.deductTokens(tokenCost, `Agent execution: ${model || 'unknown'}`);
-        if (!success) {
-          const planLimit = _getPlanTokenLimit();
-          _createLowTokenAlert(userId, 0, planLimit);
-        } else {
-          const balance = await Subscription.getTokenBalance();
-          const planLimit = _getPlanTokenLimit();
-          if (balance <= planLimit * 0.2 && balance > 0) {
-            _createLowTokenAlert(userId, balance, planLimit);
-          }
-        }
-        return;
-      }
-
-      // Fallback: direct DB operations
-      const inputTokens = Math.floor(tokensUsed * 0.6);
-      const outputTokens = Math.ceil(tokensUsed * 0.4);
-
-      const profile = await SB.db('profiles').get(userId);
-      if (profile && profile.fuel_balance != null) {
-        const newBalance = Math.max(0, profile.fuel_balance - tokenCost);
-        await SB.db('profiles').update(userId, { fuel_balance: newBalance });
-
-        const planLimit = _getPlanTokenLimit();
-        if (newBalance <= planLimit * 0.2 && newBalance > 0) {
-          _createLowTokenAlert(userId, newBalance, planLimit);
-        }
-      }
-
-      await SB.db('fuel_usage').create({
-        user_id: userId, model: model || 'unknown',
-        input_tokens: inputTokens, output_tokens: outputTokens,
-        fuel_cost: tokenCost, agent_id: agentId || null, spaceship_id: spaceshipId || null,
-      });
-    } catch (err) { console.warn('[ShipLog] Token deduct failed:', err.message); }
-  }
-
-  function _getPlanTokenLimit() {
-    if (typeof Subscription !== 'undefined') {
-      const plan = Subscription.getCurrentPlan();
-      const tier = Subscription.getPlanTier(plan);
-      return tier.tokens === -1 ? Infinity : tier.tokens;
-    }
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return 500;
-    const plan = user.user_metadata?.plan || 'scout';
-    const limits = { scout: 500, frigate: 2000, cruiser: 10000, dreadnought: 50000, flagship: Infinity };
-    return limits[plan] || 500;
-  }
-
-  async function _createLowTokenAlert(userId, remaining, limit) {
-    try {
-      await SB.db('notifications').create({
-        user_id: userId,
-        type: 'budget_alert',
-        title: 'Low Tokens',
-        message: `Your tokens are running low. ${remaining} of ${limit} tokens remaining. Consider upgrading your plan or purchasing more tokens.`,
-      });
-    } catch (err) {
-      console.warn('[ShipLog] Low token alert failed:', err.message);
-    }
   }
 
   /* ── Mock response pool (Phase 1) ── */

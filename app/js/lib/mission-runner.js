@@ -56,6 +56,14 @@ const MissionRunner = (() => {
       }
     }
 
+    // 2b. Resolve model — support NICE Auto
+    const blueprintId = agent?.blueprint_id || agentBp?.id || null;
+    let modelUsed = agentBp?.config?.llm_engine || agent?.llm_engine || 'claude-4-opus';
+    if (modelUsed === 'nice-auto' && blueprintId && typeof ModelIntel !== 'undefined') {
+      const connected = Object.keys(State.get('llm_connections') || {});
+      modelUsed = ModelIntel.bestModel(blueprintId, connected) || 'claude-4-opus';
+    }
+
     // 3. Find a spaceship for context (use first active ship, or null)
     let spaceshipId = null;
     try {
@@ -122,9 +130,12 @@ const MissionRunner = (() => {
 
       if (!result || !result.content) throw new Error('Empty response from agent');
 
-      // 6. Transition to completed
+      // 6. Transition to completed — log model performance
       const now = new Date().toISOString();
-      const metadata = Object.assign({}, mission.metadata || {}, result.metadata || {}, { completed_at: now });
+      if (blueprintId && typeof ModelIntel !== 'undefined') {
+        ModelIntel.log(blueprintId, modelUsed, { success: true, speedMs: _simSpeed(modelUsed), costTokens: _simCost(modelUsed) });
+      }
+      const metadata = Object.assign({}, mission.metadata || {}, result.metadata || {}, { completed_at: now, model_used: modelUsed });
       await SB.db('tasks').update(missionId, {
         status: 'completed',
         progress: 100,
@@ -144,6 +155,11 @@ const MissionRunner = (() => {
 
     } catch (err) {
       console.error('[MissionRunner] Execution failed:', err.message);
+
+      // Log failure to Model Intelligence
+      if (blueprintId && typeof ModelIntel !== 'undefined') {
+        ModelIntel.log(blueprintId, modelUsed, { success: false, speedMs: 0, costTokens: 0 });
+      }
 
       // Transition to failed
       const now = new Date().toISOString();
@@ -179,6 +195,19 @@ const MissionRunner = (() => {
     if (typeof Notify !== 'undefined') {
       Notify.send(title, type === 'error' ? 'error' : 'success');
     }
+  }
+
+  /* ── Simulated performance metrics (placeholder until real LLM calls) ── */
+  function _simSpeed(modelId) {
+    const tiers = { 'claude-4-opus': 4500, 'gpt-4o': 3500, 'gemini-2': 3000, 'mistral-large': 3200, 'grok-3': 3800, 'claude-4-sonnet': 2500, 'gpt-4o-mini': 1800, 'gemini-2-flash': 1500, 'codestral': 2200, 'grok-3-mini': 2000 };
+    const base = tiers[modelId] || 2500;
+    return base + Math.round(Math.random() * 2000 - 1000);
+  }
+
+  function _simCost(modelId) {
+    const tiers = { 'claude-4-opus': 0.15, 'gpt-4o': 0.12, 'gemini-2': 0.08, 'mistral-large': 0.08, 'grok-3': 0.10, 'claude-4-sonnet': 0.06, 'gpt-4o-mini': 0.02, 'gemini-2-flash': 0.01, 'codestral': 0.04, 'grok-3-mini': 0.03 };
+    const base = tiers[modelId] || 0.05;
+    return +(base + Math.random() * 0.05).toFixed(4);
   }
 
   return { run };

@@ -115,9 +115,11 @@ const AgentBuilderView = (() => {
               <div class="auth-field">
                 <label for="b-model">LLM Model</label>
                 <select id="b-model" class="filter-select builder-select">
-                  ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${agent?.llm_engine === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (no key)' : ''}</option>`).join('')}
+                  <option value="nice-auto" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? 'selected' : ''}>NICE Auto (recommended)</option>
+                  ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${agent?.llm_engine === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
                 </select>
-                ${_getConnectedProviders().length === 0 ? '<p class="builder-hint">No LLM providers connected. <a href="#/vault">Add API keys in the Vault</a>.</p>' : ''}
+                <p class="builder-hint" id="auto-model-hint" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? '' : 'style="display:none"'}>NICE Auto selects the best model based on mission history.</p>
+                ${_getConnectedProviders().length === 0 ? '<p class="builder-hint"><a href="#/security?tab=vault">Connect an LLM provider in the Vault</a> to run missions.</p>' : ''}
               </div>
               <div class="auth-field">
                 <label for="b-temp">Temperature</label>
@@ -183,6 +185,12 @@ const AgentBuilderView = (() => {
         memoryBtn.querySelector('.builder-toggle-label').textContent = isOn ? 'OFF' : 'ON';
       });
     }
+
+    // Model dropdown — toggle NICE Auto hint
+    document.getElementById('b-model')?.addEventListener('change', (e) => {
+      const hint = document.getElementById('auto-model-hint');
+      if (hint) hint.style.display = e.target.value === 'nice-auto' ? '' : 'none';
+    });
 
     // Tool chip selection
     document.querySelectorAll('.builder-tool-chip input').forEach(cb => {
@@ -294,25 +302,32 @@ const AgentBuilderView = (() => {
 
 /* ── LLM Provider / Model Registry (shared across views) ── */
 const LLM_PROVIDERS = [
-  { id: 'anthropic', name: 'Anthropic', vaultKey: 'ANTHROPIC_API_KEY', icon: '🟣', color: '#d97706' },
-  { id: 'openai',    name: 'OpenAI',    vaultKey: 'OPENAI_API_KEY',    icon: '🟢', color: '#10a37f' },
-  { id: 'google',    name: 'Google AI',  vaultKey: 'GOOGLE_AI_KEY',     icon: '🔵', color: '#4285f4' },
+  { id: 'anthropic', name: 'Anthropic', icon: '🟣', color: '#d97706', url: 'https://console.anthropic.com' },
+  { id: 'openai',    name: 'OpenAI',    icon: '🟢', color: '#10a37f', url: 'https://platform.openai.com' },
+  { id: 'google',    name: 'Google AI',  icon: '🔵', color: '#4285f4', url: 'https://aistudio.google.dev' },
+  { id: 'mistral',   name: 'Mistral',   icon: '🟠', color: '#f97316', url: 'https://console.mistral.ai' },
+  { id: 'xai',       name: 'xAI',       icon: '⚪', color: '#e5e7eb', url: 'https://console.x.ai' },
 ];
 
 const LLM_MODELS = [
-  { id: 'claude-4',        label: 'Claude 4 Opus',     provider: 'anthropic' },
-  { id: 'claude-3.5',      label: 'Claude 3.5 Sonnet', provider: 'anthropic' },
-  { id: 'gpt-4o',          label: 'GPT-4o',            provider: 'openai' },
-  { id: 'gpt-4o-mini',     label: 'GPT-4o Mini',       provider: 'openai' },
-  { id: 'gemini-2',        label: 'Gemini 2',          provider: 'google' },
-  { id: 'gemini-1.5-pro',  label: 'Gemini 1.5 Pro',    provider: 'google' },
+  { id: 'claude-4-opus',    label: 'Claude Opus 4',     provider: 'anthropic' },
+  { id: 'claude-4-sonnet',  label: 'Claude Sonnet 4',   provider: 'anthropic' },
+  { id: 'gpt-4o',           label: 'GPT-4o',            provider: 'openai' },
+  { id: 'gpt-4o-mini',      label: 'GPT-4o Mini',       provider: 'openai' },
+  { id: 'gemini-2',         label: 'Gemini 2',          provider: 'google' },
+  { id: 'gemini-2-flash',   label: 'Gemini 2 Flash',    provider: 'google' },
+  { id: 'mistral-large',    label: 'Mistral Large',     provider: 'mistral' },
+  { id: 'codestral',        label: 'Codestral',         provider: 'mistral' },
+  { id: 'grok-3',           label: 'Grok 3',            provider: 'xai' },
+  { id: 'grok-3-mini',      label: 'Grok 3 Mini',       provider: 'xai' },
 ];
 
 function _getConnectedProviders() {
-  const secrets = State.get('vault_secrets') || [];
-  return LLM_PROVIDERS.filter(p =>
-    secrets.some(s => s.name === p.vaultKey && s.status === 'active')
-  );
+  if (!State.get('llm_connections')) {
+    try { State.set('llm_connections', JSON.parse(localStorage.getItem('nice-llm-connections') || '{}')); } catch { State.set('llm_connections', {}); }
+  }
+  const connections = State.get('llm_connections') || {};
+  return LLM_PROVIDERS.filter(p => connections[p.id]);
 }
 
 function _getAvailableModels() {

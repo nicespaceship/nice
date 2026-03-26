@@ -69,6 +69,8 @@ describe('ShipLog', () => {
     Object.keys(_db).forEach(k => delete _db[k]);
     sessionStorage.clear();
     State._reset();
+    // Ensure LLM connection check passes
+    State.set('llm_connections', { anthropic: { connected_at: '2026-01-01T00:00:00Z' } });
   });
 
   describe('append', () => {
@@ -247,26 +249,15 @@ describe('ShipLog', () => {
       expect(typeof result.metadata.context_len).toBe('number');
     });
 
-    it('should return tokens depleted message when tokens are empty', async () => {
-      SB.isReady = () => true;
-      const origGet = SB.db;
-      globalThis.SB.db = (table) => {
-        if (table === 'profiles') {
-          return {
-            get: async () => ({ fuel_balance: 0 }),
-            update: async () => ({}),
-          };
-        }
-        return origGet(table);
-      };
-      State.set('user', { id: 'u1' });
+    it('should return no-provider message when no LLMs connected', async () => {
+      State.set('llm_connections', {});
 
-      const result = await ShipLog.execute('ship-fuel', null, 'Hello');
-      expect(result.content).toContain('Tokens depleted');
+      const result = await ShipLog.execute('ship-nollm', null, 'Hello');
+      expect(result.content).toContain('No LLM providers connected');
       expect(result.metadata.source).toBe('system');
 
-      globalThis.SB.db = origGet;
-      SB.isReady = () => false;
+      // Restore for other tests
+      State.set('llm_connections', { anthropic: { connected_at: '2026-01-01T00:00:00Z' } });
     });
   });
 

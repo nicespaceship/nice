@@ -1839,29 +1839,11 @@
    VAULT VIEW
 ───────────────────────────────────────────────────────────────── */
 .vault-wrap { max-width:var(--width-content); margin:0 auto; display:flex; flex-direction:column; gap:20px; }
-.vault-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-.vault-title { font-family:var(--font-d); font-size:1.2rem; font-weight:700; margin:0; }
-.vault-sub { font-family:var(--font-m); font-size:.62rem; letter-spacing:.1em; color:var(--text-muted); margin:4px 0 0 0; }
 
 .vault-stats { display:flex; gap:20px; flex-wrap:wrap; }
 .vault-stat { display:flex; align-items:center; gap:6px; }
 .vault-stat-num { font-family:var(--font-d); font-size:1rem; font-weight:700; }
 .vault-stat-label { font-family:var(--font-m); font-size:.48rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
-
-.vault-list { display:flex; flex-direction:column; gap:6px; }
-.vault-row {
-  display:flex; align-items:center; gap:12px; padding:14px;
-  border:var(--border-width) solid var(--border); background:var(--panel-bg);
-  border-radius:var(--radius); flex-wrap:wrap;
-}
-.vault-row-icon { color:var(--accent); flex-shrink:0; }
-.vault-row-info { flex:1; min-width:120px; }
-.vault-row-name { font-family:var(--font-m); font-size:.78rem; font-weight:600; display:block; color:var(--text); }
-.vault-row-service { font-family:var(--font-m); font-size:.48rem; letter-spacing:.1em; color:var(--text-dim); text-transform:uppercase; }
-.vault-row-masked { font-size:.68rem; color:var(--text-dim); letter-spacing:.06em; }
-.vault-row-meta { display:flex; align-items:center; gap:5px; }
-.vault-row-used { font-family:var(--font-m); font-size:.48rem; color:var(--text-dim); }
-.vault-row-actions { flex-shrink:0; }
 
 /* Vault LLM Providers */
 .vault-providers { margin-bottom:1.5rem; }
@@ -2267,6 +2249,8 @@
 }
 /* All interactive children need pointer-events restored */
 .nice-ai-input-area { pointer-events:auto; }
+.nice-ai-pills { pointer-events:auto; }
+.nice-ai-chips { pointer-events:auto; }
 .nice-ai-close {
   position:absolute; top:-2px; right:0; z-index:5;
   pointer-events:auto; cursor:pointer;
@@ -2286,7 +2270,7 @@
 /* Input container */
 .nice-ai-input-container {
   display:flex; flex-direction:column;
-  border:1px solid var(--border); border-radius:var(--prompt-radius, 0px);
+  border:1px solid var(--border); border-radius:16px !important;
   background:var(--panel-bg, var(--bg-alt));
   padding:12px 12px 8px;
   transition:border-color .2s;
@@ -2392,7 +2376,7 @@
 .nice-ai-tts-btn:hover { color:var(--accent); border-color:var(--accent); }
 .nice-ai-tts-btn.active { color:var(--accent); border-color:var(--accent); background:rgba(255,255,255,.05); }
 
-/* Contextual suggestion chips */
+/* Contextual suggestion chips — removed */
 .nice-ai-chips { display:none; }
 .nice-ai-chip {
   background:transparent; border:1px solid var(--border);
@@ -2503,7 +2487,6 @@
   .integ-grid { grid-template-columns:1fr; }
   .acad-progress-row { grid-template-columns:1fr; }
   .acad-track-hdr { flex-wrap:wrap; }
-  .vault-row { flex-direction:column; align-items:flex-start; }
   .settings-row { flex-direction:column; align-items:flex-start; gap:8px; }
   .bell-dropdown { width:calc(100vw - 24px); right:-50px; }
 }
@@ -2631,7 +2614,7 @@
 /* Quick action pills */
 .chat-home-pills {
   display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
-  padding:0 0 20px;
+  padding:10px 0 20px;
 }
 .chat-pill {
   display:flex; align-items:center; gap:5px;
@@ -2664,33 +2647,7 @@
   padding-bottom:16px;
 }
 
-/* Input wrap — holds the PromptPanel when inline */
-.chat-home-input-wrap { padding-bottom:20px; }
-
-/* Inline mode — PromptPanel styled as centered card instead of fixed bar */
-.nice-ai.nice-ai--inline {
-  position:static !important;
-  left:auto !important; right:auto !important; bottom:auto !important;
-  transform:none !important;
-  width:100% !important; max-width:100% !important;
-  margin:0 !important; padding:0 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  border-top:none !important;
-  pointer-events:auto !important;
-  z-index:auto !important;
-}
-.nice-ai.nice-ai--inline::before { display:none !important; }
-.nice-ai--inline .nice-ai-input-container {
-  border:1px solid var(--border);
-  border-radius:16px;
-  background:var(--panel-bg);
-  padding:8px 12px;
-}
-.nice-ai--inline .nice-ai-close { display:none !important; }
-.nice-ai--inline .nice-ai-disclaimer { display:none; }
-.nice-ai--inline .nice-ai-chips { display:none; }
-
+/* Input wrap — legacy, no longer used */
 @media (max-width:600px) {
   .chat-home-greeting { font-size:1.2rem; }
   .chat-home-pills { gap:6px; }

@@ -1461,11 +1461,30 @@ const BlueprintsView = (() => {
       const s = bp.stats || {};
       rows.push(['Role', c.role || bp.category || '—']);
       rows.push(['Type', c.type || '—']);
-      rows.push(['Model', c.llm_engine || '—']);
+      const modelLabel = c.llm_engine === 'nice-auto' ? 'NICE Auto' : (c.llm_engine || '—');
+      rows.push(['Model', modelLabel]);
       rows.push(['Rarity', bp.rarity || 'Common']);
       if (s.spd) rows.push(['Speed', s.spd]);
       if (s.acc) rows.push(['Accuracy', s.acc]);
       if (s.pwr) rows.push(['Power', s.pwr]);
+      // Model Intelligence stats
+      if (typeof ModelIntel !== 'undefined') {
+        const profile = ModelIntel.getProfile(bp.id);
+        if (profile && Object.keys(profile.models).length > 0) {
+          const sorted = Object.entries(profile.models)
+            .filter(([, d]) => d.runs >= 1)
+            .sort((a, b) => (b[1].successes / b[1].runs) - (a[1].successes / a[1].runs));
+          if (sorted.length) {
+            rows.push(['', '']);
+            const models = typeof LLM_MODELS !== 'undefined' ? LLM_MODELS : [];
+            sorted.slice(0, 3).forEach(([modelId, data]) => {
+              const label = models.find(m => m.id === modelId)?.label || modelId;
+              const rate = Math.round((data.successes / data.runs) * 100);
+              rows.push([label, rate + '% (' + data.runs + ' runs)']);
+            });
+          }
+        }
+      }
     } else if (type === 'spaceship') {
       const s = bp.stats || {};
       rows.push(['Rank', bp.rarity || 'Common']);

@@ -98,7 +98,7 @@ const ProfileView = (() => {
           <h3 class="profile-section-title">Account</h3>
           <div class="profile-row">
             <span class="profile-row-label">Plan</span>
-            <span class="profile-row-val">Free</span>
+            <span class="profile-row-val">${typeof Subscription !== 'undefined' ? Subscription.getPlanTier(Subscription.getCurrentPlan()).label : 'Free'}</span>
           </div>
           <div class="profile-row">
             <span class="profile-row-label">Member Since</span>
@@ -121,13 +121,6 @@ const ProfileView = (() => {
         </div>
 
         <div class="profile-section">
-          <h3 class="profile-section-title">Token Usage</h3>
-          <div id="profile-token-gauge">
-            <p class="text-muted" style="font-size:.82rem">Loading usage data...</p>
-          </div>
-        </div>
-
-        <div class="profile-section">
           <h3 class="profile-section-title">Weekly Summary</h3>
           <div id="profile-weekly-summary" class="home-weekly-summary"></div>
         </div>
@@ -141,14 +134,10 @@ const ProfileView = (() => {
 
         <div class="profile-section">
           <h3 class="profile-section-title">Referral Program</h3>
-          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">Share your code. Both you and your friend get 500 bonus tokens!</p>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">Invite a friend — you both earn 500 XP when they sign up.</p>
           <div class="profile-row">
             <span class="profile-row-label">Referral Code</span>
             <span class="profile-row-val mono" style="color:var(--accent);letter-spacing:.1em;">${user.id.slice(0, 8).toUpperCase()}</span>
-          </div>
-          <div class="profile-row">
-            <span class="profile-row-label">Shareable Link</span>
-            <span class="profile-row-val mono" style="font-size:.7rem;word-break:break-all;">nicespaceship.ai/app/#/?ref=${user.id.slice(0, 8)}</span>
           </div>
           <div class="profile-row">
             <span class="profile-row-label">Referrals</span>
@@ -176,9 +165,6 @@ const ProfileView = (() => {
 
     // Load referral count
     _loadReferralData(user);
-
-    // Load token gauge
-    _loadProfileTokens(user);
 
     // Load weekly summary
     _loadProfileWeekly();
@@ -275,28 +261,6 @@ const ProfileView = (() => {
     }
   }
 
-  async function _loadProfileTokens(user) {
-    const el = document.getElementById('profile-token-gauge');
-    if (!el) return;
-    try {
-      if (typeof Gamification !== 'undefined' && Gamification.renderTokenGauge) {
-        el.innerHTML = Gamification.renderTokenGauge();
-      } else {
-        const resources = typeof Gamification !== 'undefined' ? Gamification.getResources?.() : null;
-        const tokens = resources?.tokens || 0;
-        const maxTokens = resources?.maxTokens || 100;
-        const pct = Math.round((tokens / maxTokens) * 100);
-        el.innerHTML = `
-          <div class="profile-row"><span class="profile-row-label">Tokens</span><span class="profile-row-val">${tokens} / ${maxTokens}</span></div>
-          <div style="background:var(--border);border-radius:4px;height:8px;margin-top:8px;overflow:hidden">
-            <div style="background:var(--accent);height:100%;width:${pct}%;border-radius:4px;transition:width .3s"></div>
-          </div>
-        `;
-      }
-    } catch (e) {
-      el.innerHTML = '<p class="text-muted" style="font-size:.82rem">Token data unavailable.</p>';
-    }
-  }
 
   function _loadProfileWeekly() {
     const el = document.getElementById('profile-weekly-summary');

@@ -1,22 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════
-   NICE — Home View (Chat Interface)
-   Claude-style conversational home page. The chat IS the home page.
-   Greeting + centered input + quick action pills → conversation feed.
+   NICE — Home View (Bridge)
+   Greeting + unified PromptPanel at bottom.
 ═══════════════════════════════════════════════════════════════════ */
 
 const HomeView = (() => {
   const title = 'NICE SPACESHIP';
   const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-  /* ── Quick action pills ── */
-  const PILLS = [
-    { label: 'Research',  icon: 'search',    prefill: 'Research ' },
-    { label: 'Mission',   icon: 'zap',       prefill: 'Run a mission to ' },
-    { label: 'Code',      icon: 'code',      prefill: 'Write code that ' },
-    { label: 'Analyze',   icon: 'analytics',  prefill: 'Analyze ' },
-    { label: 'Agent',     icon: 'agent',     prefill: '@' },
-    { label: 'Build',     icon: 'build',     prefill: 'Create a workflow to ' },
-  ];
 
   /* ── Time-of-day greeting ── */
   function _greeting() {
@@ -35,45 +24,13 @@ const HomeView = (() => {
 
   /* ── Render ── */
   function render(el) {
-    // Tell PromptPanel to go inline (hide floating bar)
-    if (typeof PromptPanel !== 'undefined') {
-      PromptPanel.hide();
-    }
-
-    // Check if there are existing messages
     const hasMessages = _hasMessages();
 
     el.innerHTML = `
       <div class="chat-home" id="chat-home">
         ${hasMessages ? _renderConversation() : _renderEmptyGreeting()}
-        <div class="chat-home-input-wrap" id="chat-home-input-wrap"></div>
-        ${hasMessages ? '' : _renderPills()}
       </div>
     `;
-
-    // Move PromptPanel input into our container
-    _embedPromptInput(el);
-
-    // Bind pill clicks
-    el.querySelectorAll('.chat-pill').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const input = el.querySelector('#nice-ai-input') || document.querySelector('#nice-ai-input');
-        if (input) {
-          input.value = btn.dataset.prefill;
-          input.focus();
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      });
-    });
-
-    // Hide pills when typing, show when empty
-    const pillsEl = el.querySelector('.chat-home-pills');
-    const inputEl = el.querySelector('#nice-ai-input') || document.querySelector('#nice-ai-input');
-    if (pillsEl && inputEl) {
-      inputEl.addEventListener('input', () => {
-        pillsEl.style.display = inputEl.value.trim() ? 'none' : '';
-      });
-    }
 
     // Bind new chat button
     el.querySelector('#chat-home-new')?.addEventListener('click', () => {
@@ -87,24 +44,9 @@ const HomeView = (() => {
   }
 
   function _renderEmptyGreeting() {
-    const greeting = _greeting();
-    const name = _userName();
     return `
       <div class="chat-home-empty">
-        <div class="chat-home-greeting">${greeting}, ${_esc(name)}</div>
-      </div>
-    `;
-  }
-
-  function _renderPills() {
-    return `
-      <div class="chat-home-pills">
-        ${PILLS.map(p => `
-          <button class="chat-pill" data-prefill="${_esc(p.prefill)}">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${p.icon}"/></svg>
-            ${p.label}
-          </button>
-        `).join('')}
+        <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
       </div>
     `;
   }
@@ -125,7 +67,6 @@ const HomeView = (() => {
         return `<div class="monitor-system-msg">${_esc(m.text)}</div>`;
       } else {
         const agentLabel = `<div class="monitor-card-agent">${_esc(m.agent || 'NICE')}</div>`;
-        // Strip action tags for clean display
         let text = m.text || '';
         text = text.replace(/\[ACTION:\s*.+?\s*\|\s*.+?\s*\]/g, '').replace(/\[THEME:\s*.+?\s*\]/gi, '').replace(/\[EXEC:\s*\w+\s*(?:\|.*?)?\s*\]/g, '').trim();
         const time = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
@@ -152,32 +93,8 @@ const HomeView = (() => {
     } catch { return false; }
   }
 
-  function _embedPromptInput(el) {
-    const wrap = el.querySelector('#chat-home-input-wrap');
-    if (!wrap) return;
-
-    // Get the existing PromptPanel element and move it inline
-    const panel = document.getElementById('nice-ai');
-    if (panel) {
-      // Clone the input area into our container (don't move — PromptPanel keeps reference)
-      panel.style.display = '';
-      panel.classList.add('nice-ai--inline');
-      wrap.appendChild(panel);
-    }
-  }
-
   function destroy() {
-    // Restore PromptPanel to its floating position
-    const panel = document.getElementById('nice-ai');
-    if (panel) {
-      panel.classList.remove('nice-ai--inline');
-      document.body.appendChild(panel);
-      // Re-sync: show floating bar if on another route
-      if (typeof PromptPanel !== 'undefined') {
-        PromptPanel.show();
-        PromptPanel.syncRoute();
-      }
-    }
+    // No cleanup needed — PromptPanel is always floating
   }
 
   return { title, render, destroy };

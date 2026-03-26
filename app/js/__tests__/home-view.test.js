@@ -120,11 +120,12 @@ describe('HomeView', () => {
     expect(greeting.textContent).toMatch(/Good (morning|afternoon|evening)/);
   });
 
-  it('renders quick action pills', () => {
+  it('pills are now in PromptPanel, not HomeView', () => {
     const el = document.getElementById('test-el');
     HomeView.render(el);
+    // Pills moved to the unified PromptPanel — HomeView just renders greeting
     const pills = el.querySelectorAll('.chat-pill');
-    expect(pills.length).toBe(6);
+    expect(pills.length).toBe(0);
   });
 
   it('renders conversation when messages exist', () => {
@@ -150,11 +151,12 @@ describe('HomeView', () => {
     expect(() => HomeView.destroy()).not.toThrow();
   });
 
-  it('contains quick action buttons', () => {
+  it('renders greeting without buttons when no messages', () => {
     const el = document.getElementById('test-el');
     HomeView.render(el);
-    const buttons = el.querySelectorAll('button');
-    expect(buttons.length).toBeGreaterThan(0);
+    // No messages = empty greeting, no buttons in HomeView itself
+    const greeting = el.querySelector('.chat-home-greeting');
+    expect(greeting).toBeTruthy();
   });
 
   it('shows new chat button when messages exist', () => {

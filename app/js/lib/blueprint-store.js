@@ -1032,7 +1032,7 @@ const BlueprintStore = (() => {
             } else {
               // Short queries: prefix match on name
               const escaped = query.replace(/[%_]/g, '\\$&');
-              q = q.ilike('name', `${escaped}%`);
+              q = q.ilike('name', `%${escaped}%`);
             }
           }
 

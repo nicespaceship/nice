@@ -1346,9 +1346,6 @@ const NICE = (() => {
       PromptPanel.syncRoute();
       window.addEventListener('hashchange', () => {
         PromptPanel.syncRoute();
-        // On home route, hide floating bar (HomeView embeds it inline)
-        const path = (location.hash || '#/').replace('#', '') || '/';
-        if (path === '/') PromptPanel.hide();
       });
       // Brand logo click → navigate to home (chat)
       const brandBtn = document.getElementById('nice-brand-btn');

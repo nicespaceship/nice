@@ -432,70 +432,40 @@ const SettingsView = (() => {
 
     // Plan info — use Subscription module if available
     let plan = 'free';
-    let tokenBalance = 0;
-    let tokenLimit = 0;
-
     if (typeof Subscription !== 'undefined') {
       await Subscription.init();
       plan = Subscription.getCurrentPlan();
-      tokenBalance = await Subscription.getTokenBalance();
-      const tier = Subscription.getPlanTier(plan);
-      tokenLimit = tier.slots === -1 ? Infinity : tier.slots;
-    } else {
-      const legacyPlan = user.user_metadata?.plan || 'free';
-      const aliases = { explorer: 'free', scout: 'free', pilot: 'pro', frigate: 'pro', captain: 'team', cruiser: 'team' };
-      plan = aliases[legacyPlan] || legacyPlan;
     }
 
-    const tierLabels = { free:'Open Source (Free)', pro:'Pro ($29/mo)', team:'Team ($99/mo)', enterprise:'Enterprise (Custom)' };
+    const tierLabels = { free:'Free', starpass:'Star Pass ($19/mo)' };
 
     const planNameEl = document.getElementById('set-plan-name');
     const planBadgeEl = document.getElementById('set-plan-badge');
-    if (planNameEl) planNameEl.textContent = tierLabels[plan] || 'Open Source (Free)';
+    if (planNameEl) planNameEl.textContent = tierLabels[plan] || 'Free';
     if (planBadgeEl) {
-      planBadgeEl.textContent = plan.toUpperCase();
-      const tierColors = { free:'#94a3b8', pro:'#6366f1', team:'#a855f7', enterprise:'#f59e0b' };
+      planBadgeEl.textContent = plan === 'starpass' ? 'STAR PASS' : 'FREE';
+      const tierColors = { free:'#94a3b8', starpass:'#f59e0b' };
       const c = tierColors[plan] || '#94a3b8';
       planBadgeEl.style.color = c;
       planBadgeEl.style.borderColor = c;
     }
 
-    // Token usage
-    const tokensUsed = tokenLimit === Infinity ? 0 : Math.max(0, tokenLimit - tokenBalance);
-    const pct = tokenLimit === Infinity ? 0 : (tokenLimit > 0 ? Math.min(100, (tokensUsed / tokenLimit) * 100) : 0);
-    const tokenBar = document.getElementById('set-token-bar');
+    // LLM connections
     const tokenLabel = document.getElementById('set-token-label');
+    const tokenBar = document.getElementById('set-token-bar');
+    const connections = Object.keys(State.get('llm_connections') || {}).length;
+    const totalProviders = typeof LLM_PROVIDERS !== 'undefined' ? LLM_PROVIDERS.length : 5;
+    if (tokenLabel) tokenLabel.textContent = `${connections} of ${totalProviders} LLM providers connected`;
     if (tokenBar) {
+      const pct = (connections / totalProviders) * 100;
       tokenBar.style.width = pct + '%';
-      tokenBar.className = 'cost-budget-fill' + (pct >= 90 ? ' bar-danger' : pct >= 70 ? ' bar-warn' : '');
-    }
-    if (tokenLabel) {
-      tokenLabel.textContent = tokenLimit === Infinity
-        ? `${tokenBalance.toLocaleString()} tokens (Enterprise — Unlimited)`
-        : plan === 'free'
-        ? `${tokenBalance.toLocaleString()} tokens (Bring your own key)`
-        : `${tokenBalance.toLocaleString()} tokens (Hosted LLM)`;
+      tokenBar.className = 'cost-budget-fill';
     }
 
-    // Billing history — use fuel_transactions
+    // Billing history
     const historyEl = document.getElementById('set-billing-history');
     if (historyEl) {
-      try {
-        if (typeof Subscription !== 'undefined') {
-          const txns = await Subscription.getTransactions(5);
-          if (txns.length) {
-            historyEl.innerHTML = txns.map(t =>
-              `<div style="margin-bottom:4px;">${new Date(t.created_at).toLocaleDateString()} — ${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString()} tokens — ${t.description || t.type}</div>`
-            ).join('');
-          } else {
-            historyEl.textContent = 'No transactions yet.';
-          }
-        } else {
-          historyEl.textContent = 'No transactions yet.';
-        }
-      } catch {
-        historyEl.textContent = 'No transactions yet.';
-      }
+      historyEl.textContent = 'No billing history yet.';
     }
 
     // Upgrade button — navigate to Wallet for plan management

@@ -41,6 +41,27 @@ const MissionRouter = (() => {
       };
     }
 
+    // If intent hint provided, try direct category match first
+    if (opts.intent) {
+      var intentMap = { research: 'Research', code: 'Code', analyze: 'Data', build: 'Ops' };
+      var intentCat = intentMap[opts.intent];
+      if (intentCat) {
+        var intentMatch = crew.find(function(c) {
+          var r = (c.role || c.capabilities || '').toLowerCase();
+          return r.includes(intentCat.toLowerCase());
+        });
+        if (intentMatch) {
+          var intentBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(intentMatch.agent_id) : null;
+          if (opts.onRouting) opts.onRouting({ agentId: intentMatch.agent_id, agentName: intentMatch.name, reasoning: 'Matched ' + opts.intent + ' intent' });
+          var intentResult = await _executeAgent(spaceshipId, intentBp, prompt, opts);
+          return {
+            routing: { agentId: intentMatch.agent_id, agentName: intentMatch.name, reasoning: 'Matched ' + opts.intent + ' intent → ' + intentMatch.name },
+            result: intentResult,
+          };
+        }
+      }
+    }
+
     // Call Claude Haiku to decide which crew member handles the task
     var routingDecision;
     var startMs = Date.now();
@@ -151,15 +172,15 @@ const MissionRouter = (() => {
       '## Crew\n' + crewLines + '\n\n' +
       'Respond ONLY with JSON: {"agent_id":"...","reasoning":"one sentence why"}';
 
-    var { data, error } = await SB.functions.invoke('nice-ai', {
+    var { data, error } = await SB.functions.invoke('llm-proxy', {
       body: {
-        messages: [{ role: 'user', content: prompt }],
-        systemPrompt: systemPrompt,
-        config: {
-          model: 'claude-haiku-4-5-20251001',
-          temperature: 0.2,
-          max_tokens: 256,
-        },
+        model: 'claude-4-sonnet',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 256,
       },
     });
 

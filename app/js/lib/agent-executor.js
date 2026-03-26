@@ -252,16 +252,13 @@ const AgentExecutor = (() => {
       llmConfig = LLMConfig.forBlueprint(blueprint);
     }
 
-    const { data, error } = await SB.functions.invoke('nice-ai', {
+    const apiMessages = [{ role: 'system', content: systemPrompt }, ...messages];
+    const { data, error } = await SB.functions.invoke('llm-proxy', {
       body: {
-        messages,
-        systemPrompt,
-        config: {
-          model:       llmConfig.model || 'claude-haiku-4-5-20251001',
-          temperature: llmConfig.temperature || 0.3,
-          max_tokens:  llmConfig.max_tokens || 2048,
-        },
-        agentId: blueprint ? blueprint.id : undefined,
+        model:       llmConfig.model || 'claude-4-sonnet',
+        messages:    apiMessages,
+        temperature: llmConfig.temperature || 0.3,
+        max_tokens:  llmConfig.max_tokens || 2048,
       },
     });
 

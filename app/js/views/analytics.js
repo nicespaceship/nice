@@ -62,7 +62,7 @@ const AnalyticsView = (() => {
           <div class="ana-table-wrap" id="ana-agent-table"></div>
         </div>
 
-        <!-- ═══ 3. Cost & Tokens ═══ -->
+        <!-- ═══ 3. Cost Tracking ═══ -->
         <div class="ana-section">
           <div class="ana-section-header">
             <h3 class="ana-section-title">Cost &amp; Tokens</h3>
@@ -418,7 +418,7 @@ const AnalyticsView = (() => {
   }
 
   /* ════════════════════════════════════════════════════════════════
-     3. Cost & Tokens (merged from CostView)
+     3. Cost Tracking (merged from CostView)
   ════════════════════════════════════════════════════════════════ */
 
   function _getBudget() {

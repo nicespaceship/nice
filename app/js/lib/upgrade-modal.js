@@ -33,7 +33,7 @@ const UpgradeModal = (() => {
           <h2>Upgrade Plan</h2>
           <button class="upgrade-modal-close" aria-label="Close">&times;</button>
         </div>
-        <p class="upgrade-modal-desc">Unlock all 12 agent slots instantly and get hosted LLM access.</p>
+        <p class="upgrade-modal-desc">Unlock 60 agent slots, 5 spaceships, and auto-unlock Legendary blueprints.</p>
         <div class="upgrade-modal-current">
           <span class="upgrade-current-label">Current</span>
           <span class="upgrade-current-name">${plans[currentPlan]?.label || 'Open Source'}</span>

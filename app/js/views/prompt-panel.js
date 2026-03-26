@@ -20,6 +20,10 @@ const PromptPanel = (() => {
   let _mentionItems = [];
   let _mentionIdx = -1;
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
+  let _activeIntent = null; // intent from pill click: research, mission, code, analyze, agent, build
+
+  // Intent → agent category mapping
+  const INTENT_CATEGORIES = { research: 'Research', code: 'Code', analyze: 'Data', build: 'Ops', mission: null, agent: null };
   let _recognition = null;
   let _audioCtx = null;
   let _analyser = null;
@@ -355,9 +359,21 @@ const PromptPanel = (() => {
     }
   }
 
-  /* ── Pick the best agent for a task based on keyword matching ── */
-  function _pickBestAgent(title, agents) {
+  /* ── Pick the best agent for a task based on intent + keyword matching ── */
+  function _pickBestAgent(title, agents, intentCategory) {
     if (!agents || !agents.length) return null;
+
+    // If intent provides a category, try direct match first
+    if (intentCategory) {
+      const intentMatch = agents.find(a => {
+        const r = (a.role || a.category || '').toLowerCase();
+        const n = (a.name || '').toLowerCase();
+        return r.includes(intentCategory.toLowerCase()) || n.includes(intentCategory.toLowerCase());
+      });
+      if (intentMatch) return intentMatch;
+    }
+
+    // Fall back to keyword matching from prompt text
     const lower = title.toLowerCase();
     const roleKeywords = {
       Content: ['write', 'draft', 'blog', 'copy', 'tagline', 'content', 'article', 'description', 'story'],
@@ -387,7 +403,8 @@ const PromptPanel = (() => {
   async function _executeAutoMission(title, sendBtn) {
     const user = State.get('user');
     const agents = State.get('agents') || [];
-    const agent = _pickBestAgent(title, agents);
+    const intentCategory = _activeIntent ? INTENT_CATEGORIES[_activeIntent] : null;
+    const agent = _pickBestAgent(title, agents, intentCategory);
     const agentName = agent ? agent.name : 'NICE';
 
     // Show creation message
@@ -415,6 +432,7 @@ const PromptPanel = (() => {
       mission = await SB.db('tasks').create({
         user_id: user.id, title, agent_id: agentId,
         status: 'queued', priority: 'medium', progress: 0,
+        metadata: _activeIntent ? { intent: _activeIntent } : {},
       });
       const missions = State.get('missions') || [];
       missions.push(mission);
@@ -1535,7 +1553,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
       };
 
-      MissionRouter.route(spaceshipId, text, { onRouting, onChunk }).then(({ routing, result }) => {
+      MissionRouter.route(spaceshipId, text, { onRouting, onChunk, intent: _activeIntent || null }).then(({ routing, result }) => {
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const agentName = routing ? routing.agentName : 'NICE';
@@ -1829,7 +1847,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           </div>
         </div>
         <div class="nice-ai-chips"></div>
-        <div class="nice-ai-disclaimer">NICE uses AI agents that consume tokens. Responses may vary.</div>
+        <div class="chat-home-pills nice-ai-pills">
+          <button class="chat-pill" data-prefill="Research " data-intent="research"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg> Research</button>
+          <button class="chat-pill" data-prefill="Run a mission to " data-intent="mission"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-zap"/></svg> Mission</button>
+          <button class="chat-pill" data-prefill="Write code that " data-intent="code"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-code"/></svg> Code</button>
+          <button class="chat-pill" data-prefill="Analyze " data-intent="analyze"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-analytics"/></svg> Analyze</button>
+          <button class="chat-pill" data-prefill="@" data-intent="agent"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-agent"/></svg> Agent</button>
+          <button class="chat-pill" data-prefill="Create a workflow to " data-intent="build"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-build"/></svg> Build</button>
+        </div>
       </div>
     `;
 
@@ -1881,6 +1906,32 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
     // Send button (NS logo)
     _panel.querySelector('#nice-ai-send')?.addEventListener('click', _send);
+
+    // Action pills — prefill input + set intent for routing
+    _panel.querySelectorAll('.chat-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _activeIntent = btn.dataset.intent || null;
+        const input = _panel.querySelector('#nice-ai-input');
+        if (input) {
+          input.value = btn.dataset.prefill;
+          input.focus();
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        // Hide pills after selection
+        const pills = _panel.querySelector('.nice-ai-pills');
+        if (pills) pills.style.display = 'none';
+      });
+    });
+
+    // Show pills again when input is cleared, reset intent
+    const input = _panel.querySelector('#nice-ai-input');
+    if (input) {
+      input.addEventListener('input', () => {
+        const pills = _panel.querySelector('.nice-ai-pills');
+        if (pills) pills.style.display = input.value.trim() ? 'none' : '';
+        if (!input.value.trim()) _activeIntent = null;
+      });
+    }
 
     // Voice mode — tap-to-talk (like Claude Code)
     // Tap 1: start listening. Tap 2: stop & send.
@@ -2358,11 +2409,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   function syncRoute() {
     _updateRouteContext();
     const path = (location.hash || '#/').replace('#', '') || '/';
-    // On home route, HomeView embeds the panel inline — don't show floating
-    if (path === '/') return;
-    // On bridge route, start with prompt bar hidden
-    if (path.startsWith('/bridge')) { hide(); return; }
-    // On all other routes, show the floating prompt bar
+    // Show on all routes
     show();
   }
 
