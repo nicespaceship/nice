@@ -103,7 +103,7 @@
   <div class="app-hud-panel" id="app-hud-panel">
     <div class="hud-row" style="justify-content:space-between">
       <span class="dock-lbl"><a href="#/theme-editor" style="color:var(--accent);text-decoration:none">THEME</a> <span class="dock-lbl-sep">|</span> <span id="active-theme-name" class="dock-lbl-val"></span></span>
-      <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode" onclick="Theme.toggleDarkLight()">
+      <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-sun"/></svg>
       </button>
     </div>
@@ -113,14 +113,14 @@
     <div class="hud-row-sep"></div>
     <div class="hud-row">
       <span class="dock-lbl">FONT</span>
-      <button class="fb fb-auto"  data-fid="auto"  data-tip="Auto"    onclick="Font.set('auto')"  aria-label="Auto">A</button>
-      <button class="fb fb-clean" data-fid="clean" data-tip="Inter"   onclick="Font.set('clean')" aria-label="Inter">A</button>
-      <button class="fb fb-space" data-fid="space" data-tip="Orbitron" onclick="Font.set('space')" aria-label="Orbitron">A</button>
-      <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani" onclick="Font.set('tac')"  aria-label="Rajdhani">A</button>
-      <button class="fb fb-code"  data-fid="code"  data-tip="Fira"    onclick="Font.set('code')"  aria-label="Fira Code">A</button>
-      <button class="fb fb-serif" data-fid="serif" data-tip="Playfair" onclick="Font.set('serif')" aria-label="Playfair">A</button>
-      <button class="fb fb-mono"  data-fid="mono"  data-tip="Share"   onclick="Font.set('mono')"  aria-label="Share Tech">A</button>
-      <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"   onclick="Font.set('pixel')" aria-label="Pixel">A</button>
+      <button class="fb fb-auto"  data-fid="auto"  data-tip="Auto"    aria-label="Auto">A</button>
+      <button class="fb fb-clean" data-fid="clean" data-tip="Inter"   aria-label="Inter">A</button>
+      <button class="fb fb-space" data-fid="space" data-tip="Orbitron" aria-label="Orbitron">A</button>
+      <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani" aria-label="Rajdhani">A</button>
+      <button class="fb fb-code"  data-fid="code"  data-tip="Fira"    aria-label="Fira Code">A</button>
+      <button class="fb fb-serif" data-fid="serif" data-tip="Playfair" aria-label="Playfair">A</button>
+      <button class="fb fb-mono"  data-fid="mono"  data-tip="Share"   aria-label="Share Tech">A</button>
+      <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"   aria-label="Pixel">A</button>
     </div>
   </div>
 
@@ -294,7 +294,7 @@
   <div class="modal-box">
     <div class="modal-hdr">
       <h3 class="modal-title" id="auth-modal-title">Sign In</h3>
-      <button class="modal-close" onclick="NICE.closeModal('modal-auth')" aria-label="Close">
+      <button class="modal-close" id="auth-modal-close-btn" aria-label="Close">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
       </button>
     </div>
