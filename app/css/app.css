@@ -33,6 +33,13 @@
   --width-content: 800px;
   --width-large: 1200px;
   --width-full: 1200px;
+
+  /* Semantic status colors — themes can override */
+  --color-success: #22c55e;
+  --color-error:   #ef4444;
+  --color-warning: #f59e0b;
+  --color-info:    #6366f1;
+  --color-epic:    #a855f7;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -635,9 +642,9 @@
    STATUS DOTS (reused from main site)
 ───────────────────────────────────────────────────────────────── */
 .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.dot-g { background:#22c55e; }
-.dot-r { background:#ef4444; }
-.dot-a { background:#f59e0b; }
+.dot-g { background:var(--color-success); }
+.dot-r { background:var(--color-error); }
+.dot-a { background:var(--color-warning); }
 .dot-pulse { }
 
 
@@ -870,10 +877,10 @@
 .bridge-mission-title { font-size:.8rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .bridge-mission-meta { font-family:var(--font-m); font-size:.55rem; color:var(--text-muted); }
 .bridge-mission-progress { height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
-.bridge-mission-progress-fill { height:100%; background:#6366f1; transition:width .3s; }
+.bridge-mission-progress-fill { height:100%; background:var(--color-info); transition:width .3s; }
 .bridge-mission-priority { font-family:var(--font-m); font-size:.5rem; letter-spacing:.08em; text-transform:uppercase; padding:1px 4px; border-radius:2px; }
-.bridge-priority-high, .bridge-priority-critical { color:#ef4444; }
-.bridge-priority-medium { color:#f59e0b; }
+.bridge-priority-high, .bridge-priority-critical { color:var(--color-error); }
+.bridge-priority-medium { color:var(--color-warning); }
 .bridge-priority-low { color:var(--text-muted); }
 .bridge-feed-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:40px 0; text-align:center; color:var(--text-muted); }
 
@@ -964,7 +971,7 @@
 .auth-remember input[type="checkbox"] {
   width:14px; height:14px; accent-color:var(--accent); cursor:pointer;
 }
-.auth-error { font-family:var(--font-m); font-size:.68rem; color:#ef4444; min-height:18px; }
+.auth-error { font-family:var(--font-m); font-size:.68rem; color:var(--color-error); min-height:18px; }
 .auth-submit {
   padding:10px 16px; background:var(--accent); color:var(--bg); border:none;
   font-family:var(--font-d); font-size:.78rem; font-weight:700; letter-spacing:.08em;
@@ -1258,12 +1265,12 @@
   padding:2px 8px; border:1px solid var(--border); color:var(--text-muted);
   text-transform:capitalize;
 }
-.status-tag-active { border-color:#22c55e; color:#22c55e; }
-.status-tag-idle { border-color:#f59e0b; color:#f59e0b; }
+.status-tag-active { border-color:var(--color-success); color:var(--color-success); }
+.status-tag-idle { border-color:var(--color-warning); color:var(--color-warning); }
 .status-tag-paused { border-color:var(--text-dim); color:var(--text-dim); }
-.status-tag-error { border-color:#ef4444; color:#ef4444; }
-.status-tag-deployed { border-color:#22c55e; color:#22c55e; }
-.status-tag-standby { border-color:#f59e0b; color:#f59e0b; }
+.status-tag-error { border-color:var(--color-error); color:var(--color-error); }
+.status-tag-deployed { border-color:var(--color-success); color:var(--color-success); }
+.status-tag-standby { border-color:var(--color-warning); color:var(--color-warning); }
 .agent-card-tools { display:flex; gap:4px; flex-wrap:wrap; }
 .agent-tool-tag {
   font-family:var(--font-m); font-size:.48rem; letter-spacing:.06em;
@@ -1472,10 +1479,10 @@
   font-family:var(--font-m); font-size:.52rem; letter-spacing:.1em;
   padding:3px 10px; text-transform:uppercase; flex-shrink:0;
 }
-.badge-queued { border:1px solid #f59e0b; color:#f59e0b; }
+.badge-queued { border:1px solid var(--color-warning); color:var(--color-warning); }
 .badge-running { border:1px solid var(--accent); color:var(--accent); background:rgba(var(--accent-rgb,100,100,100),0.1); }
-.badge-completed { border:1px solid #22c55e; color:#22c55e; }
-.badge-failed { border:1px solid #ef4444; color:#ef4444; }
+.badge-completed { border:1px solid var(--color-success); color:var(--color-success); }
+.badge-failed { border:1px solid var(--color-error); color:var(--color-error); }
 
 /* Priority tags */
 .task-priority-tag {
@@ -1483,9 +1490,9 @@
   padding:2px 8px; text-transform:uppercase; flex-shrink:0;
 }
 .priority-low { color:var(--text-dim); border:1px solid var(--border); }
-.priority-medium { color:#f59e0b; border:1px solid #f59e0b; }
+.priority-medium { color:var(--color-warning); border:1px solid var(--color-warning); }
 .priority-high { color:#f97316; border:1px solid #f97316; }
-.priority-critical { color:#ef4444; border:1px solid #ef4444; }
+.priority-critical { color:var(--color-error); border:1px solid var(--color-error); }
 
 /* Progress */
 .task-progress { height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
@@ -1556,7 +1563,7 @@
 .fleet-agent-chip:has(input:checked) { border-color:var(--accent); color:var(--accent); }
 
 /* Danger button */
-.btn-danger { color:#ef4444; border-color:#ef4444; }
+.btn-danger { color:var(--color-error); border-color:var(--color-error); }
 .btn-danger:hover { box-shadow:0 0 10px rgba(239,68,68,.3); }
 
 /* ─────────────────────────────────────────────────────────────────

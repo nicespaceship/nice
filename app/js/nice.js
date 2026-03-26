@@ -674,6 +674,19 @@ const NICE = (() => {
         }
       });
     }
+
+    // Dark/light toggle (replaces inline onclick)
+    const dlBtn = document.getElementById('btn-darklight');
+    if (dlBtn) dlBtn.addEventListener('click', () => Theme.toggleDarkLight());
+
+    // Font buttons (replaces inline onclick)
+    document.querySelectorAll('.fb[data-fid]').forEach(fb => {
+      fb.addEventListener('click', () => Font.set(fb.dataset.fid));
+    });
+
+    // Auth modal close (replaces inline onclick)
+    const authClose = document.getElementById('auth-modal-close-btn');
+    if (authClose) authClose.addEventListener('click', () => NICE.closeModal('modal-auth'));
   }
 
   /* ── Auth state listener ── */
