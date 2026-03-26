@@ -696,7 +696,10 @@
 .schematic-col .schematic-card-slot:nth-child(even) { transform:translateX(110px); }
 .schematic-col-right .schematic-card-slot:nth-child(even) { transform:translateX(-110px); }
 .schematic-center { flex:1; min-width:40px; z-index:1; }
-.schematic-svg { position:absolute; inset:0; z-index:0; pointer-events:none; }
+.schematic-svg { position:absolute; inset:0; z-index:0; }
+.schematic-svg path, .schematic-svg line { pointer-events:none; }
+.schematic-svg circle { pointer-events:none; }
+.schematic-svg .sch-core-hit { pointer-events:all; cursor:pointer; }
 .schematic-card-slot { cursor:pointer; }
 .schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; overflow:visible; }
 /* Rotating outer border with notch */
