@@ -486,82 +486,6 @@ test.describe('NICE Stripe Integration', () => {
     });
   });
 
-  test('token purchase modal opens from home view', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toHaveText('NICE SPACESHIP', { timeout: 10000 });
-
-    // Open token modal directly via JS API
-    await page.evaluate(() => {
-      State.set('user', { id: 'stripe-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
-      FuelModal.open();
-    });
-
-    // Verify modal overlay appears
-    const overlay = page.locator('.token-modal-overlay');
-    await expect(overlay).toBeVisible({ timeout: 3000 });
-
-    // Verify 4 token pack cards are visible
-    const packs = page.locator('.token-pack');
-    await expect(packs).toHaveCount(4);
-
-    // Close modal with Escape
-    await page.keyboard.press('Escape');
-    await expect(overlay).toHaveCount(0);
-  });
-
-  test('token purchase modal opens from settings', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toHaveText('NICE SPACESHIP', { timeout: 10000 });
-
-    // Inject mock user
-    await page.evaluate(() => {
-      State.set('user', { id: 'stripe-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
-    });
-
-    // Navigate to settings
-    await page.evaluate(() => { window.location.hash = '#/settings'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Settings', { timeout: 5000 });
-
-    // Verify Billing & Tokens section exists
-    const billingSection = page.locator('text=Billing & Tokens');
-    await expect(billingSection.first()).toBeVisible({ timeout: 5000 });
-
-    // Click the buy tokens button
-    const buyTokensBtn = page.locator('.btn-buy-tokens');
-    await expect(buyTokensBtn.first()).toBeVisible({ timeout: 5000 });
-    await buyTokensBtn.first().click({ force: true });
-
-    // Verify modal appears
-    const overlay = page.locator('.token-modal-overlay');
-    await expect(overlay).toBeVisible({ timeout: 3000 });
-  });
-
-  test('token packs display correct pricing', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toHaveText('NICE SPACESHIP', { timeout: 10000 });
-
-    // Inject mock user and open token modal
-    await page.evaluate(() => {
-      State.set('user', { id: 'stripe-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
-      FuelModal.open();
-    });
-
-    // Verify modal is visible
-    const overlay = page.locator('.token-modal-overlay');
-    await expect(overlay).toBeVisible({ timeout: 3000 });
-
-    // Verify pack names
-    await expect(page.locator('.token-pack-name').nth(0)).toHaveText('Starter Pack');
-    await expect(page.locator('.token-pack-name').nth(1)).toHaveText('Booster Pack');
-    await expect(page.locator('.token-pack-name').nth(2)).toHaveText('Premium Pack');
-    await expect(page.locator('.token-pack-name').nth(3)).toHaveText('Fleet Pack');
-
-    // Verify pack prices
-    await expect(page.locator('.token-pack-price').nth(0)).toHaveText('$9.99');
-    await expect(page.locator('.token-pack-price').nth(1)).toHaveText('$24.99');
-    await expect(page.locator('.token-pack-price').nth(2)).toHaveText('$49.99');
-    await expect(page.locator('.token-pack-price').nth(3)).toHaveText('$99.99');
-  });
 });
 
 test.describe('NICE Auth Flow', () => {
@@ -744,23 +668,6 @@ test.describe('NICE Focus Management', () => {
     });
   });
 
-  test('modals can be opened and closed', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toHaveText('NICE SPACESHIP', { timeout: 10000 });
-
-    // Inject user and open token modal
-    await page.evaluate(() => {
-      State.set('user', { id: 'focus-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
-      FuelModal.open();
-    });
-
-    const overlay = page.locator('.token-modal-overlay');
-    await expect(overlay).toBeVisible({ timeout: 3000 });
-
-    // Close with Escape
-    await page.keyboard.press('Escape');
-    await expect(overlay).toHaveCount(0);
-  });
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await page.goto('./');

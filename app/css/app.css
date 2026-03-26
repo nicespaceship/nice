@@ -4392,25 +4392,6 @@
 .token-stat-label { font-size:.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
 @media(max-width:480px) { .token-gauge-stats { grid-template-columns:repeat(2, 1fr); } }
 
-/* ── Token Purchase Modal ── */
-.token-modal-overlay { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); animation:fadeIn .2s ease; }
-.token-modal { background:var(--panel-bg, #0d0d1a); border:1px solid var(--border); border-radius:var(--radius, 8px); padding:2rem; max-width:520px; width:92%; box-shadow:0 8px 32px rgba(0,0,0,.4); }
-.token-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem; }
-.token-modal-header h2 { margin:0; font-family:var(--font-h); font-size:1.3rem; color:var(--text); }
-.token-modal-close { background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer; padding:0 .25rem; line-height:1; }
-.token-modal-close:hover { color:var(--accent); }
-.token-modal-desc { font-size:.82rem; color:var(--text-muted); margin-bottom:1.25rem; }
-.token-packs { display:flex; flex-direction:column; gap:.75rem; }
-.token-pack { position:relative; display:flex; flex-direction:column; align-items:center; gap:.35rem; padding:1.1rem 1rem; border:1px solid var(--border); border-radius:var(--radius, 6px); background:var(--bg-alt, #111); cursor:pointer; transition:border-color .2s, box-shadow .2s; }
-.token-pack:hover { border-color:var(--accent); box-shadow:0 0 12px rgba(var(--accent-rgb, 100,200,255),.15); }
-.token-pack--featured { border-color:var(--accent2, var(--accent)); }
-.token-pack-tag { position:absolute; top:-8px; right:12px; background:var(--accent); color:var(--bg); font-size:.6rem; font-weight:700; padding:2px 8px; border-radius:10px; text-transform:uppercase; letter-spacing:.05em; }
-.token-pack-name { font-family:var(--font-h); font-size:.95rem; color:var(--text); font-weight:600; }
-.token-pack-tokens { font-family:var(--font-m); font-size:.8rem; color:var(--text-muted); }
-.token-pack-price { font-family:var(--font-m); font-size:1.15rem; color:var(--accent); font-weight:700; }
-.token-pack--loading { opacity:.6; pointer-events:none; }
-.token-pack--loading::after { content:'Processing...'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); border-radius:var(--radius, 6px); color:var(--text); font-size:.8rem; }
-.token-modal-footer { font-size:.7rem; color:var(--text-muted); text-align:center; margin-top:1rem; }
 .btn-buy-tokens { background:var(--accent); color:var(--bg); border:none; font-weight:600; font-size:.8rem; cursor:pointer; }
 .btn-buy-tokens:hover { opacity:.85; }
 

@@ -53,7 +53,6 @@ const SCRIPTS = [
   'app/js/lib/ship-log.js',
   'app/js/lib/mission-router.js',
   'app/js/lib/mission-runner.js',
-  'app/js/lib/fuel-modal.js',
   'app/js/lib/auth-modal.js',
   'app/js/nice.js',
 ];

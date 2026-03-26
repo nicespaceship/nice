@@ -390,13 +390,10 @@ const SettingsView = (() => {
       render(el);
     });
 
-    // Buy Tokens
+    // Buy Tokens — navigate to wallet
     document.getElementById('btn-buy-tokens-settings')?.addEventListener('click', () => {
-      if (typeof FuelModal !== 'undefined') FuelModal.open();
+      window.location.hash = '#/wallet';
     });
-
-    // Check for Stripe return
-    if (typeof FuelModal !== 'undefined') FuelModal.checkReturn();
 
     // Show keyboard shortcuts
     document.getElementById('btn-show-shortcuts')?.addEventListener('click', () => {
