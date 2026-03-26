@@ -694,12 +694,19 @@ const NICE = (() => {
       SB.auth.signOut().catch(() => {});
     }
 
-    SB.auth.onAuthChange((user) => {
+    SB.auth.onAuthChange((user, _session, event) => {
       State.set('user', user);
       _updateAuthUI(user);
       if (user) {
         _migrateLocalSpaceships(user);
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
+      }
+      // Handle session expiry — prompt re-login
+      if (event === 'TOKEN_REFRESHED' && !user) {
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Session Expired', message: 'Please sign in again to continue.', type: 'warning' });
+        }
+        if (typeof AuthModal !== 'undefined') AuthModal.show();
       }
       if (typeof AuditLog !== 'undefined') {
         AuditLog.log('auth', { description: user ? 'Signed in as ' + (user.email || 'user') : 'Signed out' });

@@ -43,7 +43,7 @@ At the start of each session, run `git worktree prune` and delete any stale `cla
 ├── app/                    # NICE™ SPA Dashboard
 │   ├── index.html          # SPA shell with sidebar + view container
 │   ├── manifest.json       # PWA manifest with shortcuts & share target
-│   ├── sw.js               # Service Worker v6 (offline, periodic sync, push)
+│   ├── sw.js               # Service Worker (auto-versioned) (offline, periodic sync, push)
 │   ├── css/
 │   │   └── app.css         # NICE component styles (2000+ lines)
 │   └── js/
@@ -237,4 +237,4 @@ cd desktop && npm install && npm start
 - **Platform**: Vercel (auto-deploy from `main` branch)
 - **Repo**: `github.com/nicespaceship/nice`
 - **Forms**: Formspree endpoint `xbdzrjnn`
-- **PWA**: Service Worker v6 with offline fallback, periodic sync (12h), push notifications
+- **PWA**: Service Worker (auto-versioned) with offline fallback, periodic sync (12h), push notifications

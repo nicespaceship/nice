@@ -81,7 +81,7 @@ const Subscription = (() => {
       ]);
       const { data, error } = result;
       if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+      if (data?.url) { try { const h = new URL(data.url).hostname; if (h.endsWith('.stripe.com') || h === 'checkout.stripe.com' || h === 'billing.stripe.com') { window.location.href = data.url; } else { throw new Error('Unexpected redirect domain: ' + h); } } catch (e) { throw new Error('Invalid checkout URL'); } }
     } catch (err) {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Subscription Error', message: err.message || 'Failed to start checkout', type: 'error' });
@@ -120,7 +120,7 @@ const Subscription = (() => {
       ]);
       const { data, error } = result;
       if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+      if (data?.url) { try { const h = new URL(data.url).hostname; if (h.endsWith('.stripe.com') || h === 'checkout.stripe.com' || h === 'billing.stripe.com') { window.location.href = data.url; } else { throw new Error('Unexpected redirect domain: ' + h); } } catch (e) { throw new Error('Invalid checkout URL'); } }
     } catch (err) {
       // Edge function unavailable — fall back to local demo upgrade
       const spaceships = typeof State !== 'undefined' ? State.get('spaceships') || [] : [];
@@ -149,7 +149,7 @@ const Subscription = (() => {
         body: { userId: user.id },
       });
       if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+      if (data?.url) { try { const h = new URL(data.url).hostname; if (h.endsWith('.stripe.com') || h === 'checkout.stripe.com' || h === 'billing.stripe.com') { window.location.href = data.url; } else { throw new Error('Unexpected redirect domain: ' + h); } } catch (e) { throw new Error('Invalid checkout URL'); } }
     } catch (err) {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Billing Error', message: err.message || 'Failed to open billing portal', type: 'error' });

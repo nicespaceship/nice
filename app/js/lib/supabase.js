@@ -113,8 +113,8 @@ const SB = (() => {
     onAuthChange(callback) {
       const c = client();
       if (!c) return { data: { subscription: { unsubscribe: () => {} } } };
-      return c.auth.onAuthStateChange((_event, session) => {
-        callback(session?.user || null, session);
+      return c.auth.onAuthStateChange((event, session) => {
+        callback(session?.user || null, session, event);
       });
     }
   };

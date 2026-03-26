@@ -16,6 +16,7 @@ const PromptPanel = (() => {
   let _appMain = null;
   let _messages = [];
   let _sending = false;
+  let _abortCtrl = null; // AbortController for in-flight LLM requests
   let _mentionPopup = null;
   let _mentionItems = [];
   let _mentionIdx = -1;
@@ -815,23 +816,13 @@ const PromptPanel = (() => {
 
     if (lower === '/help' || lower === '/commands') {
       return {
-        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /rank — Show your rank & XP\n• /tokens — Check token balance\n• /callsign [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints\n• /apikey [key] — Connect to Claude API for live AI',
+        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /rank — Show your rank & XP\n• /tokens — Check token balance\n• /callsign [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
         handled: true,
       };
     }
 
     if (lower.startsWith('/apikey')) {
-      const key = text.replace(/^\/apikey\s*/i, '').trim();
-      if (!key) {
-        const has = localStorage.getItem('nice-api-key');
-        return { text: has ? 'API key is set. Use /apikey clear to remove, or /apikey sk-ant-... to update.' : 'No API key set. Use /apikey sk-ant-... to enable live AI.', handled: true };
-      }
-      if (key === 'clear' || key === 'remove') {
-        localStorage.removeItem('nice-api-key');
-        return { text: 'API key cleared. NICE will use mock responses.', handled: true };
-      }
-      localStorage.setItem('nice-api-key', key);
-      return { text: 'API key saved. NICE is now connected to Claude. 🚀', handled: true };
+      return { text: 'API keys are managed securely in the Vault (Security → Vault). Connect your LLM providers there — keys are stored server-side, never in the browser.', handled: true };
     }
 
     if (lower.startsWith('/preview')) {
@@ -954,8 +945,8 @@ const PromptPanel = (() => {
     // Only auto-mission for short, direct tasks (under 80 chars) without API key context.
     // Longer prompts are conversational and should go to the LLM (which can use EXEC markers).
     const taskVerbs = /^(write|draft|generate|analyze|summarize|research|list|outline|compose|review|evaluate|audit|produce)\s+(me\s+|a\s+|an\s+|the\s+|my\s+|\d+\s+)/i;
-    const hasApiKey = !!localStorage.getItem('nice-api-key');
-    if (taskVerbs.test(lower) && !isNavRequest && (!hasApiKey || text.length < 80)) {
+    const hasLLM = Object.values(State.get('llm_connections') || {}).some(Boolean);
+    if (taskVerbs.test(lower) && !isNavRequest && (!hasLLM || text.length < 80)) {
       return { type: 'auto-mission', title: text };
     }
 
@@ -1289,6 +1280,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
     if (!supabaseUrl) return null;
 
+    // Abort any in-flight request before starting a new one
+    if (_abortCtrl) { try { _abortCtrl.abort(); } catch {} }
+    _abortCtrl = new AbortController();
+
     // Build conversation history (last 20 messages)
     const history = _messages.slice(-20).map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
@@ -1303,6 +1298,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const res = await fetch(`${supabaseUrl}/functions/v1/llm-proxy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: _abortCtrl.signal,
       body: JSON.stringify({
         model,
         messages: history,
@@ -1363,61 +1359,21 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   }
 
   /**
-   * Stream a response from the Claude API.
-   * Priority: 1) Edge function (auth'd) → 2) Direct browser (API key) → 3) null (mock)
+   * Stream a response from the LLM via edge function.
+   * All LLM calls go through the server-side proxy — no API keys in the browser.
+   * Returns null if no edge function is available (falls back to mock).
    * @param {string} userText
    * @param {object} opts  { onChunk: (text) => void }
    * @returns {Promise<{text: string, model: string}|null>}
    */
   async function _callDirectLLM(userText, opts = {}) {
-    // Try edge function first (authenticated users)
     try {
       const edgeResult = await _callEdgeLLM(userText, opts);
       if (edgeResult) return edgeResult;
     } catch (e) {
-      console.warn('[NICE] Edge function failed, trying direct:', e.message);
+      console.warn('[NICE] Edge LLM call failed:', e.message);
     }
-
-    // Fall back to direct browser call
-    const apiKey = localStorage.getItem('nice-api-key');
-    if (!apiKey) return null; // no key → fall back to mock
-
-    // Build conversation history (last 20 messages)
-    const history = _messages.slice(-20).map(m => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
-      content: m.text,
-    }));
-    history.push({ role: 'user', content: userText });
-
-    const { id: model, label: modelLabel } = _getSelectedModel();
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 1024,
-        stream: true,
-        temperature: 0.4,
-        system: _buildSystemPrompt(),
-        messages: history,
-      }),
-    });
-
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.warn('[NICE] LLM error:', errBody);
-      let detail = '';
-      try { detail = JSON.parse(errBody)?.error?.message || errBody; } catch { detail = errBody; }
-      throw new Error(detail);
-    }
-
-    return _parseSSEStream(res, opts, modelLabel);
+    return null; // no edge function → fall back to mock
   }
 
   /* ── Send message ── */

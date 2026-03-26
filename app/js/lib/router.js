@@ -73,7 +73,7 @@ const Router = (() => {
       const m = p.match(route.regex);
       if (m) {
         const params = {};
-        route.keys.forEach((key, i) => { params[key] = m[i + 1]; });
+        route.keys.forEach((key, i) => { try { params[key] = decodeURIComponent(m[i + 1]); } catch { params[key] = m[i + 1]; } });
         return { view: route.view, params };
       }
     }
@@ -93,6 +93,10 @@ const Router = (() => {
     // Teardown previous view safely
     if (_currentView && _currentView.destroy) {
       try { _currentView.destroy(); } catch(e) { console.error('[NICE] View destroy error:', e); }
+    }
+    // Clean up any scoped State subscriptions from the previous view
+    if (typeof State !== 'undefined' && State.destroyScoped) {
+      State.destroyScoped();
     }
 
     _currentView = match.view;
@@ -164,15 +168,14 @@ const Router = (() => {
       }
     } catch { /* don't recurse */ }
 
-    const d = document.createElement('div');
-    d.textContent = String(err.message || err);
+    const _e = (s) => { const t = document.createElement('div'); t.textContent = String(s); return t.innerHTML; };
     return '<div class="err-boundary">' +
       '<div class="err-boundary-icon">\u26A0</div>' +
       '<h2 class="err-boundary-title">Something went wrong</h2>' +
-      '<p class="err-boundary-msg">Failed to render <code>' + path + '</code></p>' +
-      '<pre class="err-boundary-detail">' + d.innerHTML + '</pre>' +
+      '<p class="err-boundary-msg">Failed to render <code>' + _e(path) + '</code></p>' +
+      '<pre class="err-boundary-detail">' + _e(err.message || err) + '</pre>' +
       '<div class="err-boundary-actions">' +
-        '<button class="btn btn-sm btn-primary" onclick="Router.navigate(\'' + path.replace(/'/g, "\\'") + '\')">Retry</button>' +
+        '<button class="btn btn-sm btn-primary" onclick="Router.navigate(\'' + _e(path).replace(/'/g, "&#39;") + '\')">Retry</button>' +
         '<button class="btn btn-sm" onclick="location.reload()">Reload</button>' +
         '<a href="#/" class="btn btn-sm">Go Home</a>' +
       '</div>' +

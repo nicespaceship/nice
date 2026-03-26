@@ -31,12 +31,15 @@ if (!globalThis.crypto.randomUUID) {
 globalThis.State = (() => {
   const _data = {};
   const _listeners = {};
+  const _scoped = [];
   return {
     get: (key) => _data[key],
     set: (key, val) => { _data[key] = val; (_listeners[key] || []).forEach(fn => fn(val)); },
     on: (key, fn) => { _listeners[key] = _listeners[key] || []; _listeners[key].push(fn); },
     off: (key, fn) => { _listeners[key] = (_listeners[key] || []).filter(f => f !== fn); },
-    _reset: () => { Object.keys(_data).forEach(k => delete _data[k]); Object.keys(_listeners).forEach(k => delete _listeners[k]); },
+    onScoped: (key, fn) => { _listeners[key] = _listeners[key] || []; _listeners[key].push(fn); _scoped.push({ key, fn }); },
+    destroyScoped: () => { _scoped.forEach(({ key, fn }) => { _listeners[key] = (_listeners[key] || []).filter(f => f !== fn); }); _scoped.length = 0; },
+    _reset: () => { Object.keys(_data).forEach(k => delete _data[k]); Object.keys(_listeners).forEach(k => delete _listeners[k]); _scoped.length = 0; },
   };
 })();
 

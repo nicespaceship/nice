@@ -15,7 +15,7 @@ const ProfileView = (() => {
     }
 
     // Re-render when auth state changes
-    State.on('user', u => {
+    State.onScoped('user', u => {
       if (el.isConnected) {
         if (!u) _renderAuth(el);
         else _renderProfile(el, u);

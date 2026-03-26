@@ -51,6 +51,7 @@ const CommandPalette = (() => {
   const _esc = Utils.esc;
 
   function init() {
+    if (_el) return; // Prevent duplicate initialization
     _el = document.createElement('div');
     _el.id = 'cmd-palette';
     _el.className = 'cmd-palette';
