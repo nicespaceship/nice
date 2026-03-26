@@ -185,6 +185,22 @@ const PromptPanel = (() => {
   function _getSlottedAgents() {
     try {
       const shipId = localStorage.getItem('nice-mc-ship') || 'default-ship';
+      // Try nice-ship-state first (deploy wizard format)
+      const stateRaw = localStorage.getItem('nice-ship-state');
+      if (stateRaw) {
+        const allState = JSON.parse(stateRaw);
+        const shipState = allState[shipId] || allState['bp-' + shipId] || {};
+        const slotMap = shipState.slot_assignments || shipState.slotMap || {};
+        const agents = [];
+        for (const [slotIdx, agentId] of Object.entries(slotMap)) {
+          if (!agentId) continue;
+          const bp = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getAgent(agentId)
+            : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === agentId) : null;
+          if (bp) agents.push({ id: bp.id, name: bp.name, role: bp.config?.role || 'Custom', slot: slotIdx });
+        }
+        if (agents.length) return agents;
+      }
+      // Fallback: nice-mc-slots (legacy format)
       const raw = localStorage.getItem('nice-mc-slots');
       if (!raw) return [];
       const all = JSON.parse(raw);
@@ -298,30 +314,45 @@ const PromptPanel = (() => {
         const [title, agentHint, priority] = params;
         // Find best agent if a hint was given
         let agentId = null;
+        let agentName = agentHint || null;
         if (agentHint) {
-          const agents = State.get('agents') || [];
+          const slotted = _getSlottedAgents();
+          const agents = slotted.length ? slotted : (State.get('agents') || []);
           const a = agents.find(a => a.name.toLowerCase().includes(agentHint.toLowerCase()));
-          if (a) agentId = a.supabase_id || a.id;
+          if (a) { agentId = a.supabase_id || a.id; agentName = a.name; }
           // Don't use bp- IDs for Supabase — resolve to UUID
           if (agentId && agentId.startsWith('bp-') && typeof BlueprintStore !== 'undefined') {
             agentId = BlueprintStore.getAgentUuid(agentId) || null;
           }
         }
         try {
-          const created = await SB.db('tasks').create({
-            user_id: user.id, title: title || 'Untitled Mission',
-            agent_id: agentId, status: 'queued',
-            priority: priority || 'medium', progress: 0,
-          });
-          // Update local State
-          const missions = State.get('missions') || [];
-          missions.push(created);
-          State.set('missions', [...missions]);
-          // Auto-run if agent assigned
-          if (agentId && created && created.id && typeof MissionRunner !== 'undefined') {
-            MissionRunner.run(created.id);
+          // Try Supabase if authenticated with a real user
+          if (user.id && !user.id.startsWith('dev-') && typeof SB !== 'undefined' && SB.db) {
+            const created = await SB.db('tasks').create({
+              user_id: user.id, title: title || 'Untitled Mission',
+              agent_id: agentId, status: 'queued',
+              priority: priority || 'medium', progress: 0,
+            });
+            const missions = State.get('missions') || [];
+            missions.push(created);
+            State.set('missions', [...missions]);
+            if (agentId && created && created.id && typeof MissionRunner !== 'undefined') {
+              MissionRunner.run(created.id);
+            }
+            return { ok: true, msg: `Mission "${title}" created and assigned to ${agentName || 'queue'}.`, data: created };
           }
-          return { ok: true, msg: `Mission "${title}" created${agentId ? ' and running' : ''}.`, data: created };
+          // Local-only fallback for dev/unauthenticated users
+          const localMission = {
+            id: 'mission-' + Date.now(),
+            title: title || 'Untitled Mission',
+            agent_id: agentId, agent_name: agentName,
+            status: 'queued', priority: priority || 'medium',
+            progress: 0, created_at: new Date().toISOString(),
+          };
+          const missions = State.get('missions') || [];
+          missions.push(localMission);
+          State.set('missions', [...missions]);
+          return { ok: true, msg: `Mission "${title}" created and assigned to ${agentName || 'queue'}.` };
         } catch (e) {
           return { ok: false, msg: e.message || 'Failed to create mission' };
         }
@@ -1131,6 +1162,21 @@ ${showRarity
 ? '- When recommending agents, mention their classification (Common, Rare, Epic, Legendary) — experienced users value knowing the tier and power level.'
 : '- Never mention rarity or classification tags — this user is new, keep it simple and just use agent names directly.'}
 
+ACTIVE CREW ROSTER (agents currently deployed on the active spaceship):
+${(() => {
+  const crew = _getSlottedAgents();
+  if (!crew.length) return '  No agents deployed yet.';
+  return crew.map(a => '  - ' + a.name + ' (' + a.role + ')').join('\n');
+})()}
+
+MISSION ROUTING: When the user asks you to perform a task or create a mission, you MUST:
+1. Analyze the task and determine which agent(s) from the ACTIVE CREW ROSTER are best suited
+2. Explain WHY you chose that agent (match their role/specialty to the task)
+3. Include an EXEC marker to create the mission:
+   [EXEC: create_mission | Mission Title | agent-name | priority]
+   Priority: low, medium, high, critical (pick based on urgency)
+4. If the task needs multiple agents, create multiple EXEC markers
+
 CURRENT USER CONTEXT:
 - Rank: ${rank} (${xp} XP)
 - Active Agents: ${agentCount}
@@ -1219,15 +1265,19 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   function _getSelectedModel() {
     const modelSelect = _panel?.querySelector('#nice-ai-model');
+    const val = modelSelect?.value || 'claude-4-sonnet';
+    // Check LLM_MODELS registry first (supports all providers)
+    if (typeof LLM_MODELS !== 'undefined') {
+      const entry = LLM_MODELS.find(m => m.id === val);
+      if (entry) return { id: entry.id, label: entry.label };
+    }
+    // Legacy fallback
     const modelMap = {
-      'nice-4':      'claude-sonnet-4-20250514',
-      'nice-4-mini': 'claude-haiku-4-5-20251001',
-      'nice-3':      'claude-3-5-haiku-20241022',
+      'nice-4':      'claude-4-sonnet',
+      'nice-4-mini': 'claude-4-sonnet',
+      'nice-3':      'claude-4-sonnet',
     };
-    return {
-      id: modelMap[modelSelect?.value] || 'claude-haiku-4-5-20251001',
-      label: modelSelect?.value || 'nice-4-mini',
-    };
+    return { id: modelMap[val] || val, label: val };
   }
 
   /**
@@ -1235,43 +1285,47 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
    * Falls back to null if not authenticated or SB unavailable.
    */
   async function _callEdgeLLM(userText, opts = {}) {
-    if (typeof SB === 'undefined' || !SB.auth) return null;
-    const session = await SB.auth.getSession();
-    if (!session?.access_token) return null;
+    if (typeof SB === 'undefined' || !SB.client) return null;
+    const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
+    if (!supabaseUrl) return null;
 
+    // Build conversation history (last 20 messages)
     const history = _messages.slice(-20).map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.text,
     }));
+    // Prepend system prompt as first message
+    history.unshift({ role: 'system', content: _buildSystemPrompt() });
     history.push({ role: 'user', content: userText });
 
     const { id: model, label: modelLabel } = _getSelectedModel();
 
-    const res = await fetch(`${SB.client?.supabaseUrl || ''}/functions/v1/nice-ai`, {
+    const res = await fetch(`${supabaseUrl}/functions/v1/llm-proxy`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
-        max_tokens: 4096,
-        stream: true,
-        temperature: 0.4,
-        system: _buildSystemPrompt(),
         messages: history,
+        temperature: 0.4,
+        max_tokens: 2048,
       }),
     });
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.warn('[NICE] Edge function error:', errBody);
+      console.warn('[NICE] llm-proxy error:', errBody);
       let detail = '';
-      try { detail = JSON.parse(errBody)?.error?.message || errBody; } catch { detail = errBody; }
+      try { const parsed = JSON.parse(errBody); detail = parsed.error || errBody; } catch { detail = errBody; }
       throw new Error(detail);
     }
 
-    return _parseSSEStream(res, opts, modelLabel);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Simulate streaming by emitting the full content as a single chunk
+    if (opts.onChunk && data.content) opts.onChunk(data.content);
+
+    return { text: data.content || '', model: modelLabel };
   }
 
   /**
@@ -1756,6 +1810,32 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (connected) select.value = connected.id;
   }
 
+  function _populateModelDropdown() {
+    const select = _panel?.querySelector('#nice-ai-model');
+    if (!select || typeof LLM_MODELS === 'undefined' || typeof LLM_PROVIDERS === 'undefined') return;
+    const connections = (typeof State !== 'undefined' && State.get('llm_connections')) || {};
+    const connectedProviders = Object.keys(connections).filter(k => connections[k]);
+    if (!connectedProviders.length) return; // keep default option
+    select.innerHTML = '';
+    // Group models by provider, only show connected providers
+    LLM_PROVIDERS.forEach(p => {
+      if (!connectedProviders.includes(p.id)) return;
+      const models = LLM_MODELS.filter(m => m.provider === p.id);
+      if (!models.length) return;
+      const grp = document.createElement('optgroup');
+      grp.label = p.name;
+      models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.label;
+        grp.appendChild(opt);
+      });
+      select.appendChild(grp);
+    });
+    // Default to first connected model
+    if (select.options.length) select.selectedIndex = 0;
+  }
+
   /* ═══ @Mention Autocomplete ═══ */
 
   function _showMentionPopup(query) {
@@ -1833,9 +1913,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
                 <option value="">Loading voices…</option>
               </select>
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model">
-                <option value="nice-4" selected>NICE-4</option>
-                <option value="nice-4-mini">NICE-4 Mini</option>
-                <option value="nice-3">NICE-3</option>
+                <option value="claude-4-sonnet" selected>Claude Sonnet</option>
               </select>
               <button class="nice-ai-voice-btn" id="nice-ai-voice" aria-label="Voice mode" title="Voice mode">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -2282,6 +2360,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _bindEvents();
     _populateBlueprintDropdown();
     _populateLLMDropdown();
+    _populateModelDropdown();
     _updateSuggestionChips();
     // Restore voice controls visibility from saved TTS state
     if (_ttsEnabled) {
@@ -2403,14 +2482,21 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     input.placeholder = 'Ask NICE…';
   }
 
-  function show() { if (_panel) _panel.style.display = ''; }
-  function hide() { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
+  let _lastSyncPath = null;
+  let _manualShow = false;
+  function show() { if (_panel) { _panel.style.display = ''; _manualShow = true; } }
+  function hide() { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); _manualShow = false; } }
 
   function syncRoute() {
     _updateRouteContext();
     const path = (location.hash || '#/').replace('#', '') || '/';
-    // Show on all routes
-    show();
+    // Reset manual flag when navigating to a different route
+    if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
+    // If explicitly shown on this route (e.g. reactor/card click), keep it visible
+    if (_manualShow) return;
+    // Only show by default on the home page
+    if (path === '/') { if (_panel) _panel.style.display = ''; }
+    else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
   }
 
   return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute };

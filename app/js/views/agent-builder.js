@@ -302,30 +302,33 @@ const AgentBuilderView = (() => {
 
 /* ── LLM Provider / Model Registry (shared across views) ── */
 const LLM_PROVIDERS = [
-  { id: 'anthropic', name: 'Anthropic', icon: '🟣', color: '#d97706', url: 'https://console.anthropic.com' },
-  { id: 'openai',    name: 'OpenAI',    icon: '🟢', color: '#10a37f', url: 'https://platform.openai.com' },
-  { id: 'google',    name: 'Google AI',  icon: '🔵', color: '#4285f4', url: 'https://aistudio.google.dev' },
-  { id: 'mistral',    name: 'Mistral',    icon: '🟠', color: '#f97316', url: 'https://console.mistral.ai' },
-  { id: 'xai',        name: 'xAI',        icon: '⚪', color: '#e5e7eb', url: 'https://console.x.ai' },
-  { id: 'perplexity', name: 'Perplexity', icon: '🔍', color: '#20b2aa', url: 'https://www.perplexity.ai/settings/api' },
+  { id: 'anthropic',  name: 'Anthropic',  icon: '🟣', color: '#d97706', url: 'https://console.anthropic.com' },
   { id: 'deepseek',   name: 'DeepSeek',   icon: '🧠', color: '#4f46e5', url: 'https://platform.deepseek.com' },
+  { id: 'google',     name: 'Google AI',   icon: '🔵', color: '#4285f4', url: 'https://aistudio.google.dev' },
+  { id: 'meta',       name: 'Meta AI',     icon: '🦙', color: '#0668E1', url: 'https://llama.developer.meta.com' },
+  { id: 'mistral',    name: 'Mistral',     icon: '🟠', color: '#f97316', url: 'https://console.mistral.ai' },
+  { id: 'openai',     name: 'OpenAI',      icon: '🟢', color: '#10a37f', url: 'https://platform.openai.com' },
+  { id: 'perplexity', name: 'Perplexity',  icon: '🔍', color: '#20b2aa', url: 'https://www.perplexity.ai/settings/api' },
+  { id: 'xai',        name: 'xAI',         icon: '⚪', color: '#e5e7eb', url: 'https://console.x.ai' },
 ];
 
 const LLM_MODELS = [
-  { id: 'claude-4-opus',    label: 'Claude Opus 4',     provider: 'anthropic' },
-  { id: 'claude-4-sonnet',  label: 'Claude Sonnet 4',   provider: 'anthropic' },
-  { id: 'gpt-4o',           label: 'GPT-4o',            provider: 'openai' },
-  { id: 'gpt-4o-mini',      label: 'GPT-4o Mini',       provider: 'openai' },
-  { id: 'gemini-2',         label: 'Gemini 2',          provider: 'google' },
-  { id: 'gemini-2-flash',   label: 'Gemini 2 Flash',    provider: 'google' },
-  { id: 'mistral-large',    label: 'Mistral Large',     provider: 'mistral' },
-  { id: 'codestral',        label: 'Codestral',         provider: 'mistral' },
-  { id: 'grok-3',           label: 'Grok 3',            provider: 'xai' },
-  { id: 'grok-3-mini',      label: 'Grok 3 Mini',       provider: 'xai' },
-  { id: 'sonar-pro',        label: 'Sonar Pro',         provider: 'perplexity' },
-  { id: 'sonar',            label: 'Sonar',             provider: 'perplexity' },
-  { id: 'deepseek-chat',    label: 'DeepSeek V3',       provider: 'deepseek' },
-  { id: 'deepseek-reasoner',label: 'DeepSeek R1',       provider: 'deepseek' },
+  { id: 'claude-4-opus',     label: 'Claude Opus 4',     provider: 'anthropic' },
+  { id: 'claude-4-sonnet',   label: 'Claude Sonnet 4',   provider: 'anthropic' },
+  { id: 'deepseek-chat',     label: 'DeepSeek V3',       provider: 'deepseek' },
+  { id: 'deepseek-reasoner', label: 'DeepSeek R1',       provider: 'deepseek' },
+  { id: 'gemini-2',          label: 'Gemini 2',          provider: 'google' },
+  { id: 'gemini-2-flash',    label: 'Gemini 2 Flash',    provider: 'google' },
+  { id: 'llama-4-maverick',  label: 'Llama 4 Maverick',  provider: 'meta' },
+  { id: 'llama-4-scout',     label: 'Llama 4 Scout',     provider: 'meta' },
+  { id: 'mistral-large',     label: 'Mistral Large',     provider: 'mistral' },
+  { id: 'codestral',         label: 'Codestral',         provider: 'mistral' },
+  { id: 'gpt-4o',            label: 'GPT-4o',            provider: 'openai' },
+  { id: 'gpt-4o-mini',       label: 'GPT-4o Mini',       provider: 'openai' },
+  { id: 'sonar-pro',         label: 'Sonar Pro',         provider: 'perplexity' },
+  { id: 'sonar',             label: 'Sonar',             provider: 'perplexity' },
+  { id: 'grok-3',            label: 'Grok 3',            provider: 'xai' },
+  { id: 'grok-3-mini',       label: 'Grok 3 Mini',       provider: 'xai' },
 ];
 
 function _getConnectedProviders() {

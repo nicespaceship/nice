@@ -87,6 +87,17 @@ const SchematicView = (() => {
         if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
           DockView._initRadar(cvs);
         }
+        // Core click → prefill prompt with spaceship name (must bind after _wireSchematic creates SVG)
+        const coreHit = el.querySelector('.sch-core-hit');
+        if (coreHit) {
+          coreHit.addEventListener('click', () => {
+            const shipName = activeShip?.name || 'Ship';
+            if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
+              PromptPanel.show();
+              PromptPanel.prefill('@' + shipName + ' ');
+            }
+          });
+        }
       });
     }
 
@@ -112,18 +123,6 @@ const SchematicView = (() => {
         }
       });
     });
-
-    // Core click → prefill prompt with spaceship name
-    const coreHit = el.querySelector('.sch-core-hit');
-    if (coreHit) {
-      coreHit.addEventListener('click', () => {
-        const shipName = activeShip?.name || 'Ship';
-        if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
-          PromptPanel.show();
-          PromptPanel.prefill('@' + shipName + ' ');
-        }
-      });
-    }
 
     // Ship selector dropdown
     const shipSelect = el.querySelector('#sch-ship-select');
