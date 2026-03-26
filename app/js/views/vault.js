@@ -89,7 +89,7 @@ const VaultView = (() => {
         const btn2 = document.querySelector(`.vault-provider-connect[data-provider="${id}"]`);
         if (btn2) { btn2.disabled = true; btn2.textContent = 'Verifying...'; }
 
-        const testModels = { anthropic: 'claude-4-sonnet', openai: 'gpt-4o-mini', google: 'gemini-2-flash', mistral: 'mistral-large', xai: 'grok-3-mini' };
+        const testModels = { anthropic: 'claude-4-sonnet', openai: 'gpt-4o-mini', google: 'gemini-2-flash', mistral: 'mistral-large', xai: 'grok-3-mini', perplexity: 'sonar', deepseek: 'deepseek-chat' };
         const testModel = testModels[id] || 'claude-4-sonnet';
 
         try {

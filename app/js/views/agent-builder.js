@@ -305,8 +305,10 @@ const LLM_PROVIDERS = [
   { id: 'anthropic', name: 'Anthropic', icon: '🟣', color: '#d97706', url: 'https://console.anthropic.com' },
   { id: 'openai',    name: 'OpenAI',    icon: '🟢', color: '#10a37f', url: 'https://platform.openai.com' },
   { id: 'google',    name: 'Google AI',  icon: '🔵', color: '#4285f4', url: 'https://aistudio.google.dev' },
-  { id: 'mistral',   name: 'Mistral',   icon: '🟠', color: '#f97316', url: 'https://console.mistral.ai' },
-  { id: 'xai',       name: 'xAI',       icon: '⚪', color: '#e5e7eb', url: 'https://console.x.ai' },
+  { id: 'mistral',    name: 'Mistral',    icon: '🟠', color: '#f97316', url: 'https://console.mistral.ai' },
+  { id: 'xai',        name: 'xAI',        icon: '⚪', color: '#e5e7eb', url: 'https://console.x.ai' },
+  { id: 'perplexity', name: 'Perplexity', icon: '🔍', color: '#20b2aa', url: 'https://www.perplexity.ai/settings/api' },
+  { id: 'deepseek',   name: 'DeepSeek',   icon: '🧠', color: '#4f46e5', url: 'https://platform.deepseek.com' },
 ];
 
 const LLM_MODELS = [
@@ -320,6 +322,10 @@ const LLM_MODELS = [
   { id: 'codestral',        label: 'Codestral',         provider: 'mistral' },
   { id: 'grok-3',           label: 'Grok 3',            provider: 'xai' },
   { id: 'grok-3-mini',      label: 'Grok 3 Mini',       provider: 'xai' },
+  { id: 'sonar-pro',        label: 'Sonar Pro',         provider: 'perplexity' },
+  { id: 'sonar',            label: 'Sonar',             provider: 'perplexity' },
+  { id: 'deepseek-chat',    label: 'DeepSeek V3',       provider: 'deepseek' },
+  { id: 'deepseek-reasoner',label: 'DeepSeek R1',       provider: 'deepseek' },
 ];
 
 function _getConnectedProviders() {

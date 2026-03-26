@@ -77,6 +77,8 @@ const Gamification = (() => {
     'claude-4-sonnet': 3, 'claude-3.5': 3, 'claude-3.5-sonnet': 3, 'gemini-2': 3, 'codestral': 3,
     'gemini-2-flash': 2, 'gemini-1.5-pro': 2, 'grok-3-mini': 2,
     'gpt-4o-mini': 1,
+    'sonar-pro': 3, 'sonar': 2,
+    'deepseek-chat': 3, 'deepseek-reasoner': 4,
     'nice-auto': 3,
   };
 
