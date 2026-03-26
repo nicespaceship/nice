@@ -89,17 +89,6 @@ const SecurityView = (() => {
 
   /* ── Render ─────────────────────────────────────────────────── */
   function render(el, params) {
-    let user = State.get('user');
-    if (!user) {
-      // Wait for auth — Supabase may still be restoring session
-      const unsub = State.on('user', (u) => {
-        if (u) { unsub(); render(el, params); }
-      });
-      // Show auth prompt after 2s if still no user
-      setTimeout(() => { if (!State.get('user')) _authPrompt(el, 'security settings'); }, 2000);
-      el.innerHTML = '<div class="loading-state"><p>Loading...</p></div>';
-      return;
-    }
 
     // Support ?tab= from redirect or direct nav
     const hashParts = (window.location.hash || '').split('?');
