@@ -34,7 +34,6 @@ const PRECACHE_ASSETS = [
   '/app/js/lib/ship-log.js',
   '/app/js/lib/llm-config.js',
   '/app/js/lib/mission-runner.js',
-  '/app/js/lib/fuel-modal.js',
   '/app/js/lib/auth-modal.js',
   '/app/js/lib/blueprint-store.js',
   '/app/js/lib/message-bar.js',
