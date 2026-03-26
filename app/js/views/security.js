@@ -83,14 +83,23 @@ const SecurityView = (() => {
         <svg class="icon icon-xl" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
         <h2>Sign in to access ${area}</h2>
         <p class="text-muted">Authentication is required to manage security settings.</p>
-        <button class="btn btn-primary" onclick="location.hash='#/settings'">Sign In</button>
+        <button class="btn btn-primary" onclick="location.hash='#/profile'">Sign In</button>
       </div>`;
   }
 
   /* ── Render ─────────────────────────────────────────────────── */
   function render(el, params) {
-    const user = State.get('user');
-    if (!user) return _authPrompt(el, 'security settings');
+    let user = State.get('user');
+    if (!user) {
+      // Wait for auth — Supabase may still be restoring session
+      const unsub = State.on('user', (u) => {
+        if (u) { unsub(); render(el, params); }
+      });
+      // Show auth prompt after 2s if still no user
+      setTimeout(() => { if (!State.get('user')) _authPrompt(el, 'security settings'); }, 2000);
+      el.innerHTML = '<div class="loading-state"><p>Loading...</p></div>';
+      return;
+    }
 
     // Support ?tab= from redirect or direct nav
     const hashParts = (window.location.hash || '').split('?');
