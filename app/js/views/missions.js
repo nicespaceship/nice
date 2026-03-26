@@ -104,7 +104,7 @@ const MissionsView = (() => {
     _loadMissions();
     _bindEvents();
     _subscribeRealtime();
-    State.on('missions', _onMissionsChanged);
+    State.onScoped('missions', _onMissionsChanged);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -505,7 +505,7 @@ const MissionsView = (() => {
 
   function destroy() {
     if (_channel) { SB.realtime.unsubscribe(_channel); _channel = null; }
-    State.off('missions', _onMissionsChanged);
+    // State.onScoped subscriptions are auto-cleaned by Router
     _selected.clear();
     _prevStatuses = {};
   }
@@ -627,7 +627,7 @@ const MissionDetailView = (() => {
             <div class="detail-section">
               <h3 class="detail-section-title">Assigned Agent</h3>
               ${agent ? `
-                <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="Router.navigate('#/bridge/agents/${agent.id}')">
+                <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="Router.navigate('#/bridge/agents/${_esc(agent.id)}')">
                   <div class="agent-avatar" style="background:${_agentColor(agent.role)}">${_esc(agentInitials)}</div>
                   <div>
                     <div style="font-weight:600;font-size:.82rem">${_esc(agent.name)}</div>

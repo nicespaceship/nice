@@ -23,6 +23,14 @@ jobs:
       - name: Security audit
         run: npm audit --audit-level=high || true
 
+      - name: Stamp SW cache version
+        run: |
+          # Auto-increment SW cache version based on git short SHA
+          SHA=$(git rev-parse --short HEAD)
+          STAMP=$(date +%s)
+          sed -i "s/const CACHE_VERSION = [0-9]*/const CACHE_VERSION = ${STAMP}/" app/sw.js
+          echo "SW cache version stamped: ${STAMP} (${SHA})"
+
       - name: Verify build
         run: npm run build
 

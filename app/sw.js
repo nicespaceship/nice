@@ -1,11 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════
-   NICE — Service Worker v7
+   NICE — Service Worker (auto-versioned by CI)
    Precaches all app assets for full offline support.
    Network-first for JS/CSS (always fresh), cache-first for static.
    Includes offline fallback page, periodic sync, Badge API support.
    Bump CACHE_VERSION to force a full cache refresh on deploy.
 ═══════════════════════════════════════════════════════════════════ */
 
+// AUTO-STAMPED by CI — do not edit manually. Bumped on each deploy.
 const CACHE_VERSION = 15;
 const CACHE_NAME = `nice-v${CACHE_VERSION}`;
 const DATA_CACHE = `nice-v${CACHE_VERSION}-data`;

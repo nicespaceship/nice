@@ -18,6 +18,9 @@ const State = (() => {
   let _pendingFlush = null;
   const _pendingKeys = new Set();
 
+  /* Scoped subscriptions — auto-cleaned when destroyScoped() is called */
+  let _scopedSubs = [];
+
   function get(key) { return _data[key]; }
 
   function set(key, val) {
@@ -52,5 +55,22 @@ const State = (() => {
     _subs[key] = _subs[key].filter(f => f !== fn);
   }
 
-  return { get, set, setBatched, on, off };
+  /**
+   * Subscribe with automatic cleanup on view teardown.
+   * Views should use this instead of on() for subscriptions that should
+   * die when the view navigates away.
+   * Router calls State.destroyScoped() before rendering a new view.
+   */
+  function onScoped(key, fn) {
+    on(key, fn);
+    _scopedSubs.push({ key, fn });
+  }
+
+  /** Unsubscribe all scoped listeners — called by Router on view teardown */
+  function destroyScoped() {
+    _scopedSubs.forEach(({ key, fn }) => off(key, fn));
+    _scopedSubs = [];
+  }
+
+  return { get, set, setBatched, on, off, onScoped, destroyScoped };
 })();
