@@ -1315,7 +1315,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       const errBody = await res.text();
       console.warn('[NICE] llm-proxy error:', errBody);
       let detail = '';
-      try { const parsed = JSON.parse(errBody); detail = parsed.error || errBody; } catch { detail = errBody; }
+      try { detail = JSON.parse(errBody)?.error || errBody; } catch { detail = errBody; }
       throw new Error(detail);
     }
 
