@@ -58,11 +58,11 @@ const MissionRunner = (() => {
 
     // 2b. Resolve model — support NICE Auto
     const blueprintId = agent?.blueprint_id || agentBp?.id || null;
-    let modelUsed = agentBp?.config?.llm_engine || agent?.llm_engine || 'claude-4-opus';
+    let modelUsed = agentBp?.config?.llm_engine || agent?.llm_engine || 'gemini-2.5-flash';
     if (modelUsed === 'nice-auto' && blueprintId && typeof ModelIntel !== 'undefined') {
       const enabled = State.get('enabled_models') || {};
       const connected = Object.keys(enabled).filter(k => enabled[k]);
-      modelUsed = ModelIntel.bestModel(blueprintId, connected) || 'claude-4-opus';
+      modelUsed = ModelIntel.bestModel(blueprintId, connected) || 'gemini-2.5-flash';
     }
 
     // 3. Find a spaceship for context (use first active ship, or null)
