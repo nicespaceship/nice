@@ -238,5 +238,5 @@ const SB = (() => {
     }
   };
 
-  return { get client() { return client(); }, auth, db, realtime, functions, isReady, isOnline };
+  return { get client() { return client(); }, auth, db, realtime, functions, isReady, isOnline, _url: URL, _key: KEY };
 })();

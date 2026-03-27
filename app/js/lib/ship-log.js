@@ -256,6 +256,66 @@ const ShipLog = (() => {
     return data;
   }
 
+  /* ── Streaming LLM call via nice-ai Edge Function ── */
+  async function _callLLMStream(blueprint, prompt, context, config, onChunk) {
+    if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
+
+    const params = _buildLLMParams(blueprint, prompt, context, config);
+    params.stream = true;
+
+    // Use fetch directly for streaming (SB.functions.invoke doesn't support streams)
+    const supabaseUrl = SB.client?.supabaseUrl || SB._url || '';
+    const supabaseKey = SB.client?.supabaseKey || SB._key || '';
+    const session = SB.auth?.session?.();
+    const accessToken = session?.access_token || supabaseKey;
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Streaming error (${res.status}): ${err}`);
+    }
+
+    // Read the stream
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let model = config.model || 'gemini-2.5-flash';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      // Parse SSE lines: "data: {...}\n\n"
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
+          if (delta) {
+            fullContent += delta;
+            if (onChunk) onChunk(delta);
+          }
+          if (parsed.model) model = parsed.model;
+        } catch { /* skip unparseable lines */ }
+      }
+    }
+
+    return { content: fullContent, model, usage: { input_tokens: 0, output_tokens: Math.floor(fullContent.length / 4) } };
+  }
+
   /* ── Mock response pool (Phase 1) ── */
   const _ROLE_RESPONSES = {
     Research: [
