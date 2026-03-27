@@ -28,19 +28,19 @@ test.describe('NICE Smoke Tests', () => {
 
   test('app loads and shows home view', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
     await expect(page.locator('.chat-home')).toBeVisible();
   });
 
   test('sidebar navigation works', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
     // Open sidebar and navigate to Home
     const sidebar = page.locator('#app-sidebar');
-    await page.locator('#sidebar-toggle').click({ timeout: 5000 });
-    await expect(sidebar).toHaveClass(/open/, { timeout: 3000 });
+    await page.locator('#sidebar-toggle').click();
+    await expect(sidebar).toHaveClass(/open/);
     await page.locator('.side-link[data-view="blueprints"]').click({ force: true, timeout: 3000 });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
   });
 
   test('all main views render without error', async ({ page }) => {
@@ -54,12 +54,12 @@ test.describe('NICE Smoke Tests', () => {
 
     // Load the app first
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     for (const view of views) {
       // Navigate via hash change
       await page.evaluate((hash) => { window.location.hash = hash; }, view.hash);
-      await expect(page.locator('#app-page-title')).toHaveText(view.title, { timeout: 5000 });
+      await expect(page.locator('#app-page-title')).toHaveText(view.title);
       // Ensure no error boundary
       const errorBoundary = page.locator('.err-boundary');
       await expect(errorBoundary).toHaveCount(0);
@@ -68,7 +68,7 @@ test.describe('NICE Smoke Tests', () => {
 
   test('bridge view renders with tabs', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user for auth-gated views
     await page.evaluate(() => {
@@ -77,25 +77,25 @@ test.describe('NICE Smoke Tests', () => {
 
     // Bridge view
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     // Dock route redirects to home
     await page.evaluate(() => { window.location.hash = '#/dock'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
   });
 
   test('command palette opens with Ctrl+K', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Use Control+k (works in headless Chromium on all platforms)
     await page.keyboard.press('Control+k');
-    await expect(page.locator('#cmd-palette.open')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('#cmd-palette.open')).toBeVisible();
 
     // Type a search
     await page.fill('#cmd-input', 'agent');
     // Verify at least one result appears
-    await expect(page.locator('.cmd-result').first()).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('.cmd-result').first()).toBeVisible();
 
     // Close with Escape
     await page.keyboard.press('Escape');
@@ -104,7 +104,7 @@ test.describe('NICE Smoke Tests', () => {
 
   test('theme switching works', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Check default theme
     const theme = await page.getAttribute('html', 'data-theme');
@@ -123,7 +123,7 @@ test.describe('NICE Smoke Tests', () => {
 
   test('keyboard shortcuts help opens with ?', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     await page.keyboard.press('?');
     // Should show keyboard help overlay
@@ -136,7 +136,7 @@ test.describe('NICE Smoke Tests', () => {
   test('responsive layout at mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // App should load without errors at mobile width
     const app = page.locator('#app-view');
@@ -170,11 +170,11 @@ test.describe('NICE Smoke Tests', () => {
 
   test('settings view renders correctly', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Navigate to settings
     await page.evaluate(() => { window.location.hash = '#/settings'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Settings', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Settings');
 
     // Settings renders without error (auth gate shows sign-in prompt)
     const viewContent = page.locator('#app-view');
@@ -186,10 +186,10 @@ test.describe('NICE Smoke Tests', () => {
 
   test('bridge view has schematic and blueprint tabs', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     // Bridge should have content
     const viewContent = page.locator('#app-view');
@@ -200,11 +200,11 @@ test.describe('NICE Smoke Tests', () => {
 
   test('prompt panel is visible on home', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Chat home should have input area
     const chatHome = page.locator('.chat-home');
-    await expect(chatHome).toBeVisible({ timeout: 5000 });
+    await expect(chatHome).toBeVisible();
   });
 });
 
@@ -217,7 +217,7 @@ test.describe('NICE Accessibility', () => {
 
   test('home view has no critical accessibility violations', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -231,9 +231,9 @@ test.describe('NICE Accessibility', () => {
 
   test('bridge view has no critical accessibility violations', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -252,7 +252,7 @@ test.describe('NICE Accessibility', () => {
 
   test('all images have alt text or are decorative', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Check all images have alt attributes
     const images = await page.locator('img').all();
@@ -275,13 +275,13 @@ test.describe('NICE Feature Tests', () => {
 
   test('theme creator has color pickers', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     await page.evaluate(() => { window.location.hash = '#/theme-editor'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Theme Editor', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Theme Editor');
 
     // Wait for page transition to complete and color inputs to render
-    await expect(page.locator('input[type="color"]').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('input[type="color"]').first()).toBeVisible();
     const colorInputs = page.locator('input[type="color"]');
     const count = await colorInputs.count();
     expect(count).toBeGreaterThanOrEqual(5);
@@ -289,7 +289,7 @@ test.describe('NICE Feature Tests', () => {
 
   test('bridge missions tab renders', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user so missions view renders (it has an auth gate)
     await page.evaluate(() => {
@@ -301,7 +301,7 @@ test.describe('NICE Feature Tests', () => {
       document.querySelectorAll('.achievement-unlock, .notify-toast').forEach(el => el.remove());
       window.location.hash = '#/bridge?tab=missions';
     });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     // Bridge view should render
     const viewContent = page.locator('#app-view');
@@ -310,7 +310,7 @@ test.describe('NICE Feature Tests', () => {
 
   test('bridge log tab renders', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user
     await page.evaluate(() => {
@@ -319,7 +319,7 @@ test.describe('NICE Feature Tests', () => {
 
     // Navigate to Bridge log tab
     await page.evaluate(() => { window.location.hash = '#/bridge?tab=log'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     // Should render without crash
     const viewContent = page.locator('#app-view');
@@ -328,7 +328,7 @@ test.describe('NICE Feature Tests', () => {
 
   test('full journey: navigate zones and verify no errors', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user
     await page.evaluate(() => {
@@ -337,17 +337,17 @@ test.describe('NICE Feature Tests', () => {
 
     // 1. Navigate to Bridge
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
     const viewContent = page.locator('#app-view');
     await expect(viewContent).toBeVisible();
 
     // 2. Navigate to Security
     await page.evaluate(() => { window.location.hash = '#/security'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Security', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Security');
 
     // 3. Dock redirects to Home
     await page.evaluate(() => { window.location.hash = '#/dock'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     // 4. Verify MissionRunner module is loaded
     const hasMissionRunner = await page.evaluate(() => typeof MissionRunner === 'object' && typeof MissionRunner.run === 'function');
@@ -371,7 +371,7 @@ test.describe('NICE Feature Tests', () => {
 
   test('old routes redirect correctly', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // /missions → /bridge?tab=missions
     await page.evaluate(() => { window.location.hash = '#/missions'; });
@@ -401,7 +401,7 @@ test.describe('NICE Feature Tests', () => {
 
   test('streamlined journey: prompt panel and agent matching', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user and activate an agent
     await page.evaluate(() => {
@@ -497,15 +497,15 @@ test.describe('NICE Auth Flow', () => {
 
   test('sign-in modal opens and has form fields', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Click sign-in button (in header or auth-gate)
     const signInBtn = page.locator('button:has-text("Sign In"), .btn:has-text("SIGN IN")').first();
-    if (await signInBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await signInBtn.isVisible().catch(() => false)) {
       await signInBtn.click();
       // Auth modal should appear
       const modal = page.locator('.auth-modal, #auth-modal');
-      if (await modal.isVisible({ timeout: 3000 }).catch(() => false)) {
+      if (await modal.isVisible().catch(() => false)) {
         // Should have email and password fields
         await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible();
         await expect(page.locator('input[type="password"]').first()).toBeVisible();
@@ -515,11 +515,11 @@ test.describe('NICE Auth Flow', () => {
 
   test('unauthenticated users can navigate views without errors', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Navigate to bridge without authentication
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     // Page should render without crashing (either auth gate or demo content)
     const viewContent = page.locator('#app-view');
@@ -539,14 +539,14 @@ test.describe('NICE Performance', () => {
   test('home view loads within 3 seconds', async ({ page }) => {
     const start = Date.now();
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
     const loadTime = Date.now() - start;
     expect(loadTime).toBeLessThan(3000);
   });
 
   test('view transitions complete within 1 second', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     const views = ['#/bridge', '#/security', '#/settings', '#/'];
     for (const hash of views) {
@@ -560,7 +560,7 @@ test.describe('NICE Performance', () => {
 
   test('no memory leaks from rapid navigation', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user
     await page.evaluate(() => {
@@ -596,7 +596,7 @@ test.describe('NICE Blueprint Drawer', () => {
   // TODO: fix drawer tests — drawer doesn't open in CI after schematic-default change
   test.skip('clicking a blueprint card opens the detail drawer', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user so blueprints view renders, also dismiss first-mission tour
     await page.evaluate(() => {
@@ -605,17 +605,17 @@ test.describe('NICE Blueprint Drawer', () => {
 
     // Navigate to bridge blueprints tab
     await page.evaluate(() => { window.location.hash = '#/bridge?tab=blueprints'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
     // Wait for grid to render
-    await expect(page.locator('.tcg-card').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.tcg-card').first()).toBeVisible();
 
     // Click first card
     await page.locator('.tcg-card.bp-card-clickable').first().click();
 
     // Drawer should open
     const drawer = page.locator('#bp-drawer.open');
-    await expect(drawer).toBeVisible({ timeout: 5000 });
+    await expect(drawer).toBeVisible();
 
     // Drawer should have a close button
     const closeBtn = drawer.locator('.bp-drawer-close');
@@ -623,12 +623,12 @@ test.describe('NICE Blueprint Drawer', () => {
 
     // Close with ESC
     await page.keyboard.press('Escape');
-    await expect(page.locator('#bp-drawer.open')).toHaveCount(0, { timeout: 2000 });
+    await expect(page.locator('#bp-drawer.open')).toHaveCount(0);
   });
 
   test.skip('drawer can be opened programmatically', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Inject mock user
     await page.evaluate(() => {
@@ -636,8 +636,8 @@ test.describe('NICE Blueprint Drawer', () => {
     });
 
     await page.evaluate(() => { window.location.hash = '#/bridge?tab=blueprints'; });
-    await expect(page.locator('#app-page-title')).toHaveText('Bridge', { timeout: 5000 });
-    await expect(page.locator('.tcg-card').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#app-page-title')).toHaveText('Bridge');
+    await expect(page.locator('.tcg-card').first()).toBeVisible();
 
     // Open drawer via public API using first card's ID and wait for .open class
     const opened = await page.evaluate(() => {
@@ -657,7 +657,7 @@ test.describe('NICE Blueprint Drawer', () => {
     });
 
     expect(opened).toBe(true);
-    await expect(page.locator('#bp-drawer.open')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('#bp-drawer.open')).toBeVisible();
   });
 });
 
@@ -671,7 +671,7 @@ test.describe('NICE Focus Management', () => {
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Focus first sidebar link
     const firstLink = page.locator('.side-link').first();
@@ -688,7 +688,7 @@ test.describe('NICE Focus Management', () => {
 
   test('ARIA landmarks are present', async ({ page }) => {
     await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached({ timeout: 10000 });
+    await expect(page.locator('#app-page-title')).toBeAttached();
 
     // Check for main landmark
     const main = page.locator('[role="main"], main');
