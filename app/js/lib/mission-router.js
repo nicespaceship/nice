@@ -172,9 +172,9 @@ const MissionRouter = (() => {
       '## Crew\n' + crewLines + '\n\n' +
       'Respond ONLY with JSON: {"agent_id":"...","reasoning":"one sentence why"}';
 
-    var { data, error } = await SB.functions.invoke('llm-proxy', {
+    var { data, error } = await SB.functions.invoke('nice-ai', {
       body: {
-        model: 'claude-4-sonnet',
+        model: 'gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt },

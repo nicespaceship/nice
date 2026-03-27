@@ -227,7 +227,7 @@ const ShipLog = (() => {
     messages.push({ role: 'user', content: prompt });
 
     return {
-      model:       config.model || 'claude-4-sonnet',
+      model:       config.model || 'gemini-2.5-flash',
       messages,
       temperature: config.temperature || 0.7,
       max_tokens:  config.max_tokens || 1024,
@@ -239,7 +239,7 @@ const ShipLog = (() => {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
     const params = _buildLLMParams(blueprint, prompt, context, config);
-    const { data, error } = await SB.functions.invoke('llm-proxy', { body: params });
+    const { data, error } = await SB.functions.invoke('nice-ai', { body: params });
 
     if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Edge function error');
     if (!data || data.error) throw new Error(data?.error || 'Empty response from edge function');
