@@ -1,163 +1,196 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Vault View
-   Connect LLM providers and verify agent blueprint certificates.
+   AI Model selector. NICE provides all LLMs — users choose which
+   models their agents can use. Free tier = Gemini Flash.
+   Premium models cost tokens (purchased via Stripe).
 ═══════════════════════════════════════════════════════════════════ */
 
 const VaultView = (() => {
   const title = 'Vault';
-  const _esc = Utils.esc;
+  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
 
+  /* ── Model Catalog ──────────────────────────────────────────── */
+  const MODEL_CATALOG = [
+    // Free tier
+    { id: 'gemini-2.5-flash',    name: 'Gemini 2.5 Flash',   provider: 'Google',    icon: '🔵', tier: 'free',    speed: 'fast',   quality: 'good',    desc: 'Fast & free. Great for most tasks.' },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Lite',  provider: 'Google',    icon: '🔵', tier: 'free',    speed: 'fastest', quality: 'basic',   desc: 'Ultra-fast for simple tasks.' },
+    // Premium
+    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'Anthropic', icon: '🟣', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'Best balance of speed and intelligence.' },
+    { id: 'claude-opus-4-6',     name: 'Claude Opus 4',       provider: 'Anthropic', icon: '🟣', tier: 'premium', speed: 'slow',   quality: 'best',    desc: 'Most capable model. Complex reasoning.' },
+    { id: 'gpt-5.2',             name: 'GPT-5.2',             provider: 'OpenAI',    icon: '🟢', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'OpenAI\'s latest flagship model.' },
+    { id: 'gpt-5-mini',          name: 'GPT-5 Mini',          provider: 'OpenAI',    icon: '🟢', tier: 'premium', speed: 'fast',   quality: 'good',    desc: 'Fast and affordable from OpenAI.' },
+    { id: 'gemini-2.5-pro',      name: 'Gemini 2.5 Pro',      provider: 'Google',    icon: '🔵', tier: 'premium', speed: 'medium', quality: 'excellent', desc: 'Google\'s most capable model.' },
+    // Budget
+    { id: 'deepseek-chat',       name: 'DeepSeek V3',         provider: 'DeepSeek',  icon: '🧠', tier: 'budget',  speed: 'fast',   quality: 'good',    desc: 'Powerful open-weight model. Very affordable.' },
+    { id: 'mistral-large-latest', name: 'Mistral Large 3',    provider: 'Mistral',   icon: '🟠', tier: 'budget',  speed: 'fast',   quality: 'good',    desc: 'European AI. Strong multilingual.' },
+    { id: 'grok-4',              name: 'Grok 4',              provider: 'xAI',       icon: '⚪', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'xAI\'s real-time knowledge model.' },
+  ];
+
+  const TIER_LABELS = { free: '✦ FREE', premium: '⚡ PREMIUM', budget: '💰 BUDGET' };
+  const TIER_CLASSES = { free: 'tier-free', premium: 'tier-premium', budget: 'tier-budget' };
+  const SPEED_BARS = { fastest: '████░', fast: '███░░', medium: '██░░░', slow: '█░░░░' };
+  const QUALITY_BARS = { best: '████░', excellent: '███░░', good: '██░░░', basic: '█░░░░' };
+
+  /* ── Render ─────────────────────────────────────────────────── */
   function render(el) {
-    // Hydrate from localStorage if not yet in state
-    if (!State.get('llm_connections')) {
-      try { State.set('llm_connections', JSON.parse(localStorage.getItem('nice-llm-connections') || '{}')); } catch { State.set('llm_connections', {}); }
-    }
-    const connections = State.get('llm_connections') || {};
-    const connectedCount = Object.values(connections).filter(Boolean).length;
+    // Get enabled models from state (default: free models on)
+    const enabled = State.get('enabled_models') || _defaultEnabled();
+    const tokenBalance = State.get('token_balance') || { balance: 0, free_tier_remaining: 100000 };
+    const totalAvailable = (tokenBalance.balance || 0) + (tokenBalance.free_tier_remaining || 0);
+    const enabledCount = Object.values(enabled).filter(Boolean).length;
+    const freeModels = MODEL_CATALOG.filter(m => m.tier === 'free');
+    const premiumModels = MODEL_CATALOG.filter(m => m.tier === 'premium');
+    const budgetModels = MODEL_CATALOG.filter(m => m.tier === 'budget');
 
     el.innerHTML = `
       <div class="vault-wrap">
-        <!-- LLM Connections -->
-        <div class="vault-providers">
-          <h3 class="vault-section-title">LLM Connections</h3>
-          <p class="vault-section-desc">Connect your AI provider accounts. Agents use these to run missions.</p>
-          <div class="vault-provider-grid" id="vault-provider-grid"></div>
+
+        <!-- Token Balance Bar -->
+        <div class="vault-balance-bar">
+          <div class="vault-balance-info">
+            <span class="vault-balance-label">Token Balance</span>
+            <span class="vault-balance-num">${totalAvailable.toLocaleString()}</span>
+          </div>
+          <div class="vault-balance-actions">
+            <button class="btn btn-sm" id="vault-buy-tokens">Buy Tokens</button>
+          </div>
         </div>
 
-        <!-- Vault Stats -->
+        <!-- Free Tier -->
+        <div class="vault-section">
+          <div class="vault-section-hdr">
+            <h3 class="vault-section-title">✦ Free Models</h3>
+            <span class="vault-section-badge free">Always available — no tokens required</span>
+          </div>
+          <div class="vault-model-grid" id="vault-free-models">
+            ${freeModels.map(m => _renderModelCard(m, enabled)).join('')}
+          </div>
+        </div>
+
+        <!-- Premium Tier -->
+        <div class="vault-section">
+          <div class="vault-section-hdr">
+            <h3 class="vault-section-title">⚡ Premium Models</h3>
+            <span class="vault-section-badge premium">Uses tokens — best quality</span>
+          </div>
+          <div class="vault-model-grid" id="vault-premium-models">
+            ${premiumModels.map(m => _renderModelCard(m, enabled)).join('')}
+          </div>
+        </div>
+
+        <!-- Budget Tier -->
+        <div class="vault-section">
+          <div class="vault-section-hdr">
+            <h3 class="vault-section-title">💰 Budget Models</h3>
+            <span class="vault-section-badge budget">Uses tokens — cost-effective</span>
+          </div>
+          <div class="vault-model-grid" id="vault-budget-models">
+            ${budgetModels.map(m => _renderModelCard(m, enabled)).join('')}
+          </div>
+        </div>
+
+        <!-- Stats -->
         <div class="vault-stats">
           <div class="vault-stat">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-integrations"/></svg>
-            <span class="vault-stat-num">${connectedCount}/${typeof LLM_PROVIDERS !== 'undefined' ? LLM_PROVIDERS.length : 0}</span>
-            <span class="vault-stat-label">Connected</span>
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-cpu"/></svg>
+            <span class="vault-stat-num">${enabledCount}/${MODEL_CATALOG.length}</span>
+            <span class="vault-stat-label">Models Active</span>
           </div>
           <div class="vault-stat">
-            <span class="status-dot ${connectedCount > 0 ? 'dot-g' : 'dot-r'}"></span>
-            <span class="vault-stat-num">${connectedCount > 0 ? 'Ready' : 'No Providers'}</span>
-            <span class="vault-stat-label">Fleet Status</span>
+            <span class="status-dot dot-g"></span>
+            <span class="vault-stat-num">NICE Auto</span>
+            <span class="vault-stat-label">Picks the best model for each task</span>
           </div>
         </div>
-
       </div>
     `;
 
-    _renderProviders();
+    _bindEvents(el);
   }
 
-  /* ── LLM Provider Connections ─────────────────────────────── */
+  /* ── Model Card ─────────────────────────────────────────────── */
+  function _renderModelCard(model, enabled) {
+    const isOn = !!enabled[model.id];
+    const isFree = model.tier === 'free';
+    const tierLabel = TIER_LABELS[model.tier];
+    const tierClass = TIER_CLASSES[model.tier];
 
-  function _renderProviders() {
-    const grid = document.getElementById('vault-provider-grid');
-    if (!grid || typeof LLM_PROVIDERS === 'undefined') return;
-
-    const connections = State.get('llm_connections') || {};
-
-    grid.innerHTML = LLM_PROVIDERS.map(p => {
-      const connected = !!connections[p.id];
-      return `
-        <div class="vault-provider-card ${connected ? 'connected' : ''}">
-          <div class="vault-provider-hdr">
-            <span class="vault-provider-icon">${p.icon}</span>
-            <span class="vault-provider-name">${_esc(p.name)}</span>
+    return `
+      <div class="vault-model-card ${isOn ? 'active' : ''} ${tierClass}" data-model="${model.id}">
+        <div class="vault-model-hdr">
+          <span class="vault-model-icon">${model.icon}</span>
+          <div class="vault-model-name-wrap">
+            <span class="vault-model-name">${_esc(model.name)}</span>
+            <span class="vault-model-provider">${_esc(model.provider)}</span>
           </div>
-          <div class="vault-provider-status">
-            <span class="status-dot ${connected ? 'dot-g' : 'dot-off'}"></span>
-            <span>${connected ? 'Connected' : 'Not Connected'}</span>
-          </div>
-          ${connected
-            ? `<button class="btn btn-sm vault-provider-disconnect" data-provider="${p.id}">Disconnect</button>`
-            : `<button class="btn btn-sm btn-primary vault-provider-connect" data-provider="${p.id}">Connect</button>`
-          }
+          <label class="vault-toggle">
+            <input type="checkbox" ${isOn ? 'checked' : ''} ${isFree ? 'checked disabled' : ''} data-model="${model.id}">
+            <span class="vault-toggle-slider"></span>
+          </label>
         </div>
-      `;
-    }).join('');
-
-    _bindProviderEvents();
+        <p class="vault-model-desc">${_esc(model.desc)}</p>
+        <div class="vault-model-meta">
+          <span class="vault-model-tier ${tierClass}">${tierLabel}</span>
+          <span class="vault-model-speed" title="Speed">⚡ ${SPEED_BARS[model.speed]}</span>
+          <span class="vault-model-quality" title="Quality">🧠 ${QUALITY_BARS[model.quality]}</span>
+        </div>
+      </div>
+    `;
   }
 
-  function _bindProviderEvents() {
-    document.querySelectorAll('.vault-provider-connect').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.provider;
-        const provider = LLM_PROVIDERS.find(p => p.id === id);
-        if (!provider) return;
+  /* ── Events ─────────────────────────────────────────────────── */
+  function _bindEvents(el) {
+    // Model toggles
+    el.querySelectorAll('.vault-toggle input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const modelId = cb.dataset.model;
+        const model = MODEL_CATALOG.find(m => m.id === modelId);
+        if (!model || model.tier === 'free') return; // Can't disable free models
 
-        // Verify connection by sending a test request to llm-proxy
-        const btn2 = document.querySelector(`.vault-provider-connect[data-provider="${id}"]`);
-        if (btn2) { btn2.disabled = true; btn2.textContent = 'Verifying...'; }
+        const enabled = State.get('enabled_models') || _defaultEnabled();
+        enabled[modelId] = cb.checked;
+        State.set('enabled_models', enabled);
+        localStorage.setItem('nice-enabled-models', JSON.stringify(enabled));
 
-        const testModels = { anthropic: 'claude-4-sonnet', openai: 'gpt-4o-mini', google: 'gemini-2-flash', mistral: 'mistral-large', xai: 'grok-3-mini', perplexity: 'sonar', deepseek: 'deepseek-chat', meta: 'llama-4-scout' };
-        const testModel = testModels[id] || 'claude-4-sonnet';
+        // Update card visual
+        const card = cb.closest('.vault-model-card');
+        if (card) card.classList.toggle('active', cb.checked);
 
-        try {
-          if (typeof SB === 'undefined' || !SB.functions) throw new Error('Not signed in');
-          const { data, error } = await SB.functions.invoke('llm-proxy', {
-            body: { model: testModel, messages: [{ role: 'user', content: 'Reply with OK' }], temperature: 0, max_tokens: 10 },
-          });
-          if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Connection failed');
-          if (!data || data.error) throw new Error(data?.error || 'No response from provider');
-
-          // Success — mark connected
-          const connections = State.get('llm_connections') || {};
-          connections[id] = { connected_at: new Date().toISOString(), model: testModel };
-          State.set('llm_connections', connections);
-          localStorage.setItem('nice-llm-connections', JSON.stringify(connections));
-
-          _renderProviders();
-          _updateStats();
-
-          if (typeof Notify !== 'undefined') {
-            Notify.send({ title: 'Provider Connected', message: `${provider.name} verified and connected.`, type: 'system' });
-          }
-          if (typeof AuditLog !== 'undefined') {
-            AuditLog.log({ action: 'connect_provider', target: provider.name });
-          }
-          if (typeof Gamification !== 'undefined') {
-            Gamification.addXP('connect_provider');
-          }
-        } catch (err) {
-          console.warn('[Vault] Connection test failed:', err.message);
-          if (typeof Notify !== 'undefined') {
-            Notify.send({ title: 'Connection Failed', message: `${provider.name}: ${err.message}`, type: 'error' });
-          }
-          _renderProviders(); // re-render to reset button state
-        }
-      });
-    });
-
-    document.querySelectorAll('.vault-provider-disconnect').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.provider;
-        const provider = LLM_PROVIDERS.find(p => p.id === id);
-        if (!provider) return;
-        if (!confirm(`Disconnect ${provider.name}? Agents using this provider will lose access.`)) return;
-
-        const connections = State.get('llm_connections') || {};
-        delete connections[id];
-        State.set('llm_connections', connections);
-        localStorage.setItem('nice-llm-connections', JSON.stringify(connections));
-
-        _renderProviders();
-        _updateStats();
+        // Update stats
+        const count = Object.values(enabled).filter(Boolean).length;
+        const statNum = el.querySelector('.vault-stat-num');
+        if (statNum) statNum.textContent = `${count}/${MODEL_CATALOG.length}`;
 
         if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Provider Disconnected', message: `${provider.name} has been disconnected.`, type: 'system' });
-        }
-        if (typeof AuditLog !== 'undefined') {
-          AuditLog.log({ action: 'disconnect_provider', target: provider.name });
+          Notify.send({
+            title: cb.checked ? 'Model Enabled' : 'Model Disabled',
+            message: `${model.name} is now ${cb.checked ? 'available' : 'disabled'} for your agents.`,
+            type: 'system',
+          });
         }
       });
     });
+
+    // Buy tokens button
+    const buyBtn = el.querySelector('#vault-buy-tokens');
+    if (buyBtn) {
+      buyBtn.addEventListener('click', () => {
+        if (typeof Router !== 'undefined') Router.go('#/wallet');
+      });
+    }
   }
 
-  function _updateStats() {
-    const connections = State.get('llm_connections') || {};
-    const count = Object.values(connections).filter(Boolean).length;
-    const nums = document.querySelectorAll('.vault-stat-num');
-    if (nums[0]) nums[0].textContent = `${count}/${LLM_PROVIDERS.length}`;
-    if (nums[1]) nums[1].textContent = count > 0 ? 'Ready' : 'No Providers';
-    const dots = document.querySelectorAll('.vault-stats .status-dot');
-    if (dots[0]) { dots[0].classList.toggle('dot-g', count > 0); dots[0].classList.toggle('dot-r', count === 0); }
+  /* ── Defaults ───────────────────────────────────────────────── */
+  function _defaultEnabled() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('nice-enabled-models') || 'null');
+      if (saved) return saved;
+    } catch { /* ignore */ }
+
+    // Default: free models on, everything else off
+    const defaults = {};
+    MODEL_CATALOG.forEach(m => { defaults[m.id] = m.tier === 'free'; });
+    return defaults;
   }
 
   return { title, render };
