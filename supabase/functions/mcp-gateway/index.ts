@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "invoke") {
       if (!tool) return jsonResponse({ error: "tool name is required for invoke" }, 400, req);
-      return await handleInvoke(conn, mcpHeaders, tool, input || {});
+      return await handleInvoke(conn, mcpHeaders, tool, input || {}, user.email);
     }
 
     return jsonResponse({ error: `Unknown action: ${action}` }, 400, req);
@@ -216,6 +216,7 @@ async function handleInvoke(
   headers: Record<string, string>,
   toolName: string,
   toolInput: Record<string, unknown>,
+  userEmail?: string,
 ) {
   const rpcBody = {
     jsonrpc: "2.0",
@@ -224,6 +225,8 @@ async function handleInvoke(
     params: {
       name: toolName,
       arguments: toolInput,
+      // Pass user context so MCP servers can impersonate the correct user
+      context: { user_email: userEmail },
     },
   };
 

@@ -8,7 +8,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
  *   tools/call  — executes a Gmail tool (search, read, labels)
  *
  * Auth: Google Workspace service account (GOOGLE_SERVICE_ACCOUNT secret).
- *       Signs JWT, exchanges for access token, impersonates GOOGLE_IMPERSONATE_EMAIL.
+ *       Signs JWT per-user, exchanges for access token, impersonates the calling user.
+ *       User email passed via params.context.user_email from mcp-gateway.
+ *       Only allows @nicespaceship.com emails (domain-wide delegation scope).
  *       Scopes: Gmail (readonly), Calendar (readonly), Drive (readonly).
  * Called by: mcp-gateway edge function (proxied from NICE agents)
  */
@@ -86,8 +88,11 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/drive.readonly",
 ].join(" ");
 
-// Cache access token (valid for 1 hour)
-let _cachedToken: { token: string; expires: number } | null = null;
+// Per-user token cache (valid for 1 hour, keyed by email)
+const _tokenCache = new Map<string, { token: string; expires: number }>();
+
+// Only allow impersonation of users on this domain
+const ALLOWED_DOMAIN = "nicespaceship.com";
 
 function base64url(data: Uint8Array): string {
   return btoa(String.fromCharCode(...data))
@@ -115,26 +120,31 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   );
 }
 
-async function getAccessToken(): Promise<string> {
+async function getAccessToken(userEmail: string): Promise<string> {
+  // Validate domain — only allow nicespaceship.com users
+  const domain = userEmail.split("@")[1];
+  if (domain !== ALLOWED_DOMAIN) {
+    throw new Error(`Domain "${domain}" not authorized. Only @${ALLOWED_DOMAIN} accounts are supported.`);
+  }
+
   // Return cached token if still valid (with 5min buffer)
-  if (_cachedToken && _cachedToken.expires > Date.now() + 300_000) {
-    return _cachedToken.token;
+  const cached = _tokenCache.get(userEmail);
+  if (cached && cached.expires > Date.now() + 300_000) {
+    return cached.token;
   }
 
   const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT");
   if (!saJson) throw new Error("GOOGLE_SERVICE_ACCOUNT secret not configured");
 
   const sa = JSON.parse(saJson);
-  const impersonateEmail = Deno.env.get("GOOGLE_IMPERSONATE_EMAIL") || "ben@nicespaceship.com";
-
   const now = Math.floor(Date.now() / 1000);
 
-  // Build JWT header + payload
+  // Build JWT header + payload — impersonate the requesting user
   const header = base64urlStr(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const payload = base64urlStr(
     JSON.stringify({
       iss: sa.client_email,
-      sub: impersonateEmail,
+      sub: userEmail,
       scope: GOOGLE_SCOPES,
       aud: GOOGLE_TOKEN_URI,
       iat: now,
@@ -163,14 +173,23 @@ async function getAccessToken(): Promise<string> {
   }
 
   const data = await res.json();
-  _cachedToken = { token: data.access_token, expires: Date.now() + data.expires_in * 1000 };
+  _tokenCache.set(userEmail, { token: data.access_token, expires: Date.now() + data.expires_in * 1000 });
+
+  // Evict stale cache entries (max 100 users)
+  if (_tokenCache.size > 100) {
+    const now = Date.now();
+    for (const [email, entry] of _tokenCache) {
+      if (entry.expires < now) _tokenCache.delete(email);
+    }
+  }
+
   return data.access_token;
 }
 
 /* ── Gmail API Helpers ───────────────────────────────────────── */
 
-async function gmailFetch(path: string): Promise<Response> {
-  const token = await getAccessToken();
+async function gmailFetch(path: string, userEmail: string): Promise<Response> {
+  const token = await getAccessToken(userEmail);
   const res = await fetch(`${GMAIL_API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -225,14 +244,14 @@ function getHeader(headers: any[], name: string): string {
 
 /* ── Tool Executors ──────────────────────────────────────────── */
 
-async function searchMessages(args: any): Promise<string> {
+async function searchMessages(args: any, userEmail: string): Promise<string> {
   const q = args?.q || "";
   const maxResults = Math.min(Math.max(args?.maxResults || 10, 1), 20);
 
   const params = new URLSearchParams({ maxResults: String(maxResults) });
   if (q) params.set("q", q);
 
-  const res = await gmailFetch(`/messages?${params}`);
+  const res = await gmailFetch(`/messages?${params}`, userEmail);
   const data = await res.json();
 
   if (!data.messages || data.messages.length === 0) {
@@ -243,7 +262,7 @@ async function searchMessages(args: any): Promise<string> {
   const details = await Promise.all(
     data.messages.slice(0, maxResults).map(async (msg: any) => {
       try {
-        const r = await gmailFetch(`/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`);
+        const r = await gmailFetch(`/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, userEmail);
         const m = await r.json();
         const subject = getHeader(m.payload?.headers, "Subject") || "(no subject)";
         const from = getHeader(m.payload?.headers, "From") || "unknown";
@@ -259,10 +278,10 @@ async function searchMessages(args: any): Promise<string> {
   return `Found ${data.resultSizeEstimate || data.messages.length} messages${q ? ` matching "${q}"` : ""}:\n\n${details.join("\n\n")}`;
 }
 
-async function readMessage(args: any): Promise<string> {
+async function readMessage(args: any, userEmail: string): Promise<string> {
   if (!args?.messageId) return "Error: messageId is required.";
 
-  const res = await gmailFetch(`/messages/${args.messageId}?format=full`);
+  const res = await gmailFetch(`/messages/${args.messageId}?format=full`, userEmail);
   const msg = await res.json();
 
   const subject = getHeader(msg.payload?.headers, "Subject") || "(no subject)";
@@ -289,8 +308,8 @@ async function readMessage(args: any): Promise<string> {
     .join("\n");
 }
 
-async function listLabels(): Promise<string> {
-  const res = await gmailFetch("/labels");
+async function listLabels(userEmail: string): Promise<string> {
+  const res = await gmailFetch("/labels", userEmail);
   const data = await res.json();
 
   if (!data.labels) return "No labels found.";
@@ -343,18 +362,30 @@ Deno.serve(async (req: Request) => {
     if (method === "tools/call") {
       const toolName = params?.name;
       const args = params?.arguments || {};
+      const userEmail = params?.context?.user_email;
+
+      if (!userEmail) {
+        return new Response(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            id,
+            error: { code: -32602, message: "params.context.user_email is required. The mcp-gateway must pass the authenticated user's email." },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       let resultText: string;
 
       switch (toolName) {
         case "gmail_search_messages":
-          resultText = await searchMessages(args);
+          resultText = await searchMessages(args, userEmail);
           break;
         case "gmail_read_message":
-          resultText = await readMessage(args);
+          resultText = await readMessage(args, userEmail);
           break;
         case "gmail_list_labels":
-          resultText = await listLabels();
+          resultText = await listLabels(userEmail);
           break;
         default:
           return new Response(
