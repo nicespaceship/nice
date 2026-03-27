@@ -194,7 +194,7 @@ const MissionRunner = (() => {
     } catch { /* non-critical */ }
 
     if (typeof Notify !== 'undefined') {
-      Notify.send(title, type === 'error' ? 'error' : 'success');
+      Notify.send({ title, message: body, type: type === 'error' ? 'error' : 'success' });
     }
   }
 

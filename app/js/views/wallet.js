@@ -10,9 +10,9 @@ const WalletView = (() => {
 
   /* ── Token Packages ─────────────────────────────────────────── */
   const PACKAGES = [
-    { id: 'starter',    name: 'Starter',    tokens: 500000,    price: '$4.99',  url: 'https://buy.stripe.com/bJe5kCbtm3Fu4k5fUc33W00', badge: '' },
-    { id: 'pro',        name: 'Pro',        tokens: 5000000,   price: '$19.99', url: 'https://buy.stripe.com/7sY7sK54YgsgeYJ6jC33W01', badge: 'Best Value' },
-    { id: 'enterprise', name: 'Enterprise', tokens: 25000000,  price: '$69.99', url: 'https://buy.stripe.com/6oU14meFy4Jy5o937q33W02', badge: 'Max Power' },
+    { id: 'starter',    name: 'Starter',    tokens: 500000,    price: '$4.99',  url: 'https://buy.stripe.com/aFa5kC7d63FudUF37q33W03', badge: '' },
+    { id: 'pro',        name: 'Pro',        tokens: 5000000,   price: '$19.99', url: 'https://buy.stripe.com/9B628qbtmek8aIt37q33W04', badge: 'Best Value' },
+    { id: 'enterprise', name: 'Enterprise', tokens: 25000000,  price: '$69.99', url: 'https://buy.stripe.com/14AaEW40Uek84k57nG33W05', badge: 'Max Power' },
   ];
 
   /* ── Render ─────────────────────────────────────────────────── */
