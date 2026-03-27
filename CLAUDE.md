@@ -12,10 +12,37 @@ At the start of each session, run `git worktree prune` and delete any stale `cla
 ## Project Overview
 **NICE™** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Vercel via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
 
+NICE IS the LLM provider — users never deal with API keys. NICE holds all provider keys server-side. Users toggle which models they want active. Free tier = Gemini 2.5 Flash. Premium models cost tokens (purchased via Stripe).
+
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
 - Region: `us-west-1`
 - 308 blueprints seeded (261 agents + 43 spaceships + 4 special)
+
+### Edge Functions (8)
+| Function | Purpose |
+|----------|---------|
+| `nice-ai` | Multi-provider LLM proxy (Gemini, Anthropic, OpenAI, Mistral, DeepSeek, xAI) |
+| `gmail-mcp` | Gmail MCP server (search, read, labels) — OAuth + service account dual auth |
+| `calendar-mcp` | Google Calendar MCP server (events, calendars) |
+| `drive-mcp` | Google Drive MCP server (search, read, metadata) |
+| `mcp-gateway` | MCP tool router — auth, token refresh, tool invocation |
+| `google-oauth` | OAuth 2.0 flow (authorize, callback, disconnect) for any Google account |
+| `stripe-webhook` | Credits tokens on Stripe purchase (500K/5M/25M packages) |
+| `blueprint-search` | Full-text blueprint catalog search |
+
+### Database Tables
+| Table | Purpose |
+|-------|---------|
+| `blueprints` | Agent + spaceship blueprint catalog (308 seeded) |
+| `user_agents` | Activated agent instances per user |
+| `user_spaceships` | Activated spaceship instances per user |
+| `tasks` | Missions (queued → running → completed/failed) |
+| `ship_log` | Agent conversation history per spaceship |
+| `mcp_connections` | MCP server connections with OAuth tokens |
+| `token_balances` | Per-user token balance (free tier + purchased) |
+| `token_transactions` | Purchase/usage transaction log |
+| `vault_secrets` | Encrypted credential storage |
 
 ## XP Progression System
 | Class | Slots | Max Rarity | Rank | XP |
@@ -34,52 +61,47 @@ At the start of each session, run `git worktree prune` and delete any stale `cla
 ```
 ├── index.html              # Landing page (redirects to /app/)
 ├── assets/
-│   └── logo.svg            # Vector logo (inline in nav/footer with fill="currentColor")
+│   └── logo.svg            # Vector logo
 ├── public/
 │   ├── css/
-│   │   └── theme.css       # All styles — 8-mode theme engine + component styles
+│   │   └── theme.css       # Marketing site styles + skin engine
 │   └── js/
-│       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD, games
+│       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD
 ├── app/                    # NICE™ SPA Dashboard
-│   ├── index.html          # SPA shell with sidebar + view container
-│   ├── manifest.json       # PWA manifest with shortcuts & share target
-│   ├── sw.js               # Service Worker (auto-versioned) (offline, periodic sync, push)
+│   ├── index.html          # SPA shell (59 script tags in dependency order)
+│   ├── manifest.json       # PWA manifest
+│   ├── sw.js               # Service Worker v16 (offline, periodic sync, push)
 │   ├── css/
-│   │   └── app.css         # NICE component styles (2000+ lines)
+│   │   └── app.css         # NICE component styles (5000+ lines)
 │   └── js/
-│       ├── nice.js         # Main orchestrator (init, auth, presence, error handling)
-│       ├── lib/            # Shared IIFE modules (see table below)
-│       ├── views/          # View modules (see table below)
-│       └── __tests__/      # Vitest unit tests
-├── e2e/                    # Playwright E2E tests
-│   └── smoke.spec.js       # 9 smoke tests
+│       ├── nice.js         # Main orchestrator (init, auth, routing, error handling)
+│       ├── lib/            # 36 shared IIFE modules
+│       ├── views/          # 24 view modules
+│       └── __tests__/      # 17 Vitest test files (288 tests)
+├── supabase/
+│   └── functions/          # 8 Deno edge functions
+├── e2e/
+│   └── smoke.spec.js       # 14 Playwright E2E tests
 ├── desktop/                # Electron desktop wrapper
-│   ├── main.js             # BrowserWindow + system tray
-│   ├── preload.js          # contextBridge API
-│   └── package.json        # Electron dependencies
 ├── .github/workflows/
-│   └── ci.yml              # GitHub Actions (vitest + playwright)
-├── package.json            # npm config (vitest, playwright devDeps)
-├── vitest.config.js        # Unit test configuration
-├── playwright.config.js    # E2E test configuration
+│   └── ci.yml              # GitHub Actions (vitest + playwright, strict)
+├── package.json            # npm config
+├── vitest.config.js        # Unit test config
+├── playwright.config.js    # E2E config (60s timeout, 15s expect)
 └── CLAUDE.md               # This file
 ```
 
-## 8-Mode Theme Engine
-Themes are set via `data-theme` attribute on `<html>`. Each theme overrides CSS custom properties.
+## Skin System
+Skins are applied via the `Skin` module. Base theme uses CSS custom properties on `<html>`.
 
-| # | Theme Name     | Key Aesthetic                              | Font Stack               |
-|---|----------------|--------------------------------------------|--------------------------|
-| 1 | `spaceship`    | High-contrast monochrome (default)         | Inter / Orbitron         |
-| 2 | `robotech`     | Mecha red/black, angular                   | Rajdhani                 |
-| 3 | `navigator`    | Cyan/Blue HUD, scanlines                   | Rajdhani                 |
-| 4 | `solar`        | Orange/Gold, breathing glow animations     | Heavy sans-serif         |
-| 5 | `matrix`       | Digital Rain Green, terminal aesthetic     | Fira Code                |
-| 6 | `retro`        | 70s Teal/Orange/Brown, wavy patterns       | Playfair Display         |
-| 7 | `lcars`        | Star Trek modular, pastel palette          | Share Tech Mono          |
-| 8 | `pixel`        | 16-bit pixel art, chunky borders           | Press Start 2P           |
+| Skin | Aesthetic | Source |
+|------|-----------|--------|
+| Default (NICE) | Premium dark command center | Built-in |
+| Cyberpunk 2099 | Neon pink/cyan, glitch effects | Skin pack |
+| LCARS Starfleet | Star Trek modular, pastels | Skin pack |
+| The Matrix | Digital rain green, terminal | Skin pack |
 
-### Theme CSS Variables (per theme)
+### Skin CSS Variables
 - `--bg`, `--bg-alt` — background colors
 - `--text`, `--text-muted` — text colors
 - `--accent`, `--accent2` — primary/secondary accent
@@ -89,12 +111,9 @@ Themes are set via `data-theme` attribute on `<html>`. Each theme overrides CSS 
 - `--font-h`, `--font-b`, `--font-m` — heading/body/mono fonts
 - `--radius` — border radius
 
-### Theme Switching
-- JS module `Theme` in `app.js` manages switching via `Theme.set(name)`
-- Theme dock (8 colored buttons) is fixed at bottom of every page
-- Selection persisted in `localStorage` key `ns-theme`
-- Matrix theme activates canvas rain effect via `MatrixRain.toggle()`
-- Theme Creator view (`#/theme-creator`) allows building custom themes
+### Skin Switching
+- Persisted in `localStorage` key `ns-theme`
+- Theme Creator view (`#/theme-editor`) for custom skins
 
 ## NICE™ SPA Architecture
 
@@ -108,61 +127,121 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`)
-| Module            | File                 | Purpose                                                    |
-|-------------------|----------------------|------------------------------------------------------------|
-| `State`           | `state.js`           | Pub/sub state store: `get/set/setBatched/on/off`           |
-| `SB`              | `supabase.js`        | Supabase client wrapper: `db()`, `auth()`, `client`        |
-| `Router`          | `router.js`          | Hash router with param extraction & page transitions       |
-| `AuditLog`        | `audit-log.js`       | Persistent event logging (max 500 FIFO, localStorage)      |
-| `DataIO`          | `data-io.js`         | Export/import all NICE data as JSON                        |
-| `ActivityFeed`    | `activity-feed.js`   | Live event stream from Supabase realtime                   |
-| `Notify`          | `notify.js`          | Toast notifications, badge API, permission management      |
-| `Gamification`    | `gamification.js`    | XP system, ranks, ship classes, achievements               |
-| `CommandPalette`  | `command-palette.js` | Cmd+K fuzzy search overlay (routes + live data)            |
-| `Keyboard`        | `keyboard.js`        | Global keyboard shortcuts & chord system                   |
-| `McpBridge`       | `mcp-bridge.js`      | Bridges MCP connections to ToolRegistry for agents         |
+### Lib Modules (`app/js/lib/`) — 36 modules
+| Module | File | Purpose |
+|--------|------|---------|
+| `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
+| `SB` | `supabase.js` | Supabase client wrapper: `db()`, `auth()`, `client` |
+| `Router` | `router.js` | Hash router with param extraction & page transitions |
+| `Utils` | `utils.js` | Shared utilities (esc, debounce, format) |
+| `AuditLog` | `audit-log.js` | Persistent event logging (max 500 FIFO) |
+| `DataIO` | `data-io.js` | Export/import all NICE data as JSON |
+| `ActivityFeed` | `activity-feed.js` | Live event stream from Supabase realtime |
+| `Notify` | `notify.js` | Toast notifications, badge API |
+| `Gamification` | `gamification.js` | XP system, ranks, ship classes, achievements |
+| `CommandPalette` | `command-palette.js` | Cmd+K fuzzy search overlay |
+| `Keyboard` | `keyboard.js` | Global keyboard shortcuts & chord system |
+| `McpBridge` | `mcp-bridge.js` | Bridges MCP connections to ToolRegistry |
+| `ToolRegistry` | `tool-registry.js` | Central registry for agent tools |
+| `AgentExecutor` | `agent-executor.js` | ReAct loop: LLM → tool calls → observations |
+| `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management |
+| `MissionRouter` | `mission-router.js` | Routes prompts to optimal agent on spaceship |
+| `ShipLog` | `ship-log.js` | Agent conversation persistence to Supabase |
+| `LLMConfig` | `llm-config.js` | Model selection from enabled_models state |
+| `ModelIntel` | `model-intel.js` | Learns optimal models from mission history |
+| `BlueprintStore` | `blueprint-store.js` | Blueprint catalog with Supabase sync |
+| `CardRenderer` | `card-renderer.js` | Unified TCG card template renderer |
+| `Skin` | `skin.js` | Skin system (CSS variable overrides) |
+| `SkinPacks` | `skin-packs.js` | Premium skin definitions |
+| `Subscription` | `subscription.js` | Stripe subscription management |
+| `WorkflowEngine` | `workflow-engine.js` | Multi-step workflow execution |
+| `AuthModal` | `auth-modal.js` | Sign-in/sign-up modal |
+| `Favorites` | `favorites.js` | Sidebar favorites management |
+| `QuickNotes` | `quick-notes.js` | Ephemeral note-taking |
+| `SetupWizard` | `setup-wizard.js` | First-run onboarding wizard |
+| `ShipSetupWizard` | `ship-setup-wizard.js` | Spaceship activation wizard |
+| `PromptBuilder` | `prompt-builder.js` | System prompt construction |
+| `PreviewPanel` | `preview-panel.js` | Content preview rendering |
+| `MessageBar` | `message-bar.js` | Status message display |
+| `UpgradeModal` | `upgrade-modal.js` | Subscription upgrade prompts |
+| `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
+| `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
 
-### View Modules (`app/js/views/`)
-| View              | File                 | Route(s)                        | Title            |
-|-------------------|----------------------|---------------------------------|------------------|
-| `HomeView`        | `home.js`            | `#/`                            | Bridge           |
-| `BlueprintsView`  | `blueprints.js`      | `#/blueprints`                  | Blueprints (2 tabs) |
-| `LogView`         | `log-view.js`        | `#/log`                         | Log (3 tabs: Missions/Operations/Log) |
-| `DockView`        | `dock-view.js`       | `#/dock`                        | Dock (fleet + schematic) |
-| `AgentDetailView` | `agents.js`          | `#/agents/:id`                  | Agent Detail     |
-| `AgentBuilderView`| `agent-builder.js`   | `#/agents/new`                  | Agent Builder    |
-| `SpaceshipDetailView`| `spaceships.js`   | `#/spaceships/:id`              | Ship Detail      |
-| `MissionsView`    | `missions.js`        | (embedded in LogView)           | Missions         |
-| `AnalyticsView`   | `analytics.js`       | (embedded in LogView)           | Operations       |
-| `AuditLogView`    | `audit-log.js`       | (embedded in LogView)           | Captain's Log    |
-| `VaultView`       | `vault.js`           | (embedded in SecurityView)      | Vault            |
-| `SecurityView`    | `security.js`        | `#/security`                    | Security         |
-| `SettingsView`    | `settings.js`        | `#/settings`                    | Settings         |
-| `ProfileView`     | `profile.js`         | `#/profile`                     | Profile          |
-| `WalletView`      | `wallet.js`          | `#/wallet`                      | Wallet           |
-| `WorkflowDetailView`| `workflows.js`     | `#/workflows/:id`               | Workflow Detail  |
-| `ThemeCreatorView`| `theme-creator.js`   | `#/theme-editor`                | Theme Creator    |
+### View Modules (`app/js/views/`) — 24 views
+| View | File | Route(s) | Title |
+|------|------|----------|-------|
+| `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
+| `BlueprintsView` | `blueprints.js` | `#/bridge` | Bridge |
+| `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
+| `AgentBuilderView` | `agent-builder.js` | `#/bridge/agents/new` | Agent Builder |
+| `SpaceshipDetailView` | `spaceships.js` | `#/bridge/spaceships/:id` | Ship Detail |
+| `SpaceshipBuilderView` | `spaceship-builder.js` | `#/bridge/spaceships/new` | Ship Builder |
+| `SchematicView` | `schematic.js` | (embedded in BlueprintsView) | Schematic |
+| `MissionsView` | `missions.js` | (embedded in BlueprintsView) | Missions |
+| `AnalyticsView` | `analytics.js` | (embedded in BlueprintsView) | Operations |
+| `LogView` | `log-view.js` | (embedded in BlueprintsView) | Log |
+| `AuditLogView` | `audit-log.js` | (embedded in BlueprintsView) | Captain's Log |
+| `ShipLogView` | `ship-log-view.js` | (embedded in SchematicView) | Ship's Log |
+| `DockView` | `dock-view.js` | `#/dock` → redirects to `#/` | — |
+| `SecurityView` | `security.js` | `#/security` | Security |
+| `IntegrationsView` | `integrations.js` | (tab in SecurityView) | Integrations |
+| `VaultView` | `vault.js` | (section in IntegrationsView) | AI Models |
+| `WalletView` | `wallet.js` | (tab in SecurityView) | Wallet |
+| `SettingsView` | `settings.js` | `#/settings` | Settings |
+| `ProfileView` | `profile.js` | `#/profile` | Profile |
+| `CostView` | `cost.js` | (embedded) | Cost Tracker |
+| `AlertsView` | `alerts.js` | (embedded) | Alerts |
+| `WorkflowDetailView` | `workflows.js` | `#/workflows/:id` | Workflow Detail |
+| `ThemeCreatorView` | `theme-creator.js` | `#/theme-editor` | Theme Editor |
+| `PromptPanel` | `prompt-panel.js` | (global overlay) | Prompt Panel |
 
-### Script Load Order
-```
-state.js → supabase.js → router.js → [21 view scripts] →
-audit-log.js → data-io.js → activity-feed.js → notify.js → gamification.js →
-command-palette.js → keyboard.js → mcp-bridge.js → nice.js
-```
+### Security Page Tabs
+| Tab | Content |
+|-----|---------|
+| Security | Threats, compliance checklist, access policies |
+| Integrations | MCP connections (Google, Slack, etc.) + AI model selector |
+| Wallet | Token balance, buy tokens (Stripe), transaction history |
+
+### AI Model System
+Models defined in `VaultView.MODEL_CATALOG`. Users toggle models on/off. State key: `enabled_models`.
+
+| Model | Provider | Tier | Notes |
+|-------|----------|------|-------|
+| Gemini 2.5 Flash | Google | Free | Default for all users |
+| Gemini 2.0 Lite | Google | Free | Ultra-fast |
+| Claude Sonnet 4 | Anthropic | Premium | Best reasoning |
+| Claude Opus 4 | Anthropic | Premium | Most capable |
+| GPT-5.2 | OpenAI | Premium | Flagship |
+| GPT-5 Mini | OpenAI | Premium | Fast + cheap |
+| Gemini 2.5 Pro | Google | Premium | Complex tasks |
+| DeepSeek V3 | DeepSeek | Budget | Affordable |
+| Mistral Large 3 | Mistral | Budget | Multilingual |
+| Grok 4 | xAI | Premium | Real-time knowledge |
+
+Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
+
+### Token Credit System
+- 100K free tokens per new user
+- Stripe packages: Starter ($4.99/500K), Pro ($19.99/5M), Enterprise ($69.99/25M)
+- `nice-ai` checks balance before premium calls (402 if insufficient)
+- Free Gemini models don't consume tokens
+- Usage tracked per request (fire-and-forget deduction)
 
 ### Key localStorage Keys
-| Key                    | Purpose                           |
-|------------------------|-----------------------------------|
-| `ns-theme`             | Current theme name                |
-| `nice-xp`             | Gamification XP points            |
-| `nice-achievements`   | Unlocked achievement IDs          |
-| `nice-audit-log`      | Audit log entries (max 500)       |
-| `nice-widget-order`   | Home dashboard widget order       |
-| `nice-workflows`      | Saved workflow definitions        |
-| `nice-custom-themes`  | Custom theme definitions          |
-| `nice-mcp-connections`| MCP connection cache              |
-| `nice-budget`         | Cost tracker budget data          |
+| Key | Purpose |
+|-----|---------|
+| `ns-theme` | Current skin name |
+| `nice-enabled-models` | Toggled AI models (object keyed by model ID) |
+| `nice-xp` | Gamification XP points |
+| `nice-achievements` | Unlocked achievement IDs |
+| `nice-audit-log` | Audit log entries (max 500) |
+| `nice-workflows` | Saved workflow definitions |
+| `nice-mcp-connections` | MCP connection cache |
+| `nice-budget` | Cost tracker budget data |
+| `nice-bp-activated` | Activated blueprint IDs |
+| `nice-agent-stats` | Per-agent usage statistics |
+| `nice-favorites` | Sidebar favorites |
+| `nice-ai-messages` | Prompt panel conversation history |
 
 ## Gamification System
 - **XP Actions**: `create_robot: 20`, `complete_mission: 15`, `chat_agent: 5`, `create_workflow: 20`, etc.
@@ -172,9 +251,9 @@ command-palette.js → keyboard.js → mcp-bridge.js → nice.js
 
 ## Testing
 
-### Unit Tests (Vitest)
+### Unit Tests (Vitest) — 288 tests across 17 files
 ```bash
-npm test          # Run all 64 unit tests
+npm test          # Run all tests
 npm run test:watch  # Watch mode
 ```
 Test files: `app/js/__tests__/*.test.js`
@@ -183,58 +262,48 @@ Test files: `app/js/__tests__/*.test.js`
 - `audit-log.test.js` — CRUD, filtering, FIFO limit (11 tests)
 - `data-io.test.js` — Export/import mechanics (5 tests)
 - `command-palette.test.js` — Fuzzy scoring, module API (10 tests)
-- `router.test.js` — Route matching, param extraction, path parsing (8 tests)
+- `router.test.js` — Route matching, param extraction (8 tests)
+- `ship-log.test.js` — Conversation persistence, LLM calls
+- `mission-runner.test.js` — Mission lifecycle management
+- `llm-config.test.js` — Model selection from enabled_models
+- `blueprint-store.test.js` — Blueprint CRUD operations
+- `keyboard.test.js` — Shortcut binding and chord system
+- `notify.test.js` — Toast notification system
+- `prompt-builder.test.js` — System prompt construction
+- `supabase.test.js` — Supabase client wrapper
+- `home-view.test.js` — Home view rendering
+- `missions-view.test.js` — Missions view rendering
 
-**Test Setup**: IIFE modules are loaded via `loadScriptGlobal()` which replaces `const X =` with `globalThis.X =` and evals the code, making modules available as globals in the jsdom environment.
-
-### E2E Tests (Playwright)
+### E2E Tests (Playwright) — 14 tests
 ```bash
-npm run test:e2e  # Run 9 smoke tests
+npm run test:e2e  # Run all E2E tests
 ```
-Tests: `e2e/smoke.spec.js` — app loads, sidebar nav, 14 views render, command palette, theme switching, keyboard shortcuts, responsive layout, settings, widget cards.
+- Smoke: app loads, sidebar nav, view rendering, command palette, theme switching, responsive
+- Routes: hash navigation between views
+- Accessibility: skip-to-content, WCAG 2.1 AA (axe-core), ARIA landmarks, keyboard nav
+- Auth: unauthenticated navigation without errors
+- Performance: load time < 5s, no JS errors during rapid navigation
+
+**Test helpers:**
+- `waitForApp(page)` — waits for State + Router globals (JS bootstrap complete)
+- `navigateTo(page, hash, title)` — navigates and waits for document.title update
 
 ### CI/CD
-GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → `vitest` → `playwright install --with-deps chromium` → `playwright test`
+GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (288 tests) → playwright (14 tests) → bundle size check
 
-## NICE™ Branding Rules
-- **Full name**: NICE™ (always include ™ on first mention per page)
-- **Short form**: NICE™ or NICE
-- **Tagline**: "Mission control for your AI agent fleet"
-- **Visual**: Concentric animated rings with glowing core
-- **Version**: v3.5 (displayed in HUD panels)
+**CI is strict** — both unit and E2E failures block merges.
 
-## Marketing Site JS Modules (public/js/app.js)
-| Module          | Purpose                                      |
-|-----------------|----------------------------------------------|
-| `Theme`         | 8-mode theme switching + localStorage         |
-| `MatrixRain`    | Canvas digital rain for Matrix theme          |
-| `Telemetry`     | Mission Elapsed Time clock                    |
-| `MissionControl`| Animated dial, position coords, console log   |
-| `Toggles`       | Interactive toggle switches                   |
-| `TacSim`        | Tactical Sim Lab (Tic Tac Toe)               |
-| `MobileMenu`    | Hamburger menu for mobile                     |
-| `NavActive`     | Highlights current page in nav                |
-
-## Shared Marketing Page Shell
-Every marketing page includes (in order):
-1. `<canvas id="matrix-canvas">` + background divs
-2. Telemetry ticker bar (`.tel-bar`)
-3. `<nav>` with inline SVG logo, nav-links, hamburger
-4. `<div class="page">` — unique page content
-5. `<footer>` with inline SVG logo, link columns
-6. Theme dock (8 buttons)
-7. `<script src="./public/js/app.js">`
-
-## Desktop App (Electron)
-```bash
-cd desktop && npm install && npm start
-```
-- BrowserWindow 1200x800 loading local `app/index.html`
-- System tray with online/offline status + context menu
-- Desktop notifications via Electron Notification API
+## Google Workspace Integration
+- OAuth flow for any Google account (Gmail, Workspace, any domain)
+- `google-oauth` edge function: `/authorize` → Google consent → `/callback` → stores tokens
+- MCP servers: gmail-mcp, calendar-mcp, drive-mcp
+- `mcp-gateway` auto-refreshes expired OAuth tokens before tool calls
+- Scopes: gmail.readonly, calendar.readonly, drive.readonly
+- Domain-wide delegation fallback for @nicespaceship.com internal users
 
 ## Deployment
 - **Platform**: Vercel (auto-deploy from `main` branch)
 - **Repo**: `github.com/nicespaceship/nice`
-- **Forms**: Formspree endpoint `xbdzrjnn`
-- **PWA**: Service Worker (auto-versioned) with offline fallback, periodic sync (12h), push notifications
+- **Supabase**: 8 edge functions deployed via `npx supabase functions deploy`
+- **Stripe**: 3 token packages with payment links
+- **PWA**: Service Worker v16 with offline fallback, periodic sync (12h), push notifications
