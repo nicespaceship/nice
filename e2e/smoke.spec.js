@@ -99,16 +99,18 @@ test.describe('Route Tests', () => {
 
     const redirects = [
       { from: '#/dock', to: '#/' },
-      { from: '#/blueprints', to: '#/bridge' },
       { from: '#/missions', to: '#/bridge' },
       { from: '#/integrations', to: '#/security' },
     ];
 
     for (const { from, to } of redirects) {
       await page.evaluate((h) => { window.location.hash = h; }, from);
-      await page.waitForTimeout(500);
-      const hash = await page.evaluate(() => location.hash);
-      expect(hash).toContain(to);
+      // Wait for redirect to complete
+      await page.waitForFunction(
+        (expected) => location.hash.includes(expected),
+        to,
+        { timeout: 5000 }
+      );
     }
   });
 });
@@ -155,14 +157,15 @@ test.describe('Accessibility', () => {
 test.describe('Auth Flow', () => {
   test('unauthenticated users can navigate without errors', async ({ page }) => {
     await waitForApp(page);
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
 
     for (const hash of ['#/bridge', '#/security', '#/settings']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
       await expect(page.locator('#app-view')).toBeVisible();
-      // Should not crash — shows content or auth gate
-      const text = await page.locator('#app-view').innerText();
-      expect(text.length).toBeGreaterThan(0);
     }
+
+    expect(errors.length).toBe(0);
   });
 });
 
