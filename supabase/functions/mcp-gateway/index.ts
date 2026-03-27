@@ -106,6 +106,46 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     };
 
+    // Refresh expired OAuth tokens before using them
+    if (conn.auth_type === "oauth" && conn.auth_config?.refresh_token) {
+      const expiresAt = conn.auth_config.expires_at || 0;
+      if (Date.now() > expiresAt - 300_000) { // 5-min buffer
+        try {
+          const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
+          const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+          const tokenUri = conn.auth_config.token_uri || "https://oauth2.googleapis.com/token";
+          if (clientId && clientSecret) {
+            const refreshRes = await fetch(tokenUri, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                client_id: clientId,
+                client_secret: clientSecret,
+                refresh_token: conn.auth_config.refresh_token,
+                grant_type: "refresh_token",
+              }),
+            });
+            if (refreshRes.ok) {
+              const tokens = await refreshRes.json();
+              conn.auth_config = {
+                ...conn.auth_config,
+                access_token: tokens.access_token,
+                expires_at: Date.now() + (tokens.expires_in || 3600) * 1000,
+              };
+              // Persist refreshed token to DB
+              await supabase.from("mcp_connections")
+                .update({ auth_config: conn.auth_config, updated_at: new Date().toISOString() })
+                .eq("id", conn.id);
+            } else {
+              console.error("[mcp-gateway] Token refresh failed:", await refreshRes.text());
+            }
+          }
+        } catch (err) {
+          console.error("[mcp-gateway] Token refresh error:", err);
+        }
+      }
+    }
+
     if (conn.auth_type === "api_key" && conn.auth_config?.api_key) {
       mcpHeaders["Authorization"] = `Bearer ${conn.auth_config.api_key}`;
     } else if (conn.auth_type === "bearer" && conn.auth_config?.token) {
@@ -121,7 +161,9 @@ Deno.serve(async (req: Request) => {
 
     if (action === "invoke") {
       if (!tool) return jsonResponse({ error: "tool name is required for invoke" }, 400, req);
-      return await handleInvoke(conn, mcpHeaders, tool, input || {}, user.email);
+      // Pass OAuth access token in context so MCP servers can use it directly
+      const oauthToken = conn.auth_type === "oauth" ? conn.auth_config?.access_token : null;
+      return await handleInvoke(conn, mcpHeaders, tool, input || {}, user.email, oauthToken);
     }
 
     return jsonResponse({ error: `Unknown action: ${action}` }, 400, req);
@@ -217,6 +259,7 @@ async function handleInvoke(
   toolName: string,
   toolInput: Record<string, unknown>,
   userEmail?: string,
+  oauthAccessToken?: string | null,
 ) {
   const rpcBody = {
     jsonrpc: "2.0",
@@ -225,8 +268,11 @@ async function handleInvoke(
     params: {
       name: toolName,
       arguments: toolInput,
-      // Pass user context so MCP servers can impersonate the correct user
-      context: { user_email: userEmail },
+      // Pass user context so MCP servers can use the correct auth
+      context: {
+        user_email: userEmail,
+        oauth_access_token: oauthAccessToken || null,
+      },
     },
   };
 

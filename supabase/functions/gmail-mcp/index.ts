@@ -188,10 +188,9 @@ async function getAccessToken(userEmail: string): Promise<string> {
 
 /* ── Gmail API Helpers ───────────────────────────────────────── */
 
-async function gmailFetch(path: string, userEmail: string): Promise<Response> {
-  const token = await getAccessToken(userEmail);
+async function gmailFetch(path: string, accessToken: string): Promise<Response> {
   const res = await fetch(`${GMAIL_API}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) {
     const err = await res.text();
@@ -244,14 +243,14 @@ function getHeader(headers: any[], name: string): string {
 
 /* ── Tool Executors ──────────────────────────────────────────── */
 
-async function searchMessages(args: any, userEmail: string): Promise<string> {
+async function searchMessages(args: any, accessToken: string): Promise<string> {
   const q = args?.q || "";
   const maxResults = Math.min(Math.max(args?.maxResults || 10, 1), 20);
 
   const params = new URLSearchParams({ maxResults: String(maxResults) });
   if (q) params.set("q", q);
 
-  const res = await gmailFetch(`/messages?${params}`, userEmail);
+  const res = await gmailFetch(`/messages?${params}`, accessToken);
   const data = await res.json();
 
   if (!data.messages || data.messages.length === 0) {
@@ -262,7 +261,7 @@ async function searchMessages(args: any, userEmail: string): Promise<string> {
   const details = await Promise.all(
     data.messages.slice(0, maxResults).map(async (msg: any) => {
       try {
-        const r = await gmailFetch(`/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, userEmail);
+        const r = await gmailFetch(`/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, accessToken);
         const m = await r.json();
         const subject = getHeader(m.payload?.headers, "Subject") || "(no subject)";
         const from = getHeader(m.payload?.headers, "From") || "unknown";
@@ -278,10 +277,10 @@ async function searchMessages(args: any, userEmail: string): Promise<string> {
   return `Found ${data.resultSizeEstimate || data.messages.length} messages${q ? ` matching "${q}"` : ""}:\n\n${details.join("\n\n")}`;
 }
 
-async function readMessage(args: any, userEmail: string): Promise<string> {
+async function readMessage(args: any, accessToken: string): Promise<string> {
   if (!args?.messageId) return "Error: messageId is required.";
 
-  const res = await gmailFetch(`/messages/${args.messageId}?format=full`, userEmail);
+  const res = await gmailFetch(`/messages/${args.messageId}?format=full`, accessToken);
   const msg = await res.json();
 
   const subject = getHeader(msg.payload?.headers, "Subject") || "(no subject)";
@@ -308,8 +307,8 @@ async function readMessage(args: any, userEmail: string): Promise<string> {
     .join("\n");
 }
 
-async function listLabels(userEmail: string): Promise<string> {
-  const res = await gmailFetch("/labels", userEmail);
+async function listLabels(accessToken: string): Promise<string> {
+  const res = await gmailFetch("/labels", accessToken);
   const data = await res.json();
 
   if (!data.labels) return "No labels found.";
@@ -363,13 +362,36 @@ Deno.serve(async (req: Request) => {
       const toolName = params?.name;
       const args = params?.arguments || {};
       const userEmail = params?.context?.user_email;
+      const oauthToken = params?.context?.oauth_access_token;
 
-      if (!userEmail) {
+      // Determine which token to use:
+      // 1. OAuth token from user's own Google consent (any Google account)
+      // 2. Service account impersonation (only @nicespaceship.com)
+      // 3. Error if neither available
+      let resolvedToken: string;
+      if (oauthToken) {
+        // User connected via OAuth — use their token directly
+        resolvedToken = oauthToken;
+      } else if (userEmail) {
+        // Fall back to service account for internal domain users
+        try {
+          resolvedToken = await getAccessToken(userEmail);
+        } catch (saErr) {
+          return new Response(
+            JSON.stringify({
+              jsonrpc: "2.0",
+              id,
+              error: { code: -32602, message: `Google not connected. ${saErr.message} Please connect Google Workspace from Settings → Integrations.` },
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
         return new Response(
           JSON.stringify({
             jsonrpc: "2.0",
             id,
-            error: { code: -32602, message: "params.context.user_email is required. The mcp-gateway must pass the authenticated user's email." },
+            error: { code: -32602, message: "No Google auth available. Please connect Google Workspace from Settings → Integrations." },
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -379,13 +401,13 @@ Deno.serve(async (req: Request) => {
 
       switch (toolName) {
         case "gmail_search_messages":
-          resultText = await searchMessages(args, userEmail);
+          resultText = await searchMessages(args, resolvedToken);
           break;
         case "gmail_read_message":
-          resultText = await readMessage(args, userEmail);
+          resultText = await readMessage(args, resolvedToken);
           break;
         case "gmail_list_labels":
-          resultText = await listLabels(userEmail);
+          resultText = await listLabels(resolvedToken);
           break;
         default:
           return new Response(
