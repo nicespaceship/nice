@@ -450,11 +450,12 @@ const SettingsView = (() => {
     // LLM connections
     const tokenLabel = document.getElementById('set-token-label');
     const tokenBar = document.getElementById('set-token-bar');
-    const connections = Object.keys(State.get('llm_connections') || {}).length;
-    const totalProviders = typeof LLM_PROVIDERS !== 'undefined' ? LLM_PROVIDERS.length : 5;
-    if (tokenLabel) tokenLabel.textContent = `${connections} of ${totalProviders} LLM providers connected`;
+    const enabledMdls = State.get('enabled_models') || {};
+    const connections = Object.keys(enabledMdls).filter(k => enabledMdls[k]).length;
+    const totalModels = typeof VaultView !== 'undefined' && VaultView.MODEL_CATALOG ? VaultView.MODEL_CATALOG.length : 10;
+    if (tokenLabel) tokenLabel.textContent = `${connections} of ${totalModels} AI models enabled`;
     if (tokenBar) {
-      const pct = (connections / totalProviders) * 100;
+      const pct = (connections / totalModels) * 100;
       tokenBar.style.width = pct + '%';
       tokenBar.className = 'cost-budget-fill';
     }

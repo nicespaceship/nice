@@ -60,7 +60,8 @@ const MissionRunner = (() => {
     const blueprintId = agent?.blueprint_id || agentBp?.id || null;
     let modelUsed = agentBp?.config?.llm_engine || agent?.llm_engine || 'claude-4-opus';
     if (modelUsed === 'nice-auto' && blueprintId && typeof ModelIntel !== 'undefined') {
-      const connected = Object.keys(State.get('llm_connections') || {});
+      const enabled = State.get('enabled_models') || {};
+      const connected = Object.keys(enabled).filter(k => enabled[k]);
       modelUsed = ModelIntel.bestModel(blueprintId, connected) || 'claude-4-opus';
     }
 

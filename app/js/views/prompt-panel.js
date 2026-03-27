@@ -945,7 +945,7 @@ const PromptPanel = (() => {
     // Only auto-mission for short, direct tasks (under 80 chars) without API key context.
     // Longer prompts are conversational and should go to the LLM (which can use EXEC markers).
     const taskVerbs = /^(write|draft|generate|analyze|summarize|research|list|outline|compose|review|evaluate|audit|produce)\s+(me\s+|a\s+|an\s+|the\s+|my\s+|\d+\s+)/i;
-    const hasLLM = Object.values(State.get('llm_connections') || {}).some(Boolean);
+    const hasLLM = true; // NICE provides free Gemini to all users
     if (taskVerbs.test(lower) && !isNavRequest && (!hasLLM || text.length < 80)) {
       return { type: 'auto-mission', title: text };
     }
@@ -1769,13 +1769,12 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   function _populateModelDropdown() {
     const select = _panel?.querySelector('#nice-ai-model');
     if (!select || typeof LLM_MODELS === 'undefined' || typeof LLM_PROVIDERS === 'undefined') return;
-    const connections = (typeof State !== 'undefined' && State.get('llm_connections')) || {};
-    const connectedProviders = Object.keys(connections).filter(k => connections[k]);
-    if (!connectedProviders.length) return; // keep default option
+    const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    const enabledIds = Object.keys(enabled).filter(k => enabled[k]);
+    if (!enabledIds.length && !LLM_MODELS.length) return; // keep default option
     select.innerHTML = '';
-    // Group models by provider, only show connected providers
+    // Group models by provider, show all providers with enabled models
     LLM_PROVIDERS.forEach(p => {
-      if (!connectedProviders.includes(p.id)) return;
       const models = LLM_MODELS.filter(m => m.provider === p.id);
       if (!models.length) return;
       const grp = document.createElement('optgroup');

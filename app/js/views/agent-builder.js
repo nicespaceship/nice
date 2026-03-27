@@ -119,7 +119,7 @@ const AgentBuilderView = (() => {
                   ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${agent?.llm_engine === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
                 </select>
                 <p class="builder-hint" id="auto-model-hint" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? '' : 'style="display:none"'}>NICE Auto selects the best model based on mission history.</p>
-                ${_getConnectedProviders().length === 0 ? '<p class="builder-hint"><a href="#/security?tab=vault">Connect an LLM provider in the Vault</a> to run missions.</p>' : ''}
+                ${_getAvailableModels().filter(m => m.enabled).length === 0 ? '<p class="builder-hint"><a href="#/security?tab=vault">Enable models in the Vault</a> to run missions.</p>' : ''}
               </div>
               <div class="auth-field">
                 <label for="b-temp">Temperature</label>
@@ -300,43 +300,22 @@ const AgentBuilderView = (() => {
   return { title, render };
 })();
 
-/* ── LLM Provider / Model Registry (shared across views) ── */
-const LLM_PROVIDERS = [
-  { id: 'anthropic',  name: 'Anthropic',  icon: '🟣', color: '#d97706', url: 'https://console.anthropic.com' },
-  { id: 'deepseek',   name: 'DeepSeek',   icon: '🧠', color: '#4f46e5', url: 'https://platform.deepseek.com' },
-  { id: 'google',     name: 'Google AI',   icon: '🔵', color: '#4285f4', url: 'https://aistudio.google.dev' },
-  { id: 'meta',       name: 'Meta AI',     icon: '🦙', color: '#0668E1', url: 'https://llama.developer.meta.com' },
-  { id: 'mistral',    name: 'Mistral',     icon: '🟠', color: '#f97316', url: 'https://console.mistral.ai' },
-  { id: 'openai',     name: 'OpenAI',      icon: '🟢', color: '#10a37f', url: 'https://platform.openai.com' },
-  { id: 'perplexity', name: 'Perplexity',  icon: '🔍', color: '#20b2aa', url: 'https://www.perplexity.ai/settings/api' },
-  { id: 'xai',        name: 'xAI',         icon: '⚪', color: '#e5e7eb', url: 'https://console.x.ai' },
-];
+/* ── LLM Provider / Model Registry (backwards-compatible aliases from MODEL_CATALOG) ── */
+const LLM_PROVIDERS = [...new Set((typeof VaultView !== 'undefined' ? VaultView.MODEL_CATALOG : []).map(m => m.provider))].map(p => {
+  const model = VaultView.MODEL_CATALOG.find(m => m.provider === p);
+  return { id: p.toLowerCase().replace(/\s/g, ''), name: p, icon: model?.icon || '🤖', color: '#666', url: '' };
+});
 
-const LLM_MODELS = [
-  { id: 'claude-4-opus',     label: 'Claude Opus 4',     provider: 'anthropic' },
-  { id: 'claude-4-sonnet',   label: 'Claude Sonnet 4',   provider: 'anthropic' },
-  { id: 'deepseek-chat',     label: 'DeepSeek V3',       provider: 'deepseek' },
-  { id: 'deepseek-reasoner', label: 'DeepSeek R1',       provider: 'deepseek' },
-  { id: 'gemini-2',          label: 'Gemini 2',          provider: 'google' },
-  { id: 'gemini-2-flash',    label: 'Gemini 2 Flash',    provider: 'google' },
-  { id: 'llama-4-maverick',  label: 'Llama 4 Maverick',  provider: 'meta' },
-  { id: 'llama-4-scout',     label: 'Llama 4 Scout',     provider: 'meta' },
-  { id: 'mistral-large',     label: 'Mistral Large',     provider: 'mistral' },
-  { id: 'codestral',         label: 'Codestral',         provider: 'mistral' },
-  { id: 'gpt-4o',            label: 'GPT-4o',            provider: 'openai' },
-  { id: 'gpt-4o-mini',       label: 'GPT-4o Mini',       provider: 'openai' },
-  { id: 'sonar-pro',         label: 'Sonar Pro',         provider: 'perplexity' },
-  { id: 'sonar',             label: 'Sonar',             provider: 'perplexity' },
-  { id: 'grok-3',            label: 'Grok 3',            provider: 'xai' },
-  { id: 'grok-3-mini',       label: 'Grok 3 Mini',       provider: 'xai' },
-];
+const LLM_MODELS = (typeof VaultView !== 'undefined' ? VaultView.MODEL_CATALOG : []).map(m => ({
+  id: m.id, label: m.name, provider: m.provider.toLowerCase().replace(/\s/g, '')
+}));
 
 function _getConnectedProviders() {
-  const connections = State.get('llm_connections') || {};
-  return LLM_PROVIDERS.filter(p => connections[p.id]);
+  // New system: NICE provides all models, so all providers are "connected"
+  return LLM_PROVIDERS;
 }
 
 function _getAvailableModels() {
-  const connected = _getConnectedProviders().map(p => p.id);
-  return LLM_MODELS.map(m => ({ ...m, available: connected.includes(m.provider) }));
+  const enabled = State.get('enabled_models') || {};
+  return LLM_MODELS.map(m => ({ ...m, available: true, enabled: !!enabled[m.id] }));
 }

@@ -142,14 +142,12 @@ const ShipLog = (() => {
       };
     }
 
-    // 3c. LLM connection check
-    const connections = typeof State !== 'undefined' ? State.get('llm_connections') || {} : {};
-    if (!Object.keys(connections).length) {
-      return {
-        agent: agentName, agentId,
-        content: 'No LLM providers connected. Connect a provider in the Vault to run missions.',
-        metadata: { source: 'system', model: 'none', tokens_used: 0 },
-      };
+    // 3c. LLM availability check — NICE provides free models to all users
+    const enabledModels = typeof State !== 'undefined' ? State.get('enabled_models') || {} : {};
+    const hasEnabledModel = Object.values(enabledModels).some(Boolean);
+    if (!hasEnabledModel) {
+      // Free models are always available even if nothing is explicitly enabled
+      // This check is a soft gate — proceed anyway since NICE provides Gemini free
     }
 
     // 4. Try real LLM via Edge Function, fall back to mock

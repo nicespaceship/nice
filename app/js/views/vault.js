@@ -193,5 +193,5 @@ const VaultView = (() => {
     return defaults;
   }
 
-  return { title, render };
+  return { title, render, MODEL_CATALOG };
 })();

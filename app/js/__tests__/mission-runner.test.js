@@ -47,7 +47,7 @@ globalThis.State = (() => {
 })();
 
 globalThis.Notify = { send: () => {}, show: () => {} };
-globalThis.Gamification = { addXP: vi.fn(), checkAchievements: () => {} };
+globalThis.Gamification = { addXP: vi.fn(), checkAchievements: () => {}, recordAgentMission: vi.fn() };
 globalThis.BlueprintStore = { isReady: () => false, getAgent: () => null };
 globalThis.LLMConfig = { forBlueprint: () => ({ model: 'mock', temperature: 0.7 }) };
 
