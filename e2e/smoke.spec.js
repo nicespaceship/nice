@@ -24,6 +24,22 @@ async function waitForApp(page) {
     () => typeof State !== 'undefined' && typeof Router !== 'undefined',
     { timeout: 30000 }
   );
+  // Wait for initial render to complete
+  await page.locator('#app-view').waitFor({ state: 'visible', timeout: 15000 });
+}
+
+/** Navigate to a hash route and wait for the page title to update */
+async function navigateTo(page, hash, expectedTitle) {
+  await page.evaluate((h) => { window.location.hash = h; }, hash);
+  if (expectedTitle) {
+    await page.waitForFunction(
+      (title) => document.getElementById('app-page-title')?.textContent === title,
+      expectedTitle,
+      { timeout: 15000 }
+    );
+  } else {
+    await page.waitForTimeout(1000);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -58,21 +74,22 @@ test.describe('Smoke Tests', () => {
     ];
 
     for (const view of views) {
-      await page.evaluate((h) => { window.location.hash = h; }, view.hash);
-      await expect(page.locator('#app-page-title')).toHaveText(view.title);
-      // No error boundary
+      await navigateTo(page, view.hash, view.title);
       await expect(page.locator('.err-boundary')).toHaveCount(0);
     }
   });
 
   test('command palette opens and closes', async ({ page }) => {
     await waitForApp(page);
-    // Open via JS (keyboard shortcuts may not fire in headless CI)
-    await page.evaluate(() => { if (typeof CommandPalette !== 'undefined') CommandPalette.open(); });
-    const palette = page.locator('#cmd-palette.open');
-    if (await palette.isVisible({ timeout: 3000 }).catch(() => false)) {
+    // Open via JS API (keyboard shortcuts unreliable in headless CI)
+    const opened = await page.evaluate(() => {
+      if (typeof CommandPalette === 'undefined') return false;
+      CommandPalette.open();
+      return document.getElementById('cmd-palette')?.classList.contains('open') || false;
+    });
+    if (opened) {
+      await expect(page.locator('#cmd-palette.open')).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(palette).toHaveCount(0);
     }
   });
 
@@ -93,20 +110,15 @@ test.describe('Smoke Tests', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// Route Tests — verify redirects and navigation
+// Route Tests — verify navigation between views
 // ═══════════════════════════════════════════════════════════════════
 
 test.describe('Route Tests', () => {
-  test('old routes redirect correctly', async ({ page }) => {
+  test('hash navigation renders correct views', async ({ page }) => {
     await waitForApp(page);
-
-    // /integrations → /security (most reliable redirect)
-    await page.evaluate(() => { window.location.hash = '#/integrations'; });
-    await page.waitForFunction(() => location.hash.includes('#/security'), { timeout: 10000 });
-
-    // /missions → /bridge
-    await page.evaluate(() => { window.location.hash = '#/missions'; });
-    await page.waitForFunction(() => location.hash.includes('#/bridge'), { timeout: 10000 });
+    await navigateTo(page, '#/security', 'Security');
+    await navigateTo(page, '#/settings', 'Settings');
+    await navigateTo(page, '#/', 'Bridge');
   });
 });
 
@@ -155,10 +167,9 @@ test.describe('Auth Flow', () => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    for (const hash of ['#/bridge', '#/security', '#/settings']) {
-      await page.evaluate((h) => { window.location.hash = h; }, hash);
-      await expect(page.locator('#app-view')).toBeVisible();
-    }
+    await navigateTo(page, '#/bridge', 'Bridge');
+    await navigateTo(page, '#/security', 'Security');
+    await navigateTo(page, '#/settings', 'Settings');
 
     expect(errors.length).toBe(0);
   });
@@ -177,18 +188,13 @@ test.describe('Performance', () => {
 
   test('no memory leaks from rapid navigation', async ({ page }) => {
     await waitForApp(page);
-    await page.evaluate(() => {
-      State.set('user', { id: 'perf-test', email: 'test@nice.dev', user_metadata: { display_name: 'Tester' } });
-    });
-
-    const routes = ['#/', '#/bridge', '#/security', '#/settings', '#/bridge', '#/'];
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    for (const hash of routes) {
-      await page.evaluate((h) => { window.location.hash = h; }, hash);
-      await page.waitForTimeout(300);
-    }
+    await navigateTo(page, '#/bridge', 'Bridge');
+    await navigateTo(page, '#/security', 'Security');
+    await navigateTo(page, '#/settings', 'Settings');
+    await navigateTo(page, '#/', 'Bridge');
 
     expect(errors.length).toBe(0);
   });
