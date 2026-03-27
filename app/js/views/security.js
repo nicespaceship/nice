@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Security View
    AI & Agent security management — permissions, threats, compliance.
-   Includes Vault tab for secrets/credentials management.
+   Security overview + Integrations (MCP connections + AI models).
 ═══════════════════════════════════════════════════════════════════ */
 
 const SecurityView = (() => {
@@ -94,7 +94,8 @@ const SecurityView = (() => {
     const hashParts = (window.location.hash || '').split('?');
     const urlParams = new URLSearchParams(hashParts[1] || '');
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview','vault','integrations'].includes(tabParam)) _activeTab = tabParam;
+    if (tabParam && ['overview','integrations','wallet'].includes(tabParam)) _activeTab = tabParam;
+    if (tabParam === 'vault') _activeTab = 'integrations'; // Vault removed, redirect to Integrations
 
     el.innerHTML = `
       <div class="security-wrap">
@@ -104,13 +105,13 @@ const SecurityView = (() => {
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
             Security
           </button>
-          <button class="security-tab ${_activeTab === 'vault' ? 'security-tab--active' : ''}" data-sec-tab="vault">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-key"/></svg>
-            Vault
-          </button>
           <button class="security-tab ${_activeTab === 'integrations' ? 'security-tab--active' : ''}" data-sec-tab="integrations">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-integrations"/></svg>
             Integrations
+          </button>
+          <button class="security-tab ${_activeTab === 'wallet' ? 'security-tab--active' : ''}" data-sec-tab="wallet">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-wallet"/></svg>
+            Wallet
           </button>
         </div>
 
@@ -136,13 +137,13 @@ const SecurityView = (() => {
     const container = el.querySelector('#sec-tab-content');
     if (!container) return;
     switch (_activeTab) {
-      case 'vault':
-        if (typeof VaultView !== 'undefined') VaultView.render(container);
-        else container.innerHTML = '<p class="text-muted">Vault module not loaded.</p>';
-        break;
       case 'integrations':
         if (typeof IntegrationsView !== 'undefined') IntegrationsView.render(container);
         else container.innerHTML = '<p class="text-muted">Integrations module not loaded.</p>';
+        break;
+      case 'wallet':
+        if (typeof WalletView !== 'undefined') WalletView.render(container);
+        else container.innerHTML = '<p class="text-muted">Wallet module not loaded.</p>';
         break;
       default:
         _renderOverviewTab(container);

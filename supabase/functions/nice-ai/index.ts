@@ -25,6 +25,10 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
+const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
+const XAI_API_URL = "https://api.x.ai/v1/chat/completions";
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
 
@@ -44,6 +48,60 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+/** Deduct tokens from user balance after a successful LLM call (fire-and-forget) */
+async function deductTokens(userId: string, inputTokens: number, outputTokens: number, model: string) {
+  try {
+    const total = inputTokens + outputTokens;
+    if (total <= 0) return;
+
+    const svc = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    const { data: bal } = await svc
+      .from("token_balances")
+      .select("balance, free_tier_remaining, lifetime_used")
+      .eq("user_id", userId)
+      .single();
+
+    if (!bal) return;
+
+    // Deduct from free tier first, then purchased balance
+    let freeUsed = 0;
+    let paidUsed = 0;
+    let remaining = total;
+
+    if (bal.free_tier_remaining > 0) {
+      freeUsed = Math.min(remaining, bal.free_tier_remaining);
+      remaining -= freeUsed;
+    }
+    if (remaining > 0) {
+      paidUsed = Math.min(remaining, bal.balance);
+    }
+
+    await svc.from("token_balances").update({
+      balance: Math.max(0, bal.balance - paidUsed),
+      free_tier_remaining: Math.max(0, bal.free_tier_remaining - freeUsed),
+      lifetime_used: (bal.lifetime_used || 0) + total,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+
+    // Log transaction
+    await svc.from("token_transactions").insert({
+      user_id: userId,
+      type: "usage",
+      amount: -total,
+      balance_after: Math.max(0, bal.balance - paidUsed),
+      model,
+      metadata: { input_tokens: inputTokens, output_tokens: outputTokens },
+    });
+  } catch (err) {
+    console.error("[nice-ai] Token deduction error:", err);
+    // Don't fail the request if token tracking fails
+  }
+}
+
 function jsonError(msg: string, status: number, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify({ error: msg }), {
     status,
@@ -51,9 +109,23 @@ function jsonError(msg: string, status: number, corsHeaders: Record<string, stri
   });
 }
 
+/** Provider config: API URL, env key name, and model prefix matching */
+type Provider = "gemini" | "anthropic" | "openai" | "mistral" | "deepseek" | "xai";
+
+const PROVIDER_CONFIG: Record<Exclude<Provider, "gemini" | "anthropic">, { url: string; keyEnv: string; name: string }> = {
+  openai:   { url: OPENAI_API_URL,   keyEnv: "OPENAI_API_KEY",   name: "OpenAI" },
+  mistral:  { url: MISTRAL_API_URL,  keyEnv: "MISTRAL_API_KEY",  name: "Mistral" },
+  deepseek: { url: DEEPSEEK_API_URL, keyEnv: "DEEPSEEK_API_KEY", name: "DeepSeek" },
+  xai:      { url: XAI_API_URL,      keyEnv: "XAI_API_KEY",      name: "xAI" },
+};
+
 /** Determine which provider to use based on model name */
-function getProvider(model: string): "gemini" | "anthropic" {
+function getProvider(model: string): Provider {
   if (model.startsWith("claude")) return "anthropic";
+  if (model.startsWith("gpt") || model.startsWith("o3") || model.startsWith("o4")) return "openai";
+  if (model.startsWith("mistral") || model.startsWith("pixtral") || model.startsWith("codestral")) return "mistral";
+  if (model.startsWith("deepseek")) return "deepseek";
+  if (model.startsWith("grok")) return "xai";
   return "gemini"; // Default everything else to free Gemini
 }
 
@@ -99,13 +171,40 @@ Deno.serve(async (req: Request) => {
     }
 
     const provider = getProvider(model);
+    const isFreeModel = provider === "gemini";
 
-    // ── Route to provider ──────────────────────────────────────
-    if (provider === "anthropic") {
-      return await handleAnthropic(model, messages, system, max_tokens, temperature, stream, corsHeaders);
+    // ── Token balance check (skip for free models) ─────────────
+    if (!isFreeModel) {
+      const svcSupabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      );
+      const { data: bal } = await svcSupabase
+        .from("token_balances")
+        .select("balance, free_tier_remaining")
+        .eq("user_id", user.id)
+        .single();
+
+      const available = (bal?.balance || 0) + (bal?.free_tier_remaining || 0);
+      // Estimate: max_tokens is the upper bound for this request
+      if (available < 1000) {
+        return jsonError(
+          "Insufficient tokens. Buy more tokens from Settings → Wallet, or use the free Gemini model.",
+          402, corsHeaders
+        );
+      }
     }
 
-    return await handleGemini(model, messages, system, max_tokens, temperature, stream, corsHeaders);
+    // ── Route to provider ──────────────────────────────────────
+    const uid = user.id;
+    if (provider === "anthropic") {
+      return await handleAnthropic(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+    }
+    if (provider === "gemini") {
+      return await handleGemini(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+    }
+    // OpenAI-compatible providers (OpenAI, Mistral, DeepSeek, xAI)
+    return await handleOpenAICompatible(uid, provider, model, messages, system, max_tokens, temperature, stream, corsHeaders);
 
   } catch (err) {
     return jsonError(err.message || "Internal error", 500, corsHeaders);
@@ -115,6 +214,7 @@ Deno.serve(async (req: Request) => {
 /* ── Gemini Provider (Free Default) ───────────────────────────── */
 
 async function handleGemini(
+  userId: string,
   model: string,
   messages: Array<{ role: string; content: string }>,
   system: string | undefined,
@@ -209,6 +309,11 @@ async function handleGemini(
   const data = await geminiRes.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   const usage = data.usageMetadata || {};
+  const inTok = usage.promptTokenCount || 0;
+  const outTok = usage.candidatesTokenCount || 0;
+
+  // Track usage (fire-and-forget, even for free models)
+  deductTokens(userId, inTok, outTok, model);
 
   const response = {
     id: `msg_gemini_${Date.now()}`,
@@ -217,10 +322,7 @@ async function handleGemini(
     content: [{ type: "text", text }],
     model,
     stop_reason: "end_turn",
-    usage: {
-      input_tokens: usage.promptTokenCount || 0,
-      output_tokens: usage.candidatesTokenCount || 0,
-    },
+    usage: { input_tokens: inTok, output_tokens: outTok },
   };
 
   return new Response(JSON.stringify(response), {
@@ -231,6 +333,7 @@ async function handleGemini(
 /* ── Anthropic Provider (Premium) ─────────────────────────────── */
 
 async function handleAnthropic(
+  userId: string,
   model: string,
   messages: Array<{ role: string; content: string }>,
   system: string | undefined,
@@ -281,9 +384,122 @@ async function handleAnthropic(
     });
   }
 
-  // Non-streaming: pass through
+  // Non-streaming: pass through + track usage
   const data = await anthropicRes.json();
+  const aUsage = data.usage || {};
+  deductTokens(userId, aUsage.input_tokens || 0, aUsage.output_tokens || 0, model);
+
   return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+/* ── OpenAI-Compatible Providers (OpenAI, Mistral, DeepSeek, xAI) ─ */
+
+async function handleOpenAICompatible(
+  userId: string,
+  provider: Exclude<Provider, "gemini" | "anthropic">,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  system: string | undefined,
+  maxTokens: number,
+  temperature: number,
+  stream: boolean,
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const config = PROVIDER_CONFIG[provider];
+  const apiKey = Deno.env.get(config.keyEnv);
+  if (!apiKey) {
+    return jsonError(`${config.name} is not available yet. Try "nice-auto" for free Gemini or "claude-sonnet-4-20250514" for premium.`, 503, corsHeaders);
+  }
+
+  // Build OpenAI-format messages (prepend system as a system message)
+  const oaiMessages: Array<{ role: string; content: string }> = [];
+  if (system) oaiMessages.push({ role: "system", content: system });
+  oaiMessages.push(...messages);
+
+  const oaiBody: Record<string, unknown> = {
+    model,
+    messages: oaiMessages,
+    max_tokens: maxTokens,
+    temperature,
+    stream,
+  };
+
+  const res = await fetch(config.url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(oaiBody),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error(`[nice-ai] ${config.name} error:`, errText);
+    return jsonError(`${config.name} API error (${res.status})`, res.status, corsHeaders);
+  }
+
+  // Streaming: transform OpenAI SSE to Anthropic-compatible format
+  if (stream && res.body) {
+    const transformer = new TransformStream({
+      transform(chunk, controller) {
+        const text = new TextDecoder().decode(chunk);
+        for (const line of text.split("\n")) {
+          if (!line.startsWith("data: ") || line === "data: [DONE]") continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            const content = data.choices?.[0]?.delta?.content || "";
+            if (content) {
+              controller.enqueue(new TextEncoder().encode(
+                `event: content_block_delta\ndata: ${JSON.stringify({
+                  type: "content_block_delta",
+                  delta: { type: "text_delta", text: content },
+                })}\n\n`
+              ));
+            }
+            if (data.choices?.[0]?.finish_reason) {
+              controller.enqueue(new TextEncoder().encode(
+                `event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}\n\n`
+              ));
+            }
+          } catch { /* skip */ }
+        }
+      },
+    });
+
+    return new Response(res.body.pipeThrough(transformer), {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  }
+
+  // Non-streaming: transform OpenAI response to Anthropic-compatible format
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || "";
+  const usage = data.usage || {};
+  const inTok = usage.prompt_tokens || 0;
+  const outTok = usage.completion_tokens || 0;
+
+  // Track usage
+  deductTokens(userId, inTok, outTok, model);
+
+  const response = {
+    id: data.id || `msg_${provider}_${Date.now()}`,
+    type: "message",
+    role: "assistant",
+    content: [{ type: "text", text }],
+    model,
+    stop_reason: "end_turn",
+    usage: { input_tokens: inTok, output_tokens: outTok },
+  };
+
+  return new Response(JSON.stringify(response), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }

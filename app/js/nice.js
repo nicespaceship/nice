@@ -697,7 +697,6 @@ const NICE = (() => {
       const devUser = { id: 'dev-user', email: 'dev@nicespaceship.com', name: 'Commander' };
       State.set('user', devUser);
       _updateAuthUI(devUser);
-      console.log('[NICE] Dev mode — auth bypassed');
       return;
     }
 

@@ -197,7 +197,6 @@ const WorkflowsView = (() => {
         }
         // Clear localStorage after successful migration
         localStorage.removeItem(STORAGE_KEY);
-        console.log('[Workflows] Migrated', local.length, 'workflows to DB');
       }
     } catch (err) {
       console.warn('[Workflows] Migration failed:', err.message);
