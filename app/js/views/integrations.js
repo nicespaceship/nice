@@ -124,8 +124,32 @@ const IntegrationsView = (() => {
     ];
   }
 
+  /* ── OAuth Return Handler ─────────────────────────────────────── */
+  let _oauthHandled = false;
+  function _handleOAuthReturn() {
+    if (_oauthHandled) return;
+    // Check for google_connected param in both URL search and hash
+    const hashParts = window.location.hash.split('?');
+    const params = new URLSearchParams(hashParts[1] || window.location.search || '');
+    if (params.get('google_connected') === 'true') {
+      _oauthHandled = true;
+      // Reload MCP connections from DB
+      _loadMcps();
+      // Show success notification
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Google Connected', message: 'Your Google account is now linked. Agents can access Gmail, Calendar, and Drive.', type: 'system' });
+      }
+      // Clean URL — remove the query param
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+  }
+
   /* ── Render ───────────────────────────────────────────────────── */
   function render(el) {
+    // Handle OAuth return redirect
+    _handleOAuthReturn(el);
+
     const apis = State.get('api_connections') || _loadApis();
     const mcps = State.get('mcp_connections') || _loadMcps();
     const totalTools = mcps.reduce((sum, c) => sum + (c.available_tools || []).length, 0);
@@ -500,12 +524,24 @@ const IntegrationsView = (() => {
   }
 
   /* ── MCP Actions ──────────────────────────────────────────────── */
+
+  /** Google OAuth base URL for the edge function */
+  const GOOGLE_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/google-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/google-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
     const conns = State.get('mcp_connections') || [];
-    if (conns.find(c => c.catalog_id === catalogId)) return;
+    if (conns.find(c => c.catalog_id === catalogId || c.name === catalog.name)) return;
 
+    // OAuth-based connections: redirect to OAuth flow
+    if (catalog.auth === 'oauth' && catalogId === 'google') {
+      return _initiateGoogleOAuth();
+    }
+
+    // Standard connections (API key / bearer / none)
     const conn = {
       id: 'mc-' + Date.now(), name: catalog.name,
       server_url: `https://mcp.${catalogId}.com`, transport: catalog.transport,
@@ -524,6 +560,23 @@ const IntegrationsView = (() => {
     }
     render(el);
     if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Connected', message: `${catalog.name} is now available to all your agents.`, type: 'system' });
+  }
+
+  /** Initiate Google OAuth flow — redirects to Google consent screen */
+  function _initiateGoogleOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Google services.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${GOOGLE_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    // Redirect to Google OAuth
+    window.location.href = authUrl;
   }
 
   function _disconnectMcp(connId, el) {
