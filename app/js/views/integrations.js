@@ -220,6 +220,18 @@ const IntegrationsView = (() => {
           </div>
         </div>
 
+        <!-- ═══ AI Models Section ═══ -->
+        <div class="integrations-section">
+          <div class="integrations-section-header">
+            <h3 class="integrations-section-title">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-cpu"/></svg>
+              AI Models
+            </h3>
+            <p class="integrations-section-desc">Choose which AI models your agents can use. NICE Auto picks the best one for each task.</p>
+          </div>
+          <div id="intg-models-container"></div>
+        </div>
+
         <!-- ═══ API Keys Section ═══ -->
         <div class="integrations-section">
           <div class="integrations-section-header">
@@ -325,6 +337,12 @@ const IntegrationsView = (() => {
     `;
 
     _bindEvents(el, apis, mcps);
+
+    // Render AI Models section (from VaultView)
+    const modelsContainer = document.getElementById('intg-models-container');
+    if (modelsContainer && typeof VaultView !== 'undefined') {
+      VaultView.render(modelsContainer);
+    }
   }
 
   /* ── Card Renderers ──────────────────────────────────────────── */
