@@ -4231,19 +4231,6 @@
 .api-config-section {}
 .api-config-section-title { font-family:var(--font-d); font-size:.9rem; font-weight:700; margin:0 0 12px; }
 
-.api-catalog-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
-.api-catalog-card {
-  background:var(--panel-bg); border:var(--border-width) solid var(--border); border-radius:var(--radius);
-  padding:14px; display:flex; flex-direction:column; gap:10px; transition:border-color .2s;
-}
-.api-catalog-card:hover { border-color:var(--accent); }
-.api-catalog-card--connected { border-color:var(--accent); }
-.api-catalog-icon { flex-shrink:0; }
-.api-catalog-info { display:flex; flex-direction:column; gap:2px; }
-.api-catalog-name { font-family:var(--font-d); font-size:.85rem; font-weight:700; }
-.api-catalog-desc { font-family:var(--font-m); font-size:.6rem; color:var(--text-muted); letter-spacing:.06em; }
-.api-catalog-action { margin-top:auto; }
-.api-catalog-status { font-family:var(--font-m); font-size:.6rem; display:flex; align-items:center; gap:4px; color:var(--accent); }
 
 .api-conn-row {
   display:flex; align-items:center; gap:12px; padding:10px 14px;
@@ -4263,10 +4250,6 @@
 .api-ship-checkboxes { display:flex; flex-direction:column; gap:6px; }
 .api-ship-check { display:flex; align-items:center; gap:8px; font-size:.82rem; cursor:pointer; }
 .api-ship-check input { accent-color:var(--accent); }
-
-@media (max-width:600px) {
-  .api-catalog-grid { grid-template-columns:1fr; }
-}
 
 /* ═══════════════════════════════════════════════════════════════
    Combined Integrations View

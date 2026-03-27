@@ -332,9 +332,6 @@ const LLM_MODELS = [
 ];
 
 function _getConnectedProviders() {
-  if (!State.get('llm_connections')) {
-    try { State.set('llm_connections', JSON.parse(localStorage.getItem('nice-llm-connections') || '{}')); } catch { State.set('llm_connections', {}); }
-  }
   const connections = State.get('llm_connections') || {};
   return LLM_PROVIDERS.filter(p => connections[p.id]);
 }

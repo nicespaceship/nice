@@ -142,3 +142,4 @@ vite.config.ts.timestamp-*
 # Generated bundle
 app/js/helm.bundle.js
 app/js/helm.bundle.min.js
+test-results/

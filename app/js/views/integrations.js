@@ -8,60 +8,6 @@ const IntegrationsView = (() => {
   const title = 'Integrations';
   const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  /* ── API Service Catalog ──────────────────────────────────────── */
-  const API_CATALOG = [
-    /* LLM Providers */
-    { id:'openai',      name:'OpenAI',         desc:'GPT, DALL-E, Whisper APIs',         icon:'cpu',       cat:'llm' },
-    { id:'anthropic',   name:'Anthropic',      desc:'Claude API, completions',            icon:'cpu',       cat:'llm' },
-    { id:'google-ai',   name:'Google AI',      desc:'Gemini, PaLM, Vertex AI',            icon:'cpu',       cat:'llm' },
-    { id:'groq',        name:'Groq',           desc:'Ultra-fast LLM inference',            icon:'cpu',       cat:'llm' },
-    { id:'mistral',     name:'Mistral AI',     desc:'Open-weight models, cost-effective',  icon:'cpu',       cat:'llm' },
-    { id:'cohere',      name:'Cohere',         desc:'Enterprise NLP, embeddings, RAG',     icon:'cpu',       cat:'llm' },
-    { id:'together',    name:'Together AI',    desc:'Open source model hosting',           icon:'cpu',       cat:'llm' },
-    { id:'huggingface', name:'Hugging Face',   desc:'Inference API, 1000s of models',      icon:'cpu',       cat:'llm' },
-    /* Payments & Billing */
-    { id:'stripe',      name:'Stripe',         desc:'Payments, invoices, customers',       icon:'wallet',    cat:'payments' },
-    { id:'paypal',      name:'PayPal',         desc:'Payments, checkout, transfers',       icon:'wallet',    cat:'payments' },
-    { id:'square',      name:'Square',         desc:'Point-of-sale, payments',             icon:'wallet',    cat:'payments' },
-    /* Cloud & Infrastructure */
-    { id:'aws',         name:'AWS',            desc:'S3, Lambda, SES, and more',           icon:'cloud',     cat:'cloud' },
-    { id:'gcp',         name:'Google Cloud',   desc:'GCS, Cloud Functions, BigQuery',      icon:'cloud',     cat:'cloud' },
-    { id:'azure',       name:'Azure',          desc:'Blob Storage, Functions, Cosmos DB',  icon:'cloud',     cat:'cloud' },
-    { id:'vercel',      name:'Vercel',         desc:'Deployments, serverless, edge',       icon:'cloud',     cat:'cloud' },
-    /* Communication */
-    { id:'twilio',      name:'Twilio',         desc:'SMS, voice, messaging',               icon:'chat',      cat:'comms' },
-    { id:'sendgrid',    name:'SendGrid',       desc:'Transactional & marketing email',     icon:'mail',      cat:'comms' },
-    { id:'discord',     name:'Discord',        desc:'Bots, webhooks, community',           icon:'chat',      cat:'comms' },
-    { id:'telegram',    name:'Telegram',       desc:'Bot API, messaging automation',       icon:'chat',      cat:'comms' },
-    { id:'whatsapp',    name:'WhatsApp',       desc:'Business API, customer engagement',   icon:'chat',      cat:'comms' },
-    /* Data & Vector DBs */
-    { id:'pinecone',    name:'Pinecone',       desc:'Managed vector database for RAG',     icon:'database',  cat:'data' },
-    { id:'weaviate',    name:'Weaviate',       desc:'Vector search, semantic queries',     icon:'database',  cat:'data' },
-    { id:'snowflake',   name:'Snowflake',      desc:'Cloud data warehouse',                icon:'database',  cat:'data' },
-    { id:'bigquery',    name:'BigQuery',       desc:'Serverless data warehouse',           icon:'database',  cat:'data' },
-    { id:'mongodb',     name:'MongoDB',        desc:'Document database, Atlas cloud',      icon:'database',  cat:'data' },
-    { id:'postgres',    name:'PostgreSQL',     desc:'Direct PostgreSQL connections',        icon:'database',  cat:'data' },
-    { id:'elasticsearch',name:'Elasticsearch', desc:'Full-text search & analytics',        icon:'database',  cat:'data' },
-    /* CRM & Business */
-    { id:'salesforce',  name:'Salesforce',     desc:'CRM, leads, deals, reporting',        icon:'target',    cat:'crm' },
-    { id:'hubspot',     name:'HubSpot',        desc:'CRM, marketing automation',           icon:'target',    cat:'crm' },
-    { id:'zendesk',     name:'Zendesk',        desc:'Support tickets, customer service',   icon:'clipboard', cat:'crm' },
-    { id:'intercom',    name:'Intercom',       desc:'Customer messaging platform',         icon:'chat',      cat:'crm' },
-    { id:'pipedrive',   name:'Pipedrive',      desc:'Sales pipeline management',           icon:'target',    cat:'crm' },
-    /* DevOps & Code */
-    { id:'github',      name:'GitHub',         desc:'Repos, Actions, API access',          icon:'code',      cat:'dev' },
-    { id:'gitlab',      name:'GitLab',         desc:'Git platform, CI/CD pipelines',       icon:'code',      cat:'dev' },
-    { id:'bitbucket',   name:'Bitbucket',      desc:'Atlassian git, Pipelines',            icon:'code',      cat:'dev' },
-    { id:'sentry',      name:'Sentry',         desc:'Error tracking, performance',         icon:'alert',     cat:'dev' },
-    { id:'datadog',     name:'Datadog',        desc:'Metrics, logs, APM',                  icon:'chart',     cat:'dev' },
-    { id:'pagerduty',   name:'PagerDuty',      desc:'Incident management, alerting',       icon:'alert',     cat:'dev' },
-    /* Automation */
-    { id:'zapier',      name:'Zapier',         desc:'Connect 5000+ apps, workflows',       icon:'zap',       cat:'auto' },
-    { id:'make',        name:'Make',           desc:'Visual workflow automation',           icon:'zap',       cat:'auto' },
-    /* Custom */
-    { id:'custom',      name:'Custom',         desc:'Add any API key manually',            icon:'plus',      cat:'other' },
-  ];
-
   /* ── MCP Server Catalog ───────────────────────────────────────── */
   const MCP_CATALOG = [
     /* Productivity & Workspace */
@@ -111,12 +57,6 @@ const IntegrationsView = (() => {
   ];
 
   /* ── Demo seed data ───────────────────────────────────────────── */
-  function _seedApiConnections() {
-    return [
-      { id:'ac1', service:'stripe',  status:'active', masked:'sk_live_...4242', spaceship_ids:['ship-1'], created_at:new Date(Date.now() - 604800000).toISOString(), last_used:new Date(Date.now() - 3600000).toISOString() },
-      { id:'ac2', service:'openai',  status:'active', masked:'sk-...q8Xm',     spaceship_ids:['ship-1','ship-2'], created_at:new Date(Date.now() - 1209600000).toISOString(), last_used:new Date(Date.now() - 7200000).toISOString() },
-    ];
-  }
   function _seedMcpConnections() {
     return [
       { id:'mc1', name:'Google Workspace', server_url:'https://mcp.google.com/workspace', transport:'streamable-http', auth_type:'oauth', available_tools:['gmail','drive','calendar','docs'], status:'connected', catalog_id:'google', created_at:new Date(Date.now() - 604800000).toISOString() },
@@ -319,42 +259,8 @@ const IntegrationsView = (() => {
     }).join('');
   }
 
-  function _renderApiCards(catalog, apis, viewMode) {
-    return catalog.map(svc => {
-      const conn = apis.find(c => c.service === svc.id);
-      const connected = !!conn;
-      if (viewMode === 'list') {
-        return `<div class="intg-list-row ${connected ? 'intg-list-row--connected' : ''}" data-service="${svc.id}" data-cat="${svc.cat}">
-          <div class="intg-list-icon"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${svc.icon}"/></svg></div>
-          <span class="intg-list-name">${svc.name}</span>
-          <span class="intg-list-desc">${svc.desc}</span>
-          <span class="intg-list-cat mono">${svc.cat}</span>
-          ${connected
-            ? `<button class="btn btn-xs api-disconnect-btn" data-service="${svc.id}" data-conn-id="${conn.id}">Disconnect</button>`
-            : `<button class="btn btn-xs btn-primary api-connect-btn" data-service="${svc.id}">Connect</button>`
-          }
-          ${connected ? `<span class="status-dot dot-g"></span>` : ''}
-        </div>`;
-      }
-      return `<div class="api-catalog-card ${connected ? 'api-catalog-card--connected' : ''}" data-service="${svc.id}" data-cat="${svc.cat}">
-        <div class="api-catalog-icon"><svg class="icon icon-md" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${svc.icon}"/></svg></div>
-        <div class="api-catalog-info">
-          <span class="api-catalog-name">${svc.name}</span>
-          <span class="api-catalog-desc">${svc.desc}</span>
-        </div>
-        <div class="api-catalog-action">
-          ${connected
-            ? `<button class="btn btn-sm api-disconnect-btn" data-service="${svc.id}" data-conn-id="${conn.id}">Disconnect</button>`
-            : `<button class="btn btn-sm btn-primary api-connect-btn" data-service="${svc.id}">Connect</button>`
-          }
-        </div>
-        ${connected ? `<span class="api-catalog-status"><span class="status-dot dot-g"></span> Active</span>` : ''}
-      </div>`;
-    }).join('');
-  }
-
   /* ── Filter & View Logic ─────────────────────────────────────── */
-  let _mcpView = 'grid', _apiView = 'grid', _mcpCat = 'all', _apiCat = 'all', _mcpQ = '', _apiQ = '';
+  let _mcpView = 'grid', _mcpCat = 'all', _mcpQ = '';
 
   function _applyFilters(section, el, apis, mcps) {
     if (section === 'mcp' || section === 'both') {
@@ -367,30 +273,9 @@ const IntegrationsView = (() => {
         grid.innerHTML = _renderMcpCards(filtered, mcps, _mcpView);
       }
     }
-    if (section === 'api' || section === 'both') {
-      let filtered = API_CATALOG;
-      if (_apiCat !== 'all') filtered = filtered.filter(a => a.cat === _apiCat);
-      if (_apiQ) filtered = filtered.filter(a => (a.name + ' ' + a.desc).toLowerCase().includes(_apiQ));
-      const grid = el.querySelector('#intg-api-grid');
-      if (grid) {
-        grid.className = _apiView === 'list' ? 'intg-list-container' : 'api-catalog-grid';
-        grid.innerHTML = _renderApiCards(filtered, apis, _apiView);
-      }
-    }
   }
 
   /* ── Data Loading ─────────────────────────────────────────────── */
-  function _loadApis() {
-    const user = State.get('user');
-    if (!user) return [];
-    SB.db('api_connections').list({ userId: user.id }).then(rows => {
-      if (rows && rows.length) State.set('api_connections', rows);
-    }).catch(() => {});
-    const seed = _seedApiConnections();
-    State.set('api_connections', seed);
-    return seed;
-  }
-
   function _loadMcps() {
     const user = State.get('user');
     if (!user) return [];
@@ -430,9 +315,6 @@ const IntegrationsView = (() => {
     // View toggle (grid/list)
     document.getElementById('mcp-view-grid')?.addEventListener('click', () => { _mcpView = 'grid'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, apis, mcps); });
     document.getElementById('mcp-view-list')?.addEventListener('click', () => { _mcpView = 'list'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, apis, mcps); });
-    document.getElementById('api-view-grid')?.addEventListener('click', () => { _apiView = 'grid'; _toggleViewBtns('api', el); _applyFilters('api', el, apis, mcps); });
-    document.getElementById('api-view-list')?.addEventListener('click', () => { _apiView = 'list'; _toggleViewBtns('api', el); _applyFilters('api', el, apis, mcps); });
-
     // Custom MCP modal
     document.getElementById('btn-add-custom-mcp')?.addEventListener('click', () => {
       document.getElementById('modal-add-mcp')?.classList.add('open');
@@ -446,20 +328,11 @@ const IntegrationsView = (() => {
     });
     document.getElementById('mcp-custom-form')?.addEventListener('submit', (e) => _addCustomMcp(e, el));
 
-    // API modal
-    document.getElementById('close-api-modal')?.addEventListener('click', () => {
-      document.getElementById('modal-add-api')?.classList.remove('open');
-    });
-    document.getElementById('modal-add-api')?.addEventListener('click', (e) => {
-      if (e.target.id === 'modal-add-api') e.target.classList.remove('open');
-    });
-    document.getElementById('api-connect-form')?.addEventListener('submit', (e) => _connectApi(e, el));
   }
 
   function _toggleViewBtns(section, el) {
-    const view = section === 'mcp' ? _mcpView : _apiView;
-    el.querySelector(`#${section}-view-grid`)?.classList.toggle('active', view === 'grid');
-    el.querySelector(`#${section}-view-list`)?.classList.toggle('active', view === 'list');
+    el.querySelector(`#${section}-view-grid`)?.classList.toggle('active', _mcpView === 'grid');
+    el.querySelector(`#${section}-view-list`)?.classList.toggle('active', _mcpView === 'list');
   }
 
   /* ── MCP Actions ──────────────────────────────────────────────── */
@@ -553,52 +426,5 @@ const IntegrationsView = (() => {
     if (typeof Notify !== 'undefined') Notify.send({ title: 'Custom MCP Connected', message: `${name} is now available to all your agents.`, type: 'system' });
   }
 
-  /* ── API Actions ──────────────────────────────────────────────── */
-  function _openApiModal(serviceId) {
-    const svc = API_CATALOG.find(s => s.id === serviceId);
-    if (!svc) return;
-    document.getElementById('api-service-name').value = svc.name;
-    document.getElementById('api-service-id').value = serviceId;
-    document.getElementById('api-key-input').value = '';
-    document.getElementById('api-error').textContent = '';
-    document.getElementById('modal-add-api')?.classList.add('open');
-  }
-
-  function _connectApi(e, el) {
-    e.preventDefault();
-    const serviceId = document.getElementById('api-service-id').value;
-    const apiKey = document.getElementById('api-key-input').value.trim();
-    const errEl = document.getElementById('api-error');
-    if (!apiKey) { errEl.textContent = 'API key is required.'; return; }
-
-    const masked = apiKey.slice(0, 6) + '...' + apiKey.slice(-4);
-    const conn = {
-      id: 'ac-' + Date.now(), service: serviceId, status: 'active', masked,
-      spaceship_ids: [], created_at: new Date().toISOString(), last_used: new Date().toISOString(),
-    };
-    const apis = State.get('api_connections') || [];
-    const filtered = apis.filter(c => c.service !== serviceId);
-    filtered.push(conn);
-    State.set('api_connections', filtered);
-
-    const user = State.get('user');
-    if (user) {
-      SB.db('api_connections').create({ user_id: user.id, service: serviceId, spaceship_ids: [], status: 'active', config: { masked } }).catch(() => {});
-    }
-    document.getElementById('modal-add-api')?.classList.remove('open');
-    render(el);
-    if (typeof Notify !== 'undefined') Notify.send({ title: 'API Connected', message: `${serviceId} API connected.`, type: 'system' });
-  }
-
-  function _disconnectApi(connId, el) {
-    if (!confirm('Disconnect this API? Agents using it will lose access.')) return;
-    let apis = State.get('api_connections') || [];
-    apis = apis.filter(c => c.id !== connId);
-    State.set('api_connections', apis);
-    if (connId.includes('-')) SB.db('api_connections').remove(connId).catch(() => {});
-    render(el);
-    if (typeof Notify !== 'undefined') Notify.send({ title: 'API Disconnected', message: 'Connection removed.', type: 'system' });
-  }
-
-  return { title, render, API_CATALOG, MCP_CATALOG };
+  return { title, render, MCP_CATALOG };
 })();
