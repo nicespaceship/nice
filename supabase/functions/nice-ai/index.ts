@@ -48,6 +48,60 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+/** Deduct tokens from user balance after a successful LLM call (fire-and-forget) */
+async function deductTokens(userId: string, inputTokens: number, outputTokens: number, model: string) {
+  try {
+    const total = inputTokens + outputTokens;
+    if (total <= 0) return;
+
+    const svc = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    const { data: bal } = await svc
+      .from("token_balances")
+      .select("balance, free_tier_remaining, lifetime_used")
+      .eq("user_id", userId)
+      .single();
+
+    if (!bal) return;
+
+    // Deduct from free tier first, then purchased balance
+    let freeUsed = 0;
+    let paidUsed = 0;
+    let remaining = total;
+
+    if (bal.free_tier_remaining > 0) {
+      freeUsed = Math.min(remaining, bal.free_tier_remaining);
+      remaining -= freeUsed;
+    }
+    if (remaining > 0) {
+      paidUsed = Math.min(remaining, bal.balance);
+    }
+
+    await svc.from("token_balances").update({
+      balance: Math.max(0, bal.balance - paidUsed),
+      free_tier_remaining: Math.max(0, bal.free_tier_remaining - freeUsed),
+      lifetime_used: (bal.lifetime_used || 0) + total,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+
+    // Log transaction
+    await svc.from("token_transactions").insert({
+      user_id: userId,
+      type: "usage",
+      amount: -total,
+      balance_after: Math.max(0, bal.balance - paidUsed),
+      model,
+      metadata: { input_tokens: inputTokens, output_tokens: outputTokens },
+    });
+  } catch (err) {
+    console.error("[nice-ai] Token deduction error:", err);
+    // Don't fail the request if token tracking fails
+  }
+}
+
 function jsonError(msg: string, status: number, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify({ error: msg }), {
     status,
@@ -117,16 +171,40 @@ Deno.serve(async (req: Request) => {
     }
 
     const provider = getProvider(model);
+    const isFreeModel = provider === "gemini";
+
+    // ── Token balance check (skip for free models) ─────────────
+    if (!isFreeModel) {
+      const svcSupabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      );
+      const { data: bal } = await svcSupabase
+        .from("token_balances")
+        .select("balance, free_tier_remaining")
+        .eq("user_id", user.id)
+        .single();
+
+      const available = (bal?.balance || 0) + (bal?.free_tier_remaining || 0);
+      // Estimate: max_tokens is the upper bound for this request
+      if (available < 1000) {
+        return jsonError(
+          "Insufficient tokens. Buy more tokens from Settings → Wallet, or use the free Gemini model.",
+          402, corsHeaders
+        );
+      }
+    }
 
     // ── Route to provider ──────────────────────────────────────
+    const uid = user.id;
     if (provider === "anthropic") {
-      return await handleAnthropic(model, messages, system, max_tokens, temperature, stream, corsHeaders);
+      return await handleAnthropic(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
     }
     if (provider === "gemini") {
-      return await handleGemini(model, messages, system, max_tokens, temperature, stream, corsHeaders);
+      return await handleGemini(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
     }
     // OpenAI-compatible providers (OpenAI, Mistral, DeepSeek, xAI)
-    return await handleOpenAICompatible(provider, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+    return await handleOpenAICompatible(uid, provider, model, messages, system, max_tokens, temperature, stream, corsHeaders);
 
   } catch (err) {
     return jsonError(err.message || "Internal error", 500, corsHeaders);
@@ -136,6 +214,7 @@ Deno.serve(async (req: Request) => {
 /* ── Gemini Provider (Free Default) ───────────────────────────── */
 
 async function handleGemini(
+  userId: string,
   model: string,
   messages: Array<{ role: string; content: string }>,
   system: string | undefined,
@@ -230,6 +309,11 @@ async function handleGemini(
   const data = await geminiRes.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   const usage = data.usageMetadata || {};
+  const inTok = usage.promptTokenCount || 0;
+  const outTok = usage.candidatesTokenCount || 0;
+
+  // Track usage (fire-and-forget, even for free models)
+  deductTokens(userId, inTok, outTok, model);
 
   const response = {
     id: `msg_gemini_${Date.now()}`,
@@ -238,10 +322,7 @@ async function handleGemini(
     content: [{ type: "text", text }],
     model,
     stop_reason: "end_turn",
-    usage: {
-      input_tokens: usage.promptTokenCount || 0,
-      output_tokens: usage.candidatesTokenCount || 0,
-    },
+    usage: { input_tokens: inTok, output_tokens: outTok },
   };
 
   return new Response(JSON.stringify(response), {
@@ -252,6 +333,7 @@ async function handleGemini(
 /* ── Anthropic Provider (Premium) ─────────────────────────────── */
 
 async function handleAnthropic(
+  userId: string,
   model: string,
   messages: Array<{ role: string; content: string }>,
   system: string | undefined,
@@ -302,8 +384,11 @@ async function handleAnthropic(
     });
   }
 
-  // Non-streaming: pass through
+  // Non-streaming: pass through + track usage
   const data = await anthropicRes.json();
+  const aUsage = data.usage || {};
+  deductTokens(userId, aUsage.input_tokens || 0, aUsage.output_tokens || 0, model);
+
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
@@ -312,6 +397,7 @@ async function handleAnthropic(
 /* ── OpenAI-Compatible Providers (OpenAI, Mistral, DeepSeek, xAI) ─ */
 
 async function handleOpenAICompatible(
+  userId: string,
   provider: Exclude<Provider, "gemini" | "anthropic">,
   model: string,
   messages: Array<{ role: string; content: string }>,
@@ -397,6 +483,11 @@ async function handleOpenAICompatible(
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content || "";
   const usage = data.usage || {};
+  const inTok = usage.prompt_tokens || 0;
+  const outTok = usage.completion_tokens || 0;
+
+  // Track usage
+  deductTokens(userId, inTok, outTok, model);
 
   const response = {
     id: data.id || `msg_${provider}_${Date.now()}`,
@@ -405,10 +496,7 @@ async function handleOpenAICompatible(
     content: [{ type: "text", text }],
     model,
     stop_reason: "end_turn",
-    usage: {
-      input_tokens: usage.prompt_tokens || 0,
-      output_tokens: usage.completion_tokens || 0,
-    },
+    usage: { input_tokens: inTok, output_tokens: outTok },
   };
 
   return new Response(JSON.stringify(response), {
