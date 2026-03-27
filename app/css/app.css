@@ -1506,8 +1506,20 @@
 .task-result pre { font-family:var(--font-m); font-size:.68rem; color:var(--text-muted); white-space:pre-wrap; word-break:break-word; margin:0; }
 .task-actions { display:flex; gap:6px; padding:6px 0 2px; }
 .btn-xs { padding:3px 10px; font-size:.65rem; }
-.mission-result-content { background:var(--surface, var(--bg-alt)); border:1px solid var(--border); border-radius:var(--radius); padding:14px; max-height:400px; overflow:auto; }
+.mission-result-content { background:var(--surface, var(--bg-alt)); border:1px solid var(--border); border-radius:var(--radius); padding:14px; max-height:600px; overflow:auto; }
 .mission-result-content pre { font-family:var(--font-m); font-size:.72rem; color:var(--text); white-space:pre-wrap; word-break:break-word; margin:0; line-height:1.6; }
+/* Markdown result styling */
+.mission-md h2 { font-size:1rem; font-weight:700; color:var(--text); margin:16px 0 8px; border-bottom:1px solid var(--border); padding-bottom:4px; }
+.mission-md h3 { font-size:.88rem; font-weight:600; color:var(--text); margin:12px 0 6px; }
+.mission-md h4 { font-size:.8rem; font-weight:600; color:var(--text-muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.04em; }
+.mission-md p { font-size:.78rem; line-height:1.65; color:var(--text); margin:6px 0; }
+.mission-md strong { color:var(--accent); font-weight:600; }
+.mission-md li { font-size:.78rem; line-height:1.6; margin:2px 0 2px 16px; list-style:disc; }
+.mission-md code { font-family:var(--font-m); background:var(--bg); padding:1px 4px; border-radius:3px; font-size:.72rem; }
+.mission-md pre code { display:block; padding:10px; background:var(--bg); border-radius:var(--radius); overflow-x:auto; }
+.mission-md hr { border:none; border-top:1px solid var(--border); margin:12px 0; }
+/* Model badge on mission cards */
+.mc-model-badge { font-size:.58rem; background:var(--accent); color:var(--bg); padding:1px 6px; border-radius:10px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
 
 /* Mini task list (used in agent detail) */
 .task-mini-list { display:flex; flex-direction:column; gap:6px; }

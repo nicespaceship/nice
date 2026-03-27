@@ -206,15 +206,17 @@ const MissionsView = (() => {
       return;
     }
 
-    const agents = State.get('agents') || [];
-    const agentMap = {};
-    agents.forEach(a => { agentMap[a.id] = a; });
+    const agentMap = _buildAgentMap();
 
     // Sort: running first, then queued, then completed/failed by date
     const order = { running: 0, queued: 1, failed: 2, completed: 3 };
     const sorted = [...missions].sort((a, b) => (order[a.status] ?? 4) - (order[b.status] ?? 4) || new Date(b.created_at) - new Date(a.created_at));
 
-    feed.innerHTML = `<div class="mc-card-grid">${sorted.map(m => _renderCard(m, agentMap)).join('')}</div>`;
+    // Run All button for queued missions
+    const queuedCount = missions.filter(m => m.status === 'queued' && m.agent_id).length;
+    const runAllHTML = queuedCount > 1 ? `<button class="btn btn-primary btn-sm" id="run-all-btn" style="margin-bottom:12px">⚡ Run All (${queuedCount})</button>` : '';
+
+    feed.innerHTML = `${runAllHTML}<div class="mc-card-grid">${sorted.map(m => _renderCard(m, agentMap)).join('')}</div>`;
 
     // Detect transitions and animate
     _detectTransitions(missions);
@@ -239,6 +241,19 @@ const MissionsView = (() => {
       await MissionRunner.run(missionId);
       _loadMissions();
     });
+
+    // Run All button
+    const runAllBtn = document.getElementById('run-all-btn');
+    if (runAllBtn) {
+      runAllBtn.addEventListener('click', async () => {
+        runAllBtn.disabled = true; runAllBtn.textContent = 'Running...';
+        const queued = missions.filter(m => m.status === 'queued' && m.agent_id);
+        for (const m of queued) {
+          try { await MissionRunner.run(m.id); } catch (err) { console.error('[Missions] Run All failed for', m.id, err); }
+        }
+        _loadMissions();
+      });
+    }
 
     // Batch checkboxes
     feed.querySelectorAll('.mc-card-check').forEach(cb => {
@@ -293,14 +308,39 @@ const MissionsView = (() => {
         ` : ''}
         <div class="mc-card-footer">
           <span class="mc-card-time">${_timeAgo(m.created_at)}</span>
+          ${m.status === 'completed' && m.metadata?.model ? `<span class="mc-model-badge">${_esc(_shortModel(m.metadata.model))}</span>` : ''}
           ${actionsHTML}
         </div>
       </div>`;
   }
 
+  /* Build a combined agent map from user_agents + blueprints */
+  function _buildAgentMap() {
+    const map = {};
+    const agents = State.get('agents') || [];
+    agents.forEach(a => { map[a.id] = a; });
+    // Also index blueprints by ID so mission agent_id (which is a blueprint ID) resolves
+    const blueprints = State.get('blueprints') || [];
+    blueprints.forEach(bp => {
+      if (!map[bp.id]) map[bp.id] = { id: bp.id, name: bp.name, role: bp.role || bp.category, llm_engine: bp.llm_engine || 'gemini-2.5-flash' };
+    });
+    return map;
+  }
+
   function _agentColor(role) {
-    const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6' };
+    const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6',
+                     Analytics:'#f59e0b', Engineering:'#06b6d4', Sales:'#22c55e', Support:'#a855f7', Legal:'#64748b', Communications:'#3b82f6' };
     return colors[role] || 'var(--accent)';
+  }
+
+  function _shortModel(modelId) {
+    const shorts = {
+      'gemini-2.5-flash': 'Gemini Flash', 'gemini-2.0-lite': 'Gemini Lite', 'gemini-2.5-pro': 'Gemini Pro',
+      'claude-sonnet-4-6': 'Claude Sonnet', 'claude-opus-4': 'Claude Opus',
+      'gpt-5.2': 'GPT-5.2', 'gpt-5-mini': 'GPT-5 Mini',
+      'mistral-large-3': 'Mistral Large', 'deepseek-v3': 'DeepSeek V3', 'grok-4': 'Grok 4',
+    };
+    return shorts[modelId] || modelId;
   }
 
   function _missionAgeClass(createdAt) {
@@ -537,12 +577,14 @@ const MissionDetailView = (() => {
       if (!mission) throw new Error('Mission not found');
 
       // Resolve agent
+      // Look up agent from user_agents, then blueprints, then use stored name
       const agents = State.get('agents') || [];
-      const agentMap = {};
-      agents.forEach(a => { agentMap[a.id] = a; });
-      const agent = agentMap[mission.agent_id];
+      const blueprints = State.get('blueprints') || [];
+      let agent = agents.find(a => a.id === mission.agent_id);
+      if (!agent) agent = blueprints.find(bp => bp.id === mission.agent_id);
+      if (!agent && mission.agent_name) agent = { name: mission.agent_name, role: _inferRole(mission.agent_name) };
       const agentName = agent ? agent.name : (mission.agent_name || 'Unassigned');
-      const agentInitials = agentName.slice(0, 2).toUpperCase();
+      const agentInitials = agentName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
       // Status styling
       const dotClass = mission.status === 'completed' ? 'dot-g' : mission.status === 'running' ? 'dot-g dot-pulse' : mission.status === 'failed' ? 'dot-r' : 'dot-a';
@@ -641,8 +683,8 @@ const MissionDetailView = (() => {
           ${mission.result ? `
             <div class="detail-section">
               <h3 class="detail-section-title">Result</h3>
-              <div class="mission-result-content">
-                <pre>${_esc(mission.result)}</pre>
+              <div class="mission-result-content mission-md">
+                ${_renderMarkdown(mission.result)}
               </div>
             </div>
           ` : ''}
@@ -723,8 +765,50 @@ const MissionDetailView = (() => {
   }
 
   function _agentColor(role) {
-    const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6' };
+    const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6',
+                     Analytics:'#f59e0b', Engineering:'#06b6d4', Sales:'#22c55e', Support:'#a855f7', Legal:'#64748b', Communications:'#3b82f6' };
     return colors[role] || 'var(--accent)';
+  }
+
+  function _inferRole(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('research') || n.includes('data') || n.includes('intel')) return 'Research';
+    if (n.includes('code') || n.includes('tech') || n.includes('engineer') || n.includes('cto')) return 'Engineering';
+    if (n.includes('content') || n.includes('write') || n.includes('counselor') || n.includes('comms')) return 'Content';
+    if (n.includes('ops') || n.includes('security')) return 'Ops';
+    if (n.includes('sales') || n.includes('revenue')) return 'Sales';
+    return 'Custom';
+  }
+
+  /* Simple markdown → HTML renderer (no external deps) */
+  function _renderMarkdown(text) {
+    if (!text) return '';
+    return _esc(text)
+      // Headers
+      .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+      // Bold / italic
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Bullet lists
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+      // Code blocks
+      .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      // Horizontal rules
+      .replace(/^---$/gm, '<hr/>')
+      // Paragraphs (double newline)
+      .replace(/\n\n/g, '</p><p>')
+      // Single newlines → <br>
+      .replace(/\n/g, '<br/>')
+      // Wrap in paragraph
+      .replace(/^/, '<p>').replace(/$/, '</p>')
+      // Fix nested list items
+      .replace(/<\/li><br\/><li>/g, '</li><li>')
+      // Clean up empty paragraphs
+      .replace(/<p><\/p>/g, '');
   }
 
   function destroy() {
