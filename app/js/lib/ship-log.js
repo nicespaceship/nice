@@ -316,7 +316,7 @@ const ShipLog = (() => {
     return { content: fullContent, model, usage: { input_tokens: 0, output_tokens: Math.floor(fullContent.length / 4) } };
   }
 
-  /* ── Mock response pool (Phase 1) ── */
+  /* ── Mock response pool (fallback when LLM calls fail) ── */
   const _ROLE_RESPONSES = {
     Research: [
       'I found 3 relevant sources on this topic. The key findings suggest a significant shift in market dynamics, with emerging players disrupting traditional approaches. I\'ll compile the full briefing.',
