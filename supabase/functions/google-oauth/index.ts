@@ -106,7 +106,29 @@ function errorPage(title: string, message: string): Response {
 
 /* ── Main Handler ─────────────────────────────────────────────── */
 
+const ALLOWED_ORIGINS = [
+  "https://nicespaceship.ai",
+  "https://www.nicespaceship.ai",
+  "http://localhost:3000",
+  "http://localhost:5173",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  };
+}
+
 Deno.serve(async (req: Request) => {
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: getCorsHeaders(req) });
+  }
+
   const url = new URL(req.url);
   const path = url.pathname;
 
@@ -284,10 +306,7 @@ async function handleCallback(url: URL): Promise<Response> {
 /* ── Disconnect: Remove Google OAuth connection ───────────────── */
 
 async function handleDisconnect(req: Request): Promise<Response> {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, content-type",
-  };
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const authHeader = req.headers.get("Authorization");

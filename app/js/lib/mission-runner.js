@@ -198,7 +198,7 @@ const MissionRunner = (() => {
     }
   }
 
-  /* ── Simulated performance metrics (placeholder until real LLM calls) ── */
+  /* ── Estimated performance metrics (cost/speed approximation per model) ── */
   function _simSpeed(modelId) {
     const tiers = { 'claude-4-opus': 4500, 'gpt-4o': 3500, 'gemini-2': 3000, 'mistral-large': 3200, 'grok-3': 3800, 'claude-4-sonnet': 2500, 'gpt-4o-mini': 1800, 'gemini-2-flash': 1500, 'codestral': 2200, 'grok-3-mini': 2000, 'sonar-pro': 3000, 'sonar': 1800, 'deepseek-chat': 2000, 'deepseek-reasoner': 5000 };
     const base = tiers[modelId] || 2500;

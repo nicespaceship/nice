@@ -19,9 +19,43 @@ const PRICE_TO_TOKENS: Record<string, { tokens: number; name: string }> = {
   "price_1TFRmuBTNqh90rCuSNEVyUJN": { tokens: 25_000_000, name: "Enterprise" },
 };
 
+/* ── HMAC-SHA256 Signature Verification ─────────────────────── */
+
+async function verifyStripeSignature(payload: string, sigHeader: string, secret: string): Promise<boolean> {
+  const parts = sigHeader.split(",").reduce((acc, part) => {
+    const [k, v] = part.split("=");
+    acc[k] = v;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const timestamp = parts["t"];
+  const sig = parts["v1"];
+  if (!timestamp || !sig) return false;
+
+  // Reject if timestamp is more than 5 minutes old
+  const age = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
+  if (age > 300) return false;
+
+  const signedPayload = `${timestamp}.${payload}`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const expected = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
+  const expectedHex = Array.from(new Uint8Array(expected)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+  return expectedHex === sig;
+}
+
+/* ── Handler ────────────────────────────────────────────────── */
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200 });
+  // Stripe sends POST — no CORS needed (server-to-server)
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
   }
 
   try {
@@ -33,16 +67,20 @@ Deno.serve(async (req: Request) => {
 
     if (!sigHeader || !webhookSecret) {
       console.error("[stripe-webhook] Missing signature or webhook secret");
-      return new Response("Missing signature", { status: 400 });
+      return new Response(JSON.stringify({ error: "Missing signature" }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
-    // Simple signature verification (timestamp + payload hash)
-    // For production, use Stripe SDK — for now verify the event structure
+    const valid = await verifyStripeSignature(body, sigHeader, webhookSecret);
+    if (!valid) {
+      console.error("[stripe-webhook] Invalid signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+
     let event: Record<string, unknown>;
     try {
       event = JSON.parse(body);
     } catch {
-      return new Response("Invalid JSON", { status: 400 });
+      return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
     // Only handle checkout.session.completed
@@ -56,7 +94,7 @@ Deno.serve(async (req: Request) => {
     const sessionObj = session.object as Record<string, unknown>;
 
     if (!sessionObj) {
-      return new Response("Missing session object", { status: 400 });
+      return new Response(JSON.stringify({ error: "Missing session object" }), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
     const customerEmail = sessionObj.customer_email as string ||
@@ -64,16 +102,9 @@ Deno.serve(async (req: Request) => {
     const sessionId = sessionObj.id as string;
     const amountTotal = sessionObj.amount_total as number;
 
-    // Get line items to determine which token package was purchased
-    // The metadata or line_items will tell us the price ID
-    const lineItems = sessionObj.line_items as Record<string, unknown> | undefined;
-    let priceId: string | null = null;
-
-    // Try to get price from metadata first (most reliable)
+    // Get price ID from metadata or line items
     const metadata = sessionObj.metadata as Record<string, string> | undefined;
-    if (metadata?.price_id) {
-      priceId = metadata.price_id;
-    }
+    let priceId: string | null = metadata?.price_id || null;
 
     // Determine tokens from price or amount
     let tokenAmount = 0;
@@ -83,22 +114,22 @@ Deno.serve(async (req: Request) => {
       tokenAmount = PRICE_TO_TOKENS[priceId].tokens;
       packageName = PRICE_TO_TOKENS[priceId].name;
     } else {
-      // Fallback: determine by amount
+      // Fallback: determine by amount (cents)
       if (amountTotal === 499) { tokenAmount = 500_000; packageName = "Starter"; }
       else if (amountTotal === 1999) { tokenAmount = 5_000_000; packageName = "Pro"; }
       else if (amountTotal === 6999) { tokenAmount = 25_000_000; packageName = "Enterprise"; }
       else {
         console.error(`[stripe-webhook] Unknown amount: ${amountTotal}`);
-        return new Response(JSON.stringify({ received: true, error: "Unknown amount" }), {
-          headers: { "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ error: `Unknown amount: ${amountTotal}` }), {
+          status: 400, headers: { "Content-Type": "application/json" },
         });
       }
     }
 
     if (!customerEmail) {
       console.error("[stripe-webhook] No customer email in session");
-      return new Response(JSON.stringify({ received: true, error: "No email" }), {
-        headers: { "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "No customer email" }), {
+        status: 400, headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -108,16 +139,15 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Find user by email
-    const { data: users } = await supabase.auth.admin.listUsers();
-    const user = users?.users?.find((u: { email?: string }) => u.email === customerEmail);
-
-    if (!user) {
+    // Find user by email (direct lookup, not listUsers)
+    const { data: userData, error: userErr } = await supabase.auth.admin.getUserByEmail(customerEmail);
+    if (userErr || !userData?.user) {
       console.error(`[stripe-webhook] No user found for email: ${customerEmail}`);
-      return new Response(JSON.stringify({ received: true, error: "User not found" }), {
-        headers: { "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "User not found" }), {
+        status: 404, headers: { "Content-Type": "application/json" },
       });
     }
+    const user = userData.user;
 
     // Credit tokens to balance (atomic upsert)
     const { data: balance } = await supabase
@@ -168,9 +198,8 @@ Deno.serve(async (req: Request) => {
 
   } catch (err) {
     console.error("[stripe-webhook] Error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: err.message || "Internal error" }), {
+      status: 500, headers: { "Content-Type": "application/json" },
     });
   }
 });
