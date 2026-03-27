@@ -87,10 +87,11 @@ const SchematicView = (() => {
         if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
           DockView._initRadar(cvs);
         }
-        // Core click → prefill prompt with spaceship name (must bind after _wireSchematic creates SVG)
-        const coreHit = el.querySelector('.sch-core-hit');
+        // Core click → prefill prompt with spaceship name (HTML overlay above SVG + slots)
+        const coreHit = el.querySelector('.sch-core-hit-overlay') || el.querySelector('.sch-core-hit');
         if (coreHit) {
-          coreHit.addEventListener('click', () => {
+          coreHit.addEventListener('click', (e) => {
+            e.stopPropagation();
             const shipName = activeShip?.name || 'Ship';
             if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
               PromptPanel.show();
@@ -257,7 +258,7 @@ const SchematicView = (() => {
     return '<div class="schematic-wired">' +
       '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
-      '<div class="schematic-center">' + svg + '</div>' +
+      '<div class="schematic-center">' + svg + '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' + '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';
   }
