@@ -150,13 +150,11 @@ const IntegrationsView = (() => {
     // Handle OAuth return redirect
     _handleOAuthReturn(el);
 
-    const apis = State.get('api_connections') || _loadApis();
     const mcps = State.get('mcp_connections') || _loadMcps();
     const totalTools = mcps.reduce((sum, c) => sum + (c.available_tools || []).length, 0);
 
     /* Derive unique categories */
     const mcpCats = [...new Set(MCP_CATALOG.map(m => m.cat))];
-    const apiCats = [...new Set(API_CATALOG.map(a => a.cat))];
     const catLabels = { llm:'LLM', payments:'Payments', cloud:'Cloud', comms:'Comms', data:'Data', crm:'CRM', dev:'DevOps', auto:'Automation', other:'Other', workspace:'Workspace', design:'Design', pm:'Project Mgmt', ops:'Monitoring' };
 
     el.innerHTML = `
@@ -164,12 +162,8 @@ const IntegrationsView = (() => {
         <!-- Stats Bar -->
         <div class="integrations-stats">
           <div class="intg-stat">
-            <span class="intg-stat-num">${apis.length}</span>
-            <span class="intg-stat-label">APIs</span>
-          </div>
-          <div class="intg-stat">
             <span class="intg-stat-num">${mcps.length}</span>
-            <span class="intg-stat-label">MCPs</span>
+            <span class="intg-stat-label">Connections</span>
           </div>
           <div class="intg-stat">
             <span class="intg-stat-num">${totalTools}</span>
@@ -177,7 +171,7 @@ const IntegrationsView = (() => {
           </div>
           <div class="intg-stat">
             <span class="status-dot dot-g"></span>
-            <span class="intg-stat-num">${apis.filter(a => a.status === 'active').length + mcps.filter(m => m.status === 'connected').length}</span>
+            <span class="intg-stat-num">${mcps.filter(m => m.status === 'connected').length}</span>
             <span class="intg-stat-label">Online</span>
           </div>
         </div>
@@ -232,64 +226,6 @@ const IntegrationsView = (() => {
           <div id="intg-models-container"></div>
         </div>
 
-        <!-- ═══ API Keys Section ═══ -->
-        <div class="integrations-section">
-          <div class="integrations-section-header">
-            <h3 class="integrations-section-title">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-code"/></svg>
-              API Keys
-            </h3>
-            <p class="integrations-section-desc">Direct API key integrations. Keys are encrypted and stored in the Vault.</p>
-          </div>
-          <div class="intg-toolbar">
-            <div class="search-box" style="flex:1;max-width:280px">
-              <svg class="icon icon-sm search-icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-              <input type="text" class="search-input" id="intg-api-search" placeholder="Search APIs..." style="width:100%">
-            </div>
-            <div class="intg-filters" id="intg-api-filters">
-              <button class="bp-rarity-btn active" data-cat="all">All</button>
-              ${apiCats.map(c => `<button class="bp-rarity-btn" data-cat="${c}">${catLabels[c] || c}</button>`).join('')}
-            </div>
-            <div class="intg-view-toggle">
-              <button class="bp-rarity-btn active" data-view="grid" id="api-view-grid" title="Grid view">
-                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-              </button>
-              <button class="bp-rarity-btn" data-view="list" id="api-view-list" title="List view">
-                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="api-catalog-grid" id="intg-api-grid">
-            ${_renderApiCards(API_CATALOG, apis, 'grid')}
-          </div>
-        </div>
-      </div>
-
-      <!-- Add API Modal -->
-      <div class="modal-overlay" id="modal-add-api">
-        <div class="modal-box">
-          <div class="modal-hdr">
-            <h3 class="modal-title">Connect API</h3>
-            <button class="modal-close" id="close-api-modal" aria-label="Close">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form id="api-connect-form" class="auth-form">
-              <div class="auth-field">
-                <label for="api-service-name">Service</label>
-                <input type="text" id="api-service-name" readonly />
-              </div>
-              <div class="auth-field">
-                <label for="api-key-input">API Key</label>
-                <input type="password" id="api-key-input" required placeholder="Enter your API key..." />
-              </div>
-              <input type="hidden" id="api-service-id" />
-              <div class="auth-error" id="api-error"></div>
-              <button type="submit" class="auth-submit">Connect API</button>
-            </form>
-          </div>
-        </div>
       </div>
 
       <!-- Custom MCP Modal -->
@@ -336,7 +272,7 @@ const IntegrationsView = (() => {
       </div>
     `;
 
-    _bindEvents(el, apis, mcps);
+    _bindEvents(el, null, mcps);
 
     // Render AI Models section (from VaultView)
     const modelsContainer = document.getElementById('intg-models-container');
@@ -467,43 +403,28 @@ const IntegrationsView = (() => {
   }
 
   /* ── Events ───────────────────────────────────────────────────── */
-  function _bindEvents(el, apis, mcps) {
-    // Delegate connect/disconnect clicks (works for both grid and list)
+  function _bindEvents(el, _unused, mcps) {
+    // Delegate connect/disconnect clicks
     el.addEventListener('click', (e) => {
       const mcpConn = e.target.closest('.mcp-connect-btn');
       if (mcpConn) return _connectMcp(mcpConn.dataset.catalogId, el);
       const mcpDisc = e.target.closest('.mcp-disconnect-btn');
       if (mcpDisc) return _disconnectMcp(mcpDisc.dataset.connId, el);
-      const apiConn = e.target.closest('.api-connect-btn');
-      if (apiConn) return _openApiModal(apiConn.dataset.service);
-      const apiDisc = e.target.closest('.api-disconnect-btn');
-      if (apiDisc) return _disconnectApi(apiDisc.dataset.connId, el);
     });
 
-    // Search inputs
+    // MCP search
     document.getElementById('intg-mcp-search')?.addEventListener('input', (e) => {
       _mcpQ = e.target.value.toLowerCase().trim();
-      _applyFilters('mcp', el, apis, mcps);
-    });
-    document.getElementById('intg-api-search')?.addEventListener('input', (e) => {
-      _apiQ = e.target.value.toLowerCase().trim();
-      _applyFilters('api', el, apis, mcps);
+      _applyFilters('mcp', el, [], mcps);
     });
 
-    // Category filter pills
+    // MCP category filter pills
     document.getElementById('intg-mcp-filters')?.addEventListener('click', (e) => {
       const btn = e.target.closest('.bp-rarity-btn');
       if (!btn) return;
       _mcpCat = btn.dataset.cat;
       el.querySelectorAll('#intg-mcp-filters .bp-rarity-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === _mcpCat));
-      _applyFilters('mcp', el, apis, mcps);
-    });
-    document.getElementById('intg-api-filters')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.bp-rarity-btn');
-      if (!btn) return;
-      _apiCat = btn.dataset.cat;
-      el.querySelectorAll('#intg-api-filters .bp-rarity-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === _apiCat));
-      _applyFilters('api', el, apis, mcps);
+      _applyFilters('mcp', el, [], mcps);
     });
 
     // View toggle (grid/list)
