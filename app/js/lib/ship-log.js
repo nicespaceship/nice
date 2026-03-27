@@ -161,9 +161,16 @@ const ShipLog = (() => {
       } else {
         response = await _callLLM(agentBlueprint, prompt, context, llmConfig);
       }
-      const tokensUsed = response.usage ? (response.usage.input_tokens + response.usage.output_tokens) : Math.floor(response.content.length / 4);
+      // Normalize content: Gemini returns string, Anthropic returns [{type:"text",text:"..."}]
+      const rawContent = response.content;
+      const textContent = typeof rawContent === 'string'
+        ? rawContent
+        : (Array.isArray(rawContent) && rawContent[0]?.text) || String(rawContent || '');
+      response.content = textContent;
+
+      const tokensUsed = response.usage ? (response.usage.input_tokens + response.usage.output_tokens) : Math.floor(textContent.length / 4);
       metadata = {
-        model:       response.model || llmConfig.model || 'claude-haiku-4-5-20251001',
+        model:       response.model || llmConfig.model || 'gemini-2.5-flash',
         tokens_used: tokensUsed,
         duration_ms: Date.now() - startMs,
         context_len: context.length,
@@ -215,7 +222,8 @@ const ShipLog = (() => {
       ? PromptBuilder.build(blueprint)
       : `You are ${blueprint ? blueprint.name : 'NICE AI'}, a ${role} agent. ${blueprint && blueprint.flavor ? blueprint.flavor : 'Provide helpful, concise responses.'}`;
 
-    const messages = [{ role: 'system', content: systemPrompt }];
+    // System prompt goes as top-level param (nice-ai handles per-provider)
+    const messages = [];
     if (context && context.length) {
       context.forEach(entry => {
         messages.push({
@@ -228,6 +236,7 @@ const ShipLog = (() => {
 
     return {
       model:       config.model || 'gemini-2.5-flash',
+      system:      systemPrompt,
       messages,
       temperature: config.temperature || 0.7,
       max_tokens:  config.max_tokens || 1024,
