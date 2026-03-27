@@ -253,9 +253,9 @@ const AgentExecutor = (() => {
     }
 
     const apiMessages = [{ role: 'system', content: systemPrompt }, ...messages];
-    const { data, error } = await SB.functions.invoke('llm-proxy', {
+    const { data, error } = await SB.functions.invoke('nice-ai', {
       body: {
-        model:       llmConfig.model || 'claude-4-sonnet',
+        model:       llmConfig.model || 'gemini-2.5-flash',
         messages:    apiMessages,
         temperature: llmConfig.temperature || 0.3,
         max_tokens:  llmConfig.max_tokens || 2048,
