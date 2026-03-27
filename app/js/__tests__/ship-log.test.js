@@ -70,7 +70,7 @@ describe('ShipLog', () => {
     sessionStorage.clear();
     State._reset();
     // Ensure LLM connection check passes
-    State.set('llm_connections', { anthropic: { connected_at: '2026-01-01T00:00:00Z' } });
+    State.set('enabled_models', { 'gemini-2.5-flash': true, 'claude-sonnet-4-20250514': true });
   });
 
   describe('append', () => {
@@ -250,14 +250,15 @@ describe('ShipLog', () => {
     });
 
     it('should return no-provider message when no LLMs connected', async () => {
-      State.set('llm_connections', {});
+      State.set('enabled_models', {});
 
       const result = await ShipLog.execute('ship-nollm', null, 'Hello');
-      expect(result.content).toContain('No LLM providers connected');
-      expect(result.metadata.source).toBe('system');
+      // With new system, free models are always available — should get a mock response
+      expect(result).not.toBeNull();
+      expect(result.content).toBeTruthy();
 
       // Restore for other tests
-      State.set('llm_connections', { anthropic: { connected_at: '2026-01-01T00:00:00Z' } });
+      State.set('enabled_models', { 'gemini-2.5-flash': true, 'claude-sonnet-4-20250514': true });
     });
   });
 

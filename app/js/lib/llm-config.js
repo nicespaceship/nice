@@ -33,7 +33,8 @@ const LLMConfig = (() => {
     let model = (bp.config && bp.config.llm_engine) || 'claude-haiku-4-5-20251001';
     // Resolve NICE Auto via Model Intelligence
     if (model === 'nice-auto' && typeof ModelIntel !== 'undefined') {
-      const connected = Object.keys(State.get('llm_connections') || {});
+      const enabled = State.get('enabled_models') || {};
+      const connected = Object.keys(enabled).filter(k => enabled[k]);
       model = ModelIntel.bestModel(bp.id, connected) || 'claude-haiku-4-5-20251001';
     }
     params.model = model;

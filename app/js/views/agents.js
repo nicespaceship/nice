@@ -528,7 +528,8 @@ const AgentDetailView = (() => {
   function _resolveAutoHint(agent) {
     const bpId = agent.blueprint_id || agent.id;
     if (typeof ModelIntel === 'undefined') return '';
-    const connected = Object.keys(State.get('llm_connections') || {});
+    const enabled = State.get('enabled_models') || {};
+    const connected = Object.keys(enabled).filter(k => enabled[k]);
     const best = ModelIntel.bestModel(bpId, connected);
     if (!best) return '';
     const models = typeof LLM_MODELS !== 'undefined' ? LLM_MODELS : [];

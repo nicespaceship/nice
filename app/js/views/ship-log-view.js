@@ -65,7 +65,8 @@ const ShipLogView = (() => {
 
     const agents = (State.get('agents') || []).length;
     const ships = (State.get('spaceships') || []).length;
-    const connections = Object.keys(State.get('llm_connections') || {}).length;
+    const enabledMdls = State.get('enabled_models') || {};
+    const connections = Object.keys(enabledMdls).filter(k => enabledMdls[k]).length;
 
     el.innerHTML = `
       <div class="task-stat"><span class="task-stat-num">${rank}</span><span class="task-stat-label">Rank</span></div>

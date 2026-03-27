@@ -42,7 +42,6 @@ jobs:
 
       - name: Run E2E tests
         run: npx playwright test
-        continue-on-error: true  # E2E tests are advisory — unit tests are the gate
 
       - name: Upload E2E artifacts
         if: failure()
