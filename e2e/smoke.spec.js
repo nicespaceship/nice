@@ -21,20 +21,28 @@ import AxeBuilder from '@axe-core/playwright';
  *   #/integrations → redirects to #/security?tab=integrations
  */
 
+/** Wait for NICE app to fully bootstrap (all scripts loaded + first render) */
+async function waitForApp(page) {
+  await page.goto('./');
+  // Wait for all scripts to load and app to render
+  await page.waitForFunction(() => typeof State !== 'undefined' && typeof Router !== 'undefined', { timeout: 20000 });
+  await page.locator('#app-page-title').waitFor({ state: 'attached', timeout: 15000 });
+}
+
 test.describe('NICE Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // no-op — onboarding removed
+    await page.addInitScript(() => {
+      localStorage.setItem('nice-tour-completed', 'true');
+    });
   });
 
   test('app loads and shows home view', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
     await expect(page.locator('.chat-home')).toBeVisible();
   });
 
   test('sidebar navigation works', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
     // Open sidebar and navigate to Home
     const sidebar = page.locator('#app-sidebar');
     await page.locator('#sidebar-toggle').click();
@@ -53,8 +61,7 @@ test.describe('NICE Smoke Tests', () => {
     ];
 
     // Load the app first
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     for (const view of views) {
       // Navigate via hash change
@@ -67,8 +74,7 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('bridge view renders with tabs', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user for auth-gated views
     await page.evaluate(() => {
@@ -85,8 +91,7 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('command palette opens with Ctrl+K', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Use Control+k (works in headless Chromium on all platforms)
     await page.keyboard.press('Control+k');
@@ -103,8 +108,7 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('theme switching works', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Check default theme
     const theme = await page.getAttribute('html', 'data-theme');
@@ -122,8 +126,7 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('keyboard shortcuts help opens with ?', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     await page.keyboard.press('?');
     // Should show keyboard help overlay
@@ -135,8 +138,7 @@ test.describe('NICE Smoke Tests', () => {
 
   test('responsive layout at mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // App should load without errors at mobile width
     const app = page.locator('#app-view');
@@ -169,8 +171,7 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('settings view renders correctly', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Navigate to settings
     await page.evaluate(() => { window.location.hash = '#/settings'; });
@@ -185,8 +186,7 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('bridge view has schematic and blueprint tabs', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
     await expect(page.locator('#app-page-title')).toHaveText('Bridge');
@@ -199,8 +199,7 @@ test.describe('NICE Smoke Tests', () => {
   });
 
   test('prompt panel is visible on home', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Chat home should have input area
     const chatHome = page.locator('.chat-home');
@@ -216,8 +215,7 @@ test.describe('NICE Accessibility', () => {
   });
 
   test('home view has no critical accessibility violations', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -230,8 +228,7 @@ test.describe('NICE Accessibility', () => {
   });
 
   test('bridge view has no critical accessibility violations', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
     await expect(page.locator('#app-page-title')).toHaveText('Bridge');
 
@@ -251,8 +248,7 @@ test.describe('NICE Accessibility', () => {
   });
 
   test('all images have alt text or are decorative', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Check all images have alt attributes
     const images = await page.locator('img').all();
@@ -274,8 +270,7 @@ test.describe('NICE Feature Tests', () => {
   });
 
   test('theme creator has color pickers', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     await page.evaluate(() => { window.location.hash = '#/theme-editor'; });
     await expect(page.locator('#app-page-title')).toHaveText('Theme Editor');
@@ -288,8 +283,7 @@ test.describe('NICE Feature Tests', () => {
   });
 
   test('bridge missions tab renders', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user so missions view renders (it has an auth gate)
     await page.evaluate(() => {
@@ -309,8 +303,7 @@ test.describe('NICE Feature Tests', () => {
   });
 
   test('bridge log tab renders', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user
     await page.evaluate(() => {
@@ -327,8 +320,7 @@ test.describe('NICE Feature Tests', () => {
   });
 
   test('full journey: navigate zones and verify no errors', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user
     await page.evaluate(() => {
@@ -370,8 +362,7 @@ test.describe('NICE Feature Tests', () => {
   });
 
   test('old routes redirect correctly', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // /missions → /bridge?tab=missions
     await page.evaluate(() => { window.location.hash = '#/missions'; });
@@ -400,8 +391,7 @@ test.describe('NICE Feature Tests', () => {
   });
 
   test('streamlined journey: prompt panel and agent matching', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user and activate an agent
     await page.evaluate(() => {
@@ -496,8 +486,7 @@ test.describe('NICE Auth Flow', () => {
   });
 
   test('sign-in modal opens and has form fields', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Click sign-in button (in header or auth-gate)
     const signInBtn = page.locator('button:has-text("Sign In"), .btn:has-text("SIGN IN")').first();
@@ -514,8 +503,7 @@ test.describe('NICE Auth Flow', () => {
   });
 
   test('unauthenticated users can navigate views without errors', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Navigate to bridge without authentication
     await page.evaluate(() => { window.location.hash = '#/bridge'; });
@@ -538,15 +526,13 @@ test.describe('NICE Performance', () => {
 
   test('home view loads within 3 seconds', async ({ page }) => {
     const start = Date.now();
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
     const loadTime = Date.now() - start;
     expect(loadTime).toBeLessThan(3000);
   });
 
   test('view transitions complete within 1 second', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     const views = ['#/bridge', '#/security', '#/settings', '#/'];
     for (const hash of views) {
@@ -559,8 +545,7 @@ test.describe('NICE Performance', () => {
   });
 
   test('no memory leaks from rapid navigation', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user
     await page.evaluate(() => {
@@ -595,8 +580,7 @@ test.describe('NICE Blueprint Drawer', () => {
 
   // TODO: fix drawer tests — drawer doesn't open in CI after schematic-default change
   test.skip('clicking a blueprint card opens the detail drawer', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user so blueprints view renders, also dismiss first-mission tour
     await page.evaluate(() => {
@@ -627,8 +611,7 @@ test.describe('NICE Blueprint Drawer', () => {
   });
 
   test.skip('drawer can be opened programmatically', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Inject mock user
     await page.evaluate(() => {
@@ -670,8 +653,7 @@ test.describe('NICE Focus Management', () => {
 
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Focus first sidebar link
     const firstLink = page.locator('.side-link').first();
@@ -687,8 +669,7 @@ test.describe('NICE Focus Management', () => {
   });
 
   test('ARIA landmarks are present', async ({ page }) => {
-    await page.goto('./');
-    await expect(page.locator('#app-page-title')).toBeAttached();
+    await waitForApp(page);
 
     // Check for main landmark
     const main = page.locator('[role="main"], main');
