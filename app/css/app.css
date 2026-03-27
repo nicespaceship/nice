@@ -991,6 +991,22 @@
 .auth-submit:disabled { opacity:.5; cursor:not-allowed; }
 
 
+/* Google sign-in button */
+.auth-google-btn {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; padding:10px; border:1px solid var(--border); border-radius:var(--radius);
+  background:var(--bg-alt); color:var(--text); font-family:var(--font-b); font-size:.78rem;
+  cursor:pointer; transition:border-color .15s, background .15s;
+}
+.auth-google-btn:hover { border-color:var(--accent); background:rgba(255,255,255,.04); }
+.auth-divider {
+  display:flex; align-items:center; gap:12px; color:var(--text-muted); font-size:.65rem;
+  text-transform:uppercase; letter-spacing:.1em;
+}
+.auth-divider::before, .auth-divider::after {
+  content:''; flex:1; height:1px; background:var(--border);
+}
+
 .auth-footer {
   font-family:var(--font-m); font-size:.5rem; letter-spacing:.14em;
   color:var(--text-dim); text-align:center; margin-top:8px;
