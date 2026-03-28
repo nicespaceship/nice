@@ -5720,31 +5720,3 @@ body.preview-active .nice-ai {
   .bpl-header .bpl-desc, .bpl-header .bpl-stat1, .bpl-header .bpl-stat2, .bpl-header .bpl-stat3, .bpl-header .bpl-dl { display:none; }
 }
 
-/* ═══ Marketplace / Plugins Grid ═══ */
-.mp-toolbar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
-.mp-search-wrap { flex:1; min-width:200px; }
-.mp-filters { display:flex; gap:6px; }
-.mp-filter.active { background:var(--accent); color:var(--bg); }
-.mp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
-.mp-card { background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; display:flex; flex-direction:column; gap:8px; transition:border-color .2s; }
-.mp-card:hover { border-color:var(--accent); }
-.mp-card-header { display:flex; justify-content:space-between; align-items:center; }
-.mp-card-cat { font-size:.65rem; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); font-family:var(--font-m); }
-.mp-card-ver { font-size:.65rem; color:var(--text-muted); font-family:var(--font-m); }
-.mp-card-title { font-size:1rem; font-weight:600; color:var(--text); margin:0; }
-.mp-card-desc { font-size:.8rem; color:var(--text-muted); line-height:1.4; flex:1; }
-.mp-card-tags { display:flex; flex-wrap:wrap; gap:4px; }
-.mp-tag { font-size:.6rem; padding:2px 6px; border-radius:3px; background:var(--bg-alt); color:var(--text-muted); font-family:var(--font-m); }
-.mp-card-footer { display:flex; align-items:center; gap:12px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
-.mp-stat { font-size:.7rem; color:var(--text-muted); font-family:var(--font-m); }
-.mp-loading { text-align:center; color:var(--text-muted); padding:40px 0; }
-
-/* ═══ Teams ═══ */
-.teams-toolbar { margin-bottom:20px; }
-.teams-list { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; }
-.team-card { background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
-.team-card:hover { border-color:var(--accent); }
-.team-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.team-card-name { font-size:1rem; font-weight:600; color:var(--text); margin:0; }
-.team-card-meta { display:flex; gap:16px; font-size:.75rem; color:var(--text-muted); font-family:var(--font-m); margin-bottom:12px; }
-.team-card-actions { display:flex; gap:8px; }
