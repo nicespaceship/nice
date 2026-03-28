@@ -712,6 +712,8 @@ const NICE = (() => {
       if (user) {
         _migrateLocalSpaceships(user);
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
+        // First-run check: show setup wizard for new users with no spaceships
+        _checkFirstRun(user);
       }
       // Handle session expiry — prompt re-login
       if (event === 'TOKEN_REFRESHED' && !user) {
@@ -734,6 +736,32 @@ const NICE = (() => {
       State.set('user', null);
       _updateAuthUI(null);
     });
+  }
+
+  /* ── First-run onboarding: show setup wizard for new users ── */
+  async function _checkFirstRun(user) {
+    if (!user || localStorage.getItem('nice-onboarded-' + user.id)) return;
+    // Wait a moment for the app to settle
+    await new Promise(r => setTimeout(r, 1500));
+    // Check if user has any spaceships
+    const ships = State.get('user_spaceships') || [];
+    if (ships.length > 0) {
+      localStorage.setItem('nice-onboarded-' + user.id, '1');
+      return;
+    }
+    // Try loading from DB
+    try {
+      const dbShips = await SB.db('user_spaceships').list({ user_id: user.id, limit: 1 });
+      if (dbShips && dbShips.length > 0) {
+        localStorage.setItem('nice-onboarded-' + user.id, '1');
+        return;
+      }
+    } catch { /* proceed to wizard */ }
+    // No spaceships — show setup wizard
+    if (typeof SetupWizard !== 'undefined' && SetupWizard.open) {
+      SetupWizard.open();
+      localStorage.setItem('nice-onboarded-' + user.id, '1');
+    }
   }
 
   /* ── Migrate localStorage spaceship slots to Supabase user_spaceships ── */
@@ -855,6 +883,38 @@ const NICE = (() => {
   }
 
   /* ── Service Worker ── */
+  /* ── PWA Install Prompt ── */
+  let _deferredInstallPrompt = null;
+  function _initPWAInstall() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      _deferredInstallPrompt = e;
+      // Show install banner after 30s if user is engaged
+      setTimeout(() => {
+        if (_deferredInstallPrompt && typeof Notify !== 'undefined') {
+          Notify.send({
+            title: 'Install NICE',
+            message: 'Add NICE to your home screen for offline access.',
+            type: 'system',
+            undo: () => {
+              if (_deferredInstallPrompt) {
+                _deferredInstallPrompt.prompt();
+                _deferredInstallPrompt.userChoice.then(() => { _deferredInstallPrompt = null; });
+              }
+            },
+            undoLabel: 'Install',
+          });
+        }
+      }, 30000);
+    });
+
+    window.addEventListener('appinstalled', () => {
+      _deferredInstallPrompt = null;
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'NICE Installed', message: 'App installed successfully!', type: 'success' });
+      if (typeof Gamification !== 'undefined') Gamification.addXP('install_pwa');
+    });
+  }
+
   function _registerSW() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js')
@@ -1340,6 +1400,7 @@ const NICE = (() => {
     _initAuth();
     _initRoutes();
     _registerSW();
+    _initPWAInstall();
     Notify.init();
 
     // Initialize command palette and keyboard shortcuts
