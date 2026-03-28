@@ -47,6 +47,14 @@ const AuthModal = (() => {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
             Sign in with GitHub
           </button>
+          <button type="button" class="auth-x-btn" id="am-x-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Sign in with X
+          </button>
+          <button type="button" class="auth-apple-btn" id="am-apple-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+            Sign in with Apple
+          </button>
           <button type="button" class="auth-link" id="am-forgot-btn">Forgot password?</button>
         </form>
 
@@ -73,6 +81,14 @@ const AuthModal = (() => {
           <button type="button" class="auth-github-btn" id="am-github-btn-su">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
             Sign up with GitHub
+          </button>
+          <button type="button" class="auth-x-btn" id="am-x-btn-su">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Sign up with X
+          </button>
+          <button type="button" class="auth-apple-btn" id="am-apple-btn-su">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+            Sign up with Apple
           </button>
         </form>
 
@@ -111,6 +127,10 @@ const AuthModal = (() => {
     document.getElementById('am-google-btn-su')?.addEventListener('click', _handleGoogleSignIn);
     document.getElementById('am-github-btn')?.addEventListener('click', _handleGitHubSignIn);
     document.getElementById('am-github-btn-su')?.addEventListener('click', _handleGitHubSignIn);
+    document.getElementById('am-x-btn')?.addEventListener('click', _handleXSignIn);
+    document.getElementById('am-x-btn-su')?.addEventListener('click', _handleXSignIn);
+    document.getElementById('am-apple-btn')?.addEventListener('click', _handleAppleSignIn);
+    document.getElementById('am-apple-btn-su')?.addEventListener('click', _handleAppleSignIn);
   }
 
   async function _handleSignIn(e) {
@@ -194,6 +214,38 @@ const AuthModal = (() => {
     } catch (err) {
       const errEl = document.getElementById('am-si-error') || document.getElementById('am-su-error');
       if (errEl) errEl.textContent = err.message || 'Google sign-in failed';
+    }
+  }
+
+  async function _handleAppleSignIn() {
+    try {
+      const c = SB.client;
+      if (!c) throw new Error('Service unavailable');
+      const { error } = await c.auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo: location.origin + '/app/#/' },
+      });
+      if (error) throw error;
+      close();
+    } catch (err) {
+      const errEl = document.getElementById('am-si-error') || document.getElementById('am-su-error');
+      if (errEl) errEl.textContent = err.message || 'Apple sign-in failed';
+    }
+  }
+
+  async function _handleXSignIn() {
+    try {
+      const c = SB.client;
+      if (!c) throw new Error('Service unavailable');
+      const { error } = await c.auth.signInWithOAuth({
+        provider: 'twitter',
+        options: { redirectTo: location.origin + '/app/#/' },
+      });
+      if (error) throw error;
+      close();
+    } catch (err) {
+      const errEl = document.getElementById('am-si-error') || document.getElementById('am-su-error');
+      if (errEl) errEl.textContent = err.message || 'X sign-in failed';
     }
   }
 
