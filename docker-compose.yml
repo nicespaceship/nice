@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  nice:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  # Optional: local Supabase (requires supabase CLI)
+  # Uncomment to run your own Supabase instance:
+  #
+  # supabase:
+  #   image: supabase/studio:latest
+  #   ports:
+  #     - "54321:3000"
+  #   depends_on:
+  #     - postgres
+  #
+  # postgres:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: supabase
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+# volumes:
+#   pgdata:
