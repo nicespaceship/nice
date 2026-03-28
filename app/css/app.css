@@ -2355,7 +2355,7 @@
 /* Input container */
 .nice-ai-input-container {
   display:flex; flex-direction:column;
-  border:1px solid var(--border); border-radius:var(--radius, 16px);
+  border:1px solid var(--border); border-radius:16px;
   background:var(--panel-bg, var(--bg-alt));
   padding:12px 12px 8px;
   transition:border-color .2s;

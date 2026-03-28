@@ -280,7 +280,7 @@
 
 /* Prompt panel */
 [data-theme="spaceship"] .nice-ai-input-container {
-  border: 1px solid #2a2a2a; border-radius: 0;
+  border: 1px solid #2a2a2a; border-radius: 16px;
   background: rgba(10,10,10,0.95);
 }
 [data-theme="spaceship"] .nice-ai-input-container:focus-within { border-color: #555; }
@@ -531,7 +531,7 @@
 
 /* Prompt panel */
 [data-theme="robotech"] .nice-ai-input-container {
-  border: 1px solid #ddd; border-radius: 0;
+  border: 1px solid #ddd; border-radius: 16px;
   background: #fff;
 }
 [data-theme="robotech"] .nice-ai-input-container:focus-within { border-color: #888; }
@@ -915,7 +915,7 @@
 
 /* Prompt panel — identity disc communicator */
 [data-theme="navigator"] .nice-ai-input-container {
-  border: 1px solid rgba(0,229,255,0.2); border-radius: 2px;
+  border: 1px solid rgba(0,229,255,0.2); border-radius: 16px;
   background: rgba(2,9,15,0.9);
   box-shadow: 0 0 15px rgba(0,229,255,0.05), inset 0 0 15px rgba(0,229,255,0.02);
 }
@@ -1678,7 +1678,7 @@
 
 /* Prompt panel — brass communicator */
 [data-theme="steampunk"] .nice-ai-input-container {
-  border: 1px solid #5a4220; border-radius: 3px;
+  border: 1px solid #5a4220; border-radius: 16px;
   background: linear-gradient(135deg, #1a1208, #0f0a04);
 }
 [data-theme="steampunk"] .nice-ai-input-container:focus-within { border-color: #c8a050; box-shadow: 0 0 8px rgba(200,160,80,0.15); }
