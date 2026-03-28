@@ -102,7 +102,7 @@
   border-radius: 0;
   margin: 1px 0;
   padding: 8px 14px;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .15em;
@@ -166,7 +166,7 @@
   border-radius: 0;
   background: transparent;
   color: #ccc;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .12em;
@@ -196,7 +196,7 @@
   border: 1px solid #2a2a2a;
   background: transparent;
   color: #666;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .1em;
@@ -221,14 +221,14 @@
 [data-theme="spaceship"] .bp-sub-tab {
   border-radius: 0; border: 1px solid #2a2a2a;
   background: transparent; color: #666;
-  font-family: 'Orbitron', sans-serif; font-weight: 500;
+  font-family: var(--font-h); font-weight: 500;
   text-transform: uppercase; letter-spacing: .08em; font-size: .55rem;
 }
 [data-theme="spaceship"] .bp-sub-tab.active { color: #fff; border-color: #fff; background: rgba(255,255,255,0.05); }
 [data-theme="spaceship"] .bp-rarity-btn {
   border-radius: 0; border: 1px solid #2a2a2a;
   background: transparent; color: #555;
-  font-family: 'Orbitron', sans-serif; font-size: .5rem;
+  font-family: var(--font-h); font-size: .5rem;
 }
 [data-theme="spaceship"] .bp-rarity-btn.active { color: #fff; border-color: #666; background: rgba(255,255,255,0.05); }
 [data-theme="spaceship"] .bp-view-btn {
@@ -262,7 +262,7 @@
 [data-theme="spaceship"] .search-input {
   border-radius: 0; border: 1px solid #2a2a2a;
   background: #0a0a0a; color: #ccc;
-  font-family: 'Orbitron', sans-serif; font-size: .65rem;
+  font-family: var(--font-h); font-size: .65rem;
 }
 [data-theme="spaceship"] input[type="text"]:focus,
 [data-theme="spaceship"] .search-input:focus { border-color: #666; }
@@ -289,11 +289,11 @@
 [data-theme="spaceship"] .nice-ai-chip {
   border-radius: 0; border: 1px solid #2a2a2a;
   background: transparent; color: #666;
-  font-family: 'Orbitron', sans-serif; text-transform: uppercase; font-size: .5rem;
+  font-family: var(--font-h); text-transform: uppercase; font-size: .5rem;
 }
 [data-theme="spaceship"] .nice-ai-chip:hover { border-color: #555; color: #ccc; }
 [data-theme="spaceship"] .chat-pill {
-  border-radius: 0; border: 1px solid #2a2a2a;
+  border-radius: 9999px; border: 1px solid #2a2a2a;
   background: transparent; color: #666;
 }
 [data-theme="spaceship"] .chat-pill:hover { border-color: #555; color: #ccc; }
@@ -321,7 +321,7 @@
 /* Popover */
 [data-theme="spaceship"] .side-popover { background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 0; }
 [data-theme="spaceship"] .side-popover-item {
-  color: #888; font-family: 'Orbitron', sans-serif;
+  color: #888; font-family: var(--font-h);
   text-transform: uppercase; letter-spacing: .1em; font-size: .55rem;
 }
 [data-theme="spaceship"] .side-popover-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
@@ -357,7 +357,7 @@
   border-radius: 0;
   margin: 1px 0;
   padding: 8px 14px;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .12em;
@@ -414,7 +414,7 @@
   border-radius: 0;
   background: transparent;
   color: #333;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .12em;
@@ -444,7 +444,7 @@
   border: 1px solid #ddd;
   background: transparent;
   color: #999;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .08em;
@@ -469,14 +469,14 @@
 [data-theme="robotech"] .bp-sub-tab {
   border-radius: 0; border: 1px solid #ddd;
   background: transparent; color: #999;
-  font-family: 'Orbitron', sans-serif; font-weight: 600;
+  font-family: var(--font-h); font-weight: 600;
   text-transform: uppercase; letter-spacing: .08em; font-size: .55rem;
 }
 [data-theme="robotech"] .bp-sub-tab.active { color: #111; border-color: #111; background: rgba(0,0,0,0.03); }
 [data-theme="robotech"] .bp-rarity-btn {
   border-radius: 0; border: 1px solid #ddd;
   background: transparent; color: #aaa;
-  font-family: 'Orbitron', sans-serif; font-size: .5rem;
+  font-family: var(--font-h); font-size: .5rem;
 }
 [data-theme="robotech"] .bp-rarity-btn.active { color: #111; border-color: #888; background: rgba(0,0,0,0.03); }
 [data-theme="robotech"] .bp-view-btn {
@@ -513,7 +513,7 @@
 [data-theme="robotech"] .search-input {
   border-radius: 0; border: 1px solid #ddd;
   background: #fff; color: #222;
-  font-family: 'Orbitron', sans-serif; font-size: .65rem;
+  font-family: var(--font-h); font-size: .65rem;
 }
 [data-theme="robotech"] input[type="text"]:focus,
 [data-theme="robotech"] .search-input:focus { border-color: #888; }
@@ -540,11 +540,11 @@
 [data-theme="robotech"] .nice-ai-chip {
   border-radius: 0; border: 1px solid #ddd;
   background: transparent; color: #888;
-  font-family: 'Orbitron', sans-serif; text-transform: uppercase; font-size: .5rem;
+  font-family: var(--font-h); text-transform: uppercase; font-size: .5rem;
 }
 [data-theme="robotech"] .nice-ai-chip:hover { border-color: #888; color: #333; background: rgba(0,0,0,0.03); }
 [data-theme="robotech"] .chat-pill {
-  border-radius: 0; border: 1px solid #ddd;
+  border-radius: 9999px; border: 1px solid #ddd;
   background: transparent; color: #888;
 }
 [data-theme="robotech"] .chat-pill:hover { border-color: #888; color: #333; }
@@ -573,7 +573,7 @@
 /* Popover */
 [data-theme="robotech"] .side-popover { background: #fff; border: 1px solid #ddd; border-radius: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 [data-theme="robotech"] .side-popover-item {
-  color: #666; font-family: 'Orbitron', sans-serif;
+  color: #666; font-family: var(--font-h);
   text-transform: uppercase; letter-spacing: .1em; font-size: .55rem;
 }
 [data-theme="robotech"] .side-popover-item:hover { background: rgba(0,0,0,0.04); color: #111; }
@@ -680,13 +680,13 @@
 [data-theme="navigator"] .side-header .app-brand-text {
   color: #00e5ff;
   text-shadow: 0 0 10px rgba(0,229,255,0.5), 0 0 20px rgba(0,229,255,0.2);
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
 }
 [data-theme="navigator"] .side-link {
   border-radius: 2px;
   border: 1px solid transparent;
   margin: 2px 8px;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .15em;
@@ -766,7 +766,7 @@
   border-radius: 2px;
   background: transparent;
   color: #00e5ff;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .12em;
@@ -799,7 +799,7 @@
   border: 1px solid rgba(0,229,255,0.15);
   background: transparent;
   color: rgba(0,229,255,0.5);
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .1em;
@@ -827,7 +827,7 @@
 [data-theme="navigator"] .bp-sub-tab {
   border-radius: 2px; border: 1px solid rgba(0,229,255,0.15);
   background: transparent; color: rgba(0,229,255,0.5);
-  font-family: 'Orbitron', sans-serif; font-weight: 600;
+  font-family: var(--font-h); font-weight: 600;
   text-transform: uppercase; letter-spacing: .08em; font-size: .55rem;
 }
 [data-theme="navigator"] .bp-sub-tab.active {
@@ -837,7 +837,7 @@
 [data-theme="navigator"] .bp-rarity-btn {
   border-radius: 2px; border: 1px solid rgba(0,229,255,0.12);
   background: transparent; color: rgba(0,229,255,0.4);
-  font-family: 'Orbitron', sans-serif; font-size: .5rem; letter-spacing: .08em;
+  font-family: var(--font-h); font-size: .5rem; letter-spacing: .08em;
 }
 [data-theme="navigator"] .bp-rarity-btn.active {
   background: rgba(0,229,255,0.1); color: #00e5ff; border-color: rgba(0,229,255,0.5);
@@ -889,7 +889,7 @@
   border: 1px solid rgba(0,229,255,0.2);
   background: rgba(0,229,255,0.03);
   color: #00e5ff;
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
   font-size: .7rem;
 }
 [data-theme="navigator"] input[type="text"]:focus,
@@ -900,13 +900,13 @@
 [data-theme="navigator"] select {
   border-radius: 2px; border: 1px solid rgba(0,229,255,0.2); color: #00e5ff;
   background: rgba(0,229,255,0.03) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
-  font-family: 'Orbitron', sans-serif; font-size: .65rem;
+  font-family: var(--font-h); font-size: .65rem;
   appearance: none; -webkit-appearance: none;
 }
 [data-theme="navigator"] .filter-select {
   border-radius: 2px; border: 1px solid rgba(0,229,255,0.2); color: #00e5ff;
   background: rgba(0,229,255,0.03) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
-  font-family: 'Orbitron', sans-serif; font-size: .65rem;
+  font-family: var(--font-h); font-size: .65rem;
   appearance: none; -webkit-appearance: none;
 }
 [data-theme="navigator"] .search-box {
@@ -923,12 +923,12 @@
   border-color: #00e5ff;
   box-shadow: 0 0 20px rgba(0,229,255,0.15), inset 0 0 15px rgba(0,229,255,0.03);
 }
-[data-theme="navigator"] .nice-ai-input { color: #cce8f0; font-family: 'Orbitron', sans-serif; font-size: .7rem; }
+[data-theme="navigator"] .nice-ai-input { color: #cce8f0; font-family: var(--font-h); font-size: .7rem; }
 [data-theme="navigator"] .nice-ai-input::placeholder { color: rgba(0,229,255,0.25); }
 [data-theme="navigator"] .nice-ai-chip {
   border-radius: 2px; border: 1px solid rgba(0,229,255,0.15);
   background: transparent; color: rgba(0,229,255,0.5);
-  font-family: 'Orbitron', sans-serif; font-size: .5rem;
+  font-family: var(--font-h); font-size: .5rem;
   font-weight: 600; text-transform: uppercase; letter-spacing: .1em;
 }
 [data-theme="navigator"] .nice-ai-chip:hover {
@@ -936,9 +936,9 @@
   box-shadow: 0 0 8px rgba(0,229,255,0.15);
 }
 [data-theme="navigator"] .chat-pill {
-  border-radius: 2px; border: 1px solid rgba(0,229,255,0.15);
+  border-radius: 9999px; border: 1px solid rgba(0,229,255,0.15);
   background: transparent; color: rgba(0,229,255,0.5);
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
 }
 [data-theme="navigator"] .chat-pill:hover {
   background: rgba(0,229,255,0.1); color: #00e5ff;
@@ -954,7 +954,7 @@
 
 /* Card actions */
 [data-theme="navigator"] .c-btn {
-  border-radius: 2px; font-family: 'Orbitron', sans-serif;
+  border-radius: 2px; font-family: var(--font-h);
   font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: .55rem;
 }
 
@@ -998,7 +998,7 @@
   box-shadow: 0 0 15px rgba(0,229,255,0.1);
 }
 [data-theme="navigator"] .side-popover-item {
-  color: rgba(0,229,255,0.6); font-family: 'Orbitron', sans-serif;
+  color: rgba(0,229,255,0.6); font-family: var(--font-h);
   font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: .55rem;
 }
 [data-theme="navigator"] .side-popover-item:hover {
@@ -1009,7 +1009,7 @@
 /* Sidebar folder */
 [data-theme="navigator"] .side-folder-toggle {
   color: rgba(0,229,255,0.5); border-color: rgba(0,229,255,0.1);
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-h);
 }
 [data-theme="navigator"] .side-folder-body { border-left-color: rgba(0,229,255,0.1); }
 [data-theme="navigator"] .side-mission-item { color: rgba(0,229,255,0.5); }
@@ -1423,7 +1423,7 @@
 }
 [data-theme="lcars"] .nice-ai-chip:hover { background:#ff9966; }
 [data-theme="lcars"] .chat-pill {
-  border-radius:24px; background:#666688; color:#000; border:none;
+  border-radius:9999px; background:#666688; color:#000; border:none;
   font-weight:700; text-transform:uppercase;
 }
 [data-theme="lcars"] .chat-pill:hover { background:#ff9966; color:#000; }
@@ -1692,7 +1692,7 @@
 }
 [data-theme="steampunk"] .nice-ai-chip:hover { background: #5a4220; color: #e8d8c0; }
 [data-theme="steampunk"] .chat-pill {
-  border-radius: 2px; border: 1px solid #5a4220;
+  border-radius: 9999px; border: 1px solid #5a4220;
   background: #1a1208; color: #c8a050;
   font-family: 'Playfair Display', serif;
 }
