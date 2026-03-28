@@ -143,3 +143,5 @@ vite.config.ts.timestamp-*
 app/js/helm.bundle.js
 app/js/helm.bundle.min.js
 test-results/
+.vercel
+.vercel/
