@@ -197,14 +197,39 @@ Deno.serve(async (req: Request) => {
 
     // ── Route to provider ──────────────────────────────────────
     const uid = user.id;
+    let response: Response;
     if (provider === "anthropic") {
-      return await handleAnthropic(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+      response = await handleAnthropic(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+    } else if (provider === "gemini") {
+      response = await handleGemini(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+    } else {
+      response = await handleOpenAICompatible(uid, provider, model, messages, system, max_tokens, temperature, stream, corsHeaders);
     }
-    if (provider === "gemini") {
-      return await handleGemini(uid, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+
+    // ── Token deduction (fire-and-forget, skip for free models) ──
+    if (!isFreeModel && response.ok && !stream) {
+      // Clone response to read usage without consuming
+      try {
+        const clone = response.clone();
+        const data = await clone.json();
+        const tokensUsed = data?.usage?.input_tokens && data?.usage?.output_tokens
+          ? data.usage.input_tokens + data.usage.output_tokens
+          : Math.max(Math.floor((data?.content?.length || 500) / 4), 100);
+
+        // Deduct tokens (fire-and-forget — don't block the response)
+        const svcSupabase2 = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        );
+        svcSupabase2.rpc("deduct_tokens", { p_user_id: uid, p_amount: tokensUsed }).then(() => {
+          console.log(`[nice-ai] Deducted ${tokensUsed} tokens from ${uid} (${model})`);
+        }).catch((err: Error) => {
+          console.warn("[nice-ai] Token deduction failed:", err.message);
+        });
+      } catch { /* don't block response for deduction errors */ }
     }
-    // OpenAI-compatible providers (OpenAI, Mistral, DeepSeek, xAI)
-    return await handleOpenAICompatible(uid, provider, model, messages, system, max_tokens, temperature, stream, corsHeaders);
+
+    return response;
 
   } catch (err) {
     return jsonError(err.message || "Internal error", 500, corsHeaders);
