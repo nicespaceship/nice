@@ -58,9 +58,44 @@ const IntegrationsView = (() => {
 
   /* ── Demo seed data ───────────────────────────────────────────── */
   function _seedMcpConnections() {
+    const sbUrl = typeof SB !== 'undefined' ? SB.url : 'https://zacllshbgmnwsmliteqx.supabase.co';
     return [
-      { id:'mc1', name:'Google Workspace', server_url:'https://mcp.google.com/workspace', transport:'streamable-http', auth_type:'oauth', available_tools:['gmail','drive','calendar','docs'], status:'connected', catalog_id:'google', created_at:new Date(Date.now() - 604800000).toISOString() },
-      { id:'mc2', name:'GitHub', server_url:'https://mcp.github.com', transport:'streamable-http', auth_type:'oauth', available_tools:['repos','pull_requests','issues','actions'], status:'connected', catalog_id:'github', created_at:new Date(Date.now() - 1209600000).toISOString() },
+      {
+        id: 'mc-gmail', name: 'Gmail', catalog_id: 'google-gmail',
+        server_url: sbUrl + '/functions/v1/gmail-mcp',
+        transport: 'json-rpc', auth_type: 'oauth',
+        available_tools: ['gmail_search_messages', 'gmail_read_message', 'gmail_list_labels'],
+        tool_definitions: {
+          gmail_search_messages: { description: 'Search Gmail messages using query syntax (is:unread, from:, subject:, has:attachment)', inputSchema: { type:'object', properties: { q:{type:'string',description:'Gmail search query'}, maxResults:{type:'number',description:'Max results (1-20)'} } } },
+          gmail_read_message: { description: 'Read the full content of a Gmail message by ID', inputSchema: { type:'object', properties: { messageId:{type:'string',description:'Message ID from search'} }, required:['messageId'] } },
+          gmail_list_labels: { description: 'List all Gmail labels', inputSchema: { type:'object', properties:{} } },
+        },
+        status: 'disconnected', created_at: new Date().toISOString(),
+      },
+      {
+        id: 'mc-calendar', name: 'Google Calendar', catalog_id: 'google-calendar',
+        server_url: sbUrl + '/functions/v1/calendar-mcp',
+        transport: 'json-rpc', auth_type: 'oauth',
+        available_tools: ['calendar_list_events', 'calendar_get_event', 'calendar_list_calendars'],
+        tool_definitions: {
+          calendar_list_events: { description: 'List calendar events within a time range', inputSchema: { type:'object', properties: { timeMin:{type:'string'}, timeMax:{type:'string'}, maxResults:{type:'number'} } } },
+          calendar_get_event: { description: 'Get details of a specific calendar event', inputSchema: { type:'object', properties: { eventId:{type:'string'} }, required:['eventId'] } },
+          calendar_list_calendars: { description: 'List all calendars', inputSchema: { type:'object', properties:{} } },
+        },
+        status: 'disconnected', created_at: new Date().toISOString(),
+      },
+      {
+        id: 'mc-drive', name: 'Google Drive', catalog_id: 'google-drive',
+        server_url: sbUrl + '/functions/v1/drive-mcp',
+        transport: 'json-rpc', auth_type: 'oauth',
+        available_tools: ['drive_search_files', 'drive_get_file', 'drive_read_file'],
+        tool_definitions: {
+          drive_search_files: { description: 'Search files in Google Drive by name or content', inputSchema: { type:'object', properties: { q:{type:'string',description:'Search query'}, maxResults:{type:'number'} } } },
+          drive_get_file: { description: 'Get metadata of a specific file', inputSchema: { type:'object', properties: { fileId:{type:'string'} }, required:['fileId'] } },
+          drive_read_file: { description: 'Read the text content of a file', inputSchema: { type:'object', properties: { fileId:{type:'string'} }, required:['fileId'] } },
+        },
+        status: 'disconnected', created_at: new Date().toISOString(),
+      },
     ];
   }
 

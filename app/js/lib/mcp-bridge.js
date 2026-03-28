@@ -27,17 +27,19 @@ const McpBridge = (() => {
 
     for (const conn of connectedMcps) {
       const tools = conn.available_tools || [];
+      const toolDefs = conn.tool_definitions || {}; // Rich schemas from discovery
       const prefix = conn.catalog_id || conn.id;
 
       for (const toolName of tools) {
         const toolId = `mcp:${prefix}:${toolName}`;
+        const def = toolDefs[toolName] || {};
 
         if (typeof ToolRegistry !== 'undefined') {
           ToolRegistry.register({
             id: toolId,
-            name: `${conn.name} — ${toolName}`,
-            description: `MCP tool "${toolName}" from ${conn.name}. Invoked via MCP gateway.`,
-            schema: {
+            name: def.description ? toolName : `${conn.name} — ${toolName}`,
+            description: def.description || `MCP tool "${toolName}" from ${conn.name}. Invoked via MCP gateway.`,
+            schema: def.inputSchema || {
               type: 'object',
               properties: {
                 input: { type: 'object', description: 'Tool-specific input parameters' },
@@ -102,11 +104,15 @@ const McpBridge = (() => {
       throw new Error(data.error);
     }
 
-    // Update connection in State with discovered tools (clone to avoid mutation)
+    // Update connection in State with discovered tools + rich schemas
     const connections = State.get('mcp_connections') || [];
     if (data?.tools) {
+      const toolDefs = {};
+      data.tools.forEach(t => {
+        toolDefs[t.name] = { description: t.description || '', inputSchema: t.inputSchema || {} };
+      });
       const updated = connections.map(c => c.id === connectionId
-        ? { ...c, available_tools: data.tools.map(t => t.name), status: 'connected' }
+        ? { ...c, available_tools: data.tools.map(t => t.name), tool_definitions: toolDefs, status: 'connected' }
         : c
       );
       State.set('mcp_connections', updated);
