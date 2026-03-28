@@ -1,11 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — App Stylesheet
    Mobile-first PWA styles. Inherits theme tokens from theme.css.
-   Design: flat vector graphics — no box-shadows anywhere.
 ═══════════════════════════════════════════════════════════════════ */
 
-/* Universal: no shadows — flat design */
-*, *::before, *::after { box-shadow:none !important; }
 
 /* Spacing scale (4px base) */
 :root {
@@ -666,10 +663,10 @@
 /* Ship Hero (3-view carousel) */
 .bridge-hero { margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
 .bridge-hero-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:40px; color:var(--text-muted); text-align:center; }
-.bridge-hero-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); background:var(--panel-bg,rgba(255,255,255,.02)); }
-.bridge-hero-info { display:flex; flex-direction:column; gap:2px; }
-.bridge-hero-name { font-size:.85rem; font-weight:600; color:var(--text); }
-.bridge-hero-meta { font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); }
+.bridge-hero-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); background:var(--panel-bg,rgba(255,255,255,.02)); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.bridge-hero-info { display:flex; flex-direction:column; gap:3px; }
+.bridge-hero-name { font-size:.95rem; font-weight:700; color:var(--text); font-family:var(--font-h); letter-spacing:.05em; }
+.bridge-hero-meta { font-family:var(--font-m); font-size:.58rem; letter-spacing:.08em; color:var(--text-muted); display:flex; align-items:center; gap:8px; }
 .bridge-hero-controls { display:flex; align-items:center; gap:8px; }
 .bridge-hero-tabs { display:flex; gap:4px; }
 .sch-ship-select {
@@ -703,12 +700,17 @@
 /* HTML overlay for reactor core click (sits above SVG + slots) */
 .sch-core-hit-overlay {
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:100px; height:100px; border-radius:50%;
+  width:120px; height:120px; border-radius:50%;
   cursor:pointer; z-index:5; pointer-events:auto;
+  transition:box-shadow .3s, background .3s;
 }
-.sch-core-hit-overlay:hover { background:rgba(255,255,255,.06); }
+.sch-core-hit-overlay:hover {
+  background:rgba(165,180,252,.06);
+  box-shadow:0 0 40px rgba(165,180,252,.15), 0 0 80px rgba(165,180,252,.05);
+}
 .schematic-card-slot { cursor:pointer; }
-.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:transparent; position:relative; justify-content:center; align-items:center; overflow:visible; }
+.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:var(--panel-bg, transparent); position:relative; justify-content:center; align-items:center; overflow:visible; transition:box-shadow .3s, border-color .3s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .tcg-card-mini { box-shadow:0 0 20px rgba(165,180,252,.15), 0 0 40px rgba(165,180,252,.05); }
 /* Rotating outer border with notch */
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty) {
   position:relative;
@@ -716,9 +718,9 @@
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty)::before {
   content:''; position:absolute;
   inset:-6px;
-  border:1.5px dashed #22c55e;
+  border:1.5px dashed var(--accent2, #a5b4fc);
   border-radius:10px;
-  opacity:.2;
+  opacity:.25;
   pointer-events:none;
   z-index:3;
 }
@@ -733,20 +735,20 @@
   z-index:4;
   background:conic-gradient(
     from var(--sch-notch-angle, 0deg),
-    #22c55e 0deg,
-    #22c55e 8deg,
+    var(--accent2, #a5b4fc) 0deg,
+    var(--accent2, #a5b4fc) 8deg,
     transparent 8deg,
     transparent 90deg,
-    #22c55e 90deg,
-    #22c55e 92deg,
+    var(--accent2, #a5b4fc) 90deg,
+    var(--accent2, #a5b4fc) 92deg,
     transparent 92deg,
     transparent 180deg,
-    #22c55e 180deg,
-    #22c55e 184deg,
+    var(--accent2, #a5b4fc) 180deg,
+    var(--accent2, #a5b4fc) 184deg,
     transparent 184deg,
     transparent 270deg,
-    #22c55e 270deg,
-    #22c55e 274deg,
+    var(--accent2, #a5b4fc) 270deg,
+    var(--accent2, #a5b4fc) 274deg,
     transparent 274deg,
     transparent 360deg
   );
@@ -797,13 +799,26 @@
   pointer-events:none;
 }
 @keyframes sch-aura-ring1 {
-  0%, 100% { width:50px; height:50px; opacity:.04; }
-  50%      { width:80px; height:80px; opacity:.1; }
+  0%, 100% { width:50px; height:50px; opacity:.06; }
+  50%      { width:85px; height:85px; opacity:.15; }
 }
 @keyframes sch-aura-ring2 {
-  0%, 100% { width:30px; height:30px; opacity:.03; }
-  50%      { width:50px; height:50px; opacity:.08; }
+  0%, 100% { width:30px; height:30px; opacity:.05; }
+  50%      { width:55px; height:55px; opacity:.12; }
 }
+/* Subtle float on filled card contents */
+@keyframes sch-card-float {
+  0%, 100% { translate:0 0; }
+  50%      { translate:0 -3px; }
+}
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-card-mini {
+  animation:sch-card-float 4s ease-in-out infinite;
+}
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(2) .tcg-card-mini { animation-delay:-1s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(3) .tcg-card-mini { animation-delay:-2s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(4) .tcg-card-mini { animation-delay:-3s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(5) .tcg-card-mini { animation-delay:-0.5s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(6) .tcg-card-mini { animation-delay:-2.5s; }
 .schematic-wired .schematic-card-slot .tcg-card-mini { flex-direction:column; }
 .schematic-wired .schematic-card-slot .tcg-mini-name { position:relative; z-index:1; order:-1; margin-bottom:auto; padding-top:4px; white-space:normal; overflow:visible; text-overflow:unset; max-width:74px; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .schematic-wired .schematic-card-slot .tcg-mini-badge { position:relative; z-index:1; margin-top:auto; margin-bottom:4px; }
@@ -812,13 +827,21 @@
 .schematic-empty-slot { padding:4px 6px; border:3px solid rgba(255,60,60,.4); border-radius:8px; background:transparent; aspect-ratio:5/7; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow:0 0 8px rgba(255,60,60,.1); }
 .schematic-card-role { font-family:var(--font-m); font-size:.36rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
 .schematic-card-rarity { font-family:var(--font-m); font-size:.32rem; letter-spacing:.1em; font-weight:600; }
-.schematic-slot-label { font-family:var(--font-m); font-size:.36rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; text-align:center; margin-top:2px; }
+.schematic-slot-label { font-family:var(--font-m); font-size:.42rem; letter-spacing:.1em; color:var(--accent2, var(--text-muted)); text-transform:uppercase; text-align:center; margin-top:4px; opacity:.7; transition:opacity .2s; }
+.schematic-card-slot:hover .schematic-slot-label { opacity:1; }
 @media (max-width:600px) {
   .schematic-wired { flex-direction:column; gap:4px; align-items:center; }
   .schematic-col { flex-direction:row; flex-wrap:wrap; flex:none; justify-content:center; gap:4px; }
   .schematic-col-left, .schematic-col-right { align-items:center; }
   .schematic-col .schematic-card-slot:nth-child(even) { transform:none; }
   .schematic-center { min-height:100px; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .schematic-wired .schematic-card-slot .tcg-card-mini,
+  .schematic-wired .schematic-card-slot::after,
+  .schematic-wired .tcg-mini-art::before,
+  .schematic-wired .tcg-mini-art::after { animation:none !important; }
 }
 
 /* Crew Split (crew list + blueprint card side by side) */
@@ -1564,6 +1587,7 @@
   display:flex; flex-direction:column; gap:10px;
   padding:16px; border:var(--border-width) solid var(--border);
   background:var(--panel-bg); border-radius:var(--radius);
+  transition:border-color .2s, box-shadow .2s, transform .15s;
 }
 .fleet-card-hdr { display:flex; align-items:center; justify-content:space-between; }
 .fleet-card-info { flex:1; }
@@ -1864,7 +1888,7 @@
 .integ-card {
   display:flex; flex-direction:column; gap:10px; padding:16px;
   border:var(--border-width) solid var(--border); background:var(--panel-bg);
-  border-radius:var(--radius); transition:border-color .2s;
+  border-radius:var(--radius); transition:border-color .2s, box-shadow .2s, transform .15s;
 }
 .integ-card.connected { border-color:var(--accent); }
 .integ-card:hover { border-color:var(--border-hi); }
@@ -1989,6 +2013,7 @@
 .settings-section {
   border:var(--border-width) solid var(--border); background:var(--panel-bg);
   border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; gap:4px;
+  transition:border-color .2s, box-shadow .2s, transform .15s;
 }
 .settings-section-title {
   font-family:var(--font-m); font-size:.62rem; letter-spacing:.14em;
@@ -3918,6 +3943,110 @@
 .tcg-card-compact[data-tier="flagship"]          { border-color:#f59e0b40; box-shadow:0 0 16px rgba(245,158,11,.2); }
 
 
+/* ── Card enhancements — glass, shimmer, glow, hover lift ── */
+
+
+/* Hover elevation + glow */
+.tcg-card { transition:transform .25s ease, box-shadow .25s ease; }
+.tcg-card:hover {
+  transform:translateY(-6px);
+  box-shadow:0 12px 40px rgba(0,0,0,.4), 0 0 20px rgba(0,0,0,.2);
+}
+.tcg-card-grid { transition:transform .25s ease, box-shadow .25s ease; }
+.tcg-card-grid:hover {
+  transform:translateY(-6px) scale(1.02);
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+}
+
+/* Rarity glow on hover — amplify the existing glow */
+.tcg-card[data-rarity="rare"]:hover,
+.tcg-card-grid[data-rarity="rare"]:hover      { box-shadow:0 0 20px rgba(99,102,241,.25), 0 12px 40px rgba(0,0,0,.3); }
+.tcg-card[data-rarity="epic"]:hover,
+.tcg-card-grid[data-rarity="epic"]:hover       { box-shadow:0 0 24px rgba(168,85,247,.3), 0 12px 40px rgba(0,0,0,.3); }
+.tcg-card[data-rarity="legendary"]:hover,
+.tcg-card-grid[data-rarity="legendary"]:hover  { box-shadow:0 0 30px rgba(245,158,11,.4), 0 12px 40px rgba(0,0,0,.3); }
+
+
+/* Foil overlay on legendary+ — slow animated gradient */
+.tcg-card[data-rarity="legendary"]::before,
+.tcg-card[data-rarity="mythic"]::before,
+.tcg-card-grid[data-rarity="legendary"]::before,
+.tcg-card-grid[data-rarity="mythic"]::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:linear-gradient(
+    135deg,
+    rgba(245,158,11,0.06) 0%,
+    rgba(168,85,247,0.04) 25%,
+    rgba(99,102,241,0.06) 50%,
+    rgba(245,158,11,0.04) 75%,
+    rgba(255,45,85,0.06) 100%
+  );
+  background-size:300% 300%;
+  animation:foil-shift 8s ease-in-out infinite;
+  pointer-events:none;
+  z-index:9;
+}
+@keyframes foil-shift {
+  0%, 100% { background-position:0% 0%; }
+  50%      { background-position:100% 100%; }
+}
+
+/* Art halo ring — pulsing ring in rarity color */
+.tcg-card .tcg-art::after {
+  content:'';
+  position:absolute;
+  top:50%; left:50%;
+  width:60px; height:60px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  border:1px solid var(--accent);
+  opacity:0;
+  pointer-events:none;
+  z-index:5;
+  transition:opacity .3s;
+}
+.tcg-card:hover .tcg-art::after {
+  opacity:.15;
+  animation:card-art-pulse 2s ease-in-out infinite;
+}
+@keyframes card-art-pulse {
+  0%, 100% { width:60px; height:60px; opacity:.1; }
+  50%      { width:90px; height:90px; opacity:.2; }
+}
+
+/* Rarity-specific art halo colors */
+.tcg-card[data-rarity="rare"] .tcg-art::after { border-color:#6366f1; }
+.tcg-card[data-rarity="epic"] .tcg-art::after { border-color:#a855f7; }
+.tcg-card[data-rarity="legendary"] .tcg-art::after { border-color:#f59e0b; }
+.tcg-card[data-rarity="mythic"] .tcg-art::after { border-color:#ff2d55; }
+
+/* 3D tilt on hover (CSS-only subtle version) */
+.tcg-card { perspective:800px; }
+.tcg-card:hover .tcg-name-bar { transform:translateZ(10px); }
+.tcg-card:hover .tcg-stats { transform:translateZ(8px); }
+
+/* Compact cards — hover glow */
+.tcg-card-compact { transition:transform .2s, box-shadow .2s, border-color .2s; }
+.tcg-card-compact:hover {
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+}
+.tcg-card-compact[data-rarity="rare"]:hover { box-shadow:0 0 12px rgba(99,102,241,.2), 0 6px 20px rgba(0,0,0,.3); }
+.tcg-card-compact[data-rarity="epic"]:hover { box-shadow:0 0 16px rgba(168,85,247,.25), 0 6px 20px rgba(0,0,0,.3); }
+.tcg-card-compact[data-rarity="legendary"]:hover { box-shadow:0 0 20px rgba(245,158,11,.3), 0 6px 20px rgba(0,0,0,.3); }
+
+/* Reduced motion */
+@media (prefers-reduced-motion:reduce) {
+  .tcg-card[data-rarity="legendary"]::before,
+  .tcg-card[data-rarity="mythic"]::before,
+  .tcg-card-grid[data-rarity="legendary"]::before,
+  .tcg-card-grid[data-rarity="mythic"]::before { animation:none !important; }
+  .tcg-card:hover .tcg-art::after { animation:none !important; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    COMPUTING — Spaceship Slot Formation + Drag-and-Drop
 ═══════════════════════════════════════════════════════════════════ */
@@ -4207,7 +4336,7 @@
 .security-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
 .security-card {
   background:var(--panel-bg); border:var(--border-width) solid var(--border); border-radius:var(--radius);
-  padding:14px; transition:border-color .2s;
+  padding:14px; transition:border-color .2s, box-shadow .2s, transform .15s;
 }
 .security-card:hover { border-color:var(--accent); }
 .security-card-empty { grid-column:1 / -1; text-align:center; padding:24px; }
