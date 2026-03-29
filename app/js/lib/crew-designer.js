@@ -255,18 +255,54 @@ Rules:
 
   function _fallbackCrew(prompt) {
     const text = prompt.toLowerCase();
-    if (text.includes('email') || text.includes('inbox') || text.includes('support') || text.includes('customer')) {
+
+    // Restaurant / food / hospitality
+    if (text.includes('restaurant') || text.includes('food') || text.includes('chef') || text.includes('menu') || text.includes('reservation') || text.includes('hospitality') || text.includes('dining')) {
+      return {
+        spaceship: { name: 'Restaurant Command', description: 'Full-stack restaurant operations and marketing', category: 'Operations', flow_pattern: 'router', rationale: 'Router: operations captain delegates to specialists for scheduling, costs, marketing, and reviews' },
+        agents: [
+          { name: 'Floor Captain', role: 'Ops', description: 'Routes tasks to the right specialist and manages daily operations', tools: ['summarize', 'google-calendar'], model: 'gemini-2.5-flash', temperature: 0.2 },
+          { name: 'Reservation Manager', role: 'Ops', description: 'Handles booking requests, table assignments, and waitlist management', tools: ['google-calendar', 'gmail'], model: 'gemini-2.5-flash', temperature: 0.2 },
+          { name: 'Cost Controller', role: 'Analytics', description: 'Tracks food costs, inventory levels, and supplier pricing', tools: ['calculator', 'data-transform'], model: 'gemini-2.5-flash', temperature: 0.2 },
+          { name: 'Social Chef', role: 'Marketing', description: 'Creates mouth-watering social media posts and food photography captions', tools: ['summarize', 'web-search'], model: 'gemini-2.5-flash', temperature: 0.7 },
+          { name: 'Review Watcher', role: 'Research', description: 'Monitors Yelp, Google, and social mentions for reviews and feedback', tools: ['web-search', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.3 },
+          { name: 'Campaign Manager', role: 'Marketing', description: 'Runs email campaigns to regulars and promotes local events', tools: ['gmail', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.5 },
+        ],
+        integrations_needed: ['gmail', 'google-calendar'],
+        suggested_test_mission: 'Search for the latest reviews of our restaurant and summarize the top 3 themes from customer feedback',
+      };
+    }
+
+    // Marketing / social media / content
+    if (text.includes('marketing') || text.includes('social media') || text.includes('brand') || text.includes('campaign') || text.includes('content creation')) {
+      return {
+        spaceship: { name: 'Marketing Engine', description: 'Content creation and campaign management', category: 'Marketing', flow_pattern: 'parallel', rationale: 'Parallel: each channel specialist works independently on their platform' },
+        agents: [
+          { name: 'Content Strategist', role: 'Marketing', description: 'Plans content calendar and messaging themes', tools: ['summarize', 'web-search'], model: 'gemini-2.5-flash', temperature: 0.5 },
+          { name: 'Copywriter', role: 'Content', description: 'Writes engaging copy for posts, ads, and emails', tools: ['summarize'], model: 'gemini-2.5-flash', temperature: 0.7 },
+          { name: 'SEO Analyst', role: 'Research', description: 'Researches keywords and optimizes content for search', tools: ['web-search', 'data-transform'], model: 'gemini-2.5-flash', temperature: 0.3 },
+          { name: 'Campaign Tracker', role: 'Analytics', description: 'Monitors campaign performance and ROI metrics', tools: ['calculator', 'data-transform'], model: 'gemini-2.5-flash', temperature: 0.2 },
+        ],
+        integrations_needed: ['gmail'],
+        suggested_test_mission: 'Research trending topics in our industry and draft 3 social media post ideas',
+      };
+    }
+
+    // Email / inbox / support
+    if (text.includes('email') || text.includes('inbox') || text.includes('support') || text.includes('customer service')) {
       return {
         spaceship: { name: 'Support Ops', description: 'Customer support automation team', category: 'Support', flow_pattern: 'sequential', rationale: 'Sequential pipeline: monitor → respond → report' },
         agents: [
-          { name: 'Inbox Monitor', role: 'Ops', description: 'Watches email for customer issues', tools: ['gmail'], model: 'gemini-2.5-flash', temperature: 0.2 },
-          { name: 'Response Drafter', role: 'Content', description: 'Drafts helpful replies to customers', tools: ['gmail', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.4 },
-          { name: 'Trend Analyst', role: 'Analytics', description: 'Tracks patterns in customer feedback', tools: ['data-transform', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.3 },
+          { name: 'Inbox Monitor', role: 'Ops', description: 'Watches email for customer issues and prioritizes them', tools: ['gmail'], model: 'gemini-2.5-flash', temperature: 0.2 },
+          { name: 'Response Drafter', role: 'Content', description: 'Drafts helpful, empathetic replies to customers', tools: ['gmail', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.4 },
+          { name: 'Trend Analyst', role: 'Analytics', description: 'Tracks patterns and recurring issues in customer feedback', tools: ['data-transform', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.3 },
         ],
         integrations_needed: ['gmail'],
         suggested_test_mission: 'Check my inbox for the 3 most recent messages and summarize them',
       };
     }
+
+    // Research / competitor / analysis
     if (text.includes('research') || text.includes('competitor') || text.includes('report') || text.includes('analysis')) {
       return {
         spaceship: { name: 'Research Lab', description: 'Research and intelligence team', category: 'Research', flow_pattern: 'sequential', rationale: 'Sequential: gather → analyze → report' },
@@ -279,6 +315,22 @@ Rules:
         suggested_test_mission: 'Research the top 3 trends in AI agents and write a brief summary',
       };
     }
+
+    // E-commerce / sales / store
+    if (text.includes('ecommerce') || text.includes('e-commerce') || text.includes('store') || text.includes('sell') || text.includes('product') || text.includes('shop')) {
+      return {
+        spaceship: { name: 'Commerce Hub', description: 'E-commerce operations and growth', category: 'Operations', flow_pattern: 'router', rationale: 'Router: operations captain delegates orders, inventory, and marketing tasks' },
+        agents: [
+          { name: 'Order Manager', role: 'Ops', description: 'Tracks orders, shipping, and fulfillment status', tools: ['gmail', 'data-transform'], model: 'gemini-2.5-flash', temperature: 0.2 },
+          { name: 'Product Writer', role: 'Content', description: 'Writes compelling product descriptions and listings', tools: ['summarize', 'web-search'], model: 'gemini-2.5-flash', temperature: 0.6 },
+          { name: 'Price Watcher', role: 'Research', description: 'Monitors competitor pricing and market trends', tools: ['web-search', 'calculator'], model: 'gemini-2.5-flash', temperature: 0.3 },
+          { name: 'Review Responder', role: 'Support', description: 'Responds to customer reviews and questions', tools: ['gmail', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.4 },
+        ],
+        integrations_needed: ['gmail'],
+        suggested_test_mission: 'Research competitor pricing for our top product category and summarize findings',
+      };
+    }
+
     // Default: general business ops
     return {
       spaceship: { name: 'Business Ops', description: 'General business operations team', category: 'Operations', flow_pattern: 'router', rationale: 'Router: captain triages tasks to specialists' },
@@ -286,8 +338,9 @@ Rules:
         { name: 'Task Captain', role: 'Ops', description: 'Routes incoming requests to the right specialist', tools: ['summarize'], model: 'gemini-2.5-flash', temperature: 0.2 },
         { name: 'Research Agent', role: 'Research', description: 'Handles research and information gathering', tools: ['web-search', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.3 },
         { name: 'Content Creator', role: 'Content', description: 'Writes documents, emails, and reports', tools: ['summarize', 'code-gen'], model: 'gemini-2.5-flash', temperature: 0.5 },
+        { name: 'Scheduler', role: 'Ops', description: 'Manages calendar, appointments, and reminders', tools: ['google-calendar', 'gmail'], model: 'gemini-2.5-flash', temperature: 0.2 },
       ],
-      integrations_needed: [],
+      integrations_needed: ['gmail', 'google-calendar'],
       suggested_test_mission: 'Help me draft a professional email introducing our company to a potential client',
     };
   }
