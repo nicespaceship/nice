@@ -91,7 +91,40 @@ const MediaTools = (() => {
       },
     });
 
-    console.log('[MediaTools] Registered generate-image and generate-social-post tools');
+    /* ── Generate Video ── */
+    ToolRegistry.register({
+      id: 'generate-video',
+      name: 'Generate Video',
+      description: 'Generate a short video clip (5-8 seconds) from a text description using Google Veo 2. Great for social media reels, product demos, and promotional clips.',
+      schema: {
+        type: 'object',
+        properties: {
+          prompt: { type: 'string', description: 'Detailed description of the video to generate. Include action, scene, mood, camera movement.' },
+          aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'], description: '16:9 for landscape/YouTube, 9:16 for stories/reels, 1:1 for square' },
+          duration: { type: 'number', enum: [5, 8], description: 'Video duration in seconds (5 or 8)' },
+        },
+        required: ['prompt'],
+      },
+      execute: async (input) => {
+        try {
+          const result = await _callMediaAPI({
+            prompt: input.prompt,
+            type: 'video',
+            aspect_ratio: input.aspect_ratio || '16:9',
+            duration: input.duration || 5,
+          });
+
+          if (result.error) return `Error generating video: ${result.error}`;
+
+          const videoUrl = result.stored_url || result.url;
+          return `Video generated successfully!\n\n[▶ Watch Video](${videoUrl})\n\nPrompt: ${input.prompt}\nProvider: ${result.provider} (${result.model})\nDuration: ${result.duration || 5}s\nAspect: ${result.size}`;
+        } catch (err) {
+          return `Error: ${err.message || 'Video generation failed'}`;
+        }
+      },
+    });
+
+    console.log('[MediaTools] Registered generate-image, generate-social-post, and generate-video tools');
   }
 
   /* ── API Call ── */

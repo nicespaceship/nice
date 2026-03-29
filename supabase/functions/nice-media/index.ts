@@ -5,20 +5,23 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
  * NICE Media — Image & video generation proxy.
  *
  * Routes to the appropriate provider based on request type:
- *   - "dalle"  → OpenAI DALL-E 3
- *   - "flux"   → Replicate Flux (when configured)
+ *   - "gemini"  → Google Imagen 3 (images, free tier)
+ *   - "gemini-video" → Google Veo 2 (videos, free tier)
+ *   - "dalle"   → OpenAI DALL-E 3
+ *   - "flux"    → Replicate Flux (when configured)
  *
  * Request body:
- *   { provider?, prompt, size?, quality?, style?, n? }
+ *   { provider?, type?, prompt, size?, quality?, style?, n? }
  *
  * Returns:
- *   { url, revised_prompt?, provider, model, cost_tokens }
+ *   { url, revised_prompt?, provider, model, cost_tokens, type }
  *
- * Generated images are optionally stored in Supabase Storage.
+ * Generated media stored in Supabase Storage.
  */
 
 /* ── Config ───────────────────────────────────────────────────── */
 
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta";
 const OPENAI_API_URL = "https://api.openai.com/v1/images/generations";
 const REPLICATE_API_URL = "https://api.replicate.com/v1/predictions";
 
@@ -29,8 +32,10 @@ const ALLOWED_ORIGINS = [
   "http://localhost:5173",
 ];
 
-// Token costs for image generation (approximate)
+// Token costs for media generation (approximate)
 const COST_MAP: Record<string, number> = {
+  "imagen-3": 0,                // Free tier via Gemini API
+  "veo-2": 0,                   // Free tier via Gemini API
   "dall-e-3-standard": 20000,   // ~$0.04 equivalent in tokens
   "dall-e-3-hd": 40000,         // ~$0.08
   "flux-schnell": 5000,         // ~$0.01
@@ -68,6 +73,122 @@ async function deductTokens(userId: string, tokens: number, model: string) {
       lifetime_used: (bal as any).lifetime_used + tokens,
     }).eq("user_id", userId);
   } catch { /* fire and forget */ }
+}
+
+/* ── Google Imagen 3 (images) ──────────────────────────────── */
+
+async function generateImagen(prompt: string, opts: any) {
+  const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
+  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
+
+  const res = await fetch(
+    `${GEMINI_API_URL}/models/imagen-3.0-generate-002:predict?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances: [{ prompt }],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: opts.aspect_ratio || "1:1",
+          personGeneration: "dont_allow",
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Imagen error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const prediction = data.predictions?.[0];
+  if (!prediction?.bytesBase64Encoded) {
+    throw new Error("No image generated");
+  }
+
+  // Convert base64 to data URL (will be stored to Supabase Storage)
+  const dataUrl = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
+
+  return {
+    url: dataUrl,
+    _base64: prediction.bytesBase64Encoded,
+    revised_prompt: prompt,
+    provider: "google",
+    model: "imagen-3",
+    type: "image",
+    size: opts.aspect_ratio || "1:1",
+    cost_tokens: COST_MAP["imagen-3"],
+  };
+}
+
+/* ── Google Veo 2 (videos) ─────────────────────────────────── */
+
+async function generateVeo(prompt: string, opts: any) {
+  const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
+  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
+
+  // Start video generation (async — returns operation name)
+  const res = await fetch(
+    `${GEMINI_API_URL}/models/veo-2.0-generate-001:predictLongRunning?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances: [{ prompt }],
+        parameters: {
+          aspectRatio: opts.aspect_ratio || "16:9",
+          durationSeconds: opts.duration || 5,
+          personGeneration: "dont_allow",
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Veo error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const operationName = data.name;
+  if (!operationName) throw new Error("No operation returned from Veo");
+
+  // Poll for completion (max 120s)
+  let videoUrl: string | null = null;
+  for (let i = 0; i < 24; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+
+    const pollRes = await fetch(
+      `${GEMINI_API_URL}/${operationName}?key=${apiKey}`
+    );
+    if (!pollRes.ok) continue;
+
+    const pollData = await pollRes.json();
+    if (pollData.done) {
+      const video = pollData.response?.generateVideoResponse?.generatedSamples?.[0];
+      if (video?.video?.uri) {
+        videoUrl = video.video.uri;
+      } else if (video?.video?.bytesBase64Encoded) {
+        videoUrl = `data:video/mp4;base64,${video.video.bytesBase64Encoded}`;
+      }
+      break;
+    }
+  }
+
+  if (!videoUrl) throw new Error("Video generation timed out or failed");
+
+  return {
+    url: videoUrl,
+    revised_prompt: prompt,
+    provider: "google",
+    model: "veo-2",
+    type: "video",
+    size: opts.aspect_ratio || "16:9",
+    duration: opts.duration || 5,
+    cost_tokens: COST_MAP["veo-2"],
+  };
 }
 
 /* ── DALL-E 3 ──────────────────────────────────────────────── */
@@ -198,6 +319,36 @@ async function storeImage(imageUrl: string, userId: string): Promise<string | nu
   }
 }
 
+/* ── Store base64 to Supabase Storage (for Imagen/Veo) ───── */
+
+async function storeBase64(base64: string, userId: string, ext = "png"): Promise<string | null> {
+  try {
+    const svc = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const contentType = ext === "mp4" ? "video/mp4" : `image/${ext}`;
+    const filename = `${userId}/${Date.now()}.${ext}`;
+
+    const { error } = await svc.storage
+      .from("generated-media")
+      .upload(filename, bytes, { contentType, upsert: false });
+
+    if (error) {
+      console.warn("Storage upload error:", error.message);
+      return null;
+    }
+
+    const { data: urlData } = svc.storage.from("generated-media").getPublicUrl(filename);
+    return urlData?.publicUrl || null;
+  } catch (e) {
+    console.warn("Base64 storage error:", e);
+    return null;
+  }
+}
+
 /* ── Main handler ──────────────────────────────────────────── */
 
 Deno.serve(async (req: Request) => {
@@ -242,18 +393,29 @@ Deno.serve(async (req: Request) => {
 
     // Route to provider
     let result: any;
-    const selectedProvider = provider || _detectProvider();
+    const mediaType = body.type || "image";
+    const selectedProvider = provider || _detectProvider(mediaType);
 
-    if (selectedProvider === "flux") {
+    if (mediaType === "video") {
+      result = await generateVeo(prompt, { aspect_ratio: aspect_ratio || "16:9", duration: body.duration });
+    } else if (selectedProvider === "gemini") {
+      result = await generateImagen(prompt, { aspect_ratio });
+    } else if (selectedProvider === "flux") {
       result = await generateFlux(prompt, { aspect_ratio, flux_model });
     } else {
       result = await generateDalle(prompt, { size, quality, style });
     }
 
-    // Optionally store in Supabase Storage
-    if (store !== false && result.url && userId) {
-      const storedUrl = await storeImage(result.url, userId);
-      if (storedUrl) result.stored_url = storedUrl;
+    // Store in Supabase Storage (handles both URLs and base64)
+    if (store !== false && userId && (result.url || result._base64)) {
+      const storedUrl = result._base64
+        ? await storeBase64(result._base64, userId, result.type === "video" ? "mp4" : "png")
+        : await storeImage(result.url, userId);
+      if (storedUrl) {
+        result.stored_url = storedUrl;
+        result.url = storedUrl; // Replace temp URL with permanent one
+      }
+      delete result._base64; // Don't send base64 to client
     }
 
     // Deduct tokens
@@ -274,9 +436,12 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-/** Auto-detect best available provider */
-function _detectProvider(): string {
+/** Auto-detect best available provider — Google first (free), then others */
+function _detectProvider(type = "image"): string {
+  if (type === "video") return "gemini"; // Veo is the only video provider
+  // Prefer Google (free) → Flux (cheap) → DALL-E (premium)
+  if (Deno.env.get("GOOGLE_AI_API_KEY")) return "gemini";
   if (Deno.env.get("REPLICATE_API_TOKEN")) return "flux";
   if (Deno.env.get("OPENAI_API_KEY")) return "dalle";
-  return "dalle"; // fallback
+  return "gemini"; // fallback
 }

@@ -846,12 +846,26 @@ const MissionDetailView = (() => {
   /* Simple markdown → HTML renderer (no external deps) */
   function _renderMarkdown(text) {
     if (!text) return '';
-    // Extract images BEFORE escaping (URLs contain special chars)
+    // Extract images and video links BEFORE escaping (URLs contain special chars)
     const images = [];
+    const videos = [];
     let processed = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
       const idx = images.length;
       images.push({ alt, url });
       return `%%IMG_${idx}%%`;
+    });
+    // Video links: [▶ Watch Video](url) or [Watch](url.mp4)
+    processed = processed.replace(/\[([^\]]*(?:Watch|Video|▶)[^\]]*)\]\(([^)]+)\)/gi, (_, label, url) => {
+      const idx = videos.length;
+      videos.push({ label, url });
+      return `%%VID_${idx}%%`;
+    });
+    // Regular links: [text](url) — extract before escaping
+    const links = [];
+    processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+      const idx = links.length;
+      links.push({ label, url });
+      return `%%LINK_${idx}%%`;
     });
 
     processed = _esc(processed)
@@ -891,6 +905,20 @@ const MissionDetailView = (() => {
     images.forEach((img, i) => {
       processed = processed.replace(`%%IMG_${i}%%`,
         `<div class="mission-image-wrap"><img src="${img.url}" alt="${_esc(img.alt)}" class="mission-generated-image" loading="lazy"/><a href="${img.url}" target="_blank" rel="noopener" class="mission-image-download" title="Open full size">⬇ Download</a></div>`
+      );
+    });
+
+    // Restore videos
+    videos.forEach((vid, i) => {
+      processed = processed.replace(`%%VID_${i}%%`,
+        `<div class="mission-image-wrap"><video src="${vid.url}" controls class="mission-generated-image" style="max-height:400px"></video><a href="${vid.url}" target="_blank" rel="noopener" class="mission-image-download" title="Download video">⬇ Download Video</a></div>`
+      );
+    });
+
+    // Restore links
+    links.forEach((link, i) => {
+      processed = processed.replace(`%%LINK_${i}%%`,
+        `<a href="${link.url}" target="_blank" rel="noopener">${_esc(link.label)}</a>`
       );
     });
 
