@@ -863,9 +863,7 @@ const NICE = (() => {
     Router.on('/workflows/:id', WorkflowDetailView);
     if (typeof ShipLogView !== 'undefined') Router.on('/ship-log', ShipLogView);
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
-    if (typeof MarketplaceView !== 'undefined') Router.on('/marketplace', MarketplaceView);
-    if (typeof TeamsView !== 'undefined') Router.on('/teams', TeamsView);
-    if (typeof PluginsView !== 'undefined') Router.on('/plugins', PluginsView);
+    if (typeof EngineeringView !== 'undefined') Router.on('/engineering', EngineeringView);
   }
 
   /* ── Modal helpers ── */
