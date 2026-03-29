@@ -13,7 +13,10 @@ const SchematicView = (() => {
 
   function render(el) {
     const shipId = _getShipId();
-    const activatedShips = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
+    let activatedShips = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
+    // Include custom ships from State (created by Crew Designer)
+    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    customShips.forEach(cs => { if (!activatedShips.find(s => s.id === cs.id)) activatedShips.push(cs); });
     const activeShip = activatedShips.find(s => s.id === shipId) || activatedShips[0];
 
     if (!activeShip) {
@@ -457,7 +460,10 @@ const SchematicView = (() => {
     const stored = localStorage.getItem('nice-mc-ship');
     if (stored) return _normalizeShipId(stored);
     const ships = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
-    return ships.length ? _normalizeShipId(ships[0].id) : null;
+    if (ships.length) return _normalizeShipId(ships[0].id);
+    // Check custom ships from State (Crew Designer)
+    const custom = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    return custom.length ? _normalizeShipId(custom[0].id) : null;
   }
 
   function _getSlotMap() {
@@ -468,6 +474,12 @@ const SchematicView = (() => {
       if (saved && saved.slot_assignments && Object.keys(saved.slot_assignments).length) {
         return { ...saved.slot_assignments };
       }
+    }
+    // Check custom ships from State (Crew Designer)
+    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const customShip = customShips.find(s => s.id === shipId);
+    if (customShip && customShip.slot_assignments && Object.keys(customShip.slot_assignments).length) {
+      return { ...customShip.slot_assignments };
     }
     const rawId = shipId.replace(/^bp-/, '');
     const bp = (typeof BlueprintStore !== 'undefined') ? (BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId)) : null;
