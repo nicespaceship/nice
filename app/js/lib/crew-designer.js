@@ -560,12 +560,12 @@ Rules:
 
         const agentData = {
           name: agent.name,
-          role: agent.role || 'Ops',
-          type: 'Specialist',
-          description: agent.description || '',
-          llm_engine: agent.model || 'gemini-2.5-flash',
           status: 'idle',
           config: {
+            role: agent.role || 'Ops',
+            type: 'Specialist',
+            description: agent.description || '',
+            llm_engine: agent.model || 'gemini-2.5-flash',
             tools: agent.tools || [],
             temperature: agent.temperature || 0.3,
             memory: true,
@@ -596,6 +596,7 @@ Rules:
       const slotAssignments = {};
       createdAgentIds.forEach((id, i) => { slotAssignments[i] = id; });
 
+      // shipData for local State/localStorage (full details)
       const shipData = {
         name: _data.shipName || 'Custom Spaceship',
         category: _data.shipCategory || 'Custom',
@@ -613,10 +614,27 @@ Rules:
         caps: _data.editedAgents.map(a => a.role).filter((v, i, arr) => arr.indexOf(v) === i),
       };
 
+      // Supabase insert uses only valid columns: name, status, slots (jsonb)
       let shipId = `ship-${Date.now()}`;
       if (userId && typeof SB !== 'undefined' && SB.isReady()) {
         try {
-          const { data: created } = await SB.db('user_spaceships').create({ ...shipData, user_id: userId });
+          const { data: created } = await SB.db('user_spaceships').create({
+            user_id: userId,
+            name: shipData.name,
+            status: 'deployed',
+            slots: {
+              slot_assignments: slotAssignments,
+              agent_ids: createdAgentIds,
+              flow_pattern: _data.flowPattern || 'sequential',
+              category: _data.shipCategory || 'Custom',
+              description: _data.shipDescription || '',
+              rationale: _data.rationale,
+              integrations_needed: _data.integrationsNeeded,
+              suggested_test_mission: _data.testMission,
+              caps: shipData.caps,
+              stats: shipData.stats,
+            },
+          });
           if (created?.id) shipId = created.id;
         } catch (e) { console.warn('[CrewDesigner] Ship create fallback to local:', e); }
       }
