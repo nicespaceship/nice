@@ -69,12 +69,14 @@
   letter-spacing:.18em; color:var(--accent);
 }
 .app-hdr-btn {
-  background:none; border:var(--border-width) solid var(--border);
-  color:var(--text-muted); cursor:pointer; padding:5px 8px;
-  font-family:var(--font-m); font-size:.55rem; letter-spacing:.1em;
-  transition:color .2s, border-color .2s;
+  background:var(--surface, #18181b); border:1px solid var(--border);
+  color:var(--text-muted); cursor:pointer; padding:6px 12px;
+  font-family:var(--font-b, Inter, sans-serif); font-size:.65rem; font-weight:500; letter-spacing:.06em;
+  border-radius:var(--radius, 8px);
+  transition:all .15s;
 }
-.app-hdr-btn:hover, .app-hdr-btn.active { color:var(--accent); border-color:var(--accent); }
+.app-hdr-btn:hover { color:var(--text); background:var(--surface2, #27272a); border-color:var(--border-hi, #71717a); }
+.app-hdr-btn.active { color:var(--accent); border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, transparent); }
 .app-hdr-menu { display:none; background:none; border:none; color:var(--text-muted); cursor:pointer; padding:6px; }
 
 /* User info (now in sidebar footer) */
@@ -188,19 +190,22 @@
 ───────────────────────────────────────────────────────────────── */
 .app-hud-panel {
   max-height:0; overflow:hidden; opacity:0;
-  padding:0 14px;
+  padding:0 12px;
   border-bottom:0 solid var(--border);
-  display:flex; flex-direction:column; gap:8px;
+  display:flex; flex-direction:column; gap:10px;
   transition:max-height .3s ease, opacity .25s ease, padding .3s ease, border-bottom-width .3s ease;
   flex-shrink:0;
+  background:var(--bg2, #18181b);
+  margin:0 8px;
+  border-radius:0 0 var(--radius, 10px) var(--radius, 10px);
 }
 .app-hud-panel.open {
   max-height:280px; opacity:1;
-  padding:10px 14px;
+  padding:14px 12px;
   border-bottom:var(--border-width, 1px) solid var(--border);
 }
-.hud-row { display:flex; align-items:center; gap:5px; }
-.hud-row-sep { height:1px; background:var(--border); margin:4px 0; }
+.hud-row { display:flex; align-items:center; gap:6px; }
+.hud-row-sep { height:1px; background:var(--border); margin:2px 0; opacity:.5; }
 .hud-notif-row { justify-content:space-between; padding:2px 0; }
 .hud-notif-row .bell-dropdown { position:absolute; top:auto; left:0; right:0; margin-top:4px; }
 .dock-lbl { font-family:var(--font-m); font-size:.55rem; letter-spacing:.14em; color:var(--text-muted); margin-right:2px; padding-right:6px; }

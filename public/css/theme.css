@@ -305,14 +305,18 @@
 
 /* HUD */
 [data-theme="spaceship"] .app-hud-panel {
-  background: #09090b; border: 1px solid var(--border);
+  background: rgba(9,9,11,0.95);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
-[data-theme="spaceship"] .app-hud-panel .dock-lbl { color: var(--text-dim); }
-[data-theme="spaceship"] .app-hud-panel .dock-lbl-val { color: var(--text-muted); }
-[data-theme="spaceship"] .app-hud-panel .db { border: 1px solid var(--border); transition: all .15s; }
-[data-theme="spaceship"] .app-hud-panel .db.active { border-color: var(--accent); }
-[data-theme="spaceship"] .app-hud-panel .fb { border-color: var(--border); color: var(--text-dim); transition: all .15s; }
-[data-theme="spaceship"] .app-hud-panel .fb.active { background: rgba(224,231,255,0.06); color: var(--accent); }
+[data-theme="spaceship"] .app-hud-panel .dock-lbl { color: var(--text-muted); }
+[data-theme="spaceship"] .app-hud-panel .dock-lbl a { color: var(--accent2); }
+[data-theme="spaceship"] .app-hud-panel .dock-lbl-val { color: var(--accent); font-weight: 500; }
+[data-theme="spaceship"] .app-hud-panel .db { border: 2px solid var(--border); }
+[data-theme="spaceship"] .app-hud-panel .db.active { border-color: var(--accent); box-shadow: 0 0 10px rgba(224,231,255,0.15); }
+[data-theme="spaceship"] .app-hud-panel .fb { border-color: var(--border); color: var(--text-muted); }
+[data-theme="spaceship"] .app-hud-panel .fb.active { background: rgba(224,231,255,0.08); color: var(--accent); border-color: var(--accent); }
 
 /* Scrollbar */
 [data-theme="spaceship"] ::-webkit-scrollbar { width: 5px; }
@@ -2735,17 +2739,19 @@ footer {
   transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
 }
 .dock-lbl {
-  font-family: var(--font-m); font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--text-muted); padding-right: 8px; border-right: 1px solid var(--border);
-  margin-right: 4px; white-space: nowrap; transition: color 0.4s, border-color 0.4s;
+  font-family: var(--font-b, Inter, sans-serif); font-size: .6rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted); padding-right: 8px;
+  margin-right: 4px; white-space: nowrap; transition: color 0.4s;
 }
+.dock-lbl-sep { display: none; }
+.dock-lbl a { text-decoration: none; }
 .db {
-  width: 22px; height: 22px; border-radius: 50%;
+  width: 26px; height: 26px; border-radius: 50%;
   border: 2px solid transparent; cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s; position: relative; flex-shrink: 0;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; position: relative; flex-shrink: 0;
 }
-.db:hover { transform: scale(1.3); }
-.db.active { border-color: rgba(255,255,255,0.85); transform: scale(1.15); }
+.db:hover { transform: scale(1.2); box-shadow: 0 0 8px rgba(255,255,255,0.15); }
+.db.active { border-color: rgba(255,255,255,0.85); transform: scale(1.1); box-shadow: 0 0 12px rgba(255,255,255,0.2); }
 .db::after {
   content: attr(data-tip);
   position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
@@ -3850,14 +3856,15 @@ input:checked + .toggle-slider::before { transform:translateX(18px); background:
 
 /* ── Font switcher buttons ─────────────────────────── */
 .fb {
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  transition: border-color 0.15s, color 0.15s; position: relative;
+  border-radius: 6px;
+  transition: all 0.15s; position: relative;
 }
-.fb:hover { border-color: var(--border-hi); color: var(--text); }
-.fb.active { border-color: var(--accent); color: var(--accent); }
+.fb:hover { border-color: var(--border-hi); color: var(--text); background: rgba(255,255,255,0.03); }
+.fb.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .fb::after {
   content: attr(data-tip);
   position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
