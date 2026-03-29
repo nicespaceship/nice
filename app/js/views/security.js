@@ -94,8 +94,8 @@ const SecurityView = (() => {
     const hashParts = (window.location.hash || '').split('?');
     const urlParams = new URLSearchParams(hashParts[1] || '');
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview','integrations','wallet'].includes(tabParam)) _activeTab = tabParam;
-    if (tabParam === 'vault') _activeTab = 'integrations'; // Vault removed, redirect to Integrations
+    if (tabParam && ['overview','integrations','models','wallet'].includes(tabParam)) _activeTab = tabParam;
+    if (tabParam === 'vault') _activeTab = 'models'; // Vault removed, redirect to Models
 
     el.innerHTML = `
       <div class="security-wrap">
@@ -108,6 +108,10 @@ const SecurityView = (() => {
           <button class="security-tab ${_activeTab === 'integrations' ? 'security-tab--active' : ''}" data-sec-tab="integrations">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-integrations"/></svg>
             Integrations
+          </button>
+          <button class="security-tab ${_activeTab === 'models' ? 'security-tab--active' : ''}" data-sec-tab="models">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-cpu"/></svg>
+            Models
           </button>
           <button class="security-tab ${_activeTab === 'wallet' ? 'security-tab--active' : ''}" data-sec-tab="wallet">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-wallet"/></svg>
@@ -140,6 +144,10 @@ const SecurityView = (() => {
       case 'integrations':
         if (typeof IntegrationsView !== 'undefined') IntegrationsView.render(container);
         else container.innerHTML = '<p class="text-muted">Integrations module not loaded.</p>';
+        break;
+      case 'models':
+        if (typeof VaultView !== 'undefined') VaultView.render(container);
+        else container.innerHTML = '<p class="text-muted">Models module not loaded.</p>';
         break;
       case 'wallet':
         if (typeof WalletView !== 'undefined') WalletView.render(container);
