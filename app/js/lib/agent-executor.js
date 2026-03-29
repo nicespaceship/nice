@@ -70,7 +70,10 @@ const AgentExecutor = (() => {
       }
 
       totalTokens += llmResponse.tokensUsed || 0;
-      const text = llmResponse.content || '';
+      // Normalize content: Gemini returns [{type:"text",text:"..."}], Anthropic returns string
+      let text = llmResponse.content || '';
+      if (Array.isArray(text)) text = text.map(c => c.text || c).join('');
+      if (typeof text !== 'string') text = String(text);
 
       // Parse the response for ReAct structure
       const parsed = _parseReActResponse(text);
@@ -265,12 +268,17 @@ const AgentExecutor = (() => {
     if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Edge function error');
     if (!data || data.error) throw new Error(data?.error || 'Empty response');
 
+    // Normalize content: Gemini returns [{type:"text",text:"..."}]
+    let content = data.content || '';
+    if (Array.isArray(content)) content = content.map(c => c.text || c).join('');
+    if (typeof content !== 'string') content = String(content);
+
     const tokensUsed = data.usage
       ? (data.usage.input_tokens + data.usage.output_tokens)
-      : Math.floor((data.content || '').length / 4);
+      : Math.floor(content.length / 4);
 
     return {
-      content:    data.content || '',
+      content,
       model:      data.model || llmConfig.model,
       tokensUsed: tokensUsed,
     };
