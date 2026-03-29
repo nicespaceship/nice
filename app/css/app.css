@@ -3978,11 +3978,11 @@
   border-radius:inherit;
   background:linear-gradient(
     135deg,
-    rgba(245,158,11,0.06) 0%,
-    rgba(168,85,247,0.04) 25%,
-    rgba(99,102,241,0.06) 50%,
-    rgba(245,158,11,0.04) 75%,
-    rgba(255,45,85,0.06) 100%
+    rgba(245,158,11,0.02) 0%,
+    rgba(168,85,247,0.015) 25%,
+    rgba(99,102,241,0.02) 50%,
+    rgba(245,158,11,0.015) 75%,
+    rgba(255,45,85,0.02) 100%
   );
   background-size:300% 300%;
   animation:foil-shift 8s ease-in-out infinite;
