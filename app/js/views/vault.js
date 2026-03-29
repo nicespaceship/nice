@@ -92,7 +92,7 @@ const VaultView = (() => {
         <!-- Stats -->
         <div class="vault-stats">
           <div class="vault-stat">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-cpu"/></svg>
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-stations"/></svg>
             <span class="vault-stat-num">${enabledCount}/${MODEL_CATALOG.length}</span>
             <span class="vault-stat-label">Models Active</span>
           </div>
