@@ -3881,9 +3881,19 @@
 .tcg-card[data-rarity="epic"],
 .tcg-card-grid[data-rarity="epic"],
 .tcg-card-compact[data-rarity="epic"]      { border-color:#a855f740; box-shadow:0 0 12px rgba(168,85,247,.15); }
+/* Legendary pulsing gold border */
+@keyframes legendary-border-pulse {
+  0%, 100% { border-color:#f59e0b; box-shadow:0 0 12px rgba(245,158,11,.2), 0 0 24px rgba(245,158,11,.08); }
+  33%      { border-color:#f97316; box-shadow:0 0 16px rgba(249,115,22,.25), 0 0 30px rgba(249,115,22,.1); }
+  66%      { border-color:#fbbf24; box-shadow:0 0 14px rgba(251,191,36,.22), 0 0 28px rgba(251,191,36,.09); }
+}
 .tcg-card[data-rarity="legendary"],
 .tcg-card-grid[data-rarity="legendary"],
-.tcg-card-compact[data-rarity="legendary"] { border-color:#f59e0b; box-shadow:0 0 16px rgba(245,158,11,.3); }
+.tcg-card-compact[data-rarity="legendary"] {
+  border-color:#f59e0b;
+  box-shadow:0 0 16px rgba(245,158,11,.3);
+  animation:legendary-border-pulse 4s ease-in-out infinite;
+}
 
 /* Mythic RGB LED border */
 @keyframes mythic-rgb-border {
@@ -4045,6 +4055,9 @@
   .tcg-card-grid[data-rarity="legendary"]::before,
   .tcg-card-grid[data-rarity="mythic"]::before { animation:none !important; }
   .tcg-card:hover .tcg-art::after { animation:none !important; }
+  .tcg-card[data-rarity="legendary"],
+  .tcg-card-grid[data-rarity="legendary"],
+  .tcg-card-compact[data-rarity="legendary"] { animation:none !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
