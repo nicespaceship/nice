@@ -179,15 +179,9 @@ const ShipLog = (() => {
       response = response.content;
 
     } catch (e) {
-      console.warn('[ShipLog] LLM call failed, using mock:', e.message || e);
-      response = _mockResponse(agentBlueprint, prompt);
-      metadata = {
-        model:       llmConfig.model || 'mock',
-        tokens_used: Math.floor(response.length / 4),
-        duration_ms: Date.now() - startMs,
-        context_len: context.length,
-        source:      'mock',
-      };
+      console.error('[ShipLog] LLM call failed:', e.message || e);
+      // Surface the real error instead of hiding behind mock data
+      throw new Error('AI call failed: ' + (e.message || 'Unknown error. Check your connection and try again.'));
     }
 
     // 5. Log agent response

@@ -146,6 +146,11 @@ const MissionRunner = (() => {
       }, 2000);
 
       // Check if agent has tools configured → use AgentExecutor
+      // Also pull tools from mission metadata if agent config doesn't have them
+      if (agentBp && (!agentBp.config?.tools?.length) && mission.metadata?.tools) {
+        if (!agentBp.config) agentBp.config = {};
+        agentBp.config.tools = mission.metadata.tools;
+      }
       const _hasTools = agentBp && agentBp.config && agentBp.config.tools && agentBp.config.tools.length > 0;
       let result;
 
