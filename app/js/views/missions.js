@@ -846,7 +846,15 @@ const MissionDetailView = (() => {
   /* Simple markdown → HTML renderer (no external deps) */
   function _renderMarkdown(text) {
     if (!text) return '';
-    return _esc(text)
+    // Extract images BEFORE escaping (URLs contain special chars)
+    const images = [];
+    let processed = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
+      const idx = images.length;
+      images.push({ alt, url });
+      return `%%IMG_${idx}%%`;
+    });
+
+    processed = _esc(processed)
       // Headers
       .replace(/^### (.+)$/gm, '<h4>$1</h4>')
       .replace(/^## (.+)$/gm, '<h3>$1</h3>')
@@ -860,6 +868,12 @@ const MissionDetailView = (() => {
       // Code blocks
       .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
       .replace(/`(.+?)`/g, '<code>$1</code>')
+      // Tables (basic)
+      .replace(/\|(.+)\|/g, (match) => {
+        if (match.includes('---')) return '';
+        const cells = match.split('|').filter(c => c.trim());
+        return '<tr>' + cells.map(c => `<td style="padding:4px 8px;border:1px solid var(--border,#333)">${c.trim()}</td>`).join('') + '</tr>';
+      })
       // Horizontal rules
       .replace(/^---$/gm, '<hr/>')
       // Paragraphs (double newline)
@@ -872,6 +886,15 @@ const MissionDetailView = (() => {
       .replace(/<\/li><br\/><li>/g, '</li><li>')
       // Clean up empty paragraphs
       .replace(/<p><\/p>/g, '');
+
+    // Restore images
+    images.forEach((img, i) => {
+      processed = processed.replace(`%%IMG_${i}%%`,
+        `<div class="mission-image-wrap"><img src="${img.url}" alt="${_esc(img.alt)}" class="mission-generated-image" loading="lazy"/><a href="${img.url}" target="_blank" rel="noopener" class="mission-image-download" title="Open full size">⬇ Download</a></div>`
+      );
+    });
+
+    return processed;
   }
 
   function destroy() {

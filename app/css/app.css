@@ -6506,3 +6506,11 @@ body.preview-active .nice-ai {
   .outbox-card-actions { flex-wrap:wrap; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   MISSION — Generated Images
+═══════════════════════════════════════════════════════════════ */
+.mission-image-wrap { margin:12px 0; text-align:center; }
+.mission-generated-image { max-width:100%; border-radius:var(--radius, 10px); border:1px solid var(--border, #333); }
+.mission-image-download { display:inline-block; margin-top:6px; font-family:var(--font-b, Inter, sans-serif); font-size:.75rem; color:var(--accent, #a5b4fc); text-decoration:none; }
+.mission-image-download:hover { text-decoration:underline; }
