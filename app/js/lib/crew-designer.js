@@ -753,6 +753,53 @@ Rules:
   }
 
   /* ══════════════════════════════════════════════════════════════ */
+  /*  BOOT: Restore custom ships/agents into State on page load    */
+  /* ══════════════════════════════════════════════════════════════ */
+
+  function _restoreCustomData() {
+    try {
+      const ships = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+      const agents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+      if (ships.length && typeof State !== 'undefined') {
+        const existing = State.get('spaceships') || [];
+        const merged = [...existing];
+        ships.forEach(s => { if (!merged.find(e => e.id === s.id)) merged.push(s); });
+        if (merged.length > existing.length) State.set('spaceships', merged);
+      }
+      if (agents.length && typeof State !== 'undefined') {
+        const existing = State.get('agents') || [];
+        const merged = [...existing];
+        agents.forEach(a => { if (!merged.find(e => e.id === a.id)) merged.push(a); });
+        if (merged.length > existing.length) State.set('agents', merged);
+      }
+      // Ensure BlueprintStore knows about custom ships
+      if (ships.length && typeof BlueprintStore !== 'undefined') {
+        ships.forEach(s => {
+          if (!BlueprintStore.isShipActivated(s.id)) {
+            BlueprintStore.activateShip(s.id);
+          }
+          if (s.slot_assignments && !BlueprintStore.getShipState(s.id)?.slot_assignments) {
+            BlueprintStore.saveShipState(s.id, {
+              slot_assignments: s.slot_assignments,
+              status: s.status || 'deployed',
+              agent_ids: Object.values(s.slot_assignments),
+            });
+          }
+        });
+      }
+    } catch (e) { console.warn('[CrewDesigner] restore error:', e); }
+  }
+
+  // Run on load after a short delay to ensure State/BlueprintStore are ready
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => setTimeout(_restoreCustomData, 500));
+    } else {
+      setTimeout(_restoreCustomData, 500);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════ */
   /*  PUBLIC API                                                    */
   /* ══════════════════════════════════════════════════════════════ */
 
