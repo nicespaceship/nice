@@ -277,9 +277,9 @@ const MissionsView = (() => {
     const eta = isRunning ? _estimateETA(m) : '';
 
     let actionsHTML = '';
-    if (m.status === 'queued' && m.agent_id) {
+    if (m.status === 'queued' && (m.agent_id || m.agent_name)) {
       actionsHTML = `<button class="btn btn-primary btn-xs task-run-btn" data-id="${m.id}">⚡ Run</button>`;
-    } else if (m.status === 'failed' && m.agent_id) {
+    } else if (m.status === 'failed' && (m.agent_id || m.agent_name)) {
       actionsHTML = `<button class="btn btn-xs task-retry-btn" data-id="${m.id}">↻ Retry</button>`;
     }
 
@@ -616,10 +616,10 @@ const MissionDetailView = (() => {
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
               Back to Missions
             </a>
-            ${mission.status === 'queued' && mission.agent_id ? `
+            ${mission.status === 'queued' && (mission.agent_id || mission.agent_name) ? `
               <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run Mission</button>
             ` : ''}
-            ${mission.status === 'failed' && mission.agent_id ? `
+            ${mission.status === 'failed' && (mission.agent_id || mission.agent_name) ? `
               <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry Mission</button>
             ` : ''}
             ${mission.status === 'completed' ? `
