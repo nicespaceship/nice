@@ -153,13 +153,6 @@ const IntegrationsView = (() => {
 
         <!-- ═══ MCP Servers Section ═══ -->
         <div class="integrations-section">
-          <div class="integrations-section-header">
-            <h3 class="integrations-section-title">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-cpu"/></svg>
-              MCP Servers
-            </h3>
-            <p class="integrations-section-desc">Connect MCP servers so all your agents can use their tools.</p>
-          </div>
           <div class="intg-toolbar">
             <div class="search-box" style="flex:1;max-width:280px">
               <svg class="icon icon-sm search-icon" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
