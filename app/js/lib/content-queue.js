@@ -21,16 +21,17 @@ const ContentQueue = (() => {
   async function load(filter = {}) {
     const items = [];
 
-    // Try Supabase first
-    if (typeof SB !== 'undefined' && SB.isReady()) {
+    // Try Supabase first — direct query to get approval_status column
+    if (typeof SB !== 'undefined' && SB.isReady() && SB.client) {
       try {
         const user = typeof State !== 'undefined' ? State.get('user') : null;
         if (user?.id) {
-          const { data } = await SB.db('tasks').list({ userId: user.id });
-          if (data) {
-            const drafts = data.filter(t => t.approval_status);
-            items.push(...drafts);
-          }
+          const { data } = await SB.client
+            .from('tasks')
+            .select('id, title, agent_name, result, content_type, approval_status, edited_content, reviewed_at, created_at, metadata, status')
+            .eq('user_id', user.id)
+            .not('approval_status', 'is', null);
+          if (data) items.push(...data);
         }
       } catch (e) { console.warn('[ContentQueue] Supabase load error:', e); }
     }
@@ -119,9 +120,9 @@ const ContentQueue = (() => {
 
   async function edit(id, newContent) {
     // Update Supabase
-    if (typeof SB !== 'undefined' && SB.isReady()) {
+    if (typeof SB !== 'undefined' && SB.isReady() && SB.client) {
       try {
-        await SB.db('tasks').update(id, { edited_content: newContent });
+        await SB.client.from('tasks').update({ edited_content: newContent }).eq('id', id);
       } catch {}
     }
 
@@ -200,9 +201,9 @@ const ContentQueue = (() => {
     const now = new Date().toISOString();
 
     // Update Supabase
-    if (typeof SB !== 'undefined' && SB.isReady()) {
+    if (typeof SB !== 'undefined' && SB.isReady() && SB.client) {
       try {
-        await SB.db('tasks').update(id, { approval_status: status, reviewed_at: now });
+        await SB.client.from('tasks').update({ approval_status: status, reviewed_at: now }).eq('id', id);
       } catch {}
     }
 

@@ -683,8 +683,16 @@ const MissionDetailView = (() => {
           ${mission.result ? `
             <div class="detail-section">
               <h3 class="detail-section-title">Result</h3>
-              <div class="mission-result-content mission-md">
-                ${_renderMarkdown(mission.result)}
+              <div class="mission-result-content mission-md" id="mission-result-body">
+                ${_renderMarkdown(mission.edited_content || mission.result)}
+              </div>
+              <div class="outbox-card-actions" style="padding:12px 0 0; border-top:1px solid var(--border,#333); margin-top:12px;" data-id="${_esc(mission.id)}">
+                ${mission.approval_status === 'approved' ? '<span class="outbox-status-badge approved" style="margin-right:8px">✓ Approved</span>' : ''}
+                ${mission.approval_status === 'rejected' ? '<span class="outbox-status-badge rejected" style="margin-right:8px">✕ Rejected</span>' : ''}
+                ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-approve-btn" data-action="approve" data-mid="${_esc(mission.id)}">✓ Approve</button>` : ''}
+                <button class="btn outbox-edit-btn" data-action="edit" data-mid="${_esc(mission.id)}">✎ Edit</button>
+                ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-reject-btn" data-action="reject" data-mid="${_esc(mission.id)}">✕ Reject</button>` : ''}
+                <button class="btn outbox-copy-btn" data-action="copy" data-mid="${_esc(mission.id)}">📋 Copy</button>
               </div>
             </div>
           ` : ''}
@@ -761,6 +769,61 @@ const MissionDetailView = (() => {
           Notify.send({ title: 'Report Link Copied', message: 'Shareable mission report URL copied to clipboard.', type: 'system' });
         }
       }).catch(() => {});
+    });
+
+    // Content actions (approve/edit/reject/copy)
+    el.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const action = btn.dataset.action;
+        const mid = btn.dataset.mid;
+        if (!mid) return;
+
+        if (action === 'approve' && typeof ContentQueue !== 'undefined') {
+          await ContentQueue.approve(mid);
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Approved', message: 'Content approved', type: 'success' });
+          _loadMission(el, id);
+        }
+        if (action === 'reject' && typeof ContentQueue !== 'undefined') {
+          await ContentQueue.reject(mid);
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Rejected', message: 'Content rejected', type: 'system' });
+          _loadMission(el, id);
+        }
+        if (action === 'copy') {
+          const content = mission.edited_content || mission.result || '';
+          try {
+            await navigator.clipboard.writeText(content);
+            if (typeof Notify !== 'undefined') Notify.send({ title: 'Copied', message: 'Content copied to clipboard', type: 'success' });
+          } catch {
+            const ta = document.createElement('textarea');
+            ta.value = content; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+          }
+        }
+        if (action === 'edit') {
+          const body = document.getElementById('mission-result-body');
+          if (!body) return;
+          const content = mission.edited_content || mission.result || '';
+          body.innerHTML = `
+            <textarea class="outbox-edit-area" id="mission-edit-ta" style="min-height:200px">${_esc(content)}</textarea>
+            <div class="outbox-edit-actions" style="margin-top:8px">
+              <button class="btn outbox-save-btn" id="mission-edit-save">Save</button>
+              <button class="btn" id="mission-edit-cancel">Cancel</button>
+            </div>
+          `;
+          document.getElementById('mission-edit-save')?.addEventListener('click', async () => {
+            const newContent = document.getElementById('mission-edit-ta')?.value;
+            if (newContent != null) {
+              if (typeof ContentQueue !== 'undefined') await ContentQueue.edit(mid, newContent);
+              else if (typeof SB !== 'undefined' && SB.client) {
+                await SB.client.from('tasks').update({ edited_content: newContent }).eq('id', mid);
+              }
+              mission.edited_content = newContent;
+              if (typeof Notify !== 'undefined') Notify.send({ title: 'Saved', message: 'Content updated', type: 'success' });
+            }
+            _loadMission(el, id);
+          });
+          document.getElementById('mission-edit-cancel')?.addEventListener('click', () => _loadMission(el, id));
+        }
+      });
     });
   }
 

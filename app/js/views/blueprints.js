@@ -281,9 +281,9 @@ const BlueprintsView = (() => {
           <button class="bp-type-tab" data-tab="schematic">Schematic</button>
           <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
           <button class="bp-type-tab" data-tab="missions">Missions</button>
-          <button class="bp-type-tab" data-tab="outbox">Outbox</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
+          <button class="bp-type-tab" data-tab="outbox">Outbox</button>
         </div>
 
         <!-- Blueprints sub-tabs (Spaceships / Agents) -->
