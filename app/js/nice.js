@@ -15,7 +15,7 @@ const Theme = (() => {
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
     { id:'spaceship', name:'NICE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
-      data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
+      data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
     { id:'robotech', name:'Pod', builtin:true, accent:'#f8f8f8', preview:['#f8f8f8','#080808','#444444'],
       data:{ colors:{ '--bg':'#f8f8f8','--bg2':'#efefef','--surface':'#e4e4e4','--surface2':'#d8d8d8','--border':'#c8c8c8','--border-hi':'#888888','--accent':'#080808','--accent2':'#444444','--text':'#0f0f0f','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(239,239,239,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
     { id:'navigator', name:'Navigator', builtin:true, accent:'#00e5ff', preview:['#02090f','#00e5ff','#0099bb'],

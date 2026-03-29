@@ -25,10 +25,11 @@
   --text-dim:     #3f3f46;
   --glow:         0 0 0 1px rgba(224,231,255,0.06);
   --glow-hi:      0 0 12px rgba(224,231,255,0.08);
-  --font-d:       'Orbitron', sans-serif;
-  --font-h:       'Orbitron', sans-serif;
+  --font-d:       'Inter', sans-serif;
+  --font-h:       'Inter', sans-serif;
   --font-b:       'Inter', sans-serif;
   --font-m:       'Fira Code', monospace;
+  --font-brand:   'Orbitron', sans-serif;
   --radius:       10px;
   --scan:         0;
   --border-width: 1px;
@@ -96,6 +97,7 @@
   background: linear-gradient(90deg, transparent, rgba(224,231,255,0.1), transparent);
 }
 [data-theme="spaceship"] .side-header .app-brand-text {
+  font-family: var(--font-brand, 'Orbitron', sans-serif);
   color: var(--accent);
   letter-spacing: .25em;
   text-transform: uppercase;
