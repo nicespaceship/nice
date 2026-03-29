@@ -143,7 +143,7 @@ const MissionRunner = (() => {
             '**Aspect Ratio:** ' + (videoResult.size || '9:16');
           _updateLocalMission(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' });
           SB.db('tasks').update(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' }).catch(() => {});
-          _awardXP('complete_mission', 15, agentBp);
+          if (typeof Gamification !== 'undefined') Gamification.addXP('complete_mission');
           return;
         }
       } catch (videoErr) {
