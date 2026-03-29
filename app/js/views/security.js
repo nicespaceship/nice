@@ -110,7 +110,7 @@ const SecurityView = (() => {
             Integrations
           </button>
           <button class="security-tab ${_activeTab === 'models' ? 'security-tab--active' : ''}" data-sec-tab="models">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-cpu"/></svg>
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-stations"/></svg>
             Models
           </button>
           <button class="security-tab ${_activeTab === 'wallet' ? 'security-tab--active' : ''}" data-sec-tab="wallet">
