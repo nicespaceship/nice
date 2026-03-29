@@ -1,255 +1,166 @@
 /* ═══════════════════════════════════════════════════════════════════
-   NICE — Setup Wizard
-   Guided spaceship creation: questionnaire → LLM recommendation →
-   auto-creates agents + workflows + spaceship in one flow.
-   Works for businesses, personal projects, creative work, research,
-   open-source — anything that can be powered by AI agents.
+   NICE — Setup Wizard (First-Run Onboarding)
+   4-step flow: Describe → Pick needs → AI crew preview → Deploy.
+   Shows on first visit (localStorage 'nice-onboarded'), skippable.
+   Uses CrewDesigner-style AI generation + deploy.
 ═══════════════════════════════════════════════════════════════════ */
 
 const SetupWizard = (() => {
   let _overlay = null;
   let _step = 0;
+  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
   const _data = {
-    projectName: '',
-    description: '',
-    category: '',
-    projectType: '',
-    goals: [],
-    recommendation: null,
-    // Editable in review step
-    spaceshipName: '',
-    classId: 'class-1',
-    agents: [],
-    workflows: [],
+    businessDesc: '',
+    needs: [],
+    proposal: null,
+    shipName: '',
+    shipId: null,
+    agentCount: 0,
   };
 
-  const CATEGORIES = [
-    'Business / Startup',
-    'Freelance / Consulting',
-    'E-Commerce / Retail',
-    'Restaurant / Hospitality',
-    'Real Estate',
-    'Healthcare',
-    'Legal',
-    'Marketing / Agency',
-    'Software / SaaS',
-    'Education / Tutoring',
-    'Creative / Design / Art',
-    'Music / Audio Production',
-    'Video / Film / Animation',
-    'Writing / Publishing',
-    'Gaming / Game Dev',
-    'Research / Academic',
-    'Open Source / Community',
-    'Nonprofit / Social Impact',
-    'Finance / Accounting',
-    'Construction / Trades',
-    'Logistics / Supply Chain',
-    'Personal Productivity',
-    'Content Creation',
-    'Data Science / AI/ML',
-    'Other',
+  const NEEDS = [
+    { id: 'social',   label: 'Social Media',       icon: '#icon-share-2' },
+    { id: 'email',    label: 'Email Marketing',     icon: '#icon-mail' },
+    { id: 'support',  label: 'Customer Support',    icon: '#icon-message-circle' },
+    { id: 'analytics',label: 'Analytics',           icon: '#icon-bar-chart' },
+    { id: 'content',  label: 'Content Creation',    icon: '#icon-file-text' },
+    { id: 'ops',      label: 'Operations',          icon: '#icon-cog' },
   ];
 
-  const PROJECT_TYPES = [
-    { id: 'business',   label: 'Business or Company',     icon: '🏢', hint: 'Run or grow a business with AI agents' },
-    { id: 'project',    label: 'Project or Side Hustle',   icon: 'rocket', hint: 'Build something new from scratch' },
-    { id: 'creative',   label: 'Creative Work',            icon: 'palette', hint: 'Art, music, writing, video, design' },
-    { id: 'research',   label: 'Research or Learning',     icon: '🔬', hint: 'Academic research, study, exploration' },
-    { id: 'community',  label: 'Community or Open Source',  icon: '🌍', hint: 'Open source, nonprofit, community project' },
-    { id: 'personal',   label: 'Personal Productivity',    icon: 'zap', hint: 'Automate your daily life and tasks' },
-  ];
+  const TOTAL_STEPS = 4;
 
-  const GOALS = [
-    { id: 'content',    label: 'Create content & copy',         icon: 'file-text' },
-    { id: 'research',   label: 'Research & gather intel',       icon: 'search' },
-    { id: 'analytics',  label: 'Analyze data & insights',       icon: 'bar-chart' },
-    { id: 'code',       label: 'Write or review code',          icon: '💻' },
-    { id: 'design',     label: 'Design & creative direction',   icon: 'palette' },
-    { id: 'support',    label: 'Handle support & communication', icon: '💬' },
-    { id: 'sales',      label: 'Sales & outreach',              icon: 'dollar' },
-    { id: 'ops',        label: 'Automate operations & tasks',   icon: 'cog' },
-    { id: 'legal',      label: 'Legal, compliance & contracts',  icon: '⚖️' },
-    { id: 'schedule',   label: 'Plan, schedule & coordinate',   icon: '📅' },
-    { id: 'learning',   label: 'Learn & train on new topics',   icon: '📚' },
-    { id: 'media',      label: 'Audio, video & media production', icon: '🎬' },
-  ];
+  /* ── Should the wizard auto-open? ── */
+  function shouldShow() {
+    return !localStorage.getItem('nice-onboarded');
+  }
 
-  /* ── Open the wizard ── */
+  /* ── Mark onboarding complete ── */
+  function _markDone() {
+    localStorage.setItem('nice-onboarded', '1');
+  }
+
+  /* ══════════════════════════════════════════════════════════════ */
+  /*  OPEN / CLOSE                                                 */
+  /* ══════════════════════════════════════════════════════════════ */
+
   function open() {
     if (_overlay) return;
     _step = 0;
-    _data.projectName = '';
-    _data.description = '';
-    _data.category = '';
-    _data.projectType = '';
-    _data.goals = [];
-    _data.recommendation = null;
+    _data.businessDesc = '';
+    _data.needs = [];
+    _data.proposal = null;
+    _data.shipName = '';
+    _data.shipId = null;
+    _data.agentCount = 0;
 
     _overlay = document.createElement('div');
     _overlay.className = 'wizard-overlay';
+    _overlay.setAttribute('role', 'dialog');
+    _overlay.setAttribute('aria-label', 'Welcome to NICE');
     _overlay.innerHTML = `
       <div class="wizard-container">
-        <button class="wizard-close" aria-label="Close">&times;</button>
-        <div class="wizard-progress"></div>
-        <div class="wizard-body"></div>
-        <div class="wizard-actions"></div>
+        <div class="wizard-progress" id="wiz-progress"></div>
+        <div class="wizard-body" id="wiz-body"></div>
+        <div class="wizard-actions" id="wiz-actions"></div>
       </div>
     `;
     document.body.appendChild(_overlay);
-    requestAnimationFrame(() => _overlay.classList.add('open'));
-
-    _overlay.querySelector('.wizard-close').addEventListener('click', close);
-    _overlay.addEventListener('click', (e) => { if (e.target === _overlay) close(); });
+    document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', _onKey);
-
+    requestAnimationFrame(() => _overlay?.classList.add('open'));
     _showStep(0);
   }
 
-  /* ── Close the wizard ── */
   function close() {
     if (!_overlay) return;
     document.removeEventListener('keydown', _onKey);
+    document.body.style.overflow = '';
     _overlay.classList.remove('open');
     setTimeout(() => { _overlay?.remove(); _overlay = null; }, 200);
   }
 
-  function _onKey(e) {
-    if (e.key === 'Escape') close();
+  function skip() {
+    _markDone();
+    close();
+    if (typeof AuditLog !== 'undefined') {
+      AuditLog.log('wizard_skipped', { step: _step });
+    }
   }
 
-  /* ── Step rendering ── */
+  function _onKey(e) {
+    if (e.key === 'Escape') skip();
+  }
+
+  /* ══════════════════════════════════════════════════════════════ */
+  /*  STEP RENDERING                                                */
+  /* ══════════════════════════════════════════════════════════════ */
+
   function _showStep(n) {
     _step = n;
     if (!_overlay) return;
-    const body = _overlay.querySelector('.wizard-body');
-    const actions = _overlay.querySelector('.wizard-actions');
-    const progress = _overlay.querySelector('.wizard-progress');
+    const body = _overlay.querySelector('#wiz-body');
+    const actions = _overlay.querySelector('#wiz-actions');
+    const progress = _overlay.querySelector('#wiz-progress');
 
     // Progress dots
-    progress.innerHTML = [0,1,2,3,4].map(i =>
-      `<span class="wizard-dot${i === n ? ' active' : ''}${i < n ? ' done' : ''}">${i < n ? '✓' : i + 1}</span>`
+    progress.innerHTML = Array.from({ length: TOTAL_STEPS }, (_, i) =>
+      `<span class="wizard-dot${i === n ? ' active' : ''}${i < n ? ' done' : ''}">${i < n ? '&#10003;' : i + 1}</span>`
     ).join('');
 
-    const renderers = [_renderStep1, _renderStep2, _renderStep3, _renderStep4, _renderStep5];
+    const renderers = [_renderStep1, _renderStep2, _renderStep3, _renderStep4];
     renderers[n](body, actions);
   }
 
-  /* ── Step 1: What are you building? ── */
+  /* ── Step 1: What does your business do? ── */
   function _renderStep1(body, actions) {
     body.innerHTML = `
-      <h2 class="wizard-title">What are you building?</h2>
-      <p class="wizard-subtitle">NICE can power anything — businesses, creative projects, research, personal tools, and more.</p>
-      <div class="wizard-goals wizard-project-types">
-        ${PROJECT_TYPES.map(t => `
-          <label class="wizard-goal wizard-project-type${_data.projectType === t.id ? ' selected' : ''}">
-            <input type="radio" name="project-type" value="${t.id}" ${_data.projectType === t.id ? 'checked' : ''}>
-            <span class="wizard-goal-icon">${t.icon}</span>
-            <span class="wizard-goal-label">${t.label}</span>
-            <span class="wizard-goal-hint">${t.hint}</span>
-          </label>
-        `).join('')}
+      <h2 class="wizard-title">Welcome to NICE</h2>
+      <p class="wizard-subtitle">Tell us about your business and we'll build you a custom AI team in seconds.</p>
+      <div class="wizard-field">
+        <label for="wiz-biz-desc">What does your business do?</label>
+        <input type="text" id="wiz-biz-desc" class="wizard-input" placeholder="e.g., I run a restaurant called Moonwalk" maxlength="200" value="${_esc(_data.businessDesc)}">
+        <span class="wizard-hint">A short description is all we need — be as specific as you like.</span>
       </div>
     `;
-
-    body.querySelectorAll('input[name="project-type"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        _data.projectType = radio.value;
-        body.querySelectorAll('.wizard-project-type').forEach(el => el.classList.remove('selected'));
-        radio.closest('.wizard-project-type').classList.add('selected');
-      });
-    });
-
     actions.innerHTML = `
-      <button class="btn btn-sm" onclick="SetupWizard.close()">Cancel</button>
+      <button class="btn btn-sm" id="wiz-skip-1">Skip</button>
       <button class="btn btn-sm btn-primary" id="wiz-next-1">Next</button>
     `;
+
+    const input = body.querySelector('#wiz-biz-desc');
+    requestAnimationFrame(() => input.focus());
+
+    actions.querySelector('#wiz-skip-1').addEventListener('click', skip);
     actions.querySelector('#wiz-next-1').addEventListener('click', () => {
-      if (!_data.projectType) {
-        body.querySelector('.wizard-project-types').classList.add('wizard-shake');
-        setTimeout(() => body.querySelector('.wizard-project-types')?.classList.remove('wizard-shake'), 500);
+      _data.businessDesc = input.value.trim();
+      if (!_data.businessDesc) {
+        _flash('wiz-biz-desc');
         return;
       }
       _showStep(1);
     });
-  }
 
-  /* ── Step 2: Tell us about your business or project ── */
-  function _renderStep2(body, actions) {
-    const nameLabel = _data.projectType === 'business' ? 'Business or Company Name'
-      : _data.projectType === 'creative' ? 'Project or Studio Name'
-      : _data.projectType === 'research' ? 'Research Project Name'
-      : _data.projectType === 'community' ? 'Project or Organization Name'
-      : _data.projectType === 'personal' ? 'What should we call this?'
-      : 'Project Name';
-
-    const namePlaceholder = _data.projectType === 'business' ? 'e.g. Desert Dirt Landscaping'
-      : _data.projectType === 'creative' ? 'e.g. Neon Dreams Studio'
-      : _data.projectType === 'research' ? 'e.g. Climate Data Analysis'
-      : _data.projectType === 'community' ? 'e.g. OpenWidget Project'
-      : _data.projectType === 'personal' ? 'e.g. My Productivity Hub'
-      : 'e.g. My Awesome Project';
-
-    const descLabel = _data.projectType === 'business' ? 'Describe what your business does'
-      : _data.projectType === 'creative' ? 'Describe your creative vision'
-      : _data.projectType === 'research' ? 'Describe your research focus'
-      : _data.projectType === 'community' ? 'Describe the project and its mission'
-      : _data.projectType === 'personal' ? 'What do you want to accomplish?'
-      : 'Describe your project';
-
-    const descPlaceholder = _data.projectType === 'business' ? 'e.g. We design and maintain desert-adapted landscapes for residential and commercial properties in the Phoenix metro area.'
-      : _data.projectType === 'creative' ? 'e.g. I create synthwave music and retro-futuristic visual art for independent films and game soundtracks.'
-      : _data.projectType === 'research' ? 'e.g. Analyzing satellite imagery and climate datasets to predict drought patterns in the American Southwest.'
-      : _data.projectType === 'community' ? 'e.g. An open-source toolkit for building accessible web components, maintained by a community of 50+ contributors.'
-      : _data.projectType === 'personal' ? 'e.g. I want AI agents to help me manage my schedule, research topics I\'m learning, and draft emails.'
-      : 'e.g. Describe what you\'re building and what you want to achieve.';
-
-    body.innerHTML = `
-      <h2 class="wizard-title">Tell us about your ${_data.projectType === 'business' ? 'business' : 'project'}</h2>
-      <p class="wizard-subtitle">The more detail you provide, the better NICE can customize your AI team.</p>
-      <div class="wizard-field">
-        <label>${nameLabel}</label>
-        <input type="text" id="wiz-proj-name" class="wizard-input" placeholder="${namePlaceholder}" maxlength="60" value="${_esc(_data.projectName)}">
-      </div>
-      <div class="wizard-field">
-        <label>Category</label>
-        <select id="wiz-category" class="wizard-input">
-          <option value="">Select a category...</option>
-          ${CATEGORIES.map(c => `<option value="${c}"${_data.category === c ? ' selected' : ''}>${c}</option>`).join('')}
-        </select>
-      </div>
-      <div class="wizard-field">
-        <label>${descLabel}</label>
-        <textarea id="wiz-desc" class="wizard-input wizard-textarea" placeholder="${descPlaceholder}" maxlength="500">${_esc(_data.description)}</textarea>
-        <span class="wizard-hint">Be specific — mention tools you use, your audience, team size, or anything relevant.</span>
-      </div>
-    `;
-    actions.innerHTML = `
-      <button class="btn btn-sm" id="wiz-back-2">Back</button>
-      <button class="btn btn-sm btn-primary" id="wiz-next-2">Next</button>
-    `;
-    actions.querySelector('#wiz-back-2').addEventListener('click', () => _showStep(0));
-    actions.querySelector('#wiz-next-2').addEventListener('click', () => {
-      _data.projectName = document.getElementById('wiz-proj-name').value.trim();
-      _data.category = document.getElementById('wiz-category').value;
-      _data.description = document.getElementById('wiz-desc').value.trim();
-      if (!_data.projectName) { _flash('wiz-proj-name'); return; }
-      if (!_data.description) { _flash('wiz-desc'); return; }
-      _showStep(2);
+    // Allow Enter to advance
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        actions.querySelector('#wiz-next-1').click();
+      }
     });
   }
 
-  /* ── Step 3: Goals & Priorities ── */
-  function _renderStep3(body, actions) {
+  /* ── Step 2: What do you need help with? (checkboxes) ── */
+  function _renderStep2(body, actions) {
     body.innerHTML = `
-      <h2 class="wizard-title">What do you need AI to help with?</h2>
-      <p class="wizard-subtitle">Select everything that applies — NICE will build a custom agent team around your needs.</p>
-      <div class="wizard-goals">
-        ${GOALS.map(g => `
-          <label class="wizard-goal${_data.goals.includes(g.id) ? ' selected' : ''}">
-            <input type="checkbox" value="${g.id}" ${_data.goals.includes(g.id) ? 'checked' : ''}>
-            <span class="wizard-goal-icon">${g.icon}</span>
-            <span class="wizard-goal-label">${g.label}</span>
+      <h2 class="wizard-title">What do you need help with?</h2>
+      <p class="wizard-subtitle">Select everything that applies — we'll tailor your AI crew to match.</p>
+      <div class="wizard-goals" id="wiz-needs-grid">
+        ${NEEDS.map(n => `
+          <label class="wizard-goal${_data.needs.includes(n.id) ? ' selected' : ''}">
+            <input type="checkbox" value="${n.id}" ${_data.needs.includes(n.id) ? 'checked' : ''}>
+            <span class="wizard-goal-icon"><svg class="icon icon-sm"><use href="${n.icon}"></use></svg></span>
+            <span class="wizard-goal-label">${n.label}</span>
           </label>
         `).join('')}
       </div>
@@ -258,147 +169,149 @@ const SetupWizard = (() => {
     body.querySelectorAll('.wizard-goal input').forEach(cb => {
       cb.addEventListener('change', () => {
         const val = cb.value;
-        if (cb.checked && !_data.goals.includes(val)) _data.goals.push(val);
-        else _data.goals = _data.goals.filter(g => g !== val);
+        if (cb.checked && !_data.needs.includes(val)) _data.needs.push(val);
+        else _data.needs = _data.needs.filter(g => g !== val);
         cb.closest('.wizard-goal').classList.toggle('selected', cb.checked);
       });
     });
 
     actions.innerHTML = `
-      <button class="btn btn-sm" id="wiz-back-3">Back</button>
-      <button class="btn btn-sm btn-primary" id="wiz-next-3">Generate My Team</button>
+      <button class="btn btn-sm" id="wiz-back-2">Back</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="wiz-skip-2">Skip</button>
+        <button class="btn btn-sm btn-primary" id="wiz-next-2">Generate My Team</button>
+      </div>
     `;
-    actions.querySelector('#wiz-back-3').addEventListener('click', () => _showStep(1));
-    actions.querySelector('#wiz-next-3').addEventListener('click', () => {
-      if (_data.goals.length === 0) {
-        body.querySelector('.wizard-goals').classList.add('wizard-shake');
-        setTimeout(() => body.querySelector('.wizard-goals')?.classList.remove('wizard-shake'), 500);
+    actions.querySelector('#wiz-back-2').addEventListener('click', () => _showStep(0));
+    actions.querySelector('#wiz-skip-2').addEventListener('click', skip);
+    actions.querySelector('#wiz-next-2').addEventListener('click', () => {
+      if (_data.needs.length === 0) {
+        body.querySelector('#wiz-needs-grid').classList.add('wizard-shake');
+        setTimeout(() => body.querySelector('#wiz-needs-grid')?.classList.remove('wizard-shake'), 500);
         return;
       }
-      _showStep(3);
+      _showStep(2);
     });
   }
 
-  /* ── Step 4: LLM Recommendation + Review ── */
-  function _renderStep4(body, actions) {
+  /* ── Step 3: AI generates recommendation + preview ── */
+  function _renderStep3(body, actions) {
     body.innerHTML = `
-      <h2 class="wizard-title">Building your custom setup...</h2>
-      <p class="wizard-subtitle">NICE is designing the perfect AI team for your ${_data.projectType === 'business' ? 'business' : 'project'}.</p>
+      <h2 class="wizard-title">Building your AI team...</h2>
+      <p class="wizard-subtitle">NICE is designing the perfect crew for your business.</p>
       <div class="wizard-loading">
         <div class="wizard-spinner"></div>
         <p id="wiz-loading-text">Analyzing your needs...</p>
       </div>
     `;
     actions.innerHTML = `
-      <button class="btn btn-sm" id="wiz-back-4">Cancel</button>
+      <button class="btn btn-sm" id="wiz-back-3">Cancel</button>
       <span></span>
     `;
-    actions.querySelector('#wiz-back-4').addEventListener('click', () => _showStep(2));
+    actions.querySelector('#wiz-back-3').addEventListener('click', () => _showStep(1));
 
-    _generateRecommendation().then(rec => {
-      if (_step !== 3) return; // user navigated away
-      _data.recommendation = rec;
-      _data.spaceshipName = rec.spaceship_name || (_data.projectName + ' HQ');
-      _data.classId = rec.class_id || 'class-1';
-      _data.agents = rec.agents || [];
-      _data.workflows = rec.workflows || [];
-
-      // Show recommendation with inline editing
-      body.innerHTML = `
-        <h2 class="wizard-title">Your Custom Setup</h2>
-        <p class="wizard-subtitle">${_esc(rec.rationale || 'Here\'s what NICE recommends based on your needs.')}</p>
-        <div class="wizard-field" style="margin-bottom:12px">
-          <label>Spaceship Name</label>
-          <input type="text" id="wiz-ship-name" class="wizard-input" value="${_esc(_data.spaceshipName)}" maxlength="60">
-        </div>
-        <div class="wizard-rec-card">
-          <div class="wizard-rec-header">
-            <span class="wizard-rec-class">${_data.classId === 'class-3' ? 'ELITE' : _data.classId === 'class-2' ? 'PRO' : 'LITE'}</span>
-          </div>
-          <div class="wizard-rec-section">
-            <h4>Agents (${_data.agents.length})</h4>
-            ${_data.agents.map((a, i) => `
-              <label class="wizard-agent-toggle">
-                <input type="checkbox" data-idx="${i}" checked>
-                <span><strong>${_esc(a.name)}</strong> — ${_esc(a.role)}</span>
-              </label>
-            `).join('')}
-          </div>
-          <div class="wizard-rec-section">
-            <h4>Workflows (${_data.workflows.length})</h4>
-            ${_data.workflows.map((w, i) => `
-              <label class="wizard-agent-toggle">
-                <input type="checkbox" data-wf-idx="${i}" checked>
-                <span><strong>${_esc(w.name)}</strong> — ${(w.nodes || []).length} steps</span>
-              </label>
-            `).join('')}
-          </div>
-        </div>
-      `;
-      actions.innerHTML = `
-        <button class="btn btn-sm" id="wiz-back-4b">Back</button>
-        <button class="btn btn-sm btn-primary" id="wiz-launch">Launch Spaceship</button>
-      `;
-      actions.querySelector('#wiz-back-4b').addEventListener('click', () => _showStep(2));
-      actions.querySelector('#wiz-launch').addEventListener('click', async () => {
-        _data.spaceshipName = document.getElementById('wiz-ship-name').value.trim() || _data.spaceshipName;
-
-        // Filter unchecked agents
-        const agentChecks = body.querySelectorAll('input[data-idx]');
-        const enabledAgents = [];
-        agentChecks.forEach(cb => { if (cb.checked) enabledAgents.push(_data.agents[+cb.dataset.idx]); });
-        _data.agents = enabledAgents;
-
-        // Filter unchecked workflows
-        const wfChecks = body.querySelectorAll('input[data-wf-idx]');
-        const enabledWfs = [];
-        wfChecks.forEach(cb => { if (cb.checked) enabledWfs.push(_data.workflows[+cb.dataset.wfIdx]); });
-        _data.workflows = enabledWfs;
-
-        _showStep(4);
-      });
+    _generateCrew().then(proposal => {
+      if (_step !== 2) return; // user navigated away
+      _data.proposal = proposal;
+      _data.shipName = proposal.spaceship?.name || _data.businessDesc.split(' ').slice(0, 3).join(' ') + ' HQ';
+      _renderPreview(body, actions, proposal);
     }).catch(err => {
-      if (_step !== 3) return;
-      console.warn('[SetupWizard] LLM failed, using fallback:', err.message);
-      _data.recommendation = _fallbackRecommendation();
-      _data.spaceshipName = _data.recommendation.spaceship_name;
-      _data.classId = _data.recommendation.class_id;
-      _data.agents = _data.recommendation.agents;
-      _data.workflows = _data.recommendation.workflows;
-      _showStep(3); // re-render with fallback data
+      if (_step !== 2) return;
+      console.warn('[SetupWizard] AI failed, using fallback:', err.message);
+      const fallback = _fallbackCrew();
+      _data.proposal = fallback;
+      _data.shipName = fallback.spaceship?.name || _data.businessDesc.split(' ').slice(0, 3).join(' ') + ' HQ';
+      _renderPreview(body, actions, fallback);
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Offline Mode', message: 'Used templates (AI unavailable)', type: 'warning' });
+      }
     });
   }
 
-  /* ── Step 5: Launch ── */
-  function _renderStep5(body, actions) {
+  function _renderPreview(body, actions, proposal) {
+    const agents = proposal.agents || [];
+    const flowLabel = { sequential: 'Sequential', parallel: 'Parallel', router: 'Router', hierarchical: 'Hierarchical' }[proposal.spaceship?.flow_pattern] || 'Sequential';
+
+    body.innerHTML = `
+      <h2 class="wizard-title">Your AI Team</h2>
+      <p class="wizard-subtitle">${_esc(proposal.spaceship?.rationale || 'Here is your custom crew, ready to deploy.')}</p>
+      <div class="wizard-rec-card">
+        <div class="wizard-rec-header">
+          <span class="wizard-rec-class">${_esc(_data.shipName)}</span>
+          <span class="wizard-rec-flow">${_esc(flowLabel)} Flow</span>
+        </div>
+        <div class="wizard-rec-section">
+          <h4>Crew (${agents.length} agent${agents.length !== 1 ? 's' : ''})</h4>
+          ${agents.map(a => `
+            <div class="wizard-agent-row">
+              <strong>${_esc(a.name)}</strong>
+              <span class="wizard-agent-role">${_esc(a.role)}</span>
+              ${a.description ? `<span class="wizard-agent-desc">${_esc(a.description)}</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+        ${proposal.integrations_needed?.length ? `
+          <div class="wizard-rec-section">
+            <h4>Integrations</h4>
+            <div class="wizard-integrations">
+              ${proposal.integrations_needed.map(i => `<span class="wizard-integration-badge">${_esc(i)}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    actions.innerHTML = `
+      <button class="btn btn-sm" id="wiz-back-3b">Back</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="wiz-skip-3">Skip</button>
+        <button class="btn btn-sm btn-primary" id="wiz-deploy">Deploy Team</button>
+      </div>
+    `;
+    actions.querySelector('#wiz-back-3b').addEventListener('click', () => _showStep(1));
+    actions.querySelector('#wiz-skip-3').addEventListener('click', skip);
+    actions.querySelector('#wiz-deploy').addEventListener('click', () => _showStep(3));
+  }
+
+  /* ── Step 4: Deploy + success ── */
+  function _renderStep4(body, actions) {
     body.innerHTML = `
       <div class="wizard-launching">
         <div class="wizard-spinner"></div>
-        <h2 class="wizard-title">Launching ${_esc(_data.spaceshipName)}...</h2>
-        <p id="wiz-launch-status">Creating agents...</p>
+        <h2 class="wizard-title">Deploying ${_esc(_data.shipName)}...</h2>
+        <p id="wiz-deploy-status">Creating agents...</p>
       </div>
     `;
     actions.innerHTML = '';
 
-    _createSpaceship().then(shipId => {
+    _deployCrew().then(({ shipId, agentCount }) => {
+      if (_step !== 3) return;
+      _data.shipId = shipId;
+      _data.agentCount = agentCount;
+      _markDone();
+
       body.innerHTML = `
         <div class="wizard-success">
-          <div class="wizard-success-icon">🚀</div>
-          <h2 class="wizard-title">${_esc(_data.spaceshipName)} is Live!</h2>
-          <p class="wizard-subtitle">${_data.agents.length} agents and ${_data.workflows.length} workflows ready to go.</p>
-          ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned!</p>' : ''}
+          <div class="wizard-success-icon">
+            <svg class="icon" style="width:48px;height:48px"><use href="#icon-check-circle"></use></svg>
+          </div>
+          <h2 class="wizard-title">Your team is ready!</h2>
+          <p class="wizard-subtitle"><strong>${_esc(_data.shipName)}</strong> is live with ${agentCount} agent${agentCount !== 1 ? 's' : ''}.</p>
+          ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned</p>' : ''}
         </div>
       `;
       actions.innerHTML = `
-        <button class="btn btn-sm" onclick="SetupWizard.close()">Close</button>
-        <button class="btn btn-sm btn-primary" id="wiz-goto-ship">View Spaceship</button>
+        <button class="btn btn-sm" id="wiz-close-done">Close</button>
+        <button class="btn btn-sm btn-primary" id="wiz-view-ship">View Spaceship</button>
       `;
-      actions.querySelector('#wiz-goto-ship').addEventListener('click', () => {
+      actions.querySelector('#wiz-close-done').addEventListener('click', close);
+      actions.querySelector('#wiz-view-ship').addEventListener('click', () => {
         close();
-        if (typeof Router !== 'undefined') Router.navigate('#/bridge/spaceships/' + shipId);
-        else location.hash = '#/bridge/spaceships/' + shipId;
+        location.hash = '#/bridge?tab=schematic';
       });
     }).catch(err => {
+      if (_step !== 3) return;
+      _markDone(); // don't re-show wizard even on error
       body.innerHTML = `
         <div class="wizard-success">
           <h2 class="wizard-title">Setup Error</h2>
@@ -409,58 +322,57 @@ const SetupWizard = (() => {
         <button class="btn btn-sm" id="wiz-retry">Try Again</button>
         <button class="btn btn-sm" onclick="SetupWizard.close()">Close</button>
       `;
-      actions.querySelector('#wiz-retry')?.addEventListener('click', () => _showStep(3));
+      actions.querySelector('#wiz-retry')?.addEventListener('click', () => _showStep(2));
     });
   }
 
-  /* ── LLM-powered recommendation ── */
-  async function _generateRecommendation() {
-    if (typeof SB === 'undefined' || !SB.isReady()) return _fallbackRecommendation();
+  /* ══════════════════════════════════════════════════════════════ */
+  /*  AI GENERATION (via CrewDesigner pattern)                      */
+  /* ══════════════════════════════════════════════════════════════ */
 
-    // Build compact agent catalog for the LLM
-    const agentCatalog = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED)
-      ? BlueprintsView.SEED.slice(0, 30).map(a => `${a.id}: ${a.name} (${a.config?.role || a.category})`)
-      : [];
+  async function _generateCrew() {
+    if (typeof SB === 'undefined' || !SB.isReady()) return _fallbackCrew();
 
-    const systemPrompt = `You are NICE, an AI that configures custom setups for any kind of project — businesses, creative work, research, personal productivity, open source, and more. Given a project description and goals, recommend a spaceship configuration.
+    const needLabels = _data.needs.map(id => {
+      const n = NEEDS.find(x => x.id === id);
+      return n ? n.label : id;
+    });
+
+    const systemPrompt = `You are NICE, an AI crew designer. Given what the user's business does and what they need help with, design an optimal spaceship crew.
 
 Return ONLY valid JSON (no markdown, no explanation) in this exact format:
 {
-  "spaceship_name": "Short catchy name for the spaceship",
-  "class_id": "class-1 or class-2 or class-3",
-  "rationale": "1-2 sentence explanation of why this config was chosen",
+  "spaceship": {
+    "name": "Short Name",
+    "description": "1-2 sentence description of this team",
+    "category": "Operations|Research|Content|Engineering|Marketing|Creative|Support|Custom",
+    "flow_pattern": "sequential|parallel|router|hierarchical",
+    "rationale": "Why this crew design works"
+  },
   "agents": [
-    { "blueprint_id": "bp-agent-XX or null", "name": "Agent Display Name", "role": "Research|Analytics|Content|Engineering|Ops|Sales|Support|Legal|Marketing|Creative|Media|Learning" }
-  ],
-  "workflows": [
     {
-      "name": "Workflow Name",
-      "nodes": [
-        { "id": "n1", "type": "agent", "label": "Step Label", "config": { "agentRole": "Role", "prompt": "What this step does" } },
-        { "id": "nN", "type": "output", "label": "Done", "config": { "format": "text" } }
-      ],
-      "connections": [{ "from": "n1", "to": "n2" }]
+      "name": "Agent Name",
+      "role": "Research|Analytics|Content|Engineering|Ops|Support|Sales|Marketing|Creative|Media|Learning|Legal",
+      "description": "What this agent does in 1 sentence",
+      "tools": ["web-search","gmail"],
+      "model": "gemini-2.5-flash",
+      "temperature": 0.3
     }
-  ]
+  ],
+  "integrations_needed": ["gmail","google-drive"],
+  "suggested_test_mission": "A concrete first task to test the crew"
 }
 
 Rules:
-- 3-6 agents depending on project complexity
-- 1-3 workflows that chain agents for common processes
-- class-1 for simple projects, class-2 for medium, class-3 for complex/enterprise
-- Use roles from: Research, Analytics, Content, Engineering, Ops, Sales, Support, Legal, Marketing, Creative, Media, Learning
-- Each workflow should have 2-4 agent nodes plus one output node
-- Make agent names creative and relevant to the project
-- This is NOT just for businesses — adapt the tone and recommendations to match the project type (creative, research, personal, community, etc.)`;
+- 2-5 agents based on needs
+- flow_pattern: "sequential" when tasks chain; "parallel" when independent; "router" when one triages; "hierarchical" when captain delegates
+- Default model: "gemini-2.5-flash" (free)
+- Tools from: web-search, code-gen, summarize, gmail, google-drive, google-calendar, calculator, data-transform
+- Creative, role-specific agent names relevant to the business
+- Test mission should be immediately runnable`;
 
-    const userPrompt = `Project Type: ${_data.projectType}
-Name: ${_data.projectName}
-Category: ${_data.category || 'Not specified'}
-Description: ${_data.description}
-Goals: ${_data.goals.join(', ')}
-
-Available agent blueprints:
-${agentCatalog.join('\n')}`;
+    const userPrompt = `Business: ${_data.businessDesc}
+Needs help with: ${needLabels.join(', ')}`;
 
     const { data, error } = await SB.functions.invoke('nice-ai', {
       body: {
@@ -470,237 +382,224 @@ ${agentCatalog.join('\n')}`;
       },
     });
 
-    if (error) throw new Error(typeof error === 'string' ? error : 'Edge function error');
-    if (!data || !data.content) throw new Error('Empty response');
+    if (error) throw new Error(typeof error === 'string' ? error : 'AI service error');
+    if (!data?.content) throw new Error('Empty response');
 
-    // Parse JSON from response
     let content = data.content.trim();
-    // Strip markdown code fences if present
     if (content.startsWith('```')) {
       content = content.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
     }
     const rec = JSON.parse(content);
-
-    // Validate minimum structure
     if (!rec.agents || !Array.isArray(rec.agents) || rec.agents.length === 0) {
       throw new Error('Invalid recommendation structure');
     }
-
     return rec;
   }
 
-  /* ── Fallback: keyword-based matching ── */
-  function _fallbackRecommendation() {
-    const text = (_data.projectName + ' ' + _data.description + ' ' + _data.category + ' ' + _data.goals.join(' ')).toLowerCase();
+  /* ── Fallback: keyword-based crew ── */
+  function _fallbackCrew() {
+    const text = (_data.businessDesc + ' ' + _data.needs.join(' ')).toLowerCase();
+    const agents = [];
 
-    // Score spaceship seeds by tag/category match
-    const seeds = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED)
-      ? BlueprintsView.SPACESHIP_SEED : [];
+    // Map needs to agents
+    if (_data.needs.includes('social')) {
+      agents.push({ name: 'Social Strategist', role: 'Marketing', description: 'Creates and schedules social media content', tools: ['web-search', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.6 });
+    }
+    if (_data.needs.includes('email')) {
+      agents.push({ name: 'Email Campaigner', role: 'Marketing', description: 'Drafts email campaigns and newsletters', tools: ['gmail', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.5 });
+    }
+    if (_data.needs.includes('support')) {
+      agents.push({ name: 'Support Agent', role: 'Support', description: 'Handles customer inquiries and drafts responses', tools: ['gmail', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.3 });
+    }
+    if (_data.needs.includes('analytics')) {
+      agents.push({ name: 'Data Analyst', role: 'Analytics', description: 'Tracks metrics and generates insight reports', tools: ['calculator', 'data-transform'], model: 'gemini-2.5-flash', temperature: 0.2 });
+    }
+    if (_data.needs.includes('content')) {
+      agents.push({ name: 'Content Writer', role: 'Content', description: 'Writes blog posts, copy, and marketing materials', tools: ['web-search', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.6 });
+    }
+    if (_data.needs.includes('ops')) {
+      agents.push({ name: 'Ops Manager', role: 'Ops', description: 'Automates scheduling, tasks, and coordination', tools: ['google-calendar', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.2 });
+    }
 
-    let bestBp = seeds[0] || null;
-    let bestScore = 0;
+    // Ensure at least one agent
+    if (agents.length === 0) {
+      agents.push({ name: 'General Assistant', role: 'Ops', description: 'Handles general tasks and coordination', tools: ['web-search', 'summarize'], model: 'gemini-2.5-flash', temperature: 0.3 });
+    }
 
-    seeds.forEach(bp => {
-      let score = 0;
-      (bp.tags || []).forEach(tag => { if (text.includes(tag)) score += 10; });
-      if (bp.category && text.includes(bp.category.toLowerCase())) score += 15;
-      if (score > bestScore) { bestScore = score; bestBp = bp; }
-    });
+    // Derive integrations
+    const integrations = [];
+    if (_data.needs.includes('email') || _data.needs.includes('support')) integrations.push('gmail');
+    if (_data.needs.includes('ops')) integrations.push('google-calendar');
 
-    // Build agents from goals
-    const goalToRole = {
-      support: 'Support', content: 'Content', analytics: 'Analytics', sales: 'Sales',
-      ops: 'Ops', research: 'Research', legal: 'Legal', schedule: 'Ops',
-      code: 'Engineering', design: 'Creative', learning: 'Research', media: 'Media',
-    };
-    const agents = _data.goals.slice(0, 5).map(g => ({
-      blueprint_id: null,
-      name: _data.projectName + ' ' + (goalToRole[g] || 'Agent'),
-      role: goalToRole[g] || 'Ops',
-    }));
-
-    // Use blueprint workflows if available
-    const workflows = (bestBp && bestBp.config && bestBp.config.workflows)
-      ? bestBp.config.workflows
-      : [{ name: 'Default Pipeline', nodes: [
-          { id: 'n1', type: 'agent', label: 'Process', config: { agentRole: agents[0]?.role || 'Ops', prompt: 'Process the incoming task.' }},
-          { id: 'n2', type: 'output', label: 'Done', config: { format: 'text' }}
-        ], connections: [{ from: 'n1', to: 'n2' }] }];
-
-    const suffix = _data.projectType === 'business' ? ' HQ'
-      : _data.projectType === 'creative' ? ' Studio'
-      : _data.projectType === 'research' ? ' Lab'
-      : _data.projectType === 'community' ? ' Hub'
-      : _data.projectType === 'personal' ? ' Command'
-      : ' HQ';
+    // Derive ship name from business description
+    const words = _data.businessDesc.split(/\s+/).filter(w => w.length > 2);
+    const shipName = words.length >= 2
+      ? words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') + ' HQ'
+      : _data.businessDesc + ' HQ';
 
     return {
-      spaceship_name: _data.projectName + suffix,
-      class_id: agents.length > 4 ? 'class-2' : 'class-1',
-      rationale: bestBp ? `Based on your profile, the "${bestBp.name}" template is a great starting point.` : 'Custom configuration based on your goals.',
+      spaceship: {
+        name: shipName,
+        description: `AI team for: ${_data.businessDesc}`,
+        category: 'Operations',
+        flow_pattern: agents.length > 3 ? 'router' : 'sequential',
+        rationale: `Custom crew built around your ${_data.needs.length} selected focus areas.`,
+      },
       agents,
-      workflows,
+      integrations_needed: integrations,
+      suggested_test_mission: 'Introduce yourself and summarize what each team member can help with',
     };
   }
 
-  /* ── Create everything in Supabase (with local fallback) ── */
-  async function _createSpaceship() {
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) throw new Error('Not signed in');
-    const statusEl = document.getElementById('wiz-launch-status');
-    const classId = _data.classId || 'class-2';
-    const hasSB = typeof SB !== 'undefined' && SB.db;
+  /* ══════════════════════════════════════════════════════════════ */
+  /*  DEPLOY (CrewDesigner-style logic)                             */
+  /* ══════════════════════════════════════════════════════════════ */
+
+  async function _deployCrew() {
+    const proposal = _data.proposal;
+    if (!proposal?.agents?.length) throw new Error('No crew to deploy');
+
+    const agents = proposal.agents;
+    const userId = typeof State !== 'undefined' ? State.get('user')?.id : null;
+    const hasSB = typeof SB !== 'undefined' && SB.isReady();
+    const statusEl = document.getElementById('wiz-deploy-status');
+    const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 
     // 1. Create agents
-    const agentIds = [];
-    for (const a of _data.agents) {
-      if (statusEl) statusEl.textContent = `Creating agent: ${a.name}...`;
-      if (hasSB) {
+    const createdAgentIds = [];
+    for (const a of agents) {
+      setStatus(`Creating agent: ${a.name}...`);
+      let agentId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      if (userId && hasSB) {
         try {
-          const created = await SB.db('user_agents').create({
-            user_id: user.id,
+          const { data: created } = await SB.db('user_agents').create({
+            user_id: userId,
             name: a.name,
             role: a.role,
             type: 'Specialist',
             status: 'active',
-            config: { role: a.role, tools: _toolsForRole(a.role), source: 'guided_setup' },
+            config: { role: a.role, tools: a.tools || ['summarize'], description: a.description, model: a.model, temperature: a.temperature, source: 'setup_wizard' },
           });
-          if (created) agentIds.push(created.id);
+          if (created?.id) agentId = created.id;
         } catch (err) {
-          console.warn('[SetupWizard] Agent creation failed:', a.name, err.message);
-          agentIds.push('local-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+          console.warn('[SetupWizard] Agent create fallback:', a.name, err.message);
         }
-      } else {
-        agentIds.push('local-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
       }
+      createdAgentIds.push(agentId);
     }
 
     // 2. Create spaceship
-    if (statusEl) statusEl.textContent = 'Deploying spaceship...';
-    const spaceshipClass = typeof Gamification !== 'undefined' ? Gamification.getSpaceshipClass(classId) : { slots: agentIds.map((_, i) => ({ id: i })) };
+    setStatus('Deploying spaceship...');
     const slotAssignments = {};
-    (spaceshipClass.slots || []).forEach((slot, i) => {
-      slotAssignments[slot.id] = agentIds[i] || null;
-    });
+    createdAgentIds.forEach((id, i) => { slotAssignments[`slot-${i}`] = id; });
 
-    let ship = null;
-    if (hasSB) {
+    const shipData = {
+      name: _data.shipName,
+      category: proposal.spaceship?.category || 'Operations',
+      description: proposal.spaceship?.description || '',
+      status: 'deployed',
+      stats: { crew: String(createdAgentIds.length), slots: String(createdAgentIds.length) },
+      config: {
+        flow_pattern: proposal.spaceship?.flow_pattern || 'sequential',
+        source: 'setup_wizard',
+        rationale: proposal.spaceship?.rationale || '',
+        integrations_needed: proposal.integrations_needed || [],
+        suggested_test_mission: proposal.suggested_test_mission || '',
+      },
+      slot_assignments: slotAssignments,
+      caps: agents.map(a => a.role).filter((v, i, arr) => arr.indexOf(v) === i),
+    };
+
+    let shipId = `ship-${Date.now()}`;
+    if (userId && hasSB) {
       try {
-        ship = await SB.db('user_spaceships').create({
-          user_id: user.id,
-          name: _data.spaceshipName,
-          blueprint_id: classId,
-          slots: slotAssignments,
+        const { data: created } = await SB.db('user_spaceships').create({
+          user_id: userId,
+          name: shipData.name,
           status: 'deployed',
-          config: { workflows: _data.workflows, wizard_category: _data.category, wizard_goals: _data.goals, wizard_type: _data.projectType, source: 'guided_setup' },
+          slots: {
+            slot_assignments: slotAssignments,
+            agent_ids: createdAgentIds,
+            flow_pattern: proposal.spaceship?.flow_pattern || 'sequential',
+            category: proposal.spaceship?.category || 'Operations',
+            description: proposal.spaceship?.description || '',
+            rationale: proposal.spaceship?.rationale || '',
+            integrations_needed: proposal.integrations_needed || [],
+            suggested_test_mission: proposal.suggested_test_mission || '',
+            caps: shipData.caps,
+            stats: shipData.stats,
+          },
         });
-      } catch (err) {
-        console.warn('[SetupWizard] Spaceship creation failed, using local fallback:', err.message);
-      }
+        if (created?.id) shipId = created.id;
+      } catch (e) { console.warn('[SetupWizard] Ship create fallback to local:', e); }
     }
 
-    // Local fallback if Supabase failed or unavailable
-    if (!ship) {
-      ship = {
-        id: 'local-ship-' + Date.now(),
-        user_id: user.id,
-        name: _data.spaceshipName,
-        blueprint_id: classId,
-        slots: slotAssignments,
-        status: 'deployed',
-        config: { workflows: _data.workflows, wizard_category: _data.category, wizard_goals: _data.goals, wizard_type: _data.projectType, source: 'guided_setup' },
-        created_at: new Date().toISOString(),
-      };
+    // 3. Activate in BlueprintStore
+    setStatus('Activating crew...');
+    if (typeof BlueprintStore !== 'undefined') {
+      try {
+        BlueprintStore.activateShip(shipId);
+        BlueprintStore.saveShipState(shipId, {
+          slot_assignments: slotAssignments,
+          status: 'deployed',
+          agent_ids: createdAgentIds,
+        });
+        createdAgentIds.forEach(id => BlueprintStore.activateAgent(id));
+      } catch (e) { console.warn('[SetupWizard] BlueprintStore activation error:', e); }
     }
 
-    // 3. Create workflow records
-    if (statusEl) statusEl.textContent = 'Setting up workflows...';
-    for (const wf of _data.workflows) {
-      if (hasSB) {
-        try {
-          await SB.db('user_workflows').create({
-            user_id: user.id,
-            name: wf.name,
-            nodes: JSON.stringify(wf.nodes || []),
-            connections: JSON.stringify(wf.connections || []),
-            spaceship_id: ship.id,
-            tags: [_data.category || 'general'],
-          });
-        } catch (err) {
-          console.warn('[SetupWizard] Workflow creation failed:', wf.name, err.message);
-        }
-      }
-    }
-
-    // 4. Update local state
+    // 4. Update State
     if (typeof State !== 'undefined') {
-      // Build local agent objects for State
-      const localAgents = _data.agents.map((a, i) => ({
-        id: agentIds[i],
-        user_id: user.id,
-        name: a.name,
-        role: a.role,
-        type: 'Specialist',
-        status: 'active',
-        source: 'guided_setup',
-        config: { role: a.role, tools: _toolsForRole(a.role), source: 'guided_setup' },
-        created_at: new Date().toISOString(),
+      const newAgentObjects = agents.map((a, i) => ({
+        id: createdAgentIds[i],
+        name: a.name, role: a.role, type: 'Specialist', description: a.description,
+        llm_engine: a.model, status: 'idle',
+        config: { tools: a.tools, temperature: a.temperature, memory: true, source: 'setup_wizard' },
       }));
+      const existingAgents = State.get('agents') || [];
+      State.set('agents', [...existingAgents, ...newAgentObjects]);
 
-      const agents = State.get('agents') || [];
-      const spaceships = State.get('spaceships') || [];
+      // Persist custom agents to localStorage
+      try {
+        const storedAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        storedAgents.push(...newAgentObjects);
+        localStorage.setItem('nice-custom-agents', JSON.stringify(storedAgents));
+      } catch {}
 
-      if (hasSB) {
-        try {
-          const freshAgents = await SB.db('user_agents').list({ user_id: user.id });
-          State.set('agents', freshAgents);
-        } catch { State.set('agents', [...agents, ...localAgents]); }
-        try {
-          const freshShips = await SB.db('user_spaceships').list({ user_id: user.id });
-          State.set('spaceships', freshShips);
-        } catch { State.set('spaceships', [...spaceships, ship]); }
-      } else {
-        State.set('agents', [...agents, ...localAgents]);
-        State.set('spaceships', [...spaceships, ship]);
-      }
+      const newShip = { id: shipId, ...shipData };
+      const existingShips = State.get('spaceships') || [];
+      State.set('spaceships', [...existingShips, newShip]);
+
+      // Persist custom ship to localStorage
+      try {
+        const stored = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+        stored.push(newShip);
+        localStorage.setItem('nice-custom-ships', JSON.stringify(stored));
+      } catch {}
     }
 
-    // 5. Gamification
+    // 5. XP + Audit
     if (typeof Gamification !== 'undefined') {
       Gamification.addXP('complete_wizard');
-      _data.agents.forEach(() => Gamification.addXP('create_agent'));
+      agents.forEach(() => Gamification.addXP('create_agent'));
     }
-
-    // 6. Audit log
     if (typeof AuditLog !== 'undefined') {
-      AuditLog.log('wizard_complete', { spaceship: _data.spaceshipName, agents: _data.agents.length, workflows: _data.workflows.length, type: _data.projectType });
+      AuditLog.log('wizard_complete', {
+        shipId,
+        shipName: _data.shipName,
+        agentCount: createdAgentIds.length,
+        needs: _data.needs,
+        businessDesc: _data.businessDesc,
+      });
+    }
+    if (typeof Notify !== 'undefined') {
+      Notify.send({ title: 'Team Deployed', message: `${_data.shipName} with ${createdAgentIds.length} agents`, type: 'success' });
     }
 
-    return ship.id;
-  }
-
-  /* ── Assign default tools based on role ── */
-  function _toolsForRole(role) {
-    const map = {
-      Research: ['web-search', 'summarize'],
-      Analytics: ['summarize', 'code-gen'],
-      Content: ['web-search', 'summarize'],
-      Engineering: ['code-gen', 'web-search'],
-      Ops: ['summarize', 'web-search'],
-      Sales: ['web-search', 'summarize'],
-      Support: ['summarize', 'web-search'],
-      Legal: ['web-search', 'summarize'],
-      Marketing: ['web-search', 'summarize', 'code-gen'],
-      Creative: ['summarize', 'code-gen'],
-      Media: ['summarize', 'code-gen', 'web-search'],
-      Learning: ['web-search', 'summarize'],
-    };
-    return map[role] || ['summarize'];
+    return { shipId, agentCount: createdAgentIds.length };
   }
 
   /* ── Helpers ── */
-  const _esc = Utils.esc;
-
   function _flash(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -709,5 +608,5 @@ ${agentCatalog.join('\n')}`;
     setTimeout(() => el.classList.remove('wizard-shake'), 500);
   }
 
-  return { open, close };
+  return { open, close, skip, shouldShow };
 })();

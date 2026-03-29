@@ -740,27 +740,28 @@ const NICE = (() => {
 
   /* ── First-run onboarding: show setup wizard for new users ── */
   async function _checkFirstRun(user) {
-    if (!user || localStorage.getItem('nice-onboarded-' + user.id)) return;
+    if (!user) return;
+    // Check both the new simple flag and legacy per-user flag
+    if (localStorage.getItem('nice-onboarded') || localStorage.getItem('nice-onboarded-' + user.id)) return;
     // Wait a moment for the app to settle
     await new Promise(r => setTimeout(r, 1500));
-    // Check if user has any spaceships
+    // Check if user has any spaceships — skip wizard if they do
     const ships = State.get('user_spaceships') || [];
     if (ships.length > 0) {
-      localStorage.setItem('nice-onboarded-' + user.id, '1');
+      localStorage.setItem('nice-onboarded', '1');
       return;
     }
     // Try loading from DB
     try {
       const dbShips = await SB.db('user_spaceships').list({ user_id: user.id, limit: 1 });
       if (dbShips && dbShips.length > 0) {
-        localStorage.setItem('nice-onboarded-' + user.id, '1');
+        localStorage.setItem('nice-onboarded', '1');
         return;
       }
     } catch { /* proceed to wizard */ }
     // No spaceships — show setup wizard
     if (typeof SetupWizard !== 'undefined' && SetupWizard.open) {
       SetupWizard.open();
-      localStorage.setItem('nice-onboarded-' + user.id, '1');
     }
   }
 
