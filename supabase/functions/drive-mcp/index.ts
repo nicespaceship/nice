@@ -66,6 +66,32 @@ const TOOLS = [
       required: ["fileId"],
     },
   },
+  {
+    name: "drive_upload_file",
+    description: "Upload a file to Google Drive. Can upload text content, images (from URL), or create Google Docs. Returns the file ID and web link.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "File name (e.g., 'Social Media Plan.txt', 'menu-photo.jpg')." },
+        content: { type: "string", description: "Text content for the file, OR a URL to an image/video to upload." },
+        mimeType: { type: "string", description: "MIME type. Use 'application/vnd.google-apps.document' for Google Docs, 'text/plain' for text, or the actual type for media." },
+        folderId: { type: "string", description: "Parent folder ID. If omitted, uploads to root Drive." },
+      },
+      required: ["name", "content"],
+    },
+  },
+  {
+    name: "drive_create_folder",
+    description: "Create a folder in Google Drive. Returns the folder ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Folder name." },
+        parentId: { type: "string", description: "Parent folder ID. If omitted, creates in root." },
+      },
+      required: ["name"],
+    },
+  },
 ];
 
 /* ── Drive API Helpers ────────────────────────────────────────── */
@@ -203,6 +229,105 @@ async function readFile(args: any, token: string): Promise<string> {
   return `File: ${meta.name}\n\n${content}`;
 }
 
+async function uploadFile(args: any, token: string): Promise<string> {
+  if (!args?.name) return "Error: name is required.";
+  if (!args?.content) return "Error: content is required.";
+
+  const mimeType = args.mimeType || "text/plain";
+  const isUrl = args.content.startsWith("http://") || args.content.startsWith("https://");
+
+  // Build multipart upload
+  const metadata: any = { name: args.name };
+  if (args.folderId) metadata.parents = [args.folderId];
+
+  // If converting to Google Doc
+  if (mimeType === "application/vnd.google-apps.document") {
+    metadata.mimeType = mimeType;
+  }
+
+  let fileBody: Uint8Array | string;
+  let uploadMime = mimeType;
+
+  if (isUrl) {
+    // Download from URL and upload
+    const dlRes = await fetch(args.content);
+    if (!dlRes.ok) throw new Error(`Failed to download: ${dlRes.status}`);
+    fileBody = new Uint8Array(await dlRes.arrayBuffer());
+    uploadMime = dlRes.headers.get("content-type") || mimeType;
+  } else {
+    fileBody = args.content;
+    if (mimeType === "application/vnd.google-apps.document") {
+      uploadMime = "text/plain"; // Upload as text, Google converts to Doc
+    }
+  }
+
+  const boundary = "nice_boundary_" + Date.now();
+  const metaPart = JSON.stringify(metadata);
+
+  const encoder = new TextEncoder();
+  const bodyParts = [
+    encoder.encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metaPart}\r\n`),
+    encoder.encode(`--${boundary}\r\nContent-Type: ${uploadMime}\r\n\r\n`),
+    typeof fileBody === "string" ? encoder.encode(fileBody) : fileBody,
+    encoder.encode(`\r\n--${boundary}--`),
+  ];
+
+  const totalLen = bodyParts.reduce((sum, p) => sum + p.length, 0);
+  const combined = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const part of bodyParts) {
+    combined.set(part, offset);
+    offset += part.length;
+  }
+
+  const res = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,mimeType",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
+      body: combined,
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Upload failed (${res.status}): ${err}`);
+  }
+
+  const f = await res.json();
+  return `Uploaded: ${f.name}\nID: ${f.id}\nType: ${f.mimeType}\nLink: ${f.webViewLink || "N/A"}`;
+}
+
+async function createFolder(args: any, token: string): Promise<string> {
+  if (!args?.name) return "Error: name is required.";
+
+  const metadata: any = {
+    name: args.name,
+    mimeType: "application/vnd.google-apps.folder",
+  };
+  if (args.parentId) metadata.parents = [args.parentId];
+
+  const res = await fetch(`${DRIVE_API}/files?fields=id,name,webViewLink`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(metadata),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Folder creation failed (${res.status}): ${err}`);
+  }
+
+  const f = await res.json();
+  return `Created folder: ${f.name}\nID: ${f.id}\nLink: ${f.webViewLink || "N/A"}`;
+}
+
 /* ── MCP JSON-RPC Handler ────────────────────────────────────── */
 
 Deno.serve(async (req: Request) => {
@@ -244,6 +369,8 @@ Deno.serve(async (req: Request) => {
         case "drive_search_files": resultText = await searchFiles(args, token); break;
         case "drive_get_file": resultText = await getFile(args, token); break;
         case "drive_read_file": resultText = await readFile(args, token); break;
+        case "drive_upload_file": resultText = await uploadFile(args, token); break;
+        case "drive_create_folder": resultText = await createFolder(args, token); break;
         default:
           return new Response(
             JSON.stringify({ jsonrpc: "2.0", id, error: { code: -32601, message: `Unknown tool: ${toolName}` } }),

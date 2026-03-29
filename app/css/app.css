@@ -6451,17 +6451,82 @@ body.preview-active .nice-ai {
 /* ═══════════════════════════════════════════════════════════════
    OUTBOX — Draft & Approve Content Queue
 ═══════════════════════════════════════════════════════════════ */
-.outbox-container { max-width:740px; margin:0 auto; padding:0 16px; }
-.outbox-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+.outbox-container { max-width:1100px; margin:0 auto; padding:0 16px; }
+.outbox-header { margin-bottom:16px; }
+.outbox-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .outbox-filters { display:flex; gap:6px; flex-wrap:wrap; }
 .outbox-filter { padding:6px 14px; border-radius:20px; border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #888); font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; cursor:pointer; transition:all .15s; }
 .outbox-filter.active { background:var(--accent, #a5b4fc); color:var(--bg, #000); border-color:var(--accent, #a5b4fc); }
 .outbox-filter:hover:not(.active) { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
 .outbox-badge { font-size:.65rem; opacity:.7; margin-left:2px; }
+
+/* Type filters */
+.outbox-type-filters { display:flex; gap:4px; flex-wrap:wrap; }
+.outbox-type-btn { padding:4px 12px; border-radius:14px; border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #888); font-family:var(--font-b, Inter, sans-serif); font-size:.72rem; cursor:pointer; transition:all .15s; }
+.outbox-type-btn.active { background:var(--type-color, var(--accent, #a5b4fc)); color:var(--bg, #000); border-color:var(--type-color, var(--accent, #a5b4fc)); }
+.outbox-type-btn:hover:not(.active) { border-color:var(--type-color, var(--accent, #a5b4fc)); color:var(--text, #fff); }
+
+/* View toggle */
+.outbox-view-toggle { display:flex; gap:4px; margin-left:auto; align-items:center; }
+.outbox-view-btn { width:30px; height:30px; border-radius:var(--radius, 6px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #888); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.outbox-view-btn.active { background:var(--accent, #a5b4fc); color:var(--bg, #000); border-color:var(--accent, #a5b4fc); }
+.outbox-view-btn:hover:not(.active) { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
 .outbox-export-btn { padding:6px 14px; border-radius:var(--radius, 8px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #aaa); font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; cursor:pointer; }
 .outbox-export-btn:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
 
-/* Feed */
+/* ── Calendar View ── */
+.outbox-calendar { margin-top:8px; }
+.outbox-cal-nav { display:flex; align-items:center; gap:10px; margin-bottom:12px; font-family:var(--font-b, Inter, sans-serif); }
+.outbox-week-btn { width:32px; height:32px; border-radius:var(--radius, 6px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #aaa); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.outbox-week-btn:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
+.outbox-week-label { font-size:.88rem; font-weight:600; color:var(--text, #fff); min-width:180px; text-align:center; }
+.outbox-today-btn { padding:4px 12px; border-radius:var(--radius, 6px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #aaa); font-family:var(--font-b, Inter, sans-serif); font-size:.72rem; cursor:pointer; }
+.outbox-today-btn:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
+
+.outbox-cal-grid { border:1px solid var(--border, #333); border-radius:var(--radius, 10px); overflow:hidden; background:var(--bg-alt, #18181b); }
+.outbox-cal-header { display:grid; grid-template-columns:repeat(7, 1fr); border-bottom:1px solid var(--border, #333); }
+.outbox-cal-col-head { padding:10px 6px; text-align:center; font-family:var(--font-b, Inter, sans-serif); border-right:1px solid var(--border, #222); }
+.outbox-cal-col-head:last-child { border-right:none; }
+.outbox-cal-col-head.today { background:rgba(165,180,252,.08); }
+.outbox-cal-day-name { display:block; font-size:.68rem; font-weight:700; color:var(--text-muted, #888); text-transform:uppercase; letter-spacing:.5px; }
+.outbox-cal-day-num { display:block; font-size:.78rem; color:var(--text, #fff); margin-top:2px; }
+.outbox-cal-col-head.today .outbox-cal-day-num { color:var(--accent, #a5b4fc); font-weight:700; }
+
+.outbox-cal-body { display:grid; grid-template-columns:repeat(7, 1fr); min-height:260px; }
+.outbox-cal-col { padding:6px; border-right:1px solid var(--border, #222); display:flex; flex-direction:column; gap:6px; min-height:180px; transition:background .15s; }
+.outbox-cal-col:last-child { border-right:none; }
+.outbox-cal-col.today { background:rgba(165,180,252,.04); }
+.outbox-cal-col.drag-over { background:rgba(165,180,252,.12); outline:2px dashed var(--accent, #a5b4fc); outline-offset:-2px; }
+.outbox-cal-empty-day { flex:1; }
+
+/* Calendar mini cards */
+.outbox-cal-card { padding:8px; border-radius:var(--radius, 6px); background:var(--panel-bg, rgba(255,255,255,.04)); border:1px solid var(--border, #333); border-left:3px solid var(--status-color, #94a3b8); cursor:pointer; transition:all .15s; font-family:var(--font-b, Inter, sans-serif); }
+.outbox-cal-card:hover { border-color:var(--border-hi, #555); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.3); }
+.outbox-cal-card.dragging { opacity:.4; }
+.outbox-cal-card-head { display:flex; align-items:center; justify-content:space-between; gap:4px; margin-bottom:4px; }
+.outbox-cal-card-icon { font-size:.78rem; }
+.outbox-cal-card-badge { font-size:.58rem; font-weight:700; padding:1px 6px; border-radius:8px; color:#fff; text-transform:uppercase; letter-spacing:.3px; line-height:1.6; }
+.outbox-cal-card-title { font-size:.7rem; color:var(--text-muted, #aaa); line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+
+/* Unscheduled tray */
+.outbox-unscheduled { margin-top:14px; }
+.outbox-unscheduled-label { font-family:var(--font-b, Inter, sans-serif); font-size:.75rem; font-weight:600; color:var(--text-muted, #888); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
+.outbox-unscheduled-items { display:flex; gap:8px; flex-wrap:wrap; }
+.outbox-unscheduled-items .outbox-cal-card { min-width:140px; max-width:200px; }
+
+/* ── Detail overlay ── */
+.outbox-detail-overlay { position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.outbox-detail-panel { background:var(--bg-alt, #18181b); border:1px solid var(--border, #333); border-radius:var(--radius, 12px); max-width:560px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+.outbox-detail-head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--border, #333); font-family:var(--font-b, Inter, sans-serif); font-size:.8rem; flex-wrap:wrap; }
+.outbox-detail-close { width:28px; height:28px; border-radius:50%; border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #888); font-size:1.1rem; cursor:pointer; margin-left:auto; display:flex; align-items:center; justify-content:center; }
+.outbox-detail-close:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
+.outbox-detail-body { padding:18px; font-family:var(--font-b, Inter, sans-serif); font-size:.88rem; color:var(--text, #fff); line-height:1.6; }
+.outbox-detail-body p { margin:0 0 8px; }
+.outbox-detail-actions { display:flex; gap:8px; padding:12px 18px; border-top:1px solid var(--border, #333); }
+.outbox-detail-actions .btn { padding:6px 14px; border-radius:var(--radius, 6px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #aaa); font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; cursor:pointer; transition:all .15s; }
+.outbox-detail-actions .btn:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
+
+/* ── List View (preserved) ── */
 .outbox-feed { display:flex; flex-direction:column; gap:12px; }
 .outbox-card { border-radius:var(--radius, 10px); border:1px solid var(--border, #333); background:var(--bg-alt, #18181b); overflow:hidden; transition:border-color .15s; }
 .outbox-card:hover { border-color:var(--border-hi, #555); }
@@ -6501,9 +6566,14 @@ body.preview-active .nice-ai {
 /* Mobile */
 @media (max-width:640px) {
   .outbox-container { padding:0 8px; }
-  .outbox-header { flex-direction:column; align-items:stretch; }
+  .outbox-toolbar { flex-direction:column; align-items:stretch; }
   .outbox-card-header { flex-wrap:wrap; gap:6px; }
   .outbox-card-actions { flex-wrap:wrap; }
+  .outbox-cal-grid { overflow-x:auto; }
+  .outbox-cal-header { min-width:600px; }
+  .outbox-cal-body { min-width:600px; }
+  .outbox-cal-col { min-height:120px; }
+  .outbox-view-toggle { margin-left:0; }
 }
 
 

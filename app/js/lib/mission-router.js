@@ -236,5 +236,89 @@ const MissionRouter = (() => {
     return { content: 'No execution engine available.', agent: 'NICE' };
   }
 
-  return { route, buildCrewManifest };
+  /**
+   * Execute a sequential pipeline — each agent's output feeds into the next.
+   * @param {string} spaceshipId
+   * @param {Array<string>} agentIds — ordered list of agent IDs to execute
+   * @param {string} initialPrompt — the starting task
+   * @param {Object} [opts] — { onStep: fn({ step, agentName, input, output }) }
+   * @returns {{ steps: Array<{ agentId, agentName, input, output }>, finalResult: string }}
+   */
+  async function pipeline(spaceshipId, agentIds, initialPrompt, opts) {
+    opts = opts || {};
+    var steps = [];
+    var currentInput = initialPrompt;
+
+    for (var i = 0; i < agentIds.length; i++) {
+      var agentId = agentIds[i];
+      var bp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(agentId) : null;
+
+      // Check custom agents in localStorage
+      if (!bp) {
+        try {
+          var custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+          bp = custom.find(function(a) { return a.id === agentId; });
+        } catch (e) {}
+      }
+
+      var agentName = bp ? bp.name : 'Agent ' + (i + 1);
+
+      // Build context-aware prompt for agents after the first
+      var agentPrompt = i === 0 ? currentInput :
+        'You are step ' + (i + 1) + ' in a pipeline. The previous agent (' +
+        steps[i - 1].agentName + ') produced the following output:\n\n' +
+        '---\n' + currentInput + '\n---\n\n' +
+        'Your task: Review, refine, and enhance this based on your expertise. ' +
+        'Build on what was done — don\'t start over.';
+
+      // Notify UI
+      if (opts.onStep) {
+        opts.onStep({ step: i + 1, total: agentIds.length, agentName: agentName, status: 'running', input: currentInput.substring(0, 200) });
+      }
+
+      // Execute this agent
+      var result;
+      try {
+        result = await _executeAgent(spaceshipId, bp, agentPrompt, {});
+      } catch (err) {
+        result = { content: 'Agent error: ' + (err.message || err), agent: agentName };
+      }
+
+      var outputText = typeof result === 'string' ? result :
+        (result && result.content) ? (typeof result.content === 'string' ? result.content : JSON.stringify(result.content)) :
+        JSON.stringify(result);
+
+      steps.push({
+        agentId: agentId,
+        agentName: agentName,
+        input: currentInput.substring(0, 500),
+        output: outputText,
+      });
+
+      // Log to Ship's Log
+      if (typeof ShipLog !== 'undefined') {
+        await ShipLog.append(spaceshipId, {
+          agentId: agentId,
+          role: 'assistant',
+          content: '[Pipeline Step ' + (i + 1) + '/' + agentIds.length + '] ' + outputText.substring(0, 1000),
+          metadata: { type: 'pipeline', step: i + 1, total: agentIds.length },
+        });
+      }
+
+      // Feed output as input to next agent
+      currentInput = outputText;
+
+      // Notify UI of completion
+      if (opts.onStep) {
+        opts.onStep({ step: i + 1, total: agentIds.length, agentName: agentName, status: 'done', output: outputText.substring(0, 200) });
+      }
+    }
+
+    return {
+      steps: steps,
+      finalResult: currentInput,
+    };
+  }
+
+  return { route, pipeline, buildCrewManifest };
 })();

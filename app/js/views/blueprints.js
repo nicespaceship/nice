@@ -1223,7 +1223,49 @@ const BlueprintsView = (() => {
     }
   }
 
-  /* ── Outbox (Draft & Approve Content Queue) ── */
+  /* ── Outbox (Content Calendar + Queue) ── */
+  let _outboxViewMode = 'calendar';   // 'calendar' | 'list'
+  let _outboxTypeFilter = 'all';      // 'all' | 'social' | 'email' | 'report'
+  let _outboxStatusFilter = 'all';    // 'all' | 'draft' | 'approved' | 'rejected'
+  let _outboxWeekOffset = 0;          // 0 = current week, -1 = prev, +1 = next
+
+  function _getOutboxWeekDays(offset) {
+    const now = new Date();
+    const day = now.getDay();
+    const mondayDiff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayDiff + (offset * 7));
+    monday.setHours(0, 0, 0, 0);
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  }
+
+  function _outboxDateKey(date) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  function _outboxItemDate(item) {
+    // Use scheduled_for from metadata if present, otherwise created_at
+    const meta = item.metadata || {};
+    return meta.scheduled_for || item.created_at || '';
+  }
+
+  function _outboxFilterItems(items) {
+    let filtered = items;
+    if (_outboxTypeFilter !== 'all') {
+      filtered = filtered.filter(i => i.content_type === _outboxTypeFilter);
+    }
+    if (_outboxStatusFilter !== 'all') {
+      filtered = filtered.filter(i => (i.approval_status || 'draft') === _outboxStatusFilter);
+    }
+    return filtered;
+  }
+
   function _renderOutbox(el) {
     const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
@@ -1236,49 +1278,263 @@ const BlueprintsView = (() => {
       });
     }
 
+    const filtered = _outboxFilterItems(items);
     const pending = items.filter(i => i.approval_status === 'draft');
     const approved = items.filter(i => i.approval_status === 'approved');
     const rejected = items.filter(i => i.approval_status === 'rejected');
 
+    const weekDays = _getOutboxWeekDays(_outboxWeekOffset);
+    const weekLabel = _outboxFormatWeekLabel(weekDays);
+
+    // Group filtered items by date key
+    const byDate = {};
+    filtered.forEach(item => {
+      const dateStr = _outboxItemDate(item);
+      if (!dateStr) return;
+      const key = dateStr.slice(0, 10);
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(item);
+    });
+    // Also put unscheduled items in a bucket
+    const unscheduled = filtered.filter(item => !_outboxItemDate(item));
+
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayKey = _outboxDateKey(new Date());
+
     el.innerHTML = `
       <div class="outbox-container">
         <div class="outbox-header">
-          <div class="outbox-filters">
-            <button class="outbox-filter active" data-filter="all">All <span class="outbox-badge">${items.length}</span></button>
-            <button class="outbox-filter" data-filter="draft">Pending <span class="outbox-badge">${pending.length}</span></button>
-            <button class="outbox-filter" data-filter="approved">Approved <span class="outbox-badge">${approved.length}</span></button>
-            <button class="outbox-filter" data-filter="rejected">Rejected <span class="outbox-badge">${rejected.length}</span></button>
-          </div>
-          <div class="outbox-actions-top">
-            ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
+          <div class="outbox-toolbar">
+            <div class="outbox-filters">
+              <button class="outbox-filter${_outboxStatusFilter === 'all' ? ' active' : ''}" data-status="all">All <span class="outbox-badge">${items.length}</span></button>
+              <button class="outbox-filter${_outboxStatusFilter === 'draft' ? ' active' : ''}" data-status="draft">Pending <span class="outbox-badge">${pending.length}</span></button>
+              <button class="outbox-filter${_outboxStatusFilter === 'approved' ? ' active' : ''}" data-status="approved">Approved <span class="outbox-badge">${approved.length}</span></button>
+              <button class="outbox-filter${_outboxStatusFilter === 'rejected' ? ' active' : ''}" data-status="rejected">Rejected <span class="outbox-badge">${rejected.length}</span></button>
+            </div>
+            <div class="outbox-type-filters">
+              <button class="outbox-type-btn${_outboxTypeFilter === 'all' ? ' active' : ''}" data-type="all">All Types</button>
+              <button class="outbox-type-btn${_outboxTypeFilter === 'social' ? ' active' : ''}" data-type="social" style="--type-color:#c084fc">Social</button>
+              <button class="outbox-type-btn${_outboxTypeFilter === 'email' ? ' active' : ''}" data-type="email" style="--type-color:#60a5fa">Email</button>
+              <button class="outbox-type-btn${_outboxTypeFilter === 'report' ? ' active' : ''}" data-type="report" style="--type-color:#34d399">Report</button>
+            </div>
+            <div class="outbox-view-toggle">
+              <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view">&#9634;</button>
+              <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view">&#9776;</button>
+              ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
+            </div>
           </div>
         </div>
+
+        ${_outboxViewMode === 'calendar' ? `
+        <div class="outbox-calendar">
+          <div class="outbox-cal-nav">
+            <button class="btn outbox-week-btn" id="outbox-prev-week">&larr;</button>
+            <span class="outbox-week-label">${_e(weekLabel)}</span>
+            <button class="btn outbox-week-btn" id="outbox-next-week">&rarr;</button>
+            <button class="btn outbox-today-btn" id="outbox-today">Today</button>
+          </div>
+          <div class="outbox-cal-grid">
+            <div class="outbox-cal-header">
+              ${weekDays.map((d, i) => {
+                const key = _outboxDateKey(d);
+                const isToday = key === todayKey;
+                const dayNum = d.getDate();
+                const monthShort = d.toLocaleString('en', { month: 'short' });
+                return `<div class="outbox-cal-col-head${isToday ? ' today' : ''}">
+                  <span class="outbox-cal-day-name">${dayNames[i]}</span>
+                  <span class="outbox-cal-day-num">${dayNum} ${monthShort}</span>
+                </div>`;
+              }).join('')}
+            </div>
+            <div class="outbox-cal-body">
+              ${weekDays.map(d => {
+                const key = _outboxDateKey(d);
+                const isToday = key === todayKey;
+                const dayItems = byDate[key] || [];
+                return `<div class="outbox-cal-col${isToday ? ' today' : ''}" data-date="${key}">
+                  ${dayItems.length === 0
+                    ? '<div class="outbox-cal-empty-day"></div>'
+                    : dayItems.map(item => _renderOutboxCalCard(item, _e)).join('')
+                  }
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+          ${unscheduled.length ? `
+          <div class="outbox-unscheduled">
+            <div class="outbox-unscheduled-label">Unscheduled (${unscheduled.length})</div>
+            <div class="outbox-unscheduled-items">
+              ${unscheduled.map(item => _renderOutboxCalCard(item, _e)).join('')}
+            </div>
+          </div>` : ''}
+        </div>
+        ` : `
         <div class="outbox-feed" id="outbox-feed">
-          ${items.length === 0 ? `
+          ${filtered.length === 0 ? `
             <div class="outbox-empty">
               <p class="outbox-empty-icon">📬</p>
               <p class="outbox-empty-title">No drafts yet</p>
               <p class="outbox-empty-sub">Run a mission to generate content. Agent output will appear here for review.</p>
             </div>
-          ` : items.map(item => _renderOutboxCard(item)).join('')}
+          ` : filtered.map(item => _renderOutboxListCard(item)).join('')}
         </div>
+        `}
       </div>
     `;
 
-    // Bind filter clicks
+    _bindOutboxEvents(el);
+  }
+
+  function _outboxFormatWeekLabel(days) {
+    if (!days.length) return '';
+    const s = days[0];
+    const e = days[days.length - 1];
+    const opts = { month: 'short', day: 'numeric' };
+    const sStr = s.toLocaleDateString('en', opts);
+    const eStr = e.toLocaleDateString('en', { ...opts, year: 'numeric' });
+    return `${sStr} — ${eStr}`;
+  }
+
+  /* Mini card for calendar grid cells */
+  function _renderOutboxCalCard(item, _e) {
+    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
+    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '📝', label: 'Content', color: '#94a3b8' };
+    const status = item.approval_status || 'draft';
+    const content = CQ ? CQ.getContent(item) : (item.result || '');
+    const snippet = (content || '').replace(/<[^>]+>/g, '').slice(0, 50);
+    const statusColors = { draft: '#eab308', approved: '#22c55e', rejected: '#ef4444' };
+    const statusLabels = { draft: 'Draft', approved: 'Approved', rejected: 'Rejected' };
+
+    return `
+      <div class="outbox-cal-card" data-id="${_e(item.id)}" data-status="${status}" draggable="true"
+           style="--status-color:${statusColors[status] || '#94a3b8'}">
+        <div class="outbox-cal-card-head">
+          <span class="outbox-cal-card-icon" style="color:${type.color}">${type.icon}</span>
+          <span class="outbox-cal-card-badge" style="background:${statusColors[status] || '#94a3b8'}">${statusLabels[status] || status}</span>
+        </div>
+        <div class="outbox-cal-card-title">${_e(snippet || type.label)}</div>
+      </div>
+    `;
+  }
+
+  /* Full card for list view (preserves original layout) */
+  function _renderOutboxListCard(item) {
+    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
+    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
+    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '📝', label: 'Content', color: '#94a3b8' };
+    const content = CQ ? CQ.getContent(item) : (item.result || '');
+    const time = CQ ? CQ.timeAgo(item.created_at) : '';
+    const rendered = CQ ? CQ.renderMarkdown(content) : _e(content);
+    const status = item.approval_status || 'draft';
+
+    return `
+      <div class="outbox-card ${status}" data-id="${_e(item.id)}" data-status="${status}">
+        <div class="outbox-card-header">
+          <span class="outbox-card-type" style="color:${type.color}">${type.icon} ${_e(type.label)}</span>
+          <span class="outbox-card-agent">${_e(item.agent_name || 'Agent')}</span>
+          <span class="outbox-card-time">${_e(time)}</span>
+          ${status === 'approved' ? '<span class="outbox-status-badge approved">&#10003; Approved</span>' : ''}
+          ${status === 'rejected' ? '<span class="outbox-status-badge rejected">&#10005; Rejected</span>' : ''}
+        </div>
+        <div class="outbox-card-preview">${rendered}</div>
+        <div class="outbox-card-actions" data-id="${_e(item.id)}">
+          ${status === 'draft' ? `
+            <button class="btn outbox-approve-btn">&#10003; Approve</button>
+            <button class="btn outbox-edit-btn">&#9998; Edit</button>
+            <button class="btn outbox-reject-btn">&#10005; Reject</button>
+          ` : ''}
+          ${status === 'approved' ? `<button class="btn outbox-edit-btn">&#9998; Edit</button>` : ''}
+          <button class="btn outbox-copy-btn">Copy</button>
+        </div>
+      </div>
+    `;
+  }
+
+  /* Bind all outbox interaction events */
+  function _bindOutboxEvents(el) {
+    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
+
+    // Status filter clicks
     el.querySelectorAll('.outbox-filter').forEach(btn => {
       btn.addEventListener('click', () => {
-        el.querySelectorAll('.outbox-filter').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const filter = btn.dataset.filter;
-        el.querySelectorAll('.outbox-card').forEach(card => {
-          if (filter === 'all') { card.style.display = ''; return; }
-          card.style.display = card.dataset.status === filter ? '' : 'none';
-        });
+        _outboxStatusFilter = btn.dataset.status || 'all';
+        _renderOutbox(el);
       });
     });
 
-    // Bind card actions (delegated)
+    // Type filter clicks
+    el.querySelectorAll('.outbox-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _outboxTypeFilter = btn.dataset.type || 'all';
+        _renderOutbox(el);
+      });
+    });
+
+    // View toggle (calendar / list)
+    el.querySelectorAll('.outbox-view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _outboxViewMode = btn.dataset.view || 'calendar';
+        _renderOutbox(el);
+      });
+    });
+
+    // Week navigation
+    el.querySelector('#outbox-prev-week')?.addEventListener('click', () => {
+      _outboxWeekOffset--;
+      _renderOutbox(el);
+    });
+    el.querySelector('#outbox-next-week')?.addEventListener('click', () => {
+      _outboxWeekOffset++;
+      _renderOutbox(el);
+    });
+    el.querySelector('#outbox-today')?.addEventListener('click', () => {
+      _outboxWeekOffset = 0;
+      _renderOutbox(el);
+    });
+
+    // Drag-and-drop on calendar cards
+    el.querySelectorAll('.outbox-cal-card[draggable]').forEach(card => {
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+        card.classList.add('dragging');
+      });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    });
+
+    el.querySelectorAll('.outbox-cal-col').forEach(col => {
+      col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', (e) => {
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        const itemId = e.dataTransfer.getData('text/plain');
+        const newDate = col.dataset.date;
+        if (!itemId || !newDate) return;
+        // Update item scheduled date in state
+        const allItems = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+        const item = allItems.find(i => i.id === itemId);
+        if (item) {
+          if (!item.metadata) item.metadata = {};
+          item.metadata.scheduled_for = newDate + 'T09:00:00Z';
+          if (typeof State !== 'undefined') State.set('content-queue', [...allItems]);
+          _renderOutbox(el);
+        }
+      });
+    });
+
+    // Calendar card click → expand detail in list mode
+    el.querySelectorAll('.outbox-cal-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.defaultPrevented) return;
+        const id = card.dataset.id;
+        const allItems = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+        const item = allItems.find(i => i.id === id);
+        if (!item) return;
+        _showOutboxCardDetail(el, item);
+      });
+    });
+
+    // List card actions (delegated)
     const feed = el.querySelector('#outbox-feed');
     if (feed) feed.addEventListener('click', async (e) => {
       const id = e.target.closest('[data-id]')?.dataset.id;
@@ -1329,36 +1585,60 @@ const BlueprintsView = (() => {
     });
   }
 
-  function _renderOutboxCard(item) {
+  /* Detail overlay when clicking a calendar card */
+  function _showOutboxCardDetail(parentEl, item) {
     const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
     const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
     const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '📝', label: 'Content', color: '#94a3b8' };
     const content = CQ ? CQ.getContent(item) : (item.result || '');
-    const time = CQ ? CQ.timeAgo(item.created_at) : '';
     const rendered = CQ ? CQ.renderMarkdown(content) : _e(content);
     const status = item.approval_status || 'draft';
+    const time = CQ ? CQ.timeAgo(item.created_at) : '';
+    const statusColors = { draft: '#eab308', approved: '#22c55e', rejected: '#ef4444' };
 
-    return `
-      <div class="outbox-card ${status}" data-id="${_e(item.id)}" data-status="${status}">
-        <div class="outbox-card-header">
+    const overlay = document.createElement('div');
+    overlay.className = 'outbox-detail-overlay';
+    overlay.innerHTML = `
+      <div class="outbox-detail-panel">
+        <div class="outbox-detail-head">
           <span class="outbox-card-type" style="color:${type.color}">${type.icon} ${_e(type.label)}</span>
           <span class="outbox-card-agent">${_e(item.agent_name || 'Agent')}</span>
+          <span class="outbox-cal-card-badge" style="background:${statusColors[status] || '#94a3b8'}">${_e(status)}</span>
           <span class="outbox-card-time">${_e(time)}</span>
-          ${status === 'approved' ? '<span class="outbox-status-badge approved">✓ Approved</span>' : ''}
-          ${status === 'rejected' ? '<span class="outbox-status-badge rejected">✕ Rejected</span>' : ''}
+          <button class="btn outbox-detail-close">&times;</button>
         </div>
-        <div class="outbox-card-preview">${rendered}</div>
-        <div class="outbox-card-actions" data-id="${_e(item.id)}">
+        <div class="outbox-detail-body">${rendered}</div>
+        <div class="outbox-detail-actions" data-id="${_e(item.id)}">
           ${status === 'draft' ? `
-            <button class="btn outbox-approve-btn">✓ Approve</button>
-            <button class="btn outbox-edit-btn">✎ Edit</button>
-            <button class="btn outbox-reject-btn">✕ Reject</button>
+            <button class="btn outbox-approve-btn">&#10003; Approve</button>
+            <button class="btn outbox-reject-btn">&#10005; Reject</button>
           ` : ''}
-          ${status === 'approved' ? `<button class="btn outbox-edit-btn">✎ Edit</button>` : ''}
-          <button class="btn outbox-copy-btn">📋 Copy</button>
+          <button class="btn outbox-copy-btn">Copy</button>
         </div>
       </div>
     `;
+
+    overlay.addEventListener('click', async (e) => {
+      if (e.target === overlay || e.target.closest('.outbox-detail-close')) {
+        overlay.remove();
+        return;
+      }
+      if (e.target.closest('.outbox-approve-btn')) {
+        await ContentQueue.approve(item.id);
+        overlay.remove();
+        _renderOutbox(parentEl);
+      }
+      if (e.target.closest('.outbox-reject-btn')) {
+        await ContentQueue.reject(item.id);
+        overlay.remove();
+        _renderOutbox(parentEl);
+      }
+      if (e.target.closest('.outbox-copy-btn')) {
+        await ContentQueue.copy(item.id);
+      }
+    });
+
+    parentEl.appendChild(overlay);
   }
 
   function _bindEvents() {

@@ -8,7 +8,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
  *   /authorize  — initiates OAuth flow (redirects to Google consent screen)
  *   /callback   — handles Google's redirect, exchanges code for tokens, stores in DB
  *
- * Supports: Gmail, Google Calendar, Google Drive (readonly scopes)
+ * Supports: Gmail (read), Google Calendar (read), Google Drive (read/write app files)
  * Works with: Gmail accounts, Google Workspace (any domain), any Google account
  */
 
@@ -19,7 +19,7 @@ const GOOGLE_SCOPES = [
   "email",
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/calendar.readonly",
-  "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/drive.file",
 ].join(" ");
 
 const GMAIL_MCP_URL_SUFFIX = "/functions/v1/gmail-mcp";
