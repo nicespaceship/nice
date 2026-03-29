@@ -871,19 +871,33 @@ const BlueprintStore = (() => {
   function getActivatedShips() {
     const result = [];
     _activatedShipIds.forEach(bpId => {
-      const bp = getSpaceship(bpId);
+      let bp = getSpaceship(bpId);
+      const shipId = bpId.startsWith('bp-') ? bpId : bpId;
+      const saved = getShipState(bpId) || getShipState(shipId);
+
+      // If not in seed catalog, check State for custom ships (Crew Designer)
+      if (!bp) {
+        const stateShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+        bp = stateShips.find(s => s.id === bpId || s.id === shipId);
+      }
+      // Also check localStorage for persisted custom ships
+      if (!bp) {
+        try {
+          const stored = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+          bp = stored.find(s => s.id === bpId || s.id === shipId);
+        } catch {}
+      }
       if (!bp) return;
-      const shipId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
+
       const custom = typeof CardRenderer !== 'undefined' && CardRenderer.getCustomLabels
         ? CardRenderer.getCustomLabels(shipId) : {};
-      const saved = getShipState(shipId);
       result.push(Object.assign({}, bp, {
         id: shipId,
         name: custom.name || bp.name,
-        status: saved?.status || 'standby',
-        slot_assignments: saved?.slot_assignments || {},
+        status: saved?.status || bp.status || 'standby',
+        slot_assignments: saved?.slot_assignments || bp.slot_assignments || {},
         agent_ids: saved?.agent_ids || [],
-        created_at: new Date().toISOString(),
+        created_at: bp.created_at || new Date().toISOString(),
         blueprint_id: bpId,
       }));
     });

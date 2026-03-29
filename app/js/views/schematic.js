@@ -514,6 +514,14 @@ const SchematicView = (() => {
       const agent = (typeof State !== 'undefined' && State.get('agents') || []).find(r => r.id === bpId);
       if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || agent.category, rarity: agent.rarity || 'Common' };
     }
+    // Check localStorage for custom agents (Crew Designer, survives reload)
+    if (!bp) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        const agent = stored.find(a => a.id === bpId);
+        if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || 'Agent', rarity: 'Common' };
+      } catch {}
+    }
     return bp;
   }
 

@@ -646,10 +646,23 @@ Rules:
         }));
         State.set('agents', [...existingAgents, ...newAgentObjects]);
 
+        // Persist custom agents to localStorage
+        try {
+          const storedAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+          storedAgents.push(...newAgentObjects);
+          localStorage.setItem('nice-custom-agents', JSON.stringify(storedAgents));
+        } catch {}
+
+        const newShip = { id: shipId, ...shipData };
         const existingShips = State.get('spaceships') || [];
-        State.set('spaceships', [...existingShips, {
-          id: shipId, ...shipData,
-        }]);
+        State.set('spaceships', [...existingShips, newShip]);
+
+        // Persist custom ship to localStorage so it survives reloads
+        try {
+          const stored = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+          stored.push(newShip);
+          localStorage.setItem('nice-custom-ships', JSON.stringify(stored));
+        } catch {}
       }
 
       // 5. XP + Audit
