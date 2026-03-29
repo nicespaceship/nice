@@ -784,10 +784,23 @@ const MissionDetailView = (() => {
           await SB.client.from('tasks').update({ status: 'completed', approval_status: 'approved', reviewed_at: now }).eq('id', id);
         }
       } catch {}
-      // Award XP on approval
+      // Award user XP on approval
       if (typeof Gamification !== 'undefined') {
         Gamification.addXP('complete_mission');
         Gamification.addXP('approve_content');
+      }
+      // Award per-agent XP (agent levels up)
+      if (typeof MissionRunner !== 'undefined' && MissionRunner.awardAgentXP) {
+        const agentId = mission.agent_id;
+        const agentName = mission.agent_name;
+        // Find agent ID from name if not set
+        let resolvedId = agentId;
+        if (!resolvedId && agentName) {
+          const agents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+          const found = agents.find(a => a.name === agentName);
+          if (found) resolvedId = found.id;
+        }
+        if (resolvedId) MissionRunner.awardAgentXP(resolvedId, 50);
       }
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Approved', message: 'Content approved and mission completed!', type: 'success' });
       _loadMission(el, id);

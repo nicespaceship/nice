@@ -22,38 +22,81 @@ const MissionRunner = (() => {
     }
     if (!mission) return null;
 
-    // 2. Find the assigned agent (resolve bp- IDs to Supabase UUIDs)
+    // 2. Find the assigned agent
     let agent = null;
     let agentId = mission.agent_id;
+    const agents = State.get('agents') || [];
+
+    // Strategy: agent_id → State lookup → Supabase lookup → spaceship crew → name match
     if (agentId) {
-      const agents = State.get('agents') || [];
       agent = agents.find(a => a.id === agentId);
-      // If agent_id is a local bp- ID, try resolving to Supabase UUID
       if (!agent && agentId.startsWith('bp-') && typeof BlueprintStore !== 'undefined') {
         const uuid = BlueprintStore.getAgentUuid(agentId);
         if (uuid) {
-          try { agent = await SB.db('user_agents').get(uuid); } catch { /* proceed without */ }
+          try { agent = await SB.db('user_agents').get(uuid); } catch {}
         }
-        // Also check State by supabase_id
         if (!agent) agent = agents.find(a => a.supabase_id === uuid) || agents.find(a => a.id === agentId);
       }
       if (!agent) {
+        try { agent = await SB.db('user_agents').get(agentId); } catch {}
+      }
+    }
+
+    // If no agent_id but has agent_name, find from spaceship crew slots or State
+    if (!agent && mission.agent_name) {
+      // Check spaceship crew slots first
+      const spaceshipName = mission.metadata?.spaceship;
+      if (spaceshipName) {
+        const stateShips = State.get('spaceships') || [];
+        const ship = stateShips.find(s => s.name === spaceshipName);
+        if (ship?.slot_assignments) {
+          const crewIds = Object.values(ship.slot_assignments);
+          const crewAgent = agents.find(a => crewIds.includes(a.id) && a.name === mission.agent_name);
+          if (crewAgent) agent = crewAgent;
+        }
+      }
+      // Fallback: find by name in State agents
+      if (!agent) agent = agents.find(a => a.name === mission.agent_name);
+      // Fallback: search Supabase by name
+      if (!agent && typeof SB !== 'undefined' && SB.client) {
         try {
-          agent = await SB.db('user_agents').get(agentId);
-        } catch { /* proceed without agent */ }
+          const { data } = await SB.client.from('user_agents').select('*').eq('user_id', user.id).eq('name', mission.agent_name).limit(1);
+          if (data?.[0]) agent = data[0];
+        } catch {}
       }
     }
 
     // Build an agent blueprint-like object for ShipLog
     let agentBp = null;
     if (agent) {
-      // If agent has a blueprint_id, resolve the full blueprint
       if (agent.blueprint_id && typeof BlueprintStore !== 'undefined' && BlueprintStore.isReady()) {
         agentBp = BlueprintStore.getAgent(agent.blueprint_id);
       }
       if (!agentBp) {
-        agentBp = { id: agent.id, name: agent.name, config: agent.config || { role: agent.role || 'General' }, flavor: '' };
+        const cfg = agent.config || {};
+        agentBp = {
+          id: agent.id,
+          name: agent.name,
+          config: {
+            role: cfg.role || agent.role || 'General',
+            type: cfg.type || agent.type || 'Specialist',
+            tools: cfg.tools || [],
+            temperature: cfg.temperature || 0.3,
+            llm_engine: cfg.llm_engine || agent.llm_engine || 'gemini-2.5-flash',
+          },
+          description: cfg.description || agent.description || '',
+          flavor: '',
+        };
       }
+    } else if (mission.agent_name) {
+      // Last resort: create a minimal agent config from name alone
+      agentBp = {
+        id: 'ephemeral-' + Date.now(),
+        name: mission.agent_name,
+        config: { role: _inferRoleFromName(mission.agent_name), tools: [], llm_engine: 'gemini-2.5-flash', temperature: 0.4 },
+        description: '',
+        flavor: '',
+      };
     }
 
     // 2b. Resolve model — support NICE Auto
@@ -213,5 +256,58 @@ const MissionRunner = (() => {
     return +(base + Math.random() * 0.05).toFixed(4);
   }
 
-  return { run };
+  /* ── Infer agent role from name ── */
+  function _inferRoleFromName(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('research') || n.includes('scout') || n.includes('watcher')) return 'Research';
+    if (n.includes('code') || n.includes('engineer') || n.includes('tech')) return 'Engineering';
+    if (n.includes('content') || n.includes('writer') || n.includes('chef') || n.includes('copy')) return 'Content';
+    if (n.includes('market') || n.includes('campaign') || n.includes('social')) return 'Marketing';
+    if (n.includes('data') || n.includes('analyst') || n.includes('cost') || n.includes('controller')) return 'Analytics';
+    if (n.includes('support') || n.includes('customer')) return 'Support';
+    if (n.includes('sales') || n.includes('biz')) return 'Sales';
+    if (n.includes('captain') || n.includes('ops') || n.includes('manager') || n.includes('floor')) return 'Ops';
+    return 'General';
+  }
+
+  /* ── Per-agent XP tracking ── */
+  function awardAgentXP(agentId, xp) {
+    if (!agentId) return;
+    try {
+      const stats = JSON.parse(localStorage.getItem('nice-agent-stats') || '{}');
+      if (!stats[agentId]) stats[agentId] = { xp: 0, missions: 0, approved: 0, rejected: 0 };
+      stats[agentId].xp = (stats[agentId].xp || 0) + xp;
+      stats[agentId].missions = (stats[agentId].missions || 0) + 1;
+      localStorage.setItem('nice-agent-stats', JSON.stringify(stats));
+
+      // Check for rarity evolution
+      const totalXP = stats[agentId].xp;
+      let newRarity = 'Common';
+      if (totalXP >= 5000) newRarity = 'Mythic';
+      else if (totalXP >= 2000) newRarity = 'Legendary';
+      else if (totalXP >= 800) newRarity = 'Epic';
+      else if (totalXP >= 200) newRarity = 'Rare';
+
+      // Update agent rarity in State
+      const agents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+      const agent = agents.find(a => a.id === agentId);
+      if (agent && agent.rarity !== newRarity) {
+        const oldRarity = agent.rarity || 'Common';
+        agent.rarity = newRarity;
+        State.set('agents', [...agents]);
+        if (typeof Notify !== 'undefined' && oldRarity !== newRarity) {
+          Notify.send({ title: 'Agent Evolved!', message: `${agent.name} evolved to ${newRarity}!`, type: 'success' });
+        }
+      }
+    } catch {}
+  }
+
+  function getAgentStats(agentId) {
+    try {
+      const stats = JSON.parse(localStorage.getItem('nice-agent-stats') || '{}');
+      return stats[agentId] || { xp: 0, missions: 0, approved: 0, rejected: 0 };
+    } catch { return { xp: 0, missions: 0, approved: 0, rejected: 0 }; }
+  }
+
+  return { run, awardAgentXP, getAgentStats };
 })();
