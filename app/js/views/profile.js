@@ -84,11 +84,21 @@ const ProfileView = (() => {
     const meta = user.user_metadata || {};
     const name = meta.display_name || user.email?.split('@')[0] || 'Pilot';
     const initials = name.slice(0, 2).toUpperCase();
+    const avatarUrl = meta.avatar_url || localStorage.getItem('nice-avatar-url') || '';
 
     el.innerHTML = `
       <div class="profile-wrap">
         <div class="profile-card">
-          <div class="profile-avatar">${_esc(initials)}</div>
+          <div class="profile-avatar-wrap" id="profile-avatar-wrap" title="Click to change photo">
+            ${avatarUrl
+              ? `<img class="profile-avatar-img" src="${_esc(avatarUrl)}" alt="${_esc(name)}" />`
+              : `<div class="profile-avatar">${_esc(initials)}</div>`
+            }
+            <div class="profile-avatar-overlay">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+            </div>
+            <input type="file" id="profile-avatar-input" accept="image/*" style="display:none" />
+          </div>
           <h2 class="profile-name">${_esc(name)}</h2>
           <p class="profile-email">${_esc(user.email || '')}</p>
           <div class="profile-badge">PILOT</div>
@@ -168,6 +178,14 @@ const ProfileView = (() => {
 
     // Load weekly summary
     _loadProfileWeekly();
+
+    // Avatar upload
+    const avatarWrap = document.getElementById('profile-avatar-wrap');
+    const avatarInput = document.getElementById('profile-avatar-input');
+    if (avatarWrap && avatarInput) {
+      avatarWrap.addEventListener('click', () => avatarInput.click());
+      avatarInput.addEventListener('change', (e) => _handleAvatarUpload(e, user));
+    }
 
     // Copy referral link button
     document.getElementById('btn-copy-referral')?.addEventListener('click', () => {
@@ -285,6 +303,99 @@ const ProfileView = (() => {
   }
 
   const _esc = Utils.esc;
+
+  /* ── Avatar upload ── */
+  async function _handleAvatarUpload(e, user) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate
+    if (!file.type.startsWith('image/')) {
+      if (typeof Notify !== 'undefined') Notify.show('Please select an image file', 'error');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      if (typeof Notify !== 'undefined') Notify.show('Image must be under 2MB', 'error');
+      return;
+    }
+
+    // Convert to base64 data URL for local storage
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target.result;
+
+      // Resize to 128x128 for performance
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        // Center crop
+        const size = Math.min(img.width, img.height);
+        const sx = (img.width - size) / 2;
+        const sy = (img.height - size) / 2;
+        ctx.drawImage(img, sx, sy, size, size, 0, 0, 128, 128);
+        const resized = canvas.toDataURL('image/jpeg', 0.85);
+
+        // Save locally
+        localStorage.setItem('nice-avatar-url', resized);
+
+        // Try to update Supabase user metadata
+        if (typeof SB !== 'undefined' && SB.client) {
+          try {
+            await SB.client.auth.updateUser({ data: { avatar_url: resized } });
+          } catch (err) {
+            console.warn('[Profile] Failed to save avatar to Supabase:', err);
+          }
+        }
+
+        // Update profile avatar
+        const wrap = document.getElementById('profile-avatar-wrap');
+        if (wrap) {
+          const existing = wrap.querySelector('.profile-avatar, .profile-avatar-img');
+          if (existing) {
+            const newImg = document.createElement('img');
+            newImg.className = 'profile-avatar-img';
+            newImg.src = resized;
+            newImg.alt = 'Avatar';
+            existing.replaceWith(newImg);
+          }
+        }
+
+        // Update sidebar avatar
+        _updateSidebarAvatar(resized);
+
+        if (typeof Notify !== 'undefined') Notify.show('Photo updated', 'success');
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function _updateSidebarAvatar(url) {
+    const userCard = document.getElementById('hdr-user');
+    if (!userCard) return;
+    const iconEl = userCard.querySelector('.icon');
+    if (iconEl && url) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = 'Avatar';
+      img.style.cssText = 'width:18px;height:18px;border-radius:50%;object-fit:cover;';
+      iconEl.replaceWith(img);
+    }
+  }
+
+  // On load, update sidebar if avatar exists
+  function _initAvatar() {
+    const url = localStorage.getItem('nice-avatar-url');
+    if (url) _updateSidebarAvatar(url);
+  }
+  // Run on module load
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initAvatar);
+    else setTimeout(_initAvatar, 100);
+  }
 
   return { title, render, _switchTab, _handleSignIn, _handleSignUp, _signOut };
 })();
