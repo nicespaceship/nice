@@ -128,8 +128,11 @@ const MissionRunner = (() => {
 
     // 5. Build a directive prompt from the mission title
     const hasMediaTools = agentBp?.config?.tools?.some(t => t.includes('generate-image') || t.includes('generate-video') || t.includes('generate-social'));
+    const hasVideoTool = agentBp?.config?.tools?.some(t => t.includes('generate-video'));
+    const taskMentionsVideo = /\b(video|reel|clip|footage)\b/i.test(mission.title);
     const mediaInstruction = hasMediaTools
-      ? '\n\nIMPORTANT: You MUST use your generate-image and/or generate-video tools to create the actual media. Do NOT just describe what to create — actually call the tools to generate images and videos. Create the deliverable, don\'t plan it.'
+      ? '\n\nIMPORTANT: You MUST use your tools to create the actual media. Do NOT just describe what to create — actually call the tools.' +
+        (hasVideoTool && taskMentionsVideo ? ' The task asks for VIDEO content — you MUST use the generate-video tool (not generate-image). Call generate-video with the prompt.' : ' Create the deliverable, don\'t plan it.')
       : '';
     const missionPrompt = 'Complete the following task thoroughly and provide the deliverable directly.\n\n' +
       'Task: ' + mission.title + '\n' +

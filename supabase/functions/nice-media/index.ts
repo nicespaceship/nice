@@ -157,6 +157,7 @@ async function generateVeo(prompt: string, opts: any) {
 
   // Poll for completion (max 120s)
   let videoUrl: string | null = null;
+  let videoBase64: string | null = null;
   for (let i = 0; i < 24; i++) {
     await new Promise(r => setTimeout(r, 5000));
 
@@ -169,18 +170,39 @@ async function generateVeo(prompt: string, opts: any) {
     if (pollData.done) {
       const video = pollData.response?.generateVideoResponse?.generatedSamples?.[0];
       if (video?.video?.uri) {
-        videoUrl = video.video.uri;
+        // Download the video from Google's API (requires key) and upload to Supabase Storage
+        const videoDownloadUrl = video.video.uri + (video.video.uri.includes('?') ? '&' : '?') + `key=${apiKey}`;
+        const videoRes = await fetch(videoDownloadUrl);
+        if (videoRes.ok) {
+          const videoBlob = await videoRes.blob();
+          // Store directly to Supabase Storage
+          const svc = createClient(
+            Deno.env.get("SUPABASE_URL") ?? "",
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          );
+          const filename = `videos/${Date.now()}.mp4`;
+          const { error: uploadErr } = await svc.storage
+            .from("generated-media")
+            .upload(filename, videoBlob, { contentType: "video/mp4", upsert: false });
+          if (!uploadErr) {
+            const { data: urlData } = svc.storage.from("generated-media").getPublicUrl(filename);
+            videoUrl = urlData?.publicUrl || null;
+          }
+        }
+        // Fallback if storage failed
+        if (!videoUrl) videoUrl = videoDownloadUrl;
       } else if (video?.video?.bytesBase64Encoded) {
-        videoUrl = `data:video/mp4;base64,${video.video.bytesBase64Encoded}`;
+        videoBase64 = video.video.bytesBase64Encoded;
       }
       break;
     }
   }
 
-  if (!videoUrl) throw new Error("Video generation timed out or failed");
+  if (!videoUrl && !videoBase64) throw new Error("Video generation timed out or failed");
 
   return {
-    url: videoUrl,
+    url: videoUrl || `data:video/mp4;base64,${videoBase64}`,
+    _base64: videoBase64 || undefined,
     revised_prompt: prompt,
     provider: "google",
     model: "veo-2",
