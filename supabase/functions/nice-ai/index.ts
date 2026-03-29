@@ -273,8 +273,8 @@ async function handleGemini(
   }
 
   const endpoint = stream ? "streamGenerateContent" : "generateContent";
-  const streamParam = stream ? "?alt=sse" : "";
-  const url = `${GEMINI_API_URL}/models/${model}:${endpoint}${streamParam}&key=${apiKey}`;
+  const streamParam = stream ? "?alt=sse&" : "?";
+  const url = `${GEMINI_API_URL}/models/${model}:${endpoint}${streamParam}key=${apiKey}`;
 
   const geminiRes = await fetch(url, {
     method: "POST",
