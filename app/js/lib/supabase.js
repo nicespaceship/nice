@@ -30,7 +30,14 @@ const SB = (() => {
 
   function client() {
     if (!_client && typeof supabase !== 'undefined') {
-      _client = supabase.createClient(URL, KEY);
+      _client = supabase.createClient(URL, KEY, {
+        auth: {
+          persistSession: true,
+          storageKey: 'nice-auth',
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
+      });
     }
     return _client;
   }

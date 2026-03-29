@@ -200,8 +200,10 @@ async function generateVeo(prompt: string, opts: any) {
 
   if (!videoUrl && !videoBase64) throw new Error("Video generation timed out or failed");
 
+  const isStored = videoUrl?.includes('supabase.co/storage');
   return {
     url: videoUrl || `data:video/mp4;base64,${videoBase64}`,
+    stored_url: isStored ? videoUrl : undefined,
     _base64: videoBase64 || undefined,
     revised_prompt: prompt,
     provider: "google",
@@ -428,16 +430,16 @@ Deno.serve(async (req: Request) => {
       result = await generateDalle(prompt, { size, quality, style });
     }
 
-    // Store in Supabase Storage (handles both URLs and base64)
-    if (store !== false && userId && (result.url || result._base64)) {
+    // Store in Supabase Storage (skip if already stored by provider handler)
+    if (store !== false && userId && !result.stored_url && (result.url || result._base64)) {
       const storedUrl = result._base64
         ? await storeBase64(result._base64, userId, result.type === "video" ? "mp4" : "png")
-        : await storeImage(result.url, userId);
+        : (result.type !== "video" ? await storeImage(result.url, userId) : null);
       if (storedUrl) {
         result.stored_url = storedUrl;
-        result.url = storedUrl; // Replace temp URL with permanent one
+        result.url = storedUrl;
       }
-      delete result._base64; // Don't send base64 to client
+      delete result._base64;
     }
 
     // Deduct tokens
