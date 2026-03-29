@@ -22,5 +22,10 @@ const Utils = (() => {
     return Math.floor(hrs / 24) + 'd ago';
   }
 
-  return { esc, timeAgo };
+  /** Render an SVG icon from the sprite. Usage: Utils.icon('lock') or Utils.icon('lock', 'icon-lg') */
+  function icon(name, cls) {
+    return `<svg class="icon ${cls || 'icon-sm'}" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${name}"/></svg>`;
+  }
+
+  return { esc, timeAgo, icon };
 })();

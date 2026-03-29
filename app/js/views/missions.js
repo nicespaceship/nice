@@ -11,9 +11,9 @@ const MissionsView = (() => {
   const PRIORITIES = ['low','medium','high','critical'];
   const STATUS_META = {
     queued:    { label: 'Queued',    color: '#f59e0b', icon: '◷' },
-    running:   { label: 'Running',   color: '#6366f1', icon: '⚡' },
-    completed: { label: 'Completed', color: '#22c55e', icon: '✓' },
-    failed:    { label: 'Failed',    color: '#ef4444', icon: '✕' },
+    running:   { label: 'Running',   color: '#6366f1', icon: 'zap' },
+    completed: { label: 'Completed', color: '#22c55e', icon: 'check' },
+    failed:    { label: 'Failed',    color: '#ef4444', icon: 'x' },
   };
 
   /* ── State ── */

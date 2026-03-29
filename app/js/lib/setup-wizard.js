@@ -53,22 +53,22 @@ const SetupWizard = (() => {
 
   const PROJECT_TYPES = [
     { id: 'business',   label: 'Business or Company',     icon: '🏢', hint: 'Run or grow a business with AI agents' },
-    { id: 'project',    label: 'Project or Side Hustle',   icon: '🚀', hint: 'Build something new from scratch' },
-    { id: 'creative',   label: 'Creative Work',            icon: '🎨', hint: 'Art, music, writing, video, design' },
+    { id: 'project',    label: 'Project or Side Hustle',   icon: 'rocket', hint: 'Build something new from scratch' },
+    { id: 'creative',   label: 'Creative Work',            icon: 'palette', hint: 'Art, music, writing, video, design' },
     { id: 'research',   label: 'Research or Learning',     icon: '🔬', hint: 'Academic research, study, exploration' },
     { id: 'community',  label: 'Community or Open Source',  icon: '🌍', hint: 'Open source, nonprofit, community project' },
-    { id: 'personal',   label: 'Personal Productivity',    icon: '⚡', hint: 'Automate your daily life and tasks' },
+    { id: 'personal',   label: 'Personal Productivity',    icon: 'zap', hint: 'Automate your daily life and tasks' },
   ];
 
   const GOALS = [
-    { id: 'content',    label: 'Create content & copy',         icon: '📝' },
-    { id: 'research',   label: 'Research & gather intel',       icon: '🔍' },
-    { id: 'analytics',  label: 'Analyze data & insights',       icon: '📊' },
+    { id: 'content',    label: 'Create content & copy',         icon: 'file-text' },
+    { id: 'research',   label: 'Research & gather intel',       icon: 'search' },
+    { id: 'analytics',  label: 'Analyze data & insights',       icon: 'bar-chart' },
     { id: 'code',       label: 'Write or review code',          icon: '💻' },
-    { id: 'design',     label: 'Design & creative direction',   icon: '🎨' },
+    { id: 'design',     label: 'Design & creative direction',   icon: 'palette' },
     { id: 'support',    label: 'Handle support & communication', icon: '💬' },
-    { id: 'sales',      label: 'Sales & outreach',              icon: '💰' },
-    { id: 'ops',        label: 'Automate operations & tasks',   icon: '⚙️' },
+    { id: 'sales',      label: 'Sales & outreach',              icon: 'dollar' },
+    { id: 'ops',        label: 'Automate operations & tasks',   icon: 'cog' },
     { id: 'legal',      label: 'Legal, compliance & contracts',  icon: '⚖️' },
     { id: 'schedule',   label: 'Plan, schedule & coordinate',   icon: '📅' },
     { id: 'learning',   label: 'Learn & train on new topics',   icon: '📚' },

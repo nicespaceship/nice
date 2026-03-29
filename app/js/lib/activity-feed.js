@@ -46,17 +46,17 @@ const ActivityFeed = (() => {
     let icon = '📡';
 
     if (type === 'agent') {
-      icon = '🤖';
+      icon = 'bot';
       if (eventType === 'INSERT') description = `New agent created: ${record.name || 'Unnamed'}`;
       else if (eventType === 'UPDATE') description = `Agent updated: ${record.name || 'Unnamed'}`;
       else if (eventType === 'DELETE') description = `Agent removed: ${record.name || 'Unnamed'}`;
     } else if (type === 'mission') {
-      icon = '🎯';
+      icon = 'target';
       if (eventType === 'INSERT') description = `New mission: ${record.title || 'Untitled'}`;
       else if (eventType === 'UPDATE') description = `Mission status: ${record.status || 'updated'}`;
       else if (eventType === 'DELETE') description = `Mission removed: ${record.title || 'Untitled'}`;
     } else if (type === 'spaceship') {
-      icon = '🚀';
+      icon = 'rocket';
       if (eventType === 'INSERT') description = `New ship launched: ${record.name || 'Unnamed'}`;
       else if (eventType === 'UPDATE') description = `Ship updated: ${record.name || 'Unnamed'}`;
       else if (eventType === 'DELETE') description = `Ship decommissioned: ${record.name || 'Unnamed'}`;

@@ -481,17 +481,17 @@ const Gamification = (() => {
 
   const ACH_STORAGE = 'nice-achievements';
   const ACHIEVEMENTS = [
-    { id: 'first-agent',        name: 'First Agent',        desc: 'Create your first agent',           icon: '🤖' },
+    { id: 'first-agent',        name: 'First Agent',        desc: 'Create your first agent',           icon: 'bot' },
     { id: 'agent-army',         name: 'Agent Army',         desc: 'Have 5+ agents',                    icon: '🦾' },
-    { id: 'first-mission',      name: 'First Mission',      desc: 'Complete 1 mission',                icon: '🎯' },
+    { id: 'first-mission',      name: 'First Mission',      desc: 'Complete 1 mission',                icon: 'target' },
     { id: 'mission-streak',     name: 'Mission Streak',     desc: 'Complete 5 missions',               icon: '🔥' },
-    { id: 'first-spaceship',    name: 'First Spaceship',    desc: 'Create your first spaceship',       icon: '🚀' },
+    { id: 'first-spaceship',    name: 'First Spaceship',    desc: 'Create your first spaceship',       icon: 'rocket' },
     { id: 'fleet-admiral',      name: 'Fleet Admiral',      desc: 'Have 3+ spaceships',                icon: '⭐' },
     { id: 'blueprint-collector',name: 'Blueprint Collector', desc: 'Activate 3 blueprints',             icon: '📘' },
     { id: 'rank-captain',       name: "Captain's Chair",    desc: 'Reach Captain rank',                icon: '💺' },
     { id: 'rank-admiral',       name: "Admiral's Bridge",   desc: 'Reach Admiral rank',                icon: '🌟' },
     { id: 'station-founder',    name: 'Station Founder',    desc: 'Create a Space Station',            icon: '🏗️' },
-    { id: 'data-exporter',     name: 'Data Archivist',     desc: 'Export your NICE data',              icon: '💾' },
+    { id: 'data-exporter',     name: 'Data Archivist',     desc: 'Export your NICE data',              icon: 'save' },
     { id: 'workflow-creator',  name: 'Pipeline Engineer',  desc: 'Create a workflow pipeline',         icon: '🔧' },
     { id: 'first-dock-slot',   name: 'First Dock',         desc: 'Dock an agent into a ship slot',     icon: '🔌' },
     { id: 'full-ship',         name: 'Full Squad',         desc: 'Fill all slots on a spaceship',      icon: '🛸' },

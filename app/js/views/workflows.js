@@ -220,13 +220,13 @@ const WorkflowDetailView = (() => {
   let _runHistory = [];
 
   const NODE_TYPES = [
-    { type: 'agent',     label: 'Agent',     icon: '🤖', color: 'var(--accent)' },
+    { type: 'agent',     label: 'Agent',     icon: 'bot', color: 'var(--accent)' },
     { type: 'condition', label: 'Condition',  icon: '❓', color: '#f59e0b' },
     { type: 'branch',    label: 'Branch',     icon: '🔀', color: '#f59e0b' },
-    { type: 'delay',     label: 'Delay',      icon: '⏱️', color: '#6366f1' },
+    { type: 'delay',     label: 'Delay',      icon: 'timer', color: '#6366f1' },
     { type: 'output',    label: 'Output',     icon: '📤', color: '#22c55e' },
-    { type: 'loop',      label: 'Loop',       icon: '🔄', color: '#06b6d4' },
-    { type: 'webhook',   label: 'Webhook',    icon: '🌐', color: '#8b5cf6' },
+    { type: 'loop',      label: 'Loop',       icon: 'repeat', color: '#06b6d4' },
+    { type: 'webhook',   label: 'Webhook',    icon: 'globe', color: '#8b5cf6' },
   ];
 
   const TRIGGER_TYPES = [
@@ -761,7 +761,7 @@ const WorkflowDetailView = (() => {
             if (typeof ActivityFeed !== 'undefined') {
               const ntDef = NODE_TYPES.find(n => n.type === node.type);
               const preview = (res || '').slice(0, 80);
-              ActivityFeed.push(ntDef?.icon || '⚙️', `${node.label}: ${preview || 'done'}`, 'workflow');
+              ActivityFeed.push(ntDef?.icon || 'cog', `${node.label}: ${preview || 'done'}`, 'workflow');
             }
           },
           onError: (node, err) => {

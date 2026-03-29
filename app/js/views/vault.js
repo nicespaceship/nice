@@ -12,24 +12,24 @@ const VaultView = (() => {
   /* ── Model Catalog ──────────────────────────────────────────── */
   const MODEL_CATALOG = [
     // Free tier
-    { id: 'gemini-2.5-flash',    name: 'Gemini 2.5 Flash',   provider: 'Google',    icon: '🔵', tier: 'free',    speed: 'fast',   quality: 'good',    desc: 'Fast & free. Great for most tasks.' },
-    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Lite',  provider: 'Google',    icon: '🔵', tier: 'free',    speed: 'fastest', quality: 'basic',   desc: 'Ultra-fast for simple tasks.' },
+    { id: 'gemini-2.5-flash',    name: 'Gemini 2.5 Flash',   provider: 'Google',    icon: 'circle', tier: 'free',    speed: 'fast',   quality: 'good',    desc: 'Fast & free. Great for most tasks.' },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Lite',  provider: 'Google',    icon: 'circle', tier: 'free',    speed: 'fastest', quality: 'basic',   desc: 'Ultra-fast for simple tasks.' },
     // Premium
-    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'Anthropic', icon: '🟣', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'Best balance of speed and intelligence.' },
-    { id: 'claude-opus-4-6',     name: 'Claude Opus 4',       provider: 'Anthropic', icon: '🟣', tier: 'premium', speed: 'slow',   quality: 'best',    desc: 'Most capable model. Complex reasoning.' },
-    { id: 'gpt-5.2',             name: 'GPT-5.2',             provider: 'OpenAI',    icon: '🟢', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'OpenAI\'s latest flagship model.' },
-    { id: 'gpt-5-mini',          name: 'GPT-5 Mini',          provider: 'OpenAI',    icon: '🟢', tier: 'premium', speed: 'fast',   quality: 'good',    desc: 'Fast and affordable from OpenAI.' },
-    { id: 'gemini-2.5-pro',      name: 'Gemini 2.5 Pro',      provider: 'Google',    icon: '🔵', tier: 'premium', speed: 'medium', quality: 'excellent', desc: 'Google\'s most capable model.' },
+    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'Anthropic', icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'Best balance of speed and intelligence.' },
+    { id: 'claude-opus-4-6',     name: 'Claude Opus 4',       provider: 'Anthropic', icon: 'circle', tier: 'premium', speed: 'slow',   quality: 'best',    desc: 'Most capable model. Complex reasoning.' },
+    { id: 'gpt-5.2',             name: 'GPT-5.2',             provider: 'OpenAI',    icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'OpenAI\'s latest flagship model.' },
+    { id: 'gpt-5-mini',          name: 'GPT-5 Mini',          provider: 'OpenAI',    icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'good',    desc: 'Fast and affordable from OpenAI.' },
+    { id: 'gemini-2.5-pro',      name: 'Gemini 2.5 Pro',      provider: 'Google',    icon: 'circle', tier: 'premium', speed: 'medium', quality: 'excellent', desc: 'Google\'s most capable model.' },
     // Budget
-    { id: 'deepseek-chat',       name: 'DeepSeek V3',         provider: 'DeepSeek',  icon: '🧠', tier: 'budget',  speed: 'fast',   quality: 'good',    desc: 'Powerful open-weight model. Very affordable.' },
-    { id: 'mistral-large-latest', name: 'Mistral Large 3',    provider: 'Mistral',   icon: '🟠', tier: 'budget',  speed: 'fast',   quality: 'good',    desc: 'European AI. Strong multilingual.' },
-    { id: 'grok-4',              name: 'Grok 4',              provider: 'xAI',       icon: '⚪', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'xAI\'s real-time knowledge model.' },
+    { id: 'deepseek-chat',       name: 'DeepSeek V3',         provider: 'DeepSeek',  icon: 'cpu', tier: 'budget',  speed: 'fast',   quality: 'good',    desc: 'Powerful open-weight model. Very affordable.' },
+    { id: 'mistral-large-latest', name: 'Mistral Large 3',    provider: 'Mistral',   icon: 'circle', tier: 'budget',  speed: 'fast',   quality: 'good',    desc: 'European AI. Strong multilingual.' },
+    { id: 'grok-4',              name: 'Grok 4',              provider: 'xAI',       icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'xAI\'s real-time knowledge model.' },
   ];
 
-  const TIER_LABELS = { free: '✦ FREE', premium: '⚡ PREMIUM', budget: '💰 BUDGET' };
+  const TIER_LABELS = { free: 'FREE', premium: 'PREMIUM', budget: 'BUDGET' };
   const TIER_CLASSES = { free: 'tier-free', premium: 'tier-premium', budget: 'tier-budget' };
-  const SPEED_BARS = { fastest: '████░', fast: '███░░', medium: '██░░░', slow: '█░░░░' };
-  const QUALITY_BARS = { best: '████░', excellent: '███░░', good: '██░░░', basic: '█░░░░' };
+  const SPEED_BARS = { fastest: '●●●●○', fast: '●●●○○', medium: '●●○○○', slow: '●○○○○' };
+  const QUALITY_BARS = { best: '●●●●○', excellent: '●●●○○', good: '●●○○○', basic: '●○○○○' };
 
   /* ── Render ─────────────────────────────────────────────────── */
   function render(el) {
@@ -59,7 +59,7 @@ const VaultView = (() => {
         <!-- Free Tier -->
         <div class="vault-section">
           <div class="vault-section-hdr">
-            <h3 class="vault-section-title">✦ Free Models</h3>
+            <h3 class="vault-section-title">Free Models</h3>
             <span class="vault-section-badge free">Always available — no tokens required</span>
           </div>
           <div class="vault-model-grid" id="vault-free-models">
@@ -70,7 +70,7 @@ const VaultView = (() => {
         <!-- Premium Tier -->
         <div class="vault-section">
           <div class="vault-section-hdr">
-            <h3 class="vault-section-title">⚡ Premium Models</h3>
+            <h3 class="vault-section-title">Premium Models</h3>
             <span class="vault-section-badge premium">Uses tokens — best quality</span>
           </div>
           <div class="vault-model-grid" id="vault-premium-models">
@@ -81,7 +81,7 @@ const VaultView = (() => {
         <!-- Budget Tier -->
         <div class="vault-section">
           <div class="vault-section-hdr">
-            <h3 class="vault-section-title">💰 Budget Models</h3>
+            <h3 class="vault-section-title">Budget Models</h3>
             <span class="vault-section-badge budget">Uses tokens — cost-effective</span>
           </div>
           <div class="vault-model-grid" id="vault-budget-models">
@@ -92,7 +92,7 @@ const VaultView = (() => {
         <!-- Stats -->
         <div class="vault-stats">
           <div class="vault-stat">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-stations"/></svg>
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-cpu"/></svg>
             <span class="vault-stat-num">${enabledCount}/${MODEL_CATALOG.length}</span>
             <span class="vault-stat-label">Models Active</span>
           </div>
@@ -118,7 +118,7 @@ const VaultView = (() => {
     return `
       <div class="vault-model-card ${isOn ? 'active' : ''} ${tierClass}" data-model="${model.id}">
         <div class="vault-model-hdr">
-          <span class="vault-model-icon">${model.icon}</span>
+          <span class="vault-model-icon"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" style="color:${model.tier === 'free' ? 'var(--color-success)' : model.tier === 'premium' ? '#a855f7' : '#eab308'}"><use href="#icon-${model.icon}"/></svg></span>
           <div class="vault-model-name-wrap">
             <span class="vault-model-name">${_esc(model.name)}</span>
             <span class="vault-model-provider">${_esc(model.provider)}</span>
@@ -131,8 +131,8 @@ const VaultView = (() => {
         <p class="vault-model-desc">${_esc(model.desc)}</p>
         <div class="vault-model-meta">
           <span class="vault-model-tier ${tierClass}">${tierLabel}</span>
-          <span class="vault-model-speed" title="Speed">⚡ ${SPEED_BARS[model.speed]}</span>
-          <span class="vault-model-quality" title="Quality">🧠 ${QUALITY_BARS[model.quality]}</span>
+          <span class="vault-model-speed" title="Speed">${SPEED_BARS[model.speed]}</span>
+          <span class="vault-model-quality" title="Quality">${QUALITY_BARS[model.quality]}</span>
         </div>
       </div>
     `;

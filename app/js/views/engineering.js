@@ -231,7 +231,7 @@ const EngineeringView = (() => {
         <!-- Editor Area -->
         <div class="ide-editor-area">
           <div class="ide-tab-bar">
-            <button class="ide-mobile-toggle" id="ide-mobile-files">☰ Files</button>
+            <button class="ide-mobile-toggle" id="ide-mobile-files">Files</button>
             <div class="ide-tab-list" id="ide-tab-bar-inner"></div>
           </div>
           <div class="ide-editor-wrap" id="ide-editor-mount"></div>
@@ -243,9 +243,9 @@ const EngineeringView = (() => {
                 <button class="ide-bottom-btn${_bottomMode === 'terminal' ? ' active' : ''}" data-bottom="terminal">Terminal</button>
               </div>
               <div class="ide-viewport-btns" id="ide-viewport-btns" style="${_bottomMode !== 'preview' ? 'display:none' : ''}">
-                <button class="ide-bottom-btn${_viewport === 'desktop' ? ' active' : ''}" data-viewport="desktop" title="Desktop">🖥</button>
-                <button class="ide-bottom-btn${_viewport === 'tablet' ? ' active' : ''}" data-viewport="tablet" title="Tablet">📱</button>
-                <button class="ide-bottom-btn${_viewport === 'mobile' ? ' active' : ''}" data-viewport="mobile" title="Mobile">📱</button>
+                <button class="ide-bottom-btn${_viewport === 'desktop' ? ' active' : ''}" data-viewport="desktop" title="Desktop">D</button>
+                <button class="ide-bottom-btn${_viewport === 'tablet' ? ' active' : ''}" data-viewport="tablet" title="Tablet">T</button>
+                <button class="ide-bottom-btn${_viewport === 'mobile' ? ' active' : ''}" data-viewport="mobile" title="Mobile">M</button>
               </div>
               <button class="ide-bottom-btn" id="ide-clear-term" style="${_bottomMode !== 'terminal' ? 'display:none' : ''}">Clear</button>
             </div>
@@ -322,7 +322,7 @@ const EngineeringView = (() => {
           <div class="ide-tree-item" data-folder="${_esc(n.path)}" data-depth="${depth}">
             ${indent}
             <span class="ide-tree-folder-toggle">▶</span>
-            <span class="ide-tree-icon folder">📁</span>
+            <svg class="icon ide-tree-icon folder" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><use href="#icon-folder"/></svg>
             ${_esc(n.name)}
           </div>
           <div class="ide-tree-children" data-folder-children="${_esc(n.path)}">
@@ -339,8 +339,9 @@ const EngineeringView = (() => {
 
   function _fileIcon(name) {
     const ext = name.split('.').pop().toLowerCase();
-    const map = { html: '🌐', css: '🎨', js: '⚡', ts: '🔷', json: '📋', md: '📝', svg: '🖼' };
-    return map[ext] || '📄';
+    const map = { html: 'globe', css: 'palette', js: 'file-code', ts: 'file-code', json: 'hash', md: 'file-text', svg: 'image' };
+    const iconName = map[ext] || 'file';
+    return `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><use href="#icon-${iconName}"/></svg>`;
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -355,7 +356,7 @@ const EngineeringView = (() => {
       return `<div class="ide-tab${isActive ? ' active' : ''}${t.dirty ? ' dirty' : ''}" data-tab="${_esc(t.path)}">
         <span class="ide-tab-dot"></span>
         <span>${_esc(name)}</span>
-        <button class="ide-tab-close" data-close-tab="${_esc(t.path)}">✕</button>
+        <button class="ide-tab-close" data-close-tab="${_esc(t.path)}" aria-label="Close">×</button>
       </div>`;
     }).join('');
   }

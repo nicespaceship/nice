@@ -68,17 +68,17 @@ const WalletView = (() => {
           <h3 class="wallet-section-title">How Tokens Work</h3>
           <div class="wallet-info-grid">
             <div class="wallet-info-card">
-              <span class="wallet-info-icon">✦</span>
+              <span class="wallet-info-icon"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" style="width:24px;height:24px"><use href="#icon-sparkle"/></svg></span>
               <span class="wallet-info-title">Free Models</span>
               <span class="wallet-info-desc">Gemini Flash is always free. No tokens needed.</span>
             </div>
             <div class="wallet-info-card">
-              <span class="wallet-info-icon">⚡</span>
+              <span class="wallet-info-icon"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" style="width:24px;height:24px"><use href="#icon-zap"/></svg></span>
               <span class="wallet-info-title">Premium Models</span>
               <span class="wallet-info-desc">Claude, GPT-5, and others use tokens from your balance.</span>
             </div>
             <div class="wallet-info-card">
-              <span class="wallet-info-icon">🤖</span>
+              <span class="wallet-info-icon"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" style="width:24px;height:24px"><use href="#icon-bot"/></svg></span>
               <span class="wallet-info-title">NICE Auto</span>
               <span class="wallet-info-desc">Automatically picks the best model. Uses free when possible.</span>
             </div>
@@ -126,7 +126,7 @@ const WalletView = (() => {
         <div class="wallet-tx-list">
           ${data.map(tx => {
             const isCredit = tx.amount > 0;
-            const icon = tx.type === 'purchase' ? '💳' : tx.type === 'free_grant' ? '🎁' : '🤖';
+            const icon = tx.type === 'purchase' ? 'credit-card' : tx.type === 'free_grant' ? 'gift' : 'bot';
             const label = tx.type === 'purchase' ? `Purchased (${tx.metadata?.package || 'tokens'})`
               : tx.type === 'free_grant' ? 'Free tier grant'
               : tx.model ? `Used ${tx.model}` : 'Agent usage';
