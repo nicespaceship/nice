@@ -97,7 +97,7 @@ const EngineeringView = (() => {
           <h3 style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;font-family:var(--font-b)">OR DESCRIBE WHAT YOU WANT</h3>
           <div style="display:flex;gap:8px;">
             <input type="text" id="ide-ai-build-input" placeholder="Build me a portfolio site with a dark theme..." style="flex:1;background:var(--surface, #18181b);color:var(--text);border:1px solid var(--border, #3f3f46);border-radius:10px;padding:12px 16px;font-size:.85rem;font-family:var(--font-b);outline:none;">
-            <button class="btn btn-primary" id="ide-ai-build-btn" style="padding:12px 20px;border-radius:10px;font-size:.85rem;white-space:nowrap;background:var(--accent, #6366f1);color:var(--bg);border:none;cursor:pointer;">Build it →</button>
+            <button class="btn btn-primary btn-lg" id="ide-ai-build-btn">Build it →</button>
           </div>
         </div>
       </div>
