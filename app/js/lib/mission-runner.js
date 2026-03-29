@@ -137,20 +137,22 @@ const MissionRunner = (() => {
         ModelIntel.log(blueprintId, modelUsed, { success: true, speedMs: _simSpeed(modelUsed), costTokens: _simCost(modelUsed) });
       }
       const metadata = Object.assign({}, mission.metadata || {}, result.metadata || {}, { completed_at: now, model_used: modelUsed });
+      // Transition to review (user must approve before it's "completed")
       await SB.db('tasks').update(missionId, {
-        status: 'completed',
+        status: 'review',
         progress: 100,
         result: result.content,
+        approval_status: 'draft',
         metadata,
         updated_at: now,
       });
-      _updateLocalMission(missionId, { status: 'completed', progress: 100, result: result.content, metadata });
+      _updateLocalMission(missionId, { status: 'review', progress: 100, result: result.content, approval_status: 'draft', metadata });
 
-      // Award XP
-      if (typeof Gamification !== 'undefined') Gamification.addXP('complete_mission');
+      // XP awarded on approval, not on generation
+      // (Gamification.addXP('complete_mission') moved to approve action)
 
       // Create notification
-      _notify(user.id, 'mission', 'Mission Complete', mission.title + ' finished successfully.');
+      _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
 
       return result;
 

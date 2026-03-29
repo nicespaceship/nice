@@ -12,6 +12,7 @@ const MissionsView = (() => {
   const STATUS_META = {
     queued:    { label: 'Queued',    color: '#f59e0b', icon: '◷' },
     running:   { label: 'Running',   color: '#6366f1', icon: 'zap' },
+    review:    { label: 'Review',    color: '#a855f7', icon: '◎' },
     completed: { label: 'Completed', color: '#22c55e', icon: 'check' },
     failed:    { label: 'Failed',    color: '#ef4444', icon: 'x' },
   };
@@ -587,7 +588,7 @@ const MissionDetailView = (() => {
       const agentInitials = agentName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
       // Status styling
-      const dotClass = mission.status === 'completed' ? 'dot-g' : mission.status === 'running' ? 'dot-g dot-pulse' : mission.status === 'failed' ? 'dot-r' : 'dot-a';
+      const dotClass = mission.status === 'completed' ? 'dot-g' : mission.status === 'review' ? 'dot-p' : mission.status === 'running' ? 'dot-g dot-pulse' : mission.status === 'failed' ? 'dot-r' : 'dot-a';
       const progress = mission.progress || 0;
       const metadata = mission.metadata || {};
 
@@ -618,6 +619,10 @@ const MissionDetailView = (() => {
             </a>
             ${mission.status === 'queued' && (mission.agent_id || mission.agent_name) ? `
               <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run Mission</button>
+            ` : ''}
+            ${mission.status === 'review' ? `
+              <button class="btn btn-sm btn-primary" id="md-approve" data-id="${id}" style="background:#22c55e;border-color:#22c55e">✓ Approve</button>
+              <button class="btn btn-sm" id="md-reject" data-id="${id}" style="color:#f87171">✕ Reject</button>
             ` : ''}
             ${mission.status === 'failed' && (mission.agent_id || mission.agent_name) ? `
               <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry Mission</button>
@@ -769,6 +774,35 @@ const MissionDetailView = (() => {
           Notify.send({ title: 'Report Link Copied', message: 'Shareable mission report URL copied to clipboard.', type: 'system' });
         }
       }).catch(() => {});
+    });
+
+    // Approve mission (review → completed)
+    document.getElementById('md-approve')?.addEventListener('click', async () => {
+      const now = new Date().toISOString();
+      try {
+        if (typeof SB !== 'undefined' && SB.client) {
+          await SB.client.from('tasks').update({ status: 'completed', approval_status: 'approved', reviewed_at: now }).eq('id', id);
+        }
+      } catch {}
+      // Award XP on approval
+      if (typeof Gamification !== 'undefined') {
+        Gamification.addXP('complete_mission');
+        Gamification.addXP('approve_content');
+      }
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Approved', message: 'Content approved and mission completed!', type: 'success' });
+      _loadMission(el, id);
+    });
+
+    // Reject mission (review → failed)
+    document.getElementById('md-reject')?.addEventListener('click', async () => {
+      const now = new Date().toISOString();
+      try {
+        if (typeof SB !== 'undefined' && SB.client) {
+          await SB.client.from('tasks').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', id);
+        }
+      } catch {}
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Rejected', message: 'Content rejected. You can retry the mission.', type: 'system' });
+      _loadMission(el, id);
     });
 
     // Content actions (approve/edit/reject/copy)
