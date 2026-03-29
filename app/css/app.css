@@ -3881,44 +3881,6 @@
 .tcg-card[data-rarity="epic"],
 .tcg-card-grid[data-rarity="epic"],
 .tcg-card-compact[data-rarity="epic"]      { border-color:#a855f740; box-shadow:0 0 12px rgba(168,85,247,.15); }
-/* Legendary + Mythic colorful card backgrounds */
-@keyframes legendary-bg-shift {
-  0%, 100% { background-position:0% 50%; }
-  50%      { background-position:100% 50%; }
-}
-.tcg-card[data-rarity="legendary"],
-.tcg-card-grid[data-rarity="legendary"] {
-  background:linear-gradient(135deg,
-    rgba(245,158,11,0.08) 0%,
-    rgba(180,83,9,0.12) 25%,
-    rgba(217,119,6,0.06) 50%,
-    rgba(245,158,11,0.1) 75%,
-    rgba(251,191,36,0.06) 100%
-  ), var(--panel-bg);
-  background-size:200% 200%;
-  animation:legendary-bg-shift 8s ease-in-out infinite;
-}
-@keyframes mythic-bg-shift {
-  0%   { background-position:0% 50%; }
-  25%  { background-position:50% 0%; }
-  50%  { background-position:100% 50%; }
-  75%  { background-position:50% 100%; }
-  100% { background-position:0% 50%; }
-}
-.tcg-card[data-rarity="mythic"],
-.tcg-card-grid[data-rarity="mythic"] {
-  background:linear-gradient(135deg,
-    rgba(255,45,85,0.1) 0%,
-    rgba(168,45,255,0.08) 20%,
-    rgba(45,159,255,0.1) 40%,
-    rgba(45,255,107,0.07) 60%,
-    rgba(255,211,45,0.09) 80%,
-    rgba(255,45,85,0.1) 100%
-  ), var(--panel-bg);
-  background-size:300% 300%;
-  animation:mythic-bg-shift 12s ease-in-out infinite;
-}
-
 /* Legendary pulsing gold border */
 @keyframes legendary-border-pulse {
   0%, 100% { border-color:#f59e0b; box-shadow:0 0 12px rgba(245,158,11,.2), 0 0 24px rgba(245,158,11,.08); }
@@ -4095,9 +4057,7 @@
   .tcg-card:hover .tcg-art::after { animation:none !important; }
   .tcg-card[data-rarity="legendary"],
   .tcg-card-grid[data-rarity="legendary"],
-  .tcg-card-compact[data-rarity="legendary"],
-  .tcg-card[data-rarity="mythic"],
-  .tcg-card-grid[data-rarity="mythic"] { animation:none !important; }
+  .tcg-card-compact[data-rarity="legendary"] { animation:none !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
