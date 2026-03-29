@@ -4330,14 +4330,18 @@
 .security-tabs {
   display: inline-flex; gap: 4px;
   padding: 4px;
+  overflow-x: auto; max-width: 100%;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
   background: var(--bg2, #18181b);
   border-radius: var(--radius, 10px);
   border: 1px solid var(--border, #333);
   margin-bottom: 8px;
 }
+.security-tabs::-webkit-scrollbar { display: none; }
 .security-tab {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 18px;
+  white-space: nowrap; flex-shrink: 0;
   background: none; border: none;
   color: var(--text-muted, #888);
   font-family: var(--font-b, Inter, sans-serif);
