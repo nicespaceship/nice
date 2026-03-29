@@ -955,10 +955,15 @@ const MissionDetailView = (() => {
       );
     });
 
-    // Restore videos
+    // Restore videos (check if URL is actually an image)
     videos.forEach((vid, i) => {
+      const isImage = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(vid.url);
+      const mediaHtml = isImage
+        ? `<img src="${vid.url}" alt="Generated content" class="mission-generated-image" loading="lazy"/>`
+        : `<video src="${vid.url}" controls class="mission-generated-image" style="max-height:400px"></video>`;
+      const dlLabel = isImage ? '⬇ Download Image' : '⬇ Download Video';
       processed = processed.replace(`%%VID_${i}%%`,
-        `<div class="mission-image-wrap"><video src="${vid.url}" controls class="mission-generated-image" style="max-height:400px"></video><a href="${vid.url}" target="_blank" rel="noopener" class="mission-image-download" title="Download video">⬇ Download Video</a></div>`
+        `<div class="mission-image-wrap">${mediaHtml}<a href="${vid.url}" target="_blank" rel="noopener" class="mission-image-download" title="${dlLabel}">${dlLabel}</a></div>`
       );
     });
 

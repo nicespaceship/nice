@@ -34,7 +34,7 @@ const ALLOWED_ORIGINS = [
 
 // Token costs for media generation (approximate)
 const COST_MAP: Record<string, number> = {
-  "imagen-3": 0,                // Free tier via Gemini API
+  "imagen-4-fast": 0,            // Free tier via Gemini API
   "veo-2": 0,                   // Free tier via Gemini API
   "dall-e-3-standard": 20000,   // ~$0.04 equivalent in tokens
   "dall-e-3-hd": 40000,         // ~$0.08
@@ -75,14 +75,14 @@ async function deductTokens(userId: string, tokens: number, model: string) {
   } catch { /* fire and forget */ }
 }
 
-/* ── Google Imagen 3 (images) ──────────────────────────────── */
+/* ── Google Imagen 4 Fast (images) ─────────────────────────── */
 
 async function generateImagen(prompt: string, opts: any) {
   const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
 
   const res = await fetch(
-    `${GEMINI_API_URL}/models/imagen-3.0-generate-002:predict?key=${apiKey}`,
+    `${GEMINI_API_URL}/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,7 +116,7 @@ async function generateImagen(prompt: string, opts: any) {
     _base64: prediction.bytesBase64Encoded,
     revised_prompt: prompt,
     provider: "google",
-    model: "imagen-3",
+    model: "imagen-4-fast",
     type: "image",
     size: opts.aspect_ratio || "1:1",
     cost_tokens: COST_MAP["imagen-3"],
