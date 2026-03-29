@@ -281,9 +281,9 @@ const BlueprintsView = (() => {
           <button class="bp-type-tab" data-tab="schematic">Schematic</button>
           <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
           <button class="bp-type-tab" data-tab="missions">Missions</button>
+          <button class="bp-type-tab" data-tab="outbox">Outbox</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
-          <button class="bp-type-tab" data-tab="outbox">Outbox</button>
         </div>
 
         <!-- Blueprints sub-tabs (Spaceships / Agents) -->
@@ -1250,7 +1250,6 @@ const BlueprintsView = (() => {
   }
 
   function _outboxItemDate(item) {
-    // Use scheduled_for from metadata if present, otherwise created_at
     const meta = item.metadata || {};
     return meta.scheduled_for || item.created_at || '';
   }
@@ -1295,7 +1294,6 @@ const BlueprintsView = (() => {
       if (!byDate[key]) byDate[key] = [];
       byDate[key].push(item);
     });
-    // Also put unscheduled items in a bucket
     const unscheduled = filtered.filter(item => !_outboxItemDate(item));
 
     const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -1392,13 +1390,12 @@ const BlueprintsView = (() => {
     const opts = { month: 'short', day: 'numeric' };
     const sStr = s.toLocaleDateString('en', opts);
     const eStr = e.toLocaleDateString('en', { ...opts, year: 'numeric' });
-    return `${sStr} — ${eStr}`;
+    return `${sStr} \u2014 ${eStr}`;
   }
 
-  /* Mini card for calendar grid cells */
   function _renderOutboxCalCard(item, _e) {
     const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
-    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '📝', label: 'Content', color: '#94a3b8' };
+    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '\uD83D\uDCDD', label: 'Content', color: '#94a3b8' };
     const status = item.approval_status || 'draft';
     const content = CQ ? CQ.getContent(item) : (item.result || '');
     const snippet = (content || '').replace(/<[^>]+>/g, '').slice(0, 50);
@@ -1417,11 +1414,10 @@ const BlueprintsView = (() => {
     `;
   }
 
-  /* Full card for list view (preserves original layout) */
   function _renderOutboxListCard(item) {
     const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
     const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
-    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '📝', label: 'Content', color: '#94a3b8' };
+    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '\uD83D\uDCDD', label: 'Content', color: '#94a3b8' };
     const content = CQ ? CQ.getContent(item) : (item.result || '');
     const time = CQ ? CQ.timeAgo(item.created_at) : '';
     const rendered = CQ ? CQ.renderMarkdown(content) : _e(content);
@@ -1450,7 +1446,6 @@ const BlueprintsView = (() => {
     `;
   }
 
-  /* Bind all outbox interaction events */
   function _bindOutboxEvents(el) {
     const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
 
@@ -1510,7 +1505,6 @@ const BlueprintsView = (() => {
         const itemId = e.dataTransfer.getData('text/plain');
         const newDate = col.dataset.date;
         if (!itemId || !newDate) return;
-        // Update item scheduled date in state
         const allItems = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
         const item = allItems.find(i => i.id === itemId);
         if (item) {
@@ -1522,7 +1516,7 @@ const BlueprintsView = (() => {
       });
     });
 
-    // Calendar card click → expand detail in list mode
+    // Calendar card click -> detail overlay
     el.querySelectorAll('.outbox-cal-card').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.defaultPrevented) return;
@@ -1541,24 +1535,24 @@ const BlueprintsView = (() => {
       if (!id) return;
 
       if (e.target.closest('.outbox-approve-btn')) {
-        await ContentQueue.approve(id);
+        if (typeof ContentQueue !== 'undefined') await ContentQueue.approve(id);
         _renderOutbox(el);
       }
       if (e.target.closest('.outbox-reject-btn')) {
-        await ContentQueue.reject(id);
+        if (typeof ContentQueue !== 'undefined') await ContentQueue.reject(id);
         _renderOutbox(el);
       }
       if (e.target.closest('.outbox-copy-btn')) {
-        await ContentQueue.copy(id);
+        if (typeof ContentQueue !== 'undefined') await ContentQueue.copy(id);
       }
       if (e.target.closest('.outbox-edit-btn')) {
         const card = e.target.closest('.outbox-card');
         const preview = card?.querySelector('.outbox-card-preview');
-        const items = State.get('content-queue') || [];
+        const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
         const item = items.find(i => i.id === id);
         if (!preview || !item) return;
 
-        const content = ContentQueue.getContent(item);
+        const content = typeof ContentQueue !== 'undefined' ? ContentQueue.getContent(item) : '';
         preview.innerHTML = `
           <textarea class="outbox-edit-area" id="outbox-edit-${_e(id)}">${_e(content)}</textarea>
           <div class="outbox-edit-actions">
@@ -1569,7 +1563,7 @@ const BlueprintsView = (() => {
       }
       if (e.target.closest('.outbox-save-btn')) {
         const textarea = el.querySelector(`#outbox-edit-${CSS.escape(id)}`);
-        if (textarea) {
+        if (textarea && typeof ContentQueue !== 'undefined') {
           await ContentQueue.edit(id, textarea.value);
           _renderOutbox(el);
         }
@@ -1585,11 +1579,10 @@ const BlueprintsView = (() => {
     });
   }
 
-  /* Detail overlay when clicking a calendar card */
   function _showOutboxCardDetail(parentEl, item) {
     const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
     const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
-    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '📝', label: 'Content', color: '#94a3b8' };
+    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '\uD83D\uDCDD', label: 'Content', color: '#94a3b8' };
     const content = CQ ? CQ.getContent(item) : (item.result || '');
     const rendered = CQ ? CQ.renderMarkdown(content) : _e(content);
     const status = item.approval_status || 'draft';
@@ -1624,17 +1617,17 @@ const BlueprintsView = (() => {
         return;
       }
       if (e.target.closest('.outbox-approve-btn')) {
-        await ContentQueue.approve(item.id);
+        if (typeof ContentQueue !== 'undefined') await ContentQueue.approve(item.id);
         overlay.remove();
         _renderOutbox(parentEl);
       }
       if (e.target.closest('.outbox-reject-btn')) {
-        await ContentQueue.reject(item.id);
+        if (typeof ContentQueue !== 'undefined') await ContentQueue.reject(item.id);
         overlay.remove();
         _renderOutbox(parentEl);
       }
       if (e.target.closest('.outbox-copy-btn')) {
-        await ContentQueue.copy(item.id);
+        if (typeof ContentQueue !== 'undefined') await ContentQueue.copy(item.id);
       }
     });
 
