@@ -126,13 +126,35 @@ const MissionRunner = (() => {
       console.warn('[MissionRunner] Status update failed:', err.message);
     }
 
-    // 5. Build a directive prompt from the mission title
-    const hasMediaTools = agentBp?.config?.tools?.some(t => t.includes('generate-image') || t.includes('generate-video') || t.includes('generate-social'));
+    // 5. Check if this is a direct video/image generation task — bypass LLM entirely
     const hasVideoTool = agentBp?.config?.tools?.some(t => t.includes('generate-video'));
     const taskMentionsVideo = /\b(video|reel|clip|footage)\b/i.test(mission.title);
+
+    if (hasVideoTool && taskMentionsVideo && typeof MediaTools !== 'undefined') {
+      // Direct video generation — don't trust LLM to pick the right tool
+      console.log('[MissionRunner] Direct video generation for:', missionId);
+      _updateLocalMission(missionId, { status: 'running', progress: 20 });
+      try {
+        const videoResult = await MediaTools.generate(mission.title, { type: 'video', aspect_ratio: '9:16', duration: 5 });
+        if (videoResult && videoResult.url) {
+          const resultText = 'Here is your generated video:\n\n[▶ Watch Video](' + videoResult.url + ')\n\n' +
+            '**Model:** ' + (videoResult.model || 'veo-2') + '\n' +
+            '**Duration:** ' + (videoResult.duration || 5) + 's\n' +
+            '**Aspect Ratio:** ' + (videoResult.size || '9:16');
+          _updateLocalMission(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' });
+          SB.db('tasks').update(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' }).catch(() => {});
+          _awardXP('complete_mission', 15, agentBp);
+          return;
+        }
+      } catch (videoErr) {
+        console.warn('[MissionRunner] Direct video generation failed:', videoErr.message, '— falling back to LLM');
+      }
+    }
+
+    // 5b. Build a directive prompt from the mission title
+    const hasMediaTools = agentBp?.config?.tools?.some(t => t.includes('generate-image') || t.includes('generate-video') || t.includes('generate-social'));
     const mediaInstruction = hasMediaTools
-      ? '\n\nIMPORTANT: You MUST use your tools to create the actual media. Do NOT just describe what to create — actually call the tools.' +
-        (hasVideoTool && taskMentionsVideo ? ' The task asks for VIDEO content — you MUST use the generate-video tool (not generate-image). Call generate-video with the prompt.' : ' Create the deliverable, don\'t plan it.')
+      ? '\n\nIMPORTANT: You MUST use your tools to create the actual media. Do NOT just describe what to create — actually call the tools. Create the deliverable, don\'t plan it.'
       : '';
     const missionPrompt = 'Complete the following task thoroughly and provide the deliverable directly.\n\n' +
       'Task: ' + mission.title + '\n' +

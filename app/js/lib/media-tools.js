@@ -136,11 +136,13 @@ const MediaTools = (() => {
     const { data, error } = await SB.functions.invoke('nice-media', {
       body: {
         prompt: opts.prompt,
+        type: opts.type || 'image',
         size: opts.size,
         quality: opts.quality,
         style: opts.style,
         provider: opts.provider,
         aspect_ratio: opts.aspect_ratio,
+        duration: opts.duration,
         store: true,
       },
     });
