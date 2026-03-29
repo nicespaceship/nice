@@ -345,8 +345,9 @@ const SpaceshipsView = (() => {
   }
 
   function _openWizard() {
-    if (typeof SetupWizard !== 'undefined') SetupWizard.open();
-    else console.warn('[Spaceships] SetupWizard not loaded');
+    if (typeof CrewDesigner !== 'undefined') CrewDesigner.open();
+    else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
+    else console.warn('[Spaceships] No wizard available');
   }
 
   function _bindEvents() {

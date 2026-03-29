@@ -38,6 +38,12 @@ const HomeView = (() => {
       render(el);
     });
 
+    // Bind "Build an AI Team" CTA
+    el.querySelector('#home-build-team')?.addEventListener('click', () => {
+      if (typeof CrewDesigner !== 'undefined') CrewDesigner.open();
+      else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
+    });
+
     // Scroll conversation to bottom
     const feed = el.querySelector('#chat-home-feed');
     if (feed) feed.scrollTop = feed.scrollHeight;
@@ -47,6 +53,7 @@ const HomeView = (() => {
     return `
       <div class="chat-home-empty">
         <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
+        <button class="btn cd-btn-primary cd-home-cta" id="home-build-team" style="margin-top:24px;padding:12px 28px;font-size:.9rem;">Build an AI Team</button>
       </div>
     `;
   }
