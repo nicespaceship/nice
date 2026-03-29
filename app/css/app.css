@@ -6448,3 +6448,61 @@ body.preview-active .nice-ai {
   .cd-tool-checks { grid-template-columns:1fr; }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   OUTBOX — Draft & Approve Content Queue
+═══════════════════════════════════════════════════════════════ */
+.outbox-container { max-width:740px; margin:0 auto; padding:0 16px; }
+.outbox-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+.outbox-filters { display:flex; gap:6px; flex-wrap:wrap; }
+.outbox-filter { padding:6px 14px; border-radius:20px; border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #888); font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; cursor:pointer; transition:all .15s; }
+.outbox-filter.active { background:var(--accent, #a5b4fc); color:var(--bg, #000); border-color:var(--accent, #a5b4fc); }
+.outbox-filter:hover:not(.active) { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
+.outbox-badge { font-size:.65rem; opacity:.7; margin-left:2px; }
+.outbox-export-btn { padding:6px 14px; border-radius:var(--radius, 8px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #aaa); font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; cursor:pointer; }
+.outbox-export-btn:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
+
+/* Feed */
+.outbox-feed { display:flex; flex-direction:column; gap:12px; }
+.outbox-card { border-radius:var(--radius, 10px); border:1px solid var(--border, #333); background:var(--bg-alt, #18181b); overflow:hidden; transition:border-color .15s; }
+.outbox-card:hover { border-color:var(--border-hi, #555); }
+.outbox-card.approved { border-left:3px solid #34d399; }
+.outbox-card.rejected { border-left:3px solid #f87171; opacity:.6; }
+.outbox-card-header { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border, #333); font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; }
+.outbox-card-type { font-weight:600; white-space:nowrap; }
+.outbox-card-agent { color:var(--text-muted, #888); }
+.outbox-card-time { color:var(--text-muted, #666); margin-left:auto; font-size:.7rem; }
+.outbox-status-badge { font-size:.65rem; padding:2px 8px; border-radius:10px; font-weight:600; }
+.outbox-status-badge.approved { background:rgba(52,211,153,.12); color:#34d399; }
+.outbox-status-badge.rejected { background:rgba(248,113,113,.12); color:#f87171; }
+.outbox-card-preview { padding:16px; font-family:var(--font-b, Inter, sans-serif); font-size:.88rem; color:var(--text, #fff); line-height:1.6; }
+.outbox-card-preview p { margin:0 0 8px; }
+.outbox-card-preview h2, .outbox-card-preview h3, .outbox-card-preview h4 { margin:12px 0 6px; color:var(--text, #fff); }
+.outbox-card-preview code { background:rgba(255,255,255,.06); padding:1px 4px; border-radius:3px; font-family:var(--font-m, monospace); font-size:.82rem; }
+.outbox-card-preview pre { background:rgba(0,0,0,.3); padding:12px; border-radius:6px; overflow-x:auto; margin:8px 0; }
+.outbox-card-preview ul { margin:4px 0; padding-left:20px; }
+.outbox-card-actions { display:flex; gap:8px; padding:10px 16px; border-top:1px solid var(--border, #333); }
+.outbox-card-actions .btn { padding:5px 12px; border-radius:var(--radius, 6px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #aaa); font-family:var(--font-b, Inter, sans-serif); font-size:.75rem; cursor:pointer; transition:all .15s; }
+.outbox-card-actions .btn:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
+.outbox-approve-btn:hover { border-color:#34d399 !important; color:#34d399 !important; }
+.outbox-reject-btn:hover { border-color:#f87171 !important; color:#f87171 !important; }
+
+/* Edit */
+.outbox-edit-area { width:100%; min-height:120px; padding:12px; border:1px solid var(--accent, #a5b4fc); border-radius:var(--radius, 6px); background:var(--bg, #09090b); color:var(--text, #fff); font-family:var(--font-b, Inter, sans-serif); font-size:.88rem; line-height:1.6; resize:vertical; box-sizing:border-box; }
+.outbox-edit-actions { display:flex; gap:8px; margin-top:8px; }
+.outbox-edit-actions .btn { padding:5px 14px; }
+.outbox-save-btn { background:var(--accent, #a5b4fc) !important; color:var(--bg, #000) !important; border:none !important; }
+
+/* Empty */
+.outbox-empty { text-align:center; padding:60px 20px; }
+.outbox-empty-icon { font-size:2.5rem; margin-bottom:12px; }
+.outbox-empty-title { font-family:var(--font-b, Inter, sans-serif); font-size:1.1rem; font-weight:600; color:var(--text, #fff); margin:0 0 6px; }
+.outbox-empty-sub { font-family:var(--font-b, Inter, sans-serif); font-size:.82rem; color:var(--text-muted, #888); margin:0; }
+
+/* Mobile */
+@media (max-width:640px) {
+  .outbox-container { padding:0 8px; }
+  .outbox-header { flex-direction:column; align-items:stretch; }
+  .outbox-card-header { flex-wrap:wrap; gap:6px; }
+  .outbox-card-actions { flex-wrap:wrap; }
+}
+

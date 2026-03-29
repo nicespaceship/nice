@@ -281,6 +281,7 @@ const BlueprintsView = (() => {
           <button class="bp-type-tab" data-tab="schematic">Schematic</button>
           <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
           <button class="bp-type-tab" data-tab="missions">Missions</button>
+          <button class="bp-type-tab" data-tab="outbox">Outbox</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
         </div>
@@ -1177,7 +1178,7 @@ const BlueprintsView = (() => {
     const loadMore = document.getElementById('bp-load-more');
 
     const subTabs = document.getElementById('bp-sub-tabs');
-    const isLogTab = ['missions', 'operations', 'log'].includes(_activeTab);
+    const isLogTab = ['missions', 'outbox', 'operations', 'log'].includes(_activeTab);
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
@@ -1211,6 +1212,8 @@ const BlueprintsView = (() => {
   function _renderLogTab(el) {
     if (_activeTab === 'missions' && typeof MissionsView !== 'undefined') {
       MissionsView.render(el);
+    } else if (_activeTab === 'outbox') {
+      _renderOutbox(el);
     } else if (_activeTab === 'operations' && typeof AnalyticsView !== 'undefined') {
       AnalyticsView.render(el);
     } else if (_activeTab === 'log' && typeof AuditLogView !== 'undefined') {
@@ -1218,6 +1221,144 @@ const BlueprintsView = (() => {
     } else {
       el.innerHTML = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
     }
+  }
+
+  /* ── Outbox (Draft & Approve Content Queue) ── */
+  function _renderOutbox(el) {
+    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+
+    // Load from ContentQueue if empty
+    if (!items.length && typeof ContentQueue !== 'undefined') {
+      ContentQueue.load().then(() => {
+        const loaded = State.get('content-queue') || [];
+        if (loaded.length) _renderOutbox(el);
+      });
+    }
+
+    const pending = items.filter(i => i.approval_status === 'draft');
+    const approved = items.filter(i => i.approval_status === 'approved');
+    const rejected = items.filter(i => i.approval_status === 'rejected');
+
+    el.innerHTML = `
+      <div class="outbox-container">
+        <div class="outbox-header">
+          <div class="outbox-filters">
+            <button class="outbox-filter active" data-filter="all">All <span class="outbox-badge">${items.length}</span></button>
+            <button class="outbox-filter" data-filter="draft">Pending <span class="outbox-badge">${pending.length}</span></button>
+            <button class="outbox-filter" data-filter="approved">Approved <span class="outbox-badge">${approved.length}</span></button>
+            <button class="outbox-filter" data-filter="rejected">Rejected <span class="outbox-badge">${rejected.length}</span></button>
+          </div>
+          <div class="outbox-actions-top">
+            ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
+          </div>
+        </div>
+        <div class="outbox-feed" id="outbox-feed">
+          ${items.length === 0 ? `
+            <div class="outbox-empty">
+              <p class="outbox-empty-icon">📬</p>
+              <p class="outbox-empty-title">No drafts yet</p>
+              <p class="outbox-empty-sub">Run a mission to generate content. Agent output will appear here for review.</p>
+            </div>
+          ` : items.map(item => _renderOutboxCard(item)).join('')}
+        </div>
+      </div>
+    `;
+
+    // Bind filter clicks
+    el.querySelectorAll('.outbox-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        el.querySelectorAll('.outbox-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        el.querySelectorAll('.outbox-card').forEach(card => {
+          if (filter === 'all') { card.style.display = ''; return; }
+          card.style.display = card.dataset.status === filter ? '' : 'none';
+        });
+      });
+    });
+
+    // Bind card actions (delegated)
+    const feed = el.querySelector('#outbox-feed');
+    if (feed) feed.addEventListener('click', async (e) => {
+      const id = e.target.closest('[data-id]')?.dataset.id;
+      if (!id) return;
+
+      if (e.target.closest('.outbox-approve-btn')) {
+        await ContentQueue.approve(id);
+        _renderOutbox(el);
+      }
+      if (e.target.closest('.outbox-reject-btn')) {
+        await ContentQueue.reject(id);
+        _renderOutbox(el);
+      }
+      if (e.target.closest('.outbox-copy-btn')) {
+        await ContentQueue.copy(id);
+      }
+      if (e.target.closest('.outbox-edit-btn')) {
+        const card = e.target.closest('.outbox-card');
+        const preview = card?.querySelector('.outbox-card-preview');
+        const items = State.get('content-queue') || [];
+        const item = items.find(i => i.id === id);
+        if (!preview || !item) return;
+
+        const content = ContentQueue.getContent(item);
+        preview.innerHTML = `
+          <textarea class="outbox-edit-area" id="outbox-edit-${_e(id)}">${_e(content)}</textarea>
+          <div class="outbox-edit-actions">
+            <button class="btn outbox-save-btn" data-id="${_e(id)}">Save</button>
+            <button class="btn outbox-cancel-btn" data-id="${_e(id)}">Cancel</button>
+          </div>
+        `;
+      }
+      if (e.target.closest('.outbox-save-btn')) {
+        const textarea = el.querySelector(`#outbox-edit-${CSS.escape(id)}`);
+        if (textarea) {
+          await ContentQueue.edit(id, textarea.value);
+          _renderOutbox(el);
+        }
+      }
+      if (e.target.closest('.outbox-cancel-btn')) {
+        _renderOutbox(el);
+      }
+    });
+
+    // Export button
+    el.querySelector('#outbox-export')?.addEventListener('click', () => {
+      if (typeof ContentQueue !== 'undefined') ContentQueue.exportApproved();
+    });
+  }
+
+  function _renderOutboxCard(item) {
+    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
+    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
+    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '📝', label: 'Content', color: '#94a3b8' };
+    const content = CQ ? CQ.getContent(item) : (item.result || '');
+    const time = CQ ? CQ.timeAgo(item.created_at) : '';
+    const rendered = CQ ? CQ.renderMarkdown(content) : _e(content);
+    const status = item.approval_status || 'draft';
+
+    return `
+      <div class="outbox-card ${status}" data-id="${_e(item.id)}" data-status="${status}">
+        <div class="outbox-card-header">
+          <span class="outbox-card-type" style="color:${type.color}">${type.icon} ${_e(type.label)}</span>
+          <span class="outbox-card-agent">${_e(item.agent_name || 'Agent')}</span>
+          <span class="outbox-card-time">${_e(time)}</span>
+          ${status === 'approved' ? '<span class="outbox-status-badge approved">✓ Approved</span>' : ''}
+          ${status === 'rejected' ? '<span class="outbox-status-badge rejected">✕ Rejected</span>' : ''}
+        </div>
+        <div class="outbox-card-preview">${rendered}</div>
+        <div class="outbox-card-actions" data-id="${_e(item.id)}">
+          ${status === 'draft' ? `
+            <button class="btn outbox-approve-btn">✓ Approve</button>
+            <button class="btn outbox-edit-btn">✎ Edit</button>
+            <button class="btn outbox-reject-btn">✕ Reject</button>
+          ` : ''}
+          ${status === 'approved' ? `<button class="btn outbox-edit-btn">✎ Edit</button>` : ''}
+          <button class="btn outbox-copy-btn">📋 Copy</button>
+        </div>
+      </div>
+    `;
   }
 
   function _bindEvents() {
