@@ -14,8 +14,10 @@ const EngineeringView = (() => {
   let _bottomMode = 'preview'; // 'preview' | 'terminal'
   let _terminalLogs = [];
   let _viewport = 'desktop'; // 'desktop' | 'tablet' | 'mobile'
-  let _aiOpen = false;
+  let _aiOpen = true;
   let _bottomHeight = 250;
+  let _aiMessages = [];
+  let _aiSending = false;
 
   /* ── CodeMirror state ── */
   let _cm = null;        // CodeMirror modules
@@ -91,13 +93,37 @@ const EngineeringView = (() => {
             </button>
           </div>
         </div>
+        <div style="width:100%;max-width:600px;margin-top:8px;">
+          <h3 style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;font-family:var(--font-b)">OR DESCRIBE WHAT YOU WANT</h3>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="ide-ai-build-input" placeholder="Build me a portfolio site with a dark theme..." style="flex:1;background:var(--surface, #18181b);color:var(--text);border:1px solid var(--border, #3f3f46);border-radius:10px;padding:12px 16px;font-size:.85rem;font-family:var(--font-b);outline:none;">
+            <button class="btn btn-primary" id="ide-ai-build-btn" style="padding:12px 20px;border-radius:10px;font-size:.85rem;white-space:nowrap;background:var(--accent, #6366f1);color:var(--bg);border:none;cursor:pointer;">Build it →</button>
+          </div>
+        </div>
       </div>
     `;
 
     el.addEventListener('click', _onProjectPickerClick);
+    // Enter key in AI build input
+    const buildInput = document.getElementById('ide-ai-build-input');
+    if (buildInput) {
+      buildInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ide-ai-build-btn')?.click(); }
+      });
+      buildInput.focus();
+    }
   }
 
   function _onProjectPickerClick(e) {
+    // "Build it" button or Enter in AI build input
+    if (e.target.closest('#ide-ai-build-btn')) {
+      const input = document.getElementById('ide-ai-build-input');
+      const desc = input?.value.trim();
+      if (!desc) return;
+      _buildFromDescription(desc);
+      return;
+    }
+
     const tpl = e.target.closest('[data-template]');
     if (tpl) {
       const template = tpl.dataset.template;
@@ -131,6 +157,54 @@ const EngineeringView = (() => {
       }
       _renderIDE(_el);
     }
+  }
+
+  async function _buildFromDescription(description) {
+    // Create a blank project and immediately ask AI to build it
+    const name = description.slice(0, 40).replace(/[^\w\s-]/g, '').trim() || 'AI Project';
+    const id = VirtualFS.createProject(name, 'blank');
+    _activeProject = id;
+    localStorage.setItem('nice-ide-last-project', id);
+    _openTabs = [{ path: 'index.html', dirty: false }];
+    _activeFile = 'index.html';
+    _aiMessages = [];
+    _renderIDE(_el);
+    if (typeof Gamification !== 'undefined') Gamification.addXP('create_project', 20);
+
+    // Send the description to AI
+    _aiMessages.push({ role: 'user', text: `Build this: ${description}. Create all necessary files (index.html, style.css, script.js). Make it look modern, dark-themed, and responsive.`, ts: Date.now() });
+    _aiSending = true;
+    _renderAIMessages();
+
+    try {
+      const systemPrompt = _buildIDESystemPrompt();
+      const history = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Build this: ${description}. Create all necessary files (index.html, style.css, script.js). Make it look modern, dark-themed, and responsive.` }
+      ];
+
+      if (typeof SB !== 'undefined' && SB.client) {
+        const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
+        const res = await fetch(`${supabaseUrl}/functions/v1/llm-proxy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: _getIDEModel(), messages: history, temperature: 0.3, max_tokens: 4096 })
+        });
+        if (!res.ok) throw new Error('LLM call failed');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        _aiMessages.push({ role: 'assistant', text: data.content || '', ts: Date.now() });
+        _autoApplyCodeBlocks(data.content || '');
+      } else {
+        _aiMessages.push({ role: 'assistant', text: 'Sign in to use AI-powered project generation.', ts: Date.now() });
+      }
+    } catch (e) {
+      _aiMessages.push({ role: 'assistant', text: 'Error: ' + e.message, ts: Date.now() });
+    }
+
+    _aiSending = false;
+    _renderAIMessages();
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -195,6 +269,12 @@ const EngineeringView = (() => {
     _loadCodeMirror().then(() => { if (_activeFile) _openFileInEditor(_activeFile); });
     _refreshPreview();
     _attachHandlers(el);
+    _initResizeHandles();
+    _updateIDEContext();
+    _renderAIMessages();
+
+    // Restore layout
+    try { const layout = JSON.parse(localStorage.getItem('nice-ide-layout') || '{}'); if (layout.bottomHeight) _bottomHeight = layout.bottomHeight; } catch {}
 
     // Listen for file changes
     if (typeof State !== 'undefined') {
@@ -503,6 +583,229 @@ const EngineeringView = (() => {
   }
 
   /* ══════════════════════════════════════════════════════════════════
+     AI CHAT PANEL
+  ══════════════════════════════════════════════════════════════════ */
+  function _updateIDEContext() {
+    if (typeof PromptPanel === 'undefined' || !PromptPanel.setContext) return;
+    const files = _activeProject ? VirtualFS.listFiles(_activeProject) : [];
+    const content = _activeFile ? VirtualFS.getFile(_activeProject, _activeFile) || '' : '';
+    PromptPanel.setContext({
+      ide: true,
+      files,
+      activeFile: _activeFile,
+      activeContent: content
+    });
+  }
+
+  function _renderAIMessages() {
+    const container = document.getElementById('ide-ai-messages');
+    if (!container) return;
+    const wasScrolled = container.scrollTop >= container.scrollHeight - container.clientHeight - 20;
+    container.innerHTML = _aiMessages.map((m, i) => {
+      if (m.role === 'user') {
+        return `<div style="margin-bottom:12px;"><div style="font-size:.65rem;color:var(--text-muted);margin-bottom:3px;">You</div><div style="font-size:.8rem;color:var(--text);line-height:1.5;">${_esc(m.text)}</div></div>`;
+      }
+      // Assistant — parse code blocks and add Apply buttons
+      const html = _renderAIResponse(m.text, i);
+      return `<div style="margin-bottom:16px;"><div style="font-size:.65rem;color:var(--accent, #a5b4fc);margin-bottom:3px;">NICE Engineering</div><div style="font-size:.8rem;color:var(--text);line-height:1.6;">${html}</div></div>`;
+    }).join('') + (_aiSending ? '<div style="font-size:.75rem;color:var(--text-muted);"><span class="ide-ai-dots">Thinking</span></div>' : '');
+    if (wasScrolled) container.scrollTop = container.scrollHeight;
+  }
+
+  function _renderAIResponse(text, msgIndex) {
+    if (!text) return '';
+    // Parse fenced code blocks: ```filename or ```language
+    const parts = [];
+    const regex = /```(\S*)\n([\s\S]*?)```/g;
+    let last = 0;
+    let match;
+    let blockIndex = 0;
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > last) {
+        parts.push(_mdBasic(text.slice(last, match.index)));
+      }
+      const label = match[1] || 'code';
+      const code = match[2];
+      // Detect if label is a filename
+      const isFile = /\.\w+$/.test(label);
+      const filename = isFile ? label : null;
+      parts.push(`<div style="position:relative;margin:8px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg2, #111);padding:4px 8px;border-radius:6px 6px 0 0;border:1px solid var(--border);border-bottom:none;">
+          <span style="font-size:.65rem;color:var(--text-muted);font-family:var(--font-m);">${_esc(label)}</span>
+          ${filename ? `<button class="ide-project-btn" data-apply-code="${msgIndex}-${blockIndex}" data-apply-file="${_esc(filename)}" style="font-size:.6rem;padding:2px 8px;">Apply</button>` : ''}
+        </div>
+        <pre style="margin:0;padding:10px 12px;background:var(--bg2, #111);border:1px solid var(--border);border-radius:0 0 6px 6px;overflow-x:auto;font-size:.72rem;line-height:1.5;font-family:var(--font-m);color:var(--text);white-space:pre-wrap;word-break:break-word;">${_esc(code)}</pre>
+      </div>`);
+      blockIndex++;
+      last = match.index + match[0].length;
+    }
+    if (last < text.length) {
+      parts.push(_mdBasic(text.slice(last)));
+    }
+    return parts.join('');
+  }
+
+  function _mdBasic(text) {
+    // Very simple markdown: bold, inline code, line breaks
+    return _esc(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code style="background:var(--bg2);padding:1px 4px;border-radius:3px;font-size:.75rem;">$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function _applyCodeBlock(msgIndex, blockIndex, filename) {
+    const msg = _aiMessages[msgIndex];
+    if (!msg || msg.role !== 'assistant') return;
+    // Extract the code block
+    const regex = /```\S*\n([\s\S]*?)```/g;
+    let match;
+    let idx = 0;
+    while ((match = regex.exec(msg.text)) !== null) {
+      if (idx === blockIndex) {
+        const code = match[1];
+        VirtualFS.setFile(_activeProject, filename, code);
+        // Open the file
+        _openTab(filename);
+        _renderFileTree();
+        if (typeof Notify !== 'undefined') Notify.show(`Applied to ${filename}`, 'success');
+        return;
+      }
+      idx++;
+    }
+  }
+
+  async function _sendAIMessage() {
+    const input = document.getElementById('ide-ai-input');
+    if (!input || _aiSending) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    _aiMessages.push({ role: 'user', text, ts: Date.now() });
+    input.value = '';
+    _aiSending = true;
+    _renderAIMessages();
+
+    _updateIDEContext();
+
+    try {
+      // Build messages for LLM
+      const systemPrompt = _buildIDESystemPrompt();
+      const history = _aiMessages.slice(-20).map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.text
+      }));
+      history.unshift({ role: 'system', content: systemPrompt });
+
+      // Call LLM via edge function
+      if (typeof SB !== 'undefined' && SB.client) {
+        const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
+        const res = await fetch(`${supabaseUrl}/functions/v1/llm-proxy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: _getIDEModel(),
+            messages: history,
+            temperature: 0.3,
+            max_tokens: 4096
+          })
+        });
+
+        if (!res.ok) throw new Error('LLM call failed: ' + res.status);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        _aiMessages.push({ role: 'assistant', text: data.content || 'No response', ts: Date.now() });
+
+        // Auto-apply if response contains code blocks with filenames
+        _autoApplyCodeBlocks(data.content || '');
+      } else {
+        _aiMessages.push({ role: 'assistant', text: 'LLM not available — sign in to use AI coding.', ts: Date.now() });
+      }
+    } catch (e) {
+      console.error('[Engineering AI]', e);
+      _aiMessages.push({ role: 'assistant', text: 'Error: ' + (e.message || 'Unknown error'), ts: Date.now() });
+    }
+
+    _aiSending = false;
+    _renderAIMessages();
+  }
+
+  function _buildIDESystemPrompt() {
+    const files = _activeProject ? VirtualFS.listFiles(_activeProject) : [];
+    const activeContent = _activeFile ? VirtualFS.getFile(_activeProject, _activeFile) || '' : '';
+    // Include all file contents for small projects
+    let fileContents = '';
+    if (files.length <= 10) {
+      fileContents = files.map(f => {
+        const c = VirtualFS.getFile(_activeProject, f) || '';
+        return `--- ${f} ---\n${c.slice(0, 3000)}`;
+      }).join('\n\n');
+    }
+
+    return `You are NICE Engineering — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
+
+RULES:
+- When asked to build, create, or modify something, respond with code.
+- Use fenced code blocks with the FILENAME as the label: \`\`\`index.html, \`\`\`style.css, \`\`\`script.js
+- ALWAYS use the filename (not the language) as the code block label so the Apply button works.
+- Always write COMPLETE file contents, not partial snippets.
+- Keep designs modern, dark-themed (#09090b background, #fafafa text), and responsive.
+- Use vanilla HTML/CSS/JS — no frameworks unless asked.
+- If modifying existing code, output the FULL updated file.
+- Be concise — brief explanation then code. No long preambles.
+- You can create new files by using a new filename in the code block label.
+
+PROJECT FILES: ${files.join(', ') || 'None'}
+ACTIVE FILE: ${_activeFile || 'None'}
+
+CURRENT PROJECT CODE:
+${fileContents || 'No files yet.'}
+
+The user\'s code runs in a live browser preview that auto-refreshes. Generate production-quality code.`;
+  }
+
+  function _getIDEModel() {
+    // Use the model from PromptPanel's selector, or default
+    if (typeof PromptPanel !== 'undefined' && PromptPanel.getContext) {
+      // Try to get selected model from the main panel
+    }
+    // Default to gemini for free users
+    const enabled = typeof State !== 'undefined' ? State.get('enabled_models') : null;
+    if (enabled) {
+      // Prefer Claude for code, then GPT, then Gemini
+      if (enabled['claude-4-sonnet']) return 'claude-4-sonnet';
+      if (enabled['gpt-5.2']) return 'gpt-5.2';
+    }
+    return 'gemini-2.5-flash';
+  }
+
+  function _autoApplyCodeBlocks(text) {
+    // Auto-apply code blocks that have filename labels
+    const regex = /```(\S+)\n([\s\S]*?)```/g;
+    let match;
+    let applied = 0;
+    while ((match = regex.exec(text)) !== null) {
+      const label = match[1];
+      const code = match[2];
+      if (/\.\w+$/.test(label)) {
+        VirtualFS.setFile(_activeProject, label, code);
+        applied++;
+        // Open tab if not already open
+        if (!_openTabs.find(t => t.path === label)) {
+          _openTabs.push({ path: label, dirty: false });
+        }
+      }
+    }
+    if (applied > 0) {
+      _renderFileTree();
+      _renderTabs();
+      // Reopen active file to refresh editor
+      if (_activeFile) _openFileInEditor(_activeFile);
+      if (typeof Notify !== 'undefined') Notify.show(`Applied ${applied} file${applied > 1 ? 's' : ''}`, 'success');
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
      CONTEXT MENU
   ══════════════════════════════════════════════════════════════════ */
   function _showContextMenu(x, y, items) {
@@ -613,6 +916,21 @@ const EngineeringView = (() => {
       return;
     }
 
+    // AI send button
+    if (e.target.closest('#ide-ai-send')) {
+      _sendAIMessage();
+      return;
+    }
+
+    // Apply code block
+    const applyBtn = e.target.closest('[data-apply-code]');
+    if (applyBtn) {
+      const [msgIdx, blockIdx] = applyBtn.dataset.applyCode.split('-').map(Number);
+      const filename = applyBtn.dataset.applyFile;
+      _applyCodeBlock(msgIdx, blockIdx, filename);
+      return;
+    }
+
     // Context menu action
     const ctxAction = e.target.closest('[data-action]');
     if (ctxAction) {
@@ -698,6 +1016,12 @@ const EngineeringView = (() => {
   }
 
   function _onKeydown(e) {
+    // Enter in AI input — send message
+    if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'ide-ai-input') {
+      e.preventDefault();
+      _sendAIMessage();
+      return;
+    }
     // Cmd+S — save current file
     if ((e.metaKey || e.ctrlKey) && e.key === 's') {
       e.preventDefault();
@@ -760,6 +1084,37 @@ const EngineeringView = (() => {
   }
 
   /* ══════════════════════════════════════════════════════════════════
+     RESIZE HANDLES
+  ══════════════════════════════════════════════════════════════════ */
+  function _initResizeHandles() {
+    const resizeBottom = document.getElementById('ide-resize-bottom');
+    if (resizeBottom) {
+      let startY, startH;
+      resizeBottom.addEventListener('mousedown', e => {
+        e.preventDefault();
+        startY = e.clientY;
+        const panel = document.getElementById('ide-bottom-panel');
+        startH = panel ? panel.offsetHeight : _bottomHeight;
+        resizeBottom.classList.add('dragging');
+        const onMove = ev => {
+          const delta = startY - ev.clientY;
+          const newH = Math.max(80, Math.min(window.innerHeight - 200, startH + delta));
+          _bottomHeight = newH;
+          if (panel) panel.style.height = newH + 'px';
+        };
+        const onUp = () => {
+          resizeBottom.classList.remove('dragging');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          localStorage.setItem('nice-ide-layout', JSON.stringify({ bottomHeight: _bottomHeight }));
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
      CLEANUP
   ══════════════════════════════════════════════════════════════════ */
   function destroy() {
@@ -768,6 +1123,7 @@ const EngineeringView = (() => {
     clearTimeout(_previewTimer);
     window.removeEventListener('message', _onIframeMessage);
     document.removeEventListener('keydown', _onKeydown);
+    if (typeof PromptPanel !== 'undefined' && PromptPanel.setContext) PromptPanel.setContext(null);
     if (typeof State !== 'undefined') State.destroyScoped();
     _el = null;
   }

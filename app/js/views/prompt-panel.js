@@ -1113,6 +1113,29 @@ const PromptPanel = (() => {
         : '  ' + s.name + ' (' + (s.slots || 2) + ' agent slots)' + descPart;
     }).join('\n');
 
+    // IDE mode — completely different system prompt for code generation
+    if (_ideContext && _ideContext.ide) {
+      const files = _ideContext.files || [];
+      const activeFile = _ideContext.activeFile || '';
+      const activeContent = _ideContext.activeContent || '';
+      return `You are NICE Engineering — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
+
+RULES:
+- When the user asks you to build, create, or modify something, respond with code.
+- Use fenced code blocks with the filename as the language label: \`\`\`index.html, \`\`\`style.css, \`\`\`script.js
+- Always write complete file contents, not partial snippets.
+- Keep designs modern, dark-themed, and responsive by default.
+- Use vanilla HTML/CSS/JS — no frameworks unless asked.
+- If modifying existing code, output the FULL updated file.
+- Be concise — brief explanation then code. No long preambles.
+
+PROJECT FILES: ${files.join(', ') || 'None'}
+ACTIVE FILE: ${activeFile || 'None'}
+${activeContent ? 'ACTIVE FILE CONTENT:\n```\n' + activeContent.slice(0, 4000) + '\n```' : ''}
+
+The user's code runs in a browser preview. Generate production-quality code.`;
+    }
+
     return `You are NICE, the AI mission control assistant for Nice Spaceship — an Agentic Intelligence platform that helps businesses automate their operations with AI agent fleets.
 
 PERSONALITY: Friendly, knowledgeable, consultative. Speak with a subtle space/sci-fi flair (mission, fleet, deploy). Keep responses concise (2-4 sentences max) for voice conversation flow.
@@ -2454,5 +2477,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
   }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute };
+  /* ── IDE Context injection ── */
+  let _ideContext = null;
+  function setContext(ctx) { _ideContext = ctx; }
+  function getContext() { return _ideContext; }
+
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext };
 })();

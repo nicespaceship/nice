@@ -118,6 +118,7 @@ loadScriptGlobal('lib/data-io.js');
 loadScriptGlobal('lib/command-palette.js');
 loadScriptGlobal('lib/prompt-builder.js');
 loadScriptGlobal('lib/mission-router.js');
+loadScriptGlobal('lib/virtual-fs.js');
 
 // Reset helper
 beforeEach(() => {
