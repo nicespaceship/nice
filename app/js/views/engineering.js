@@ -225,9 +225,15 @@ const EngineeringView = (() => {
           <div class="ide-tree-scroll" id="ide-tree-scroll"></div>
         </div>
 
+        <!-- Mobile backdrop -->
+        <div class="ide-mobile-backdrop" id="ide-mobile-backdrop"></div>
+
         <!-- Editor Area -->
         <div class="ide-editor-area">
-          <div class="ide-tab-bar" id="ide-tab-bar"></div>
+          <div class="ide-tab-bar">
+            <button class="ide-mobile-toggle" id="ide-mobile-files">☰ Files</button>
+            <div class="ide-tab-list" id="ide-tab-bar-inner"></div>
+          </div>
           <div class="ide-editor-wrap" id="ide-editor-mount"></div>
           <div class="ide-resize-v" id="ide-resize-bottom"></div>
           <div class="ide-bottom-panel" id="ide-bottom-panel" style="height:${_bottomHeight}px">
@@ -341,7 +347,7 @@ const EngineeringView = (() => {
      TABS
   ══════════════════════════════════════════════════════════════════ */
   function _renderTabs() {
-    const bar = document.getElementById('ide-tab-bar');
+    const bar = document.getElementById('ide-tab-bar-inner');
     if (!bar) return;
     bar.innerHTML = _openTabs.map(t => {
       const name = t.path.split('/').pop();
@@ -363,6 +369,11 @@ const EngineeringView = (() => {
     _openFileInEditor(path);
     _updateStatus();
     _highlightTreeItem(path);
+    // Close mobile file drawer
+    const tree = document.getElementById('ide-file-tree');
+    const backdrop = document.getElementById('ide-mobile-backdrop');
+    if (tree) tree.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('visible');
   }
 
   function _closeTab(path) {
@@ -906,6 +917,24 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
       _aiOpen = !_aiOpen;
       const layout = _el.querySelector('.ide-layout');
       if (layout) layout.classList.toggle('ide-ai-open', _aiOpen);
+      return;
+    }
+
+    // Mobile file toggle
+    if (e.target.closest('#ide-mobile-files')) {
+      const tree = document.getElementById('ide-file-tree');
+      const backdrop = document.getElementById('ide-mobile-backdrop');
+      if (tree) tree.classList.toggle('mobile-open');
+      if (backdrop) backdrop.classList.toggle('visible');
+      return;
+    }
+
+    // Mobile backdrop click — close file tree
+    if (e.target.closest('#ide-mobile-backdrop')) {
+      const tree = document.getElementById('ide-file-tree');
+      const backdrop = document.getElementById('ide-mobile-backdrop');
+      if (tree) tree.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('visible');
       return;
     }
 

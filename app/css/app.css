@@ -5967,11 +5967,16 @@ body.preview-active .nice-ai {
   align-items:stretch;
   background:var(--bg, #09090b);
   border-bottom:1px solid var(--border, #3f3f46);
-  overflow-x:auto;
   flex-shrink:0;
+}
+.ide-tab-list {
+  display:flex;
+  align-items:stretch;
+  overflow-x:auto;
+  flex:1;
   scrollbar-width:none;
 }
-.ide-tab-bar::-webkit-scrollbar { display:none; }
+.ide-tab-list::-webkit-scrollbar { display:none; }
 .ide-tab {
   display:flex;
   align-items:center;
@@ -6264,13 +6269,51 @@ body.preview-active .nice-ai {
 .ide-template-card h3 { font-size:.85rem; margin-bottom:4px; color:var(--text, #fafafa); }
 .ide-template-card p { font-size:.7rem; color:var(--text-muted, #a1a1aa); }
 
+/* ── Mobile file toggle button ── */
+.ide-mobile-toggle {
+  display:none;
+  background:var(--surface, #18181b);
+  border:1px solid var(--border, #3f3f46);
+  color:var(--text-muted, #a1a1aa);
+  border-radius:var(--radius);
+  padding:6px 12px;
+  font-size:.7rem;
+  font-family:var(--font-b);
+  cursor:pointer;
+  align-items:center;
+  gap:4px;
+}
+
+/* ── Mobile overlay backdrop ── */
+.ide-mobile-backdrop {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  z-index:99;
+}
+.ide-mobile-backdrop.visible { display:block; }
+
 /* ── Responsive ── */
 @media (max-width:768px) {
-  .ide-layout { grid-template-columns:1fr; }
+  .ide-layout { grid-template-columns:1fr; height:calc(100vh - 60px); }
   .ide-layout.ide-ai-open { grid-template-columns:1fr; }
-  .ide-file-tree { display:none; }
-  .ide-file-tree.mobile-open { display:flex; position:fixed; left:0; top:60px; bottom:0; width:260px; z-index:100; box-shadow:8px 0 24px rgba(0,0,0,.5); }
+  .ide-file-tree {
+    display:none;
+    position:fixed; left:0; top:0; bottom:0; width:280px;
+    z-index:100;
+    box-shadow:8px 0 24px rgba(0,0,0,.5);
+    background:var(--bg, #09090b);
+  }
+  .ide-file-tree.mobile-open { display:flex; }
   .ide-ai-panel { display:none; }
-  .ide-status-bar { font-size:.6rem; gap:8px; }
+  .ide-mobile-toggle { display:inline-flex; }
+  .ide-status-bar { font-size:.6rem; gap:6px; padding:3px 8px; }
+  .ide-tab { padding:6px 10px; font-size:.65rem; }
+  .ide-bottom-panel { height:180px !important; }
+  .ide-new-project { padding:20px 16px; }
+  .ide-template-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .ide-template-card { padding:14px 10px; }
+  .ide-new-project h2 { font-size:1rem; }
 }
 
