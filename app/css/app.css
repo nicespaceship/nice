@@ -2637,7 +2637,7 @@
 
 @media (max-width:768px) {
   /* username and badge always visible in sidebar drawer */
-  .nice-ai { max-width:100%; padding:0 8px 12px; left:50%; width:100%; }
+  .nice-ai { max-width:100%; padding:0 8px 12px; left:0; right:0; width:auto; transform:none; }
   .nice-ai-input-container { border-radius:var(--radius); }
   .nice-monitor-inner { padding:16px 12px 120px; }
 }
@@ -4019,8 +4019,7 @@
   /* Profile page: stack avatar and info */
   .profile-header { flex-direction: column; align-items: center; text-align: center; }
 
-  /* Prompt panel: full-width on mobile */
-  .nice-ai { left: 0; right: 0; margin: 0 8px 8px 8px; }
+  /* Prompt panel: handled in main 768px block above */
 
   /* Agent detail: stack sections */
   .agent-detail-grid { grid-template-columns: 1fr; }
