@@ -1257,7 +1257,7 @@
 
 /* Horizontal cycle 1 — travels right */
 [data-theme="navigator"] body::before {
-  content:''; position:fixed; bottom:22%; left:-8%;
+  content:''; position:fixed; bottom:5%; left:-8%;
   width:6px; height:2px;
   background:#00e5ff;
   box-shadow:
@@ -1273,7 +1273,7 @@
 }
 /* Horizontal cycle 2 — travels left */
 [data-theme="navigator"] body::after {
-  content:''; position:fixed; bottom:10%; right:-8%;
+  content:''; position:fixed; bottom:1%; right:-8%;
   width:5px; height:2px;
   background:rgba(0,229,255,0.9);
   box-shadow:
