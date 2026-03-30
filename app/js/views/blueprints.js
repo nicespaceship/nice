@@ -280,7 +280,6 @@ const BlueprintsView = (() => {
           <button class="bp-type-tab" data-tab="outbox">Outbox</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
-          <button class="bp-type-tab" data-tab="game" id="bp-tab-game" style="display:none">Light Cycle</button>
         </div>
 
         <!-- Blueprints sub-tabs (Spaceships / Agents) -->
@@ -295,8 +294,6 @@ const BlueprintsView = (() => {
         <!-- Schematic content (rendered by DockView when active) -->
         <div id="bp-schematic-content" style="display:none"></div>
 
-        <!-- TRON Game (The Grid theme only) -->
-        <div id="bp-game-content" style="display:none"></div>
 
 
         <div class="bp-search-row">
@@ -1181,7 +1178,6 @@ const BlueprintsView = (() => {
     const isLogTab = ['missions', 'outbox', 'operations', 'log'].includes(_activeTab);
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
-    const isGame = _activeTab === 'game';
 
     // Sub-tabs (Spaceships/Agents) — only show when Blueprints tab active
     if (subTabs) subTabs.style.display = isBlueprintsTab ? '' : 'none';
@@ -1209,16 +1205,6 @@ const BlueprintsView = (() => {
       }
     }
 
-    // TRON Game (The Grid theme only)
-    const gameEl = document.getElementById('bp-game-content');
-    if (gameEl) {
-      gameEl.style.display = isGame ? '' : 'none';
-      if (isGame && typeof TronGameView !== 'undefined') {
-        TronGameView.render(gameEl);
-      } else if (!isGame && typeof TronGameView !== 'undefined' && TronGameView.destroy) {
-        TronGameView.destroy();
-      }
-    }
   }
 
   function _renderLogTab(el) {
@@ -1647,29 +1633,6 @@ const BlueprintsView = (() => {
   }
 
   function _bindEvents() {
-    // Show/hide Game tab based on theme (The Grid only)
-    const gameTab = document.getElementById('bp-tab-game');
-    function _syncGameTab() {
-      if (!gameTab) return;
-      const isGrid = (typeof Theme !== 'undefined' && Theme.current() === 'navigator')
-        || document.documentElement.getAttribute('data-theme') === 'navigator';
-      gameTab.style.display = isGrid ? '' : 'none';
-      // If switching away from The Grid while on game tab, switch to schematic
-      if (!isGrid && _activeTab === 'game') {
-        _activeTab = 'schematic';
-        document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
-        document.querySelector('[data-tab="schematic"]')?.classList.add('active');
-        _toggleSchematicView();
-      }
-    }
-    _syncGameTab();
-    if (typeof State !== 'undefined') {
-      State.on('skin', _syncGameTab); // legacy
-    }
-    // Watch for theme changes via attribute observer
-    const _themeObs = new MutationObserver(_syncGameTab);
-    _themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
     // Scroll-end detection for tab fade hint
     const tabBar = document.getElementById('bp-type-tabs');
     if (tabBar) {

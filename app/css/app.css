@@ -3978,59 +3978,6 @@
   .mc-schematic-hud { min-height:100px; }
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   TRON LIGHT CYCLE GAME
-═══════════════════════════════════════════════════════════════════ */
-.tron-game-wrap {
-  display:flex; flex-direction:column; align-items:center; gap:12px;
-  padding:8px 0;
-}
-.tron-game-hud {
-  display:flex; align-items:center; gap:8px;
-  font-family:'Orbitron', var(--font-h), sans-serif;
-  font-size:.7rem; letter-spacing:.12em; text-transform:uppercase;
-  color:rgba(0,229,255,0.6);
-}
-.tron-hud-value { color:#00e5ff; font-weight:700; font-size:.85rem; }
-.tron-hud-sep { color:rgba(0,229,255,0.2); }
-.tron-game-arena {
-  position:relative; width:100%; max-width:500px; aspect-ratio:1;
-  border:1px solid rgba(0,229,255,0.2);
-  background:#010509;
-  box-shadow:0 0 20px rgba(0,229,255,0.05), inset 0 0 30px rgba(0,229,255,0.02);
-}
-#tron-canvas { display:block; margin:0 auto; }
-.tron-overlay, .tron-gameover {
-  position:absolute; inset:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:12px;
-  background:rgba(1,5,9,0.85); z-index:5;
-}
-.tron-overlay-title, .tron-go-title {
-  font-family:'Orbitron', var(--font-h), sans-serif;
-  font-size:1.6rem; font-weight:700; letter-spacing:.2em;
-  color:#00e5ff;
-  text-shadow:0 0 20px rgba(0,229,255,0.5), 0 0 40px rgba(0,229,255,0.2);
-}
-.tron-overlay-sub {
-  font-family:var(--font-b); font-size:.7rem; color:rgba(0,229,255,0.5);
-  letter-spacing:.1em;
-}
-.tron-go-score {
-  font-family:'Orbitron', var(--font-h), sans-serif;
-  font-size:.9rem; color:rgba(0,229,255,0.7); letter-spacing:.1em;
-}
-.tron-start-btn {
-  margin-top:8px; padding:10px 28px;
-  background:rgba(0,229,255,0.1); border:1px solid #00e5ff;
-  color:#00e5ff; font-family:'Orbitron', var(--font-h), sans-serif;
-  font-size:.7rem; font-weight:700; letter-spacing:.15em;
-  text-transform:uppercase; cursor:pointer;
-  transition:all .2s;
-}
-.tron-start-btn:hover {
-  background:rgba(0,229,255,0.2);
-  box-shadow:0 0 15px rgba(0,229,255,0.3);
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    MOBILE RESPONSIVE — Tabs, Cards, Panels
