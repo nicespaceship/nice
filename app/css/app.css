@@ -4148,7 +4148,6 @@
 .tcg-card[data-rarity="mythic"],
 .tcg-card-grid[data-rarity="mythic"],
 .tcg-card-compact[data-rarity="mythic"] {
-  border-width:3px;
   animation: mythic-rgb-border 6s linear infinite;
 }
 /* Mythic badge — applied directly via class (no inline style conflict) */
@@ -4333,7 +4332,7 @@
 .computing-inv-card[data-rarity="Rare"]     { border-color:var(--color-info)40; }
 .computing-inv-card[data-rarity="Epic"]     { border-color:#a855f740; }
 .computing-inv-card[data-rarity="Legendary"]{ border-color:var(--color-warning)40; }
-.computing-inv-card[data-rarity="Mythic"]   { animation: mythic-rgb-border 6s linear infinite; border-width:2px; }
+.computing-inv-card[data-rarity="Mythic"]   { animation: mythic-rgb-border 6s linear infinite; }
 .computing-inv-card[data-rarity="Common"]:hover   { border-color:#94a3b8; }
 .computing-inv-card[data-rarity="Rare"]:hover     { border-color:var(--color-info); }
 .computing-inv-card[data-rarity="Epic"]:hover     { border-color:#a855f7; }
