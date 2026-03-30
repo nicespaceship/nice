@@ -1241,7 +1241,7 @@
   animation:tron-disc-spin 8s linear infinite reverse;
 }
 
-/* ── 2. Lightcycles — circles with trailing light ribbons ── */
+/* ── 2. Lightcycles — circles traveling ON the grid lines ── */
 @keyframes tron-cycle-1 {
   0%   { left:-8%; opacity:0; }
   5%   { opacity:1; }
@@ -1254,35 +1254,37 @@
   95%  { opacity:1; }
   100% { right:108%; opacity:0; }
 }
-/* Lightcycle 1 — travels right across upper grid */
+/* Lightcycle 1 — travels right on a grid line (bottom 25%) */
 [data-theme="navigator"] body::before {
-  content:''; position:fixed; top:58%; left:-8%;
-  width:8px; height:8px; border-radius:50%;
+  content:''; position:fixed; bottom:22%; left:-8%;
+  width:6px; height:2px;
   background:#00e5ff;
   box-shadow:
-    0 0 8px #00e5ff, 0 0 20px rgba(0,229,255,0.5),
-    /* Trail ribbon — long gradient behind the circle */
-    -20px 0 6px rgba(0,229,255,0.4),
-    -40px 0 8px rgba(0,229,255,0.3),
-    -70px 0 10px rgba(0,229,255,0.2),
-    -110px 0 12px rgba(0,229,255,0.1),
-    -160px 0 14px rgba(0,229,255,0.05);
+    0 0 6px #00e5ff, 0 0 14px rgba(0,229,255,0.6),
+    /* Light trail ribbon behind the cycle */
+    -12px 0 4px rgba(0,229,255,0.5),
+    -28px 0 6px rgba(0,229,255,0.4),
+    -50px 0 8px rgba(0,229,255,0.3),
+    -80px 0 10px rgba(0,229,255,0.2),
+    -120px 0 12px rgba(0,229,255,0.1),
+    -170px 0 14px rgba(0,229,255,0.05);
   pointer-events:none; z-index:1;
-  animation:tron-cycle-1 10s linear infinite;
+  animation:tron-cycle-1 9s linear infinite;
 }
-/* Lightcycle 2 — travels left across lower grid */
+/* Lightcycle 2 — travels left on a lower grid line (bottom 12%) */
 [data-theme="navigator"] body::after {
-  content:''; position:fixed; top:68%; right:-8%;
-  width:6px; height:6px; border-radius:50%;
-  background:rgba(0,229,255,0.8);
+  content:''; position:fixed; bottom:10%; right:-8%;
+  width:5px; height:2px;
+  background:rgba(0,229,255,0.9);
   box-shadow:
-    0 0 6px rgba(0,229,255,0.6), 0 0 14px rgba(0,229,255,0.3),
-    20px 0 5px rgba(0,229,255,0.3),
-    45px 0 7px rgba(0,229,255,0.2),
-    80px 0 9px rgba(0,229,255,0.1),
-    120px 0 11px rgba(0,229,255,0.05);
+    0 0 5px rgba(0,229,255,0.7), 0 0 12px rgba(0,229,255,0.4),
+    12px 0 4px rgba(0,229,255,0.4),
+    28px 0 6px rgba(0,229,255,0.3),
+    50px 0 8px rgba(0,229,255,0.2),
+    80px 0 10px rgba(0,229,255,0.1),
+    120px 0 12px rgba(0,229,255,0.05);
   pointer-events:none; z-index:1;
-  animation:tron-cycle-2 14s linear infinite 4s;
+  animation:tron-cycle-2 13s linear infinite 3s;
 }
 
 /* ── 3. Grid handled by .app-sidebar-overlay rule above (perspective floor) ── */
