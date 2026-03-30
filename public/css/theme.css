@@ -37,7 +37,6 @@
   --panel-bg:     rgba(24,24,27,0.75);
   --hero-grad:    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(224,231,255,0.04) 0%, transparent 70%);
   --bg-pattern:   radial-gradient(circle, rgba(165,180,252,0.06) 1px, transparent 1px);
-  --scan:         0;
 }
 
 /* Robotech — light day mode, exact inversion of spaceship */

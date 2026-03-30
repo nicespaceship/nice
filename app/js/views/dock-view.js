@@ -88,7 +88,7 @@ const DockView = (() => {
       const shipClass = typeof Gamification !== 'undefined' ? Gamification.getSpaceshipClass(classId) : null;
       const className = shipClass ? shipClass.name : classId;
       const slotCount = shipClass ? shipClass.slots.length : 2;
-      const state = BlueprintStore.getShipState(ship.id);
+      const state = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getShipState) ? BlueprintStore.getShipState(ship.id) : null;
       const filledSlots = state?.agent_ids?.length || 0;
       const status = state?.status || 'standby';
       const statusColor = status === 'deployed' ? '#22c55e' : status === 'docked' ? '#f59e0b' : 'var(--text-muted)';
