@@ -648,6 +648,151 @@ const SpaceshipDetailView = (() => {
   let _draggedAgentId = null;
   let _draggedAgentRarity = null;
 
+  /* ── Behaviors settings panel ── */
+  function _renderBehaviorsPanel(shipId) {
+    if (typeof ShipBehaviors === 'undefined') return '';
+    const b = ShipBehaviors.getBehaviors(shipId);
+
+    const modeOptions = [
+      { value: 'review', label: 'Review Mode', desc: 'All output goes to Outbox for approval' },
+      { value: 'autonomous', label: 'Autonomous', desc: 'Agent runs freely, no approval needed' },
+      { value: 'draft', label: 'Draft Mode', desc: 'Creates drafts but never auto-publishes' },
+    ].map(opt =>
+      `<label class="behavior-radio ${b.approvalMode === opt.value ? 'active' : ''}">
+        <input type="radio" name="sb-approval-${Utils.esc(shipId)}" value="${opt.value}" ${b.approvalMode === opt.value ? 'checked' : ''}>
+        <span class="behavior-radio-label">${opt.label}</span>
+        <span class="behavior-radio-desc">${opt.desc}</span>
+      </label>`
+    ).join('');
+
+    const budgetK = b.dailyBudget ? Math.round(b.dailyBudget / 1000) : '';
+    const usedK   = b.budgetUsedToday ? Math.round(b.budgetUsedToday / 1000) : 0;
+    const budgetPct = b.dailyBudget ? Math.min(100, Math.round((b.budgetUsedToday / b.dailyBudget) * 100)) : 0;
+
+    return `
+      <div class="detail-section ship-behaviors-panel" data-ship-id="${Utils.esc(shipId)}">
+        <h3 class="detail-section-title">⚙️ Ship Behaviors</h3>
+
+        <div class="behavior-group">
+          <div class="behavior-group-label">Approval Mode</div>
+          <div class="behavior-radios">${modeOptions}</div>
+        </div>
+
+        <div class="behavior-group behavior-toggles">
+          <label class="behavior-toggle">
+            <span class="behavior-toggle-text">Auto-run missions on schedule</span>
+            <input type="checkbox" class="behavior-cb" data-key="autoRun" ${b.autoRun ? 'checked' : ''}>
+            <span class="behavior-toggle-track"></span>
+          </label>
+          <label class="behavior-toggle">
+            <span class="behavior-toggle-text">Notify on mission complete</span>
+            <input type="checkbox" class="behavior-cb" data-key="notifyOnComplete" ${b.notifyOnComplete ? 'checked' : ''}>
+            <span class="behavior-toggle-track"></span>
+          </label>
+          <label class="behavior-toggle">
+            <span class="behavior-toggle-text">Notify on mission failure</span>
+            <input type="checkbox" class="behavior-cb" data-key="notifyOnFail" ${b.notifyOnFail ? 'checked' : ''}>
+            <span class="behavior-toggle-track"></span>
+          </label>
+        </div>
+
+        <div class="behavior-group">
+          <div class="behavior-group-label">Daily Token Budget
+            <span class="behavior-hint">0 = unlimited</span>
+          </div>
+          <div class="behavior-budget-row">
+            <input type="number" class="behavior-input" id="sb-budget-${Utils.esc(shipId)}"
+              placeholder="0" min="0" step="1000" value="${b.dailyBudget || ''}">
+            <span class="behavior-budget-unit">tokens / day</span>
+            <button class="behavior-save-btn" data-key="dailyBudget" data-input="sb-budget-${Utils.esc(shipId)}">Save</button>
+          </div>
+          ${b.dailyBudget ? `
+          <div class="behavior-budget-bar">
+            <div class="behavior-budget-fill" style="width:${budgetPct}%"></div>
+          </div>
+          <div class="behavior-budget-meta">${usedK}K of ${budgetK}K used today (${budgetPct}%)</div>` : ''}
+        </div>
+
+        <div class="behavior-group">
+          <div class="behavior-group-label">Max Concurrent Missions</div>
+          <div class="behavior-budget-row">
+            <input type="number" class="behavior-input" id="sb-concurrent-${Utils.esc(shipId)}"
+              placeholder="3" min="1" max="10" value="${b.maxConcurrent || 3}">
+            <button class="behavior-save-btn" data-key="maxConcurrent" data-input="sb-concurrent-${Utils.esc(shipId)}">Save</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ── Dashboard panel renderer ── */
+  async function _renderDashboard(shipId, memberIds, allMissions) {
+    const shipMissions = allMissions.filter(m => memberIds.includes(m.agent_id) || m.spaceship_id === shipId);
+    const activeMissions = shipMissions.filter(m => m.status === 'running' || m.status === 'queued').length;
+    const completedMissions = shipMissions.filter(m => m.status === 'completed').length;
+
+    // Approval rate: missions that were reviewed (approved or rejected) vs approved
+    const reviewed = shipMissions.filter(m => m.reviewed);
+    const approved = reviewed.filter(m => m.approved);
+    const approvalRate = reviewed.length ? Math.round((approved.length / reviewed.length) * 100) : 100;
+
+    // Tokens used this session (from ShipBehaviors if available)
+    let tokensUsed = 0;
+    if (typeof ShipBehaviors !== 'undefined') {
+      const b = ShipBehaviors.getBehaviors(shipId);
+      tokensUsed = b.budgetUsedToday || 0;
+    }
+
+    // Last 5 Ship's Log entries
+    let logEntries = [];
+    if (typeof ShipLog !== 'undefined') {
+      try {
+        logEntries = await ShipLog.getEntries(shipId, 5);
+      } catch (e) { /* offline */ }
+    }
+
+    const logHtml = logEntries.length
+      ? logEntries.map(entry => {
+          const time = entry.created_at ? new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          const role = Utils.esc(entry.role || 'system');
+          const content = Utils.esc((entry.content || '').substring(0, 120));
+          return `<div class="ship-dash-log-entry">
+            <span class="ship-dash-log-time">${time}</span>
+            <span class="ship-dash-log-role">${role}</span>
+            <span class="ship-dash-log-content">${content}</span>
+          </div>`;
+        }).join('')
+      : '<p class="text-muted" style="font-size:.78rem">No log entries yet.</p>';
+
+    return `
+      <div class="detail-section ship-dashboard">
+        <h3 class="detail-section-title">Dashboard</h3>
+        <div class="ship-dash-stats">
+          <div class="ship-dash-stat">
+            <div class="ship-dash-stat-value">${activeMissions}</div>
+            <div class="ship-dash-stat-label">Active Missions</div>
+          </div>
+          <div class="ship-dash-stat">
+            <div class="ship-dash-stat-value">${completedMissions}</div>
+            <div class="ship-dash-stat-label">Completed</div>
+          </div>
+          <div class="ship-dash-stat">
+            <div class="ship-dash-stat-value">${approvalRate}%</div>
+            <div class="ship-dash-stat-label">Approval Rate</div>
+          </div>
+          <div class="ship-dash-stat">
+            <div class="ship-dash-stat-value">${tokensUsed ? tokensUsed.toLocaleString() : '0'}</div>
+            <div class="ship-dash-stat-label">Tokens Today</div>
+          </div>
+        </div>
+        <div class="ship-dash-log">
+          <div class="ship-dash-log-title">Recent Ship's Log</div>
+          ${logHtml}
+        </div>
+      </div>
+    `;
+  }
+
   /* ── Ship state persistence delegated to BlueprintStore ── */
 
   /* ── Ship Profile: icon, name, description persistence ── */
@@ -740,6 +885,43 @@ const SpaceshipDetailView = (() => {
         _saveShipProfile(shipId, { desc });
       });
     }
+  }
+
+  /* ── Bind behaviors panel interactions ── */
+  function _bindBehaviors(el, shipId) {
+    const panel = el.querySelector('.ship-behaviors-panel');
+    if (!panel || typeof ShipBehaviors === 'undefined') return;
+
+    // Approval mode radios
+    panel.querySelectorAll('input[type="radio"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        ShipBehaviors.setBehavior(shipId, 'approvalMode', radio.value);
+        panel.querySelectorAll('.behavior-radio').forEach(function(lbl) {
+          lbl.classList.toggle('active', lbl.querySelector('input').value === radio.value);
+        });
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Behavior Saved', message: 'Approval mode: ' + radio.value, type: 'success' });
+      });
+    });
+
+    // Toggle checkboxes
+    panel.querySelectorAll('.behavior-cb').forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        const key = cb.dataset.key;
+        ShipBehaviors.setBehavior(shipId, key, cb.checked);
+      });
+    });
+
+    // Save number inputs
+    panel.querySelectorAll('.behavior-save-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const key = btn.dataset.key;
+        const inputEl = document.getElementById(btn.dataset.input);
+        if (!inputEl) return;
+        const val = parseInt(inputEl.value, 10) || 0;
+        ShipBehaviors.setBehavior(shipId, key, val);
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Saved', message: key + ' updated', type: 'success' });
+      });
+    });
   }
 
   function render(el, params) {
@@ -857,6 +1039,9 @@ const SpaceshipDetailView = (() => {
       const shipClass = typeof Gamification !== 'undefined' ? Gamification.renderShipClassBadge(members.length) : '';
       const allMissions = State.get('missions') || [];
       const health = typeof Gamification !== 'undefined' ? Gamification.getSpaceshipHealth(fleet, allAgents, allMissions) : null;
+
+      // Build dashboard HTML (async for ShipLog)
+      const dashboardHtml = await _renderDashboard(fleet.id, memberIds, allMissions);
       const spaceshipClass = typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate() : { id:'dynamic', name:'Ship', slots:[{id:0,maxRarity:'Mythic',label:'Bridge'},{id:1,maxRarity:'Legendary',label:'Ops'}] };
       const assignedIds = new Set(Object.values(fleet.slot_assignments || {}).filter(Boolean));
 
@@ -888,6 +1073,8 @@ const SpaceshipDetailView = (() => {
               </div>
             </div>
           </div>
+
+          ${dashboardHtml}
 
           <div class="fleet-detail-actions">
             <div class="bridge-launch-wrap">
@@ -924,6 +1111,9 @@ const SpaceshipDetailView = (() => {
 
           ${health ? `<div class="detail-section" style="margin-top:20px"><h3 class="detail-section-title">Ship Health</h3>${Gamification.renderHealthBars(health)}</div>` : ''}
 
+          <!-- Ship Behaviors -->
+          ${_renderBehaviorsPanel(fleet.id)}
+
           <!-- Agent Missions -->
           <div class="detail-section">
             <h3 class="detail-section-title">Agent Missions</h3>
@@ -937,6 +1127,7 @@ const SpaceshipDetailView = (() => {
 
       _bindDetailEvents(el, id, fleet, allAgents, agentMap, spaceshipClass);
       _bindShipProfile(el, id);
+      _bindBehaviors(el, id);
       _initSlotDnD(el, id, fleet, allAgents, agentMap, spaceshipClass);
 
       _channel = SB.realtime.subscribe('fleets', (payload) => {
