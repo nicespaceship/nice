@@ -2106,36 +2106,285 @@
 [data-theme="steampunk"] nav:not(.app-side-nav) { border-bottom: 2px solid #5a4220; }
 
 /* ═══════════════════════════════════════════════════════════════════
-   PREMIUM THEME: Cyberpunk 2099
+   THEME: Cyberpunk — Night City Terminal
+   Neon dystopia: glitch scanlines, chromatic aberration, CRT vignette,
+   holographic cards, corner notches, data rain, neon glow pulse.
 ═══════════════════════════════════════════════════════════════════ */
-[data-theme="cyberpunk"] { --bg:#0a0a0f;--bg2:#12121a;--surface:#1a1a2e;--surface2:#222240;--border:#2a2a4a;--border-hi:#ff2d6f;--accent:#ff2d6f;--accent2:#00fff5;--text:#e0e0ff;--text-muted:#7a7a9e;--glow:0 0 15px rgba(255,45,111,0.3);--glow-hi:0 0 25px rgba(0,255,245,0.4);--panel-bg:rgba(10,10,15,0.97);--nav-bg:rgba(10,10,15,0.98);--font-h:'Orbitron', sans-serif;--font-b:'Fira Code', monospace;--radius:2px; }
+
+/* ── 0. Variables ── */
+[data-theme="cyberpunk"] {
+  --bg:#0a0a0f;--bg2:#12121a;--surface:#1a1a2e;--surface2:#222240;
+  --border:#2a2a4a;--border-hi:#ff2d6f;
+  --accent:#ff2d6f;--accent2:#00fff5;
+  --text:#e0e0ff;--text-muted:#7a7a9e;
+  --glow:0 0 15px rgba(255,45,111,0.3);--glow-hi:0 0 25px rgba(0,255,245,0.4);
+  --panel-bg:rgba(10,10,15,0.97);--nav-bg:rgba(10,10,15,0.98);
+  --font-h:'Orbitron', sans-serif;--font-b:'Fira Code', monospace;--font-m:'Fira Code', monospace;
+  --radius:2px;
+  --cp-pink:#ff2d6f;--cp-cyan:#00fff5;--cp-purple:#b026ff;
+}
+
+/* ── 1. Glitch Scanlines — horizontal noise lines across viewport ── */
+[data-theme="cyberpunk"] .app-main::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent, transparent 2px,
+    rgba(255,45,111,0.015) 2px, rgba(255,45,111,0.015) 4px
+  );
+  animation:cp-scanline-drift 8s linear infinite;
+}
+@keyframes cp-scanline-drift {
+  0%   { background-position:0 0; }
+  100% { background-position:0 200px; }
+}
+
+/* ── 2. Neon Glow Pulse — accent elements breathe ── */
+@keyframes cp-neon-pulse {
+  0%, 100% { box-shadow:0 0 8px rgba(255,45,111,0.3), 0 0 20px rgba(255,45,111,0.1); }
+  50%      { box-shadow:0 0 16px rgba(255,45,111,0.5), 0 0 40px rgba(255,45,111,0.2); }
+}
+@keyframes cp-neon-pulse-cyan {
+  0%, 100% { box-shadow:0 0 8px rgba(0,255,245,0.3), 0 0 20px rgba(0,255,245,0.1); }
+  50%      { box-shadow:0 0 16px rgba(0,255,245,0.5), 0 0 40px rgba(0,255,245,0.2); }
+}
+[data-theme="cyberpunk"] .btn-primary {
+  background:rgba(255,45,111,0.15); border-color:#ff2d6f; color:#ff2d6f;
+  animation:cp-neon-pulse 3s ease-in-out infinite;
+}
+[data-theme="cyberpunk"] .btn-primary:hover {
+  background:rgba(255,45,111,0.3);
+  animation:cp-neon-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── 3. CRT Screen Curvature — barrel distortion vignette ── */
+[data-theme="cyberpunk"] .app-main::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9998;
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(5,5,10,0.6) 100%);
+}
+
+/* ── 4. Chromatic Aberration — RGB split on headings ── */
+[data-theme="cyberpunk"] h1,
+[data-theme="cyberpunk"] h2,
+[data-theme="cyberpunk"] h3,
+[data-theme="cyberpunk"] .app-hdr-title,
+[data-theme="cyberpunk"] .home-greeting {
+  text-shadow:
+    -1.5px 0 rgba(255,45,111,0.5),
+     1.5px 0 rgba(0,255,245,0.5),
+     0 0 12px rgba(176,38,255,0.3);
+}
+
+/* ── 5. Glitch Text — brand header flicker ── */
+@keyframes cp-glitch {
+  0%, 93%, 100% { transform:none; opacity:1; }
+  94%  { transform:translate(-2px, 1px) skewX(-1deg); opacity:0.85; }
+  95%  { transform:translate(3px, -1px) skewX(2deg); opacity:0.9; }
+  96%  { transform:translate(-1px, 2px); opacity:0.8; clip-path:inset(20% 0 40% 0); }
+  97%  { transform:translate(2px, -2px); opacity:0.95; clip-path:none; }
+}
+[data-theme="cyberpunk"] .app-brand-text,
+[data-theme="cyberpunk"] .app-hdr-title {
+  animation:cp-glitch 4s ease-in-out infinite;
+  font-family:'Orbitron', sans-serif;
+  letter-spacing:.15em;
+}
+
+/* ── 6. Monospace Everything ── */
+[data-theme="cyberpunk"] * { font-family:'Fira Code', 'Orbitron', monospace; }
+[data-theme="cyberpunk"] h1, [data-theme="cyberpunk"] h2, [data-theme="cyberpunk"] h3,
+[data-theme="cyberpunk"] .app-brand-text { font-family:'Orbitron', sans-serif; }
+
+/* ── 7. Neon Underline on Active Sidebar Links ── */
+[data-theme="cyberpunk"] .side-link {
+  border-left:none; position:relative;
+}
+[data-theme="cyberpunk"] .side-link::after {
+  content:''; position:absolute; bottom:0; left:12px; right:12px; height:2px;
+  background:transparent; transition:all .2s;
+}
+[data-theme="cyberpunk"] .side-link:hover::after {
+  background:rgba(255,45,111,0.4);
+  box-shadow:0 0 6px rgba(255,45,111,0.3);
+}
+[data-theme="cyberpunk"] .side-link.active::after {
+  background:#ff2d6f;
+  box-shadow:0 0 10px rgba(255,45,111,0.6), 0 0 20px rgba(255,45,111,0.2);
+}
+[data-theme="cyberpunk"] .side-link.active {
+  background:rgba(255,45,111,0.06); color:#ff2d6f;
+}
+
+/* ── 8. Holographic Shimmer on Card Hover ── */
+@keyframes cp-holo-sweep {
+  0%   { left:-100%; }
+  100% { left:200%; }
+}
+[data-theme="cyberpunk"] .tcg-card,
+[data-theme="cyberpunk"] .mc-card,
+[data-theme="cyberpunk"] .mcp-catalog-card,
+[data-theme="cyberpunk"] .widget-card {
+  position:relative; overflow:hidden;
+}
+[data-theme="cyberpunk"] .tcg-card::after,
+[data-theme="cyberpunk"] .mc-card::after,
+[data-theme="cyberpunk"] .mcp-catalog-card::after,
+[data-theme="cyberpunk"] .widget-card::after {
+  content:''; position:absolute; top:0; left:-100%; width:50%; height:100%;
+  background:linear-gradient(105deg, transparent 30%, rgba(255,45,111,0.06) 45%, rgba(0,255,245,0.08) 55%, transparent 70%);
+  pointer-events:none; transition:none;
+}
+[data-theme="cyberpunk"] .tcg-card:hover::after,
+[data-theme="cyberpunk"] .mc-card:hover::after,
+[data-theme="cyberpunk"] .mcp-catalog-card:hover::after,
+[data-theme="cyberpunk"] .widget-card:hover::after {
+  animation:cp-holo-sweep .8s ease-out forwards;
+}
+
+/* ── 9. Hacking Cursor on Inputs ── */
+[data-theme="cyberpunk"] input[type="text"],
+[data-theme="cyberpunk"] textarea,
+[data-theme="cyberpunk"] .search-input,
+[data-theme="cyberpunk"] .nice-ai-input {
+  border-radius:2px; border:1px solid #2a2a4a; background:#0a0a0f; color:#00fff5;
+  caret-color:#00fff5; font-family:'Fira Code', monospace;
+}
+[data-theme="cyberpunk"] input[type="text"]:focus,
+[data-theme="cyberpunk"] textarea:focus,
+[data-theme="cyberpunk"] .search-input:focus {
+  border-color:#ff2d6f;
+  box-shadow:0 0 8px rgba(255,45,111,0.2), inset 0 0 12px rgba(0,255,245,0.03);
+}
+[data-theme="cyberpunk"] input::placeholder,
+[data-theme="cyberpunk"] textarea::placeholder { color:#4a4a6e; }
+
+/* ── 10. Corner Notches — angular cyberpunk clipping ── */
+[data-theme="cyberpunk"] .tcg-card,
+[data-theme="cyberpunk"] .mc-card,
+[data-theme="cyberpunk"] .mcp-catalog-card,
+[data-theme="cyberpunk"] .widget-card,
+[data-theme="cyberpunk"] .security-posture-card,
+[data-theme="cyberpunk"] .nice-ai-input-container {
+  clip-path:polygon(
+    0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px,
+    100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px)
+  );
+  border-radius:0;
+}
+[data-theme="cyberpunk"] .nice-ai-input-container {
+  border:1px solid #2a2a4a; background:#12121a;
+}
+[data-theme="cyberpunk"] .nice-ai-input-container:focus-within {
+  border-color:#ff2d6f; box-shadow:0 0 12px rgba(255,45,111,0.15);
+}
+
+/* ── 11. Noise Texture Overlay — surveillance feed grain ── */
+[data-theme="cyberpunk"] body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9997;
+  opacity:0.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat:repeat;
+}
+
+/* ── 12. Data Rain Particles — falling code in background grid ── */
+@keyframes cp-data-fall {
+  0%   { transform:translateY(-100vh); opacity:0; }
+  10%  { opacity:0.6; }
+  90%  { opacity:0.6; }
+  100% { transform:translateY(100vh); opacity:0; }
+}
+[data-theme="cyberpunk"] .bg-grid {
+  opacity:0.15;
+  background-image:
+    linear-gradient(rgba(255,45,111,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,245,0.06) 1px, transparent 1px);
+  background-size:48px 48px;
+}
+[data-theme="cyberpunk"] .bg-grid::before,
+[data-theme="cyberpunk"] .bg-grid::after {
+  content:'01 FF A0 3C 7E D2 00 B4 1F 9A E6 C8 22 5D 88 AB 0D F1';
+  position:absolute; top:0; font-family:'Fira Code', monospace; font-size:9px;
+  color:rgba(0,255,245,0.12); white-space:nowrap; pointer-events:none;
+  writing-mode:vertical-lr; letter-spacing:12px; line-height:48px;
+  animation:cp-data-fall 12s linear infinite;
+}
+[data-theme="cyberpunk"] .bg-grid::before { left:15%; animation-delay:0s; }
+[data-theme="cyberpunk"] .bg-grid::after  { left:72%; animation-delay:-5s; content:'D4 2B 97 E1 00 6F C3 58 AA 1E 7B 0C F5 39 84 B6 4D E8'; }
+
+/* ── Component Overrides ── */
 [data-theme="cyberpunk"] .btn { border-radius:2px; border-color:#2a2a4a; }
-[data-theme="cyberpunk"] .btn-primary { background:rgba(255,45,111,0.15); border-color:#ff2d6f; color:#ff2d6f; }
-[data-theme="cyberpunk"] .btn-primary:hover { background:rgba(255,45,111,0.25); box-shadow:0 0 12px rgba(255,45,111,0.3); }
+
+/* Tabs — angular neon segments */
 [data-theme="cyberpunk"] .bp-type-tab,
 [data-theme="cyberpunk"] .bridge-hero-tab,
-[data-theme="cyberpunk"] .log-view-tab { border-radius:2px; border:1px solid #2a2a4a; background:transparent; color:#7a7a9e; font-family:'Orbitron',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:.1em; font-size:.6rem; }
+[data-theme="cyberpunk"] .log-view-tab {
+  border-radius:2px; border:1px solid #2a2a4a; background:transparent;
+  color:#7a7a9e; font-family:'Orbitron',sans-serif; font-weight:600;
+  text-transform:uppercase; letter-spacing:.1em; font-size:.6rem;
+  clip-path:polygon(0 4px, 4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px));
+}
 [data-theme="cyberpunk"] .bp-type-tab.active,
 [data-theme="cyberpunk"] .bridge-hero-tab.active,
-[data-theme="cyberpunk"] .log-view-tab.active { background:rgba(255,45,111,0.12); color:#ff2d6f; border-color:#ff2d6f; text-shadow:0 0 8px rgba(255,45,111,0.4); }
+[data-theme="cyberpunk"] .log-view-tab.active {
+  background:rgba(255,45,111,0.12); color:#ff2d6f; border-color:#ff2d6f;
+  text-shadow:0 0 8px rgba(255,45,111,0.4);
+}
 [data-theme="cyberpunk"] .bp-type-tab:hover,
 [data-theme="cyberpunk"] .bridge-hero-tab:hover,
 [data-theme="cyberpunk"] .log-view-tab:hover { border-color:rgba(255,45,111,0.4); color:#ff2d6f; }
+
+/* Sub-tabs & filters */
 [data-theme="cyberpunk"] .bp-sub-tab { border-radius:2px; border:1px solid #2a2a4a; background:transparent; color:#7a7a9e; }
 [data-theme="cyberpunk"] .bp-sub-tab.active { background:rgba(255,45,111,0.12); color:#ff2d6f; border-color:#ff2d6f; }
 [data-theme="cyberpunk"] .bp-rarity-btn { border-radius:2px; border:1px solid #2a2a4a; background:#12121a; color:#7a7a9e; }
 [data-theme="cyberpunk"] .bp-rarity-btn.active { background:rgba(255,45,111,0.15); color:#ff2d6f; border-color:#ff2d6f; }
-[data-theme="cyberpunk"] .mc-card { border-radius:2px; border:1px solid #2a2a4a; background:rgba(18,18,26,0.9); }
+
+/* Cards */
+[data-theme="cyberpunk"] .mc-card { border-radius:0; border:1px solid #2a2a4a; background:rgba(18,18,26,0.9); }
 [data-theme="cyberpunk"] .mc-card-running { border-left:3px solid #ff2d6f; }
 [data-theme="cyberpunk"] .mc-card-completed { border-left:3px solid #00fff5; }
-[data-theme="cyberpunk"] input[type="text"],
-[data-theme="cyberpunk"] .search-input { border-radius:2px; border:1px solid #2a2a4a; background:#0a0a0f; color:#e0e0ff; }
-[data-theme="cyberpunk"] input[type="text"]:focus,
-[data-theme="cyberpunk"] .search-input:focus { border-color:#ff2d6f; box-shadow:0 0 8px rgba(255,45,111,0.2); }
-[data-theme="cyberpunk"] .nice-ai-input-container { border:1px solid #2a2a4a; border-radius:2px; background:#12121a; }
-[data-theme="cyberpunk"] .nice-ai-input-container:focus-within { border-color:#ff2d6f; box-shadow:0 0 12px rgba(255,45,111,0.15); }
+
+/* Security tabs */
 [data-theme="cyberpunk"] .security-tab { border-radius:2px; }
 [data-theme="cyberpunk"] .security-tab.security-tab--active { background:rgba(255,45,111,0.12); color:#ff2d6f; }
+[data-theme="cyberpunk"] .security-tabs {
+  clip-path:polygon(0 4px, 4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px));
+}
+
+/* Prompt panel — notched neon terminal */
+[data-theme="cyberpunk"] .nice-ai-pills .nice-ai-pill {
+  clip-path:polygon(0 3px, 3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px));
+  border-color:#2a2a4a;
+}
+[data-theme="cyberpunk"] .nice-ai-pills .nice-ai-pill:hover {
+  border-color:#ff2d6f; color:#ff2d6f;
+  box-shadow:0 0 8px rgba(255,45,111,0.2);
+}
+
+/* Sidebar — dark with neon accents */
+[data-theme="cyberpunk"] .app-sidebar {
+  border-right:1px solid rgba(255,45,111,0.15);
+}
+
+/* Scrollbar — thin neon */
+[data-theme="cyberpunk"] ::-webkit-scrollbar { width:6px; height:6px; }
+[data-theme="cyberpunk"] ::-webkit-scrollbar-track { background:#0a0a0f; }
+[data-theme="cyberpunk"] ::-webkit-scrollbar-thumb { background:rgba(255,45,111,0.3); border-radius:0; }
+[data-theme="cyberpunk"] ::-webkit-scrollbar-thumb:hover { background:rgba(255,45,111,0.5); }
+
+/* ── Reduced motion — disable all animations ── */
+@media (prefers-reduced-motion:reduce) {
+  [data-theme="cyberpunk"] .app-main::after { animation:none; }
+  [data-theme="cyberpunk"] .btn-primary { animation:none; }
+  [data-theme="cyberpunk"] .app-brand-text,
+  [data-theme="cyberpunk"] .app-hdr-title { animation:none; }
+  [data-theme="cyberpunk"] .tcg-card:hover::after,
+  [data-theme="cyberpunk"] .mc-card:hover::after,
+  [data-theme="cyberpunk"] .mcp-catalog-card:hover::after,
+  [data-theme="cyberpunk"] .widget-card:hover::after { animation:none; }
+  [data-theme="cyberpunk"] .bg-grid::before,
+  [data-theme="cyberpunk"] .bg-grid::after { animation:none; }
+}
 
 /* ─────────────────────────────────────────────────────────────────
    MODULE: BASE
