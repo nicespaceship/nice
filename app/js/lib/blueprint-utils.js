@@ -13,6 +13,17 @@ const BlueprintUtils = (() => {
     Legendary: '#f59e0b', Mythic: '#ff2d55',
   };
 
+  /** Category/role color map — single source of truth for card art and badges */
+  const CATEGORY_COLORS = {
+    Research:'#6366f1', Analytics:'#f59e0b', Content:'#ec4899', Engineering:'#06b6d4',
+    Ops:'#22c55e', Sales:'#f97316', Support:'#8b5cf6', Legal:'#64748b',
+    Marketing:'#e11d48', Automation:'#14b8a6', Hospitality:'#06b6d4', Professional:'#64748b',
+    Retail:'#f97316', Code:'#06b6d4', Data:'#f59e0b', Custom:'#8b5cf6',
+  };
+
+  /** Status colors for missions */
+  const STATUS_COLORS = { queued:'#f59e0b', running:'#6366f1', completed:'#22c55e', failed:'#ef4444' };
+
   /**
    * Get the color for a rarity level.
    * @param {string} rarity
@@ -135,5 +146,5 @@ const BlueprintUtils = (() => {
   /** Build slot array for a specific count (used by gamification for XP-gated classes) */
   function buildSlots(count, maxRarity) { return _buildClassSlots(count, maxRarity); }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, buildSlots, RARITY_COLORS, SLOT_LABELS, SHIP_CLASSES };
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, buildSlots, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
 })();

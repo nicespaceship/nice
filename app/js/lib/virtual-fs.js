@@ -2,7 +2,7 @@
    VirtualFS — In-memory file system with localStorage persistence
    ═══════════════════════════════════════════════════════════════════ */
 const VirtualFS = (() => {
-  const STORAGE_KEY = 'nice-ide-projects';
+  const STORAGE_KEY = Utils.KEYS.ideProjects;
   const MAX_SIZE = 5 * 1024 * 1024; // 5MB
   const WARN_SIZE = 4 * 1024 * 1024;
 

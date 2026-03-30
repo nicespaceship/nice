@@ -150,7 +150,7 @@ const VaultView = (() => {
         const enabled = State.get('enabled_models') || _defaultEnabled();
         enabled[modelId] = cb.checked;
         State.set('enabled_models', enabled);
-        localStorage.setItem('nice-enabled-models', JSON.stringify(enabled));
+        localStorage.setItem(Utils.KEYS.enabledModels, JSON.stringify(enabled));
 
         // Update card visual
         const card = cb.closest('.vault-model-card');
@@ -183,7 +183,7 @@ const VaultView = (() => {
   /* ── Defaults ───────────────────────────────────────────────── */
   function _defaultEnabled() {
     try {
-      const saved = JSON.parse(localStorage.getItem('nice-enabled-models') || 'null');
+      const saved = JSON.parse(localStorage.getItem(Utils.KEYS.enabledModels) || 'null');
       if (saved) return saved;
     } catch { /* ignore */ }
 

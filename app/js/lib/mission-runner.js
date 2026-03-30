@@ -58,10 +58,10 @@ const MissionRunner = (() => {
       // Fallback: find by name in State agents
       if (!agent) agent = agents.find(a => a.name === mission.agent_name);
       // Fallback: search Supabase by name
-      if (!agent && typeof SB !== 'undefined' && SB.client) {
+      if (!agent && typeof SB !== 'undefined') {
         try {
-          const { data } = await SB.client.from('user_agents').select('*').eq('user_id', user.id).eq('name', mission.agent_name).limit(1);
-          if (data?.[0]) agent = data[0];
+          const results = await SB.db('user_agents').list({ user_id: user.id, name: mission.agent_name, limit: 1 });
+          if (results?.[0]) agent = results[0];
         } catch {}
       }
     }
@@ -350,7 +350,7 @@ const MissionRunner = (() => {
         State.set('agents', [...agents]);
         // Persist rarity evolution to Supabase
         if (typeof SB !== 'undefined' && SB.isReady() && agent.supabase_id) {
-          SB.client.from('user_agents').update({ rarity: newRarity }).eq('id', agent.supabase_id).then(() => {}).catch(() => {});
+          SB.db('user_agents').update(agent.supabase_id, { rarity: newRarity }).catch(() => {});
         }
         if (typeof Notify !== 'undefined' && oldRarity !== newRarity) {
           Notify.send({ title: 'Agent Evolved!', message: `${agent.name} evolved to ${newRarity}!`, type: 'success' });

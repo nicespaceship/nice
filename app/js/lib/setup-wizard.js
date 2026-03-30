@@ -8,7 +8,7 @@
 const SetupWizard = (() => {
   let _overlay = null;
   let _step = 0;
-  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _esc = Utils.esc;
 
   const _data = {
     businessDesc: '',

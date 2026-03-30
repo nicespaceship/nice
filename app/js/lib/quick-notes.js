@@ -5,7 +5,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const QuickNotes = (() => {
-  const STORAGE_KEY = 'nice-quick-notes';
+  const STORAGE_KEY = Utils.KEYS.quickNotes;
   let _open = false;
   let _panelEl = null;
   let _saveTimer = null;

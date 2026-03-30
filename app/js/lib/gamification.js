@@ -4,7 +4,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const Gamification = (() => {
-  const STORAGE_KEY = 'nice-xp';
+  const STORAGE_KEY = Utils.KEYS.xp;
 
   /** Safe localStorage write — catches QuotaExceededError */
   function _store(key, val) {
@@ -689,7 +689,7 @@ const Gamification = (() => {
 
   /* ─── Agent Progression ─── */
 
-  const AGENT_STATS_KEY = 'nice-agent-stats';
+  const AGENT_STATS_KEY = Utils.KEYS.agentStats;
 
   function _getAgentStats() {
     try { return JSON.parse(localStorage.getItem(AGENT_STATS_KEY) || '{}'); } catch(e) { return {}; }

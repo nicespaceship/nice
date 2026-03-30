@@ -21,7 +21,7 @@ const SpaceshipBuilderView = (() => {
     return { name: 'Ship', slots: [{ max: 'Mythic', label: 'Bridge' }, { max: 'Legendary', label: 'Ops' }] };
   }
 
-  const SLOT_COLORS = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b' };
+  const SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   function render(el) {
     const user = State.get('user');

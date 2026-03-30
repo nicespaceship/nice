@@ -7,14 +7,10 @@ const BlueprintsView = (() => {
   const title = 'Bridge';
   const _esc = Utils.esc;
 
-  const RARITY_COLORS = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.RARITY_COLORS) ? BlueprintUtils.RARITY_COLORS : { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+  const RARITY_COLORS = BlueprintUtils.RARITY_COLORS;
 
   /* ── Avatar Art Generator (role-colored initials for agent cards) ── */
-  const _categoryColors = {
-    Research:'#6366f1', Analytics:'#f59e0b', Content:'#ec4899', Engineering:'#06b6d4',
-    Ops:'#22c55e', Sales:'#f97316', Support:'#8b5cf6', Legal:'#64748b',
-    Marketing:'#e11d48', Automation:'#14b8a6'
-  };
+  const _categoryColors = BlueprintUtils.CATEGORY_COLORS;
 
   /* ── Deterministic 16-char alphanumeric serial — unique fingerprint per blueprint ── */
   const _SERIAL_CHARS = 'A0B1C2D3E4F5G6H7J8K9LMNPQRSTUVWXYZ';
@@ -78,7 +74,7 @@ const BlueprintsView = (() => {
     return { name: 'Ship', slots: [{max:'Epic',label:'Bridge'},{max:'Rare',label:'Ops'},{max:'Rare',label:'Tactical'},{max:'Rare',label:'Science'},{max:'Rare',label:'Engineering'}] };
   }
 
-  const _SLOT_COLORS = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+  const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   /* ── Ship blueprint lookup (SEED + BlueprintStore for community ships) ── */
   function _findShipBp(id) {

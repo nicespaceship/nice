@@ -5,7 +5,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const ModelIntel = (() => {
-  const STORAGE_KEY = 'nice-model-intel';
+  const STORAGE_KEY = Utils.KEYS.modelIntel;
   const MIN_RUNS = 3; // minimum runs before a model gets a real score
   const EXPLORE_SCORE = 0.5; // score for under-explored models
 

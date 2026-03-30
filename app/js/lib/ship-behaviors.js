@@ -5,7 +5,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const ShipBehaviors = (() => {
-  const _STORAGE_KEY = 'nice-ship-behaviors';
+  const _STORAGE_KEY = Utils.KEYS.shipBehaviors;
 
   const _DEFAULTS = {
     approvalMode:     'review',   // 'review' | 'autonomous' | 'draft'

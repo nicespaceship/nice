@@ -4,7 +4,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const AuditLog = (() => {
-  const STORAGE_KEY = 'nice-audit-log';
+  const STORAGE_KEY = Utils.KEYS.auditLog;
   const MAX_ENTRIES = 500;
 
   /**

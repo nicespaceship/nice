@@ -4,7 +4,7 @@
    Keeps: ownership/purchase, text/list lookups, effect registration.
 ───────────────────────────────────────────────────────────────── */
 const Skin = (() => {
-  const INV_KEY = 'nice-skin-inventory';
+  const INV_KEY = (typeof Utils !== 'undefined' && Utils.KEYS) ? Utils.KEYS.skinInventory : 'nice-skin-inventory';
 
   // Legacy mapping: old skin IDs → new theme IDs
   const LEGACY_MAP = {

@@ -18,7 +18,7 @@ const ShipSetupWizard = (() => {
     aiRec: null,
   };
 
-  const RARITY_COLORS = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.RARITY_COLORS) ? BlueprintUtils.RARITY_COLORS : { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+  const RARITY_COLORS = BlueprintUtils.RARITY_COLORS;
   const STEP_LABELS = ['Name', 'Agents', 'Deploy'];
   const STEP_COUNT = 3;
 

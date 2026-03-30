@@ -364,7 +364,7 @@ const SchematicView = (() => {
     const slotsHTML = shipClass.slots.map(slot => {
       const bpId = slotMap[String(slot.id)] || null;
       const bp = _resolveBp(bpId);
-      const RC = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+      const RC = BlueprintUtils.RARITY_COLORS;
 
       const placeholder = bp ? 'Swap Agent...' : 'Assign Agent...';
       const searchDropdown = `<div class="sch-search-drop" data-slot-id="${slot.id}">

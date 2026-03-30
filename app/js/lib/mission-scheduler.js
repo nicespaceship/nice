@@ -7,7 +7,7 @@
 
 const MissionScheduler = (() => {
 
-  const STORAGE_KEY = 'nice-mission-schedules';
+  const STORAGE_KEY = Utils.KEYS.missionSchedules;
   let _intervalId = null;
 
   /* ── Cron expression parser ──

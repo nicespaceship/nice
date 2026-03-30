@@ -5,7 +5,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const ContentQueue = (() => {
-  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _esc = Utils.esc;
 
   const TYPE_META = {
     social:  { icon: '📱', label: 'Social Post', color: '#c084fc' },
@@ -120,9 +120,9 @@ const ContentQueue = (() => {
 
   async function edit(id, newContent) {
     // Update Supabase
-    if (typeof SB !== 'undefined' && SB.isReady() && SB.client) {
+    if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
-        await SB.client.from('tasks').update({ edited_content: newContent }).eq('id', id);
+        await SB.db('tasks').update(id, { edited_content: newContent });
       } catch {}
     }
 
@@ -260,9 +260,9 @@ const ContentQueue = (() => {
     const now = new Date().toISOString();
 
     // Update Supabase
-    if (typeof SB !== 'undefined' && SB.isReady() && SB.client) {
+    if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
-        await SB.client.from('tasks').update({ approval_status: status, reviewed_at: now }).eq('id', id);
+        await SB.db('tasks').update(id, { approval_status: status, reviewed_at: now });
       } catch {}
     }
 

@@ -5,7 +5,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const Favorites = (() => {
-  const STORAGE_KEY = 'nice-favorites';
+  const STORAGE_KEY = Utils.KEYS.favorites;
   const MAX_FAVORITES = 8;
 
   // Icon map for known routes

@@ -6,7 +6,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const AgentMemory = (() => {
-  const STORAGE_KEY = 'nice-agent-memories';
+  const STORAGE_KEY = Utils.KEYS.agentMemories;
   const MAX_FACTS = 50;
   const MAX_SUCCESS = 20;
   const MAX_FAILURE = 20;

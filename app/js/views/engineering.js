@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 const EngineeringView = (() => {
   const title = 'Engineering';
-  const _esc = typeof Utils !== 'undefined' ? Utils.esc : s => s;
+  const _esc = Utils.esc;
 
   /* ── Private state ── */
   let _el = null;

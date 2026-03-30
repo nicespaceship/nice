@@ -8,19 +8,12 @@ const CardRenderer = (() => {
   const _esc = Utils.esc;
 
   /* ── Constants ── */
-  const RARITY_COLORS = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.RARITY_COLORS) ? BlueprintUtils.RARITY_COLORS : { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+  const RARITY_COLORS = BlueprintUtils.RARITY_COLORS;
 
-  const ROLE_COLORS = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6' };
+  const ROLE_COLORS = BlueprintUtils.CATEGORY_COLORS;
+  const CATEGORY_COLORS = BlueprintUtils.CATEGORY_COLORS;
 
-  const CATEGORY_COLORS = {
-    Research:'#6366f1', Analytics:'#f59e0b', Content:'#ec4899', Engineering:'#06b6d4',
-    Ops:'#22c55e', Sales:'#f97316', Support:'#8b5cf6', Legal:'#64748b',
-    Marketing:'#e11d48', Automation:'#14b8a6'
-  };
-
-  const SHIP_CLASSES = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.SHIP_CLASSES)
-    ? BlueprintUtils.SHIP_CLASSES
-    : { 'class-1':{name:'Scout',slots:[]}, 'slot-6':{name:'Ship',slots:[]} };
+  const SHIP_CLASSES = BlueprintUtils.SHIP_CLASSES;
 
   const SLOT_COLORS = RARITY_COLORS; // Same colors — unified via BlueprintUtils
 
