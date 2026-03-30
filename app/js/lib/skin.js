@@ -1,29 +1,28 @@
 /* ─────────────────────────────────────────────────────────────────
-   MODULE: Skin Engine — Premium App Skins
-   Complete makeover: visuals + copy + effects + card styling
+   MODULE: Skin — Compatibility wrapper over Theme (SSOT)
+   Premium themes now live in Theme.THEMES. Skin delegates to Theme.
+   Keeps: ownership/purchase, text/list lookups, effect registration.
 ───────────────────────────────────────────────────────────────── */
 const Skin = (() => {
-  const STORAGE_KEY = 'nice-active-skin';
   const INV_KEY = 'nice-skin-inventory';
-  const PRE_SKIN_THEME = 'nice-pre-skin-theme';
 
-  let _activeSkin = null;
-  let _overrides = {};
-  let _effectCleanup = null;
-
-  /* ── Skin Pack Registry ── */
-  const PACKS = {};
-
-  function registerPack(pack) {
-    if (pack && pack.id) PACKS[pack.id] = pack;
-  }
+  // Legacy mapping: old skin IDs → new theme IDs
+  const LEGACY_MAP = {
+    'cyberpunk-2099': 'cyberpunk',
+    'lcars-federation': 'lcars-federation',
+    'matrix-reloaded': 'matrix-reloaded',
+  };
 
   /* ── Ownership ── */
   function _getInventory() {
     try { return JSON.parse(localStorage.getItem(INV_KEY) || '[]'); } catch { return []; }
   }
 
-  function ownsSkin(id) { return _getInventory().includes(id); }
+  function ownsSkin(id) {
+    const inv = _getInventory();
+    const resolved = LEGACY_MAP[id] || id;
+    return inv.includes(id) || inv.includes(resolved);
+  }
 
   function purchaseSkin(id) {
     const inv = _getInventory();
@@ -33,185 +32,85 @@ const Skin = (() => {
     }
   }
 
-  /* ── Override Map Builder ── */
-  function _buildOverrideMap(pack) {
-    const map = {};
-    if (!pack.copy) return map;
-    const copy = pack.copy;
-    // Flatten nested objects: nav.agents, titles.agents, etc.
-    for (const section of Object.keys(copy)) {
-      const val = copy[section];
-      if (typeof val === 'string') {
-        map[section] = val;
-      } else if (Array.isArray(val)) {
-        // Arrays accessed via list(), not overrides
-        continue;
-      } else if (typeof val === 'object') {
-        for (const key of Object.keys(val)) {
-          map[section + '.' + key] = val[key];
-        }
-      }
-    }
-    return map;
-  }
-
-  /* ── Visual Layer ── */
-  function _applyVisuals(pack) {
-    const td = pack.theme_data;
-    if (!td) return;
-    const root = document.documentElement;
-    // Apply CSS variables
-    if (td.colors) {
-      Object.entries(td.colors).forEach(([k, v]) => root.style.setProperty(k, v));
-    }
-    if (td.fonts) {
-      Object.entries(td.fonts).forEach(([k, v]) => root.style.setProperty(k, v));
-    }
-    if (td.radius) root.style.setProperty('--radius', td.radius);
-    // Inject Google Fonts if needed
-    if (pack.googleFonts) {
-      let link = document.getElementById('skin-fonts');
-      if (!link) {
-        link = document.createElement('link');
-        link.id = 'skin-fonts';
-        link.rel = 'stylesheet';
-        document.head.appendChild(link);
-      }
-      link.href = pack.googleFonts;
-    }
-  }
-
-  function _clearVisuals() {
-    document.documentElement.style.cssText = '';
-    const link = document.getElementById('skin-fonts');
-    if (link) link.remove();
-  }
-
-  /* ── Effect Layer (canvas background) ── */
-  const _effects = {};
-
+  /* ── Effect Registration (delegates to Theme) ── */
   function registerEffect(id, startFn) {
-    // startFn(canvas) returns a cleanup function
-    _effects[id] = startFn;
-  }
-
-  function _startEffect(effectId) {
-    _stopEffect();
-    if (!effectId || !_effects[effectId]) return;
-    const canvas = document.getElementById('matrix-canvas');
-    if (!canvas) return;
-    canvas.style.display = 'block';
-    canvas.style.opacity = '0.15';
-    _effectCleanup = _effects[effectId](canvas);
-  }
-
-  function _stopEffect() {
-    if (_effectCleanup) { _effectCleanup(); _effectCleanup = null; }
-    const canvas = document.getElementById('matrix-canvas');
-    if (canvas) { canvas.style.display = 'none'; }
-  }
-
-  /* ── Sidebar Refresh ── */
-  function _refreshSidebar() {
-    document.querySelectorAll('[data-skin-nav]').forEach(el => {
-      const key = el.dataset.skinNav;
-      // Store original text on first encounter
-      if (!el.dataset.skinDefault) el.dataset.skinDefault = el.textContent;
-      el.textContent = _activeSkin?.copy?.nav?.[key] || el.dataset.skinDefault;
-    });
-  }
-
-  /* ── Core API ── */
-  function activate(skinId) {
-    const pack = PACKS[skinId];
-    if (!pack) return false;
-
-    // Save current theme before overriding
-    if (!_activeSkin) {
-      const currentTheme = localStorage.getItem('ns-theme') || 'spaceship';
-      localStorage.setItem(PRE_SKIN_THEME, currentTheme);
+    if (typeof Theme !== 'undefined' && Theme.registerEffect) {
+      Theme.registerEffect(id, startFn);
     }
+  }
 
-    _activeSkin = pack;
-    _overrides = _buildOverrideMap(pack);
-
-    // Apply layers
-    _applyVisuals(pack);
-    _startEffect(pack.effect);
-    document.documentElement.setAttribute('data-skin', skinId);
-    localStorage.setItem(STORAGE_KEY, skinId);
-
-    // Refresh DOM
-    _refreshSidebar();
-
-    // Notify state subscribers
-    if (typeof State !== 'undefined') State.set('skin', skinId);
-    return true;
+  /* ── Core API (delegates to Theme) ── */
+  function activate(skinId) {
+    const resolved = LEGACY_MAP[skinId] || skinId;
+    if (typeof Theme !== 'undefined') {
+      Theme.set(resolved);
+      return true;
+    }
+    return false;
   }
 
   function deactivate() {
-    _activeSkin = null;
-    _overrides = {};
-
-    // Clear skin visuals
-    _clearVisuals();
-    _stopEffect();
-    document.documentElement.removeAttribute('data-skin');
-    localStorage.removeItem(STORAGE_KEY);
-
-    // Restore previous theme
-    const prevTheme = localStorage.getItem(PRE_SKIN_THEME) || 'spaceship';
-    localStorage.removeItem(PRE_SKIN_THEME);
-    if (typeof Theme !== 'undefined') Theme.set(prevTheme);
-
-    // Refresh DOM
-    _refreshSidebar();
-
-    if (typeof State !== 'undefined') State.set('skin', null);
+    // Switch back to default theme
+    if (typeof Theme !== 'undefined') Theme.set('spaceship');
   }
 
   // Key lookup: Skin.text('nav.agents', 'Agents') → override or fallback
   function text(key, fallback) {
     if (fallback === undefined) fallback = key;
-    return _overrides[key] || fallback;
+    const t = _currentPremium();
+    if (!t || !t.copy) return fallback;
+    // Support dotted keys: 'nav.home' → t.copy.nav.home
+    const parts = key.split('.');
+    let val = t.copy;
+    for (const p of parts) {
+      if (val && typeof val === 'object') val = val[p];
+      else { val = undefined; break; }
+    }
+    return (typeof val === 'string') ? val : fallback;
   }
 
-  // Array lookup: Skin.list('ranks') → ['Waterboy', ...] or null
+  // Array lookup: Skin.list('ranks') → ['Hacker', ...] or null
   function list(key) {
-    if (!_activeSkin || !_activeSkin.copy) return null;
-    const val = _activeSkin.copy[key];
+    const t = _currentPremium();
+    if (!t || !t.copy) return null;
+    const val = t.copy[key];
     return Array.isArray(val) ? val : null;
   }
 
-  function isActive() { return !!_activeSkin; }
-  function activeSkin() { return _activeSkin; }
-  function allPacks() { return Object.values(PACKS); }
-  function getPack(id) { return PACKS[id] || null; }
+  function _currentPremium() {
+    if (typeof Theme === 'undefined') return null;
+    const id = Theme.current();
+    const t = Theme.getTheme(id);
+    return (t && t.premium) ? t : null;
+  }
+
+  function isActive() { return !!_currentPremium(); }
+  function activeSkin() { return _currentPremium(); }
+
+  function allPacks() {
+    if (typeof Theme === 'undefined') return [];
+    return Theme.THEMES.filter(t => t.premium);
+  }
+
+  function getPack(id) {
+    const resolved = LEGACY_MAP[id] || id;
+    if (typeof Theme === 'undefined') return null;
+    return Theme.getTheme(resolved) || Theme.getTheme(id) || null;
+  }
+
+  // Legacy no-ops
+  function registerPack() {}
 
   function init() {
-    // Wrap Theme.set so switching themes deactivates the active skin
-    if (typeof Theme !== 'undefined' && Theme.set) {
-      const _origThemeSet = Theme.set;
-      Theme.set = function(name) {
-        if (_activeSkin) {
-          // User is switching theme manually — deactivate skin first
-          _activeSkin = null;
-          _overrides = {};
-          _clearVisuals();
-          _stopEffect();
-          document.documentElement.removeAttribute('data-skin');
-          localStorage.removeItem(STORAGE_KEY);
-          localStorage.removeItem(PRE_SKIN_THEME);
-          _refreshSidebar();
-          if (typeof State !== 'undefined') State.set('skin', null);
-        }
-        _origThemeSet(name);
-      };
-    }
-
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && PACKS[saved] && ownsSkin(saved)) {
-      activate(saved);
+    // Migrate legacy skin → theme
+    const legacySkin = localStorage.getItem('nice-active-skin');
+    if (legacySkin) {
+      const resolved = LEGACY_MAP[legacySkin] || legacySkin;
+      localStorage.removeItem('nice-active-skin');
+      localStorage.removeItem('nice-pre-skin-theme');
+      if (typeof Theme !== 'undefined') {
+        localStorage.setItem('ns-theme', resolved);
+      }
     }
   }
 
@@ -221,6 +120,6 @@ const Skin = (() => {
     text, list,
     isActive, activeSkin, allPacks, getPack,
     ownsSkin, purchaseSkin,
-    init, PACKS
+    init, PACKS: {},
   };
 })();
