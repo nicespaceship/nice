@@ -236,6 +236,42 @@ const MissionRouter = (() => {
     return { content: 'No execution engine available.', agent: 'NICE' };
   }
 
+  /* ── Helper: resolve agent blueprint by ID (BlueprintStore + localStorage custom agents) ── */
+  function _resolveAgent(agentId) {
+    var bp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(agentId) : null;
+    if (!bp) {
+      try {
+        var custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        bp = custom.find(function(a) { return a.id === agentId; }) || null;
+      } catch (e) {}
+    }
+    return bp;
+  }
+
+  /* ── Helper: extract text content from an execution result ── */
+  function _extractText(result) {
+    if (typeof result === 'string') return result;
+    if (result && result.content) {
+      return typeof result.content === 'string' ? result.content : JSON.stringify(result.content);
+    }
+    return JSON.stringify(result);
+  }
+
+  /* ── Helper: parse JSON from LLM text (handles markdown fences, mixed text) ── */
+  function _parseJSON(text, requiredKey) {
+    try {
+      var parsed = JSON.parse(text.trim());
+      if (!requiredKey || parsed[requiredKey]) return parsed;
+    } catch (e) { /* fall through */ }
+
+    var pattern = new RegExp('\\{[\\s\\S]*?"' + (requiredKey || '') + '"[\\s\\S]*?\\}');
+    var match = text.match(pattern);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch (e) { /* fall through */ }
+    }
+    return null;
+  }
+
   /**
    * Execute a sequential pipeline — each agent's output feeds into the next.
    * @param {string} spaceshipId
@@ -251,16 +287,7 @@ const MissionRouter = (() => {
 
     for (var i = 0; i < agentIds.length; i++) {
       var agentId = agentIds[i];
-      var bp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(agentId) : null;
-
-      // Check custom agents in localStorage
-      if (!bp) {
-        try {
-          var custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
-          bp = custom.find(function(a) { return a.id === agentId; });
-        } catch (e) {}
-      }
-
+      var bp = _resolveAgent(agentId);
       var agentName = bp ? bp.name : 'Agent ' + (i + 1);
 
       // Build context-aware prompt for agents after the first
@@ -271,12 +298,10 @@ const MissionRouter = (() => {
         'Your task: Review, refine, and enhance this based on your expertise. ' +
         'Build on what was done — don\'t start over.';
 
-      // Notify UI
       if (opts.onStep) {
         opts.onStep({ step: i + 1, total: agentIds.length, agentName: agentName, status: 'running', input: currentInput.substring(0, 200) });
       }
 
-      // Execute this agent
       var result;
       try {
         result = await _executeAgent(spaceshipId, bp, agentPrompt, {});
@@ -284,9 +309,7 @@ const MissionRouter = (() => {
         result = { content: 'Agent error: ' + (err.message || err), agent: agentName };
       }
 
-      var outputText = typeof result === 'string' ? result :
-        (result && result.content) ? (typeof result.content === 'string' ? result.content : JSON.stringify(result.content)) :
-        JSON.stringify(result);
+      var outputText = _extractText(result);
 
       steps.push({
         agentId: agentId,
@@ -295,7 +318,6 @@ const MissionRouter = (() => {
         output: outputText,
       });
 
-      // Log to Ship's Log
       if (typeof ShipLog !== 'undefined') {
         await ShipLog.append(spaceshipId, {
           agentId: agentId,
@@ -305,205 +327,398 @@ const MissionRouter = (() => {
         });
       }
 
-      // Feed output as input to next agent
       currentInput = outputText;
 
-      // Notify UI of completion
       if (opts.onStep) {
         opts.onStep({ step: i + 1, total: agentIds.length, agentName: agentName, status: 'done', output: outputText.substring(0, 200) });
       }
     }
 
-    return {
-      steps: steps,
-      finalResult: currentInput,
-    };
+    return { steps: steps, finalResult: currentInput };
   }
 
   /**
-   * Execute agents in parallel — all receive the same prompt, results collected.
+   * Run all agents simultaneously on the same prompt and merge results.
    * @param {string} spaceshipId
-   * @param {Array<string>} agentIds
+   * @param {Array<string>} agentIds — agents to run in parallel
    * @param {string} prompt
-   * @param {Object} [opts] — { onResult: fn({ agentName, output }) }
-   * @returns {{ results: Array<{ agentId, agentName, output }>, combined: string }}
+   * @param {Object} [opts] — { onStep: fn({ agentName, status }) }
+   * @returns {{ results: Array<{ agentId, agentName, output }>, mergedResult: string }}
    */
   async function parallel(spaceshipId, agentIds, prompt, opts) {
     opts = opts || {};
 
     var promises = agentIds.map(function(agentId) {
-      var bp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(agentId) : null;
-      if (!bp) {
-        try {
-          var custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
-          bp = custom.find(function(a) { return a.id === agentId; });
-        } catch (e) {}
-      }
+      var bp = _resolveAgent(agentId);
       var agentName = bp ? bp.name : agentId;
+
+      if (opts.onStep) opts.onStep({ agentId: agentId, agentName: agentName, status: 'running' });
+
       return _executeAgent(spaceshipId, bp, prompt, {})
         .then(function(result) {
-          var output = typeof result === 'string' ? result :
-            (result && result.content ? (typeof result.content === 'string' ? result.content : JSON.stringify(result.content)) : JSON.stringify(result));
-          if (opts.onResult) opts.onResult({ agentName: agentName, output: output.substring(0, 200) });
-          if (typeof ShipLog !== 'undefined') {
-            ShipLog.append(spaceshipId, { agentId: agentId, role: 'assistant', content: '[Parallel] ' + output.substring(0, 1000), metadata: { type: 'parallel' } });
-          }
-          return { agentId: agentId, agentName: agentName, output: output };
+          if (opts.onStep) opts.onStep({ agentId: agentId, agentName: agentName, status: 'done' });
+          return { agentId: agentId, agentName: agentName, output: _extractText(result) };
         })
         .catch(function(err) {
+          if (opts.onStep) opts.onStep({ agentId: agentId, agentName: agentName, status: 'error' });
           return { agentId: agentId, agentName: agentName, output: 'Error: ' + (err.message || err) };
         });
     });
 
     var results = await Promise.all(promises);
-    var combined = results.map(function(r) {
-      return '### ' + r.agentName + '\n\n' + r.output;
+
+    var mergedResult = results.map(function(r) {
+      return '## ' + r.agentName + '\n\n' + r.output;
     }).join('\n\n---\n\n');
 
-    return { results: results, combined: combined };
+    if (typeof ShipLog !== 'undefined') {
+      await ShipLog.append(spaceshipId, {
+        agentId: null,
+        role: 'system',
+        content: '[Parallel] ' + results.length + ' agents completed. Merged output (' + mergedResult.length + ' chars).',
+        metadata: { type: 'parallel', agent_count: results.length, agent_ids: agentIds },
+      });
+    }
+
+    return { results: results, mergedResult: mergedResult };
   }
 
   /**
-   * Execute a single agent in a loop until a stop condition or max iterations.
-   * Each iteration receives its own output as additional context.
+   * Triage agent analyzes the prompt and dispatches to one or more specialists.
    * @param {string} spaceshipId
-   * @param {string} agentId
+   * @param {string} triageAgentId — the agent that decides who handles the task
+   * @param {Array<string>} specialistIds — available specialist agent IDs
    * @param {string} prompt
-   * @param {Object} [opts]
-   *   - maxIterations: number (default 3)
-   *   - stopCondition: function(output) → boolean (stop if true)
-   *   - onIteration: fn({ iteration, output })
-   * @returns {{ iterations: Array<{ iteration, output }>, finalResult: string }}
+   * @param {Object} [opts] — { onRouting, onStep }
+   * @returns {{ triage: { selectedIds, reasoning }, results: Array<{ agentId, agentName, output }>, mergedResult: string }}
+   */
+  async function routerPattern(spaceshipId, triageAgentId, specialistIds, prompt, opts) {
+    opts = opts || {};
+
+    // Build specialist descriptions for triage prompt
+    var specialists = specialistIds.map(function(id) {
+      var bp = _resolveAgent(id);
+      var name = bp ? bp.name : id;
+      var role = (bp && bp.config && bp.config.role) || (bp && bp.category) || 'General';
+      var desc = (bp && bp.description) || '';
+      return { id: id, name: name, role: role, description: desc };
+    });
+
+    var specLines = specialists.map(function(s) {
+      return '- ' + s.name + ' (ID: ' + s.id + ') — ' + s.role + '. ' + s.description;
+    }).join('\n');
+
+    var triageSystemPrompt = 'You are a triage agent. Analyze this task and decide which specialist(s) should handle it.\n\n' +
+      '## Available Specialists\n' + specLines + '\n\n' +
+      'You may select one or more specialists. ' +
+      'Respond ONLY with JSON: {"agent_ids":["id1","id2"],"reasoning":"why these specialists"}';
+
+    var triageResult;
+    try {
+      if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
+
+      var resp = await SB.functions.invoke('nice-ai', {
+        body: {
+          model: 'gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: triageSystemPrompt },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.2,
+          max_tokens: 256,
+        },
+      });
+
+      if (resp.error) throw new Error(typeof resp.error === 'string' ? resp.error : resp.error.message || 'Triage LLM error');
+      if (!resp.data || !resp.data.content) throw new Error('Empty triage response');
+
+      var parsed = _parseJSON(resp.data.content, 'agent_ids');
+      if (!parsed) throw new Error('Could not parse triage response');
+
+      var selectedIds = (parsed.agent_ids || []).filter(function(id) {
+        return specialistIds.indexOf(id) !== -1;
+      });
+      if (selectedIds.length === 0) selectedIds = [specialistIds[0]];
+
+      triageResult = { selectedIds: selectedIds, reasoning: parsed.reasoning || 'Selected by triage' };
+    } catch (err) {
+      console.warn('[MissionRouter] Triage failed, defaulting to first specialist:', err.message || err);
+      triageResult = { selectedIds: [specialistIds[0]], reasoning: 'Triage unavailable — defaulting to first specialist' };
+    }
+
+    if (opts.onRouting) opts.onRouting(triageResult);
+
+    // Execute selected specialists in parallel
+    var execPromises = triageResult.selectedIds.map(function(agentId) {
+      var bp = _resolveAgent(agentId);
+      var agentName = bp ? bp.name : agentId;
+
+      if (opts.onStep) opts.onStep({ agentId: agentId, agentName: agentName, status: 'running' });
+
+      return _executeAgent(spaceshipId, bp, prompt, {})
+        .then(function(result) {
+          if (opts.onStep) opts.onStep({ agentId: agentId, agentName: agentName, status: 'done' });
+          return { agentId: agentId, agentName: agentName, output: _extractText(result) };
+        })
+        .catch(function(err) {
+          if (opts.onStep) opts.onStep({ agentId: agentId, agentName: agentName, status: 'error' });
+          return { agentId: agentId, agentName: agentName, output: 'Error: ' + (err.message || err) };
+        });
+    });
+
+    var results = await Promise.all(execPromises);
+
+    var mergedResult = results.map(function(r) {
+      return '## ' + r.agentName + '\n\n' + r.output;
+    }).join('\n\n---\n\n');
+
+    if (typeof ShipLog !== 'undefined') {
+      await ShipLog.append(spaceshipId, {
+        agentId: null,
+        role: 'system',
+        content: '[RouterPattern] Triage selected ' + triageResult.selectedIds.length + ' specialist(s): ' + triageResult.reasoning,
+        metadata: { type: 'router_pattern', triage_agent: triageAgentId, selected_ids: triageResult.selectedIds, reasoning: triageResult.reasoning },
+      });
+    }
+
+    return { triage: triageResult, results: results, mergedResult: mergedResult };
+  }
+
+  /**
+   * Run an agent in a quality-checked loop with reviewer feedback.
+   * Agent runs, reviewer scores output, if below threshold agent retries with feedback.
+   * @param {string} spaceshipId
+   * @param {string} agentId — the agent to run
+   * @param {string} prompt
+   * @param {Object} [opts] — { threshold: number (default 7), maxIterations: number (default 3), onStep }
+   * @returns {{ iterations: number, finalResult: string, qualityScore: number }}
    */
   async function loop(spaceshipId, agentId, prompt, opts) {
     opts = opts || {};
-    var maxIter = opts.maxIterations || 3;
-    var bp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(agentId) : null;
-    if (!bp) {
-      try {
-        var custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
-        bp = custom.find(function(a) { return a.id === agentId; });
-      } catch (e) {}
-    }
+    var threshold = opts.threshold || 7;
+    var maxIterations = opts.maxIterations || 3;
+    var bp = _resolveAgent(agentId);
     var agentName = bp ? bp.name : agentId;
 
-    var iterations = [];
     var currentPrompt = prompt;
+    var lastOutput = '';
+    var qualityScore = 0;
+    var iterations = 0;
 
-    for (var i = 0; i < maxIter; i++) {
-      var iterPrompt = i === 0 ? currentPrompt :
-        'Iteration ' + (i + 1) + '. Your previous output:\n\n' + iterations[i - 1].output.substring(0, 1000) +
-        '\n\nRefine and improve. Be specific about what you changed and why.';
+    for (var i = 1; i <= maxIterations; i++) {
+      iterations = i;
 
+      if (opts.onStep) opts.onStep({ iteration: i, maxIterations: maxIterations, agentName: agentName, status: 'executing' });
+
+      // Execute agent
       var result;
       try {
-        result = await _executeAgent(spaceshipId, bp, iterPrompt, {});
+        result = await _executeAgent(spaceshipId, bp, currentPrompt, {});
       } catch (err) {
-        result = { content: 'Error: ' + (err.message || err) };
+        result = { content: 'Agent error: ' + (err.message || err), agent: agentName };
       }
+      lastOutput = _extractText(result);
 
-      var output = typeof result === 'string' ? result :
-        (result && result.content ? (typeof result.content === 'string' ? result.content : JSON.stringify(result.content)) : JSON.stringify(result));
+      if (opts.onStep) opts.onStep({ iteration: i, maxIterations: maxIterations, agentName: agentName, status: 'reviewing' });
 
-      iterations.push({ iteration: i + 1, output: output });
+      // Quality review via Gemini Flash
+      var reviewSystemPrompt = 'You are a quality reviewer. Rate the following output on a scale of 1-10.\n\n' +
+        '## Original Task\n' + prompt + '\n\n' +
+        '## Agent Output\n' + lastOutput.substring(0, 3000) + '\n\n' +
+        'Respond ONLY with JSON: {"score":N,"feedback":"specific improvements needed"}';
 
-      if (typeof ShipLog !== 'undefined') {
-        ShipLog.append(spaceshipId, { agentId: agentId, role: 'assistant', content: '[Loop ' + (i + 1) + '/' + maxIter + '] ' + output.substring(0, 800), metadata: { type: 'loop', iteration: i + 1 } });
+      try {
+        if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
+
+        var reviewResp = await SB.functions.invoke('nice-ai', {
+          body: {
+            model: 'gemini-2.5-flash',
+            messages: [
+              { role: 'system', content: reviewSystemPrompt },
+              { role: 'user', content: 'Rate the output quality.' },
+            ],
+            temperature: 0.3,
+            max_tokens: 256,
+          },
+        });
+
+        if (reviewResp.error) throw new Error(typeof reviewResp.error === 'string' ? reviewResp.error : reviewResp.error.message || 'Review LLM error');
+        if (!reviewResp.data || !reviewResp.data.content) throw new Error('Empty review response');
+
+        var review = _parseJSON(reviewResp.data.content, 'score');
+        if (!review) review = { score: 5, feedback: 'Could not parse review' };
+
+        qualityScore = typeof review.score === 'number' ? review.score : 5;
+        var feedback = review.feedback || '';
+
+        if (opts.onStep) opts.onStep({ iteration: i, maxIterations: maxIterations, agentName: agentName, status: 'reviewed', score: qualityScore });
+
+        // If quality meets threshold, stop
+        if (qualityScore >= threshold) break;
+
+        // If iterations remain, build retry prompt with feedback
+        if (i < maxIterations) {
+          currentPrompt = 'Your previous attempt scored ' + qualityScore + '/10. Feedback: ' + feedback + '\n\n' +
+            'Original task: ' + prompt + '\n\n' +
+            'Your previous output:\n' + lastOutput.substring(0, 2000) + '\n\n' +
+            'Please improve your response based on the feedback.';
+        }
+      } catch (reviewErr) {
+        console.warn('[MissionRouter] Review failed, accepting output:', reviewErr.message || reviewErr);
+        qualityScore = threshold; // Accept on review failure
+        break;
       }
-
-      if (opts.onIteration) opts.onIteration({ iteration: i + 1, total: maxIter, agentName: agentName, output: output.substring(0, 200) });
-
-      if (opts.stopCondition && opts.stopCondition(output)) break;
     }
 
-    return { iterations: iterations, finalResult: iterations[iterations.length - 1].output };
+    if (typeof ShipLog !== 'undefined') {
+      await ShipLog.append(spaceshipId, {
+        agentId: agentId,
+        role: 'system',
+        content: '[Loop] ' + agentName + ' completed after ' + iterations + ' iteration(s). Quality: ' + qualityScore + '/10.',
+        metadata: { type: 'loop', iterations: iterations, quality_score: qualityScore, agent_id: agentId },
+      });
+    }
+
+    return { iterations: iterations, finalResult: lastOutput, qualityScore: qualityScore };
   }
 
   /**
-   * Hierarchical execution — a "director" agent plans tasks, then specialist agents execute.
+   * Captain decomposes task into subtasks, assigns to crew, collects results, synthesizes final output.
    * @param {string} spaceshipId
-   * @param {string} directorId — agent that creates the plan
-   * @param {Array<string>} specialistIds — agents that execute plan steps
-   * @param {string} goal — the high-level goal
-   * @param {Object} [opts] — { onStep: fn({ step, agentName, output }) }
-   * @returns {{ plan: string, steps: Array<{ agentName, task, output }>, summary: string }}
+   * @param {string} captainId — the captain/lead agent who plans and synthesizes
+   * @param {Array<string>} crewIds — available crew agent IDs
+   * @param {string} prompt
+   * @param {Object} [opts] — { onStep }
+   * @returns {{ plan: Array<{ agentId, agentName, subtask }>, results: Array<{ agentId, agentName, subtask, output }>, synthesis: string }}
    */
-  async function hierarchical(spaceshipId, directorId, specialistIds, goal, opts) {
+  async function hierarchical(spaceshipId, captainId, crewIds, prompt, opts) {
     opts = opts || {};
 
-    // 1. Director creates the plan
-    var directorBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(directorId) : null;
-    if (!directorBp) {
-      try {
-        var customAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
-        directorBp = customAgents.find(function(a) { return a.id === directorId; });
-      } catch (e) {}
-    }
+    // Build crew descriptions for the captain
+    var crewDescs = crewIds.map(function(id) {
+      var bp = _resolveAgent(id);
+      var name = bp ? bp.name : id;
+      var role = (bp && bp.config && bp.config.role) || (bp && bp.category) || 'General';
+      var desc = (bp && bp.description) || '';
+      return { id: id, name: name, role: role, description: desc };
+    });
 
-    var planPrompt = 'You are coordinating a team of ' + specialistIds.length + ' agents.\n' +
-      'Goal: ' + goal + '\n\n' +
-      'Create a numbered task list — one specific task per agent.\n' +
-      'Format: "1. [task]\\n2. [task]\\n..." — one line per task, no extra text.';
+    var crewLines = crewDescs.map(function(c) {
+      return '- ' + c.name + ' (ID: ' + c.id + ') — ' + c.role + '. ' + c.description;
+    }).join('\n');
 
-    var planResult;
+    if (opts.onStep) opts.onStep({ phase: 'planning', status: 'running' });
+
+    // Captain creates task plan via LLM
+    var planSystemPrompt = 'You are a team captain. Decompose this task into subtasks and assign each to the best crew member.\n\n' +
+      '## Available Crew\n' + crewLines + '\n\n' +
+      'Respond ONLY with JSON: {"subtasks":[{"agent_id":"...","subtask":"what this agent should do"}]}';
+
+    var plan;
     try {
-      planResult = await _executeAgent(spaceshipId, directorBp, planPrompt, {});
+      if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
+
+      var planResp = await SB.functions.invoke('nice-ai', {
+        body: {
+          model: 'gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: planSystemPrompt },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 512,
+        },
+      });
+
+      if (planResp.error) throw new Error(typeof planResp.error === 'string' ? planResp.error : planResp.error.message || 'Planning LLM error');
+      if (!planResp.data || !planResp.data.content) throw new Error('Empty planning response');
+
+      var parsed = _parseJSON(planResp.data.content, 'subtasks');
+      if (!parsed || !parsed.subtasks || parsed.subtasks.length === 0) throw new Error('Empty plan');
+
+      plan = parsed.subtasks.map(function(st) {
+        var assignedId = crewIds.indexOf(st.agent_id) !== -1 ? st.agent_id : crewIds[0];
+        var bp = _resolveAgent(assignedId);
+        return { agentId: assignedId, agentName: bp ? bp.name : assignedId, subtask: st.subtask || prompt };
+      });
     } catch (err) {
-      planResult = { content: 'Plan: Complete the goal: ' + goal };
-    }
-    var plan = typeof planResult === 'string' ? planResult :
-      (planResult && planResult.content ? (typeof planResult.content === 'string' ? planResult.content : JSON.stringify(planResult.content)) : goal);
-
-    if (typeof ShipLog !== 'undefined') {
-      ShipLog.append(spaceshipId, { agentId: directorId, role: 'assistant', content: '[Director Plan] ' + plan.substring(0, 1000), metadata: { type: 'hierarchical', role: 'director' } });
+      console.warn('[MissionRouter] Planning failed, assigning full task to each crew member:', err.message || err);
+      plan = crewIds.map(function(id) {
+        var bp = _resolveAgent(id);
+        return { agentId: id, agentName: bp ? bp.name : id, subtask: prompt };
+      });
     }
 
-    // 2. Parse tasks from plan
-    var taskLines = plan.split('\n').filter(function(l) { return /^\d+\./.test(l.trim()); });
-    if (!taskLines.length) taskLines = [goal];
+    if (opts.onStep) opts.onStep({ phase: 'planning', status: 'done', plan: plan });
 
-    // 3. Execute each specialist on their task
-    var steps = [];
-    for (var s = 0; s < specialistIds.length; s++) {
-      var specId = specialistIds[s];
-      var specBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(specId) : null;
-      if (!specBp) {
-        try {
-          var customAll = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
-          specBp = customAll.find(function(a) { return a.id === specId; });
-        } catch (e) {}
-      }
-      var specName = specBp ? specBp.name : 'Agent ' + (s + 1);
-      var task = taskLines[s] ? taskLines[s].replace(/^\d+\.\s*/, '') : goal;
+    // Execute subtasks in parallel
+    var execPromises = plan.map(function(task, idx) {
+      var bp = _resolveAgent(task.agentId);
 
-      if (opts.onStep) opts.onStep({ step: s + 1, total: specialistIds.length, agentName: specName, status: 'running', task: task });
+      if (opts.onStep) opts.onStep({ phase: 'executing', agentName: task.agentName, subtask: task.subtask, index: idx, status: 'running' });
 
-      var specResult;
-      try {
-        specResult = await _executeAgent(spaceshipId, specBp, 'Your assigned task: ' + task + '\n\nOverall goal: ' + goal, {});
-      } catch (err) {
-        specResult = { content: 'Error: ' + (err.message || err) };
-      }
+      return _executeAgent(spaceshipId, bp, task.subtask, {})
+        .then(function(result) {
+          if (opts.onStep) opts.onStep({ phase: 'executing', agentName: task.agentName, index: idx, status: 'done' });
+          return { agentId: task.agentId, agentName: task.agentName, subtask: task.subtask, output: _extractText(result) };
+        })
+        .catch(function(err) {
+          if (opts.onStep) opts.onStep({ phase: 'executing', agentName: task.agentName, index: idx, status: 'error' });
+          return { agentId: task.agentId, agentName: task.agentName, subtask: task.subtask, output: 'Error: ' + (err.message || err) };
+        });
+    });
 
-      var specOutput = typeof specResult === 'string' ? specResult :
-        (specResult && specResult.content ? (typeof specResult.content === 'string' ? specResult.content : JSON.stringify(specResult.content)) : JSON.stringify(specResult));
+    var results = await Promise.all(execPromises);
 
-      steps.push({ agentId: specId, agentName: specName, task: task, output: specOutput });
+    if (opts.onStep) opts.onStep({ phase: 'synthesizing', status: 'running' });
 
-      if (typeof ShipLog !== 'undefined') {
-        ShipLog.append(spaceshipId, { agentId: specId, role: 'assistant', content: '[Task: ' + task.substring(0, 60) + '] ' + specOutput.substring(0, 800), metadata: { type: 'hierarchical', role: 'specialist', step: s + 1 } });
-      }
-
-      if (opts.onStep) opts.onStep({ step: s + 1, total: specialistIds.length, agentName: specName, status: 'done', output: specOutput.substring(0, 200) });
-    }
-
-    // 4. Summary — combine all outputs
-    var summary = steps.map(function(step) {
-      return '**' + step.agentName + '** — ' + step.task + '\n\n' + step.output;
+    // Captain synthesizes final output
+    var resultsSummary = results.map(function(r) {
+      return '## ' + r.agentName + ' — ' + r.subtask + '\n\n' + r.output;
     }).join('\n\n---\n\n');
 
-    return { plan: plan, steps: steps, summary: summary };
+    var synthesisPrompt = 'You are the team captain. Your crew has completed their subtasks. ' +
+      'Synthesize their outputs into a single coherent final deliverable.\n\n' +
+      '## Original Task\n' + prompt + '\n\n' +
+      '## Crew Results\n' + resultsSummary.substring(0, 6000) + '\n\n' +
+      'Produce a unified, polished final output that combines the best of each crew member\'s work.';
+
+    var synthesis;
+    try {
+      if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
+
+      var synthResp = await SB.functions.invoke('nice-ai', {
+        body: {
+          model: 'gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: synthesisPrompt },
+            { role: 'user', content: 'Synthesize the crew results.' },
+          ],
+          temperature: 0.4,
+          max_tokens: 2048,
+        },
+      });
+
+      if (synthResp.error) throw new Error(typeof synthResp.error === 'string' ? synthResp.error : synthResp.error.message || 'Synthesis LLM error');
+      synthesis = (synthResp.data && synthResp.data.content) || resultsSummary;
+    } catch (err) {
+      console.warn('[MissionRouter] Synthesis failed, returning raw results:', err.message || err);
+      synthesis = resultsSummary;
+    }
+
+    if (opts.onStep) opts.onStep({ phase: 'synthesizing', status: 'done' });
+
+    if (typeof ShipLog !== 'undefined') {
+      await ShipLog.append(spaceshipId, {
+        agentId: captainId,
+        role: 'system',
+        content: '[Hierarchical] Captain decomposed into ' + plan.length + ' subtask(s). Synthesis complete.',
+        metadata: { type: 'hierarchical', subtask_count: plan.length, captain_id: captainId, crew_ids: crewIds },
+      });
+    }
+
+    return { plan: plan, results: results, synthesis: synthesis };
   }
 
-  return { route, pipeline, parallel, loop, hierarchical, buildCrewManifest };
+  return { route, pipeline, parallel, routerPattern, loop, hierarchical, buildCrewManifest };
 })();
