@@ -257,71 +257,13 @@ const CardRenderer = (() => {
     return _renderFull(type, data, options);
   }
 
-  /* ── Full TCG Card (terminal) ── */
-  function _renderFull(type, bp, opts) {
-    if (type === 'spaceship') return _renderFullSpaceship(bp, opts);
-    return _renderFullAgent(bp, opts);
-  }
-
-  function _renderFullAgent(bp, opts) {
-    const rarity = _getAgentRarity(bp).toLowerCase();
-    const rarityLabel = { common:'COMMON', rare:'RARE', epic:'EPIC', legendary:'LEGENDARY', mythic:'MYTHIC' }[rarity] || 'COMMON';
-    const rarityColor = RARITY_COLORS[bp.rarity || 'Common'] || RARITY_COLORS.Common;
-
-    // Derive marquee & flavor from available data
-    const desc = bp.desc || bp.description || bp.flavor || [bp.role, bp.type, bp.llm_engine].filter(Boolean).join(' · ') || '';
-    const marqueeText = _esc(desc);
-    const flavor = bp.flavor || bp.description || bp.desc || desc;
-
-    // Derive capabilities from blueprint caps, metadata.caps, or tools
-    const caps = bp.caps || bp.metadata?.caps || (bp.config?.tools || []).map(t => '⚙ ' + t);
-
-    const statKeys = ['spd','acc','cap','pwr'];
-    const statLbls = ['SPD','ACC','CAP','PWR'];
-    const statVals = statKeys.map(k => bp.stats?.[k] || '&#8212;');
-    const serial = serialHash(bp.id || bp.name);
-    const clickClass = opts.clickClass || 'bp-card-clickable';
-    const statusDot = opts.statusDot || '';
-    const draggable = opts.draggable ? ' draggable="true"' : '';
-    const statusAttr = bp.status ? ` data-status="${bp.status}"` : '';
-
-    const isActivated = !!opts.activated;
-    const _cl = isActivated ? getCustomLabels(bp.id) : {};
-    const displayName = _cl.name || bp.name;
-    const roleLabel = _cl.role || bp.category || bp.role || '';
-    const nameEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="name"' : '';
-
-    return `<div class="tcg-card ${clickClass}" data-id="${bp.id}" data-type="agent" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}${draggable}>
-      <div class="tcg-name-bar">
-        <span class="tcg-name"${nameEditable}>${_esc(displayName)}</span>
-        ${statusDot}
-      </div>
-      <div class="tcg-art">
-        ${roleLabel ? `<div class="tcg-art-role"><span class="tcg-serial-code"${isActivated ? ' contenteditable="true" spellcheck="false" data-field="role"' : ''}>${_esc(roleLabel)}</span></div>` : ''}
-        <div class="tcg-art-class"><span class="tcg-serial-code${rarity === 'mythic' ? ' mythic-badge-animated' : ''}" ${rarity === 'mythic' ? '' : `style="color:${rarityColor};border:1px solid ${rarityColor}"`}>${rarityLabel}</span></div>
-        <div class="tcg-art-serial" title="Serial: ${serial.code}"><span class="tcg-serial-code">${serial.code}</span></div>
-        ${avatarArt(bp.name, bp.category || bp.role, serial)}
-      </div>
-      <div class="tcg-marquee"><div class="tcg-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
-      <div class="tcg-text-box">
-        <p class="tcg-flavor">"${_esc(flavor)}"</p>
-        ${caps.slice(0,3).map(c => `<p class="tcg-cap">${_esc(c)}</p>`).join('')}
-      </div>
-      ${opts.overlay ? `<div class="tcg-overlay">${opts.overlay}</div>` : ''}
-      <div class="tcg-stats">
-        ${statLbls.map((l,i) => `<div class="tcg-stat"><span class="tcg-stat-val">${statVals[i]}</span><span class="tcg-stat-lbl">${l}</span></div>`).join('')}
-      </div>
-      ${opts.footer ? `<div class="tcg-footer">${opts.footer}</div>` : ''}
-      ${opts.actions ? `<div class="tcg-actions">${opts.actions}</div>` : ''}
-    </div>`;
-  }
+  /* ── Full TCG Card — ONE unified template for all types and rarities ── */
 
   const _SPECIAL_SHIPS = ['USS Enterprise NCC-1701-D', 'Star Destroyer'];
   function _isSpecialShip(bp) { return _SPECIAL_SHIPS.includes(bp.name); }
 
   function _deriveClassId(bp) {
     if (bp.class_id) return bp.class_id;
-    // Use crew/slot count to determine art layout (not recommended_class)
     const slots = parseInt(bp.stats?.slots || bp.stats?.crew, 10) || 0;
     if (slots >= 10) return 'class-5';
     if (slots >= 7)  return 'class-4';
@@ -330,60 +272,87 @@ const CardRenderer = (() => {
     return 'slot-6';
   }
 
-  // Map DB tier names for backward compat
   const TIER_ALIAS = { lite:'scout', pro:'frigate', elite:'cruiser', free:'scout' };
 
-  function _renderFullSpaceship(bp, opts) {
-    const classId = _deriveClassId(bp);
-    const cls = SHIP_CLASSES[classId] || SHIP_CLASSES['slot-6'] || SHIP_CLASSES['class-1'];
-    // Use rarity as the class label (not the old Scout/Frigate/etc.)
-    const rarityName = bp.rarity || 'Common';
-    const classLabel = rarityName.toUpperCase();
-    const rarityColor = SLOT_COLORS[rarityName] || '#94a3b8';
-    const tierKey = TIER_ALIAS[bp.tier] || bp.tier || 'scout';
-    const shipColor = rarityColor;
-    const serial = serialHash(bp.id || bp.name, 12);
+  function _renderFull(type, bp, opts) {
+    const isShip = type === 'spaceship';
 
-    // Derive marquee from available data
+    // ── Rarity (unified) ──
+    const rarity = isShip ? (bp.rarity || 'Common').toLowerCase() : _getAgentRarity(bp).toLowerCase();
+    const rarityLabel = { common:'COMMON', rare:'RARE', epic:'EPIC', legendary:'LEGENDARY', mythic:'MYTHIC' }[rarity] || 'COMMON';
+    const rarityColor = (isShip ? SLOT_COLORS : RARITY_COLORS)[bp.rarity || 'Common'] || '#94a3b8';
+
+    // ── Serial ──
+    const serial = serialHash(bp.id || bp.name, isShip ? 12 : undefined);
+
+    // ── Text content ──
     const members = bp._members || [];
     const memberCount = members.length || (bp.agent_ids || []).length;
-    const desc = bp.desc || bp.flavor || bp.description || `${cls.name} · ${memberCount} agent${memberCount !== 1 ? 's' : ''}`;
+    const classId = isShip ? _deriveClassId(bp) : null;
+    const cls = isShip ? (SHIP_CLASSES[classId] || SHIP_CLASSES['slot-6'] || SHIP_CLASSES['class-1']) : null;
+    const fallbackDesc = isShip
+      ? `${cls.name} · ${memberCount} agent${memberCount !== 1 ? 's' : ''}`
+      : [bp.role, bp.type, bp.llm_engine].filter(Boolean).join(' · ') || '';
+    const desc = bp.desc || bp.description || bp.flavor || fallbackDesc;
     const marqueeText = _esc(desc);
-    const flavor = bp.flavor || bp.desc || bp.description || desc;
+    const flavor = bp.flavor || bp.description || bp.desc || desc;
 
-    // Derive caps from blueprint caps, metadata.caps, or member names
-    const caps = bp.caps || bp.metadata?.caps || (members.length ? members.map(m => '⚙ ' + (m.name || 'Agent')) : []);
+    // ── Capabilities (same derivation for both types) ──
+    const caps = bp.caps || bp.metadata?.caps
+      || (isShip && members.length ? members.map(m => '⚙ ' + (m.name || 'Agent')) : [])
+      || (!isShip ? (bp.config?.tools || []).map(t => '⚙ ' + t) : []);
 
-    // Stats: crew count + slots + rank (rarity) + cost
-    const crewCount = bp.stats?.crew || memberCount.toString();
-    const slotCount = cls.slots.length.toString();
-    const statLbls = ['AGENTS','SLOTS','DEPLOYS'];
-    const deployCount = bp.activation_count || bp.stats?.deployments || 0;
-    const statVals = [crewCount, slotCount, deployCount.toLocaleString()];
+    // ── Stats (type-specific data, same 3-4 column layout) ──
+    let statLbls, statVals;
+    if (isShip) {
+      const crewCount = bp.stats?.crew || memberCount.toString();
+      const slotCount = cls.slots.length.toString();
+      const deployCount = bp.activation_count || bp.stats?.deployments || 0;
+      statLbls = ['AGENTS','SLOTS','DEPLOYS'];
+      statVals = [crewCount, slotCount, deployCount.toLocaleString()];
+    } else {
+      const statKeys = ['spd','acc','cap','pwr'];
+      statLbls = ['SPD','ACC','CAP','PWR'];
+      statVals = statKeys.map(k => bp.stats?.[k] || '&#8212;');
+    }
 
-    const clickClass = opts.clickClass || 'bp-card-clickable';
-    const statusDot = opts.statusDot || '';
-    const statusAttr = bp.status ? ` data-status="${bp.status}"` : '';
-
+    // ── Labels & editability ──
     const isActivated = !!opts.activated;
     const _cl = isActivated ? getCustomLabels(bp.id) : {};
     const displayName = _cl.name || bp.name;
-    const shipRole = _cl.role || bp.category || (bp.desc || bp.description || '').split(/[—–.]/)[0]?.trim() || '';
+    const roleLabel = isShip
+      ? (_cl.role || bp.category || (bp.desc || bp.description || '').split(/[—–.]/)[0]?.trim() || '')
+      : (_cl.role || bp.category || bp.role || '');
     const nameEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="name"' : '';
+    const roleEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="role"' : '';
 
-    const subtitle = bp.subtitle || (bp.metadata && bp.metadata.subtitle) || '';
+    const clickClass = opts.clickClass || 'bp-card-clickable';
+    const statusDot = opts.statusDot || '';
+    const draggable = opts.draggable ? ' draggable="true"' : '';
+    const statusAttr = bp.status ? ` data-status="${bp.status}"` : '';
+    const subtitle = bp.subtitle || bp.metadata?.subtitle || '';
 
-    return `<div class="tcg-card ${clickClass}" data-id="${bp.id}" data-type="spaceship" data-rarity="${rarityName.toLowerCase()}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}>
+    // ── Rarity badge — same treatment for ALL rarities ──
+    const badgeClass = rarity === 'mythic' ? ' mythic-badge-animated' : '';
+    const badgeStyle = `style="color:${rarityColor};border:1px solid ${rarityColor}"`;
+
+    // ── Art ──
+    const artContent = isShip
+      ? (_isSpecialShip(bp) ? slotDiagramArt(classId, serial) : slotDiagramArt('slot-6', serial))
+      : avatarArt(bp.name, bp.category || bp.role, serial);
+
+    // ── ONE template ──
+    return `<div class="tcg-card ${clickClass}" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}${draggable}>
       <div class="tcg-name-bar">
         <span class="tcg-name"${nameEditable}>${_esc(displayName)}</span>
         ${subtitle ? `<span class="tcg-subtitle">${_esc(subtitle)}</span>` : ''}
         ${statusDot}
       </div>
       <div class="tcg-art">
-        ${shipRole ? `<div class="tcg-art-role"><span class="tcg-serial-code"${isActivated ? ' contenteditable="true" spellcheck="false" data-field="role"' : ''}>${_esc(shipRole)}</span></div>` : ''}
-        <div class="tcg-art-class"><span class="tcg-serial-code" style="color:${shipColor};border:1px solid ${shipColor}">${classLabel}</span></div>
+        ${roleLabel ? `<div class="tcg-art-role"><span class="tcg-serial-code"${roleEditable}>${_esc(roleLabel)}</span></div>` : ''}
+        <div class="tcg-art-class"><span class="tcg-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
         <div class="tcg-art-serial" title="Serial: ${serial.code}"><span class="tcg-serial-code">${serial.code}</span></div>
-        ${_isSpecialShip(bp) ? slotDiagramArt(classId, serial) : slotDiagramArt('slot-6', serial)}
+        ${artContent}
       </div>
       <div class="tcg-marquee"><div class="tcg-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
       <div class="tcg-text-box">
