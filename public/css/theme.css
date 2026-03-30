@@ -2139,20 +2139,98 @@
    ornate flourishes, copper patina, pressure gauges.
 ═══════════════════════════════════════════════════════════════════ */
 
-/* ── 1. Rotating Gear Animations — clockwork machinery feel ── */
-@keyframes sp-gear-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
-@keyframes sp-gear-spin-rev { 0% { transform:rotate(0deg); } 100% { transform:rotate(-360deg); } }
-
-[data-theme="steampunk"] .app-main::after {
-  content:'⚙'; position:fixed; bottom:40px; right:30px;
-  font-size:120px; color:rgba(200,160,80,0.04); pointer-events:none; z-index:0;
-  animation:sp-gear-spin 30s linear infinite;
-  text-shadow:0 0 40px rgba(200,160,80,0.02);
+/* ── 1. Clockwork Machinery Background — gears, pistons, steam ── */
+@keyframes sp-gear-spin     { to { transform:rotate(360deg); } }
+@keyframes sp-gear-spin-rev { to { transform:rotate(-360deg); } }
+@keyframes sp-piston-pump   { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-18px); } }
+@keyframes sp-piston-pump-2 { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-12px); } }
+@keyframes sp-steam-burst   {
+  0%        { opacity:0; transform:translateY(0) scale(1); }
+  20%       { opacity:0.5; }
+  100%      { opacity:0; transform:translateY(-80px) scale(2.5); }
 }
+@keyframes sp-steam-drift   {
+  0%        { opacity:0; transform:translate(0,0) scale(1); }
+  30%       { opacity:0.3; }
+  100%      { opacity:0; transform:translate(30px,-100px) scale(3); }
+}
+@keyframes sp-valve-pulse   { 0%,100% { opacity:0.06; } 50% { opacity:0.12; } }
+
+/* ── Gear cluster: bottom-right (3 interlocking gears) ── */
+[data-theme="steampunk"] .bg-grid::before {
+  content:'⚙'; position:fixed; bottom:20px; right:20px;
+  font-size:160px; color:rgba(212,168,64,0.06); pointer-events:none; z-index:0;
+  animation:sp-gear-spin 25s linear infinite;
+  text-shadow:
+    -90px 30px 0 rgba(160,120,24,0.05),
+    -45px -55px 0 rgba(212,168,64,0.04);
+  line-height:1;
+  filter:drop-shadow(0 0 20px rgba(212,168,64,0.02));
+}
+/* Counter-rotating meshed gear */
+[data-theme="steampunk"] .bg-grid::after {
+  content:'⚙'; position:fixed; bottom:95px; right:110px;
+  font-size:96px; color:rgba(184,115,51,0.06); pointer-events:none; z-index:0;
+  animation:sp-gear-spin-rev 17s linear infinite;
+  line-height:1;
+}
+
+/* ── Small gear cluster: top-left ── */
 [data-theme="steampunk"] .app-main::before {
-  content:'⚙'; position:fixed; bottom:80px; right:85px;
-  font-size:72px; color:rgba(139,105,20,0.04); pointer-events:none; z-index:0;
-  animation:sp-gear-spin-rev 22s linear infinite;
+  content:'⚙'; position:fixed; top:80px; left:70px;
+  font-size:64px; color:rgba(212,168,64,0.035); pointer-events:none; z-index:0;
+  animation:sp-gear-spin 20s linear infinite;
+  text-shadow:38px 20px 0 rgba(160,120,24,0.03);
+}
+
+/* ── Hydraulic Piston: left side ── */
+[data-theme="steampunk"] .app-main::after {
+  content:'';
+  position:fixed; bottom:60px; left:50px; width:8px; height:50px;
+  background:linear-gradient(180deg, var(--sp-brass) 0%, var(--sp-brass-dk) 40%, #4a3210 100%);
+  border:1px solid var(--sp-brass-dk); border-radius:2px;
+  pointer-events:none; z-index:0;
+  animation:sp-piston-pump 3s ease-in-out infinite;
+  box-shadow:
+    0 52px 0 0 var(--sp-brass-dk),
+    -1px 52px 0 1px rgba(0,0,0,0.3),
+    20px 10px 0 0 var(--sp-brass-dk),
+    20px -2px 0 0 var(--sp-brass);
+}
+
+/* ── Steam Vents — bursts from machinery ── */
+[data-theme="steampunk"] .app-view-content::before {
+  content:''; position:fixed; bottom:110px; left:46px;
+  width:20px; height:20px; border-radius:50%;
+  background:radial-gradient(ellipse, rgba(240,224,192,0.4), transparent 70%);
+  pointer-events:none; z-index:0; filter:blur(6px);
+  animation:sp-steam-burst 4s ease-out infinite 1.5s;
+}
+
+/* ── Pressure Valve Indicator — glowing dial ── */
+[data-theme="steampunk"] .bg-hero-glow {
+  background:none;
+}
+[data-theme="steampunk"] .app-view-content::after {
+  content:''; position:fixed; bottom:20px; left:35px;
+  width:40px; height:40px; border-radius:50%;
+  border:3px solid var(--sp-brass-dk);
+  background:radial-gradient(circle at 40% 40%, rgba(212,168,64,0.15), rgba(139,105,20,0.05) 60%, transparent);
+  pointer-events:none; z-index:0;
+  animation:sp-valve-pulse 3s ease-in-out infinite;
+  box-shadow:inset 0 0 8px rgba(0,0,0,0.3), 0 0 6px rgba(212,168,64,0.1);
+}
+
+/* ── Pipe Network — connecting lines in background ── */
+[data-theme="steampunk"] .app-view-content {
+  background-image:
+    /* Vertical pipe left */
+    linear-gradient(180deg, transparent 0%, rgba(139,105,20,0.06) 20%, rgba(139,105,20,0.06) 80%, transparent 100%),
+    /* Horizontal pipe bottom */
+    linear-gradient(90deg, transparent 0%, rgba(139,105,20,0.04) 10%, rgba(139,105,20,0.04) 60%, transparent 100%);
+  background-size:6px 100%, 100% 4px;
+  background-position:40px 0, 0 calc(100% - 120px);
+  background-repeat:no-repeat;
 }
 
 /* ── 2. Aged Parchment / Leather Texture ── */
@@ -2402,8 +2480,11 @@
   [data-theme="steampunk"] .app-main::before { animation:none; }
   [data-theme="steampunk"] .bg-grid::before,
   [data-theme="steampunk"] .bg-grid::after { animation:none; }
+  [data-theme="steampunk"] .app-view-content::before,
+  [data-theme="steampunk"] .app-view-content::after { animation:none; }
   [data-theme="steampunk"] .side-header::after { animation:none; }
   [data-theme="steampunk"] .btn-primary { animation:none; }
+  [data-theme="steampunk"] .mcp-catalog-card::before { animation:none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
