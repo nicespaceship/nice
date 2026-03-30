@@ -6,8 +6,8 @@
 
 const TronGameView = (() => {
   const title = 'Light Cycle';
-  const GRID = 25;          // grid cells per axis
-  const TICK_MS = 110;       // ms per game tick
+  const GRID = 20;          // grid cells per axis (bigger cells = more visible)
+  const TICK_MS = 130;       // ms per game tick (slightly slower for playability)
   const HS_KEY = 'nice-tron-highscore';
 
   let _el = null;
@@ -199,7 +199,7 @@ const TronGameView = (() => {
     _ctx.fillRect(0, 0, W, H);
 
     // Grid lines
-    _ctx.strokeStyle = 'rgba(0,229,255,0.06)';
+    _ctx.strokeStyle = 'rgba(0,229,255,0.12)';
     _ctx.lineWidth = 1;
     for (let i = 0; i <= GRID; i++) {
       const x = i * _cellW;
@@ -215,26 +215,30 @@ const TronGameView = (() => {
       const age = i / len; // 0 = oldest, 1 = newest
 
       if (i === len - 1) {
-        // Head — bright white-cyan
+        // Head — bright white with strong glow
         _ctx.fillStyle = '#ffffff';
         _ctx.shadowColor = '#00e5ff';
-        _ctx.shadowBlur = 12;
-        _ctx.fillRect(t.x * _cellW + 1, t.y * _cellH + 1, _cellW - 2, _cellH - 2);
+        _ctx.shadowBlur = 18;
+        _ctx.fillRect(t.x * _cellW, t.y * _cellH, _cellW, _cellH);
         _ctx.shadowBlur = 0;
+        // Extra glow ring around head
+        _ctx.strokeStyle = 'rgba(0,229,255,0.6)';
+        _ctx.lineWidth = 2;
+        _ctx.strokeRect(t.x * _cellW - 1, t.y * _cellH - 1, _cellW + 2, _cellH + 2);
       } else {
-        // Trail body — fading cyan
-        const alpha = 0.15 + age * 0.5;
+        // Trail body — solid cyan, fading with age
+        const alpha = 0.3 + age * 0.6;
         _ctx.fillStyle = `rgba(0,229,255,${alpha})`;
-        _ctx.fillRect(t.x * _cellW + 1, t.y * _cellH + 1, _cellW - 2, _cellH - 2);
+        _ctx.fillRect(t.x * _cellW, t.y * _cellH, _cellW, _cellH);
       }
     }
 
     // Trail glow line connecting segments
     if (len > 1) {
-      _ctx.strokeStyle = 'rgba(0,229,255,0.3)';
-      _ctx.lineWidth = 2;
+      _ctx.strokeStyle = 'rgba(0,229,255,0.5)';
+      _ctx.lineWidth = 3;
       _ctx.shadowColor = '#00e5ff';
-      _ctx.shadowBlur = 6;
+      _ctx.shadowBlur = 10;
       _ctx.beginPath();
       _ctx.moveTo(_trail[0].x * _cellW + _cellW / 2, _trail[0].y * _cellH + _cellH / 2);
       for (let i = 1; i < len; i++) {
@@ -245,19 +249,26 @@ const TronGameView = (() => {
     }
 
     // Energy pickup — pulsing glow
-    const pulse = 0.6 + Math.sin(Date.now() / 200) * 0.4;
+    const pulse = 0.7 + Math.sin(Date.now() / 150) * 0.3;
     _ctx.fillStyle = `rgba(0,229,255,${pulse})`;
     _ctx.shadowColor = '#00e5ff';
-    _ctx.shadowBlur = 16 * pulse;
+    _ctx.shadowBlur = 24 * pulse;
     _ctx.fillRect(
-      _energy.x * _cellW + 2, _energy.y * _cellH + 2,
-      _cellW - 4, _cellH - 4
+      _energy.x * _cellW + 1, _energy.y * _cellH + 1,
+      _cellW - 2, _cellH - 2
     );
     // Inner bright core
-    _ctx.fillStyle = `rgba(255,255,255,${pulse * 0.7})`;
+    _ctx.fillStyle = `rgba(255,255,255,${pulse * 0.9})`;
     _ctx.fillRect(
-      _energy.x * _cellW + _cellW * 0.3, _energy.y * _cellH + _cellH * 0.3,
-      _cellW * 0.4, _cellH * 0.4
+      _energy.x * _cellW + _cellW * 0.2, _energy.y * _cellH + _cellH * 0.2,
+      _cellW * 0.6, _cellH * 0.6
+    );
+    // Outer glow ring
+    _ctx.strokeStyle = `rgba(0,229,255,${pulse * 0.5})`;
+    _ctx.lineWidth = 2;
+    _ctx.strokeRect(
+      _energy.x * _cellW - 2, _energy.y * _cellH - 2,
+      _cellW + 4, _cellH + 4
     );
     _ctx.shadowBlur = 0;
 
@@ -277,7 +288,7 @@ const TronGameView = (() => {
     if (!_ctx || !_cvs) return;
     _ctx.fillStyle = '#010509';
     _ctx.fillRect(0, 0, _cvs.width, _cvs.height);
-    _ctx.strokeStyle = 'rgba(0,229,255,0.06)';
+    _ctx.strokeStyle = 'rgba(0,229,255,0.12)';
     _ctx.lineWidth = 1;
     for (let i = 0; i <= GRID; i++) {
       const x = i * _cellW;
