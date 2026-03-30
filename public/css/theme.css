@@ -2415,12 +2415,14 @@
 }
 [data-theme="steampunk"] .side-header {
   padding-bottom:20px; margin-bottom:4px;
+  overflow:hidden;
 }
 [data-theme="steampunk"] .side-header::after {
-  content:'NICE SPACESHIP CO. — EST. 2026 — AETHERIC INTELLIGENCE DIVISION — PATENT PENDING — ';
-  position:absolute; bottom:0; left:0; right:0; height:14px;
+  content:'NICE SPACESHIP CO. — EST. 2026 — AETHERIC INTELLIGENCE DIVISION — PATENT PENDING — NICE SPACESHIP CO. — EST. 2026 — AETHERIC INTELLIGENCE DIVISION — PATENT PENDING — ';
+  position:absolute; bottom:0; left:0; height:14px;
+  width:max-content;
   font-family:'Courier Prime', monospace; font-size:7px; letter-spacing:.15em;
-  color:rgba(200,160,80,0.2); white-space:nowrap; overflow:hidden;
+  color:rgba(200,160,80,0.2); white-space:nowrap;
   line-height:14px;
   background:rgba(10,7,4,0.8);
   border-top:1px solid rgba(200,160,80,0.15);
