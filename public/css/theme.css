@@ -1631,14 +1631,20 @@
   --accent:       #c8a050;
   --accent2:      #8b6914;
   --text:         #e8d8c0;
+  --text-muted:   #8b7a5a;
   --text-dim:     rgba(232,216,192,0.5);
   --glow:         0 0 12px rgba(200,160,80,0.15);
   --glow-hi:      0 0 20px rgba(200,160,80,0.3);
   --panel-bg:     rgba(15,10,4,0.97);
+  --nav-bg:       rgba(10,7,4,0.95);
   --font-d:       'Playfair Display', 'Georgia', serif;
+  --font-h:       'Playfair Display', 'Georgia', serif;
   --font-b:       'EB Garamond', 'Georgia', serif;
   --font-m:       'Courier Prime', 'Courier New', monospace;
   --radius:       3px;
+  --border-width: 2px;
+  --scan:         0;
+  --bg-pattern:   radial-gradient(circle, rgba(200,160,80,0.04) 1px, transparent 1px);
 }
 
 /* Sidebar — riveted brass panels */

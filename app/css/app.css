@@ -459,6 +459,7 @@
   animation:blink 2s ease-in-out infinite; flex-shrink:0;
 }
 .msg-bar-text { white-space:nowrap; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 @keyframes msg-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
 /* Expanded state */
