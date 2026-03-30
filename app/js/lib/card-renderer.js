@@ -18,14 +18,9 @@ const CardRenderer = (() => {
     Marketing:'#e11d48', Automation:'#14b8a6'
   };
 
-  const SHIP_CLASSES = {
-    'class-1': { name:'Scout',       tier:'FREE',   slots:[{max:'Common',label:'Bridge'},{max:'Common',label:'Ops'}] },
-    'class-2': { name:'Frigate',     tier:'$49',    slots:[{max:'Epic',label:'Bridge'},{max:'Rare',label:'Comms'},{max:'Rare',label:'Ops'}] },
-    'class-3': { name:'Cruiser',     tier:'$149',   slots:[{max:'Epic',label:'Bridge'},{max:'Epic',label:'Comms'},{max:'Epic',label:'Tactical'},{max:'Rare',label:'Science'},{max:'Rare',label:'Engineering'}] },
-    'class-4': { name:'Dreadnought', tier:'$349',   slots:[{max:'Legendary',label:'Bridge'},{max:'Epic',label:'Comms'},{max:'Epic',label:'Tactical'},{max:'Epic',label:'Science'},{max:'Epic',label:'Engineering'},{max:'Rare',label:'Ops'},{max:'Rare',label:'Logistics'},{max:'Rare',label:'Support'}] },
-    'class-5': { name:'Flagship',    tier:'$799',   slots:[{max:'Mythic',label:'Bridge'},{max:'Legendary',label:'Command'},{max:'Epic',label:'Comms'},{max:'Epic',label:'Tactical'},{max:'Epic',label:'Science'},{max:'Epic',label:'Engineering'},{max:'Epic',label:'Analytics'},{max:'Epic',label:'Operations'},{max:'Rare',label:'Support'},{max:'Rare',label:'Logistics'},{max:'Rare',label:'Intel'},{max:'Rare',label:'Creative'}] },
-    'slot-6':  { name:'Ship',       tier:'',       slots:[{max:'Legendary',label:'Bridge'},{max:'Epic',label:'Command'},{max:'Epic',label:'Tactical'},{max:'Epic',label:'Ops'},{max:'Rare',label:'Science'},{max:'Rare',label:'Engineering'}] }
-  };
+  const SHIP_CLASSES = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.SHIP_CLASSES)
+    ? BlueprintUtils.SHIP_CLASSES
+    : { 'class-1':{name:'Scout',slots:[]}, 'slot-6':{name:'Ship',slots:[]} };
 
   const SLOT_COLORS = RARITY_COLORS; // Same colors — unified via BlueprintUtils
 

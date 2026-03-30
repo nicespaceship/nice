@@ -7,7 +7,8 @@
    MODULE: Theme Engine (reused from main site)
 ───────────────────────────────────────────────────────────────── */
 const Theme = (() => {
-  const BUILTIN = ['spaceship','robotech','navigator','matrix','lcars','steampunk'];
+  // BUILTIN derived from THEMES — no separate list to maintain
+  let BUILTIN; // set after THEMES definition
 
   // CSS var keys to clear when switching themes
   const VAR_KEYS = ['--bg','--bg2','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--nav-bg','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
@@ -27,6 +28,8 @@ const Theme = (() => {
     { id:'steampunk', name:'Steampunk', builtin:true, accent:'#c8a050', preview:['#0f0a04','#c8a050','#8b6914'],
       data:{ colors:{ '--bg':'#0f0a04','--bg2':'#1a1208','--surface':'rgba(200,160,80,0.06)','--surface2':'rgba(139,105,20,0.08)','--border':'rgba(200,160,80,0.28)','--border-hi':'rgba(200,160,80,0.6)','--accent':'#c8a050','--accent2':'#8b6914','--text':'#e8d8c0','--text-muted':'rgba(232,216,192,0.5)','--glow':'0 0 16px rgba(200,160,80,0.22)','--panel-bg':'rgba(15,10,4,0.97)' }, fonts:{ '--font-h':"'Playfair Display', serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
   ];
+
+  BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
 
   function set(name) {
     // Clear inline vars first so built-in CSS takes over cleanly
@@ -106,7 +109,7 @@ const Theme = (() => {
     }
     const themes = (Array.isArray(dockIds) && dockIds.length)
       ? THEMES.filter(t => dockIds.includes(t.id))
-      : THEMES.filter(t => ['spaceship','robotech','navigator','matrix','lcars','steampunk'].includes(t.id));
+      : THEMES.filter(t => BUILTIN.includes(t.id));
 
     container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
@@ -130,7 +133,9 @@ const Theme = (() => {
     _updateDarkLightIcon();
   }
 
-  return { set, init, toggleDarkLight, renderDock, list, getTheme, THEMES };
+  function current() { return localStorage.getItem(typeof Utils !== 'undefined' ? Utils.KEYS.theme : 'ns-theme') || 'spaceship'; }
+
+  return { set, init, toggleDarkLight, renderDock, list, getTheme, current, THEMES, BUILTIN };
 })();
 
 /* ─────────────────────────────────────────────────────────────────

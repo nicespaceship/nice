@@ -113,5 +113,27 @@ const BlueprintUtils = (() => {
     return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
   }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, RARITY_COLORS };
+  /** Slot labels — used by gamification and card-renderer for dynamic slot generation */
+  const SLOT_LABELS = ['Bridge', 'Command', 'Tactical', 'Intel', 'Analytics', 'Operations', 'Comms', 'Science', 'Engineering', 'Support', 'Logistics', 'Creative'];
+
+  /** Ship class definitions — single source of truth for both card art and gamification */
+  const SHIP_CLASSES = {
+    'class-1': { name: 'Scout',       slots: _buildClassSlots(6, 'Common') },
+    'class-2': { name: 'Frigate',     slots: _buildClassSlots(8, 'Rare') },
+    'class-3': { name: 'Cruiser',     slots: _buildClassSlots(10, 'Epic') },
+    'class-4': { name: 'Dreadnought', slots: _buildClassSlots(12, 'Legendary') },
+    'class-5': { name: 'Flagship',    slots: _buildClassSlots(24, 'Mythic') },
+    'slot-6':  { name: 'Ship',        slots: _buildClassSlots(6, 'Legendary') },
+  };
+
+  function _buildClassSlots(count, maxRarity) {
+    return Array.from({ length: count }, function(_, i) {
+      return { id: i, max: maxRarity, maxRarity: maxRarity, label: SLOT_LABELS[i] || 'Agent ' + (i + 1) };
+    });
+  }
+
+  /** Build slot array for a specific count (used by gamification for XP-gated classes) */
+  function buildSlots(count, maxRarity) { return _buildClassSlots(count, maxRarity); }
+
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, buildSlots, RARITY_COLORS, SLOT_LABELS, SHIP_CLASSES };
 })();

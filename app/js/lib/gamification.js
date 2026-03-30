@@ -141,10 +141,13 @@ const Gamification = (() => {
     return { ...RARITY_THRESHOLDS[RARITY_THRESHOLDS.length - 1], score };
   }
 
-  /* ── Slot labels for dynamic slot generation ── */
-  const SLOT_LABELS = ['Bridge', 'Command', 'Tactical', 'Intel', 'Analytics', 'Operations', 'Comms', 'Science', 'Engineering', 'Support', 'Logistics', 'Creative'];
+  /* ── Slot labels & builder — delegate to BlueprintUtils (single source of truth) ── */
+  var SLOT_LABELS = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.SLOT_LABELS)
+    ? BlueprintUtils.SLOT_LABELS
+    : ['Bridge', 'Command', 'Tactical', 'Intel', 'Analytics', 'Operations', 'Comms', 'Science', 'Engineering', 'Support', 'Logistics', 'Creative'];
 
   function _buildSlots(count, maxRarity) {
+    if (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.buildSlots) return BlueprintUtils.buildSlots(count, maxRarity);
     return Array.from({ length: count }, function(_, i) {
       return { id: i, maxRarity: maxRarity, label: SLOT_LABELS[i] || 'Agent ' + i };
     });

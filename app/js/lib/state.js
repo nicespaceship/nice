@@ -72,5 +72,19 @@ const State = (() => {
     _scopedSubs = [];
   }
 
-  return { get, set, setBatched, on, off, onScoped, destroyScoped };
+  /** State key registry — prevents magic strings and enables grep */
+  const KEYS = {
+    user: 'user',
+    agents: 'agents',
+    missions: 'missions',
+    spaceships: 'spaceships',
+    enabledModels: 'enabled_models',
+    notifications: 'notifications',
+    blueprints: 'blueprints',
+    activeSkin: 'active_skin',
+    mcpConnections: 'mcp_connections',
+    tokenBalance: 'token_balance',
+  };
+
+  return { get, set, setBatched, on, off, onScoped, destroyScoped, KEYS };
 })();
