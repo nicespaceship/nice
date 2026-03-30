@@ -90,10 +90,11 @@ const MissionRunner = (() => {
       }
     } else if (mission.agent_name) {
       // Last resort: create a minimal agent config from name alone
+      const inferredRole = _inferRoleFromName(mission.agent_name);
       agentBp = {
         id: 'ephemeral-' + Date.now(),
         name: mission.agent_name,
-        config: { role: _inferRoleFromName(mission.agent_name), tools: [], llm_engine: 'gemini-2.5-flash', temperature: 0.4 },
+        config: { role: inferredRole, tools: _defaultToolsForRole(inferredRole), llm_engine: 'gemini-2.5-flash', temperature: 0.4 },
         description: '',
         flavor: '',
       };
@@ -163,9 +164,10 @@ const MissionRunner = (() => {
       '\nProvide a detailed, actionable response. Do not ask clarifying questions — use your best judgment. Execute, don\'t advise.';
 
     // 6. Execute via Ship's Log
+    let progressTimer = null;
     try {
       // Progress ticks
-      const progressTimer = setInterval(() => {
+      progressTimer = setInterval(() => {
         const missions = State.get('missions') || [];
         const m = missions.find(t => t.id === missionId);
         if (m && m.status === 'running' && m.progress < 80) {
@@ -235,6 +237,7 @@ const MissionRunner = (() => {
       return result;
 
     } catch (err) {
+      if (progressTimer) clearInterval(progressTimer);
       console.error('[MissionRunner] Execution failed:', err.message);
 
       // Log failure to Model Intelligence
@@ -291,6 +294,21 @@ const MissionRunner = (() => {
     return +(base + Math.random() * 0.05).toFixed(4);
   }
 
+  /* ── Default tools per role for ephemeral agents ── */
+  function _defaultToolsForRole(role) {
+    const toolSets = {
+      Research:    ['web-search', 'web-scrape'],
+      Engineering: ['code-generate', 'code-review'],
+      Content:     ['text-generate', 'text-summarize'],
+      Marketing:   ['text-generate', 'social_create_post'],
+      Analytics:   ['data-query', 'chart-generate'],
+      Support:     ['text-generate', 'text-summarize'],
+      Sales:       ['text-generate', 'web-search'],
+      Ops:         ['text-generate', 'data-query'],
+    };
+    return toolSets[role] || [];
+  }
+
   /* ── Infer agent role from name ── */
   function _inferRoleFromName(name) {
     const n = (name || '').toLowerCase();
@@ -330,6 +348,10 @@ const MissionRunner = (() => {
         const oldRarity = agent.rarity || 'Common';
         agent.rarity = newRarity;
         State.set('agents', [...agents]);
+        // Persist rarity evolution to Supabase
+        if (typeof SB !== 'undefined' && SB.isReady() && agent.supabase_id) {
+          SB.client.from('user_agents').update({ rarity: newRarity }).eq('id', agent.supabase_id).then(() => {}).catch(() => {});
+        }
         if (typeof Notify !== 'undefined' && oldRarity !== newRarity) {
           Notify.send({ title: 'Agent Evolved!', message: `${agent.name} evolved to ${newRarity}!`, type: 'success' });
         }

@@ -165,6 +165,65 @@ const ContentQueue = (() => {
     }
   }
 
+  async function publish(id, platform = 'buffer') {
+    // Publish an approved item via social-mcp
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+    const item = items.find(i => i.id === id);
+    if (!item) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Not found', message: 'Content item not found', type: 'error' });
+      return { success: false, error: 'Item not found' };
+    }
+    if (item.approval_status !== 'approved') {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Not approved', message: 'Approve this content before publishing', type: 'warning' });
+      return { success: false, error: 'Item must be approved first' };
+    }
+
+    // Call social MCP via mcp-gateway
+    if (typeof SB !== 'undefined' && SB.isReady()) {
+      try {
+        const sbUrl = SB.url || 'https://zacllshbgmnwsmliteqx.supabase.co';
+        const session = await SB.auth().getSession();
+        const token = session?.data?.session?.access_token;
+        if (!token) {
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Auth required', message: 'Sign in to publish', type: 'error' });
+          return { success: false, error: 'Not authenticated' };
+        }
+
+        const res = await fetch(sbUrl + '/functions/v1/social-mcp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'tools/call',
+            id: Date.now(),
+            params: {
+              name: 'social_publish_post',
+              arguments: { post_id: id, platform },
+            },
+          }),
+        });
+        const data = await res.json();
+        if (data.result) {
+          const text = data.result.content?.[0]?.text || 'Published';
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Published', message: text.slice(0, 100), type: 'success' });
+          // Update local state
+          _updateStatus(id, 'published');
+          return { success: true, result: text };
+        }
+        const errMsg = data.error?.message || 'Publish failed';
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Publish failed', message: errMsg, type: 'error' });
+        return { success: false, error: errMsg };
+      } catch (e) {
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Publish error', message: e.message, type: 'error' });
+        return { success: false, error: e.message };
+      }
+    }
+    return { success: false, error: 'Supabase not available' };
+  }
+
   function exportApproved() {
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
     const approved = items.filter(i => i.approval_status === 'approved');
@@ -303,7 +362,7 @@ const ContentQueue = (() => {
   /* ══════════════════════════════════════════════════════════════ */
 
   return {
-    load, createDraft, approve, reject, edit, copy, exportApproved,
+    load, createDraft, approve, reject, edit, copy, publish, exportApproved,
     getTypeMeta, getContent, timeAgo, renderMarkdown,
   };
 })();

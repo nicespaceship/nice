@@ -123,6 +123,17 @@ const SecurityView = (() => {
         <div class="security-tab-content" id="sec-tab-content"></div>
       </div>`;
 
+    // Scroll-end detection for tab fade hint
+    const secTabBar = el.querySelector('.security-tabs');
+    if (secTabBar) {
+      const _checkScroll = () => {
+        const atEnd = secTabBar.scrollLeft + secTabBar.clientWidth >= secTabBar.scrollWidth - 4;
+        secTabBar.classList.toggle('scroll-end', atEnd);
+      };
+      secTabBar.addEventListener('scroll', _checkScroll, { passive: true });
+      _checkScroll();
+    }
+
     // Bind tab switching
     el.querySelectorAll('.security-tab').forEach(btn => {
       btn.addEventListener('click', () => {

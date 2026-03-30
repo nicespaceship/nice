@@ -1635,6 +1635,17 @@ const BlueprintsView = (() => {
   }
 
   function _bindEvents() {
+    // Scroll-end detection for tab fade hint
+    const tabBar = document.getElementById('bp-type-tabs');
+    if (tabBar) {
+      const _checkScroll = () => {
+        const atEnd = tabBar.scrollLeft + tabBar.clientWidth >= tabBar.scrollWidth - 4;
+        tabBar.classList.toggle('scroll-end', atEnd);
+      };
+      tabBar.addEventListener('scroll', _checkScroll, { passive: true });
+      _checkScroll();
+    }
+
     // Main tabs
     document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
       const tab = e.target.closest('.bp-type-tab');

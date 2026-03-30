@@ -3978,6 +3978,69 @@
   .mc-schematic-hud { min-height:100px; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — Tabs, Cards, Panels
+═══════════════════════════════════════════════════════════════════ */
+
+/* Tab bars: tighter padding on mobile so more tabs fit */
+@media (max-width:768px) {
+  .bp-type-tab,
+  .security-tab {
+    padding: 6px 12px;
+    font-size: .68rem;
+  }
+  .bp-type-tab svg,
+  .security-tab svg { width: 14px; height: 14px; }
+
+  /* Scroll fade hint for overflowing tab bars */
+  .bp-type-tabs,
+  .security-tabs {
+    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+  }
+  /* Remove fade when scrolled to end (JS adds this class) */
+  .bp-type-tabs.scroll-end,
+  .security-tabs.scroll-end {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* Card grids: single column on narrow screens */
+  .mcp-catalog-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Security posture card: smaller gauge */
+  .sec-posture-gauge { width: 120px; height: 120px; }
+
+  /* Wallet token stats: stack vertically */
+  .wlt-stats { flex-direction: column; gap: 8px; }
+
+  /* Profile page: stack avatar and info */
+  .profile-header { flex-direction: column; align-items: center; text-align: center; }
+
+  /* Prompt panel: full-width on mobile */
+  .nice-ai { left: 0; right: 0; margin: 0 8px 8px 8px; }
+
+  /* Agent detail: stack sections */
+  .agent-detail-grid { grid-template-columns: 1fr; }
+
+  /* Blueprint sub-tabs: wrap */
+  .bp-sub-tabs { flex-wrap: wrap; }
+}
+
+/* Extra-small screens (iPhone SE etc.) */
+@media (max-width:380px) {
+  .bp-type-tab,
+  .security-tab {
+    padding: 5px 8px;
+    font-size: .62rem;
+    gap: 4px;
+  }
+  .bp-sub-tab { padding: 4px 10px; font-size: .68rem; }
+  .app-view-content { padding: 4px; }
+}
+
 /* Better widget layout on tablet */
 @media (min-width:769px) and (max-width:1024px) {
   .mc-canvas-main { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }

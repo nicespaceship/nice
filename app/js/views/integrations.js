@@ -51,6 +51,12 @@ const IntegrationsView = (() => {
     /* Communication */
     { id:'discord',      name:'Discord',           desc:'Guilds, channels, messages, bots',   icon:'chat',      tools:['messages','channels','guilds','members'],     transport:'streamable-http', auth:'api_key', cat:'comms' },
     { id:'telegram',     name:'Telegram',          desc:'Messages, groups, bot commands',     icon:'chat',      tools:['messages','groups','bot_commands','files'],   transport:'streamable-http', auth:'api_key', cat:'comms' },
+    /* Social Media */
+    { id:'buffer',       name:'Buffer',            desc:'Schedule, publish, analyze posts',   icon:'share',     tools:['create_post','schedule','analytics','profiles'], transport:'streamable-http', auth:'oauth',   cat:'social' },
+    { id:'x-twitter',    name:'X (Twitter)',        desc:'Tweets, threads, analytics',         icon:'share',     tools:['tweet','thread','analytics','timeline'],       transport:'streamable-http', auth:'oauth',   cat:'social' },
+    { id:'linkedin',     name:'LinkedIn',           desc:'Posts, articles, company pages',     icon:'share',     tools:['post','article','analytics','company'],        transport:'streamable-http', auth:'oauth',   cat:'social' },
+    { id:'instagram',    name:'Instagram',          desc:'Posts, reels, stories, insights',    icon:'share',     tools:['post','reel','story','insights'],              transport:'streamable-http', auth:'oauth',   cat:'social' },
+    { id:'facebook',     name:'Facebook',           desc:'Pages, posts, ads, insights',        icon:'share',     tools:['post','page','ads','insights'],                transport:'streamable-http', auth:'oauth',   cat:'social' },
     /* Automation */
     { id:'zapier',       name:'Zapier',            desc:'Triggers, actions, 5000+ apps',      icon:'zap',       tools:['triggers','actions','zaps','search'],         transport:'streamable-http', auth:'api_key', cat:'auto' },
     { id:'make',         name:'Make',              desc:'Scenarios, modules, data stores',    icon:'zap',       tools:['scenarios','modules','connections','hooks'],   transport:'streamable-http', auth:'api_key', cat:'auto' },
@@ -93,6 +99,21 @@ const IntegrationsView = (() => {
           drive_search_files: { description: 'Search files in Google Drive by name or content', inputSchema: { type:'object', properties: { q:{type:'string',description:'Search query'}, maxResults:{type:'number'} } } },
           drive_get_file: { description: 'Get metadata of a specific file', inputSchema: { type:'object', properties: { fileId:{type:'string'} }, required:['fileId'] } },
           drive_read_file: { description: 'Read the text content of a file', inputSchema: { type:'object', properties: { fileId:{type:'string'} }, required:['fileId'] } },
+        },
+        status: 'disconnected', created_at: new Date().toISOString(),
+      },
+      {
+        id: 'mc-social', name: 'Social Media', catalog_id: 'buffer',
+        server_url: sbUrl + '/functions/v1/social-mcp',
+        transport: 'json-rpc', auth_type: 'oauth',
+        available_tools: ['social_list_queued', 'social_create_post', 'social_publish_post', 'social_schedule_post', 'social_get_analytics', 'social_list_platforms'],
+        tool_definitions: {
+          social_list_queued: { description: 'List approved content from the outbox queue', inputSchema: { type:'object', properties: { status:{type:'string'}, limit:{type:'number'} } } },
+          social_create_post: { description: 'Draft a social media post for review', inputSchema: { type:'object', properties: { content:{type:'string'}, platforms:{type:'array',items:{type:'string'}}, title:{type:'string'} }, required:['content'] } },
+          social_publish_post: { description: 'Publish an approved post to a platform', inputSchema: { type:'object', properties: { post_id:{type:'string'}, platform:{type:'string'} }, required:['post_id','platform'] } },
+          social_schedule_post: { description: 'Schedule a post for future publishing', inputSchema: { type:'object', properties: { post_id:{type:'string'}, platform:{type:'string'}, scheduled_at:{type:'string'} }, required:['post_id','platform','scheduled_at'] } },
+          social_get_analytics: { description: 'Get engagement metrics for published posts', inputSchema: { type:'object', properties: { platform:{type:'string'} }, required:['platform'] } },
+          social_list_platforms: { description: 'List available social platforms and connection status', inputSchema: { type:'object', properties:{} } },
         },
         status: 'disconnected', created_at: new Date().toISOString(),
       },
