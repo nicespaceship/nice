@@ -64,6 +64,26 @@ const PromptBuilder = (() => {
       }
     }
 
+    // ── Structured Persona (if defined) ──
+    var persona = (blueprint.config && blueprint.config.persona) || blueprint.persona;
+    if (persona) {
+      var personaParts = [];
+      if (persona.personality) personaParts.push('Personality: ' + persona.personality);
+      if (persona.expertise && persona.expertise.length) personaParts.push('Expertise: ' + persona.expertise.join(', '));
+      if (persona.tone) personaParts.push('Tone: ' + persona.tone);
+      if (persona.constraints && persona.constraints.length) {
+        personaParts.push('Constraints:\n' + persona.constraints.map(function(c) { return '- ' + c; }).join('\n'));
+      }
+      if (personaParts.length) parts.push(personaParts.join('\n'));
+    }
+
+    // ── Agent Memory (learned context) ──
+    if (typeof AgentMemory !== 'undefined') {
+      var agentId = blueprint.id || blueprint.name;
+      var memoryContext = AgentMemory.buildPromptContext(agentId);
+      if (memoryContext) parts.push(memoryContext);
+    }
+
     // ── Personality (flavor text — last, so it colors tone) ──
     var flavor = blueprint.flavor || '';
     if (flavor) parts.push(flavor);

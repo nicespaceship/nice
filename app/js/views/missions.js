@@ -802,6 +802,12 @@ const MissionDetailView = (() => {
         }
         if (resolvedId) MissionRunner.awardAgentXP(resolvedId, 50);
       }
+      // Feedback loop — agent learns from approval
+      if (typeof AgentMemory !== 'undefined') {
+        const agentKey = mission.agent_id || mission.agent_name || 'unknown';
+        AgentMemory.learn(agentKey, mission.result, 'approved');
+        AgentMemory.addSuccess(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200) });
+      }
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Approved', message: 'Content approved and mission completed!', type: 'success' });
       _loadMission(el, id);
     });
@@ -814,6 +820,12 @@ const MissionDetailView = (() => {
           await SB.client.from('tasks').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', id);
         }
       } catch {}
+      // Feedback loop — agent learns from rejection
+      if (typeof AgentMemory !== 'undefined') {
+        const agentKey = mission.agent_id || mission.agent_name || 'unknown';
+        AgentMemory.learn(agentKey, mission.result, 'rejected');
+        AgentMemory.addFailure(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200), reason: 'Rejected by user' });
+      }
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Rejected', message: 'Content rejected. You can retry the mission.', type: 'system' });
       _loadMission(el, id);
     });
