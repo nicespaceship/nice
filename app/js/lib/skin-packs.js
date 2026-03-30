@@ -130,7 +130,7 @@
     name: 'The Matrix',
     category: 'Sci-Fi',
     price: 0,
-    rarity: 'Legendary',
+    rarity: 'Mythic',
     description: 'Welcome to the desert of the real. Full digital rain, phosphor glow, and operator-grade terminal aesthetics.',
     flavor: 'There is no spoon.',
     card_num: 'NS-S03',

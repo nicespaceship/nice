@@ -601,6 +601,12 @@ const ShipSetupWizard = (() => {
         if (typeof Notify !== 'undefined') Notify.send({ title: 'Theme Activated', message: 'LCARS interface engaged.', type: 'system' });
       }
     }
+    if (shipName.includes('matrix') || shipId.includes('matrix')) {
+      if (typeof Theme !== 'undefined') {
+        Theme.set('matrix');
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Theme Activated', message: 'Welcome to the Matrix.', type: 'system' });
+      }
+    }
 
     // Refresh + callback
     if (typeof BlueprintsView !== 'undefined' && BlueprintsView._applyFilters) {

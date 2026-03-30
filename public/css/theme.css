@@ -1232,6 +1232,168 @@
   --bg-pattern:   none;
 }
 
+/* Matrix — Mythic component overrides */
+[data-theme="matrix"] .app-sidebar {
+  background: rgba(0,4,0,0.98);
+  border-right: 1px solid rgba(0,255,65,0.15);
+  background-image: repeating-linear-gradient(
+    0deg, transparent, transparent 2px, rgba(0,255,65,0.03) 2px, rgba(0,255,65,0.03) 4px
+  );
+}
+[data-theme="matrix"] .side-header {
+  border-bottom: 1px solid rgba(0,255,65,0.2);
+  text-shadow: 0 0 8px rgba(0,255,65,0.6);
+}
+[data-theme="matrix"] .side-link {
+  color: rgba(0,255,65,0.6); border-radius: 0; border: 1px solid transparent;
+  font-family: 'Fira Code', monospace; font-size: 12px; letter-spacing: 0.5px;
+}
+[data-theme="matrix"] .side-link:hover {
+  background: rgba(0,255,65,0.06); color: #00ff41; border-color: rgba(0,255,65,0.15);
+  text-shadow: 0 0 6px rgba(0,255,65,0.4);
+}
+[data-theme="matrix"] .side-link.active {
+  background: rgba(0,255,65,0.1); color: #00ff41; border-color: rgba(0,255,65,0.3);
+  box-shadow: inset 3px 0 0 #00ff41; text-shadow: 0 0 8px rgba(0,255,65,0.5);
+}
+[data-theme="matrix"] .app-topbar {
+  background: rgba(0,4,0,0.95); border-bottom: 1px solid rgba(0,255,65,0.15);
+}
+[data-theme="matrix"] .app-topbar::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,65,0.4), transparent);
+}
+[data-theme="matrix"] .widget-card,
+[data-theme="matrix"] .tc-section,
+[data-theme="matrix"] .detail-section {
+  background: rgba(0,8,0,0.8); border: 1px solid rgba(0,255,65,0.15); border-radius: 0;
+  box-shadow: 0 0 15px rgba(0,255,65,0.05), inset 0 0 30px rgba(0,255,65,0.02);
+}
+[data-theme="matrix"] .widget-card:hover {
+  border-color: rgba(0,255,65,0.35); box-shadow: 0 0 20px rgba(0,255,65,0.1);
+}
+[data-theme="matrix"] .btn {
+  border-radius: 0; font-family: 'Fira Code', monospace; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1px;
+  border: 1px solid rgba(0,255,65,0.3); background: rgba(0,255,65,0.06);
+  color: #00ff41; transition: all 0.2s;
+}
+[data-theme="matrix"] .btn:hover {
+  background: rgba(0,255,65,0.12); border-color: rgba(0,255,65,0.5);
+  box-shadow: 0 0 10px rgba(0,255,65,0.2); text-shadow: 0 0 4px rgba(0,255,65,0.5);
+}
+[data-theme="matrix"] .btn-primary {
+  background: rgba(0,255,65,0.15); border-color: #00ff41; color: #00ff41;
+}
+[data-theme="matrix"] .btn-primary:hover {
+  background: rgba(0,255,65,0.25); box-shadow: 0 0 15px rgba(0,255,65,0.3);
+}
+[data-theme="matrix"] .bp-type-tab,
+[data-theme="matrix"] .bridge-hero-tab,
+[data-theme="matrix"] .log-view-tab {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.15);
+  background: transparent; color: rgba(0,255,65,0.5);
+  font-family: 'Fira Code', monospace; font-size: 11px; text-transform: uppercase;
+}
+[data-theme="matrix"] .bp-type-tab.active,
+[data-theme="matrix"] .bridge-hero-tab.active,
+[data-theme="matrix"] .log-view-tab.active {
+  background: rgba(0,255,65,0.12); color: #00ff41; border-color: #00ff41;
+  text-shadow: 0 0 6px rgba(0,255,65,0.4);
+}
+[data-theme="matrix"] .mc-card {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.15);
+  background: rgba(0,8,0,0.7);
+}
+[data-theme="matrix"] .mc-card-running { border-left: 3px solid #00ff41; }
+[data-theme="matrix"] .mc-card-completed { border-left: 3px solid #00aa2a; }
+[data-theme="matrix"] .mc-card-failed { border-left: 3px solid #ff2020; }
+[data-theme="matrix"] .mc-card-review { border-left: 3px solid #00ccaa; }
+[data-theme="matrix"] input[type="text"],
+[data-theme="matrix"] .search-input {
+  border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
+  color: #00ff41; font-family: 'Fira Code', monospace;
+}
+[data-theme="matrix"] input[type="text"]:focus,
+[data-theme="matrix"] .search-input:focus {
+  border-color: #00ff41; box-shadow: 0 0 8px rgba(0,255,65,0.2);
+}
+[data-theme="matrix"] select {
+  border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
+  color: #00ff41; font-family: 'Fira Code', monospace;
+}
+[data-theme="matrix"] .nice-ai-input-container {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.25); background: rgba(0,6,0,0.8);
+}
+[data-theme="matrix"] .nice-ai-input-container:focus-within {
+  border-color: #00ff41; box-shadow: 0 0 12px rgba(0,255,65,0.15);
+}
+[data-theme="matrix"] .nice-ai-input { color: #00ff41; font-family: 'Fira Code', monospace; }
+[data-theme="matrix"] .nice-ai-input::placeholder { color: rgba(0,255,65,0.3); }
+[data-theme="matrix"] .nice-ai-chip {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.2); background: transparent;
+  color: rgba(0,255,65,0.6); font-family: 'Fira Code', monospace; font-size: 11px;
+}
+[data-theme="matrix"] .nice-ai-chip:hover { background: rgba(0,255,65,0.1); color: #00ff41; }
+[data-theme="matrix"] .chat-pill {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.2); background: transparent;
+  color: rgba(0,255,65,0.5);
+}
+[data-theme="matrix"] .chat-pill:hover { background: rgba(0,255,65,0.08); color: #00ff41; }
+[data-theme="matrix"] .tcg-card {
+  box-shadow: 0 0 20px rgba(0,255,65,0.08); border-color: rgba(0,255,65,0.25);
+}
+[data-theme="matrix"] .tcg-card:hover {
+  box-shadow: 0 0 30px rgba(0,255,65,0.15); border-color: rgba(0,255,65,0.5);
+}
+[data-theme="matrix"] .tcg-card .tcg-name-bar {
+  text-shadow: 0 0 8px rgba(0,255,65,0.5);
+}
+[data-theme="matrix"] .app-hud-panel { background: rgba(0,4,0,0.95); border-color: rgba(0,255,65,0.15); }
+[data-theme="matrix"] .app-hud-panel .dock-lbl { color: rgba(0,255,65,0.5); }
+[data-theme="matrix"] .app-hud-panel .dock-lbl a { color: #00ff41; }
+[data-theme="matrix"] .app-hud-panel .dock-lbl-val { color: #00aa2a; }
+[data-theme="matrix"] .app-hud-panel .db { border: 1px solid rgba(0,255,65,0.2); border-radius: 0; }
+[data-theme="matrix"] .app-hud-panel .db.active { border-color: #00ff41; box-shadow: 0 0 6px rgba(0,255,65,0.3); }
+[data-theme="matrix"] .app-hud-panel .fb { color: #00ff41; border-color: rgba(0,255,65,0.2); border-radius: 0; }
+[data-theme="matrix"] .app-hud-panel .fb.active { background: rgba(0,255,65,0.1); color: #00ff41; }
+[data-theme="matrix"] .schematic-wired .tcg-card-mini {
+  border-color: rgba(0,255,65,0.2); box-shadow: 0 0 10px rgba(0,255,65,0.08);
+}
+[data-theme="matrix"] .c-btn {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.2);
+  color: rgba(0,255,65,0.6); background: transparent;
+}
+[data-theme="matrix"] .c-btn:hover { border-color: #00ff41; color: #00ff41; background: rgba(0,255,65,0.08); }
+[data-theme="matrix"] ::-webkit-scrollbar { width: 6px; }
+[data-theme="matrix"] ::-webkit-scrollbar-track { background: #000800; }
+[data-theme="matrix"] ::-webkit-scrollbar-thumb { background: rgba(0,255,65,0.2); border-radius: 0; }
+[data-theme="matrix"] ::-webkit-scrollbar-thumb:hover { background: rgba(0,255,65,0.4); }
+[data-theme="matrix"] .side-popover { background: rgba(0,6,0,0.98); border: 1px solid rgba(0,255,65,0.2); border-radius: 0; }
+[data-theme="matrix"] .side-popover-item { color: rgba(0,255,65,0.6); }
+[data-theme="matrix"] .side-popover-item:hover { background: rgba(0,255,65,0.08); color: #00ff41; }
+[data-theme="matrix"] .side-folder-toggle { color: rgba(0,255,65,0.5); }
+[data-theme="matrix"] .side-folder-body { border-left-color: rgba(0,255,65,0.15); }
+[data-theme="matrix"] .bp-sub-tab {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.12); background: transparent; color: rgba(0,255,65,0.4);
+}
+[data-theme="matrix"] .bp-sub-tab.active { background: rgba(0,255,65,0.12); color: #00ff41; border-color: #00ff41; }
+[data-theme="matrix"] .bp-rarity-btn {
+  border-radius: 0; border: 1px solid rgba(0,255,65,0.12); color: rgba(0,255,65,0.4);
+}
+[data-theme="matrix"] .bp-rarity-btn.active { background: rgba(0,255,65,0.1); color: #00ff41; border-color: #00ff41; }
+[data-theme="matrix"] .bp-view-btn { border-radius: 0; }
+[data-theme="matrix"] .bp-view-btn.active { background: rgba(0,255,65,0.1); border-color: #00ff41; }
+/* CRT vignette overlay */
+[data-theme="matrix"] .app-main::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+}
+/* Phosphor heading glow */
+[data-theme="matrix"] h1, [data-theme="matrix"] h2, [data-theme="matrix"] h3 {
+  text-shadow: 0 0 6px rgba(0,255,65,0.4), 0 0 12px rgba(0,255,65,0.15);
+}
+
 /* LCARS — Star Trek */
 [data-theme="lcars"] {
   --bg:           #000000;
