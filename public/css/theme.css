@@ -801,10 +801,14 @@
 
 /* ═══ NAVIGATOR / TRON ═══════════════════════════════════════════════ */
 
-/* Tron Grid Floor — perspective grid animation */
+/* Tron Grid Floor — forward travel animation (toward viewer) */
 @keyframes tron-grid-scroll {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 60px; }
+  0% { background-position: 0 0; background-size: 50px 50px; }
+  100% { background-position: 0 50px; background-size: 50px 50px; }
+}
+@keyframes tron-grid-forward {
+  0%   { transform: perspective(300px) rotateX(60deg) scale(1); }
+  100% { transform: perspective(300px) rotateX(60deg) scale(1.08); }
 }
 @keyframes tron-pulse {
   0%, 100% { opacity: 0.3; }
@@ -819,23 +823,30 @@
   100% { transform: translateX(200%); }
 }
 
-/* Grid floor background on main content */
+/* Grid floor background — on bg-grid (not app-main, which has overflow:hidden) */
 [data-theme="navigator"] .app-main {
   position: relative;
 }
-[data-theme="navigator"] .app-main::before {
-  content: '';
-  position: fixed; bottom: 0; left: 0; right: 0; height: 45vh;
+/* Perspective grid floor — full viewport, traveling forward toward viewer */
+[data-theme="navigator"] .bg-grid {
+  position: fixed; inset: 0;
+  opacity: 1;
   background:
-    linear-gradient(rgba(0,229,255,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.08) 1px, transparent 1px);
-  background-size: 60px 60px;
-  animation: tron-grid-scroll 3s linear infinite;
-  mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%);
+    linear-gradient(rgba(0,229,255,0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.15) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: tron-grid-scroll 1.8s linear infinite;
+  transform: perspective(250px) rotateX(60deg);
+  transform-origin: center 80%;
+  mask-image: radial-gradient(ellipse 120% 80% at 50% 85%, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 40%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 120% 80% at 50% 85%, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 40%, transparent 70%);
+}
+/* Horizon glow — bright line where grid meets sky */
+[data-theme="navigator"] .bg-hero-glow {
+  position: fixed; top: auto; bottom: 35vh; left: 0; right: 0; height: 100px;
+  background: radial-gradient(ellipse 80% 100% at 50% 100%, rgba(0,229,255,0.12) 0%, transparent 70%);
   pointer-events: none; z-index: 0;
-  transform: perspective(400px) rotateX(55deg);
-  transform-origin: bottom center;
+  filter: blur(12px);
 }
 
 /* Horizontal scan line sweeping across content */
@@ -1253,15 +1264,7 @@
   animation:tron-light-trail 12s linear infinite 3s;
 }
 
-/* ── 3. Grid Floor Enhancement — brighter intersections ── */
-[data-theme="navigator"] .bg-grid {
-  opacity:0.2;
-  background-image:
-    linear-gradient(rgba(0,229,255,0.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.15) 1px, transparent 1px),
-    radial-gradient(circle 1px, rgba(0,229,255,0.3) 1px, transparent 1px);
-  background-size:52px 52px, 52px 52px, 52px 52px;
-}
+/* ── 3. Grid handled by main .bg-grid rule above (perspective floor) ── */
 
 /* ── 4. Energy Pulse on Active Elements ── */
 @keyframes tron-energy-pulse {
