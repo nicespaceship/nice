@@ -49,7 +49,7 @@ const TronGameView = (() => {
           <canvas id="tron-canvas"></canvas>
           <div class="tron-overlay" id="tron-overlay">
             <div class="tron-overlay-title">LIGHT CYCLE</div>
-            <div class="tron-overlay-sub">Arrow keys or WASD to steer</div>
+            <div class="tron-overlay-sub">Arrow keys or WASD to steer<br>Collect energy. Avoid your trail.</div>
             <button class="tron-start-btn" id="tron-start">ENTER THE GRID</button>
           </div>
           <div class="tron-gameover" id="tron-gameover" style="display:none">
@@ -89,32 +89,30 @@ const TronGameView = (() => {
     _el = null; _cvs = null; _ctx = null;
   }
 
+  let _waitingForInput = false;
+
   /* ── Game Loop ── */
   function _startGame() {
     document.getElementById('tron-overlay').style.display = 'none';
     document.getElementById('tron-gameover').style.display = 'none';
 
     _score = 0;
-    _dir = { x: 1, y: 0 };
-    _nextDir = { x: 1, y: 0 };
+    _dir = { x: 0, y: 0 };    // Stationary until player presses a key
+    _nextDir = { x: 0, y: 0 };
     _gameOver = false;
     _running = true;
+    _waitingForInput = true;
 
-    // Start in center with length 4
+    // Start in center with length 1 (just the head)
     const cx = Math.floor(GRID / 2);
     const cy = Math.floor(GRID / 2);
-    _trail = [
-      { x: cx - 3, y: cy },
-      { x: cx - 2, y: cy },
-      { x: cx - 1, y: cy },
-      { x: cx, y: cy },
-    ];
+    _trail = [{ x: cx, y: cy }];
 
     _spawnEnergy();
     _updateHUD();
 
     _stop();
-    _tickTimer = setInterval(_tick, TICK_MS);
+    // Don't start tick timer yet — wait for first keypress
     _raf = requestAnimationFrame(_draw);
   }
 
@@ -125,7 +123,7 @@ const TronGameView = (() => {
   }
 
   function _tick() {
-    if (_gameOver || !_running) return;
+    if (_gameOver || !_running || _waitingForInput) return;
 
     // Apply direction
     _dir = { ..._nextDir };
@@ -208,44 +206,38 @@ const TronGameView = (() => {
       _ctx.beginPath(); _ctx.moveTo(0, y); _ctx.lineTo(W, y); _ctx.stroke();
     }
 
-    // Trail — gradient from dim to bright
+    // Trail — bright solid blocks
     const len = _trail.length;
     for (let i = 0; i < len; i++) {
       const t = _trail[i];
-      const age = i / len; // 0 = oldest, 1 = newest
+      const x = t.x * _cellW;
+      const y = t.y * _cellH;
 
       if (i === len - 1) {
-        // Head — bright white with strong glow
+        // HEAD — bright white, unmissable
+        _ctx.fillStyle = '#00e5ff';
+        _ctx.fillRect(x, y, _cellW, _cellH);
         _ctx.fillStyle = '#ffffff';
+        _ctx.fillRect(x + 2, y + 2, _cellW - 4, _cellH - 4);
+        // Glow halo
         _ctx.shadowColor = '#00e5ff';
-        _ctx.shadowBlur = 18;
-        _ctx.fillRect(t.x * _cellW, t.y * _cellH, _cellW, _cellH);
+        _ctx.shadowBlur = 20;
+        _ctx.fillStyle = '#00e5ff';
+        _ctx.fillRect(x + 4, y + 4, _cellW - 8, _cellH - 8);
         _ctx.shadowBlur = 0;
-        // Extra glow ring around head
-        _ctx.strokeStyle = 'rgba(0,229,255,0.6)';
-        _ctx.lineWidth = 2;
-        _ctx.strokeRect(t.x * _cellW - 1, t.y * _cellH - 1, _cellW + 2, _cellH + 2);
       } else {
-        // Trail body — solid cyan, fading with age
-        const alpha = 0.3 + age * 0.6;
-        _ctx.fillStyle = `rgba(0,229,255,${alpha})`;
-        _ctx.fillRect(t.x * _cellW, t.y * _cellH, _cellW, _cellH);
+        // TRAIL — solid cyan blocks, brighter near head
+        const age = i / len;
+        const bright = Math.floor(40 + age * 180);
+        _ctx.fillStyle = `rgb(0,${bright},${Math.floor(bright * 1.1)})`;
+        _ctx.fillRect(x + 1, y + 1, _cellW - 2, _cellH - 2);
+        // Bright border on recent segments
+        if (age > 0.5) {
+          _ctx.strokeStyle = `rgba(0,229,255,${(age - 0.5) * 1.2})`;
+          _ctx.lineWidth = 1;
+          _ctx.strokeRect(x + 0.5, y + 0.5, _cellW - 1, _cellH - 1);
+        }
       }
-    }
-
-    // Trail glow line connecting segments
-    if (len > 1) {
-      _ctx.strokeStyle = 'rgba(0,229,255,0.5)';
-      _ctx.lineWidth = 3;
-      _ctx.shadowColor = '#00e5ff';
-      _ctx.shadowBlur = 10;
-      _ctx.beginPath();
-      _ctx.moveTo(_trail[0].x * _cellW + _cellW / 2, _trail[0].y * _cellH + _cellH / 2);
-      for (let i = 1; i < len; i++) {
-        _ctx.lineTo(_trail[i].x * _cellW + _cellW / 2, _trail[i].y * _cellH + _cellH / 2);
-      }
-      _ctx.stroke();
-      _ctx.shadowBlur = 0;
     }
 
     // Energy pickup — pulsing glow
@@ -271,6 +263,19 @@ const TronGameView = (() => {
       _cellW + 4, _cellH + 4
     );
     _ctx.shadowBlur = 0;
+
+    // Waiting for input prompt
+    if (_waitingForInput) {
+      const blink = Math.sin(Date.now() / 400) > 0 ? 1 : 0.4;
+      _ctx.fillStyle = `rgba(0,229,255,${blink})`;
+      _ctx.font = `bold ${Math.round(_cellW * 0.7)}px "Orbitron", sans-serif`;
+      _ctx.textAlign = 'center';
+      _ctx.fillText('PRESS ARROW KEY TO START', W / 2, H * 0.3);
+      _ctx.font = `${Math.round(_cellW * 0.5)}px "Orbitron", sans-serif`;
+      _ctx.fillStyle = 'rgba(0,229,255,0.4)';
+      _ctx.fillText('↑ ↓ ← → or WASD', W / 2, H * 0.3 + _cellW);
+      _ctx.textAlign = 'left';
+    }
 
     // Game over flash
     if (_gameOver) {
@@ -331,15 +336,28 @@ const TronGameView = (() => {
   function _onKey(e) {
     if (!_running) return;
     const key = e.key;
+    let newDir = null;
+
+    if (key === 'ArrowUp' || key === 'w' || key === 'W') newDir = { x: 0, y: -1 };
+    else if (key === 'ArrowDown' || key === 's' || key === 'S') newDir = { x: 0, y: 1 };
+    else if (key === 'ArrowLeft' || key === 'a' || key === 'A') newDir = { x: -1, y: 0 };
+    else if (key === 'ArrowRight' || key === 'd' || key === 'D') newDir = { x: 1, y: 0 };
+
+    if (!newDir) return;
+    e.preventDefault();
+
+    // First keypress starts the game
+    if (_waitingForInput) {
+      _waitingForInput = false;
+      _dir = newDir;
+      _nextDir = newDir;
+      _tickTimer = setInterval(_tick, TICK_MS);
+      return;
+    }
+
     // Prevent reversing into yourself
-    if ((key === 'ArrowUp' || key === 'w' || key === 'W') && _dir.y !== 1) {
-      _nextDir = { x: 0, y: -1 }; e.preventDefault();
-    } else if ((key === 'ArrowDown' || key === 's' || key === 'S') && _dir.y !== -1) {
-      _nextDir = { x: 0, y: 1 }; e.preventDefault();
-    } else if ((key === 'ArrowLeft' || key === 'a' || key === 'A') && _dir.x !== 1) {
-      _nextDir = { x: -1, y: 0 }; e.preventDefault();
-    } else if ((key === 'ArrowRight' || key === 'd' || key === 'D') && _dir.x !== -1) {
-      _nextDir = { x: 1, y: 0 }; e.preventDefault();
+    if (newDir.x !== -_dir.x || newDir.y !== -_dir.y) {
+      _nextDir = newDir;
     }
   }
 
@@ -357,14 +375,23 @@ const TronGameView = (() => {
 
     if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return; // Too small
 
+    let newDir = null;
     if (Math.abs(dx) > Math.abs(dy)) {
-      // Horizontal swipe
-      if (dx > 0 && _dir.x !== -1) _nextDir = { x: 1, y: 0 };
-      else if (dx < 0 && _dir.x !== 1) _nextDir = { x: -1, y: 0 };
+      newDir = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
     } else {
-      // Vertical swipe
-      if (dy > 0 && _dir.y !== -1) _nextDir = { x: 0, y: 1 };
-      else if (dy < 0 && _dir.y !== 1) _nextDir = { x: 0, y: -1 };
+      newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+    }
+
+    if (_waitingForInput) {
+      _waitingForInput = false;
+      _dir = newDir;
+      _nextDir = newDir;
+      _tickTimer = setInterval(_tick, TICK_MS);
+      return;
+    }
+
+    if (newDir.x !== -_dir.x || newDir.y !== -_dir.y) {
+      _nextDir = newDir;
     }
   }
 
