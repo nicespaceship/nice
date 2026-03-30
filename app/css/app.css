@@ -4148,7 +4148,7 @@
 .tcg-card[data-rarity="mythic"],
 .tcg-card-grid[data-rarity="mythic"],
 .tcg-card-compact[data-rarity="mythic"] {
-  border-width:2px;
+  border-width:3px;
   animation: mythic-rgb-border 6s linear infinite;
 }
 /* Mythic badge — applied directly via class (no inline style conflict) */
