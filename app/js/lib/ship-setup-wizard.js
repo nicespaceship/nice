@@ -88,11 +88,15 @@ const ShipSetupWizard = (() => {
 
   /* ── Helpers ── */
   function _getShipClass() {
-    const crewCount = parseInt(_blueprint?.stats?.crew, 10) || 0;
-    const slotCount = crewCount > 0 ? crewCount : (typeof Gamification !== 'undefined' ? Gamification.getMaxSlots() : 5);
-    return typeof Gamification !== 'undefined'
-      ? Gamification.getSlotTemplate(slotCount)
-      : { id: 'dynamic', slots: Array.from({ length: slotCount }, function(_, i) { return { id: i, maxRarity: 'Rare', label: 'Agent ' + i }; }), name: 'Ship' };
+    // Blueprint slots/crew take priority — this is what the card shows
+    const bpSlots = parseInt(_blueprint?.stats?.slots, 10) || 0;
+    const bpCrew  = parseInt(_blueprint?.stats?.crew, 10) || 0;
+    const bpCrewMeta = (_blueprint?.metadata?.crew || []).length;
+    const slotCount = bpSlots || bpCrew || bpCrewMeta
+      || (typeof Gamification !== 'undefined' && Gamification.getSpaceshipClass
+        ? (Gamification.getSpaceshipClass(_blueprint?.class_id || 'class-1')?.slots?.length || 6)
+        : 6);
+    return { id: 'dynamic', slots: Array.from({ length: slotCount }, function(_, i) { return { id: i, maxRarity: 'Legendary', label: 'Agent ' + (i + 1) }; }), name: _blueprint?.name || 'Ship' };
   }
 
   function _getAgentCatalog() {
