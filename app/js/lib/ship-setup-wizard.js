@@ -87,16 +87,36 @@ const ShipSetupWizard = (() => {
   }
 
   /* ── Helpers ── */
-  function _getShipClass() {
-    // Blueprint slots/crew take priority — this is what the card shows
+
+  /** Single source of truth for slot count — syncs with the card stats */
+  function _getSlotCount() {
     const bpSlots = parseInt(_blueprint?.stats?.slots, 10) || 0;
     const bpCrew  = parseInt(_blueprint?.stats?.crew, 10) || 0;
     const bpCrewMeta = (_blueprint?.metadata?.crew || []).length;
-    const slotCount = bpSlots || bpCrew || bpCrewMeta
-      || (typeof Gamification !== 'undefined' && Gamification.getSpaceshipClass
-        ? (Gamification.getSpaceshipClass(_blueprint?.class_id || 'class-1')?.slots?.length || 6)
-        : 6);
-    return { id: 'dynamic', slots: Array.from({ length: slotCount }, function(_, i) { return { id: i, maxRarity: 'Legendary', label: 'Agent ' + (i + 1) }; }), name: _blueprint?.name || 'Ship' };
+    const bpCrewNodes = (_blueprint?.crew || _blueprint?.nodes || []).length;
+    return bpSlots || bpCrew || bpCrewMeta || bpCrewNodes || 6;
+  }
+
+  /** Get the crew definitions from the blueprint (metadata.crew or nodes) */
+  function _getCrewDefs() {
+    return _blueprint?.metadata?.crew || _blueprint?.crew || _blueprint?.nodes || [];
+  }
+
+  function _getShipClass() {
+    const slotCount = _getSlotCount();
+    const crewDefs = _getCrewDefs();
+    return {
+      id: 'dynamic',
+      name: _blueprint?.name || 'Ship',
+      slots: Array.from({ length: slotCount }, function(_, i) {
+        const member = crewDefs[i];
+        return {
+          id: i,
+          maxRarity: member?.rarity || 'Legendary',
+          label: member?.label || member?.name || ('Agent ' + (i + 1)),
+        };
+      }),
+    };
   }
 
   function _getAgentCatalog() {
@@ -129,9 +149,8 @@ const ShipSetupWizard = (() => {
   }
 
   function _getCrewForClass() {
-    const crew = _blueprint.crew || _blueprint.nodes || [];
-    const sc = _getShipClass();
-    return crew.slice(0, sc.slots.length);
+    const crew = _getCrewDefs();
+    return crew.slice(0, _getSlotCount());
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -179,7 +198,7 @@ const ShipSetupWizard = (() => {
     const sc = _getShipClass();
     const slotCount = sc.slots?.length || 0;
     const displayName = _data.shipName || _blueprint.name;
-    const crew = _blueprint.crew || _blueprint.nodes || [];
+    const crew = _getCrewDefs();
     const hasCrewDefs = crew.length > 0;
 
     body.innerHTML = `
@@ -241,7 +260,7 @@ const ShipSetupWizard = (() => {
   function _renderSlotDropdowns(container) {
     const sc = _getShipClass();
     const agents = _getAgentCatalog();
-    const crew = _blueprint.crew || _blueprint.nodes || [];
+    const crew = _getCrewDefs();
 
     let html = '<div class="ship-wizard-slots">';
     for (let i = 0; i < sc.slots.length; i++) {
@@ -303,13 +322,14 @@ const ShipSetupWizard = (() => {
     await _ensureCatalog();
 
     const sc = _getShipClass();
-    const crew = _blueprint.crew || _blueprint.nodes || [];
+    const crew = _getCrewDefs();
 
-    // Use blueprint crew first (e.g. Picard, Riker, Worf for Enterprise)
+    // Use blueprint crew first (e.g. Picard, Riker, Worf for Enterprise; Neo, Trinity for The Matrix)
     if (crew.length > 0) {
       for (let i = 0; i < sc.slots.length; i++) {
-        if (crew[i]) {
-          _data.slotAssignments[i] = `__new__${crew[i].label}`;
+        const member = crew[i];
+        if (member) {
+          _data.slotAssignments[i] = `__new__${member.label || member.name || 'Agent ' + (i + 1)}`;
         }
       }
     }
@@ -377,7 +397,7 @@ const ShipSetupWizard = (() => {
       const sc = _getShipClass();
       const filledCount = Object.values(_data.slotAssignments).filter(Boolean).length;
       const agents = _getAgentCatalog();
-      const crew = _blueprint.crew || _blueprint.nodes || [];
+      const crew = _getCrewDefs();
       const agentNames = Object.entries(_data.slotAssignments)
         .filter(([, v]) => v)
         .map(([idx, id]) => {
@@ -431,7 +451,7 @@ const ShipSetupWizard = (() => {
   async function _deploy() {
     const statusEl = document.getElementById('ship-wiz-status');
     const sc = _getShipClass();
-    const crew = _blueprint.crew || _blueprint.nodes || [];
+    const crew = _getCrewDefs();
 
     // 1. Activate blueprint
     if (statusEl) statusEl.textContent = 'Activating blueprint...';
