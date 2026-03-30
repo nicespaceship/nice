@@ -1255,36 +1255,75 @@
   100% { right:108%; opacity:0; }
 }
 
-/* Horizontal cycle 1 — travels right */
+/* Horizontal cycle 1 — travels right, upper grid */
 [data-theme="navigator"] body::before {
-  content:''; position:fixed; bottom:5%; left:-8%;
-  width:6px; height:2px;
+  content:''; position:fixed; bottom:38%; left:-8%;
+  width:3px; height:1px;
   background:#00e5ff;
   box-shadow:
-    0 0 6px #00e5ff, 0 0 14px rgba(0,229,255,0.6),
-    -12px 0 4px rgba(0,229,255,0.5),
-    -28px 0 6px rgba(0,229,255,0.4),
-    -50px 0 8px rgba(0,229,255,0.3),
-    -80px 0 10px rgba(0,229,255,0.2),
-    -120px 0 12px rgba(0,229,255,0.1),
-    -170px 0 14px rgba(0,229,255,0.05);
+    0 0 4px #00e5ff, 0 0 10px rgba(0,229,255,0.5),
+    -8px 0 3px rgba(0,229,255,0.5),
+    -20px 0 4px rgba(0,229,255,0.4),
+    -36px 0 5px rgba(0,229,255,0.3),
+    -56px 0 6px rgba(0,229,255,0.2),
+    -80px 0 7px rgba(0,229,255,0.1);
   pointer-events:none; z-index:1;
-  animation:tron-cycle-right 9s linear infinite;
+  animation:tron-cycle-right 8s linear infinite;
 }
-/* Horizontal cycle 2 — travels left */
+/* Horizontal cycle 2 — travels left, mid grid */
 [data-theme="navigator"] body::after {
-  content:''; position:fixed; bottom:1%; right:-8%;
-  width:5px; height:2px;
+  content:''; position:fixed; bottom:30%; right:-8%;
+  width:3px; height:1px;
   background:rgba(0,229,255,0.9);
   box-shadow:
-    0 0 5px rgba(0,229,255,0.7), 0 0 12px rgba(0,229,255,0.4),
-    12px 0 4px rgba(0,229,255,0.4),
-    28px 0 6px rgba(0,229,255,0.3),
-    50px 0 8px rgba(0,229,255,0.2),
-    80px 0 10px rgba(0,229,255,0.1),
-    120px 0 12px rgba(0,229,255,0.05);
+    0 0 4px rgba(0,229,255,0.6), 0 0 8px rgba(0,229,255,0.3),
+    8px 0 3px rgba(0,229,255,0.4),
+    20px 0 4px rgba(0,229,255,0.3),
+    36px 0 5px rgba(0,229,255,0.2),
+    56px 0 6px rgba(0,229,255,0.1);
   pointer-events:none; z-index:1;
-  animation:tron-cycle-left 13s linear infinite 3s;
+  animation:tron-cycle-left 11s linear infinite 2s;
+}
+/* Horizontal cycle 3 — travels right, lower grid */
+[data-theme="navigator"] .app-view-content::before {
+  content:''; position:fixed; bottom:22%; left:-8%;
+  width:2px; height:1px;
+  background:rgba(0,229,255,0.8);
+  box-shadow:
+    0 0 3px rgba(0,229,255,0.5), 0 0 8px rgba(0,229,255,0.3),
+    -8px 0 2px rgba(0,229,255,0.4),
+    -18px 0 3px rgba(0,229,255,0.3),
+    -32px 0 4px rgba(0,229,255,0.2),
+    -50px 0 5px rgba(0,229,255,0.1);
+  pointer-events:none; z-index:1;
+  animation:tron-cycle-right 14s linear infinite 5s;
+}
+/* Horizontal cycle 4 — travels left, near bottom */
+[data-theme="navigator"] .app-view-content::after {
+  content:''; position:fixed; bottom:15%; right:-8%;
+  width:2px; height:1px;
+  background:rgba(0,229,255,0.7);
+  box-shadow:
+    0 0 3px rgba(0,229,255,0.5), 0 0 6px rgba(0,229,255,0.2),
+    6px 0 2px rgba(0,229,255,0.3),
+    16px 0 3px rgba(0,229,255,0.2),
+    28px 0 4px rgba(0,229,255,0.15),
+    44px 0 5px rgba(0,229,255,0.08);
+  pointer-events:none; z-index:1;
+  animation:tron-cycle-left 16s linear infinite 8s;
+}
+/* Horizontal cycle 5 — fast, travels right, top of grid */
+[data-theme="navigator"] .app-main::after {
+  content:''; position:fixed; bottom:44%; left:-6%;
+  width:2px; height:1px;
+  background:rgba(0,229,255,0.6);
+  box-shadow:
+    0 0 3px rgba(0,229,255,0.4), 0 0 6px rgba(0,229,255,0.2),
+    -6px 0 2px rgba(0,229,255,0.3),
+    -14px 0 3px rgba(0,229,255,0.2),
+    -24px 0 4px rgba(0,229,255,0.1);
+  pointer-events:none; z-index:1;
+  animation:tron-cycle-right 6s linear infinite 1s;
 }
 
 /* ── 3. Grid handled by .app-sidebar-overlay rule above (perspective floor) ── */
@@ -1397,7 +1436,9 @@
   [data-theme="navigator"] .btn-primary { animation:none; }
   [data-theme="navigator"] .side-link.active { animation:none; }
   [data-theme="navigator"] .app-main::before { animation:none; }
-  [data-theme="navigator"] .app-main::after { animation:none; }
+  [data-theme="navigator"] .app-main::after { animation:none; display:none; }
+  [data-theme="navigator"] .app-view-content::before,
+  [data-theme="navigator"] .app-view-content::after { animation:none; display:none; }
 }
 
 /* The Matrix — terminal green */
