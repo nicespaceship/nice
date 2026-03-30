@@ -823,30 +823,29 @@
   100% { transform: translateX(200%); }
 }
 
-/* Grid floor background — on bg-grid (not app-main, which has overflow:hidden) */
+/* Grid floor — on #tron-grid injected element + body fallback */
 [data-theme="navigator"] .app-main {
   position: relative;
 }
-/* Perspective grid floor — full viewport, traveling forward toward viewer */
-[data-theme="navigator"] .bg-grid {
+/* Perspective grid floor — traveling forward toward viewer.
+   Uses the canvas element (#matrix-canvas) which exists in the SPA
+   and sits behind content at z-index 0. */
+[data-theme="navigator"] #matrix-canvas {
+  display: block !important;
   position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 0;
   opacity: 1;
   background:
-    linear-gradient(rgba(0,229,255,0.2) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.15) 1px, transparent 1px);
-  background-size: 50px 50px;
+    linear-gradient(rgba(0,229,255,0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.16) 1px, transparent 1px) !important;
+  background-size: 50px 50px !important;
   animation: tron-grid-scroll 1.8s linear infinite;
   transform: perspective(250px) rotateX(60deg);
-  transform-origin: center 80%;
-  mask-image: radial-gradient(ellipse 120% 80% at 50% 85%, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 40%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 120% 80% at 50% 85%, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 40%, transparent 70%);
-}
-/* Horizon glow — bright line where grid meets sky */
-[data-theme="navigator"] .bg-hero-glow {
-  position: fixed; top: auto; bottom: 35vh; left: 0; right: 0; height: 100px;
-  background: radial-gradient(ellipse 80% 100% at 50% 100%, rgba(0,229,255,0.12) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
-  filter: blur(12px);
+  transform-origin: center 65%;
+  mask-image: radial-gradient(ellipse 160% 100% at 50% 75%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 45%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 160% 100% at 50% 75%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 45%, transparent 70%);
 }
 
 /* Horizontal scan line sweeping across content */
@@ -1264,7 +1263,7 @@
   animation:tron-light-trail 12s linear infinite 3s;
 }
 
-/* ── 3. Grid handled by main .bg-grid rule above (perspective floor) ── */
+/* ── 3. Grid handled by .app-sidebar-overlay rule above (perspective floor) ── */
 
 /* ── 4. Energy Pulse on Active Elements ── */
 @keyframes tron-energy-pulse {
