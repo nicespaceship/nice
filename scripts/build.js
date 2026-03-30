@@ -22,6 +22,7 @@ const SCRIPTS = [
   'app/js/lib/supabase.js',
   'app/js/lib/offline-queue.js',
   'app/js/lib/router.js',
+  'app/js/lib/blueprint-utils.js',
   'app/js/lib/card-renderer.js',
   'app/js/views/home.js',
   'app/js/views/profile.js',

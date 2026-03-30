@@ -84,12 +84,12 @@ const DockView = (() => {
 
     container.innerHTML = ships.map(ship => {
       const isActive = ship.id === activeShipId;
-      const classId = ship.class_id || 'class-1';
-      const shipClass = typeof Gamification !== 'undefined' ? Gamification.getSpaceshipClass(classId) : null;
-      const className = shipClass ? shipClass.name : classId;
-      const slotCount = shipClass ? shipClass.slots.length : 2;
+      const _bu = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
+      const classId = _bu ? _bu.getClassId(ship) : (ship.class_id || 'class-1');
+      const slotCount = _bu ? _bu.getSlotCount(ship) : 6;
+      const className = ship.name || classId;
       const state = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getShipState) ? BlueprintStore.getShipState(ship.id) : null;
-      const filledSlots = state?.agent_ids?.length || 0;
+      const filledSlots = _bu ? _bu.getFilledCount(state || ship) : (state?.agent_ids?.length || 0);
       const status = state?.status || 'standby';
       const statusColor = status === 'deployed' ? '#22c55e' : status === 'docked' ? '#f59e0b' : 'var(--text-muted)';
 
@@ -322,12 +322,10 @@ const DockView = (() => {
     const activeShip = activatedShips.find(s => s.id === shipId) || activatedShips[0];
     const classId = activeShip ? activeShip.class_id : 'class-1';
 
-    let shipClass;
-    if (typeof Gamification !== 'undefined') {
-      shipClass = Gamification.getSpaceshipClass(classId);
-    } else {
-      shipClass = { id: classId, name: 'Scout', slots: [{ id: 0, label: 'Bridge', maxRarity: 'Rare' }, { id: 1, label: 'Ops', maxRarity: 'Rare' }] };
-    }
+    const _bu2 = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
+    const shipClass = _bu2 ? _bu2.getSlotTemplate(activeShip) : (typeof Gamification !== 'undefined'
+      ? Gamification.getSpaceshipClass(classId)
+      : { id: classId, name: 'Scout', slots: [{ id: 0, label: 'Bridge', maxRarity: 'Rare' }, { id: 1, label: 'Ops', maxRarity: 'Rare' }] });
 
     const slotMap = _getSlotMap();
     const deployedCount = Object.values(slotMap).filter(Boolean).length;

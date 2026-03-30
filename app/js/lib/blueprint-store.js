@@ -261,7 +261,8 @@ const BlueprintStore = (() => {
     if (r.type === 'spaceship') {
       const meta = r.metadata || {};
       const cfg = r.config || {};
-      const ship = { ...r, recommended_class: meta.recommended_class, card_num: meta.card_num, caps: meta.caps, crew: meta.crew || cfg.crew, nodes: cfg.crew, desc: r.description };
+      const crewDefs = (typeof BlueprintUtils !== 'undefined') ? BlueprintUtils.getCrewDefs(r) : (meta.crew || cfg.crew || []);
+      const ship = { ...r, recommended_class: meta.recommended_class, card_num: meta.card_num, caps: meta.caps, crew: crewDefs, nodes: crewDefs, desc: r.description };
       const cid = ship.recommended_class || ship.class_id;
       if (cid && CLASS_TO_TIER[cid]) ship.tier = CLASS_TO_TIER[cid];
       return ship;

@@ -88,34 +88,24 @@ const ShipSetupWizard = (() => {
 
   /* ── Helpers ── */
 
-  /** Single source of truth for slot count — syncs with the card stats */
+  /** Delegate to BlueprintUtils (single source of truth) with inline fallback */
+  const _bu = () => typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
+
   function _getSlotCount() {
-    const bpSlots = parseInt(_blueprint?.stats?.slots, 10) || 0;
-    const bpCrew  = parseInt(_blueprint?.stats?.crew, 10) || 0;
-    const bpCrewMeta = (_blueprint?.metadata?.crew || []).length;
-    const bpCrewNodes = (_blueprint?.crew || _blueprint?.nodes || []).length;
-    return bpSlots || bpCrew || bpCrewMeta || bpCrewNodes || 6;
+    const bu = _bu();
+    return bu ? bu.getSlotCount(_blueprint) : (parseInt(_blueprint?.stats?.slots, 10) || parseInt(_blueprint?.stats?.crew, 10) || 6);
   }
 
-  /** Get the crew definitions from the blueprint (metadata.crew or nodes) */
   function _getCrewDefs() {
-    return _blueprint?.metadata?.crew || _blueprint?.crew || _blueprint?.nodes || [];
+    const bu = _bu();
+    return bu ? bu.getCrewDefs(_blueprint) : (_blueprint?.metadata?.crew || _blueprint?.crew || _blueprint?.nodes || []);
   }
 
   function _getShipClass() {
-    const slotCount = _getSlotCount();
-    const crewDefs = _getCrewDefs();
-    return {
-      id: 'dynamic',
-      name: _blueprint?.name || 'Ship',
-      slots: Array.from({ length: slotCount }, function(_, i) {
-        const member = crewDefs[i];
-        return {
-          id: i,
-          maxRarity: member?.rarity || 'Legendary',
-          label: member?.label || member?.name || ('Agent ' + (i + 1)),
-        };
-      }),
+    const bu = _bu();
+    return bu ? bu.getSlotTemplate(_blueprint) : {
+      id: 'dynamic', name: _blueprint?.name || 'Ship',
+      slots: Array.from({ length: _getSlotCount() }, (_, i) => ({ id: i, maxRarity: 'Legendary', label: 'Agent ' + (i + 1) })),
     };
   }
 

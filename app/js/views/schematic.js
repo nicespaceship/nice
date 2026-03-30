@@ -28,11 +28,9 @@ const SchematicView = (() => {
       return;
     }
 
-    const shipCrewCount = parseInt(activeShip.stats?.crew, 10) || 0;
-    const slotCount = shipCrewCount > 0 ? shipCrewCount : (typeof Gamification !== 'undefined' ? Gamification.getMaxSlots() : 5);
-    const shipClass = typeof Gamification !== 'undefined'
-      ? Gamification.getSlotTemplate(slotCount)
-      : { id: 'dynamic', name: 'Ship', slots: Array.from({ length: slotCount }, (_, i) => ({ id: i, label: 'Agent ' + i, maxRarity: 'Rare' })) };
+    const _bu = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
+    const shipClass = _bu ? _bu.getSlotTemplate(activeShip)
+      : { id: 'dynamic', name: 'Ship', slots: Array.from({ length: parseInt(activeShip.stats?.crew, 10) || 5 }, (_, i) => ({ id: i, label: 'Agent ' + i, maxRarity: 'Rare' })) };
     const slotMap = _getSlotMap();
     const filledCount = Object.values(slotMap).filter(Boolean).length;
     const totalSlots = shipClass.slots.length;

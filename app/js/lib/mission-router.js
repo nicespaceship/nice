@@ -125,7 +125,7 @@ const MissionRouter = (() => {
     if (!state || !state.slot_assignments) return [];
 
     var shipBp = BlueprintStore.getSpaceship(spaceshipId) || BlueprintStore.getSpaceship(spaceshipId.replace(/^bp-/, ''));
-    var crewNodes = (shipBp && shipBp.metadata && shipBp.metadata.crew) || (shipBp && shipBp.crew) || [];
+    var crewNodes = (typeof BlueprintUtils !== 'undefined') ? BlueprintUtils.getCrewDefs(shipBp) : ((shipBp && shipBp.metadata && shipBp.metadata.crew) || (shipBp && shipBp.crew) || []);
 
     var manifest = [];
     var assignments = state.slot_assignments;

@@ -264,7 +264,8 @@ const CardRenderer = (() => {
 
   function _deriveClassId(bp) {
     if (bp.class_id) return bp.class_id;
-    const slots = parseInt(bp.stats?.slots || bp.stats?.crew, 10) || 0;
+    const _bu = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
+    const slots = _bu ? _bu.getSlotCount(bp, 0) : (parseInt(bp.stats?.slots || bp.stats?.crew, 10) || 0);
     if (slots >= 10) return 'class-5';
     if (slots >= 7)  return 'class-4';
     if (slots >= 4)  return 'class-3';
@@ -285,9 +286,11 @@ const CardRenderer = (() => {
     // ── Serial ──
     const serial = serialHash(bp.id || bp.name, isShip ? 12 : undefined);
 
+    // ── BlueprintUtils (single source of truth) ──
+    const _bu = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
+
     // ── Text content ──
-    const members = bp._members || [];
-    const memberCount = members.length || (bp.agent_ids || []).length;
+    const memberCount = _bu ? _bu.getFilledCount(bp) : ((bp._members || []).length || (bp.agent_ids || []).length);
     const classId = isShip ? _deriveClassId(bp) : null;
     const cls = isShip ? (SHIP_CLASSES[classId] || SHIP_CLASSES['slot-6'] || SHIP_CLASSES['class-1']) : null;
     const fallbackDesc = isShip
@@ -298,18 +301,19 @@ const CardRenderer = (() => {
     const flavor = bp.flavor || bp.description || bp.desc || desc;
 
     // ── Capabilities (same derivation for both types) ──
+    const crewDefs = _bu ? _bu.getCrewDefs(bp) : (bp.metadata?.crew || bp._members || []);
     const caps = bp.caps || bp.metadata?.caps
-      || (isShip && members.length ? members.map(m => '⚙ ' + (m.name || 'Agent')) : [])
+      || (isShip && crewDefs.length ? crewDefs.map(m => '⚙ ' + (m.name || m.label || 'Agent')) : [])
       || (!isShip ? (bp.config?.tools || []).map(t => '⚙ ' + t) : []);
 
     // ── Stats (type-specific data, same 3-4 column layout) ──
     let statLbls, statVals;
     if (isShip) {
-      const crewCount = bp.stats?.crew || memberCount.toString();
-      const slotCount = cls.slots.length.toString();
+      const slotCount = _bu ? _bu.getSlotCount(bp) : (cls.slots.length);
+      const crewCount = _bu ? _bu.getFilledCount(bp) || slotCount : (bp.stats?.crew || memberCount);
       const deployCount = bp.activation_count || bp.stats?.deployments || 0;
       statLbls = ['AGENTS','SLOTS','DEPLOYS'];
-      statVals = [crewCount, slotCount, deployCount.toLocaleString()];
+      statVals = [crewCount.toString(), slotCount.toString(), deployCount.toLocaleString()];
     } else {
       const statKeys = ['spd','acc','cap','pwr'];
       statLbls = ['SPD','ACC','CAP','PWR'];
