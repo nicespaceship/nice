@@ -1241,27 +1241,27 @@
   animation:tron-disc-spin 8s linear infinite reverse;
 }
 
-/* ── 2. Lightcycles — circles traveling ON the grid lines ── */
-@keyframes tron-cycle-1 {
+/* ── 2. Lightcycles — horizontal AND vertical, traveling on grid lines ── */
+@keyframes tron-cycle-right {
   0%   { left:-8%; opacity:0; }
   5%   { opacity:1; }
   95%  { opacity:1; }
   100% { left:108%; opacity:0; }
 }
-@keyframes tron-cycle-2 {
+@keyframes tron-cycle-left {
   0%   { right:-8%; opacity:0; }
   5%   { opacity:1; }
   95%  { opacity:1; }
   100% { right:108%; opacity:0; }
 }
-/* Lightcycle 1 — travels right on a grid line (bottom 25%) */
+
+/* Horizontal cycle 1 — travels right */
 [data-theme="navigator"] body::before {
   content:''; position:fixed; bottom:22%; left:-8%;
   width:6px; height:2px;
   background:#00e5ff;
   box-shadow:
     0 0 6px #00e5ff, 0 0 14px rgba(0,229,255,0.6),
-    /* Light trail ribbon behind the cycle */
     -12px 0 4px rgba(0,229,255,0.5),
     -28px 0 6px rgba(0,229,255,0.4),
     -50px 0 8px rgba(0,229,255,0.3),
@@ -1269,9 +1269,9 @@
     -120px 0 12px rgba(0,229,255,0.1),
     -170px 0 14px rgba(0,229,255,0.05);
   pointer-events:none; z-index:1;
-  animation:tron-cycle-1 9s linear infinite;
+  animation:tron-cycle-right 9s linear infinite;
 }
-/* Lightcycle 2 — travels left on a lower grid line (bottom 12%) */
+/* Horizontal cycle 2 — travels left */
 [data-theme="navigator"] body::after {
   content:''; position:fixed; bottom:10%; right:-8%;
   width:5px; height:2px;
@@ -1284,7 +1284,7 @@
     80px 0 10px rgba(0,229,255,0.1),
     120px 0 12px rgba(0,229,255,0.05);
   pointer-events:none; z-index:1;
-  animation:tron-cycle-2 13s linear infinite 3s;
+  animation:tron-cycle-left 13s linear infinite 3s;
 }
 
 /* ── 3. Grid handled by .app-sidebar-overlay rule above (perspective floor) ── */
@@ -1327,15 +1327,7 @@
   box-shadow:0 0 20px rgba(0,229,255,0.1), inset 0 0 30px rgba(0,229,255,0.02);
 }
 
-/* ── 6. Wireframe Geometry — subtle wireframe sphere ── */
-[data-theme="navigator"] .app-view-content::before {
-  content:'◇'; position:fixed; top:15%; right:10%;
-  font-size:200px; color:rgba(0,229,255,0.015); pointer-events:none; z-index:0;
-  transform:rotate(45deg);
-  text-shadow:
-    -80px 40px 0 rgba(0,229,255,0.01),
-    60px -30px 0 rgba(0,229,255,0.01);
-}
+/* ── 6. Wireframe geometry now replaced by vertical lightcycles above ── */
 
 /* ── 7. Derezz Hover Effect — pixelation on hover out ── */
 [data-theme="navigator"] .mcp-catalog-card {
@@ -1353,14 +1345,7 @@
   pointer-events:none;
 }
 
-/* ── 8. CRT Overlay — subtle horizontal lines ── */
-[data-theme="navigator"] .app-view-content::after {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:9997;
-  background:repeating-linear-gradient(
-    0deg, transparent, transparent 3px,
-    rgba(0,229,255,0.008) 3px, rgba(0,229,255,0.008) 4px
-  );
-}
+/* ── 8. CRT overlay now replaced by vertical lightcycles above ── */
 
 /* ── 9. Security Tabs — energy segments ── */
 [data-theme="navigator"] .security-tabs {
