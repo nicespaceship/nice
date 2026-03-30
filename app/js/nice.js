@@ -27,113 +27,15 @@ const Theme = (() => {
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' } },
     { id:'steampunk', name:'Steampunk', builtin:true, accent:'#c8a050', preview:['#0f0a04','#c8a050','#8b6914'],
       data:{ colors:{ '--bg':'#0f0a04','--bg2':'#1a1208','--surface':'rgba(200,160,80,0.06)','--surface2':'rgba(139,105,20,0.08)','--border':'rgba(200,160,80,0.28)','--border-hi':'rgba(200,160,80,0.6)','--accent':'#c8a050','--accent2':'#8b6914','--text':'#e8d8c0','--text-muted':'rgba(232,216,192,0.5)','--glow':'0 0 16px rgba(200,160,80,0.22)','--panel-bg':'rgba(15,10,4,0.97)' }, fonts:{ '--font-h':"'Playfair Display', serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
-    /* Premium themes (formerly skins) */
-    { id:'cyberpunk', name:'Cyberpunk 2099', builtin:true, premium:true, accent:'#ff2d6f', rarity:'Legendary',
-      preview:['#0a0a0f','#ff2d6f','#00fff5'],
-      googleFonts:'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Fira+Code&display=swap',
-      data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)','--nav-bg':'rgba(10,10,15,0.98)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
-      effect:'glitch',
-      copy:{
-        nav:{ home:'Terminal', missions:'Ops', blueprints:'Black Market', analytics:'Surveillance', cost:'Crypto Ledger', comms:'Darknet', vault:'Data Vault', log:'System Logs', stations:'Megacorps', profile:'ID Chip', settings:'Config', 'theme-creator':'Mod Shop' },
-        titles:{ home:'Terminal', missions:'Active Ops', blueprints:'Black Market', analytics:'Surveillance Feed', cost:'Crypto Ledger', comms:'Darknet Comms', vault:'Data Vault', log:'System Logs', stations:'Megacorp Directory', profile:'ID Chip', settings:'Config' },
-        ranks:['Script Kiddie','Hacker','Netrunner','Ghost','Architect','Daemon Lord','Singularity'],
-        shipClasses:['Burner Phone','Custom Rig','Server Farm','Neural Mainframe','Quantum Core'],
-        greeting:'Welcome back, Runner', newAgent:'New Netrunner', newMission:'New Op', newSpaceship:'New Rig',
-      },
-    },
-    { id:'lcars-federation', name:'LCARS — Starfleet', builtin:true, premium:true, accent:'#ff9966', rarity:'Legendary',
-      preview:['#000000','#ff9966','#cc99cc'],
-      googleFonts:'https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&family=Share+Tech+Mono&display=swap',
-      data:{ colors:{ '--bg':'#000000','--bg2':'#0a0a0e','--surface':'#111118','--surface2':'#1a1a22','--border':'#cc6699','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99cc','--text':'#ff9966','--text-muted':'#9999cc','--glow':'0 0 8px rgba(255,153,102,0.2)','--glow-hi':'0 0 16px rgba(204,153,204,0.3)','--panel-bg':'rgba(0,0,0,0.97)','--nav-bg':'rgba(0,0,0,0.98)' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Share Tech Mono', monospace" }, radius:'24px' },
-      effect:'lcars',
-      copy:{
-        nav:{ home:'Main Bridge', missions:'Away Missions', blueprints:'Schematics', analytics:'Sensor Array', cost:'Resource Alloc.', comms:'Subspace Comms', vault:'Classified', log:"Captain's Log", stations:'Starbases', profile:'Personnel File', settings:'Ship Config', 'theme-creator':'Holodeck Program' },
-        titles:{ home:'Main Bridge', missions:'Away Mission Briefing', blueprints:'Starfleet Schematics Database', analytics:'Sensor Array — Long Range', cost:'Resource Allocation', comms:'Subspace Communications', vault:'Classified — Clearance Required', log:"Captain's Log — Supplemental", stations:'Starbase Operations', profile:'Personnel File', settings:'Ship Configuration' },
-        ranks:['Cadet','Ensign','Lieutenant','Lt. Commander','Commander','Captain','Admiral'],
-        shipClasses:['Shuttlecraft','Runabout','Defiant-class','Intrepid-class','Galaxy-class'],
-        greeting:'Welcome aboard, Captain', newAgent:'New Officer', newMission:'New Away Mission', newSpaceship:'New Starship',
-      },
-    },
-    { id:'matrix-reloaded', name:'The Matrix', builtin:true, premium:true, accent:'#00ff41', rarity:'Mythic',
-      preview:['#000800','#00ff41','#00cc33'],
-      googleFonts:'https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Share+Tech+Mono&display=swap',
-      data:{ colors:{ '--bg':'#000600','--bg2':'#000a00','--surface':'#001a00','--surface2':'#002200','--border':'rgba(0,255,65,0.25)','--border-hi':'#00ff41','--accent':'#00ff41','--accent2':'#00cc33','--text':'#00ff41','--text-muted':'rgba(0,255,65,0.45)','--glow':'0 0 12px rgba(0,255,65,0.35)','--glow-hi':'0 0 24px rgba(0,255,65,0.6)','--panel-bg':'rgba(0,4,0,0.97)','--nav-bg':'rgba(0,4,0,0.98)' }, fonts:{ '--font-h':"'Fira Code', monospace", '--font-b':"'Share Tech Mono', monospace" }, radius:'0px' },
-      effect:'digital-rain',
-      copy:{
-        nav:{ home:'Construct', missions:'Assignments', blueprints:'Source Code', analytics:'Surveillance', cost:'Resource Monitor', comms:'Broadcast', vault:'Encrypted', log:'Operator Log', stations:'Nodes', profile:'Identity', settings:'System Config', 'theme-creator':'Code Editor' },
-        titles:{ home:'The Construct', missions:'Active Assignments', blueprints:'Source Code', analytics:'Surveillance Grid', cost:'Resource Monitor', comms:'Pirate Broadcast', vault:'Encrypted Archive', log:'Operator Log — Authenticated', stations:'Node Network', profile:'Identity File', settings:'System Configuration' },
-        ranks:['Bluepill','Awakened','Rebel','Operator','The One\'s Ally','Oracle','The One'],
-        shipClasses:['Escape Pod','Hovercraft','Nebuchadnezzar','Hammer','Logos'],
-        greeting:'Welcome back, Operator', newAgent:'New Operative', newMission:'New Assignment', newSpaceship:'New Hovercraft',
-      },
-    },
+    { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
+      data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' } },
   ];
 
   BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
 
-  // Track active effect cleanup function
-  let _effectCleanup = null;
-  // Effect registry — canvas background effects (registered by skin-packs or theme modules)
-  const _effects = {};
-  function registerEffect(id, startFn) { _effects[id] = startFn; }
-
-  function _startEffect(effectId) {
-    _stopEffect();
-    if (!effectId || !_effects[effectId]) return;
-    const canvas = document.getElementById('matrix-canvas');
-    if (!canvas) return;
-    canvas.style.display = 'block';
-    canvas.style.opacity = '0.15';
-    _effectCleanup = _effects[effectId](canvas);
-  }
-
-  function _stopEffect() {
-    if (_effectCleanup) { _effectCleanup(); _effectCleanup = null; }
-    const canvas = document.getElementById('matrix-canvas');
-    if (canvas) canvas.style.display = 'none';
-  }
-
-  function _applyGoogleFonts(url) {
-    if (!url) return;
-    let link = document.getElementById('theme-fonts');
-    if (!link) {
-      link = document.createElement('link');
-      link.id = 'theme-fonts';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-    }
-    link.href = url;
-  }
-
-  function _clearGoogleFonts() {
-    const link = document.getElementById('theme-fonts');
-    if (link) link.remove();
-  }
-
-  function _applyCopy(copy) {
-    if (!copy) return;
-    document.querySelectorAll('[data-skin-nav]').forEach(el => {
-      const key = el.dataset.skinNav;
-      if (!el.dataset.skinDefault) el.dataset.skinDefault = el.textContent;
-      el.textContent = copy.nav?.[key] || el.dataset.skinDefault;
-    });
-  }
-
-  function _clearCopy() {
-    document.querySelectorAll('[data-skin-nav]').forEach(el => {
-      if (el.dataset.skinDefault) el.textContent = el.dataset.skinDefault;
-    });
-  }
-
   function set(name) {
     // Clear inline vars first so built-in CSS takes over cleanly
     VAR_KEYS.forEach(k => document.documentElement.style.removeProperty(k));
-
-    // Stop any running effects and clear copy from previous theme
-    _stopEffect();
-    _clearCopy();
-    _clearGoogleFonts();
-    document.documentElement.removeAttribute('data-skin');
 
     const t = THEMES.find(t => t.id === name);
 
@@ -141,16 +43,7 @@ const Theme = (() => {
     if (BUILTIN.includes(name)) {
       document.documentElement.setAttribute('data-theme', name);
       localStorage.setItem('ns-theme', name);
-      // Matrix rain for the built-in 'matrix' theme
       MatrixRain.toggle(name === 'matrix');
-
-      // Premium theme extras: effects, copy, fonts
-      if (t) {
-        if (t.effect) _startEffect(t.effect);
-        if (t.copy) _applyCopy(t.copy);
-        if (t.googleFonts) _applyGoogleFonts(t.googleFonts);
-        if (t.premium) document.documentElement.setAttribute('data-skin', name);
-      }
     } else {
       // Non-built-in: look up in THEMES by id (custom themes)
       if (!t) return;
@@ -167,10 +60,6 @@ const Theme = (() => {
       MatrixRain.toggle(false);
     }
 
-    // Clear legacy skin keys
-    localStorage.removeItem('nice-active-skin');
-    localStorage.removeItem('nice-pre-skin-theme');
-
     // Highlight active dock button
     document.querySelectorAll('.db').forEach(b => b.classList.remove('active'));
     document.querySelector(`.db[data-theme-id="${name}"]`)?.classList.add('active');
@@ -186,10 +75,6 @@ const Theme = (() => {
       meta.setAttribute('content', bg || '#080808');
     }
 
-    // Publish state
-    if (typeof State !== 'undefined') {
-      State.set('skin', t?.premium ? name : null);
-    }
   }
 
   function toggleDarkLight() {
@@ -251,7 +136,7 @@ const Theme = (() => {
 
   function current() { return localStorage.getItem(typeof Utils !== 'undefined' ? Utils.KEYS.theme : 'ns-theme') || 'spaceship'; }
 
-  return { set, init, toggleDarkLight, renderDock, list, getTheme, current, registerEffect, THEMES, BUILTIN };
+  return { set, init, toggleDarkLight, renderDock, list, getTheme, current, THEMES, BUILTIN };
 })();
 
 /* ─────────────────────────────────────────────────────────────────
