@@ -1784,35 +1784,42 @@
 
 /* ═══ STEAMPUNK ═══════════════════════════════════════════════════════ */
 [data-theme="steampunk"] {
-  --bg:           #0a0704;
-  --bg2:          #120e08;
-  --surface:      rgba(200,160,80,0.06);
-  --surface2:     rgba(139,105,20,0.08);
-  --border:       #5a4220;
-  --border-hi:    #c8a050;
-  --accent:       #c8a050;
-  --accent2:      #8b6914;
-  --text:         #e8d8c0;
-  --text-muted:   #8b7a5a;
-  --text-dim:     rgba(232,216,192,0.5);
-  --glow:         0 0 12px rgba(200,160,80,0.15);
-  --glow-hi:      0 0 20px rgba(200,160,80,0.3);
-  --panel-bg:     rgba(15,10,4,0.97);
-  --nav-bg:       rgba(10,7,4,0.95);
+  --bg:           #1a1008;
+  --bg2:          #241a0e;
+  --surface:      rgba(200,160,80,0.1);
+  --surface2:     rgba(180,140,60,0.12);
+  --border:       #8b6914;
+  --border-hi:    #d4a840;
+  --accent:       #d4a840;
+  --accent2:      #a07818;
+  --text:         #f0e0c0;
+  --text-muted:   #a08858;
+  --text-dim:     rgba(240,224,192,0.5);
+  --glow:         0 0 12px rgba(212,168,64,0.2);
+  --glow-hi:      0 0 20px rgba(212,168,64,0.4);
+  --panel-bg:     rgba(30,20,10,0.95);
+  --nav-bg:       rgba(24,16,8,0.95);
   --font-d:       'Playfair Display', 'Georgia', serif;
   --font-h:       'Playfair Display', 'Georgia', serif;
   --font-b:       'EB Garamond', 'Georgia', serif;
   --font-m:       'Courier Prime', 'Courier New', monospace;
-  --radius:       3px;
-  --border-width: 2px;
+  --radius:       4px;
+  --border-width: 3px;
   --scan:         0;
-  --bg-pattern:   radial-gradient(circle, rgba(200,160,80,0.04) 1px, transparent 1px);
+  --bg-pattern:   radial-gradient(circle, rgba(200,160,80,0.05) 1px, transparent 1px);
+  --sp-brass:     #d4a840;
+  --sp-brass-dk:  #8b6914;
+  --sp-brass-lt:  #e8c060;
+  --sp-copper:    #b87333;
+  --sp-panel:     #2a1a0e;
+  --sp-panel-lt:  #3a2814;
 }
 
 /* Sidebar — riveted brass panels */
 [data-theme="steampunk"] .app-sidebar {
-  background: linear-gradient(180deg, #1a1208 0%, #0f0a04 100%);
-  border-right: 3px solid #5a4220;
+  background: linear-gradient(180deg, #241a0e 0%, #1a1008 100%);
+  border-right: 3px solid var(--sp-brass-dk);
+  box-shadow:inset -1px 0 0 rgba(212,168,64,0.15);
 }
 [data-theme="steampunk"] .side-header {
   background: linear-gradient(135deg, #2a1e10, #1a1208);
@@ -1872,15 +1879,21 @@
   background: linear-gradient(90deg, #5a4220 0%, #c8a050 20%, #8b6914 50%, #c8a050 80%, #5a4220 100%);
 }
 
-/* Panels — riveted plate look */
+/* Panels — thick brass-framed plates (game UI style) */
 [data-theme="steampunk"] .widget-card,
 [data-theme="steampunk"] .tc-section,
 [data-theme="steampunk"] .detail-section {
-  border: 1px solid #5a4220;
-  border-radius: 3px;
-  background: linear-gradient(135deg, rgba(26,18,8,0.95), rgba(15,10,4,0.98));
-  box-shadow: inset 0 1px 0 rgba(200,160,80,0.08), 0 2px 8px rgba(0,0,0,0.3);
+  border: 3px solid var(--sp-brass-dk);
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--sp-panel-lt), var(--sp-panel));
+  box-shadow:
+    inset 0 1px 0 rgba(212,168,64,0.15),
+    inset 0 -1px 0 rgba(0,0,0,0.3),
+    0 3px 10px rgba(0,0,0,0.4),
+    0 0 0 1px rgba(212,168,64,0.1);
   position: relative;
+  outline:1px solid rgba(212,168,64,0.08);
+  outline-offset:3px;
 }
 /* Corner rivets */
 [data-theme="steampunk"] .widget-card::before,
@@ -1900,58 +1913,64 @@
   pointer-events: none; letter-spacing: 0;
 }
 
-/* Buttons — brass plate */
+/* Buttons — beveled brass plate (game UI style) */
 [data-theme="steampunk"] .btn {
-  border: 1px solid #5a4220;
-  border-radius: 2px;
-  background: linear-gradient(180deg, #3a2a14, #2a1e10);
-  color: #c8a050;
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(200,160,80,0.1);
+  border:2px solid var(--sp-brass-dk);
+  border-radius:4px;
+  background:linear-gradient(180deg, #3a2814 0%, #2a1a0e 100%);
+  color:var(--sp-brass-lt);
+  font-family:'Playfair Display', serif;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  box-shadow:0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(232,192,96,0.12);
 }
 [data-theme="steampunk"] .btn:hover {
-  background: linear-gradient(180deg, #4a3a1e, #3a2a14);
-  border-color: #c8a050;
-  box-shadow: 0 0 8px rgba(200,160,80,0.2), inset 0 1px 0 rgba(200,160,80,0.15);
+  background:linear-gradient(180deg, #4a3818 0%, #3a2814 100%);
+  border-color:var(--sp-brass);
+  box-shadow:0 0 10px rgba(212,168,64,0.25), inset 0 1px 0 rgba(232,192,96,0.2);
 }
 [data-theme="steampunk"] .btn-primary {
-  background: linear-gradient(180deg, #c8a050, #8b6914);
-  color: #0a0704;
-  border-color: #c8a050;
+  background:linear-gradient(180deg, var(--sp-brass-lt) 0%, var(--sp-brass) 40%, var(--sp-brass-dk) 100%);
+  color:#1a1008;
+  border-color:var(--sp-brass);
+  box-shadow:0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.15);
+  text-shadow:0 1px 0 rgba(255,255,255,0.15);
 }
 [data-theme="steampunk"] .btn-primary:hover {
-  background: linear-gradient(180deg, #d8b060, #a88030);
+  background:linear-gradient(180deg, #f0d070 0%, var(--sp-brass-lt) 40%, var(--sp-brass) 100%);
+  box-shadow:0 0 12px rgba(212,168,64,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
 }
 
-/* Tab bars — brass tabs with rivets */
+/* Tab bars — beveled brass segments */
 [data-theme="steampunk"] .bp-type-tab,
 [data-theme="steampunk"] .bridge-hero-tab,
 [data-theme="steampunk"] .log-view-tab {
-  border-radius: 2px;
-  border: 1px solid #5a4220;
-  background: linear-gradient(180deg, #2a1e10, #1a1208);
-  color: #c8a050;
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
+  border-radius:4px;
+  border:2px solid var(--sp-brass-dk);
+  background:linear-gradient(180deg, #3a2814, #2a1a0e);
+  color:var(--sp-brass);
+  font-family:'Playfair Display', serif;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  box-shadow:inset 0 1px 0 rgba(232,192,96,0.08);
 }
 [data-theme="steampunk"] .bp-type-tab.active,
 [data-theme="steampunk"] .bridge-hero-tab.active,
 [data-theme="steampunk"] .log-view-tab.active {
-  background: linear-gradient(180deg, #c8a050, #8b6914);
-  color: #0a0704;
-  border-color: #c8a050;
-  border-bottom: none;
+  background:linear-gradient(180deg, var(--sp-brass-lt), var(--sp-brass) 40%, var(--sp-brass-dk));
+  color:#1a1008;
+  border-color:var(--sp-brass);
+  box-shadow:0 0 8px rgba(212,168,64,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+  text-shadow:0 1px 0 rgba(255,255,255,0.1);
 }
 [data-theme="steampunk"] .bp-type-tab:hover,
 [data-theme="steampunk"] .bridge-hero-tab:hover,
 [data-theme="steampunk"] .log-view-tab:hover {
-  background: linear-gradient(180deg, #3a2a14, #2a1e10);
-  border-color: #c8a050;
+  background:linear-gradient(180deg, #4a3818, #3a2814);
+  border-color:var(--sp-brass);
+  color:var(--sp-brass-lt);
 }
 
 /* Sub-tabs & filters */
@@ -1974,12 +1993,21 @@
 }
 [data-theme="steampunk"] .bp-view-btn.active { background: #5a4220; border-color: #c8a050; }
 
-/* Mission cards — aged parchment edge */
+/* Mission cards — brass-framed parchment */
 [data-theme="steampunk"] .mc-card {
-  border: 1px solid #5a4220;
-  border-left: 4px solid #c8a050;
-  border-radius: 2px;
-  background: linear-gradient(135deg, rgba(26,18,8,0.9), rgba(15,10,4,0.95));
+  border:2px solid var(--sp-brass-dk);
+  border-left:4px solid var(--sp-brass);
+  border-radius:4px;
+  background:linear-gradient(135deg, var(--sp-panel-lt), var(--sp-panel));
+  box-shadow:0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(212,168,64,0.08);
+}
+/* TCG cards — thick gold frame */
+[data-theme="steampunk"] .tcg-card {
+  border:3px solid var(--sp-brass-dk);
+  border-radius:4px;
+  box-shadow:0 3px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,64,0.1);
+  outline:1px solid rgba(212,168,64,0.06);
+  outline-offset:2px;
 }
 [data-theme="steampunk"] .mc-card-running { border-left-color: #8b6914; }
 [data-theme="steampunk"] .mc-card-completed { border-left-color: #6a8a40; }
@@ -2104,6 +2132,279 @@
 
 /* Marketing page overrides */
 [data-theme="steampunk"] nav:not(.app-side-nav) { border-bottom: 2px solid #5a4220; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   STEAMPUNK v2 — Victorian Engineering Immersion
+   Clockwork gears, brass pipes, parchment, steam wisps, rivets,
+   ornate flourishes, copper patina, pressure gauges.
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Rotating Gear Animations — clockwork machinery feel ── */
+@keyframes sp-gear-spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+@keyframes sp-gear-spin-rev { 0% { transform:rotate(0deg); } 100% { transform:rotate(-360deg); } }
+
+[data-theme="steampunk"] .app-main::after {
+  content:'⚙'; position:fixed; bottom:40px; right:30px;
+  font-size:120px; color:rgba(200,160,80,0.04); pointer-events:none; z-index:0;
+  animation:sp-gear-spin 30s linear infinite;
+  text-shadow:0 0 40px rgba(200,160,80,0.02);
+}
+[data-theme="steampunk"] .app-main::before {
+  content:'⚙'; position:fixed; bottom:80px; right:85px;
+  font-size:72px; color:rgba(139,105,20,0.04); pointer-events:none; z-index:0;
+  animation:sp-gear-spin-rev 22s linear infinite;
+}
+
+/* ── 2. Aged Parchment / Leather Texture ── */
+[data-theme="steampunk"] body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9997;
+  opacity:0.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  mix-blend-mode:multiply;
+}
+/* Leather grain on sidebar */
+[data-theme="steampunk"] .app-sidebar::after {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  opacity:0.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='turbulence' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23l)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* ── 3. Upgraded Rivets — brass bolts at corners ── */
+[data-theme="steampunk"] .widget-card::before,
+[data-theme="steampunk"] .tc-section::before {
+  content:''; position:absolute; top:5px; left:5px; width:10px; height:10px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, var(--sp-brass-lt), var(--sp-brass) 50%, var(--sp-brass-dk) 80%);
+  box-shadow:
+    calc(100% - 20px) 0 0 0 var(--sp-brass-dk),
+    0 calc(100% - 20px) 0 0 var(--sp-brass-dk),
+    calc(100% - 20px) calc(100% - 20px) 0 0 var(--sp-brass-dk),
+    0 0 3px rgba(0,0,0,0.5);
+  pointer-events:none; z-index:3;
+  display:block;
+  font-size:0; letter-spacing:0;
+}
+[data-theme="steampunk"] .widget-card::after,
+[data-theme="steampunk"] .tc-section::after {
+  content:''; display:none;
+}
+/* Gear decorations at panel corners for MCP catalog cards */
+[data-theme="steampunk"] .mcp-catalog-card {
+  border:2px solid var(--sp-brass-dk); border-radius:4px;
+  background:linear-gradient(135deg, var(--sp-panel-lt), var(--sp-panel));
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+[data-theme="steampunk"] .mcp-catalog-card::before {
+  content:'⚙'; position:absolute; top:-6px; right:-6px;
+  font-size:18px; color:var(--sp-brass-dk); pointer-events:none; z-index:2;
+  animation:sp-gear-spin 15s linear infinite;
+  text-shadow:0 1px 2px rgba(0,0,0,0.4);
+}
+[data-theme="steampunk"] .mcp-catalog-card:hover::before {
+  color:var(--sp-brass); animation-duration:4s;
+}
+
+/* ── 4. Steam / Smoke Wisps — rising from bottom ── */
+@keyframes sp-steam-rise {
+  0%   { transform:translateY(0) scaleX(1); opacity:0.4; }
+  50%  { transform:translateY(-60px) scaleX(1.8); opacity:0.15; }
+  100% { transform:translateY(-120px) scaleX(2.5); opacity:0; }
+}
+[data-theme="steampunk"] .bg-grid::before {
+  content:''; position:fixed; bottom:0; left:20%;
+  width:60px; height:40px; border-radius:50%;
+  background:radial-gradient(ellipse, rgba(200,160,80,0.15), transparent 70%);
+  pointer-events:none; filter:blur(12px);
+  animation:sp-steam-rise 6s ease-out infinite;
+}
+[data-theme="steampunk"] .bg-grid::after {
+  content:''; position:fixed; bottom:0; left:65%;
+  width:80px; height:50px; border-radius:50%;
+  background:radial-gradient(ellipse, rgba(200,160,80,0.1), transparent 70%);
+  pointer-events:none; filter:blur(16px);
+  animation:sp-steam-rise 8s ease-out infinite 2s;
+}
+
+/* ── 5. Brass Pipe Borders — segmented copper bars ── */
+[data-theme="steampunk"] .bp-type-tabs {
+  border:2px solid #5a4220; border-radius:3px;
+  background:linear-gradient(180deg, #1a1208, #0f0a04);
+  box-shadow:inset 0 1px 0 rgba(200,160,80,0.08);
+  position:relative;
+}
+[data-theme="steampunk"] .bp-type-tabs::before {
+  content:''; position:absolute; top:-4px; left:20px; right:20px; height:3px;
+  background:linear-gradient(90deg, transparent 0%, #c8a050 10%, #8b6914 50%, #c8a050 90%, transparent 100%);
+  border-radius:2px;
+}
+[data-theme="steampunk"] .bp-type-tabs::after {
+  content:''; position:absolute; bottom:-4px; left:20px; right:20px; height:3px;
+  background:linear-gradient(90deg, transparent 0%, #5a4220 10%, #8b6914 50%, #5a4220 90%, transparent 100%);
+  border-radius:2px;
+}
+/* Pipe joints on security tabs */
+[data-theme="steampunk"] .security-tabs {
+  border:2px solid #5a4220; border-radius:3px;
+  background:linear-gradient(180deg, #1a1208, #0f0a04);
+}
+
+/* ── 6. Victorian Typography — ornate flourish dividers ── */
+[data-theme="steampunk"] .app-view-content h1::after,
+[data-theme="steampunk"] .app-view-content h2::after {
+  content:'— ✦ —'; display:block;
+  font-size:.6rem; color:rgba(200,160,80,0.3); letter-spacing:.3em;
+  margin-top:6px; text-align:inherit;
+}
+[data-theme="steampunk"] .home-greeting {
+  text-shadow:0 2px 4px rgba(0,0,0,0.5), 0 0 20px rgba(200,160,80,0.1);
+  letter-spacing:.08em;
+}
+/* Ornate section separators */
+[data-theme="steampunk"] hr,
+[data-theme="steampunk"] .section-divider {
+  border:none; height:1px; position:relative;
+  background:linear-gradient(90deg, transparent, #5a4220 20%, #c8a050 50%, #5a4220 80%, transparent);
+}
+
+/* ── 7. Copper Patina Hover — verdigris green tint on hover ── */
+@keyframes sp-patina-glow {
+  0%, 100% { box-shadow:0 0 8px rgba(200,160,80,0.15); }
+  50%      { box-shadow:0 0 16px rgba(200,160,80,0.3), 0 0 4px rgba(80,160,120,0.1); }
+}
+[data-theme="steampunk"] .tcg-card:hover,
+[data-theme="steampunk"] .mcp-catalog-card:hover {
+  border-color:#c8a050;
+  box-shadow:0 0 12px rgba(200,160,80,0.2), inset 0 0 30px rgba(80,160,120,0.02);
+  transition:all .3s;
+}
+[data-theme="steampunk"] .btn-primary {
+  animation:sp-patina-glow 4s ease-in-out infinite;
+}
+
+/* ── 8. Warm Amber Glow — CRT warmth vignette ── */
+[data-theme="steampunk"] .app-main {
+  position:relative;
+}
+/* Warm amber vignette at edges (oil lamp light falloff) */
+[data-theme="steampunk"] .app-view-content::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9998;
+  background:radial-gradient(ellipse at center, transparent 50%, rgba(10,7,4,0.5) 100%);
+}
+
+/* ── 9. Pressure Gauge Progress Bars — brass dial aesthetic ── */
+[data-theme="steampunk"] progress,
+[data-theme="steampunk"] .progress-bar {
+  background:linear-gradient(180deg, #1a1208, #0f0a04); border:2px solid #5a4220;
+  border-radius:3px; height:12px; overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,0.4);
+}
+[data-theme="steampunk"] progress::-webkit-progress-value,
+[data-theme="steampunk"] .progress-fill {
+  background:linear-gradient(180deg, #d8b060, #c8a050 40%, #8b6914);
+  border-radius:2px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);
+}
+[data-theme="steampunk"] progress::-webkit-progress-bar {
+  background:linear-gradient(180deg, #1a1208, #0f0a04); border-radius:2px;
+}
+
+/* ── 10. Embossed Card Headers — engraved brass nameplate ── */
+[data-theme="steampunk"] .tcg-card .tcg-name-bar {
+  background:linear-gradient(180deg, rgba(200,160,80,0.12), rgba(200,160,80,0.04));
+  border-bottom:2px solid #5a4220;
+  text-shadow:0 1px 0 rgba(0,0,0,0.5), 0 -1px 0 rgba(200,160,80,0.1);
+  position:relative;
+}
+[data-theme="steampunk"] .tcg-card .tcg-name-bar::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(200,160,80,0.3), transparent);
+}
+[data-theme="steampunk"] .tcg-card .tcg-stats {
+  background:linear-gradient(180deg, rgba(200,160,80,0.06), transparent);
+  border-top:1px solid #5a4220;
+}
+[data-theme="steampunk"] .tcg-card .tcg-stats::before {
+  content:'⚙ SPECIFICATIONS';
+  position:absolute; top:-9px; right:8px;
+  font-family:'Playfair Display', serif; font-size:6px; letter-spacing:.15em;
+  color:rgba(200,160,80,0.35); text-transform:uppercase;
+}
+
+/* ── 11. Ticker Tape — scrolling text decoration on sidebar ── */
+@keyframes sp-ticker {
+  0%   { transform:translateX(0); }
+  100% { transform:translateX(-50%); }
+}
+[data-theme="steampunk"] .side-header::after {
+  content:'NICE SPACESHIP CO. — EST. 2026 — AETHERIC INTELLIGENCE DIVISION — PATENT PENDING — ';
+  position:absolute; bottom:0; left:0; right:0; height:14px;
+  font-family:'Courier Prime', monospace; font-size:7px; letter-spacing:.15em;
+  color:rgba(200,160,80,0.2); white-space:nowrap; overflow:hidden;
+  line-height:14px;
+  background:rgba(10,7,4,0.8);
+  border-top:1px solid rgba(200,160,80,0.15);
+  animation:sp-ticker 20s linear infinite;
+}
+
+/* ── 12. Ornate Scrollbar — brass with decorative track ── */
+[data-theme="steampunk"] ::-webkit-scrollbar { width:10px; }
+[data-theme="steampunk"] ::-webkit-scrollbar-track {
+  background:#0a0704;
+  border-left:1px solid #5a4220; border-right:1px solid #5a4220;
+}
+[data-theme="steampunk"] ::-webkit-scrollbar-thumb {
+  background:linear-gradient(180deg, #c8a050, #8b6914, #c8a050);
+  border:1px solid #5a4220; border-radius:2px;
+}
+[data-theme="steampunk"] ::-webkit-scrollbar-thumb:hover {
+  background:linear-gradient(180deg, #d8b060, #c8a050, #d8b060);
+}
+
+/* ── 13. Prompt Panel — brass telegraph device ── */
+[data-theme="steampunk"] .nice-ai-input-container {
+  border:2px solid #5a4220; border-radius:4px;
+  background:linear-gradient(135deg, #1a1208, #0f0a04);
+  box-shadow:0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(200,160,80,0.08);
+}
+[data-theme="steampunk"] .nice-ai-pills .nice-ai-pill {
+  border:1px solid #5a4220; border-radius:2px;
+  background:linear-gradient(180deg, #2a1e10, #1a1208);
+  color:#c8a050; font-family:'Playfair Display', serif;
+  font-weight:700; text-transform:uppercase; letter-spacing:.08em; font-size:.65rem;
+}
+[data-theme="steampunk"] .nice-ai-pills .nice-ai-pill:hover {
+  background:linear-gradient(180deg, #c8a050, #8b6914); color:#0a0704;
+  border-color:#c8a050;
+}
+
+/* ── 14. Background Grid — blueprint drafting paper ── */
+[data-theme="steampunk"] .bg-grid {
+  opacity:0.08;
+  background-image:
+    linear-gradient(rgba(200,160,80,0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,160,80,0.1) 1px, transparent 1px);
+  background-size:32px 32px;
+}
+
+/* ── 15. Security Tabs — brass plate segments ── */
+[data-theme="steampunk"] .security-tab {
+  border-radius:2px; font-family:'Playfair Display', serif;
+  font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+}
+[data-theme="steampunk"] .security-tab.security-tab--active {
+  background:linear-gradient(180deg, #c8a050, #8b6914); color:#0a0704;
+  box-shadow:0 0 8px rgba(200,160,80,0.2);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion:reduce) {
+  [data-theme="steampunk"] .app-main::after,
+  [data-theme="steampunk"] .app-main::before { animation:none; }
+  [data-theme="steampunk"] .bg-grid::before,
+  [data-theme="steampunk"] .bg-grid::after { animation:none; }
+  [data-theme="steampunk"] .side-header::after { animation:none; }
+  [data-theme="steampunk"] .btn-primary { animation:none; }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    THEME: Cyberpunk — Night City Terminal
