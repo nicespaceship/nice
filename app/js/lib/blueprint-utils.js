@@ -7,6 +7,23 @@
 
 const BlueprintUtils = (() => {
 
+  /** Rarity color map — single source of truth for all card/badge/slot coloring */
+  const RARITY_COLORS = {
+    Common: '#94a3b8', Rare: '#6366f1', Epic: '#a855f7',
+    Legendary: '#f59e0b', Mythic: '#ff2d55',
+  };
+
+  /**
+   * Get the color for a rarity level.
+   * @param {string} rarity
+   * @returns {string} hex color
+   */
+  function getRarityColor(rarity) {
+    const r = (rarity || 'Common');
+    const key = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
+    return RARITY_COLORS[key] || RARITY_COLORS.Common;
+  }
+
   /**
    * Get the crew definition array from a blueprint.
    * Priority: metadata.crew → crew → nodes → []
@@ -96,5 +113,5 @@ const BlueprintUtils = (() => {
     return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
   }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity };
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, RARITY_COLORS };
 })();

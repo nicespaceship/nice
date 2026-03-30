@@ -765,13 +765,13 @@ const PromptPanel = (() => {
     if (lower.startsWith('/theme')) {
       const arg = lower.replace('/theme', '').trim();
       if (!arg) {
-        const current = localStorage.getItem('ns-theme') || 'spaceship';
+        const current = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : (localStorage.getItem(Utils.KEYS.theme) || 'spaceship');
         return { text: `Current theme: ${current}. Available: ${_THEME_NAMES.join(', ')}.`, handled: true };
       }
       const key = _resolveTheme(arg);
       if (key) {
         if (typeof Theme !== 'undefined') Theme.set(key);
-        else { document.documentElement.setAttribute('data-theme', key); localStorage.setItem('ns-theme', key); }
+        else { document.documentElement.setAttribute('data-theme', key); localStorage.setItem(Utils.KEYS.theme, key); }
         return { text: `Theme switched to ${arg}.`, handled: true };
       }
       return { text: `Unknown theme "${arg}". Available: ${_THEME_NAMES.join(', ')}.`, handled: true };
@@ -963,7 +963,7 @@ const PromptPanel = (() => {
     }
     if (intent.type === 'theme') {
       if (typeof Theme !== 'undefined') Theme.set(intent.theme);
-      else { document.documentElement.setAttribute('data-theme', intent.theme); localStorage.setItem('ns-theme', intent.theme); }
+      else { document.documentElement.setAttribute('data-theme', intent.theme); localStorage.setItem(Utils.KEYS.theme, intent.theme); }
       // Find display name from the map
       const displayName = Object.entries(_THEME_MAP).find(([, v]) => v === intent.theme)?.[0] || intent.theme;
       return { text: `Theme switched to ${displayName}. Looking good, Commander.`, agent: null };

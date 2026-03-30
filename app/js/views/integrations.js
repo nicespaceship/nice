@@ -6,7 +6,7 @@
 
 const IntegrationsView = (() => {
   const title = 'Integrations';
-  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _esc = Utils.esc;
 
   /* ── MCP Server Catalog ───────────────────────────────────────── */
   const MCP_CATALOG = [

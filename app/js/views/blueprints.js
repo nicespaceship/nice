@@ -7,7 +7,7 @@ const BlueprintsView = (() => {
   const title = 'Bridge';
   const _esc = Utils.esc;
 
-  const RARITY_COLORS = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+  const RARITY_COLORS = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.RARITY_COLORS) ? BlueprintUtils.RARITY_COLORS : { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
 
   /* ── Avatar Art Generator (role-colored initials for agent cards) ── */
   const _categoryColors = {

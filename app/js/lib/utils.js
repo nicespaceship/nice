@@ -27,5 +27,50 @@ const Utils = (() => {
     return `<svg class="icon ${cls || 'icon-sm'}" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${name}"/></svg>`;
   }
 
-  return { esc, timeAgo, icon };
+  /** Format a date for display — consistent across all views */
+  function formatDate(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function formatDateTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' +
+      d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** Central localStorage key registry — prevents typos and enables grep */
+  const KEYS = {
+    theme: 'ns-theme',
+    darkTheme: 'ns-dark-theme',
+    font: 'ns-font',
+    enabledModels: 'nice-enabled-models',
+    xp: 'nice-xp',
+    achievements: 'nice-achievements',
+    auditLog: 'nice-audit-log',
+    workflows: 'nice-workflows',
+    mcpConnections: 'nice-mcp-connections',
+    budget: 'nice-budget',
+    bpActivated: 'nice-bp-activated',
+    bpActivatedShips: 'nice-bp-activated-ships',
+    shipState: 'nice-ship-state',
+    agentStats: 'nice-agent-stats',
+    favorites: 'nice-favorites',
+    aiMessages: 'nice-ai-messages',
+    customAgents: 'nice-custom-agents',
+    customShips: 'nice-custom-ships',
+    contentQueue: 'nice-content-queue',
+    onboarded: 'nice-onboarded',
+    plan: 'nice-plan',
+    settings: 'nice-settings',
+    streak: 'nice-streak',
+    lastActive: 'nice-last-active',
+    hudDockThemes: 'nice-hud-dock-themes',
+    guiSettings: 'nice-gui-settings',
+    customThemes: 'nice-custom-themes',
+    missionsFolder: 'nice-missions-folder',
+  };
+
+  return { esc, timeAgo, formatDate, formatDateTime, icon, KEYS };
 })();

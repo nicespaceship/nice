@@ -257,6 +257,7 @@ const ContentQueue = (() => {
 
   function timeAgo(dateStr) {
     if (!dateStr) return '';
+    if (typeof Utils !== 'undefined' && Utils.timeAgo) return Utils.timeAgo(dateStr);
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'just now';

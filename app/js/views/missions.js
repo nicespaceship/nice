@@ -557,7 +557,7 @@ const MissionsView = (() => {
 /* ── Mission Detail View ── */
 const MissionDetailView = (() => {
   const title = 'Mission Detail';
-  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _esc = Utils.esc;
   let _detailChannel = null;
 
   function render(el, params) {
@@ -999,7 +999,7 @@ const MissionDetailView = (() => {
 /* ── Shared Mission Report View ── */
 const SharedReportView = (() => {
   const title = 'Mission Report';
-  const _esc = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _esc = Utils.esc;
 
   function render(el, params) {
     const missionId = (params.id || '').replace('report-', '');

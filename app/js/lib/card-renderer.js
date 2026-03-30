@@ -8,7 +8,7 @@ const CardRenderer = (() => {
   const _esc = Utils.esc;
 
   /* ── Constants ── */
-  const RARITY_COLORS = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+  const RARITY_COLORS = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.RARITY_COLORS) ? BlueprintUtils.RARITY_COLORS : { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
 
   const ROLE_COLORS = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6' };
 
@@ -27,7 +27,7 @@ const CardRenderer = (() => {
     'slot-6':  { name:'Ship',       tier:'',       slots:[{max:'Legendary',label:'Bridge'},{max:'Epic',label:'Command'},{max:'Epic',label:'Tactical'},{max:'Epic',label:'Ops'},{max:'Rare',label:'Science'},{max:'Rare',label:'Engineering'}] }
   };
 
-  const SLOT_COLORS = { Common:'#94a3b8', Rare:'#6366f1', Epic:'#a855f7', Legendary:'#f59e0b', Mythic:'#ff2d55' };
+  const SLOT_COLORS = RARITY_COLORS; // Same colors — unified via BlueprintUtils
 
 
 
