@@ -31,7 +31,7 @@ globalThis.SB = {
     },
   }),
   realtime: { subscribe: () => null, unsubscribe: () => {} },
-  functions: { invoke: async () => ({ data: null, error: 'not available' }) },
+  functions: { invoke: async () => ({ data: { content: 'Mock LLM response for testing.', model: 'mock-test', usage: { input_tokens: 10, output_tokens: 20 } }, error: null }) },
 };
 
 globalThis.State = (() => {
@@ -78,7 +78,7 @@ describe('MissionRunner', () => {
     expect(await MissionRunner.run('nonexistent')).toBeNull();
   });
 
-  it('should transition mission from queued to completed via mock LLM', async () => {
+  it('should transition mission from queued to review via LLM', async () => {
     // Create a mission in the mock DB
     const mission = await SB.db('tasks').create({
       id: 'm1', user_id: userId, title: 'Test mission',
@@ -87,16 +87,16 @@ describe('MissionRunner', () => {
 
     const result = await MissionRunner.run('m1');
 
-    // Should complete (mock LLM fallback)
+    // Should go to review (Draft & Approve flow)
     const updated = _db.tasks?.m1;
-    expect(updated.status).toBe('completed');
+    expect(updated.status).toBe('review');
     expect(updated.progress).toBe(100);
     expect(updated.result).toBeTruthy();
     expect(result).not.toBeNull();
     expect(result.content).toBeTruthy();
   });
 
-  it('should award XP on successful mission', async () => {
+  it('should not award XP until approval (Draft & Approve flow)', async () => {
     await SB.db('tasks').create({
       id: 'm2', user_id: userId, title: 'XP test',
       agent_id: null, status: 'queued', progress: 0,
@@ -104,7 +104,8 @@ describe('MissionRunner', () => {
 
     await MissionRunner.run('m2');
 
-    expect(Gamification.addXP).toHaveBeenCalledWith('complete_mission');
+    // XP is awarded on user approval, not on generation
+    expect(Gamification.addXP).not.toHaveBeenCalled();
   });
 
   it('should create a notification on completion', async () => {
@@ -132,7 +133,7 @@ describe('MissionRunner', () => {
 
     const result = await MissionRunner.run('m4');
     expect(result).not.toBeNull();
-    expect(_db.tasks.m4.status).toBe('completed');
+    expect(_db.tasks.m4.status).toBe('review');
   });
 
   it('should update local State missions during execution', async () => {
@@ -147,7 +148,7 @@ describe('MissionRunner', () => {
 
     const missions = State.get('missions');
     const m = missions.find(t => t.id === 'm5');
-    expect(m.status).toBe('completed');
+    expect(m.status).toBe('review');
     expect(m.progress).toBe(100);
   });
 
@@ -198,8 +199,8 @@ describe('MissionRunner', () => {
 
     const result = await MissionRunner.run('m-no-ship');
     expect(result).not.toBeNull();
-    // The mission should still complete with a fallback spaceship ID
-    expect(_db.tasks['m-no-ship'].status).toBe('completed');
+    // The mission should still go to review with a fallback spaceship ID
+    expect(_db.tasks['m-no-ship'].status).toBe('review');
   });
 
   it('should fall back to DB lookup when agent not in State', async () => {
@@ -216,7 +217,7 @@ describe('MissionRunner', () => {
 
     const result = await MissionRunner.run('m-db-agent');
     expect(result).not.toBeNull();
-    expect(_db.tasks['m-db-agent'].status).toBe('completed');
+    expect(_db.tasks['m-db-agent'].status).toBe('review');
   });
 
   it('should include completed_at in metadata on success', async () => {

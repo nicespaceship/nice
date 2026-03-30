@@ -46,7 +46,7 @@ globalThis.SB = {
     },
   }),
   realtime: { subscribe: () => null, unsubscribe: () => {} },
-  functions: { invoke: async () => ({ data: null, error: 'not available' }) },
+  functions: { invoke: async () => ({ data: { content: 'Mock LLM response for testing.', model: 'mock-test', usage: { input_tokens: 10, output_tokens: 20 } }, error: null }) },
 };
 
 globalThis.State = (() => {
@@ -223,7 +223,7 @@ describe('ShipLog', () => {
       expect(result.agentId).toBe('a1');
       expect(result.content).toBeTruthy();
       expect(result.metadata).toBeTruthy();
-      expect(result.metadata.source).toBe('mock');
+      expect(result.metadata.source).toBe('llm');
     });
 
     it('should log user message and agent response to ship log', async () => {
