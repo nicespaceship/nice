@@ -939,6 +939,96 @@
   -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 50%, transparent 62%);
 }
 
+/* ── TRON Cityscape — horizon silhouette with towers & light beams ── */
+#tron-city {
+  display: none;
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 48%;
+  height: 20vh;
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="navigator"] #tron-city {
+  display: block;
+  /* Skyline silhouette built from layered gradients */
+  background:
+    /* ── Central spire (tall, narrow, bright) ── */
+    linear-gradient(to top, #041220 0%, transparent 100%) no-repeat 50% 100% / 4px 100%,
+    linear-gradient(to top, rgba(0,229,255,0.5) 0%, transparent 80%) no-repeat 50% 100% / 2px 100%,
+    /* Spire glow */
+    radial-gradient(ellipse 30px 60px at 50% 30%, rgba(0,229,255,0.15) 0%, transparent 100%),
+    /* ── Tower pair flanking center ── */
+    linear-gradient(#041220, #041220) no-repeat 47% 100% / 16px 55%,
+    linear-gradient(#041220, #041220) no-repeat 53% 100% / 16px 55%,
+    /* Tower caps */
+    linear-gradient(#041220, #041220) no-repeat 46.2% 45% / 22px 4px,
+    linear-gradient(#041220, #041220) no-repeat 52.2% 45% / 22px 4px,
+    /* ── Light beams from towers ── */
+    linear-gradient(to top, rgba(0,229,255,0.3), transparent) no-repeat 47.5% 0% / 2px 45%,
+    linear-gradient(to top, rgba(0,229,255,0.3), transparent) no-repeat 53.5% 0% / 2px 45%,
+    linear-gradient(to top, rgba(0,229,255,0.2), transparent) no-repeat 50% 0% / 1px 30%,
+    /* ── Outer towers (shorter) ── */
+    linear-gradient(#041220, #041220) no-repeat 38% 100% / 20px 35%,
+    linear-gradient(#041220, #041220) no-repeat 62% 100% / 20px 35%,
+    linear-gradient(#041220, #041220) no-repeat 35% 100% / 12px 25%,
+    linear-gradient(#041220, #041220) no-repeat 65% 100% / 12px 25%,
+    /* Outer tower caps */
+    linear-gradient(#041220, #041220) no-repeat 37% 65% / 26px 3px,
+    linear-gradient(#041220, #041220) no-repeat 61% 65% / 26px 3px,
+    /* Outer light beams */
+    linear-gradient(to top, rgba(0,229,255,0.15), transparent) no-repeat 39% 0% / 1px 65%,
+    linear-gradient(to top, rgba(0,229,255,0.15), transparent) no-repeat 63% 0% / 1px 65%,
+    /* ── Far outer structures ── */
+    linear-gradient(#041220, #041220) no-repeat 28% 100% / 24px 20%,
+    linear-gradient(#041220, #041220) no-repeat 72% 100% / 24px 20%,
+    linear-gradient(#041220, #041220) no-repeat 22% 100% / 14px 15%,
+    linear-gradient(#041220, #041220) no-repeat 78% 100% / 14px 15%,
+    linear-gradient(#041220, #041220) no-repeat 16% 100% / 18px 10%,
+    linear-gradient(#041220, #041220) no-repeat 84% 100% / 18px 10%,
+    /* ── Low skyline fill (base of cityscape) ── */
+    linear-gradient(#041220, #041220) no-repeat 30% 100% / 40% 8%,
+    linear-gradient(#041220, #041220) no-repeat 10% 100% / 25% 5%,
+    linear-gradient(#041220, #041220) no-repeat 65% 100% / 25% 5%,
+    /* ── Horizon glow line ── */
+    linear-gradient(90deg, transparent 5%, rgba(0,229,255,0.12) 30%, rgba(0,229,255,0.25) 50%, rgba(0,229,255,0.12) 70%, transparent 95%) no-repeat 0% 100% / 100% 2px,
+    /* ── Atmospheric glow behind city ── */
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,229,255,0.08) 0%, transparent 100%);
+}
+@keyframes tron-beacon {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+/* Pulsing beacon on central spire */
+[data-theme="navigator"] #tron-city::before {
+  content: '';
+  position: absolute;
+  left: calc(50% - 3px);
+  top: 0;
+  width: 6px; height: 6px;
+  background: #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 3px rgba(0,229,255,0.8), 0 0 20px 6px rgba(0,229,255,0.3);
+  animation: tron-beacon 2s ease-in-out infinite;
+}
+/* Faint window lights on towers */
+[data-theme="navigator"] #tron-city::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 60%;
+  background:
+    radial-gradient(circle 1px, rgba(0,229,255,0.4) 0%, transparent 100%) 47.5% 60% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.3) 0%, transparent 100%) 48.5% 70% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.4) 0%, transparent 100%) 52.5% 55% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.3) 0%, transparent 100%) 53.5% 75% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 38.5% 75% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 39.5% 85% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 62.5% 75% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 61.5% 85% / 2px 2px no-repeat;
+  pointer-events: none;
+}
+
 /* ── Light Cycles — travel along perspective grid lines ── */
 /* Cyan: from bottom-left toward vanishing point (center-top) */
 @keyframes tron-cycle-inward {
