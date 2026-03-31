@@ -786,7 +786,7 @@
       #991b1b 50%, #450a0a 72%, #0a0202 100%
     );
   border:3px solid #555;
-  border-radius:50%; overflow:hidden;
+  border-radius:50%;
   box-shadow:
     /* Dark inner ring (recessed lens edge) */
     0 0 0 5px #1a1a1a,
