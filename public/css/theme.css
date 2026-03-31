@@ -857,15 +857,15 @@
       #450a0a 75%,
       #1a0505 100%
     );
-  border:6px solid transparent;
+  border:6px solid rgba(180,180,190,0.5);
   border-radius:50%;
+  overflow:hidden;
   box-shadow:
     0 0 30px rgba(239,68,68,0.4),
     0 0 60px rgba(239,68,68,0.15),
     inset 0 0 20px rgba(0,0,0,0.4);
-  /* Chrome ring via outline + border-image */
-  outline:4px solid rgba(180,180,190,0.6);
-  outline-offset:2px;
+  outline:3px solid rgba(150,150,160,0.3);
+  outline-offset:3px;
   animation:hal-eye-pulse 3s ease-in-out infinite;
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
 }
