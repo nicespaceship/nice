@@ -963,7 +963,14 @@
 }
 [data-theme="navigator"] #tron-cycles { display: block; }
 
-/* Cyan cycle — traveling inward (toward vanishing point) */
+/* Light cycle dot base */
+[data-theme="navigator"] .tron-dot {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+/* Cyan cycles — inward */
 [data-theme="navigator"] #tron-cycles::before {
   content: '';
   position: absolute;
@@ -975,8 +982,7 @@
     0 0 14px 4px rgba(0,229,255,0.3);
   animation: tron-cycle-inward 4s linear infinite;
 }
-
-/* Orange cycle — traveling outward (from vanishing point) */
+/* Orange cycles — outward */
 [data-theme="navigator"] #tron-cycles::after {
   content: '';
   position: absolute;
@@ -988,6 +994,72 @@
     0 0 14px 4px rgba(255,149,0,0.3);
   animation: tron-cycle-outward 5s linear infinite;
   animation-delay: 2s;
+}
+
+/* ── Extra scattered cycles (injected via #tron-cycles children) ── */
+@keyframes tron-cycle-in2 {
+  0%   { bottom: -5%; left: 15%; transform: scale(1); opacity: 0.8; }
+  100% { bottom: 105%; left: 47%; transform: scale(0.15); opacity: 0; }
+}
+@keyframes tron-cycle-in3 {
+  0%   { bottom: -5%; left: 35%; transform: scale(0.8); opacity: 0.7; }
+  100% { bottom: 105%; left: 49%; transform: scale(0.1); opacity: 0; }
+}
+@keyframes tron-cycle-out2 {
+  0%   { bottom: 105%; left: 53%; transform: scale(0.15); opacity: 0; }
+  100% { bottom: -5%; left: 85%; transform: scale(1); opacity: 0.8; }
+}
+@keyframes tron-cycle-out3 {
+  0%   { bottom: 105%; left: 51%; transform: scale(0.1); opacity: 0; }
+  100% { bottom: -5%; left: 65%; transform: scale(0.8); opacity: 0.7; }
+}
+@keyframes tron-cycle-in4 {
+  0%   { bottom: -5%; left: 8%; transform: scale(0.9); opacity: 0.6; }
+  100% { bottom: 105%; left: 46%; transform: scale(0.1); opacity: 0; }
+}
+@keyframes tron-cycle-out4 {
+  0%   { bottom: 105%; left: 54%; transform: scale(0.1); opacity: 0; }
+  100% { bottom: -5%; left: 92%; transform: scale(0.9); opacity: 0.6; }
+}
+[data-theme="navigator"] .tron-c1 {
+  background: #00e5ff;
+  box-shadow: 0 0 5px 2px rgba(0,229,255,0.8), 0 0 10px 3px rgba(0,229,255,0.25);
+  animation: tron-cycle-in2 5.5s linear infinite;
+  animation-delay: 1s;
+}
+[data-theme="navigator"] .tron-c2 {
+  background: #00e5ff;
+  box-shadow: 0 0 4px 1px rgba(0,229,255,0.7), 0 0 8px 2px rgba(0,229,255,0.2);
+  animation: tron-cycle-in3 3.5s linear infinite;
+  animation-delay: 3s;
+  width: 2px; height: 2px;
+}
+[data-theme="navigator"] .tron-c3 {
+  background: #ff9500;
+  box-shadow: 0 0 5px 2px rgba(255,149,0,0.8), 0 0 10px 3px rgba(255,149,0,0.25);
+  animation: tron-cycle-out2 6s linear infinite;
+  animation-delay: 0.5s;
+}
+[data-theme="navigator"] .tron-c4 {
+  background: #ff9500;
+  box-shadow: 0 0 4px 1px rgba(255,149,0,0.7), 0 0 8px 2px rgba(255,149,0,0.2);
+  animation: tron-cycle-out3 4s linear infinite;
+  animation-delay: 4s;
+  width: 2px; height: 2px;
+}
+[data-theme="navigator"] .tron-c5 {
+  background: #00e5ff;
+  box-shadow: 0 0 4px 1px rgba(0,229,255,0.6), 0 0 8px 2px rgba(0,229,255,0.15);
+  animation: tron-cycle-in4 7s linear infinite;
+  animation-delay: 2.5s;
+  width: 2px; height: 2px;
+}
+[data-theme="navigator"] .tron-c6 {
+  background: #ff9500;
+  box-shadow: 0 0 4px 1px rgba(255,149,0,0.6), 0 0 8px 2px rgba(255,149,0,0.15);
+  animation: tron-cycle-out4 6.5s linear infinite;
+  animation-delay: 5s;
+  width: 2px; height: 2px;
 }
 
 /* Horizontal scan line sweeping across content */
