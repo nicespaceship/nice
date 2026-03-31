@@ -842,7 +842,8 @@
 [data-theme="robotech"] .side-mission-item:hover { background:rgba(212,163,115,0.04); color:var(--hal-copper); }
 
 /* ── Schematic — black inset panel behind HAL eye (like the console) ── */
-/* Schematic center — black bg inherited from .app-main */
+/* Hide canvas radar — let CSS HAL eye be the only visual */
+[data-theme="robotech"] .sch-radar-canvas { opacity:0; }
 
 /* ── HAL-9000 Eye — Schematic center core ── */
 [data-theme="robotech"] .sch-core-hit-overlay {
