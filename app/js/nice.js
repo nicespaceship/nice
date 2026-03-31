@@ -47,6 +47,8 @@ const Theme = (() => {
     // 4. Hide dedicated theme elements (CSS-driven ones reset via data-theme removal)
     const tronGrid = document.getElementById('tron-grid');
     if (tronGrid) tronGrid.style.display = 'none';
+    const tronCycles = document.getElementById('tron-cycles');
+    if (tronCycles) tronCycles.style.display = 'none';
 
     const t = THEMES.find(t => t.id === name);
 
@@ -57,8 +59,11 @@ const Theme = (() => {
       // Activate theme-specific assets
       MatrixRain.toggle(name === 'matrix');
       if (typeof StarField16 !== 'undefined') StarField16.toggle(name === '16bit');
-      // Tron grid is CSS-driven via [data-theme="navigator"] — reset inline hide
-      if (name === 'navigator' && tronGrid) tronGrid.style.removeProperty('display');
+      // Tron grid + cycles are CSS-driven via [data-theme="navigator"] — reset inline hide
+      if (name === 'navigator') {
+        if (tronGrid) tronGrid.style.removeProperty('display');
+        if (tronCycles) tronCycles.style.removeProperty('display');
+      }
     } else {
       // Non-built-in: look up in THEMES by id (custom themes)
       if (!t) return;
