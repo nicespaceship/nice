@@ -314,13 +314,20 @@
 
 /* ── Card treatment — SNES item card with pixel bevel ── */
 [data-theme="16bit"] .tcg-card {
-  border: 4px solid #e2b714 !important;
+  border-width: 5px !important;
+  border-style: solid !important;
   box-shadow:
     inset 3px 3px 0 rgba(255,255,200,0.2),
     inset -3px -3px 0 rgba(0,0,0,0.4),
-    4px 4px 0 rgba(0,0,0,0.6);
+    5px 5px 0 rgba(0,0,0,0.6);
   background: #16213e;
 }
+/* Rarity border colors on full cards */
+[data-theme="16bit"] .tcg-card[data-rarity="common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
 [data-theme="16bit"] .tcg-card .name-bar {
   font-size: 8px;
   background: linear-gradient(180deg, #2e4068, #1f2b47);
@@ -340,15 +347,27 @@
   border-top: 3px solid #e2b714;
 }
 
-/* Mini cards — smaller pixel bevel */
+/* Mini cards — smaller pixel bevel, rarity border from inline style */
 [data-theme="16bit"] .tcg-card-mini {
-  border: 3px solid #e2b714 !important;
+  border-width: 4px !important;
+  border-style: solid !important;
   box-shadow:
     inset 2px 2px 0 rgba(255,255,200,0.15),
     inset -2px -2px 0 rgba(0,0,0,0.35),
-    3px 3px 0 rgba(0,0,0,0.5);
+    4px 4px 0 rgba(0,0,0,0.5);
   background: #16213e;
 }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
+/* Case-insensitive fallback (some paths use title case) */
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Mythic"]    { border-color: #ff2d55 !important; }
 [data-theme="16bit"] .tcg-mini-name {
   font-size: 8px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
