@@ -36,21 +36,32 @@ const Theme = (() => {
   BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
 
   function set(name) {
-    // Clear inline vars first so built-in CSS takes over cleanly
+    // ── FORCED RESET: kill all theme assets before applying new theme ──
+    // 1. Clear all CSS custom properties
     VAR_KEYS.forEach(k => document.documentElement.style.removeProperty(k));
+    // 2. Remove data-theme attribute
+    document.documentElement.removeAttribute('data-theme');
+    // 3. Turn off all canvas/animated assets
+    MatrixRain.toggle(false);
+    if (typeof StarField16 !== 'undefined') StarField16.toggle(false);
+    // 4. Hide dedicated theme elements (CSS-driven ones reset via data-theme removal)
+    const tronGrid = document.getElementById('tron-grid');
+    if (tronGrid) tronGrid.style.display = 'none';
 
     const t = THEMES.find(t => t.id === name);
 
-    // Check if it's a built-in theme name
+    // ── Apply new theme ──
     if (BUILTIN.includes(name)) {
       document.documentElement.setAttribute('data-theme', name);
       localStorage.setItem('ns-theme', name);
+      // Activate theme-specific assets
       MatrixRain.toggle(name === 'matrix');
       if (typeof StarField16 !== 'undefined') StarField16.toggle(name === '16bit');
+      // Tron grid is CSS-driven via [data-theme="navigator"] — reset inline hide
+      if (name === 'navigator' && tronGrid) tronGrid.style.removeProperty('display');
     } else {
       // Non-built-in: look up in THEMES by id (custom themes)
       if (!t) return;
-      document.documentElement.removeAttribute('data-theme');
       const td = t.data;
       if (td.colors) Object.entries(td.colors).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
       if (td.fonts) {
@@ -60,8 +71,6 @@ const Theme = (() => {
       }
       if (td.radius) document.documentElement.style.setProperty('--radius', td.radius);
       localStorage.setItem('ns-theme', name);
-      MatrixRain.toggle(false);
-      if (typeof StarField16 !== 'undefined') StarField16.toggle(false);
     }
 
     // Highlight active dock button
