@@ -547,10 +547,13 @@
   --hal-copper:#d4a373; --hal-gold:#c4956b; --hal-red:#ef4444; --hal-warm:#f5f0eb;
 }
 
-/* ── Background — clean warm white, no grid ── */
+/* ── Background — black main panel ── */
 [data-theme="robotech"] .bg-grid { opacity:0; }
+[data-theme="robotech"] .app-main { background:#000; }
+[data-theme="robotech"] .app-view-content { color:#e8e0d8; }
+[data-theme="robotech"] .home-greeting { color:#e8e0d8; }
 
-/* ── Sidebar — clean white cabin wall ── */
+/* ── Sidebar — white cabin wall ── */
 [data-theme="robotech"] .app-sidebar {
   background:#fafaf9;
   border-right:1px solid rgba(212,163,115,0.15);
@@ -594,27 +597,28 @@
   background:linear-gradient(90deg, transparent, rgba(212,163,115,0.3), transparent);
 }
 
-/* ── Panels — soft white with warm shadow ── */
+/* ── Panels — dark on black ── */
 [data-theme="robotech"] .widget-card,
 [data-theme="robotech"] .tc-section,
 [data-theme="robotech"] .detail-section {
-  border:1px solid rgba(212,163,115,0.1); border-radius:20px;
-  background:#fffffe;
-  box-shadow:0 4px 30px rgba(44,36,32,0.04), 0 1px 2px rgba(44,36,32,0.02);
+  border:1px solid rgba(212,163,115,0.12); border-radius:20px;
+  background:rgba(20,16,12,0.9);
+  box-shadow:0 2px 16px rgba(0,0,0,0.3);
+  color:#e8e0d8;
 }
 
-/* ── Cards — elevated white, copper accent, soft hover lift ── */
+/* ── Cards — dark with copper accent ── */
 [data-theme="robotech"] .tcg-card,
 [data-theme="robotech"] .mcp-catalog-card {
-  border:1px solid rgba(212,163,115,0.1); border-radius:20px;
-  background:#fffffe;
-  box-shadow:0 2px 20px rgba(44,36,32,0.05);
-  transition:all .3s ease;
+  border:1px solid rgba(212,163,115,0.12); border-radius:20px;
+  background:rgba(20,16,12,0.9);
+  box-shadow:0 2px 16px rgba(0,0,0,0.3);
+  transition:all .3s ease; color:#e8e0d8;
 }
 [data-theme="robotech"] .tcg-card:hover,
 [data-theme="robotech"] .mcp-catalog-card:hover {
-  box-shadow:0 8px 40px rgba(212,163,115,0.12);
-  transform:translateY(-3px);
+  box-shadow:0 8px 32px rgba(212,163,115,0.15);
+  transform:translateY(-3px); border-color:rgba(212,163,115,0.25);
 }
 [data-theme="robotech"] .tcg-card .tcg-name-bar {
   border-bottom:1px solid rgba(212,163,115,0.08); position:relative;
@@ -624,10 +628,10 @@
   background:var(--hal-copper); border-radius:2px;
 }
 
-/* ── Buttons — pill shaped, warm ── */
+/* ── Buttons — pill shaped, warm on dark ── */
 [data-theme="robotech"] .btn {
-  border:1px solid rgba(212,163,115,0.2); border-radius:9999px;
-  background:#fffffe; color:#2c2420;
+  border:1px solid rgba(212,163,115,0.25); border-radius:9999px;
+  background:rgba(30,24,18,0.8); color:#e8e0d8;
   font-weight:500; letter-spacing:.01em;
   box-shadow:0 1px 4px rgba(44,36,32,0.04);
   transition:all .25s;
@@ -649,7 +653,7 @@
 
 /* ── Tabs — pill segments ── */
 [data-theme="robotech"] .bp-type-tabs {
-  background:rgba(245,240,235,0.6); border:1px solid rgba(212,163,115,0.1);
+  background:rgba(20,16,12,0.6); border:1px solid rgba(212,163,115,0.12);
   border-radius:9999px; padding:3px;
 }
 [data-theme="robotech"] .bp-type-tab,
@@ -663,8 +667,8 @@
 [data-theme="robotech"] .bp-type-tab.active,
 [data-theme="robotech"] .bridge-hero-tab.active,
 [data-theme="robotech"] .log-view-tab.active {
-  color:#2c2420; background:#fffffe;
-  box-shadow:0 2px 8px rgba(44,36,32,0.08);
+  color:var(--hal-copper); background:rgba(212,163,115,0.12);
+  box-shadow:0 2px 8px rgba(212,163,115,0.1);
 }
 [data-theme="robotech"] .bp-type-tab:hover,
 [data-theme="robotech"] .bridge-hero-tab:hover,
@@ -694,11 +698,11 @@
 [data-theme="robotech"] .bp-view-btn svg { stroke:#b5a99f; }
 [data-theme="robotech"] .bp-view-btn.active svg { stroke:var(--hal-copper); }
 
-/* ── Mission Cards — HAL-9000 red indicators ── */
+/* ── Mission Cards — dark with HAL-9000 red indicators ── */
 [data-theme="robotech"] .mc-card {
-  border:1px solid rgba(212,163,115,0.08); border-radius:16px;
-  background:#fffffe;
-  box-shadow:0 2px 16px rgba(44,36,32,0.04);
+  border:1px solid rgba(212,163,115,0.1); border-radius:16px;
+  background:rgba(20,16,12,0.9); color:#e8e0d8;
+  box-shadow:0 2px 12px rgba(0,0,0,0.3);
   border-left:3px solid rgba(212,163,115,0.15);
 }
 [data-theme="robotech"] .mc-card-running {
@@ -722,11 +726,11 @@
   box-shadow:0 2px 10px rgba(212,163,115,0.25);
 }
 
-/* ── Inputs — pill shaped, warm borders ── */
+/* ── Inputs — pill shaped, dark ── */
 [data-theme="robotech"] input[type="text"],
 [data-theme="robotech"] .search-input {
-  border-radius:9999px; border:1px solid rgba(212,163,115,0.15);
-  background:#fffffe; color:#2c2420; font-size:.75rem;
+  border-radius:9999px; border:1px solid rgba(212,163,115,0.2);
+  background:rgba(20,16,12,0.8); color:#e8e0d8; font-size:.75rem;
   padding-left:16px; padding-right:16px;
 }
 [data-theme="robotech"] input[type="text"]:focus,
@@ -734,33 +738,33 @@
   border-color:var(--hal-copper);
   box-shadow:0 0 0 3px rgba(212,163,115,0.08);
 }
-[data-theme="robotech"] input::placeholder { color:#b5a99f; }
+[data-theme="robotech"] input::placeholder { color:#6b5e54; }
 [data-theme="robotech"] select {
-  border-radius:9999px; border:1px solid rgba(212,163,115,0.15); color:#2c2420;
-  background:#fffffe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4a373' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border-radius:9999px; border:1px solid rgba(212,163,115,0.2); color:#e8e0d8;
+  background:rgba(20,16,12,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4a373' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
   appearance:none; -webkit-appearance:none;
 }
 [data-theme="robotech"] .filter-select {
-  border-radius:9999px; border:1px solid rgba(212,163,115,0.15); color:#2c2420;
-  background:#fffffe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4a373' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border-radius:9999px; border:1px solid rgba(212,163,115,0.2); color:#e8e0d8;
+  background:rgba(20,16,12,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23d4a373' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
   appearance:none; -webkit-appearance:none;
 }
 [data-theme="robotech"] .search-box {
-  background:#fffffe; border-color:rgba(212,163,115,0.15); border-radius:9999px;
+  background:rgba(20,16,12,0.8); border-color:rgba(212,163,115,0.2); border-radius:9999px;
 }
 
-/* ── Prompt Panel — pod communicator ── */
+/* ── Prompt Panel — dark pod communicator ── */
 [data-theme="robotech"] .nice-ai-input-container {
-  border:1px solid rgba(212,163,115,0.15); border-radius:24px;
-  background:#fffffe;
-  box-shadow:0 4px 24px rgba(44,36,32,0.05);
+  border:1px solid rgba(212,163,115,0.2); border-radius:24px;
+  background:rgba(20,16,12,0.9);
+  box-shadow:0 4px 24px rgba(0,0,0,0.3);
 }
 [data-theme="robotech"] .nice-ai-input-container:focus-within {
   border-color:var(--hal-copper);
   box-shadow:0 0 0 3px rgba(212,163,115,0.08), 0 4px 24px rgba(44,36,32,0.06);
 }
-[data-theme="robotech"] .nice-ai-input { color:#2c2420; }
-[data-theme="robotech"] .nice-ai-input::placeholder { color:#b5a99f; }
+[data-theme="robotech"] .nice-ai-input { color:#e8e0d8; }
+[data-theme="robotech"] .nice-ai-input::placeholder { color:#6b5e54; }
 [data-theme="robotech"] .nice-ai-chip {
   border-radius:9999px; border:1px solid rgba(212,163,115,0.12);
   background:transparent; color:#9a8e84; font-size:.6rem;
@@ -786,8 +790,8 @@
 
 /* ── HUD panel ── */
 [data-theme="robotech"] .app-hud-panel {
-  background:#fffffe; border:1px solid rgba(212,163,115,0.1); border-radius:20px;
-  box-shadow:0 4px 20px rgba(44,36,32,0.04);
+  background:rgba(20,16,12,0.9); border:1px solid rgba(212,163,115,0.1); border-radius:20px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3); color:#e8e0d8;
 }
 [data-theme="robotech"] .app-hud-panel .dock-lbl { color:#9a8e84; }
 [data-theme="robotech"] .app-hud-panel .dock-lbl-val { color:var(--hal-copper); }
@@ -804,13 +808,13 @@
 
 /* ── Security tabs — pill bar ── */
 [data-theme="robotech"] .security-tabs {
-  border:1px solid rgba(212,163,115,0.08); border-radius:9999px;
-  background:rgba(245,240,235,0.6); padding:3px;
+  border:1px solid rgba(212,163,115,0.1); border-radius:9999px;
+  background:rgba(20,16,12,0.6); padding:3px;
 }
-[data-theme="robotech"] .security-tab { border-radius:9999px; border:none; }
+[data-theme="robotech"] .security-tab { border-radius:9999px; border:none; color:#9a8e84; }
 [data-theme="robotech"] .security-tab.security-tab--active {
-  color:#2c2420; background:#fffffe;
-  box-shadow:0 2px 8px rgba(44,36,32,0.06);
+  color:var(--hal-copper); background:rgba(212,163,115,0.12);
+  box-shadow:0 2px 8px rgba(212,163,115,0.1);
 }
 
 /* ── Progress bars — copper fill ── */
@@ -825,8 +829,8 @@
 
 /* ── Popover ── */
 [data-theme="robotech"] .side-popover {
-  background:#fffffe; border:1px solid rgba(212,163,115,0.1); border-radius:16px;
-  box-shadow:0 8px 32px rgba(44,36,32,0.08);
+  background:rgba(20,16,12,0.95); border:1px solid rgba(212,163,115,0.15); border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4); color:#e8e0d8;
 }
 [data-theme="robotech"] .side-popover-item { color:#9a8e84; font-size:.7rem; border-radius:8px; }
 [data-theme="robotech"] .side-popover-item:hover { background:rgba(212,163,115,0.06); color:var(--hal-copper); }
@@ -836,6 +840,9 @@
 [data-theme="robotech"] .side-folder-body { border-left-color:rgba(212,163,115,0.1); }
 [data-theme="robotech"] .side-mission-item { color:#b5a99f; }
 [data-theme="robotech"] .side-mission-item:hover { background:rgba(212,163,115,0.04); color:var(--hal-copper); }
+
+/* ── Schematic — black inset panel behind HAL eye (like the console) ── */
+/* Schematic center — black bg inherited from .app-main */
 
 /* ── HAL-9000 Eye — Schematic center core ── */
 [data-theme="robotech"] .sch-core-hit-overlay {
