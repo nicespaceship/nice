@@ -49,7 +49,7 @@
 /* ─────────────────────────────────────────────────────────────────
    MATRIX CANVAS
 ───────────────────────────────────────────────────────────────── */
-#matrix-canvas {
+#matrix-canvas, #snes-canvas {
   position:fixed; top:0; left:0; width:100%; height:100%;
   pointer-events:none; z-index:0; display:none;
 }
@@ -265,6 +265,145 @@
 [data-theme="pixel"] .topbar-tab { font-size:8px; }
 [data-theme="pixel"] .c-btn, [data-theme="pixel"] .btn { font-size:9px; }
 [data-theme="pixel"] .filter-select, [data-theme="pixel"] .search-input { font-size:9px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   16-BIT THEME — SNES RPG pixel styling
+───────────────────────────────────────────────────────────────── */
+
+/* Headings use Press Start 2P — scale down because it renders ~2× larger */
+[data-theme="16bit"] h1, [data-theme="16bit"] h2, [data-theme="16bit"] h3,
+[data-theme="16bit"] .wizard-title,
+[data-theme="16bit"] .bridge-hero-name,
+[data-theme="16bit"] .topbar-tab,
+[data-theme="16bit"] .bp-card-name,
+[data-theme="16bit"] .tcg-card .name-bar,
+[data-theme="16bit"] .side-header .app-brand-text {
+  font-family: 'Press Start 2P', cursive;
+  letter-spacing: 1px;
+}
+[data-theme="16bit"] h1 { font-size: 16px; line-height: 1.6; }
+[data-theme="16bit"] h2 { font-size: 13px; line-height: 1.5; }
+[data-theme="16bit"] h3 { font-size: 11px; line-height: 1.5; }
+[data-theme="16bit"] .topbar-tab { font-size: 8px; }
+[data-theme="16bit"] .bp-card-name { font-size: 9px; }
+[data-theme="16bit"] .bridge-hero-name { font-size: 12px; }
+[data-theme="16bit"] .side-header .app-brand-text { font-size: 7px; }
+
+/* RPG dialog box borders — double-line pixel border on panels */
+[data-theme="16bit"] .view-container,
+[data-theme="16bit"] .wizard-container,
+[data-theme="16bit"] .bp-drawer {
+  border: 3px solid #e2b714;
+  box-shadow: inset 0 0 0 2px #1a1a2e, inset 0 0 0 4px #2980b9;
+}
+
+/* Card treatment — pixel inset bevel */
+[data-theme="16bit"] .tcg-card {
+  border: 3px solid #e2b714 !important;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.15), inset -2px -2px 0 rgba(0,0,0,0.3);
+  image-rendering: pixelated;
+}
+[data-theme="16bit"] .tcg-card-mini {
+  border: 2px solid #e2b714 !important;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.12), inset -1px -1px 0 rgba(0,0,0,0.25);
+}
+
+/* Buttons — RPG menu style */
+[data-theme="16bit"] .btn,
+[data-theme="16bit"] .c-btn {
+  border: 2px solid #e2b714;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+[data-theme="16bit"] .btn:hover,
+[data-theme="16bit"] .c-btn:hover {
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  transform: translate(1px, 1px);
+}
+[data-theme="16bit"] .btn-primary {
+  background: #2980b9;
+  border-color: #e2b714;
+  color: #e8e0d0;
+}
+
+/* Sidebar — pixel border right edge */
+[data-theme="16bit"] .app-sidebar {
+  border-right: 3px solid #e2b714;
+  box-shadow: inset -2px 0 0 #2980b9;
+}
+
+/* Input fields — RPG text entry */
+[data-theme="16bit"] input[type="text"],
+[data-theme="16bit"] input[type="search"],
+[data-theme="16bit"] textarea,
+[data-theme="16bit"] select,
+[data-theme="16bit"] .nice-ai-input {
+  border: 2px solid #2e4068;
+  background: #16213e;
+  color: #e8e0d0;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.3);
+}
+[data-theme="16bit"] input:focus,
+[data-theme="16bit"] textarea:focus,
+[data-theme="16bit"] .nice-ai-input:focus {
+  border-color: #e2b714;
+}
+
+/* Prompt bar — RPG command input */
+[data-theme="16bit"] .nice-ai-bar {
+  border: 3px solid #e2b714;
+  box-shadow: inset 0 0 0 2px #1a1a2e, inset 0 0 0 4px #2980b9;
+}
+[data-theme="16bit"] .nice-ai-input {
+  font-size: 12px;
+}
+[data-theme="16bit"] .nice-ai-input::placeholder {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+}
+
+/* Blinking cursor animation for prompt */
+[data-theme="16bit"] .nice-ai-input:focus::placeholder {
+  animation: snes-blink 1s step-end infinite;
+}
+@keyframes snes-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* CRT scanline overlay on the whole app */
+[data-theme="16bit"]::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.04) 2px,
+    rgba(0,0,0,0.04) 3px
+  );
+}
+
+/* HP-bar style progress/XP bars */
+[data-theme="16bit"] .health-fill,
+[data-theme="16bit"] .xp-bar-fill {
+  background: linear-gradient(90deg, #c0392b 0%, #e74c3c 40%, #27ae60 70%, #2ecc71 100%);
+  image-rendering: pixelated;
+  border-right: 2px solid #e8e0d0;
+}
+
+/* Rarity badge — pixel corners */
+[data-theme="16bit"] .tcg-mini-badge,
+[data-theme="16bit"] .bp-card-rarity {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  letter-spacing: 0.5px;
+}
 
 /* ─────────────────────────────────────────────────────────────────
    SIDEBAR (Desktop always visible, mobile drawer)

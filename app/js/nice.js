@@ -29,6 +29,8 @@ const Theme = (() => {
       data:{ colors:{ '--bg':'#0f0a04','--bg2':'#1a1208','--surface':'rgba(200,160,80,0.06)','--surface2':'rgba(139,105,20,0.08)','--border':'rgba(200,160,80,0.28)','--border-hi':'rgba(200,160,80,0.6)','--accent':'#c8a050','--accent2':'#8b6914','--text':'#e8d8c0','--text-muted':'rgba(232,216,192,0.5)','--glow':'0 0 16px rgba(200,160,80,0.22)','--panel-bg':'rgba(15,10,4,0.97)' }, fonts:{ '--font-h':"'Playfair Display', serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' } },
+    { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
+      data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
   ];
 
   BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
@@ -44,6 +46,7 @@ const Theme = (() => {
       document.documentElement.setAttribute('data-theme', name);
       localStorage.setItem('ns-theme', name);
       MatrixRain.toggle(name === 'matrix');
+      if (typeof StarField16 !== 'undefined') StarField16.toggle(name === '16bit');
     } else {
       // Non-built-in: look up in THEMES by id (custom themes)
       if (!t) return;
@@ -58,6 +61,7 @@ const Theme = (() => {
       if (td.radius) document.documentElement.style.setProperty('--radius', td.radius);
       localStorage.setItem('ns-theme', name);
       MatrixRain.toggle(false);
+      if (typeof StarField16 !== 'undefined') StarField16.toggle(false);
     }
 
     // Highlight active dock button
@@ -208,6 +212,102 @@ const MatrixRain = (() => {
     _on = on;
     canvas.style.display = on ? 'block' : 'none';
     if (on) { _resize(); _draw(); }
+    else if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+  }
+
+  window.addEventListener('resize', () => { if (_on) _resize(); });
+  return { toggle };
+})();
+
+/* ─────────────────────────────────────────────────────────────────
+   MODULE: 16-BIT Starfield (canvas) — parallax pixel starfield
+───────────────────────────────────────────────────────────────── */
+const StarField16 = (() => {
+  const canvas = document.getElementById('snes-canvas');
+  if (!canvas) return { toggle: () => {} };
+
+  const ctx = canvas.getContext('2d');
+  let _on = false, _raf = null;
+
+  const STAR_COUNT = 120;
+  const LAYERS = [
+    { speed: 0.3, size: 1, color: '#4a4060', count: 50 },   // far — dim purple
+    { speed: 0.8, size: 2, color: '#8a8070', count: 40 },   // mid — warm gray
+    { speed: 1.8, size: 3, color: '#e8e0d0', count: 20 },   // near — bright
+    { speed: 2.5, size: 4, color: '#e2b714', count: 10 },   // accent — gold twinkle
+  ];
+
+  let stars = [];
+
+  function _init() {
+    stars = [];
+    LAYERS.forEach(layer => {
+      for (let i = 0; i < layer.count; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          speed: layer.speed + Math.random() * 0.3,
+          size: layer.size,
+          color: layer.color,
+          twinkle: Math.random() * Math.PI * 2,
+        });
+      }
+    });
+  }
+
+  function _resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    _init();
+  }
+
+  let _lastDraw = 0;
+  const _interval = 50; // ~20fps for retro feel
+
+  function _draw(time) {
+    _raf = requestAnimationFrame(_draw);
+    if (time - _lastDraw < _interval) return;
+    _lastDraw = time;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Pixel grid overlay (subtle)
+    ctx.fillStyle = 'rgba(255,255,255,0.012)';
+    for (let x = 0; x < canvas.width; x += 4) {
+      for (let y = 0; y < canvas.height; y += 4) {
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+
+    // Draw and move stars
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      s.x -= s.speed;
+      s.twinkle += 0.05;
+      if (s.x < -4) { s.x = canvas.width + 4; s.y = Math.random() * canvas.height; }
+
+      const alpha = 0.5 + 0.5 * Math.sin(s.twinkle);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = s.color;
+      // Pixel-snapped rendering (no anti-alias feel)
+      const px = Math.floor(s.x);
+      const py = Math.floor(s.y);
+      ctx.fillRect(px, py, s.size, s.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // Scanline overlay
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let y = 0; y < canvas.height; y += 3) {
+      ctx.fillRect(0, y, canvas.width, 1);
+    }
+  }
+
+  function toggle(on) {
+    _on = on;
+    canvas.style.display = on ? 'block' : 'none';
+    if (on) { _resize(); _draw(0); }
     else if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
   }
 
