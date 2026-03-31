@@ -536,7 +536,7 @@
 
 /* ── Variables ── */
 [data-theme="robotech"] {
-  --bg:#fafaf9; --bg2:#f5f0eb; --surface:rgba(212,163,115,0.05); --surface2:rgba(212,163,115,0.08);
+  --bg:#000000; --bg2:#0a0808; --surface:rgba(212,163,115,0.05); --surface2:rgba(212,163,115,0.08);
   --border:rgba(212,163,115,0.18); --border-hi:#d4a373;
   --accent:#d4a373; --accent2:#c4956b;
   --text:#2c2420; --text-muted:#9a8e84;
@@ -765,11 +765,14 @@
   background:rgba(20,16,12,0.8); border-color:rgba(212,163,115,0.2); border-radius:9999px;
 }
 
-/* ── Prompt Panel — fix white corners, fade to black ── */
+/* ── Prompt Panel — fully dark, no light bleed ── */
 [data-theme="robotech"] .nice-ai::before {
-  background:linear-gradient(to bottom, transparent, #000 65%);
+  background:linear-gradient(to bottom, transparent, #000 50%);
 }
 [data-theme="robotech"] .nice-ai {
+  background:transparent;
+}
+[data-theme="robotech"] .nice-ai-pills {
   background:transparent;
 }
 /* ── Prompt Panel — dark pod communicator ── */
