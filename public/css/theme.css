@@ -951,8 +951,10 @@
 
 #tron-cycles {
   display: none;
-  position: fixed; inset: 0;
-  width: 100vw; height: 100vh;
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 0;
+  height: 40vh;
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
