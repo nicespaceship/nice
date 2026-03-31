@@ -847,6 +847,35 @@
   animation:hal-eye-pulse 3s ease-in-out infinite;
 }
 
+/* ── Wizard / Modal overrides for light theme ── */
+[data-theme="robotech"] .ship-wizard-slot {
+  background:rgba(212,163,115,0.04); border-color:rgba(212,163,115,0.12);
+}
+[data-theme="robotech"] .ship-wizard-slot-label { color:#2c2420; }
+[data-theme="robotech"] .ship-wizard-slot-select select {
+  background:#fffffe; color:#2c2420;
+  border-color:rgba(212,163,115,0.15);
+}
+[data-theme="robotech"] .ship-wizard-slot-select select:focus { border-color:var(--hal-copper); }
+[data-theme="robotech"] .ship-wizard-analysis {
+  background:rgba(212,163,115,0.06); border-left-color:var(--hal-copper);
+}
+[data-theme="robotech"] .wizard-container { background:#fafaf9; border-color:rgba(212,163,115,0.15); }
+[data-theme="robotech"] .wizard-step-content { color:#2c2420; }
+[data-theme="robotech"] .wizard-close { color:#9a8e84; }
+[data-theme="robotech"] .wizard-close:hover { color:#2c2420; }
+/* Setup wizard choice cards */
+[data-theme="robotech"] .sw-choice {
+  background:#fffffe; border-color:rgba(212,163,115,0.12); color:#2c2420;
+}
+[data-theme="robotech"] .sw-choice.active,
+[data-theme="robotech"] .sw-choice:hover {
+  border-color:var(--hal-copper); background:rgba(212,163,115,0.04);
+}
+/* Auth modal */
+[data-theme="robotech"] .modal-box { background:#fafaf9; border-color:rgba(212,163,115,0.15); }
+[data-theme="robotech"] .modal-hdr { border-bottom-color:rgba(212,163,115,0.1); }
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion:reduce) {
   [data-theme="robotech"] .side-link.active { animation:none; }
