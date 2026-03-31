@@ -891,8 +891,8 @@
 
 /* Tron Grid Floor — forward travel animation (toward viewer) */
 @keyframes tron-grid-scroll {
-  0% { background-position: 0 0; background-size: 50px 50px; }
-  100% { background-position: 0 50px; background-size: 50px 50px; }
+  0% { background-position: 0 0; }
+  100% { background-position: 0 25px; }
 }
 @keyframes tron-grid-forward {
   0%   { transform: perspective(300px) rotateX(60deg) scale(1); }
@@ -916,19 +916,22 @@
   position: relative;
 }
 /* Perspective grid floor — traveling forward toward viewer.
-   Uses the canvas element (#matrix-canvas) which exists in the SPA
-   and sits behind content at z-index 0. */
-[data-theme="navigator"] #matrix-canvas {
-  display: block !important;
+   Uses dedicated #tron-grid element (not shared with other themes). */
+#tron-grid {
+  display: none;
   position: fixed; inset: 0;
   width: 100vw; height: 100vh;
   pointer-events: none;
   z-index: 0;
-  opacity: 1;
+}
+[data-theme="navigator"] #tron-grid {
+  display: block;
   background:
-    linear-gradient(rgba(0,229,255,0.22) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.16) 1px, transparent 1px) !important;
-  background-size: 50px 50px !important;
+    linear-gradient(rgba(0,229,255,0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.18) 1px, transparent 1px),
+    linear-gradient(rgba(0,229,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.06) 1px, transparent 1px);
+  background-size: 25px 25px, 25px 25px, 5px 5px, 5px 5px;
   animation: tron-grid-scroll 1.8s linear infinite;
   transform: perspective(250px) rotateX(60deg);
   transform-origin: center 65%;
