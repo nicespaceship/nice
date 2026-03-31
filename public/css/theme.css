@@ -956,7 +956,7 @@
   position: fixed;
   left: 0; right: 0;
   bottom: 0;
-  height: 30vh;
+  height: 40vh;
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
