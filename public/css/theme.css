@@ -552,40 +552,47 @@
 [data-theme="robotech"] .app-main { background:#000; }
 [data-theme="robotech"] .app-view-content { color:#e8e0d8; }
 [data-theme="robotech"] .home-greeting { color:#e8e0d8; }
+/* Override any light backgrounds in main content area */
+[data-theme="robotech"] .mc-schematic-hud { background:transparent; color:#e8e0d8; }
+[data-theme="robotech"] .sch-ship-info { background:transparent; border-color:rgba(212,163,115,0.1); }
 
-/* ── Sidebar — white cabin wall ── */
+/* ── Sidebar — brushed chrome/metallic (HAL console panel) ── */
 [data-theme="robotech"] .app-sidebar {
-  background:#fafaf9;
-  border-right:1px solid rgba(212,163,115,0.15);
+  background:linear-gradient(180deg, #e8e4e0 0%, #d4d0cc 15%, #c8c4c0 50%, #bab6b2 85%, #a8a4a0 100%);
+  border-right:2px solid #8a8682;
+  box-shadow:inset -1px 0 0 rgba(255,255,255,0.3), 2px 0 8px rgba(0,0,0,0.2);
 }
 [data-theme="robotech"] .side-header {
-  background:transparent;
-  border-bottom:1px solid rgba(212,163,115,0.12);
+  background:linear-gradient(180deg, rgba(255,255,255,0.15), transparent);
+  border-bottom:1px solid rgba(0,0,0,0.1);
 }
 [data-theme="robotech"] .side-header .app-brand-text {
-  color:#2c2420; letter-spacing:.25em; text-transform:uppercase;
+  color:#3a3632; letter-spacing:.25em; text-transform:uppercase;
+  text-shadow:0 1px 0 rgba(255,255,255,0.4);
 }
 [data-theme="robotech"] .side-link {
   border-radius:9999px; margin:3px 10px; padding:9px 16px;
-  font-weight:500; font-size:.72rem; letter-spacing:.02em;
-  color:#9a8e84; transition:all .25s;
+  font-weight:600; font-size:.72rem; letter-spacing:.02em;
+  color:#5a5652; transition:all .25s;
   border:1px solid transparent; position:relative;
+  text-shadow:0 1px 0 rgba(255,255,255,0.3);
 }
 [data-theme="robotech"] .side-link:hover {
-  color:#2c2420; background:rgba(212,163,115,0.06);
+  color:#2c2420; background:rgba(0,0,0,0.06);
 }
 [data-theme="robotech"] .side-link.active {
-  color:var(--hal-copper); background:rgba(212,163,115,0.1);
-  border-color:rgba(212,163,115,0.2);
-  animation:hal-breathe 4s ease-in-out infinite;
+  color:#2c2420; background:rgba(0,0,0,0.08);
+  border-color:rgba(0,0,0,0.1);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,0.1), 0 1px 0 rgba(255,255,255,0.3);
 }
-[data-theme="robotech"] .side-link svg { opacity:0.35; }
-[data-theme="robotech"] .side-link.active svg { opacity:0.85; stroke:var(--hal-copper); }
+[data-theme="robotech"] .side-link svg { opacity:0.4; }
+[data-theme="robotech"] .side-link.active svg { opacity:0.8; }
 [data-theme="robotech"] .side-footer {
-  background:transparent; border-top:1px solid rgba(212,163,115,0.12);
+  background:linear-gradient(180deg, transparent, rgba(255,255,255,0.1));
+  border-top:1px solid rgba(0,0,0,0.1);
 }
 [data-theme="robotech"] .hdr-user-badge {
-  background:var(--hal-copper); color:#fff; border-color:var(--hal-copper); border-radius:9999px;
+  background:#3a3632; color:#e8e0d8; border-color:#3a3632; border-radius:9999px;
 }
 
 /* ── Topbar — black with copper accent line ── */
@@ -753,9 +760,12 @@
   background:rgba(20,16,12,0.8); border-color:rgba(212,163,115,0.2); border-radius:9999px;
 }
 
-/* ── Prompt Panel backdrop — fade to black ── */
+/* ── Prompt Panel — fix white corners, fade to black ── */
 [data-theme="robotech"] .nice-ai::before {
   background:linear-gradient(to bottom, transparent, #000 65%);
+}
+[data-theme="robotech"] .nice-ai {
+  background:transparent;
 }
 /* ── Prompt Panel — dark pod communicator ── */
 [data-theme="robotech"] .nice-ai-input-container {
@@ -837,17 +847,17 @@
 
 /* ── Popover ── */
 [data-theme="robotech"] .side-popover {
-  background:rgba(20,16,12,0.95); border:1px solid rgba(212,163,115,0.15); border-radius:16px;
-  box-shadow:0 8px 32px rgba(0,0,0,0.4); color:#e8e0d8;
+  background:linear-gradient(180deg, #d8d4d0, #c4c0bc); border:1px solid #8a8682; border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3); color:#3a3632;
 }
-[data-theme="robotech"] .side-popover-item { color:#9a8e84; font-size:.7rem; border-radius:8px; }
-[data-theme="robotech"] .side-popover-item:hover { background:rgba(212,163,115,0.06); color:var(--hal-copper); }
+[data-theme="robotech"] .side-popover-item { color:#5a5652; font-size:.7rem; border-radius:8px; }
+[data-theme="robotech"] .side-popover-item:hover { background:rgba(0,0,0,0.06); color:#2c2420; }
 
 /* ── Sidebar folder ── */
-[data-theme="robotech"] .side-folder-toggle { color:#9a8e84; border-color:rgba(212,163,115,0.1); }
-[data-theme="robotech"] .side-folder-body { border-left-color:rgba(212,163,115,0.1); }
-[data-theme="robotech"] .side-mission-item { color:#b5a99f; }
-[data-theme="robotech"] .side-mission-item:hover { background:rgba(212,163,115,0.04); color:var(--hal-copper); }
+[data-theme="robotech"] .side-folder-toggle { color:#5a5652; border-color:rgba(0,0,0,0.08); }
+[data-theme="robotech"] .side-folder-body { border-left-color:rgba(0,0,0,0.08); }
+[data-theme="robotech"] .side-mission-item { color:#6a6662; }
+[data-theme="robotech"] .side-mission-item:hover { background:rgba(0,0,0,0.05); color:#2c2420; }
 
 /* ── Schematic — black inset panel behind HAL eye (like the console) ── */
 /* Hide canvas radar — let CSS HAL eye be the only visual */
