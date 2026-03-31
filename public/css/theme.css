@@ -779,56 +779,70 @@
 [data-theme="robotech"] .sch-radar-canvas { opacity:0; }
 
 [data-theme="robotech"] .sch-core-hit-overlay {
-  width:110px; height:110px;
+  width:90px; height:90px;
   background:
-    radial-gradient(circle at 45% 42%,
-      #ff8c00 0%, #ef4444 18%, #dc2626 35%,
-      #991b1b 55%, #450a0a 75%, #1a0505 100%
+    radial-gradient(circle at 44% 40%,
+      #ffaa00 0%, #ef4444 16%, #dc2626 30%,
+      #991b1b 50%, #450a0a 72%, #0a0202 100%
     );
-  border:3px solid #777;
+  border:3px solid #555;
   border-radius:50%; overflow:hidden;
   box-shadow:
-    /* Inner dark gap */
-    0 0 0 3px #222,
-    /* Chrome bezel — thick brushed metal ring */
-    0 0 0 6px #a0a0a4,
-    0 0 0 16px #c8c8cc,
-    0 0 0 18px #e0e0e4,
-    0 0 0 19px #b0b0b4,
-    0 0 0 20px #888,
+    /* Dark inner ring (recessed lens edge) */
+    0 0 0 5px #1a1a1a,
+    0 0 0 7px #333,
+    /* Chrome bezel — THICK, 3D beveled, light from top-left */
+    0 0 0 10px #707074,
+    0 0 0 16px #8a8a8e,
+    0 0 0 22px #a0a0a6,
+    0 0 0 28px #b4b4ba,
+    0 0 0 33px #c8c8ce,
+    0 0 0 37px #d4d4da,
+    0 0 0 40px #dcdce2,
+    0 0 0 42px #d0d0d6,
+    0 0 0 44px #bbbbc2,
+    0 0 0 46px #a0a0a6,
+    0 0 0 48px #88888e,
     /* Outer dark edge */
-    0 0 0 22px #555,
-    0 0 0 23px #333,
+    0 0 0 50px #555,
+    0 0 0 51px #333,
+    0 0 0 52px #1a1a1a,
     /* Red glow */
-    0 0 30px 10px rgba(239,68,68,0.15),
-    0 0 60px 5px rgba(239,68,68,0.08),
+    0 0 40px 20px rgba(239,68,68,0.08),
     /* Inner depth */
-    inset 0 0 25px rgba(0,0,0,0.5),
-    inset 0 2px 4px rgba(0,0,0,0.3);
+    inset 0 0 30px rgba(0,0,0,0.6),
+    inset 0 3px 6px rgba(0,0,0,0.4);
   animation:hal-eye-pulse 3s ease-in-out infinite;
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
 }
 /* Lens flare / reflection */
 [data-theme="robotech"] .sch-core-hit-overlay::after {
   content:''; position:absolute;
-  top:10%; left:15%; width:50%; height:25%;
-  background:linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
-  border-radius:50%; pointer-events:none; transform:rotate(-12deg);
+  top:8%; left:12%; width:55%; height:28%;
+  background:linear-gradient(180deg, rgba(255,255,255,0.18), transparent);
+  border-radius:50%; pointer-events:none; transform:rotate(-10deg);
 }
 [data-theme="robotech"] .sch-core-hit-overlay:hover {
   box-shadow:
-    0 0 0 3px #222,
-    0 0 0 6px #a8a8ac,
-    0 0 0 16px #d0d0d4,
-    0 0 0 18px #e8e8ec,
-    0 0 0 19px #b8b8bc,
-    0 0 0 20px #8a8a8a,
-    0 0 0 22px #555,
-    0 0 0 23px #333,
-    0 0 40px 10px rgba(239,68,68,0.2),
-    0 0 80px 5px rgba(239,68,68,0.12),
-    inset 0 0 25px rgba(0,0,0,0.4),
-    inset 0 2px 4px rgba(0,0,0,0.2);
+    0 0 0 5px #1a1a1a,
+    0 0 0 7px #333,
+    0 0 0 10px #787880,
+    0 0 0 16px #929298,
+    0 0 0 22px #a8a8b0,
+    0 0 0 28px #bdbdc4,
+    0 0 0 33px #d0d0d8,
+    0 0 0 37px #dddde4,
+    0 0 0 40px #e4e4ec,
+    0 0 0 42px #d8d8e0,
+    0 0 0 44px #c4c4cc,
+    0 0 0 46px #a8a8b0,
+    0 0 0 48px #909098,
+    0 0 0 50px #555,
+    0 0 0 51px #333,
+    0 0 0 52px #1a1a1a,
+    0 0 50px 20px rgba(239,68,68,0.12),
+    inset 0 0 30px rgba(0,0,0,0.5),
+    inset 0 3px 6px rgba(0,0,0,0.3);
 }
 
 /* ── Small HAL eye — bottom-right indicator ── */
