@@ -939,14 +939,16 @@
   -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 50%, transparent 62%);
 }
 
-/* ── Light Cycles — small glowing dots riding vertically ── */
-@keyframes tron-cycle-down {
-  0%   { top: -5%; }
-  100% { top: 105%; }
+/* ── Light Cycles — travel along perspective grid lines ── */
+/* Cyan: from bottom-left toward vanishing point (center-top) */
+@keyframes tron-cycle-inward {
+  0%   { bottom: -5%; left: 25%; transform: scale(1); opacity: 1; }
+  100% { bottom: 105%; left: 48%; transform: scale(0.2); opacity: 0; }
 }
-@keyframes tron-cycle-up {
-  0%   { bottom: -5%; }
-  100% { bottom: 105%; }
+/* Orange: from vanishing point (center-top) out toward bottom-right */
+@keyframes tron-cycle-outward {
+  0%   { bottom: 105%; left: 52%; transform: scale(0.2); opacity: 0; }
+  100% { bottom: -5%; left: 75%; transform: scale(1); opacity: 1; }
 }
 
 #tron-cycles {
@@ -961,42 +963,30 @@
 }
 [data-theme="navigator"] #tron-cycles { display: block; }
 
-/* Cyan cycle — traveling down */
+/* Cyan cycle — traveling inward (toward vanishing point) */
 [data-theme="navigator"] #tron-cycles::before {
   content: '';
   position: absolute;
-  left: 38%;
-  top: -5%;
   width: 4px; height: 4px;
   background: #00e5ff;
   border-radius: 50%;
   box-shadow:
     0 0 6px 2px rgba(0,229,255,0.9),
-    0 0 14px 4px rgba(0,229,255,0.3),
-    0 -12px 4px 1px rgba(0,229,255,0.6),
-    0 -28px 3px 1px rgba(0,229,255,0.4),
-    0 -50px 2px 1px rgba(0,229,255,0.2),
-    0 -80px 2px 0px rgba(0,229,255,0.1);
-  animation: tron-cycle-down 5s linear infinite;
+    0 0 14px 4px rgba(0,229,255,0.3);
+  animation: tron-cycle-inward 4s linear infinite;
 }
 
-/* Orange cycle — traveling up */
+/* Orange cycle — traveling outward (from vanishing point) */
 [data-theme="navigator"] #tron-cycles::after {
   content: '';
   position: absolute;
-  left: 62%;
-  bottom: -5%;
   width: 4px; height: 4px;
   background: #ff9500;
   border-radius: 50%;
   box-shadow:
     0 0 6px 2px rgba(255,149,0,0.9),
-    0 0 14px 4px rgba(255,149,0,0.3),
-    0 12px 4px 1px rgba(255,149,0,0.6),
-    0 28px 3px 1px rgba(255,149,0,0.4),
-    0 50px 2px 1px rgba(255,149,0,0.2),
-    0 80px 2px 0px rgba(255,149,0,0.1);
-  animation: tron-cycle-up 6s linear infinite;
+    0 0 14px 4px rgba(255,149,0,0.3);
+  animation: tron-cycle-outward 5s linear infinite;
   animation-delay: 2s;
 }
 
