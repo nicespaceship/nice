@@ -864,14 +864,20 @@
 [data-theme="robotech"] .wizard-step-content { color:#2c2420; }
 [data-theme="robotech"] .wizard-close { color:#9a8e84; }
 [data-theme="robotech"] .wizard-close:hover { color:#2c2420; }
-/* Setup wizard choice cards */
-[data-theme="robotech"] .sw-choice {
-  background:#fffffe; border-color:rgba(212,163,115,0.12); color:#2c2420;
+/* Setup wizard mode cards */
+[data-theme="robotech"] .ship-wizard-mode-card {
+  background:#fffffe; border-color:rgba(212,163,115,0.15); color:#2c2420;
 }
-[data-theme="robotech"] .sw-choice.active,
-[data-theme="robotech"] .sw-choice:hover {
+[data-theme="robotech"] .ship-wizard-mode-card:hover {
   border-color:var(--hal-copper); background:rgba(212,163,115,0.04);
 }
+[data-theme="robotech"] .ship-wizard-mode-card.selected {
+  border-color:var(--hal-copper); background:rgba(212,163,115,0.08);
+  box-shadow:0 0 12px rgba(212,163,115,0.12);
+}
+[data-theme="robotech"] .ship-wizard-mode-label { color:var(--hal-copper); }
+[data-theme="robotech"] .ship-wizard-mode-hint { color:#9a8e84; }
+[data-theme="robotech"] .ship-wizard-mode-icon { color:var(--hal-copper); }
 /* Auth modal */
 [data-theme="robotech"] .modal-box { background:#fafaf9; border-color:rgba(212,163,115,0.15); }
 [data-theme="robotech"] .modal-hdr { border-bottom-color:rgba(212,163,115,0.1); }
