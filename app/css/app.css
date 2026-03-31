@@ -267,104 +267,262 @@
 [data-theme="pixel"] .filter-select, [data-theme="pixel"] .search-input { font-size:9px; }
 
 /* ─────────────────────────────────────────────────────────────────
-   16-BIT THEME — SNES RPG pixel styling
+   16-BIT THEME — SNES RPG pixel GUI
+   Full retro game treatment: beveled buttons, segmented bars,
+   pixel borders, dialog boxes, Press Start 2P throughout.
 ───────────────────────────────────────────────────────────────── */
 
-/* Headings use Press Start 2P — scale down because it renders ~2× larger */
-[data-theme="16bit"] h1, [data-theme="16bit"] h2, [data-theme="16bit"] h3,
-[data-theme="16bit"] .wizard-title,
-[data-theme="16bit"] .bridge-hero-name,
-[data-theme="16bit"] .topbar-tab,
-[data-theme="16bit"] .bp-card-name,
-[data-theme="16bit"] .tcg-card .name-bar,
-[data-theme="16bit"] .side-header .app-brand-text {
+/* ── Global pixel rendering ── */
+[data-theme="16bit"] { image-rendering: pixelated; }
+[data-theme="16bit"] * { border-radius: 0px !important; }
+
+/* ── Pixel font on ALL text ── */
+[data-theme="16bit"] {
   font-family: 'Press Start 2P', cursive;
-  letter-spacing: 1px;
+  font-size: 9px;
+  line-height: 1.8;
+  letter-spacing: 0.5px;
 }
-[data-theme="16bit"] h1 { font-size: 16px; line-height: 1.6; }
-[data-theme="16bit"] h2 { font-size: 13px; line-height: 1.5; }
-[data-theme="16bit"] h3 { font-size: 11px; line-height: 1.5; }
-[data-theme="16bit"] .topbar-tab { font-size: 8px; }
-[data-theme="16bit"] .bp-card-name { font-size: 9px; }
-[data-theme="16bit"] .bridge-hero-name { font-size: 12px; }
-[data-theme="16bit"] .side-header .app-brand-text { font-size: 7px; }
+[data-theme="16bit"] h1 { font-size: 14px; line-height: 1.8; }
+[data-theme="16bit"] h2 { font-size: 11px; line-height: 1.7; }
+[data-theme="16bit"] h3 { font-size: 9px; line-height: 1.6; }
+[data-theme="16bit"] p, [data-theme="16bit"] li,
+[data-theme="16bit"] span, [data-theme="16bit"] label,
+[data-theme="16bit"] td, [data-theme="16bit"] th { font-size: 8px; line-height: 1.8; }
+[data-theme="16bit"] .topbar-tab { font-size: 7px; padding: 6px 10px; }
+[data-theme="16bit"] .bp-card-name { font-size: 8px; }
+[data-theme="16bit"] .bridge-hero-name { font-size: 11px; }
+[data-theme="16bit"] .side-header .app-brand-text { font-size: 6px; }
+[data-theme="16bit"] .bridge-hero-meta { font-size: 7px; }
+[data-theme="16bit"] .nav-link, [data-theme="16bit"] .side-link { font-size: 7px; }
+[data-theme="16bit"] .badge { font-size: 6px; }
+[data-theme="16bit"] .dock-lbl { font-size: 5px; }
+[data-theme="16bit"] .nice-ai-disclaimer { font-size: 6px; }
 
-/* RPG dialog box borders — double-line pixel border on panels */
-[data-theme="16bit"] .view-container,
+/* ── RPG Dialog Box — triple-layer pixel border on panels ── */
 [data-theme="16bit"] .wizard-container,
-[data-theme="16bit"] .bp-drawer {
-  border: 3px solid #e2b714;
-  box-shadow: inset 0 0 0 2px #1a1a2e, inset 0 0 0 4px #2980b9;
+[data-theme="16bit"] .bp-drawer,
+[data-theme="16bit"] .nice-ai-panel {
+  border: 4px solid #e2b714;
+  outline: 4px solid #16213e;
+  box-shadow:
+    inset 0 0 0 2px #16213e,
+    inset 0 0 0 4px #5b8dd9,
+    0 0 0 2px #0d1526,
+    4px 4px 0 rgba(0,0,0,0.5);
 }
 
-/* Card treatment — pixel inset bevel */
+/* ── Card treatment — SNES item card with pixel bevel ── */
 [data-theme="16bit"] .tcg-card {
-  border: 3px solid #e2b714 !important;
-  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.15), inset -2px -2px 0 rgba(0,0,0,0.3);
-  image-rendering: pixelated;
+  border: 4px solid #e2b714 !important;
+  box-shadow:
+    inset 3px 3px 0 rgba(255,255,200,0.2),
+    inset -3px -3px 0 rgba(0,0,0,0.4),
+    4px 4px 0 rgba(0,0,0,0.6);
+  background: #16213e;
 }
-[data-theme="16bit"] .tcg-card-mini {
-  border: 2px solid #e2b714 !important;
-  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.12), inset -1px -1px 0 rgba(0,0,0,0.25);
+[data-theme="16bit"] .tcg-card .name-bar {
+  font-size: 8px;
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  border-bottom: 3px solid #e2b714;
+  padding: 8px;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+[data-theme="16bit"] .tcg-card .text-box {
+  background: #0d1526;
+  border: 2px solid #2e4068;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.4);
+  margin: 4px;
+  padding: 8px;
+}
+[data-theme="16bit"] .tcg-card .stats {
+  background: linear-gradient(180deg, #1f2b47, #16213e);
+  border-top: 3px solid #e2b714;
 }
 
-/* Buttons — RPG menu style */
+/* Mini cards — smaller pixel bevel */
+[data-theme="16bit"] .tcg-card-mini {
+  border: 3px solid #e2b714 !important;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.15),
+    inset -2px -2px 0 rgba(0,0,0,0.35),
+    3px 3px 0 rgba(0,0,0,0.5);
+  background: #16213e;
+}
+[data-theme="16bit"] .tcg-mini-name {
+  font-size: 6px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+
+/* ── Buttons — Pixel RPG beveled buttons with color coding ── */
 [data-theme="16bit"] .btn,
 [data-theme="16bit"] .c-btn {
-  border: 2px solid #e2b714;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
   text-transform: uppercase;
-  font-size: 10px;
   letter-spacing: 1px;
+  padding: 8px 16px;
+  border: 3px solid #e2b714;
+  background: linear-gradient(180deg, #2e4068 0%, #1f2b47 100%);
+  color: #e8e0d0;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.2),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    3px 3px 0 rgba(0,0,0,0.6);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  transition: none;
+  cursor: pointer;
+  position: relative;
 }
 [data-theme="16bit"] .btn:hover,
 [data-theme="16bit"] .c-btn:hover {
-  box-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  background: linear-gradient(180deg, #3a5080 0%, #2e4068 100%);
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.25),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    2px 2px 0 rgba(0,0,0,0.6);
   transform: translate(1px, 1px);
 }
+[data-theme="16bit"] .btn:active,
+[data-theme="16bit"] .c-btn:active {
+  background: linear-gradient(180deg, #1f2b47 0%, #16213e 100%);
+  box-shadow:
+    inset -2px -2px 0 rgba(255,255,200,0.1),
+    inset 2px 2px 0 rgba(0,0,0,0.4);
+  transform: translate(2px, 2px);
+}
+/* Primary = green RPG "START" button */
 [data-theme="16bit"] .btn-primary {
-  background: #2980b9;
+  background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%);
   border-color: #e2b714;
-  color: #e8e0d0;
+  color: #fff;
+  text-shadow: 1px 1px 0 #145a32;
+}
+[data-theme="16bit"] .btn-primary:hover {
+  background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+}
+/* Danger = red RPG "EXIT" button */
+[data-theme="16bit"] .btn-danger,
+[data-theme="16bit"] .btn[data-action="delete"] {
+  background: linear-gradient(180deg, #c0392b 0%, #922b21 100%);
+  border-color: #e2b714;
+  text-shadow: 1px 1px 0 #641e16;
 }
 
-/* Sidebar — pixel border right edge */
+/* ── Deploy/Activate buttons — special gold "PLAY" treatment ── */
+[data-theme="16bit"] .bp-deploy-ship-btn,
+[data-theme="16bit"] .bp-deploy-btn {
+  background: linear-gradient(180deg, #e2b714 0%, #c8a050 30%, #8b6914 100%) !important;
+  color: #0d1526 !important;
+  border: 3px solid #fff3b0 !important;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.4),
+    inset -2px -2px 0 rgba(0,0,0,0.2),
+    3px 3px 0 rgba(0,0,0,0.6) !important;
+  text-shadow: 1px 1px 0 rgba(255,255,200,0.5);
+  font-size: 8px !important;
+}
+
+/* ── Sidebar — pixel border, RPG menu ── */
 [data-theme="16bit"] .app-sidebar {
-  border-right: 3px solid #e2b714;
-  box-shadow: inset -2px 0 0 #2980b9;
+  border-right: 4px solid #e2b714;
+  box-shadow: inset -3px 0 0 #5b8dd9;
+  background: #0d1526;
+}
+[data-theme="16bit"] .side-link {
+  border-bottom: 2px solid #16213e;
+  transition: none;
+}
+[data-theme="16bit"] .side-link:hover {
+  background: #1f2b47;
+  color: #e2b714;
+}
+[data-theme="16bit"] .side-link.active {
+  background: #1f2b47;
+  border-left: 4px solid #e2b714;
+  color: #e2b714;
+  box-shadow: inset 0 2px 0 rgba(255,255,200,0.1), inset 0 -2px 0 rgba(0,0,0,0.2);
 }
 
-/* Input fields — RPG text entry */
+/* ── Top tabs — RPG menu tabs ── */
+[data-theme="16bit"] .topbar-tab,
+[data-theme="16bit"] .bridge-tab,
+[data-theme="16bit"] .bridge-hero-tab,
+[data-theme="16bit"] .bp-sub-tab {
+  font-family: 'Press Start 2P', cursive;
+  border: 2px solid #2e4068;
+  background: #16213e;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,200,0.1),
+    inset -1px -1px 0 rgba(0,0,0,0.3);
+  transition: none;
+}
+[data-theme="16bit"] .topbar-tab.active,
+[data-theme="16bit"] .bridge-tab.active,
+[data-theme="16bit"] .bridge-hero-tab.active,
+[data-theme="16bit"] .bp-sub-tab.active {
+  border-color: #e2b714;
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  color: #e2b714;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.15),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    0 3px 0 #e2b714;
+}
+
+/* ── Input fields — RPG text entry window ── */
 [data-theme="16bit"] input[type="text"],
 [data-theme="16bit"] input[type="search"],
 [data-theme="16bit"] textarea,
-[data-theme="16bit"] select,
-[data-theme="16bit"] .nice-ai-input {
-  border: 2px solid #2e4068;
-  background: #16213e;
+[data-theme="16bit"] select {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  border: 3px solid #2e4068;
+  background: #0d1526;
   color: #e8e0d0;
-  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.3);
+  box-shadow:
+    inset 2px 2px 0 rgba(0,0,0,0.5),
+    inset -1px -1px 0 rgba(91,141,217,0.1);
+  padding: 8px 10px;
 }
 [data-theme="16bit"] input:focus,
 [data-theme="16bit"] textarea:focus,
-[data-theme="16bit"] .nice-ai-input:focus {
+[data-theme="16bit"] select:focus {
   border-color: #e2b714;
+  box-shadow:
+    inset 2px 2px 0 rgba(0,0,0,0.5),
+    0 0 0 2px rgba(226,183,20,0.3);
 }
 
-/* Prompt bar — RPG command input */
+/* ── Prompt bar — RPG command window ── */
 [data-theme="16bit"] .nice-ai-bar {
-  border: 3px solid #e2b714;
-  box-shadow: inset 0 0 0 2px #1a1a2e, inset 0 0 0 4px #2980b9;
+  border: 4px solid #e2b714;
+  box-shadow:
+    inset 0 0 0 2px #16213e,
+    inset 0 0 0 4px #5b8dd9,
+    4px 4px 0 rgba(0,0,0,0.5);
 }
 [data-theme="16bit"] .nice-ai-input {
-  font-size: 12px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
 }
 [data-theme="16bit"] .nice-ai-input::placeholder {
   font-family: 'Press Start 2P', cursive;
-  font-size: 8px;
+  font-size: 7px;
+}
+[data-theme="16bit"] .nice-ai-chip {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  border: 2px solid #2e4068;
+  background: #1f2b47;
+  box-shadow: inset 1px 1px 0 rgba(255,255,200,0.1), 2px 2px 0 rgba(0,0,0,0.3);
+}
+[data-theme="16bit"] .nice-ai-chip:hover {
+  border-color: #e2b714;
+  background: #2e4068;
 }
 
-/* Blinking cursor animation for prompt */
+/* Blinking cursor animation */
 [data-theme="16bit"] .nice-ai-input:focus::placeholder {
   animation: snes-blink 1s step-end infinite;
 }
@@ -373,7 +531,7 @@
   50% { opacity: 0; }
 }
 
-/* CRT scanline overlay on the whole app */
+/* ── CRT scanline overlay ── */
 [data-theme="16bit"]::after {
   content: '';
   position: fixed;
@@ -384,25 +542,200 @@
     0deg,
     transparent,
     transparent 2px,
-    rgba(0,0,0,0.04) 2px,
-    rgba(0,0,0,0.04) 3px
+    rgba(0,0,0,0.06) 2px,
+    rgba(0,0,0,0.06) 3px
   );
 }
 
-/* HP-bar style progress/XP bars */
-[data-theme="16bit"] .health-fill,
-[data-theme="16bit"] .xp-bar-fill {
-  background: linear-gradient(90deg, #c0392b 0%, #e74c3c 40%, #27ae60 70%, #2ecc71 100%);
+/* ── Segmented HP bars — pixel blocks instead of smooth fill ── */
+[data-theme="16bit"] .health-bar,
+[data-theme="16bit"] .xp-bar {
+  border: 3px solid #e2b714;
+  background: #0d1526;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.5);
+  height: 18px;
+}
+[data-theme="16bit"] .health-fill {
+  background: repeating-linear-gradient(
+    90deg,
+    #27ae60 0px, #27ae60 6px,
+    #1e8449 6px, #1e8449 7px,
+    #2ecc71 7px, #2ecc71 13px,
+    #1e8449 13px, #1e8449 14px
+  );
+  box-shadow: inset 0 2px 0 rgba(255,255,200,0.2), inset 0 -2px 0 rgba(0,0,0,0.3);
   image-rendering: pixelated;
-  border-right: 2px solid #e8e0d0;
+}
+[data-theme="16bit"] .health-fill.shield {
+  background: repeating-linear-gradient(
+    90deg,
+    #2980b9 0px, #2980b9 6px,
+    #1f6da0 6px, #1f6da0 7px,
+    #3498db 7px, #3498db 13px,
+    #1f6da0 13px, #1f6da0 14px
+  );
+}
+[data-theme="16bit"] .xp-bar-fill {
+  background: repeating-linear-gradient(
+    90deg,
+    #e2b714 0px, #e2b714 6px,
+    #c8a050 6px, #c8a050 7px,
+    #f1c40f 7px, #f1c40f 13px,
+    #c8a050 13px, #c8a050 14px
+  );
+  box-shadow: inset 0 2px 0 rgba(255,255,200,0.3), inset 0 -2px 0 rgba(0,0,0,0.3);
 }
 
-/* Rarity badge — pixel corners */
+/* ── Rarity badges — chunky pixel labels ── */
 [data-theme="16bit"] .tcg-mini-badge,
 [data-theme="16bit"] .bp-card-rarity {
   font-family: 'Press Start 2P', cursive;
-  font-size: 6px;
+  font-size: 5px;
   letter-spacing: 0.5px;
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  padding: 3px 6px;
+}
+
+/* ── Filter pills — pixel RPG item selection ── */
+[data-theme="16bit"] .bp-rarity-pill,
+[data-theme="16bit"] .bp-filter-pill {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  border: 2px solid #2e4068;
+  background: #16213e;
+  box-shadow: inset 1px 1px 0 rgba(255,255,200,0.08), 2px 2px 0 rgba(0,0,0,0.4);
+}
+[data-theme="16bit"] .bp-rarity-pill.active,
+[data-theme="16bit"] .bp-filter-pill.active {
+  border-color: #e2b714;
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  color: #e2b714;
+}
+
+/* ── Wizard — RPG save/menu screen ── */
+[data-theme="16bit"] .wizard-container {
+  background: #16213e;
+}
+[data-theme="16bit"] .wizard-title {
+  font-size: 11px;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  color: #e2b714;
+}
+[data-theme="16bit"] .wizard-subtitle {
+  font-size: 7px;
+}
+[data-theme="16bit"] .wizard-dot {
+  border: 2px solid #e2b714;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+}
+[data-theme="16bit"] .wizard-step-wrap.done .wizard-dot {
+  background: #27ae60;
+  border-color: #27ae60;
+}
+[data-theme="16bit"] .wizard-step-wrap.active .wizard-dot {
+  background: #e2b714;
+  color: #0d1526;
+}
+[data-theme="16bit"] .wizard-input {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+}
+
+/* ── Schematic — pixel connection lines ── */
+[data-theme="16bit"] .schematic-wired .schematic-svg line {
+  stroke-dasharray: 4, 4;
+}
+[data-theme="16bit"] .schematic-slot-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Select dropdowns ── */
+[data-theme="16bit"] select {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0,0 L8,0 L4,8 Z' fill='%23e2b714'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+/* ── Scrollbar — pixel chunky ── */
+[data-theme="16bit"] ::-webkit-scrollbar { width: 12px; }
+[data-theme="16bit"] ::-webkit-scrollbar-track {
+  background: #0d1526;
+  border-left: 2px solid #2e4068;
+}
+[data-theme="16bit"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  border: 2px solid #e2b714;
+  box-shadow: inset 1px 1px 0 rgba(255,255,200,0.15);
+}
+
+/* ── Search bar ── */
+[data-theme="16bit"] .bp-search-wrap input,
+[data-theme="16bit"] .search-input {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+}
+
+/* ── Notifications/toasts — pixel alert box ── */
+[data-theme="16bit"] .toast {
+  border: 3px solid #e2b714;
+  background: #16213e;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.15),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    4px 4px 0 rgba(0,0,0,0.6);
+}
+
+/* ── Card stats — RPG stat block ── */
+[data-theme="16bit"] .tcg-card .stat-label,
+[data-theme="16bit"] .tcg-card .stat-val {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+}
+[data-theme="16bit"] .bp-card-stat-label {
+  font-size: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+[data-theme="16bit"] .bp-card-stat-val {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  color: #e2b714;
+}
+
+/* ── Marquee ticker ── */
+[data-theme="16bit"] .tcg-card .marquee {
+  background: #0d1526;
+  border-top: 2px solid #2e4068;
+  border-bottom: 2px solid #2e4068;
+  font-size: 7px;
+}
+
+/* ── Mission cards ── */
+[data-theme="16bit"] .mission-card {
+  border: 3px solid #2e4068;
+  background: #16213e;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.08),
+    inset -2px -2px 0 rgba(0,0,0,0.25),
+    3px 3px 0 rgba(0,0,0,0.5);
+}
+[data-theme="16bit"] .mission-card.completed {
+  border-color: #27ae60;
+}
+[data-theme="16bit"] .mission-card.failed {
+  border-color: #c0392b;
 }
 
 /* ─────────────────────────────────────────────────────────────────
