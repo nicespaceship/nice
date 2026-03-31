@@ -211,8 +211,11 @@ const MatrixRain = (() => {
   function toggle(on) {
     _on = on;
     canvas.style.display = on ? 'block' : 'none';
-    if (on) { _resize(); _draw(); }
-    else if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+    if (on) { _resize(); _draw(0); }
+    else {
+      if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
   }
 
   window.addEventListener('resize', () => { if (_on) _resize(); });
@@ -308,7 +311,10 @@ const StarField16 = (() => {
     _on = on;
     canvas.style.display = on ? 'block' : 'none';
     if (on) { _resize(); _draw(0); }
-    else if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+    else {
+      if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
   }
 
   window.addEventListener('resize', () => { if (_on) _resize(); });
