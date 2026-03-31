@@ -785,7 +785,7 @@
       #ffaa00 0%, #ef4444 16%, #dc2626 30%,
       #991b1b 50%, #450a0a 72%, #0a0202 100%
     );
-  border:3px solid #555;
+  border:3px solid #111;
   border-radius:50%;
   box-shadow:
     /* Dark inner ring */
