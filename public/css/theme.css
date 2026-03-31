@@ -939,22 +939,14 @@
   -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 50%, transparent 62%);
 }
 
-/* ── Light Cycles — glowing dots with trailing ribbons ── */
-@keyframes tron-cycle-h {
-  0%   { left: -10%; }
-  100% { left: 110%; }
+/* ── Light Cycles — small glowing dots riding vertically ── */
+@keyframes tron-cycle-down {
+  0%   { top: -5%; }
+  100% { top: 105%; }
 }
-@keyframes tron-cycle-h2 {
-  0%   { right: -10%; }
-  100% { right: 110%; }
-}
-@keyframes tron-cycle-v {
-  0%   { bottom: -10%; }
-  100% { bottom: 110%; }
-}
-@keyframes tron-cycle-v2 {
-  0%   { top: -10%; }
-  100% { top: 110%; }
+@keyframes tron-cycle-up {
+  0%   { bottom: -5%; }
+  100% { bottom: 105%; }
 }
 
 #tron-cycles {
@@ -967,45 +959,43 @@
 }
 [data-theme="navigator"] #tron-cycles { display: block; }
 
-/* Cyan cycle — left to right */
+/* Cyan cycle — traveling down */
 [data-theme="navigator"] #tron-cycles::before {
   content: '';
   position: absolute;
-  bottom: 30%;
-  left: -10%;
-  width: 8px; height: 8px;
+  left: 38%;
+  top: -5%;
+  width: 4px; height: 4px;
   background: #00e5ff;
   border-radius: 50%;
   box-shadow:
-    0 0 12px 4px rgba(0,229,255,0.9),
-    0 0 30px 8px rgba(0,229,255,0.4),
-    -20px 0 6px 2px rgba(0,229,255,0.7),
-    -50px 0 4px 1px rgba(0,229,255,0.5),
-    -90px 0 3px 1px rgba(0,229,255,0.35),
-    -140px 0 2px 1px rgba(0,229,255,0.2),
-    -200px 0 2px 0px rgba(0,229,255,0.1);
-  animation: tron-cycle-h 8s linear infinite;
+    0 0 6px 2px rgba(0,229,255,0.9),
+    0 0 14px 4px rgba(0,229,255,0.3),
+    0 -12px 4px 1px rgba(0,229,255,0.6),
+    0 -28px 3px 1px rgba(0,229,255,0.4),
+    0 -50px 2px 1px rgba(0,229,255,0.2),
+    0 -80px 2px 0px rgba(0,229,255,0.1);
+  animation: tron-cycle-down 5s linear infinite;
 }
 
-/* Orange cycle — right to left */
+/* Orange cycle — traveling up */
 [data-theme="navigator"] #tron-cycles::after {
   content: '';
   position: absolute;
-  bottom: 22%;
-  right: -10%;
-  width: 8px; height: 8px;
+  left: 62%;
+  bottom: -5%;
+  width: 4px; height: 4px;
   background: #ff9500;
   border-radius: 50%;
   box-shadow:
-    0 0 12px 4px rgba(255,149,0,0.9),
-    0 0 30px 8px rgba(255,149,0,0.4),
-    20px 0 6px 2px rgba(255,149,0,0.7),
-    50px 0 4px 1px rgba(255,149,0,0.5),
-    90px 0 3px 1px rgba(255,149,0,0.35),
-    140px 0 2px 1px rgba(255,149,0,0.2),
-    200px 0 2px 0px rgba(255,149,0,0.1);
-  animation: tron-cycle-h2 7s linear infinite;
-  animation-delay: 3s;
+    0 0 6px 2px rgba(255,149,0,0.9),
+    0 0 14px 4px rgba(255,149,0,0.3),
+    0 12px 4px 1px rgba(255,149,0,0.6),
+    0 28px 3px 1px rgba(255,149,0,0.4),
+    0 50px 2px 1px rgba(255,149,0,0.2),
+    0 80px 2px 0px rgba(255,149,0,0.1);
+  animation: tron-cycle-up 6s linear infinite;
+  animation-delay: 2s;
 }
 
 /* Horizontal scan line sweeping across content */
