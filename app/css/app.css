@@ -274,7 +274,7 @@
 
 /* ── Global pixel rendering ── */
 [data-theme="16bit"] { image-rendering: pixelated; }
-[data-theme="16bit"] * { border-radius: 0px !important; }
+[data-theme="16bit"] * { border-radius: 0px !important; font-family: 'Press Start 2P', cursive !important; }
 
 /* ── Pixel font on ALL text ── */
 [data-theme="16bit"] {
