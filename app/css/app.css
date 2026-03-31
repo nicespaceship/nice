@@ -276,6 +276,22 @@
 [data-theme="16bit"] { image-rendering: pixelated; }
 [data-theme="16bit"] * { border-radius: 0px !important; font-family: 'Press Start 2P', cursive !important; }
 
+/* ── Pixelated SVG icons — crisp edges, chunky strokes ── */
+[data-theme="16bit"] svg {
+  shape-rendering: crispEdges;
+}
+[data-theme="16bit"] .icon,
+[data-theme="16bit"] .side-link svg,
+[data-theme="16bit"] .nav-link svg,
+[data-theme="16bit"] .topbar-tab svg,
+[data-theme="16bit"] .btn svg,
+[data-theme="16bit"] .c-btn svg {
+  shape-rendering: crispEdges;
+  stroke-width: 2.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
 /* ── Pixel font on ALL text ── */
 [data-theme="16bit"] {
   font-family: 'Press Start 2P', cursive;
