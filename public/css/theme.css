@@ -541,7 +541,7 @@
   --accent:#d4a373; --accent2:#c4956b;
   --text:#2c2420; --text-muted:#9a8e84;
   --glow:none; --glow-hi:0 0 20px rgba(212,163,115,0.2);
-  --panel-bg:rgba(255,255,253,0.9); --nav-bg:rgba(250,250,249,0.95);
+  --panel-bg:rgba(15,12,10,0.9); --nav-bg:rgba(200,196,192,0.95);
   --font-h:'Inter', sans-serif; --font-b:'Inter', sans-serif;
   --radius:9999px;
   --hal-copper:#d4a373; --hal-gold:#c4956b; --hal-red:#ef4444; --hal-warm:#f5f0eb;
@@ -555,6 +555,11 @@
 /* Override any light backgrounds in main content area */
 [data-theme="robotech"] .mc-schematic-hud { background:transparent; color:#e8e0d8; }
 [data-theme="robotech"] .sch-ship-info { background:transparent; border-color:rgba(212,163,115,0.1); }
+/* Bridge hero bar — dark on black */
+[data-theme="robotech"] .bridge-hero { background:transparent; border-color:rgba(212,163,115,0.1); }
+[data-theme="robotech"] .bridge-hero-header { background:rgba(10,10,10,0.8); border-bottom-color:rgba(212,163,115,0.1); color:#e8e0d8; }
+[data-theme="robotech"] .bridge-hero-name { color:#e8e0d8; }
+[data-theme="robotech"] .bridge-hero-meta { color:#9a8e84; }
 
 /* ── Sidebar — brushed chrome/metallic (HAL console panel) ── */
 [data-theme="robotech"] .app-sidebar {
