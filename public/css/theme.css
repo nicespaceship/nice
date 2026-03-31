@@ -788,29 +788,24 @@
   border:3px solid #555;
   border-radius:50%;
   box-shadow:
-    /* Dark inner ring (recessed lens edge) */
-    0 0 0 5px #1a1a1a,
-    0 0 0 7px #333,
-    /* Chrome bezel — THICK, 3D beveled, light from top-left */
-    0 0 0 10px #707074,
-    0 0 0 16px #8a8a8e,
-    0 0 0 22px #a0a0a6,
-    0 0 0 28px #b4b4ba,
-    0 0 0 33px #c8c8ce,
-    0 0 0 37px #d4d4da,
-    0 0 0 40px #dcdce2,
-    0 0 0 42px #d0d0d6,
-    0 0 0 44px #bbbbc2,
-    0 0 0 46px #a0a0a6,
-    0 0 0 48px #88888e,
+    /* Dark inner ring */
+    0 0 0 3px #1a1a1a,
+    0 0 0 5px #444,
+    /* Chrome bezel — 3D beveled */
+    0 0 0 8px #808086,
+    0 0 0 13px #a8a8ae,
+    0 0 0 18px #c4c4ca,
+    0 0 0 22px #d8d8de,
+    0 0 0 24px #c0c0c6,
+    0 0 0 26px #9a9aa0,
     /* Outer dark edge */
-    0 0 0 50px #555,
-    0 0 0 51px #333,
-    0 0 0 52px #1a1a1a,
+    0 0 0 28px #666,
+    0 0 0 29px #444,
+    0 0 0 30px #1a1a1a,
     /* Red glow */
-    0 0 40px 20px rgba(239,68,68,0.08),
+    0 0 30px 10px rgba(239,68,68,0.08),
     /* Inner depth */
-    inset 0 0 30px rgba(0,0,0,0.6),
+    inset 0 0 25px rgba(0,0,0,0.6),
     inset 0 3px 6px rgba(0,0,0,0.4);
   animation:hal-eye-pulse 3s ease-in-out infinite;
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
@@ -824,24 +819,19 @@
 }
 [data-theme="robotech"] .sch-core-hit-overlay:hover {
   box-shadow:
-    0 0 0 5px #1a1a1a,
-    0 0 0 7px #333,
-    0 0 0 10px #787880,
-    0 0 0 16px #929298,
-    0 0 0 22px #a8a8b0,
-    0 0 0 28px #bdbdc4,
-    0 0 0 33px #d0d0d8,
-    0 0 0 37px #dddde4,
-    0 0 0 40px #e4e4ec,
-    0 0 0 42px #d8d8e0,
-    0 0 0 44px #c4c4cc,
-    0 0 0 46px #a8a8b0,
-    0 0 0 48px #909098,
-    0 0 0 50px #555,
-    0 0 0 51px #333,
-    0 0 0 52px #1a1a1a,
-    0 0 50px 20px rgba(239,68,68,0.12),
-    inset 0 0 30px rgba(0,0,0,0.5),
+    0 0 0 3px #1a1a1a,
+    0 0 0 5px #444,
+    0 0 0 8px #8a8a90,
+    0 0 0 13px #b0b0b6,
+    0 0 0 18px #ccccd2,
+    0 0 0 22px #e0e0e6,
+    0 0 0 24px #c8c8ce,
+    0 0 0 26px #a4a4aa,
+    0 0 0 28px #666,
+    0 0 0 29px #444,
+    0 0 0 30px #1a1a1a,
+    0 0 40px 10px rgba(239,68,68,0.12),
+    inset 0 0 25px rgba(0,0,0,0.5),
     inset 0 3px 6px rgba(0,0,0,0.3);
 }
 
