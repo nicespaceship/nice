@@ -935,8 +935,8 @@
   animation: tron-grid-scroll 1.8s linear infinite;
   transform: perspective(250px) rotateX(60deg);
   transform-origin: center 65%;
-  mask-image: radial-gradient(ellipse 160% 100% at 50% 75%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 45%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 160% 100% at 50% 75%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 45%, transparent 70%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 50%, transparent 62%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 50%, transparent 62%);
 }
 
 /* Horizontal scan line sweeping across content */
