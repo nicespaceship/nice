@@ -314,7 +314,7 @@
 
 /* ── Card treatment — SNES item card with pixel bevel ── */
 [data-theme="16bit"] .tcg-card {
-  border-width: 5px !important;
+  border-width: 10px !important;
   border-style: solid !important;
   box-shadow:
     inset 3px 3px 0 rgba(255,255,200,0.2),
@@ -349,7 +349,7 @@
 
 /* Mini cards — smaller pixel bevel, rarity border from inline style */
 [data-theme="16bit"] .tcg-card-mini {
-  border-width: 4px !important;
+  border-width: 6px !important;
   border-style: solid !important;
   box-shadow:
     inset 2px 2px 0 rgba(255,255,200,0.15),
