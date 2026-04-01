@@ -11,14 +11,14 @@ const Theme = (() => {
   let BUILTIN; // set after THEMES definition
 
   // CSS var keys to clear when switching themes
-  const VAR_KEYS = ['--bg','--bg2','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--nav-bg','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
+  const VAR_KEYS = ['--bg','--bg2','--bg-alt','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--panel-border','--nav-bg','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
     { id:'spaceship', name:'NICE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
       data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
     { id:'robotech', name:'HAL-9000', builtin:true, accent:'#999', preview:['#f2f2f0','#999','#ef4444'],
-      data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--glow':'none','--panel-bg':'#fff' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
+      data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--bg-alt':'#ffffff','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--text-dim':'#aaaaaa','--glow':'none','--panel-bg':'#fff','--panel-border':'#d0d0ce' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
     { id:'navigator', name:'The Grid', builtin:true, accent:'#00e5ff', preview:['#02090f','#00e5ff','#0099bb'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(0,200,240,0.05)','--surface2':'rgba(0,200,240,0.09)','--border':'rgba(0,229,255,0.25)','--border-hi':'rgba(0,229,255,0.6)','--accent':'#00e5ff','--accent2':'#0099bb','--text':'#cce8f0','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' } },
     { id:'matrix', name:'The Matrix', builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
@@ -34,7 +34,9 @@ const Theme = (() => {
     { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' } },
     { id:'office', name:'The Office', builtin:true, accent:'#0078d4', preview:['#f5f5f5','#0078d4','#107c10'],
-      data:{ colors:{ '--bg':'#f5f5f5','--bg2':'#ebebeb','--surface':'#ffffff','--surface2':'#fafafa','--border':'#e0e0e0','--border-hi':'#0078d4','--accent':'#0078d4','--accent2':'#107c10','--text':'#1a1a1a','--text-muted':'#6b6b6b','--glow':'none','--panel-bg':'#ffffff' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'8px' } },
+      data:{ colors:{ '--bg':'#f5f5f5','--bg2':'#ebebeb','--bg-alt':'#ffffff','--surface':'#ffffff','--surface2':'#fafafa','--border':'#e0e0e0','--border-hi':'#0078d4','--accent':'#0078d4','--accent2':'#107c10','--text':'#1a1a1a','--text-muted':'#6b6b6b','--text-dim':'#999999','--glow':'none','--panel-bg':'#ffffff','--panel-border':'#e0e0e0' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'8px' } },
+    { id:'office-dark', name:'The Office', builtin:false, accent:'#0078d4', preview:['#1e1e1e','#0078d4','#107c10'],
+      data:{ colors:{ '--bg':'#1e1e1e','--bg2':'#252526','--bg-alt':'#2d2d2d','--surface':'#333333','--surface2':'#3c3c3c','--border':'#444444','--border-hi':'#0078d4','--accent':'#0078d4','--accent2':'#107c10','--text':'#e0e0e0','--text-muted':'#999999','--text-dim':'#666666','--glow':'none','--panel-bg':'#2d2d2d','--panel-border':'#444444' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'8px' } },
   ];
 
   BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
@@ -114,18 +116,30 @@ const Theme = (() => {
     }
 
     // Theme-specific terminology
-    _applyOfficeLabels(name === 'office');
+    _applyOfficeLabels(name === 'office' || name === 'office-dark');
     _applyLcarsLabels(name === 'lcars');
+    _updateDarkLightIcon();
   }
 
   const _OFFICE_LABELS = {
-    'Schematic': 'Overview', 'Blueprints': 'Templates', 'Missions': 'Tasks',
+    'Schematic': 'Overview', 'Missions': 'Tasks',
     'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
     'Bridge': 'Office', 'Deploy': 'Activate', 'Deployed': 'Active',
-    'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'OVERVIEW', 'BLUEPRINTS': 'TEMPLATES',
+    'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'OVERVIEW',
     'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
-    'Spaceships': 'Teams', 'Agents': 'Assistants', 'Spaceship': 'Team', 'Agent': 'Assistant',
-    'Ship': 'Team', "Captain's Log": 'Audit Trail', "Ship's Log": 'Chat History',
+    'Spaceships': 'Businesses', 'Spaceship': 'Business',
+    'Ship': 'Business', 'Create Spaceship': 'Create Business', 'Create New Spaceship': 'Create New Business',
+    'Crew': 'Staff',
+    "Captain's Log": 'Audit Trail', "Ship's Log": 'Chat History',
+    'spaceships': 'businesses', 'spaceship': 'business', 'crew': 'staff',
+  };
+  // Placeholder overrides for Office theme (attribute values the DOM text swapper can't reach)
+  const _OFFICE_PLACEHOLDERS = {
+    'e.g. AURORA, VANGUARD, NEXUS': 'e.g. Acme Corp, Bright Solutions, Peak Digital',
+    'What does this spaceship do?': 'Define your business objectives and key deliverables',
+    'e.g. Ship faster. Scale smarter.': 'e.g. Automate operations. Scale without headcount.',
+    'Comma-separated: saas, startup, tech': 'Comma-separated: marketing, sales, ops',
+    'Search by name, description, or tags...': 'Search by name, description, or tags...',
   };
   // Reverse map for restoring originals
   const _OFFICE_REVERSE = Object.fromEntries(Object.entries(_OFFICE_LABELS).map(([k,v]) => [v,k]));
@@ -170,9 +184,10 @@ const Theme = (() => {
   }
 
   function _swapTextInDOM(map) {
+    // Sort keys longest-first to prevent partial matches (e.g. "Spaceships" before "Spaceship")
+    const keys = Object.keys(map).sort((a, b) => b.length - a.length);
     // Tabs
     document.querySelectorAll('.bp-type-tab, .side-link span, .bridge-hero-tab, .bp-sub-tab').forEach(el => {
-      const keys = Object.keys(map);
       for (const k of keys) {
         if (el.textContent.trim() === k || el.textContent.trim().startsWith(k + ' ')) {
           el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = n.textContent.replace(k, map[k]); });
@@ -181,8 +196,6 @@ const Theme = (() => {
     });
     // Sidebar link text (direct text nodes)
     document.querySelectorAll('.side-link, .side-folder-toggle, .side-folder-label, .sidebar-section-label').forEach(el => {
-      const keys = Object.keys(map);
-      // Check direct text nodes AND text inside child spans
       const nodes = [];
       el.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); });
       el.querySelectorAll('span').forEach(s => { s.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); }); });
@@ -190,35 +203,38 @@ const Theme = (() => {
         nodes.forEach(n => { if (n.textContent.includes(k)) n.textContent = n.textContent.replace(k, map[k]); });
       }
     });
-    // Hero header text
-    document.querySelectorAll('.bridge-hero-meta, h2, h3, .wizard-title, .bp-card-type').forEach(el => {
-      const keys = Object.keys(map);
+    // Hero header text, buttons, labels, legends
+    document.querySelectorAll('.bridge-hero-meta, h2, h3, p, .wizard-title, .bp-card-type, .btn-primary, .btn-sm, .builder-sub, .builder-legend, .builder-hint, legend, label').forEach(el => {
       for (const k of keys) {
         el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), map[k]); });
       }
+    });
+    // Placeholder attributes (input, textarea)
+    const phMap = _officeActive ? _OFFICE_PLACEHOLDERS : Object.fromEntries(Object.entries(_OFFICE_PLACEHOLDERS).map(([k,v]) => [v,k]));
+    document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
+      const ph = el.getAttribute('placeholder');
+      if (phMap[ph]) el.setAttribute('placeholder', phMap[ph]);
     });
   }
 
   function toggleDarkLight() {
     const current = localStorage.getItem('ns-theme') || 'spaceship';
-    const isLight = current === 'robotech';
-    if (isLight) {
-      const prev = localStorage.getItem('ns-dark-theme') || 'spaceship';
-      set(prev || 'spaceship');
-    } else {
-      localStorage.setItem('ns-dark-theme', current);
-      set('robotech');
-    }
-    _updateDarkLightIcon();
+    if (current === 'office') set('office-dark');
+    else if (current === 'office-dark') set('office');
+    // No-op for all other themes — toggle is hidden
   }
 
   function _updateDarkLightIcon() {
     const btn = document.getElementById('btn-darklight');
     if (!btn) return;
     const current = localStorage.getItem('ns-theme') || 'spaceship';
-    const isLight = current === 'robotech';
-    const icon = isLight ? '#icon-moon' : '#icon-sun';
-    btn.innerHTML = `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${icon}"/></svg>`;
+    const isOffice = current === 'office' || current === 'office-dark';
+    btn.style.display = isOffice ? '' : 'none';
+    if (isOffice) {
+      const isLight = current === 'office';
+      const icon = isLight ? '#icon-moon' : '#icon-sun';
+      btn.innerHTML = `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${icon}"/></svg>`;
+    }
   }
 
   function renderDock(filterIds) {
@@ -266,14 +282,37 @@ const Theme = (() => {
    MODULE: Font Engine
 ───────────────────────────────────────────────────────────────── */
 const Font = (() => {
-  const FONTS = ['auto','clean','space','tac','code','serif','mono','pixel'];
+  const FONT_MAP = {
+    auto:  null,
+    clean: "'Inter', sans-serif",
+    space: "'Orbitron', sans-serif",
+    tac:   "'Rajdhani', sans-serif",
+    code:  "'Fira Code', monospace",
+    serif: "'Playfair Display', serif",
+    mono:  "'Share Tech Mono', monospace",
+    pixel: "'Press Start 2P', monospace",
+  };
 
   function set(name) {
-    if (!FONTS.includes(name)) return;
+    if (!(name in FONT_MAP)) return;
+    const root = document.documentElement;
     if (name === 'auto') {
-      document.documentElement.removeAttribute('data-font');
+      root.removeAttribute('data-font');
+      root.style.removeProperty('--font-h');
+      root.style.removeProperty('--font-b');
+      root.style.removeProperty('--font-d');
+      // Re-apply theme fonts
+      const themeId = localStorage.getItem('ns-theme') || 'spaceship';
+      const theme = Theme.THEMES.find(t => t.id === themeId);
+      if (theme?.data?.fonts) {
+        Object.entries(theme.data.fonts).forEach(([k, v]) => root.style.setProperty(k, v));
+      }
     } else {
-      document.documentElement.setAttribute('data-font', name);
+      root.setAttribute('data-font', name);
+      const family = FONT_MAP[name];
+      root.style.setProperty('--font-h', family);
+      root.style.setProperty('--font-b', family);
+      root.style.setProperty('--font-d', family);
     }
     localStorage.setItem('ns-font', name);
     document.querySelectorAll('.fb').forEach(b => b.classList.remove('active'));

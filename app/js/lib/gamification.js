@@ -213,15 +213,18 @@ const Gamification = (() => {
     return rank.slots || 6;
   }
 
-  /** Generate a slot template for N slots (dynamic, no class dependency). */
+  /** Generate a slot template for N slots (dynamic, no class dependency).
+   *  Free tier: 6 Common slots. Subscription: 12 Legendary slots.
+   *  Mythic is never a builder option — it must be earned through evolution. */
   function getSlotTemplate(slotCount) {
-    slotCount = slotCount || getMaxSlots();
+    var isSub = typeof Subscription !== 'undefined' && Subscription.isActive && Subscription.isActive();
+    slotCount = slotCount || (isSub ? 12 : getMaxSlots());
+    var maxRarity = isSub ? 'Legendary' : 'Common';
     var slots = [];
     for (var i = 0; i < slotCount; i++) {
-      var maxRarity = i === 0 ? 'Mythic' : i < 3 ? 'Legendary' : 'Epic';
-      slots.push({ id: i, maxRarity: maxRarity, label: SLOT_LABELS[i] || 'Agent ' + i });
+      slots.push({ id: i, maxRarity: maxRarity, label: SLOT_LABELS[i] || 'Agent ' + (i + 1) });
     }
-    return { id: 'dynamic', name: 'Ship', slots: slots };
+    return { id: 'dynamic', name: 'Spaceship', slots: slots };
   }
 
   /** Backward-compatible: returns class template or dynamic slots. */

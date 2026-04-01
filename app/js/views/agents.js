@@ -581,6 +581,7 @@ const AgentDetailView = (() => {
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-blueprint"/></svg>
               Save as Template
             </button>
+            <button class="btn btn-sm" id="btn-copy-md" data-id="${id}">Copy Blueprint</button>
           </div>
 
           <div class="detail-header">
@@ -677,6 +678,17 @@ const AgentDetailView = (() => {
         if (typeof Notify !== 'undefined') {
           Notify.send({ title: 'Template Saved', message: '"' + name.trim() + '" saved to templates.', type: 'system' });
         }
+      });
+
+      // Copy as Markdown
+      document.getElementById('btn-copy-md')?.addEventListener('click', () => {
+        const bp = Object.assign({}, agent, { type: 'agent' });
+        if (!bp.metadata) bp.metadata = {};
+        if (bp.role) bp.config = Object.assign({ role: bp.role }, bp.config || {});
+        const md = BlueprintMarkdown.serialize(bp);
+        navigator.clipboard.writeText(md).then(() => {
+          if (typeof Notify !== 'undefined') Notify.send('Blueprint copied to clipboard', 'success');
+        });
       });
 
       _channel = SB.realtime.subscribe('user_agents', (payload) => {

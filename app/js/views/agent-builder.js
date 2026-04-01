@@ -30,6 +30,12 @@ const AgentBuilderView = (() => {
       _loadForEdit(el, editId);
     } else {
       _renderForm(el, null);
+      // Check for imported blueprint from Bridge
+      const importJson = sessionStorage.getItem('nice-import-bp');
+      if (importJson) {
+        sessionStorage.removeItem('nice-import-bp');
+        try { const bp = JSON.parse(importJson); if (bp.type === 'agent' || !bp.type) _populateForm(bp); } catch(e) {}
+      }
     }
   }
 
@@ -67,6 +73,10 @@ const AgentBuilderView = (() => {
           <div>
             <h2 class="builder-title">${isEdit ? 'Edit Agent' : 'Create New Agent'}</h2>
             <p class="builder-sub">Configure your agent's identity, engine, and capabilities.</p>
+          </div>
+          <div class="builder-header-actions">
+            <button type="button" class="btn btn-sm" id="btn-view-md" title="View as text">View as Text</button>
+            <button type="button" class="btn btn-sm" id="btn-import-md" title="Import blueprint from text">Import</button>
           </div>
         </div>
 
@@ -159,6 +169,30 @@ const AgentBuilderView = (() => {
             </button>
           </div>
         </form>
+
+        <!-- Markdown Editor (hidden by default) -->
+        <div id="builder-md-editor" class="builder-md-editor" style="display:none">
+          <div class="builder-md-toolbar">
+            <button type="button" class="btn btn-sm" id="btn-md-back">Back to Form</button>
+            <button type="button" class="btn btn-sm" id="btn-md-copy">Copy</button>
+            <button type="button" class="btn btn-sm" id="btn-md-download">Download Blueprint</button>
+          </div>
+          <textarea id="builder-md-textarea" class="builder-md-textarea" spellcheck="false"></textarea>
+          <div id="builder-md-status" class="builder-md-status"></div>
+        </div>
+
+        <!-- Import Modal -->
+        <div id="builder-import-modal" class="builder-import-modal" style="display:none">
+          <div class="builder-import-content">
+            <h3>Import Agent Blueprint</h3>
+            <textarea id="import-md-textarea" class="builder-md-textarea" spellcheck="false" placeholder="Paste blueprint text here..."></textarea>
+            <div id="import-md-status" class="builder-md-status"></div>
+            <div class="builder-actions-row">
+              <button type="button" class="btn btn-primary" id="btn-import-confirm">Import</button>
+              <button type="button" class="btn btn-sm" id="btn-import-cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
@@ -239,6 +273,78 @@ const AgentBuilderView = (() => {
         _submitAgent(agent);
       });
     }
+
+    // ── Markdown toggle ──
+    document.getElementById('btn-view-md')?.addEventListener('click', () => {
+      const bp = _formToBlueprint(agent);
+      const md = BlueprintMarkdown.serialize(bp);
+      document.getElementById('builder-md-textarea').value = md;
+      document.getElementById('builder-form').style.display = 'none';
+      document.getElementById('builder-md-editor').style.display = '';
+      _updateMdStatus('builder-md-status', md);
+    });
+
+    document.getElementById('btn-md-back')?.addEventListener('click', () => {
+      const md = document.getElementById('builder-md-textarea').value;
+      const v = BlueprintMarkdown.validate(md);
+      if (v.valid) {
+        const bp = BlueprintMarkdown.parse(md);
+        _populateForm(bp);
+      }
+      document.getElementById('builder-md-editor').style.display = 'none';
+      document.getElementById('builder-form').style.display = '';
+    });
+
+    document.getElementById('btn-md-copy')?.addEventListener('click', () => {
+      const ta = document.getElementById('builder-md-textarea');
+      navigator.clipboard.writeText(ta.value).then(() => {
+        if (typeof Notify !== 'undefined') Notify.send('Copied to clipboard', 'success');
+      });
+    });
+
+    document.getElementById('btn-md-download')?.addEventListener('click', () => {
+      const ta = document.getElementById('builder-md-textarea');
+      const name = (document.getElementById('b-name')?.value || 'agent').toLowerCase().replace(/\s+/g, '-');
+      const blob = new Blob([ta.value], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name + '.md';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    // Live validation in md editor
+    document.getElementById('builder-md-textarea')?.addEventListener('input', _debounce(() => {
+      _updateMdStatus('builder-md-status', document.getElementById('builder-md-textarea').value);
+    }, 300));
+
+    // ── Import modal ──
+    document.getElementById('btn-import-md')?.addEventListener('click', () => {
+      document.getElementById('import-md-textarea').value = '';
+      document.getElementById('import-md-status').textContent = '';
+      document.getElementById('builder-import-modal').style.display = '';
+    });
+
+    document.getElementById('btn-import-cancel')?.addEventListener('click', () => {
+      document.getElementById('builder-import-modal').style.display = 'none';
+    });
+
+    document.getElementById('import-md-textarea')?.addEventListener('input', _debounce(() => {
+      _updateMdStatus('import-md-status', document.getElementById('import-md-textarea').value);
+    }, 300));
+
+    document.getElementById('btn-import-confirm')?.addEventListener('click', () => {
+      const md = document.getElementById('import-md-textarea').value;
+      const v = BlueprintMarkdown.validate(md);
+      if (!v.valid) {
+        document.getElementById('import-md-status').textContent = v.errors.join('; ');
+        return;
+      }
+      const bp = BlueprintMarkdown.parse(md);
+      _populateForm(bp);
+      document.getElementById('builder-import-modal').style.display = 'none';
+      if (typeof Notify !== 'undefined') Notify.send('Blueprint imported', 'success');
+    });
   }
 
   function _getTemplates() {
@@ -294,6 +400,84 @@ const AgentBuilderView = (() => {
       errEl.textContent = err.message || 'Failed to save agent.';
       btn.disabled = false;
       btn.textContent = existingAgent ? 'Save Changes' : 'Create Agent';
+    }
+  }
+
+  function _debounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
+
+  /** Build a blueprint object from the current form state */
+  function _formToBlueprint(agent) {
+    const name  = document.getElementById('b-name')?.value?.trim() || '';
+    const role  = document.getElementById('b-role')?.value || 'Research';
+    const type  = document.getElementById('b-type')?.value || 'Specialist';
+    const model = document.getElementById('b-model')?.value || 'nice-auto';
+    const temp  = parseFloat(document.getElementById('b-temp')?.value ?? 0.7);
+    const memory = document.getElementById('b-memory')?.dataset?.val === '1';
+    const tools = [...document.querySelectorAll('#b-tools input:checked')].map(cb => cb.value);
+
+    return {
+      type: 'agent',
+      name: name,
+      category: role,
+      config: {
+        role: role,
+        type: type,
+        llm_engine: model,
+        temperature: temp,
+        memory: memory,
+        tools: tools,
+      },
+      stats: {},
+      metadata: { agentType: type },
+      description: agent?.description || '',
+      flavor: agent?.flavor || '',
+      tags: agent?.tags || [],
+      rarity: agent?.rarity || 'Common',
+      serial_key: agent?.serial_key || '',
+    };
+  }
+
+  /** Populate the form from a parsed blueprint */
+  function _populateForm(bp) {
+    const cfg = bp.config || {};
+    const el = (id) => document.getElementById(id);
+    if (el('b-name')) el('b-name').value = bp.name || '';
+    if (el('b-role')) el('b-role').value = cfg.role || bp.category || 'Research';
+    if (el('b-type')) el('b-type').value = cfg.type || 'Specialist';
+    if (el('b-model')) el('b-model').value = cfg.llm_engine || 'nice-auto';
+    if (el('b-temp')) {
+      el('b-temp').value = cfg.temperature ?? 0.7;
+      const tempVal = el('b-temp-val');
+      if (tempVal) tempVal.textContent = cfg.temperature ?? 0.7;
+    }
+    const memBtn = el('b-memory');
+    if (memBtn) {
+      memBtn.dataset.val = cfg.memory ? '1' : '0';
+      memBtn.classList.toggle('on', !!cfg.memory);
+      const lbl = memBtn.querySelector('.builder-toggle-label');
+      if (lbl) lbl.textContent = cfg.memory ? 'ON' : 'OFF';
+    }
+    const tools = cfg.tools || [];
+    document.querySelectorAll('#b-tools input[type="checkbox"]').forEach(cb => {
+      cb.checked = tools.includes(cb.value);
+      cb.parentElement.classList.toggle('selected', cb.checked);
+    });
+  }
+
+  /** Show validation status for markdown textarea */
+  function _updateMdStatus(elId, md) {
+    const statusEl = document.getElementById(elId);
+    if (!statusEl || !md) return;
+    const v = BlueprintMarkdown.validate(md);
+    if (!v.valid) {
+      statusEl.textContent = v.errors.join('; ');
+      statusEl.className = 'builder-md-status error';
+    } else if (v.warnings.length) {
+      statusEl.textContent = v.warnings.join('; ');
+      statusEl.className = 'builder-md-status warn';
+    } else {
+      statusEl.textContent = 'Valid blueprint';
+      statusEl.className = 'builder-md-status ok';
     }
   }
 

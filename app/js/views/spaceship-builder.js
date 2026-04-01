@@ -14,11 +14,11 @@ const SpaceshipBuilderView = (() => {
     if (typeof Gamification !== 'undefined' && Gamification.getSlotTemplate) {
       const tpl = Gamification.getSlotTemplate();
       return {
-        name: tpl.name || 'Ship',
-        slots: tpl.slots.map(s => ({ max: s.maxRarity || 'Epic', label: s.label || 'Crew ' + s.id }))
+        name: tpl.name || 'Spaceship',
+        slots: tpl.slots.map(s => ({ max: s.maxRarity || 'Common', label: s.label || 'Crew ' + s.id }))
       };
     }
-    return { name: 'Ship', slots: [{ max: 'Mythic', label: 'Bridge' }, { max: 'Legendary', label: 'Ops' }] };
+    return { name: 'Spaceship', slots: [{ max: 'Common', label: 'Bridge' }, { max: 'Common', label: 'Ops' }] };
   }
 
   const SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
@@ -69,6 +69,10 @@ const SpaceshipBuilderView = (() => {
             <h2 class="builder-title">${isEdit ? 'Edit Spaceship' : 'Create New Spaceship'}</h2>
             <p class="builder-sub">Configure your spaceship's identity and crew assignments. Slots are determined by your rank (${slotConfig.slots.length} available).</p>
           </div>
+          <div class="builder-header-actions">
+            <button type="button" class="btn btn-sm" id="btn-view-md" title="View as text">View as Text</button>
+            <button type="button" class="btn btn-sm" id="btn-import-md" title="Import blueprint from text">Import</button>
+          </div>
         </div>
 
         <form id="builder-form" class="builder-form">
@@ -77,7 +81,7 @@ const SpaceshipBuilderView = (() => {
             <legend class="builder-legend">Identity</legend>
             <div class="builder-row">
               <div class="auth-field">
-                <label for="sb-name">Ship Name</label>
+                <label for="sb-name">Name</label>
                 <input type="text" id="sb-name" required maxlength="40" placeholder="e.g. AURORA, VANGUARD, NEXUS" value="${_esc(ship?.name || '')}" />
               </div>
               <div class="auth-field">
@@ -110,8 +114,8 @@ const SpaceshipBuilderView = (() => {
 
           <!-- CREW SLOTS -->
           <fieldset class="builder-section">
-            <legend class="builder-legend">Crew Slots</legend>
-            <p class="builder-hint">Assign activated agents to crew positions. Each slot has a maximum rarity requirement.</p>
+            <legend class="builder-legend">Agent Slots</legend>
+            <p class="builder-hint">Assign activated agents to slots. Each slot has a maximum rarity requirement.</p>
             <div class="builder-slot-grid" id="sb-slots"></div>
             <p class="builder-hint" id="sb-slot-count" style="margin-top:8px"></p>
           </fieldset>
@@ -125,6 +129,30 @@ const SpaceshipBuilderView = (() => {
             </button>
           </div>
         </form>
+
+        <!-- Markdown Editor -->
+        <div id="builder-md-editor" class="builder-md-editor" style="display:none">
+          <div class="builder-md-toolbar">
+            <button type="button" class="btn btn-sm" id="btn-md-back">Back to Form</button>
+            <button type="button" class="btn btn-sm" id="btn-md-copy">Copy</button>
+            <button type="button" class="btn btn-sm" id="btn-md-download">Download Blueprint</button>
+          </div>
+          <textarea id="builder-md-textarea" class="builder-md-textarea" spellcheck="false"></textarea>
+          <div id="builder-md-status" class="builder-md-status"></div>
+        </div>
+
+        <!-- Import Modal -->
+        <div id="builder-import-modal" class="builder-import-modal" style="display:none">
+          <div class="builder-import-content">
+            <h3>Import Spaceship Blueprint</h3>
+            <textarea id="import-md-textarea" class="builder-md-textarea" spellcheck="false" placeholder="Paste blueprint text here..."></textarea>
+            <div id="import-md-status" class="builder-md-status"></div>
+            <div class="builder-actions-row">
+              <button type="button" class="btn btn-primary" id="btn-import-confirm">Import</button>
+              <button type="button" class="btn btn-sm" id="btn-import-cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
@@ -184,6 +212,76 @@ const SpaceshipBuilderView = (() => {
         _submitShip(ship);
       });
     }
+
+    // ── Markdown toggle ──
+    document.getElementById('btn-view-md')?.addEventListener('click', () => {
+      const bp = _formToBlueprint(ship);
+      const md = BlueprintMarkdown.serialize(bp);
+      document.getElementById('builder-md-textarea').value = md;
+      document.getElementById('builder-form').style.display = 'none';
+      document.getElementById('builder-md-editor').style.display = '';
+      _updateMdStatus('builder-md-status', md);
+    });
+
+    document.getElementById('btn-md-back')?.addEventListener('click', () => {
+      const md = document.getElementById('builder-md-textarea').value;
+      const v = BlueprintMarkdown.validate(md);
+      if (v.valid) {
+        const bp = BlueprintMarkdown.parse(md);
+        _populateForm(bp);
+      }
+      document.getElementById('builder-md-editor').style.display = 'none';
+      document.getElementById('builder-form').style.display = '';
+    });
+
+    document.getElementById('btn-md-copy')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(document.getElementById('builder-md-textarea').value).then(() => {
+        if (typeof Notify !== 'undefined') Notify.send('Copied to clipboard', 'success');
+      });
+    });
+
+    document.getElementById('btn-md-download')?.addEventListener('click', () => {
+      const ta = document.getElementById('builder-md-textarea');
+      const name = (document.getElementById('sb-name')?.value || 'spaceship').toLowerCase().replace(/\s+/g, '-');
+      const blob = new Blob([ta.value], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name + '.md';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    document.getElementById('builder-md-textarea')?.addEventListener('input', _debounce(() => {
+      _updateMdStatus('builder-md-status', document.getElementById('builder-md-textarea').value);
+    }, 300));
+
+    // ── Import modal ──
+    document.getElementById('btn-import-md')?.addEventListener('click', () => {
+      document.getElementById('import-md-textarea').value = '';
+      document.getElementById('import-md-status').textContent = '';
+      document.getElementById('builder-import-modal').style.display = '';
+    });
+
+    document.getElementById('btn-import-cancel')?.addEventListener('click', () => {
+      document.getElementById('builder-import-modal').style.display = 'none';
+    });
+
+    document.getElementById('import-md-textarea')?.addEventListener('input', _debounce(() => {
+      _updateMdStatus('import-md-status', document.getElementById('import-md-textarea').value);
+    }, 300));
+
+    document.getElementById('btn-import-confirm')?.addEventListener('click', () => {
+      const md = document.getElementById('import-md-textarea').value;
+      const v = BlueprintMarkdown.validate(md);
+      if (!v.valid) {
+        document.getElementById('import-md-status').textContent = v.errors.join('; ');
+        return;
+      }
+      const bp = BlueprintMarkdown.parse(md);
+      _populateForm(bp);
+      document.getElementById('builder-import-modal').style.display = 'none';
+      if (typeof Notify !== 'undefined') Notify.send('Blueprint imported', 'success');
+    });
   }
 
   function _bindSlotEvents() {
@@ -232,14 +330,16 @@ const SpaceshipBuilderView = (() => {
     const cls = _getSlotConfig();
     const row = {
       name,
-      category,
-      description: desc,
-      flavor,
-      tags,
-      slot_assignments: slots,
       status: existingShip?.status || 'standby',
-      stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
-      caps: [category + ' operations', cls.slots.length + ' crew slots'],
+      slots: {
+        category,
+        description: desc,
+        flavor,
+        tags,
+        slot_assignments: slots,
+        stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
+        caps: [category + ' operations', cls.slots.length + ' agent slots'],
+      },
     };
 
     try {
@@ -262,6 +362,73 @@ const SpaceshipBuilderView = (() => {
       errEl.textContent = err.message || 'Failed to save spaceship.';
       btn.disabled = false;
       btn.textContent = existingShip ? 'Save Changes' : 'Create Spaceship';
+    }
+  }
+
+  function _debounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
+
+  /** Build a blueprint object from the current form state */
+  function _formToBlueprint(ship) {
+    const name     = document.getElementById('sb-name')?.value?.trim() || '';
+    const category = document.getElementById('sb-category')?.value || '';
+    const desc     = document.getElementById('sb-desc')?.value?.trim() || '';
+    const flavor   = document.getElementById('sb-flavor')?.value?.trim() || '';
+    const tags     = (document.getElementById('sb-tags')?.value || '').split(',').map(t => t.trim()).filter(Boolean);
+    const slots    = _getSlotAssignments();
+    const cls      = _getSlotConfig();
+
+    return {
+      type: 'spaceship',
+      name: name,
+      category: category,
+      description: desc,
+      flavor: flavor,
+      tags: tags,
+      rarity: ship?.rarity || '',
+      serial_key: ship?.serial_key || '',
+      config: { slot_assignments: slots },
+      stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
+      metadata: {
+        recommended_class: ship?.metadata?.recommended_class || '',
+        caps: ship?.metadata?.caps || [category + ' operations'],
+        crew: Object.keys(slots).map(s => ({
+          slot: parseInt(s, 10),
+          role: cls.slots[parseInt(s, 10)]?.label || 'Crew ' + s,
+          agent: slots[s],
+        })),
+      },
+    };
+  }
+
+  /** Populate the form from a parsed blueprint */
+  function _populateForm(bp) {
+    const el = (id) => document.getElementById(id);
+    if (el('sb-name')) el('sb-name').value = bp.name || '';
+    if (el('sb-category')) el('sb-category').value = bp.category || 'Research';
+    if (el('sb-desc')) el('sb-desc').value = bp.description || '';
+    if (el('sb-flavor')) el('sb-flavor').value = bp.flavor || '';
+    if (el('sb-tags')) el('sb-tags').value = (bp.tags || []).join(', ');
+
+    // Re-render slots with imported assignments
+    const assignments = (bp.config && bp.config.slot_assignments) || {};
+    _renderSlots(assignments);
+    _bindSlotEvents();
+  }
+
+  /** Show validation status for markdown textarea */
+  function _updateMdStatus(elId, md) {
+    const statusEl = document.getElementById(elId);
+    if (!statusEl || !md) return;
+    const v = BlueprintMarkdown.validate(md);
+    if (!v.valid) {
+      statusEl.textContent = v.errors.join('; ');
+      statusEl.className = 'builder-md-status error';
+    } else if (v.warnings.length) {
+      statusEl.textContent = v.warnings.join('; ');
+      statusEl.className = 'builder-md-status warn';
+    } else {
+      statusEl.textContent = 'Valid blueprint';
+      statusEl.className = 'builder-md-status ok';
     }
   }
 

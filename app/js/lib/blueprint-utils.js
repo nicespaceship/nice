@@ -133,8 +133,8 @@ const BlueprintUtils = (() => {
     'class-2': { name: 'Frigate',     slots: _buildClassSlots(8, 'Rare') },
     'class-3': { name: 'Cruiser',     slots: _buildClassSlots(10, 'Epic') },
     'class-4': { name: 'Dreadnought', slots: _buildClassSlots(12, 'Legendary') },
-    'class-5': { name: 'Flagship',    slots: _buildClassSlots(24, 'Mythic') },
-    'slot-6':  { name: 'Ship',        slots: _buildClassSlots(6, 'Legendary') },
+    'class-5': { name: 'Flagship',    slots: _buildClassSlots(24, 'Legendary') },
+    'slot-6':  { name: 'Spaceship',   slots: _buildClassSlots(6, 'Common') },
   };
 
   function _buildClassSlots(count, maxRarity) {
