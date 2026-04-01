@@ -248,7 +248,9 @@ const BlueprintStore = (() => {
     }
 
     // Prune ship state for ships that are no longer activated
-    const activeShipKeys = new Set(_activatedShipIds.map(id => 'bp-' + id));
+    // Check both raw ID and bp- prefixed ID since custom ships use raw UUIDs
+    const activeShipKeys = new Set();
+    _activatedShipIds.forEach(id => { activeShipKeys.add(id); activeShipKeys.add('bp-' + id); });
     let pruned = false;
     for (const key of Object.keys(_shipState)) {
       if (!activeShipKeys.has(key)) {
