@@ -365,6 +365,10 @@ const SpaceshipBuilderView = (() => {
           ships.push(shipObj);
           State.set('spaceships', ships);
           if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateShip(created.id);
+
+          // Show crew setup choice (AI Auto Setup vs Manual vs Skip)
+          _showSetupChoice(created.id, { name, category, description: desc, flavor, tags, slotCount: cls.slots.length, slots: row.slots });
+          return;
         }
       }
       Router.navigate('#/bridge?tab=spaceship');
@@ -373,6 +377,100 @@ const SpaceshipBuilderView = (() => {
       btn.disabled = false;
       btn.textContent = existingShip ? 'Save Changes' : 'Create Spaceship';
     }
+  }
+
+  /** Show crew setup choice modal after spaceship creation */
+  function _showSetupChoice(shipId, shipData) {
+    // Remove any existing modal
+    document.getElementById('crew-setup-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'crew-setup-modal';
+    modal.className = 'builder-import-modal';
+    modal.innerHTML = `
+      <div class="crew-setup-content">
+        <h2 class="crew-setup-title">${Utils.esc(shipData.name)} Created</h2>
+        <p class="crew-setup-sub">How would you like to set up your crew?</p>
+
+        <div class="crew-setup-options">
+          <button class="crew-setup-option crew-setup-recommended" id="btn-ai-setup">
+            <span class="crew-setup-icon">&#9733;</span>
+            <span class="crew-setup-label">AI Auto Setup</span>
+            <span class="crew-setup-desc">Let NICE design ${shipData.slotCount} agents tailored to your business</span>
+          </button>
+          <button class="crew-setup-option" id="btn-manual-setup">
+            <span class="crew-setup-icon">&#9881;</span>
+            <span class="crew-setup-label">Manual Setup</span>
+            <span class="crew-setup-desc">Choose agents yourself from the blueprint catalog</span>
+          </button>
+          <button class="crew-setup-option" id="btn-skip-setup">
+            <span class="crew-setup-icon">&#8594;</span>
+            <span class="crew-setup-label">Skip for Now</span>
+            <span class="crew-setup-desc">Set up crew later from the Schematic view</span>
+          </button>
+        </div>
+
+        <div id="crew-setup-status" class="crew-setup-status" style="display:none">
+          <div class="crew-setup-spinner"></div>
+          <p id="crew-setup-msg">Generating your crew...</p>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    // AI Auto Setup
+    document.getElementById('btn-ai-setup').addEventListener('click', async () => {
+      const optionsEl = modal.querySelector('.crew-setup-options');
+      const statusEl = document.getElementById('crew-setup-status');
+      const msgEl = document.getElementById('crew-setup-msg');
+      optionsEl.style.display = 'none';
+      statusEl.style.display = '';
+      msgEl.textContent = 'Analyzing your business...';
+
+      try {
+        // Generate agents via AI
+        const result = await CrewGenerator.generate(shipData);
+        if (result.error || !result.agents.length) {
+          msgEl.textContent = result.error || 'Failed to generate agents. Try manual setup.';
+          setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2000);
+          return;
+        }
+
+        msgEl.textContent = 'Creating ' + result.agents.length + ' agents...';
+
+        // Save and assign
+        const saved = await CrewGenerator.saveAndAssign(shipId, result.agents, { slots: shipData.slots || {} });
+        if (!saved.savedAgents.length) {
+          msgEl.textContent = 'Failed to save agents. Try manual setup.';
+          setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2000);
+          return;
+        }
+
+        msgEl.textContent = saved.savedAgents.length + ' agents deployed!';
+        if (typeof Notify !== 'undefined') {
+          Notify.send(saved.savedAgents.length + ' agents created for ' + shipData.name, 'success');
+        }
+
+        setTimeout(() => {
+          modal.remove();
+          Router.navigate('#/bridge');
+        }, 1200);
+      } catch (e) {
+        msgEl.textContent = 'Error: ' + (e.message || 'Unknown error');
+        setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2000);
+      }
+    });
+
+    // Manual Setup → go to Bridge Blueprints/Agents tab
+    document.getElementById('btn-manual-setup').addEventListener('click', () => {
+      modal.remove();
+      Router.navigate('#/bridge?tab=agent');
+    });
+
+    // Skip → go to Schematic
+    document.getElementById('btn-skip-setup').addEventListener('click', () => {
+      modal.remove();
+      Router.navigate('#/bridge');
+    });
   }
 
   function _debounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }

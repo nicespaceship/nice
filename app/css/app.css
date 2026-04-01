@@ -2759,6 +2759,40 @@
 }
 .builder-import-content .builder-md-textarea { min-height:240px; }
 
+/* Crew Setup Choice Modal */
+.crew-setup-content {
+  background:var(--bg-alt); border:1px solid var(--border);
+  padding:32px; width:min(520px, 90vw); text-align:center;
+}
+.crew-setup-title {
+  font-family:var(--font-h); font-size:1.2rem; letter-spacing:.06em;
+  color:var(--text); margin:0 0 8px 0;
+}
+.crew-setup-sub {
+  font-family:var(--font-b); font-size:.82rem; color:var(--text-muted); margin:0 0 24px 0;
+}
+.crew-setup-options { display:flex; flex-direction:column; gap:10px; }
+.crew-setup-option {
+  display:flex; align-items:center; gap:14px; padding:14px 18px;
+  background:var(--bg); border:1px solid var(--border); cursor:pointer;
+  text-align:left; color:var(--text); transition:border-color .2s;
+  font-family:var(--font-b);
+}
+.crew-setup-option:hover { border-color:var(--accent); }
+.crew-setup-recommended { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--bg)); }
+.crew-setup-icon { font-size:1.4rem; flex-shrink:0; width:28px; text-align:center; }
+.crew-setup-label { font-weight:600; font-size:.85rem; letter-spacing:.04em; }
+.crew-setup-desc { font-size:.72rem; color:var(--text-muted); margin-top:2px; }
+.crew-setup-option > span:nth-child(2) { display:flex; flex-direction:column; }
+.crew-setup-status { padding:24px 0; }
+.crew-setup-spinner {
+  width:32px; height:32px; margin:0 auto 12px;
+  border:3px solid var(--border); border-top-color:var(--accent);
+  border-radius:50%; animation:spin 1s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.crew-setup-status p { font-family:var(--font-b); font-size:.82rem; color:var(--text-muted); }
+
 /* Spaceship Builder — Crew Slots */
 .builder-slot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
 .builder-slot-card { border:1px solid var(--border); padding:12px; background:var(--bg-alt); transition:border-color .2s; }
