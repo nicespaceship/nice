@@ -523,6 +523,23 @@
   background: #e8c840;
   color: #1a1a2a;
 }
+/* Chat pills (Research, Mission, Code, etc.) */
+[data-theme="gundam"] .chat-pill {
+  background: #d4a017 !important;
+  border-color: #e8c840 !important;
+  color: #1a1a2a !important;
+  font-weight: 600;
+}
+[data-theme="gundam"] .chat-pill:hover {
+  background: #e8c840 !important;
+}
+/* Model & voice dropdowns — white to match prompt bar */
+[data-theme="gundam"] .nice-ai-model-select,
+[data-theme="gundam"] .nice-ai-voice-select {
+  background: #fff !important;
+  color: #1a1a2a !important;
+  border-color: #c0c0c0 !important;
+}
 
 /* ── Schematic header panel — Gundam red ── */
 [data-theme="gundam"] .bridge-hero-header {
