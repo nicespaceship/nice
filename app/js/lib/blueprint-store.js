@@ -377,6 +377,22 @@ const BlueprintStore = (() => {
               if (c.agent_id) { assignments[String(idx)] = c.agent_id; agentIds.push(c.agent_id); }
             });
           }
+          // Backfill missing slots from catalog crew (Legendary/Mythic ships should be full)
+          if (catalogBp) {
+            var catalogCrew = catalogBp.metadata?.crew || catalogBp.crew || [];
+            var totalSlots = parseInt(catalogBp.stats?.slots || '6', 10);
+            if (catalogCrew.length > Object.keys(assignments).length) {
+              catalogCrew.forEach(function(c, idx) {
+                var key = String(idx);
+                if (!assignments[key]) {
+                  // Use __new__ prefix so ShipSetupWizard can resolve them
+                  var crewId = '__new__' + (c.label || c.name || 'Agent ' + (idx + 1));
+                  assignments[key] = crewId;
+                  agentIds.push(crewId);
+                }
+              });
+            }
+          }
           if (agentIds.length) {
             _shipState[s.id] = {
               slot_assignments: assignments,
