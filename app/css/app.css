@@ -284,7 +284,7 @@
 
 /* ── Mecha panel cards — armor plate segmentation ── */
 [data-theme="gundam"] .tcg-card {
-  border: 2px solid #3a3f55;
+  border: 25px solid #3a3f55;
   background: linear-gradient(160deg, #1e2030 0%, #252838 100%);
   box-shadow:
     inset 1px 1px 0 rgba(255,255,255,0.06),
