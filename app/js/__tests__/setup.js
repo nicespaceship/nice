@@ -116,6 +116,7 @@ loadScriptGlobal('lib/notify.js');      // Before Gamification (Gamification cal
 loadScriptGlobal('lib/gamification.js');
 loadScriptGlobal('lib/data-io.js');
 loadScriptGlobal('lib/command-palette.js');
+loadScriptGlobal('lib/blueprint-markdown.js');
 loadScriptGlobal('lib/prompt-builder.js');
 loadScriptGlobal('lib/mission-router.js');
 loadScriptGlobal('lib/virtual-fs.js');

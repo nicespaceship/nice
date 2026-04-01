@@ -330,6 +330,12 @@ const BlueprintsView = (() => {
           </div>
         </div>
 
+        <div class="bp-toolbar-actions" id="bp-toolbar-actions">
+          <button class="btn btn-sm" id="btn-bp-search-focus">Search Blueprints</button>
+          <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create">+ Create</a>
+          <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
+        </div>
+
         <div class="bp-result-bar" id="bp-result-bar" aria-live="polite"></div>
 
         <div id="bp-activated-wrap"></div>
@@ -1697,6 +1703,83 @@ const BlueprintsView = (() => {
       btn.classList.add('active');
       btn.setAttribute('aria-pressed', 'true');
       _applyFilters();
+    });
+
+    // Search Blueprints button — switches to Blueprints tab and focuses search
+    document.getElementById('btn-bp-search-focus')?.addEventListener('click', () => {
+      const bpTab = document.querySelector('[data-tab="blueprints"]');
+      if (bpTab && !bpTab.classList.contains('active')) bpTab.click();
+      setTimeout(() => {
+        const search = document.getElementById('bp-search');
+        if (search) { search.focus(); search.select(); }
+      }, 50);
+    });
+
+    // Import Blueprint button
+    document.getElementById('btn-bp-import')?.addEventListener('click', () => {
+      // Create import modal if it doesn't exist
+      if (!document.getElementById('bp-import-modal')) {
+        const modal = document.createElement('div');
+        modal.id = 'bp-import-modal';
+        modal.className = 'builder-import-modal';
+        modal.innerHTML = `
+          <div class="builder-import-content">
+            <h3>Import Blueprint</h3>
+            <textarea id="bp-import-textarea" class="builder-md-textarea" spellcheck="false" placeholder="Paste blueprint text here..."></textarea>
+            <div id="bp-import-status" class="builder-md-status"></div>
+            <div class="builder-actions-row">
+              <button type="button" class="btn btn-primary" id="bp-import-confirm">Import</button>
+              <button type="button" class="btn btn-sm" id="bp-import-cancel">Cancel</button>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+
+        let _debTimer;
+        document.getElementById('bp-import-textarea').addEventListener('input', () => {
+          clearTimeout(_debTimer);
+          _debTimer = setTimeout(() => {
+            const md = document.getElementById('bp-import-textarea').value;
+            const statusEl = document.getElementById('bp-import-status');
+            if (!md) { statusEl.textContent = ''; return; }
+            const v = BlueprintMarkdown.validate(md);
+            if (!v.valid) { statusEl.textContent = v.errors.join('; '); statusEl.className = 'builder-md-status error'; }
+            else if (v.warnings.length) { statusEl.textContent = v.warnings.join('; '); statusEl.className = 'builder-md-status warn'; }
+            else { statusEl.textContent = 'Valid blueprint'; statusEl.className = 'builder-md-status ok'; }
+          }, 300);
+        });
+
+        document.getElementById('bp-import-cancel').addEventListener('click', () => {
+          document.getElementById('bp-import-modal').style.display = 'none';
+        });
+
+        document.getElementById('bp-import-confirm').addEventListener('click', () => {
+          const md = document.getElementById('bp-import-textarea').value;
+          const v = BlueprintMarkdown.validate(md);
+          if (!v.valid) { document.getElementById('bp-import-status').textContent = v.errors.join('; '); return; }
+          const bp = BlueprintMarkdown.parse(md);
+          document.getElementById('bp-import-modal').style.display = 'none';
+          // Navigate to the appropriate builder with parsed data
+          if (bp.type === 'spaceship') {
+            Router.navigate('#/bridge/spaceships/new');
+          } else {
+            Router.navigate('#/bridge/agents/new');
+          }
+          // Store parsed data for the builder to pick up
+          sessionStorage.setItem('nice-import-bp', JSON.stringify(bp));
+          if (typeof Notify !== 'undefined') Notify.send('Blueprint parsed — fill in the builder form', 'success');
+        });
+      }
+      document.getElementById('bp-import-textarea').value = '';
+      document.getElementById('bp-import-status').textContent = '';
+      document.getElementById('bp-import-modal').style.display = '';
+    });
+
+    // Create button — context-sensitive (agent vs spaceship sub-tab)
+    document.getElementById('btn-bp-create')?.addEventListener('click', (e) => {
+      if (_subTab === 'spaceship') {
+        e.preventDefault();
+        Router.navigate('#/bridge/spaceships/new');
+      }
     });
 
     // Deactivate All button

@@ -101,12 +101,12 @@ describe('Gamification', () => {
       expect(Gamification.getMaxSlots()).toBe(6);
     });
 
-    it('getSlotTemplate generates correct slot count', () => {
+    it('getSlotTemplate generates correct slot count with Common rarity (free tier)', () => {
       const template = Gamification.getSlotTemplate(7);
       expect(template.slots).toHaveLength(7);
       expect(template.slots[0].label).toBe('Bridge');
-      expect(template.slots[0].maxRarity).toBe('Mythic');
-      expect(template.slots[3].maxRarity).toBe('Epic');
+      expect(template.slots[0].maxRarity).toBe('Common');
+      expect(template.slots[3].maxRarity).toBe('Common');
     });
 
     it('getSlotTemplate defaults to getMaxSlots', () => {

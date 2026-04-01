@@ -2722,6 +2722,40 @@
 .builder-hint { font-family:var(--font-b); font-size:.62rem; color:var(--text-dim); margin:0 0 10px 0; }
 .builder-actions { display:flex; align-items:center; gap:12px; }
 .builder-actions .auth-error { flex:1; margin:0; }
+.builder-actions-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.builder-header-actions { margin-left:auto; display:flex; gap:6px; flex-shrink:0; }
+.bp-toolbar-actions { display:flex; gap:8px; margin-bottom:8px; }
+
+/* Markdown Editor */
+.builder-md-editor { margin-top:16px; }
+.builder-md-toolbar { display:flex; gap:8px; margin-bottom:8px; }
+.builder-md-textarea {
+  width:100%; min-height:320px; resize:vertical;
+  font-family:var(--font-m); font-size:.78rem; line-height:1.5;
+  background:var(--bg); color:var(--text); border:1px solid var(--border);
+  padding:12px; tab-size:2; white-space:pre; overflow:auto;
+}
+.builder-md-textarea:focus { border-color:var(--accent); outline:none; }
+.builder-md-status { font-family:var(--font-b); font-size:.65rem; margin-top:6px; letter-spacing:.04em; }
+.builder-md-status.ok { color:#22c55e; }
+.builder-md-status.warn { color:#f59e0b; }
+.builder-md-status.error { color:#ef4444; }
+
+/* Import Modal */
+.builder-import-modal {
+  position:fixed; inset:0; z-index:9000;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.6); backdrop-filter:blur(4px);
+}
+.builder-import-content {
+  background:var(--bg-alt); border:1px solid var(--border);
+  padding:24px; width:min(640px, 90vw); max-height:80vh; overflow:auto;
+}
+.builder-import-content h3 {
+  font-family:var(--font-h); font-size:.9rem; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--text); margin:0 0 12px 0;
+}
+.builder-import-content .builder-md-textarea { min-height:240px; }
 
 /* Spaceship Builder — Crew Slots */
 .builder-slot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
