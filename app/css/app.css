@@ -492,6 +492,38 @@
   box-shadow: 0 0 20px rgba(43,78,140,0.1);
 }
 
+/* ── Schematic header panel — Gundam red ── */
+[data-theme="gundam"] .bridge-hero-header {
+  background: #c0392b;
+  padding: 12px 16px;
+  margin: -16px -16px 16px -16px;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+[data-theme="gundam"] .bridge-hero-name {
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+[data-theme="gundam"] .bridge-hero-meta {
+  color: rgba(255,255,255,0.85);
+}
+[data-theme="gundam"] .bridge-hero-controls .btn,
+[data-theme="gundam"] .bridge-hero-controls button,
+[data-theme="gundam"] .bridge-hero-controls select {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.3);
+  color: #fff;
+}
+[data-theme="gundam"] .bridge-hero-controls .btn:hover,
+[data-theme="gundam"] .bridge-hero-controls button:hover {
+  background: rgba(255,255,255,0.25);
+}
+[data-theme="gundam"] .bridge-hero-tab.active {
+  background: rgba(255,255,255,0.2) !important;
+  border-color: #d4a017 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 0 #d4a017 !important;
+}
+
 /* ── HUD crosshair overlay ── */
 [data-theme="gundam"]::after {
   content: '';
