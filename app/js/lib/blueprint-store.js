@@ -403,18 +403,31 @@ const BlueprintStore = (() => {
         _persistShipState();
       }
 
-      // Build agent→rarity map from ship crew assignments
+      // Build agent→rarity map from catalog crew definitions (individual rarities)
       var agentRarityMap = {};
       if (ships) {
         ships.forEach(function(s) {
           var meta = s.slots || {};
-          var shipRarity = 'Common';
           var cbp = s.blueprint_id ? (getSpaceship(s.blueprint_id) || getSpaceship('bp-' + s.blueprint_id)) : null;
-          if (cbp) shipRarity = cbp.rarity || 'Common';
-          else if (meta.rarity) shipRarity = meta.rarity;
-          // Map crew agent_ids and slot_assignments to this ship's rarity
-          if (Array.isArray(meta.crew)) meta.crew.forEach(function(c) { if (c.agent_id) agentRarityMap[c.agent_id] = shipRarity; });
-          if (meta.slot_assignments) Object.values(meta.slot_assignments).forEach(function(id) { if (id) agentRarityMap[id] = shipRarity; });
+          var catalogCrew = cbp ? (cbp.metadata?.crew || cbp.crew || []) : [];
+
+          // Match DB crew to catalog crew by slot index to get individual rarities
+          if (Array.isArray(meta.crew)) {
+            meta.crew.forEach(function(c, idx) {
+              if (!c.agent_id) return;
+              var catalogMember = catalogCrew[idx];
+              agentRarityMap[c.agent_id] = (catalogMember && catalogMember.rarity) || 'Common';
+            });
+          }
+          if (meta.slot_assignments) {
+            Object.keys(meta.slot_assignments).forEach(function(slot) {
+              var agentId = meta.slot_assignments[slot];
+              if (!agentId) return;
+              var idx = parseInt(slot, 10);
+              var catalogMember = catalogCrew[idx];
+              agentRarityMap[agentId] = (catalogMember && catalogMember.rarity) || 'Common';
+            });
+          }
         });
       }
 
