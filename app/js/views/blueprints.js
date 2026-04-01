@@ -711,8 +711,6 @@ const BlueprintsView = (() => {
         const id = card.dataset.id;
         if (e.shiftKey) {
           _toggleCompare(id);
-        } else if (card.closest('.bp-activated-section') && typeof PromptPanel !== 'undefined') {
-          _promptActivatedCard(id, card.dataset.type || 'agent');
         } else {
           _openDrawer(id);
         }
@@ -1833,6 +1831,13 @@ const BlueprintsView = (() => {
       const sk = Skin.getPack(bpId);
       if (sk) return { bp: sk, type: 'skin' };
     }
+    // Fallback: check State for user-created ships/agents
+    const stateShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const us = stateShips.find(b => b.id === bpId);
+    if (us) return { bp: us, type: 'spaceship' };
+    const stateAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+    const ua = stateAgents.find(b => b.id === bpId);
+    if (ua) return { bp: ua, type: 'agent' };
     return null;
   }
 
@@ -1842,16 +1847,17 @@ const BlueprintsView = (() => {
     const { bp, type } = found;
     _drawerBpId = bpId;
 
-    // Build filtered list for arrow-key nav
+    // Build filtered list for arrow-key nav (include activated + catalog cards)
     const grid = document.getElementById('bp-grid');
-    if (grid) {
-      _drawerBpList = Array.from(grid.querySelectorAll('[data-id]')).map(el => el.dataset.id);
-      _drawerBpIndex = _drawerBpList.indexOf(bpId);
-    }
+    const activated = document.getElementById('bp-activated-wrap');
+    _drawerBpList = [];
+    if (activated) _drawerBpList.push(...Array.from(activated.querySelectorAll('[data-id]')).map(el => el.dataset.id));
+    if (grid) _drawerBpList.push(...Array.from(grid.querySelectorAll('[data-id]')).map(el => el.dataset.id));
+    _drawerBpIndex = _drawerBpList.indexOf(bpId);
 
     // Highlight selected card
     document.querySelectorAll('.bp-card-selected').forEach(c => c.classList.remove('bp-card-selected'));
-    const card = grid?.querySelector(`[data-id="${CSS.escape(bpId)}"]`);
+    const card = document.querySelector(`[data-id="${CSS.escape(bpId)}"]`);
     if (card) card.classList.add('bp-card-selected');
 
     let drawer = document.getElementById('bp-drawer');
@@ -2033,6 +2039,9 @@ const BlueprintsView = (() => {
       btns.push(`<button class="bp-toggle-switch bp-drawer-skin-toggle${isActive ? ' on' : ''}" data-id="${bp.id}"><span class="toggle-track"><span class="toggle-knob"></span></span></button>`);
       if (!isActive) btns.push(`<button class="btn btn-sm bp-drawer-skin-preview" data-id="${bp.id}">Preview</button>`);
     }
+    if (typeof BlueprintMarkdown !== 'undefined') {
+      btns.push(`<button class="btn btn-sm bp-drawer-copy-bp" data-id="${bp.id}" data-type="${type}" title="Copy as text">Copy Blueprint</button>`);
+    }
     btns.push(`<button class="btn btn-sm bp-drawer-share" data-id="${bp.id}" title="Share">&#8599; Share</button>`);
     return btns.join('');
   }
@@ -2142,6 +2151,17 @@ const BlueprintsView = (() => {
     // Share
     drawer.querySelectorAll('.bp-drawer-share').forEach(btn => {
       btn.addEventListener('click', () => _share(btn.dataset.id));
+    });
+
+    // Copy Blueprint (as text)
+    drawer.querySelectorAll('.bp-drawer-copy-bp').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const bpObj = Object.assign({}, bp, { type: btn.dataset.type || type });
+        const md = BlueprintMarkdown.serialize(bpObj);
+        navigator.clipboard.writeText(md).then(() => {
+          if (typeof Notify !== 'undefined') Notify.send('Blueprint copied to clipboard', 'success');
+        });
+      });
     });
 
     // Hangar add from drawer
