@@ -189,7 +189,7 @@ const ProfileView = (() => {
 
     // Copy referral link button
     document.getElementById('btn-copy-referral')?.addEventListener('click', () => {
-      const link = 'https://nicespaceship.ai/app/#/?ref=' + user.id.slice(0, 8);
+      const link = 'https://nicespaceship.ai/#/?ref=' + user.id.slice(0, 8);
       navigator.clipboard.writeText(link).then(() => {
         const btn = document.getElementById('btn-copy-referral');
         if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.innerHTML = '<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-share"/></svg> Copy Referral Link'; }, 2000); }
