@@ -385,8 +385,15 @@
   border-bottom: 3px solid #d4a017;
   border-left: 3px solid #d4a017;
 }
+[data-theme="gundam"] .app-sidebar .side-header,
+[data-theme="gundam"] .app-sidebar .sidebar-section,
+[data-theme="gundam"] .app-sidebar .side-folder,
+[data-theme="gundam"] .app-sidebar .side-nav {
+  border-color: #d4a017;
+}
 [data-theme="gundam"] .side-link {
   color: rgba(255,255,255,0.75);
+  border-color: #d4a017;
 }
 [data-theme="gundam"] .side-link:hover {
   background: rgba(255,255,255,0.1);
