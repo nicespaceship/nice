@@ -613,6 +613,11 @@
 [data-theme="office"] .wizard-title { color: #1a1a1a; }
 [data-theme="office"] .wizard-subtitle { color: #6b6b6b; }
 
+/* ── Card grid — more breathing room ── */
+[data-theme="office"] .fleet-grid { gap: 28px !important; }
+[data-theme="office"] .fleet-grid.ships-view-full { gap: 28px !important; }
+[data-theme="office"] .fleet-grid.ships-view-grid { gap: 20px !important; }
+
 /* ── No effects — kill any pseudo overlays ── */
 [data-theme="office"]::after { display: none !important; }
 
