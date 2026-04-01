@@ -123,7 +123,7 @@ const Theme = (() => {
   const _OFFICE_LABELS = {
     'Schematic': 'Org Chart', 'Blueprints': 'Templates', 'Missions': 'Tasks',
     'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
-    'Bridge': 'Office', 'Deploy': 'Activate', 'Deployed': 'Active',
+    'Bridge': 'Office', 'Engineering': 'Code', 'Deploy': 'Activate', 'Deployed': 'Active',
     'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'ORG CHART', 'BLUEPRINTS': 'TEMPLATES',
     'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
     'Spaceships': 'Teams', 'Agents': 'Assistants', 'Spaceship': 'Team', 'Agent': 'Assistant',
@@ -161,7 +161,7 @@ const Theme = (() => {
       }
     });
     // Sidebar link text (direct text nodes)
-    document.querySelectorAll('.side-link, .side-folder-toggle').forEach(el => {
+    document.querySelectorAll('.side-link, .side-folder-toggle, .side-folder-label, .sidebar-section-label').forEach(el => {
       const keys = Object.keys(map);
       for (const k of keys) {
         el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(k, map[k]); });
