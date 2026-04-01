@@ -512,19 +512,20 @@
 [data-theme="gundam"] .bridge-hero-controls .btn,
 [data-theme="gundam"] .bridge-hero-controls button,
 [data-theme="gundam"] .bridge-hero-controls select {
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.3);
-  color: #fff;
+  background: #d4a017;
+  border-color: #e8c840;
+  color: #1a1a2a;
+  font-weight: 700;
 }
 [data-theme="gundam"] .bridge-hero-controls .btn:hover,
 [data-theme="gundam"] .bridge-hero-controls button:hover {
-  background: rgba(255,255,255,0.25);
+  background: #e8c840;
 }
 [data-theme="gundam"] .bridge-hero-tab.active {
-  background: rgba(255,255,255,0.2) !important;
-  border-color: #d4a017 !important;
-  color: #fff !important;
-  box-shadow: 0 2px 0 #d4a017 !important;
+  background: #e8c840 !important;
+  border-color: #fff !important;
+  color: #1a1a2a !important;
+  box-shadow: 0 2px 0 #fff !important;
 }
 
 /* ── HUD crosshair overlay ── */
