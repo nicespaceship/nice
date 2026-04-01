@@ -1035,17 +1035,28 @@ const BlueprintStore = (() => {
       }
       if (!bp) return;
 
+      // Enrich with catalog blueprint data if blueprint_id links to a seed ship
+      var catalogBp = null;
+      var bpLinkId = bp.blueprint_id || bp.blueprintId;
+      if (bpLinkId) {
+        catalogBp = getSpaceship(bpLinkId) || getSpaceship('bp-' + bpLinkId);
+      }
+
       const custom = typeof CardRenderer !== 'undefined' && CardRenderer.getCustomLabels
         ? CardRenderer.getCustomLabels(shipId) : {};
-      result.push(Object.assign({}, bp, {
+      const merged = Object.assign({}, catalogBp || {}, bp, {
         id: shipId,
         name: custom.name || bp.name,
+        rarity: (catalogBp && catalogBp.rarity) || bp.rarity || 'Common',
+        stats: (catalogBp && catalogBp.stats) || bp.stats,
+        category: (catalogBp && catalogBp.category) || bp.category,
         status: saved?.status || bp.status || 'standby',
         slot_assignments: saved?.slot_assignments || bp.slot_assignments || {},
         agent_ids: saved?.agent_ids || [],
         created_at: bp.created_at || new Date().toISOString(),
         blueprint_id: bpId,
-      }));
+      });
+      result.push(merged);
     });
     return result;
   }
