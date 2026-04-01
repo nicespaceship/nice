@@ -49,7 +49,7 @@
 /* ─────────────────────────────────────────────────────────────────
    MATRIX CANVAS
 ───────────────────────────────────────────────────────────────── */
-#matrix-canvas, #snes-canvas {
+#matrix-canvas, #snes-canvas, #gundam-canvas {
   position:fixed; top:0; left:0; width:100%; height:100%;
   pointer-events:none; z-index:0; display:none;
 }
@@ -265,6 +265,247 @@
 [data-theme="pixel"] .topbar-tab { font-size:8px; }
 [data-theme="pixel"] .c-btn, [data-theme="pixel"] .btn { font-size:9px; }
 [data-theme="pixel"] .filter-select, [data-theme="pixel"] .search-input { font-size:9px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   RX-78-2 THEME — Gundam mecha command interface
+───────────────────────────────────────────────────────────────── */
+
+/* ── Font — Rajdhani for military tech feel ── */
+[data-theme="gundam"] {
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.5px;
+}
+[data-theme="gundam"] h1, [data-theme="gundam"] h2, [data-theme="gundam"] h3 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ── Mecha panel cards — armor plate segmentation ── */
+[data-theme="gundam"] .tcg-card {
+  border: 2px solid #3a3f55;
+  background: linear-gradient(160deg, #1e2030 0%, #252838 100%);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,0.06),
+    inset -1px -1px 0 rgba(0,0,0,0.3),
+    3px 3px 0 rgba(0,0,0,0.4);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+/* Panel line accent on card top */
+[data-theme="gundam"] .tcg-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2b4e8c 0%, #2b4e8c 40%, #c0392b 40%, #c0392b 60%, #d4a017 60%, #d4a017 100%);
+  z-index: 1;
+}
+/* Rarity border colors */
+[data-theme="gundam"] .tcg-card[data-rarity="common"]    { border-color: #5a5f75; }
+[data-theme="gundam"] .tcg-card[data-rarity="rare"]      { border-color: #2b4e8c; }
+[data-theme="gundam"] .tcg-card[data-rarity="epic"]      { border-color: #7b3fa0; }
+[data-theme="gundam"] .tcg-card[data-rarity="legendary"] { border-color: #d4a017; }
+[data-theme="gundam"] .tcg-card[data-rarity="mythic"]    { border-color: #c0392b; }
+
+/* Mini cards — angular cut corners */
+[data-theme="gundam"] .tcg-card-mini {
+  border: 2px solid #3a3f55;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  background: linear-gradient(160deg, #1e2030, #252838);
+}
+[data-theme="gundam"] .tcg-card-mini[data-rarity="common"]    { border-color: #5a5f75; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="rare"]      { border-color: #2b4e8c; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="epic"]      { border-color: #7b3fa0; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="legendary"] { border-color: #d4a017; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="mythic"]    { border-color: #c0392b; }
+
+/* ── Card name bar — V-fin accent stripe ── */
+[data-theme="gundam"] .tcg-card .name-bar {
+  background: linear-gradient(180deg, #252838 0%, #1e2030 100%);
+  border-bottom: 2px solid #3a3f55;
+  position: relative;
+}
+[data-theme="gundam"] .tcg-card .name-bar::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #d4a017;
+}
+
+/* ── Buttons — thruster glow on hover ── */
+[data-theme="gundam"] .btn,
+[data-theme="gundam"] .c-btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border: 1px solid #3a3f55;
+  background: linear-gradient(180deg, #252838 0%, #1e2030 100%);
+  color: #e0e0e8;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+[data-theme="gundam"] .btn:hover,
+[data-theme="gundam"] .c-btn:hover {
+  border-color: #c0392b;
+  box-shadow: 0 0 12px rgba(192,57,43,0.4), 0 0 24px rgba(192,57,43,0.15);
+}
+[data-theme="gundam"] .btn-primary {
+  background: linear-gradient(180deg, #2b4e8c 0%, #1e3a6a 100%);
+  border-color: #4a7abb;
+  color: #fff;
+}
+[data-theme="gundam"] .btn-primary:hover {
+  box-shadow: 0 0 14px rgba(43,78,140,0.5), 0 0 28px rgba(43,78,140,0.2);
+}
+
+/* Deploy buttons — Federation red */
+[data-theme="gundam"] .bp-deploy-ship-btn,
+[data-theme="gundam"] .bp-deploy-btn {
+  background: linear-gradient(180deg, #c0392b 0%, #922b21 100%) !important;
+  border-color: #e74c3c !important;
+  color: #fff !important;
+}
+[data-theme="gundam"] .bp-deploy-ship-btn:hover,
+[data-theme="gundam"] .bp-deploy-btn:hover {
+  box-shadow: 0 0 16px rgba(192,57,43,0.5), 0 0 32px rgba(192,57,43,0.2) !important;
+}
+
+/* ── Sidebar — dark hull with blue accent edge ── */
+[data-theme="gundam"] .app-sidebar {
+  background: #0e0f16;
+  border-right: 2px solid #2b4e8c;
+  box-shadow: 2px 0 15px rgba(43,78,140,0.1);
+}
+[data-theme="gundam"] .side-link.active {
+  border-left: 3px solid #c0392b;
+  background: rgba(43,78,140,0.12);
+}
+
+/* ── Tabs — angular mecha tabs ── */
+[data-theme="gundam"] .topbar-tab,
+[data-theme="gundam"] .bridge-tab,
+[data-theme="gundam"] .bridge-hero-tab,
+[data-theme="gundam"] .bp-sub-tab {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border: 1px solid #3a3f55;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+}
+[data-theme="gundam"] .topbar-tab.active,
+[data-theme="gundam"] .bridge-tab.active,
+[data-theme="gundam"] .bridge-hero-tab.active,
+[data-theme="gundam"] .bp-sub-tab.active {
+  border-color: #2b4e8c;
+  background: rgba(43,78,140,0.15);
+  box-shadow: 0 2px 0 #2b4e8c;
+}
+
+/* ── Inputs — cockpit HUD style ── */
+[data-theme="gundam"] input[type="text"],
+[data-theme="gundam"] input[type="search"],
+[data-theme="gundam"] textarea,
+[data-theme="gundam"] select {
+  font-family: 'Rajdhani', sans-serif;
+  border: 1px solid #3a3f55;
+  background: #12131a;
+  color: #e0e0e8;
+}
+[data-theme="gundam"] input:focus,
+[data-theme="gundam"] textarea:focus {
+  border-color: #2b4e8c;
+  box-shadow: 0 0 8px rgba(43,78,140,0.3);
+}
+
+/* ── Prompt bar ── */
+[data-theme="gundam"] .nice-ai-bar {
+  border: 2px solid #2b4e8c;
+  background: #12131a;
+  box-shadow: 0 0 20px rgba(43,78,140,0.1);
+}
+
+/* ── HUD crosshair overlay ── */
+[data-theme="gundam"]::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  background:
+    /* Vertical crosshair */
+    linear-gradient(rgba(43,78,140,0.08), rgba(43,78,140,0.08)) no-repeat 50% 0 / 1px 100%,
+    /* Horizontal crosshair */
+    linear-gradient(rgba(43,78,140,0.08), rgba(43,78,140,0.08)) no-repeat 0 50% / 100% 1px,
+    /* Corner brackets — top left */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 3% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 3% / 1px 30px,
+    /* Corner brackets — top right */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 3% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 3% / 1px 30px,
+    /* Corner brackets — bottom left */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 97% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 97% / 1px 30px,
+    /* Corner brackets — bottom right */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 97% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 97% / 1px 30px;
+}
+
+/* ── Health/XP bars — mecha power gauges ── */
+[data-theme="gundam"] .health-bar,
+[data-theme="gundam"] .xp-bar {
+  border: 1px solid #3a3f55;
+  background: #12131a;
+}
+[data-theme="gundam"] .health-fill {
+  background: linear-gradient(90deg, #27ae60, #2ecc71);
+  box-shadow: 0 0 6px rgba(46,204,113,0.3);
+}
+[data-theme="gundam"] .health-fill.shield {
+  background: linear-gradient(90deg, #2b4e8c, #4a7abb);
+  box-shadow: 0 0 6px rgba(43,78,140,0.3);
+}
+[data-theme="gundam"] .xp-bar-fill {
+  background: linear-gradient(90deg, #d4a017, #f1c40f);
+  box-shadow: 0 0 6px rgba(212,160,23,0.3);
+}
+
+/* ── Rarity badges ── */
+[data-theme="gundam"] .tcg-mini-badge,
+[data-theme="gundam"] .bp-card-rarity {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Schematic — mecha wireframe feel ── */
+[data-theme="gundam"] .schematic-wired .schematic-svg line {
+  stroke: #2b4e8c;
+}
+
+/* ── Warning hazard stripe on mission status ── */
+[data-theme="gundam"] .mission-card.failed {
+  border-color: #c0392b;
+  border-left: 4px solid #c0392b;
+  background: linear-gradient(135deg,
+    rgba(192,57,43,0.08) 25%, transparent 25%, transparent 50%,
+    rgba(192,57,43,0.08) 50%, rgba(192,57,43,0.08) 75%, transparent 75%
+  );
+  background-size: 20px 20px;
+}
+
+/* ── Toast notifications ── */
+[data-theme="gundam"] .toast {
+  border: 1px solid #2b4e8c;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
 
 /* ─────────────────────────────────────────────────────────────────
    16-BIT THEME — SNES RPG pixel GUI

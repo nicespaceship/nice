@@ -29,6 +29,8 @@ const Theme = (() => {
       data:{ colors:{ '--bg':'#0f0a04','--bg2':'#1a1208','--surface':'rgba(200,160,80,0.06)','--surface2':'rgba(139,105,20,0.08)','--border':'rgba(200,160,80,0.28)','--border-hi':'rgba(200,160,80,0.6)','--accent':'#c8a050','--accent2':'#8b6914','--text':'#e8d8c0','--text-muted':'rgba(232,216,192,0.5)','--glow':'0 0 16px rgba(200,160,80,0.22)','--panel-bg':'rgba(15,10,4,0.97)' }, fonts:{ '--font-h':"'Playfair Display', serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' } },
+    { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
+      data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' } },
     { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' } },
   ];
@@ -44,6 +46,7 @@ const Theme = (() => {
     // 3. Turn off all canvas/animated assets
     MatrixRain.toggle(false);
     if (typeof StarField16 !== 'undefined') StarField16.toggle(false);
+    if (typeof GundamField !== 'undefined') GundamField.toggle(false);
     // 4. Hide dedicated theme elements (CSS-driven ones reset via data-theme removal)
     const tronGrid = document.getElementById('tron-grid');
     if (tronGrid) tronGrid.style.display = 'none';
@@ -61,6 +64,7 @@ const Theme = (() => {
       // Activate theme-specific assets
       MatrixRain.toggle(name === 'matrix');
       if (typeof StarField16 !== 'undefined') StarField16.toggle(name === '16bit');
+      if (typeof GundamField !== 'undefined') GundamField.toggle(name === 'gundam');
       // Tron elements are CSS-driven via [data-theme="navigator"] — reset inline hide
       if (name === 'navigator') {
         if (tronGrid) tronGrid.style.removeProperty('display');
@@ -223,6 +227,96 @@ const MatrixRain = (() => {
       if (drops[i] * 18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
       drops[i]++;
     }
+  }
+
+  function toggle(on) {
+    _on = on;
+    canvas.style.display = on ? 'block' : 'none';
+    if (on) { _resize(); _draw(0); }
+    else {
+      if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  window.addEventListener('resize', () => { if (_on) _resize(); });
+  return { toggle };
+})();
+
+/* ─────────────────────────────────────────────────────────────────
+   MODULE: Gundam Particles (canvas) — Minovsky particle debris
+───────────────────────────────────────────────────────────────── */
+const GundamField = (() => {
+  const canvas = document.getElementById('gundam-canvas');
+  if (!canvas) return { toggle: () => {} };
+
+  const ctx = canvas.getContext('2d');
+  let _on = false, _raf = null;
+
+  const PARTICLE_COUNT = 60;
+  let particles = [];
+
+  function _init() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: 1 + Math.random() * 3,
+        speedX: (Math.random() - 0.5) * 0.4,
+        speedY: (Math.random() - 0.5) * 0.3,
+        alpha: 0.15 + Math.random() * 0.4,
+        // Color: mix of white debris, blue Minovsky, red thruster sparks
+        color: i < 35 ? '#8090a8' : i < 50 ? '#4a7abb' : '#c04030',
+        drift: Math.random() * Math.PI * 2,
+        driftSpeed: 0.003 + Math.random() * 0.008,
+        shape: Math.random() > 0.7 ? 'rect' : 'dot', // debris chunks vs particles
+      });
+    }
+  }
+
+  function _resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    _init();
+  }
+
+  let _lastDraw = 0;
+  const _interval = 50;
+
+  function _draw(time) {
+    _raf = requestAnimationFrame(_draw);
+    if (time - _lastDraw < _interval) return;
+    _lastDraw = time;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.drift += p.driftSpeed;
+      p.x += p.speedX + Math.sin(p.drift) * 0.2;
+      p.y += p.speedY + Math.cos(p.drift) * 0.15;
+
+      // Wrap around
+      if (p.x < -10) p.x = canvas.width + 10;
+      if (p.x > canvas.width + 10) p.x = -10;
+      if (p.y < -10) p.y = canvas.height + 10;
+      if (p.y > canvas.height + 10) p.y = -10;
+
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      if (p.shape === 'rect') {
+        // Angular debris chunks — rotated rectangles
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.drift * 2);
+        ctx.fillRect(-p.size, -p.size * 0.4, p.size * 2, p.size * 0.8);
+        ctx.restore();
+      } else {
+        ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 
   function toggle(on) {
