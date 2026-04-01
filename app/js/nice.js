@@ -107,7 +107,7 @@ const Theme = (() => {
 
     // Update active theme name label
     const nameEl = document.getElementById('active-theme-name');
-    if (nameEl) nameEl.textContent = t ? t.name : name;
+    if (nameEl) nameEl.textContent = (t ? t.name : name).toUpperCase();
 
     // Update theme-color meta for PWA
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -217,7 +217,8 @@ const Theme = (() => {
 
     container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
-      return `<button class="db" data-theme-id="${t.id}" data-tip="${t.name}" style="background:${accent}" onclick="Theme.set('${t.id}')" aria-label="${t.name}" title="${t.name}"></button>`;
+      const tn = t.name.toUpperCase();
+      return `<button class="db" data-theme-id="${t.id}" data-tip="${tn}" style="background:${accent}" onclick="Theme.set('${t.id}')" aria-label="${tn}" title="${tn}"></button>`;
     }).join('');
 
     // Highlight current
