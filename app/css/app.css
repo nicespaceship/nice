@@ -420,6 +420,9 @@
 [data-theme="gundam"] .side-footer * {
   color: rgba(255,255,255,0.7);
 }
+[data-theme="gundam"] .side-footer {
+  border-top-color: #d4a017;
+}
 
 /* ── Top tab bar — white bar with blue/red RX-78-2 accents ── */
 [data-theme="gundam"] .bp-type-tabs {
