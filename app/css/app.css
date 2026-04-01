@@ -302,7 +302,7 @@
   z-index: 1;
 }
 /* Rarity border colors */
-[data-theme="gundam"] .tcg-card[data-rarity="common"]    { border-color: #5a5f75; }
+[data-theme="gundam"] .tcg-card[data-rarity="common"]    { border-color: #e8e8e8; }
 [data-theme="gundam"] .tcg-card[data-rarity="rare"]      { border-color: #2b4e8c; }
 [data-theme="gundam"] .tcg-card[data-rarity="epic"]      { border-color: #7b3fa0; }
 [data-theme="gundam"] .tcg-card[data-rarity="legendary"] { border-color: #d4a017; }
@@ -314,7 +314,7 @@
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
   background: linear-gradient(160deg, #1e2030, #252838);
 }
-[data-theme="gundam"] .tcg-card-mini[data-rarity="common"]    { border-color: #5a5f75; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="common"]    { border-color: #e8e8e8; }
 [data-theme="gundam"] .tcg-card-mini[data-rarity="rare"]      { border-color: #2b4e8c; }
 [data-theme="gundam"] .tcg-card-mini[data-rarity="epic"]      { border-color: #7b3fa0; }
 [data-theme="gundam"] .tcg-card-mini[data-rarity="legendary"] { border-color: #d4a017; }
