@@ -2793,6 +2793,10 @@
 @keyframes spin { to { transform:rotate(360deg); } }
 .crew-setup-status p { font-family:var(--font-b); font-size:.82rem; color:var(--text-muted); }
 
+/* Locked blueprint card */
+.bp-locked { opacity:.6; cursor:not-allowed !important; }
+.bp-locked:hover { opacity:.6; }
+
 /* Spaceship Builder — Crew Slots */
 .builder-slot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
 .builder-slot-card { border:1px solid var(--border); padding:12px; background:var(--bg-alt); transition:border-color .2s; }

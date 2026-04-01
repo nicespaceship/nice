@@ -417,7 +417,14 @@ const BlueprintsView = (() => {
     if (type === 'spaceship') {
       const serial = _sh(bp.id || bp.name, 12);
       const isShipActivated = bp._forceActive || BlueprintStore.isShipActivated(bp.id);
-      const deployBtn = `<button class="c-btn bp-deploy-ship-btn${isShipActivated ? ' bp-activated' : ''}" data-id="${bp.id}">${isShipActivated ? 'Deployed' : 'Deploy'}</button>`;
+      const shipRarity = bp.rarity || 'Common';
+      const isLocked = typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(shipRarity);
+      let deployBtn;
+      if (isLocked) {
+        deployBtn = `<button class="c-btn bp-deploy-ship-btn bp-locked" data-id="${bp.id}" disabled title="Reach ${shipRarity} rank to deploy">🔒 ${shipRarity}</button>`;
+      } else {
+        deployBtn = `<button class="c-btn bp-deploy-ship-btn${isShipActivated ? ' bp-activated' : ''}" data-id="${bp.id}">${isShipActivated ? 'Deployed' : 'Deploy'}</button>`;
+      }
       const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'bp-card-clickable' });
       return `<div class="bp-card-wrap">${rendered}<div class="bp-card-buttons">${deployBtn}</div></div>`;
     }

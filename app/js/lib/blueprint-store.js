@@ -771,10 +771,27 @@ const BlueprintStore = (() => {
 
   function activateAgent(bpId) {
     if (_activatedAgentIds.includes(bpId)) return;
+
+    // Rarity gate: check if user's rank allows this rarity
+    var bp = getAgent(bpId);
+    if (!bp) {
+      var stateAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+      bp = stateAgents.find(function(a) { return a.id === bpId; });
+    }
+    var rarity = bp ? (bp.rarity || 'Common') : 'Common';
+    if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
+      if (typeof Notify !== 'undefined') {
+        var rank = Gamification.getRank();
+        Notify.send('Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), 'warning');
+      }
+      return false;
+    }
+
     _activatedAgentIds.push(bpId);
     _persistAgents();
     _syncActivation(bpId, 'agent');
     _fireAgentState();
+    return true;
   }
 
   function deactivateAgent(bpId) {
@@ -885,10 +902,27 @@ const BlueprintStore = (() => {
 
   function activateShip(bpId) {
     if (_activatedShipIds.includes(bpId)) return;
+
+    // Rarity gate: check if user's rank allows this rarity
+    var bp = getSpaceship(bpId);
+    if (!bp) {
+      var stateShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+      bp = stateShips.find(function(s) { return s.id === bpId; });
+    }
+    var rarity = bp ? (bp.rarity || 'Common') : 'Common';
+    if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
+      if (typeof Notify !== 'undefined') {
+        var rank = Gamification.getRank();
+        Notify.send('Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), 'warning');
+      }
+      return false;
+    }
+
     _activatedShipIds.push(bpId);
     _persistShips();
     _syncActivation(bpId, 'spaceship');
     _fireShipState();
+    return true;
   }
 
   function deactivateShip(bpId) {
