@@ -333,23 +333,34 @@ const BlueprintStore = (() => {
         const existingIds = new Set(stateShips.map(s => s.id));
         ships.forEach(s => {
           const meta = s.slots || {};
+          // Cross-reference blueprint catalog for rarity/stats if blueprint_id exists
+          var catalogBp = null;
+          if (s.blueprint_id) {
+            catalogBp = getSpaceship(s.blueprint_id) || getSpaceship('bp-' + s.blueprint_id);
+          }
           if (!existingIds.has(s.id)) {
+            var crewCount = 0;
+            if (meta.slot_assignments) crewCount = Object.keys(meta.slot_assignments).length;
+            else if (Array.isArray(meta.crew)) crewCount = meta.crew.length;
+
             stateShips.push({
               id: s.id, name: s.name, type: 'spaceship',
-              category: meta.category || '', description: meta.description || '',
-              flavor: meta.flavor || '', tags: meta.tags || [],
-              rarity: 'Common', status: s.status || 'standby',
+              category: (catalogBp && catalogBp.category) || meta.category || '',
+              description: (catalogBp && catalogBp.description) || meta.description || '',
+              flavor: (catalogBp && catalogBp.flavor) || meta.flavor || '',
+              tags: (catalogBp && catalogBp.tags) || meta.tags || [],
+              rarity: (catalogBp && catalogBp.rarity) || meta.rarity || 'Common',
+              status: s.status || 'standby',
               config: { slot_assignments: meta.slot_assignments || {} },
-              stats: meta.stats || { crew: '0', slots: '6' },
-              metadata: { caps: meta.caps || [] },
+              stats: (catalogBp && catalogBp.stats) || meta.stats || { crew: String(crewCount), slots: '6' },
+              metadata: (catalogBp && catalogBp.metadata) || { caps: meta.caps || [] },
+              blueprint_id: s.blueprint_id,
               created_at: s.created_at,
             });
           }
           // Auto-activate if not already — but respect rarity gate
           if (!_activatedShipIds.includes(s.id)) {
-            var shipRarity = meta.rarity || 'Common';
-            // Legendary ships from catalog (crew array format) need rank check
-            if (Array.isArray(meta.crew) && meta.crew.length > 6) shipRarity = 'Legendary';
+            var shipRarity = (catalogBp && catalogBp.rarity) || meta.rarity || 'Common';
             var canActivate = typeof Gamification === 'undefined' || !Gamification.isRarityUnlocked || Gamification.isRarityUnlocked(shipRarity);
             if (canActivate) {
               _activatedShipIds.push(s.id);
