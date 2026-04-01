@@ -358,13 +358,10 @@ const BlueprintStore = (() => {
               created_at: s.created_at,
             });
           }
-          // Auto-activate if not already — but respect rarity gate
+          // Auto-activate — ships in user_spaceships are OWNED, always activate
+          // Rarity gate only applies to NEW activations from the catalog
           if (!_activatedShipIds.includes(s.id)) {
-            var shipRarity = (catalogBp && catalogBp.rarity) || meta.rarity || 'Common';
-            var canActivate = typeof Gamification === 'undefined' || !Gamification.isRarityUnlocked || Gamification.isRarityUnlocked(shipRarity);
-            if (canActivate) {
-              _activatedShipIds.push(s.id);
-            }
+            _activatedShipIds.push(s.id);
           }
           // Always restore ship state (slot assignments) from DB
           // Handle both formats: slot_assignments object and crew array
