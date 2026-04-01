@@ -226,9 +226,16 @@ const BlueprintStore = (() => {
         state.agent_ids.forEach(id => { if (id) shipAssignedAgents.add(id); });
       }
     }
+    // Include both seed catalog and user-created ships/agents from State
     const shipIds = new Set(_spaceships.map(s => s.id));
+    const stateShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    stateShips.forEach(s => shipIds.add(s.id));
 
-    const cleanAgents = _activatedAgentIds.filter(id => shipAssignedAgents.has(id));
+    const agentIds = new Set(_agents.map(a => a.id));
+    const stateAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+    stateAgents.forEach(a => agentIds.add(a.id));
+
+    const cleanAgents = _activatedAgentIds.filter(id => shipAssignedAgents.has(id) || agentIds.has(id));
     if (cleanAgents.length !== _activatedAgentIds.length) {
       _activatedAgentIds = cleanAgents;
       _persistAgents();
