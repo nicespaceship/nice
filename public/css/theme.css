@@ -280,11 +280,11 @@
 [data-theme="spaceship"] .search-box { background: rgba(9,9,11,0.8); border-color: var(--border); }
 
 /* Prompt panel */
-[data-theme="spaceship"] .nice-ai-input-container {
+[data-theme="spaceship"] .nice-ai-input-area {
   border: 1px solid var(--border); border-radius: 16px;
   background: #09090b;
 }
-[data-theme="spaceship"] .nice-ai-input-container:focus-within { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); }
+[data-theme="spaceship"] .nice-ai-input-area:focus-within { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); }
 [data-theme="spaceship"] .nice-ai-input { color: var(--text); }
 [data-theme="spaceship"] .nice-ai-input::placeholder { color: var(--text-dim); }
 [data-theme="spaceship"] .nice-ai-chip {
@@ -348,7 +348,7 @@
 }
 
 /* Prompt bar — glow on focus */
-[data-theme="spaceship"] .nice-ai-input-container:focus-within {
+[data-theme="spaceship"] .nice-ai-input-area:focus-within {
   border-color: var(--accent2);
   box-shadow: 0 0 0 2px rgba(165,180,252,0.12), 0 0 20px rgba(165,180,252,0.06);
 }
@@ -682,10 +682,10 @@
 [data-theme="robotech"] .search-box { background:#fff; border-color:#d0d0ce; border-radius:4px; }
 
 /* ── Prompt Panel ── */
-[data-theme="robotech"] .nice-ai-input-container {
+[data-theme="robotech"] .nice-ai-input-area {
   border:1px solid #d0d0ce; border-radius:8px; background:#fff;
 }
-[data-theme="robotech"] .nice-ai-input-container:focus-within { border-color:#999; }
+[data-theme="robotech"] .nice-ai-input-area:focus-within { border-color:#999; }
 [data-theme="robotech"] .nice-ai-input { color:#1a1a1a; }
 [data-theme="robotech"] .nice-ai-input::placeholder { color:#bbb; }
 [data-theme="robotech"] .nice-ai-chip {
@@ -1414,12 +1414,12 @@
 }
 
 /* Prompt panel — identity disc communicator */
-[data-theme="navigator"] .nice-ai-input-container {
+[data-theme="navigator"] .nice-ai-input-area {
   border: 1px solid rgba(0,229,255,0.2); border-radius: 16px;
   background: rgba(2,9,15,0.9);
   box-shadow: 0 0 15px rgba(0,229,255,0.05), inset 0 0 15px rgba(0,229,255,0.02);
 }
-[data-theme="navigator"] .nice-ai-input-container:focus-within {
+[data-theme="navigator"] .nice-ai-input-area:focus-within {
   border-color: #00e5ff;
   box-shadow: 0 0 20px rgba(0,229,255,0.15), inset 0 0 15px rgba(0,229,255,0.03);
 }
@@ -1864,10 +1864,10 @@
   border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
   color: #00ff41; font-family: 'Fira Code', monospace;
 }
-[data-theme="matrix"] .nice-ai-input-container {
+[data-theme="matrix"] .nice-ai-input-area {
   border-radius: 0; border: 1px solid rgba(0,255,65,0.25); background: rgba(0,6,0,0.8);
 }
-[data-theme="matrix"] .nice-ai-input-container:focus-within {
+[data-theme="matrix"] .nice-ai-input-area:focus-within {
   border-color: #00ff41; box-shadow: 0 0 12px rgba(0,255,65,0.15);
 }
 [data-theme="matrix"] .nice-ai-input { color: #00ff41; font-family: 'Fira Code', monospace; }
@@ -2301,10 +2301,10 @@
 }
 
 /* Prompt panel */
-[data-theme="lcars"] .nice-ai-input-container {
+[data-theme="lcars"] .nice-ai-input-area {
   border:2px solid #666688; border-radius:24px; background:#000;
 }
-[data-theme="lcars"] .nice-ai-input-container:focus-within { border-color:#ff9966; }
+[data-theme="lcars"] .nice-ai-input-area:focus-within { border-color:#ff9966; }
 [data-theme="lcars"] .nice-ai-input { color:#ff9966; }
 [data-theme="lcars"] .nice-ai-input::placeholder { color:#666688; }
 [data-theme="lcars"] .nice-ai-chip {
@@ -2601,11 +2601,11 @@
 }
 
 /* Prompt panel — brass communicator */
-[data-theme="steampunk"] .nice-ai-input-container {
+[data-theme="steampunk"] .nice-ai-input-area {
   border: 1px solid #5a4220; border-radius: 16px;
   background: linear-gradient(135deg, #1a1208, #0f0a04);
 }
-[data-theme="steampunk"] .nice-ai-input-container:focus-within { border-color: #c8a050; box-shadow: 0 0 8px rgba(200,160,80,0.15); }
+[data-theme="steampunk"] .nice-ai-input-area:focus-within { border-color: #c8a050; box-shadow: 0 0 8px rgba(200,160,80,0.15); }
 [data-theme="steampunk"] .nice-ai-input { color: #e8d8c0; font-family: 'Playfair Display', serif; }
 [data-theme="steampunk"] .nice-ai-input::placeholder { color: #5a4220; }
 [data-theme="steampunk"] .nice-ai-chip {
@@ -2986,7 +2986,7 @@
 }
 
 /* ── 13. Prompt Panel — brass telegraph device ── */
-[data-theme="steampunk"] .nice-ai-input-container {
+[data-theme="steampunk"] .nice-ai-input-area {
   border:2px solid #5a4220; border-radius:4px;
   background:linear-gradient(135deg, #1a1208, #0f0a04);
   box-shadow:0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(200,160,80,0.08);
@@ -3193,17 +3193,17 @@
 [data-theme="cyberpunk"] .mcp-catalog-card,
 [data-theme="cyberpunk"] .widget-card,
 [data-theme="cyberpunk"] .security-posture-card,
-[data-theme="cyberpunk"] .nice-ai-input-container {
+[data-theme="cyberpunk"] .nice-ai-input-area {
   clip-path:polygon(
     0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px,
     100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px)
   );
   border-radius:0;
 }
-[data-theme="cyberpunk"] .nice-ai-input-container {
+[data-theme="cyberpunk"] .nice-ai-input-area {
   border:1px solid #2a2a4a; background:#12121a;
 }
-[data-theme="cyberpunk"] .nice-ai-input-container:focus-within {
+[data-theme="cyberpunk"] .nice-ai-input-area:focus-within {
   border-color:#ff2d6f; box-shadow:0 0 12px rgba(255,45,111,0.15);
 }
 
@@ -3418,7 +3418,7 @@
   border:1px solid rgba(255,45,111,0.2);
   background:rgba(10,10,20,0.9);
 }
-[data-theme="cyberpunk"] .nice-ai-input-container {
+[data-theme="cyberpunk"] .nice-ai-input-area {
   clip-path:polygon(
     0 10px, 10px 0, calc(100% - 16px) 0, 100% 16px,
     100% calc(100% - 10px), calc(100% - 10px) 100%, 16px 100%, 0 calc(100% - 16px)

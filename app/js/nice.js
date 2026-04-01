@@ -52,8 +52,6 @@ const Theme = (() => {
     // 4. Hide dedicated theme elements (CSS-driven ones reset via data-theme removal)
     const tronGrid = document.getElementById('tron-grid');
     if (tronGrid) tronGrid.style.display = 'none';
-    const gundamBg = document.getElementById('gundam-bg');
-    if (gundamBg) gundamBg.style.display = 'none';
     const tronCity = document.getElementById('tron-city');
     if (tronCity) tronCity.style.display = 'none';
     const tronCycles = document.getElementById('tron-cycles');
@@ -86,7 +84,6 @@ const Theme = (() => {
         if (tronCity) tronCity.style.removeProperty('display');
         if (tronCycles) tronCycles.style.removeProperty('display');
       }
-      if (name === 'gundam' && gundamBg) gundamBg.style.removeProperty('display');
     } else {
       // Non-built-in: look up in THEMES by id (custom themes)
       if (!t) return;

@@ -248,23 +248,23 @@
 .fb-pixel { font-family:'Press Start 2P', monospace; font-size:5px; }
 
 /* ── Pixel theme font-size overrides (Press Start 2P renders ~2× larger) ── */
-[data-theme="pixel"] .app-sidebar { font-size:9px; }
-[data-theme="pixel"] .app-sidebar .nav-link { font-size:9px; padding:8px 12px; }
-[data-theme="pixel"] .app-sidebar .sidebar-section-label { font-size:7px; }
-[data-theme="pixel"] .app-sidebar .badge { font-size:7px; }
-[data-theme="pixel"] .view-container { font-size:10px; }
-[data-theme="pixel"] .view-container h1 { font-size:16px; }
-[data-theme="pixel"] .view-container h2 { font-size:13px; }
-[data-theme="pixel"] .view-container h3 { font-size:11px; }
-[data-theme="pixel"] .nice-ai-input { font-size:10px; }
-[data-theme="pixel"] .nice-ai-chip { font-size:8px; }
-[data-theme="pixel"] .nice-ai-disclaimer { font-size:7px; }
-[data-theme="pixel"] .app-hdr { font-size:9px; }
-[data-theme="pixel"] .hud-row { font-size:8px; }
-[data-theme="pixel"] .dock-lbl { font-size:7px; }
-[data-theme="pixel"] .topbar-tab { font-size:8px; }
-[data-theme="pixel"] .c-btn, [data-theme="pixel"] .btn { font-size:9px; }
-[data-theme="pixel"] .filter-select, [data-theme="pixel"] .search-input { font-size:9px; }
+[data-font="pixel"] .app-sidebar { font-size:9px; }
+[data-font="pixel"] .app-sidebar .nav-link { font-size:9px; padding:8px 12px; }
+[data-font="pixel"] .app-sidebar .sidebar-section-label { font-size:7px; }
+[data-font="pixel"] .app-sidebar .badge { font-size:7px; }
+[data-font="pixel"] .view-container { font-size:10px; }
+[data-font="pixel"] .view-container h1 { font-size:16px; }
+[data-font="pixel"] .view-container h2 { font-size:13px; }
+[data-font="pixel"] .view-container h3 { font-size:11px; }
+[data-font="pixel"] .nice-ai-input { font-size:10px; }
+[data-font="pixel"] .nice-ai-chip { font-size:8px; }
+[data-font="pixel"] .nice-ai-disclaimer { font-size:7px; }
+[data-font="pixel"] .app-hdr { font-size:9px; }
+[data-font="pixel"] .hud-row { font-size:8px; }
+[data-font="pixel"] .dock-lbl { font-size:7px; }
+[data-font="pixel"] .topbar-tab { font-size:8px; }
+[data-font="pixel"] .c-btn, [data-font="pixel"] .btn { font-size:9px; }
+[data-font="pixel"] .filter-select, [data-font="pixel"] .search-input { font-size:9px; }
 
 /* ─────────────────────────────────────────────────────────────────
    THE OFFICE — Professional SaaS business theme
