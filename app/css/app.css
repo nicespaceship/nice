@@ -494,24 +494,28 @@
   border: 2px solid #c0c0c0;
   border-bottom: 4px solid #c0392b;
   background: #e8e8e8 !important;
+  border-radius: 12px !important;
   box-shadow: 0 0 20px rgba(0,0,0,0.15);
   color: #1a1a2a;
 }
 [data-theme="gundam"] .nice-ai-input {
-  color: #1a1a2a !important;
-  background: transparent !important;
+  color: #fff !important;
+  background: #3a3f55 !important;
+  border-radius: 8px !important;
 }
 [data-theme="gundam"] .nice-ai-input::placeholder {
-  color: #7a7e94;
+  color: #b0b4c8;
 }
 [data-theme="gundam"] .nice-ai-input-area button,
 [data-theme="gundam"] .nice-ai-input-area select {
-  color: #1a1a2a;
-  border-color: #c0c0c0;
+  color: #fff;
+  border-color: #5a5f75;
+  background: #3a3f55;
+  border-radius: 8px !important;
 }
 [data-theme="gundam"] .nice-ai-input-area svg {
-  color: #1a1a2a;
-  stroke: #1a1a2a;
+  color: #fff;
+  stroke: #fff;
 }
 [data-theme="gundam"] .nice-ai-chip {
   background: #d4a017;
@@ -533,12 +537,13 @@
 [data-theme="gundam"] .chat-pill:hover {
   background: #e8c840 !important;
 }
-/* Model & voice dropdowns — white to match prompt bar */
+/* Model & voice dropdowns — same gray as other buttons */
 [data-theme="gundam"] .nice-ai-model-select,
 [data-theme="gundam"] .nice-ai-voice-select {
-  background: #fff !important;
-  color: #1a1a2a !important;
-  border-color: #c0c0c0 !important;
+  background: #3a3f55 !important;
+  color: #fff !important;
+  border-color: #5a5f75 !important;
+  border-radius: 8px !important;
 }
 
 /* ── Schematic header panel — Gundam red ── */
