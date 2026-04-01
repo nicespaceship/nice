@@ -120,6 +120,106 @@
 <div id="tron-cycles"><i class="tron-dot tron-c1"></i><i class="tron-dot tron-c2"></i><i class="tron-dot tron-c3"></i><i class="tron-dot tron-c4"></i><i class="tron-dot tron-c5"></i><i class="tron-dot tron-c6"></i></div>
 <!-- GUNDAM MINOVSKY PARTICLES -->
 <canvas id="gundam-canvas"></canvas>
+<!-- GUNDAM BACKGROUND SVGs -->
+<div id="gundam-bg">
+  <!-- Mecha head silhouette watermark — large, centered, faint -->
+  <svg class="gd-head" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <!-- V-Fin antenna -->
+    <polygon points="100,0 85,55 90,58" fill="currentColor"/>
+    <polygon points="100,0 115,55 110,58" fill="currentColor"/>
+    <!-- Outer fin blades -->
+    <polygon points="60,65 30,10 38,8 72,58" fill="currentColor"/>
+    <polygon points="140,65 170,10 162,8 128,58" fill="currentColor"/>
+    <!-- Helmet dome -->
+    <path d="M65,60 Q65,40 100,35 Q135,40 135,60 L135,72 L65,72 Z" fill="currentColor"/>
+    <!-- Forehead crest -->
+    <rect x="88" y="48" width="24" height="8" rx="1" fill="currentColor" opacity="0.7"/>
+    <!-- Face plate -->
+    <path d="M68,72 L132,72 L128,105 Q100,115 72,105 Z" fill="currentColor"/>
+    <!-- Visor / eyes -->
+    <polygon points="78,78 98,78 95,88 80,88" fill="#12131a" opacity="0.8"/>
+    <polygon points="122,78 102,78 105,88 120,88" fill="#12131a" opacity="0.8"/>
+    <!-- Chin guard -->
+    <path d="M78,100 L122,100 L118,112 Q100,118 82,112 Z" fill="currentColor" opacity="0.6"/>
+    <!-- Mouth vent -->
+    <rect x="90" y="102" width="20" height="3" rx="1" fill="#12131a" opacity="0.5"/>
+    <rect x="92" y="107" width="16" height="2" rx="1" fill="#12131a" opacity="0.4"/>
+    <!-- Neck -->
+    <rect x="85" y="115" width="30" height="12" fill="currentColor" opacity="0.4"/>
+    <!-- Shoulder hints -->
+    <path d="M60,127 L85,120 L85,135 L55,135 Z" fill="currentColor" opacity="0.3"/>
+    <path d="M140,127 L115,120 L115,135 L145,135 Z" fill="currentColor" opacity="0.3"/>
+    <!-- Collar / chest top -->
+    <path d="M75,130 L125,130 L130,145 L70,145 Z" fill="currentColor" opacity="0.25"/>
+  </svg>
+
+  <!-- Blueprint schematic overlay — technical drawing lines -->
+  <svg class="gd-blueprint" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Grid lines -->
+    <line x1="0" y1="100" x2="400" y2="100" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <line x1="0" y1="200" x2="400" y2="200" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <line x1="0" y1="300" x2="400" y2="300" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <line x1="0" y1="400" x2="400" y2="400" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <line x1="0" y1="500" x2="400" y2="500" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <line x1="100" y1="0" x2="100" y2="600" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <line x1="200" y1="0" x2="200" y2="600" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <line x1="300" y1="0" x2="300" y2="600" stroke="currentColor" stroke-width="0.3" opacity="0.15"/>
+    <!-- Mecha full-body outline (front view) — simplified wireframe -->
+    <!-- Head -->
+    <polygon points="200,30 185,55 190,58" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <polygon points="200,30 215,55 210,58" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <rect x="180" y="55" width="40" height="30" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <!-- Torso -->
+    <path d="M165,85 L235,85 L245,140 L240,200 L160,200 L155,140 Z" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <!-- Chest vents -->
+    <rect x="175" y="100" width="15" height="20" stroke="currentColor" fill="none" stroke-width="0.3" opacity="0.15"/>
+    <rect x="210" y="100" width="15" height="20" stroke="currentColor" fill="none" stroke-width="0.3" opacity="0.15"/>
+    <!-- Waist -->
+    <rect x="175" y="200" width="50" height="25" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <!-- Shoulders -->
+    <rect x="130" y="85" width="35" height="40" rx="3" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <rect x="235" y="85" width="35" height="40" rx="3" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <!-- Arms -->
+    <rect x="135" y="125" width="25" height="60" stroke="currentColor" fill="none" stroke-width="0.4" opacity="0.18"/>
+    <rect x="240" y="125" width="25" height="60" stroke="currentColor" fill="none" stroke-width="0.4" opacity="0.18"/>
+    <!-- Forearms -->
+    <rect x="133" y="185" width="28" height="50" stroke="currentColor" fill="none" stroke-width="0.4" opacity="0.18"/>
+    <rect x="238" y="185" width="28" height="50" stroke="currentColor" fill="none" stroke-width="0.4" opacity="0.18"/>
+    <!-- Hands -->
+    <rect x="137" y="235" width="20" height="15" stroke="currentColor" fill="none" stroke-width="0.3" opacity="0.15"/>
+    <rect x="242" y="235" width="20" height="15" stroke="currentColor" fill="none" stroke-width="0.3" opacity="0.15"/>
+    <!-- Legs -->
+    <path d="M175,225 L185,225 L190,350 L170,350 Z" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <path d="M215,225 L225,225 L230,350 L210,350 Z" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <!-- Knee joints -->
+    <circle cx="180" cy="290" r="8" stroke="currentColor" fill="none" stroke-width="0.3" opacity="0.15"/>
+    <circle cx="220" cy="290" r="8" stroke="currentColor" fill="none" stroke-width="0.3" opacity="0.15"/>
+    <!-- Lower legs -->
+    <path d="M168,310 L192,310 L195,400 L165,400 Z" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <path d="M208,310 L232,310 L235,400 L205,400 Z" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <!-- Feet -->
+    <path d="M160,400 L195,400 L200,420 L155,420 Z" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <path d="M205,400 L240,400 L245,420 L200,420 Z" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.2"/>
+    <!-- Dimension lines -->
+    <line x1="120" y1="30" x2="120" y2="420" stroke="currentColor" stroke-width="0.3" opacity="0.1" stroke-dasharray="4,4"/>
+    <line x1="280" y1="30" x2="280" y2="420" stroke="currentColor" stroke-width="0.3" opacity="0.1" stroke-dasharray="4,4"/>
+    <!-- Labels -->
+    <text x="15" y="95" font-size="7" fill="currentColor" opacity="0.12" font-family="Rajdhani, sans-serif">RX-78-2</text>
+    <text x="15" y="108" font-size="5" fill="currentColor" opacity="0.1" font-family="Rajdhani, sans-serif">EFSF MOBILE SUIT</text>
+    <text x="330" y="415" font-size="5" fill="currentColor" opacity="0.1" font-family="Rajdhani, sans-serif">HEIGHT: 18.0m</text>
+    <text x="330" y="425" font-size="5" fill="currentColor" opacity="0.1" font-family="Rajdhani, sans-serif">WEIGHT: 43.4t</text>
+  </svg>
+
+  <!-- EFSF insignia — bottom corner -->
+  <svg class="gd-efsf" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="45" stroke="currentColor" fill="none" stroke-width="1.5" opacity="0.12"/>
+    <circle cx="50" cy="50" r="38" stroke="currentColor" fill="none" stroke-width="0.5" opacity="0.08"/>
+    <!-- Star -->
+    <polygon points="50,15 56,35 78,35 60,47 67,68 50,55 33,68 40,47 22,35 44,35" stroke="currentColor" fill="currentColor" opacity="0.06" stroke-width="0.5"/>
+    <!-- Text arc -->
+    <text x="50" y="90" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.1" font-family="Rajdhani, sans-serif" font-weight="700" letter-spacing="3">E.F.S.F.</text>
+  </svg>
+</div>
 <!-- 16-BIT STARFIELD CANVAS -->
 <canvas id="snes-canvas"></canvas>
 

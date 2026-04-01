@@ -431,6 +431,78 @@
   box-shadow: 0 0 20px rgba(43,78,140,0.1);
 }
 
+/* ── Background SVGs — mecha head, blueprint, EFSF insignia ── */
+#gundam-bg {
+  display: none;
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  left: 56px;
+}
+[data-theme="gundam"] #gundam-bg { display: block; }
+
+/* Head watermark — subtle pulse breathing */
+@keyframes gd-head-pulse {
+  0%, 100% { opacity: 0.04; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.08; transform: translate(-50%, -50%) scale(1.02); }
+}
+[data-theme="gundam"] .gd-head {
+  position: absolute;
+  width: 340px; height: 380px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: #2b4e8c;
+  animation: gd-head-pulse 6s ease-in-out infinite;
+}
+
+/* Blueprint schematic — slow vertical scan scroll */
+@keyframes gd-bp-scan {
+  0% { transform: translateY(-48%); }
+  50% { transform: translateY(-52%); }
+  100% { transform: translateY(-48%); }
+}
+@keyframes gd-bp-scanline {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+[data-theme="gundam"] .gd-blueprint {
+  position: absolute;
+  width: 500px; height: 750px;
+  right: -40px; top: 50%;
+  transform: translateY(-50%);
+  color: #4a7abb;
+  opacity: 0.5;
+  animation: gd-bp-scan 12s ease-in-out infinite;
+}
+/* Scanning line over blueprint */
+[data-theme="gundam"] .gd-blueprint::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(43,78,140,0.4), rgba(192,57,43,0.3), transparent);
+  animation: gd-bp-scanline 4s linear infinite;
+  pointer-events: none;
+}
+
+/* EFSF insignia — slow rotation */
+@keyframes gd-efsf-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes gd-efsf-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+[data-theme="gundam"] .gd-efsf {
+  position: absolute;
+  width: 120px; height: 120px;
+  left: 30px; bottom: 60px;
+  color: #4a7abb;
+  animation: gd-efsf-rotate 60s linear infinite, gd-efsf-pulse 4s ease-in-out infinite;
+}
+
 /* ── HUD crosshair overlay ── */
 [data-theme="gundam"]::after {
   content: '';
