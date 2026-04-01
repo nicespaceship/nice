@@ -490,10 +490,38 @@
 }
 
 /* ── Prompt bar ── */
-[data-theme="gundam"] .nice-ai-bar {
-  border: 2px solid #2b4e8c;
-  background: #12131a;
-  box-shadow: 0 0 20px rgba(43,78,140,0.1);
+[data-theme="gundam"] .nice-ai-input-area {
+  border: 2px solid #c0c0c0;
+  border-bottom: 4px solid #c0392b;
+  background: #e8e8e8 !important;
+  box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  color: #1a1a2a;
+}
+[data-theme="gundam"] .nice-ai-input {
+  color: #1a1a2a !important;
+  background: transparent !important;
+}
+[data-theme="gundam"] .nice-ai-input::placeholder {
+  color: #7a7e94;
+}
+[data-theme="gundam"] .nice-ai-input-area button,
+[data-theme="gundam"] .nice-ai-input-area select {
+  color: #1a1a2a;
+  border-color: #c0c0c0;
+}
+[data-theme="gundam"] .nice-ai-input-area svg {
+  color: #1a1a2a;
+  stroke: #1a1a2a;
+}
+[data-theme="gundam"] .nice-ai-chip {
+  background: #d4a017;
+  border-color: #e8c840;
+  color: #1a1a2a;
+  font-weight: 600;
+}
+[data-theme="gundam"] .nice-ai-chip:hover {
+  background: #e8c840;
+  color: #1a1a2a;
 }
 
 /* ── Schematic header panel — Gundam red ── */
