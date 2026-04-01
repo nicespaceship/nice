@@ -1287,16 +1287,14 @@
     4px 4px 0 rgba(0,0,0,0.5);
 }
 [data-theme="16bit"] .nice-ai-input {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 11px;
+  font-size: 10px;
 }
 [data-theme="16bit"] .nice-ai-input::placeholder {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 9px;
+  font-size: 8px;
 }
 [data-theme="16bit"] .nice-ai-chip {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 8px;
+  font-size: 7px;
+  padding: 4px 8px;
   border: 2px solid #2e4068;
   background: #1f2b47;
   box-shadow: inset 1px 1px 0 rgba(255,255,200,0.1), 2px 2px 0 rgba(0,0,0,0.3);
@@ -1304,6 +1302,17 @@
 [data-theme="16bit"] .nice-ai-chip:hover {
   border-color: #e2b714;
   background: #2e4068;
+}
+[data-theme="16bit"] .chat-pill {
+  font-size: 7px !important;
+  padding: 4px 10px !important;
+}
+[data-theme="16bit"] .nice-ai-model-select,
+[data-theme="16bit"] .nice-ai-voice-select {
+  font-size: 8px;
+}
+[data-theme="16bit"] .nice-ai-input-area button {
+  font-size: 8px;
 }
 
 /* Blinking cursor animation */
