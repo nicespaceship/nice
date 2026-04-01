@@ -376,15 +376,33 @@
   box-shadow: 0 0 16px rgba(192,57,43,0.5), 0 0 32px rgba(192,57,43,0.2) !important;
 }
 
-/* ── Sidebar — dark hull with blue accent edge ── */
+/* ── Sidebar — Federation blue like the active tab ── */
 [data-theme="gundam"] .app-sidebar {
-  background: #0e0f16;
-  border-right: 2px solid #2b4e8c;
-  box-shadow: 2px 0 15px rgba(43,78,140,0.1);
+  background: #2b4e8c;
+  border-right: 2px solid #1e3a6a;
+  box-shadow: 2px 0 15px rgba(43,78,140,0.2);
+}
+[data-theme="gundam"] .side-link {
+  color: rgba(255,255,255,0.75);
+}
+[data-theme="gundam"] .side-link:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
 }
 [data-theme="gundam"] .side-link.active {
   border-left: 3px solid #c0392b;
-  background: rgba(43,78,140,0.12);
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+[data-theme="gundam"] .side-link svg {
+  opacity: 0.8;
+}
+[data-theme="gundam"] .side-header .app-brand-text {
+  color: #fff;
+}
+[data-theme="gundam"] .side-footer,
+[data-theme="gundam"] .side-footer * {
+  color: rgba(255,255,255,0.7);
 }
 
 /* ── Top tab bar — white bar with blue/red RX-78-2 accents ── */
