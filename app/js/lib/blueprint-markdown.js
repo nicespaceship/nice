@@ -348,7 +348,7 @@ const BlueprintMarkdown = (() => {
     var fm = {};
     fm.type = 'agent';
     fm.name = bp.name || '';
-    if (bp.serial_key) fm.serial_key = bp.serial_key;
+    fm.serial_key = bp.serial_key || _generateKey(bp.name);
     if (bp.category) fm.category = bp.category;
     if (bp.rarity) fm.rarity = bp.rarity;
     if (bp.tags && bp.tags.length) fm.tags = bp.tags;
@@ -376,7 +376,7 @@ const BlueprintMarkdown = (() => {
     var fm = {};
     fm.type = 'spaceship';
     fm.name = bp.name || '';
-    if (bp.serial_key) fm.serial_key = bp.serial_key;
+    fm.serial_key = bp.serial_key || _generateKey(bp.name);
     if (bp.category) fm.category = bp.category;
     if (bp.rarity) fm.rarity = bp.rarity;
     if (bp.tags && bp.tags.length) fm.tags = bp.tags;
@@ -385,9 +385,11 @@ const BlueprintMarkdown = (() => {
 
     var body = _buildBody(bp);
 
-    // Crew manifest table
+    // Crew manifest table — resolve UUIDs to agent names
     var crew = (bp.metadata && bp.metadata.crew) || [];
     var assignments = (bp.config && bp.config.slot_assignments) || {};
+    var slotLabels = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.SLOT_LABELS)
+      ? BlueprintUtils.SLOT_LABELS : ['Bridge','Command','Tactical','Intel','Analytics','Operations'];
 
     if (crew.length || Object.keys(assignments).length) {
       body += '\n\n## Crew Manifest\n\n';
@@ -396,16 +398,54 @@ const BlueprintMarkdown = (() => {
 
       if (crew.length) {
         crew.forEach(function(c) {
-          body += '| ' + c.slot + ' | ' + (c.role || '') + ' | ' + (c.agent || '') + ' |\n';
+          var agentName = _resolveAgentName(c.agent);
+          body += '| ' + c.slot + ' | ' + (c.role || slotLabels[c.slot] || '') + ' | ' + agentName + ' |\n';
         });
       } else {
         Object.keys(assignments).sort().forEach(function(slot) {
-          body += '| ' + slot + ' | Crew ' + slot + ' | ' + assignments[slot] + ' |\n';
+          var idx = parseInt(slot, 10);
+          var role = slotLabels[idx] || 'Agent ' + (idx + 1);
+          var agentName = _resolveAgentName(assignments[slot]);
+          body += '| ' + slot + ' | ' + role + ' | ' + agentName + ' |\n';
         });
       }
     }
 
     return _buildDocument(fm, body, SHIP_FIELDS);
+  }
+
+  /** Resolve an agent ID to a human-readable name */
+  function _resolveAgentName(id) {
+    if (!id) return '—';
+    // Not a UUID — already a name or bp-id
+    if (id.length < 30 && !id.includes('-')) return id;
+    // Check BlueprintStore
+    if (typeof BlueprintStore !== 'undefined') {
+      var bp = BlueprintStore.getAgent(id);
+      if (bp && bp.name) return bp.name;
+    }
+    // Check State
+    if (typeof State !== 'undefined') {
+      var agents = State.get('agents') || [];
+      var found = agents.find(function(a) { return a.id === id; });
+      if (found && found.name) return found.name;
+    }
+    return id; // fallback to raw ID
+  }
+
+  /** Generate a short blueprint key from a name */
+  function _generateKey(name) {
+    if (!name) return 'BP-0000';
+    var h = 0;
+    for (var i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+    h = Math.abs(h);
+    var chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    var key = '';
+    for (var j = 0; j < 8; j++) {
+      h = ((h * 9301 + 49297) % 233280);
+      key += chars[h % chars.length];
+    }
+    return key.slice(0, 4) + '-' + key.slice(4);
   }
 
   function _serializeWorkflow(wf) {
