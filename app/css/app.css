@@ -613,10 +613,11 @@
 [data-theme="office"] .wizard-title { color: #1a1a1a; }
 [data-theme="office"] .wizard-subtitle { color: #6b6b6b; }
 
-/* ── Card grid — more breathing room ── */
-[data-theme="office"] .fleet-grid { gap: 28px !important; }
-[data-theme="office"] .fleet-grid.ships-view-full { gap: 28px !important; }
-[data-theme="office"] .fleet-grid.ships-view-grid { gap: 20px !important; }
+/* ── Card grid — generous spacing for clean SaaS feel ── */
+[data-theme="office"] .fleet-grid { gap: 32px 28px !important; }
+[data-theme="office"] .fleet-grid.ships-view-full { gap: 40px 32px !important; }
+[data-theme="office"] .fleet-grid.ships-view-grid { gap: 24px 20px !important; }
+[data-theme="office"] .tcg-card { margin-bottom: 8px; }
 
 /* ── No effects — kill any pseudo overlays ── */
 [data-theme="office"]::after { display: none !important; }
