@@ -49,7 +49,7 @@
 /* ─────────────────────────────────────────────────────────────────
    MATRIX CANVAS
 ───────────────────────────────────────────────────────────────── */
-#matrix-canvas {
+#matrix-canvas, #snes-canvas, #gundam-canvas {
   position:fixed; top:0; left:0; width:100%; height:100%;
   pointer-events:none; z-index:0; display:none;
 }
@@ -248,23 +248,1300 @@
 .fb-pixel { font-family:'Press Start 2P', monospace; font-size:5px; }
 
 /* ── Pixel theme font-size overrides (Press Start 2P renders ~2× larger) ── */
-[data-theme="pixel"] .app-sidebar { font-size:9px; }
-[data-theme="pixel"] .app-sidebar .nav-link { font-size:9px; padding:8px 12px; }
-[data-theme="pixel"] .app-sidebar .sidebar-section-label { font-size:7px; }
-[data-theme="pixel"] .app-sidebar .badge { font-size:7px; }
-[data-theme="pixel"] .view-container { font-size:10px; }
-[data-theme="pixel"] .view-container h1 { font-size:16px; }
-[data-theme="pixel"] .view-container h2 { font-size:13px; }
-[data-theme="pixel"] .view-container h3 { font-size:11px; }
-[data-theme="pixel"] .nice-ai-input { font-size:10px; }
-[data-theme="pixel"] .nice-ai-chip { font-size:8px; }
-[data-theme="pixel"] .nice-ai-disclaimer { font-size:7px; }
-[data-theme="pixel"] .app-hdr { font-size:9px; }
-[data-theme="pixel"] .hud-row { font-size:8px; }
-[data-theme="pixel"] .dock-lbl { font-size:7px; }
-[data-theme="pixel"] .topbar-tab { font-size:8px; }
-[data-theme="pixel"] .c-btn, [data-theme="pixel"] .btn { font-size:9px; }
-[data-theme="pixel"] .filter-select, [data-theme="pixel"] .search-input { font-size:9px; }
+[data-font="pixel"] .app-sidebar { font-size:9px; }
+[data-font="pixel"] .app-sidebar .nav-link { font-size:9px; padding:8px 12px; }
+[data-font="pixel"] .app-sidebar .sidebar-section-label { font-size:7px; }
+[data-font="pixel"] .app-sidebar .badge { font-size:7px; }
+[data-font="pixel"] .view-container { font-size:10px; }
+[data-font="pixel"] .view-container h1 { font-size:16px; }
+[data-font="pixel"] .view-container h2 { font-size:13px; }
+[data-font="pixel"] .view-container h3 { font-size:11px; }
+[data-font="pixel"] .nice-ai-input { font-size:10px; }
+[data-font="pixel"] .nice-ai-chip { font-size:8px; }
+[data-font="pixel"] .nice-ai-disclaimer { font-size:7px; }
+[data-font="pixel"] .app-hdr { font-size:9px; }
+[data-font="pixel"] .hud-row { font-size:8px; }
+[data-font="pixel"] .dock-lbl { font-size:7px; }
+[data-font="pixel"] .topbar-tab { font-size:8px; }
+[data-font="pixel"] .c-btn, [data-font="pixel"] .btn { font-size:9px; }
+[data-font="pixel"] .filter-select, [data-font="pixel"] .search-input { font-size:9px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   THE OFFICE — Professional SaaS business theme
+   Clean, light, corporate. No effects, no overlays.
+───────────────────────────────────────────────────────────────── */
+
+/* ── Base: clean Inter, comfortable sizing ── */
+[data-theme="office"] {
+  font-family: 'Inter', sans-serif;
+}
+[data-theme="office"] h1 { font-weight: 600; color: #1a1a1a; }
+[data-theme="office"] h2 { font-weight: 600; color: #1a1a1a; }
+[data-theme="office"] h3 { font-weight: 500; color: #333; }
+
+/* ── Cards — clean white panels with soft shadow ── */
+[data-theme="office"] .tcg-card {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  clip-path: none;
+}
+[data-theme="office"] .tcg-card::before { display: none; }
+[data-theme="office"] .tcg-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #0078d4;
+}
+/* Rarity → professional tier colors */
+[data-theme="office"] .tcg-card[data-rarity="common"]    { border-left: 4px solid #6b6b6b; }
+[data-theme="office"] .tcg-card[data-rarity="rare"]      { border-left: 4px solid #0078d4; }
+[data-theme="office"] .tcg-card[data-rarity="epic"]      { border-left: 4px solid #8764b8; }
+[data-theme="office"] .tcg-card[data-rarity="legendary"] { border-left: 4px solid #d48000; }
+[data-theme="office"] .tcg-card[data-rarity="mythic"]    { border-left: 4px solid #c50f1f; }
+
+/* Card content — dark text on white */
+[data-theme="office"] .tcg-card .name-bar {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  color: #1a1a1a;
+}
+[data-theme="office"] .tcg-card .text-box {
+  background: #fff;
+  color: #333;
+}
+[data-theme="office"] .tcg-card .stats {
+  background: #fafafa;
+  border-top: 1px solid #e8e8e8;
+  color: #1a1a1a;
+}
+
+/* Mini cards */
+[data-theme="office"] .tcg-card-mini {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  clip-path: none;
+}
+[data-theme="office"] .tcg-mini-name { color: #1a1a1a; }
+[data-theme="office"] .tcg-mini-badge { border-radius: 4px; }
+
+/* ── Buttons — clean SaaS style ── */
+[data-theme="office"] .btn,
+[data-theme="office"] .c-btn {
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #333;
+  border-radius: 6px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  clip-path: none;
+  transition: all 0.15s;
+}
+[data-theme="office"] .btn:hover,
+[data-theme="office"] .c-btn:hover {
+  background: #f5f5f5;
+  border-color: #0078d4;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+[data-theme="office"] .btn-primary {
+  background: #0078d4;
+  border-color: #0078d4;
+  color: #fff;
+}
+[data-theme="office"] .btn-primary:hover {
+  background: #006cbe;
+}
+/* Deploy/Activate buttons */
+[data-theme="office"] .bp-deploy-ship-btn,
+[data-theme="office"] .bp-deploy-btn {
+  background: #107c10 !important;
+  border-color: #107c10 !important;
+  color: #fff !important;
+  border-radius: 6px !important;
+  clip-path: none !important;
+}
+[data-theme="office"] .bp-deploy-ship-btn:hover,
+[data-theme="office"] .bp-deploy-btn:hover {
+  background: #0e6b0e !important;
+}
+
+/* ── Sidebar — white with blue accent ── */
+[data-theme="office"] .app-sidebar {
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+  box-shadow: 1px 0 3px rgba(0,0,0,0.04);
+}
+[data-theme="office"] .side-link {
+  color: #333;
+  border-radius: 6px;
+  margin: 2px 6px;
+}
+[data-theme="office"] .side-link:hover {
+  background: #f0f0f0;
+  color: #1a1a1a;
+}
+[data-theme="office"] .side-link.active {
+  background: #e8f4fd;
+  border-left: 3px solid #0078d4;
+  color: #0078d4;
+  font-weight: 500;
+}
+[data-theme="office"] .side-link svg { opacity: 0.6; }
+[data-theme="office"] .side-link.active svg { opacity: 1; color: #0078d4; }
+[data-theme="office"] .side-header {
+  border-bottom: 1px solid #e8e8e8;
+}
+[data-theme="office"] .side-header .app-brand-text { color: #1a1a1a; }
+[data-theme="office"] .side-footer {
+  border-top: 1px solid #e8e8e8;
+  color: #6b6b6b;
+}
+
+/* ── Top tabs — clean underline style ── */
+[data-theme="office"] .bp-type-tabs {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+[data-theme="office"] .bp-type-tab {
+  font-weight: 500;
+  color: #6b6b6b;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+}
+[data-theme="office"] .bp-type-tab:hover {
+  background: #f5f5f5;
+  color: #1a1a1a;
+}
+[data-theme="office"] .bp-type-tab.active {
+  background: #0078d4;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* Sub-tabs */
+[data-theme="office"] .bp-sub-tab {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #6b6b6b;
+  border-radius: 6px;
+  clip-path: none;
+}
+[data-theme="office"] .bp-sub-tab.active {
+  background: #e8f4fd;
+  border-color: #0078d4;
+  color: #0078d4;
+}
+
+/* Hero tabs */
+[data-theme="office"] .bridge-hero-tab {
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #333;
+  border-radius: 6px;
+  clip-path: none;
+}
+[data-theme="office"] .bridge-hero-tab.active {
+  background: #0078d4;
+  border-color: #0078d4;
+  color: #fff;
+}
+
+/* ── Inputs — clean form fields ── */
+[data-theme="office"] input[type="text"],
+[data-theme="office"] input[type="search"],
+[data-theme="office"] textarea,
+[data-theme="office"] select {
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #1a1a1a;
+  border-radius: 6px;
+}
+[data-theme="office"] input:focus,
+[data-theme="office"] textarea:focus,
+[data-theme="office"] select:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 0 2px rgba(0,120,212,0.15);
+  outline: none;
+}
+
+/* ── Prompt bar — minimal white ── */
+/* Strip nested borders — only keep outermost */
+[data-theme="office"] .nice-ai-input-area {
+  background: #fff !important;
+  border: 1px solid #d0d0d0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+[data-theme="office"] .nice-ai-input {
+  color: #1a1a1a !important;
+  background: #f8f8f8 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding-left: 16px !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.06) !important;
+}
+[data-theme="office"] .nice-ai-input:focus {
+  background: #fff !important;
+  box-shadow: inset 0 0 0 2px rgba(0,120,212,0.3) !important;
+}
+[data-theme="office"] .nice-ai-input::placeholder { color: #999; }
+[data-theme="office"] .nice-ai-input-area button {
+  background: #f5f5f5;
+  border: 1px solid #d0d0d0;
+  color: #555;
+  border-radius: 6px !important;
+}
+[data-theme="office"] .nice-ai-input-area button:hover {
+  background: #e8e8e8;
+  border-color: #0078d4;
+}
+[data-theme="office"] .nice-ai-close {
+  color: #999 !important;
+  border: none !important;
+  background: transparent !important;
+}
+[data-theme="office"] .nice-ai-input-area svg { color: #6b6b6b; stroke: #6b6b6b; }
+[data-theme="office"] .nice-ai-model-select,
+[data-theme="office"] .nice-ai-voice-select {
+  background: #f0f0f0 !important;
+  border: 1px solid #d0d0d0 !important;
+  color: #333 !important;
+  border-radius: 6px !important;
+}
+/* Chat pills */
+[data-theme="office"] .chat-pill {
+  background: #e8f4fd !important;
+  border: 1px solid #b3d9f2 !important;
+  color: #0078d4 !important;
+  border-radius: 20px !important;
+  font-weight: 500;
+}
+[data-theme="office"] .chat-pill:hover {
+  background: #0078d4 !important;
+  color: #fff !important;
+}
+[data-theme="office"] .nice-ai-chip {
+  background: #e8f4fd;
+  border: 1px solid #b3d9f2;
+  color: #0078d4;
+  border-radius: 20px;
+}
+
+/* ── Schematic / Org Chart ── */
+[data-theme="office"] .bridge-hero-header {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 12px 16px;
+  clip-path: none;
+}
+[data-theme="office"] .bridge-hero-name { color: #1a1a1a; }
+[data-theme="office"] .bridge-hero-meta { color: #6b6b6b; }
+
+/* Schematic wires — subtle gray */
+[data-theme="office"] .schematic-wired .schematic-svg line { stroke: #d0d0d0; }
+[data-theme="office"] .schematic-slot-label { color: #6b6b6b; }
+
+/* ── Health/progress bars — clean flat ── */
+[data-theme="office"] .health-bar,
+[data-theme="office"] .xp-bar {
+  border: 1px solid #e0e0e0;
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+[data-theme="office"] .health-fill { background: #107c10; border-radius: 3px; }
+[data-theme="office"] .health-fill.shield { background: #0078d4; border-radius: 3px; }
+[data-theme="office"] .xp-bar-fill { background: #d48000; border-radius: 3px; }
+
+/* ── Rarity badges — professional tier labels ── */
+[data-theme="office"] .tcg-mini-badge,
+[data-theme="office"] .bp-card-rarity {
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+}
+
+/* ── Filter pills ── */
+[data-theme="office"] .bp-rarity-pill,
+[data-theme="office"] .bp-filter-pill {
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #6b6b6b;
+  border-radius: 20px;
+}
+[data-theme="office"] .bp-rarity-pill.active,
+[data-theme="office"] .bp-filter-pill.active {
+  background: #0078d4;
+  border-color: #0078d4;
+  color: #fff;
+}
+
+/* ── Toast notifications — clean ── */
+[data-theme="office"] .toast {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  color: #1a1a1a;
+  clip-path: none;
+}
+
+/* ── Mission cards ── */
+[data-theme="office"] .mission-card {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+[data-theme="office"] .mission-card.completed { border-left: 4px solid #107c10; }
+[data-theme="office"] .mission-card.failed { border-left: 4px solid #c50f1f; }
+
+/* ── Wizard — clean modal ── */
+[data-theme="office"] .wizard-container {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+[data-theme="office"] .wizard-title { color: #1a1a1a; }
+[data-theme="office"] .wizard-subtitle { color: #6b6b6b; }
+
+/* ── Card grid — generous spacing for clean SaaS feel ── */
+[data-theme="office"] .fleet-grid { gap: 32px 28px !important; }
+[data-theme="office"] .fleet-grid.ships-view-full { gap: 40px 32px !important; }
+[data-theme="office"] .fleet-grid.ships-view-grid { gap: 24px 20px !important; }
+[data-theme="office"] .tcg-card { margin-bottom: 8px; }
+
+/* ── No effects — kill any pseudo overlays ── */
+[data-theme="office"]::after { display: none !important; }
+
+/* ── Scrollbar — subtle ── */
+[data-theme="office"] ::-webkit-scrollbar { width: 8px; }
+[data-theme="office"] ::-webkit-scrollbar-track { background: #f5f5f5; }
+[data-theme="office"] ::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 4px;
+}
+[data-theme="office"] ::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
+
+/* ─────────────────────────────────────────────────────────────────
+   RX-78-2 THEME — Gundam mecha command interface
+───────────────────────────────────────────────────────────────── */
+
+/* ── Font — Rajdhani for military tech feel ── */
+[data-theme="gundam"] {
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.5px;
+}
+[data-theme="gundam"] h1, [data-theme="gundam"] h2, [data-theme="gundam"] h3 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ── Mecha panel cards — armor plate segmentation ── */
+[data-theme="gundam"] .tcg-card {
+  border: 25px solid #3a3f55;
+  background: linear-gradient(160deg, #1e2030 0%, #252838 100%);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,0.06),
+    inset -1px -1px 0 rgba(0,0,0,0.3),
+    3px 3px 0 rgba(0,0,0,0.4);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+/* Panel line accent on card top */
+[data-theme="gundam"] .tcg-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2b4e8c 0%, #2b4e8c 40%, #c0392b 40%, #c0392b 60%, #d4a017 60%, #d4a017 100%);
+  z-index: 1;
+}
+/* Rarity border colors */
+[data-theme="gundam"] .tcg-card[data-rarity="common"]    { border-color: #e8e8e8; }
+[data-theme="gundam"] .tcg-card[data-rarity="rare"]      { border-color: #2b4e8c; }
+[data-theme="gundam"] .tcg-card[data-rarity="epic"]      { border-color: #7b3fa0; }
+[data-theme="gundam"] .tcg-card[data-rarity="legendary"] { border-color: #d4a017; }
+[data-theme="gundam"] .tcg-card[data-rarity="mythic"]    { border-color: #c0392b; }
+
+/* Mini cards — angular cut corners */
+[data-theme="gundam"] .tcg-card-mini {
+  border: 2px solid #3a3f55;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  background: linear-gradient(160deg, #1e2030, #252838);
+}
+[data-theme="gundam"] .tcg-card-mini[data-rarity="common"]    { border-color: #e8e8e8; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="rare"]      { border-color: #2b4e8c; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="epic"]      { border-color: #7b3fa0; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="legendary"] { border-color: #d4a017; }
+[data-theme="gundam"] .tcg-card-mini[data-rarity="mythic"]    { border-color: #c0392b; }
+
+/* ── Card name bar — V-fin accent stripe ── */
+[data-theme="gundam"] .tcg-card .name-bar {
+  background: linear-gradient(180deg, #252838 0%, #1e2030 100%);
+  border-bottom: 2px solid #3a3f55;
+  position: relative;
+}
+[data-theme="gundam"] .tcg-card .name-bar::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #d4a017;
+}
+
+/* ── Buttons — thruster glow on hover ── */
+[data-theme="gundam"] .btn,
+[data-theme="gundam"] .c-btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border: 1px solid #3a3f55;
+  background: linear-gradient(180deg, #252838 0%, #1e2030 100%);
+  color: #e0e0e8;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+[data-theme="gundam"] .btn:hover,
+[data-theme="gundam"] .c-btn:hover {
+  border-color: #c0392b;
+  box-shadow: 0 0 12px rgba(192,57,43,0.4), 0 0 24px rgba(192,57,43,0.15);
+}
+[data-theme="gundam"] .btn-primary {
+  background: linear-gradient(180deg, #2b4e8c 0%, #1e3a6a 100%);
+  border-color: #4a7abb;
+  color: #fff;
+}
+[data-theme="gundam"] .btn-primary:hover {
+  box-shadow: 0 0 14px rgba(43,78,140,0.5), 0 0 28px rgba(43,78,140,0.2);
+}
+
+/* Deploy buttons — Federation red */
+[data-theme="gundam"] .bp-deploy-ship-btn,
+[data-theme="gundam"] .bp-deploy-btn {
+  background: linear-gradient(180deg, #c0392b 0%, #922b21 100%) !important;
+  border-color: #e74c3c !important;
+  color: #fff !important;
+}
+[data-theme="gundam"] .bp-deploy-ship-btn:hover,
+[data-theme="gundam"] .bp-deploy-btn:hover {
+  box-shadow: 0 0 16px rgba(192,57,43,0.5), 0 0 32px rgba(192,57,43,0.2) !important;
+}
+
+/* ── Sidebar — Federation blue like the active tab ── */
+[data-theme="gundam"] .app-sidebar {
+  background: #2b4e8c;
+  border-right: 3px solid #d4a017;
+  box-shadow: 2px 0 15px rgba(43,78,140,0.2);
+  border-top: 3px solid #d4a017;
+  border-bottom: 3px solid #d4a017;
+  border-left: 3px solid #d4a017;
+}
+[data-theme="gundam"] .app-sidebar .side-header,
+[data-theme="gundam"] .app-sidebar .sidebar-section,
+[data-theme="gundam"] .app-sidebar .side-folder,
+[data-theme="gundam"] .app-sidebar .side-nav {
+  border-color: #d4a017;
+}
+[data-theme="gundam"] .side-link {
+  color: rgba(255,255,255,0.75);
+  border-color: #d4a017;
+}
+[data-theme="gundam"] .side-link:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+[data-theme="gundam"] .side-link.active {
+  border-left: 3px solid #c0392b;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+[data-theme="gundam"] .side-link svg {
+  opacity: 0.8;
+}
+[data-theme="gundam"] .side-header .app-brand-text {
+  color: #fff;
+}
+[data-theme="gundam"] #btn-hud {
+  background: #d4a017;
+  color: #1a1a2a;
+  border: 2px solid #e8c840;
+  font-weight: 700;
+}
+[data-theme="gundam"] .side-footer,
+[data-theme="gundam"] .side-footer * {
+  color: rgba(255,255,255,0.7);
+}
+[data-theme="gundam"] .side-footer {
+  border-top-color: #d4a017;
+}
+
+/* ── Top tab bar — white bar with blue/red RX-78-2 accents ── */
+[data-theme="gundam"] .bp-type-tabs {
+  background: #e8e8e8;
+  border: 2px solid #c0c0c0;
+  border-bottom: 5px solid #c0392b;
+  padding: 4px;
+  gap: 2px;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+[data-theme="gundam"] .bp-type-tab {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #1a1a2a;
+  background: #e8e8e8;
+  border: none;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+}
+[data-theme="gundam"] .bp-type-tab:hover {
+  background: #d0d0d8;
+}
+[data-theme="gundam"] .bp-type-tab.active {
+  background: #2b4e8c;
+  color: #fff;
+  box-shadow: 0 2px 0 #c0392b;
+}
+
+/* ── Other tabs — angular mecha style ── */
+[data-theme="gundam"] .topbar-tab,
+[data-theme="gundam"] .bridge-tab,
+[data-theme="gundam"] .bridge-hero-tab,
+[data-theme="gundam"] .bp-sub-tab {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border: 1px solid #3a3f55;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+}
+[data-theme="gundam"] .topbar-tab.active,
+[data-theme="gundam"] .bridge-tab.active,
+[data-theme="gundam"] .bridge-hero-tab.active,
+[data-theme="gundam"] .bp-sub-tab.active {
+  border-color: #2b4e8c;
+  background: rgba(43,78,140,0.15);
+  box-shadow: 0 2px 0 #2b4e8c;
+}
+
+/* ── Inputs — cockpit HUD style ── */
+[data-theme="gundam"] input[type="text"],
+[data-theme="gundam"] input[type="search"],
+[data-theme="gundam"] textarea,
+[data-theme="gundam"] select {
+  font-family: 'Rajdhani', sans-serif;
+  border: 1px solid #3a3f55;
+  background: #12131a;
+  color: #e0e0e8;
+}
+[data-theme="gundam"] input:focus,
+[data-theme="gundam"] textarea:focus {
+  border-color: #2b4e8c;
+  box-shadow: 0 0 8px rgba(43,78,140,0.3);
+}
+
+/* ── Prompt bar ── */
+[data-theme="gundam"] .nice-ai-input-area {
+  border: 2px solid #c0c0c0;
+  border-bottom: 4px solid #c0392b;
+  background: #e8e8e8 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  color: #1a1a2a;
+}
+[data-theme="gundam"] .nice-ai-input {
+  color: #fff !important;
+  background: #3a3f55 !important;
+  border-radius: 8px !important;
+  padding-left: 16px !important;
+}
+[data-theme="gundam"] .nice-ai-input::placeholder {
+  color: #b0b4c8;
+}
+[data-theme="gundam"] .nice-ai-input-area button,
+[data-theme="gundam"] .nice-ai-input-area select {
+  color: #fff;
+  border-color: #5a5f75;
+  background: #3a3f55;
+  border-radius: 8px !important;
+}
+[data-theme="gundam"] .nice-ai-input-area svg {
+  color: #fff;
+  stroke: #fff;
+}
+[data-theme="gundam"] .nice-ai-chip {
+  background: #d4a017;
+  border-color: #e8c840;
+  color: #1a1a2a;
+  font-weight: 600;
+}
+[data-theme="gundam"] .nice-ai-chip:hover {
+  background: #e8c840;
+  color: #1a1a2a;
+}
+/* Chat pills (Research, Mission, Code, etc.) */
+[data-theme="gundam"] .chat-pill {
+  background: #d4a017 !important;
+  border-color: #e8c840 !important;
+  color: #1a1a2a !important;
+  font-weight: 600;
+}
+[data-theme="gundam"] .chat-pill:hover {
+  background: #e8c840 !important;
+}
+/* Model & voice dropdowns — same gray as other buttons */
+[data-theme="gundam"] .nice-ai-model-select,
+[data-theme="gundam"] .nice-ai-voice-select {
+  background: #3a3f55 !important;
+  color: #fff !important;
+  border-color: #5a5f75 !important;
+  border-radius: 8px !important;
+}
+
+/* ── Schematic header panel — Gundam red ── */
+[data-theme="gundam"] .bridge-hero-header {
+  background: #c0392b;
+  padding: 12px 16px;
+  margin: -16px -16px 16px -16px;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+[data-theme="gundam"] .bridge-hero-name {
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+[data-theme="gundam"] .bridge-hero-meta {
+  color: rgba(255,255,255,0.85);
+}
+[data-theme="gundam"] .bridge-hero-controls .btn,
+[data-theme="gundam"] .bridge-hero-controls button,
+[data-theme="gundam"] .bridge-hero-controls select {
+  background: #d4a017;
+  border-color: #e8c840;
+  color: #1a1a2a;
+  font-weight: 700;
+}
+[data-theme="gundam"] .bridge-hero-controls .btn:hover,
+[data-theme="gundam"] .bridge-hero-controls button:hover {
+  background: #e8c840;
+}
+[data-theme="gundam"] .bridge-hero-tab.active {
+  background: #e8c840 !important;
+  border-color: #fff !important;
+  color: #1a1a2a !important;
+  box-shadow: 0 2px 0 #fff !important;
+}
+
+/* ── HUD crosshair overlay ── */
+[data-theme="gundam"]::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  background:
+    /* Vertical crosshair */
+    linear-gradient(rgba(43,78,140,0.08), rgba(43,78,140,0.08)) no-repeat 50% 0 / 1px 100%,
+    /* Horizontal crosshair */
+    linear-gradient(rgba(43,78,140,0.08), rgba(43,78,140,0.08)) no-repeat 0 50% / 100% 1px,
+    /* Corner brackets — top left */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 3% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 3% / 1px 30px,
+    /* Corner brackets — top right */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 3% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 3% / 1px 30px,
+    /* Corner brackets — bottom left */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 97% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 97% / 1px 30px,
+    /* Corner brackets — bottom right */
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 97% / 30px 1px,
+    linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 97% / 1px 30px;
+}
+
+/* ── Health/XP bars — mecha power gauges ── */
+[data-theme="gundam"] .health-bar,
+[data-theme="gundam"] .xp-bar {
+  border: 1px solid #3a3f55;
+  background: #12131a;
+}
+[data-theme="gundam"] .health-fill {
+  background: linear-gradient(90deg, #27ae60, #2ecc71);
+  box-shadow: 0 0 6px rgba(46,204,113,0.3);
+}
+[data-theme="gundam"] .health-fill.shield {
+  background: linear-gradient(90deg, #2b4e8c, #4a7abb);
+  box-shadow: 0 0 6px rgba(43,78,140,0.3);
+}
+[data-theme="gundam"] .xp-bar-fill {
+  background: linear-gradient(90deg, #d4a017, #f1c40f);
+  box-shadow: 0 0 6px rgba(212,160,23,0.3);
+}
+
+/* ── Rarity badges ── */
+[data-theme="gundam"] .tcg-mini-badge,
+[data-theme="gundam"] .bp-card-rarity {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Schematic — mecha wireframe feel ── */
+[data-theme="gundam"] .schematic-wired .schematic-svg line {
+  stroke: #2b4e8c;
+}
+
+/* ── Warning hazard stripe on mission status ── */
+[data-theme="gundam"] .mission-card.failed {
+  border-color: #c0392b;
+  border-left: 4px solid #c0392b;
+  background: linear-gradient(135deg,
+    rgba(192,57,43,0.08) 25%, transparent 25%, transparent 50%,
+    rgba(192,57,43,0.08) 50%, rgba(192,57,43,0.08) 75%, transparent 75%
+  );
+  background-size: 20px 20px;
+}
+
+/* ── Toast notifications ── */
+[data-theme="gundam"] .toast {
+  border: 1px solid #2b4e8c;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   16-BIT THEME — SNES RPG pixel GUI
+   Full retro game treatment: beveled buttons, segmented bars,
+   pixel borders, dialog boxes, Press Start 2P throughout.
+───────────────────────────────────────────────────────────────── */
+
+/* ── Global pixel rendering ── */
+[data-theme="16bit"] { image-rendering: pixelated; }
+[data-theme="16bit"] * { border-radius: 0px !important; font-family: 'Press Start 2P', cursive !important; }
+
+/* ── Pixelated SVG icons — crisp edges, chunky strokes ── */
+[data-theme="16bit"] svg {
+  shape-rendering: crispEdges;
+}
+[data-theme="16bit"] .icon,
+[data-theme="16bit"] .side-link svg,
+[data-theme="16bit"] .nav-link svg,
+[data-theme="16bit"] .topbar-tab svg,
+[data-theme="16bit"] .btn svg,
+[data-theme="16bit"] .c-btn svg {
+  shape-rendering: crispEdges;
+  stroke-width: 2.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+/* ── Pixel font on ALL text ── */
+[data-theme="16bit"] {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  line-height: 2;
+  letter-spacing: 0.5px;
+}
+[data-theme="16bit"] h1 { font-size: 18px; line-height: 1.8; }
+[data-theme="16bit"] h2 { font-size: 14px; line-height: 1.7; }
+[data-theme="16bit"] h3 { font-size: 12px; line-height: 1.6; }
+[data-theme="16bit"] p, [data-theme="16bit"] li,
+[data-theme="16bit"] span, [data-theme="16bit"] label,
+[data-theme="16bit"] td, [data-theme="16bit"] th { font-size: 10px; line-height: 2; }
+[data-theme="16bit"] .topbar-tab { font-size: 9px; padding: 8px 14px; }
+[data-theme="16bit"] .bp-card-name { font-size: 11px; }
+[data-theme="16bit"] .bridge-hero-name { font-size: 14px; }
+[data-theme="16bit"] .side-header .app-brand-text { font-size: 8px; }
+[data-theme="16bit"] .bridge-hero-meta { font-size: 9px; }
+[data-theme="16bit"] .nav-link, [data-theme="16bit"] .side-link { font-size: 9px; }
+[data-theme="16bit"] .badge { font-size: 8px; }
+[data-theme="16bit"] .dock-lbl { font-size: 7px; }
+[data-theme="16bit"] .nice-ai-disclaimer { font-size: 8px; }
+
+/* ── RPG Dialog Box — triple-layer pixel border on panels ── */
+[data-theme="16bit"] .wizard-container,
+[data-theme="16bit"] .bp-drawer,
+[data-theme="16bit"] .nice-ai-panel {
+  border: 4px solid #e2b714;
+  outline: 4px solid #16213e;
+  box-shadow:
+    inset 0 0 0 2px #16213e,
+    inset 0 0 0 4px #5b8dd9,
+    0 0 0 2px #0d1526,
+    4px 4px 0 rgba(0,0,0,0.5);
+}
+
+/* ── Card treatment — SNES item card with pixel bevel ── */
+[data-theme="16bit"] .tcg-card {
+  border-width: 10px !important;
+  border-style: solid !important;
+  box-shadow:
+    inset 3px 3px 0 rgba(255,255,200,0.2),
+    inset -3px -3px 0 rgba(0,0,0,0.4),
+    5px 5px 0 rgba(0,0,0,0.6);
+  background: #16213e;
+}
+/* Rarity border colors on full cards */
+[data-theme="16bit"] .tcg-card[data-rarity="common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .tcg-card[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
+[data-theme="16bit"] .tcg-card .name-bar {
+  font-size: 8px;
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  border-bottom: 3px solid #e2b714;
+  padding: 8px;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+[data-theme="16bit"] .tcg-card .text-box {
+  background: #0d1526;
+  border: 2px solid #2e4068;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.4);
+  margin: 4px;
+  padding: 8px;
+}
+[data-theme="16bit"] .tcg-card .stats {
+  background: linear-gradient(180deg, #1f2b47, #16213e);
+  border-top: 3px solid #e2b714;
+}
+
+/* Mini cards — smaller pixel bevel, rarity border from inline style */
+[data-theme="16bit"] .tcg-card-mini {
+  border-width: 6px !important;
+  border-style: solid !important;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.15),
+    inset -2px -2px 0 rgba(0,0,0,0.35),
+    4px 4px 0 rgba(0,0,0,0.5);
+  background: #16213e;
+}
+[data-theme="16bit"] .tcg-card-mini[data-rarity="common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
+/* Case-insensitive fallback (some paths use title case) */
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .tcg-card-mini[data-rarity="Mythic"]    { border-color: #ff2d55 !important; }
+[data-theme="16bit"] .tcg-mini-name {
+  font-size: 8px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+
+/* ── Buttons — Pixel RPG beveled buttons with color coding ── */
+[data-theme="16bit"] .btn,
+[data-theme="16bit"] .c-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 18px;
+  border: 3px solid #e2b714;
+  background: linear-gradient(180deg, #2e4068 0%, #1f2b47 100%);
+  color: #e8e0d0;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.2),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    3px 3px 0 rgba(0,0,0,0.6);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  transition: none;
+  cursor: pointer;
+  position: relative;
+}
+[data-theme="16bit"] .btn:hover,
+[data-theme="16bit"] .c-btn:hover {
+  background: linear-gradient(180deg, #3a5080 0%, #2e4068 100%);
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.25),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    2px 2px 0 rgba(0,0,0,0.6);
+  transform: translate(1px, 1px);
+}
+[data-theme="16bit"] .btn:active,
+[data-theme="16bit"] .c-btn:active {
+  background: linear-gradient(180deg, #1f2b47 0%, #16213e 100%);
+  box-shadow:
+    inset -2px -2px 0 rgba(255,255,200,0.1),
+    inset 2px 2px 0 rgba(0,0,0,0.4);
+  transform: translate(2px, 2px);
+}
+/* Primary = green RPG "START" button */
+[data-theme="16bit"] .btn-primary {
+  background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%);
+  border-color: #e2b714;
+  color: #fff;
+  text-shadow: 1px 1px 0 #145a32;
+}
+[data-theme="16bit"] .btn-primary:hover {
+  background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+}
+/* Danger = red RPG "EXIT" button */
+[data-theme="16bit"] .btn-danger,
+[data-theme="16bit"] .btn[data-action="delete"] {
+  background: linear-gradient(180deg, #c0392b 0%, #922b21 100%);
+  border-color: #e2b714;
+  text-shadow: 1px 1px 0 #641e16;
+}
+
+/* ── Deploy/Activate buttons — special gold "PLAY" treatment ── */
+[data-theme="16bit"] .bp-deploy-ship-btn,
+[data-theme="16bit"] .bp-deploy-btn {
+  background: linear-gradient(180deg, #e2b714 0%, #c8a050 30%, #8b6914 100%) !important;
+  color: #0d1526 !important;
+  border: 3px solid #fff3b0 !important;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.4),
+    inset -2px -2px 0 rgba(0,0,0,0.2),
+    3px 3px 0 rgba(0,0,0,0.6) !important;
+  text-shadow: 1px 1px 0 rgba(255,255,200,0.5);
+  font-size: 8px !important;
+}
+
+/* ── Sidebar — pixel border, RPG menu ── */
+[data-theme="16bit"] .app-sidebar {
+  border-right: 4px solid #e2b714;
+  box-shadow: inset -3px 0 0 #5b8dd9;
+  background: #0d1526;
+}
+[data-theme="16bit"] .side-link {
+  border-bottom: 2px solid #16213e;
+  transition: none;
+}
+[data-theme="16bit"] .side-link:hover {
+  background: #1f2b47;
+  color: #e2b714;
+}
+[data-theme="16bit"] .side-link.active {
+  background: #1f2b47;
+  border-left: 4px solid #e2b714;
+  color: #e2b714;
+  box-shadow: inset 0 2px 0 rgba(255,255,200,0.1), inset 0 -2px 0 rgba(0,0,0,0.2);
+}
+
+/* ── Top tabs — RPG menu tabs ── */
+[data-theme="16bit"] .topbar-tab,
+[data-theme="16bit"] .bridge-tab,
+[data-theme="16bit"] .bridge-hero-tab,
+[data-theme="16bit"] .bp-sub-tab {
+  font-family: 'Press Start 2P', cursive;
+  border: 2px solid #2e4068;
+  background: #16213e;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,200,0.1),
+    inset -1px -1px 0 rgba(0,0,0,0.3);
+  transition: none;
+}
+[data-theme="16bit"] .topbar-tab.active,
+[data-theme="16bit"] .bridge-tab.active,
+[data-theme="16bit"] .bridge-hero-tab.active,
+[data-theme="16bit"] .bp-sub-tab.active {
+  border-color: #e2b714;
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  color: #e2b714;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.15),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    0 3px 0 #e2b714;
+}
+
+/* ── Input fields — RPG text entry window ── */
+[data-theme="16bit"] input[type="text"],
+[data-theme="16bit"] input[type="search"],
+[data-theme="16bit"] textarea,
+[data-theme="16bit"] select {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  border: 3px solid #2e4068;
+  background: #0d1526;
+  color: #e8e0d0;
+  box-shadow:
+    inset 2px 2px 0 rgba(0,0,0,0.5),
+    inset -1px -1px 0 rgba(91,141,217,0.1);
+  padding: 10px 12px;
+}
+[data-theme="16bit"] input:focus,
+[data-theme="16bit"] textarea:focus,
+[data-theme="16bit"] select:focus {
+  border-color: #e2b714;
+  box-shadow:
+    inset 2px 2px 0 rgba(0,0,0,0.5),
+    0 0 0 2px rgba(226,183,20,0.3);
+}
+
+/* ── Prompt bar — RPG command window ── */
+[data-theme="16bit"] .nice-ai-input-area {
+  border: 4px solid #e2b714;
+  box-shadow:
+    inset 0 0 0 2px #16213e,
+    inset 0 0 0 4px #5b8dd9,
+    4px 4px 0 rgba(0,0,0,0.5);
+}
+[data-theme="16bit"] .nice-ai-input {
+  font-size: 10px;
+}
+[data-theme="16bit"] .nice-ai-input::placeholder {
+  font-size: 8px;
+}
+[data-theme="16bit"] .nice-ai-chip {
+  font-size: 7px;
+  padding: 4px 8px;
+  border: 2px solid #2e4068;
+  background: #1f2b47;
+  box-shadow: inset 1px 1px 0 rgba(255,255,200,0.1), 2px 2px 0 rgba(0,0,0,0.3);
+}
+[data-theme="16bit"] .nice-ai-chip:hover {
+  border-color: #e2b714;
+  background: #2e4068;
+}
+[data-theme="16bit"] .chat-pill {
+  font-size: 7px !important;
+  padding: 4px 10px !important;
+}
+[data-theme="16bit"] .nice-ai-model-select,
+[data-theme="16bit"] .nice-ai-voice-select {
+  font-size: 8px;
+}
+[data-theme="16bit"] .nice-ai-input-area button {
+  font-size: 8px;
+}
+
+/* Blinking cursor animation */
+[data-theme="16bit"] .nice-ai-input:focus::placeholder {
+  animation: snes-blink 1s step-end infinite;
+}
+@keyframes snes-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── CRT scanline overlay ── */
+[data-theme="16bit"]::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.06) 2px,
+    rgba(0,0,0,0.06) 3px
+  );
+}
+
+/* ── Segmented HP bars — pixel blocks instead of smooth fill ── */
+[data-theme="16bit"] .health-bar,
+[data-theme="16bit"] .xp-bar {
+  border: 3px solid #e2b714;
+  background: #0d1526;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.5);
+  height: 18px;
+}
+[data-theme="16bit"] .health-fill {
+  background: repeating-linear-gradient(
+    90deg,
+    #27ae60 0px, #27ae60 6px,
+    #1e8449 6px, #1e8449 7px,
+    #2ecc71 7px, #2ecc71 13px,
+    #1e8449 13px, #1e8449 14px
+  );
+  box-shadow: inset 0 2px 0 rgba(255,255,200,0.2), inset 0 -2px 0 rgba(0,0,0,0.3);
+  image-rendering: pixelated;
+}
+[data-theme="16bit"] .health-fill.shield {
+  background: repeating-linear-gradient(
+    90deg,
+    #2980b9 0px, #2980b9 6px,
+    #1f6da0 6px, #1f6da0 7px,
+    #3498db 7px, #3498db 13px,
+    #1f6da0 13px, #1f6da0 14px
+  );
+}
+[data-theme="16bit"] .xp-bar-fill {
+  background: repeating-linear-gradient(
+    90deg,
+    #e2b714 0px, #e2b714 6px,
+    #c8a050 6px, #c8a050 7px,
+    #f1c40f 7px, #f1c40f 13px,
+    #c8a050 13px, #c8a050 14px
+  );
+  box-shadow: inset 0 2px 0 rgba(255,255,200,0.3), inset 0 -2px 0 rgba(0,0,0,0.3);
+}
+
+/* ── Rarity badges — chunky pixel labels ── */
+[data-theme="16bit"] .tcg-mini-badge,
+[data-theme="16bit"] .bp-card-rarity {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  letter-spacing: 0.5px;
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  padding: 3px 6px;
+}
+
+/* ── Filter pills — pixel RPG item selection ── */
+[data-theme="16bit"] .bp-rarity-pill,
+[data-theme="16bit"] .bp-filter-pill {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  border: 2px solid #2e4068;
+  background: #16213e;
+  box-shadow: inset 1px 1px 0 rgba(255,255,200,0.08), 2px 2px 0 rgba(0,0,0,0.4);
+}
+[data-theme="16bit"] .bp-rarity-pill.active,
+[data-theme="16bit"] .bp-filter-pill.active {
+  border-color: #e2b714;
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  color: #e2b714;
+}
+
+/* ── Wizard — RPG save/menu screen ── */
+[data-theme="16bit"] .wizard-container {
+  background: #16213e;
+}
+[data-theme="16bit"] .wizard-title {
+  font-size: 14px;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  color: #e2b714;
+}
+[data-theme="16bit"] .wizard-subtitle {
+  font-size: 9px;
+}
+[data-theme="16bit"] .wizard-dot {
+  border: 2px solid #e2b714;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+}
+[data-theme="16bit"] .wizard-step-wrap.done .wizard-dot {
+  background: #27ae60;
+  border-color: #27ae60;
+}
+[data-theme="16bit"] .wizard-step-wrap.active .wizard-dot {
+  background: #e2b714;
+  color: #0d1526;
+}
+[data-theme="16bit"] .wizard-input {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+}
+
+/* ── Schematic — pixel connection lines ── */
+[data-theme="16bit"] .schematic-wired .schematic-svg line {
+  stroke-dasharray: 4, 4;
+}
+[data-theme="16bit"] .schematic-slot-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Select dropdowns ── */
+[data-theme="16bit"] select {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0,0 L8,0 L4,8 Z' fill='%23e2b714'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+/* ── Scrollbar — pixel chunky ── */
+[data-theme="16bit"] ::-webkit-scrollbar { width: 12px; }
+[data-theme="16bit"] ::-webkit-scrollbar-track {
+  background: #0d1526;
+  border-left: 2px solid #2e4068;
+}
+[data-theme="16bit"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  border: 2px solid #e2b714;
+  box-shadow: inset 1px 1px 0 rgba(255,255,200,0.15);
+}
+
+/* ── Search bar ── */
+[data-theme="16bit"] .bp-search-wrap input,
+[data-theme="16bit"] .search-input {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+}
+
+/* ── Notifications/toasts — pixel alert box ── */
+[data-theme="16bit"] .toast {
+  border: 3px solid #e2b714;
+  background: #16213e;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.15),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    4px 4px 0 rgba(0,0,0,0.6);
+}
+
+/* ── Card stats — RPG stat block ── */
+[data-theme="16bit"] .tcg-card .stat-label,
+[data-theme="16bit"] .tcg-card .stat-val {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+}
+[data-theme="16bit"] .bp-card-stat-label {
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+[data-theme="16bit"] .bp-card-stat-val {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  color: #e2b714;
+}
+
+/* ── Marquee ticker ── */
+[data-theme="16bit"] .tcg-card .marquee {
+  background: #0d1526;
+  border-top: 2px solid #2e4068;
+  border-bottom: 2px solid #2e4068;
+  font-size: 9px;
+}
+
+/* ── Deploy button font ── */
+[data-theme="16bit"] .bp-deploy-ship-btn,
+[data-theme="16bit"] .bp-deploy-btn {
+  font-size: 10px !important;
+}
+
+/* ── Mission cards ── */
+[data-theme="16bit"] .mission-card {
+  border: 3px solid #2e4068;
+  background: #16213e;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.08),
+    inset -2px -2px 0 rgba(0,0,0,0.25),
+    3px 3px 0 rgba(0,0,0,0.5);
+}
+[data-theme="16bit"] .mission-card.completed {
+  border-color: #27ae60;
+}
+[data-theme="16bit"] .mission-card.failed {
+  border-color: #c0392b;
+}
 
 /* ─────────────────────────────────────────────────────────────────
    SIDEBAR (Desktop always visible, mobile drawer)
@@ -2464,23 +3741,25 @@
 }
 .nice-ai-close:hover { opacity:1; color:var(--text, #fff); }
 
-/* Input area — solid bg so nothing bleeds through */
+/* Input area — single outer shell with border (no nested borders) */
 .nice-ai-input-area {
   position:relative;
-  background:var(--bg);
+  background:var(--panel-bg, var(--bg-alt));
+  border:1px solid var(--border);
+  border-radius:16px;
   padding:0;
+  transition:border-color .2s;
 }
+.nice-ai-input-area:focus-within { border-color:var(--accent); }
 
-/* Input container */
+/* Input container — borderless inner wrapper (border lives on .nice-ai-input-area) */
 .nice-ai-input-container {
   display:flex; flex-direction:column;
-  border:1px solid var(--border); border-radius:16px;
-  background:var(--panel-bg, var(--bg-alt));
+  border:none !important; border-radius:0 !important;
+  background:transparent !important;
   padding:12px 12px 8px;
-  transition:border-color .2s;
-  box-shadow:none;
+  box-shadow:none !important;
 }
-.nice-ai-input-container:focus-within { border-color:var(--accent); }
 
 .nice-ai-input-row {
   display:flex; flex:1;
@@ -2638,7 +3917,7 @@
 @media (max-width:768px) {
   /* username and badge always visible in sidebar drawer */
   .nice-ai { max-width:100%; padding:0 8px 12px; left:0; right:0; width:auto; transform:none; }
-  .nice-ai-input-container { border-radius:var(--radius); }
+  .nice-ai-input-area { border-radius:var(--radius); }
   .nice-monitor-inner { padding:16px 12px 120px; }
 }
 

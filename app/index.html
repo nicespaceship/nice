@@ -112,6 +112,16 @@
 
 <!-- MATRIX RAIN CANVAS -->
 <canvas id="matrix-canvas"></canvas>
+<!-- TRON GRID FLOOR -->
+<div id="tron-grid"></div>
+<!-- TRON CITYSCAPE (horizon silhouette) -->
+<div id="tron-city"></div>
+<!-- TRON LIGHT CYCLES (separate from grid to avoid perspective warp) -->
+<div id="tron-cycles"><i class="tron-dot tron-c1"></i><i class="tron-dot tron-c2"></i><i class="tron-dot tron-c3"></i><i class="tron-dot tron-c4"></i><i class="tron-dot tron-c5"></i><i class="tron-dot tron-c6"></i></div>
+<!-- GUNDAM MINOVSKY PARTICLES -->
+<canvas id="gundam-canvas"></canvas>
+<!-- 16-BIT STARFIELD CANVAS -->
+<canvas id="snes-canvas"></canvas>
 
 <!-- Hidden page title for router / screen readers -->
 <span id="app-page-title" class="sr-only" aria-live="polite">Bridge</span>
@@ -134,7 +144,7 @@
   <!-- HUD PANEL (inline, slides open pushing nav down) -->
   <div class="app-hud-panel" id="app-hud-panel">
     <div class="hud-row" style="justify-content:space-between">
-      <span class="dock-lbl"><a href="#/theme-editor" style="color:var(--accent);text-decoration:none">THEME</a> <span class="dock-lbl-sep">|</span> <span id="active-theme-name" class="dock-lbl-val"></span></span>
+      <span class="dock-lbl"><span id="active-theme-name" class="dock-lbl-val" style="text-transform:uppercase"></span></span>
       <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-sun"/></svg>
       </button>
@@ -163,7 +173,7 @@
     </a>
     <a href="#/engineering" class="side-link" data-view="engineering">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
-      <span>Engineering</span>
+      <span>Code</span>
     </a>
     <div class="side-folder" id="side-missions-folder">
       <button class="side-folder-toggle" id="side-missions-toggle" aria-label="Toggle missions folder" aria-expanded="false">

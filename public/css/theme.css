@@ -280,11 +280,11 @@
 [data-theme="spaceship"] .search-box { background: rgba(9,9,11,0.8); border-color: var(--border); }
 
 /* Prompt panel */
-[data-theme="spaceship"] .nice-ai-input-container {
+[data-theme="spaceship"] .nice-ai-input-area {
   border: 1px solid var(--border); border-radius: 16px;
   background: #09090b;
 }
-[data-theme="spaceship"] .nice-ai-input-container:focus-within { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); }
+[data-theme="spaceship"] .nice-ai-input-area:focus-within { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); }
 [data-theme="spaceship"] .nice-ai-input { color: var(--text); }
 [data-theme="spaceship"] .nice-ai-input::placeholder { color: var(--text-dim); }
 [data-theme="spaceship"] .nice-ai-chip {
@@ -348,7 +348,7 @@
 }
 
 /* Prompt bar — glow on focus */
-[data-theme="spaceship"] .nice-ai-input-container:focus-within {
+[data-theme="spaceship"] .nice-ai-input-area:focus-within {
   border-color: var(--accent2);
   box-shadow: 0 0 0 2px rgba(165,180,252,0.12), 0 0 20px rgba(165,180,252,0.06);
 }
@@ -682,10 +682,10 @@
 [data-theme="robotech"] .search-box { background:#fff; border-color:#d0d0ce; border-radius:4px; }
 
 /* ── Prompt Panel ── */
-[data-theme="robotech"] .nice-ai-input-container {
+[data-theme="robotech"] .nice-ai-input-area {
   border:1px solid #d0d0ce; border-radius:8px; background:#fff;
 }
-[data-theme="robotech"] .nice-ai-input-container:focus-within { border-color:#999; }
+[data-theme="robotech"] .nice-ai-input-area:focus-within { border-color:#999; }
 [data-theme="robotech"] .nice-ai-input { color:#1a1a1a; }
 [data-theme="robotech"] .nice-ai-input::placeholder { color:#bbb; }
 [data-theme="robotech"] .nice-ai-chip {
@@ -891,8 +891,8 @@
 
 /* Tron Grid Floor — forward travel animation (toward viewer) */
 @keyframes tron-grid-scroll {
-  0% { background-position: 0 0; background-size: 50px 50px; }
-  100% { background-position: 0 50px; background-size: 50px 50px; }
+  0% { background-position: 0 0; }
+  100% { background-position: 0 25px; }
 }
 @keyframes tron-grid-forward {
   0%   { transform: perspective(300px) rotateX(60deg) scale(1); }
@@ -916,24 +916,240 @@
   position: relative;
 }
 /* Perspective grid floor — traveling forward toward viewer.
-   Uses the canvas element (#matrix-canvas) which exists in the SPA
-   and sits behind content at z-index 0. */
-[data-theme="navigator"] #matrix-canvas {
-  display: block !important;
-  position: fixed; inset: 0;
-  width: 100vw; height: 100vh;
+   Uses dedicated #tron-grid element (not shared with other themes). */
+#tron-grid {
+  display: none;
+  position: fixed;
+  top: 0; left: 56px; right: 0; bottom: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 1;
+}
+[data-theme="navigator"] #tron-grid {
+  display: block;
   background:
-    linear-gradient(rgba(0,229,255,0.22) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,0.16) 1px, transparent 1px) !important;
-  background-size: 50px 50px !important;
+    linear-gradient(rgba(0,229,255,0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.18) 1px, transparent 1px),
+    linear-gradient(rgba(0,229,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.06) 1px, transparent 1px);
+  background-size: 25px 25px, 25px 25px, 5px 5px, 5px 5px;
   animation: tron-grid-scroll 1.8s linear infinite;
   transform: perspective(250px) rotateX(60deg);
   transform-origin: center 65%;
-  mask-image: radial-gradient(ellipse 160% 100% at 50% 75%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 45%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 160% 100% at 50% 75%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 45%, transparent 70%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 50%, transparent 62%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 50%, transparent 62%);
+}
+
+/* ── TRON Cityscape — horizon silhouette with towers & light beams ── */
+#tron-city {
+  display: none;
+  position: fixed;
+  left: 56px; right: 0;
+  bottom: 48%;
+  height: 20vh;
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="navigator"] #tron-city {
+  display: block;
+  /* Skyline silhouette built from layered gradients */
+  background:
+    /* ── Central spire (tall, narrow, bright) ── */
+    linear-gradient(to top, #041220 0%, transparent 100%) no-repeat 50% 100% / 4px 100%,
+    linear-gradient(to top, rgba(0,229,255,0.5) 0%, transparent 80%) no-repeat 50% 100% / 2px 100%,
+    /* Spire glow */
+    radial-gradient(ellipse 30px 60px at 50% 30%, rgba(0,229,255,0.15) 0%, transparent 100%),
+    /* ── Tower pair flanking center ── */
+    linear-gradient(#041220, #041220) no-repeat 47% 100% / 16px 55%,
+    linear-gradient(#041220, #041220) no-repeat 53% 100% / 16px 55%,
+    /* Tower caps */
+    linear-gradient(#041220, #041220) no-repeat 46.2% 45% / 22px 4px,
+    linear-gradient(#041220, #041220) no-repeat 52.2% 45% / 22px 4px,
+    /* ── Light beams from towers ── */
+    linear-gradient(to top, rgba(0,229,255,0.3), transparent) no-repeat 47.5% 0% / 2px 45%,
+    linear-gradient(to top, rgba(0,229,255,0.3), transparent) no-repeat 53.5% 0% / 2px 45%,
+    linear-gradient(to top, rgba(0,229,255,0.2), transparent) no-repeat 50% 0% / 1px 30%,
+    /* ── Outer towers (shorter) ── */
+    linear-gradient(#041220, #041220) no-repeat 38% 100% / 20px 35%,
+    linear-gradient(#041220, #041220) no-repeat 62% 100% / 20px 35%,
+    linear-gradient(#041220, #041220) no-repeat 35% 100% / 12px 25%,
+    linear-gradient(#041220, #041220) no-repeat 65% 100% / 12px 25%,
+    /* Outer tower caps */
+    linear-gradient(#041220, #041220) no-repeat 37% 65% / 26px 3px,
+    linear-gradient(#041220, #041220) no-repeat 61% 65% / 26px 3px,
+    /* Outer light beams */
+    linear-gradient(to top, rgba(0,229,255,0.15), transparent) no-repeat 39% 0% / 1px 65%,
+    linear-gradient(to top, rgba(0,229,255,0.15), transparent) no-repeat 63% 0% / 1px 65%,
+    /* ── Far outer structures ── */
+    linear-gradient(#041220, #041220) no-repeat 28% 100% / 24px 20%,
+    linear-gradient(#041220, #041220) no-repeat 72% 100% / 24px 20%,
+    linear-gradient(#041220, #041220) no-repeat 22% 100% / 14px 15%,
+    linear-gradient(#041220, #041220) no-repeat 78% 100% / 14px 15%,
+    linear-gradient(#041220, #041220) no-repeat 16% 100% / 18px 10%,
+    linear-gradient(#041220, #041220) no-repeat 84% 100% / 18px 10%,
+    /* ── Low skyline fill (base of cityscape) ── */
+    linear-gradient(#041220, #041220) no-repeat 30% 100% / 40% 8%,
+    linear-gradient(#041220, #041220) no-repeat 10% 100% / 25% 5%,
+    linear-gradient(#041220, #041220) no-repeat 65% 100% / 25% 5%,
+    /* ── Horizon glow line ── */
+    linear-gradient(90deg, transparent 5%, rgba(0,229,255,0.12) 30%, rgba(0,229,255,0.25) 50%, rgba(0,229,255,0.12) 70%, transparent 95%) no-repeat 0% 100% / 100% 2px,
+    /* ── Atmospheric glow behind city ── */
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,229,255,0.08) 0%, transparent 100%);
+}
+@keyframes tron-beacon {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+/* Pulsing beacon on central spire */
+[data-theme="navigator"] #tron-city::before {
+  content: '';
+  position: absolute;
+  left: calc(50% - 3px);
+  top: 0;
+  width: 6px; height: 6px;
+  background: #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 3px rgba(0,229,255,0.8), 0 0 20px 6px rgba(0,229,255,0.3);
+  animation: tron-beacon 2s ease-in-out infinite;
+}
+/* Faint window lights on towers */
+[data-theme="navigator"] #tron-city::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 60%;
+  background:
+    radial-gradient(circle 1px, rgba(0,229,255,0.4) 0%, transparent 100%) 47.5% 60% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.3) 0%, transparent 100%) 48.5% 70% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.4) 0%, transparent 100%) 52.5% 55% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.3) 0%, transparent 100%) 53.5% 75% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 38.5% 75% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 39.5% 85% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 62.5% 75% / 2px 2px no-repeat,
+    radial-gradient(circle 1px, rgba(0,229,255,0.25) 0%, transparent 100%) 61.5% 85% / 2px 2px no-repeat;
+  pointer-events: none;
+}
+
+/* ── Light Cycles — travel along perspective grid lines ── */
+/* Cyan: from bottom-left toward vanishing point (center-top) */
+@keyframes tron-cycle-inward {
+  0%   { bottom: -5%; left: 25%; transform: scale(1); opacity: 1; }
+  100% { bottom: 105%; left: 48%; transform: scale(0.2); opacity: 0; }
+}
+/* Orange: from vanishing point (center-top) out toward bottom-right */
+@keyframes tron-cycle-outward {
+  0%   { bottom: 105%; left: 52%; transform: scale(0.2); opacity: 0; }
+  100% { bottom: -5%; left: 75%; transform: scale(1); opacity: 1; }
+}
+
+#tron-cycles {
+  display: none;
+  position: fixed;
+  left: 56px; right: 0;
+  bottom: 0;
+  height: 40vh;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+[data-theme="navigator"] #tron-cycles { display: block; }
+
+/* Light cycle dot base */
+[data-theme="navigator"] .tron-dot {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+/* Cyan cycles — inward */
+[data-theme="navigator"] #tron-cycles::before {
+  content: '';
+  position: absolute;
+  width: 4px; height: 4px;
+  background: #00e5ff;
+  border-radius: 50%;
+  box-shadow:
+    0 0 6px 2px rgba(0,229,255,0.9),
+    0 0 14px 4px rgba(0,229,255,0.3);
+  animation: tron-cycle-inward 4s linear infinite;
+}
+/* Orange cycles — outward */
+[data-theme="navigator"] #tron-cycles::after {
+  content: '';
+  position: absolute;
+  width: 4px; height: 4px;
+  background: #ff9500;
+  border-radius: 50%;
+  box-shadow:
+    0 0 6px 2px rgba(255,149,0,0.9),
+    0 0 14px 4px rgba(255,149,0,0.3);
+  animation: tron-cycle-outward 5s linear infinite;
+  animation-delay: 2s;
+}
+
+/* ── Extra scattered cycles (injected via #tron-cycles children) ── */
+@keyframes tron-cycle-in2 {
+  0%   { bottom: -5%; left: 15%; transform: scale(1); opacity: 0.8; }
+  100% { bottom: 105%; left: 47%; transform: scale(0.15); opacity: 0; }
+}
+@keyframes tron-cycle-in3 {
+  0%   { bottom: -5%; left: 35%; transform: scale(0.8); opacity: 0.7; }
+  100% { bottom: 105%; left: 49%; transform: scale(0.1); opacity: 0; }
+}
+@keyframes tron-cycle-out2 {
+  0%   { bottom: 105%; left: 53%; transform: scale(0.15); opacity: 0; }
+  100% { bottom: -5%; left: 85%; transform: scale(1); opacity: 0.8; }
+}
+@keyframes tron-cycle-out3 {
+  0%   { bottom: 105%; left: 51%; transform: scale(0.1); opacity: 0; }
+  100% { bottom: -5%; left: 65%; transform: scale(0.8); opacity: 0.7; }
+}
+@keyframes tron-cycle-in4 {
+  0%   { bottom: -5%; left: 8%; transform: scale(0.9); opacity: 0.6; }
+  100% { bottom: 105%; left: 46%; transform: scale(0.1); opacity: 0; }
+}
+@keyframes tron-cycle-out4 {
+  0%   { bottom: 105%; left: 54%; transform: scale(0.1); opacity: 0; }
+  100% { bottom: -5%; left: 92%; transform: scale(0.9); opacity: 0.6; }
+}
+[data-theme="navigator"] .tron-c1 {
+  background: #00e5ff;
+  box-shadow: 0 0 5px 2px rgba(0,229,255,0.8), 0 0 10px 3px rgba(0,229,255,0.25);
+  animation: tron-cycle-in2 5.5s linear infinite;
+  animation-delay: 1s;
+}
+[data-theme="navigator"] .tron-c2 {
+  background: #00e5ff;
+  box-shadow: 0 0 4px 1px rgba(0,229,255,0.7), 0 0 8px 2px rgba(0,229,255,0.2);
+  animation: tron-cycle-in3 3.5s linear infinite;
+  animation-delay: 3s;
+  width: 2px; height: 2px;
+}
+[data-theme="navigator"] .tron-c3 {
+  background: #ff9500;
+  box-shadow: 0 0 5px 2px rgba(255,149,0,0.8), 0 0 10px 3px rgba(255,149,0,0.25);
+  animation: tron-cycle-out2 6s linear infinite;
+  animation-delay: 0.5s;
+}
+[data-theme="navigator"] .tron-c4 {
+  background: #ff9500;
+  box-shadow: 0 0 4px 1px rgba(255,149,0,0.7), 0 0 8px 2px rgba(255,149,0,0.2);
+  animation: tron-cycle-out3 4s linear infinite;
+  animation-delay: 4s;
+  width: 2px; height: 2px;
+}
+[data-theme="navigator"] .tron-c5 {
+  background: #00e5ff;
+  box-shadow: 0 0 4px 1px rgba(0,229,255,0.6), 0 0 8px 2px rgba(0,229,255,0.15);
+  animation: tron-cycle-in4 7s linear infinite;
+  animation-delay: 2.5s;
+  width: 2px; height: 2px;
+}
+[data-theme="navigator"] .tron-c6 {
+  background: #ff9500;
+  box-shadow: 0 0 4px 1px rgba(255,149,0,0.6), 0 0 8px 2px rgba(255,149,0,0.15);
+  animation: tron-cycle-out4 6.5s linear infinite;
+  animation-delay: 5s;
+  width: 2px; height: 2px;
 }
 
 /* Horizontal scan line sweeping across content */
@@ -1198,12 +1414,12 @@
 }
 
 /* Prompt panel — identity disc communicator */
-[data-theme="navigator"] .nice-ai-input-container {
+[data-theme="navigator"] .nice-ai-input-area {
   border: 1px solid rgba(0,229,255,0.2); border-radius: 16px;
   background: rgba(2,9,15,0.9);
   box-shadow: 0 0 15px rgba(0,229,255,0.05), inset 0 0 15px rgba(0,229,255,0.02);
 }
-[data-theme="navigator"] .nice-ai-input-container:focus-within {
+[data-theme="navigator"] .nice-ai-input-area:focus-within {
   border-color: #00e5ff;
   box-shadow: 0 0 20px rgba(0,229,255,0.15), inset 0 0 15px rgba(0,229,255,0.03);
 }
@@ -1648,10 +1864,10 @@
   border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
   color: #00ff41; font-family: 'Fira Code', monospace;
 }
-[data-theme="matrix"] .nice-ai-input-container {
+[data-theme="matrix"] .nice-ai-input-area {
   border-radius: 0; border: 1px solid rgba(0,255,65,0.25); background: rgba(0,6,0,0.8);
 }
-[data-theme="matrix"] .nice-ai-input-container:focus-within {
+[data-theme="matrix"] .nice-ai-input-area:focus-within {
   border-color: #00ff41; box-shadow: 0 0 12px rgba(0,255,65,0.15);
 }
 [data-theme="matrix"] .nice-ai-input { color: #00ff41; font-family: 'Fira Code', monospace; }
@@ -2085,10 +2301,10 @@
 }
 
 /* Prompt panel */
-[data-theme="lcars"] .nice-ai-input-container {
+[data-theme="lcars"] .nice-ai-input-area {
   border:2px solid #666688; border-radius:24px; background:#000;
 }
-[data-theme="lcars"] .nice-ai-input-container:focus-within { border-color:#ff9966; }
+[data-theme="lcars"] .nice-ai-input-area:focus-within { border-color:#ff9966; }
 [data-theme="lcars"] .nice-ai-input { color:#ff9966; }
 [data-theme="lcars"] .nice-ai-input::placeholder { color:#666688; }
 [data-theme="lcars"] .nice-ai-chip {
@@ -2385,11 +2601,11 @@
 }
 
 /* Prompt panel — brass communicator */
-[data-theme="steampunk"] .nice-ai-input-container {
+[data-theme="steampunk"] .nice-ai-input-area {
   border: 1px solid #5a4220; border-radius: 16px;
   background: linear-gradient(135deg, #1a1208, #0f0a04);
 }
-[data-theme="steampunk"] .nice-ai-input-container:focus-within { border-color: #c8a050; box-shadow: 0 0 8px rgba(200,160,80,0.15); }
+[data-theme="steampunk"] .nice-ai-input-area:focus-within { border-color: #c8a050; box-shadow: 0 0 8px rgba(200,160,80,0.15); }
 [data-theme="steampunk"] .nice-ai-input { color: #e8d8c0; font-family: 'Playfair Display', serif; }
 [data-theme="steampunk"] .nice-ai-input::placeholder { color: #5a4220; }
 [data-theme="steampunk"] .nice-ai-chip {
@@ -2770,7 +2986,7 @@
 }
 
 /* ── 13. Prompt Panel — brass telegraph device ── */
-[data-theme="steampunk"] .nice-ai-input-container {
+[data-theme="steampunk"] .nice-ai-input-area {
   border:2px solid #5a4220; border-radius:4px;
   background:linear-gradient(135deg, #1a1208, #0f0a04);
   box-shadow:0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(200,160,80,0.08);
@@ -2977,17 +3193,17 @@
 [data-theme="cyberpunk"] .mcp-catalog-card,
 [data-theme="cyberpunk"] .widget-card,
 [data-theme="cyberpunk"] .security-posture-card,
-[data-theme="cyberpunk"] .nice-ai-input-container {
+[data-theme="cyberpunk"] .nice-ai-input-area {
   clip-path:polygon(
     0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px,
     100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px)
   );
   border-radius:0;
 }
-[data-theme="cyberpunk"] .nice-ai-input-container {
+[data-theme="cyberpunk"] .nice-ai-input-area {
   border:1px solid #2a2a4a; background:#12121a;
 }
-[data-theme="cyberpunk"] .nice-ai-input-container:focus-within {
+[data-theme="cyberpunk"] .nice-ai-input-area:focus-within {
   border-color:#ff2d6f; box-shadow:0 0 12px rgba(255,45,111,0.15);
 }
 
@@ -3202,7 +3418,7 @@
   border:1px solid rgba(255,45,111,0.2);
   background:rgba(10,10,20,0.9);
 }
-[data-theme="cyberpunk"] .nice-ai-input-container {
+[data-theme="cyberpunk"] .nice-ai-input-area {
   clip-path:polygon(
     0 10px, 10px 0, calc(100% - 16px) 0, 100% 16px,
     100% calc(100% - 10px), calc(100% - 10px) 100%, 16px 100%, 0 calc(100% - 16px)

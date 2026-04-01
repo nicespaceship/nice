@@ -588,6 +588,14 @@ const ShipSetupWizard = (() => {
         status: 'deployed',
         slot_assignments: _data.slotAssignments,
         agent_ids: resolvedAgentIds,
+        stats: _blueprint.stats,
+        metadata: _blueprint.metadata,
+        crew: _blueprint.crew || _blueprint.metadata?.crew || [],
+        rarity: _blueprint.rarity,
+        config: _blueprint.config,
+        description: _blueprint.description,
+        caps: _blueprint.caps || _blueprint.metadata?.caps || [],
+        type: 'spaceship',
       };
       if (existing) Object.assign(existing, shipData);
       else spaceships.push(shipData);

@@ -29,25 +29,64 @@ const Theme = (() => {
       data:{ colors:{ '--bg':'#0f0a04','--bg2':'#1a1208','--surface':'rgba(200,160,80,0.06)','--surface2':'rgba(139,105,20,0.08)','--border':'rgba(200,160,80,0.28)','--border-hi':'rgba(200,160,80,0.6)','--accent':'#c8a050','--accent2':'#8b6914','--text':'#e8d8c0','--text-muted':'rgba(232,216,192,0.5)','--glow':'0 0 16px rgba(200,160,80,0.22)','--panel-bg':'rgba(15,10,4,0.97)' }, fonts:{ '--font-h':"'Playfair Display', serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' } },
+    { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
+      data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' } },
+    { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
+      data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' } },
+    { id:'office', name:'The Office', builtin:true, accent:'#0078d4', preview:['#f5f5f5','#0078d4','#107c10'],
+      data:{ colors:{ '--bg':'#f5f5f5','--bg2':'#ebebeb','--surface':'#ffffff','--surface2':'#fafafa','--border':'#e0e0e0','--border-hi':'#0078d4','--accent':'#0078d4','--accent2':'#107c10','--text':'#1a1a1a','--text-muted':'#6b6b6b','--glow':'none','--panel-bg':'#ffffff' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'8px' } },
   ];
 
   BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
 
   function set(name) {
-    // Clear inline vars first so built-in CSS takes over cleanly
+    // ── FORCED RESET: kill all theme assets before applying new theme ──
+    // 1. Clear all CSS custom properties
     VAR_KEYS.forEach(k => document.documentElement.style.removeProperty(k));
+    // 2. Remove data-theme attribute
+    document.documentElement.removeAttribute('data-theme');
+    // 3. Turn off all canvas/animated assets
+    MatrixRain.toggle(false);
+    if (typeof StarField16 !== 'undefined') StarField16.toggle(false);
+    if (typeof GundamField !== 'undefined') GundamField.toggle(false);
+    // 4. Hide dedicated theme elements (CSS-driven ones reset via data-theme removal)
+    const tronGrid = document.getElementById('tron-grid');
+    if (tronGrid) tronGrid.style.display = 'none';
+    const tronCity = document.getElementById('tron-city');
+    if (tronCity) tronCity.style.display = 'none';
+    const tronCycles = document.getElementById('tron-cycles');
+    if (tronCycles) tronCycles.style.display = 'none';
 
     const t = THEMES.find(t => t.id === name);
 
-    // Check if it's a built-in theme name
+    // ── Apply new theme ──
     if (BUILTIN.includes(name)) {
       document.documentElement.setAttribute('data-theme', name);
       localStorage.setItem('ns-theme', name);
+      // Apply inline color vars for themes not defined in theme.css
+      if (t && t.data) {
+        const td = t.data;
+        if (td.colors) Object.entries(td.colors).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
+        if (td.fonts) {
+          document.documentElement.style.setProperty('--font-h', td.fonts['--font-h']);
+          document.documentElement.style.setProperty('--font-d', td.fonts['--font-h']);
+          document.documentElement.style.setProperty('--font-b', td.fonts['--font-b']);
+        }
+        if (td.radius) document.documentElement.style.setProperty('--radius', td.radius);
+      }
+      // Activate theme-specific assets
       MatrixRain.toggle(name === 'matrix');
+      if (typeof StarField16 !== 'undefined') StarField16.toggle(name === '16bit');
+      if (typeof GundamField !== 'undefined') GundamField.toggle(name === 'gundam');
+      // Tron elements are CSS-driven via [data-theme="navigator"] — reset inline hide
+      if (name === 'navigator') {
+        if (tronGrid) tronGrid.style.removeProperty('display');
+        if (tronCity) tronCity.style.removeProperty('display');
+        if (tronCycles) tronCycles.style.removeProperty('display');
+      }
     } else {
       // Non-built-in: look up in THEMES by id (custom themes)
       if (!t) return;
-      document.documentElement.removeAttribute('data-theme');
       const td = t.data;
       if (td.colors) Object.entries(td.colors).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
       if (td.fonts) {
@@ -57,7 +96,6 @@ const Theme = (() => {
       }
       if (td.radius) document.documentElement.style.setProperty('--radius', td.radius);
       localStorage.setItem('ns-theme', name);
-      MatrixRain.toggle(false);
     }
 
     // Highlight active dock button
@@ -66,7 +104,7 @@ const Theme = (() => {
 
     // Update active theme name label
     const nameEl = document.getElementById('active-theme-name');
-    if (nameEl) nameEl.textContent = t ? t.name : name;
+    if (nameEl) nameEl.textContent = (t ? t.name : name).toUpperCase();
 
     // Update theme-color meta for PWA
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -75,6 +113,90 @@ const Theme = (() => {
       meta.setAttribute('content', bg || '#080808');
     }
 
+    // Theme-specific terminology
+    _applyOfficeLabels(name === 'office');
+    _applyLcarsLabels(name === 'lcars');
+  }
+
+  const _OFFICE_LABELS = {
+    'Schematic': 'Overview', 'Blueprints': 'Templates', 'Missions': 'Tasks',
+    'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
+    'Bridge': 'Office', 'Deploy': 'Activate', 'Deployed': 'Active',
+    'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'OVERVIEW', 'BLUEPRINTS': 'TEMPLATES',
+    'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
+    'Spaceships': 'Teams', 'Agents': 'Assistants', 'Spaceship': 'Team', 'Agent': 'Assistant',
+    'Ship': 'Team', "Captain's Log": 'Audit Trail', "Ship's Log": 'Chat History',
+  };
+  // Reverse map for restoring originals
+  const _OFFICE_REVERSE = Object.fromEntries(Object.entries(_OFFICE_LABELS).map(([k,v]) => [v,k]));
+  let _officeActive = false;
+  let _officeObserver = null;
+
+  function _applyOfficeLabels(on) {
+    if (on === _officeActive) return;
+    _officeActive = on;
+    const map = on ? _OFFICE_LABELS : _OFFICE_REVERSE;
+    _swapTextInDOM(map);
+    // Observe DOM changes to re-apply on tab switches / view renders
+    if (on && !_officeObserver) {
+      _officeObserver = new MutationObserver(() => { if (_officeActive) _swapTextInDOM(_OFFICE_LABELS); });
+      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
+      _officeObserver.observe(main, { childList: true, subtree: true, characterData: true });
+    } else if (!on && _officeObserver) {
+      _officeObserver.disconnect();
+      _officeObserver = null;
+    }
+  }
+
+  // LCARS: swap Code back to Engineering
+  const _LCARS_LABELS = { 'Code': 'Engineering' };
+  const _LCARS_REVERSE = { 'Engineering': 'Code' };
+  let _lcarsActive = false;
+  let _lcarsObserver = null;
+
+  function _applyLcarsLabels(on) {
+    if (on === _lcarsActive) return;
+    _lcarsActive = on;
+    const map = on ? _LCARS_LABELS : _LCARS_REVERSE;
+    _swapTextInDOM(map);
+    if (on && !_lcarsObserver) {
+      _lcarsObserver = new MutationObserver(() => { if (_lcarsActive) _swapTextInDOM(_LCARS_LABELS); });
+      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
+      _lcarsObserver.observe(main, { childList: true, subtree: true, characterData: true });
+    } else if (!on && _lcarsObserver) {
+      _lcarsObserver.disconnect();
+      _lcarsObserver = null;
+    }
+  }
+
+  function _swapTextInDOM(map) {
+    // Tabs
+    document.querySelectorAll('.bp-type-tab, .side-link span, .bridge-hero-tab, .bp-sub-tab').forEach(el => {
+      const keys = Object.keys(map);
+      for (const k of keys) {
+        if (el.textContent.trim() === k || el.textContent.trim().startsWith(k + ' ')) {
+          el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = n.textContent.replace(k, map[k]); });
+        }
+      }
+    });
+    // Sidebar link text (direct text nodes)
+    document.querySelectorAll('.side-link, .side-folder-toggle, .side-folder-label, .sidebar-section-label').forEach(el => {
+      const keys = Object.keys(map);
+      // Check direct text nodes AND text inside child spans
+      const nodes = [];
+      el.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); });
+      el.querySelectorAll('span').forEach(s => { s.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); }); });
+      for (const k of keys) {
+        nodes.forEach(n => { if (n.textContent.includes(k)) n.textContent = n.textContent.replace(k, map[k]); });
+      }
+    });
+    // Hero header text
+    document.querySelectorAll('.bridge-hero-meta, h2, h3, .wizard-title, .bp-card-type').forEach(el => {
+      const keys = Object.keys(map);
+      for (const k of keys) {
+        el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), map[k]); });
+      }
+    });
   }
 
   function toggleDarkLight() {
@@ -114,7 +236,8 @@ const Theme = (() => {
 
     container.innerHTML = themes.map(t => {
       const accent = t.accent || (t.preview && t.preview[1]) || '#888';
-      return `<button class="db" data-theme-id="${t.id}" data-tip="${t.name}" style="background:${accent}" onclick="Theme.set('${t.id}')" aria-label="${t.name}" title="${t.name}"></button>`;
+      const tn = t.name.toUpperCase();
+      return `<button class="db" data-theme-id="${t.id}" data-tip="${tn}" style="background:${accent}" onclick="Theme.set('${t.id}')" aria-label="${tn}" title="${tn}"></button>`;
     }).join('');
 
     // Highlight current
@@ -207,8 +330,200 @@ const MatrixRain = (() => {
   function toggle(on) {
     _on = on;
     canvas.style.display = on ? 'block' : 'none';
-    if (on) { _resize(); _draw(); }
-    else if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+    if (on) { _resize(); _draw(0); }
+    else {
+      if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  window.addEventListener('resize', () => { if (_on) _resize(); });
+  return { toggle };
+})();
+
+/* ─────────────────────────────────────────────────────────────────
+   MODULE: Gundam Particles (canvas) — Minovsky particle debris
+───────────────────────────────────────────────────────────────── */
+const GundamField = (() => {
+  const canvas = document.getElementById('gundam-canvas');
+  if (!canvas) return { toggle: () => {} };
+
+  const ctx = canvas.getContext('2d');
+  let _on = false, _raf = null;
+
+  const PARTICLE_COUNT = 60;
+  let particles = [];
+
+  function _init() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: 1 + Math.random() * 3,
+        speedX: (Math.random() - 0.5) * 0.4,
+        speedY: (Math.random() - 0.5) * 0.3,
+        alpha: 0.15 + Math.random() * 0.4,
+        // Color: mix of white debris, blue Minovsky, red thruster sparks
+        color: i < 35 ? '#8090a8' : i < 50 ? '#4a7abb' : '#c04030',
+        drift: Math.random() * Math.PI * 2,
+        driftSpeed: 0.003 + Math.random() * 0.008,
+        shape: Math.random() > 0.7 ? 'rect' : 'dot', // debris chunks vs particles
+      });
+    }
+  }
+
+  function _resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    _init();
+  }
+
+  let _lastDraw = 0;
+  const _interval = 50;
+
+  function _draw(time) {
+    _raf = requestAnimationFrame(_draw);
+    if (time - _lastDraw < _interval) return;
+    _lastDraw = time;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.drift += p.driftSpeed;
+      p.x += p.speedX + Math.sin(p.drift) * 0.2;
+      p.y += p.speedY + Math.cos(p.drift) * 0.15;
+
+      // Wrap around
+      if (p.x < -10) p.x = canvas.width + 10;
+      if (p.x > canvas.width + 10) p.x = -10;
+      if (p.y < -10) p.y = canvas.height + 10;
+      if (p.y > canvas.height + 10) p.y = -10;
+
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      if (p.shape === 'rect') {
+        // Angular debris chunks — rotated rectangles
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.drift * 2);
+        ctx.fillRect(-p.size, -p.size * 0.4, p.size * 2, p.size * 0.8);
+        ctx.restore();
+      } else {
+        ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function toggle(on) {
+    _on = on;
+    canvas.style.display = on ? 'block' : 'none';
+    if (on) { _resize(); _draw(0); }
+    else {
+      if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  window.addEventListener('resize', () => { if (_on) _resize(); });
+  return { toggle };
+})();
+
+/* ─────────────────────────────────────────────────────────────────
+   MODULE: 16-BIT Starfield (canvas) — parallax pixel starfield
+───────────────────────────────────────────────────────────────── */
+const StarField16 = (() => {
+  const canvas = document.getElementById('snes-canvas');
+  if (!canvas) return { toggle: () => {} };
+
+  const ctx = canvas.getContext('2d');
+  let _on = false, _raf = null;
+
+  const STAR_COUNT = 120;
+  const LAYERS = [
+    { speed: 0.3, size: 1, color: '#4a4060', count: 50 },   // far — dim purple
+    { speed: 0.8, size: 2, color: '#8a8070', count: 40 },   // mid — warm gray
+    { speed: 1.8, size: 3, color: '#e8e0d0', count: 20 },   // near — bright
+    { speed: 2.5, size: 4, color: '#e2b714', count: 10 },   // accent — gold twinkle
+  ];
+
+  let stars = [];
+
+  function _init() {
+    stars = [];
+    LAYERS.forEach(layer => {
+      for (let i = 0; i < layer.count; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          speed: layer.speed + Math.random() * 0.3,
+          size: layer.size,
+          color: layer.color,
+          twinkle: Math.random() * Math.PI * 2,
+        });
+      }
+    });
+  }
+
+  function _resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    _init();
+  }
+
+  let _lastDraw = 0;
+  const _interval = 50; // ~20fps for retro feel
+
+  function _draw(time) {
+    _raf = requestAnimationFrame(_draw);
+    if (time - _lastDraw < _interval) return;
+    _lastDraw = time;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Pixel grid overlay (subtle)
+    ctx.fillStyle = 'rgba(255,255,255,0.012)';
+    for (let x = 0; x < canvas.width; x += 4) {
+      for (let y = 0; y < canvas.height; y += 4) {
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+
+    // Draw and move stars
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      s.x -= s.speed;
+      s.twinkle += 0.05;
+      if (s.x < -4) { s.x = canvas.width + 4; s.y = Math.random() * canvas.height; }
+
+      const alpha = 0.5 + 0.5 * Math.sin(s.twinkle);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = s.color;
+      // Pixel-snapped rendering (no anti-alias feel)
+      const px = Math.floor(s.x);
+      const py = Math.floor(s.y);
+      ctx.fillRect(px, py, s.size, s.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // Scanline overlay
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let y = 0; y < canvas.height; y += 3) {
+      ctx.fillRect(0, y, canvas.width, 1);
+    }
+  }
+
+  function toggle(on) {
+    _on = on;
+    canvas.style.display = on ? 'block' : 'none';
+    if (on) { _resize(); _draw(0); }
+    else {
+      if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
   }
 
   window.addEventListener('resize', () => { if (_on) _resize(); });
