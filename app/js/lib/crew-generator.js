@@ -166,6 +166,131 @@ Rules:
     return { savedAgents, slotAssignments };
   }
 
+  /**
+   * Deploy a catalog blueprint ship with its full crew.
+   * Creates all agents from the blueprint's crew definitions,
+   * saves the ship to user_spaceships, and activates everything.
+   * @param {string} blueprintId - Seed catalog ship ID (e.g. 'ship-46')
+   * @returns {Promise<Object>} { shipId, agents[], error? }
+   */
+  async function deployFromCatalog(blueprintId) {
+    var user = State.get('user');
+    if (!user) return { error: 'Not signed in' };
+
+    var bp = typeof BlueprintStore !== 'undefined'
+      ? (BlueprintStore.getSpaceship(blueprintId) || BlueprintStore.getSpaceship('bp-' + blueprintId))
+      : null;
+    if (!bp) return { error: 'Blueprint not found: ' + blueprintId };
+
+    var catalogCrew = bp.metadata?.crew || bp.crew || [];
+    if (!catalogCrew.length) return { error: 'No crew defined in blueprint' };
+
+    var slotAssignments = {};
+    var savedAgents = [];
+    var stateAgents = State.get('agents') || [];
+    var agentCrewData = [];
+
+    // Create all agents from catalog crew
+    for (var i = 0; i < catalogCrew.length; i++) {
+      var c = catalogCrew[i];
+      var agentName = c.label || c.name || 'Agent ' + (i + 1);
+      var agentRole = c.config?.agentRole || 'Ops';
+
+      try {
+        var row = {
+          user_id: user.id,
+          name: agentName,
+          status: 'idle',
+          config: {
+            role: agentRole,
+            type: 'Specialist',
+            tools: ['Web Search', 'Email', 'Calendar', 'Database', 'API Call'],
+            memory: false,
+            temperature: 0.7,
+          },
+        };
+        var created = await SB.db('user_agents').create(row);
+        if (!created || !created.id) continue;
+
+        savedAgents.push(created);
+        slotAssignments[String(i)] = created.id;
+        agentCrewData.push({ name: agentName, role: agentRole, agent_id: created.id });
+
+        stateAgents.push({
+          id: created.id, name: agentName, type: 'agent',
+          category: agentRole, rarity: bp.rarity || 'Common',
+          status: 'idle', config: row.config,
+          metadata: { agentType: 'Specialist' },
+          created_at: created.created_at || new Date().toISOString(),
+        });
+
+        if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateAgent(created.id);
+      } catch (e) {
+        console.warn('[CrewGenerator] Failed to create agent:', agentName, e.message);
+      }
+    }
+
+    State.set('agents', stateAgents);
+
+    // Create the spaceship in user_spaceships
+    var totalSlots = parseInt(bp.stats?.slots || '12', 10);
+    var shipRow = {
+      user_id: user.id,
+      name: bp.name,
+      blueprint_id: blueprintId,
+      status: 'active',
+      slots: {
+        crew: agentCrewData,
+        slot_assignments: slotAssignments,
+        category: bp.category || '',
+        description: bp.description || '',
+        flavor: bp.flavor || '',
+        tags: bp.tags || [],
+        rarity: bp.rarity || 'Legendary',
+        stats: { crew: String(savedAgents.length), slots: String(totalSlots) },
+        caps: bp.metadata?.caps || bp.caps || [],
+      },
+    };
+
+    try {
+      var shipCreated = await SB.db('user_spaceships').create(shipRow);
+      if (!shipCreated || !shipCreated.id) return { error: 'Failed to create ship' };
+
+      // Add to State
+      var stateShips = State.get('spaceships') || [];
+      stateShips.push({
+        id: shipCreated.id, name: bp.name, type: 'spaceship',
+        category: bp.category, description: bp.description,
+        flavor: bp.flavor, tags: bp.tags,
+        rarity: bp.rarity, status: 'active',
+        config: { slot_assignments: slotAssignments },
+        stats: bp.stats, metadata: bp.metadata,
+        blueprint_id: blueprintId,
+        created_at: shipCreated.created_at,
+      });
+      State.set('spaceships', stateShips);
+
+      // Activate and save ship state
+      if (typeof BlueprintStore !== 'undefined') {
+        BlueprintStore.activateShip(shipCreated.id);
+        BlueprintStore.saveShipState(shipCreated.id, {
+          slot_assignments: slotAssignments,
+          status: 'deployed',
+          agent_ids: savedAgents.map(function(a) { return a.id; }),
+        });
+      }
+
+      if (typeof Gamification !== 'undefined') {
+        Gamification.addXP('launch_spaceship');
+        savedAgents.forEach(function() { Gamification.addXP('create_agent'); });
+      }
+
+      return { shipId: shipCreated.id, agents: savedAgents };
+    } catch (e) {
+      return { error: e.message || 'Failed to deploy ship' };
+    }
+  }
+
   /** Parse LLM text response into agent array */
   function _parseAgents(text, expectedCount) {
     if (!text) return [];
@@ -206,5 +331,5 @@ Rules:
       });
   }
 
-  return { generate, saveAndAssign };
+  return { generate, saveAndAssign, deployFromCatalog };
 })();
