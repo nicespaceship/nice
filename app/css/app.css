@@ -479,12 +479,6 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
 }
-[data-theme="office"] .nice-ai-input-container {
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-}
 [data-theme="office"] .nice-ai-input {
   color: #1a1a1a !important;
   background: #f8f8f8 !important;
@@ -1285,7 +1279,7 @@
 }
 
 /* ── Prompt bar — RPG command window ── */
-[data-theme="16bit"] .nice-ai-bar {
+[data-theme="16bit"] .nice-ai-input-area {
   border: 4px solid #e2b714;
   box-shadow:
     inset 0 0 0 2px #16213e,
@@ -3732,23 +3726,25 @@
 }
 .nice-ai-close:hover { opacity:1; color:var(--text, #fff); }
 
-/* Input area — solid bg so nothing bleeds through */
+/* Input area — single outer shell with border (no nested borders) */
 .nice-ai-input-area {
   position:relative;
-  background:var(--bg);
+  background:var(--panel-bg, var(--bg-alt));
+  border:1px solid var(--border);
+  border-radius:16px;
   padding:0;
+  transition:border-color .2s;
 }
+.nice-ai-input-area:focus-within { border-color:var(--accent); }
 
-/* Input container */
+/* Input container — borderless inner wrapper (border lives on .nice-ai-input-area) */
 .nice-ai-input-container {
   display:flex; flex-direction:column;
-  border:1px solid var(--border); border-radius:16px;
-  background:var(--panel-bg, var(--bg-alt));
+  border:none !important; border-radius:0 !important;
+  background:transparent !important;
   padding:12px 12px 8px;
-  transition:border-color .2s;
-  box-shadow:none;
+  box-shadow:none !important;
 }
-.nice-ai-input-container:focus-within { border-color:var(--accent); }
 
 .nice-ai-input-row {
   display:flex; flex:1;
@@ -3906,7 +3902,7 @@
 @media (max-width:768px) {
   /* username and badge always visible in sidebar drawer */
   .nice-ai { max-width:100%; padding:0 8px 12px; left:0; right:0; width:auto; transform:none; }
-  .nice-ai-input-container { border-radius:var(--radius); }
+  .nice-ai-input-area { border-radius:var(--radius); }
   .nice-monitor-inner { padding:16px 12px 120px; }
 }
 
