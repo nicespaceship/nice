@@ -121,10 +121,10 @@ const Theme = (() => {
   }
 
   const _OFFICE_LABELS = {
-    'Schematic': 'Org Chart', 'Blueprints': 'Templates', 'Missions': 'Tasks',
+    'Schematic': 'Overview', 'Blueprints': 'Templates', 'Missions': 'Tasks',
     'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
     'Bridge': 'Office', 'Engineering': 'Code', 'Deploy': 'Activate', 'Deployed': 'Active',
-    'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'ORG CHART', 'BLUEPRINTS': 'TEMPLATES',
+    'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'OVERVIEW', 'BLUEPRINTS': 'TEMPLATES',
     'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
     'Spaceships': 'Teams', 'Agents': 'Assistants', 'Spaceship': 'Team', 'Agent': 'Assistant',
     'Ship': 'Team', "Captain's Log": 'Audit Trail', "Ship's Log": 'Chat History',
@@ -163,8 +163,12 @@ const Theme = (() => {
     // Sidebar link text (direct text nodes)
     document.querySelectorAll('.side-link, .side-folder-toggle, .side-folder-label, .sidebar-section-label').forEach(el => {
       const keys = Object.keys(map);
+      // Check direct text nodes AND text inside child spans
+      const nodes = [];
+      el.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); });
+      el.querySelectorAll('span').forEach(s => { s.childNodes.forEach(n => { if (n.nodeType === 3) nodes.push(n); }); });
       for (const k of keys) {
-        el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(k, map[k]); });
+        nodes.forEach(n => { if (n.textContent.includes(k)) n.textContent = n.textContent.replace(k, map[k]); });
       }
     });
     // Hero header text
