@@ -31,6 +31,8 @@ const Theme = (() => {
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' } },
     { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' } },
+    { id:'office', name:'The Office', builtin:true, accent:'#0078d4', preview:['#f5f5f5','#0078d4','#107c10'],
+      data:{ colors:{ '--bg':'#f5f5f5','--bg2':'#ebebeb','--surface':'#ffffff','--surface2':'#fafafa','--border':'#e0e0e0','--border-hi':'#0078d4','--accent':'#0078d4','--accent2':'#107c10','--text':'#1a1a1a','--text-muted':'#6b6b6b','--glow':'none','--panel-bg':'#ffffff' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'8px' } },
     { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' } },
   ];
@@ -63,6 +65,17 @@ const Theme = (() => {
     if (BUILTIN.includes(name)) {
       document.documentElement.setAttribute('data-theme', name);
       localStorage.setItem('ns-theme', name);
+      // Apply inline color vars for themes not defined in theme.css
+      if (t && t.data) {
+        const td = t.data;
+        if (td.colors) Object.entries(td.colors).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
+        if (td.fonts) {
+          document.documentElement.style.setProperty('--font-h', td.fonts['--font-h']);
+          document.documentElement.style.setProperty('--font-d', td.fonts['--font-h']);
+          document.documentElement.style.setProperty('--font-b', td.fonts['--font-b']);
+        }
+        if (td.radius) document.documentElement.style.setProperty('--radius', td.radius);
+      }
       // Activate theme-specific assets
       MatrixRain.toggle(name === 'matrix');
       if (typeof StarField16 !== 'undefined') StarField16.toggle(name === '16bit');
@@ -103,6 +116,64 @@ const Theme = (() => {
       meta.setAttribute('content', bg || '#080808');
     }
 
+    // Office theme: swap terminology to professional labels
+    _applyOfficeLabels(name === 'office');
+  }
+
+  const _OFFICE_LABELS = {
+    'Schematic': 'Org Chart', 'Blueprints': 'Templates', 'Missions': 'Tasks',
+    'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
+    'Bridge': 'Office', 'Deploy': 'Activate', 'Deployed': 'Active',
+    'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'ORG CHART', 'BLUEPRINTS': 'TEMPLATES',
+    'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
+    'Spaceships': 'Teams', 'Agents': 'Assistants', 'Spaceship': 'Team', 'Agent': 'Assistant',
+    'Ship': 'Team', "Captain's Log": 'Audit Trail', "Ship's Log": 'Chat History',
+  };
+  // Reverse map for restoring originals
+  const _OFFICE_REVERSE = Object.fromEntries(Object.entries(_OFFICE_LABELS).map(([k,v]) => [v,k]));
+  let _officeActive = false;
+  let _officeObserver = null;
+
+  function _applyOfficeLabels(on) {
+    if (on === _officeActive) return;
+    _officeActive = on;
+    const map = on ? _OFFICE_LABELS : _OFFICE_REVERSE;
+    _swapTextInDOM(map);
+    // Observe DOM changes to re-apply on tab switches / view renders
+    if (on && !_officeObserver) {
+      _officeObserver = new MutationObserver(() => { if (_officeActive) _swapTextInDOM(_OFFICE_LABELS); });
+      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
+      _officeObserver.observe(main, { childList: true, subtree: true, characterData: true });
+    } else if (!on && _officeObserver) {
+      _officeObserver.disconnect();
+      _officeObserver = null;
+    }
+  }
+
+  function _swapTextInDOM(map) {
+    // Tabs
+    document.querySelectorAll('.bp-type-tab, .side-link span, .bridge-hero-tab, .bp-sub-tab').forEach(el => {
+      const keys = Object.keys(map);
+      for (const k of keys) {
+        if (el.textContent.trim() === k || el.textContent.trim().startsWith(k + ' ')) {
+          el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = n.textContent.replace(k, map[k]); });
+        }
+      }
+    });
+    // Sidebar link text (direct text nodes)
+    document.querySelectorAll('.side-link, .side-folder-toggle').forEach(el => {
+      const keys = Object.keys(map);
+      for (const k of keys) {
+        el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(k, map[k]); });
+      }
+    });
+    // Hero header text
+    document.querySelectorAll('.bridge-hero-meta, h2, h3, .wizard-title, .bp-card-type').forEach(el => {
+      const keys = Object.keys(map);
+      for (const k of keys) {
+        el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), map[k]); });
+      }
+    });
   }
 
   function toggleDarkLight() {
