@@ -345,9 +345,15 @@ const BlueprintStore = (() => {
               created_at: s.created_at,
             });
           }
-          // Auto-activate if not already
+          // Auto-activate if not already — but respect rarity gate
           if (!_activatedShipIds.includes(s.id)) {
-            _activatedShipIds.push(s.id);
+            var shipRarity = meta.rarity || 'Common';
+            // Legendary ships from catalog (crew array format) need rank check
+            if (Array.isArray(meta.crew) && meta.crew.length > 6) shipRarity = 'Legendary';
+            var canActivate = typeof Gamification === 'undefined' || !Gamification.isRarityUnlocked || Gamification.isRarityUnlocked(shipRarity);
+            if (canActivate) {
+              _activatedShipIds.push(s.id);
+            }
           }
           // Always restore ship state (slot assignments) from DB
           // Handle both formats: slot_assignments object and crew array
