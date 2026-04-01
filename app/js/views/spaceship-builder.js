@@ -330,14 +330,16 @@ const SpaceshipBuilderView = (() => {
     const cls = _getSlotConfig();
     const row = {
       name,
-      category,
-      description: desc,
-      flavor,
-      tags,
-      slot_assignments: slots,
       status: existingShip?.status || 'standby',
-      stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
-      caps: [category + ' operations', cls.slots.length + ' crew slots'],
+      slots: {
+        category,
+        description: desc,
+        flavor,
+        tags,
+        slot_assignments: slots,
+        stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
+        caps: [category + ' operations', cls.slots.length + ' agent slots'],
+      },
     };
 
     try {
