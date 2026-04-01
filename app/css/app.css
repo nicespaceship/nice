@@ -428,6 +428,7 @@
 [data-theme="gundam"] .bp-type-tabs {
   background: #e8e8e8;
   border: 2px solid #c0c0c0;
+  border-bottom: 5px solid #c0392b;
   padding: 4px;
   gap: 2px;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
