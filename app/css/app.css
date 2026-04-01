@@ -502,6 +502,7 @@
   color: #fff !important;
   background: #3a3f55 !important;
   border-radius: 8px !important;
+  padding-left: 16px !important;
 }
 [data-theme="gundam"] .nice-ai-input::placeholder {
   color: #b0b4c8;
