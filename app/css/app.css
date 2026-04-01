@@ -379,8 +379,11 @@
 /* ── Sidebar — Federation blue like the active tab ── */
 [data-theme="gundam"] .app-sidebar {
   background: #2b4e8c;
-  border-right: 2px solid #1e3a6a;
+  border-right: 3px solid #d4a017;
   box-shadow: 2px 0 15px rgba(43,78,140,0.2);
+  border-top: 3px solid #d4a017;
+  border-bottom: 3px solid #d4a017;
+  border-left: 3px solid #d4a017;
 }
 [data-theme="gundam"] .side-link {
   color: rgba(255,255,255,0.75);
@@ -399,6 +402,12 @@
 }
 [data-theme="gundam"] .side-header .app-brand-text {
   color: #fff;
+}
+[data-theme="gundam"] #btn-hud {
+  background: #d4a017;
+  color: #1a1a2a;
+  border: 2px solid #e8c840;
+  font-weight: 700;
 }
 [data-theme="gundam"] .side-footer,
 [data-theme="gundam"] .side-footer * {
