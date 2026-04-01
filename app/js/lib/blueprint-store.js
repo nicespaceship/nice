@@ -55,6 +55,7 @@ const BlueprintStore = (() => {
         await Promise.all([
           _loadActivatedFromDB(),
           _loadConnectedCounts(),
+          _loadUserCreations(),
         ]);
       }
     } catch (e) {
@@ -304,6 +305,70 @@ const BlueprintStore = (() => {
       if (error || !rows || !rows.length) return;
       _mergeRows(rows);
     } catch { /* seed fallback already loaded */ }
+  }
+
+  /**
+   * Load user-created spaceships and agents from Supabase.
+   * These are private custom blueprints — not in the seed catalog.
+   * Merges into State so getActivatedShips/Agents can find them.
+   */
+  async function _loadUserCreations() {
+    try {
+      const c = SB.client;
+      if (!c || typeof c.from !== 'function') return;
+
+      // Load custom spaceships
+      const { data: ships } = await c.from('user_spaceships').select('*');
+      if (ships && ships.length) {
+        const stateShips = State.get('spaceships') || [];
+        const existingIds = new Set(stateShips.map(s => s.id));
+        ships.forEach(s => {
+          if (existingIds.has(s.id)) return;
+          const meta = s.slots || {};
+          stateShips.push({
+            id: s.id, name: s.name, type: 'spaceship',
+            category: meta.category || '', description: meta.description || '',
+            flavor: meta.flavor || '', tags: meta.tags || [],
+            rarity: 'Common', status: s.status || 'standby',
+            config: { slot_assignments: meta.slot_assignments || {} },
+            stats: meta.stats || { crew: '0', slots: '6' },
+            metadata: { caps: meta.caps || [] },
+            created_at: s.created_at,
+          });
+          // Auto-activate if not already
+          if (!_activatedShipIds.includes(s.id)) {
+            _activatedShipIds.push(s.id);
+          }
+        });
+        State.set('spaceships', stateShips);
+        _persistShips();
+      }
+
+      // Load custom agents
+      const { data: agents } = await c.from('user_agents').select('*');
+      if (agents && agents.length) {
+        const stateAgents = State.get('agents') || [];
+        const existingIds = new Set(stateAgents.map(a => a.id));
+        agents.forEach(a => {
+          if (existingIds.has(a.id)) return;
+          const cfg = a.config || {};
+          stateAgents.push({
+            id: a.id, name: a.name, type: 'agent',
+            category: cfg.role || a.role || '', rarity: 'Common',
+            status: a.status || 'idle', config: cfg,
+            metadata: { agentType: cfg.type || 'Agent' },
+            created_at: a.created_at,
+          });
+          if (!_activatedAgentIds.includes(a.id)) {
+            _activatedAgentIds.push(a.id);
+          }
+        });
+        State.set('agents', stateAgents);
+        _persistAgents();
+      }
+    } catch (e) {
+      console.warn('[BlueprintStore] Failed to load user creations:', e.message);
+    }
   }
 
   /**
