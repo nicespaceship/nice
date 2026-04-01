@@ -113,14 +113,15 @@ const Theme = (() => {
       meta.setAttribute('content', bg || '#080808');
     }
 
-    // Office theme: swap terminology to professional labels
+    // Theme-specific terminology
     _applyOfficeLabels(name === 'office');
+    _applyLcarsLabels(name === 'lcars');
   }
 
   const _OFFICE_LABELS = {
     'Schematic': 'Overview', 'Blueprints': 'Templates', 'Missions': 'Tasks',
     'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
-    'Bridge': 'Office', 'Engineering': 'Code', 'Deploy': 'Activate', 'Deployed': 'Active',
+    'Bridge': 'Office', 'Deploy': 'Activate', 'Deployed': 'Active',
     'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'OVERVIEW', 'BLUEPRINTS': 'TEMPLATES',
     'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
     'Spaceships': 'Teams', 'Agents': 'Assistants', 'Spaceship': 'Team', 'Agent': 'Assistant',
@@ -144,6 +145,27 @@ const Theme = (() => {
     } else if (!on && _officeObserver) {
       _officeObserver.disconnect();
       _officeObserver = null;
+    }
+  }
+
+  // LCARS: swap Code back to Engineering
+  const _LCARS_LABELS = { 'Code': 'Engineering' };
+  const _LCARS_REVERSE = { 'Engineering': 'Code' };
+  let _lcarsActive = false;
+  let _lcarsObserver = null;
+
+  function _applyLcarsLabels(on) {
+    if (on === _lcarsActive) return;
+    _lcarsActive = on;
+    const map = on ? _LCARS_LABELS : _LCARS_REVERSE;
+    _swapTextInDOM(map);
+    if (on && !_lcarsObserver) {
+      _lcarsObserver = new MutationObserver(() => { if (_lcarsActive) _swapTextInDOM(_LCARS_LABELS); });
+      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
+      _lcarsObserver.observe(main, { childList: true, subtree: true, characterData: true });
+    } else if (!on && _lcarsObserver) {
+      _lcarsObserver.disconnect();
+      _lcarsObserver = null;
     }
   }
 
