@@ -350,11 +350,20 @@ const BlueprintStore = (() => {
             _activatedShipIds.push(s.id);
           }
           // Always restore ship state (slot assignments) from DB
-          if (meta.slot_assignments && Object.keys(meta.slot_assignments).length) {
-            var agentIds = Object.values(meta.slot_assignments).filter(Boolean);
+          // Handle both formats: slot_assignments object and crew array
+          var assignments = meta.slot_assignments || {};
+          var agentIds = [];
+          if (Object.keys(assignments).length) {
+            agentIds = Object.values(assignments).filter(Boolean);
+          } else if (Array.isArray(meta.crew) && meta.crew.length) {
+            meta.crew.forEach(function(c, idx) {
+              if (c.agent_id) { assignments[String(idx)] = c.agent_id; agentIds.push(c.agent_id); }
+            });
+          }
+          if (agentIds.length) {
             _shipState[s.id] = {
-              slot_assignments: meta.slot_assignments,
-              status: s.status === 'active' ? 'deployed' : (s.status || 'standby'),
+              slot_assignments: assignments,
+              status: 'deployed',
               agent_ids: agentIds,
             };
           }
