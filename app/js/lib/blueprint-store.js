@@ -330,23 +330,24 @@ const BlueprintStore = (() => {
         const stateShips = State.get('spaceships') || [];
         const existingIds = new Set(stateShips.map(s => s.id));
         ships.forEach(s => {
-          if (existingIds.has(s.id)) return;
           const meta = s.slots || {};
-          stateShips.push({
-            id: s.id, name: s.name, type: 'spaceship',
-            category: meta.category || '', description: meta.description || '',
-            flavor: meta.flavor || '', tags: meta.tags || [],
-            rarity: 'Common', status: s.status || 'standby',
-            config: { slot_assignments: meta.slot_assignments || {} },
-            stats: meta.stats || { crew: '0', slots: '6' },
-            metadata: { caps: meta.caps || [] },
-            created_at: s.created_at,
-          });
+          if (!existingIds.has(s.id)) {
+            stateShips.push({
+              id: s.id, name: s.name, type: 'spaceship',
+              category: meta.category || '', description: meta.description || '',
+              flavor: meta.flavor || '', tags: meta.tags || [],
+              rarity: 'Common', status: s.status || 'standby',
+              config: { slot_assignments: meta.slot_assignments || {} },
+              stats: meta.stats || { crew: '0', slots: '6' },
+              metadata: { caps: meta.caps || [] },
+              created_at: s.created_at,
+            });
+          }
           // Auto-activate if not already
           if (!_activatedShipIds.includes(s.id)) {
             _activatedShipIds.push(s.id);
           }
-          // Restore ship state (slot assignments) so Schematic renders agents
+          // Always restore ship state (slot assignments) from DB
           if (meta.slot_assignments && Object.keys(meta.slot_assignments).length) {
             var agentIds = Object.values(meta.slot_assignments).filter(Boolean);
             _shipState[s.id] = {
