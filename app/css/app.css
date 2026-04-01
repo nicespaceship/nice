@@ -387,7 +387,34 @@
   background: rgba(43,78,140,0.12);
 }
 
-/* ── Tabs — angular mecha tabs ── */
+/* ── Top tab bar — white bar with blue/red RX-78-2 accents ── */
+[data-theme="gundam"] .bp-type-tabs {
+  background: #e8e8e8;
+  border: 2px solid #c0c0c0;
+  padding: 4px;
+  gap: 2px;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+[data-theme="gundam"] .bp-type-tab {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #1a1a2a;
+  background: #e8e8e8;
+  border: none;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+}
+[data-theme="gundam"] .bp-type-tab:hover {
+  background: #d0d0d8;
+}
+[data-theme="gundam"] .bp-type-tab.active {
+  background: #2b4e8c;
+  color: #fff;
+  box-shadow: 0 2px 0 #c0392b;
+}
+
+/* ── Other tabs — angular mecha style ── */
 [data-theme="gundam"] .topbar-tab,
 [data-theme="gundam"] .bridge-tab,
 [data-theme="gundam"] .bridge-hero-tab,
