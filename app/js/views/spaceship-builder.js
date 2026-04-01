@@ -352,9 +352,19 @@ const SpaceshipBuilderView = (() => {
           Gamification.addXP('launch_spaceship');
           Gamification.checkAchievements();
         }
-        // Auto-activate the new ship
-        if (created?.id && typeof BlueprintStore !== 'undefined') {
-          BlueprintStore.activateShip(created.id);
+        // Add to State so BlueprintStore can find it, then activate
+        if (created?.id) {
+          const shipObj = {
+            id: created.id, name, category, description: desc, flavor, tags, type: 'spaceship',
+            rarity: 'Common', status: 'standby',
+            config: { slot_assignments: slots },
+            stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
+            metadata: { caps: [category + ' operations', cls.slots.length + ' agent slots'] },
+          };
+          const ships = State.get('spaceships') || [];
+          ships.push(shipObj);
+          State.set('spaceships', ships);
+          if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateShip(created.id);
         }
       }
       Router.navigate('#/bridge?tab=spaceship');
