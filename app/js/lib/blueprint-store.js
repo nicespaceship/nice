@@ -346,9 +346,19 @@ const BlueprintStore = (() => {
           if (!_activatedShipIds.includes(s.id)) {
             _activatedShipIds.push(s.id);
           }
+          // Restore ship state (slot assignments) so Schematic renders agents
+          if (meta.slot_assignments && Object.keys(meta.slot_assignments).length) {
+            var agentIds = Object.values(meta.slot_assignments).filter(Boolean);
+            _shipState[s.id] = {
+              slot_assignments: meta.slot_assignments,
+              status: s.status === 'active' ? 'deployed' : (s.status || 'standby'),
+              agent_ids: agentIds,
+            };
+          }
         });
         State.set('spaceships', stateShips);
         _persistShips();
+        _persistShipState();
       }
 
       // Load custom agents
