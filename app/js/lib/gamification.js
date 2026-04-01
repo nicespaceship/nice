@@ -25,8 +25,8 @@ const Gamification = (() => {
     { name: 'Rear Admiral',      xp: 750000,  badge: '✦✦',     slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
     { name: 'Vice Admiral',      xp: 1000000, badge: '✦✦✦',    slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
     { name: 'Admiral',           xp: 1500000, badge: '✦✦✦✦',   slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Fleet Admiral',     xp: 2500000, badge: '✦✦✦✦✦',  slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    // Class 5 (Mythic, unlimited slots) requires subscription — not XP-gated
+    { name: 'Fleet Admiral',     xp: 2500000, badge: '✦✦✦✦✦',  slots: 12, classId: 'class-5', maxRarity: 'Mythic' },
+    // Fleet Admiral is the only rank that can activate Mythic blueprints
   ];
 
   /* ── XP Rewards ── */
@@ -185,9 +185,9 @@ const Gamification = (() => {
   function isRarityUnlocked(rarity) {
     var rank = getRank();
     var maxOrder = RARITY_ORDER[rank.maxRarity || 'Common'] || 0;
-    // Subscription unlocks Mythic
+    // Subscription unlocks Legendary (not Mythic — Mythic requires Fleet Admiral)
     if (typeof Subscription !== 'undefined' && Subscription.isActive && Subscription.isActive()) {
-      maxOrder = Math.max(maxOrder, RARITY_ORDER['Mythic'] || 5);
+      maxOrder = Math.max(maxOrder, RARITY_ORDER['Legendary'] || 4);
     }
     return (RARITY_ORDER[rarity] || 0) <= maxOrder;
   }
