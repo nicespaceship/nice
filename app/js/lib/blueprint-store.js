@@ -403,6 +403,21 @@ const BlueprintStore = (() => {
         _persistShipState();
       }
 
+      // Build agent→rarity map from ship crew assignments
+      var agentRarityMap = {};
+      if (ships) {
+        ships.forEach(function(s) {
+          var meta = s.slots || {};
+          var shipRarity = 'Common';
+          var cbp = s.blueprint_id ? (getSpaceship(s.blueprint_id) || getSpaceship('bp-' + s.blueprint_id)) : null;
+          if (cbp) shipRarity = cbp.rarity || 'Common';
+          else if (meta.rarity) shipRarity = meta.rarity;
+          // Map crew agent_ids and slot_assignments to this ship's rarity
+          if (Array.isArray(meta.crew)) meta.crew.forEach(function(c) { if (c.agent_id) agentRarityMap[c.agent_id] = shipRarity; });
+          if (meta.slot_assignments) Object.values(meta.slot_assignments).forEach(function(id) { if (id) agentRarityMap[id] = shipRarity; });
+        });
+      }
+
       // Load custom agents
       const { data: agents } = await c.from('user_agents').select('*');
       if (agents && agents.length) {
@@ -413,7 +428,7 @@ const BlueprintStore = (() => {
           const cfg = a.config || {};
           stateAgents.push({
             id: a.id, name: a.name, type: 'agent',
-            category: cfg.role || a.role || '', rarity: 'Common',
+            category: cfg.role || a.role || '', rarity: agentRarityMap[a.id] || 'Common',
             status: a.status || 'idle', config: cfg,
             metadata: { agentType: cfg.type || 'Agent' },
             created_at: a.created_at,

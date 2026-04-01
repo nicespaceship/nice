@@ -218,7 +218,7 @@ Rules:
 
         stateAgents.push({
           id: created.id, name: agentName, type: 'agent',
-          category: agentRole, rarity: bp.rarity || 'Common',
+          category: agentRole, rarity: c.rarity || bp.rarity || 'Common',
           status: 'idle', config: row.config,
           metadata: { agentType: 'Specialist' },
           created_at: created.created_at || new Date().toISOString(),
