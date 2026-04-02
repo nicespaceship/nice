@@ -141,5 +141,34 @@ const Favorites = (() => {
     btn.title = isFav ? 'Remove from favorites' : 'Add to favorites';
   }
 
-  return { init, add, remove, isFavorite, toggleCurrent, getAll, render };
+  /* ── Blueprint Favorites ── */
+  const BP_KEY = 'nice-bp-favorites';
+
+  function _loadBpFavs() {
+    try { return JSON.parse(localStorage.getItem(BP_KEY)) || []; } catch { return []; }
+  }
+
+  function addBlueprint(bpId) {
+    const favs = _loadBpFavs();
+    if (favs.includes(bpId)) return false;
+    favs.push(bpId);
+    localStorage.setItem(BP_KEY, JSON.stringify(favs));
+    if (typeof Gamification !== 'undefined') Gamification.addXP('add_favorite', 3);
+    return true;
+  }
+
+  function removeBlueprint(bpId) {
+    const favs = _loadBpFavs().filter(id => id !== bpId);
+    localStorage.setItem(BP_KEY, JSON.stringify(favs));
+  }
+
+  function isBlueprintFavorite(bpId) {
+    return _loadBpFavs().includes(bpId);
+  }
+
+  function getBlueprintFavorites() {
+    return _loadBpFavs();
+  }
+
+  return { init, add, remove, isFavorite, toggleCurrent, getAll, render, addBlueprint, removeBlueprint, isBlueprintFavorite, getBlueprintFavorites };
 })();

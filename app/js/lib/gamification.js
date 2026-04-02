@@ -395,6 +395,26 @@ const Gamification = (() => {
     return Math.round((progress / range) * 100);
   }
 
+  /**
+   * Get progression info towards the next tier unlock.
+   * @returns {{ rank, nextRank, xp, xpNeeded, progress, nextSlots, nextMaxRarity }}
+   */
+  function getProgressToNextTier() {
+    const xp = getXP();
+    const rank = getRank(xp);
+    const nextRank = getNextRank(xp);
+    const progress = getRankProgress(xp);
+    return {
+      rank,
+      nextRank,
+      xp,
+      xpNeeded: nextRank ? nextRank.xp - xp : 0,
+      progress,
+      nextSlots: nextRank?.slots || rank.slots,
+      nextMaxRarity: nextRank?.maxRarity || rank.maxRarity,
+    };
+  }
+
   /* ─── Ship Class ─── */
 
 
@@ -862,7 +882,7 @@ const Gamification = (() => {
   }
 
   return {
-    initFromDB, getXP, addXP, getRank, getNextRank, getRankProgress,
+    initFromDB, getXP, addXP, getRank, getNextRank, getRankProgress, getProgressToNextTier,
     getSpaceshipHealth,
     renderRankBadge, renderHealthBars, renderShipClassBadge,
     getUnlockedAchievements, unlockAchievement, checkAchievements, renderAchievementGallery,

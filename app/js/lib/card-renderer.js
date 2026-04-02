@@ -525,14 +525,9 @@ const CardRenderer = (() => {
     </div>`;
   }
 
-  /* ── Helper: get agent rarity ── */
+  /* ── Helper: get agent rarity (delegates to BlueprintUtils SSOT) ── */
   function _getAgentRarity(data) {
-    if (data.rarity) return data.rarity;
-    if (typeof Gamification !== 'undefined') {
-      const r = Gamification.calcAgentRarity(data);
-      return r?.name || 'Common';
-    }
-    return 'Common';
+    return BlueprintUtils.getRarity(data);
   }
 
   /* ── Custom name/role persistence ── */

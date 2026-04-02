@@ -224,7 +224,7 @@ const AgentsView = (() => {
     }
 
     // Fallback (no CardRenderer)
-    const rarity = typeof Gamification !== 'undefined' ? Gamification.calcAgentRarity(a) : { name: 'Common' };
+    const rarity = BlueprintUtils.getRarityInfo(a);
     const config = a.config || {};
     const perfStats = `<div class="agent-perf-stats"><span>${avgSpeed} spd</span><span>${successRate} acc</span></div>`;
     const initials = (a.name || 'RB').slice(0, 2).toUpperCase();

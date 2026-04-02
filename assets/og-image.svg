@@ -61,7 +61,7 @@
   <rect x="500" y="380" width="200" height="2" rx="1" fill="#6366f1" opacity="0.6"/>
 
   <!-- Subtitle -->
-  <text x="600" y="425" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="400" fill="#a1a1aa" letter-spacing="3">HELM&#x2122; &#x2014; Mission Control for AI Agent Fleets</text>
+  <text x="600" y="425" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="400" fill="#a1a1aa" letter-spacing="3">NICE&#x2122; &#x2014; Mission Control for AI Agent Fleets</text>
 
   <!-- URL -->
   <text x="600" y="575" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="400" fill="#6366f1" opacity="0.6" letter-spacing="2">nicespaceship.com</text>

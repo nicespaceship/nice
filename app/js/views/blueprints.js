@@ -9,64 +9,10 @@ const BlueprintsView = (() => {
 
   const RARITY_COLORS = BlueprintUtils.RARITY_COLORS;
 
-  /* ── Avatar Art Generator (role-colored initials for agent cards) ── */
+  /* ── Art generators — delegate to CardRenderer (SSOT) ── */
   const _categoryColors = BlueprintUtils.CATEGORY_COLORS;
-
-  /* ── Deterministic 16-char alphanumeric serial — unique fingerprint per blueprint ── */
-  const _SERIAL_CHARS = 'A0B1C2D3E4F5G6H7J8K9LMNPQRSTUVWXYZ';
-  function _serialHash(str, len) {
-    len = len || 16;
-    let h = 0;
-    for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-    const chars = [];
-    const speeds = [];
-    let n = Math.abs(h);
-    for (let i = 0; i < len; i++) {
-      n = ((n * 9301 + 49297) % 233280);
-      const idx = n % _SERIAL_CHARS.length;
-      chars.push(_SERIAL_CHARS[idx]);
-      const ch = _SERIAL_CHARS[idx];
-      speeds.push(ch >= '0' && ch <= '9' ? +ch : (ch.charCodeAt(0) - 65) % 10);
-    }
-    const raw = chars.join('');
-    const code = raw.replace(/(.{4})(?=.)/g, '$1-');
-    return { code: code, raw: raw, speeds: speeds };
-  }
-
-  function _avatarArt(name, category, serial) {
-    const color = _categoryColors[category] || '#6366f1';
-    const initials = (name || 'AG').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    if (!serial) serial = _serialHash(name);
-
-    // 10-color spectrum — each dot gets a unique hue
-    const dotColors = ['#f43f5e','#f97316','#eab308','#22c55e','#14b8a6','#06b6d4','#3b82f6','#6366f1','#a855f7','#ec4899'];
-
-    // 10 orbiting dots — speed from serial character, unique color + varied size
-    let dots = '';
-    for (let i = 0; i < 10; i++) {
-      const spd = serial.speeds[i];
-      const dur = 24 - (spd * 2);       // 0→24s (slow), 9→6s (fast)
-      const startAngle = i * 36;         // evenly spaced 36° apart
-      const r = 1.5 + (spd * 0.15);     // faster dots are slightly bigger (1.5–2.85)
-      const dc = dotColors[i];
-      // Glow layer (larger, faded) + solid dot
-      dots += `<circle cx="100" cy="20" r="${r + 2}" fill="${dc}" opacity="0.2"><animateTransform attributeName="transform" type="rotate" from="${startAngle} 100 60" to="${startAngle + 360} 100 60" dur="${dur}s" repeatCount="indefinite"/></circle>`;
-      dots += `<circle cx="100" cy="20" r="${r}" fill="${dc}" opacity="0.85"><animateTransform attributeName="transform" type="rotate" from="${startAngle} 100 60" to="${startAngle + 360} 100 60" dur="${dur}s" repeatCount="indefinite"/></circle>`;
-    }
-
-    return `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
-      <line x1="0" y1="30" x2="200" y2="30" stroke="${color}" stroke-width="0.5" opacity="0.08"/>
-      <line x1="0" y1="60" x2="200" y2="60" stroke="${color}" stroke-width="0.5" opacity="0.08"/>
-      <line x1="0" y1="90" x2="200" y2="90" stroke="${color}" stroke-width="0.5" opacity="0.08"/>
-      <line x1="50" y1="0" x2="50" y2="120" stroke="${color}" stroke-width="0.5" opacity="0.08"/>
-      <line x1="100" y1="0" x2="100" y2="120" stroke="${color}" stroke-width="0.5" opacity="0.08"/>
-      <line x1="150" y1="0" x2="150" y2="120" stroke="${color}" stroke-width="0.5" opacity="0.08"/>
-      <circle cx="100" cy="60" r="40" fill="none" stroke="${color}" stroke-width="3" opacity="0.18"/>
-      ${dots}
-      <circle cx="100" cy="60" r="32" fill="${color}" opacity="0.9"/>
-      <text x="100" y="60" text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="var(--font-h, Inter, sans-serif)" font-size="24" font-weight="700" letter-spacing="1">${initials}</text>
-    </svg>`;
-  }
+  function _serialHash(str, len) { return CardRenderer.serialHash(str, len); }
+  function _avatarArt(name, category, serial) { return CardRenderer.avatarArt(name, category, serial); }
 
   /* ── Spaceship Slot Template (XP-based progression, no fixed classes) ── */
   function _getShipSlots(classId) {
@@ -130,106 +76,8 @@ const BlueprintsView = (() => {
 
   const _AGENT_ICON_BTN = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;display:block" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="8" width="10" height="8" rx="2"/><path d="M9 2h6M12 2v6"/><circle cx="9.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none"/><path d="M9 16v2M15 16v2M3 12h4M17 12h4"/></svg>';
 
-  /* ── Slot Diagram Art (static slots + neural network dot animation) ── */
-  function _slotDiagramArt(classId, serial) {
-    const cls = _getShipSlots(classId);
-    const slots = cls.slots;
-    const n = slots.length;
-    if (!serial) serial = _serialHash(classId, 12);
-
-    const cx = 100, cy = 60;
-
-    // Fixed slot positions per layout
-    const positions = n === 2
-      ? [{x:72,y:60},{x:128,y:60}]
-      : n === 3
-      ? [{x:100,y:30},{x:60,y:80},{x:140,y:80}]
-      : n === 5
-      ? [{x:100,y:20},{x:50,y:50},{x:150,y:50},{x:65,y:95},{x:135,y:95}]
-      : n === 8
-      ? [{x:100,y:15},{x:155,y:30},{x:175,y:65},{x:155,y:95},{x:100,y:108},{x:45,y:95},{x:25,y:65},{x:45,y:30}]
-      : n === 12
-      ? [{x:100,y:10},{x:140,y:15},{x:170,y:35},{x:180,y:65},{x:170,y:90},{x:140,y:108},{x:100,y:113},{x:60,y:108},{x:30,y:90},{x:20,y:65},{x:30,y:35},{x:60,y:15}]
-      : [{x:55,y:35},{x:100,y:35},{x:145,y:35},{x:55,y:85},{x:100,y:85},{x:145,y:85}];
-
-    // Neural network connections between slot pairs
-    const conns = n === 2 ? [[0,1]]
-      : n === 3 ? [[0,1],[1,2],[0,2]]
-      : n === 5 ? [[0,1],[0,2],[1,3],[2,4],[3,4],[1,2]]
-      : n === 8 ? [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,4],[2,6]]
-      : n === 12 ? [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,0],[0,6],[3,9]]
-      : [[0,1],[1,2],[3,4],[4,5],[0,3],[2,5],[1,4]];
-
-    const dotColors = ['#f43f5e','#f97316','#eab308','#22c55e','#14b8a6','#06b6d4',
-                       '#3b82f6','#6366f1','#a855f7','#ec4899','#84cc16','#fb923c'];
-    const localOrbitR = 18;
-
-    // ── Background grid ──
-    let svg = `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
-      <line x1="10" y1="20" x2="190" y2="20" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="10" y1="40" x2="190" y2="40" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="10" y1="60" x2="190" y2="60" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="10" y1="80" x2="190" y2="80" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="10" y1="100" x2="190" y2="100" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="30" y1="5" x2="30" y2="115" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="60" y1="5" x2="60" y2="115" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="90" y1="5" x2="90" y2="115" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="120" y1="5" x2="120" y2="115" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="150" y1="5" x2="150" y2="115" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
-      <line x1="180" y1="5" x2="180" y2="115" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>`;
-
-    // ── Center hub ──
-    svg += `<circle cx="${cx}" cy="${cy}" r="5" fill="#3b82f6" opacity="0.3"/>`;
-
-    // ── Neural network connection lines (slot-to-slot) ──
-    conns.forEach(pair => {
-      const a = positions[pair[0]], b = positions[pair[1]];
-      svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#3b82f6" stroke-width="0.6" opacity="0.1"/>`;
-    });
-
-    // ── Spoke lines (hub to each slot) ──
-    positions.forEach(p => {
-      svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#3b82f6" stroke-width="0.8" opacity="0.12"/>`;
-    });
-
-    // ── Static slot circles ──
-    slots.forEach((slot, i) => {
-      const p = positions[i];
-      const color = _SLOT_COLORS[slot.max] || '#6366f1';
-      const r = 14;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r + 3}" fill="${color}" opacity="0.12"/>`;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>`;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${color}" opacity="0.06"/>`;
-      svg += `<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="12" font-weight="300" opacity="0.6">+</text>`;
-    });
-
-    // ── Local orbit dots (one per slot) ──
-    slots.forEach((slot, i) => {
-      const p = positions[i];
-      const spd = serial.speeds[i] || 0;
-      const dur = 20 - (spd * 1.5);
-      const dotR = 1.5 + (spd * 0.12);
-      const dc = dotColors[i % dotColors.length];
-      svg += `<circle cx="${p.x + localOrbitR}" cy="${p.y}" r="${dotR + 1.5}" fill="${dc}" opacity="0.2"><animateTransform attributeName="transform" type="rotate" from="0 ${p.x} ${p.y}" to="360 ${p.x} ${p.y}" dur="${dur}s" repeatCount="indefinite"/></circle>`;
-      svg += `<circle cx="${p.x + localOrbitR}" cy="${p.y}" r="${dotR}" fill="${dc}" opacity="0.85"><animateTransform attributeName="transform" type="rotate" from="0 ${p.x} ${p.y}" to="360 ${p.x} ${p.y}" dur="${dur}s" repeatCount="indefinite"/></circle>`;
-    });
-
-    // ── Traveling dots between connections (neural data flow) ──
-    const travelSpeeds = serial.speeds.slice(n);
-    conns.forEach((pair, ci) => {
-      const a = positions[pair[0]], b = positions[pair[1]];
-      const spd = travelSpeeds[ci % travelSpeeds.length] || 3;
-      const dur = 6 + (9 - spd) * 1.2;
-      const dotR = 1.2 + (spd * 0.08);
-      const dc = dotColors[(ci + n) % dotColors.length];
-      const delay = ((ci * 0.7) % dur).toFixed(1);
-      svg += `<circle r="${dotR + 1}" fill="${dc}" opacity="0.2"><animate attributeName="cx" values="${a.x};${b.x};${a.x}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"/><animate attributeName="cy" values="${a.y};${b.y};${a.y}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"/></circle>`;
-      svg += `<circle r="${dotR}" fill="${dc}" opacity="0.7"><animate attributeName="cx" values="${a.x};${b.x};${a.x}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"/><animate attributeName="cy" values="${a.y};${b.y};${a.y}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"/></circle>`;
-    });
-
-    svg += '</svg>';
-    return svg;
-  }
+  /* ── Slot Diagram Art — delegate to CardRenderer (SSOT) ── */
+  function _slotDiagramArt(classId, serial) { return CardRenderer.slotDiagramArt(classId, serial); }
 
   /* All blueprint data comes from Supabase via BlueprintStore */
   const SEED = [];
@@ -309,6 +157,10 @@ const BlueprintsView = (() => {
             <option value="rarity-desc">Rarity: High → Low</option>
             <option value="rarity-asc">Rarity: Low → High</option>
           </select>
+          <select id="bp-category" class="filter-select" aria-label="Filter by category">
+            <option value="">All Categories</option>
+            ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
           <div class="bp-rarity-filters" id="bp-rarity-filters" role="group" aria-label="Filter by rarity">
             <button class="bp-rarity-btn active" data-rarity="all" aria-pressed="true">All</button>
             <button class="bp-rarity-btn" data-rarity="Common" aria-pressed="false">Common</button>
@@ -336,6 +188,7 @@ const BlueprintsView = (() => {
           <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
         </div>
 
+        <div class="bp-progression-bar" id="bp-progression-bar"></div>
         <div class="bp-result-bar" id="bp-result-bar" aria-live="polite"></div>
 
         <div id="bp-activated-wrap"></div>
@@ -865,7 +718,20 @@ const BlueprintsView = (() => {
   }
 
   /* ── Activated Items Section (top of each tab) ── */
+  function _renderProgressionBar() {
+    const el = document.getElementById('bp-progression-bar');
+    if (!el || typeof Gamification === 'undefined') return;
+    const p = Gamification.getProgressToNextTier();
+    if (!p.nextRank) { el.innerHTML = `<span class="bp-prog-rank">${p.rank.badge} ${p.rank.name}</span> <span class="bp-prog-max">MAX RANK</span>`; return; }
+    const xpFmt = p.xpNeeded >= 1000 ? Math.round(p.xpNeeded / 1000) + 'K' : p.xpNeeded;
+    el.innerHTML = `
+      <span class="bp-prog-rank">${p.rank.badge} ${p.rank.name}</span>
+      <div class="bp-prog-track"><div class="bp-prog-fill" style="width:${p.progress}%"></div></div>
+      <span class="bp-prog-next">${p.nextRank.name} — ${xpFmt} XP to unlock ${p.nextMaxRarity} (${p.nextSlots} slots)</span>`;
+  }
+
   function _renderActivatedSection() {
+    _renderProgressionBar();
     const wrap = document.getElementById('bp-activated-wrap');
     if (!wrap) return;
     if (typeof BlueprintStore === 'undefined') { wrap.innerHTML = ''; return; }
@@ -955,6 +821,7 @@ const BlueprintsView = (() => {
 
     const q = (document.getElementById('bp-search')?.value || '').trim();
     const sort = document.getElementById('bp-sort')?.value || 'popular';
+    const category = document.getElementById('bp-category')?.value || '';
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
 
@@ -970,6 +837,7 @@ const BlueprintsView = (() => {
         type: _subTab === 'spaceship' ? 'spaceship' : 'agent',
         query: q,
         rarity: rarity !== 'all' ? rarity : null,
+        category: category || null,
         sort: sort,
         page: _currentPage,
         perPage: _PAGE_SIZE,
@@ -1009,17 +877,24 @@ const BlueprintsView = (() => {
 
   /** Offline / fallback: filter in-memory seeds (original logic) */
   function _applyFiltersLocal() {
-    const q = (document.getElementById('bp-search')?.value || '').toLowerCase();
+    const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
     const sort = document.getElementById('bp-sort')?.value || 'popular';
+    const category = document.getElementById('bp-category')?.value || '';
 
     let list = _getAllBlueprints();
+
+    // Token-based fuzzy matching: all words must appear somewhere in name+desc+tags
     if (q) {
+      const tokens = q.split(/\s+/).filter(Boolean);
       list = list.filter(b => {
-        const name = (b.name || '').toLowerCase();
-        const desc = (b.description || b.desc || '').toLowerCase();
-        const tags = (b.tags || []).join(' ').toLowerCase();
-        return name.includes(q) || desc.includes(q) || tags.includes(q);
+        const haystack = ((b.name || '') + ' ' + (b.description || b.desc || '') + ' ' + (b.tags || []).join(' ')).toLowerCase();
+        return tokens.every(t => haystack.includes(t));
       });
+    }
+
+    // Category filter
+    if (category) {
+      list = list.filter(b => (b.category || '').toLowerCase() === category.toLowerCase());
     }
 
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
@@ -1688,6 +1563,7 @@ const BlueprintsView = (() => {
       _searchTimer = setTimeout(() => _applyFilters(), 300);
     });
     document.getElementById('bp-sort')?.addEventListener('change', () => _applyFilters());
+    document.getElementById('bp-category')?.addEventListener('change', () => _applyFilters());
 
     // View toggle buttons
     document.getElementById('bp-view-toggle')?.addEventListener('click', (e) => {
@@ -2321,6 +2197,9 @@ const BlueprintsView = (() => {
       <div class="bp-compare-grid">${cards}</div>`;
     document.body.appendChild(panel);
 
+    // Highlight best/worst stats across compared cards
+    _highlightCompareDiffs(panel);
+
     panel.querySelector('.bp-compare-panel-close')?.addEventListener('click', _closeComparePanel);
     panel.addEventListener('click', (e) => { if (e.target === panel) _closeComparePanel(); });
 
@@ -2329,6 +2208,38 @@ const BlueprintsView = (() => {
       if (e.key === 'Escape') { e.preventDefault(); _closeComparePanel(); document.removeEventListener('keydown', _escHandler); }
     };
     document.addEventListener('keydown', _escHandler);
+  }
+
+  function _highlightCompareDiffs(panel) {
+    // Find all stat value cells across columns and highlight best/worst
+    const cols = panel.querySelectorAll('.bp-compare-col');
+    if (cols.length < 2) return;
+    // Gather stat rows: each .bp-compare-stats has .stat-row elements
+    const statRowSets = [...cols].map(col => col.querySelectorAll('.stat-row .stat-val, .drawer-stat-val'));
+    if (!statRowSets[0]?.length) return;
+    const rowCount = statRowSets[0].length;
+    for (let i = 0; i < rowCount; i++) {
+      const vals = statRowSets.map(rows => rows[i]);
+      const nums = vals.map(el => parseFloat((el?.textContent || '').replace(/[^0-9.]/g, '')) || 0);
+      if (nums.every(n => n === nums[0])) continue; // all equal
+      const max = Math.max(...nums);
+      const min = Math.min(...nums);
+      vals.forEach((el, j) => {
+        if (!el) return;
+        if (nums[j] === max) el.classList.add('bp-compare-best');
+        else if (nums[j] === min && nums.filter(n => n === min).length < nums.length) el.classList.add('bp-compare-worst');
+      });
+    }
+    // Highlight unique vs shared capabilities
+    const capSets = [...cols].map(col => [...col.querySelectorAll('.bp-compare-caps .agent-tool-tag')].map(el => el.textContent.trim()));
+    const allCaps = capSets.flat();
+    cols.forEach((col, ci) => {
+      col.querySelectorAll('.bp-compare-caps .agent-tool-tag').forEach(tag => {
+        const text = tag.textContent.trim();
+        const isUnique = allCaps.filter(c => c === text).length === 1;
+        if (isUnique) tag.classList.add('bp-compare-unique');
+      });
+    });
   }
 
   function _closeComparePanel() {

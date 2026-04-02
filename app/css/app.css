@@ -2141,9 +2141,11 @@
 
 /* Crew Slots */
 .bridge-crew-list { display:flex; flex-direction:column; gap:2px; width:100%; }
-.bridge-slot { display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:var(--radius); cursor:default; transition:background .15s; border:1px solid var(--border); margin-bottom:4px; }
+.bridge-slot { position:relative; display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:var(--radius); cursor:default; transition:background .15s; border:1px solid var(--border); margin-bottom:4px; }
 .bridge-slot-filled { cursor:pointer; }
 .bridge-slot-filled:hover { background:var(--surface,var(--bg-alt,rgba(255,255,255,.05))); border-color:var(--border-hi,var(--border)); }
+.slot-rarity-mismatch { border-color:var(--color-warning) !important; background:rgba(245,158,11,.05); }
+.slot-rarity-mismatch::after { content:'⚠'; position:absolute; top:4px; right:8px; font-size:.7rem; color:var(--color-warning); }
 .bridge-slot-top { display:flex; align-items:center; justify-content:space-between; }
 .bridge-slot-label { font-family:var(--font-b); font-size:.55rem; letter-spacing:.1em; color:var(--text-muted); }
 .bridge-slot-name { font-size:.8rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -2723,6 +2725,7 @@
 }
 .builder-hint { font-family:var(--font-b); font-size:.62rem; color:var(--text-dim); margin:0 0 10px 0; }
 .builder-actions { display:flex; align-items:center; gap:12px; }
+.builder-rarity-preview { font-size:.75rem; }
 .builder-actions .auth-error { flex:1; margin:0; }
 .builder-actions-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .builder-header-actions { margin-left:auto; display:flex; gap:6px; flex-shrink:0; }
@@ -5519,18 +5522,12 @@
 .tcg-card[data-rarity="epic"],
 .tcg-card-grid[data-rarity="epic"],
 .tcg-card-compact[data-rarity="epic"]      { border-color:#a855f740; box-shadow:0 0 12px rgba(168,85,247,.15); }
-/* Legendary pulsing gold border */
-@keyframes legendary-border-pulse {
-  0%, 100% { border-color:var(--color-warning); box-shadow:0 0 12px rgba(245,158,11,.2), 0 0 24px rgba(245,158,11,.08); }
-  33%      { border-color:#f97316; box-shadow:0 0 16px rgba(249,115,22,.25), 0 0 30px rgba(249,115,22,.1); }
-  66%      { border-color:#fbbf24; box-shadow:0 0 14px rgba(251,191,36,.22), 0 0 28px rgba(251,191,36,.09); }
-}
+/* Legendary — static gold border */
 .tcg-card[data-rarity="legendary"],
 .tcg-card-grid[data-rarity="legendary"],
 .tcg-card-compact[data-rarity="legendary"] {
   border-color:var(--color-warning);
-  box-shadow:0 0 16px rgba(245,158,11,.3);
-  animation:legendary-border-pulse 4s ease-in-out infinite;
+  box-shadow:0 0 16px rgba(245,158,11,.25);
 }
 
 /* Mythic RGB LED border */
@@ -5614,10 +5611,18 @@
 .tcg-card-grid[data-rarity="legendary"]:hover  { box-shadow:0 0 30px rgba(245,158,11,.4), 0 12px 40px rgba(0,0,0,.3); }
 
 
-/* Foil overlay on legendary+ — slow animated gradient */
+/* Foil overlay — static gold sheen for legendary, animated gradient for mythic */
 .tcg-card[data-rarity="legendary"]::before,
+.tcg-card-grid[data-rarity="legendary"]::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:linear-gradient(135deg, rgba(245,158,11,0.03) 0%, transparent 40%, rgba(251,191,36,0.03) 60%, transparent 100%);
+  pointer-events:none;
+  z-index:9;
+}
 .tcg-card[data-rarity="mythic"]::before,
-.tcg-card-grid[data-rarity="legendary"]::before,
 .tcg-card-grid[data-rarity="mythic"]::before {
   content:'';
   position:absolute;
@@ -5687,14 +5692,9 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion:reduce) {
-  .tcg-card[data-rarity="legendary"]::before,
   .tcg-card[data-rarity="mythic"]::before,
-  .tcg-card-grid[data-rarity="legendary"]::before,
   .tcg-card-grid[data-rarity="mythic"]::before { animation:none !important; }
   .tcg-card:hover .tcg-art::after { animation:none !important; }
-  .tcg-card[data-rarity="legendary"],
-  .tcg-card-grid[data-rarity="legendary"],
-  .tcg-card-compact[data-rarity="legendary"] { animation:none !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -7273,6 +7273,9 @@
   font-size:1.5rem; line-height:1; transition:color .15s;
 }
 .bp-compare-panel-close:hover { color:var(--text); }
+.bp-compare-best { color:var(--color-success) !important; font-weight:600; }
+.bp-compare-worst { color:var(--color-error) !important; opacity:.7; }
+.bp-compare-unique { border-color:var(--accent) !important; background:var(--accent)15 !important; }
 .bp-compare-panel-header h3 {
   font-family:var(--font-b); font-size:1rem; color:var(--text); margin:0;
 }
@@ -7476,6 +7479,12 @@ body.preview-active .nice-ai {
 ───────────────────────────────────────────────────────────────── */
 
 /* ── Result count bar ── */
+.bp-progression-bar { display:flex; align-items:center; gap:8px; font-size:.7rem; color:var(--text-muted); padding:6px 0; }
+.bp-prog-rank { font-weight:600; color:var(--text); white-space:nowrap; }
+.bp-prog-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; min-width:60px; max-width:200px; }
+.bp-prog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .3s; }
+.bp-prog-next { white-space:nowrap; }
+.bp-prog-max { color:var(--color-warning); font-weight:600; }
 .bp-result-bar {
   display:flex; align-items:center; gap:8px;
   min-height:0; transition:min-height .2s;
