@@ -123,6 +123,14 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
 
+  // Localhost: always network-first for JS/CSS (no stale cache during dev)
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+      e.respondWith(fetch(e.request));
+      return;
+    }
+  }
+
   // Supabase API calls: network-first with cached data fallback
   if (url.hostname.includes('supabase')) {
     e.respondWith(

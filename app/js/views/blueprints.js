@@ -2039,7 +2039,13 @@ const BlueprintsView = (() => {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="spaceship">Message ${_esc(bp.name)}</button>`);
         btns.push(`<button class="btn btn-sm bp-drawer-activate" data-id="${bp.id}" data-type="spaceship">&#10003; Deployed</button>`);
       } else {
-        btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Setup Spaceship</button>`);
+        const canActivate = typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked(bp.rarity || 'Common');
+        if (canActivate) {
+          btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Setup Spaceship</button>`);
+        } else {
+          const rank = typeof Gamification !== 'undefined' ? Gamification.getRank() : { name: 'Ensign' };
+          btns.push(`<button class="btn btn-sm" disabled title="Requires higher rank">&#128274; ${bp.rarity} — Locked (${rank.name})</button>`);
+        }
       }
     } else if (type === 'skin') {
       const isActive = typeof Skin !== 'undefined' && Skin.activeSkin()?.id === bp.id;
@@ -2113,6 +2119,10 @@ const BlueprintsView = (() => {
         const id = btn.dataset.id;
         const bpObj = _findBp(id)?.bp;
         if (!bpObj || typeof ShipSetupWizard === 'undefined') return;
+        if (typeof Gamification !== 'undefined' && !Gamification.isRarityUnlocked(bpObj.rarity || 'Common')) {
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Rank Required', message: `${bpObj.rarity} blueprints require a higher rank to activate.`, type: 'warning' });
+          return;
+        }
         _closeDrawer();
         const isReconfigure = btn.dataset.reconfigure === '1';
         const existingName = bpObj._shipName || bpObj.name;
