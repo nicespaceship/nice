@@ -2611,6 +2611,19 @@
 /* ─────────────────────────────────────────────────────────────────
    AGENTS VIEW
 ───────────────────────────────────────────────────────────────── */
+/* ── Agent Archive Section ── */
+.agents-archived-section { margin-top:32px; border-top:1px solid var(--border); padding-top:20px; }
+.agents-archived-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.agents-archived-title { font-size:.9rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+.agents-archived-hint { font-size:.75rem; color:var(--text-muted); opacity:.6; }
+.agents-archived-list { display:flex; flex-direction:column; gap:6px; }
+.agents-archived-row { display:flex; align-items:center; gap:12px; padding:10px 16px; background:var(--bg-alt); border:1px solid var(--border); border-radius:8px; opacity:.6; }
+.agents-archived-row:hover { opacity:.85; }
+.agents-archived-name { flex:1; font-size:.85rem; color:var(--text); }
+.agents-archived-days { font-size:.75rem; color:var(--text-muted); white-space:nowrap; }
+.agents-archived-restore { font-size:.7rem; }
+.agents-archived-delete { font-size:.7rem; color:var(--color-danger, #ef4444); border-color:var(--color-danger, #ef4444); }
+
 .agents-wrap { max-width:var(--width-full); margin:0 auto; }
 .agents-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
 .agents-grid .tcg-card { margin:0; }

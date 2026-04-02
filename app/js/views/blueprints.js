@@ -873,7 +873,8 @@ const BlueprintsView = (() => {
     let type, label, activated;
     if (_subTab === 'agent') {
       type = 'agent'; label = 'AGENTS';
-      activated = BlueprintStore.getActivatedAgents ? BlueprintStore.getActivatedAgents() : [];
+      const allAgents = BlueprintStore.getActivatedAgents ? BlueprintStore.getActivatedAgents() : [];
+      activated = allAgents.filter(a => a.status !== 'archived');
     } else if (_subTab === 'spaceship') {
       type = 'spaceship'; label = 'SPACESHIPS';
       activated = BlueprintStore.getActivatedShips ? BlueprintStore.getActivatedShips() : [];
@@ -885,8 +886,8 @@ const BlueprintsView = (() => {
     if (!activated.length) {
       const emptyMsg = `No ${label.toLowerCase()} deployed yet. Browse below.`;
       wrap.innerHTML = `<div class="bp-activated-section"><p class="bp-activated-empty">${emptyMsg}</p></div><div class="bp-section-divider"></div>`;
-      return;
-    }
+      // Don't return — fall through to render archived banner below
+    } else {
 
     // Merge instance data with blueprint — blueprint fields (rarity, name, etc.) take priority
     let items = activated.map(a => {
@@ -942,6 +943,40 @@ const BlueprintsView = (() => {
     // Bind events for the activated section cards
     const section = wrap.querySelector('.bp-activated-grid');
     if (section) _bindCardEvents(section);
+    } // end else (has activated items)
+
+    // Archived agents banner
+    if (_subTab === 'agent' && typeof BlueprintStore !== 'undefined' && BlueprintStore.getArchivedAgents) {
+      const archived = BlueprintStore.getArchivedAgents();
+      if (archived.length) {
+        const daysLeft = (a) => Math.max(0, 30 - Math.floor((Date.now() - new Date(a.archived_at).getTime()) / 86400000));
+        const banner = document.createElement('div');
+        banner.className = 'agents-archived-section';
+        banner.innerHTML = `
+          <div class="agents-archived-header">
+            <span class="agents-archived-title">Archived (${archived.length})</span>
+            <span class="agents-archived-hint">Auto-deleted after 30 days</span>
+          </div>
+          <div class="agents-archived-list">
+            ${archived.map(a => `<div class="agents-archived-row" data-id="${a.id}">
+              <span class="agents-archived-name">${_esc(a.name)}</span>
+              <span class="agents-archived-days">${daysLeft(a)} days left</span>
+              <button class="btn btn-sm agents-archived-restore" data-id="${a.id}">Restore</button>
+              <button class="btn btn-sm agents-archived-delete" data-id="${a.id}">Delete</button>
+            </div>`).join('')}
+          </div>`;
+        wrap.appendChild(banner);
+        banner.querySelectorAll('.agents-archived-restore').forEach(btn => {
+          btn.addEventListener('click', () => { BlueprintStore.restoreAgent(btn.dataset.id); _renderActivatedSection(); _applyFilters(); });
+        });
+        banner.querySelectorAll('.agents-archived-delete').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (!confirm('Permanently delete this agent?')) return;
+            BlueprintStore.deleteArchivedAgent(btn.dataset.id); _renderActivatedSection(); _applyFilters();
+          });
+        });
+      }
+    }
   }
 
   async function _applyFilters(append) {

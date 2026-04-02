@@ -37,7 +37,12 @@ const BlueprintStore = (() => {
     uuidMap: 'nice-bp-uuid-map',
     catalogCache: 'nice-bp-catalog-v2',
     catalogCacheTs: 'nice-bp-catalog-v2-ts',
+    archivedAgents: 'nice-archived-agents',
   };
+
+  /* ── Archived agent state (persisted) ── */
+  // { agentId: { archived_at, archived_by, archived_ship } }
+  let _archivedAgents = {};
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
@@ -80,6 +85,9 @@ const BlueprintStore = (() => {
     // Purge stale IDs that no longer exist in catalog
     _purgeStaleIds();
 
+    // Auto-purge agents archived > 30 days
+    _purgeExpiredArchives();
+
     _ready = true;
 
     // Fire initial State events so views pick up activation data
@@ -99,6 +107,11 @@ const BlueprintStore = (() => {
     try { _activatedShipIds = JSON.parse(localStorage.getItem(_KEYS.ships) || '[]'); } catch { _activatedShipIds = []; }
     try { _shipState = JSON.parse(localStorage.getItem(_KEYS.shipState) || '{}'); } catch { _shipState = {}; }
     try { _uuidMap = JSON.parse(localStorage.getItem(_KEYS.uuidMap) || '{}'); } catch { _uuidMap = {}; }
+    try { _archivedAgents = JSON.parse(localStorage.getItem(_KEYS.archivedAgents) || '{}'); } catch { _archivedAgents = {}; }
+  }
+
+  function _persistArchived() {
+    try { localStorage.setItem(_KEYS.archivedAgents, JSON.stringify(_archivedAgents)); } catch {}
   }
 
   /**
@@ -929,49 +942,49 @@ const BlueprintStore = (() => {
   }
 
   function deactivateShip(bpId) {
-    // Normalize: find the matching ID in the array (with or without bp- prefix)
-    const match = _activatedShipIds.find(id => id === bpId || 'bp-' + id === bpId || id === 'bp-' + bpId);
+    const match = _activatedShipIds.find(id => _matchesBpId(id, bpId));
     if (!match) return;
     _activatedShipIds = _activatedShipIds.filter(id => id !== match);
     _persistShips();
     _syncDeactivation(bpId, 'spaceship');
 
-    // Cascade: deactivate agents assigned to this ship
+    // Cascade: archive (not delete) agents assigned to this ship
     const shipId = _normalizeBpId(bpId);
     const state = _shipState[shipId];
     if (state) {
-      const agentIdsToRemove = new Set();
+      const agentIdsToArchive = new Set();
       if (state.slot_assignments) {
-        Object.values(state.slot_assignments).forEach(id => { if (id) agentIdsToRemove.add(id); });
+        Object.values(state.slot_assignments).forEach(id => { if (id) agentIdsToArchive.add(id); });
       }
       if (state.agent_ids) {
-        state.agent_ids.forEach(id => { if (id) agentIdsToRemove.add(id); });
+        state.agent_ids.forEach(id => { if (id) agentIdsToArchive.add(id); });
       }
 
-      // Only remove agents not assigned to another active ship
+      // Only archive agents not assigned to another active ship
       const otherShipAgents = new Set();
       for (const [otherKey, otherState] of Object.entries(_shipState)) {
         if (otherKey === shipId || !otherState?.slot_assignments) continue;
         Object.values(otherState.slot_assignments).forEach(id => { if (id) otherShipAgents.add(id); });
       }
 
-      for (const agentId of agentIdsToRemove) {
+      // Archive orphaned agents instead of deleting
+      const now = new Date().toISOString();
+      for (const agentId of agentIdsToArchive) {
         if (otherShipAgents.has(agentId)) continue;
-        _activatedAgentIds = _activatedAgentIds.filter(id => id !== agentId);
-        // Also remove from custom agents
-        try {
-          const custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
-          const filtered = custom.filter(a => a.id !== agentId);
-          if (filtered.length !== custom.length) localStorage.setItem('nice-custom-agents', JSON.stringify(filtered));
-        } catch {}
+        _archivedAgents[agentId] = { archived_at: now, archived_by: 'spaceship_deactivation', archived_ship: shipId };
       }
-      _persistAgents();
+      _persistArchived();
 
-      // Remove from State.agents
       if (typeof State !== 'undefined') {
         const agents = State.get('agents') || [];
-        const cleaned = agents.filter(a => !agentIdsToRemove.has(a.id) || otherShipAgents.has(a.id));
-        if (cleaned.length !== agents.length) State.set('agents', cleaned);
+        let changed = false;
+        agents.forEach(a => {
+          if (_archivedAgents[a.id] && a.status !== 'archived') {
+            Object.assign(a, _archivedAgents[a.id], { status: 'archived' });
+            changed = true;
+          }
+        });
+        if (changed) State.set('agents', [...agents]);
       }
 
       delete _shipState[shipId];
@@ -986,6 +999,73 @@ const BlueprintStore = (() => {
     }
 
     _fireShipState();
+  }
+
+  /* ── Agent Archive / Restore / Purge ── */
+
+  const _ARCHIVE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+  /** Restore an archived agent back to active status */
+  function restoreAgent(agentId) {
+    if (!_archivedAgents[agentId]) return false;
+    const name = getArchivedAgents().find(a => a.id === agentId)?.name || agentId;
+    delete _archivedAgents[agentId];
+    _persistArchived();
+    if (typeof State !== 'undefined') {
+      const agents = State.get('agents') || [];
+      const agent = agents.find(a => a.id === agentId);
+      if (agent) {
+        agent.status = 'idle';
+        delete agent.archived_at;
+        delete agent.archived_by;
+        delete agent.archived_ship;
+        State.set('agents', [...agents]);
+      }
+    }
+    if (typeof Notify !== 'undefined') Notify.send({ title: 'Agent Restored', message: `${name} is back in service.`, type: 'system' });
+    return true;
+  }
+
+  /** Permanently delete an archived agent */
+  function deleteArchivedAgent(agentId) {
+    delete _archivedAgents[agentId];
+    _persistArchived();
+    _activatedAgentIds = _activatedAgentIds.filter(id => !_matchesBpId(id, agentId));
+    _persistAgents();
+    try {
+      const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+      const filtered = custom.filter(a => a.id !== agentId);
+      if (filtered.length !== custom.length) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
+    } catch {}
+    if (typeof State !== 'undefined') {
+      const agents = State.get('agents') || [];
+      const filtered = agents.filter(a => a.id !== agentId);
+      if (filtered.length !== agents.length) State.set('agents', filtered);
+    }
+  }
+
+  /** Get all archived agents (from persisted map + State data) */
+  function getArchivedAgents() {
+    const ids = Object.keys(_archivedAgents);
+    if (!ids.length) return [];
+    // Try to enrich with agent name from State or catalog
+    return ids.map(id => {
+      const stateAgent = typeof State !== 'undefined' ? (State.get('agents') || []).find(a => a.id === id) : null;
+      const catalogAgent = getAgent(id) || getAgent(id.replace(/^bp-/, ''));
+      const name = stateAgent?.name || catalogAgent?.name || id;
+      return { id, name, status: 'archived', ..._archivedAgents[id] };
+    });
+  }
+
+  /** Auto-purge agents archived more than 30 days ago */
+  function _purgeExpiredArchives() {
+    const now = Date.now();
+    const expired = Object.entries(_archivedAgents).filter(([, meta]) => meta.archived_at && (now - new Date(meta.archived_at).getTime()) > _ARCHIVE_TTL);
+    if (!expired.length) return;
+    expired.forEach(([id]) => deleteArchivedAgent(id));
+    if (typeof Notify !== 'undefined') {
+      Notify.send({ title: 'Archive Cleanup', message: `${expired.length} expired agent${expired.length > 1 ? 's' : ''} permanently removed.`, type: 'system' });
+    }
   }
 
   function isShipActivated(bpId) {
@@ -1323,6 +1403,9 @@ const BlueprintStore = (() => {
 
     // Agent UUID mapping (local ID ↔ Supabase UUID)
     setAgentUuid, getAgentUuid,
+
+    // Agent archive lifecycle
+    restoreAgent, deleteArchivedAgent, getArchivedAgents,
 
     // Bulk deactivation
     deactivateAllAgents, deactivateAllShips,

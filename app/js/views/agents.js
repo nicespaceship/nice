@@ -135,7 +135,11 @@ const AgentsView = (() => {
     const bpIds = new Set(bpAgents.map(a => a.id));
     const merged = [...bpAgents, ...customAgents.filter(a => !bpIds.has(a.id))];
     State.set('agents', merged);
-    _renderList(merged);
+    // Separate active vs archived
+    const active = merged.filter(a => a.status !== 'archived');
+    const archived = merged.filter(a => a.status === 'archived');
+    _renderList(active);
+    _renderArchivedBanner(archived);
     if (typeof Gamification !== 'undefined') Gamification.checkAchievements();
   }
 
@@ -202,6 +206,57 @@ const AgentsView = (() => {
         if (typeof BlueprintsView !== 'undefined' && BlueprintsView.confirmDeactivate) {
           BlueprintsView.confirmDeactivate(name, doDeactivate);
         } else { doDeactivate(); }
+      });
+    });
+  }
+
+  function _renderArchivedBanner(archived) {
+    // Remove old banner
+    const old = document.getElementById('agents-archived-section');
+    if (old) old.remove();
+    if (!archived.length) return;
+
+    const wrap = document.querySelector('.agents-wrap');
+    if (!wrap) return;
+
+    const daysLeft = (a) => {
+      const elapsed = Date.now() - new Date(a.archived_at).getTime();
+      return Math.max(0, 30 - Math.floor(elapsed / 86400000));
+    };
+
+    const section = document.createElement('div');
+    section.id = 'agents-archived-section';
+    section.className = 'agents-archived-section';
+    section.innerHTML = `
+      <div class="agents-archived-header">
+        <span class="agents-archived-title">Archived (${archived.length})</span>
+        <span class="agents-archived-hint">Auto-deleted after 30 days</span>
+      </div>
+      <div class="agents-archived-list">
+        ${archived.map(a => `
+          <div class="agents-archived-row" data-id="${a.id}">
+            <span class="agents-archived-name">${_esc(a.name)}</span>
+            <span class="agents-archived-days">${daysLeft(a)} days left</span>
+            <button class="btn btn-sm agents-archived-restore" data-id="${a.id}">Restore</button>
+            <button class="btn btn-sm agents-archived-delete" data-id="${a.id}">Delete</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    wrap.appendChild(section);
+
+    // Bind restore/delete
+    section.querySelectorAll('.agents-archived-restore').forEach(btn => {
+      btn.addEventListener('click', () => {
+        BlueprintStore.restoreAgent(btn.dataset.id);
+        _loadAgents();
+      });
+    });
+    section.querySelectorAll('.agents-archived-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!confirm('Permanently delete this agent? This cannot be undone.')) return;
+        BlueprintStore.deleteArchivedAgent(btn.dataset.id);
+        _loadAgents();
       });
     });
   }
