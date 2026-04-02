@@ -200,6 +200,7 @@ Rules:
         var row = {
           user_id: user.id,
           name: agentName,
+          rarity: c.rarity || bp.rarity || 'Common',
           status: 'idle',
           config: {
             role: agentRole,

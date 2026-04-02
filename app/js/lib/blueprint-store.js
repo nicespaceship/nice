@@ -403,45 +403,16 @@ const BlueprintStore = (() => {
         _persistShipState();
       }
 
-      // Build agent→rarity map from catalog crew definitions (individual rarities)
-      var agentRarityMap = {};
-      if (ships) {
-        ships.forEach(function(s) {
-          var meta = s.slots || {};
-          var cbp = s.blueprint_id ? (getSpaceship(s.blueprint_id) || getSpaceship('bp-' + s.blueprint_id)) : null;
-          var catalogCrew = cbp ? (cbp.metadata?.crew || cbp.crew || []) : [];
-
-          // Match DB crew to catalog crew by slot index to get individual rarities
-          if (Array.isArray(meta.crew)) {
-            meta.crew.forEach(function(c, idx) {
-              if (!c.agent_id) return;
-              var catalogMember = catalogCrew[idx];
-              agentRarityMap[c.agent_id] = (catalogMember && catalogMember.rarity) || 'Common';
-            });
-          }
-          if (meta.slot_assignments) {
-            Object.keys(meta.slot_assignments).forEach(function(slot) {
-              var agentId = meta.slot_assignments[slot];
-              if (!agentId) return;
-              var idx = parseInt(slot, 10);
-              var catalogMember = catalogCrew[idx];
-              agentRarityMap[agentId] = (catalogMember && catalogMember.rarity) || 'Common';
-            });
-          }
-        });
-      }
-
-      // Load custom agents
+      // Load custom agents — rarity stored in DB column
       const { data: agents } = await c.from('user_agents').select('*');
       if (agents && agents.length) {
         const stateAgents = State.get('agents') || [];
         const existingIds = new Set(stateAgents.map(a => a.id));
         agents.forEach(a => {
-          var agentRarity = agentRarityMap[a.id] || 'Common';
+          var agentRarity = a.rarity || 'Common';
           if (existingIds.has(a.id)) {
-            // Update rarity on existing agents from catalog data
             var existing = stateAgents.find(function(e) { return e.id === a.id; });
-            if (existing && agentRarityMap[a.id]) existing.rarity = agentRarity;
+            if (existing) existing.rarity = agentRarity;
             return;
           }
           const cfg = a.config || {};
