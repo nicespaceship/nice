@@ -437,11 +437,17 @@ const BlueprintStore = (() => {
         const stateAgents = State.get('agents') || [];
         const existingIds = new Set(stateAgents.map(a => a.id));
         agents.forEach(a => {
-          if (existingIds.has(a.id)) return;
+          var agentRarity = agentRarityMap[a.id] || 'Common';
+          if (existingIds.has(a.id)) {
+            // Update rarity on existing agents from catalog data
+            var existing = stateAgents.find(function(e) { return e.id === a.id; });
+            if (existing && agentRarityMap[a.id]) existing.rarity = agentRarity;
+            return;
+          }
           const cfg = a.config || {};
           stateAgents.push({
             id: a.id, name: a.name, type: 'agent',
-            category: cfg.role || a.role || '', rarity: agentRarityMap[a.id] || 'Common',
+            category: cfg.role || a.role || '', rarity: agentRarity,
             status: a.status || 'idle', config: cfg,
             metadata: { agentType: cfg.type || 'Agent' },
             created_at: a.created_at,
