@@ -740,10 +740,15 @@ const BlueprintsView = (() => {
     if (_subTab === 'agent') {
       type = 'agent'; label = 'AGENTS';
       activated = BlueprintStore.getActivatedAgents ? BlueprintStore.getActivatedAgents() : [];
+      // Include custom agents from State (same merge pattern as Schematic)
+      const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+      customAgents.forEach(ca => { if (ca && !activated.find(a => a.id === ca.id)) activated.push(ca); });
     } else if (_subTab === 'spaceship') {
       type = 'spaceship'; label = 'SPACESHIPS';
       activated = BlueprintStore.getActivatedShips ? BlueprintStore.getActivatedShips() : [];
-
+      // Include custom ships from State (same merge pattern as Schematic)
+      const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+      customShips.forEach(cs => { if (cs && !activated.find(s => s.id === cs.id)) activated.push(cs); });
     } else {
       wrap.innerHTML = ''; return;
     }

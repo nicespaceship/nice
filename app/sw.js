@@ -7,7 +7,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 // AUTO-STAMPED by CI — do not edit manually. Bumped on each deploy.
-const CACHE_VERSION = 35;
+const CACHE_VERSION = 36;
 const CACHE_NAME = `nice-v${CACHE_VERSION}`;
 const DATA_CACHE = `nice-v${CACHE_VERSION}-data`;
 
