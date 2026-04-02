@@ -875,11 +875,12 @@ const BlueprintStore = (() => {
       const custom = typeof CardRenderer !== 'undefined' && CardRenderer.getCustomLabels
         ? CardRenderer.getCustomLabels(lookupId) : {};
       const localId = bpId;
+      const isArchived = !!_archivedAgents[localId];
       const agent = {
         id: localId,
         name: custom.name || bp.name,
         role: custom.role || bp.config?.role || bp.category || 'General',
-        status: 'idle',
+        status: isArchived ? 'archived' : 'idle',
         llm_engine: bp.config?.llm_engine || 'claude-4',
         type: bp.config?.type || 'Specialist',
         config: { tools: bp.config?.tools || [], temperature: 0.7, memory: true },
@@ -896,6 +897,8 @@ const BlueprintStore = (() => {
       };
       // Attach Supabase UUID if available
       if (_uuidMap[localId]) agent.supabase_id = _uuidMap[localId];
+      // Attach archive metadata if archived
+      if (isArchived) Object.assign(agent, _archivedAgents[localId]);
       result.push(agent);
     });
     return result;
@@ -969,9 +972,11 @@ const BlueprintStore = (() => {
 
       // Archive orphaned agents instead of deleting
       const now = new Date().toISOString();
+      const stateAgents = typeof State !== 'undefined' ? (State.get('agents') || []) : [];
       for (const agentId of agentIdsToArchive) {
         if (otherShipAgents.has(agentId)) continue;
-        _archivedAgents[agentId] = { archived_at: now, archived_by: 'spaceship_deactivation', archived_ship: shipId };
+        const agentObj = stateAgents.find(a => a.id === agentId);
+        _archivedAgents[agentId] = { archived_at: now, archived_by: 'spaceship_deactivation', archived_ship: shipId, name: agentObj?.name || agentId };
       }
       _persistArchived();
 
@@ -1052,7 +1057,11 @@ const BlueprintStore = (() => {
     return ids.map(id => {
       const stateAgent = typeof State !== 'undefined' ? (State.get('agents') || []).find(a => a.id === id) : null;
       const catalogAgent = getAgent(id) || getAgent(id.replace(/^bp-/, ''));
-      const name = stateAgent?.name || catalogAgent?.name || id;
+      let customAgent = null;
+      if (!stateAgent && !catalogAgent) {
+        try { customAgent = (JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]')).find(a => a.id === id); } catch {}
+      }
+      const name = stateAgent?.name || catalogAgent?.name || customAgent?.name || _archivedAgents[id]?.name || id;
       return { id, name, status: 'archived', ..._archivedAgents[id] };
     });
   }
