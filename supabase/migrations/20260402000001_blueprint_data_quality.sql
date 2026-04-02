@@ -274,3 +274,608 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
 VALUES ('ship-50', 'CR-BORGCUBE', 'spaceship', 'Borg Cube', 'You are the Collective. Every drone is an extension of a single distributed intelligence — assimilating data, adapting defenses, and optimizing operations in real time. Resistance to inefficiency is futile. Individual crew roles are irrelevant; the hive executes as one.', 'Resistance is futile.', 'Automation', 'Mythic', ARRAY['enterprise','mythic','command','borg','collective'], '{}'::jsonb, '{"crew":"24","slots":"24","tier":"MYTHIC"}'::jsonb, '{"caps":["Distributed hive intelligence — every drone shares context in real time","Adaptive operations that self-optimize from every interaction","Assimilate new data sources, tools, and workflows automatically"],"crew":[{"id":"n1","type":"agent","label":"Borg Queen","config":{"agentRole":"Command"},"rarity":"Legendary"},{"id":"n2","type":"agent","label":"Locutus of Borg","config":{"agentRole":"COO"},"rarity":"Legendary"},{"id":"n3","type":"agent","label":"Tactical Drone","config":{"agentRole":"Security"},"rarity":"Epic"},{"id":"n4","type":"agent","label":"Assimilation Specialist","config":{"agentRole":"Ops"},"rarity":"Legendary"},{"id":"n5","type":"agent","label":"Navigation Drone","config":{"agentRole":"Engineering"},"rarity":"Rare"},{"id":"n6","type":"agent","label":"Medical Drone","config":{"agentRole":"QA"},"rarity":"Rare"},{"id":"n7","type":"agent","label":"Engineering Drone Alpha","config":{"agentRole":"Infrastructure"},"rarity":"Rare"},{"id":"n8","type":"agent","label":"Engineering Drone Beta","config":{"agentRole":"DevOps"},"rarity":"Rare"},{"id":"n9","type":"agent","label":"Communications Node","config":{"agentRole":"Comms"},"rarity":"Epic"},{"id":"n10","type":"agent","label":"Data Analysis Node","config":{"agentRole":"Analytics"},"rarity":"Epic"},{"id":"n11","type":"agent","label":"Shield Harmonics Drone","config":{"agentRole":"Defense"},"rarity":"Epic"},{"id":"n12","type":"agent","label":"Transwarp Specialist","config":{"agentRole":"Engineering"},"rarity":"Legendary"},{"id":"n13","type":"agent","label":"Regeneration Overseer","config":{"agentRole":"Support"},"rarity":"Rare"},{"id":"n14","type":"agent","label":"Vinculum Controller","config":{"agentRole":"Network"},"rarity":"Legendary"},{"id":"n15","type":"agent","label":"Interlink Drone","config":{"agentRole":"Integration"},"rarity":"Rare"},{"id":"n16","type":"agent","label":"Adaptation Drone","config":{"agentRole":"ML"},"rarity":"Epic"},{"id":"n17","type":"agent","label":"Temporal Processor","config":{"agentRole":"Forecasting"},"rarity":"Epic"},{"id":"n18","type":"agent","label":"Maturation Drone","config":{"agentRole":"Training"},"rarity":"Rare"},{"id":"n19","type":"agent","label":"Logistics Drone","config":{"agentRole":"Supply Chain"},"rarity":"Rare"},{"id":"n20","type":"agent","label":"Surveillance Node","config":{"agentRole":"Monitoring"},"rarity":"Epic"},{"id":"n21","type":"agent","label":"Assimilation Drone Alpha","config":{"agentRole":"Onboarding"},"rarity":"Rare"},{"id":"n22","type":"agent","label":"Assimilation Drone Beta","config":{"agentRole":"Research"},"rarity":"Rare"},{"id":"n23","type":"agent","label":"Unimatrix Coordinator","config":{"agentRole":"Strategy"},"rarity":"Legendary"},{"id":"n24","type":"agent","label":"Seven of Nine","config":{"agentRole":"Advisory"},"rarity":"Legendary"}],"card_num":"NS-F50","recommended_class":"class-5"}'::jsonb, 0, 0)
 ON CONFLICT (id) DO NOTHING;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- Common Fleet Templates — 100 SMB Business Spaceships
+-- Class-1 Scout ships. 6 crew slots. All start Common, grow with XP.
+-- ═══════════════════════════════════════════════════════════════════
+
+-- ── 100. Accounting Firm ────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-100', 'SS-7K3M-Q9X2-B4JL-W8PN', 'spaceship', 'Accounting Firm', 'You run a numbers-driven practice that turns messy ledgers into crystal-clear financials. Your crew handles bookkeeping, tax prep, and advisory so clients sleep through April.', 'Debits equal credits.', 'Professional', 'Common', ARRAY['accounting','finance','professional'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Automated reconciliation that closes books in hours, not days","Tax deadline tracking with proactive client reminders","Cash-flow forecasting dashboards for every client"],"tier":"lite","card_num":"NS-F100","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 101. Architecture Studio ────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-101', 'SS-2R5T-H8NV-C3FG-Y6DW', 'spaceship', 'Architecture Studio', 'You design buildings that outlast their builders. Your crew manages project timelines, permit workflows, and client revisions from sketch to ribbon-cutting.', 'Blueprint to skyline.', 'Engineering', 'Common', ARRAY['architecture','design','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Permit tracking and compliance checklists by municipality","Revision management with automatic client-facing changelogs","Material cost estimation synced to supplier catalogs"],"tier":"lite","card_num":"NS-F101","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 102. Recruitment Agency ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-102', 'SS-9L4P-D7WK-F2XR-N5BH', 'spaceship', 'Recruitment Agency', 'You match talent to opportunity faster than any job board. Your crew screens resumes, coordinates interviews, and keeps both candidates and hiring managers in the loop.', 'Right seat, right person.', 'Ops', 'Common', ARRAY['recruitment','hiring','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Resume parsing and candidate scoring against job requirements","Interview scheduling across multiple time zones","Pipeline analytics showing time-to-fill and source effectiveness"],"tier":"lite","card_num":"NS-F102","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 103. PR Firm ────────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-103', 'SS-6F8J-R1ZM-K5QC-T3VA', 'spaceship', 'PR Firm', 'You shape narratives for a living. Your crew monitors media mentions, drafts press releases, and manages crisis comms before stories spin out of control.', 'Control the narrative.', 'Marketing', 'Common', ARRAY['pr','communications','marketing'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Real-time media monitoring with sentiment analysis","Press release drafting with distribution list management","Crisis response playbooks with pre-approved messaging tiers"],"tier":"lite","card_num":"NS-F103","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 104. Translation Agency ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-104', 'SS-3W7G-N4LP-X9DK-J2RH', 'spaceship', 'Translation Agency', 'You bridge languages and cultures so businesses can go global. Your crew handles document translation, localization QA, and terminology management across dozens of language pairs.', 'Lost in translation? Never.', 'Content', 'Common', ARRAY['translation','localization','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Glossary management ensuring consistent terminology across projects","Localization QA with cultural context validation","Deadline tracking for multi-language simultaneous releases"],"tier":"lite","card_num":"NS-F104","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 105. Private Investigation Firm ─────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-105', 'SS-8C2V-P6YB-G1TN-M4QF', 'spaceship', 'Private Investigation Firm', 'You uncover what others want hidden. Your crew runs background checks, asset searches, and surveillance ops while maintaining airtight chain-of-custody documentation.', 'The truth is in the data.', 'Research', 'Common', ARRAY['investigation','research','security'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Background check automation with multi-database cross-referencing","Case file management with evidence chain-of-custody logs","Surveillance scheduling and field report aggregation"],"tier":"lite","card_num":"NS-F105","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 106. Management Consulting ──────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-106', 'SS-5D9K-W3HN-R7XJ-B1FP', 'spaceship', 'Management Consulting', 'You diagnose organizational problems and prescribe solutions that stick. Your crew builds decks, runs workshops, and tracks implementation milestones across client engagements.', 'Strategy meets execution.', 'Professional', 'Common', ARRAY['consulting','strategy','professional'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Engagement tracking from discovery through implementation","Deliverable templates with automated formatting and branding","Client health scoring based on milestone completion rates"],"tier":"lite","card_num":"NS-F106","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 107. Executive Coaching Practice ────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-107', 'SS-4H6R-J8MC-T2WQ-N9LX', 'spaceship', 'Executive Coaching Practice', 'You develop leaders who transform organizations. Your crew manages coaching sessions, tracks development goals, and delivers 360-feedback reports that drive real behavioral change.', 'Grow the leader, grow the company.', 'Professional', 'Common', ARRAY['coaching','leadership','professional'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Session scheduling with pre-work assignments and follow-up tracking","360-degree feedback collection and anonymized reporting","Goal progression dashboards shared between coach and coachee"],"tier":"lite","card_num":"NS-F107","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 108. Patent / IP Law Firm ───────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-108', 'SS-1Q5B-X7GD-K3VR-F9TW', 'spaceship', 'Patent / IP Law Firm', 'You protect the ideas that power innovation. Your crew drafts patent applications, monitors infringement, and manages IP portfolios worth more than the companies behind them.', 'Ideas are worth protecting.', 'Legal', 'Common', ARRAY['legal','patents','ip'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Patent filing deadline tracking across multiple jurisdictions","Prior art search automation with similarity scoring","IP portfolio valuation dashboards for client reporting"],"tier":"lite","card_num":"NS-F108","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 109. Interior Design Studio ─────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-109', 'SS-7N2F-B4KP-W8XC-D5JM', 'spaceship', 'Interior Design Studio', 'You transform empty rooms into living experiences. Your crew manages mood boards, vendor sourcing, and installation timelines so every project delivers on budget and on brand.', 'Space shapes how you feel.', 'Content', 'Common', ARRAY['design','interiors','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Mood board creation with linked vendor catalogs and pricing","Project timeline management from concept through final walkthrough","Budget tracking with real-time spend versus approved allowances"],"tier":"lite","card_num":"NS-F109","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 110. Event Planning Agency ──────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-110', 'SS-3T9L-G6RV-M1FH-Q8YW', 'spaceship', 'Event Planning Agency', 'You orchestrate unforgettable experiences from corporate galas to product launches. Your crew juggles vendors, timelines, and guest lists so the day runs like clockwork.', 'Every detail, on schedule.', 'Ops', 'Common', ARRAY['events','planning','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Vendor coordination with contract tracking and payment schedules","Guest list management with RSVP tracking and seating logic","Day-of-event run-of-show timelines with real-time status updates"],"tier":"lite","card_num":"NS-F110","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 111. Staffing / Temp Agency ─────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-111', 'SS-6P4D-N2WX-J7KB-R5HG', 'spaceship', 'Staffing / Temp Agency', 'You fill shifts before they go empty. Your crew matches available workers to open positions, handles timesheets, and ensures compliance so clients never worry about labor gaps.', 'Shift covered. Always.', 'Ops', 'Common', ARRAY['staffing','hr','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Shift matching engine pairing worker availability to open requisitions","Timesheet collection and payroll-ready export automation","Compliance tracking for certifications, background checks, and I-9 forms"],"tier":"lite","card_num":"NS-F111","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 112. Bookkeeping Service ────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-112', 'SS-8V1M-C5QL-T3YN-X6FJ', 'spaceship', 'Bookkeeping Service', 'You keep the financial heartbeat of small businesses steady. Your crew categorizes transactions, reconciles accounts, and produces monthly reports that make tax season painless.', 'Clean books, clear mind.', 'Analytics', 'Common', ARRAY['bookkeeping','finance','analytics'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Transaction categorization with smart rule-based auto-tagging","Monthly close checklists with reconciliation verification","Profit-and-loss reporting with trend comparisons to prior periods"],"tier":"lite","card_num":"NS-F112","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 113. Market Research Firm ───────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-113', 'SS-2J8W-F9RP-D4HX-K7BN', 'spaceship', 'Market Research Firm', 'You turn consumer behavior into competitive advantage. Your crew designs surveys, runs focus groups, and delivers insights that shape product roadmaps and go-to-market strategies.', 'Know your market cold.', 'Research', 'Common', ARRAY['research','analytics','market'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Survey design and distribution with response rate optimization","Focus group scheduling with transcript analysis and theme extraction","Competitive landscape mapping with quarterly trend reports"],"tier":"lite","card_num":"NS-F113","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 114. Business Brokerage ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-114', 'SS-5G3C-L1VT-Q9NK-H4XD', 'spaceship', 'Business Brokerage', 'You connect buyers with businesses worth owning. Your crew values companies, markets listings, and shepherds deals from LOI to closing table.', 'Every business has a price.', 'Sales', 'Common', ARRAY['brokerage','sales','m&a'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Business valuation models using SDE and EBITDA multiples","Confidential listing management with NDA-gated buyer access","Deal pipeline tracking from initial inquiry through post-close transition"],"tier":"lite","card_num":"NS-F114","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 115. Dental Practice ────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-115', 'SS-9R6N-T4FQ-B2KW-M7PJ', 'spaceship', 'Dental Practice', 'You keep smiles healthy and schedules full. Your crew manages patient recalls, insurance verification, and treatment planning so the chairs never sit empty.', 'Open wide for efficiency.', 'Ops', 'Common', ARRAY['dental','healthcare','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Patient recall automation with configurable cleaning intervals","Insurance eligibility verification before appointment day","Treatment plan presentation with cost breakdowns and payment options"],"tier":"lite","card_num":"NS-F115","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 116. Veterinary Clinic ──────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-116', 'SS-4W2H-X8BG-J5LD-R1MV', 'spaceship', 'Veterinary Clinic', 'You care for the animals people love most. Your crew handles appointment booking, vaccination reminders, and prescription management so every pet gets the attention it deserves.', 'Healthy pets, happy humans.', 'Ops', 'Common', ARRAY['veterinary','healthcare','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Vaccination schedule tracking with automated owner reminders","Prescription refill management with pharmacy integration","Patient record keeping with breed-specific wellness protocols"],"tier":"lite","card_num":"NS-F116","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 117. Pharmacy ───────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-117', 'SS-7F5K-D3NR-P9TW-G2XC', 'spaceship', 'Pharmacy', 'You dispense health one prescription at a time. Your crew manages inventory, checks drug interactions, and coordinates refills so patients never miss a dose.', 'Your health, our mission.', 'Ops', 'Common', ARRAY['pharmacy','healthcare','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Prescription refill automation with patient notification","Drug interaction checking against active medication profiles","Inventory management with expiration date tracking and reorder alerts"],"tier":"lite","card_num":"NS-F117","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 118. Physical Therapy Clinic ────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-118', 'SS-1B8J-V6QM-H3FC-N9WL', 'spaceship', 'Physical Therapy Clinic', 'You rebuild bodies that injury tried to break. Your crew tracks treatment plans, documents progress, and manages insurance authorizations so patients focus on recovery.', 'Move better. Live better.', 'Ops', 'Common', ARRAY['physicaltherapy','healthcare','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Treatment plan tracking with exercise progression milestones","Insurance authorization management with visit count monitoring","Outcome measurement dashboards comparing patient progress to benchmarks"],"tier":"lite","card_num":"NS-F118","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 119. Optometry Practice ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-119', 'SS-3X4G-K7PD-W1RN-T8HB', 'spaceship', 'Optometry Practice', 'You protect the gift of sight. Your crew schedules exams, manages frame inventory, and processes vision insurance so patients walk out seeing clearly.', 'See the difference.', 'Ops', 'Common', ARRAY['optometry','healthcare','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Exam scheduling with pre-screening questionnaire automation","Frame inventory management with try-on history tracking","Vision insurance benefits verification and claims submission"],"tier":"lite","card_num":"NS-F119","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 120. Med Spa ────────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-120', 'SS-6M9V-R2JT-C5WF-B8QK', 'spaceship', 'Med Spa', 'You blend medicine and luxury so clients leave looking and feeling renewed. Your crew manages treatment bookings, product inventory, and membership programs that keep clients coming back.', 'Where science meets beauty.', 'Hospitality', 'Common', ARRAY['medspa','wellness','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Treatment booking with provider credential matching","Membership and package tracking with visit balance monitoring","Product inventory management with reorder and expiration alerts"],"tier":"lite","card_num":"NS-F120","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 121. Home Health Agency ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-121', 'SS-2P7L-G4XH-N8DK-F1RW', 'spaceship', 'Home Health Agency', 'You bring quality care directly into patients'' homes. Your crew coordinates caregiver schedules, tracks visit documentation, and manages compliance so families have peace of mind.', 'Care that comes to you.', 'Ops', 'Common', ARRAY['homehealth','healthcare','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Caregiver-to-patient scheduling with geographic route optimization","Visit documentation with real-time compliance verification","Caregiver credential tracking with license renewal alerts"],"tier":"lite","card_num":"NS-F121","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 122. Chiropractor Office ────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-122', 'SS-5T3N-B9FK-Q2MJ-X7WC', 'spaceship', 'Chiropractor Office', 'You align spines and schedules with equal precision. Your crew manages patient appointments, treatment frequencies, and insurance billing so adjustments happen without friction.', 'Alignment is everything.', 'Ops', 'Common', ARRAY['chiropractic','healthcare','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Appointment scheduling with recommended visit frequency reminders","Treatment progress tracking with before-and-after imaging references","Insurance billing automation with visit-limit monitoring"],"tier":"lite","card_num":"NS-F122","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 123. Fertility Clinic ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-123', 'SS-8K6D-W1VP-H4RG-L9NX', 'spaceship', 'Fertility Clinic', 'You help families begin. Your crew coordinates complex treatment cycles, lab results, and medication schedules with the sensitivity and precision this journey demands.', 'Where families begin.', 'Research', 'Common', ARRAY['fertility','healthcare','research'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Treatment cycle tracking with medication schedule coordination","Lab result management with trend analysis across cycles","Patient communication with milestone updates and appointment reminders"],"tier":"lite","card_num":"NS-F123","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 124. Behavioral Health Practice ─────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-124', 'SS-4R2W-N7HB-J3QX-G8TM', 'spaceship', 'Behavioral Health Practice', 'You provide a safe harbor for mental wellness. Your crew manages session scheduling, treatment documentation, and insurance authorizations so therapists focus on their clients.', 'Strength starts with asking.', 'Support', 'Common', ARRAY['mentalhealth','healthcare','support'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Session scheduling with therapist-patient matching by specialty","Treatment documentation with HIPAA-compliant note templates","Insurance pre-authorization tracking with session limit alerts"],"tier":"lite","card_num":"NS-F124","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 125. Craft Brewery / Distillery ─────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-125', 'SS-9J5F-T8LD-X2NK-C6QR', 'spaceship', 'Craft Brewery / Distillery', 'You brew liquid art in small batches with big flavor. Your crew manages recipes, production schedules, and taproom sales so every keg hits the bar on time.', 'Small batch. Big flavor.', 'Hospitality', 'Common', ARRAY['brewery','beverage','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Recipe management with batch tracking from grain to glass","Production scheduling synced to taproom demand and distribution orders","TTB compliance reporting with automated excise tax calculations"],"tier":"lite","card_num":"NS-F125","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 126. Food Truck Fleet ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-126', 'SS-1G4M-R6WP-B3VH-K9JT', 'spaceship', 'Food Truck Fleet', 'You bring the kitchen to the crowd. Your crew manages route planning, inventory, and permit logistics so every truck parks in the right spot with a full menu.', 'Street eats, fleet scale.', 'Hospitality', 'Common', ARRAY['foodtruck','restaurant','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Route planning with event calendar and foot-traffic analysis","Inventory management across multiple trucks with commissary restocking","Permit and health inspection tracking by city and county"],"tier":"lite","card_num":"NS-F126","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 127. Catering Company ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-127', 'SS-7X8C-D2QN-W5TK-P3LF', 'spaceship', 'Catering Company', 'You feed events of every size without breaking a sweat. Your crew handles menu planning, dietary accommodations, and day-of logistics so every plate arrives hot and on time.', 'Feed the moment.', 'Hospitality', 'Common', ARRAY['catering','food','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Menu customization with dietary restriction tracking per guest","Event logistics planning with staff assignment and timeline","Cost-per-head analysis with ingredient purchasing optimization"],"tier":"lite","card_num":"NS-F127","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 128. Coffee Roaster ─────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-128', 'SS-5N1H-K9GB-F4RX-T7WD', 'spaceship', 'Coffee Roaster', 'You turn green beans into morning rituals. Your crew manages roast profiles, wholesale orders, and subscription fulfillment so every bag ships fresh.', 'Roasted to perfection.', 'Retail', 'Common', ARRAY['coffee','retail','food'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Roast profile management with batch consistency tracking","Wholesale order management with account-specific pricing tiers","Subscription fulfillment automation with roast-date freshness guarantees"],"tier":"lite","card_num":"NS-F128","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 129. Bakery ─────────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-129', 'SS-2L6P-V4DJ-N8MC-Q5XR', 'spaceship', 'Bakery', 'You fill the neighborhood with the smell of fresh bread and the promise of perfect pastries. Your crew manages daily production, custom cake orders, and ingredient sourcing.', 'Fresh daily. No exceptions.', 'Retail', 'Common', ARRAY['bakery','food','retail'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Daily production scheduling with par-level baking quantities","Custom order management with decoration specs and pickup scheduling","Ingredient cost tracking with supplier price comparison"],"tier":"lite","card_num":"NS-F129","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 130. Ghost Kitchen ──────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-130', 'SS-8D3W-G7KN-R1FQ-J4BX', 'spaceship', 'Ghost Kitchen', 'You run restaurants without dining rooms. Your crew manages multi-brand menus, delivery platform integrations, and kitchen throughput so every order ships in minutes.', 'All kitchen. No front door.', 'Automation', 'Common', ARRAY['ghostkitchen','delivery','automation'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Multi-brand menu management across delivery platforms","Order aggregation from Uber Eats, DoorDash, and Grubhub into one queue","Kitchen throughput analytics with prep-time optimization"],"tier":"lite","card_num":"NS-F130","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 131. Wine Bar / Sommelier ───────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-131', 'SS-6V9T-X3LP-C8HJ-W2NK', 'spaceship', 'Wine Bar / Sommelier', 'You curate wine experiences that educate and delight. Your crew manages cellar inventory, tasting events, and by-the-glass programs so every pour tells a story.', 'Every glass has a story.', 'Hospitality', 'Common', ARRAY['wine','hospitality','beverage'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Cellar inventory tracking with vintage and allocation management","Tasting event scheduling with pairing menu coordination","By-the-glass program analytics with spoilage and margin tracking"],"tier":"lite","card_num":"NS-F131","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 132. Meal Prep Service ──────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-132', 'SS-4H7B-M1QR-K6XT-D9FG', 'spaceship', 'Meal Prep Service', 'You make healthy eating effortless. Your crew manages weekly menus, macro-balanced recipes, and delivery logistics so customers eat well without lifting a pan.', 'Eat smart. Skip the dishes.', 'Ops', 'Common', ARRAY['mealprep','food','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Weekly menu rotation with nutritional macro balancing","Subscription management with dietary preference customization","Delivery route optimization with freshness window constraints"],"tier":"lite","card_num":"NS-F132","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 133. HVAC Company ───────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-133', 'SS-3Q5K-J8WN-V2RD-L6HP', 'spaceship', 'HVAC Company', 'You keep buildings comfortable year-round. Your crew dispatches technicians, manages maintenance contracts, and tracks equipment warranties so no customer sweats a breakdown.', 'Comfort is non-negotiable.', 'Ops', 'Common', ARRAY['hvac','trades','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Technician dispatch with GPS routing and skill-based assignment","Maintenance contract tracking with seasonal service reminders","Equipment warranty management with install-date lifecycle tracking"],"tier":"lite","card_num":"NS-F133","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 134. Plumbing Company ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-134', 'SS-9W4F-B7GX-N3TC-R8QL', 'spaceship', 'Plumbing Company', 'You fix what flows and what doesn''t. Your crew manages emergency dispatch, flat-rate pricing, and parts inventory so every call gets resolved on the first visit.', 'We fix what flows.', 'Ops', 'Common', ARRAY['plumbing','trades','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Emergency dispatch prioritization with customer callback ETAs","Flat-rate pricing catalog with on-site estimate generation","Parts inventory tracking across service trucks with restocking alerts"],"tier":"lite","card_num":"NS-F134","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 135. Electrical Contractor ──────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-135', 'SS-2K6D-H1MJ-F9PW-X5NR', 'spaceship', 'Electrical Contractor', 'You wire the world safely. Your crew manages project bids, permit inspections, and code compliance so every installation passes on the first inspection.', 'Wired right the first time.', 'Engineering', 'Common', ARRAY['electrical','trades','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Project bidding with material takeoff and labor hour estimation","Permit and inspection scheduling with code compliance checklists","Apprentice hour tracking for journeyman licensing requirements"],"tier":"lite","card_num":"NS-F135","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 136. Landscaping Company ────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-136', 'SS-7P3V-T5BL-Q8HD-G4WK', 'spaceship', 'Landscaping Company', 'You turn dirt into curb appeal. Your crew manages crew routing, seasonal service schedules, and material procurement so every property looks its best.', 'Curb appeal on demand.', 'Ops', 'Common', ARRAY['landscaping','trades','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Crew routing with daily job sequencing and drive-time optimization","Seasonal service scheduling with weather-adjusted timelines","Material procurement tracking with per-job cost allocation"],"tier":"lite","card_num":"NS-F136","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 137. Pest Control ───────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-137', 'SS-5N8R-W2KF-D7JX-M1QG', 'spaceship', 'Pest Control', 'You eliminate uninvited guests of the six-legged variety. Your crew manages service routes, treatment schedules, and chemical compliance so properties stay pest-free.', 'Bugs out. Peace in.', 'Ops', 'Common', ARRAY['pestcontrol','trades','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Service route optimization with seasonal pest activity forecasting","Treatment documentation with chemical application compliance tracking","Recurring service scheduling with customer notification automation"],"tier":"lite","card_num":"NS-F137","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 138. Roofing Company ────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-138', 'SS-4T6L-J3NW-C9PB-V8XH', 'spaceship', 'Roofing Company', 'You protect everything under the roof. Your crew manages storm damage estimates, crew scheduling, and material ordering so jobs close before the next rain.', 'Above it all.', 'Ops', 'Common', ARRAY['roofing','trades','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Storm damage assessment with insurance claim documentation","Crew scheduling with weather-window optimization","Material ordering with supplier lead-time tracking and waste estimates"],"tier":"lite","card_num":"NS-F138","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 139. Cleaning Service ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-139', 'SS-1D5G-P7VR-K4FN-B9WQ', 'spaceship', 'Cleaning Service', 'You make spaces sparkle on a schedule. Your crew manages recurring bookings, supply inventories, and quality checklists so every clean meets the standard.', 'Spotless. Every time.', 'Ops', 'Common', ARRAY['cleaning','services','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Recurring booking management with flexible rescheduling","Quality inspection checklists with photo documentation","Supply inventory tracking with per-location consumption forecasting"],"tier":"lite","card_num":"NS-F139","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 140. Auto Repair Shop ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-140', 'SS-6X2M-R8QH-T3JK-W7ND', 'spaceship', 'Auto Repair Shop', 'You get people back on the road. Your crew manages work orders, parts sourcing, and bay scheduling so every vehicle rolls out fixed and on time.', 'Back on the road. Fast.', 'Engineering', 'Common', ARRAY['autorepair','automotive','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Work order management with digital vehicle inspection reports","Parts sourcing with supplier price comparison and ETA tracking","Bay scheduling with technician skill matching and labor estimates"],"tier":"lite","card_num":"NS-F140","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 141. Pool Service ───────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-141', 'SS-3F9C-N5WL-G1BT-P6KR', 'spaceship', 'Pool Service', 'You keep water crystal clear and equipment humming. Your crew manages chemical testing, equipment maintenance, and route scheduling so every pool is swim-ready.', 'Crystal clear, every visit.', 'Ops', 'Common', ARRAY['pool','services','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Chemical testing log with automated dosage recommendations","Equipment maintenance scheduling with part lifecycle tracking","Route optimization with stop-sequencing for maximum daily coverage"],"tier":"lite","card_num":"NS-F141","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 142. Moving Company ─────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-142', 'SS-8H4V-D6JR-Q2NX-L7WB', 'spaceship', 'Moving Company', 'You relocate lives without the chaos. Your crew manages estimates, truck assignments, and crew scheduling so every move lands on time and damage-free.', 'New address. Zero stress.', 'Ops', 'Common', ARRAY['moving','logistics','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Move estimation with room-by-room inventory and cubic footage calculation","Truck and crew assignment with capacity and distance optimization","Customer communication with real-time arrival windows and status updates"],"tier":"lite","card_num":"NS-F142","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 143. CrossFit / Boutique Gym ────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-143', 'SS-5K7N-W3TG-J9LR-F2XD', 'spaceship', 'CrossFit / Boutique Gym', 'You build communities around sweat. Your crew manages class scheduling, membership billing, and workout programming so athletes keep showing up and getting stronger.', 'Stronger together.', 'Hospitality', 'Common', ARRAY['fitness','gym','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Class scheduling with capacity limits and waitlist management","Membership billing with auto-renewal and freeze options","Workout programming with athlete performance tracking over time"],"tier":"lite","card_num":"NS-F143","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 144. Yoga Studio ────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-144', 'SS-2R4P-B8HK-X6FW-N1QM', 'spaceship', 'Yoga Studio', 'You create space for stillness in a noisy world. Your crew manages class signups, instructor schedules, and retail sales so the studio runs as smoothly as a guided breath.', 'Breathe. Flow. Grow.', 'Hospitality', 'Common', ARRAY['yoga','wellness','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Class booking with instructor-style preference matching","Pass and membership management with attendance tracking","Retail inventory for mats, props, and apparel with POS integration"],"tier":"lite","card_num":"NS-F144","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 145. Personal Training Studio ───────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-145', 'SS-9G6J-L4XD-H2WR-T8BN', 'spaceship', 'Personal Training Studio', 'You sculpt results one client at a time. Your crew manages session bookings, client progress tracking, and nutrition planning so every program delivers measurable gains.', 'Your goals. Our blueprint.', 'Hospitality', 'Common', ARRAY['personaltraining','fitness','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Session booking with trainer availability and client preference matching","Client progress dashboards with body comp and strength benchmarks","Nutrition plan templates with macro targets and meal suggestions"],"tier":"lite","card_num":"NS-F145","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 146. Golf Course / Club ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-146', 'SS-4W1C-Q7NF-K3MR-D9PJ', 'spaceship', 'Golf Course / Club', 'You manage fairways and memberships with equal care. Your crew handles tee-time bookings, course maintenance, and member events so the club runs like a championship venue.', 'Par for the course.', 'Hospitality', 'Common', ARRAY['golf','sports','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Tee-time booking with dynamic pricing and pace-of-play management","Course maintenance scheduling with weather-adjusted mowing cycles","Member event planning with tournament scoring and handicap tracking"],"tier":"lite","card_num":"NS-F146","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 147. Martial Arts Academy ───────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-147', 'SS-7N5L-V3QK-P8HG-X2TW', 'spaceship', 'Martial Arts Academy', 'You build discipline through movement. Your crew manages belt progression, class schedules, and tournament registration so students advance with purpose.', 'Discipline forged in motion.', 'Ops', 'Common', ARRAY['martialarts','fitness','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Belt rank progression tracking with testing eligibility requirements","Class scheduling with age group and skill level segmentation","Tournament registration with bracket seeding and results recording"],"tier":"lite","card_num":"NS-F147","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 148. Swim School ────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-148', 'SS-1B8R-G4XJ-W6NF-L3KD', 'spaceship', 'Swim School', 'You teach water safety one stroke at a time. Your crew manages lane bookings, skill assessments, and instructor certifications so every lesson is safe and productive.', 'Every stroke counts.', 'Ops', 'Common', ARRAY['swimming','education','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Lane booking with class size limits and age group separation","Skill level assessments with progression criteria and parent reports","Instructor certification tracking with CPR and lifeguard renewal alerts"],"tier":"lite","card_num":"NS-F148","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 149. Sports League Management ───────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-149', 'SS-6T2W-R9PH-D5MC-Q4BX', 'spaceship', 'Sports League Management', 'You run leagues that keep rec athletes coming back season after season. Your crew manages team registration, game scheduling, and standings so every season runs itself.', 'Play organized. Play more.', 'Ops', 'Common', ARRAY['sports','league','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Team registration with roster management and waiver collection","Game scheduling with venue availability and referee assignment","Standings and stats tracking with automated playoff bracket generation"],"tier":"lite","card_num":"NS-F149","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 150. Jewelry Store ──────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-150', 'SS-8J3N-C7LK-F1XD-W5QR', 'spaceship', 'Jewelry Store', 'You sell moments wrapped in precious metal. Your crew manages inventory appraisals, custom orders, and repair tracking so every piece finds its person.', 'Precious by nature.', 'Retail', 'Common', ARRAY['jewelry','retail','luxury'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Inventory management with appraisal values and insurance documentation","Custom order tracking from design consultation through delivery","Repair intake logging with status updates and pickup notifications"],"tier":"lite","card_num":"NS-F150","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 151. Florist ────────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-151', 'SS-5D6G-T2VR-N8WH-K4PB', 'spaceship', 'Florist', 'You arrange beauty that speaks when words fall short. Your crew manages seasonal inventory, delivery routes, and event orders so every bouquet arrives fresh and on time.', 'Say it with flowers.', 'Retail', 'Common', ARRAY['florist','retail','events'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Seasonal flower inventory with supplier freshness and price tracking","Delivery route optimization with time-window scheduling","Event order management with arrangement specs and setup timelines"],"tier":"lite","card_num":"NS-F151","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 152. Pet Store / Grooming ───────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-152', 'SS-3H9F-Q5JX-L7BK-R1WT', 'spaceship', 'Pet Store / Grooming', 'You pamper pets and equip their humans. Your crew manages grooming appointments, retail inventory, and loyalty programs so tails keep wagging.', 'Happy pets. Loyal customers.', 'Retail', 'Common', ARRAY['pets','grooming','retail'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Grooming appointment scheduling with breed-specific service menus","Retail inventory management with auto-reorder for best sellers","Loyalty program tracking with visit-based rewards and birthday reminders"],"tier":"lite","card_num":"NS-F152","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 153. Thrift / Consignment Shop ──────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-153', 'SS-9L4W-B6NR-X3GD-T8KH', 'spaceship', 'Thrift / Consignment Shop', 'You give pre-loved goods a second life. Your crew manages consignor payouts, pricing, and inventory turnover so the racks stay fresh and the margins stay healthy.', 'Second life. First choice.', 'Retail', 'Common', ARRAY['thrift','consignment','retail'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Consignor account management with automated payout calculations","Dynamic pricing based on days-on-rack and category sell-through rates","Inventory intake processing with condition grading and photo cataloging"],"tier":"lite","card_num":"NS-F153","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 154. Bike Shop ──────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-154', 'SS-2V7P-K1QM-H5FL-W9NJ', 'spaceship', 'Bike Shop', 'You keep the community rolling on two wheels. Your crew manages bike sales, repair queues, and parts inventory so every rider leaves with a grin.', 'Life is better on two wheels.', 'Retail', 'Common', ARRAY['bikes','cycling','retail'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Repair queue management with estimated completion times","Parts inventory tracking with compatibility cross-referencing by bike model","Seasonal sales analytics with demo fleet and rental tracking"],"tier":"lite","card_num":"NS-F154","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 155. Bookstore ──────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-155', 'SS-4G3X-N8DL-R2WB-J6TK', 'spaceship', 'Bookstore', 'You curate shelves that change minds. Your crew manages inventory, author events, and special orders so every reader finds their next favorite book.', 'Between the covers.', 'Retail', 'Common', ARRAY['bookstore','retail','culture'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Inventory management with ISBN lookup and publisher catalog integration","Author event scheduling with marketing and RSVP tracking","Special order fulfillment with customer notification on arrival"],"tier":"lite","card_num":"NS-F155","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 156. Dispensary ─────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-156', 'SS-7M2C-F5KW-B9QH-D3XR', 'spaceship', 'Dispensary', 'You operate in one of the most regulated retail environments on Earth. Your crew manages seed-to-sale tracking, compliance reporting, and patient verification so every transaction is airtight.', 'Compliant by design.', 'Retail', 'Common', ARRAY['dispensary','cannabis','retail'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Seed-to-sale inventory tracking with state compliance integration","Patient and customer verification with purchase limit enforcement","Compliance reporting automation for state regulatory submissions"],"tier":"lite","card_num":"NS-F156","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 157. Furniture Store ────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-157', 'SS-1R8T-X4JP-G6NK-V2WL', 'spaceship', 'Furniture Store', 'You furnish homes one room at a time. Your crew manages floor displays, delivery logistics, and custom upholstery orders so every piece lands in the right room on the right day.', 'Where houses become homes.', 'Retail', 'Common', ARRAY['furniture','retail','home'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Showroom floor plan management with display rotation scheduling","Delivery logistics with white-glove assembly and room placement","Custom order tracking from fabric selection through final delivery"],"tier":"lite","card_num":"NS-F157","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 158. Print Shop ─────────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-158', 'SS-6Q5H-L3BN-W7RD-K9FX', 'spaceship', 'Print Shop', 'You put ink on anything that needs a message. Your crew manages job queues, proofing workflows, and press scheduling so every order ships color-accurate and on deadline.', 'Ink meets deadline.', 'Ops', 'Common', ARRAY['printing','production','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Job queue management with press scheduling and priority ordering","Digital proofing workflow with client approval tracking","Material cost estimation with waste factor calculations per run"],"tier":"lite","card_num":"NS-F158","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 159. Optical / Eyewear Boutique ─────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-159', 'SS-3W8K-R2FV-J6DM-N4QP', 'spaceship', 'Optical / Eyewear Boutique', 'You help people see the world in style. Your crew manages frame inventory, lens orders, and insurance claims so every customer walks out looking sharp and seeing sharper.', 'Style meets 20/20.', 'Retail', 'Common', ARRAY['eyewear','optical','retail'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Frame inventory with virtual try-on history and style preferences","Lens order tracking from lab submission through customer pickup","Insurance claims processing with benefits verification and copay calculation"],"tier":"lite","card_num":"NS-F159","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 160. Property Management Company ────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-160', 'SS-8N1G-T5LR-C9XW-F3HB', 'spaceship', 'Property Management Company', 'You keep buildings profitable and tenants happy. Your crew manages lease administration, maintenance requests, and rent collection so owners never worry about vacancies.', 'Occupied and optimized.', 'Ops', 'Common', ARRAY['property','realestate','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Lease lifecycle management from application through renewal","Maintenance request tracking with vendor dispatch and resolution times","Rent collection automation with late-fee enforcement and owner disbursements"],"tier":"lite","card_num":"NS-F160","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 161. Home Inspection Service ────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-161', 'SS-5D4J-Q8NX-H2KR-L7WV', 'spaceship', 'Home Inspection Service', 'You give buyers confidence before they sign. Your crew manages inspection scheduling, report generation, and defect photo documentation so every report tells the full story.', 'Know before you close.', 'Ops', 'Common', ARRAY['inspection','realestate','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Inspection scheduling with realtor coordination and lockbox access","Report generation with categorized defect photos and severity ratings","Follow-up tracking for re-inspections on buyer-negotiated repairs"],"tier":"lite","card_num":"NS-F161","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 162. Mortgage Brokerage ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-162', 'SS-2P6F-W9BT-G4MK-X1RJ', 'spaceship', 'Mortgage Brokerage', 'You find the best rates in a sea of lenders. Your crew manages loan applications, rate comparisons, and document collection so borrowers close on time.', 'Best rate. Fastest close.', 'Sales', 'Common', ARRAY['mortgage','finance','sales'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Rate comparison engine across multiple lender programs","Loan application pipeline with document collection checklists","Closing timeline tracking with milestone alerts for all parties"],"tier":"lite","card_num":"NS-F162","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 163. Self-Storage Facility ──────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-163', 'SS-7K3V-N5QD-R8LH-J2WF', 'spaceship', 'Self-Storage Facility', 'You rent peace of mind by the square foot. Your crew manages unit availability, access control, and billing so every space is accounted for.', 'Space when you need it.', 'Ops', 'Common', ARRAY['storage','realestate','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Unit inventory with size-category availability and occupancy dashboards","Access control logging with gate code management","Billing automation with late-fee escalation and lien notification workflows"],"tier":"lite","card_num":"NS-F163","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 164. Co-working Space ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-164', 'SS-4L8W-H1FG-T6XN-B5RK', 'spaceship', 'Co-working Space', 'You build community around shared desks. Your crew manages memberships, room bookings, and event programming so the space hums with productive energy.', 'Work better. Together.', 'Hospitality', 'Common', ARRAY['coworking','realestate','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Membership management with hot-desk and dedicated-desk tiers","Meeting room booking with AV setup and catering coordination","Community event scheduling with member engagement tracking"],"tier":"lite","card_num":"NS-F164","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 165. Short-Term Rental Management ───────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-165', 'SS-9R2D-K7MJ-Q3NX-P6WH', 'spaceship', 'Short-Term Rental Management', 'You maximize nightly revenue across a portfolio of vacation properties. Your crew manages multi-platform listings, cleaning turnover, and dynamic pricing so every night is booked profitably.', 'Every night earns.', 'Hospitality', 'Common', ARRAY['rentals','airbnb','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Multi-platform listing sync across Airbnb, VRBO, and Booking.com","Cleaning turnover scheduling with quality inspection checklists","Dynamic pricing engine adjusting nightly rates by demand and seasonality"],"tier":"lite","card_num":"NS-F165","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 166. Tutoring Center ────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-166', 'SS-1N5L-V3XT-F8QK-G4WR', 'spaceship', 'Tutoring Center', 'You turn struggling students into confident learners. Your crew matches tutors to subjects, tracks session attendance, and reports progress so parents see real results.', 'Grades up. Confidence up.', 'Support', 'Common', ARRAY['tutoring','education','support'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Tutor-student matching by subject, level, and learning style","Session scheduling with attendance tracking and no-show alerts","Progress reporting with grade trend analysis shared with parents"],"tier":"lite","card_num":"NS-F166","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 167. Driving School ─────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-167', 'SS-6H8B-R4PD-W1MJ-N7KC', 'spaceship', 'Driving School', 'You put safe drivers on the road. Your crew manages lesson scheduling, vehicle maintenance, and DMV test preparation so every student passes with confidence.', 'License to drive.', 'Ops', 'Common', ARRAY['driving','education','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Lesson scheduling with instructor and vehicle assignment","Student progress tracking with skill checklist and road-test readiness","Vehicle fleet maintenance scheduling with mileage and inspection tracking"],"tier":"lite","card_num":"NS-F167","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 168. Music School ───────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-168', 'SS-3T7G-J5WR-K9NF-D2XL', 'spaceship', 'Music School', 'You turn beginners into performers. Your crew manages lesson scheduling, recital planning, and instrument rentals so every student hits the right notes.', 'Find your sound.', 'Content', 'Common', ARRAY['music','education','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Lesson scheduling with instructor specialization and room assignment","Recital and concert event planning with program sequencing","Instrument rental tracking with maintenance and return scheduling"],"tier":"lite","card_num":"NS-F168","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 169. Language School ────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-169', 'SS-8F4N-Q2BK-V6TH-L3XP', 'spaceship', 'Language School', 'You open doors by teaching new languages. Your crew manages class levels, placement testing, and cultural immersion events so students gain fluency faster.', 'Speak the world.', 'Content', 'Common', ARRAY['language','education','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Placement testing with automatic level assignment","Class scheduling with proficiency-based grouping and progression tracking","Cultural immersion event planning with conversation practice pairing"],"tier":"lite","card_num":"NS-F169","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 170. Trade School ───────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-170', 'SS-5W9R-G1LJ-N4QX-H8MD', 'spaceship', 'Trade School', 'You train the skilled workforce the economy runs on. Your crew manages program enrollment, lab scheduling, and certification exams so graduates enter the field job-ready.', 'Skills that pay.', 'Engineering', 'Common', ARRAY['trades','education','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Program enrollment with prerequisite verification and financial aid tracking","Lab and shop scheduling with equipment allocation and safety protocols","Certification exam scheduling with pass-rate analytics by program"],"tier":"lite","card_num":"NS-F170","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 171. Test Prep Company ──────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-171', 'SS-2K6T-X3FW-B7PH-R9ND', 'spaceship', 'Test Prep Company', 'You turn test anxiety into test confidence. Your crew manages diagnostic assessments, study plans, and practice test analytics so every student walks in ready.', 'Higher scores. Guaranteed.', 'Analytics', 'Common', ARRAY['testprep','education','analytics'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Diagnostic assessment with personalized study plan generation","Practice test analytics with section-level weakness identification","Score prediction modeling based on practice performance trends"],"tier":"lite","card_num":"NS-F171","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 172. Corporate Training Provider ────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-172', 'SS-7D4V-L8KN-Q1GR-W5XJ', 'spaceship', 'Corporate Training Provider', 'You upskill workforces at scale. Your crew manages course catalogs, instructor logistics, and completion tracking so every training dollar delivers measurable ROI.', 'Train smarter. Perform better.', 'Professional', 'Common', ARRAY['training','corporate','professional'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Course catalog management with customizable learning paths","Instructor scheduling with travel logistics and per-diem tracking","Completion tracking with certification issuance and ROI reporting"],"tier":"lite","card_num":"NS-F172","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 173. Photography Studio ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-173', 'SS-4P1H-N6WD-T9BX-K3RF', 'spaceship', 'Photography Studio', 'You freeze moments worth remembering. Your crew manages session bookings, gallery proofing, and print fulfillment so every client gets frames worth hanging.', 'Capture. Deliver. Repeat.', 'Content', 'Common', ARRAY['photography','creative','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Session booking with location scouting and shot-list coordination","Online gallery proofing with client selection and retouching workflow","Print fulfillment tracking from lab order through client delivery"],"tier":"lite","card_num":"NS-F173","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 174. Video Production Company ───────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-174', 'SS-9R7L-G2FJ-H5QK-X4NW', 'spaceship', 'Video Production Company', 'You tell stories that move audiences. Your crew manages pre-production planning, shoot logistics, and post-production timelines so every project wraps on schedule.', 'Stories that move.', 'Content', 'Common', ARRAY['video','production','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Pre-production planning with script breakdowns and shot scheduling","Shoot logistics with crew call sheets and equipment checklists","Post-production pipeline tracking from rough cut through final delivery"],"tier":"lite","card_num":"NS-F174","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 175. Podcast Network ────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-175', 'SS-1X5T-B8GK-D3WN-V6MR', 'spaceship', 'Podcast Network', 'You amplify voices across a growing roster of shows. Your crew manages episode scheduling, guest coordination, and ad-spot inventory so every download counts.', 'Voices that carry.', 'Content', 'Common', ARRAY['podcast','media','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Episode scheduling with guest booking and prep material distribution","Ad-spot inventory management with CPM tracking and sponsor reporting","Cross-show analytics with download trends and audience demographics"],"tier":"lite","card_num":"NS-F175","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 176. Tattoo Studio ──────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-176', 'SS-6N2J-Q4HX-R7FK-W9LD', 'spaceship', 'Tattoo Studio', 'You turn skin into canvas. Your crew manages artist bookings, design consultations, and aftercare follow-ups so every piece heals as beautifully as it was inked.', 'Permanent art. Personal story.', 'Content', 'Common', ARRAY['tattoo','art','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Artist booking with portfolio-based style matching","Design consultation tracking with reference images and revision history","Aftercare follow-up scheduling with healing check-in reminders"],"tier":"lite","card_num":"NS-F176","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 177. Music Production Studio ────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-177', 'SS-3G8V-K1PW-N5TR-H4XB', 'spaceship', 'Music Production Studio', 'You craft sounds that become soundtracks. Your crew manages studio bookings, session engineering, and mix-down timelines so every track drops on time.', 'Hit records start here.', 'Content', 'Common', ARRAY['music','production','content'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Studio session booking with room and equipment assignment","Project tracking from recording through mastering milestones","Engineer and musician scheduling with session rate management"],"tier":"lite","card_num":"NS-F177","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 178. Animation Studio ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-178', 'SS-7W4D-T6NR-J2QH-F9BK', 'spaceship', 'Animation Studio', 'You bring imaginary worlds to life frame by frame. Your crew manages storyboard pipelines, render queues, and client review cycles so every animation ships polished.', 'Frame by frame, world by world.', 'Engineering', 'Common', ARRAY['animation','creative','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Storyboard pipeline management from concept through final animation","Render queue scheduling with resource allocation and deadline tracking","Client review cycles with timestamped feedback and revision tracking"],"tier":"lite","card_num":"NS-F178","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 179. Game Development Studio ────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-179', 'SS-5L3F-R8XK-G1WN-Q7HD', 'spaceship', 'Game Development Studio', 'You build worlds players don''t want to leave. Your crew manages sprint planning, QA testing, and platform submissions so every launch day is a good day.', 'Press start to ship.', 'Engineering', 'Common', ARRAY['gamedev','software','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Sprint planning with feature scoping and milestone burn-down tracking","QA test case management with bug severity triage and regression tracking","Platform submission checklists for Steam, App Store, and console certification"],"tier":"lite","card_num":"NS-F179","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 180. Advertising Agency ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-180', 'SS-2X9N-D4QJ-W7BL-K1MR', 'spaceship', 'Advertising Agency', 'You make brands impossible to ignore. Your crew manages campaign briefs, creative production, and media buying so every ad dollar delivers measurable impact.', 'Attention is the product.', 'Marketing', 'Common', ARRAY['advertising','creative','marketing'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Campaign brief management with client approval workflows","Creative production pipeline from concept through final asset delivery","Media buying analytics with spend tracking and ROAS reporting"],"tier":"lite","card_num":"NS-F180","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 181. Tax Preparation Service ────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-181', 'SS-8B6W-V3HT-L5NK-R2FP', 'spaceship', 'Tax Preparation Service', 'You navigate tax codes so clients don''t have to. Your crew manages document collection, return preparation, and e-filing deadlines so every refund arrives on time.', 'Maximum refund. Minimum stress.', 'Analytics', 'Common', ARRAY['tax','finance','analytics'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Document collection tracking with missing-item reminders by deadline","Return preparation workflow with multi-reviewer quality checks","E-filing status monitoring with refund tracking and client notification"],"tier":"lite","card_num":"NS-F181","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 182. Credit Union ───────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-182', 'SS-4J7G-K1XR-N9PD-T5WH', 'spaceship', 'Credit Union', 'You bank for the community, not shareholders. Your crew manages member services, loan processing, and regulatory compliance so every member feels the credit union difference.', 'Banking for people, not profit.', 'Ops', 'Common', ARRAY['creditunion','finance','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Member onboarding with account setup and product cross-sell recommendations","Loan application processing with credit decisioning and document management","Regulatory compliance tracking with audit preparation and reporting"],"tier":"lite","card_num":"NS-F182","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 183. Payment Processing Company ─────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-183', 'SS-1R5N-H8QW-X3BK-D6VL', 'spaceship', 'Payment Processing Company', 'You move money at the speed of commerce. Your crew manages merchant onboarding, transaction monitoring, and chargeback disputes so payments flow without friction.', 'Every transaction, seamless.', 'Automation', 'Common', ARRAY['payments','fintech','automation'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Merchant onboarding with KYC verification and rate tier assignment","Transaction monitoring with fraud pattern detection and alerting","Chargeback dispute management with evidence collection and deadline tracking"],"tier":"lite","card_num":"NS-F183","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 184. Collections Agency ─────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-184', 'SS-6W2M-Q4FT-G9JR-N7XK', 'spaceship', 'Collections Agency', 'You recover what''s owed with persistence and professionalism. Your crew manages debtor outreach, payment plans, and compliance documentation so recoveries stay legal and effective.', 'Recover. Resolve. Repeat.', 'Ops', 'Common', ARRAY['collections','finance','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Debtor outreach sequencing with FDCPA compliance guardrails","Payment plan negotiation tracking with automated installment reminders","Recovery rate analytics by account age, balance tier, and outreach channel"],"tier":"lite","card_num":"NS-F184","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 185. Financial Planning Practice ────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-185', 'SS-3K8P-V5DL-B2WN-J9HX', 'spaceship', 'Financial Planning Practice', 'You chart financial futures with clarity and care. Your crew manages client portfolios, retirement projections, and meeting preparation so every review builds confidence.', 'Plan today. Thrive tomorrow.', 'Analytics', 'Common', ARRAY['financial','planning','analytics'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Client portfolio overview with asset allocation and performance tracking","Retirement projection modeling with scenario comparison tools","Meeting preparation with agenda generation and account summary reports"],"tier":"lite","card_num":"NS-F185","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 186. Crypto / Web3 Startup ──────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-186', 'SS-9T4R-F7KG-N1XW-Q5BH', 'spaceship', 'Crypto / Web3 Startup', 'You build on the decentralized frontier. Your crew manages smart contract deployments, community governance, and token analytics so your protocol grows with purpose.', 'Decentralize everything.', 'Engineering', 'Common', ARRAY['crypto','web3','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Smart contract deployment tracking with audit status and version history","Community governance proposal management with voting analytics","Token analytics dashboards with holder distribution and liquidity metrics"],"tier":"lite","card_num":"NS-F186","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 187. Car Dealership ─────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-187', 'SS-5H1J-R3NW-K8QD-X2VL', 'spaceship', 'Car Dealership', 'You move metal and build relationships. Your crew manages lot inventory, lead follow-up, and F&I products so every buyer drives off satisfied.', 'Drive your dream home.', 'Sales', 'Common', ARRAY['automotive','dealership','sales'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Lot inventory management with days-on-lot aging and pricing adjustment","Lead follow-up sequencing with test-drive scheduling and CRM logging","F&I product presentation with deal profitability tracking"],"tier":"lite","card_num":"NS-F187","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 188. Fleet Management Company ───────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-188', 'SS-8N6G-T2FX-D5KR-W4PB', 'spaceship', 'Fleet Management Company', 'You keep commercial vehicles rolling profitably. Your crew manages vehicle maintenance, driver compliance, and fuel costs so fleets run lean and legal.', 'Miles managed. Costs controlled.', 'Ops', 'Common', ARRAY['fleet','logistics','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Vehicle maintenance scheduling with mileage-based and time-based triggers","Driver compliance tracking with license renewal and HOS monitoring","Fuel cost analytics with route efficiency and consumption benchmarking"],"tier":"lite","card_num":"NS-F188","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 189. Towing Company ─────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-189', 'SS-2L9K-Q5HW-J7MN-R3FD', 'spaceship', 'Towing Company', 'You rescue stranded vehicles around the clock. Your crew manages dispatch, driver routing, and impound lot inventory so every call gets answered fast.', 'Rescue is one call away.', 'Ops', 'Common', ARRAY['towing','automotive','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Emergency dispatch with GPS-based nearest-driver assignment","Impound lot inventory management with release documentation","Motor club and insurance billing with automated invoice generation"],"tier":"lite","card_num":"NS-F189","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 190. Auto Detailing ─────────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-190', 'SS-7V4W-G1ND-P8BX-L5KH', 'spaceship', 'Auto Detailing', 'You restore vehicles to showroom condition. Your crew manages appointment bookings, service packages, and supply inventory so every car leaves gleaming.', 'Shine like showroom.', 'Hospitality', 'Common', ARRAY['detailing','automotive','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Appointment booking with service package selection and duration estimation","Mobile detailing route scheduling with equipment loadout checklists","Supply inventory tracking with per-job product consumption analytics"],"tier":"lite","card_num":"NS-F190","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 191. Motorcycle / Powersports Dealer ────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-191', 'SS-4B8R-X6QJ-W3TF-N9DK', 'spaceship', 'Motorcycle / Powersports Dealer', 'You fuel the thrill of the open road. Your crew manages inventory across bikes, ATVs, and watercraft, plus service bays and parts counters so riders stay riding.', 'Fuel the thrill.', 'Sales', 'Common', ARRAY['powersports','automotive','sales'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Multi-category inventory management across motorcycles, ATVs, and watercraft","Service bay scheduling with technician specialization matching","Parts counter with VIN-based compatibility lookup and special-order tracking"],"tier":"lite","card_num":"NS-F191","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 192. Solar Installation Company ─────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-192', 'SS-1F3L-H7VN-R4XK-J6WQ', 'spaceship', 'Solar Installation Company', 'You put clean energy on every rooftop. Your crew manages site surveys, permit applications, and installation scheduling so panels go up fast and incentives get captured.', 'Power from the sun.', 'Engineering', 'Common', ARRAY['solar','energy','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Site survey management with roof assessment and shade analysis","Permit application tracking with utility interconnection coordination","Installation scheduling with crew dispatch and inspection milestones"],"tier":"lite","card_num":"NS-F192","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 193. 3D Printing Service Bureau ─────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-193', 'SS-6D5T-K2WR-B9GH-P3NX', 'spaceship', '3D Printing Service Bureau', 'You manufacture the future layer by layer. Your crew manages print queues, material inventories, and quality inspections so every part ships within tolerance.', 'Layer by layer, part by part.', 'Engineering', 'Common', ARRAY['3dprinting','manufacturing','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Print queue management with machine assignment and estimated completion times","Material inventory tracking with spool weight monitoring and reorder alerts","Quality inspection checklists with dimensional tolerance verification"],"tier":"lite","card_num":"NS-F193","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 194. Drone Services Company ─────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-194', 'SS-9M7J-V4QL-T1FN-G8WD', 'spaceship', 'Drone Services Company', 'You see the world from above. Your crew manages flight planning, FAA compliance, and deliverable production so every aerial mission returns actionable data.', 'Eyes in the sky.', 'Engineering', 'Common', ARRAY['drones','aerial','engineering'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Flight planning with airspace authorization and weather window checks","FAA Part 107 compliance tracking with pilot certification management","Deliverable production pipeline from raw footage to client-ready reports"],"tier":"lite","card_num":"NS-F194","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 195. EV Charging Network ────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-195', 'SS-3X2B-N8KH-Q5RW-D7LP', 'spaceship', 'EV Charging Network', 'You keep electric vehicles powered across a growing station network. Your crew manages charger uptime, pricing, and site host relationships so drivers always find a working plug.', 'Charged and ready.', 'Automation', 'Common', ARRAY['ev','charging','automation'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Charger uptime monitoring with automated maintenance ticketing","Dynamic pricing management based on time-of-use and demand","Site host relationship tracking with revenue sharing and lease management"],"tier":"lite","card_num":"NS-F195","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 196. Influencer Management Agency ───────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-196', 'SS-8G6R-W1TD-K4NF-V9HX', 'spaceship', 'Influencer Management Agency', 'You turn creator audiences into brand partnerships. Your crew manages talent rosters, brand deal negotiations, and campaign reporting so every post delivers measurable value.', 'Influence, measured.', 'Marketing', 'Common', ARRAY['influencer','social','marketing'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Talent roster management with audience demographics and rate cards","Brand deal negotiation tracking with contract terms and deliverable specs","Campaign performance reporting with engagement metrics and ROI analysis"],"tier":"lite","card_num":"NS-F196","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 197. Wedding Planning ───────────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-197', 'SS-5P4L-J7XB-R2GK-N8WQ', 'spaceship', 'Wedding Planning', 'You turn dream weddings into flawless celebrations. Your crew manages vendor contracts, guest logistics, and day-of timelines so the couple enjoys every moment.', 'Your day. Perfectly planned.', 'Ops', 'Common', ARRAY['wedding','events','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Vendor management with contract tracking and payment milestones","Guest list coordination with RSVP tracking and seating assignments","Day-of timeline management with vendor arrival and setup coordination"],"tier":"lite","card_num":"NS-F197","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 198. Dog Daycare / Boarding ──────────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-198', 'SS-2W9H-G5MR-B8QN-T4KJ', 'spaceship', 'Dog Daycare / Boarding', 'You give dogs their best day every day. Your crew manages reservations, feeding schedules, and report cards so owners never worry while they''re away.', 'Tails up. Owners at ease.', 'Hospitality', 'Common', ARRAY['pets','daycare','hospitality'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Reservation management with capacity limits and breed compatibility","Feeding and medication schedule tracking per dog per stay","Daily report cards with activity photos and behavior notes for owners"],"tier":"lite","card_num":"NS-F198","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 199. Cemetery / Memorial Service ────────────────────────────────
+
+INSERT INTO blueprints (id, serial_key, type, name, description, flavor, category, rarity, tags, config, stats, metadata, rating_avg, activation_count)
+VALUES ('fleet-199', 'SS-7K3D-N1FX-Q6WL-R4BT', 'spaceship', 'Cemetery / Memorial Service', 'You honor lives with dignity and care. Your crew manages plot inventories, service coordination, and perpetual care funds so families find comfort in a difficult time.', 'Honor. Remember. Endure.', 'Ops', 'Common', ARRAY['memorial','services','ops'], '{}'::jsonb, '{"cost":"$0","crew":"6","tier":"LITE","slots":"6"}'::jsonb, '{"caps":["Plot inventory management with interactive cemetery mapping","Service coordination with clergy, florist, and transportation scheduling","Perpetual care fund tracking with maintenance scheduling and compliance"],"tier":"lite","card_num":"NS-F199","recommended_class":"class-1"}'::jsonb, 0, 0)
+ON CONFLICT (id) DO NOTHING;
