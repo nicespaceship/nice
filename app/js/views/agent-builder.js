@@ -261,7 +261,7 @@ const AgentBuilderView = (() => {
       const sel = document.getElementById('b-template');
       if (!sel || !sel.value) return;
       const templates = _getTemplates().filter(t => t.id !== sel.value);
-      localStorage.setItem('nice-agent-templates', JSON.stringify(templates));
+      localStorage.setItem(Utils.KEYS.agentTemplates, JSON.stringify(templates));
       sel.querySelector('option[value="' + sel.value + '"]')?.remove();
       sel.value = '';
     });
@@ -348,7 +348,7 @@ const AgentBuilderView = (() => {
   }
 
   function _getTemplates() {
-    try { return JSON.parse(localStorage.getItem('nice-agent-templates') || '[]'); }
+    try { return JSON.parse(localStorage.getItem(Utils.KEYS.agentTemplates) || '[]'); }
     catch { return []; }
   }
 

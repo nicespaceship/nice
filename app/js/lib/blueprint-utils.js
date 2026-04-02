@@ -146,5 +146,32 @@ const BlueprintUtils = (() => {
   /** Build slot array for a specific count (used by gamification for XP-gated classes) */
   function buildSlots(count, maxRarity) { return _buildClassSlots(count, maxRarity); }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, buildSlots, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
+  /** Rarity ordering — canonical order for comparisons */
+  const RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
+
+  /** Ordered rarity tier names (lowest → highest) */
+  const RARITY_TIERS = Object.keys(RARITY_ORDER);
+
+  /**
+   * Check if an agent rarity fits within a slot's max rarity.
+   * @param {string} agentRarity
+   * @param {string} slotMaxRarity
+   * @returns {boolean}
+   */
+  function isRarityCompatible(agentRarity, slotMaxRarity) {
+    return (RARITY_ORDER[agentRarity] || 0) <= (RARITY_ORDER[slotMaxRarity] || 0);
+  }
+
+  /**
+   * Get max allowed rarity from a set of ship slots.
+   * @param {Array} slots
+   * @returns {Set<string>} set of allowed rarity names
+   */
+  function getAllowedRarities(slots) {
+    if (!slots || !slots.length) return new Set(RARITY_TIERS);
+    const maxIdx = Math.max(...slots.map(s => RARITY_ORDER[s.maxRarity || s.max] ?? 0));
+    return new Set(RARITY_TIERS.slice(0, maxIdx + 1));
+  }
+
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, buildSlots, isRarityCompatible, getAllowedRarities, RARITY_COLORS, RARITY_ORDER, RARITY_TIERS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
 })();

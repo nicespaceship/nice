@@ -61,7 +61,7 @@ const HomeView = (() => {
   function _renderConversation() {
     let messages = [];
     try {
-      const raw = localStorage.getItem('nice-ai-messages');
+      const raw = localStorage.getItem(Utils.KEYS.aiMessages);
       messages = raw ? JSON.parse(raw) : [];
     } catch { messages = []; }
 
@@ -94,7 +94,7 @@ const HomeView = (() => {
 
   function _hasMessages() {
     try {
-      const raw = localStorage.getItem('nice-ai-messages');
+      const raw = localStorage.getItem(Utils.KEYS.aiMessages);
       const msgs = raw ? JSON.parse(raw) : [];
       return msgs.length > 0;
     } catch { return false; }

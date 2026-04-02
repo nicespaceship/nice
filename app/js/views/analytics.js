@@ -130,7 +130,7 @@ const AnalyticsView = (() => {
       e.preventDefault();
       const limit = parseFloat(document.getElementById('b-limit').value) || 50;
       const alert = parseInt(document.getElementById('b-alert').value, 10) || 80;
-      localStorage.setItem('nice-budget', JSON.stringify({ limit, alert }));
+      localStorage.setItem(Utils.KEYS.budget, JSON.stringify({ limit, alert }));
       document.getElementById('modal-budget')?.classList.remove('open');
       _loadCosts();
     });
@@ -422,7 +422,7 @@ const AnalyticsView = (() => {
   ════════════════════════════════════════════════════════════════ */
 
   function _getBudget() {
-    const saved = localStorage.getItem('nice-budget');
+    const saved = localStorage.getItem(Utils.KEYS.budget);
     if (saved) { try { return JSON.parse(saved); } catch(e) {} }
     return { limit: 50, alert: 80 };
   }
@@ -516,7 +516,7 @@ const AnalyticsView = (() => {
 
     // Token forecast
     const tokens = State.get('tokens') || {};
-    const tokenBalance = tokens.remaining || tokens.balance || parseInt(localStorage.getItem('nice-tokens') || '0', 10);
+    const tokenBalance = tokens.remaining || tokens.balance || parseInt(localStorage.getItem(Utils.KEYS.tokens) || '0', 10);
     const missions = State.get('missions') || [];
     const sevenDaysAgo = Date.now() - 7 * 86400000;
     const recentMissions = missions.filter(m => new Date(m.created_at).getTime() >= sevenDaysAgo && (m.status === 'completed' || m.status === 'running'));

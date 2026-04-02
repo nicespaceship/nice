@@ -106,7 +106,7 @@ const DockView = (() => {
     container.querySelectorAll('.dock-ship-card').forEach(card => {
       card.addEventListener('click', () => {
         const id = card.dataset.shipId;
-        localStorage.setItem('nice-mc-ship', id);
+        localStorage.setItem(Utils.KEYS.mcShip, id);
         render(document.getElementById('app-view'));
       });
     });
@@ -124,9 +124,7 @@ const DockView = (() => {
     const achievements = (typeof Gamification !== 'undefined' && Gamification.getUnlockedAchievements ? Gamification.getUnlockedAchievements() : []) || [];
     const streak = (typeof Gamification !== 'undefined' && Gamification.getStreak ? Gamification.getStreak() : 0) || 0;
 
-    const rankMinXP = rank.minXP || 0;
-    const nextMinXP = nextRank ? (nextRank.minXP || 1) : 1;
-    const xpProgress = nextRank ? Math.min(100, Math.round(((xp - rankMinXP) / (nextMinXP - rankMinXP)) * 100)) : 100;
+    const xpProgress = typeof Gamification !== 'undefined' ? Gamification.getRankProgress(xp) : 0;
 
     container.innerHTML = `
       <div class="dock-prog-section">
@@ -325,7 +323,7 @@ const DockView = (() => {
     const _bu2 = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
     const shipClass = _bu2 ? _bu2.getSlotTemplate(activeShip) : (typeof Gamification !== 'undefined'
       ? Gamification.getSpaceshipClass(classId)
-      : { id: classId, name: 'Scout', slots: [{ id: 0, label: 'Bridge', maxRarity: 'Rare' }, { id: 1, label: 'Ops', maxRarity: 'Rare' }] });
+      : BlueprintUtils.SHIP_CLASSES[classId] || BlueprintUtils.SHIP_CLASSES['class-1']);
 
     const slotMap = _getSlotMap();
     const deployedCount = Object.values(slotMap).filter(Boolean).length;
@@ -564,7 +562,8 @@ const DockView = (() => {
       if (allFilled && activeShip.status !== 'deployed') {
         // Ships with 12+ slots require Pro plan to deploy
         const crewCount = parseInt(activeShip.stats?.crew, 10) || sc.slots.length;
-        if (crewCount >= 12 && typeof Subscription !== 'undefined' && Subscription.getSlotLimit() < 12) {
+        const maxRankSlots = Gamification.RANKS[Gamification.RANKS.length - 2].slots; // Captain tier max
+        if (crewCount >= maxRankSlots && typeof Subscription !== 'undefined' && Subscription.getSlotLimit() < maxRankSlots) {
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Pro Plan Required', message: `${activeShip.name || 'This ship'} requires a Pro plan to deploy. Upgrade to unlock all 12 slots.`, type: 'warning' });
           return;
         }
@@ -615,7 +614,7 @@ const DockView = (() => {
   }
 
   function _getShipId() {
-    const stored = localStorage.getItem('nice-mc-ship');
+    const stored = localStorage.getItem(Utils.KEYS.mcShip);
     if (stored) return _normalizeShipId(stored);
     const ships = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
     return ships.length ? _normalizeShipId(ships[0].id) : null;

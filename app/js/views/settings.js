@@ -301,7 +301,7 @@ const SettingsView = (() => {
   }
 
   function _getSettings() {
-    const saved = localStorage.getItem('nice-settings');
+    const saved = localStorage.getItem(Utils.KEYS.settings);
     if (saved) {
       try { return { ...DEFAULTS, ...JSON.parse(saved) }; } catch(e) {}
     }
@@ -309,7 +309,7 @@ const SettingsView = (() => {
   }
 
   function _saveSettings(settings) {
-    localStorage.setItem('nice-settings', JSON.stringify(settings));
+    localStorage.setItem(Utils.KEYS.settings, JSON.stringify(settings));
   }
 
   function _bindEvents(el) {
@@ -327,10 +327,10 @@ const SettingsView = (() => {
     document.getElementById('set-high-contrast')?.addEventListener('change', (e) => {
       if (e.target.checked) {
         document.documentElement.setAttribute('data-contrast', 'high');
-        localStorage.setItem('nice-high-contrast', '1');
+        localStorage.setItem(Utils.KEYS.highContrast, '1');
       } else {
         document.documentElement.removeAttribute('data-contrast');
-        localStorage.removeItem('nice-high-contrast');
+        localStorage.removeItem(Utils.KEYS.highContrast);
       }
     });
 
@@ -378,15 +378,15 @@ const SettingsView = (() => {
       _saveSettings(s);
 
       // Also update budget settings
-      const budget = JSON.parse(localStorage.getItem('nice-budget') || '{"limit":50,"alert":80}');
+      const budget = JSON.parse(localStorage.getItem(Utils.KEYS.budget) || '{"limit":50,"alert":80}');
       budget.alert = val;
-      localStorage.setItem('nice-budget', JSON.stringify(budget));
+      localStorage.setItem(Utils.KEYS.budget, JSON.stringify(budget));
     });
 
     // Reset
     document.getElementById('btn-reset-settings')?.addEventListener('click', () => {
       if (!confirm('Reset all settings to defaults?')) return;
-      localStorage.removeItem('nice-settings');
+      localStorage.removeItem(Utils.KEYS.settings);
       render(el);
     });
 

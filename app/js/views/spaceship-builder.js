@@ -170,18 +170,16 @@ const SpaceshipBuilderView = (() => {
     const agents = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedAgents)
       ? BlueprintStore.getActivatedAgents() : [];
 
-    const rarityOrder = { Common: 0, Rare: 1, Epic: 2, Legendary: 3 };
-
     let assigned = 0;
     grid.innerHTML = cls.slots.map((slot, i) => {
       const agentId = assignments[i] || '';
       if (agentId) assigned++;
       const color = SLOT_COLORS[slot.max] || '#94a3b8';
 
-      // Filter agents by rarity constraint
+      // Filter agents by rarity constraint — delegate to BlueprintUtils SSOT
       const eligible = agents.filter(a => {
         const r = a.rarity || 'Common';
-        return (rarityOrder[r] || 0) <= (rarityOrder[slot.max] || 0);
+        return BlueprintUtils.isRarityCompatible(r, slot.max);
       });
 
       return `

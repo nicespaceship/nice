@@ -56,12 +56,9 @@ const ShipLogView = (() => {
     const el = document.getElementById('slog-stats');
     if (!el) return;
 
-    const xp = parseInt(localStorage.getItem('nice-xp') || '0', 10);
-    const ranks = ['Ensign','Lieutenant JG','Lieutenant','Lt Commander','Commander','Captain','Fleet Captain','Commodore','Rear Admiral','Vice Admiral','Admiral','Fleet Admiral'];
-    const thresholds = [0, 10000, 25000, 50000, 100000, 200000, 350000, 500000, 750000, 1000000, 1500000, 2500000];
-    let rankIdx = 0;
-    for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= thresholds[i]) { rankIdx = i; break; } }
-    const rank = ranks[rankIdx];
+    const xp = typeof Gamification !== 'undefined' ? Gamification.getXP() : 0;
+    const rankObj = typeof Gamification !== 'undefined' ? Gamification.getRank(xp) : { name: 'Ensign' };
+    const rank = rankObj.name;
 
     const agents = (State.get('agents') || []).length;
     const ships = (State.get('spaceships') || []).length;

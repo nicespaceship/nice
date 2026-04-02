@@ -25,7 +25,7 @@ const SpaceshipsView = (() => {
     const input = document.getElementById('nice-ai-input');
     if (input) { input.placeholder = 'Mission for ' + (bp.name || 'Ship') + '…'; input.focus(); }
   }
-  let _viewMode = localStorage.getItem('nice-ships-view') || 'full';
+  let _viewMode = localStorage.getItem(Utils.KEYS.shipsView) || 'full';
   const _SHIP_VIEW_MODES = [
     { id: 'full',    icon: '&#9638;',       tip: 'Gallery' },
     { id: 'grid',    icon: '&#9638;&#9638;', tip: 'Grid' },
@@ -37,7 +37,7 @@ const SpaceshipsView = (() => {
     const user = State.get('user');
     if (!user) return _authPrompt(el, 'the shipyard');
 
-    _viewMode = localStorage.getItem('nice-ships-view') || 'full';
+    _viewMode = localStorage.getItem(Utils.KEYS.shipsView) || 'full';
 
     el.innerHTML = `
       <div class="fleet-wrap">
@@ -482,7 +482,7 @@ const SpaceshipsView = (() => {
       const btn = e.target.closest('[data-view-mode]');
       if (!btn) return;
       _viewMode = btn.dataset.viewMode;
-      localStorage.setItem('nice-ships-view', _viewMode);
+      localStorage.setItem(Utils.KEYS.shipsView, _viewMode);
       document.querySelectorAll('#ships-view-modes .mc-dock-view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const list = document.getElementById('fleets-list');
@@ -796,7 +796,7 @@ const SpaceshipDetailView = (() => {
   /* ── Ship state persistence delegated to BlueprintStore ── */
 
   /* ── Ship Profile: icon, name, description persistence ── */
-  const _PROFILE_KEY = 'nice-ship-profiles';
+  const _PROFILE_KEY = Utils.KEYS.shipProfiles;
 
   function _getShipProfile(id) {
     try { const m = JSON.parse(localStorage.getItem(_PROFILE_KEY) || '{}'); return m[id] || {}; } catch(e) { return {}; }
@@ -1042,7 +1042,8 @@ const SpaceshipDetailView = (() => {
 
       // Build dashboard HTML (async for ShipLog)
       const dashboardHtml = await _renderDashboard(fleet.id, memberIds, allMissions);
-      const spaceshipClass = typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate() : { id:'dynamic', name:'Ship', slots:[{id:0,maxRarity:'Mythic',label:'Bridge'},{id:1,maxRarity:'Legendary',label:'Ops'}] };
+      const spaceshipClass = typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate()
+        : (typeof BlueprintUtils !== 'undefined' ? BlueprintUtils.getSlotTemplate(fleet) : { id:'dynamic', name:'Ship', slots: BlueprintUtils.SHIP_CLASSES['class-1'].slots });
       const assignedIds = new Set(Object.values(fleet.slot_assignments || {}).filter(Boolean));
 
       el.innerHTML = `
@@ -1147,12 +1148,10 @@ const SpaceshipDetailView = (() => {
   function _renderInventory(allAgents, assignedIds, spaceshipClass) {
     // Only show terminal-activated agents and custom-built agents
     const activatedBpIds = typeof BlueprintStore !== 'undefined' ? new Set(BlueprintStore.getActivatedAgentIds()) : new Set();
-    const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary'];
-    // Determine max allowed rarity from ship slots
-    const maxSlotRarityIdx = spaceshipClass
-      ? Math.max(...spaceshipClass.slots.map(s => rarityOrder.indexOf(s.maxRarity)))
-      : rarityOrder.length - 1;
-    const allowedRarities = new Set(rarityOrder.slice(0, maxSlotRarityIdx + 1));
+    // Determine allowed rarities from ship slots — delegate to BlueprintUtils SSOT
+    const allowedRarities = typeof BlueprintUtils !== 'undefined'
+      ? BlueprintUtils.getAllowedRarities(spaceshipClass?.slots)
+      : new Set(['Common', 'Rare', 'Epic', 'Legendary']);
 
     const activated = allAgents.filter(a => {
       // Must be genuinely activated — check BlueprintStore activation list

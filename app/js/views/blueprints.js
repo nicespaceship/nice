@@ -239,7 +239,7 @@ const BlueprintsView = (() => {
 
   let _activeTab = 'schematic';
   let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship' or 'agent'
-  let _viewMode = localStorage.getItem('nice-bp-view') || 'card';
+  let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || 'card';
   if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = 'card';
   let _colSort = { key: null, dir: 'asc' }; // column header sort state
 
@@ -375,7 +375,7 @@ const BlueprintsView = (() => {
   }
 
   function _getUserRatings() {
-    try { return JSON.parse(localStorage.getItem('nice-bp-ratings') || '{}'); } catch(e) { return {}; }
+    try { return JSON.parse(localStorage.getItem(Utils.KEYS.bpRatings) || '{}'); } catch(e) { return {}; }
   }
 
   function _showPreview(bpId) {
@@ -1040,10 +1040,10 @@ const BlueprintsView = (() => {
     } else if (sort === 'name-desc') {
       list.sort((a, b) => b.name.localeCompare(a.name));
     } else if (sort === 'rarity-desc') {
-      const ro = { Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+      const ro = BlueprintUtils.RARITY_ORDER;
       list.sort((a, b) => (ro[b.rarity] || 0) - (ro[a.rarity] || 0));
     } else if (sort === 'rarity-asc') {
-      const ro = { Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+      const ro = BlueprintUtils.RARITY_ORDER;
       list.sort((a, b) => (ro[a.rarity] || 0) - (ro[b.rarity] || 0));
     } else {
       list.sort((a, b) => a.name.localeCompare(b.name));
@@ -1694,7 +1694,7 @@ const BlueprintsView = (() => {
       const btn = e.target.closest('.bp-view-btn');
       if (!btn) return;
       _viewMode = btn.dataset.view;
-      localStorage.setItem('nice-bp-view', _viewMode);
+      localStorage.setItem(Utils.KEYS.bpView, _viewMode);
       document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       _applyFilters();

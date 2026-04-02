@@ -673,9 +673,13 @@ const NICE = (() => {
       // Log out button
       const logoutBtn = document.getElementById('btn-logout');
       if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
+        logoutBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
           popover.classList.remove('open');
-          if (typeof SB !== 'undefined') await SB.auth.signOut();
+          localStorage.setItem('nice-dev-signed-out', '1');
+          State.set('user', null);
+          if (typeof SB !== 'undefined') SB.auth.signOut().catch(() => {});
+          window.location.hash = '#/';
           window.location.reload();
         });
       }
@@ -1045,10 +1049,18 @@ const NICE = (() => {
 
   /* ── Auth state listener ── */
   function _initAuth() {
-    // Dev mode: bypass auth on localhost
+    // Dev mode: bypass auth on localhost (unless signed out)
     const _isDevMode = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    if (_isDevMode) {
-      const devUser = { id: 'dev-user', email: 'dev@nicespaceship.com', name: 'Commander' };
+    const _DEV_ACCOUNTS = {
+      'dev@nicespaceship.com': { xp: 30, name: 'dev' },
+      'ben@nicespaceship.com': { xp: 2500000, name: 'Ben' },  // Fleet Admiral (max)
+      'new@nicespaceship.com': { xp: 0, name: 'Cadet' },       // Fresh user
+    };
+    if (_isDevMode && !localStorage.getItem('nice-dev-signed-out')) {
+      const savedEmail = localStorage.getItem('nice-dev-email') || 'dev@nicespaceship.com';
+      const profile = _DEV_ACCOUNTS[savedEmail] || { xp: 0, name: savedEmail.split('@')[0] };
+      const devUser = { id: 'dev-' + savedEmail.split('@')[0], email: savedEmail, name: profile.name };
+      localStorage.setItem(Utils.KEYS.xp, String(profile.xp));
       State.set('user', devUser);
       _updateAuthUI(devUser);
       return;

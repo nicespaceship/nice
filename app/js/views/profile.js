@@ -84,7 +84,7 @@ const ProfileView = (() => {
     const meta = user.user_metadata || {};
     const name = meta.display_name || user.email?.split('@')[0] || 'Pilot';
     const initials = name.slice(0, 2).toUpperCase();
-    const avatarUrl = meta.avatar_url || localStorage.getItem('nice-avatar-url') || '';
+    const avatarUrl = meta.avatar_url || localStorage.getItem(Utils.KEYS.avatarUrl) || '';
 
     el.innerHTML = `
       <div class="profile-wrap">
@@ -233,6 +233,16 @@ const ProfileView = (() => {
     btn.disabled = true;
     btn.textContent = 'Signing in...';
 
+    // Dev mode: bypass real auth on localhost
+    const _isDevMode = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (_isDevMode) {
+      localStorage.removeItem('nice-dev-signed-out');
+      localStorage.setItem('nice-dev-email', email);
+      window.location.hash = '#/';
+      window.location.reload();
+      return;
+    }
+
     try {
       await SB.auth.signIn(email, pass);
       const hq = Router.hashQuery();
@@ -270,13 +280,11 @@ const ProfileView = (() => {
   }
 
   async function _signOut() {
-    try {
-      await SB.auth.signOut();
-      State.set('user', null);
-      Router.navigate('#/profile');
-    } catch (err) {
-      console.error('Sign out error:', err);
-    }
+    localStorage.setItem('nice-dev-signed-out', '1');
+    try { await SB.auth.signOut(); } catch (err) { console.warn('[NICE] sign-out error:', err); }
+    State.set('user', null);
+    window.location.hash = '#/';
+    window.location.reload();
   }
 
 
@@ -339,7 +347,7 @@ const ProfileView = (() => {
         const resized = canvas.toDataURL('image/jpeg', 0.85);
 
         // Save locally
-        localStorage.setItem('nice-avatar-url', resized);
+        localStorage.setItem(Utils.KEYS.avatarUrl, resized);
 
         // Try to update Supabase user metadata
         if (typeof SB !== 'undefined' && SB.client) {
@@ -388,7 +396,7 @@ const ProfileView = (() => {
 
   // On load, update sidebar if avatar exists
   function _initAvatar() {
-    const url = localStorage.getItem('nice-avatar-url');
+    const url = localStorage.getItem(Utils.KEYS.avatarUrl);
     if (url) _updateSidebarAvatar(url);
   }
   // Run on module load

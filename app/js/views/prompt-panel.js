@@ -30,7 +30,7 @@ const PromptPanel = (() => {
   let _analyser = null;
   let _micStream = null;
   let _waveAnimId = null;
-  let _ttsEnabled = localStorage.getItem('nice-tts') === 'true';
+  let _ttsEnabled = localStorage.getItem(Utils.KEYS.tts) === 'true';
 
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
@@ -185,9 +185,9 @@ const PromptPanel = (() => {
 
   function _getSlottedAgents() {
     try {
-      const shipId = localStorage.getItem('nice-mc-ship') || 'default-ship';
+      const shipId = localStorage.getItem(Utils.KEYS.mcShip) || 'default-ship';
       // Try nice-ship-state first (deploy wizard format)
-      const stateRaw = localStorage.getItem('nice-ship-state');
+      const stateRaw = localStorage.getItem(Utils.KEYS.shipState);
       if (stateRaw) {
         const allState = JSON.parse(stateRaw);
         const shipState = allState[shipId] || allState['bp-' + shipId] || {};
@@ -202,7 +202,7 @@ const PromptPanel = (() => {
         if (agents.length) return agents;
       }
       // Fallback: nice-mc-slots (legacy format)
-      const raw = localStorage.getItem('nice-mc-slots');
+      const raw = localStorage.getItem(Utils.KEYS.mcSlots);
       if (!raw) return [];
       const all = JSON.parse(raw);
       const slotMap = all[shipId] || {};
@@ -714,36 +714,25 @@ const PromptPanel = (() => {
     }
 
     if (/token|balance|credit/i.test(lower) && /(how much|what|check|my|remaining)/i.test(lower)) {
-      const tokens = (typeof State !== 'undefined' && State.get('tokens')) || localStorage.getItem('nice-tokens') || 'unknown';
+      const tokens = (typeof State !== 'undefined' && State.get('tokens')) || localStorage.getItem(Utils.KEYS.tokens) || 'unknown';
       return { text: tokens !== 'unknown' ? `Your current token balance is ${tokens} credits.` : 'Token balance unavailable — check Operations for details.' };
     }
 
     if (/\b(rank|xp|level|experience)\b/i.test(lower) && /(what|my|current|check|show)/i.test(lower)) {
-      const xp = parseInt(localStorage.getItem('nice-xp') || '0', 10);
-      const ranks = [
-        { name: 'Ensign', min: 0 }, { name: 'Lieutenant JG', min: 10000 },
-        { name: 'Lieutenant', min: 25000 }, { name: 'Lt Commander', min: 50000 },
-        { name: 'Commander', min: 100000 }, { name: 'Captain', min: 200000 },
-        { name: 'Fleet Captain', min: 350000 }, { name: 'Commodore', min: 500000 },
-        { name: 'Rear Admiral', min: 750000 }, { name: 'Vice Admiral', min: 1000000 },
-        { name: 'Admiral', min: 1500000 }, { name: 'Fleet Admiral', min: 2500000 },
-      ];
-      let rank = ranks[0].name;
-      let nextRank = ranks[1];
-      for (let i = ranks.length - 1; i >= 0; i--) {
-        if (xp >= ranks[i].min) { rank = ranks[i].name; nextRank = ranks[i + 1] || null; break; }
-      }
-      const nextStr = nextRank ? ` Next rank: ${nextRank.name} at ${nextRank.min} XP.` : ' Max rank achieved!';
-      return { text: `You are a ${rank} with ${xp} XP.${nextStr}` };
+      const rank = Gamification.getRank();
+      const xp = Gamification.getXP();
+      const nextRank = Gamification.getNextRank();
+      const nextStr = nextRank ? ` Next rank: ${nextRank.name} at ${nextRank.xp} XP.` : ' Max rank achieved!';
+      return { text: `You are a ${rank.name} with ${xp} XP.${nextStr}` };
     }
 
     if (/how many workflow/i.test(lower) || /workflow count/i.test(lower)) {
-      const wf = JSON.parse(localStorage.getItem('nice-workflows') || '[]');
+      const wf = JSON.parse(localStorage.getItem(Utils.KEYS.workflows) || '[]');
       return { text: `You have ${wf.length} workflow${wf.length !== 1 ? 's' : ''} saved.` };
     }
 
     if (/achievement|badge/i.test(lower) && /(how many|my|list|show|check)/i.test(lower)) {
-      const achs = JSON.parse(localStorage.getItem('nice-achievements') || '[]');
+      const achs = JSON.parse(localStorage.getItem(Utils.KEYS.achievements) || '[]');
       return { text: achs.length ? `You've unlocked ${achs.length} achievement${achs.length !== 1 ? 's' : ''}: ${achs.join(', ')}.` : 'No achievements unlocked yet. Keep exploring NICE!' };
     }
 
@@ -778,22 +767,13 @@ const PromptPanel = (() => {
     }
 
     if (lower === '/rank') {
-      const xp = parseInt(localStorage.getItem('nice-xp') || '0', 10);
-      const ranks = [
-        { name: 'Ensign', min: 0 }, { name: 'Lieutenant JG', min: 10000 },
-        { name: 'Lieutenant', min: 25000 }, { name: 'Lt Commander', min: 50000 },
-        { name: 'Commander', min: 100000 }, { name: 'Captain', min: 200000 },
-        { name: 'Fleet Captain', min: 350000 }, { name: 'Commodore', min: 500000 },
-        { name: 'Rear Admiral', min: 750000 }, { name: 'Vice Admiral', min: 1000000 },
-        { name: 'Admiral', min: 1500000 }, { name: 'Fleet Admiral', min: 2500000 },
-      ];
-      let rank = ranks[0].name;
-      for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= ranks[i].min) { rank = ranks[i].name; break; } }
-      return { text: `${rank} — ${xp} XP`, handled: true };
+      const rank = Gamification.getRank();
+      const xp = Gamification.getXP();
+      return { text: `${rank.name} — ${xp} XP`, handled: true };
     }
 
     if (lower === '/tokens') {
-      const tokens = (typeof State !== 'undefined' && State.get('tokens')) || localStorage.getItem('nice-tokens') || 'N/A';
+      const tokens = (typeof State !== 'undefined' && State.get('tokens')) || localStorage.getItem(Utils.KEYS.tokens) || 'N/A';
       return { text: `Token balance: ${tokens}`, handled: true };
     }
 
@@ -807,10 +787,10 @@ const PromptPanel = (() => {
     if (lower.startsWith('/callsign')) {
       const val = text.replace(/^\/callsign\s*/i, '').trim();
       if (!val) {
-        const current = localStorage.getItem('nice-callsign') || 'Commander';
+        const current = localStorage.getItem(Utils.KEYS.callsign) || 'Commander';
         return { text: `You're currently addressed as "${current}". Use /callsign [name] to change it.`, handled: true };
       }
-      localStorage.setItem('nice-callsign', val);
+      localStorage.setItem(Utils.KEYS.callsign, val);
       return { text: `Got it — I'll call you "${val}" from now on.`, handled: true };
     }
 
@@ -861,7 +841,7 @@ const PromptPanel = (() => {
       results.push(`Blueprints (${matchBp.length}): ${matchBp.slice(0, 5).map(b => b.name).join(', ')}${matchBp.length > 5 ? '...' : ''}`);
     }
 
-    const workflows = JSON.parse(localStorage.getItem('nice-workflows') || '[]');
+    const workflows = JSON.parse(localStorage.getItem(Utils.KEYS.workflows) || '[]');
     const matchWf = workflows.filter(w => (w.name || '').toLowerCase().includes(q));
     if (matchWf.length) {
       results.push(`Workflows (${matchWf.length}): ${matchWf.slice(0, 5).map(w => w.name).join(', ')}${matchWf.length > 5 ? '...' : ''}`);
@@ -1025,7 +1005,7 @@ const PromptPanel = (() => {
     // Inject live context into generic mock responses
     const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
     const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
-    const xp = parseInt(localStorage.getItem('nice-xp') || '0', 10);
+    const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
     let contextual = text;
     if (agents.length > 0) {
       const randomAgent = agents[Math.floor(Math.random() * agents.length)];
@@ -1076,11 +1056,9 @@ const PromptPanel = (() => {
   /* ── Direct LLM call (no Supabase needed) ── */
   function _buildSystemPrompt() {
     // Gather live app context
-    const xp = parseInt(localStorage.getItem('nice-xp') || '0', 10);
-    const ranks = ['Ensign','Lieutenant JG','Lieutenant','Lt Commander','Commander','Captain','Fleet Captain','Commodore','Rear Admiral','Vice Admiral','Admiral','Fleet Admiral'];
-    const rankThresholds = [0,10000,25000,50000,100000,200000,350000,500000,750000,1000000,1500000,2500000];
-    let rank = ranks[0];
-    for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= rankThresholds[i]) { rank = ranks[i]; break; } }
+    const xp = typeof Gamification !== 'undefined' ? Gamification.getXP() : 0;
+    const rankObj = typeof Gamification !== 'undefined' ? Gamification.getRank(xp) : { name: 'Ensign' };
+    const rank = rankObj.name;
 
     const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
     const spaceships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
@@ -1139,7 +1117,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     return `You are NICE, the AI mission control assistant for Nice Spaceship — an Agentic Intelligence platform that helps businesses automate their operations with AI agent fleets.
 
 PERSONALITY: Friendly, knowledgeable, consultative. Speak with a subtle space/sci-fi flair (mission, fleet, deploy). Keep responses concise (2-4 sentences max) for voice conversation flow.
-ADDRESS THE USER AS: "${localStorage.getItem('nice-callsign') || 'Commander'}" — always use this name when addressing them directly.
+ADDRESS THE USER AS: "${localStorage.getItem(Utils.KEYS.callsign) || 'Commander'}" — always use this name when addressing them directly.
 
 YOUR GOAL: Understand the user's business needs, then guide them to build their ideal AI agent fleet inside NICE. You are a product expert AND a business consultant. Always connect their pain points to specific NICE features. Recommend agents BY NAME from the catalog below.
 
@@ -2030,7 +2008,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       // Enable TTS so NICE talks back when using voice
       if (!_ttsEnabled) {
         _ttsEnabled = true;
-        localStorage.setItem('nice-tts', 'true');
+        localStorage.setItem(Utils.KEYS.tts, 'true');
         const ttsBtn = _panel.querySelector('#nice-ai-tts');
         if (ttsBtn) ttsBtn.classList.add('active');
         const voiceSel = _panel.querySelector('#nice-ai-voice-select');
@@ -2082,7 +2060,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // TTS toggle
     _panel.querySelector('#nice-ai-tts')?.addEventListener('click', () => {
       _ttsEnabled = !_ttsEnabled;
-      localStorage.setItem('nice-tts', _ttsEnabled);
+      localStorage.setItem(Utils.KEYS.tts, _ttsEnabled);
       const btn = _panel.querySelector('#nice-ai-tts');
       if (btn) btn.classList.toggle('active', _ttsEnabled);
       const voiceSel = _panel.querySelector('#nice-ai-voice-select');
@@ -2108,7 +2086,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         seen.add(label);
         return true;
       });
-      const saved = localStorage.getItem('nice-tts-voice') || '';
+      const saved = localStorage.getItem(Utils.KEYS.ttsVoice) || '';
       _voiceSelect.innerHTML = voices.map(v => {
         const label = v.name.replace(/\s*\(.*\)/, '');
         const sel = (saved ? v.name === saved : v.name.includes('Samantha')) ? ' selected' : '';
@@ -2118,7 +2096,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _populateVoices();
     if (window.speechSynthesis) speechSynthesis.onvoiceschanged = _populateVoices;
     _voiceSelect?.addEventListener('change', (e) => {
-      localStorage.setItem('nice-tts-voice', e.target.value);
+      localStorage.setItem(Utils.KEYS.ttsVoice, e.target.value);
     });
 
     // Attach — coming soon
@@ -2322,7 +2300,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     utter.rate = 1.05;
     utter.pitch = 0.95;
     const voices = speechSynthesis.getVoices();
-    const savedVoice = localStorage.getItem('nice-tts-voice');
+    const savedVoice = localStorage.getItem(Utils.KEYS.ttsVoice);
     const preferred = (savedVoice && voices.find(v => v.name === savedVoice)) ||
                       voices.find(v => v.name.includes('Samantha')) ||
                       voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||

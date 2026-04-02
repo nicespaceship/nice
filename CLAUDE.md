@@ -307,3 +307,17 @@ GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security a
 - **Supabase**: 8 edge functions deployed via `npx supabase functions deploy`
 - **Stripe**: 3 token packages with payment links
 - **PWA**: Service Worker v16 with offline fallback, periodic sync (12h), push notifications
+
+## NICE Architectural Principles (SSOT)
+As the Neural Intelligence Command Engine (NICE), this project adheres to a strict Single Source of Truth (SSOT) architecture. When modifying or auditing the codebase, follow these rules:
+
+1. **The Constants Are Law:** All XP scaling, rank thresholds, slot counts, rarity tiers, and ship classes must reside in their canonical modules (`BlueprintUtils`, `Gamification`, `Utils.KEYS`, `State.KEYS`). Never hard-code magic numbers in views.
+2. **Logic Isolation:** Business logic and decision-making belong in lib modules (`app/js/lib/`). View modules (`app/js/views/`) are strictly for rendering state and handling user interaction.
+3. **Module Contracts:** IIFE modules expose a public API object. If a module's public interface changes, all consumers must be updated. Grep for `ModuleName.methodName` before renaming or removing.
+4. **No Logic Duplication:** Before implementing a calculation (like XP gain, rarity gating, or slot limits), search for existing functions in `Gamification`, `BlueprintUtils`, or `BlueprintStore`. If it exists, import it; if it's duplicated, consolidate it.
+
+### SSOT Audit
+When asked to "Run an SSOT Audit," you should:
+- Grep for hard-coded numbers that should be in `BlueprintUtils` or `Gamification` constants (slot counts, XP thresholds, rarity names).
+- Identify logic leaks where engine rules (XP gating, rarity checks, slot limits) are being calculated in view modules instead of lib modules.
+- Verify that Supabase table schemas match the data shapes used in `BlueprintStore`, `ShipLog`, and `Gamification`.

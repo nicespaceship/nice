@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "serve (static)",
-      "runtimeExecutable": "node",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
       "runtimeArgs": ["server.js"],
       "port": 3000,
       "autoPort": true

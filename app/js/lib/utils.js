@@ -92,6 +92,9 @@ const Utils = (() => {
     callsign: 'nice-callsign',
     highContrast: 'nice-high-contrast',
     sidebarOrder: 'nice-sidebar-order',
+    mcShip: 'nice-mc-ship',
+    mcSlots: 'nice-mc-slots',
+    shipProfiles: 'nice-ship-profiles',
   };
 
   return { esc, timeAgo, formatDate, formatDateTime, icon, KEYS };
