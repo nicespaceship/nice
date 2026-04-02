@@ -41,6 +41,15 @@ const BlueprintStore = (() => {
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
+  /** Normalize a blueprint ID — handles with/without bp- prefix */
+  function _normalizeBpId(bpId) {
+    return bpId && bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
+  }
+  /** Match a blueprint ID flexibly (bp-xxx, xxx, or bp-xxx vs xxx) */
+  function _matchesBpId(storedId, queryId) {
+    return storedId === queryId || 'bp-' + storedId === queryId || storedId === 'bp-' + queryId;
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      Initialization
   ═══════════════════════════════════════════════════════════════ */
@@ -592,42 +601,6 @@ const BlueprintStore = (() => {
     return { results, total: results.length, page: 1, per_page: results.length };
   }
 
-  /**
-   * Look up a blueprint by its serial key (soul key).
-   * @param {string} serialKey - e.g. 'CR-J0CWCJ'
-   * @returns {Promise<Object|null>}
-   */
-  async function getBySerial(serialKey) {
-    if (!serialKey) return null;
-
-    // Try Edge Function
-    if (typeof SB !== 'undefined' && typeof SB.isReady === 'function' && SB.isReady() && SB.isOnline()) {
-      try {
-        const url = (SB.client?.supabaseUrl || '').replace(/\/$/, '');
-        const anonKey = SB.client?.supabaseKey || '';
-        if (url && anonKey) {
-          const resp = await fetch(`${url}/functions/v1/blueprint-search`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': anonKey },
-            body: JSON.stringify({ serial_key: serialKey }),
-          });
-          if (resp.ok) {
-            const data = await resp.json();
-            return data.results?.[0] || null;
-          }
-        }
-      } catch {}
-    }
-
-    // Offline fallback: scan seeds
-    const key = serialKey.toUpperCase();
-    const agent = _agents.find(a => (a.serial || '').toUpperCase() === key || (a.serial_key || '').toUpperCase() === key);
-    if (agent) return agent;
-    // Spaceships don't have serial in seed, but check DB-loaded ones
-    const ship = _spaceships.find(s => (s.serial_key || '').toUpperCase() === key);
-    return ship || null;
-  }
-
   /* ═══════════════════════════════════════════════════════════════
      Persist helpers (write to localStorage)
   ═══════════════════════════════════════════════════════════════ */
@@ -830,15 +803,13 @@ const BlueprintStore = (() => {
   }
 
   function deactivateAgent(bpId) {
-    // Normalize: find the matching ID in the array (with or without bp- prefix)
-    const match = _activatedAgentIds.find(id => id === bpId || 'bp-' + id === bpId || id === 'bp-' + bpId);
+    const match = _activatedAgentIds.find(id => _matchesBpId(id, bpId));
     if (!match) return;
     _activatedAgentIds = _activatedAgentIds.filter(id => id !== match);
     _persistAgents();
     _syncDeactivation(bpId, 'agent');
 
-    // Cascade: remove from local agents state
-    const agentId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
+    const agentId = _normalizeBpId(bpId);
     if (typeof State !== 'undefined') {
       const agents = State.get('agents') || [];
       const filtered = agents.filter(r => r.id !== agentId);
@@ -867,10 +838,7 @@ const BlueprintStore = (() => {
   }
 
   function isAgentActivated(bpId) {
-    if (_activatedAgentIds.includes(bpId)) return true;
-    // Check without bp- prefix (activated IDs don't have it)
-    if (bpId.startsWith('bp-')) return _activatedAgentIds.includes(bpId.slice(3));
-    return _activatedAgentIds.includes('bp-' + bpId);
+    return _activatedAgentIds.some(id => _matchesBpId(id, bpId));
   }
 
   function getActivatedAgentIds() {
@@ -890,7 +858,7 @@ const BlueprintStore = (() => {
         try { bp = (JSON.parse(localStorage.getItem('nice-custom-agents') || '[]')).find(a => a.id === bpId); } catch {}
       }
       if (!bp) return;
-      const lookupId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
+      const lookupId = _normalizeBpId(bpId);
       const custom = typeof CardRenderer !== 'undefined' && CardRenderer.getCustomLabels
         ? CardRenderer.getCustomLabels(lookupId) : {};
       const localId = bpId;
@@ -969,7 +937,7 @@ const BlueprintStore = (() => {
     _syncDeactivation(bpId, 'spaceship');
 
     // Cascade: deactivate agents assigned to this ship
-    const shipId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
+    const shipId = _normalizeBpId(bpId);
     const state = _shipState[shipId];
     if (state) {
       const agentIdsToRemove = new Set();
@@ -1021,10 +989,7 @@ const BlueprintStore = (() => {
   }
 
   function isShipActivated(bpId) {
-    if (_activatedShipIds.includes(bpId)) return true;
-    // Check without bp- prefix (activated IDs don't have it)
-    if (bpId.startsWith('bp-')) return _activatedShipIds.includes(bpId.slice(3));
-    return _activatedShipIds.includes('bp-' + bpId);
+    return _activatedShipIds.some(id => _matchesBpId(id, bpId));
   }
 
   function getActivatedShipIds() {
@@ -1261,7 +1226,7 @@ const BlueprintStore = (() => {
 
             // Client-side rarity sort (no DB column for sort order)
             if (sort === 'rarity-desc' || sort === 'rarity-asc') {
-              const ro = { Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+              const ro = BlueprintUtils.RARITY_ORDER;
               const dir = sort === 'rarity-desc' ? -1 : 1;
               rows.sort((a, b) => dir * ((ro[a.rarity] || 0) - (ro[b.rarity] || 0)));
             }
@@ -1311,10 +1276,10 @@ const BlueprintStore = (() => {
     } else if (sort === 'name-desc') {
       list.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
     } else if (sort === 'rarity-desc') {
-      const ro = { Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+      const ro = BlueprintUtils.RARITY_ORDER;
       list.sort((a, b) => (ro[b.rarity] || 0) - (ro[a.rarity] || 0));
     } else if (sort === 'rarity-asc') {
-      const ro = { Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+      const ro = BlueprintUtils.RARITY_ORDER;
       list.sort((a, b) => (ro[a.rarity] || 0) - (ro[b.rarity] || 0));
     } else {
       list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -1369,6 +1334,6 @@ const BlueprintStore = (() => {
     ensureCatalogLoaded,
 
     // Search & serial key lookup
-    search, searchCatalog, getBySerial,
+    search, searchCatalog,
   };
 })();
