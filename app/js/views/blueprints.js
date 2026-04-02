@@ -150,10 +150,10 @@ const BlueprintsView = (() => {
             <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" />
           </div>
           <select id="bp-sort" class="filter-select" aria-label="Sort blueprints">
-            <option value="popular">Most Popular</option>
-            <option value="rating">Highest Rated</option>
             <option value="name">A — Z</option>
             <option value="name-desc">Z — A</option>
+            <option value="popular">Most Popular</option>
+            <option value="rating">Highest Rated</option>
             <option value="rarity-desc">Rarity: High → Low</option>
             <option value="rarity-asc">Rarity: Low → High</option>
           </select>
@@ -820,7 +820,7 @@ const BlueprintsView = (() => {
     }
 
     const q = (document.getElementById('bp-search')?.value || '').trim();
-    const sort = document.getElementById('bp-sort')?.value || 'popular';
+    const sort = document.getElementById('bp-sort')?.value || 'name';
     const category = document.getElementById('bp-category')?.value || '';
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
@@ -878,7 +878,7 @@ const BlueprintsView = (() => {
   /** Offline / fallback: filter in-memory seeds (original logic) */
   function _applyFiltersLocal() {
     const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
-    const sort = document.getElementById('bp-sort')?.value || 'popular';
+    const sort = document.getElementById('bp-sort')?.value || 'name';
     const category = document.getElementById('bp-category')?.value || '';
 
     let list = _getAllBlueprints();

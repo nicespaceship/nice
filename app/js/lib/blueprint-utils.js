@@ -9,7 +9,7 @@ const BlueprintUtils = (() => {
 
   /** Rarity color map — single source of truth for all card/badge/slot coloring */
   const RARITY_COLORS = {
-    Common: '#94a3b8', Rare: '#6366f1', Epic: '#a855f7',
+    Common: '#94a3b8', Rare: '#b6dff9', Epic: '#a855f7',
     Legendary: '#f59e0b', Mythic: '#ff2d55',
   };
 
