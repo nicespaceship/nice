@@ -23,7 +23,6 @@ const AgentsView = (() => {
 
   function render(el) {
     const user = State.get('user');
-    if (!user) return _authPrompt(el, 'agents');
     _viewMode = localStorage.getItem('nice-agents-view') || 'full';
 
     el.innerHTML = `
@@ -577,7 +576,6 @@ const AgentDetailView = (() => {
 
   function render(el, params) {
     const user = State.get('user');
-    if (!user) return _authPrompt(el, 'agent details');
 
     el.innerHTML = `<div class="loading-state"><p>Loading agent...</p></div>`;
     _loadAgent(el, params.id);

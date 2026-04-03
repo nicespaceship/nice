@@ -115,7 +115,6 @@ const BlueprintsView = (() => {
   function render(el, opts) {
     const embedded = opts && opts.embedded;
     const user = State.get('user');
-    if (!user) return _authPrompt(el, 'the Blueprints');
 
     el.innerHTML = `
       <div class="bp-wrap">

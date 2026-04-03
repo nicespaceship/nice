@@ -35,7 +35,6 @@ const SpaceshipsView = (() => {
 
   function render(el) {
     const user = State.get('user');
-    if (!user) return _authPrompt(el, 'the shipyard');
 
     _viewMode = localStorage.getItem('nice-ships-view') || 'full';
 
@@ -926,7 +925,6 @@ const SpaceshipDetailView = (() => {
 
   function render(el, params) {
     const user = State.get('user');
-    if (!user) return _authPrompt(el, 'spaceship details');
     el.innerHTML = `<div class="loading-state"><p>Loading spaceship...</p></div>`;
     _loadSpaceship(el, params.id);
   }
