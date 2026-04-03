@@ -38,7 +38,6 @@ const MissionsView = (() => {
   function render(el) {
     _el = el;
     const user = State.get('user');
-    if (!user) return _authPrompt(el, 'missions');
 
     el.innerHTML = `
       <div class="mc-missions">
@@ -562,7 +561,6 @@ const MissionDetailView = (() => {
 
   function render(el, params) {
     const user = State.get('user');
-    if (!user) return _authPrompt(el, 'mission details');
     el.innerHTML = `<div class="loading-state"><p>Loading mission...</p></div>`;
     _loadMission(el, params.id);
   }
