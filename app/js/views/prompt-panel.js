@@ -22,6 +22,7 @@ const PromptPanel = (() => {
   let _mentionIdx = -1;
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
   let _activeIntent = null; // intent from pill click: research, mission, code, analyze, agent, build
+  let _activeMode = 'auto'; // orchestration mode: auto, pipeline, parallel, hierarchical, loop
 
   // Intent → agent category mapping
   const INTENT_CATEGORIES = { research: 'Research', code: 'Code', analyze: 'Data', build: 'Ops', mission: null, agent: null };
@@ -1317,33 +1318,48 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     history.push({ role: 'user', content: userText });
 
     const { id: model, label: modelLabel } = _getSelectedModel();
+    const wantStream = !!opts.onChunk;
 
-    const res = await fetch(`${supabaseUrl}/functions/v1/llm-proxy`, {
+    // Get auth token for nice-ai (requires Supabase session)
+    let authHeader = '';
+    try {
+      const session = (await SB.client.auth.getSession())?.data?.session;
+      if (session?.access_token) authHeader = `Bearer ${session.access_token}`;
+    } catch { /* anon ok for free models */ }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (authHeader) headers['Authorization'] = authHeader;
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       signal: _abortCtrl.signal,
       body: JSON.stringify({
         model,
         messages: history,
         temperature: 0.4,
         max_tokens: 2048,
+        stream: wantStream,
       }),
     });
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.warn('[NICE] llm-proxy error:', errBody);
+      console.warn('[NICE] nice-ai error:', errBody);
       let detail = '';
       try { detail = JSON.parse(errBody)?.error || errBody; } catch { detail = errBody; }
       throw new Error(detail);
     }
 
+    // Stream: parse SSE chunks as they arrive
+    if (wantStream && res.headers.get('content-type')?.includes('text/event-stream')) {
+      return _parseSSEStream(res, opts, modelLabel);
+    }
+
+    // Non-stream fallback
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-
-    // Simulate streaming by emitting the full content as a single chunk
     if (opts.onChunk && data.content) opts.onChunk(data.content);
-
     return { text: data.content || '', model: modelLabel };
   }
 
@@ -1598,12 +1614,30 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
       };
 
-      MissionRouter.route(spaceshipId, text, { onRouting, onChunk, intent: _activeIntent || null }).then(({ routing, result }) => {
+      // Dispatch based on orchestration mode
+      const mode = _activeMode || 'auto';
+      let routerPromise;
+      const routerOpts = { onRouting, onChunk, intent: _activeIntent || null };
+
+      if (mode === 'pipeline' && MissionRouter.pipeline) {
+        routerPromise = MissionRouter.pipeline(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
+      } else if (mode === 'parallel' && MissionRouter.parallel) {
+        routerPromise = MissionRouter.parallel(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
+      } else if (mode === 'hierarchical' && MissionRouter.hierarchical) {
+        routerPromise = MissionRouter.hierarchical(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
+      } else if (mode === 'loop' && MissionRouter.loop) {
+        routerPromise = MissionRouter.loop(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
+      } else {
+        routerPromise = MissionRouter.route(spaceshipId, text, routerOpts);
+      }
+
+      routerPromise.then(({ routing, result }) => {
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const agentName = routing ? routing.agentName : 'NICE';
         const content = result.finalAnswer || result.content || 'No response.';
-        _messages.push({ role: 'assistant', text: content, agent: agentName, ts: Date.now() });
+        const modeLabel = mode !== 'auto' ? ` [${mode}]` : '';
+        _messages.push({ role: 'assistant', text: content, agent: agentName + modeLabel, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
         _sending = false;
@@ -1902,6 +1936,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
               <select class="nice-ai-voice-select" id="nice-ai-voice-select" title="Select voice" style="display:none">
                 <option value="">Loading voices…</option>
               </select>
+              <select class="nice-ai-mode-select" id="nice-ai-mode" title="Orchestration mode">
+                <option value="auto" selected>Auto</option>
+                <option value="pipeline">Pipeline</option>
+                <option value="parallel">Parallel</option>
+                <option value="hierarchical">Hierarchical</option>
+                <option value="loop">Quality Loop</option>
+              </select>
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model">
                 <option value="claude-4-sonnet" selected>Claude Sonnet</option>
               </select>
@@ -1971,6 +2012,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   function _bindEvents() {
     // Close button
     _panel.querySelector('#nice-ai-close')?.addEventListener('click', hide);
+
+    // Orchestration mode selector
+    const modeSelect = _panel.querySelector('#nice-ai-mode');
+    if (modeSelect) modeSelect.addEventListener('change', () => { _activeMode = modeSelect.value; });
 
     // Send button (NS logo)
     _panel.querySelector('#nice-ai-send')?.addEventListener('click', _send);

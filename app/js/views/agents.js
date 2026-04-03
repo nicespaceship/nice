@@ -80,6 +80,14 @@ const AgentsView = (() => {
                 <button class="btn btn-sm" id="share-soul-copy" title="Copy Soul Key" style="white-space:nowrap">Copy</button>
               </div>
             </div>
+            <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
+              <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:8px">Share Link &mdash; anyone with the link can import (expires 30 days)</label>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="share-link-url" readonly placeholder="Click Generate to create a share link" style="flex:1;font-family:var(--font-m);font-size:.7rem;padding:8px;background:var(--bg-alt);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:text" />
+                <button class="btn btn-sm" id="share-link-gen" style="white-space:nowrap">Generate</button>
+                <button class="btn btn-sm" id="share-link-copy" title="Copy Link" style="white-space:nowrap;display:none">Copy</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -403,6 +411,36 @@ const AgentsView = (() => {
       if (keyInput?.value) {
         navigator.clipboard.writeText(keyInput.value).then(() => {
           const btn = document.getElementById('share-soul-copy');
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 2000); }
+        });
+      }
+    });
+
+    // Generate Share Link
+    document.getElementById('share-link-gen')?.addEventListener('click', async () => {
+      if (!_shareAgentId) return;
+      const genBtn = document.getElementById('share-link-gen');
+      const urlInput = document.getElementById('share-link-url');
+      const copyBtn = document.getElementById('share-link-copy');
+      if (genBtn) genBtn.textContent = 'Generating…';
+      try {
+        const code = await BlueprintStore.shareBlueprint(_shareAgentId, 'agent');
+        const shareUrl = `${location.origin}/app/#/share/${code}`;
+        if (urlInput) urlInput.value = shareUrl;
+        if (copyBtn) copyBtn.style.display = '';
+        if (genBtn) genBtn.style.display = 'none';
+      } catch (err) {
+        if (urlInput) urlInput.value = '';
+        if (genBtn) genBtn.textContent = 'Generate';
+        const errEl = document.getElementById('share-error');
+        if (errEl) errEl.textContent = err.message || 'Failed to generate link.';
+      }
+    });
+    document.getElementById('share-link-copy')?.addEventListener('click', () => {
+      const urlInput = document.getElementById('share-link-url');
+      if (urlInput?.value) {
+        navigator.clipboard.writeText(urlInput.value).then(() => {
+          const btn = document.getElementById('share-link-copy');
           if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 2000); }
         });
       }
