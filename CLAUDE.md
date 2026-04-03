@@ -9,6 +9,18 @@
 ## Housekeeping
 At the start of each session, run `git worktree prune` and delete any stale `claude/*` branches (local and remote) that have no uncommitted work. Keep the repo clean.
 
+## Git Commit Standards
+- **Never** add `Co-Authored-By: Claude` or any AI attribution to commits. Benjamin is the author.
+- Write commits in the founder's voice — short, direct, technical.
+- One concern per commit. Prefer small focused commits over large multi-feature commits.
+- Commit message format: imperative mood, under 72 chars for the subject line. No bullet lists in subject.
+  - Good: `Fix streaming endpoint in prompt panel`
+  - Good: `Add blueprint sharing via Supabase`
+  - Bad: `9-point upgrade: streaming, orchestration, MCP tools, achievements, sharing, onboarding`
+  - Bad: `Fix various issues and add new features`
+- Body (optional): explain *why*, not *what*. The diff shows what changed.
+- Never force-add files that are in `.gitignore`.
+
 ## Project Overview
 **NICE™** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Vercel via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
 
