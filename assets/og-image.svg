@@ -55,16 +55,20 @@
   <circle cx="600" cy="220" r="85" fill="none" stroke="#6366f1" stroke-width="0.5" opacity="0.12"/>
 
   <!-- Main title -->
-  <text x="600" y="360" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="56" font-weight="700" fill="#ffffff" letter-spacing="2">Nice Spaceship</text>
+  <text x="600" y="355" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="60" font-weight="800" fill="#ffffff" letter-spacing="4">NICE</text>
+  <text x="600" y="385" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="500" fill="#6366f1" letter-spacing="6" opacity="0.8">NEURAL INTELLIGENCE COMMAND ENGINE</text>
 
   <!-- Accent line -->
-  <rect x="500" y="380" width="200" height="2" rx="1" fill="#6366f1" opacity="0.6"/>
+  <rect x="480" y="405" width="240" height="2" rx="1" fill="#6366f1" opacity="0.6"/>
 
   <!-- Subtitle -->
-  <text x="600" y="425" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="400" fill="#a1a1aa" letter-spacing="3">NICE&#x2122; &#x2014; Mission Control for AI Agent Fleets</text>
+  <text x="600" y="445" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="400" fill="#a1a1aa" letter-spacing="2">Mission Control for AI Agent Fleets</text>
+
+  <!-- Stats -->
+  <text x="600" y="490" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="400" fill="#6366f1" opacity="0.7" letter-spacing="1">800+ Blueprints &#x2022; Multi-Agent Orchestration &#x2022; Real-Time Missions</text>
 
   <!-- URL -->
-  <text x="600" y="575" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="400" fill="#6366f1" opacity="0.6" letter-spacing="2">nicespaceship.com</text>
+  <text x="600" y="575" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="500" fill="#6366f1" opacity="0.6" letter-spacing="3">nicespaceship.ai</text>
 
   <!-- Border accent -->
   <rect x="0" y="0" width="1200" height="3" fill="#6366f1" opacity="0.5"/>

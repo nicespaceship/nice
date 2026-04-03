@@ -1066,6 +1066,7 @@ const NICE = (() => {
       if (user) {
         _migrateLocalSpaceships(user);
         if (typeof BlueprintStore !== 'undefined' && BlueprintStore.migrateGuestState) BlueprintStore.migrateGuestState();
+        _loadTokenBalance(user);
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
         // First-run check: show setup wizard for new users with no spaceships
         _checkFirstRun(user);
@@ -1086,11 +1087,43 @@ const NICE = (() => {
     SB.auth.getUser().then(user => {
       State.set('user', user);
       _updateAuthUI(user);
-      if (user) _migrateLocalSpaceships(user);
+      if (user) { _migrateLocalSpaceships(user); _loadTokenBalance(user); }
     }).catch(() => {
       State.set('user', null);
       _updateAuthUI(null);
     });
+  }
+
+  /* ── Token Balance ── */
+  let _tokenBalanceSub = null;
+
+  async function _loadTokenBalance(user) {
+    if (!user || !SB.isReady()) return;
+    try {
+      const { data } = await SB.client
+        .from('token_balances')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      State.set('token_balance', data || { balance: 0, free_tier_remaining: 100000, lifetime_purchased: 0, lifetime_used: 0 });
+    } catch (err) {
+      console.warn('[NICE] Failed to load token balance:', err.message);
+    }
+
+    // Subscribe to realtime balance updates (e.g. after Stripe webhook credits)
+    if (!_tokenBalanceSub) {
+      _tokenBalanceSub = SB.client
+        .channel('token-balance')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'token_balances',
+          filter: `user_id=eq.${user.id}`,
+        }, (payload) => {
+          if (payload.new) State.set('token_balance', payload.new);
+        })
+        .subscribe();
+    }
   }
 
   /* ── First-run onboarding: show setup wizard for new users ── */
