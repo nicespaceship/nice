@@ -1002,9 +1002,66 @@ const SharedReportView = (() => {
   const _esc = Utils.esc;
 
   function render(el, params) {
-    const missionId = (params.id || '').replace('report-', '');
+    const id = (params.id || '').replace('report-', '');
+    // Short codes (8 chars, no dashes) = blueprint share links
+    if (id.length <= 12 && !id.includes('-')) {
+      el.innerHTML = '<div class="loading-state"><p>Loading shared blueprint...</p></div>';
+      _loadSharedBlueprint(el, id);
+      return;
+    }
     el.innerHTML = '<div class="loading-state"><p>Loading mission report...</p></div>';
-    _loadReport(el, missionId);
+    _loadReport(el, id);
+  }
+
+  async function _loadSharedBlueprint(el, code) {
+    try {
+      const shared = await BlueprintStore.importSharedBlueprint(code);
+      const bp = shared.data;
+      el.innerHTML = `
+        <div class="detail-wrap">
+          <div class="detail-header">
+            <div class="detail-header-info">
+              <h2 class="detail-name">${_esc(bp.name || 'Shared Blueprint')}</h2>
+              <div class="detail-meta-row">
+                <span class="badge-rarity badge-${(bp.rarity || 'common').toLowerCase()}">${_esc(bp.rarity || 'Common')}</span>
+                <span style="color:var(--text-muted);font-size:.8rem">${_esc(shared.type)} blueprint</span>
+              </div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <h3 class="detail-section-title">Description</h3>
+            <p style="color:var(--text-muted);font-size:.85rem">${_esc(bp.description || 'No description.')}</p>
+          </div>
+          ${bp.config && bp.config.tools && bp.config.tools.length ? `
+            <div class="detail-section">
+              <h3 class="detail-section-title">Tools</h3>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">${bp.config.tools.map(t => `<span class="agent-tool-tag">${_esc(t)}</span>`).join('')}</div>
+            </div>
+          ` : ''}
+          <div class="detail-section" style="margin-top:1.5rem">
+            <button class="btn btn-primary" id="import-shared-bp">Import This Blueprint</button>
+          </div>
+        </div>
+      `;
+      el.querySelector('#import-shared-bp')?.addEventListener('click', async () => {
+        const btn = el.querySelector('#import-shared-bp');
+        if (btn) btn.textContent = 'Importing...';
+        try {
+          if (shared.type === 'agent') {
+            await BlueprintStore.activateAgent(bp.id || 'shared-' + code);
+          } else {
+            await BlueprintStore.activateShip(bp.id || 'shared-' + code);
+          }
+          if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Imported!', message: bp.name + ' added to your collection.', type: 'system' });
+          location.hash = '#/bridge';
+        } catch (err) {
+          if (btn) btn.textContent = 'Import Failed';
+        }
+      });
+    } catch (err) {
+      el.innerHTML = `<div class="app-empty"><h2>Blueprint Not Found</h2><p>${_esc(err.message || 'This share link may have expired.')}</p><div class="app-empty-acts"><a href="#/" class="btn btn-sm">Home</a></div></div>`;
+    }
   }
 
   async function _loadReport(el, id) {

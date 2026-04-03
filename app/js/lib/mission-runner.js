@@ -183,7 +183,9 @@ const MissionRunner = (() => {
         if (!agentBp.config) agentBp.config = {};
         agentBp.config.tools = mission.metadata.tools;
       }
-      const _hasTools = agentBp && agentBp.config && agentBp.config.tools && agentBp.config.tools.length > 0;
+      const _hasExplicitTools = agentBp && agentBp.config && agentBp.config.tools && agentBp.config.tools.length > 0;
+      const _hasMcpTools = typeof McpBridge !== 'undefined' && ((State.get('mcp_connections') || []).some(c => c.status === 'connected'));
+      const _hasTools = _hasExplicitTools || _hasMcpTools;
       let result;
 
       if (_hasTools && typeof AgentExecutor !== 'undefined') {

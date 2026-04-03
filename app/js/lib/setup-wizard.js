@@ -289,6 +289,13 @@ const SetupWizard = (() => {
       _data.shipId = shipId;
       _data.agentCount = agentCount;
       _markDone();
+      if (typeof Gamification !== 'undefined') Gamification.unlockAchievement('first-deployment');
+
+      // Build a suggested first mission based on crew
+      const crewRoles = ((_data.agents || []).map(a => a.role || a.name)).slice(0, 3).join(', ');
+      const firstMissionPrompt = _data.businessDescription
+        ? `Give me a brief analysis of ${_data.businessDescription.split(' ').slice(0, 5).join(' ')} trends`
+        : 'Introduce yourself and describe what you can help me with';
 
       body.innerHTML = `
         <div class="wizard-success">
@@ -298,6 +305,14 @@ const SetupWizard = (() => {
           <h2 class="wizard-title">Your team is ready!</h2>
           <p class="wizard-subtitle"><strong>${_esc(_data.shipName)}</strong> is live with ${agentCount} agent${agentCount !== 1 ? 's' : ''}.</p>
           ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned</p>' : ''}
+          <div class="wizard-first-mission" style="margin-top:1.5rem;padding:1rem;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;text-align:left">
+            <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first mission</p>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your crew${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" id="wiz-first-mission" value="${_esc(firstMissionPrompt)}" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;font-family:var(--font-b)" />
+              <button class="btn btn-sm btn-primary" id="wiz-run-mission" style="white-space:nowrap">Run</button>
+            </div>
+          </div>
         </div>
       `;
       actions.innerHTML = `
@@ -308,6 +323,18 @@ const SetupWizard = (() => {
       actions.querySelector('#wiz-view-ship').addEventListener('click', () => {
         close();
         location.hash = '#/bridge?tab=schematic';
+      });
+      document.getElementById('wiz-run-mission')?.addEventListener('click', () => {
+        const prompt = document.getElementById('wiz-first-mission')?.value?.trim();
+        close();
+        // Open prompt panel with the mission text
+        if (prompt && typeof PromptPanel !== 'undefined') {
+          PromptPanel.show();
+          setTimeout(() => {
+            const input = document.getElementById('nice-ai-input');
+            if (input) { input.value = prompt; input.focus(); input.dispatchEvent(new Event('input', { bubbles: true })); }
+          }, 300);
+        }
       });
     }).catch(err => {
       if (_step !== 3) return;

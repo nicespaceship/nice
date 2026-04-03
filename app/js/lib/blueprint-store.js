@@ -1334,6 +1334,64 @@ const BlueprintStore = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     Blueprint Sharing
+  ═══════════════════════════════════════════════════════════════ */
+
+  function _generateShareCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghkmnpqrstuvwxyz23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  async function shareBlueprint(blueprintId, type) {
+    if (typeof SB === 'undefined' || !SB.client) throw new Error('Not connected');
+    const bp = type === 'agent' ? getAgent(blueprintId) : getSpaceship(blueprintId);
+    if (!bp) throw new Error('Blueprint not found');
+
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) throw new Error('Sign in to share blueprints');
+
+    const shareCode = _generateShareCode();
+    const data = {
+      id: bp.id, name: bp.name, type: bp.type || type,
+      category: bp.category, description: bp.description,
+      rarity: bp.rarity, config: bp.config,
+    };
+    if (type === 'spaceship' && bp.crew) data.crew = bp.crew;
+
+    const { error } = await SB.client
+      .from('shared_blueprints')
+      .insert({ blueprint_type: type, data, creator_id: user.id, share_code: shareCode });
+
+    if (error) throw new Error(error.message);
+    return shareCode;
+  }
+
+  async function importSharedBlueprint(shareCode) {
+    if (typeof SB === 'undefined' || !SB.client) throw new Error('Not connected');
+
+    const { data: rows, error } = await SB.client
+      .from('shared_blueprints')
+      .select('*')
+      .eq('share_code', shareCode)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1);
+
+    if (error) throw new Error(error.message);
+    if (!rows || !rows.length) throw new Error('Share link expired or not found');
+
+    const shared = rows[0];
+
+    // Increment import count (fire and forget)
+    SB.client.from('shared_blueprints')
+      .update({ import_count: (shared.import_count || 0) + 1 })
+      .eq('id', shared.id).then(() => {});
+
+    return { type: shared.blueprint_type, data: shared.data, createdAt: shared.created_at };
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      Public API
   ═══════════════════════════════════════════════════════════════ */
 
@@ -1370,5 +1428,8 @@ const BlueprintStore = (() => {
 
     // Search & serial key lookup
     search, searchCatalog, getBySerial,
+
+    // Sharing
+    shareBlueprint, importSharedBlueprint,
   };
 })();
