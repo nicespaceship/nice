@@ -29,7 +29,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
 - Region: `us-west-1`
-- 308 blueprints seeded (261 agents + 43 spaceships + 4 special)
+- 800+ blueprints (agents + spaceships + fleets)
 
 ### Edge Functions (8)
 | Function | Purpose |
@@ -46,7 +46,8 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ### Database Tables
 | Table | Purpose |
 |-------|---------|
-| `blueprints` | Agent + spaceship blueprint catalog (308 seeded) |
+| `blueprints` | Agent + spaceship blueprint catalog (800+ seeded) |
+| `shared_blueprints` | Blueprint sharing via links (8-char codes, 30-day expiry) |
 | `user_agents` | Activated agent instances per user |
 | `user_spaceships` | Activated spaceship instances per user |
 | `tasks` | Missions (queued → running → completed/failed) |
@@ -80,16 +81,16 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 │   └── js/
 │       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD
 ├── app/                    # NICE™ SPA Dashboard
-│   ├── index.html          # SPA shell (59 script tags in dependency order)
+│   ├── index.html          # SPA shell (73 script tags in dependency order)
 │   ├── manifest.json       # PWA manifest
-│   ├── sw.js               # Service Worker v16 (offline, periodic sync, push)
+│   ├── sw.js               # Service Worker v36 (offline, periodic sync, push)
 │   ├── css/
-│   │   └── app.css         # NICE component styles (5000+ lines)
+│   │   └── app.css         # NICE component styles (8000+ lines)
 │   └── js/
 │       ├── nice.js         # Main orchestrator (init, auth, routing, error handling)
 │       ├── lib/            # 36 shared IIFE modules
 │       ├── views/          # 24 view modules
-│       └── __tests__/      # 17 Vitest test files (288 tests)
+│       └── __tests__/      # 19 Vitest test files (343 tests)
 ├── supabase/
 │   └── functions/          # 8 Deno edge functions
 ├── e2e/
@@ -108,10 +109,13 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 
 | Skin | Aesthetic | Source |
 |------|-----------|--------|
-| Default (NICE) | Premium dark command center | Built-in |
-| Cyberpunk 2099 | Neon pink/cyan, glitch effects | Skin pack |
-| LCARS Starfleet | Star Trek modular, pastels | Skin pack |
-| The Matrix | Digital rain green, terminal | Skin pack |
+| NICE (default) | Premium dark command center | Built-in |
+| The Office | Light/warm corporate, real-world terminology | Built-in |
+| Navigator | Electric blue TRON grid | Built-in |
+| Matrix | Digital rain green, terminal | Built-in |
+| LCARS | Star Trek modular, pastels | Built-in |
+| Steampunk | Brass/copper Victorian | Built-in |
+| + 5 more | Pod, Gundam, 16-bit, Solar, Retro | Built-in |
 
 ### Skin CSS Variables
 - `--bg`, `--bg-alt` — background colors
@@ -263,7 +267,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 
 ## Testing
 
-### Unit Tests (Vitest) — 288 tests across 17 files
+### Unit Tests (Vitest) — 343 tests across 19 files
 ```bash
 npm test          # Run all tests
 npm run test:watch  # Watch mode
@@ -301,7 +305,7 @@ npm run test:e2e  # Run all E2E tests
 - `navigateTo(page, hash, title)` — navigates and waits for document.title update
 
 ### CI/CD
-GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (288 tests) → playwright (14 tests) → bundle size check
+GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (343 tests) → playwright (14 tests) → bundle size check
 
 **CI is strict** — both unit and E2E failures block merges.
 
@@ -313,9 +317,37 @@ GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security a
 - Scopes: gmail.readonly, calendar.readonly, drive.readonly
 - Domain-wide delegation fallback for @nicespaceship.com internal users
 
+## Single Source of Truth (SSOT)
+Before adding constants, arrays, or configuration, check if a source already exists:
+
+| Data | SSOT Location | Notes |
+|------|--------------|-------|
+| Blueprint data | `BlueprintStore` + Supabase `blueprints` table | Never hardcode blueprint lists |
+| Crew slots, rarity, ship classes | `BlueprintUtils` (`blueprint-utils.js`) | Loaded before card-renderer |
+| localStorage keys | `Utils.KEYS` (28 constants) | Never use raw string keys |
+| State keys | `State.KEYS` (10 constants) | Never use raw string keys |
+| Theme definitions | `THEMES` array in `nice.js` → `Theme.BUILTIN` | No separate theme list |
+| Ranks & XP | `Gamification.RANKS` / `XP_ACTIONS` | Never duplicate rank data |
+| Card rendering | `CardRenderer.render()` | ONE renderer for all card types |
+| Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
+| Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
+
+## Coding Guidelines
+- **Read before write.** Never modify a file you haven't read. Understand existing patterns.
+- **Prefer editing over creating.** Don't create new files when extending an existing module works.
+- **No speculative abstractions.** Three similar lines > premature helper function.
+- **No unnecessary comments.** Only explain *why*, never *what*. The code shows what.
+- **Escape user content.** Always use `Utils.esc()` before inserting into DOM. No raw `innerHTML` with user data.
+- **Test after changes.** Run `npm test` after editing JS. All 343 tests must pass.
+- **Mobile-first.** Check changes at 375px. Breakpoints: 480px, 640px, 768px.
+- **Theme-aware.** Use CSS custom properties (`var(--accent)`, `var(--bg)`), never hardcoded colors.
+
 ## Deployment
 - **Platform**: Vercel (auto-deploy from `main` branch)
+- **Domains**: `nicespaceship.ai` (app, served at root via rewrite), `nicespaceship.com` (community, upcoming)
 - **Repo**: `github.com/nicespaceship/nice`
 - **Supabase**: 8 edge functions deployed via `npx supabase functions deploy`
 - **Stripe**: 3 token packages with payment links
-- **PWA**: Service Worker v16 with offline fallback, periodic sync (12h), push notifications
+- **PWA**: Service Worker v36 with offline fallback, periodic sync (12h), push notifications
+- **Build**: `node scripts/build.js` → 865KB minified bundle (73 scripts)
+- **Manual deploy**: `npx vercel deploy --prod`
