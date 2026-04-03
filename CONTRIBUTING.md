@@ -42,7 +42,7 @@ Thank you for your interest in contributing to NICE — the Neural Intelligence 
 
 ### Running Tests
 ```bash
-npm test          # Unit tests (Vitest, 288 tests)
+npm test          # Unit tests (Vitest, 343 tests)
 npm run test:e2e  # E2E tests (Playwright, 14 tests)
 ```
 
