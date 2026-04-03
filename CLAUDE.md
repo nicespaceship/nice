@@ -357,6 +357,13 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
 | Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
 
+## Tool Preferences
+- **CLI first.** Always prefer CLI tools over browser/GUI for GitHub (`gh`), Vercel (`npx vercel`), Supabase (`npx supabase`), npm, and git operations. CLI is faster, scriptable, and doesn't depend on browser rendering.
+- **Vercel CLI**: `npx vercel deploy --prod`, `npx vercel domains add`, `npx vercel project rm`
+- **Supabase CLI**: `npx supabase functions deploy`, `npx supabase secrets set`, `npx supabase db push`
+- **GitHub CLI**: `gh pr create`, `gh issue list`, `gh repo view`
+- Fall back to browser automation only when CLI doesn't support the operation.
+
 ## Coding Guidelines
 - **Read before write.** Never modify a file you haven't read. Understand existing patterns.
 - **Prefer editing over creating.** Don't create new files when extending an existing module works.
