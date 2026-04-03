@@ -8101,3 +8101,86 @@ body.preview-active .nice-ai {
   .cd-tool-checks { grid-template-columns:1fr; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS FIXES (375px target)
+   Consolidated fixes for components missing mobile breakpoints.
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── Search input: fluid width on mobile ── */
+@media (max-width:640px) {
+  .search-input { width:100%; min-width:0; }
+  .search-box { flex:1; min-width:0; }
+}
+
+/* ── Prompt panel: tighter padding on mobile ── */
+@media (max-width:768px) {
+  .nice-ai { padding:0 4px env(safe-area-inset-bottom, 12px); }
+  .nice-ai-input-area { border-radius:8px; }
+  .nice-ai-toolbar { flex-wrap:wrap; gap:4px; }
+  .nice-ai-toolbar-right { gap:4px; }
+  .nice-ai-mode-select, .nice-ai-model-select { font-size:.65rem; padding:3px 16px 3px 6px; max-width:100px; }
+  .nice-ai-pills { flex-wrap:wrap; gap:6px; }
+  .chat-pill { font-size:.72rem; padding:6px 10px; }
+}
+
+/* ── Modals: full-width on small screens ── */
+@media (max-width:480px) {
+  .modal-overlay { padding:8px; }
+  .modal-box { width:100%; max-width:none; border-radius:12px; }
+  .modal-body { padding:16px; }
+  .auth-modal-box { width:100%; max-width:none; }
+}
+
+/* ── Outbox calendar: allow horizontal scroll ── */
+@media (max-width:640px) {
+  .outbox-cal-header, .outbox-cal-body { min-width:auto; }
+  .outbox-cal-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+}
+
+/* ── Detail views: reduce padding on mobile ── */
+@media (max-width:480px) {
+  .detail-wrap { padding:0 12px; }
+  .detail-header { flex-direction:column; gap:12px; }
+  .detail-grid { grid-template-columns:1fr; }
+  .detail-kv-row { flex-direction:column; gap:2px; }
+}
+
+/* ── View topbar: stack on small screens ── */
+@media (max-width:480px) {
+  .view-topbar { flex-direction:column; gap:8px; align-items:stretch; }
+  .view-topbar-l, .view-topbar-r { width:100%; }
+  .view-topbar-r { justify-content:flex-start; flex-wrap:wrap; }
+}
+
+/* ── Blueprint type tabs: scrollable on mobile ── */
+@media (max-width:640px) {
+  .bp-type-tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; flex-wrap:nowrap; gap:0; }
+  .bp-type-tab { white-space:nowrap; flex-shrink:0; font-size:.78rem; padding:8px 14px; }
+  .bp-sub-tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+}
+
+/* ── Slot grids: tighter on 375px ── */
+@media (max-width:400px) {
+  .slot-grid-3 { max-width:280px; gap:6px; }
+  .slot-grid-4 { max-width:240px; gap:6px; }
+  .sch-slot { width:70px; height:70px; }
+  .sch-slot-label { font-size:.58rem; }
+}
+
+/* ── Guest banner: responsive ── */
+@media (max-width:640px) {
+  #guest-banner { font-size:.7rem; padding:5px 10px; }
+}
+
+/* ── Wallet cards: stack on mobile ── */
+@media (max-width:640px) {
+  .wallet-packages { grid-template-columns:1fr; }
+  .wallet-stat-grid { grid-template-columns:1fr 1fr; }
+}
+
+/* ── Achievement overlays: fit small screens ── */
+@media (max-width:480px) {
+  .achievement-unlock-card { padding:1.5rem 1.5rem; min-width:auto; max-width:calc(100vw - 32px); }
+  .rankup-card { padding:1.5rem 2rem; min-width:auto; max-width:calc(100vw - 32px); }
+}
+
