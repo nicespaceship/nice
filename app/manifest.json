@@ -1,8 +1,10 @@
 {
-  "name": "NICE™ — Mission Control",
+  "name": "NICE™ — Mission Control for AI Agents",
   "short_name": "NICE",
-  "description": "Mission control for your AI agent fleet",
+  "description": "Build, deploy, and manage AI agent fleets. 800+ blueprints, multi-agent orchestration, real-time missions. By NICE SPACESHIP.",
   "start_url": "/app/",
+  "scope": "/app/",
+  "id": "/app/",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#080808",
@@ -21,34 +23,34 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
+  "categories": ["productivity", "utilities", "business"],
   "lang": "en",
   "dir": "ltr",
   "shortcuts": [
     {
+      "name": "Bridge",
+      "short_name": "Bridge",
+      "description": "Browse blueprints and manage your fleet",
+      "url": "/app/#/bridge",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "New Agent",
       "short_name": "New Agent",
       "description": "Create a new AI agent",
-      "url": "/app/#/blueprints/agents/new",
+      "url": "/app/#/bridge/agents/new",
       "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Missions",
       "short_name": "Missions",
-      "description": "View all missions",
-      "url": "/app/#/missions",
-      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Workflows",
-      "short_name": "Workflows",
-      "description": "Agent workflow pipelines",
-      "url": "/app/#/workflows",
+      "description": "View and run missions",
+      "url": "/app/#/bridge?tab=missions",
       "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "share_target": {
-    "action": "/app/#/missions",
+    "action": "/app/#/bridge",
     "method": "GET",
     "params": {
       "title": "title",
