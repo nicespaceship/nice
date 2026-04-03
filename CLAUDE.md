@@ -31,30 +31,41 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 - Region: `us-west-1`
 - 800+ blueprints (agents + spaceships + fleets)
 
-### Edge Functions (8)
+### Edge Functions (11)
 | Function | Purpose |
 |----------|---------|
 | `nice-ai` | Multi-provider LLM proxy (Gemini, Anthropic, OpenAI, Mistral, DeepSeek, xAI) |
+| `nice-media` | Image/video generation proxy (Imagen 3, Veo 2, DALL-E 3, Flux) |
 | `gmail-mcp` | Gmail MCP server (search, read, labels) — OAuth + service account dual auth |
 | `calendar-mcp` | Google Calendar MCP server (events, calendars) |
 | `drive-mcp` | Google Drive MCP server (search, read, metadata) |
+| `social-mcp` | Social media publishing (Buffer, X, LinkedIn) |
 | `mcp-gateway` | MCP tool router — auth, token refresh, tool invocation |
 | `google-oauth` | OAuth 2.0 flow (authorize, callback, disconnect) for any Google account |
 | `stripe-webhook` | Credits tokens on Stripe purchase (500K/5M/25M packages) |
 | `blueprint-search` | Full-text blueprint catalog search |
+| `browser-proxy` | Fetches web pages for agent browser tools; returns clean text |
 
 ### Database Tables
 | Table | Purpose |
 |-------|---------|
 | `blueprints` | Agent + spaceship blueprint catalog (800+ seeded) |
 | `shared_blueprints` | Blueprint sharing via links (8-char codes, 30-day expiry) |
+| `profiles` | Public user profile data (extends auth.users) |
 | `user_agents` | Activated agent instances per user |
 | `user_spaceships` | Activated spaceship instances per user |
+| `user_shared_agents` | Agent sharing between users |
 | `tasks` | Missions (queued → running → completed/failed) |
 | `ship_log` | Agent conversation history per spaceship |
 | `mcp_connections` | MCP server connections with OAuth tokens |
+| `integrations` | OAuth/API integrations (Gmail, Calendar, Drive) |
 | `token_balances` | Per-user token balance (free tier + purchased) |
 | `token_transactions` | Purchase/usage transaction log |
+| `workflow_runs` | Workflow execution history |
+| `blueprint_ratings` | Community blueprint ratings |
+| `blueprint_submissions` | Community-submitted blueprints |
+| `notifications` | System notifications |
+| `error_log` | Client-side error reporting |
 | `vault_secrets` | Encrypted credential storage |
 
 ## XP Progression System
@@ -81,7 +92,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 │   └── js/
 │       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD
 ├── app/                    # NICE™ SPA Dashboard
-│   ├── index.html          # SPA shell (73 script tags in dependency order)
+│   ├── index.html          # SPA shell (78 script tags in dependency order)
 │   ├── manifest.json       # PWA manifest
 │   ├── sw.js               # Service Worker v36 (offline, periodic sync, push)
 │   ├── css/
@@ -346,8 +357,42 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **Platform**: Vercel (auto-deploy from `main` branch)
 - **Domains**: `nicespaceship.ai` (app, served at root via rewrite), `nicespaceship.com` (community, upcoming)
 - **Repo**: `github.com/nicespaceship/nice`
-- **Supabase**: 8 edge functions deployed via `npx supabase functions deploy`
+- **Supabase**: 11 edge functions deployed via `npx supabase functions deploy`
 - **Stripe**: 3 token packages with payment links
 - **PWA**: Service Worker v36 with offline fallback, periodic sync (12h), push notifications
-- **Build**: `node scripts/build.js` → 865KB minified bundle (73 scripts)
+- **Build**: `node scripts/build.js` → 865KB minified bundle (78 scripts)
 - **Manual deploy**: `npx vercel deploy --prod`
+
+### Vercel Routing
+- Root `/` rewrites to `/app/index.html` (app served at domain root)
+- `/app/*` rewrites to `/app/index.html` (SPA catch-all)
+- 12 redirects for legacy paths (`/pricing` → `/#/wallet`, `/blueprints` → `/#/bridge`, etc.)
+- Security headers: HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy
+- Cache: HTML = no-cache, JS/CSS = 60s + stale-while-revalidate, public assets = 1hr
+
+## Environment Variables (Supabase Secrets)
+| Variable | Used By | Required |
+|----------|---------|----------|
+| `SUPABASE_URL` | All functions | Auto-set |
+| `SUPABASE_ANON_KEY` | All functions | Auto-set |
+| `SUPABASE_SERVICE_ROLE_KEY` | stripe-webhook, mcp-gateway | Auto-set |
+| `GOOGLE_AI_API_KEY` | nice-ai, nice-media | Yes (free tier) |
+| `ANTHROPIC_API_KEY` | nice-ai | Premium models |
+| `OPENAI_API_KEY` | nice-ai, nice-media | Premium models |
+| `MISTRAL_API_KEY` | nice-ai | Budget models |
+| `DEEPSEEK_API_KEY` | nice-ai | Budget models |
+| `XAI_API_KEY` | nice-ai | Budget models |
+| `GOOGLE_CLIENT_ID` | google-oauth, mcp-gateway | For OAuth |
+| `GOOGLE_CLIENT_SECRET` | google-oauth, mcp-gateway | For OAuth |
+| `GOOGLE_SERVICE_ACCOUNT` | gmail-mcp | Domain-wide delegation |
+| `STRIPE_WEBHOOK_SECRET` | stripe-webhook | For payments |
+| `REPLICATE_API_TOKEN` | nice-media | Flux image gen |
+
+## CSS Naming Conventions
+- **Block-element**: `.agent-card`, `.agent-card-hdr`, `.agent-card-info` (hyphenated, not BEM)
+- **View prefixes**: `.bp-` (blueprints), `.mc-` (missions), `.sch-` (schematic), `.fleet-` (spaceships)
+- **Utility prefixes**: `.btn`, `.badge-`, `.skeleton-`
+- **IDs use hyphens**: `#nice-ai-input`, `#btn-logout`, `#hud-alert-badge`
+- **SVG icons**: `<use href="#icon-name"/>` referencing `<symbol id="icon-name">` in index.html
+- **Data attributes**: `data-theme`, `data-tab`, `data-view`, `data-tip`, `data-rarity`
+- **Theme overrides**: `[data-theme="office"] .component { ... }`
