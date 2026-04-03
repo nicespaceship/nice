@@ -1715,20 +1715,20 @@ const NICE = (() => {
     if (document.getElementById('guest-banner')) return;
     const banner = document.createElement('div');
     banner.id = 'guest-banner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--accent);color:var(--bg);padding:8px 16px;text-align:center;font-size:0.82rem;font-family:var(--font-m);display:flex;align-items:center;justify-content:center;gap:12px;';
-    banner.innerHTML = 'You are in demo mode. <a href="#/profile" style="color:var(--bg);font-weight:700;text-decoration:underline;">Sign Up</a> to save your work.';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--bg-alt);color:var(--text);padding:6px 16px;text-align:center;font-size:0.78rem;font-family:var(--font-b);display:flex;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid var(--border);';
+    banner.innerHTML = 'Browse freely &mdash; <a href="#/profile" style="color:var(--accent);font-weight:600;text-decoration:underline;">Sign in</a> to deploy agents and run missions.';
     document.body.prepend(banner);
     const sidebar = document.getElementById('app-sidebar');
-    if (sidebar) sidebar.style.top = '32px';
+    if (sidebar) sidebar.style.top = '30px';
     const mobileBar = document.getElementById('app-mobile-bar');
-    if (mobileBar) mobileBar.style.top = '32px';
+    if (mobileBar) mobileBar.style.top = '30px';
   }
 
   /** Check if a write operation is allowed (blocks in guest mode) */
   function guardWrite(action) {
     if (State.get('guestMode')) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Demo Mode', message: 'Sign up to save your ' + (action || 'changes') + '.', type: 'system' });
+        Notify.send({ title: 'Sign in required', message: 'Sign in to ' + (action || 'save changes') + '.', type: 'system' });
       }
       return false;
     }
