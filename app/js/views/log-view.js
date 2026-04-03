@@ -8,8 +8,7 @@ const LogView = (() => {
   let _activeTab = 'missions';
 
   function render(el) {
-    const user = State.get('user');
-    if (!user) return _authPrompt(el, 'log');
+    // Guest mode: show local logs without auth
 
     // Detect tab from hash params
     const hash = location.hash || '';

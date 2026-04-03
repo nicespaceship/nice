@@ -33,9 +33,7 @@ const DockView = (() => {
   };
 
   function render(el) {
-    const user = State.get('user');
-    if (!user) return _authPrompt(el, 'dock');
-
+    // Guest mode: show local data without auth
     const activatedShips = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
     const shipId = _getShipId();
 
@@ -706,9 +704,7 @@ const DockView = (() => {
   }
 
   function _getBpRarity(bp) {
-    if (bp.rarity) return bp.rarity;
-    if (typeof Gamification === 'undefined') return 'Common';
-    return Gamification.calcAgentRarity(bp).name;
+    return BlueprintUtils.getRarity(bp);
   }
 
   const _esc = Utils.esc;

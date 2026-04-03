@@ -9,7 +9,7 @@ const BlueprintUtils = (() => {
 
   /** Rarity color map — single source of truth for all card/badge/slot coloring */
   const RARITY_COLORS = {
-    Common: '#94a3b8', Rare: '#6366f1', Epic: '#a855f7',
+    Common: '#94a3b8', Rare: '#b6dff9', Epic: '#a855f7',
     Legendary: '#f59e0b', Mythic: '#ff2d55',
   };
 
@@ -115,13 +115,34 @@ const BlueprintUtils = (() => {
 
   /**
    * Get the rarity of a blueprint (normalized to title case).
+   * Priority: bp.rarity → Gamification.calcAgentRarity() → 'Common'
+   * This is the single source of truth — all views should call this
+   * instead of implementing their own rarity fallback chain.
    * @param {object} bp
    * @returns {string}
    */
   function getRarity(bp) {
     if (!bp) return 'Common';
-    const r = bp.rarity || 'Common';
-    return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
+    if (bp.rarity) {
+      const r = bp.rarity;
+      return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
+    }
+    if (typeof Gamification !== 'undefined') {
+      const calc = Gamification.calcAgentRarity(bp);
+      return calc?.name || 'Common';
+    }
+    return 'Common';
+  }
+
+  /**
+   * Get rarity info object { name, color } for a blueprint.
+   * Single source of truth for rarity + color together.
+   * @param {object} bp
+   * @returns {{ name: string, color: string }}
+   */
+  function getRarityInfo(bp) {
+    const name = getRarity(bp);
+    return { name, color: RARITY_COLORS[name] || RARITY_COLORS.Common };
   }
 
   /** Slot labels — used by gamification and card-renderer for dynamic slot generation */
@@ -146,5 +167,5 @@ const BlueprintUtils = (() => {
   /** Build slot array for a specific count (used by gamification for XP-gated classes) */
   function buildSlots(count, maxRarity) { return _buildClassSlots(count, maxRarity); }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityColor, buildSlots, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, buildSlots, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
 })();

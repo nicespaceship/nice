@@ -5,7 +5,7 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('HelmDesktop', {
+contextBridge.exposeInMainWorld('NiceDesktop', {
   // Platform info
   platform: process.platform,
   isDesktop: true,

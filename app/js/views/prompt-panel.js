@@ -1474,6 +1474,18 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       }
     }
 
+    // Guest mode: prompt sign-in before AI execution
+    const user = State.get('user');
+    if (!user) {
+      _messages.push({ role: 'user', text, ts: Date.now() });
+      _messages.push({ role: 'assistant', text: '🔒 Sign in to run missions and chat with your agents. Your blueprints and configurations will be saved.\n\n<button class="btn btn-primary btn-sm" onclick="NICE.openModal(\'modal-auth\')">Sign In to Launch</button>', agent: 'NICE', ts: Date.now() });
+      _saveMessages();
+      _renderMonitor();
+      input.value = '';
+      input.style.height = '36px';
+      return;
+    }
+
     // Add user message and show on monitor
     _messages.push({ role: 'user', text, ts: Date.now() });
     _saveMessages();

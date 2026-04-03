@@ -133,9 +133,7 @@ const ShipSetupWizard = (() => {
   }
 
   function _agentRarity(agent) {
-    if (agent.rarity) return agent.rarity;
-    if (typeof Gamification !== 'undefined') return Gamification.calcAgentRarity(agent);
-    return 'Common';
+    return BlueprintUtils.getRarity(agent);
   }
 
   function _getCrewForClass() {

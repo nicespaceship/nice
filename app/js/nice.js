@@ -1065,6 +1065,7 @@ const NICE = (() => {
       _updateAuthUI(user);
       if (user) {
         _migrateLocalSpaceships(user);
+        if (typeof BlueprintStore !== 'undefined' && BlueprintStore.migrateGuestState) BlueprintStore.migrateGuestState();
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
         // First-run check: show setup wizard for new users with no spaceships
         _checkFirstRun(user);

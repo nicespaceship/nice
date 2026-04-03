@@ -1160,15 +1160,12 @@ const SpaceshipDetailView = (() => {
       const isActivated = activatedBpIds.has(a.id) || activatedBpIds.has(bpId) || a.imported_via || a._custom;
       if (!isActivated) return false;
       // Filter by rarity that fits in the ship's slots
-      const agentRarity = a.rarity || (typeof Gamification !== 'undefined' ? Gamification.calcAgentRarity(a).name : 'Common');
+      const agentRarity = BlueprintUtils.getRarity(a);
       return allowedRarities.has(agentRarity);
     });
     if (!activated.length) return '<p class="text-muted" style="font-size:.78rem">No agents added. <a href="#/bridge" style="color:var(--accent)">Browse the Blueprint Catalog.</a></p>';
     return activated.map(a => {
-      // Prefer blueprint's declared rarity over computed rarity
-      const rarity = a.rarity
-        ? { name: a.rarity, color: (typeof Gamification !== 'undefined' && Gamification.RARITY_THRESHOLDS ? (Gamification.RARITY_THRESHOLDS.find(r => r.name === a.rarity) || {}).color : null) || '#94a3b8' }
-        : (typeof Gamification !== 'undefined' ? Gamification.calcAgentRarity(a) : { name:'Common', color:'#94a3b8' });
+      const rarity = BlueprintUtils.getRarityInfo(a);
       const initials = (a.name || 'AG').slice(0,2).toUpperCase();
       const isAssigned = assignedIds.has(a.id);
       return `
@@ -1188,10 +1185,7 @@ const SpaceshipDetailView = (() => {
     const rarityClass = 'ship-slot-' + maxRarity.toLowerCase();
 
     if (agent) {
-      // Prefer blueprint's declared rarity over computed rarity
-      const rarity = agent.rarity
-        ? { name: agent.rarity, color: (typeof Gamification !== 'undefined' && Gamification.RARITY_THRESHOLDS ? (Gamification.RARITY_THRESHOLDS.find(r => r.name === agent.rarity) || {}).color : null) || '#94a3b8' }
-        : (typeof Gamification !== 'undefined' ? Gamification.calcAgentRarity(agent) : { name:'Common', color:'#94a3b8' });
+      const rarity = BlueprintUtils.getRarityInfo(agent);
       const initials = (agent.name || 'AG').slice(0,2).toUpperCase();
       return `
         <div class="ship-slot ship-slot-filled ${rarityClass}" data-slot-id="${slot.id}" data-max-rarity="${maxRarity}" data-agent-rarity="${rarity.name}">

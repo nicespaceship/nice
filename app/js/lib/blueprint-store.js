@@ -1020,6 +1020,31 @@ const BlueprintStore = (() => {
     _fireShipState();
   }
 
+  /**
+   * Remove activated agent IDs that are not assigned to any active ship.
+   * Safe to call any time — idempotent.
+   */
+  function cleanupOrphans() {
+    const assignedAgents = new Set();
+    for (const [, state] of Object.entries(_shipState)) {
+      if (state?.slot_assignments) {
+        Object.values(state.slot_assignments).forEach(id => { if (id) assignedAgents.add(id); });
+      }
+      if (state?.agent_ids) {
+        state.agent_ids.forEach(id => { if (id) assignedAgents.add(id); });
+      }
+    }
+    const before = _activatedAgentIds.length;
+    _activatedAgentIds = _activatedAgentIds.filter(id => {
+      // Keep agents that are assigned to a ship, or are catalog blueprints (bp-agent-*)
+      if (assignedAgents.has(id)) return true;
+      if (id.startsWith('bp-agent-')) return true;
+      // Custom agents not on any ship → orphan
+      return false;
+    });
+    if (_activatedAgentIds.length !== before) _persistAgents();
+  }
+
   function isShipActivated(bpId) {
     if (_activatedShipIds.includes(bpId)) return true;
     // Check without bp- prefix (activated IDs don't have it)
@@ -1289,11 +1314,11 @@ const BlueprintStore = (() => {
     const q = (query || '').toLowerCase();
 
     if (q) {
-      list = list.filter(b =>
-        (b.name || '').toLowerCase().includes(q) ||
-        (b.description || b.desc || '').toLowerCase().includes(q) ||
-        (b.tags || []).join(' ').toLowerCase().includes(q)
-      );
+      const tokens = q.split(/\s+/).filter(Boolean);
+      list = list.filter(b => {
+        const haystack = ((b.name || '') + ' ' + (b.description || b.desc || '') + ' ' + (b.tags || []).join(' ')).toLowerCase();
+        return tokens.every(t => haystack.includes(t));
+      });
     }
 
     if (rarity) {
@@ -1350,7 +1375,7 @@ const BlueprintStore = (() => {
     getActivatedAgentIds, getActivatedAgents,
 
     // Ship activation
-    activateShip, deactivateShip, isShipActivated,
+    activateShip, deactivateShip, isShipActivated, cleanupOrphans,
     getActivatedShipIds, getActivatedShips,
 
     // Ship state persistence
@@ -1370,5 +1395,63 @@ const BlueprintStore = (() => {
 
     // Search & serial key lookup
     search, searchCatalog, getBySerial,
+
+    // Guest → authenticated migration
+    migrateGuestState,
   };
+
+  /**
+   * Migrate guest localStorage data to Supabase on first sign-in.
+   * Call this after successful authentication.
+   */
+  async function migrateGuestState() {
+    if (!_canSync()) return;
+    const userId = _getUserId();
+    if (!userId) return;
+
+    // Migrate guest agents
+    try {
+      const guestAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+      const toMigrate = guestAgents.filter(a => a._guest);
+      for (const agent of toMigrate) {
+        const { _guest, id, ...row } = agent;
+        row.user_id = userId;
+        try {
+          const created = await SB.db('user_agents').create(row);
+          if (created?.id) {
+            // Update local references from guest ID to real ID
+            _activatedAgentIds = _activatedAgentIds.map(aid => aid === id ? created.id : aid);
+            agent.id = created.id;
+            delete agent._guest;
+          }
+        } catch (e) { /* skip duplicates */ }
+      }
+      localStorage.setItem('nice-custom-agents', JSON.stringify(guestAgents));
+      _persistAgents();
+    } catch {}
+
+    // Migrate guest ships
+    try {
+      const guestShips = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+      const toMigrate = guestShips.filter(s => s._guest);
+      for (const ship of toMigrate) {
+        const { _guest, id, ...row } = ship;
+        row.user_id = userId;
+        try {
+          const created = await SB.db('user_spaceships').create(row);
+          if (created?.id) {
+            _activatedShipIds = _activatedShipIds.map(sid => sid === id ? created.id : sid);
+            ship.id = created.id;
+            delete ship._guest;
+          }
+        } catch (e) { /* skip duplicates */ }
+      }
+      localStorage.setItem('nice-custom-ships', JSON.stringify(guestShips));
+      _persistShips();
+    } catch {}
+
+    // Sync all activations
+    for (const id of _activatedAgentIds) _syncActivation(id, 'agent');
+    for (const id of _activatedShipIds) _syncActivation(id, 'spaceship');
+  }
 })();

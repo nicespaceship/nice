@@ -381,8 +381,13 @@ const SchematicView = (() => {
       if (bp) {
         const bpRarity = _getBpRarity(bp);
         const bpRarityColor = RC[bpRarity] || '#94a3b8';
+        const maxRarity = slot.maxRarity || 'Legendary';
+        const rarityOrder = { Common: 1, Rare: 2, Epic: 3, Legendary: 4, Mythic: 5 };
+        const isMismatch = (rarityOrder[bpRarity] || 1) > (rarityOrder[maxRarity] || 4);
+        const mismatchClass = isMismatch ? ' slot-rarity-mismatch' : '';
+        const mismatchTitle = isMismatch ? ` title="Agent rarity (${bpRarity}) exceeds slot max (${maxRarity})"` : '';
         return `
-          <div class="bridge-slot bridge-slot-filled" data-slot-id="${slot.id}" data-bp-id="${bp.id}">
+          <div class="bridge-slot bridge-slot-filled${mismatchClass}" data-slot-id="${slot.id}" data-bp-id="${bp.id}"${mismatchTitle}>
             <div class="bridge-slot-top">
               <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
               <span class="bridge-slot-rarity" style="color:${bpRarityColor}">[${bpRarity.charAt(0)}]</span>
@@ -524,9 +529,7 @@ const SchematicView = (() => {
   }
 
   function _getBpRarity(bp) {
-    if (bp.rarity) return bp.rarity;
-    if (typeof Gamification === 'undefined') return 'Common';
-    return Gamification.calcAgentRarity(bp).name;
+    return BlueprintUtils.getRarity(bp);
   }
 
   function _onResize() {

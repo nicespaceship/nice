@@ -140,8 +140,8 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Generated bundle
-app/js/helm.bundle.js
-app/js/helm.bundle.min.js
+app/js/nice.bundle.js
+app/js/nice.bundle.min.js
 test-results/
 .vercel
 .vercel/

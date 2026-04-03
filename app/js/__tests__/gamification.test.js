@@ -443,4 +443,76 @@ describe('Gamification', () => {
       expect(typeof prog.progress).toBe('number');
     });
   });
+
+  describe('Rarity Unlock Gating', () => {
+    it('should unlock Common at Ensign rank (0 XP)', () => {
+      localStorage.setItem('nice-xp', '0');
+      expect(Gamification.isRarityUnlocked('Common')).toBe(true);
+    });
+
+    it('should block Rare at Ensign rank', () => {
+      localStorage.setItem('nice-xp', '0');
+      expect(Gamification.isRarityUnlocked('Rare')).toBe(false);
+    });
+
+    it('should unlock Rare at Lieutenant rank (25K XP)', () => {
+      localStorage.setItem('nice-xp', '25000');
+      expect(Gamification.isRarityUnlocked('Rare')).toBe(true);
+    });
+
+    it('should block Legendary below Captain rank', () => {
+      localStorage.setItem('nice-xp', '100000');
+      expect(Gamification.isRarityUnlocked('Legendary')).toBe(false);
+    });
+
+    it('should unlock Legendary at Captain rank (200K XP)', () => {
+      localStorage.setItem('nice-xp', '200000');
+      expect(Gamification.isRarityUnlocked('Legendary')).toBe(true);
+    });
+
+    it('should block Mythic below Fleet Admiral', () => {
+      localStorage.setItem('nice-xp', '2000000');
+      expect(Gamification.isRarityUnlocked('Mythic')).toBe(false);
+    });
+
+    it('should unlock Mythic only at Fleet Admiral (2.5M XP)', () => {
+      localStorage.setItem('nice-xp', '2500000');
+      expect(Gamification.isRarityUnlocked('Mythic')).toBe(true);
+    });
+  });
+
+  describe('Mythic Rarity Threshold', () => {
+    it('should not compute Mythic from agent config (max score is 13, threshold is 14)', () => {
+      // Maxed out agent: top model (4) + General (3) + 7 tools (4) + memory (1) + non-default temp (1) = 13
+      const maxAgent = {
+        llm_engine: 'claude-4',
+        type: 'General',
+        config: { tools: ['A','B','C','D','E','F','G'], memory: true, temperature: 0.3 }
+      };
+      const rarity = Gamification.calcAgentRarity(maxAgent);
+      expect(rarity.name).not.toBe('Mythic');
+      expect(rarity.score).toBeLessThan(14);
+    });
+  });
+
+  describe('Progression Info', () => {
+    it('should return progression to next tier', () => {
+      localStorage.setItem('nice-xp', '5000');
+      const p = Gamification.getProgressToNextTier();
+      expect(p.rank.name).toBe('Ensign');
+      expect(p.nextRank).toBeDefined();
+      expect(p.nextRank.name).toBe('Lieutenant JG');
+      expect(p.xpNeeded).toBe(5000);
+      expect(p.progress).toBe(50);
+    });
+
+    it('should return 0 xpNeeded at max rank', () => {
+      localStorage.setItem('nice-xp', '3000000');
+      const p = Gamification.getProgressToNextTier();
+      expect(p.rank.name).toBe('Fleet Admiral');
+      expect(p.nextRank).toBeNull();
+      expect(p.xpNeeded).toBe(0);
+      expect(p.progress).toBe(100);
+    });
+  });
 });

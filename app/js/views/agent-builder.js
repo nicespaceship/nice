@@ -19,8 +19,7 @@ const AgentBuilderView = (() => {
   const TYPES  = ['Specialist','General','Hybrid'];
 
   function render(el, params) {
-    const user = State.get('user');
-    if (!user) return _authPrompt(el, 'the agent builder');
+    // Guest mode: allow building agents without sign-in (saves to localStorage)
 
     // Check if editing an existing agent (via query param)
     const editId = new URLSearchParams(window.location.hash.split('?')[1] || '').get('edit');
@@ -162,6 +161,7 @@ const AgentBuilderView = (() => {
 
           <!-- ACTIONS -->
           <div class="builder-actions">
+            <div class="builder-rarity-preview" id="builder-rarity-preview"></div>
             <div class="auth-error" id="builder-error"></div>
             <button type="submit" class="btn btn-primary" id="builder-submit">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-check"/></svg>
@@ -230,8 +230,17 @@ const AgentBuilderView = (() => {
     document.querySelectorAll('.builder-tool-chip input').forEach(cb => {
       cb.addEventListener('change', () => {
         cb.parentElement.classList.toggle('selected', cb.checked);
+        _updateRarityPreview();
       });
     });
+
+    // Live rarity preview — update on any form change
+    ['b-model', 'b-type', 'b-role'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', _updateRarityPreview);
+    });
+    if (tempSlider) tempSlider.addEventListener('input', _updateRarityPreview);
+    if (memoryBtn) memoryBtn.addEventListener('click', () => setTimeout(_updateRarityPreview, 10));
+    _updateRarityPreview(); // initial render
 
     // Template loading
     document.getElementById('b-template')?.addEventListener('change', (e) => {
@@ -352,6 +361,18 @@ const AgentBuilderView = (() => {
     catch { return []; }
   }
 
+  function _updateRarityPreview() {
+    const el = document.getElementById('builder-rarity-preview');
+    if (!el) return;
+    const model = document.getElementById('b-model')?.value || 'nice-auto';
+    const type = document.getElementById('b-type')?.value || 'Specialist';
+    const temp = parseFloat(document.getElementById('b-temp')?.value ?? 0.7);
+    const memory = document.getElementById('b-memory')?.dataset.val === '1';
+    const tools = [...document.querySelectorAll('#b-tools input:checked')].map(cb => cb.value);
+    const info = BlueprintUtils.getRarityInfo({ config: { tools, memory, temperature: temp }, llm_engine: model, type });
+    el.innerHTML = `<span class="rarity-badge rarity-${info.name.toLowerCase()}" style="border-color:${info.color}">${info.name}</span>`;
+  }
+
   async function _submitAgent(existingAgent) {
     const errEl = document.getElementById('builder-error');
     const btn   = document.getElementById('builder-submit');
@@ -374,6 +395,18 @@ const AgentBuilderView = (() => {
       btn.textContent = existingAgent ? 'Save Changes' : 'Create Agent';
       return;
     }
+    if (!role) {
+      errEl.textContent = 'Please select a role.';
+      btn.disabled = false;
+      btn.textContent = existingAgent ? 'Save Changes' : 'Create Agent';
+      return;
+    }
+    if (!model) {
+      errEl.textContent = 'Please select a model.';
+      btn.disabled = false;
+      btn.textContent = existingAgent ? 'Save Changes' : 'Create Agent';
+      return;
+    }
 
     const row = {
       name,
@@ -382,18 +415,37 @@ const AgentBuilderView = (() => {
       llm_engine: model,
       status: existingAgent?.status || 'idle',
       config: { tools, memory, temperature: temp },
+      rarity: BlueprintUtils.getRarity({ config: { tools, memory, temperature: temp }, llm_engine: model, type }),
     };
 
     try {
-      if (existingAgent) {
-        await SB.db('user_agents').update(existingAgent.id, row);
-      } else {
-        row.user_id = user.id;
-        await SB.db('user_agents').create(row);
-        if (typeof Gamification !== 'undefined') {
-          Gamification.addXP('create_agent');
-          Gamification.checkAchievements();
+      if (user && typeof SB !== 'undefined' && SB.isReady()) {
+        // Authenticated: save to Supabase
+        if (existingAgent) {
+          await SB.db('user_agents').update(existingAgent.id, row);
+        } else {
+          row.user_id = user.id;
+          await SB.db('user_agents').create(row);
         }
+      } else {
+        // Guest mode: save to localStorage
+        const guestId = 'guest-agent-' + Date.now();
+        row.id = existingAgent?.id || guestId;
+        row._guest = true;
+        const custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        const idx = custom.findIndex(a => a.id === row.id);
+        if (idx >= 0) custom[idx] = row; else custom.push(row);
+        localStorage.setItem('nice-custom-agents', JSON.stringify(custom));
+        // Add to State
+        const agents = State.get('agents') || [];
+        const si = agents.findIndex(a => a.id === row.id);
+        if (si >= 0) agents[si] = row; else agents.push(row);
+        State.set('agents', agents);
+        if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateAgent(row.id);
+      }
+      if (typeof Gamification !== 'undefined' && !existingAgent) {
+        Gamification.addXP('create_agent');
+        Gamification.checkAchievements();
       }
       Router.navigate('#/bridge/agents');
     } catch (err) {
