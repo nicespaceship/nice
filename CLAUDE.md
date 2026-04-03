@@ -154,13 +154,14 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 36 modules
+### Lib Modules (`app/js/lib/`) — 49 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
 | `SB` | `supabase.js` | Supabase client wrapper: `db()`, `auth()`, `client` |
 | `Router` | `router.js` | Hash router with param extraction & page transitions |
-| `Utils` | `utils.js` | Shared utilities (esc, debounce, format) |
+| `Utils` | `utils.js` | Shared utilities (esc, debounce, format) + `KEYS` constants |
+| `BlueprintUtils` | `blueprint-utils.js` | SSOT: rarity colors, slot labels, ship classes, categories |
 | `AuditLog` | `audit-log.js` | Persistent event logging (max 500 FIFO) |
 | `DataIO` | `data-io.js` | Export/import all NICE data as JSON |
 | `ActivityFeed` | `activity-feed.js` | Live event stream from Supabase realtime |
@@ -171,13 +172,25 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `McpBridge` | `mcp-bridge.js` | Bridges MCP connections to ToolRegistry |
 | `ToolRegistry` | `tool-registry.js` | Central registry for agent tools |
 | `AgentExecutor` | `agent-executor.js` | ReAct loop: LLM → tool calls → observations |
+| `AgentMemory` | `agent-memory.js` | Agent memory and context management |
 | `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management |
 | `MissionRouter` | `mission-router.js` | Routes prompts to optimal agent on spaceship |
+| `MissionScheduler` | `mission-scheduler.js` | Scheduled/recurring mission execution |
 | `ShipLog` | `ship-log.js` | Agent conversation persistence to Supabase |
+| `ShipBehaviors` | `ship-behaviors.js` | Spaceship behavior definitions |
+| `ShipTemplates` | `ship-templates.js` | Pre-built spaceship templates |
 | `LLMConfig` | `llm-config.js` | Model selection from enabled_models state |
 | `ModelIntel` | `model-intel.js` | Learns optimal models from mission history |
-| `BlueprintStore` | `blueprint-store.js` | Blueprint catalog with Supabase sync |
+| `BlueprintStore` | `blueprint-store.js` | Blueprint catalog with Supabase sync + sharing |
+| `BlueprintMarkdown` | `blueprint-markdown.js` | Markdown rendering for blueprint descriptions |
 | `CardRenderer` | `card-renderer.js` | Unified TCG card template renderer |
+| `CrewDesigner` | `crew-designer.js` | Describe → Design → Deploy crew builder |
+| `CrewGenerator` | `crew-generator.js` | AI crew generation from business description |
+| `QualityGate` | `quality-gate.js` | Blueprint quality validation |
+| `BrowserTools` | `browser-tools.js` | Agent web browsing via browser-proxy edge function |
+| `MediaTools` | `media-tools.js` | Image/video generation tools for agents |
+| `ContentQueue` | `content-queue.js` | Social media content queue |
+| `VirtualFS` | `virtual-fs.js` | Virtual file system for agent file operations |
 | `Skin` | `skin.js` | Skin system (CSS variable overrides) |
 | `SkinPacks` | `skin-packs.js` | Premium skin definitions |
 | `Subscription` | `subscription.js` | Stripe subscription management |
@@ -194,7 +207,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
 | `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
 
-### View Modules (`app/js/views/`) — 24 views
+### View Modules (`app/js/views/`) — 25 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
@@ -220,6 +233,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `AlertsView` | `alerts.js` | (embedded) | Alerts |
 | `WorkflowDetailView` | `workflows.js` | `#/workflows/:id` | Workflow Detail |
 | `ThemeCreatorView` | `theme-creator.js` | `#/theme-editor` | Theme Editor |
+| `EngineeringView` | `engineering.js` | `#/engineering` | Engineering |
 | `PromptPanel` | `prompt-panel.js` | (global overlay) | Prompt Panel |
 
 ### Security Page Tabs
