@@ -4,20 +4,21 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/pricing", "destination": "/app/#/wallet", "statusCode": 301 },
-    { "source": "/pricing.html", "destination": "/app/#/wallet", "statusCode": 301 },
-    { "source": "/contact", "destination": "/app/", "statusCode": 301 },
-    { "source": "/contact.html", "destination": "/app/", "statusCode": 301 },
-    { "source": "/blueprints", "destination": "/app/#/blueprints", "statusCode": 301 },
-    { "source": "/blueprints.html", "destination": "/app/#/blueprints", "statusCode": 301 },
-    { "source": "/nice", "destination": "/app/", "statusCode": 301 },
-    { "source": "/nice.html", "destination": "/app/", "statusCode": 301 },
-    { "source": "/academy", "destination": "/app/", "statusCode": 301 },
-    { "source": "/academy.html", "destination": "/app/", "statusCode": 301 },
-    { "source": "/account", "destination": "/app/", "statusCode": 301 },
-    { "source": "/account.html", "destination": "/app/", "statusCode": 301 }
+    { "source": "/pricing", "destination": "/#/wallet", "statusCode": 301 },
+    { "source": "/pricing.html", "destination": "/#/wallet", "statusCode": 301 },
+    { "source": "/contact", "destination": "/", "statusCode": 301 },
+    { "source": "/contact.html", "destination": "/", "statusCode": 301 },
+    { "source": "/blueprints", "destination": "/#/bridge", "statusCode": 301 },
+    { "source": "/blueprints.html", "destination": "/#/bridge", "statusCode": 301 },
+    { "source": "/nice", "destination": "/", "statusCode": 301 },
+    { "source": "/nice.html", "destination": "/", "statusCode": 301 },
+    { "source": "/academy", "destination": "/", "statusCode": 301 },
+    { "source": "/academy.html", "destination": "/", "statusCode": 301 },
+    { "source": "/account", "destination": "/", "statusCode": 301 },
+    { "source": "/account.html", "destination": "/", "statusCode": 301 }
   ],
   "rewrites": [
+    { "source": "/", "destination": "/app/index.html" },
     { "source": "/app/(.*)", "destination": "/app/index.html" }
   ],
   "headers": [
