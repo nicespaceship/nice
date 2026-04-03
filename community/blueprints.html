@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blueprints — NICE SPACESHIP</title>
+  <meta name="description" content="Browse 800+ AI agent blueprints for every type of business. Restaurant, Real Estate, Marketing Agency, YouTube Creator, and more." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/community/css/community.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <main>
+    <section class="section">
+      <div class="container">
+        <h1 style="text-align:center;margin-bottom:8px">Blueprint Catalog</h1>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px">800+ pre-built AI workflow templates. Find one for your business and deploy in minutes.</p>
+
+        <div class="catalog-toolbar">
+          <input type="text" class="catalog-search" id="bp-search" placeholder="Search blueprints..." />
+          <button class="catalog-filter active" data-filter="all">All</button>
+          <button class="catalog-filter" data-filter="spaceship">Spaceships</button>
+          <button class="catalog-filter" data-filter="agent">Agents</button>
+        </div>
+
+        <div class="catalog-grid" id="bp-grid">
+          <div class="catalog-empty">Loading blueprints...</div>
+        </div>
+
+        <button class="btn-secondary catalog-load-more" id="bp-load-more" style="display:none">Load More</button>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer" class="footer"></footer>
+
+  <script src="/community/js/supabase-lite.js"></script>
+  <script src="/community/js/theme-lite.js"></script>
+  <script src="/community/js/nav.js"></script>
+  <script>
+    ThemeLite.init();
+    Nav.render();
+    Nav.renderFooter();
+
+    // Blueprint catalog
+    const grid = document.getElementById('bp-grid');
+    const search = document.getElementById('bp-search');
+    const loadMore = document.getElementById('bp-load-more');
+    let offset = 0;
+    let currentFilter = 'all';
+    let currentQuery = '';
+
+    async function loadBlueprints(append) {
+      if (!append) { offset = 0; grid.innerHTML = '<div class="catalog-empty">Loading...</div>'; }
+      const filters = [];
+      if (currentFilter !== 'all') filters.push(`type=eq.${currentFilter}`);
+      if (currentQuery) filters.push(`or=(name.ilike.*${currentQuery}*,description.ilike.*${currentQuery}*,category.ilike.*${currentQuery}*)`);
+
+      const rows = await SBLite.query('blueprints', {
+        select: 'id,name,description,category,rarity,type',
+        filters,
+        order: 'name.asc',
+        limit: 24,
+        offset,
+      });
+
+      if (!append) grid.innerHTML = '';
+      if (!rows.length && !append) {
+        grid.innerHTML = '<div class="catalog-empty">No blueprints found.</div>';
+        loadMore.style.display = 'none';
+        return;
+      }
+
+      rows.forEach(bp => {
+        const card = document.createElement('a');
+        card.className = 'bp-card';
+        card.href = `https://nicespaceship.ai/#/bridge/${bp.type === 'spaceship' ? 'spaceships' : 'agents'}/${bp.id}`;
+        card.target = '_blank';
+        card.rel = 'noopener';
+        card.innerHTML = `
+          <div class="bp-card-header">
+            <div>
+              <h3>${esc(bp.name)}</h3>
+              <span class="bp-card-category">${esc(bp.category || '')}</span>
+            </div>
+          </div>
+          <p class="bp-card-desc">${esc(bp.description || 'No description.')}</p>
+          <div class="bp-card-footer">
+            <span class="bp-card-rarity ${(bp.rarity || 'common').toLowerCase()}">${esc(bp.rarity || 'Common')}</span>
+            <span class="bp-card-type">${bp.type === 'spaceship' ? 'Spaceship' : 'Agent'}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      offset += rows.length;
+      loadMore.style.display = rows.length === 24 ? '' : 'none';
+    }
+
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // Events
+    let debounce;
+    search.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => { currentQuery = search.value.trim(); loadBlueprints(false); }, 300);
+    });
+    document.querySelectorAll('.catalog-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        loadBlueprints(false);
+      });
+    });
+    loadMore.addEventListener('click', () => loadBlueprints(true));
+
+    loadBlueprints(false);
+  </script>
+</body>
+</html>

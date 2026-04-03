@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessibility — NICE SPACESHIP</title>
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/community/css/community.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="legal-content">
+    <div class="container-narrow">
+      <h1>Accessibility Statement</h1>
+      <p class="last-updated">Last updated: April 2026</p>
+
+      <h2>Our Commitment</h2>
+      <p>NICE SPACESHIP is committed to making our platform accessible to everyone. We follow WCAG 2.1 Level AA guidelines and continuously test for accessibility.</p>
+
+      <h2>What We've Built</h2>
+      <ul>
+        <li><strong>Keyboard navigation:</strong> All interactive elements are reachable via keyboard. Tab, Enter, Escape, and arrow keys work throughout the app.</li>
+        <li><strong>Skip-to-content link:</strong> Hidden link at the top of every page lets keyboard users jump past navigation.</li>
+        <li><strong>ARIA landmarks:</strong> Proper semantic HTML with ARIA roles for screen readers (navigation, main, complementary).</li>
+        <li><strong>Color contrast:</strong> Text meets WCAG AA contrast ratios. The dark theme and Office (light) theme both pass contrast checks.</li>
+        <li><strong>Focus indicators:</strong> Visible focus outlines on all interactive elements.</li>
+        <li><strong>Screen reader support:</strong> Cards, buttons, and navigation elements have descriptive labels.</li>
+        <li><strong>Responsive design:</strong> Works at all screen sizes from 375px to ultrawide monitors.</li>
+        <li><strong>Reduced motion:</strong> Respects prefers-reduced-motion where animations are used.</li>
+      </ul>
+
+      <h2>Automated Testing</h2>
+      <p>Our E2E test suite includes accessibility checks using axe-core (the same engine used by Deque). Every merge to main runs these tests automatically.</p>
+
+      <h2>Known Limitations</h2>
+      <ul>
+        <li>Some theme variants (Matrix, Navigator) may have lower contrast ratios in decorative elements</li>
+        <li>The drag-and-drop slot system has limited screen reader support (keyboard alternatives are available)</li>
+        <li>AI-generated content may not always meet readability standards</li>
+      </ul>
+
+      <h2>Feedback</h2>
+      <p>If you encounter an accessibility barrier, please let us know. We take every report seriously and fix issues promptly.</p>
+      <p>Email: <a href="mailto:ben@nicespaceship.com">ben@nicespaceship.com</a></p>
+      <p>GitHub: <a href="https://github.com/nicespaceship/nice/issues">Report an accessibility issue</a></p>
+    </div>
+  </main>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/community/js/theme-lite.js"></script>
+  <script src="/community/js/nav.js"></script>
+  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — NICE SPACESHIP</title>
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/community/css/community.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="legal-content">
+    <div class="container-narrow">
+      <h1>Privacy Policy</h1>
+      <p class="last-updated">Last updated: April 2026</p>
+
+      <h2>What We Collect</h2>
+      <p>When you create an account on nicespaceship.ai, we collect:</p>
+      <ul>
+        <li>Email address (for authentication)</li>
+        <li>Display name (optional, for your profile)</li>
+        <li>Usage data (blueprints activated, missions run, XP earned)</li>
+      </ul>
+      <p>If you connect Google Workspace (Gmail, Calendar, Drive), we access your data only through read-only OAuth scopes. NICE never stores your emails, calendar events, or files — agents process them in real-time and discard the data.</p>
+
+      <h2>What We Don't Collect</h2>
+      <ul>
+        <li>We don't sell your data to third parties</li>
+        <li>We don't use your data for advertising</li>
+        <li>We don't store your Google Workspace content</li>
+        <li>We don't track you across other websites</li>
+      </ul>
+
+      <h2>LLM Provider Data</h2>
+      <p>When you run missions, your prompts are sent to the selected LLM provider (Google, Anthropic, OpenAI, Mistral, DeepSeek, or xAI) through our server-side proxy. We do not store your prompts or responses beyond the current session. Each provider has their own data handling policies.</p>
+
+      <h2>Payment Data</h2>
+      <p>Token purchases are processed by Stripe. We never see or store your credit card number. Stripe handles all payment security.</p>
+
+      <h2>Cookies & Local Storage</h2>
+      <p>NICE uses localStorage (not cookies) to store your preferences, theme selection, XP progress, and session data. This data stays on your device and is never transmitted to our servers.</p>
+
+      <h2>Data Hosting</h2>
+      <p>Your account data is stored in Supabase (PostgreSQL database) hosted in the US West region. All data is encrypted in transit (TLS) and at rest.</p>
+
+      <h2>Data Deletion</h2>
+      <p>You can delete your account and all associated data at any time from Settings in the app. Email ben@nicespaceship.com if you need assistance.</p>
+
+      <h2>Open Source</h2>
+      <p>NICE is open source (MIT License). You can audit exactly what data we collect and how we handle it by reviewing the code at <a href="https://github.com/nicespaceship/nice">github.com/nicespaceship/nice</a>.</p>
+
+      <h2>Contact</h2>
+      <p>Questions about privacy? Email <a href="mailto:ben@nicespaceship.com">ben@nicespaceship.com</a>.</p>
+    </div>
+  </main>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/community/js/theme-lite.js"></script>
+  <script src="/community/js/nav.js"></script>
+  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+</body>
+</html>
