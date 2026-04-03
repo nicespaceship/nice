@@ -1395,5 +1395,63 @@ const BlueprintStore = (() => {
 
     // Search & serial key lookup
     search, searchCatalog, getBySerial,
+
+    // Guest → authenticated migration
+    migrateGuestState,
   };
+
+  /**
+   * Migrate guest localStorage data to Supabase on first sign-in.
+   * Call this after successful authentication.
+   */
+  async function migrateGuestState() {
+    if (!_canSync()) return;
+    const userId = _getUserId();
+    if (!userId) return;
+
+    // Migrate guest agents
+    try {
+      const guestAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+      const toMigrate = guestAgents.filter(a => a._guest);
+      for (const agent of toMigrate) {
+        const { _guest, id, ...row } = agent;
+        row.user_id = userId;
+        try {
+          const created = await SB.db('user_agents').create(row);
+          if (created?.id) {
+            // Update local references from guest ID to real ID
+            _activatedAgentIds = _activatedAgentIds.map(aid => aid === id ? created.id : aid);
+            agent.id = created.id;
+            delete agent._guest;
+          }
+        } catch (e) { /* skip duplicates */ }
+      }
+      localStorage.setItem('nice-custom-agents', JSON.stringify(guestAgents));
+      _persistAgents();
+    } catch {}
+
+    // Migrate guest ships
+    try {
+      const guestShips = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+      const toMigrate = guestShips.filter(s => s._guest);
+      for (const ship of toMigrate) {
+        const { _guest, id, ...row } = ship;
+        row.user_id = userId;
+        try {
+          const created = await SB.db('user_spaceships').create(row);
+          if (created?.id) {
+            _activatedShipIds = _activatedShipIds.map(sid => sid === id ? created.id : sid);
+            ship.id = created.id;
+            delete ship._guest;
+          }
+        } catch (e) { /* skip duplicates */ }
+      }
+      localStorage.setItem('nice-custom-ships', JSON.stringify(guestShips));
+      _persistShips();
+    } catch {}
+
+    // Sync all activations
+    for (const id of _activatedAgentIds) _syncActivation(id, 'agent');
+    for (const id of _activatedShipIds) _syncActivation(id, 'spaceship');
+  }
 })();

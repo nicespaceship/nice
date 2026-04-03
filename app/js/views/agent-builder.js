@@ -19,8 +19,7 @@ const AgentBuilderView = (() => {
   const TYPES  = ['Specialist','General','Hybrid'];
 
   function render(el, params) {
-    const user = State.get('user');
-    if (!user) return _authPrompt(el, 'the agent builder');
+    // Guest mode: allow building agents without sign-in (saves to localStorage)
 
     // Check if editing an existing agent (via query param)
     const editId = new URLSearchParams(window.location.hash.split('?')[1] || '').get('edit');
@@ -420,15 +419,33 @@ const AgentBuilderView = (() => {
     };
 
     try {
-      if (existingAgent) {
-        await SB.db('user_agents').update(existingAgent.id, row);
-      } else {
-        row.user_id = user.id;
-        await SB.db('user_agents').create(row);
-        if (typeof Gamification !== 'undefined') {
-          Gamification.addXP('create_agent');
-          Gamification.checkAchievements();
+      if (user && typeof SB !== 'undefined' && SB.isReady()) {
+        // Authenticated: save to Supabase
+        if (existingAgent) {
+          await SB.db('user_agents').update(existingAgent.id, row);
+        } else {
+          row.user_id = user.id;
+          await SB.db('user_agents').create(row);
         }
+      } else {
+        // Guest mode: save to localStorage
+        const guestId = 'guest-agent-' + Date.now();
+        row.id = existingAgent?.id || guestId;
+        row._guest = true;
+        const custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        const idx = custom.findIndex(a => a.id === row.id);
+        if (idx >= 0) custom[idx] = row; else custom.push(row);
+        localStorage.setItem('nice-custom-agents', JSON.stringify(custom));
+        // Add to State
+        const agents = State.get('agents') || [];
+        const si = agents.findIndex(a => a.id === row.id);
+        if (si >= 0) agents[si] = row; else agents.push(row);
+        State.set('agents', agents);
+        if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateAgent(row.id);
+      }
+      if (typeof Gamification !== 'undefined' && !existingAgent) {
+        Gamification.addXP('create_agent');
+        Gamification.checkAchievements();
       }
       Router.navigate('#/bridge/agents');
     } catch (err) {

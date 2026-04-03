@@ -24,8 +24,7 @@ const SpaceshipBuilderView = (() => {
   const SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   function render(el) {
-    const user = State.get('user');
-    if (!user) return _authPrompt(el, 'the spaceship builder');
+    // Guest mode: allow building ships without sign-in (saves to localStorage)
 
     const editId = new URLSearchParams(window.location.hash.split('?')[1] || '').get('edit');
     if (editId) {
@@ -343,33 +342,46 @@ const SpaceshipBuilderView = (() => {
     };
 
     try {
-      if (existingShip) {
-        await SB.db('user_spaceships').update(existingShip.id, row);
+      let shipId;
+      if (user && typeof SB !== 'undefined' && SB.isReady()) {
+        // Authenticated: save to Supabase
+        if (existingShip) {
+          await SB.db('user_spaceships').update(existingShip.id, row);
+          shipId = existingShip.id;
+        } else {
+          row.user_id = user.id;
+          const created = await SB.db('user_spaceships').create(row);
+          shipId = created?.id;
+        }
       } else {
-        row.user_id = user.id;
-        const created = await SB.db('user_spaceships').create(row);
+        // Guest mode: save to localStorage
+        shipId = existingShip?.id || ('guest-ship-' + Date.now());
+      }
+
+      if (shipId && !existingShip) {
         if (typeof Gamification !== 'undefined') {
           Gamification.addXP('launch_spaceship');
           Gamification.checkAchievements();
         }
-        // Add to State so BlueprintStore can find it, then activate
-        if (created?.id) {
-          const shipObj = {
-            id: created.id, name, category, description: desc, flavor, tags, type: 'spaceship',
-            rarity: 'Common', status: 'standby',
-            config: { slot_assignments: slots },
-            stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
-            metadata: { caps: [category + ' operations', cls.slots.length + ' agent slots'] },
-          };
-          const ships = State.get('spaceships') || [];
-          ships.push(shipObj);
-          State.set('spaceships', ships);
-          if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateShip(created.id);
-
-          // Show crew setup choice (AI Auto Setup vs Manual vs Skip)
-          _showSetupChoice(created.id, { name, category, description: desc, flavor, tags, slotCount: cls.slots.length, slots: row.slots });
-          return;
+        const shipObj = {
+          id: shipId, name, category, description: desc, flavor, tags, type: 'spaceship',
+          rarity: 'Common', status: 'standby', _guest: !user,
+          config: { slot_assignments: slots },
+          stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
+          metadata: { caps: [category + ' operations', cls.slots.length + ' agent slots'] },
+        };
+        const ships = State.get('spaceships') || [];
+        ships.push(shipObj);
+        State.set('spaceships', ships);
+        // Persist guest ships to localStorage
+        if (!user) {
+          const custom = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+          custom.push(shipObj);
+          localStorage.setItem('nice-custom-ships', JSON.stringify(custom));
         }
+        if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateShip(shipId);
+        _showSetupChoice(shipId, { name, category, description: desc, flavor, tags, slotCount: cls.slots.length, slots: row.slots });
+        return;
       }
       Router.navigate('#/bridge?tab=spaceship');
     } catch (err) {
