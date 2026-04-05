@@ -36,6 +36,12 @@ http.createServer((req, res) => {
     filePath = path.join(ROOT, 'app', 'index.html');
   }
 
+  // Community site fallback: /css/*, /js/*, /assets/* → community/*
+  if (!fs.existsSync(filePath)) {
+    const communityPath = path.join(ROOT, 'community', p);
+    if (fs.existsSync(communityPath)) filePath = communityPath;
+  }
+
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });

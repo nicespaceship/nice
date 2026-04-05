@@ -1,37 +1,178 @@
 <!DOCTYPE html>
-<html lang="en" data-mode="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blueprints — NICE SPACESHIP</title>
-  <meta name="description" content="Browse 800+ AI agent blueprints for every type of business. Restaurant, Real Estate, Marketing Agency, YouTube Creator, and more." />
+  <meta name="description" content="Browse 800+ AI agent and spaceship blueprints. Agents for marketing, sales, analytics, engineering, and every industry." />
+  <meta property="og:title" content="Blueprint Catalog — NICE SPACESHIP" />
+  <meta property="og:description" content="800+ pre-built AI agent blueprints. Find one for your business and deploy in minutes." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nicespaceship.com/blueprints" />
+  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.svg" />
+  <meta property="og:site_name" content="NICE SPACESHIP" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Blueprint Catalog — NICE SPACESHIP" />
+  <meta name="twitter:description" content="800+ pre-built AI agent blueprints. Deploy a team for your business in minutes." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://nicespaceship.com/blueprints" />
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="/css/community.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "NICE SPACESHIP Blueprint Catalog",
+    "description": "Browse 800+ AI agent blueprints for every type of business.",
+    "url": "https://nicespaceship.com/blueprints",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "NICE SPACESHIP",
+      "url": "https://nicespaceship.com"
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "NICE SPACESHIP",
+      "url": "https://nicespaceship.com"
+    }
+  }
+  </script>
+  <style>
+    .bp-hero { padding: 32px 0 0; }
+    .bp-hero h1 { margin-bottom: 4px; text-transform: none; }
+    .bp-toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .bp-tabs { display: flex; gap: 4px; }
+    .bp-tab {
+      padding: 6px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: transparent; color: var(--text-muted); font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; font-family: var(--font); transition: all 0.15s;
+    }
+    .bp-tab:hover { border-color: var(--border-hi); color: var(--text); }
+    .bp-tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .bp-filters-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .bp-rarity-filters { display: flex; gap: 4px; margin-left: auto; }
+    .bp-rarity-btn {
+      padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: transparent; font-size: 0.68rem; font-weight: 600; cursor: pointer;
+      font-family: var(--font); transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .bp-rarity-btn:hover { border-color: var(--border-hi); }
+    .bp-rarity-btn.active { background: rgba(165,180,252,0.08); border-color: var(--accent2); color: var(--accent2); }
+    .bp-rarity-btn[data-rarity="common"] { color: var(--text-muted); }
+    .bp-rarity-btn[data-rarity="rare"] { color: #60a5fa; }
+    .bp-rarity-btn[data-rarity="epic"] { color: #a78bfa; }
+    .bp-rarity-btn[data-rarity="legendary"] { color: #fbbf24; }
+    .bp-rarity-btn[data-rarity="mythic"] { color: #f87171; }
+    .bp-count { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 12px; }
+    .catalog-load-more-wrap { text-align: center; margin-top: 24px; }
+
+    /* Detail modal */
+    .bp-modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .bp-modal-overlay[hidden] { display: none; }
+    .bp-modal { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; max-width: 580px; width: 100%; max-height: 80vh; overflow-y: auto; position: relative; padding: 28px; }
+    .bp-modal-close { position: absolute; top: 10px; right: 14px; background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-family: var(--font); padding: 4px 8px; }
+    .bp-modal-close:hover { color: var(--text); }
+    .bp-detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+    .bp-detail-type { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 2px; }
+    .bp-detail-name { font-size: 1.3rem; margin: 0 0 2px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+    .bp-detail-category { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+    .bp-detail-divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .bp-detail-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.7; margin: 0 0 20px; }
+    .bp-detail-actions { display: flex; gap: 10px; }
+
+    /* Blueprint grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(51,51,51,0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(51,51,51,0.12) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      .bp-filters-row { flex-direction: column; align-items: flex-start; }
+      .bp-rarity-filters { margin-left: 0; flex-wrap: wrap; }
+      .bp-modal { padding: 20px; margin: 12px; }
+      .bp-detail-header { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .bp-tabs { flex-wrap: wrap; }
+      .bp-detail-actions { flex-direction: column; }
+      .bp-detail-actions .btn-primary,
+      .bp-detail-actions .btn-secondary { text-align: center; }
+    }
+  </style>
 </head>
 <body>
   <header id="site-header"></header>
-  <main>
-    <section class="section">
-      <div class="container">
-        <h1 style="text-align:center;margin-bottom:8px">Blueprint Catalog</h1>
-        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px">800+ pre-built AI workflow templates. Find one for your business and deploy in minutes.</p>
 
-        <div class="catalog-toolbar">
-          <input type="text" class="catalog-search" id="bp-search" placeholder="Search blueprints..." />
-          <button class="catalog-filter active" data-filter="all">All</button>
-          <button class="catalog-filter" data-filter="spaceship">Spaceships</button>
-          <button class="catalog-filter" data-filter="agent">Agents</button>
+  <main>
+    <section class="section bp-hero">
+      <div class="container">
+        <h1>Blueprints</h1>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="bp-toolbar">
+          <!-- Type tabs -->
+          <div class="bp-tabs" id="bp-tabs">
+            <button class="bp-tab active" data-type="spaceship"><i class="fa-solid fa-rocket"></i> Spaceships</button>
+            <button class="bp-tab" data-type="agent"><i class="fa-solid fa-robot"></i> Agents</button>
+          </div>
+
+          <!-- Search -->
+          <input type="text" class="catalog-search" id="bp-search" placeholder="Search by name, category, or description..." />
+
+          <!-- Category filters + rarity filters -->
+          <div class="bp-filters-row">
+            <div class="catalog-filters" id="bp-cat-filters">
+              <button class="catalog-filter active" data-cat="all">All</button>
+            </div>
+          </div>
+          <div class="bp-rarity-filters" id="bp-rarity-filters">
+            <button class="bp-rarity-btn active" data-rarity="all">All</button>
+            <button class="bp-rarity-btn" data-rarity="common">Common</button>
+            <button class="bp-rarity-btn" data-rarity="rare">Rare</button>
+            <button class="bp-rarity-btn" data-rarity="epic">Epic</button>
+            <button class="bp-rarity-btn" data-rarity="legendary">Legendary</button>
+            <button class="bp-rarity-btn" data-rarity="mythic">Mythic</button>
+          </div>
         </div>
 
+        <!-- Count -->
+        <div class="bp-count" id="bp-count"></div>
+
+        <!-- Grid -->
         <div class="catalog-grid" id="bp-grid">
           <div class="catalog-empty">Loading blueprints...</div>
         </div>
 
-        <button class="btn-secondary catalog-load-more" id="bp-load-more" style="display:none">Load More</button>
+        <!-- Load more -->
+        <div class="catalog-load-more-wrap" id="bp-load-wrap" style="display:none">
+          <button class="btn-secondary btn-sm" id="bp-load-btn">Load more</button>
+        </div>
       </div>
     </section>
   </main>
+
+  <!-- Detail Modal -->
+  <div class="bp-modal-overlay" id="bp-modal" hidden>
+    <div class="bp-modal">
+      <button class="bp-modal-close" id="bp-modal-close" aria-label="Close">&times;</button>
+      <div id="bp-modal-body"></div>
+    </div>
+  </div>
+
   <footer id="site-footer" class="footer"></footer>
 
   <script src="/js/supabase-lite.js"></script>
@@ -42,80 +183,191 @@
     Nav.render();
     Nav.renderFooter();
 
-    // Blueprint catalog
-    const grid = document.getElementById('bp-grid');
-    const search = document.getElementById('bp-search');
-    const loadMore = document.getElementById('bp-load-more');
-    let offset = 0;
-    let currentFilter = 'all';
-    let currentQuery = '';
+    const RARITY_COLORS = {
+      common:    { border: '#555',    text: '#888' },
+      rare:      { border: '#0078d4', text: '#60a5fa' },
+      epic:      { border: '#8b5cf6', text: '#a78bfa' },
+      legendary: { border: '#d97706', text: '#fbbf24' },
+      mythic:    { border: '#dc2626', text: '#f87171' },
+    };
 
-    async function loadBlueprints(append) {
-      if (!append) { offset = 0; grid.innerHTML = '<div class="catalog-empty">Loading...</div>'; }
-      const filters = [];
-      if (currentFilter !== 'all') filters.push(`type=eq.${currentFilter}`);
-      if (currentQuery) filters.push(`or=(name.ilike.*${currentQuery}*,description.ilike.*${currentQuery}*,category.ilike.*${currentQuery}*)`);
+    const BPCatalog = (() => {
+      let allData = [];
+      let currentType = 'spaceship';
+      let currentCat = 'all';
+      let currentRarity = 'all';
+      let searchTerm = '';
+      let page = 0;
+      const PAGE_SIZE = 48;
+      const RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
 
-      const rows = await SBLite.query('blueprints', {
-        select: 'id,name,description,category,rarity,type',
-        filters,
-        order: 'name.asc',
-        limit: 24,
-        offset,
-      });
+      function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-      if (!append) grid.innerHTML = '';
-      if (!rows.length && !append) {
-        grid.innerHTML = '<div class="catalog-empty">No blueprints found.</div>';
-        loadMore.style.display = 'none';
-        return;
+      async function init() {
+        allData = await SBLite.query('blueprints', {
+          select: 'id,name,type,category,rarity,description',
+          order: 'name.asc',
+          limit: 1000,
+        }) || [];
+
+        _buildCatFilters();
+        _bindEvents();
+        render();
       }
 
-      rows.forEach(bp => {
-        const card = document.createElement('a');
-        card.className = 'bp-card';
-        card.href = `https://nicespaceship.ai/#/bridge/${bp.type === 'spaceship' ? 'spaceships' : 'agents'}/${bp.id}`;
-        card.target = '_blank';
-        card.rel = 'noopener';
-        card.innerHTML = `
-          <div class="bp-card-header">
-            <div>
-              <h3>${esc(bp.name)}</h3>
-              <span class="bp-card-category">${esc(bp.category || '')}</span>
-            </div>
-          </div>
-          <p class="bp-card-desc">${esc(bp.description || 'No description.')}</p>
-          <div class="bp-card-footer">
-            <span class="bp-card-rarity ${(bp.rarity || 'common').toLowerCase()}">${esc(bp.rarity || 'Common')}</span>
-            <span class="bp-card-type">${bp.type === 'spaceship' ? 'Spaceship' : 'Agent'}</span>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
+      function _buildCatFilters() {
+        const cats = [...new Set(allData.filter(b => b.type === currentType).map(b => b.category).filter(Boolean))].sort();
+        const el = document.getElementById('bp-cat-filters');
+        el.querySelectorAll('.catalog-filter:not([data-cat="all"])').forEach(b => b.remove());
+        cats.forEach(cat => {
+          const btn = document.createElement('button');
+          btn.className = 'catalog-filter';
+          btn.dataset.cat = cat;
+          btn.textContent = cat;
+          el.appendChild(btn);
+        });
+      }
 
-      offset += rows.length;
-      loadMore.style.display = rows.length === 24 ? '' : 'none';
-    }
+      function _bindEvents() {
+        let debounce;
+        document.getElementById('bp-search').addEventListener('input', e => {
+          clearTimeout(debounce);
+          debounce = setTimeout(() => { searchTerm = e.target.value.toLowerCase().trim(); page = 0; render(); }, 200);
+        });
 
-    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        document.getElementById('bp-tabs').addEventListener('click', e => {
+          const tab = e.target.closest('.bp-tab');
+          if (!tab) return;
+          document.querySelectorAll('.bp-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentType = tab.dataset.type;
+          currentCat = 'all';
+          currentRarity = 'all';
+          page = 0;
+          _buildCatFilters();
+          document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
+          document.querySelector('[data-cat="all"]').classList.add('active');
+          document.querySelectorAll('.bp-rarity-btn').forEach(b => b.classList.remove('active'));
+          document.querySelector('[data-rarity="all"]').classList.add('active');
+          render();
+        });
 
-    // Events
-    let debounce;
-    search.addEventListener('input', () => {
-      clearTimeout(debounce);
-      debounce = setTimeout(() => { currentQuery = search.value.trim(); loadBlueprints(false); }, 300);
-    });
-    document.querySelectorAll('.catalog-filter').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        loadBlueprints(false);
-      });
-    });
-    loadMore.addEventListener('click', () => loadBlueprints(true));
+        document.getElementById('bp-cat-filters').addEventListener('click', e => {
+          const btn = e.target.closest('.catalog-filter');
+          if (!btn) return;
+          document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentCat = btn.dataset.cat;
+          page = 0;
+          render();
+        });
 
-    loadBlueprints(false);
+        document.getElementById('bp-rarity-filters').addEventListener('click', e => {
+          const btn = e.target.closest('.bp-rarity-btn');
+          if (!btn) return;
+          document.querySelectorAll('.bp-rarity-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentRarity = btn.dataset.rarity;
+          page = 0;
+          render();
+        });
+
+        document.getElementById('bp-load-btn').addEventListener('click', () => { page++; render(true); });
+
+        // Modal events
+        document.getElementById('bp-modal-close').addEventListener('click', _closeModal);
+        document.getElementById('bp-modal').addEventListener('click', e => { if (e.target === e.currentTarget) _closeModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('bp-modal').hidden) _closeModal(); });
+      }
+
+      function _closeModal() {
+        document.getElementById('bp-modal').hidden = true;
+        document.body.style.overflow = '';
+      }
+
+      function _openDetail(bp) {
+        const rarity = (bp.rarity || 'common').toLowerCase();
+        const rc = RARITY_COLORS[rarity] || RARITY_COLORS.common;
+        const appUrl = 'https://nicespaceship.ai/#/bridge/' + (bp.type === 'spaceship' ? 'spaceships' : 'agents') + '/' + bp.id;
+
+        document.getElementById('bp-modal-body').innerHTML =
+          '<div class="bp-detail-header">' +
+            '<div>' +
+              '<span class="bp-detail-type">' + (bp.type === 'spaceship' ? 'SPACESHIP' : 'AGENT') + '</span>' +
+              '<h2 class="bp-detail-name">' + _esc(bp.name) + '</h2>' +
+              '<span class="bp-detail-category">' + _esc(bp.category || '') + '</span>' +
+            '</div>' +
+            '<span class="bp-card-rarity" style="border-color:' + rc.border + ';color:' + rc.text + ';font-size:0.72rem;padding:4px 12px;border-radius:4px">' + _esc(bp.rarity || 'Common') + '</span>' +
+          '</div>' +
+          '<hr class="bp-detail-divider" />' +
+          '<p class="bp-detail-desc">' + _esc(bp.description || 'No description available.') + '</p>' +
+          '<div class="bp-detail-actions">' +
+            '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in NICE</a>' +
+            '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-secondary">View Details</a>' +
+          '</div>';
+
+        document.getElementById('bp-modal').hidden = false;
+        document.body.style.overflow = 'hidden';
+      }
+
+      function render(append) {
+        let filtered = allData.filter(b => {
+          if (b.type !== currentType) return false;
+          if (currentCat !== 'all' && b.category !== currentCat) return false;
+          if (currentRarity !== 'all' && (b.rarity || 'Common').toLowerCase() !== currentRarity) return false;
+          if (searchTerm && !b.name.toLowerCase().includes(searchTerm) && !(b.description || '').toLowerCase().includes(searchTerm) && !(b.category || '').toLowerCase().includes(searchTerm)) return false;
+          return true;
+        });
+
+        if (currentRarity === 'all' && currentCat === 'all' && !searchTerm) {
+          filtered.sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+          filtered.sort((a, b) => (RARITY_ORDER[b.rarity] || 0) - (RARITY_ORDER[a.rarity] || 0) || a.name.localeCompare(b.name));
+        }
+
+        const total = filtered.length;
+        const end = (page + 1) * PAGE_SIZE;
+        const slice = filtered.slice(0, end);
+
+        document.getElementById('bp-count').textContent = total + ' ' + currentType + (total !== 1 ? 's' : '');
+
+        const grid = document.getElementById('bp-grid');
+        if (!append) grid.innerHTML = '';
+
+        const startIdx = append ? page * PAGE_SIZE : 0;
+        const items = append ? filtered.slice(startIdx, startIdx + PAGE_SIZE) : slice;
+
+        if (total === 0 && !append) {
+          grid.innerHTML = '<div class="catalog-empty">No blueprints match your filters.</div>';
+        }
+
+        items.forEach(bp => {
+          const card = document.createElement('div');
+          card.className = 'bp-card';
+          card.setAttribute('role', 'button');
+          card.setAttribute('tabindex', '0');
+          card.innerHTML =
+            '<div class="bp-card-header">' +
+              '<h3>' + _esc(bp.name) + '</h3>' +
+              '<span class="bp-card-category">' + _esc(bp.category || '') + '</span>' +
+            '</div>' +
+            '<p class="bp-card-desc">' + _esc(bp.description || '') + '</p>' +
+            '<div class="bp-card-footer">' +
+              '<span class="bp-card-rarity ' + (bp.rarity || 'common').toLowerCase() + '">' + _esc(bp.rarity || 'Common') + '</span>' +
+              '<span class="bp-card-type">' + (bp.type === 'spaceship' ? 'Spaceship' : 'Agent') + '</span>' +
+            '</div>';
+          card.addEventListener('click', () => _openDetail(bp));
+          card.addEventListener('keydown', e => { if (e.key === 'Enter') _openDetail(bp); });
+          grid.appendChild(card);
+        });
+
+        document.getElementById('bp-load-wrap').style.display = end < total ? '' : 'none';
+      }
+
+      return { init };
+    })();
+
+    BPCatalog.init();
   </script>
 </body>
 </html>
