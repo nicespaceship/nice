@@ -5,45 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blueprints — NICE SPACESHIP</title>
   <meta name="description" content="Browse 800+ AI agent and spaceship blueprints. Agents for marketing, sales, analytics, engineering, and every industry." />
-  <meta property="og:title" content="Blueprint Catalog — NICE SPACESHIP" />
-  <meta property="og:description" content="800+ pre-built AI agent blueprints. Find one for your business and deploy in minutes." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://nicespaceship.com/blueprints" />
-  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.svg" />
-  <meta property="og:site_name" content="NICE SPACESHIP" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Blueprint Catalog — NICE SPACESHIP" />
-  <meta name="twitter:description" content="800+ pre-built AI agent blueprints. Deploy a team for your business in minutes." />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://nicespaceship.com/blueprints" />
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="/css/site.css" />
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "NICE SPACESHIP Blueprint Catalog",
-    "description": "Browse 800+ AI agent blueprints for every type of business.",
-    "url": "https://nicespaceship.com/blueprints",
-    "isPartOf": {
-      "@type": "WebSite",
-      "name": "NICE SPACESHIP",
-      "url": "https://nicespaceship.com"
-    },
-    "provider": {
-      "@type": "Organization",
-      "name": "NICE SPACESHIP",
-      "url": "https://nicespaceship.com"
-    }
-  }
-  </script>
   <style>
     .bp-hero { padding: 32px 0 0; }
-    .bp-hero h1 { margin-bottom: 4px; text-transform: none; }
+    .bp-hero h1 { margin-bottom: 4px; }
     .bp-toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
     .bp-tabs { display: flex; gap: 4px; }
     .bp-tab {
@@ -69,46 +39,6 @@
     .bp-rarity-btn[data-rarity="mythic"] { color: #f87171; }
     .bp-count { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 12px; }
     .catalog-load-more-wrap { text-align: center; margin-top: 24px; }
-
-    /* Detail modal */
-    .bp-modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .bp-modal-overlay[hidden] { display: none; }
-    .bp-modal { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; max-width: 580px; width: 100%; max-height: 80vh; overflow-y: auto; position: relative; padding: 28px; }
-    .bp-modal-close { position: absolute; top: 10px; right: 14px; background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-family: var(--font); padding: 4px 8px; }
-    .bp-modal-close:hover { color: var(--text); }
-    .bp-detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
-    .bp-detail-type { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 2px; }
-    .bp-detail-name { font-size: 1.3rem; margin: 0 0 2px; text-transform: none; letter-spacing: 0; font-weight: 600; }
-    .bp-detail-category { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
-    .bp-detail-divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
-    .bp-detail-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.7; margin: 0 0 20px; }
-    .bp-detail-actions { display: flex; gap: 10px; }
-
-    /* Blueprint grid background */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background-image:
-        linear-gradient(rgba(51,51,51,0.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(51,51,51,0.12) 1px, transparent 1px);
-      background-size: 60px 60px;
-      pointer-events: none;
-    }
-
-    @media (max-width: 768px) {
-      .bp-filters-row { flex-direction: column; align-items: flex-start; }
-      .bp-rarity-filters { margin-left: 0; flex-wrap: wrap; }
-      .bp-modal { padding: 20px; margin: 12px; }
-      .bp-detail-header { flex-direction: column; }
-    }
-    @media (max-width: 480px) {
-      .bp-tabs { flex-wrap: wrap; }
-      .bp-detail-actions { flex-direction: column; }
-      .bp-detail-actions .btn-primary,
-      .bp-detail-actions .btn-secondary { text-align: center; }
-    }
   </style>
 </head>
 <body>
@@ -138,14 +68,14 @@
             <div class="catalog-filters" id="bp-cat-filters">
               <button class="catalog-filter active" data-cat="all">All</button>
             </div>
-          </div>
-          <div class="bp-rarity-filters" id="bp-rarity-filters">
-            <button class="bp-rarity-btn active" data-rarity="all">All</button>
-            <button class="bp-rarity-btn" data-rarity="common">Common</button>
-            <button class="bp-rarity-btn" data-rarity="rare">Rare</button>
-            <button class="bp-rarity-btn" data-rarity="epic">Epic</button>
-            <button class="bp-rarity-btn" data-rarity="legendary">Legendary</button>
-            <button class="bp-rarity-btn" data-rarity="mythic">Mythic</button>
+            <div class="bp-rarity-filters" id="bp-rarity-filters">
+              <button class="bp-rarity-btn active" data-rarity="all">All</button>
+              <button class="bp-rarity-btn" data-rarity="common">Common</button>
+              <button class="bp-rarity-btn" data-rarity="rare">Rare</button>
+              <button class="bp-rarity-btn" data-rarity="epic">Epic</button>
+              <button class="bp-rarity-btn" data-rarity="legendary">Legendary</button>
+              <button class="bp-rarity-btn" data-rarity="mythic">Mythic</button>
+            </div>
           </div>
         </div>
 
@@ -165,14 +95,6 @@
     </section>
   </main>
 
-  <!-- Detail Modal -->
-  <div class="bp-modal-overlay" id="bp-modal" hidden>
-    <div class="bp-modal">
-      <button class="bp-modal-close" id="bp-modal-close" aria-label="Close">&times;</button>
-      <div id="bp-modal-body"></div>
-    </div>
-  </div>
-
   <footer id="site-footer" class="footer"></footer>
 
   <script src="/js/supabase-lite.js"></script>
@@ -182,14 +104,6 @@
     ThemeLite.init();
     Nav.render();
     Nav.renderFooter();
-
-    const RARITY_COLORS = {
-      common:    { border: '#555',    text: '#888' },
-      rare:      { border: '#0078d4', text: '#60a5fa' },
-      epic:      { border: '#8b5cf6', text: '#a78bfa' },
-      legendary: { border: '#d97706', text: '#fbbf24' },
-      mythic:    { border: '#dc2626', text: '#f87171' },
-    };
 
     const BPCatalog = (() => {
       let allData = [];
@@ -204,6 +118,7 @@
       function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
       async function init() {
+        // Fetch all
         allData = await SBLite.query('blueprints', {
           select: 'id,name,type,category,rarity,description',
           order: 'name.asc',
@@ -218,6 +133,7 @@
       function _buildCatFilters() {
         const cats = [...new Set(allData.filter(b => b.type === currentType).map(b => b.category).filter(Boolean))].sort();
         const el = document.getElementById('bp-cat-filters');
+        // keep "All" button, remove the rest
         el.querySelectorAll('.catalog-filter:not([data-cat="all"])').forEach(b => b.remove());
         cats.forEach(cat => {
           const btn = document.createElement('button');
@@ -229,12 +145,14 @@
       }
 
       function _bindEvents() {
+        // Search
         let debounce;
         document.getElementById('bp-search').addEventListener('input', e => {
           clearTimeout(debounce);
           debounce = setTimeout(() => { searchTerm = e.target.value.toLowerCase().trim(); page = 0; render(); }, 200);
         });
 
+        // Type tabs
         document.getElementById('bp-tabs').addEventListener('click', e => {
           const tab = e.target.closest('.bp-tab');
           if (!tab) return;
@@ -252,6 +170,7 @@
           render();
         });
 
+        // Category filters
         document.getElementById('bp-cat-filters').addEventListener('click', e => {
           const btn = e.target.closest('.catalog-filter');
           if (!btn) return;
@@ -262,6 +181,7 @@
           render();
         });
 
+        // Rarity filters
         document.getElementById('bp-rarity-filters').addEventListener('click', e => {
           const btn = e.target.closest('.bp-rarity-btn');
           if (!btn) return;
@@ -272,42 +192,8 @@
           render();
         });
 
+        // Load more
         document.getElementById('bp-load-btn').addEventListener('click', () => { page++; render(true); });
-
-        // Modal events
-        document.getElementById('bp-modal-close').addEventListener('click', _closeModal);
-        document.getElementById('bp-modal').addEventListener('click', e => { if (e.target === e.currentTarget) _closeModal(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('bp-modal').hidden) _closeModal(); });
-      }
-
-      function _closeModal() {
-        document.getElementById('bp-modal').hidden = true;
-        document.body.style.overflow = '';
-      }
-
-      function _openDetail(bp) {
-        const rarity = (bp.rarity || 'common').toLowerCase();
-        const rc = RARITY_COLORS[rarity] || RARITY_COLORS.common;
-        const appUrl = 'https://nicespaceship.ai/#/bridge/' + (bp.type === 'spaceship' ? 'spaceships' : 'agents') + '/' + bp.id;
-
-        document.getElementById('bp-modal-body').innerHTML =
-          '<div class="bp-detail-header">' +
-            '<div>' +
-              '<span class="bp-detail-type">' + (bp.type === 'spaceship' ? 'SPACESHIP' : 'AGENT') + '</span>' +
-              '<h2 class="bp-detail-name">' + _esc(bp.name) + '</h2>' +
-              '<span class="bp-detail-category">' + _esc(bp.category || '') + '</span>' +
-            '</div>' +
-            '<span class="bp-card-rarity" style="border-color:' + rc.border + ';color:' + rc.text + ';font-size:0.72rem;padding:4px 12px;border-radius:4px">' + _esc(bp.rarity || 'Common') + '</span>' +
-          '</div>' +
-          '<hr class="bp-detail-divider" />' +
-          '<p class="bp-detail-desc">' + _esc(bp.description || 'No description available.') + '</p>' +
-          '<div class="bp-detail-actions">' +
-            '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in NICE</a>' +
-            '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-secondary">View Details</a>' +
-          '</div>';
-
-        document.getElementById('bp-modal').hidden = false;
-        document.body.style.overflow = 'hidden';
       }
 
       function render(append) {
@@ -329,8 +215,10 @@
         const end = (page + 1) * PAGE_SIZE;
         const slice = filtered.slice(0, end);
 
+        // Count
         document.getElementById('bp-count').textContent = total + ' ' + currentType + (total !== 1 ? 's' : '');
 
+        // Grid
         const grid = document.getElementById('bp-grid');
         if (!append) grid.innerHTML = '';
 
@@ -342,10 +230,11 @@
         }
 
         items.forEach(bp => {
-          const card = document.createElement('div');
+          const card = document.createElement('a');
           card.className = 'bp-card';
-          card.setAttribute('role', 'button');
-          card.setAttribute('tabindex', '0');
+          card.href = 'https://nicespaceship.ai/#/bridge/' + (bp.type === 'spaceship' ? 'spaceships' : 'agents') + '/' + bp.id;
+          card.target = '_blank';
+          card.rel = 'noopener';
           card.innerHTML =
             '<div class="bp-card-header">' +
               '<h3>' + _esc(bp.name) + '</h3>' +
@@ -356,11 +245,10 @@
               '<span class="bp-card-rarity ' + (bp.rarity || 'common').toLowerCase() + '">' + _esc(bp.rarity || 'Common') + '</span>' +
               '<span class="bp-card-type">' + (bp.type === 'spaceship' ? 'Spaceship' : 'Agent') + '</span>' +
             '</div>';
-          card.addEventListener('click', () => _openDetail(bp));
-          card.addEventListener('keydown', e => { if (e.key === 'Enter') _openDetail(bp); });
           grid.appendChild(card);
         });
 
+        // Load more
         document.getElementById('bp-load-wrap').style.display = end < total ? '' : 'none';
       }
 

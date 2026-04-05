@@ -1,52 +1,67 @@
-/* NICE SPACESHIP — Live Stats Counter */
+/* NICE SPACESHIP — Live Stats Counter
+   Pulls blueprints + missions from Supabase, counts up on load */
 const Stats = (() => {
-  const CACHE_KEY = 'ns-site-stats';
-  const CACHE_TTL = 60000; // 1 minute
+  const CACHE_KEY = 'ns-community-stats';
+
+  // Static counts (update when new models/MCPs are added)
+  const LLMS = 17;   // 10 text + 4 image + 2 video + 1 voice
+  const MCPS = 12;   // Gmail, Calendar, Drive, HubSpot, Salesforce, Monday, Slack, Buffer, Analytics, Shopify, QuickBooks, Google Workspace
 
   function _animate(el, target) {
-    const start = parseInt(el.textContent.replace(/,/g, ''), 10) || 0;
-    const duration = 1200;
+    if (!el) return;
+    const suffix = target > 99 ? '+' : '';
+    const duration = 1800;
     const startTime = performance.now();
     function step(now) {
       const progress = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-      const current = Math.round(start + (target - start) * eased);
-      el.textContent = current.toLocaleString();
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(target * eased);
+      el.textContent = current.toLocaleString() + (progress >= 1 ? suffix : '');
       if (progress < 1) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
   }
 
-  async function load() {
-    // Show cached values instantly
-    try {
-      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-      if (cached.blueprints) _display(cached);
-    } catch {}
-
-    // Fetch fresh data
-    if (typeof SBLite === 'undefined') return;
-    const [blueprints, missions] = await Promise.all([
-      SBLite.count('blueprints', 'type=neq.special'),
-      SBLite.count('tasks', 'status=eq.completed'),
-    ]);
-
-    const data = { blueprints, missions, models: 10, providers: 6, ts: Date.now() };
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
-    _display(data);
+  function _display(data) {
+    _animate(document.getElementById('stat-blueprints'), data.blueprints);
+    _animate(document.getElementById('stat-llms'), data.llms);
+    _animate(document.getElementById('stat-mcps'), data.mcps);
+    _animate(document.getElementById('stat-missions'), data.missions);
   }
 
-  function _display(data) {
-    const els = {
-      'stat-blueprints': data.blueprints || 800,
-      'stat-missions': data.missions || 0,
-      'stat-models': data.models || 10,
-      'stat-providers': data.providers || 6,
-    };
-    Object.entries(els).forEach(([id, val]) => {
-      const el = document.getElementById(id);
-      if (el) _animate(el, val);
-    });
+  async function load() {
+    // Defaults
+    let blueprints = 800;
+    let missions = 0;
+
+    // Try live Supabase fetch
+    if (typeof SBLite !== 'undefined') {
+      try {
+        const [bp, ms] = await Promise.all([
+          SBLite.count('blueprints', 'type=neq.special'),
+          SBLite.count('tasks', 'status=eq.completed'),
+        ]);
+        if (bp > 0) blueprints = bp;
+        if (ms > 0) missions = ms;
+      } catch {}
+    }
+
+    const data = { blueprints, llms: LLMS, mcps: MCPS, missions };
+
+    // Cache
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+
+    // Animate on scroll into view (or immediately if already visible)
+    const bar = document.querySelector('.stats-bar');
+    if (!bar) { _display(data); return; }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        _display(data);
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+    observer.observe(bar);
   }
 
   return { load };
