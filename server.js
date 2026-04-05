@@ -36,12 +36,12 @@ http.createServer((req, res) => {
     filePath = path.join(ROOT, 'app', 'index.html');
   }
 
-  // Community site fallback: resolve from community/ directory
+  // Website fallback: resolve from www/ directory
   if (!fs.existsSync(filePath)) {
-    const cp = path.join(ROOT, 'community', p);
-    if (fs.existsSync(cp)) filePath = cp;
-    else if (fs.existsSync(cp + '.html')) filePath = cp + '.html';
-    else if (fs.existsSync(path.join(cp, 'index.html'))) filePath = path.join(cp, 'index.html');
+    const wp = path.join(ROOT, 'www', p);
+    if (fs.existsSync(wp)) filePath = wp;
+    else if (fs.existsSync(wp + '.html')) filePath = wp + '.html';
+    else if (fs.existsSync(path.join(wp, 'index.html'))) filePath = path.join(wp, 'index.html');
   }
 
   fs.readFile(filePath, (err, data) => {

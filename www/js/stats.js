@@ -1,6 +1,6 @@
 /* NICE SPACESHIP — Live Stats Counter */
 const Stats = (() => {
-  const CACHE_KEY = 'ns-community-stats';
+  const CACHE_KEY = 'ns-site-stats';
   const CACHE_TTL = 60000; // 1 minute
 
   function _animate(el, target) {
