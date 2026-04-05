@@ -36,10 +36,12 @@ http.createServer((req, res) => {
     filePath = path.join(ROOT, 'app', 'index.html');
   }
 
-  // Community site fallback: /css/*, /js/*, /assets/* → community/*
+  // Community site fallback: resolve from community/ directory
   if (!fs.existsSync(filePath)) {
-    const communityPath = path.join(ROOT, 'community', p);
-    if (fs.existsSync(communityPath)) filePath = communityPath;
+    const cp = path.join(ROOT, 'community', p);
+    if (fs.existsSync(cp)) filePath = cp;
+    else if (fs.existsSync(cp + '.html')) filePath = cp + '.html';
+    else if (fs.existsSync(path.join(cp, 'index.html'))) filePath = path.join(cp, 'index.html');
   }
 
   fs.readFile(filePath, (err, data) => {
