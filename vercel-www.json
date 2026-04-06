@@ -6,14 +6,15 @@
   "rewrites": [
     { "source": "/", "destination": "/www/index.html" },
     { "source": "/blueprints", "destination": "/www/blueprints.html" },
-    { "source": "/pricing", "destination": "/www/pricing.html" },
     { "source": "/academy", "destination": "/www/academy.html" },
     { "source": "/about", "destination": "/www/about.html" },
+    { "source": "/benduffey", "destination": "/www/benduffey.html" },
     { "source": "/privacy", "destination": "/www/privacy.html" },
     { "source": "/terms", "destination": "/www/terms.html" },
     { "source": "/accessibility", "destination": "/www/accessibility.html" }
   ],
   "redirects": [
+    { "source": "/pricing", "destination": "/about#pricing", "statusCode": 301 },
     { "source": "/app", "destination": "https://nicespaceship.ai", "statusCode": 301 },
     { "source": "/app/:path*", "destination": "https://nicespaceship.ai/:path*", "statusCode": 301 },
     { "source": "/community", "destination": "https://reddit.com/r/nicespaceship", "statusCode": 302 }
