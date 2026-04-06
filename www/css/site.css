@@ -277,7 +277,7 @@ p { margin-bottom: 0.75rem; font-size: 0.92rem; line-height: 1.65; color: var(--
 }
 .stat-num {
   font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 600;
-  color: var(--text); display: block; letter-spacing: -0.03em; line-height: 1.1;
+  color: var(--accent2); display: block; letter-spacing: -0.03em; line-height: 1.1;
 }
 .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; display: block; }
 
@@ -789,5 +789,5 @@ p { margin-bottom: 0.75rem; font-size: 0.92rem; line-height: 1.65; color: var(--
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 4px; }
   .pricing-grid { grid-template-columns: 1fr; }
-  .stats-bar { grid-template-columns: 1fr; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
 }
