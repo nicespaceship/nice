@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About — NICE SPACESHIP</title>
+  <meta name="description" content="NICE SPACESHIP builds the operating system for AI agents. 800+ blueprints, 17 AI models, zero coding." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+  <link rel="stylesheet" href="/css/tcg-card.css" />
+  <style>
+    .bp-example-grid {
+      display: grid; grid-template-columns: 60fr 40fr; gap: 60px; align-items: center; margin: 48px 0;
+    }
+    .bp-example-grid.reverse { grid-template-columns: 40fr 60fr; }
+    .bp-example-card { max-width: 280px; margin: 0 auto; }
+    .bp-example-card .tcg-card { margin: 0; pointer-events: none; cursor: default; }
+    .bp-example-grid h3 { margin-bottom: 12px; }
+    .bp-example-grid p { color: var(--text-muted); }
+    @media (max-width: 768px) {
+      .bp-example-grid, .bp-example-grid.reverse { grid-template-columns: 1fr; gap: 32px; }
+      .bp-example-card { order: -1; }
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main>
+    <!-- Hero -->
+    <section class="about-hero" style="text-align:center;background:radial-gradient(ellipse 60% 50% at 50% 80%, rgba(165,180,252,0.08) 0%, transparent 70%)">
+      <div class="container">
+        <h1 style="text-transform:none;background:linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Neural Intelligence Command Engine</h1>
+        <p style="color:var(--text-muted);font-size:1.1rem;max-width:600px;margin:12px auto 0">The operating system for AI agents.</p>
+      </div>
+    </section>
+
+    <!-- Mission & Approach -->
+    <section class="section" style="background:radial-gradient(ellipse 80% 40% at 0% 50%, rgba(165,180,252,0.04) 0%, transparent 60%)">
+      <div class="container">
+        <div class="about-grid">
+          <div class="about-section">
+            <h2>The Mission</h2>
+            <p>AI is the most powerful technology since the internet, but most people can't use it beyond asking a chatbot questions.</p>
+            <p>NICE SPACESHIP is changing that. We're building a platform where anyone — business owners, teachers, parents, creators — can deploy AI agent workflows without coding, without API keys, and without a computer science degree.</p>
+            <p>The blueprint system turns complex AI orchestration into something as simple as browsing an app store: find what you need, activate it, and let the agents work.</p>
+          </div>
+          <div class="about-section">
+            <h2>The Approach</h2>
+            <p><strong>Open Source.</strong> The entire platform is MIT licensed. See the code, contribute blueprints, self-host if you want. Transparency builds trust.</p>
+            <p><strong>Multi-LLM.</strong> We're not locked to one AI provider. NICE connects to Claude, Gemini, GPT-5, Mistral, DeepSeek, and Grok — routing each task to the best model automatically.</p>
+            <p><strong>Enterprise-First.</strong> We launch focused on small businesses because they have the clearest ROI: replace $1,300/month in tools with $19.99/month. Then we expand to serve everyone.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Blueprint System -->
+    <section class="section section-alt">
+      <div class="container">
+        <h2 style="text-align:center;margin-bottom:8px">The Blueprint System</h2>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:16px;max-width:560px;margin-left:auto;margin-right:auto">Every workflow starts with a blueprint. Browse the catalog, activate, and deploy.</p>
+
+        <!-- Spaceships -->
+        <div class="bp-example-grid">
+          <div>
+            <h3>Spaceships</h3>
+            <p>A Spaceship is your top-level orchestrator. It represents a complete business workflow — a restaurant, a marketing agency, a law firm. When you deploy a Spaceship, it automatically creates a crew of AI agents configured for that specific operation.</p>
+            <p>Each Spaceship has a crew capacity determined by its class. A Scout holds 1-2 agents. A Flagship holds 11+. As you earn XP and rank up, you unlock higher-class ships with more slots and rarer blueprints.</p>
+            <h3 style="margin-top:24px">Rarity & Progression</h3>
+            <p>Blueprints come in five rarities: Common, Rare, Epic, Legendary, and Mythic. Higher rarities unlock as you rank up from Ensign to Fleet Admiral. Mythic blueprints can never be purchased — they must be earned through milestones.</p>
+          </div>
+          <div class="bp-example-card" id="ship-card"></div>
+        </div>
+
+        <!-- Agents -->
+        <div class="bp-example-grid reverse">
+          <div class="bp-example-card" id="agent-card"></div>
+          <div>
+            <h3>Agents</h3>
+            <p>Agents are the workers. Each one has a role (analytics, content, marketing, support), a set of tools, and a system prompt that defines its behavior. Agents execute real tasks — drafting emails, analyzing data, scheduling posts, generating reports.</p>
+            <p>Every agent is powered by an AI model. NICE routes each task to the best available model automatically. Free users get Gemini Flash. Pro users unlock Claude, GPT-5, and 10+ models across text, image, video, and voice.</p>
+            <h3 style="margin-top:24px">How They Work Together</h3>
+            <p>You browse the catalog, pick a Spaceship blueprint, and activate it. The Spaceship deploys with a pre-configured crew. You can swap agents in and out of slots, connect integrations (Gmail, Calendar, Drive), and run missions — real tasks your agents execute.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+      <div class="container">
+        <h2 id="pricing" style="text-align:center;margin-bottom:8px;background:linear-gradient(90deg, var(--text), var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Pricing</h2>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:0">Free to start. Pay only when you need premium AI models.</p>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3>Free</h3>
+            <div class="pricing-price">$0</div>
+            <div class="pricing-period">forever</div>
+            <ul class="pricing-features">
+              <li>Deploy 1 Spaceship</li>
+              <li>6 agent slots</li>
+              <li>Common blueprints</li>
+              <li>Gemini Flash (unlimited)</li>
+              <li>100K free tokens</li>
+              <li>Basic workflows</li>
+            </ul>
+            <a href="https://nicespaceship.ai" class="btn-secondary" style="width:100%;text-align:center">Get Started Free</a>
+          </div>
+          <div class="pricing-card featured">
+            <h3>Pro</h3>
+            <div class="pricing-price">$19.99</div>
+            <div class="pricing-period">per month</div>
+            <ul class="pricing-features">
+              <li>Deploy 5 Spaceships</li>
+              <li>12 agent slots (60 total)</li>
+              <li>All blueprints (including Legendary)</li>
+              <li>All 17 AI models</li>
+              <li>Priority execution</li>
+              <li>Full integrations (Gmail, Calendar, Drive)</li>
+            </ul>
+            <a href="https://nicespaceship.ai/#/security?tab=wallet" class="btn-primary" style="width:100%;text-align:center">Choose Pro</a>
+          </div>
+          <div class="pricing-card">
+            <h3>Enterprise</h3>
+            <div class="pricing-price">$99.99</div>
+            <div class="pricing-period">per month</div>
+            <ul class="pricing-features">
+              <li>Unlimited agent slots</li>
+              <li>Team collaboration</li>
+              <li>Custom blueprints</li>
+              <li>Dedicated support</li>
+              <li>Priority infrastructure</li>
+              <li>Admin dashboard</li>
+            </ul>
+            <a href="mailto:ben@nicespaceship.com" class="btn-secondary" style="width:100%;text-align:center">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Token Packages -->
+    <section class="section section-alt">
+      <div class="container">
+        <h2 style="text-align:center;margin-bottom:8px">Token Packages</h2>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px">Tokens power premium AI models (Claude, GPT-5, Gemini Pro). Free Gemini Flash never costs tokens.</p>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3>Starter</h3>
+            <div class="pricing-price">$4.99</div>
+            <div class="pricing-period">500K tokens</div>
+            <p style="color:var(--text-muted);font-size:0.85rem">~250 premium requests</p>
+            <a href="https://buy.stripe.com/aFa5kC7d63FudUF37q33W03" target="_blank" rel="noopener" class="btn-secondary" style="width:100%;text-align:center;margin-top:16px">Buy Starter</a>
+          </div>
+          <div class="pricing-card featured">
+            <h3>Pro</h3>
+            <div class="pricing-price">$19.99</div>
+            <div class="pricing-period">5M tokens</div>
+            <p style="color:var(--text-muted);font-size:0.85rem">~2,500 premium requests</p>
+            <a href="https://buy.stripe.com/9B628qbtmek8aIt37q33W04" target="_blank" rel="noopener" class="btn-primary" style="width:100%;text-align:center;margin-top:16px">Buy Pro</a>
+          </div>
+          <div class="pricing-card">
+            <h3>Enterprise</h3>
+            <div class="pricing-price">$69.99</div>
+            <div class="pricing-period">25M tokens</div>
+            <p style="color:var(--text-muted);font-size:0.85rem">~12,500 premium requests</p>
+            <a href="https://buy.stripe.com/14AaEW40Uek84k57nG33W05" target="_blank" rel="noopener" class="btn-secondary" style="width:100%;text-align:center;margin-top:16px">Buy Enterprise</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Open Source -->
+    <section class="section" style="text-align:center;background:radial-gradient(ellipse 50% 60% at 50% 50%, rgba(165,180,252,0.06) 0%, transparent 70%)">
+      <div class="container">
+        <h2>Open Source</h2>
+        <p style="color:var(--text-muted);margin:12px auto 24px;white-space:nowrap">NICE is MIT licensed. 73 modules, 343 tests, full CI/CD. The entire codebase is public.</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <a href="https://nicespaceship.ai" class="btn-primary">Launch NICE</a>
+          <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener" class="btn-secondary">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/supabase-lite.js"></script>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script src="/app/js/lib/utils.js"></script>
+  <script src="/app/js/lib/blueprint-utils.js"></script>
+  <script src="/app/js/lib/card-renderer.js"></script>
+  <script>
+    ThemeLite.init();
+    Nav.render();
+    Nav.renderFooter();
+
+    // Render example blueprint cards
+    (async () => {
+      if (typeof SBLite === 'undefined' || typeof CardRenderer === 'undefined') return;
+
+      // Fetch one spaceship and one agent
+      const sel = 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags';
+      const [allShips, allAgents] = await Promise.all([
+        SBLite.query('blueprints', { select: sel, filters: ['type=eq.spaceship'], limit: 200 }),
+        SBLite.query('blueprints', { select: sel, filters: ['type=eq.agent'], limit: 200 }),
+      ]);
+      const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+      const ships = allShips.length ? [pick(allShips)] : [];
+      const agents = allAgents.length ? [pick(allAgents)] : [];
+
+      const shipEl = document.getElementById('ship-card');
+      const agentEl = document.getElementById('agent-card');
+
+      if (ships.length && shipEl) {
+        const sbp = ships[0];
+        if (!sbp.caps) {
+          const crew = parseInt(sbp.stats?.crew || 6, 10);
+          sbp.caps = [];
+          for (let i = 0; i < Math.min(crew, 4); i++) sbp.caps.push('Agent Slot ' + (i + 1));
+        }
+        shipEl.innerHTML = CardRenderer.render('spaceship', 'full', sbp, {});
+      }
+      if (agents.length && agentEl) {
+        const bp = agents[0];
+        if (!bp.caps && bp.config?.tools) bp.caps = bp.config.tools.map(t => typeof t === 'string' ? t : t.name || '');
+        agentEl.innerHTML = CardRenderer.render('agent', 'full', bp, {});
+      }
+    })();
+  </script>
+</body>
+</html>

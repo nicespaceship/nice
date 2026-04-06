@@ -1,7 +1,7 @@
 /* NICE SPACESHIP — Supabase Lite (read-only) */
 const SBLite = (() => {
   const URL = 'https://zacllshbgmnwsmliteqx.supabase.co';
-  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphY2xsc2hiZ21ud3NtbGl0ZXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMTg2ODQsImV4cCI6MjA1ODY5NDY4NH0.JARB32YmVPeHxNYorJKHXGAXlMNb5vciNJFWHyP3pBA';
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphY2xsc2hiZ21ud3NtbGl0ZXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTAwOTcsImV4cCI6MjA4OTg2NjA5N30.JzkhFbUMUVByEz1m6j2R4D8bXWMhPO2F0YxIqxYGq28';
 
   async function query(table, { select = '*', filters = [], order, limit, offset } = {}) {
     let url = `${URL}/rest/v1/${table}?select=${encodeURIComponent(select)}`;

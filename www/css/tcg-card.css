@@ -1,0 +1,126 @@
+/* TCG Card styles extracted from NICE app theme.css */
+/* Variable fallbacks for website context */
+:root {
+  --panel-bg: var(--bg, #09090b);
+  --surface: rgba(255,255,255,0.03);
+  --border-hi: #555;
+  --font-h: var(--font, 'Inter', sans-serif);
+  --font-m: var(--font, 'Fira Code', monospace);
+  --font-b: var(--font, 'Inter', sans-serif);
+}
+@keyframes tcg-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.tcg-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; }
+.tcg-card { position:relative; display:flex; flex-direction:column; border:15px solid var(--border); border-radius:25px; background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; margin:50px 0; padding:0; aspect-ratio:5/7; }
+.tcg-card:hover { transform:translateY(-3px); z-index:5; border-color:var(--border-hi); }
+.tcg-card[data-rarity="common"]    { border-color:var(--border); }
+.tcg-card[data-rarity="rare"]      { border-color:#6366f1; box-shadow:0 0 8px rgba(99,102,241,.15); }
+.tcg-card[data-rarity="epic"]      { border-color:#a855f7; box-shadow:0 0 12px rgba(168,85,247,.15); }
+.tcg-card[data-rarity="legendary"] { border-color:#f59e0b; box-shadow:0 0 16px rgba(245,158,11,.2); }
+.tcg-card[data-rarity="mythic"]    { animation: mythic-rgb-border 6s linear infinite; }
+@keyframes mythic-rgb-border {
+  0%   { border-color:#ff2d55; box-shadow:0 0 12px #ff2d5560, 0 0 24px #ff2d5530; }
+  16%  { border-color:#ff6b2d; box-shadow:0 0 12px #ff6b2d60, 0 0 24px #ff6b2d30; }
+  33%  { border-color:#ffd32d; box-shadow:0 0 12px #ffd32d60, 0 0 24px #ffd32d30; }
+  50%  { border-color:#2dff6b; box-shadow:0 0 12px #2dff6b60, 0 0 24px #2dff6b30; }
+  66%  { border-color:#2d9fff; box-shadow:0 0 12px #2d9fff60, 0 0 24px #2d9fff30; }
+  83%  { border-color:#a82dff; box-shadow:0 0 12px #a82dff60, 0 0 24px #a82dff30; }
+  100% { border-color:#ff2d55; box-shadow:0 0 12px #ff2d5560, 0 0 24px #ff2d5530; }
+}
+.mythic-badge-animated {
+  animation: mythic-badge-glow 6s linear infinite;
+  border:1px solid #ff2d55;
+}
+@keyframes mythic-badge-glow {
+  0%   { color:#ff2d55; border-color:#ff2d55; text-shadow:0 0 6px #ff2d5540; }
+  16%  { color:#ff6b2d; border-color:#ff6b2d; text-shadow:0 0 6px #ff6b2d40; }
+  33%  { color:#ffd32d; border-color:#ffd32d; text-shadow:0 0 6px #ffd32d40; }
+  50%  { color:#2dff6b; border-color:#2dff6b; text-shadow:0 0 6px #2dff6b40; }
+  66%  { color:#2d9fff; border-color:#2d9fff; text-shadow:0 0 6px #2d9fff40; }
+  83%  { color:#a82dff; border-color:#a82dff; text-shadow:0 0 6px #a82dff40; }
+  100% { color:#ff2d55; border-color:#ff2d55; text-shadow:0 0 6px #ff2d5540; }
+}
+.tcg-card[data-class="class-1"] { border-color:#94a3b8; }
+.tcg-card[data-class="class-2"] { border-color:#22c55e; }
+.tcg-card[data-class="class-3"] { }
+.tcg-card[data-class="class-4"] { }
+.tcg-card[data-class="class-5"] { }
+.tcg-name-bar { padding:10px 14px; display:flex; align-items:center; justify-content:flex-start; background:var(--surface); border-bottom:1px solid var(--border); gap:6px; border-radius:3px 3px 0 0; }
+.tcg-name  { font-family:var(--font-h); font-size:1.1rem; font-weight:700; letter-spacing:.04em; color:var(--text); line-height:1.2; text-align:left; }
+.tcg-subtitle { margin-left:auto; font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
+.tcg-name[contenteditable="true"] { cursor:text; outline:none; border-bottom:1px dashed var(--accent); min-width:40px; }
+.tcg-name[contenteditable="true"]:focus { border-bottom:1px solid var(--accent); background:rgba(var(--accent-rgb, 59,130,246),.08); }
+.tcg-rarity{ font-size:0.56rem; font-family:var(--font-m); color:var(--accent); letter-spacing:.12em; white-space:nowrap; flex-shrink:0; }
+.tcg-art { flex:1 1 40%; min-height:0; background:var(--bg); border-bottom:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
+.tcg-art svg { width:100%; height:100%; display:block; }
+.tcg-art-serial { position:absolute; bottom:4px; left:4px; z-index:6; pointer-events:none; }
+.tcg-art-role { position:absolute; top:4px; left:4px; z-index:6; pointer-events:none; }
+.tcg-art-role .tcg-serial-code { font-size:.46rem; letter-spacing:.06em; color:var(--accent2, var(--accent)); }
+.tcg-art-role .tcg-serial-code[contenteditable="true"] { pointer-events:auto; cursor:text; }
+.tcg-art-role .tcg-serial-code[contenteditable="true"]:focus { outline:none; border-bottom:1px solid var(--accent); }
+.tcg-art-class { position:absolute; top:4px; right:12px; z-index:6; pointer-events:none; }
+.tcg-art-bottom-right { position:absolute; bottom:4px; right:12px; z-index:6; pointer-events:none; }
+.tcg-type-line { padding:5px 12px; font-size:0.56rem; font-family:var(--font-m); letter-spacing:.1em; color:var(--text-muted); border-bottom:1px solid var(--border); background:var(--surface); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tcg-marquee { overflow:hidden; white-space:nowrap; background:#0a0e14; border-top:1px solid rgba(59,130,246,.15); border-bottom:1px solid rgba(59,130,246,.15); padding:4px 0; position:relative; }
+.tcg-marquee::before, .tcg-marquee::after { content:''; position:absolute; top:0; bottom:0; width:18px; z-index:1; pointer-events:none; }
+.tcg-marquee::before { left:0; background:var(--panel-bg, #0a0e14); }
+.tcg-marquee::after  { right:0; background:var(--panel-bg, #0a0e14); }
+.tcg-marquee-track { display:inline-flex; animation:tcg-scroll 18s linear infinite; }
+.tcg-marquee-track span { font-family:var(--font-m); font-size:.52rem; letter-spacing:.08em; color:#3b82f6; padding:0 24px; }
+.tcg-text-box { flex:1 1 0px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; overflow-y:auto; overflow-x:hidden; min-height:75px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.tcg-text-box::-webkit-scrollbar { width:4px; }
+.tcg-text-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.tcg-text-box::-webkit-scrollbar-track { background:transparent; }
+.tcg-flavor { font-size:0.65rem; font-style:italic; color:var(--text-muted); border-left:2px solid var(--accent); padding-left:6px; margin-bottom:2px; line-height:1.4; }
+.tcg-cap { font-size:0.6rem; color:var(--text-muted); display:flex; align-items:flex-start; gap:5px; line-height:1.4; }
+.tcg-cap::before { content:"◆"; color:var(--accent); font-size:.4rem; flex-shrink:0; margin-top:3px; }
+.tcg-stats { padding:6px 10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(0,1fr)); border-top:1px solid var(--border); background:var(--surface); flex-shrink:0; margin-top:auto; }
+.tcg-stat { text-align:center; }
+.tcg-stat-val { font-family:var(--font-h); font-size:.7rem; color:var(--accent); display:block; line-height:1.3; font-weight:700; }
+.tcg-stat-lbl { font-family:var(--font-m); font-size:.4rem; color:var(--text-muted); letter-spacing:.08em; }
+.tcg-footer { padding:5px 12px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border); font-family:var(--font-m); font-size:.44rem; color:var(--text-muted); background:var(--surface); flex-shrink:0; }
+.tcg-serial-code { font-family:var(--font-m); font-size:.42rem; letter-spacing:.12em; color:var(--text-muted); background:rgba(0,0,0,.55); padding:1px 5px; border-radius:2px; backdrop-filter:blur(4px); }
+.tcg-actions { padding:8px 4px; display:flex; gap:6px; border-top:none; background:transparent; margin:0 -15px -15px; border-radius:0 0 10px 10px; }
+.tcg-actions .c-btn { font-size:0.62rem; padding:5px 10px; flex:1; justify-content:center; }
+.tcg-tier-group { display:inline-flex; align-items:center; gap:4px; }
+.tcg-tier-logo { display:inline-flex; align-items:center; line-height:1; }
+.tcg-tier-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 6px; border:1px solid; border-radius:2px; letter-spacing:.12em; vertical-align:middle; }
+.tcg-overlay { padding:4px 14px; font-size:.7rem; color:var(--text-muted); }
+.tcg-card.assigned { opacity:.45; pointer-events:none; }
+.tcg-card-compact { display:flex; align-items:stretch; border:2px solid var(--border); border-radius:var(--card-radius, 0px); background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; min-height:110px; }
+.tcg-card-compact:hover { transform:translateY(-2px); z-index:5; border-color:var(--border-hi); }
+.tcg-card-compact[data-rarity="rare"]      { border-color:#6366f1; }
+.tcg-card-compact[data-rarity="epic"]      { border-color:#a855f7; }
+.tcg-card-compact[data-rarity="legendary"] { border-color:#f59e0b; }
+.tcg-card-compact[data-rarity="mythic"]    { border-color:#ff2d55; }
+.tcg-card-compact[data-class="class-1"]    { border-color:#94a3b8; }
+.tcg-card-compact[data-class="class-2"]    { border-color:#22c55e; }
+.tcg-card-compact[data-class="class-3"]    { }
+.tcg-card-compact[data-class="class-4"]    { }
+.tcg-card-compact[data-class="class-5"]    { }
+.tcg-compact-art { flex:0 0 90px; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.tcg-compact-art svg { width:100%; height:100%; display:block; }
+.tcg-compact-body { flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:4px; min-width:0; justify-content:center; }
+.tcg-compact-header { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.tcg-compact-name { font-family:var(--font-h); font-size:.78rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+.tcg-compact-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 5px; border:1px solid; border-radius:2px; letter-spacing:.1em; white-space:nowrap; }
+.tcg-compact-meta { display:flex; flex-wrap:wrap; gap:4px; }
+.tcg-compact-meta .agent-tag { font-size:.6rem; }
+.tcg-compact-tools { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
+.tcg-compact-stats { display:flex; gap:10px; margin-top:4px; }
+.tcg-compact-stat { font-family:var(--font-m); font-size:.52rem; color:var(--text-muted); letter-spacing:.05em; }
+.tcg-compact-stat b { color:var(--accent); font-weight:600; }
+.tcg-compact-actions { flex:0 0 auto; display:flex; flex-direction:column; gap:4px; padding:10px 8px; border-left:1px solid var(--border); align-items:center; justify-content:center; }
+.tcg-card-mini { display:flex; flex-direction:column; align-items:center; justify-content:center; width:90px; aspect-ratio:5/7; border:4px solid var(--border); border-radius:10px; background:var(--panel-bg); cursor:pointer; overflow:hidden; transition:transform .2s, border-color .2s, box-shadow .2s; padding:6px; gap:4px; text-align:center; }
+.tcg-card-mini:hover { transform:translateY(-2px); z-index:5; }
+.tcg-card-mini.assigned { opacity:.45; pointer-events:none; }
+.tcg-card-mini[data-rarity="Rare"]      { border-color:#6366f1; }
+.tcg-card-mini[data-rarity="Epic"]      { }
+.tcg-card-mini[data-rarity="Legendary"] { }
+.tcg-mini-name { font-family:var(--font-h); font-size:.52rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px; line-height:1.2; }
+.tcg-mini-art { width:44px; height:44px; border-radius:0; overflow:hidden; background:var(--bg); display:flex; align-items:center; justify-content:center; }
+.tcg-mini-art svg { width:100%; height:100%; }
+.tcg-mini-badge { font-family:var(--font-m); font-size:.38rem; padding:1px 4px; border-radius:2px; color:#fff; letter-spacing:.08em; line-height:1.2; }
+.tcg-grid-featured { display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); }

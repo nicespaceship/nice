@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blueprints — NICE SPACESHIP</title>
+  <meta name="description" content="Browse 800+ AI agent and spaceship blueprints. Agents for marketing, sales, analytics, engineering, and every industry." />
+  <meta property="og:title" content="Blueprint Catalog — NICE SPACESHIP" />
+  <meta property="og:description" content="800+ pre-built AI agent blueprints. Find one for your business and deploy in minutes." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nicespaceship.com/blueprints" />
+  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.svg" />
+  <meta property="og:site_name" content="NICE SPACESHIP" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Blueprint Catalog — NICE SPACESHIP" />
+  <meta name="twitter:description" content="800+ pre-built AI agent blueprints. Deploy a team for your business in minutes." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://nicespaceship.com/blueprints" />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+  <link rel="stylesheet" href="/css/tcg-card.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "NICE SPACESHIP Blueprint Catalog",
+    "description": "Browse 800+ AI agent blueprints for every type of business.",
+    "url": "https://nicespaceship.com/blueprints",
+    "isPartOf": { "@type": "WebSite", "name": "NICE SPACESHIP", "url": "https://nicespaceship.com" },
+    "provider": { "@type": "Organization", "name": "NICE SPACESHIP", "url": "https://nicespaceship.com" }
+  }
+  </script>
+  <style>
+    .bp-hero { padding: 40px 0 0; border-top: none; }
+    .bp-hero h1 { margin-bottom: 24px; text-transform: none; }
+    .bp-toolbar { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+    .bp-tabs { display: flex; gap: 8px; }
+    .bp-tab {
+      padding: 6px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: transparent; color: var(--text-muted); font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; font-family: var(--font); transition: all 0.15s;
+    }
+    .bp-tab:hover { border-color: var(--border-hi); color: var(--text); }
+    .bp-tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .bp-filters-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .bp-rarity-filters { display: flex; gap: 8px; margin-left: auto; }
+    .bp-rarity-btn {
+      padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: transparent; font-size: 0.68rem; font-weight: 600; cursor: pointer;
+      font-family: var(--font); transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .bp-rarity-btn:hover { border-color: var(--border-hi); }
+    .bp-rarity-btn.active { background: rgba(165,180,252,0.08); border-color: var(--accent2); color: var(--accent2); }
+    .bp-rarity-btn[data-rarity="all"] { color: var(--text); }
+    .bp-rarity-btn[data-rarity="common"] { color: var(--text); }
+    .bp-rarity-btn[data-rarity="rare"] { color: #60a5fa; }
+    .bp-rarity-btn[data-rarity="epic"] { color: #a78bfa; }
+    .bp-rarity-btn[data-rarity="legendary"] { color: #fbbf24; }
+    .bp-rarity-btn[data-rarity="mythic"] { color: #f87171; }
+    .bp-count { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 12px; }
+
+    /* View toggle */
+    .bp-view-toggle { display:flex; gap:2px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:2px; margin-left:auto; }
+    .bp-view-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border:none; background:transparent; color:var(--text-muted); border-radius:calc(var(--radius, 4px) - 2px); cursor:pointer; transition:all .15s; }
+    .bp-view-btn:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+    .bp-view-btn.active { color:var(--accent2); background:rgba(255,255,255,0.05); }
+
+    /* Card view — full TCG cards in grid */
+    .bp-view-card { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:26px; }
+    .bp-view-card .tcg-card { margin:0; cursor:pointer; }
+
+    /* List view */
+    .bp-view-list { display:flex; flex-direction:column; gap:1px; }
+    .bpl-row { display:grid; grid-template-columns:24px 1.5fr .7fr 2fr 60px 70px; gap:8px; align-items:center; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:border-color .15s; font-size:.75rem; }
+    .bpl-row:hover { border-color:var(--border-hi); }
+    .bpl-header { font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); cursor:default; border-color:transparent; background:transparent; }
+    .bpl-header:hover { border-color:transparent; }
+    .bpl-rarity { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.5rem; font-weight:700; color:#fff; flex-shrink:0; }
+    .bpl-name { font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bpl-cat { color:var(--text-muted); font-size:.65rem; white-space:nowrap; }
+    .bpl-desc { color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bpl-rating { color:var(--accent2); text-align:right; }
+    .bpl-dl { color:var(--text-muted); text-align:right; }
+
+    @media (max-width: 768px) {
+      .bpl-row { grid-template-columns:20px 1fr .5fr; }
+      .bpl-desc, .bpl-rating, .bpl-dl { display:none; }
+    }
+    .catalog-load-more-wrap { text-align: center; margin-top: 24px; }
+
+    /* ── Side Drawer ── */
+    .bp-drawer-overlay {
+      position: fixed; inset: 0; z-index: 249;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+      opacity: 0; pointer-events: none; transition: opacity .3s ease;
+    }
+    .bp-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .bp-drawer {
+      position: fixed; right: 0; top: 0; bottom: 0; width: 420px; z-index: 250;
+      background: var(--surface-2, #18181b); border-left: 1px solid var(--border);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.3);
+      transform: translateX(100%); transition: transform .3s ease;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .bp-drawer.open { transform: translateX(0); }
+
+    .bp-drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .bp-drawer-title { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+    .bp-drawer-nav { display: flex; gap: 4px; }
+    .bp-drawer-nav-btn {
+      background: none; border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--text-muted); width: 28px; height: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 0.72rem;
+      font-family: var(--font); transition: all 0.15s;
+    }
+    .bp-drawer-nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+    .bp-drawer-close {
+      background: none; border: none; color: var(--text-muted); font-size: 1.2rem;
+      cursor: pointer; padding: 4px 8px; font-family: var(--font); margin-left: 8px;
+    }
+    .bp-drawer-close:hover { color: var(--text); }
+
+    .bp-drawer-body {
+      flex: 1; overflow-y: auto; padding: 24px 20px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* Card styles come from app.css */
+    .bp-drawer-hero { max-width: 280px; margin: 0 auto; }
+    .bp-drawer-hero .tcg-card { margin: 0; cursor: default; pointer-events: none; }
+
+    /* Stats table below card */
+    .bp-drawer-stats { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .detail-kv-row { display: flex; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+    .detail-kv-row:last-child { border-bottom: none; }
+    .kv-label { color: var(--text-dim); }
+    .kv-val { color: var(--text); font-weight: 500; }
+
+    /* Capabilities */
+    .bp-drawer-caps { display: flex; flex-wrap: wrap; gap: 6px; }
+    .agent-tool-tag { font-size: 0.72rem; padding: 4px 12px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); }
+
+    /* Description below card */
+    .bp-drawer-desc {
+      font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;
+    }
+
+    /* Actions */
+    .bp-drawer-actions {
+      display: flex; gap: 10px; padding: 16px 20px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .bp-drawer-actions .btn-primary,
+    .bp-drawer-actions .btn-secondary { flex: 1; text-align: center; justify-content: center; }
+
+    @media (max-width: 768px) {
+      .bp-filters-row { flex-direction: column; align-items: flex-start; }
+      .bp-rarity-filters { margin-left: 0; flex-wrap: wrap; }
+    }
+    @media (max-width: 480px) {
+      .bp-tabs { flex-wrap: wrap; }
+      .bp-drawer { width: 100%; }
+      .bp-drawer-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main>
+    <section class="section bp-hero">
+      <div class="container">
+        <h1>Blueprints</h1>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0;border-top:none">
+      <div class="container">
+        <div class="bp-toolbar">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="bp-tabs" id="bp-tabs">
+              <button class="bp-tab active" data-type="spaceship"><i class="fa-solid fa-rocket"></i> Spaceships</button>
+              <button class="bp-tab" data-type="agent"><i class="fa-solid fa-robot"></i> Agents</button>
+            </div>
+            <div class="bp-view-toggle" id="bp-view-toggle">
+              <button class="bp-view-btn active" data-view="default" title="Grid view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
+              </button>
+              <button class="bp-view-btn" data-view="card" title="Card view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="0" width="12" height="14" rx="2"/></svg>
+              </button>
+              <button class="bp-view-btn" data-view="list" title="List view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
+              </button>
+            </div>
+          </div>
+          <input type="text" class="catalog-search" id="bp-search" placeholder="Search by name, category, or description..." />
+          <div class="bp-filters-row">
+            <div class="catalog-filters" id="bp-cat-filters">
+              <button class="catalog-filter active" data-cat="all">All</button>
+            </div>
+          </div>
+          <div class="bp-rarity-filters" id="bp-rarity-filters">
+            <button class="bp-rarity-btn active" data-rarity="all">All</button>
+            <button class="bp-rarity-btn" data-rarity="common">Common</button>
+            <button class="bp-rarity-btn" data-rarity="rare">Rare</button>
+            <button class="bp-rarity-btn" data-rarity="epic">Epic</button>
+            <button class="bp-rarity-btn" data-rarity="legendary">Legendary</button>
+            <button class="bp-rarity-btn" data-rarity="mythic">Mythic</button>
+          </div>
+        </div>
+        <div class="bp-count" id="bp-count"></div>
+        <div class="catalog-grid" id="bp-grid">
+          <div class="catalog-empty">Loading blueprints...</div>
+        </div>
+        <div class="catalog-load-more-wrap" id="bp-load-wrap" style="display:none">
+          <button class="btn-secondary btn-sm" id="bp-load-btn">Load more</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Side Drawer -->
+  <div class="bp-drawer-overlay" id="bp-drawer-overlay"></div>
+  <div class="bp-drawer" id="bp-drawer">
+    <div class="bp-drawer-header">
+      <span class="bp-drawer-title" id="bp-drawer-title"></span>
+      <div style="display:flex;align-items:center">
+        <div class="bp-drawer-nav">
+          <button class="bp-drawer-nav-btn" id="bp-drawer-prev" aria-label="Previous" title="Previous (←)">&#8249;</button>
+          <button class="bp-drawer-nav-btn" id="bp-drawer-next" aria-label="Next" title="Next (→)">&#8250;</button>
+        </div>
+        <button class="bp-drawer-close" id="bp-drawer-close" aria-label="Close">&times;</button>
+      </div>
+    </div>
+    <div class="bp-drawer-body" id="bp-drawer-body"></div>
+    <div class="bp-drawer-actions" id="bp-drawer-actions"></div>
+  </div>
+
+  <footer id="site-footer" class="footer"></footer>
+
+  <script src="/js/supabase-lite.js"></script>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script src="/app/js/lib/utils.js"></script>
+  <script src="/app/js/lib/blueprint-utils.js"></script>
+  <script src="/app/js/lib/card-renderer.js"></script>
+  <script>
+    ThemeLite.init();
+    Nav.render();
+    Nav.renderFooter();
+
+    const RARITY_COLORS = {
+      common:    { border: '#555',    text: '#888',    bg: '#555' },
+      rare:      { border: '#0078d4', text: '#60a5fa', bg: '#0078d4' },
+      epic:      { border: '#8b5cf6', text: '#a78bfa', bg: '#8b5cf6' },
+      legendary: { border: '#d97706', text: '#fbbf24', bg: '#d97706' },
+      mythic:    { border: '#dc2626', text: '#f87171', bg: '#dc2626' },
+    };
+
+    const BPCatalog = (() => {
+      let allData = [];
+      let filtered = [];
+      let currentType = 'spaceship';
+      let currentCat = 'all';
+      let currentRarity = 'all';
+      let searchTerm = '';
+      let page = 0;
+      let drawerIndex = -1;
+      let drawerKeyHandler = null;
+      let viewMode = 'default';
+      const PAGE_SIZE = 48;
+      const RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
+
+      function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+      async function init() {
+        allData = await SBLite.query('blueprints', {
+          select: 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags,rating_avg,activation_count',
+          order: 'name.asc',
+          limit: 1000,
+        }) || [];
+
+        _buildCatFilters();
+        _bindEvents();
+        render();
+      }
+
+      function _buildCatFilters() {
+        const cats = [...new Set(allData.filter(b => b.type === currentType).map(b => b.category).filter(Boolean))].sort();
+        const el = document.getElementById('bp-cat-filters');
+        el.querySelectorAll('.catalog-filter:not([data-cat="all"])').forEach(b => b.remove());
+        cats.forEach(cat => {
+          const btn = document.createElement('button');
+          btn.className = 'catalog-filter';
+          btn.dataset.cat = cat;
+          btn.textContent = cat;
+          el.appendChild(btn);
+        });
+      }
+
+      function _bindEvents() {
+        let debounce;
+        document.getElementById('bp-search').addEventListener('input', e => {
+          clearTimeout(debounce);
+          debounce = setTimeout(() => { searchTerm = e.target.value.toLowerCase().trim(); page = 0; render(); }, 200);
+        });
+
+        document.getElementById('bp-tabs').addEventListener('click', e => {
+          const tab = e.target.closest('.bp-tab');
+          if (!tab) return;
+          document.querySelectorAll('.bp-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentType = tab.dataset.type;
+          currentCat = 'all';
+          currentRarity = 'all';
+          page = 0;
+          _buildCatFilters();
+          document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
+          document.querySelector('[data-cat="all"]').classList.add('active');
+          document.querySelectorAll('.bp-rarity-btn').forEach(b => b.classList.remove('active'));
+          document.querySelector('[data-rarity="all"]').classList.add('active');
+          render();
+        });
+
+        document.getElementById('bp-cat-filters').addEventListener('click', e => {
+          const btn = e.target.closest('.catalog-filter');
+          if (!btn) return;
+          document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentCat = btn.dataset.cat;
+          page = 0;
+          render();
+        });
+
+        document.getElementById('bp-rarity-filters').addEventListener('click', e => {
+          const btn = e.target.closest('.bp-rarity-btn');
+          if (!btn) return;
+          document.querySelectorAll('.bp-rarity-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentRarity = btn.dataset.rarity;
+          page = 0;
+          render();
+        });
+
+        document.getElementById('bp-load-btn').addEventListener('click', () => { page++; render(true); });
+
+        // View toggle
+        document.getElementById('bp-view-toggle').addEventListener('click', e => {
+          const btn = e.target.closest('.bp-view-btn');
+          if (!btn) return;
+          document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          viewMode = btn.dataset.view;
+          page = 0;
+          render();
+        });
+
+        // Drawer events
+        document.getElementById('bp-drawer-close').addEventListener('click', _closeDrawer);
+        document.getElementById('bp-drawer-overlay').addEventListener('click', _closeDrawer);
+        document.getElementById('bp-drawer-prev').addEventListener('click', () => _navigateDrawer(-1));
+        document.getElementById('bp-drawer-next').addEventListener('click', () => _navigateDrawer(1));
+      }
+
+      // ── Drawer ──
+      function _openDrawer(bp) {
+        drawerIndex = filtered.findIndex(b => b.id === bp.id);
+        _renderDrawer(bp);
+        requestAnimationFrame(() => {
+          document.getElementById('bp-drawer').classList.add('open');
+          document.getElementById('bp-drawer-overlay').classList.add('open');
+        });
+        document.body.style.overflow = 'hidden';
+
+        drawerKeyHandler = e => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+          if (e.key === 'Escape') _closeDrawer();
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); _navigateDrawer(-1); }
+          else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); _navigateDrawer(1); }
+        };
+        document.addEventListener('keydown', drawerKeyHandler);
+      }
+
+      function _closeDrawer() {
+        document.getElementById('bp-drawer').classList.remove('open');
+        document.getElementById('bp-drawer-overlay').classList.remove('open');
+        document.body.style.overflow = '';
+        if (drawerKeyHandler) {
+          document.removeEventListener('keydown', drawerKeyHandler);
+          drawerKeyHandler = null;
+        }
+      }
+
+      function _navigateDrawer(dir) {
+        const next = drawerIndex + dir;
+        if (next < 0 || next >= filtered.length) return;
+        drawerIndex = next;
+        _renderDrawer(filtered[drawerIndex]);
+      }
+
+      function _renderDrawer(bp) {
+        const isShip = bp.type === 'spaceship';
+        const desc = bp.description || '';
+        const s = bp.stats || {};
+        const cfg = bp.config || {};
+        const tools = cfg.tools || [];
+        const installs = bp.activation_count || 0;
+        const appUrl = 'https://nicespaceship.ai/#/bridge/' + (isShip ? 'spaceships' : 'agents') + '/' + bp.id;
+
+        document.getElementById('bp-drawer-title').textContent = bp.name;
+
+        // Inject caps from config.tools if missing
+        if (!bp.caps) {
+          const t = tools;
+          if (t.length) bp.caps = t.map(function(x) { return typeof x === 'string' ? x : x.name || ''; });
+        }
+
+        // Render card via app's CardRenderer
+        const cardHTML = typeof CardRenderer !== 'undefined'
+          ? CardRenderer.render(bp.type, 'full', bp, {})
+          : '<div style="padding:20px;text-align:center;color:var(--text-muted)">Card preview unavailable</div>';
+
+        // Stats table (matches app drawer)
+        const statsRows = [];
+        if (isShip) {
+          statsRows.push(['Rank', bp.rarity || 'Common']);
+          statsRows.push(['Agents', s.crew || '—']);
+          statsRows.push(['Deploys', String(installs)]);
+          statsRows.push(['Category', bp.category || '—']);
+        } else {
+          statsRows.push(['Role', cfg.role || bp.category || '—']);
+          statsRows.push(['Type', cfg.type || '—']);
+          statsRows.push(['Model', cfg.llm_engine === 'nice-auto' ? 'NICE Auto' : (cfg.llm_engine || '—')]);
+          statsRows.push(['Rarity', bp.rarity || 'Common']);
+        }
+        const statsHTML = statsRows.map(function(r) {
+          return '<div class="detail-kv-row"><span class="kv-label">' + _esc(r[0]) + '</span><span class="kv-val">' + _esc(String(r[1])) + '</span></div>';
+        }).join('');
+
+        // Capabilities
+        const capsHTML = tools.length
+          ? '<div class="bp-drawer-caps">' + tools.map(function(t) { return '<span class="agent-tool-tag">' + _esc(typeof t === 'string' ? t : t.name || '') + '</span>'; }).join('') + '</div>'
+          : '';
+
+        // Stars
+        const stars = '&#9733;&#9733;&#9733;&#9733;&#9733;';
+
+        document.getElementById('bp-drawer-body').innerHTML =
+          '<div class="bp-drawer-hero">' + cardHTML + '</div>' +
+          '<p style="margin:0;opacity:.8;font-size:.85rem;line-height:1.7">' + _esc(desc) + '</p>' +
+          '<div style="display:flex;align-items:center;gap:12px;font-size:0.78rem;color:var(--text-dim)">' +
+            '<span style="letter-spacing:2px">' + stars + '</span>' +
+            '<span>' + installs + ' installs</span>' +
+          '</div>' +
+          '<div class="bp-drawer-stats">' + statsHTML + '</div>' +
+          capsHTML;
+
+        document.getElementById('bp-drawer-actions').innerHTML =
+          '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in NICE</a>';
+      }
+
+      function render(append) {
+        filtered = allData.filter(b => {
+          if (b.type !== currentType) return false;
+          if (currentCat !== 'all' && b.category !== currentCat) return false;
+          if (currentRarity !== 'all' && (b.rarity || 'Common').toLowerCase() !== currentRarity) return false;
+          if (searchTerm && !b.name.toLowerCase().includes(searchTerm) && !(b.description || '').toLowerCase().includes(searchTerm) && !(b.category || '').toLowerCase().includes(searchTerm)) return false;
+          return true;
+        });
+
+        if (currentRarity === 'all' && currentCat === 'all' && !searchTerm) {
+          filtered.sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+          filtered.sort((a, b) => (RARITY_ORDER[b.rarity] || 0) - (RARITY_ORDER[a.rarity] || 0) || a.name.localeCompare(b.name));
+        }
+
+        const total = filtered.length;
+        const end = (page + 1) * PAGE_SIZE;
+        const slice = filtered.slice(0, end);
+
+        document.getElementById('bp-count').textContent = total + ' ' + currentType + (total !== 1 ? 's' : '');
+
+        const grid = document.getElementById('bp-grid');
+        if (!append) grid.innerHTML = '';
+
+        // Set grid class based on view mode
+        if (!append) {
+          if (viewMode === 'card') grid.className = 'bp-view-card';
+          else if (viewMode === 'list') grid.className = 'bp-view-list';
+          else grid.className = 'catalog-grid';
+        }
+
+        const startIdx = append ? page * PAGE_SIZE : 0;
+        const items = append ? filtered.slice(startIdx, startIdx + PAGE_SIZE) : slice;
+
+        if (total === 0 && !append) {
+          grid.className = 'catalog-grid';
+          grid.innerHTML = '<div class="catalog-empty">No blueprints match your filters.</div>';
+        }
+
+        const RC = RARITY_COLORS;
+        const CR = typeof CardRenderer !== 'undefined' ? CardRenderer : null;
+
+        // List view header
+        if (viewMode === 'list' && !append) {
+          const isShip = currentType === 'spaceship';
+          grid.innerHTML = '<div class="bpl-row bpl-header">' +
+            '<span></span>' +
+            '<span class="bpl-name">Name</span>' +
+            '<span class="bpl-cat">Category</span>' +
+            '<span class="bpl-desc">Description</span>' +
+            '<span class="bpl-rating">Rating</span>' +
+            '<span class="bpl-dl">Installs</span>' +
+          '</div>';
+        }
+
+        items.forEach(bp => {
+          const rarity = (bp.rarity || 'common').toLowerCase();
+          const rc = RC[rarity] || RC.common;
+
+          if (viewMode === 'list') {
+            // List row
+            const row = document.createElement('div');
+            row.className = 'bpl-row';
+            row.setAttribute('role', 'button');
+            row.setAttribute('tabindex', '0');
+            row.innerHTML =
+              '<span class="bpl-rarity" style="background:' + rc.bg + '"></span>' +
+              '<span class="bpl-name">' + _esc(bp.name) + '</span>' +
+              '<span class="bpl-cat">' + _esc(bp.category || '') + '</span>' +
+              '<span class="bpl-desc">' + _esc(bp.description || '') + '</span>' +
+              '<span class="bpl-rating">' + (bp.rating_avg ? '★ ' + bp.rating_avg : '—') + '</span>' +
+              '<span class="bpl-dl">' + (bp.activation_count || 0) + '</span>';
+            row.addEventListener('click', () => _openDrawer(bp));
+            grid.appendChild(row);
+
+          } else if (viewMode === 'card' && CR) {
+            // Full TCG card — inject caps from config.tools if missing
+            if (!bp.caps) {
+              const t = (bp.config || {}).tools || [];
+              if (t.length) bp.caps = t.map(function(x) { return typeof x === 'string' ? x : x.name || ''; });
+            }
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = CR.render(bp.type, 'full', bp, {});
+            const card = wrapper.firstElementChild;
+            card.style.cursor = 'pointer';
+            card.style.margin = '0';
+            card.addEventListener('click', () => _openDrawer(bp));
+            grid.appendChild(card);
+
+          } else {
+            // Default grid card
+            const card = document.createElement('div');
+            card.className = 'bp-card';
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.innerHTML =
+              '<div class="bp-card-header">' +
+                '<h3>' + _esc(bp.name) + '</h3>' +
+                '<span class="bp-card-category">' + _esc(bp.category || '') + '</span>' +
+              '</div>' +
+              '<p class="bp-card-desc">' + _esc(bp.description || '') + '</p>' +
+              '<div class="bp-card-footer">' +
+                '<span class="bp-card-rarity ' + rarity + '">' + _esc(bp.rarity || 'Common') + '</span>' +
+                '<span class="bp-card-type">' + (bp.type === 'spaceship' ? 'Spaceship' : 'Agent') + '</span>' +
+              '</div>';
+            card.addEventListener('click', () => _openDrawer(bp));
+            card.addEventListener('keydown', e => { if (e.key === 'Enter') _openDrawer(bp); });
+            grid.appendChild(card);
+          }
+        });
+
+        document.getElementById('bp-load-wrap').style.display = end < total ? '' : 'none';
+      }
+
+      return { init };
+    })();
+
+    BPCatalog.init();
+  </script>
+</body>
+</html>

@@ -4,16 +4,17 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/", "destination": "/community/index.html" },
-    { "source": "/blueprints", "destination": "/community/blueprints.html" },
-    { "source": "/pricing", "destination": "/community/pricing.html" },
-    { "source": "/academy", "destination": "/community/academy.html" },
-    { "source": "/about", "destination": "/community/about.html" },
-    { "source": "/privacy", "destination": "/community/privacy.html" },
-    { "source": "/terms", "destination": "/community/terms.html" },
-    { "source": "/accessibility", "destination": "/community/accessibility.html" }
+    { "source": "/", "destination": "/www/index.html" },
+    { "source": "/blueprints", "destination": "/www/blueprints.html" },
+    { "source": "/academy", "destination": "/www/academy.html" },
+    { "source": "/about", "destination": "/www/about.html" },
+    { "source": "/benduffey", "destination": "/www/benduffey.html" },
+    { "source": "/privacy", "destination": "/www/privacy.html" },
+    { "source": "/terms", "destination": "/www/terms.html" },
+    { "source": "/accessibility", "destination": "/www/accessibility.html" }
   ],
   "redirects": [
+    { "source": "/pricing", "destination": "/about#pricing", "statusCode": 301 },
     { "source": "/app", "destination": "https://nicespaceship.ai", "statusCode": 301 },
     { "source": "/app/:path*", "destination": "https://nicespaceship.ai/:path*", "statusCode": 301 },
     { "source": "/community", "destination": "https://reddit.com/r/nicespaceship", "statusCode": 302 }
@@ -29,13 +30,13 @@
       ]
     },
     {
-      "source": "/community/css/(.*)",
+      "source": "/www/css/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
       ]
     },
     {
-      "source": "/community/js/(.*)",
+      "source": "/www/js/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
       ]

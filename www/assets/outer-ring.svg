@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" fill="none" stroke-linecap="round">
+  <defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- glow ring — cycling blue tones -->
+  <circle cx="300" cy="300" r="290" stroke-width="25" filter="url(#glow)">
+    <animate attributeName="stroke" values="#6366f1;#818cf8;#a5b4fc;#60a5fa;#38bdf8;#22d3ee;#38bdf8;#60a5fa;#a5b4fc;#818cf8;#6366f1" dur="14s" repeatCount="indefinite"/>
+    <animate attributeName="stroke-opacity" values="0.4;0.7;0.4" dur="8s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="300" cy="300" r="278" stroke-dasharray="6,12" stroke-width="0.8">
+    <animate attributeName="stroke" values="#6366f1;#818cf8;#a5b4fc;#60a5fa;#38bdf8;#22d3ee;#38bdf8;#60a5fa;#a5b4fc;#818cf8;#6366f1" dur="14s" repeatCount="indefinite"/>
+    <animate attributeName="stroke-opacity" values="0.3;0.5;0.3" dur="8s" repeatCount="indefinite"/>
+  </circle>
+</svg>

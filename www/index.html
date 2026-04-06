@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NICE SPACESHIP — AI Agents That Run Your Business</title>
+  <meta name="description" content="Replace $1,300/month in SaaS tools with AI agents for $19.99. 800+ pre-built blueprints. 17 AI models. Zero coding required." />
+  <meta property="og:title" content="NICE SPACESHIP — AI Agents That Run Your Business" />
+  <meta property="og:description" content="Replace your entire marketing stack with AI agents. 800+ blueprints, multi-LLM routing, drag-and-drop orchestration." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nicespaceship.com" />
+  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.svg" />
+  <meta property="og:site_name" content="NICE SPACESHIP" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="NICE SPACESHIP — AI Agents That Run Your Business" />
+  <meta name="twitter:description" content="Replace $1,300/month in tools with AI agents for $19.99/month." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <canvas id="warp-canvas"></canvas>
+      <img class="hero-ring" src="/assets/space-station-v2.svg" alt="" />
+      <img class="hero-ring-outer" src="/assets/outer-ring.svg" alt="" />
+      <h1>Build your Spaceship.<br/>Deploy your Agents.<br/>Run everything.</h1>
+      <p class="hero-acronym">Neural Intelligence Command Engine</p>
+      <p class="hero-sub">Agentic workflows powered by 17 AI models. 800+ blueprints. Zero configuration.</p>
+      <div class="hero-ctas">
+        <a href="https://nicespaceship.ai" class="btn-primary">Launch NICE <span>→</span></a>
+        <a href="/blueprints" class="btn-secondary">Browse blueprints</a>
+      </div>
+    </section>
+
+    <!-- Logo Ticker -->
+    <section class="logo-ticker">
+      <div class="logo-ticker-track">
+        <!-- Text LLMs -->
+        <div class="logo-ticker-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.5 Flash <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.5 Pro <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.0 Lite <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-brain"></i> Claude Sonnet 4 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-brain"></i> Claude Opus 4 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-robot"></i> GPT-5.2 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-robot"></i> GPT-5 Mini <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-microchip"></i> DeepSeek V3 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-globe"></i> Mistral Large 3 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-bolt"></i> Grok 4 <span class="ticker-tag text">Text</span></div>
+        <!-- Image -->
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> Imagen 3 <span class="ticker-tag image">Image</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> DALL-E 3 <span class="ticker-tag image">Image</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> Flux <span class="ticker-tag image">Image</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> SDXL <span class="ticker-tag image">Image</span></div>
+        <!-- Video -->
+        <div class="logo-ticker-item"><i class="fa-solid fa-video"></i> Veo 2 <span class="ticker-tag video">Video</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-video"></i> Runway Gen-4 <span class="ticker-tag video">Video</span></div>
+        <!-- Voice -->
+        <div class="logo-ticker-item"><i class="fa-solid fa-microphone"></i> ElevenLabs <span class="ticker-tag voice">Voice</span></div>
+        <!-- Duplicate set for seamless loop -->
+        <div class="logo-ticker-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.5 Flash <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.5 Pro <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.0 Lite <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-brain"></i> Claude Sonnet 4 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-brain"></i> Claude Opus 4 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-robot"></i> GPT-5.2 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-robot"></i> GPT-5 Mini <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-microchip"></i> DeepSeek V3 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-globe"></i> Mistral Large 3 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-bolt"></i> Grok 4 <span class="ticker-tag text">Text</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> Imagen 3 <span class="ticker-tag image">Image</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> DALL-E 3 <span class="ticker-tag image">Image</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> Flux <span class="ticker-tag image">Image</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-image"></i> SDXL <span class="ticker-tag image">Image</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-video"></i> Veo 2 <span class="ticker-tag video">Video</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-video"></i> Runway Gen-4 <span class="ticker-tag video">Video</span></div>
+        <div class="logo-ticker-item"><i class="fa-solid fa-microphone"></i> ElevenLabs <span class="ticker-tag voice">Voice</span></div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section>
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-num" id="stat-blueprints">0</span>
+          <span class="stat-label">Agent Blueprints</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-llms">0</span>
+          <span class="stat-label">AI Models (LLMs)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-mcps">0</span>
+          <span class="stat-label">Integrations (MCPs)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-missions">0</span>
+          <span class="stat-label">Missions Completed</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works — Flow Tree -->
+    <section class="section flow-section">
+      <canvas id="blueprint-grid-canvas"></canvas>
+      <div class="container">
+        <div class="section-header centered">
+          <span class="badge"><span class="badge-dot"></span> How it works</span>
+          <h2>The NICE ecosystem</h2>
+          <p class="section-desc">AI models power your agents. Agents execute through integrations. You just watch it work.</p>
+        </div>
+
+        <div class="flow-tree">
+          <!-- Column 1: AI Models -->
+          <div class="flow-col flow-col-models">
+            <div class="flow-col-label">AI Models</div>
+            <div class="flow-node" data-flow="model" data-tip="Google's fastest model. Free for all users."><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini</div>
+            <div class="flow-node" data-flow="model" data-tip="Anthropic. Best reasoning and analysis."><i class="fa-solid fa-brain"></i> Claude</div>
+            <div class="flow-node" data-flow="model" data-tip="OpenAI flagship. Creative writing and code."><i class="fa-solid fa-robot"></i> GPT-5</div>
+            <div class="flow-node" data-flow="model" data-tip="xAI. Real-time knowledge and search."><i class="fa-solid fa-bolt"></i> Grok</div>
+            <div class="flow-node" data-flow="model" data-tip="Affordable high-volume tasks."><i class="fa-solid fa-microchip"></i> DeepSeek</div>
+            <div class="flow-node" data-flow="model" data-tip="Multilingual. European compliance."><i class="fa-solid fa-globe"></i> Mistral</div>
+            <div class="flow-node" data-flow="model" data-tip="AI image generation from text prompts."><i class="fa-solid fa-image"></i> DALL-E / Flux</div>
+            <div class="flow-node" data-flow="model" data-tip="AI video generation and editing."><i class="fa-solid fa-video"></i> Veo / Runway</div>
+            <div class="flow-node" data-flow="model" data-tip="AI voice synthesis and cloning."><i class="fa-solid fa-microphone"></i> ElevenLabs</div>
+          </div>
+
+          <!-- Connector -->
+          <div class="flow-connector">
+            <div class="flow-arrow-line"></div>
+            <div class="flow-arrow-label">routes to</div>
+          </div>
+
+          <!-- Column 2: NICE Platform -->
+          <div class="flow-col flow-col-nice">
+            <div class="flow-col-label">NICE &middot; Neural Intelligence Command Engine</div>
+            <div class="flow-node flow-node-lg flow-node-accent" data-flow="nice" data-tip="Top-level orchestrator. Routes tasks to the right agent and model.">
+              <i class="fa-solid fa-rocket"></i>
+              <strong>Spaceships</strong>
+              <span>Orchestrators</span>
+            </div>
+            <div class="flow-node flow-node-lg" data-flow="nice" data-tip="AI agents with specific skills. Drag and drop into spaceship slots.">
+              <i class="fa-solid fa-users"></i>
+              <strong>Agents</strong>
+              <span>800+ Blueprints</span>
+            </div>
+            <div class="flow-node flow-node-lg" data-flow="nice" data-tip="Chain multiple agents into pipeline, parallel, or loop patterns.">
+              <i class="fa-solid fa-diagram-project"></i>
+              <strong>Workflows</strong>
+              <span>Multi-step missions</span>
+            </div>
+          </div>
+
+          <!-- Connector -->
+          <div class="flow-connector">
+            <div class="flow-arrow-line"></div>
+            <div class="flow-arrow-label">executes via</div>
+          </div>
+
+          <!-- Column 3: MCP Integrations -->
+          <div class="flow-col flow-col-outputs">
+            <div class="flow-col-label">Integrations (MCP)</div>
+            <div class="flow-node" data-flow="output" data-tip="Full suite: Gmail, Calendar, Drive via OAuth."><i class="fa-brands fa-google"></i> Google Workspace</div>
+            <div class="flow-node" data-flow="output" data-tip="Read, search, and draft emails."><i class="fa-solid fa-envelope"></i> Gmail</div>
+            <div class="flow-node" data-flow="output" data-tip="View and create calendar events."><i class="fa-solid fa-calendar"></i> Google Calendar</div>
+            <div class="flow-node" data-flow="output" data-tip="Search and read documents and files."><i class="fa-solid fa-hard-drive"></i> Google Drive</div>
+            <div class="flow-node" data-flow="output" data-tip="CRM contacts, deals, and pipelines."><i class="fa-solid fa-bullhorn"></i> HubSpot</div>
+            <div class="flow-node" data-flow="output" data-tip="Enterprise CRM and sales automation."><i class="fa-solid fa-cloud"></i> Salesforce</div>
+            <div class="flow-node" data-flow="output" data-tip="Project boards, tasks, and timelines."><i class="fa-solid fa-table-columns"></i> Monday.com</div>
+            <div class="flow-node" data-flow="output" data-tip="Team messaging and notifications."><i class="fa-brands fa-slack"></i> Slack</div>
+            <div class="flow-node" data-flow="output" data-tip="Schedule and publish social media posts."><i class="fa-brands fa-buffer"></i> Buffer</div>
+            <div class="flow-node" data-flow="output" data-tip="Track metrics, reports, and dashboards."><i class="fa-solid fa-chart-line"></i> Analytics</div>
+            <div class="flow-node" data-flow="output" data-tip="E-commerce orders, products, and inventory."><i class="fa-solid fa-shop"></i> Shopify</div>
+            <div class="flow-node" data-flow="output" data-tip="Invoicing, expenses, and bookkeeping."><i class="fa-solid fa-file-invoice-dollar"></i> QuickBooks</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Bento: Themes + Gamification -->
+    <section class="section experience-section">
+      <div class="container">
+        <div class="section-header centered">
+          <span class="badge"><span class="badge-dot"></span> Experience</span>
+          <h2>Level up. Literally.</h2>
+        </div>
+        <div class="bento-grid">
+          <!-- Large: Themes (interactive) -->
+          <div class="bento-card bento-lg bento-theme-preview" id="theme-preview-card">
+            <h3 id="tp-title">11 Themes</h3>
+            <p id="tp-desc">Hover a theme to preview it. Every skin changes colors, fonts, borders, and glow.</p>
+            <div class="bento-themes">
+              <div class="bento-theme-card" data-theme-name="NICE" data-bg="#080808" data-accent="#ffffff" data-accent2="#888" data-text="#f0f0f0" data-border="#2a2a2a" data-glow="none">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">NICE</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="HAL-9000" data-bg="#f2f2f0" data-accent="#666" data-accent2="#999" data-text="#1a1a1a" data-border="#d0d0ce" data-glow="none">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">HAL-9000</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="The Grid" data-bg="#02090f" data-accent="#00e5ff" data-accent2="#0099bb" data-text="#cce8f0" data-border="rgba(0,229,255,0.25)" data-glow="0 0 16px rgba(0,229,255,0.22)">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">The Grid</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="The Matrix" data-bg="#000800" data-accent="#00ff41" data-accent2="#00aa2a" data-text="#00ff41" data-border="rgba(0,255,65,0.2)" data-glow="0 0 12px rgba(0,255,65,0.3)">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">Matrix</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="LCARS" data-bg="#000000" data-accent="#ff9966" data-accent2="#cc99ff" data-text="#ff9966" data-border="#cc7744" data-glow="none">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">LCARS</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="Steampunk" data-bg="#0f0a04" data-accent="#c8a050" data-accent2="#8b6914" data-text="#e8d8c0" data-border="rgba(200,160,80,0.28)" data-glow="0 0 16px rgba(200,160,80,0.22)">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">Steampunk</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="Cyberpunk" data-bg="#0a0a0f" data-accent="#ff2d6f" data-accent2="#00fff5" data-text="#e0e0ff" data-border="#2a2a4a" data-glow="0 0 15px rgba(255,45,111,0.3)">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">Cyberpunk</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="RX-78-2" data-bg="#12131a" data-accent="#2b4e8c" data-accent2="#c0392b" data-text="#e0e0e8" data-border="#3a3f55" data-glow="0 0 12px rgba(43,78,140,0.25)">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">RX-78-2</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="16-BIT" data-bg="#1a1a2e" data-accent="#e2b714" data-accent2="#2980b9" data-text="#e8e0d0" data-border="#2e4068" data-glow="0 0 0 1px #e2b714">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">16-BIT</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="The Office" data-bg="#fafafa" data-accent="#0a0a0a" data-accent2="#333" data-text="#0a0a0a" data-border="#ccc" data-glow="none">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">Office</span>
+              </div>
+              <div class="bento-theme-card" data-theme-name="Default" data-bg="#09090b" data-accent="#e0e7ff" data-accent2="#a5b4fc" data-text="#fafafa" data-border="#3f3f46" data-glow="0 0 12px rgba(224,231,255,0.08)">
+                <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
+                <span class="btc-name">Default</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Small: Ranks (interactive) -->
+          <div class="bento-card bento-sm" id="rank-preview-card">
+            <h3 id="rp-title">12 Ranks</h3>
+            <p id="rp-desc">Hover a rank to see what it unlocks.</p>
+            <div class="bento-ranks">
+              <div class="bento-rank" data-rank="Ensign" data-slots="6" data-rarity="Common" data-xp="0" data-class="Scout"><span class="br-badge">&#x2B21;</span> Ensign <span class="br-xp">0 XP</span></div>
+              <div class="bento-rank" data-rank="Lieutenant" data-slots="8" data-rarity="Rare" data-xp="25,000" data-class="Scout"><span class="br-badge">&#x2B21;&#x2B21;&#x2B21;</span> Lieutenant <span class="br-xp">25K</span></div>
+              <div class="bento-rank" data-rank="Commander" data-slots="10" data-rarity="Epic" data-xp="100,000" data-class="Cruiser"><span class="br-badge">&#x2605;</span> Commander <span class="br-xp">100K</span></div>
+              <div class="bento-rank" data-rank="Captain" data-slots="12" data-rarity="Legendary" data-xp="200,000" data-class="Dreadnought"><span class="br-badge">&#x2605;&#x2605;</span> Captain <span class="br-xp">200K</span></div>
+              <div class="bento-rank" data-rank="Commodore" data-slots="12" data-rarity="Legendary" data-xp="500,000" data-class="Dreadnought"><span class="br-badge">&#x2726;</span> Commodore <span class="br-xp">500K</span></div>
+              <div class="bento-rank" data-rank="Admiral" data-slots="12" data-rarity="Legendary" data-xp="1,500,000" data-class="Flagship"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;</span> Admiral <span class="br-xp">1.5M</span></div>
+              <div class="bento-rank" data-rank="Fleet Admiral" data-slots="12" data-rarity="Mythic" data-xp="2,500,000" data-class="Flagship"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;&#x2726;</span> Fleet Admiral <span class="br-xp">2.5M</span></div>
+            </div>
+          </div>
+
+          <!-- Small: Achievements (interactive) -->
+          <div class="bento-card bento-sm" id="ach-preview-card">
+            <h3 id="ap-title">22 Achievements</h3>
+            <p id="ap-desc">Hover to preview each badge.</p>
+            <div class="bento-achievements">
+              <div class="bento-ach" data-ach-name="First Agent" data-ach-desc="Create your first agent"><i class="fa-solid fa-robot"></i> First Agent</div>
+              <div class="bento-ach" data-ach-name="First Launch" data-ach-desc="Deploy your first spaceship crew"><i class="fa-solid fa-rocket"></i> First Launch</div>
+              <div class="bento-ach" data-ach-name="Mission Streak" data-ach-desc="Complete 5 missions in a row"><i class="fa-solid fa-fire"></i> Mission Streak</div>
+              <div class="bento-ach" data-ach-name="Captain's Chair" data-ach-desc="Reach the rank of Captain"><i class="fa-solid fa-crown"></i> Captain's Chair</div>
+              <div class="bento-ach" data-ach-name="Admiral's Bridge" data-ach-desc="Reach the rank of Admiral"><i class="fa-solid fa-star"></i> Admiral's Bridge</div>
+              <div class="bento-ach" data-ach-name="Pipeline Engineer" data-ach-desc="Create a workflow pipeline"><i class="fa-solid fa-wrench"></i> Pipeline Engineer</div>
+              <div class="bento-ach" data-ach-name="First Dock" data-ach-desc="Dock an agent into a ship slot"><i class="fa-solid fa-plug"></i> First Dock</div>
+              <div class="bento-ach" data-ach-name="Full Squad" data-ach-desc="Fill all slots on a spaceship"><i class="fa-solid fa-users"></i> Full Squad</div>
+              <div class="bento-ach" data-ach-name="Legendary Captain" data-ach-desc="Dock a Legendary-rarity agent"><i class="fa-solid fa-gem"></i> Legendary Captain</div>
+              <div class="bento-ach" data-ach-name="Data Archivist" data-ach-desc="Export your NICE data"><i class="fa-solid fa-download"></i> Data Archivist</div>
+            </div>
+          </div>
+
+          <!-- Large: Progression (interactive) -->
+          <div class="bento-card bento-lg" id="prog-preview-card">
+            <h3>Gamified Progression</h3>
+            <p>Every action earns XP. Hover a ship class to see what unlocks.</p>
+            <div class="bento-xp-bar">
+              <div class="bento-xp-label"><span id="prog-rank">Commander</span><span id="prog-xp">100,000 / 200,000 XP</span></div>
+              <div class="bento-xp-track"><div class="bento-xp-fill" id="prog-fill" style="width:50%"></div></div>
+              <div class="bento-xp-next" id="prog-next">Next: Captain &mdash; unlocks 12 slots + Legendary rarity</div>
+            </div>
+            <div class="bento-classes">
+              <div class="bento-class" data-ship-class="Scout" data-ship-agents="1-2" data-ship-rank="Ensign" data-ship-rarity="Common" data-ship-pct="8"><strong>Scout</strong><span>1-2 agents</span></div>
+              <div class="bento-class" data-ship-class="Cruiser" data-ship-agents="3-5" data-ship-rank="Commander" data-ship-rarity="Epic" data-ship-pct="40"><strong>Cruiser</strong><span>3-5 agents</span></div>
+              <div class="bento-class" data-ship-class="Dreadnought" data-ship-agents="6-10" data-ship-rank="Captain" data-ship-rarity="Legendary" data-ship-pct="70"><strong>Dreadnought</strong><span>6-10 agents</span></div>
+              <div class="bento-class" data-ship-class="Flagship" data-ship-agents="11+" data-ship-rank="Fleet Admiral" data-ship-rarity="Mythic" data-ship-pct="100"><strong>Flagship</strong><span>11+ agents</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section faq-section faq-grid-bg">
+      <div class="container">
+        <div class="faq-layout">
+          <div class="faq-heading">
+            <h2>Frequently asked questions</h2>
+            <div class="faq-schematic" aria-hidden="true">
+              <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                  .bp-label { font-family: 'Fira Code', monospace; fill: #555; font-size: 6.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+                  .bp-val { font-family: 'Fira Code', monospace; fill: #777; font-size: 5.5px; }
+                  .bp-dim { font-family: 'Fira Code', monospace; fill: #444; font-size: 5px; letter-spacing: 0.05em; }
+                </style>
+
+                <!-- Left annotations -->
+                <text x="8" y="55" class="bp-label">Agent Slot A1</text>
+                <text x="8" y="65" class="bp-val">type: analytics</text>
+                <text x="8" y="74" class="bp-dim">rarity: rare // xp: 2,400</text>
+                <line x1="8" y1="78" x2="70" y2="78" stroke="#333" stroke-width="0.5"/>
+
+                <text x="8" y="170" class="bp-label">Orchestrator Core</text>
+                <text x="8" y="180" class="bp-val">mode: hierarchical</text>
+                <text x="8" y="189" class="bp-dim">agents: 6 / max: 12</text>
+                <line x1="8" y1="193" x2="70" y2="193" stroke="#333" stroke-width="0.5"/>
+
+                <text x="8" y="260" class="bp-label">Agent Slot B1</text>
+                <text x="8" y="270" class="bp-val">type: content</text>
+                <text x="8" y="279" class="bp-dim">status: active // pid: 0x3F</text>
+                <line x1="8" y1="283" x2="70" y2="283" stroke="#333" stroke-width="0.5"/>
+
+                <!-- Right annotations -->
+                <text x="432" y="55" class="bp-label" text-anchor="end">Agent Slot A2</text>
+                <text x="432" y="65" class="bp-val" text-anchor="end">type: research</text>
+                <text x="432" y="74" class="bp-dim" text-anchor="end">tools: 4 // llm: gemini</text>
+                <line x1="370" y1="78" x2="432" y2="78" stroke="#333" stroke-width="0.5"/>
+
+                <text x="432" y="170" class="bp-label" text-anchor="end">Ship Class</text>
+                <text x="432" y="180" class="bp-val" text-anchor="end">class: dreadnought</text>
+                <text x="432" y="189" class="bp-dim" text-anchor="end">rank: commander // 100K xp</text>
+                <line x1="370" y1="193" x2="432" y2="193" stroke="#333" stroke-width="0.5"/>
+
+                <text x="432" y="260" class="bp-label" text-anchor="end">Agent Slot B2</text>
+                <text x="432" y="270" class="bp-val" text-anchor="end">type: marketing</text>
+                <text x="432" y="279" class="bp-dim" text-anchor="end">missions: 47 // uptime: 99.2%</text>
+                <line x1="370" y1="283" x2="432" y2="283" stroke="#333" stroke-width="0.5"/>
+
+                <!-- Top center annotation -->
+                <text x="175" y="16" class="bp-label">Agent Slot A3</text>
+                <text x="175" y="25" class="bp-dim">type: ops // priority: high</text>
+
+                <!-- Bottom center annotation -->
+                <text x="175" y="340" class="bp-label">Agent Slot B3</text>
+                <text x="175" y="349" class="bp-dim">type: support // queue: 12</text>
+
+                <!-- Connection lines -->
+                <line x1="220" y1="180" x2="120" y2="90" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="320" y2="90" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="120" y2="270" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="320" y2="270" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="220" y2="70" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="220" y2="290" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+
+                <!-- Center spaceship node -->
+                <circle cx="220" cy="180" r="28" stroke="var(--accent2)" stroke-width="1" fill="none" opacity="0.4"/>
+                <circle cx="220" cy="180" r="18" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0.2" stroke-dasharray="4 3"/>
+                <circle cx="220" cy="180" r="5" fill="var(--accent2)" opacity="0.8">
+                  <animate attributeName="opacity" values="0.8;0.4;0.8" dur="3s" repeatCount="indefinite"/>
+                </circle>
+
+                <!-- Agent nodes -->
+                <circle cx="120" cy="90" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="120" cy="90" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="120" cy="90" r="3.5" fill="#f87171" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="4s" repeatCount="indefinite"/></circle>
+
+                <circle cx="320" cy="90" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="320" cy="90" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="320" cy="90" r="3.5" fill="#60a5fa" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.5s" repeatCount="indefinite"/></circle>
+
+                <circle cx="220" cy="70" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="220" cy="70" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="220" cy="70" r="3.5" fill="#fbbf24" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="2.8s" repeatCount="indefinite"/></circle>
+
+                <circle cx="120" cy="270" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="120" cy="270" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="120" cy="270" r="3.5" fill="#34d399" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.2s" repeatCount="indefinite"/></circle>
+
+                <circle cx="320" cy="270" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="320" cy="270" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="320" cy="270" r="3.5" fill="#c084fc" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="4.2s" repeatCount="indefinite"/></circle>
+
+                <circle cx="220" cy="290" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="220" cy="290" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="220" cy="290" r="3.5" fill="#fb923c" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.7s" repeatCount="indefinite"/></circle>
+
+                <!-- Pulse rings -->
+                <circle cx="220" cy="180" r="28" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0">
+                  <animate attributeName="r" values="28;50" dur="4s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.3;0" dur="4s" repeatCount="indefinite"/>
+                </circle>
+
+                <!-- Title -->
+                <text x="220" y="375" text-anchor="middle" class="bp-label" style="font-size:7px;fill:#555;letter-spacing:0.15em">Spaceship Schematic // NCC-NICE-001</text>
+              </svg>
+            </div>
+          </div>
+          <div class="faq-list">
+            <div class="faq-item open">
+              <button class="faq-q">What is NICE? <span class="faq-icon">+</span></button>
+              <div class="faq-a">NICE (Neural Intelligence Command Engine) is an open-source AI agent platform. Deploy a team of AI agents from 800+ blueprints. They handle email, social, analytics, CRM, and more. NICE is the LLM provider — no API keys needed.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">What is a Blueprint? <span class="faq-icon">+</span></button>
+              <div class="faq-a">A blueprint is a pre-built AI agent or spaceship template. Each one comes configured with a system prompt, tools, and category — ready to deploy. Browse 874 blueprints for industries like marketing, real estate, legal, hospitality, and more.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">Is this free to use? <span class="faq-icon">+</span></button>
+              <div class="faq-a">Free to start with 100K tokens. Gemini 2.5 Flash is always free. Premium models use token packages: Starter ($4.99), Pro ($19.99), Enterprise ($69.99).</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">Do I need to bring my own API keys? <span class="faq-icon">+</span></button>
+              <div class="faq-a">No. NICE holds all provider keys server-side. You toggle models on and off — that's it.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">How secure is my data on the platform? <span class="faq-icon">+</span></button>
+              <div class="faq-a">All connections use OAuth 2.0 with server-side token storage. Your credentials never touch the browser. The entire codebase is open source — audit it yourself.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">Is it really open source? <span class="faq-icon">+</span></button>
+              <div class="faq-a">Yes. MIT License. Full codebase on GitHub. Fork it, self-host it, contribute blueprints. Nothing is hidden.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section cta-section faq-section">
+      <canvas id="hero-canvas"></canvas>
+      <div class="container">
+        <span class="badge"><span class="badge-dot"></span> Open Source &middot; MIT License</span>
+        <h2>Free to start.<br class="mobile-br"/> Open source forever.</h2>
+        <p>No credit card. No API keys. Just launch and go.</p>
+        <div class="hero-ctas">
+          <a href="https://nicespaceship.ai" class="btn-primary">Get started free <span>→</span></a>
+          <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener" class="btn-secondary"><i class="fa-brands fa-github"></i> GitHub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="footer"></footer>
+
+  <script src="/js/supabase-lite.js"></script>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script src="/js/stats.js"></script>
+  <script src="/js/hero-canvas.js"></script>
+  <script src="/js/blueprint-grid.js"></script>
+  <script src="/js/warp-stars.js"></script>
+  <script>
+    ThemeLite.init();
+    Nav.render();
+    Nav.renderFooter();
+    Stats.load();
+    HeroCanvas.init();
+    BlueprintGrid.init();
+    WarpStars.init();
+
+    // Theme preview: paint mini previews with real colors + morph parent on hover
+    document.querySelectorAll('.bento-theme-card').forEach(card => {
+      const bg = card.dataset.bg;
+      const accent = card.dataset.accent;
+      const accent2 = card.dataset.accent2;
+      const text = card.dataset.text;
+      const border = card.dataset.border;
+      const glow = card.dataset.glow;
+      const preview = card.querySelector('.btc-preview');
+      const sidebar = card.querySelector('.btc-sidebar');
+      const bar = card.querySelector('.btc-bar');
+      const cs = card.querySelectorAll('.btc-c');
+
+      // paint the mini preview
+      preview.style.background = bg;
+      preview.style.borderColor = border;
+      sidebar.style.background = accent2;
+      sidebar.style.borderColor = border;
+      bar.style.background = accent;
+      cs.forEach(c => { c.style.background = 'transparent'; c.style.borderColor = border; });
+
+      // on hover, morph the parent bento card
+      const parent = document.getElementById('theme-preview-card');
+      const title = document.getElementById('tp-title');
+      const desc = document.getElementById('tp-desc');
+      const origBg = parent.style.background;
+      const origBorder = parent.style.borderColor;
+
+      card.addEventListener('mouseenter', () => {
+        parent.style.background = bg;
+        parent.style.borderColor = border;
+        parent.style.boxShadow = glow !== 'none' ? glow : '';
+        title.style.color = text;
+        title.textContent = card.dataset.themeName;
+        desc.style.color = text;
+        desc.style.opacity = '0.6';
+        desc.textContent = 'Currently previewing this theme.';
+      });
+
+      card.addEventListener('mouseleave', () => {
+        parent.style.background = '';
+        parent.style.borderColor = '';
+        parent.style.boxShadow = '';
+        title.style.color = '';
+        title.textContent = '11 Themes';
+        desc.style.color = '';
+        desc.style.opacity = '';
+        desc.textContent = 'Hover a theme to preview it. Every skin changes colors, fonts, borders, and glow.';
+      });
+    });
+
+    // Ranks preview: hover a rank to show what it unlocks
+    document.querySelectorAll('.bento-rank').forEach(rank => {
+      const card = document.getElementById('rank-preview-card');
+      const title = document.getElementById('rp-title');
+      const desc = document.getElementById('rp-desc');
+      rank.addEventListener('mouseenter', () => {
+        document.querySelectorAll('.bento-rank').forEach(r => r.classList.remove('rank-active'));
+        rank.classList.add('rank-active');
+        title.textContent = rank.dataset.rank;
+        desc.textContent = rank.dataset.slots + ' slots \u00b7 ' + rank.dataset.rarity + ' max \u00b7 ' + rank.dataset.class + ' class \u00b7 ' + rank.dataset.xp + ' XP';
+      });
+      rank.addEventListener('mouseleave', () => {
+        rank.classList.remove('rank-active');
+        title.textContent = '12 Ranks';
+        desc.textContent = 'Hover a rank to see what it unlocks.';
+      });
+    });
+
+    // Achievements preview: hover to "unlock" with glow
+    document.querySelectorAll('.bento-ach').forEach(ach => {
+      const title = document.getElementById('ap-title');
+      const desc = document.getElementById('ap-desc');
+      ach.addEventListener('mouseenter', () => {
+        title.textContent = ach.dataset.achName;
+        desc.textContent = ach.dataset.achDesc;
+      });
+      ach.addEventListener('mouseleave', () => {
+        title.textContent = '22 Achievements';
+        desc.textContent = 'Hover to preview each badge.';
+      });
+    });
+
+    // Progression preview: hover a ship class to update XP bar
+    document.querySelectorAll('.bento-class').forEach(cls => {
+      const fill = document.getElementById('prog-fill');
+      const rankEl = document.getElementById('prog-rank');
+      const xpEl = document.getElementById('prog-xp');
+      const nextEl = document.getElementById('prog-next');
+      cls.addEventListener('mouseenter', () => {
+        document.querySelectorAll('.bento-class').forEach(c => c.classList.remove('active'));
+        cls.classList.add('active');
+        fill.style.width = cls.dataset.shipPct + '%';
+        rankEl.textContent = cls.dataset.shipClass;
+        xpEl.textContent = cls.dataset.shipAgents + ' agents';
+        nextEl.textContent = 'Requires ' + cls.dataset.shipRank + ' rank \u00b7 ' + cls.dataset.shipRarity + ' max rarity';
+      });
+      cls.addEventListener('mouseleave', () => {
+        cls.classList.remove('active');
+        fill.style.width = '50%';
+        rankEl.textContent = 'Commander';
+        xpEl.textContent = '100,000 / 200,000 XP';
+        nextEl.textContent = 'Next: Captain \u2014 unlocks 12 slots + Legendary rarity';
+      });
+    });
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-q').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        const wasOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!wasOpen) item.classList.add('open');
+      });
+    });
+  </script>
+</body>
+</html>
