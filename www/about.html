@@ -4,15 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About — NICE SPACESHIP</title>
-  <meta name="description" content="NICE SPACESHIP builds the operating system for AI agents. Founded by Benjamin Duffey, a 10+ year SaaS engineer, in Las Vegas, NV." />
+  <meta name="description" content="NICE SPACESHIP builds the operating system for AI agents. 800+ blueprints, 17 AI models, zero coding." />
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="/css/site.css" />
+  <link rel="stylesheet" href="/css/tcg-card.css" />
+  <style>
+    .bp-example-grid {
+      display: grid; grid-template-columns: 1fr 280px; gap: 40px; align-items: center; margin-top: 32px;
+    }
+    .bp-example-grid.reverse { grid-template-columns: 280px 1fr; }
+    .bp-example-card { max-width: 280px; margin: 0 auto; }
+    .bp-example-card .tcg-card { margin: 0; pointer-events: none; cursor: default; }
+    @media (max-width: 768px) {
+      .bp-example-grid, .bp-example-grid.reverse { grid-template-columns: 1fr; }
+      .bp-example-card { order: -1; }
+    }
+  </style>
 </head>
 <body>
   <header id="site-header"></header>
   <main>
+    <!-- Hero -->
     <section class="about-hero" style="text-align:center;background:radial-gradient(ellipse 60% 50% at 50% 80%, rgba(165,180,252,0.08) 0%, transparent 70%)">
       <div class="container">
         <h1 style="text-transform:none;background:linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Neural Intelligence Command Engine</h1>
@@ -20,6 +36,7 @@
       </div>
     </section>
 
+    <!-- Mission & Approach -->
     <section class="section" style="background:radial-gradient(ellipse 80% 40% at 0% 50%, rgba(165,180,252,0.04) 0%, transparent 60%)">
       <div class="container">
         <div class="about-grid">
@@ -39,22 +56,38 @@
       </div>
     </section>
 
+    <!-- Blueprint System -->
     <section class="section section-alt">
       <div class="container">
-        <h2 style="text-align:center;margin-bottom:32px">The Blueprint System</h2>
-        <div class="about-grid">
-          <div class="about-section">
+        <h2 style="text-align:center;margin-bottom:8px">The Blueprint System</h2>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:40px;max-width:560px;margin-left:auto;margin-right:auto">Every workflow starts with a blueprint. Browse the catalog, activate, and deploy.</p>
+
+        <!-- Spaceships -->
+        <div class="bp-example-grid">
+          <div>
             <h3>Spaceships</h3>
             <p>A Spaceship is your top-level orchestrator. It represents a complete business workflow — a restaurant, a marketing agency, a law firm. When you deploy a Spaceship, it automatically creates a crew of AI agents configured for that specific operation.</p>
             <p>Each Spaceship has a crew capacity determined by its class. A Scout holds 1-2 agents. A Flagship holds 11+. As you earn XP and rank up, you unlock higher-class ships with more slots and rarer blueprints.</p>
           </div>
-          <div class="about-section">
+          <div class="bp-example-card" id="ship-card"></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);margin:48px 0"></div>
+
+        <!-- Agents -->
+        <div class="bp-example-grid reverse">
+          <div class="bp-example-card" id="agent-card"></div>
+          <div>
             <h3>Agents</h3>
             <p>Agents are the workers. Each one has a role (analytics, content, marketing, support), a set of tools, and a system prompt that defines its behavior. Agents execute real tasks — drafting emails, analyzing data, scheduling posts, generating reports.</p>
             <p>Every agent is powered by an AI model. NICE routes each task to the best available model automatically. Free users get Gemini Flash. Pro users unlock Claude, GPT-5, and 10+ models across text, image, video, and voice.</p>
           </div>
         </div>
-        <div class="about-grid" style="margin-top:0">
+
+        <div style="border-top:1px solid var(--border);margin:48px 0"></div>
+
+        <!-- How + Rarity -->
+        <div class="about-grid">
           <div class="about-section">
             <h3>How They Work Together</h3>
             <p>You browse the catalog, pick a Spaceship blueprint, and activate it. The Spaceship deploys with a pre-configured crew. You can swap agents in and out of slots, connect integrations (Gmail, Calendar, Drive), and run missions — real tasks your agents execute.</p>
@@ -67,6 +100,7 @@
       </div>
     </section>
 
+    <!-- Pricing -->
     <section class="section">
       <div class="container">
         <h2 id="pricing" style="text-align:center;margin-bottom:8px;background:linear-gradient(90deg, var(--text), var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Pricing</h2>
@@ -119,6 +153,7 @@
       </div>
     </section>
 
+    <!-- Token Packages -->
     <section class="section section-alt">
       <div class="container">
         <h2 style="text-align:center;margin-bottom:8px">Token Packages</h2>
@@ -149,6 +184,7 @@
       </div>
     </section>
 
+    <!-- Open Source -->
     <section class="section" style="text-align:center;background:radial-gradient(ellipse 50% 60% at 50% 50%, rgba(165,180,252,0.06) 0%, transparent 70%)">
       <div class="container">
         <h2>Open Source</h2>
@@ -161,8 +197,39 @@
     </section>
   </main>
   <footer id="site-footer" class="footer"></footer>
+  <script src="/js/supabase-lite.js"></script>
   <script src="/js/theme-lite.js"></script>
   <script src="/js/nav.js"></script>
-  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+  <script src="/app/js/lib/utils.js"></script>
+  <script src="/app/js/lib/blueprint-utils.js"></script>
+  <script src="/app/js/lib/card-renderer.js"></script>
+  <script>
+    ThemeLite.init();
+    Nav.render();
+    Nav.renderFooter();
+
+    // Render example blueprint cards
+    (async () => {
+      if (typeof SBLite === 'undefined' || typeof CardRenderer === 'undefined') return;
+
+      // Fetch one spaceship and one agent
+      const [ships, agents] = await Promise.all([
+        SBLite.query('blueprints', { select: 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags', filters: ['type=eq.spaceship', 'rarity=eq.Epic'], limit: 1 }),
+        SBLite.query('blueprints', { select: 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags', filters: ['type=eq.agent', 'rarity=eq.Rare'], limit: 1 }),
+      ]);
+
+      const shipEl = document.getElementById('ship-card');
+      const agentEl = document.getElementById('agent-card');
+
+      if (ships.length && shipEl) {
+        shipEl.innerHTML = CardRenderer.render('spaceship', 'full', ships[0], {});
+      }
+      if (agents.length && agentEl) {
+        const bp = agents[0];
+        if (!bp.caps && bp.config?.tools) bp.caps = bp.config.tools;
+        agentEl.innerHTML = CardRenderer.render('agent', 'full', bp, {});
+      }
+    })();
+  </script>
 </body>
 </html>
