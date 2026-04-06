@@ -1,0 +1,5 @@
+1:"$Sreact.fragment"
+2:I[46084,["/offthecouch/_next/static/chunks/00t6y03z9~oeo.js","/offthecouch/_next/static/chunks/0_684pjext7rs.js"],"default"]
+3:I[49653,["/offthecouch/_next/static/chunks/00t6y03z9~oeo.js","/offthecouch/_next/static/chunks/0_684pjext7rs.js"],"default"]
+4:[]
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"kCdnbDHrJbNvFc4Um5iSk"}
