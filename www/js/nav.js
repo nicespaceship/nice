@@ -2,7 +2,6 @@
 const Nav = (() => {
   const LINKS = [
     { href: '/blueprints', label: 'Blueprints' },
-    { href: '/about#pricing', label: 'Pricing' },
     { href: '/academy', label: 'Academy' },
     { href: '/about', label: 'About' },
   ];
