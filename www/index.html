@@ -30,7 +30,6 @@
       <canvas id="warp-canvas"></canvas>
       <img class="hero-ring" src="/assets/space-station-v2.svg" alt="" />
       <img class="hero-ring-outer" src="/assets/outer-ring.svg" alt="" />
-      <span class="badge"><span class="badge-dot"></span> Open Source &middot; MIT License</span>
       <h1>Build your Spaceship.<br/>Deploy your Agents.<br/>Run everything.</h1>
       <p class="hero-acronym">Neural Intelligence Command Engine</p>
       <p class="hero-sub">Agentic workflows powered by 17 AI models. 800+ blueprints. Zero configuration.</p>
@@ -140,7 +139,7 @@
 
           <!-- Column 2: NICE Platform -->
           <div class="flow-col flow-col-nice">
-            <div class="flow-col-label">NICE Platform</div>
+            <div class="flow-col-label">NICE &middot; Neural Intelligence Command Engine</div>
             <div class="flow-node flow-node-lg flow-node-accent" data-flow="nice" data-tip="Top-level orchestrator. Routes tasks to the right agent and model.">
               <i class="fa-solid fa-rocket"></i>
               <strong>Spaceships</strong>
@@ -190,7 +189,7 @@
       <div class="container">
         <div class="section-header centered">
           <span class="badge"><span class="badge-dot"></span> Experience</span>
-          <h2>Not just a tool. A game.</h2>
+          <h2>Level up. Literally.</h2>
         </div>
         <div class="bento-grid">
           <!-- Large: Themes (interactive) -->
@@ -299,16 +298,118 @@
     </section>
 
     <!-- FAQ -->
-    <section class="section faq-section">
+    <section class="section faq-section faq-grid-bg">
       <div class="container">
         <div class="faq-layout">
           <div class="faq-heading">
-            <h2>Frequently<br/>asked questions</h2>
+            <h2>Frequently asked questions</h2>
+            <div class="faq-schematic" aria-hidden="true">
+              <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                  .bp-label { font-family: 'Fira Code', monospace; fill: #555; font-size: 6.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+                  .bp-val { font-family: 'Fira Code', monospace; fill: #777; font-size: 5.5px; }
+                  .bp-dim { font-family: 'Fira Code', monospace; fill: #444; font-size: 5px; letter-spacing: 0.05em; }
+                </style>
+
+                <!-- Left annotations -->
+                <text x="8" y="55" class="bp-label">Agent Slot A1</text>
+                <text x="8" y="65" class="bp-val">type: analytics</text>
+                <text x="8" y="74" class="bp-dim">rarity: rare // xp: 2,400</text>
+                <line x1="8" y1="78" x2="70" y2="78" stroke="#333" stroke-width="0.5"/>
+
+                <text x="8" y="170" class="bp-label">Orchestrator Core</text>
+                <text x="8" y="180" class="bp-val">mode: hierarchical</text>
+                <text x="8" y="189" class="bp-dim">agents: 6 / max: 12</text>
+                <line x1="8" y1="193" x2="70" y2="193" stroke="#333" stroke-width="0.5"/>
+
+                <text x="8" y="260" class="bp-label">Agent Slot B1</text>
+                <text x="8" y="270" class="bp-val">type: content</text>
+                <text x="8" y="279" class="bp-dim">status: active // pid: 0x3F</text>
+                <line x1="8" y1="283" x2="70" y2="283" stroke="#333" stroke-width="0.5"/>
+
+                <!-- Right annotations -->
+                <text x="432" y="55" class="bp-label" text-anchor="end">Agent Slot A2</text>
+                <text x="432" y="65" class="bp-val" text-anchor="end">type: research</text>
+                <text x="432" y="74" class="bp-dim" text-anchor="end">tools: 4 // llm: gemini</text>
+                <line x1="370" y1="78" x2="432" y2="78" stroke="#333" stroke-width="0.5"/>
+
+                <text x="432" y="170" class="bp-label" text-anchor="end">Ship Class</text>
+                <text x="432" y="180" class="bp-val" text-anchor="end">class: dreadnought</text>
+                <text x="432" y="189" class="bp-dim" text-anchor="end">rank: commander // 100K xp</text>
+                <line x1="370" y1="193" x2="432" y2="193" stroke="#333" stroke-width="0.5"/>
+
+                <text x="432" y="260" class="bp-label" text-anchor="end">Agent Slot B2</text>
+                <text x="432" y="270" class="bp-val" text-anchor="end">type: marketing</text>
+                <text x="432" y="279" class="bp-dim" text-anchor="end">missions: 47 // uptime: 99.2%</text>
+                <line x1="370" y1="283" x2="432" y2="283" stroke="#333" stroke-width="0.5"/>
+
+                <!-- Top center annotation -->
+                <text x="175" y="16" class="bp-label">Agent Slot A3</text>
+                <text x="175" y="25" class="bp-dim">type: ops // priority: high</text>
+
+                <!-- Bottom center annotation -->
+                <text x="175" y="340" class="bp-label">Agent Slot B3</text>
+                <text x="175" y="349" class="bp-dim">type: support // queue: 12</text>
+
+                <!-- Connection lines -->
+                <line x1="220" y1="180" x2="120" y2="90" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="320" y2="90" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="120" y2="270" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="320" y2="270" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="220" y2="70" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <line x1="220" y1="180" x2="220" y2="290" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+
+                <!-- Center spaceship node -->
+                <circle cx="220" cy="180" r="28" stroke="var(--accent2)" stroke-width="1" fill="none" opacity="0.4"/>
+                <circle cx="220" cy="180" r="18" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0.2" stroke-dasharray="4 3"/>
+                <circle cx="220" cy="180" r="5" fill="var(--accent2)" opacity="0.8">
+                  <animate attributeName="opacity" values="0.8;0.4;0.8" dur="3s" repeatCount="indefinite"/>
+                </circle>
+
+                <!-- Agent nodes -->
+                <circle cx="120" cy="90" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="120" cy="90" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="120" cy="90" r="3.5" fill="#f87171" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="4s" repeatCount="indefinite"/></circle>
+
+                <circle cx="320" cy="90" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="320" cy="90" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="320" cy="90" r="3.5" fill="#60a5fa" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.5s" repeatCount="indefinite"/></circle>
+
+                <circle cx="220" cy="70" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="220" cy="70" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="220" cy="70" r="3.5" fill="#fbbf24" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="2.8s" repeatCount="indefinite"/></circle>
+
+                <circle cx="120" cy="270" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="120" cy="270" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="120" cy="270" r="3.5" fill="#34d399" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.2s" repeatCount="indefinite"/></circle>
+
+                <circle cx="320" cy="270" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="320" cy="270" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="320" cy="270" r="3.5" fill="#c084fc" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="4.2s" repeatCount="indefinite"/></circle>
+
+                <circle cx="220" cy="290" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
+                <circle cx="220" cy="290" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
+                <circle cx="220" cy="290" r="3.5" fill="#fb923c" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.7s" repeatCount="indefinite"/></circle>
+
+                <!-- Pulse rings -->
+                <circle cx="220" cy="180" r="28" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0">
+                  <animate attributeName="r" values="28;50" dur="4s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.3;0" dur="4s" repeatCount="indefinite"/>
+                </circle>
+
+                <!-- Title -->
+                <text x="220" y="375" text-anchor="middle" class="bp-label" style="font-size:7px;fill:#555;letter-spacing:0.15em">Spaceship Schematic // NCC-NICE-001</text>
+              </svg>
+            </div>
           </div>
           <div class="faq-list">
             <div class="faq-item open">
               <button class="faq-q">What is NICE? <span class="faq-icon">+</span></button>
               <div class="faq-a">NICE (Neural Intelligence Command Engine) is an open-source AI agent platform. Deploy a team of AI agents from 800+ blueprints. They handle email, social, analytics, CRM, and more. NICE is the LLM provider — no API keys needed.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">What is a Blueprint? <span class="faq-icon">+</span></button>
+              <div class="faq-a">A blueprint is a pre-built AI agent or spaceship template. Each one comes configured with a system prompt, tools, and category — ready to deploy. Browse 874 blueprints for industries like marketing, real estate, legal, hospitality, and more.</div>
             </div>
             <div class="faq-item">
               <button class="faq-q">Is this free to use? <span class="faq-icon">+</span></button>
@@ -335,7 +436,8 @@
     <section class="section cta-section faq-section">
       <canvas id="hero-canvas"></canvas>
       <div class="container">
-        <h2>Free to start. Open source forever.</h2>
+        <span class="badge"><span class="badge-dot"></span> Open Source &middot; MIT License</span>
+        <h2>Free to start.<br class="mobile-br"/> Open source forever.</h2>
         <p>No credit card. No API keys. Just launch and go.</p>
         <div class="hero-ctas">
           <a href="https://nicespaceship.ai" class="btn-primary">Get started free <span>→</span></a>

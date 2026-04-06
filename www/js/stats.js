@@ -9,7 +9,7 @@ const Stats = (() => {
 
   function _animate(el, target) {
     if (!el) return;
-    const suffix = target > 99 ? '+' : '';
+    const suffix = '';
     const duration = 1800;
     const startTime = performance.now();
     function step(now) {
@@ -37,12 +37,10 @@ const Stats = (() => {
     // Try live Supabase fetch
     if (typeof SBLite !== 'undefined') {
       try {
-        const [bp, ms] = await Promise.all([
-          SBLite.count('blueprints', 'type=neq.special'),
-          SBLite.count('tasks', 'status=eq.completed'),
-        ]);
-        if (bp > 0) blueprints = bp;
-        if (ms > 0) missions = ms;
+        const rows = await SBLite.query('blueprints', { select: 'id', limit: 1000 });
+        if (rows.length > 0) blueprints = rows.length;
+        const tasks = await SBLite.query('tasks', { select: 'id', filters: ['status=eq.completed'], limit: 1000 });
+        if (tasks.length > 0) missions = tasks.length;
       } catch {}
     }
 
