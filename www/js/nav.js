@@ -19,7 +19,6 @@ const Nav = (() => {
       <nav class="nav">
         <div class="nav-inner">
           <a href="/" class="nav-brand">
-            <img src="/assets/logo.svg" alt="NICE SPACESHIP" class="nav-logo" />
             <span class="nav-brand-text">NICE SPACESHIP</span>
           </a>
           <div class="nav-links" id="nav-links">
