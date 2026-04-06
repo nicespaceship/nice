@@ -16,9 +16,10 @@
 .tcg-card { position:relative; display:flex; flex-direction:column; border:15px solid var(--border); border-radius:25px; background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; margin:50px 0; padding:0; aspect-ratio:5/7; }
 .tcg-card:hover { transform:translateY(-3px); z-index:5; border-color:var(--border-hi); }
 .tcg-card[data-rarity="common"]    { border-color:var(--border); }
-.tcg-card[data-rarity="rare"]      { border-color:#6366f1; }
-.tcg-card[data-rarity="epic"]      { }
-.tcg-card[data-rarity="legendary"] { }
+.tcg-card[data-rarity="rare"]      { border-color:#6366f1; box-shadow:0 0 8px rgba(99,102,241,.15); }
+.tcg-card[data-rarity="epic"]      { border-color:#a855f7; box-shadow:0 0 12px rgba(168,85,247,.15); }
+.tcg-card[data-rarity="legendary"] { border-color:#f59e0b; box-shadow:0 0 16px rgba(245,158,11,.2); }
+.tcg-card[data-rarity="mythic"]    { border-color:#ff2d55; box-shadow:0 0 20px rgba(255,45,85,.2); }
 .tcg-card[data-class="class-1"] { border-color:#94a3b8; }
 .tcg-card[data-class="class-2"] { border-color:#22c55e; }
 .tcg-card[data-class="class-3"] { }
@@ -69,8 +70,9 @@
 .tcg-card-compact { display:flex; align-items:stretch; border:2px solid var(--border); border-radius:var(--card-radius, 0px); background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; min-height:110px; }
 .tcg-card-compact:hover { transform:translateY(-2px); z-index:5; border-color:var(--border-hi); }
 .tcg-card-compact[data-rarity="rare"]      { border-color:#6366f1; }
-.tcg-card-compact[data-rarity="epic"]      { }
-.tcg-card-compact[data-rarity="legendary"] { }
+.tcg-card-compact[data-rarity="epic"]      { border-color:#a855f7; }
+.tcg-card-compact[data-rarity="legendary"] { border-color:#f59e0b; }
+.tcg-card-compact[data-rarity="mythic"]    { border-color:#ff2d55; }
 .tcg-card-compact[data-class="class-1"]    { border-color:#94a3b8; }
 .tcg-card-compact[data-class="class-2"]    { border-color:#22c55e; }
 .tcg-card-compact[data-class="class-3"]    { }
