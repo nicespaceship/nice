@@ -107,7 +107,7 @@ p { margin-bottom: 0.75rem; font-size: 0.92rem; line-height: 1.65; color: var(--
 }
 .nav-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
 .nav-logo { width: 18px; height: 18px; filter: invert(1); }
-.nav-brand-text { font-size: 0.82rem; color: var(--text); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.nav-brand-text { font-size: 1.05rem; color: var(--text); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 .nav-links { display: flex; gap: 2px; flex: 1; justify-content: center; }
 .nav-link {
   color: var(--text-muted); font-size: 0.78rem; font-weight: 400;
@@ -647,6 +647,7 @@ p { margin-bottom: 0.75rem; font-size: 0.92rem; line-height: 1.65; color: var(--
 }
 .catalog-search::placeholder { color: var(--text-dim); }
 .catalog-search:focus { outline: none; border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); }
+.catalog-filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .catalog-filter {
   padding: 6px 14px; background: transparent; border: 1px solid var(--border);
   color: var(--text-muted); font-size: 0.72rem; cursor: pointer; font-family: var(--font);
