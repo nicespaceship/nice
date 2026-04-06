@@ -216,11 +216,17 @@
       const agentEl = document.getElementById('agent-card');
 
       if (ships.length && shipEl) {
-        shipEl.innerHTML = CardRenderer.render('spaceship', 'full', ships[0], {});
+        const sbp = ships[0];
+        if (!sbp.caps) {
+          const crew = parseInt(sbp.stats?.crew || 6, 10);
+          sbp.caps = [];
+          for (let i = 0; i < Math.min(crew, 4); i++) sbp.caps.push('Agent Slot ' + (i + 1));
+        }
+        shipEl.innerHTML = CardRenderer.render('spaceship', 'full', sbp, {});
       }
       if (agents.length && agentEl) {
         const bp = agents[0];
-        if (!bp.caps && bp.config?.tools) bp.caps = bp.config.tools;
+        if (!bp.caps && bp.config?.tools) bp.caps = bp.config.tools.map(t => typeof t === 'string' ? t : t.name || '');
         agentEl.innerHTML = CardRenderer.render('agent', 'full', bp, {});
       }
     })();
