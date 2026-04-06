@@ -19,7 +19,29 @@
 .tcg-card[data-rarity="rare"]      { border-color:#6366f1; box-shadow:0 0 8px rgba(99,102,241,.15); }
 .tcg-card[data-rarity="epic"]      { border-color:#a855f7; box-shadow:0 0 12px rgba(168,85,247,.15); }
 .tcg-card[data-rarity="legendary"] { border-color:#f59e0b; box-shadow:0 0 16px rgba(245,158,11,.2); }
-.tcg-card[data-rarity="mythic"]    { border-color:#ff2d55; box-shadow:0 0 20px rgba(255,45,85,.2); }
+.tcg-card[data-rarity="mythic"]    { animation: mythic-rgb-border 6s linear infinite; }
+@keyframes mythic-rgb-border {
+  0%   { border-color:#ff2d55; box-shadow:0 0 12px #ff2d5560, 0 0 24px #ff2d5530; }
+  16%  { border-color:#ff6b2d; box-shadow:0 0 12px #ff6b2d60, 0 0 24px #ff6b2d30; }
+  33%  { border-color:#ffd32d; box-shadow:0 0 12px #ffd32d60, 0 0 24px #ffd32d30; }
+  50%  { border-color:#2dff6b; box-shadow:0 0 12px #2dff6b60, 0 0 24px #2dff6b30; }
+  66%  { border-color:#2d9fff; box-shadow:0 0 12px #2d9fff60, 0 0 24px #2d9fff30; }
+  83%  { border-color:#a82dff; box-shadow:0 0 12px #a82dff60, 0 0 24px #a82dff30; }
+  100% { border-color:#ff2d55; box-shadow:0 0 12px #ff2d5560, 0 0 24px #ff2d5530; }
+}
+.mythic-badge-animated {
+  animation: mythic-badge-glow 6s linear infinite;
+  border:1px solid #ff2d55;
+}
+@keyframes mythic-badge-glow {
+  0%   { color:#ff2d55; border-color:#ff2d55; text-shadow:0 0 6px #ff2d5540; }
+  16%  { color:#ff6b2d; border-color:#ff6b2d; text-shadow:0 0 6px #ff6b2d40; }
+  33%  { color:#ffd32d; border-color:#ffd32d; text-shadow:0 0 6px #ffd32d40; }
+  50%  { color:#2dff6b; border-color:#2dff6b; text-shadow:0 0 6px #2dff6b40; }
+  66%  { color:#2d9fff; border-color:#2d9fff; text-shadow:0 0 6px #2d9fff40; }
+  83%  { color:#a82dff; border-color:#a82dff; text-shadow:0 0 6px #a82dff40; }
+  100% { color:#ff2d55; border-color:#ff2d55; text-shadow:0 0 6px #ff2d5540; }
+}
 .tcg-card[data-class="class-1"] { border-color:#94a3b8; }
 .tcg-card[data-class="class-2"] { border-color:#22c55e; }
 .tcg-card[data-class="class-3"] { }
