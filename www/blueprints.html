@@ -155,7 +155,10 @@
     }
 
     /* Actions */
-    .bp-drawer-actions { display: flex; gap: 10px; margin-top: auto; padding-top: 8px; }
+    .bp-drawer-actions {
+      display: flex; gap: 10px; padding: 16px 20px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
     .bp-drawer-actions .btn-primary,
     .bp-drawer-actions .btn-secondary { flex: 1; text-align: center; justify-content: center; }
 
@@ -240,6 +243,7 @@
       </div>
     </div>
     <div class="bp-drawer-body" id="bp-drawer-body"></div>
+    <div class="bp-drawer-actions" id="bp-drawer-actions"></div>
   </div>
 
   <footer id="site-footer" class="footer"></footer>
@@ -415,6 +419,12 @@
 
         document.getElementById('bp-drawer-title').textContent = bp.name;
 
+        // Inject caps from config.tools if missing
+        if (!bp.caps) {
+          const t = tools;
+          if (t.length) bp.caps = t.map(function(x) { return typeof x === 'string' ? x : x.name || ''; });
+        }
+
         // Render card via app's CardRenderer
         const cardHTML = typeof CardRenderer !== 'undefined'
           ? CardRenderer.render(bp.type, 'full', bp, {})
@@ -453,10 +463,10 @@
             '<span>' + installs + ' installs</span>' +
           '</div>' +
           '<div class="bp-drawer-stats">' + statsHTML + '</div>' +
-          capsHTML +
-          '<div class="bp-drawer-actions">' +
-            '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in NICE</a>' +
-          '</div>';
+          capsHTML;
+
+        document.getElementById('bp-drawer-actions').innerHTML =
+          '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in NICE</a>';
       }
 
       function render(append) {
@@ -535,7 +545,11 @@
             grid.appendChild(row);
 
           } else if (viewMode === 'card' && CR) {
-            // Full TCG card
+            // Full TCG card — inject caps from config.tools if missing
+            if (!bp.caps) {
+              const t = (bp.config || {}).tools || [];
+              if (t.length) bp.caps = t.map(function(x) { return typeof x === 'string' ? x : x.name || ''; });
+            }
             const wrapper = document.createElement('div');
             wrapper.innerHTML = CR.render(bp.type, 'full', bp, {});
             const card = wrapper.firstElementChild;
