@@ -213,10 +213,14 @@
       if (typeof SBLite === 'undefined' || typeof CardRenderer === 'undefined') return;
 
       // Fetch one spaceship and one agent
-      const [ships, agents] = await Promise.all([
-        SBLite.query('blueprints', { select: 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags', filters: ['type=eq.spaceship', 'rarity=eq.Epic'], limit: 1 }),
-        SBLite.query('blueprints', { select: 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags', filters: ['type=eq.agent', 'rarity=eq.Rare'], limit: 1 }),
+      const sel = 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags';
+      const [allShips, allAgents] = await Promise.all([
+        SBLite.query('blueprints', { select: sel, filters: ['type=eq.spaceship'], limit: 200 }),
+        SBLite.query('blueprints', { select: sel, filters: ['type=eq.agent'], limit: 200 }),
       ]);
+      const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+      const ships = allShips.length ? [pick(allShips)] : [];
+      const agents = allAgents.length ? [pick(allAgents)] : [];
 
       const shipEl = document.getElementById('ship-card');
       const agentEl = document.getElementById('agent-card');
