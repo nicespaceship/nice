@@ -62,6 +62,34 @@
     .bp-rarity-btn[data-rarity="legendary"] { color: #fbbf24; }
     .bp-rarity-btn[data-rarity="mythic"] { color: #f87171; }
     .bp-count { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 12px; }
+
+    /* View toggle */
+    .bp-view-toggle { display:flex; gap:2px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:2px; margin-left:auto; }
+    .bp-view-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border:none; background:transparent; color:var(--text-muted); border-radius:calc(var(--radius, 4px) - 2px); cursor:pointer; transition:all .15s; }
+    .bp-view-btn:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+    .bp-view-btn.active { color:var(--accent2); background:rgba(255,255,255,0.05); }
+
+    /* Card view — full TCG cards in grid */
+    .bp-view-card { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:26px; }
+    .bp-view-card .tcg-card { margin:0; cursor:pointer; }
+
+    /* List view */
+    .bp-view-list { display:flex; flex-direction:column; gap:1px; }
+    .bpl-row { display:grid; grid-template-columns:24px 1.5fr .7fr 2fr 60px 70px; gap:8px; align-items:center; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:border-color .15s; font-size:.75rem; }
+    .bpl-row:hover { border-color:var(--border-hi); }
+    .bpl-header { font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); cursor:default; border-color:transparent; background:transparent; }
+    .bpl-header:hover { border-color:transparent; }
+    .bpl-rarity { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.5rem; font-weight:700; color:#fff; flex-shrink:0; }
+    .bpl-name { font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bpl-cat { color:var(--text-muted); font-size:.65rem; white-space:nowrap; }
+    .bpl-desc { color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bpl-rating { color:var(--accent2); text-align:right; }
+    .bpl-dl { color:var(--text-muted); text-align:right; }
+
+    @media (max-width: 768px) {
+      .bpl-row { grid-template-columns:20px 1fr .5fr; }
+      .bpl-desc, .bpl-rating, .bpl-dl { display:none; }
+    }
     .catalog-load-more-wrap { text-align: center; margin-top: 24px; }
 
     /* ── Side Drawer ── */
@@ -155,9 +183,22 @@
     <section class="section" style="padding-top:0;border-top:none">
       <div class="container">
         <div class="bp-toolbar">
-          <div class="bp-tabs" id="bp-tabs">
-            <button class="bp-tab active" data-type="spaceship"><i class="fa-solid fa-rocket"></i> Spaceships</button>
-            <button class="bp-tab" data-type="agent"><i class="fa-solid fa-robot"></i> Agents</button>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="bp-tabs" id="bp-tabs">
+              <button class="bp-tab active" data-type="spaceship"><i class="fa-solid fa-rocket"></i> Spaceships</button>
+              <button class="bp-tab" data-type="agent"><i class="fa-solid fa-robot"></i> Agents</button>
+            </div>
+            <div class="bp-view-toggle" id="bp-view-toggle">
+              <button class="bp-view-btn active" data-view="default" title="Grid view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
+              </button>
+              <button class="bp-view-btn" data-view="card" title="Card view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="0" width="12" height="14" rx="2"/></svg>
+              </button>
+              <button class="bp-view-btn" data-view="list" title="List view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
+              </button>
+            </div>
           </div>
           <input type="text" class="catalog-search" id="bp-search" placeholder="Search by name, category, or description..." />
           <div class="bp-filters-row">
@@ -232,6 +273,7 @@
       let page = 0;
       let drawerIndex = -1;
       let drawerKeyHandler = null;
+      let viewMode = 'default';
       const PAGE_SIZE = 48;
       const RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
 
@@ -307,6 +349,17 @@
         });
 
         document.getElementById('bp-load-btn').addEventListener('click', () => { page++; render(true); });
+
+        // View toggle
+        document.getElementById('bp-view-toggle').addEventListener('click', e => {
+          const btn = e.target.closest('.bp-view-btn');
+          if (!btn) return;
+          document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          viewMode = btn.dataset.view;
+          page = 0;
+          render();
+        });
 
         // Drawer events
         document.getElementById('bp-drawer-close').addEventListener('click', _closeDrawer);
@@ -430,31 +483,87 @@
         const grid = document.getElementById('bp-grid');
         if (!append) grid.innerHTML = '';
 
+        // Set grid class based on view mode
+        if (!append) {
+          if (viewMode === 'card') grid.className = 'bp-view-card';
+          else if (viewMode === 'list') grid.className = 'bp-view-list';
+          else grid.className = 'catalog-grid';
+        }
+
         const startIdx = append ? page * PAGE_SIZE : 0;
         const items = append ? filtered.slice(startIdx, startIdx + PAGE_SIZE) : slice;
 
         if (total === 0 && !append) {
+          grid.className = 'catalog-grid';
           grid.innerHTML = '<div class="catalog-empty">No blueprints match your filters.</div>';
         }
 
+        const RC = RARITY_COLORS;
+        const CR = typeof CardRenderer !== 'undefined' ? CardRenderer : null;
+
+        // List view header
+        if (viewMode === 'list' && !append) {
+          const isShip = currentType === 'spaceship';
+          grid.innerHTML = '<div class="bpl-row bpl-header">' +
+            '<span></span>' +
+            '<span class="bpl-name">Name</span>' +
+            '<span class="bpl-cat">Category</span>' +
+            '<span class="bpl-desc">Description</span>' +
+            '<span class="bpl-rating">Rating</span>' +
+            '<span class="bpl-dl">Installs</span>' +
+          '</div>';
+        }
+
         items.forEach(bp => {
-          const card = document.createElement('div');
-          card.className = 'bp-card';
-          card.setAttribute('role', 'button');
-          card.setAttribute('tabindex', '0');
-          card.innerHTML =
-            '<div class="bp-card-header">' +
-              '<h3>' + _esc(bp.name) + '</h3>' +
-              '<span class="bp-card-category">' + _esc(bp.category || '') + '</span>' +
-            '</div>' +
-            '<p class="bp-card-desc">' + _esc(bp.description || '') + '</p>' +
-            '<div class="bp-card-footer">' +
-              '<span class="bp-card-rarity ' + (bp.rarity || 'common').toLowerCase() + '">' + _esc(bp.rarity || 'Common') + '</span>' +
-              '<span class="bp-card-type">' + (bp.type === 'spaceship' ? 'Spaceship' : 'Agent') + '</span>' +
-            '</div>';
-          card.addEventListener('click', () => _openDrawer(bp));
-          card.addEventListener('keydown', e => { if (e.key === 'Enter') _openDrawer(bp); });
-          grid.appendChild(card);
+          const rarity = (bp.rarity || 'common').toLowerCase();
+          const rc = RC[rarity] || RC.common;
+
+          if (viewMode === 'list') {
+            // List row
+            const row = document.createElement('div');
+            row.className = 'bpl-row';
+            row.setAttribute('role', 'button');
+            row.setAttribute('tabindex', '0');
+            row.innerHTML =
+              '<span class="bpl-rarity" style="background:' + rc.bg + '"></span>' +
+              '<span class="bpl-name">' + _esc(bp.name) + '</span>' +
+              '<span class="bpl-cat">' + _esc(bp.category || '') + '</span>' +
+              '<span class="bpl-desc">' + _esc(bp.description || '') + '</span>' +
+              '<span class="bpl-rating">' + (bp.rating_avg ? '★ ' + bp.rating_avg : '—') + '</span>' +
+              '<span class="bpl-dl">' + (bp.activation_count || 0) + '</span>';
+            row.addEventListener('click', () => _openDrawer(bp));
+            grid.appendChild(row);
+
+          } else if (viewMode === 'card' && CR) {
+            // Full TCG card
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = CR.render(bp.type, 'full', bp, {});
+            const card = wrapper.firstElementChild;
+            card.style.cursor = 'pointer';
+            card.style.margin = '0';
+            card.addEventListener('click', () => _openDrawer(bp));
+            grid.appendChild(card);
+
+          } else {
+            // Default grid card
+            const card = document.createElement('div');
+            card.className = 'bp-card';
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.innerHTML =
+              '<div class="bp-card-header">' +
+                '<h3>' + _esc(bp.name) + '</h3>' +
+                '<span class="bp-card-category">' + _esc(bp.category || '') + '</span>' +
+              '</div>' +
+              '<p class="bp-card-desc">' + _esc(bp.description || '') + '</p>' +
+              '<div class="bp-card-footer">' +
+                '<span class="bp-card-rarity ' + rarity + '">' + _esc(bp.rarity || 'Common') + '</span>' +
+                '<span class="bp-card-type">' + (bp.type === 'spaceship' ? 'Spaceship' : 'Agent') + '</span>' +
+              '</div>';
+            card.addEventListener('click', () => _openDrawer(bp));
+            card.addEventListener('keydown', e => { if (e.key === 'Enter') _openDrawer(bp); });
+            grid.appendChild(card);
+          }
         });
 
         document.getElementById('bp-load-wrap').style.display = end < total ? '' : 'none';
