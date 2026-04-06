@@ -14,13 +14,15 @@
   <link rel="stylesheet" href="/css/tcg-card.css" />
   <style>
     .bp-example-grid {
-      display: grid; grid-template-columns: 1fr 280px; gap: 40px; align-items: center; margin-top: 32px;
+      display: grid; grid-template-columns: 1fr 300px; gap: 60px; align-items: center; margin: 48px 0;
     }
-    .bp-example-grid.reverse { grid-template-columns: 280px 1fr; }
+    .bp-example-grid.reverse { grid-template-columns: 300px 1fr; }
     .bp-example-card { max-width: 280px; margin: 0 auto; }
     .bp-example-card .tcg-card { margin: 0; pointer-events: none; cursor: default; }
+    .bp-example-grid h3 { margin-bottom: 12px; }
+    .bp-example-grid p { color: var(--text-muted); }
     @media (max-width: 768px) {
-      .bp-example-grid, .bp-example-grid.reverse { grid-template-columns: 1fr; }
+      .bp-example-grid, .bp-example-grid.reverse { grid-template-columns: 1fr; gap: 32px; }
       .bp-example-card { order: -1; }
     }
   </style>
@@ -60,7 +62,7 @@
     <section class="section section-alt">
       <div class="container">
         <h2 style="text-align:center;margin-bottom:8px">The Blueprint System</h2>
-        <p style="text-align:center;color:var(--text-muted);margin-bottom:40px;max-width:560px;margin-left:auto;margin-right:auto">Every workflow starts with a blueprint. Browse the catalog, activate, and deploy.</p>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:16px;max-width:560px;margin-left:auto;margin-right:auto">Every workflow starts with a blueprint. Browse the catalog, activate, and deploy.</p>
 
         <!-- Spaceships -->
         <div class="bp-example-grid">
@@ -72,8 +74,6 @@
           <div class="bp-example-card" id="ship-card"></div>
         </div>
 
-        <div style="border-top:1px solid var(--border);margin:48px 0"></div>
-
         <!-- Agents -->
         <div class="bp-example-grid reverse">
           <div class="bp-example-card" id="agent-card"></div>
@@ -83,8 +83,6 @@
             <p>Every agent is powered by an AI model. NICE routes each task to the best available model automatically. Free users get Gemini Flash. Pro users unlock Claude, GPT-5, and 10+ models across text, image, video, and voice.</p>
           </div>
         </div>
-
-        <div style="border-top:1px solid var(--border);margin:48px 0"></div>
 
         <!-- How + Rarity -->
         <div class="about-grid">
