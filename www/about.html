@@ -14,9 +14,9 @@
   <link rel="stylesheet" href="/css/tcg-card.css" />
   <style>
     .bp-example-grid {
-      display: grid; grid-template-columns: 1fr 300px; gap: 60px; align-items: center; margin: 48px 0;
+      display: grid; grid-template-columns: 65fr 35fr; gap: 60px; align-items: center; margin: 48px 0;
     }
-    .bp-example-grid.reverse { grid-template-columns: 300px 1fr; }
+    .bp-example-grid.reverse { grid-template-columns: 35fr 65fr; }
     .bp-example-card { max-width: 280px; margin: 0 auto; }
     .bp-example-card .tcg-card { margin: 0; pointer-events: none; cursor: default; }
     .bp-example-grid h3 { margin-bottom: 12px; }
@@ -70,6 +70,8 @@
             <h3>Spaceships</h3>
             <p>A Spaceship is your top-level orchestrator. It represents a complete business workflow — a restaurant, a marketing agency, a law firm. When you deploy a Spaceship, it automatically creates a crew of AI agents configured for that specific operation.</p>
             <p>Each Spaceship has a crew capacity determined by its class. A Scout holds 1-2 agents. A Flagship holds 11+. As you earn XP and rank up, you unlock higher-class ships with more slots and rarer blueprints.</p>
+            <h3 style="margin-top:24px">Rarity & Progression</h3>
+            <p>Blueprints come in five rarities: Common, Rare, Epic, Legendary, and Mythic. Higher rarities unlock as you rank up from Ensign to Fleet Admiral. Mythic blueprints can never be purchased — they must be earned through milestones.</p>
           </div>
           <div class="bp-example-card" id="ship-card"></div>
         </div>
@@ -81,18 +83,8 @@
             <h3>Agents</h3>
             <p>Agents are the workers. Each one has a role (analytics, content, marketing, support), a set of tools, and a system prompt that defines its behavior. Agents execute real tasks — drafting emails, analyzing data, scheduling posts, generating reports.</p>
             <p>Every agent is powered by an AI model. NICE routes each task to the best available model automatically. Free users get Gemini Flash. Pro users unlock Claude, GPT-5, and 10+ models across text, image, video, and voice.</p>
-          </div>
-        </div>
-
-        <!-- How + Rarity -->
-        <div class="about-grid">
-          <div class="about-section">
-            <h3>How They Work Together</h3>
+            <h3 style="margin-top:24px">How They Work Together</h3>
             <p>You browse the catalog, pick a Spaceship blueprint, and activate it. The Spaceship deploys with a pre-configured crew. You can swap agents in and out of slots, connect integrations (Gmail, Calendar, Drive), and run missions — real tasks your agents execute.</p>
-          </div>
-          <div class="about-section">
-            <h3>Rarity & Progression</h3>
-            <p>Blueprints come in five rarities: Common, Rare, Epic, Legendary, and Mythic. Higher rarities unlock as you rank up from Ensign to Fleet Admiral. Mythic blueprints can never be purchased — they must be earned through milestones.</p>
           </div>
         </div>
       </div>
