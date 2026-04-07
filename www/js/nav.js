@@ -56,7 +56,6 @@ const Nav = (() => {
               <a href="https://www.instagram.com/nicespaceship" target="_blank" rel="noopener" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
               <a href="https://www.tiktok.com/@nicespaceship" target="_blank" rel="noopener" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
             </div>
-            <a href="https://nicespaceship.ai" class="footer-launch">Launch NICE <span>→</span></a>
           </div>
           <div class="footer-col">
             <h4>Product</h4>
