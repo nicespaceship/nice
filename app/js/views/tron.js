@@ -10,6 +10,65 @@ const TronView = (() => {
 
   let _canvas, _ctx, _cell;
   let _snake, _dir, _nextDir, _food, _score, _hi, _alive, _timer, _el, _lives, _nextLifeAt;
+  let _audioCtx, _soundOn = true;
+
+  /* ── Synthesized TRON sounds (Web Audio API) ── */
+  function _initAudio() {
+    if (_audioCtx) return;
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function _tone(freq, dur, type, vol, slide) {
+    if (!_soundOn || !_audioCtx) return;
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, _audioCtx.currentTime);
+    if (slide) osc.frequency.linearRampToValueAtTime(slide, _audioCtx.currentTime + dur);
+    gain.gain.setValueAtTime(vol || 0.08, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur);
+    osc.connect(gain).connect(_audioCtx.destination);
+    osc.start(); osc.stop(_audioCtx.currentTime + dur);
+  }
+
+  function _sfxStart() {
+    // Engine boot — rising sweep
+    _tone(120, 0.3, 'sawtooth', 0.06, 400);
+    setTimeout(() => _tone(400, 0.2, 'square', 0.05, 800), 200);
+  }
+
+  function _sfxTurn() {
+    // Short blip
+    _tone(600, 0.05, 'square', 0.04, 800);
+  }
+
+  function _sfxEat() {
+    // Rising pickup
+    _tone(500, 0.1, 'square', 0.06, 1200);
+    setTimeout(() => _tone(900, 0.08, 'square', 0.04, 1400), 60);
+  }
+
+  function _sfxExtraLife() {
+    // Ascending arpeggio
+    _tone(600, 0.1, 'square', 0.06);
+    setTimeout(() => _tone(800, 0.1, 'square', 0.06), 80);
+    setTimeout(() => _tone(1000, 0.1, 'square', 0.06), 160);
+    setTimeout(() => _tone(1200, 0.15, 'square', 0.07), 240);
+  }
+
+  function _sfxDeath() {
+    // Crash buzz
+    _tone(300, 0.15, 'sawtooth', 0.08, 80);
+    setTimeout(() => _tone(150, 0.2, 'sawtooth', 0.06, 40), 100);
+  }
+
+  function _sfxDerez() {
+    // Descending derez — glitchy decay
+    _tone(800, 0.1, 'square', 0.07, 200);
+    setTimeout(() => _tone(600, 0.15, 'sawtooth', 0.06, 100), 80);
+    setTimeout(() => _tone(300, 0.2, 'sawtooth', 0.05, 60), 200);
+    setTimeout(() => _tone(100, 0.4, 'sawtooth', 0.04, 30), 350);
+  }
 
   function render(el) {
     _el = el;
@@ -21,6 +80,7 @@ const TronView = (() => {
           <div>Lives: <span id="tron-lives" style="color:#ef4444">3</span></div>
           <div>Score: <span id="tron-score" style="color:var(--accent,#18a0fb)">0</span></div>
           <div>Hi: <span id="tron-hi" style="color:var(--accent2,#0a6bc4)">${_hi}</span></div>
+          <button id="tron-sound" style="background:none;border:1px solid var(--border,rgba(24,160,251,0.25));border-radius:3px;color:var(--accent,#18a0fb);font-family:'Orbitron',sans-serif;font-size:.6rem;padding:2px 8px;cursor:pointer;letter-spacing:.08em;">SFX ON</button>
         </div>
         <div style="position:relative;">
           <canvas id="tron-canvas" style="border:2px solid var(--accent,#18a0fb);border-radius:3px;display:block;box-shadow:0 0 20px rgba(24,160,251,0.15);"></canvas>
@@ -40,6 +100,11 @@ const TronView = (() => {
     _drawEmpty();
 
     document.getElementById('tron-start')?.addEventListener('click', _start);
+    document.getElementById('tron-sound')?.addEventListener('click', () => {
+      _soundOn = !_soundOn;
+      const btn = document.getElementById('tron-sound');
+      if (btn) btn.textContent = _soundOn ? 'SFX ON' : 'SFX OFF';
+    });
     window.addEventListener('keydown', _onKey);
     window.addEventListener('resize', _resize);
   }
@@ -70,6 +135,8 @@ const TronView = (() => {
       if (typeof AuthModal !== 'undefined') AuthModal.open();
       return;
     }
+    _initAudio();
+    _sfxStart();
     const overlay = document.getElementById('tron-overlay');
     if (overlay) overlay.style.display = 'none';
     _snake = [{ x: 16, y: 16 }, { x: 15, y: 16 }, { x: 14, y: 16 }];
@@ -123,6 +190,7 @@ const TronView = (() => {
     if (!nd) return;
     // Prevent reversing into self
     if (nd.x !== -_dir.x || nd.y !== -_dir.y) {
+      if (nd.x !== _dir.x || nd.y !== _dir.y) _sfxTurn();
       _nextDir = nd;
     }
     e.preventDefault();
@@ -145,6 +213,9 @@ const TronView = (() => {
       if (_score >= _nextLifeAt) {
         _lives++;
         _nextLifeAt += 100;
+        _sfxExtraLife();
+      } else {
+        _sfxEat();
       }
       _updateHUD();
       _spawnFood();
@@ -164,7 +235,7 @@ const TronView = (() => {
     _updateHUD();
 
     if (_lives > 0) {
-      // Flash and respawn
+      _sfxDeath();
       _alive = false;
       _draw();
       setTimeout(() => _respawn(), 800);
@@ -172,6 +243,7 @@ const TronView = (() => {
     }
 
     // Final death
+    _sfxDerez();
     _alive = false;
     if (_score > _hi) {
       _hi = _score;
