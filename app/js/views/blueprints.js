@@ -87,8 +87,9 @@ const BlueprintsView = (() => {
 
   let _activeTab = 'schematic';
   let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship' or 'agent'
-  let _viewMode = localStorage.getItem('nice-bp-view') || 'card';
-  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = 'card';
+  const _mobileDefault = window.innerWidth <= 768 ? 'compact' : 'card';
+  let _viewMode = localStorage.getItem('nice-bp-view') || _mobileDefault;
+  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _mobileDefault;
   let _colSort = { key: null, dir: 'asc' }; // column header sort state
 
   /* ── Paginated catalog search state ── */
