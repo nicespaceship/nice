@@ -1283,29 +1283,12 @@ const NICE = (() => {
   }
 
   /* ── Service Worker ── */
-  /* ── PWA Install Prompt ── */
+  /* ── PWA Install Prompt — suppressed, users install via browser menu ── */
   let _deferredInstallPrompt = null;
   function _initPWAInstall() {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       _deferredInstallPrompt = e;
-      // Show install banner after 30s if user is engaged
-      setTimeout(() => {
-        if (_deferredInstallPrompt && typeof Notify !== 'undefined') {
-          Notify.send({
-            title: 'Install NICE',
-            message: 'Add NICE to your home screen for offline access.',
-            type: 'system',
-            undo: () => {
-              if (_deferredInstallPrompt) {
-                _deferredInstallPrompt.prompt();
-                _deferredInstallPrompt.userChoice.then(() => { _deferredInstallPrompt = null; });
-              }
-            },
-            undoLabel: 'Install',
-          });
-        }
-      }, 30000);
     });
 
     window.addEventListener('appinstalled', () => {
