@@ -90,7 +90,7 @@ const TronView = (() => {
             <button id="tron-start" class="btn" style="margin-top:8px;padding:8px 24px;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.1em;">ENTER THE GRID</button>
           </div>
         </div>
-        <div style="font-size:.6rem;color:var(--text-muted);letter-spacing:.08em;font-family:'Orbitron',sans-serif;">ARROW KEYS / WASD</div>
+        <div style="font-size:.6rem;color:var(--text-muted);letter-spacing:.08em;font-family:'Orbitron',sans-serif;">ARROW KEYS / WASD / SWIPE</div>
       </div>
     `;
 
@@ -107,12 +107,48 @@ const TronView = (() => {
     });
     window.addEventListener('keydown', _onKey);
     window.addEventListener('resize', _resize);
+    _canvas.addEventListener('touchstart', _onTouchStart, { passive: false });
+    _canvas.addEventListener('touchend', _onTouchEnd, { passive: false });
+  }
+
+  let _touchX, _touchY;
+
+  function _onTouchStart(e) {
+    e.preventDefault();
+    const t = e.touches[0];
+    _touchX = t.clientX;
+    _touchY = t.clientY;
+    // Tap to start/restart
+    if (!_alive) { _start(); }
+  }
+
+  function _onTouchEnd(e) {
+    e.preventDefault();
+    if (!_alive) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - _touchX;
+    const dy = t.clientY - _touchY;
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return; // ignore taps
+    let nd;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      nd = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+    } else {
+      nd = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+    }
+    if (nd.x !== -_dir.x || nd.y !== -_dir.y) {
+      if (nd.x !== _dir.x || nd.y !== _dir.y) _sfxTurn();
+      _nextDir = nd;
+    }
   }
 
   function destroy() {
     clearInterval(_timer);
     window.removeEventListener('keydown', _onKey);
     window.removeEventListener('resize', _resize);
+    if (_canvas) {
+      _canvas.removeEventListener('touchstart', _onTouchStart);
+      _canvas.removeEventListener('touchend', _onTouchEnd);
+    }
   }
 
   function _resize() {
