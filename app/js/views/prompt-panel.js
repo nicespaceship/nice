@@ -1919,7 +1919,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _panel.className = 'nice-ai';
     _panel.id = 'nice-ai';
     _panel.innerHTML = `
-      <button class="nice-ai-close" id="nice-ai-close" aria-label="Close prompt" title="Close">&times;</button>
       <div class="nice-ai-input-area">
         <div class="nice-ai-mention-popup" id="nice-ai-mention-popup"></div>
         <div class="nice-ai-input-container">
@@ -2011,7 +2010,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   /* ── Bind events ── */
   function _bindEvents() {
     // Close button
-    _panel.querySelector('#nice-ai-close')?.addEventListener('click', hide);
 
     // Orchestration mode selector
     const modeSelect = _panel.querySelector('#nice-ai-mode');
