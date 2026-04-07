@@ -1,0 +1,17 @@
+# SPA fallback — root serves the app
+/ /app/index.html 200
+/app/* /app/index.html 200
+
+# Legacy redirects
+/pricing /#/wallet 301
+/pricing.html /#/wallet 301
+/contact / 301
+/contact.html / 301
+/blueprints /#/bridge 301
+/blueprints.html /#/bridge 301
+/nice / 301
+/nice.html / 301
+/academy / 301
+/academy.html / 301
+/account / 301
+/account.html / 301
