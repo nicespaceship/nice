@@ -3733,6 +3733,21 @@
   .bp-grid { grid-template-columns:1fr; }
   .bp-card-wrap { min-width:0; }
   .tcg-card { min-width:0; width:100% !important; }
+  /* Bridge toolbar — compact spacing on mobile */
+  .bp-type-tabs { margin-bottom:6px !important; }
+  .bp-sub-tabs { gap:4px; margin-bottom:4px; }
+  .bp-search-row { gap:3px; margin-bottom:2px; }
+  .bp-search-row .search-input { font-size:.75rem; padding:4px 8px; }
+  .bp-search-row select { font-size:.7rem; padding:4px 4px; }
+  .bp-rarity-filters { gap:2px; }
+  .bp-rarity-filters .bp-rarity-btn { padding:2px 6px; font-size:.6rem; }
+  .bp-view-toggles { margin-bottom:0; }
+  .bp-toolbar-actions { gap:4px; margin-bottom:2px; }
+  .bp-toolbar-actions .btn { padding:4px 8px; font-size:.6rem; }
+  .bp-progression-bar { flex-wrap:wrap; gap:4px; padding:2px 0; font-size:.6rem; }
+  .bp-prog-next { white-space:normal; font-size:.55rem; }
+  .bp-prog-track { max-width:100px; }
+  .bp-activated-wrap { margin-bottom:4px; }
   .bp-view-card, .bp-view-compact { grid-template-columns:1fr !important; }
   .bpl-row { grid-template-columns:24px 1fr .6fr auto; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
