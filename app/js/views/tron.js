@@ -398,7 +398,7 @@ const TronView = (() => {
       if (hiEl) hiEl.textContent = _hi;
     }
     if (_score >= 5 && typeof Gamification !== 'undefined') {
-      Gamification.award('play_tron', _score);
+      Gamification.addXP('play_tron');
     }
     _drawGameOver();
   }
