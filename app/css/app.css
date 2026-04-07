@@ -3731,6 +3731,8 @@
   .builder-row { grid-template-columns:1fr; }
   .task-row-main { flex-wrap:wrap; }
   .bp-grid { grid-template-columns:1fr; }
+  .bp-card-wrap { min-width:0; }
+  .tcg-card { min-width:0; width:100% !important; }
   .bp-view-card, .bp-view-compact { grid-template-columns:1fr !important; }
   .bpl-row { grid-template-columns:24px 1fr .6fr auto; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
