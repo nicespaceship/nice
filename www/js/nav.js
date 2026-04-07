@@ -62,7 +62,7 @@ const Nav = (() => {
             <h4>Product</h4>
             <a href="https://nicespaceship.ai">Launch NICE</a>
             <a href="/blueprints">Blueprints</a>
-            <a href="/pricing">Pricing</a>
+            <a href="/about#pricing">Pricing</a>
             <a href="/academy">Academy</a>
           </div>
           <div class="footer-col">
