@@ -259,7 +259,10 @@ const SchematicView = (() => {
     return '<div class="schematic-wired">' +
       '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
-      '<div class="schematic-center">' + svg + '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' + '</div>' +
+      '<div class="schematic-center">' + svg +
+        '<div class="jv-arc-reactor" aria-hidden="true"><div class="jv-arc-ring"><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div></div><div class="jv-arc-inner-ring"></div><div class="jv-arc-core"></div></div>' +
+        '<div class="jv-sch-hud" aria-hidden="true"><div class="jv-hud-r jv-hud-r1"></div><div class="jv-hud-r jv-hud-r2"></div><div class="jv-hud-r jv-hud-r3"></div><div class="jv-hud-r jv-hud-r4"></div><div class="jv-hud-r jv-hud-r5"></div><div class="jv-hud-r jv-hud-r6"></div><div class="jv-hud-ticks"></div></div>' +
+        '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' + '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';
   }
@@ -306,8 +309,13 @@ const SchematicView = (() => {
       const dash = filled ? '' : ' stroke-dasharray="3 5"';
       const sw = filled ? '.8' : '.4';
       let d;
+      const isJarvis = document.documentElement.getAttribute('data-theme') === 'jarvis';
 
-      if (isStacked) {
+      if (isJarvis) {
+        // Circuit-trace style: direct angled line from card to core
+        // Each line is a simple straight shot — no shared segments
+        d = 'M' + cardCx + ',' + cardCy + ' L' + rcx + ',' + rcy;
+      } else if (isStacked) {
         const cpOff = Math.abs(rcy - cardCy) * 0.55;
         const cp1y = isLeft ? cardCy + cpOff : cardCy - cpOff;
         const cp2y = isLeft ? rcy - cpOff * 0.3 : rcy + cpOff * 0.3;

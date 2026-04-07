@@ -50,8 +50,10 @@ const HomeView = (() => {
   }
 
   function _renderEmptyGreeting() {
+    const hudRings = '<div class="jv-sch-hud" aria-hidden="true"><div class="jv-hud-r jv-hud-r1"></div><div class="jv-hud-r jv-hud-r2"></div><div class="jv-hud-r jv-hud-r3"></div><div class="jv-hud-r jv-hud-r4"></div><div class="jv-hud-r jv-hud-r5"></div><div class="jv-hud-r jv-hud-r6"></div><div class="jv-hud-ticks"></div></div>';
     return `
       <div class="chat-home-empty">
+        ${hudRings}
         <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
         <button class="btn cd-btn-primary cd-home-cta" id="home-build-team" style="margin-top:24px;padding:12px 28px;font-size:.9rem;">Build an AI Team</button>
       </div>

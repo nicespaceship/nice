@@ -125,7 +125,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 | Navigator | Electric blue TRON grid | Built-in |
 | Matrix | Digital rain green, terminal | Built-in |
 | LCARS | Star Trek modular, pastels | Built-in |
-| Steampunk | Brass/copper Victorian | Built-in |
+| J.A.R.V.I.S. | Holographic blue HUD, arc reactor | Built-in |
 | + 5 more | Pod, Gundam, 16-bit, Solar, Retro | Built-in |
 
 ### Skin CSS Variables

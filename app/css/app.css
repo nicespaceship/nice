@@ -3824,7 +3824,7 @@
 ═══════════════════════════════════════════════════════════════ */
 .chat-home {
   display:flex; flex-direction:column;
-  min-height:calc(100vh - 60px);
+  height:100%;
   max-width:720px; margin:0 auto;
   padding:0 20px;
 }
@@ -3833,11 +3833,11 @@
 .chat-home-empty {
   flex:1; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
-  padding-bottom:40px;
+  min-height:0; position:relative;
 }
 .chat-home-greeting {
   font-family:var(--font-b); font-size:1.6rem; font-weight:700;
-  color:var(--text); text-align:center;
+  color:var(--text); text-align:center; position:relative; z-index:2;
 }
 
 /* Quick action pills */
