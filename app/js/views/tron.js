@@ -75,7 +75,7 @@ const TronView = (() => {
     _hi = parseInt(localStorage.getItem('nice-tron-hi') || '0', 10);
 
     el.innerHTML = `
-      <div class="tron-game" style="display:flex;flex-direction:column;align-items:center;padding:24px 0;gap:16px;">
+      <div class="tron-game" style="display:flex;flex-direction:column;align-items:center;padding:24px 0;gap:16px;position:relative;z-index:10;">
         <div class="tron-hud" style="display:flex;gap:32px;font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">
           <div>Lives: <span id="tron-lives" style="color:#ef4444">3</span></div>
           <div>Score: <span id="tron-score" style="color:var(--accent,#18a0fb)">0</span></div>
