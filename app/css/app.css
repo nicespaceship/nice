@@ -3749,6 +3749,8 @@
   .bp-prog-next { white-space:normal; font-size:.55rem; }
   .bp-prog-track { max-width:100px; }
   .bp-activated-wrap { margin-bottom:4px; }
+  /* Disable hover lift on touch devices */
+  .tcg-card:hover, .tcg-card-grid:hover, .tcg-card-compact:hover { transform:none !important; }
   .bp-view-card, .bp-view-compact { grid-template-columns:1fr !important; }
   .bpl-row { grid-template-columns:24px 1fr .6fr auto; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
