@@ -2328,17 +2328,17 @@
 [data-theme="jarvis"] {
   --bg:           #070d1a;
   --bg2:          #0c1829;
-  --surface:      rgba(79,195,247,0.04);
-  --surface2:     rgba(79,195,247,0.08);
-  --border:       rgba(79,195,247,0.18);
-  --border-hi:    rgba(79,195,247,0.5);
-  --accent:       #4fc3f7;
-  --accent2:      #80d8ff;
-  --text:         #b8d8f0;
-  --text-muted:   rgba(79,195,247,0.55);
+  --surface:      rgba(0,229,255,0.04);
+  --surface2:     rgba(0,229,255,0.08);
+  --border:       rgba(0,229,255,0.18);
+  --border-hi:    rgba(0,229,255,0.5);
+  --accent:       #00e5ff;
+  --accent2:      #18ffff;
+  --text:         #b2ebf2;
+  --text-muted:   rgba(0,229,255,0.55);
   --text-dim:     rgba(184,216,240,0.35);
-  --glow:         0 0 16px rgba(79,195,247,0.2);
-  --glow-hi:      0 0 24px rgba(79,195,247,0.4);
+  --glow:         0 0 16px rgba(0,229,255,0.2);
+  --glow-hi:      0 0 24px rgba(0,229,255,0.4);
   --panel-bg:     rgba(7,13,26,0.95);
   --nav-bg:       rgba(7,13,26,0.95);
   --font-d:       'Exo 2', 'Inter', sans-serif;
@@ -2349,10 +2349,10 @@
   --border-width: 1px;
   --scan:         0;
   --bg-pattern:   none;
-  --jv-blue:      #4fc3f7;
+  --jv-blue:      #00e5ff;
   --jv-blue-dk:   #1a6b9e;
-  --jv-blue-lt:   #80d8ff;
-  --jv-arc:       #e3f2fd;
+  --jv-blue-lt:   #18ffff;
+  --jv-arc:       #e0f7fa;
   --jv-panel:     #0e1a2e;
   --jv-panel-lt:  #132340;
 }
@@ -2360,55 +2360,55 @@
 /* Sidebar — translucent glass panel */
 [data-theme="jarvis"] .app-sidebar {
   background: linear-gradient(180deg, rgba(12,24,41,0.98) 0%, rgba(7,13,26,0.98) 100%);
-  border-right: 1px solid rgba(79,195,247,0.15);
-  box-shadow:inset -1px 0 0 rgba(79,195,247,0.08);
+  border-right: 1px solid rgba(0,229,255,0.15);
+  box-shadow:inset -1px 0 0 rgba(0,229,255,0.08);
 }
 [data-theme="jarvis"] .side-header {
   background: rgba(14,26,46,0.9);
-  border-bottom: 1px solid rgba(79,195,247,0.15);
+  border-bottom: 1px solid rgba(0,229,255,0.15);
   position: relative;
 }
 [data-theme="jarvis"] .side-header::after {
   content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(79,195,247,0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent);
   pointer-events: none;
 }
 [data-theme="jarvis"] .side-header .app-brand-text {
-  color: #80d8ff; font-family: 'Exo 2', sans-serif;
-  text-shadow: 0 0 12px rgba(79,195,247,0.3);
+  color: #18ffff; font-family: 'Exo 2', sans-serif;
+  text-shadow: 0 0 12px rgba(0,229,255,0.3);
   letter-spacing: .15em;
 }
 [data-theme="jarvis"] .side-link {
   border-radius: 3px;
   border: 1px solid transparent;
-  border-left: 2px solid rgba(79,195,247,0.15);
+  border-left: 2px solid rgba(0,229,255,0.15);
   margin: 2px 8px;
   font-family: 'Exo 2', sans-serif;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .12em;
   font-size: .65rem;
-  color: rgba(79,195,247,0.7);
+  color: rgba(0,229,255,0.7);
   transition: all .2s;
 }
 [data-theme="jarvis"] .side-link:hover {
-  background: rgba(79,195,247,0.06);
-  border-left-color: #4fc3f7;
-  color: #b8d8f0;
+  background: rgba(0,229,255,0.06);
+  border-left-color: #00e5ff;
+  color: #b2ebf2;
 }
 [data-theme="jarvis"] .side-link.active {
-  background: rgba(79,195,247,0.08);
-  border-left-color: #4fc3f7;
-  border-color: rgba(79,195,247,0.2);
-  color: #80d8ff;
-  box-shadow: inset 0 0 12px rgba(79,195,247,0.06);
+  background: rgba(0,229,255,0.08);
+  border-left-color: #00e5ff;
+  border-color: rgba(0,229,255,0.2);
+  color: #18ffff;
+  box-shadow: inset 0 0 12px rgba(0,229,255,0.06);
 }
 [data-theme="jarvis"] .side-footer {
   background: rgba(7,13,26,0.95);
-  border-top: 1px solid rgba(79,195,247,0.12);
+  border-top: 1px solid rgba(0,229,255,0.12);
 }
 [data-theme="jarvis"] .hdr-user-badge {
-  background: rgba(79,195,247,0.1); color: #80d8ff; border-color: rgba(79,195,247,0.3);
+  background: rgba(0,229,255,0.1); color: #18ffff; border-color: rgba(0,229,255,0.3);
 }
 
 /* Topbar — holographic scan line */
@@ -2420,20 +2420,20 @@
   content: '';
   position: absolute; bottom: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(79,195,247,0.4) 20%, rgba(128,216,255,0.6) 50%, rgba(79,195,247,0.4) 80%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.4) 20%, rgba(24,255,255,0.6) 50%, rgba(0,229,255,0.4) 80%, transparent 100%);
 }
 
 /* Panels — translucent glass with blue edge glow */
 [data-theme="jarvis"] .widget-card,
 [data-theme="jarvis"] .tc-section,
 [data-theme="jarvis"] .detail-section {
-  border: 1px solid rgba(79,195,247,0.15);
+  border: 1px solid rgba(0,229,255,0.15);
   border-radius: 3px;
   background: rgba(14,26,46,0.6);
   backdrop-filter: blur(8px);
   box-shadow:
     0 2px 12px rgba(0,0,0,0.3),
-    inset 0 1px 0 rgba(79,195,247,0.06);
+    inset 0 1px 0 rgba(0,229,255,0.06);
   position: relative;
 }
 /* Top-edge glow line */
@@ -2441,7 +2441,7 @@
 [data-theme="jarvis"] .tc-section::before {
   content: '';
   position: absolute; top: 0; left: 12px; right: 12px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(79,195,247,0.25), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.25), transparent);
   pointer-events: none; z-index: 1;
 }
 [data-theme="jarvis"] .widget-card::after,
@@ -2451,10 +2451,10 @@
 
 /* Buttons — clean geometric with blue glow */
 [data-theme="jarvis"] .btn {
-  border:1px solid rgba(79,195,247,0.25);
+  border:1px solid rgba(0,229,255,0.25);
   border-radius:3px;
-  background:rgba(79,195,247,0.06);
-  color:#80d8ff;
+  background:rgba(0,229,255,0.06);
+  color:#18ffff;
   font-family:'Exo 2', sans-serif;
   font-weight:600;
   text-transform:uppercase;
@@ -2462,19 +2462,19 @@
   box-shadow:none;
 }
 [data-theme="jarvis"] .btn:hover {
-  background:rgba(79,195,247,0.12);
-  border-color:rgba(79,195,247,0.5);
-  box-shadow:0 0 12px rgba(79,195,247,0.15);
+  background:rgba(0,229,255,0.12);
+  border-color:rgba(0,229,255,0.5);
+  box-shadow:0 0 12px rgba(0,229,255,0.15);
 }
 [data-theme="jarvis"] .btn-primary {
-  background:rgba(79,195,247,0.15);
-  color:#e3f2fd;
-  border-color:rgba(79,195,247,0.5);
-  box-shadow:0 0 8px rgba(79,195,247,0.15);
+  background:rgba(0,229,255,0.15);
+  color:#e0f7fa;
+  border-color:rgba(0,229,255,0.5);
+  box-shadow:0 0 8px rgba(0,229,255,0.15);
 }
 [data-theme="jarvis"] .btn-primary:hover {
-  background:rgba(79,195,247,0.25);
-  box-shadow:0 0 16px rgba(79,195,247,0.3);
+  background:rgba(0,229,255,0.25);
+  box-shadow:0 0 16px rgba(0,229,255,0.3);
 }
 
 /* Tab bars — holographic segments */
@@ -2482,9 +2482,9 @@
 [data-theme="jarvis"] .bridge-hero-tab,
 [data-theme="jarvis"] .log-view-tab {
   border-radius:3px;
-  border:1px solid rgba(79,195,247,0.15);
-  background:rgba(79,195,247,0.04);
-  color:rgba(79,195,247,0.6);
+  border:1px solid rgba(0,229,255,0.15);
+  background:rgba(0,229,255,0.04);
+  color:rgba(0,229,255,0.6);
   font-family:'Exo 2', sans-serif;
   font-weight:600;
   text-transform:uppercase;
@@ -2493,141 +2493,141 @@
 [data-theme="jarvis"] .bp-type-tab.active,
 [data-theme="jarvis"] .bridge-hero-tab.active,
 [data-theme="jarvis"] .log-view-tab.active {
-  background:rgba(79,195,247,0.12);
-  color:#e3f2fd;
-  border-color:rgba(79,195,247,0.5);
-  box-shadow:0 0 10px rgba(79,195,247,0.15);
+  background:rgba(0,229,255,0.12);
+  color:#e0f7fa;
+  border-color:rgba(0,229,255,0.5);
+  box-shadow:0 0 10px rgba(0,229,255,0.15);
 }
 [data-theme="jarvis"] .bp-type-tab:hover,
 [data-theme="jarvis"] .bridge-hero-tab:hover,
 [data-theme="jarvis"] .log-view-tab:hover {
-  background:rgba(79,195,247,0.08);
-  border-color:rgba(79,195,247,0.3);
-  color:#80d8ff;
+  background:rgba(0,229,255,0.08);
+  border-color:rgba(0,229,255,0.3);
+  color:#18ffff;
 }
 
 /* Sub-tabs & filters */
 [data-theme="jarvis"] .bp-sub-tab {
-  border-radius: 3px; border: 1px solid rgba(79,195,247,0.15);
-  background: rgba(79,195,247,0.04);
-  color: rgba(79,195,247,0.6); font-family: 'Exo 2', sans-serif;
+  border-radius: 3px; border: 1px solid rgba(0,229,255,0.15);
+  background: rgba(0,229,255,0.04);
+  color: rgba(0,229,255,0.6); font-family: 'Exo 2', sans-serif;
   font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
 }
-[data-theme="jarvis"] .bp-sub-tab.active { background: rgba(79,195,247,0.15); color: #e3f2fd; border-color: rgba(79,195,247,0.5); }
+[data-theme="jarvis"] .bp-sub-tab.active { background: rgba(0,229,255,0.15); color: #e0f7fa; border-color: rgba(0,229,255,0.5); }
 [data-theme="jarvis"] .bp-rarity-btn {
-  border-radius: 3px; border: 1px solid rgba(79,195,247,0.12);
-  background: rgba(79,195,247,0.03); color: rgba(79,195,247,0.5);
+  border-radius: 3px; border: 1px solid rgba(0,229,255,0.12);
+  background: rgba(0,229,255,0.03); color: rgba(0,229,255,0.5);
   font-family: 'Exo 2', sans-serif; font-weight: 500;
   text-transform: uppercase; letter-spacing: .06em; font-size: .65rem;
 }
-[data-theme="jarvis"] .bp-rarity-btn.active { background: rgba(79,195,247,0.1); color: #80d8ff; border-color: rgba(79,195,247,0.4); }
+[data-theme="jarvis"] .bp-rarity-btn.active { background: rgba(0,229,255,0.1); color: #18ffff; border-color: rgba(0,229,255,0.4); }
 [data-theme="jarvis"] .bp-view-btn {
-  border-radius: 3px; border: 1px solid rgba(79,195,247,0.12); background: rgba(79,195,247,0.03);
+  border-radius: 3px; border: 1px solid rgba(0,229,255,0.12); background: rgba(0,229,255,0.03);
 }
-[data-theme="jarvis"] .bp-view-btn.active { background: rgba(79,195,247,0.1); border-color: rgba(79,195,247,0.4); }
+[data-theme="jarvis"] .bp-view-btn.active { background: rgba(0,229,255,0.1); border-color: rgba(0,229,255,0.4); }
 
 /* Mission cards — holographic panel */
 [data-theme="jarvis"] .mc-card {
-  border:1px solid rgba(79,195,247,0.15);
-  border-left:3px solid rgba(79,195,247,0.4);
+  border:1px solid rgba(0,229,255,0.15);
+  border-left:3px solid rgba(0,229,255,0.4);
   border-radius:3px;
   background:rgba(14,26,46,0.6);
   box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 /* TCG cards — holographic frame */
 [data-theme="jarvis"] .tcg-card {
-  border:1px solid rgba(79,195,247,0.2);
+  border:1px solid rgba(0,229,255,0.2);
   border-radius:3px;
-  box-shadow:0 2px 12px rgba(0,0,0,0.3), 0 0 1px rgba(79,195,247,0.2);
+  box-shadow:0 2px 12px rgba(0,0,0,0.3), 0 0 1px rgba(0,229,255,0.2);
 }
-[data-theme="jarvis"] .mc-card-running { border-left-color: #4fc3f7; }
+[data-theme="jarvis"] .mc-card-running { border-left-color: #00e5ff; }
 [data-theme="jarvis"] .mc-card-completed { border-left-color: #66bb6a; }
 [data-theme="jarvis"] .mc-card-failed { border-left-color: #ef5350; }
 
 /* Pipeline nodes */
 [data-theme="jarvis"] .mc-pipe-node {
-  border-radius: 3px; border: 1px solid rgba(79,195,247,0.15);
-  background: rgba(79,195,247,0.04);
-  color: rgba(79,195,247,0.6);
+  border-radius: 3px; border: 1px solid rgba(0,229,255,0.15);
+  background: rgba(0,229,255,0.04);
+  color: rgba(0,229,255,0.6);
 }
 [data-theme="jarvis"] .mc-pipe-node:hover,
 [data-theme="jarvis"] .mc-pipe-active {
-  background: rgba(79,195,247,0.15);
-  color: #e3f2fd;
-  border-color: rgba(79,195,247,0.5);
+  background: rgba(0,229,255,0.15);
+  color: #e0f7fa;
+  border-color: rgba(0,229,255,0.5);
 }
 
 /* Gauges */
 [data-theme="jarvis"] .mc-gauge,
 [data-theme="jarvis"] .log-gauge {
-  border-radius: 3px; border-color: rgba(79,195,247,0.2);
+  border-radius: 3px; border-color: rgba(0,229,255,0.2);
 }
 
 /* Input fields — holographic terminal */
 [data-theme="jarvis"] input[type="text"],
 [data-theme="jarvis"] .search-input {
   border-radius: 3px;
-  border: 1px solid rgba(79,195,247,0.15);
+  border: 1px solid rgba(0,229,255,0.15);
   background: rgba(7,13,26,0.8);
-  color: #b8d8f0;
+  color: #b2ebf2;
   font-family: 'Inter', sans-serif;
 }
 [data-theme="jarvis"] input[type="text"]:focus,
-[data-theme="jarvis"] .search-input:focus { border-color: #4fc3f7; box-shadow: 0 0 8px rgba(79,195,247,0.15); }
+[data-theme="jarvis"] .search-input:focus { border-color: #00e5ff; box-shadow: 0 0 8px rgba(0,229,255,0.15); }
 [data-theme="jarvis"] select {
-  border-radius: 3px; border: 1px solid rgba(79,195,247,0.15); color: #b8d8f0;
+  border-radius: 3px; border: 1px solid rgba(0,229,255,0.15); color: #b2ebf2;
   background: rgba(7,13,26,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234fc3f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
 }
 [data-theme="jarvis"] .filter-select {
-  border-radius: 3px; border: 1px solid rgba(79,195,247,0.15); color: #b8d8f0;
+  border-radius: 3px; border: 1px solid rgba(0,229,255,0.15); color: #b2ebf2;
   background: rgba(7,13,26,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234fc3f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
 }
 [data-theme="jarvis"] .search-box {
-  background: rgba(7,13,26,0.8); border-color: rgba(79,195,247,0.15); border-radius: 3px;
+  background: rgba(7,13,26,0.8); border-color: rgba(0,229,255,0.15); border-radius: 3px;
 }
 
 /* Prompt panel — holographic communicator */
 [data-theme="jarvis"] .nice-ai-input-area {
-  border: 1px solid rgba(79,195,247,0.2); border-radius: 16px;
+  border: 1px solid rgba(0,229,255,0.2); border-radius: 16px;
   background: rgba(14,26,46,0.7);
 }
-[data-theme="jarvis"] .nice-ai-input-area:focus-within { border-color: #4fc3f7; box-shadow: 0 0 12px rgba(79,195,247,0.15); }
-[data-theme="jarvis"] .nice-ai-input { color: #b8d8f0; }
-[data-theme="jarvis"] .nice-ai-input::placeholder { color: rgba(79,195,247,0.35); }
+[data-theme="jarvis"] .nice-ai-input-area:focus-within { border-color: #00e5ff; box-shadow: 0 0 12px rgba(0,229,255,0.15); }
+[data-theme="jarvis"] .nice-ai-input { color: #b2ebf2; }
+[data-theme="jarvis"] .nice-ai-input::placeholder { color: rgba(0,229,255,0.35); }
 [data-theme="jarvis"] .nice-ai-chip {
-  border-radius: 3px; border: 1px solid rgba(79,195,247,0.2);
-  background: rgba(79,195,247,0.06);
-  color: rgba(79,195,247,0.7); font-family: 'Exo 2', sans-serif;
+  border-radius: 3px; border: 1px solid rgba(0,229,255,0.2);
+  background: rgba(0,229,255,0.06);
+  color: rgba(0,229,255,0.7); font-family: 'Exo 2', sans-serif;
   font-weight: 500; text-transform: uppercase;
 }
-[data-theme="jarvis"] .nice-ai-chip:hover { background: rgba(79,195,247,0.12); color: #80d8ff; }
+[data-theme="jarvis"] .nice-ai-chip:hover { background: rgba(0,229,255,0.12); color: #18ffff; }
 [data-theme="jarvis"] .chat-pill {
-  border-radius: 9999px; border: 1px solid rgba(79,195,247,0.15);
-  background: rgba(79,195,247,0.04); color: rgba(79,195,247,0.6);
+  border-radius: 9999px; border: 1px solid rgba(0,229,255,0.15);
+  background: rgba(0,229,255,0.04); color: rgba(0,229,255,0.6);
 }
-[data-theme="jarvis"] .chat-pill:hover { background: rgba(79,195,247,0.1); color: #80d8ff; }
+[data-theme="jarvis"] .chat-pill:hover { background: rgba(0,229,255,0.1); color: #18ffff; }
 
 /* Schematic cards */
 [data-theme="jarvis"] .schematic-wired .tcg-card-mini {
-  border-color: rgba(79,195,247,0.2);
+  border-color: rgba(0,229,255,0.2);
   border-radius: 3px;
 }
 /* Filled card slots — reactor blue glow (override rarity colors) */
 [data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-card-mini,
 [data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-card-mini[data-rarity] {
-  border-color: rgba(79,195,247,0.5) !important;
-  box-shadow: 0 0 10px rgba(79,195,247,0.15), 0 0 20px rgba(79,195,247,0.06);
+  border-color: rgba(0,229,255,0.5) !important;
+  box-shadow: 0 0 10px rgba(0,229,255,0.15), 0 0 20px rgba(0,229,255,0.06);
 }
 [data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .tcg-card-mini,
 [data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .tcg-card-mini[data-rarity] {
-  border-color: rgba(128,216,255,0.7) !important;
-  box-shadow: 0 0 20px rgba(79,195,247,0.25), 0 0 40px rgba(79,195,247,0.1);
+  border-color: rgba(24,255,255,0.7) !important;
+  box-shadow: 0 0 20px rgba(0,229,255,0.25), 0 0 40px rgba(0,229,255,0.1);
 }
 /* Rotating border ring on filled cards — reactor blue */
 [data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty)::before {
-  border-color: rgba(79,195,247,0.35);
+  border-color: rgba(0,229,255,0.35);
 }
 [data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty)::after {
   --accent2: #e64a19;
@@ -2691,8 +2691,8 @@
   position:absolute; top:2px; left:50%; transform:translateX(-50%);
   width:14px; height:20px;
   border-radius:4px;
-  background:linear-gradient(180deg, rgba(79,195,247,0.6), rgba(128,216,255,0.3));
-  box-shadow:0 0 8px rgba(79,195,247,0.5), 0 0 16px rgba(79,195,247,0.2);
+  background:linear-gradient(180deg, rgba(0,229,255,0.6), rgba(24,255,255,0.3));
+  box-shadow:0 0 8px rgba(0,229,255,0.5), 0 0 16px rgba(0,229,255,0.2);
   animation:jv-seg-pulse 2.5s ease-in-out infinite;
 }
 [data-theme="jarvis"] .jv-arc-seg:nth-child(1)  { transform:rotate(0deg); }
@@ -2721,8 +2721,8 @@
   position:absolute;
   top:28px; left:28px; right:28px; bottom:28px;
   border-radius:50%;
-  border:2px solid rgba(79,195,247,0.3);
-  box-shadow:0 0 12px rgba(79,195,247,0.15), inset 0 0 12px rgba(79,195,247,0.08);
+  border:2px solid rgba(0,229,255,0.3);
+  box-shadow:0 0 12px rgba(0,229,255,0.15), inset 0 0 12px rgba(0,229,255,0.08);
   animation:jv-ring-pulse 3s ease-in-out infinite;
 }
 
@@ -2732,27 +2732,197 @@
   top:50%; left:50%; transform:translate(-50%,-50%);
   width:40px; height:40px;
   border-radius:50%;
-  background:radial-gradient(circle, #e3f2fd 0%, #80d8ff 30%, rgba(79,195,247,0.4) 60%, transparent 80%);
-  box-shadow:0 0 20px rgba(128,216,255,0.6), 0 0 40px rgba(79,195,247,0.3), 0 0 60px rgba(79,195,247,0.15);
+  background:radial-gradient(circle, #e0f7fa 0%, #18ffff 30%, rgba(0,229,255,0.4) 60%, transparent 80%);
+  box-shadow:0 0 20px rgba(24,255,255,0.6), 0 0 40px rgba(0,229,255,0.3), 0 0 60px rgba(0,229,255,0.15);
   animation:jv-core-pulse 2s ease-in-out infinite;
 }
 
 @keyframes jv-seg-pulse {
-  0%,100% { opacity:0.5; box-shadow:0 0 6px rgba(79,195,247,0.3); }
-  50%     { opacity:1;   box-shadow:0 0 12px rgba(79,195,247,0.6), 0 0 24px rgba(79,195,247,0.2); }
+  0%,100% { opacity:0.5; box-shadow:0 0 6px rgba(0,229,255,0.3); }
+  50%     { opacity:1;   box-shadow:0 0 12px rgba(0,229,255,0.6), 0 0 24px rgba(0,229,255,0.2); }
 }
 @keyframes jv-ring-pulse {
-  0%,100% { border-color:rgba(79,195,247,0.25); box-shadow:0 0 10px rgba(79,195,247,0.1), inset 0 0 10px rgba(79,195,247,0.05); }
-  50%     { border-color:rgba(79,195,247,0.5);  box-shadow:0 0 18px rgba(79,195,247,0.25), inset 0 0 18px rgba(79,195,247,0.12); }
+  0%,100% { border-color:rgba(0,229,255,0.25); box-shadow:0 0 10px rgba(0,229,255,0.1), inset 0 0 10px rgba(0,229,255,0.05); }
+  50%     { border-color:rgba(0,229,255,0.5);  box-shadow:0 0 18px rgba(0,229,255,0.25), inset 0 0 18px rgba(0,229,255,0.12); }
 }
 @keyframes jv-core-pulse {
-  0%,100% { box-shadow:0 0 16px rgba(128,216,255,0.5), 0 0 35px rgba(79,195,247,0.25); transform:translate(-50%,-50%) scale(1); }
-  50%     { box-shadow:0 0 24px rgba(128,216,255,0.8), 0 0 50px rgba(79,195,247,0.4), 0 0 80px rgba(79,195,247,0.15); transform:translate(-50%,-50%) scale(1.06); }
+  0%,100% { box-shadow:0 0 16px rgba(24,255,255,0.5), 0 0 35px rgba(0,229,255,0.25); transform:translate(-50%,-50%) scale(1); }
+  50%     { box-shadow:0 0 24px rgba(24,255,255,0.8), 0 0 50px rgba(0,229,255,0.4), 0 0 80px rgba(0,229,255,0.15); transform:translate(-50%,-50%) scale(1.06); }
 }
 
 /* Hide default SVG reactor circles on JARVIS — arc reactor replaces them */
 [data-theme="jarvis"] .schematic-svg circle:not([class]) { opacity:0; }
 [data-theme="jarvis"] .schematic-svg .sch-core-hit { opacity:1; }
+
+/* ── Schematic HUD — animated concentric rings ── */
+.jv-sch-hud { display:none; }
+[data-theme="jarvis"] .jv-sch-hud {
+  display:block; position:absolute; z-index:1;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  width:600px; height:600px;
+  pointer-events:none;
+}
+/* Shared ring base */
+[data-theme="jarvis"] .jv-hud-r {
+  position:absolute; border-radius:50%;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  border-style:solid; border-color:rgba(0,229,255,0.15);
+}
+
+/* R1 — outermost, thick, slow counter-rotate, dashed */
+[data-theme="jarvis"] .jv-hud-r1 {
+  width:580px; height:580px;
+  border-width:3px;
+  border-color:rgba(0,229,255,0.12);
+  border-style:dashed;
+  animation:jv-hud-spin-rev 40s linear infinite;
+}
+/* R2 — thick solid, slow rotate, pulsing glow */
+[data-theme="jarvis"] .jv-hud-r2 {
+  width:540px; height:540px;
+  border-width:2px;
+  border-color:rgba(0,229,255,0.2);
+  box-shadow:0 0 15px rgba(0,229,255,0.08), inset 0 0 15px rgba(0,229,255,0.04);
+  animation:jv-hud-spin 30s linear infinite, jv-hud-glow 4s ease-in-out infinite;
+}
+/* R3 — medium, dotted, counter-rotate */
+[data-theme="jarvis"] .jv-hud-r3 {
+  width:480px; height:480px;
+  border-width:1px;
+  border-style:dotted;
+  border-color:rgba(0,229,255,0.18);
+  animation:jv-hud-spin-rev 25s linear infinite;
+}
+/* R4 — thick accent ring, partial arc via clip-path, rotating */
+[data-theme="jarvis"] .jv-hud-r4 {
+  width:420px; height:420px;
+  border-width:3px;
+  border-color:rgba(230,74,25,0.2);
+  border-top-color:rgba(230,74,25,0.6);
+  border-right-color:transparent;
+  border-bottom-color:rgba(230,74,25,0.1);
+  border-left-color:transparent;
+  box-shadow:0 0 20px rgba(230,74,25,0.1), inset 0 0 20px rgba(230,74,25,0.05);
+  animation:jv-hud-spin-rev 18s linear infinite, jv-hud-glow-orange 3s ease-in-out infinite;
+}
+/* R5 — thin dashed, slow rotate */
+[data-theme="jarvis"] .jv-hud-r5 {
+  width:350px; height:350px;
+  border-width:1px;
+  border-style:dashed;
+  border-color:rgba(0,229,255,0.15);
+  animation:jv-hud-spin-rev 35s linear infinite;
+}
+/* R6 — inner accent, thick partial, fast rotate */
+/* R6 — equalizer/spectrum ring */
+[data-theme="jarvis"] .jv-hud-r6 {
+  width:280px; height:280px;
+  border:none;
+  background:conic-gradient(
+    from 0deg,
+    rgba(0,229,255,0.5) 0deg, rgba(0,229,255,0.15) 4deg, transparent 5deg,
+    transparent 7deg, rgba(0,229,255,0.7) 7deg, rgba(0,229,255,0.2) 12deg, transparent 13deg,
+    transparent 15deg, rgba(0,229,255,0.4) 15deg, rgba(0,229,255,0.1) 18deg, transparent 19deg,
+    transparent 21deg, rgba(0,229,255,0.8) 21deg, rgba(0,229,255,0.25) 27deg, transparent 28deg,
+    transparent 30deg, rgba(0,229,255,0.3) 30deg, rgba(0,229,255,0.08) 33deg, transparent 34deg,
+    transparent 36deg, rgba(0,229,255,0.6) 36deg, rgba(0,229,255,0.18) 41deg, transparent 42deg,
+    transparent 44deg, rgba(0,229,255,0.45) 44deg, rgba(0,229,255,0.12) 48deg, transparent 49deg,
+    transparent 51deg, rgba(0,229,255,0.9) 51deg, rgba(0,229,255,0.3) 58deg, transparent 59deg,
+    transparent 61deg, rgba(0,229,255,0.35) 61deg, rgba(0,229,255,0.1) 64deg, transparent 65deg,
+    transparent 67deg, rgba(0,229,255,0.55) 67deg, rgba(0,229,255,0.15) 72deg, transparent 73deg,
+    transparent 75deg, rgba(0,229,255,0.7) 75deg, rgba(0,229,255,0.2) 81deg, transparent 82deg,
+    transparent 84deg, rgba(0,229,255,0.4) 84deg, rgba(0,229,255,0.1) 87deg, transparent 88deg,
+    transparent 90deg, rgba(0,229,255,0.85) 90deg, rgba(0,229,255,0.28) 97deg, transparent 98deg,
+    transparent 100deg, rgba(0,229,255,0.3) 100deg, transparent 103deg,
+    transparent 105deg, rgba(0,229,255,0.6) 105deg, transparent 110deg,
+    transparent 112deg, rgba(0,229,255,0.5) 112deg, transparent 116deg,
+    transparent 118deg, rgba(0,229,255,0.75) 118deg, transparent 124deg,
+    transparent 126deg, rgba(0,229,255,0.35) 126deg, transparent 129deg,
+    transparent 131deg, rgba(0,229,255,0.55) 131deg, transparent 136deg,
+    transparent 138deg, rgba(0,229,255,0.4) 138deg, transparent 141deg,
+    transparent 143deg, rgba(0,229,255,0.9) 143deg, transparent 150deg,
+    transparent 152deg, rgba(0,229,255,0.3) 152deg, transparent 155deg,
+    transparent 157deg, rgba(0,229,255,0.65) 157deg, transparent 162deg,
+    transparent 164deg, rgba(0,229,255,0.45) 164deg, transparent 168deg,
+    transparent 170deg, rgba(0,229,255,0.5) 170deg, transparent 174deg,
+    transparent 176deg, rgba(0,229,255,0.8) 176deg, transparent 183deg,
+    transparent 360deg
+  );
+  mask:radial-gradient(transparent 130px, #fff 132px, #fff 140px, transparent 142px);
+  -webkit-mask:radial-gradient(transparent 130px, #fff 132px, #fff 140px, transparent 142px);
+  box-shadow:0 0 16px rgba(0,229,255,0.1);
+  animation:jv-hud-spin 12s linear infinite, jv-eq-pulse 2s ease-in-out infinite;
+}
+@keyframes jv-eq-pulse {
+  0%,100% { opacity:0.7; filter:brightness(1); }
+  25%     { opacity:0.9; filter:brightness(1.3); }
+  50%     { opacity:0.6; filter:brightness(0.9); }
+  75%     { opacity:1;   filter:brightness(1.5); }
+}
+/* Tick marks ring — generated with conic gradient */
+[data-theme="jarvis"] .jv-hud-ticks {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:560px; height:560px; border-radius:50%;
+  background:conic-gradient(
+    from 0deg,
+    rgba(0,229,255,0.3) 0deg, transparent 2deg,
+    transparent 10deg, rgba(0,229,255,0.2) 10deg, transparent 11deg,
+    transparent 20deg, rgba(0,229,255,0.3) 20deg, transparent 22deg,
+    transparent 30deg, rgba(0,229,255,0.15) 30deg, transparent 31deg,
+    transparent 40deg, rgba(0,229,255,0.3) 40deg, transparent 42deg,
+    transparent 50deg, rgba(0,229,255,0.2) 50deg, transparent 51deg,
+    transparent 60deg, rgba(0,229,255,0.3) 60deg, transparent 62deg,
+    transparent 70deg, rgba(0,229,255,0.15) 70deg, transparent 71deg,
+    transparent 80deg, rgba(0,229,255,0.3) 80deg, transparent 82deg,
+    transparent 90deg, rgba(0,229,255,0.4) 90deg, transparent 93deg,
+    transparent 100deg, rgba(0,229,255,0.2) 100deg, transparent 101deg,
+    transparent 110deg, rgba(0,229,255,0.3) 110deg, transparent 112deg,
+    transparent 120deg, rgba(0,229,255,0.15) 120deg, transparent 121deg,
+    transparent 130deg, rgba(0,229,255,0.3) 130deg, transparent 132deg,
+    transparent 140deg, rgba(0,229,255,0.2) 140deg, transparent 141deg,
+    transparent 150deg, rgba(0,229,255,0.3) 150deg, transparent 152deg,
+    transparent 160deg, rgba(0,229,255,0.15) 160deg, transparent 161deg,
+    transparent 170deg, rgba(0,229,255,0.3) 170deg, transparent 172deg,
+    transparent 180deg, rgba(0,229,255,0.4) 180deg, transparent 183deg,
+    transparent 190deg, rgba(0,229,255,0.2) 190deg, transparent 191deg,
+    transparent 200deg, rgba(0,229,255,0.3) 200deg, transparent 202deg,
+    transparent 210deg, rgba(0,229,255,0.15) 210deg, transparent 211deg,
+    transparent 220deg, rgba(0,229,255,0.3) 220deg, transparent 222deg,
+    transparent 230deg, rgba(0,229,255,0.2) 230deg, transparent 231deg,
+    transparent 240deg, rgba(0,229,255,0.3) 240deg, transparent 242deg,
+    transparent 250deg, rgba(0,229,255,0.15) 250deg, transparent 251deg,
+    transparent 260deg, rgba(0,229,255,0.3) 260deg, transparent 262deg,
+    transparent 270deg, rgba(0,229,255,0.4) 270deg, transparent 273deg,
+    transparent 280deg, rgba(0,229,255,0.2) 280deg, transparent 281deg,
+    transparent 290deg, rgba(0,229,255,0.3) 290deg, transparent 292deg,
+    transparent 300deg, rgba(0,229,255,0.15) 300deg, transparent 301deg,
+    transparent 310deg, rgba(0,229,255,0.3) 310deg, transparent 312deg,
+    transparent 320deg, rgba(0,229,255,0.2) 320deg, transparent 321deg,
+    transparent 330deg, rgba(0,229,255,0.3) 330deg, transparent 332deg,
+    transparent 340deg, rgba(0,229,255,0.15) 340deg, transparent 341deg,
+    transparent 350deg, rgba(0,229,255,0.3) 350deg, transparent 352deg,
+    transparent 360deg
+  );
+  mask:radial-gradient(transparent 268px, #fff 270px, #fff 278px, transparent 280px);
+  -webkit-mask:radial-gradient(transparent 268px, #fff 270px, #fff 278px, transparent 280px);
+  animation:jv-hud-spin 50s linear infinite;
+}
+
+/* HUD ring animations */
+@keyframes jv-hud-spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+@keyframes jv-hud-spin-rev { to { transform:translate(-50%,-50%) rotate(-360deg); } }
+@keyframes jv-hud-glow {
+  0%,100% { box-shadow:0 0 12px rgba(0,229,255,0.06), inset 0 0 12px rgba(0,229,255,0.03); }
+  50%     { box-shadow:0 0 25px rgba(0,229,255,0.15), inset 0 0 25px rgba(0,229,255,0.08); }
+}
+@keyframes jv-hud-glow2 {
+  0%,100% { box-shadow:0 0 15px rgba(0,229,255,0.08); border-top-color:rgba(0,229,255,0.4); }
+  50%     { box-shadow:0 0 30px rgba(0,229,255,0.2); border-top-color:rgba(0,229,255,0.7); }
+}
+@keyframes jv-hud-glow-orange {
+  0%,100% { box-shadow:0 0 15px rgba(230,74,25,0.08); border-top-color:rgba(230,74,25,0.5); }
+  50%     { box-shadow:0 0 30px rgba(230,74,25,0.2); border-top-color:rgba(230,74,25,0.8); }
+}
 
 @media (prefers-reduced-motion:reduce) {
   [data-theme="jarvis"] .jv-arc-seg::before { animation:none; opacity:0.7; }
@@ -2769,45 +2939,45 @@
 /* HUD panel */
 [data-theme="jarvis"] .app-hud-panel {
   background: rgba(14,26,46,0.85);
-  border: 1px solid rgba(79,195,247,0.15); border-radius: 3px;
+  border: 1px solid rgba(0,229,255,0.15); border-radius: 3px;
   backdrop-filter: blur(8px);
 }
-[data-theme="jarvis"] .app-hud-panel .dock-lbl { color: rgba(79,195,247,0.6); }
-[data-theme="jarvis"] .app-hud-panel .dock-lbl a { color: rgba(79,195,247,0.6); }
-[data-theme="jarvis"] .app-hud-panel .dock-lbl-val { color: #4fc3f7; }
-[data-theme="jarvis"] .app-hud-panel .db { border: 1px solid rgba(79,195,247,0.2); border-radius: 50%; }
-[data-theme="jarvis"] .app-hud-panel .db.active { border-color: #4fc3f7; box-shadow: 0 0 6px rgba(79,195,247,0.2); }
-[data-theme="jarvis"] .app-hud-panel .fb { color: rgba(79,195,247,0.6); border-color: rgba(79,195,247,0.15); border-radius: 3px; }
-[data-theme="jarvis"] .app-hud-panel .fb.active { background: rgba(79,195,247,0.1); color: #80d8ff; }
+[data-theme="jarvis"] .app-hud-panel .dock-lbl { color: rgba(0,229,255,0.6); }
+[data-theme="jarvis"] .app-hud-panel .dock-lbl a { color: rgba(0,229,255,0.6); }
+[data-theme="jarvis"] .app-hud-panel .dock-lbl-val { color: #00e5ff; }
+[data-theme="jarvis"] .app-hud-panel .db { border: 1px solid rgba(0,229,255,0.2); border-radius: 50%; }
+[data-theme="jarvis"] .app-hud-panel .db.active { border-color: #00e5ff; box-shadow: 0 0 6px rgba(0,229,255,0.2); }
+[data-theme="jarvis"] .app-hud-panel .fb { color: rgba(0,229,255,0.6); border-color: rgba(0,229,255,0.15); border-radius: 3px; }
+[data-theme="jarvis"] .app-hud-panel .fb.active { background: rgba(0,229,255,0.1); color: #18ffff; }
 
 /* Scrollbar */
 [data-theme="jarvis"] ::-webkit-scrollbar { width: 6px; }
 [data-theme="jarvis"] ::-webkit-scrollbar-track { background: rgba(7,13,26,0.5); }
-[data-theme="jarvis"] ::-webkit-scrollbar-thumb { background: rgba(79,195,247,0.2); border-radius: 3px; }
-[data-theme="jarvis"] ::-webkit-scrollbar-thumb:hover { background: rgba(79,195,247,0.4); }
+[data-theme="jarvis"] ::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.2); border-radius: 3px; }
+[data-theme="jarvis"] ::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.4); }
 
 /* Popover */
 [data-theme="jarvis"] .side-popover {
-  background: rgba(14,26,46,0.95); border: 1px solid rgba(79,195,247,0.2); border-radius: 3px;
+  background: rgba(14,26,46,0.95); border: 1px solid rgba(0,229,255,0.2); border-radius: 3px;
   backdrop-filter: blur(8px);
 }
 [data-theme="jarvis"] .side-popover-item {
-  color: rgba(79,195,247,0.7); font-family: 'Exo 2', sans-serif;
+  color: rgba(0,229,255,0.7); font-family: 'Exo 2', sans-serif;
   font-weight: 500; text-transform: uppercase; letter-spacing: .08em; font-size: .7rem;
 }
-[data-theme="jarvis"] .side-popover-item:hover { background: rgba(79,195,247,0.08); color: #80d8ff; }
+[data-theme="jarvis"] .side-popover-item:hover { background: rgba(0,229,255,0.08); color: #18ffff; }
 
 /* Sidebar folder */
 [data-theme="jarvis"] .side-folder-toggle {
-  color: rgba(79,195,247,0.6); border-color: rgba(79,195,247,0.12);
+  color: rgba(0,229,255,0.6); border-color: rgba(0,229,255,0.12);
   font-family: 'Exo 2', sans-serif;
 }
-[data-theme="jarvis"] .side-folder-body { border-left-color: rgba(79,195,247,0.1); }
-[data-theme="jarvis"] .side-mission-item { color: rgba(79,195,247,0.6); }
-[data-theme="jarvis"] .side-mission-item:hover { background: rgba(79,195,247,0.06); }
+[data-theme="jarvis"] .side-folder-body { border-left-color: rgba(0,229,255,0.1); }
+[data-theme="jarvis"] .side-mission-item { color: rgba(0,229,255,0.6); }
+[data-theme="jarvis"] .side-mission-item:hover { background: rgba(0,229,255,0.06); }
 
 /* Marketing page overrides */
-[data-theme="jarvis"] nav:not(.app-side-nav) { border-bottom: 1px solid rgba(79,195,247,0.15); }
+[data-theme="jarvis"] nav:not(.app-side-nav) { border-bottom: 1px solid rgba(0,229,255,0.15); }
 
 /* ═══════════════════════════════════════════════════════════════════
    J.A.R.V.I.S. — Holographic HUD Immersion
@@ -2828,15 +2998,6 @@
 
 /* ── 3. Arc reactor ambient glow — bottom-right corner ── */
 [data-theme="jarvis"] .bg-hero-glow { background:none; }
-[data-theme="jarvis"] .app-view-content::after {
-  content:''; position:fixed; bottom:10px; right:10px;
-  width:300px; height:300px; border-radius:50%;
-  pointer-events:none; z-index:0;
-  animation:jv-arc-pulse 4s ease-in-out infinite;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cdefs%3E%3Cstyle%3Ecircle,path,line,rect%7Bfill:none;stroke:%234fc3f7%7Dtext%7Bfill:%234fc3f7;font-family:monospace;font-size:5px;letter-spacing:.5px%7D%3C/style%3E%3C/defs%3E%3C!-- R1: Outermost ring --%3E%3Ccircle cx='200' cy='200' r='195' stroke-width='.5' stroke-dasharray='1 3'/%3E%3C!-- R2: Outer ring solid --%3E%3Ccircle cx='200' cy='200' r='188' stroke-width='.8'/%3E%3C!-- R2 tick marks (36 ticks at 10deg) --%3E%3Cg stroke-width='.5'%3E%3Cline x1='200' y1='5' x2='200' y2='18'/%3E%3Cline x1='232.6' y1='5.9' x2='231' y2='18.8'/%3E%3Cline x1='264' y1='9.5' x2='260.7' y2='22'/%3E%3Cline x1='293' y1='17' x2='288' y2='29'/%3E%3Cline x1='319' y1='28' x2='312' y2='39'/%3E%3Cline x1='341' y1='42' x2='333' y2='52'/%3E%3Cline x1='358' y1='59' x2='349' y2='68'/%3E%3Cline x1='372' y1='81' x2='361' y2='88'/%3E%3Cline x1='383' y1='107' x2='371' y2='112'/%3E%3Cline x1='390' y1='136' x2='378' y2='139'/%3E%3Cline x1='394' y1='168' x2='382' y2='169'/%3E%3Cline x1='395' y1='200' x2='382' y2='200'/%3E%3Cline x1='394' y1='232' x2='382' y2='231'/%3E%3Cline x1='390' y1='264' x2='378' y2='261'/%3E%3Cline x1='383' y1='293' x2='371' y2='288'/%3E%3Cline x1='372' y1='319' x2='361' y2='312'/%3E%3Cline x1='358' y1='341' x2='349' y2='332'/%3E%3Cline x1='341' y1='358' x2='333' y2='348'/%3E%3Cline x1='319' y1='372' x2='312' y2='361'/%3E%3Cline x1='293' y1='383' x2='288' y2='371'/%3E%3Cline x1='264' y1='390' x2='261' y2='378'/%3E%3Cline x1='232.6' y1='394' x2='231' y2='381'/%3E%3Cline x1='200' y1='395' x2='200' y2='382'/%3E%3Cline x1='167' y1='394' x2='169' y2='381'/%3E%3Cline x1='136' y1='390' x2='139' y2='378'/%3E%3Cline x1='107' y1='383' x2='112' y2='371'/%3E%3Cline x1='81' y1='372' x2='88' y2='361'/%3E%3Cline x1='59' y1='358' x2='68' y2='348'/%3E%3Cline x1='42' y1='341' x2='52' y2='332'/%3E%3Cline x1='28' y1='319' x2='39' y2='312'/%3E%3Cline x1='17' y1='293' x2='29' y2='288'/%3E%3Cline x1='10' y1='264' x2='22' y2='261'/%3E%3Cline x1='6' y1='232' x2='18' y2='231'/%3E%3Cline x1='5' y1='200' x2='18' y2='200'/%3E%3Cline x1='6' y1='168' x2='18' y2='169'/%3E%3Cline x1='10' y1='136' x2='22' y2='139'/%3E%3Cline x1='17' y1='107' x2='29' y2='112'/%3E%3C/g%3E%3C!-- R3: Data ring — dashed segments with gaps --%3E%3Cpath d='M200 25 A175 175 0 0 1 340 75' stroke-width='1.5' stroke-dasharray='8 3'/%3E%3Cpath d='M370 140 A175 175 0 0 1 370 260' stroke-width='1' stroke-dasharray='4 4'/%3E%3Cpath d='M340 325 A175 175 0 0 1 200 375' stroke-width='1.5' stroke-dasharray='8 3'/%3E%3Cpath d='M60 325 A175 175 0 0 1 30 260' stroke-width='1' stroke-dasharray='4 4'/%3E%3Cpath d='M30 140 A175 175 0 0 1 60 75' stroke-width='1.5' stroke-dasharray='8 3'/%3E%3C!-- R4: Dot data band (48 dots) --%3E%3Cg fill='%234fc3f7' stroke='none' opacity='.5'%3E%3Ccircle cx='200' cy='35' r='1.5'/%3E%3Ccircle cx='220' cy='36' r='1'/%3E%3Ccircle cx='240' cy='38' r='1.5'/%3E%3Ccircle cx='259' cy='43' r='1'/%3E%3Ccircle cx='277' cy='50' r='1.5'/%3E%3Ccircle cx='294' cy='60' r='1'/%3E%3Ccircle cx='308' cy='72' r='1.5'/%3E%3Ccircle cx='321' cy='86' r='1'/%3E%3Ccircle cx='332' cy='102' r='1.5'/%3E%3Ccircle cx='340' cy='120' r='1'/%3E%3Ccircle cx='346' cy='140' r='1.5'/%3E%3Ccircle cx='349' cy='160' r='1'/%3E%3Ccircle cx='350' cy='180' r='1.5'/%3E%3Ccircle cx='349' cy='200' r='1'/%3E%3Ccircle cx='350' cy='220' r='1.5'/%3E%3Ccircle cx='349' cy='240' r='1'/%3E%3Ccircle cx='346' cy='260' r='1.5'/%3E%3Ccircle cx='340' cy='280' r='1'/%3E%3Ccircle cx='332' cy='298' r='1.5'/%3E%3Ccircle cx='321' cy='314' r='1'/%3E%3Ccircle cx='308' cy='328' r='1.5'/%3E%3Ccircle cx='294' cy='340' r='1'/%3E%3Ccircle cx='277' cy='350' r='1.5'/%3E%3Ccircle cx='259' cy='357' r='1'/%3E%3Ccircle cx='240' cy='362' r='1.5'/%3E%3Ccircle cx='220' cy='364' r='1'/%3E%3Ccircle cx='200' cy='365' r='1.5'/%3E%3Ccircle cx='180' cy='364' r='1'/%3E%3Ccircle cx='160' cy='362' r='1.5'/%3E%3Ccircle cx='141' cy='357' r='1'/%3E%3Ccircle cx='123' cy='350' r='1.5'/%3E%3Ccircle cx='106' cy='340' r='1'/%3E%3Ccircle cx='92' cy='328' r='1.5'/%3E%3Ccircle cx='79' cy='314' r='1'/%3E%3Ccircle cx='68' cy='298' r='1.5'/%3E%3Ccircle cx='60' cy='280' r='1'/%3E%3Ccircle cx='54' cy='260' r='1.5'/%3E%3Ccircle cx='51' cy='240' r='1'/%3E%3Ccircle cx='50' cy='220' r='1.5'/%3E%3Ccircle cx='51' cy='200' r='1'/%3E%3Ccircle cx='50' cy='180' r='1.5'/%3E%3Ccircle cx='51' cy='160' r='1'/%3E%3Ccircle cx='54' cy='140' r='1.5'/%3E%3Ccircle cx='60' cy='120' r='1'/%3E%3Ccircle cx='68' cy='102' r='1.5'/%3E%3Ccircle cx='79' cy='86' r='1'/%3E%3Ccircle cx='92' cy='72' r='1.5'/%3E%3Ccircle cx='106' cy='60' r='1'/%3E%3C/g%3E%3C!-- R5: Middle ring — solid thick --%3E%3Ccircle cx='200' cy='200' r='140' stroke-width='1.2'/%3E%3C!-- R5 inner — fine dashed --%3E%3Ccircle cx='200' cy='200' r='135' stroke-width='.3' stroke-dasharray='2 3'/%3E%3C!-- R6: Arc segments with varying thickness --%3E%3Cpath d='M200 70 A130 130 0 0 1 310 115' stroke-width='2.5'/%3E%3Cpath d='M325 155 A130 130 0 0 1 325 245' stroke-width='1' stroke-dasharray='6 2'/%3E%3Cpath d='M310 285 A130 130 0 0 1 200 330' stroke-width='2.5'/%3E%3Cpath d='M90 285 A130 130 0 0 1 75 245' stroke-width='1' stroke-dasharray='6 2'/%3E%3Cpath d='M75 155 A130 130 0 0 1 90 115' stroke-width='2.5'/%3E%3C!-- R7: Data readout rectangles on arcs --%3E%3Cg stroke-width='.5' opacity='.6'%3E%3Crect x='298' y='108' width='18' height='5' rx='1'/%3E%3Crect x='84' y='108' width='18' height='5' rx='1'/%3E%3Crect x='298' y='288' width='18' height='5' rx='1'/%3E%3Crect x='84' y='288' width='18' height='5' rx='1'/%3E%3Crect x='193' y='62' width='14' height='4' rx='1'/%3E%3Crect x='193' y='334' width='14' height='4' rx='1'/%3E%3C/g%3E%3C!-- R8: Inner ring --%3E%3Ccircle cx='200' cy='200' r='105' stroke-width='.8'/%3E%3Ccircle cx='200' cy='200' r='100' stroke-width='.4' stroke-dasharray='3 5'/%3E%3C!-- R9: Inner arcs — thick accent --%3E%3Cpath d='M200 105 A95 95 0 0 1 290 165' stroke-width='2'/%3E%3Cpath d='M290 235 A95 95 0 0 1 200 295' stroke-width='.8' stroke-dasharray='4 3'/%3E%3Cpath d='M200 295 A95 95 0 0 1 110 235' stroke-width='2'/%3E%3Cpath d='M110 165 A95 95 0 0 1 200 105' stroke-width='.8' stroke-dasharray='4 3'/%3E%3C!-- R10: Inner detail ring --%3E%3Ccircle cx='200' cy='200' r='75' stroke-width='1'/%3E%3C!-- R10 tick marks (12 ticks at 30deg) --%3E%3Cg stroke-width='.4'%3E%3Cline x1='200' y1='122' x2='200' y2='130'/%3E%3Cline x1='237.5' y1='135' x2='234' y2='142'/%3E%3Cline x1='265' y1='163' x2='258' y2='166'/%3E%3Cline x1='278' y1='200' x2='270' y2='200'/%3E%3Cline x1='265' y1='237' x2='258' y2='234'/%3E%3Cline x1='237.5' y1='265' x2='234' y2='258'/%3E%3Cline x1='200' y1='278' x2='200' y2='270'/%3E%3Cline x1='163' y1='265' x2='166' y2='258'/%3E%3Cline x1='135' y1='237' x2='142' y2='234'/%3E%3Cline x1='122' y1='200' x2='130' y2='200'/%3E%3Cline x1='135' y1='163' x2='142' y2='166'/%3E%3Cline x1='163' y1='135' x2='166' y2='142'/%3E%3C/g%3E%3C!-- R11: Core outer ring --%3E%3Ccircle cx='200' cy='200' r='55' stroke-width='1.5'/%3E%3C!-- R11 fine dashed --%3E%3Ccircle cx='200' cy='200' r='50' stroke-width='.4' stroke-dasharray='2 2'/%3E%3C!-- R12: Core arcs --%3E%3Cpath d='M200 150 A50 50 0 0 1 250 200' stroke-width='2'/%3E%3Cpath d='M200 250 A50 50 0 0 1 150 200' stroke-width='2'/%3E%3Cpath d='M250 200 A50 50 0 0 1 200 250' stroke-width='.6' stroke-dasharray='3 2'/%3E%3Cpath d='M150 200 A50 50 0 0 1 200 150' stroke-width='.6' stroke-dasharray='3 2'/%3E%3C!-- Core glow rings --%3E%3Ccircle cx='200' cy='200' r='35' stroke-width='1'/%3E%3Ccircle cx='200' cy='200' r='25' fill='%234fc3f7' opacity='.06'/%3E%3Ccircle cx='200' cy='200' r='15' fill='%2380d8ff' opacity='.1'/%3E%3Ccircle cx='200' cy='200' r='6' fill='%23e3f2fd' opacity='.15'/%3E%3C!-- Crosshair --%3E%3Cg stroke-width='.4'%3E%3Cline x1='175' y1='200' x2='190' y2='200'/%3E%3Cline x1='210' y1='200' x2='225' y2='200'/%3E%3Cline x1='200' y1='175' x2='200' y2='190'/%3E%3Cline x1='200' y1='210' x2='200' y2='225'/%3E%3C/g%3E%3C!-- Data labels --%3E%3Ctext x='308' y='100' opacity='.4'%3ESYS%3C/text%3E%3Ctext x='78' y='100' opacity='.4'%3EAUX%3C/text%3E%3Ctext x='308' y='306' opacity='.4'%3ECOM%3C/text%3E%3Ctext x='78' y='306' opacity='.4'%3ENAV%3C/text%3E%3C/svg%3E");
-  background-size:contain;
-  background-repeat:no-repeat;
-}
 
 /* ── 4. HUD grid overlay — fine geometric lines ── */
 [data-theme="jarvis"] .bg-grid {
@@ -2850,7 +3011,7 @@
   pointer-events:none; z-index:0;
   background:
     /* Ambient glow from center */
-    radial-gradient(ellipse at 50% 50%, rgba(79,195,247,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(0,229,255,0.06) 0%, transparent 50%),
     /* Vignette */
     radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(7,13,26,0.5) 100%);
 }
@@ -2877,10 +3038,10 @@
   position:absolute; bottom:0; left:0; height:12px;
   width:max-content;
   font-family:'Fira Code', monospace; font-size:7px; letter-spacing:.1em;
-  color:rgba(79,195,247,0.2); white-space:nowrap;
+  color:rgba(0,229,255,0.2); white-space:nowrap;
   line-height:12px;
   background:rgba(7,13,26,0.8);
-  border-top:1px solid rgba(79,195,247,0.08);
+  border-top:1px solid rgba(0,229,255,0.08);
   animation:jv-ticker 25s linear infinite;
 }
 
@@ -2888,49 +3049,49 @@
 [data-theme="jarvis"] .widget-card::after,
 [data-theme="jarvis"] .tc-section::after { content:''; display:none; }
 [data-theme="jarvis"] .mcp-catalog-card {
-  border:1px solid rgba(79,195,247,0.15); border-radius:3px;
+  border:1px solid rgba(0,229,255,0.15); border-radius:3px;
   background:rgba(14,26,46,0.6);
   box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 [data-theme="jarvis"] .mcp-catalog-card::before {
   content:''; position:absolute; top:0; left:8px; right:8px; height:1px;
-  background:linear-gradient(90deg, transparent, rgba(79,195,247,0.2), transparent);
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.2), transparent);
   pointer-events:none; z-index:2;
 }
 [data-theme="jarvis"] .mcp-catalog-card:hover::before {
-  background:linear-gradient(90deg, transparent, rgba(79,195,247,0.4), transparent);
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent);
 }
 
 /* ── 7. HUD pipe network — subtle geometry ── */
 [data-theme="jarvis"] .app-main::before {
   content:''; position:fixed; top:60px; right:30px;
   width:1px; height:120px;
-  background:linear-gradient(180deg, transparent, rgba(79,195,247,0.08), transparent);
+  background:linear-gradient(180deg, transparent, rgba(0,229,255,0.08), transparent);
   pointer-events:none; z-index:0;
 }
 [data-theme="jarvis"] .app-main::after {
   content:''; position:fixed; top:60px; right:30px;
   width:60px; height:1px;
-  background:linear-gradient(90deg, rgba(79,195,247,0.08), transparent);
+  background:linear-gradient(90deg, rgba(0,229,255,0.08), transparent);
   pointer-events:none; z-index:0;
 }
 
 /* ── 8. Blueprint tab bars ── */
 [data-theme="jarvis"] .bp-type-tabs {
-  border:1px solid rgba(79,195,247,0.12); border-radius:3px;
+  border:1px solid rgba(0,229,255,0.12); border-radius:3px;
   background:rgba(7,13,26,0.6);
   position:relative;
 }
 [data-theme="jarvis"] .bp-type-tabs::before {
   content:''; position:absolute; top:-1px; left:20px; right:20px; height:1px;
-  background:linear-gradient(90deg, transparent, rgba(79,195,247,0.25), transparent);
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.25), transparent);
 }
 [data-theme="jarvis"] .bp-type-tabs::after {
   content:''; position:absolute; bottom:-1px; left:20px; right:20px; height:1px;
-  background:linear-gradient(90deg, transparent, rgba(79,195,247,0.12), transparent);
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.12), transparent);
 }
 [data-theme="jarvis"] .security-tabs {
-  border:1px solid rgba(79,195,247,0.12); border-radius:3px;
+  border:1px solid rgba(0,229,255,0.12); border-radius:3px;
   background:rgba(7,13,26,0.6);
 }
 
@@ -2939,16 +3100,16 @@
 [data-theme="jarvis"] .app-view-content h2::after {
   content:''; display:block;
   width:40px; height:1px; margin-top:8px;
-  background:linear-gradient(90deg, #4fc3f7, transparent);
+  background:linear-gradient(90deg, #00e5ff, transparent);
 }
 [data-theme="jarvis"] .home-greeting {
-  text-shadow:0 0 20px rgba(79,195,247,0.15);
+  text-shadow:0 0 20px rgba(0,229,255,0.15);
   letter-spacing:.1em;
 }
 [data-theme="jarvis"] hr,
 [data-theme="jarvis"] .section-divider {
   border:none; height:1px;
-  background:linear-gradient(90deg, transparent, rgba(79,195,247,0.2) 20%, rgba(79,195,247,0.2) 80%, transparent);
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.2) 20%, rgba(0,229,255,0.2) 80%, transparent);
 }
 
 /* ── 10. Holographic hover glow ── */
@@ -2958,8 +3119,8 @@
 }
 [data-theme="jarvis"] .tcg-card:hover,
 [data-theme="jarvis"] .mcp-catalog-card:hover {
-  border-color:rgba(79,195,247,0.4);
-  box-shadow:0 0 16px rgba(79,195,247,0.15);
+  border-color:rgba(0,229,255,0.4);
+  box-shadow:0 0 16px rgba(0,229,255,0.15);
   transition:all .3s;
 }
 [data-theme="jarvis"] .btn-primary {
@@ -2972,12 +3133,12 @@
 /* ── 12. Progress bars — holographic fill ── */
 [data-theme="jarvis"] progress,
 [data-theme="jarvis"] .progress-bar {
-  background:rgba(7,13,26,0.8); border:1px solid rgba(79,195,247,0.15);
+  background:rgba(7,13,26,0.8); border:1px solid rgba(0,229,255,0.15);
   border-radius:3px; height:10px; overflow:hidden;
 }
 [data-theme="jarvis"] progress::-webkit-progress-value,
 [data-theme="jarvis"] .progress-fill {
-  background:linear-gradient(90deg, rgba(79,195,247,0.3), rgba(128,216,255,0.5));
+  background:linear-gradient(90deg, rgba(0,229,255,0.3), rgba(24,255,255,0.5));
   border-radius:2px;
 }
 [data-theme="jarvis"] progress::-webkit-progress-bar {
@@ -2986,46 +3147,46 @@
 
 /* ── 13. Card headers — HUD data bar ── */
 [data-theme="jarvis"] .tcg-card .tcg-name-bar {
-  background:rgba(79,195,247,0.04);
-  border-bottom:1px solid rgba(79,195,247,0.12);
+  background:rgba(0,229,255,0.04);
+  border-bottom:1px solid rgba(0,229,255,0.12);
   position:relative;
 }
 [data-theme="jarvis"] .tcg-card .tcg-name-bar::before {
   content:''; position:absolute; top:0; left:0; right:0; height:1px;
-  background:linear-gradient(90deg, transparent, rgba(79,195,247,0.2), transparent);
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.2), transparent);
 }
 [data-theme="jarvis"] .tcg-card .tcg-stats {
-  background:rgba(79,195,247,0.02);
-  border-top:1px solid rgba(79,195,247,0.08);
+  background:rgba(0,229,255,0.02);
+  border-top:1px solid rgba(0,229,255,0.08);
 }
 [data-theme="jarvis"] .tcg-card .tcg-stats::before {
   content:'DIAGNOSTICS';
   position:absolute; top:-9px; right:8px;
   font-family:'Exo 2', sans-serif; font-size:6px; letter-spacing:.15em;
-  color:rgba(79,195,247,0.25); text-transform:uppercase;
+  color:rgba(0,229,255,0.25); text-transform:uppercase;
 }
 
 /* ── 14. Scrollbar — slim holographic ── */
 [data-theme="jarvis"] ::-webkit-scrollbar { width:6px; }
 [data-theme="jarvis"] ::-webkit-scrollbar-track { background:rgba(7,13,26,0.5); }
-[data-theme="jarvis"] ::-webkit-scrollbar-thumb { background:rgba(79,195,247,0.2); border-radius:3px; }
-[data-theme="jarvis"] ::-webkit-scrollbar-thumb:hover { background:rgba(79,195,247,0.4); }
+[data-theme="jarvis"] ::-webkit-scrollbar-thumb { background:rgba(0,229,255,0.2); border-radius:3px; }
+[data-theme="jarvis"] ::-webkit-scrollbar-thumb:hover { background:rgba(0,229,255,0.4); }
 
 /* ── 15. Prompt panel — holographic input ── */
 [data-theme="jarvis"] .nice-ai-input-area {
-  border:1px solid rgba(79,195,247,0.2); border-radius:16px;
+  border:1px solid rgba(0,229,255,0.2); border-radius:16px;
   background:rgba(14,26,46,0.7);
-  box-shadow:0 0 12px rgba(79,195,247,0.05);
+  box-shadow:0 0 12px rgba(0,229,255,0.05);
 }
 [data-theme="jarvis"] .nice-ai-pills .nice-ai-pill {
-  border:1px solid rgba(79,195,247,0.15); border-radius:3px;
-  background:rgba(79,195,247,0.04);
-  color:rgba(79,195,247,0.6); font-family:'Exo 2', sans-serif;
+  border:1px solid rgba(0,229,255,0.15); border-radius:3px;
+  background:rgba(0,229,255,0.04);
+  color:rgba(0,229,255,0.6); font-family:'Exo 2', sans-serif;
   font-weight:500; text-transform:uppercase; letter-spacing:.08em; font-size:.65rem;
 }
 [data-theme="jarvis"] .nice-ai-pills .nice-ai-pill:hover {
-  background:rgba(79,195,247,0.12); color:#80d8ff;
-  border-color:rgba(79,195,247,0.4);
+  background:rgba(0,229,255,0.12); color:#18ffff;
+  border-color:rgba(0,229,255,0.4);
 }
 
 /* ── 16. Security tabs ── */
@@ -3034,14 +3195,15 @@
   font-weight:600; text-transform:uppercase; letter-spacing:.08em;
 }
 [data-theme="jarvis"] .security-tab.security-tab--active {
-  background:rgba(79,195,247,0.15); color:#e3f2fd;
-  border-color:rgba(79,195,247,0.5);
-  box-shadow:0 0 10px rgba(79,195,247,0.15);
+  background:rgba(0,229,255,0.15); color:#e0f7fa;
+  border-color:rgba(0,229,255,0.5);
+  box-shadow:0 0 10px rgba(0,229,255,0.15);
 }
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion:reduce) {
-  [data-theme="jarvis"] .app-view-content::after { animation:none; }
+  [data-theme="jarvis"] .jv-hud-r { animation:none !important; }
+  [data-theme="jarvis"] .jv-hud-ticks { animation:none; }
   [data-theme="jarvis"] .side-header::after { animation:none; }
   [data-theme="jarvis"] .btn-primary { animation:none; }
   [data-theme="jarvis"] .mcp-catalog-card::before { animation:none; }
