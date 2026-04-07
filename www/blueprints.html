@@ -251,9 +251,9 @@
   <script src="/js/supabase-lite.js"></script>
   <script src="/js/theme-lite.js"></script>
   <script src="/js/nav.js"></script>
-  <script src="/app/js/lib/utils.js"></script>
-  <script src="/app/js/lib/blueprint-utils.js"></script>
-  <script src="/app/js/lib/card-renderer.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/blueprint-utils.js"></script>
+  <script src="/js/card-renderer.js"></script>
   <script>
     ThemeLite.init();
     Nav.render();
@@ -419,10 +419,11 @@
 
         document.getElementById('bp-drawer-title').textContent = bp.name;
 
-        // Inject caps from config.tools if missing
+        // Inject caps from config.tools or tags
         if (!bp.caps) {
           const t = tools;
           if (t.length) bp.caps = t.map(function(x) { return typeof x === 'string' ? x : x.name || ''; });
+          else if (bp.tags && bp.tags.length) bp.caps = bp.tags.slice(0, 5);
         }
 
         // Render card via app's CardRenderer
@@ -545,10 +546,11 @@
             grid.appendChild(row);
 
           } else if (viewMode === 'card' && CR) {
-            // Full TCG card — inject caps from config.tools if missing
+            // Full TCG card — inject caps from config.tools or tags
             if (!bp.caps) {
               const t = (bp.config || {}).tools || [];
               if (t.length) bp.caps = t.map(function(x) { return typeof x === 'string' ? x : x.name || ''; });
+              else if (bp.tags && bp.tags.length) bp.caps = bp.tags.slice(0, 5);
             }
             const wrapper = document.createElement('div');
             wrapper.innerHTML = CR.render(bp.type, 'full', bp, {});
