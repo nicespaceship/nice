@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core Concepts — NICE Documentation</title>
+  <meta name="description" content="Understand spaceships, agents, blueprints, rarity, XP progression, and ship classes." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <div class="docs-layout">
+    <nav class="docs-sidebar" id="docs-sidebar">
+      <h4>Getting Started</h4>
+      <a href="/docs/getting-started">Quick Start</a>
+      <h4>Core Concepts</h4>
+      <a href="/docs/concepts" class="active">Spaceships & Agents</a>
+      <a href="/docs/blueprints">Blueprints</a>
+      <h4>Platform</h4>
+      <a href="/docs/ai-models">AI Models</a>
+      <a href="/docs/integrations">Integrations</a>
+    </nav>
+    <main class="docs-content">
+      <h1>Core Concepts</h1>
+      <p>NICE organizes AI agents into a fleet hierarchy: Spaceships command crews of Agents, powered by Blueprints.</p>
+
+      <h2>Spaceships</h2>
+      <p>A Spaceship is your top-level orchestrator. It represents a complete workflow — a business, a department, or a project. When you deploy a Spaceship, it creates a crew of AI agents configured for that operation.</p>
+      <p>Spaceships have <strong>slots</strong> that hold agents. The number of slots depends on the ship's class:</p>
+      <table>
+        <thead><tr><th>Class</th><th>Slots</th><th>Max Rarity</th><th>Rank Required</th></tr></thead>
+        <tbody>
+          <tr><td>Class 1</td><td>6</td><td>Common</td><td>Ensign (0 XP)</td></tr>
+          <tr><td>Class 2</td><td>8</td><td>Rare</td><td>Lieutenant (25K XP)</td></tr>
+          <tr><td>Class 3</td><td>10</td><td>Epic</td><td>Commander (100K XP)</td></tr>
+          <tr><td>Class 4</td><td>12</td><td>Legendary</td><td>Captain (200K XP)</td></tr>
+          <tr><td>Class 5</td><td>Unlimited</td><td>Mythic</td><td>Subscription</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Agents</h2>
+      <p>Agents are the workers. Each agent has:</p>
+      <ul>
+        <li><strong>Role</strong> — analytics, content, marketing, sales, support, engineering, etc.</li>
+        <li><strong>Tools</strong> — capabilities like summarize, web search, email, calendar, file generation</li>
+        <li><strong>AI Model</strong> — the LLM powering the agent (assigned automatically or manually)</li>
+        <li><strong>System Prompt</strong> — instructions that define the agent's behavior and personality</li>
+      </ul>
+      <p>Agents execute <strong>missions</strong> — real tasks like drafting emails, analyzing data, scheduling posts, or generating reports.</p>
+
+      <h2>Rarity</h2>
+      <p>Every blueprint has a rarity level that determines when you can activate it:</p>
+      <table>
+        <thead><tr><th>Rarity</th><th>Unlock Rank</th><th>Color</th></tr></thead>
+        <tbody>
+          <tr><td>Common</td><td>Ensign</td><td>Gray</td></tr>
+          <tr><td>Rare</td><td>Lieutenant</td><td>Blue</td></tr>
+          <tr><td>Epic</td><td>Commander</td><td>Purple</td></tr>
+          <tr><td>Legendary</td><td>Captain</td><td>Gold</td></tr>
+          <tr><td>Mythic</td><td>Fleet Admiral</td><td>Red</td></tr>
+        </tbody>
+      </table>
+      <p>All blueprints are visible to browse regardless of rank. Rarity only gates activation. Mythic blueprints can never be purchased — they must be earned through milestones.</p>
+
+      <h2>XP & Ranks</h2>
+      <p>You earn XP by using the platform. Every action counts:</p>
+      <ul>
+        <li>Create an agent: <strong>20 XP</strong></li>
+        <li>Complete a mission: <strong>15 XP</strong></li>
+        <li>Chat with an agent: <strong>5 XP</strong></li>
+        <li>Create a workflow: <strong>20 XP</strong></li>
+      </ul>
+      <p>There are 12 ranks from Ensign (0 XP) to Fleet Admiral (2.5M XP). Each rank unlocks higher ship classes, more slots, and rarer blueprints.</p>
+
+      <h2>Missions</h2>
+      <p>A mission is a task you give to your agents. Missions flow through this lifecycle:</p>
+      <ol>
+        <li><strong>Queued</strong> — waiting to be picked up</li>
+        <li><strong>Running</strong> — an agent is working on it</li>
+        <li><strong>Completed</strong> — results are ready</li>
+        <li><strong>Failed</strong> — something went wrong (retryable)</li>
+      </ol>
+      <p>NICE automatically routes each mission to the best agent and model on your crew. Results are rendered as formatted text with headers, lists, and code blocks.</p>
+
+      <h2>Next Steps</h2>
+      <ul>
+        <li><a href="/docs/blueprints">Learn about blueprints</a> — creating, sharing, and importing</li>
+        <li><a href="/docs/ai-models">Explore AI models</a> — 17 models across 6 providers</li>
+      </ul>
+    </main>
+  </div>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+</body>
+</html>
