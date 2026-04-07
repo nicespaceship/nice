@@ -14,9 +14,9 @@
   <link rel="stylesheet" href="/css/tcg-card.css" />
   <style>
     .bp-example-grid {
-      display: grid; grid-template-columns: 60fr 40fr; gap: 60px; align-items: center; margin: 48px 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; margin: 48px 0; max-width: 900px; margin-left: auto; margin-right: auto;
     }
-    .bp-example-grid.reverse { grid-template-columns: 40fr 60fr; }
+    .bp-example-grid.reverse { grid-template-columns: 1fr 1fr; }
     .bp-example-card { max-width: 280px; margin: 0 auto; }
     .bp-example-card .tcg-card { margin: 0; pointer-events: none; cursor: default; }
     .bp-example-grid h3 { margin-bottom: 12px; }
@@ -29,6 +29,22 @@
     .pricing-card { display: flex; flex-direction: column; }
     .pricing-features { flex: 1; }
 
+    @keyframes grid-scroll { 0% { background-position: 0 0; } 100% { background-position: 0 40px; } }
+    .bp-grid-bg {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        linear-gradient(rgba(165,180,252,0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(165,180,252,0.08) 1px, transparent 1px),
+        linear-gradient(rgba(165,180,252,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(165,180,252,0.03) 1px, transparent 1px);
+      background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+      animation: grid-scroll 3s linear infinite;
+      transform: perspective(400px) rotateX(55deg);
+      transform-origin: center 70%;
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
+    }
+
     @media (max-width: 768px) {
       .bp-example-grid, .bp-example-grid.reverse { grid-template-columns: 1fr; gap: 32px; }
       .bp-example-card { order: -1; }
@@ -40,10 +56,81 @@
   <main>
     <!-- Hero -->
     <section class="hero">
-      <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0"></canvas>
-      <div class="hero-ring"><img src="/assets/space-station-v2.svg" alt="" /></div>
-      <div class="hero-ring-outer"><img src="/assets/outer-ring.svg" alt="" /></div>
-      <div class="container" style="position:relative;z-index:1">
+      <!-- 12-slot schematic background -->
+      <div id="schematic-bg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:0;opacity:0.12;pointer-events:none;transition:transform 0.1s ease-out">
+        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:min(900px,90vw);height:auto">
+          <!-- Grid -->
+          <line x1="10" y1="20" x2="190" y2="20" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="10" y1="40" x2="190" y2="40" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="10" y1="60" x2="190" y2="60" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="10" y1="80" x2="190" y2="80" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="10" y1="100" x2="190" y2="100" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="30" y1="5" x2="30" y2="115" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="60" y1="5" x2="60" y2="115" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="90" y1="5" x2="90" y2="115" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="120" y1="5" x2="120" y2="115" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="150" y1="5" x2="150" y2="115" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <line x1="180" y1="5" x2="180" y2="115" stroke="#a5b4fc" stroke-width="0.3" opacity="0.3"/>
+          <!-- Center hub -->
+          <circle cx="100" cy="60" r="5" fill="#a5b4fc" opacity="0.4"/>
+          <!-- Hub-to-slot lines -->
+          <line x1="100" y1="60" x2="100" y2="10" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="140" y2="15" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="170" y2="35" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="180" y2="65" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="170" y2="90" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="140" y2="108" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="100" y2="113" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="60" y2="108" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="30" y2="90" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="20" y2="65" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="30" y2="35" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <line x1="100" y1="60" x2="60" y2="15" stroke="#a5b4fc" stroke-width="0.6" opacity="0.2"/>
+          <!-- Ring connections -->
+          <line x1="100" y1="10" x2="140" y2="15" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="140" y1="15" x2="170" y2="35" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="170" y1="35" x2="180" y2="65" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="180" y1="65" x2="170" y2="90" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="170" y1="90" x2="140" y2="108" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="140" y1="108" x2="100" y2="113" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="100" y1="113" x2="60" y2="108" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="60" y1="108" x2="30" y2="90" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="30" y1="90" x2="20" y2="65" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="20" y1="65" x2="30" y2="35" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="30" y1="35" x2="60" y2="15" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <line x1="60" y1="15" x2="100" y2="10" stroke="#a5b4fc" stroke-width="0.4" opacity="0.15"/>
+          <!-- Cross connections -->
+          <line x1="100" y1="10" x2="100" y2="113" stroke="#a5b4fc" stroke-width="0.3" opacity="0.1"/>
+          <line x1="170" y1="35" x2="30" y2="90" stroke="#a5b4fc" stroke-width="0.3" opacity="0.1"/>
+          <!-- 12 slot nodes -->
+          <circle cx="100" cy="10" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="100" cy="10" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="140" cy="15" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="140" cy="15" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="170" cy="35" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="170" cy="35" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="180" cy="65" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="180" cy="65" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="170" cy="90" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="170" cy="90" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="140" cy="108" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="140" cy="108" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="100" cy="113" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="100" cy="113" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="60" cy="108" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="60" cy="108" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="30" cy="90" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="30" cy="90" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="20" cy="65" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="20" cy="65" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="30" cy="35" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="30" cy="35" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <circle cx="60" cy="15" r="10" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/><circle cx="60" cy="15" r="10" fill="#a5b4fc" opacity="0.04"/>
+          <!-- Orbiting dots -->
+          <circle cx="112" cy="10" r="1.5" fill="#f43f5e" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="0 100 10" to="360 100 10" dur="18s" repeatCount="indefinite"/></circle>
+          <circle cx="152" cy="15" r="1.5" fill="#f97316" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="30 140 15" to="390 140 15" dur="16s" repeatCount="indefinite"/></circle>
+          <circle cx="182" cy="35" r="1.5" fill="#eab308" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="60 170 35" to="420 170 35" dur="19s" repeatCount="indefinite"/></circle>
+          <circle cx="192" cy="65" r="1.5" fill="#22c55e" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="90 180 65" to="450 180 65" dur="15s" repeatCount="indefinite"/></circle>
+          <circle cx="182" cy="90" r="1.5" fill="#14b8a6" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="120 170 90" to="480 170 90" dur="17s" repeatCount="indefinite"/></circle>
+          <circle cx="152" cy="108" r="1.5" fill="#06b6d4" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="150 140 108" to="510 140 108" dur="20s" repeatCount="indefinite"/></circle>
+          <circle cx="112" cy="113" r="1.5" fill="#3b82f6" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="180 100 113" to="540 100 113" dur="14s" repeatCount="indefinite"/></circle>
+          <circle cx="72" cy="108" r="1.5" fill="#6366f1" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="210 60 108" to="570 60 108" dur="18s" repeatCount="indefinite"/></circle>
+          <circle cx="42" cy="90" r="1.5" fill="#a855f7" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="240 30 90" to="600 30 90" dur="16s" repeatCount="indefinite"/></circle>
+          <circle cx="32" cy="65" r="1.5" fill="#ec4899" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="270 20 65" to="630 20 65" dur="19s" repeatCount="indefinite"/></circle>
+          <circle cx="42" cy="35" r="1.5" fill="#84cc16" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="300 30 35" to="660 30 35" dur="15s" repeatCount="indefinite"/></circle>
+          <circle cx="72" cy="15" r="1.5" fill="#fb923c" opacity="0.7"><animateTransform attributeName="transform" type="rotate" from="330 60 15" to="690 60 15" dur="17s" repeatCount="indefinite"/></circle>
+        </svg>
+      </div>
+      <div class="container" style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:inherit">
         <div class="badge"><span class="badge-dot"></span> About NICE SPACESHIP</div>
         <h1 style="text-transform:none;background:linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Neural Intelligence Command Engine</h1>
         <p class="hero-sub">The operating system for AI agents.</p>
@@ -54,28 +141,9 @@
       </div>
     </section>
 
-    <!-- Stats Bar -->
-    <section class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-num" id="stat-blueprints">0</div>
-        <div class="stat-label">Blueprints</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num" id="stat-llms">0</div>
-        <div class="stat-label">AI Models</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num" id="stat-mcps">0</div>
-        <div class="stat-label">Integrations</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num" id="stat-missions">0</div>
-        <div class="stat-label">Missions Run</div>
-      </div>
-    </section>
 
     <!-- Mission & Approach -->
-    <section class="section" style="background:radial-gradient(ellipse 80% 40% at 0% 50%, rgba(165,180,252,0.04) 0%, transparent 60%)">
+    <section class="section" style="border-top:none;background:radial-gradient(ellipse 80% 40% at 0% 50%, rgba(165,180,252,0.04) 0%, transparent 60%)">
       <div class="container">
         <div class="about-grid">
           <div class="about-section">
@@ -103,15 +171,16 @@
     </section>
 
     <!-- Blueprint System -->
-    <section class="section section-alt">
-      <div class="container">
+    <section class="section section-alt" style="position:relative;overflow:hidden;background:radial-gradient(ellipse 60% 30% at 50% 0%, rgba(165,180,252,0.08) 0%, transparent 70%)">
+      <div class="bp-grid-bg"></div>
+      <div class="container" style="position:relative;z-index:1">
         <h2 style="text-align:center;margin-bottom:8px">The Blueprint System</h2>
         <p style="text-align:center;color:var(--text-muted);margin-bottom:16px;max-width:560px;margin-left:auto;margin-right:auto">Every workflow starts with a blueprint. Browse, activate, deploy.</p>
 
         <!-- Spaceships -->
         <div class="bp-example-grid">
           <div>
-            <h3>Spaceships</h3>
+            <h2 style="background:linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Spaceships</h2>
             <p>A Spaceship is your orchestrator — a complete business workflow with a pre-configured crew of AI agents. Deploy one and your team is ready to work.</p>
             <h3 style="margin-top:24px">Rarity & Progression</h3>
             <p>Five rarities from Common to Mythic. Rank up to unlock rarer blueprints. Mythic can never be purchased — only earned.</p>
@@ -123,7 +192,7 @@
         <div class="bp-example-grid reverse">
           <div class="bp-example-card" id="agent-card"></div>
           <div>
-            <h3>Agents</h3>
+            <h2 style="background:linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Agents</h2>
             <p>Agents are the workers — each with a role, tools, and an AI model. They draft emails, analyze data, schedule posts, and generate reports.</p>
             <h3 style="margin-top:24px">How They Work Together</h3>
             <p>Pick a Spaceship, activate it, connect your integrations, and run missions. Swap agents in and out as needed.</p>
@@ -254,8 +323,6 @@
   <script src="/js/supabase-lite.js"></script>
   <script src="/js/theme-lite.js"></script>
   <script src="/js/nav.js"></script>
-  <script src="/js/hero-canvas.js"></script>
-  <script src="/js/stats.js"></script>
   <script src="/js/utils.js"></script>
   <script src="/js/blueprint-utils.js"></script>
   <script src="/js/card-renderer.js"></script>
@@ -263,9 +330,6 @@
     ThemeLite.init();
     Nav.render();
     Nav.renderFooter();
-    HeroCanvas.init();
-    Stats.load();
-
     // Render example blueprint cards
     (async () => {
       if (typeof SBLite === 'undefined' || typeof CardRenderer === 'undefined') return;
@@ -301,6 +365,15 @@
         agentEl.innerHTML = CardRenderer.render('agent', 'full', bp, {});
       }
     })();
+
+    // Parallax: schematic moves slower than scroll
+    const sBg = document.getElementById('schematic-bg');
+    if (sBg) {
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        sBg.style.transform = 'translateY(' + (y * 0.3) + 'px) scale(' + (1 + y * 0.0003) + ')';
+      }, { passive: true });
+    }
   </script>
 </body>
 </html>
