@@ -127,6 +127,8 @@ const BlueprintsView = (() => {
           <button class="bp-type-tab" data-tab="outbox">Outbox</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
+          <span style="flex:1"></span>
+          <button class="bp-type-tab bp-tab-tron" data-tab="tron">TRON</button>
         </div>
 
         <!-- Blueprints sub-tabs (Spaceships / Agents) -->
@@ -203,7 +205,7 @@ const BlueprintsView = (() => {
     const _hash = (window.location.hash || '').split('?')[0];
     const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
     const _tabParam = _hashParams.get('tab');
-    const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'log'];
+    const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'log', 'tron'];
     if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
     else if (_tabParam === 'spaceship' || _tabParam === 'agent') { _activeTab = 'blueprints'; _subTab = _tabParam; }
     else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
@@ -1065,7 +1067,7 @@ const BlueprintsView = (() => {
     const loadMore = document.getElementById('bp-load-more');
 
     const subTabs = document.getElementById('bp-sub-tabs');
-    const isLogTab = ['missions', 'outbox', 'operations', 'log'].includes(_activeTab);
+    const isLogTab = ['missions', 'outbox', 'operations', 'log', 'tron'].includes(_activeTab);
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
@@ -1087,12 +1089,13 @@ const BlueprintsView = (() => {
       if (!isSchematic && typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
     }
 
-    // Log tabs (Missions, Operations, Log)
+    // Log tabs (Missions, Operations, Log, Tron)
     if (logEl) {
       logEl.style.display = isLogTab ? '' : 'none';
       if (isLogTab) {
         _renderLogTab(logEl);
       }
+      if (_activeTab !== 'tron' && typeof TronView !== 'undefined' && TronView.destroy) TronView.destroy();
     }
 
   }
@@ -1106,6 +1109,8 @@ const BlueprintsView = (() => {
       AnalyticsView.render(el);
     } else if (_activeTab === 'log' && typeof AuditLogView !== 'undefined') {
       AuditLogView.render(el);
+    } else if (_activeTab === 'tron' && typeof TronView !== 'undefined') {
+      TronView.render(el);
     } else {
       el.innerHTML = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
     }
