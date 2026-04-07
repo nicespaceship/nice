@@ -920,7 +920,7 @@
 #tron-grid {
   display: none;
   position: fixed;
-  top: 0; left: 56px; right: 0; bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   pointer-events: none;
   z-index: 0;
 }
@@ -943,7 +943,7 @@
 #tron-city {
   display: none;
   position: fixed;
-  left: 56px; right: 0;
+  left: 0; right: 0;
   bottom: 48%;
   height: 20vh;
   pointer-events: none;
@@ -1044,7 +1044,7 @@
 #tron-cycles {
   display: none;
   position: fixed;
-  left: 56px; right: 0;
+  left: 0; right: 0;
   bottom: 0;
   height: 40vh;
   pointer-events: none;
