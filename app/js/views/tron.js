@@ -10,7 +10,7 @@ const TronView = (() => {
 
   let _canvas, _ctx, _cell;
   let _snake, _dir, _nextDir, _food, _score, _hi, _alive, _timer, _el, _lives, _nextLifeAt;
-  let _audioCtx, _soundOn = true;
+  let _audioCtx, _soundOn = true, _paused = false;
 
   /* ── Synthesized TRON sounds (Web Audio API) ── */
   function _initAudio() {
@@ -80,6 +80,7 @@ const TronView = (() => {
           <div>Lives: <span id="tron-lives" style="color:#ef4444">3</span></div>
           <div>Score: <span id="tron-score" style="color:var(--accent,#18a0fb)">0</span></div>
           <div>Hi: <span id="tron-hi" style="color:var(--accent2,#0a6bc4)">${_hi}</span></div>
+          <button id="tron-pause" style="background:none;border:1px solid var(--border,rgba(24,160,251,0.25));border-radius:3px;color:var(--accent,#18a0fb);font-family:'Orbitron',sans-serif;font-size:.6rem;padding:2px 8px;cursor:pointer;letter-spacing:.08em;">PAUSE</button>
           <button id="tron-sound" style="background:none;border:1px solid var(--border,rgba(24,160,251,0.25));border-radius:3px;color:var(--accent,#18a0fb);font-family:'Orbitron',sans-serif;font-size:.6rem;padding:2px 8px;cursor:pointer;letter-spacing:.08em;">SFX ON</button>
         </div>
         <div style="position:relative;">
@@ -116,6 +117,7 @@ const TronView = (() => {
       if (btn) btn.textContent = _soundOn ? 'SFX ON' : 'SFX OFF';
     });
     // D-pad buttons
+    document.getElementById('tron-pause')?.addEventListener('click', _togglePause);
     const dirMap = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
     _el.querySelectorAll('.tron-dpad-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -126,6 +128,33 @@ const TronView = (() => {
     window.addEventListener('resize', _resize);
     _canvas.addEventListener('touchstart', _onTouchStart, { passive: false });
     _canvas.addEventListener('touchend', _onTouchEnd, { passive: false });
+  }
+
+  function _togglePause() {
+    if (!_alive) return;
+    _paused = !_paused;
+    const btn = document.getElementById('tron-pause');
+    if (btn) btn.textContent = _paused ? 'RESUME' : 'PAUSE';
+    if (_paused) {
+      clearInterval(_timer);
+      _drawPaused();
+    } else {
+      _timer = setInterval(_tick, _speed());
+    }
+  }
+
+  function _drawPaused() {
+    _draw();
+    const w = _canvas.width, h = _canvas.height;
+    _ctx.fillStyle = 'rgba(2,8,16,0.7)';
+    _ctx.fillRect(0, 0, w, h);
+    _ctx.fillStyle = '#18a0fb';
+    _ctx.font = `bold ${Math.floor(_cell * 1.2)}px Orbitron, sans-serif`;
+    _ctx.textAlign = 'center';
+    _ctx.shadowColor = 'rgba(24,160,251,0.4)';
+    _ctx.shadowBlur = 10;
+    _ctx.fillText('PAUSED', w / 2, h / 2);
+    _ctx.shadowBlur = 0;
   }
 
   let _touchX, _touchY;
@@ -231,6 +260,8 @@ const TronView = (() => {
 
   function _onKey(e) {
     if (!_alive && (e.key === 'Enter' || e.key === ' ')) { _start(); return; }
+    if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { _togglePause(); e.preventDefault(); return; }
+    if (_paused) return;
     const map = {
       ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 },
       ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 },
