@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integrations — NICE Documentation</title>
+  <meta name="description" content="Connect Gmail, Calendar, Drive, and custom MCP servers to your AI agents." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <div class="docs-layout">
+    <nav class="docs-sidebar" id="docs-sidebar">
+      <h4>Getting Started</h4>
+      <a href="/docs/getting-started">Quick Start</a>
+      <h4>Core Concepts</h4>
+      <a href="/docs/concepts">Spaceships & Agents</a>
+      <a href="/docs/blueprints">Blueprints</a>
+      <h4>Platform</h4>
+      <a href="/docs/ai-models">AI Models</a>
+      <a href="/docs/integrations" class="active">Integrations</a>
+    </nav>
+    <main class="docs-content">
+      <h1>Integrations</h1>
+      <p>Connect external services to give your agents real-world capabilities. Integrations are managed through the MCP (Model Context Protocol) bridge.</p>
+
+      <h2>Google Workspace</h2>
+      <p>NICE supports OAuth 2.0 for any Google account — personal Gmail, Google Workspace, or any domain.</p>
+
+      <h3>Setup</h3>
+      <ol>
+        <li>Go to <strong>Security > Integrations</strong></li>
+        <li>Click <strong>Sign in with Google</strong></li>
+        <li>Authorize the requested scopes (read-only by default)</li>
+      </ol>
+      <p>Once connected, the <code>mcp-gateway</code> automatically refreshes expired OAuth tokens before each tool call.</p>
+
+      <h3>Gmail</h3>
+      <p>Scope: <code>gmail.readonly</code></p>
+      <p>Your agents can:</p>
+      <ul>
+        <li>Search emails by sender, subject, date, or content</li>
+        <li>Read full email content and attachments</li>
+        <li>List and filter by labels</li>
+      </ul>
+
+      <h3>Calendar</h3>
+      <p>Scope: <code>calendar.readonly</code></p>
+      <p>Your agents can:</p>
+      <ul>
+        <li>List upcoming events</li>
+        <li>Check availability</li>
+        <li>Read event details (attendees, location, description)</li>
+      </ul>
+
+      <h3>Drive</h3>
+      <p>Scope: <code>drive.readonly</code></p>
+      <p>Your agents can:</p>
+      <ul>
+        <li>Search files by name, type, or content</li>
+        <li>Read document content</li>
+        <li>List files in folders</li>
+      </ul>
+
+      <h2>MCP Servers</h2>
+      <p>NICE uses the <strong>Model Context Protocol</strong> (MCP) for all integrations. MCP servers expose tools that agents can call during missions.</p>
+
+      <h3>Built-in MCP Servers</h3>
+      <table>
+        <thead><tr><th>Server</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>gmail-mcp</code></td><td>Gmail search, read, labels</td></tr>
+          <tr><td><code>calendar-mcp</code></td><td>Calendar events and availability</td></tr>
+          <tr><td><code>drive-mcp</code></td><td>Drive search, read, metadata</td></tr>
+          <tr><td><code>social-mcp</code></td><td>Social media publishing (Buffer, X, LinkedIn)</td></tr>
+          <tr><td><code>browser-proxy</code></td><td>Web browsing for agents</td></tr>
+        </tbody>
+      </table>
+
+      <h3>How MCP Works</h3>
+      <p>MCP connections are made at the <strong>spaceship level</strong>. When you connect Gmail to a spaceship, all agents on that crew inherit the connection. The flow:</p>
+      <ol>
+        <li>Agent needs to use a tool (e.g., search Gmail)</li>
+        <li><code>ToolRegistry</code> finds the registered MCP tool</li>
+        <li><code>McpBridge</code> routes the call to <code>mcp-gateway</code></li>
+        <li><code>mcp-gateway</code> refreshes OAuth tokens if needed</li>
+        <li>The MCP server executes the tool and returns results</li>
+      </ol>
+
+      <h2>Next Steps</h2>
+      <ul>
+        <li><a href="/docs/ai-models">Explore AI models</a> — configure which models your agents use</li>
+        <li><a href="/docs/getting-started">Quick start</a> — deploy your first spaceship</li>
+      </ul>
+    </main>
+  </div>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+</body>
+</html>

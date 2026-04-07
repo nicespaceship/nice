@@ -1,9 +1,9 @@
 /* NICE SPACESHIP — Shared Navigation */
 const Nav = (() => {
   const LINKS = [
-    { href: '/blueprints', label: 'Blueprints' },
-    { href: '/academy', label: 'Academy' },
     { href: '/about', label: 'About' },
+    { href: '/blueprints', label: 'Blueprints' },
+    { href: '/docs', label: 'Documentation' },
   ];
 
   function _isActive(href) {
@@ -60,10 +60,10 @@ const Nav = (() => {
           </div>
           <div class="footer-col">
             <h4>Product</h4>
-            <a href="https://nicespaceship.ai">Launch NICE</a>
+            <a href="https://nicespaceship.ai">NICE</a>
             <a href="/blueprints">Blueprints</a>
             <a href="/about#pricing">Pricing</a>
-            <a href="/academy">Academy</a>
+            <a href="/docs">Documentation</a>
           </div>
           <div class="footer-col">
             <h4>Resources</h4>

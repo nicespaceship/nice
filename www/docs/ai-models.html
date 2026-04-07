@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Models — NICE Documentation</title>
+  <meta name="description" content="17 AI models across 6 providers. Auto-routing, token costs, and model selection." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <div class="docs-layout">
+    <nav class="docs-sidebar" id="docs-sidebar">
+      <h4>Getting Started</h4>
+      <a href="/docs/getting-started">Quick Start</a>
+      <h4>Core Concepts</h4>
+      <a href="/docs/concepts">Spaceships & Agents</a>
+      <a href="/docs/blueprints">Blueprints</a>
+      <h4>Platform</h4>
+      <a href="/docs/ai-models" class="active">AI Models</a>
+      <a href="/docs/integrations">Integrations</a>
+    </nav>
+    <main class="docs-content">
+      <h1>AI Models</h1>
+      <p>NICE is the LLM provider. You never deal with API keys — NICE holds all provider keys server-side and routes each task to the best model automatically.</p>
+
+      <h2>Model Catalog</h2>
+      <table>
+        <thead><tr><th>Model</th><th>Provider</th><th>Tier</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td>Gemini 2.5 Flash</td><td>Google</td><td>Free</td><td>General tasks, fast responses</td></tr>
+          <tr><td>Gemini 2.0 Lite</td><td>Google</td><td>Free</td><td>Ultra-fast, simple tasks</td></tr>
+          <tr><td>Claude Sonnet 4</td><td>Anthropic</td><td>Premium</td><td>Reasoning, analysis</td></tr>
+          <tr><td>Claude Opus 4</td><td>Anthropic</td><td>Premium</td><td>Complex tasks, long context</td></tr>
+          <tr><td>GPT-5.2</td><td>OpenAI</td><td>Premium</td><td>Flagship, broad knowledge</td></tr>
+          <tr><td>GPT-5 Mini</td><td>OpenAI</td><td>Premium</td><td>Fast, cost-effective</td></tr>
+          <tr><td>Gemini 2.5 Pro</td><td>Google</td><td>Premium</td><td>Complex reasoning</td></tr>
+          <tr><td>DeepSeek V3</td><td>DeepSeek</td><td>Budget</td><td>Affordable alternative</td></tr>
+          <tr><td>Mistral Large 3</td><td>Mistral</td><td>Budget</td><td>Multilingual tasks</td></tr>
+          <tr><td>Grok 4</td><td>xAI</td><td>Premium</td><td>Real-time knowledge</td></tr>
+        </tbody>
+      </table>
+
+      <h2>How NICE Auto Works</h2>
+      <p>When you set a model to <strong>NICE Auto</strong>, the platform picks the optimal model for each task based on:</p>
+      <ul>
+        <li><strong>Task complexity</strong> — simple queries go to fast models, complex analysis goes to powerful ones</li>
+        <li><strong>Available tokens</strong> — if your balance is low, NICE prefers free models</li>
+        <li><strong>Historical performance</strong> — NICE learns which models perform best for your specific workflows</li>
+      </ul>
+      <p>You can also manually assign a model to any agent in the Agent Builder.</p>
+
+      <h2>Token System</h2>
+      <p>Free models (Gemini Flash, Gemini Lite) never cost tokens. Premium models consume tokens per request.</p>
+      <p>Every new account gets <strong>100K free tokens</strong>. After that, purchase token packages:</p>
+      <table>
+        <thead><tr><th>Package</th><th>Price</th><th>~Requests</th></tr></thead>
+        <tbody>
+          <tr><td>500K tokens</td><td>$4.99</td><td>~250</td></tr>
+          <tr><td>5M tokens</td><td>$19.99</td><td>~2,500</td></tr>
+          <tr><td>25M tokens</td><td>$49.99</td><td>~12,500</td></tr>
+        </tbody>
+      </table>
+      <p>Token usage is tracked per request. The <code>nice-ai</code> edge function checks your balance before making premium calls and returns a 402 if insufficient.</p>
+
+      <h2>Enabling Models</h2>
+      <p>Models are toggled on/off in <strong>Security > Integrations</strong>. Only enabled models are available for agent assignment and auto-routing.</p>
+      <p>Free tier users have Gemini Flash enabled by default. Pro subscribers can enable all 17 models.</p>
+
+      <h2>Next Steps</h2>
+      <ul>
+        <li><a href="/docs/integrations">Connect integrations</a> — Gmail, Calendar, Drive</li>
+        <li><a href="/docs/getting-started">Quick start guide</a> — deploy your first spaceship</li>
+      </ul>
+    </main>
+  </div>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+</body>
+</html>
