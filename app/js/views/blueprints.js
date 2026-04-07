@@ -1082,6 +1082,10 @@ const BlueprintsView = (() => {
     if (grid) grid.style.display = catalogDisplay;
     if (loadMore) loadMore.style.display = catalogDisplay;
 
+    // Hide toolbar actions on TRON tab
+    const toolbarActions = document.getElementById('bp-toolbar-actions');
+    if (toolbarActions) toolbarActions.style.display = (_activeTab === 'tron') ? 'none' : '';
+
     // Schematic
     if (schematicEl) {
       schematicEl.style.display = isSchematic ? '' : 'none';

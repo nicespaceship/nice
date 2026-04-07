@@ -5,6 +5,18 @@
 
 /* TRON tab — only visible on The Grid theme */
 .bp-tab-tron { display:none !important; }
+
+/* TRON D-pad */
+.tron-dpad-btn {
+  background:rgba(24,160,251,0.08); border:1px solid rgba(24,160,251,0.3);
+  border-radius:4px; color:rgba(24,160,251,0.7); font-size:1rem;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .15s; user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.tron-dpad-btn:active {
+  background:rgba(24,160,251,0.25); border-color:rgba(24,160,251,0.6);
+  color:#fff; box-shadow:0 0 12px rgba(24,160,251,0.3);
+}
 [data-theme="navigator"] .bp-tab-tron {
   display:inline-flex !important;
   border-color:rgba(24,160,251,0.5);

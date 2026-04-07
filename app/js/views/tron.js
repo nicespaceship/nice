@@ -90,7 +90,17 @@ const TronView = (() => {
             <button id="tron-start" class="btn" style="margin-top:8px;padding:8px 24px;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.1em;">ENTER THE GRID</button>
           </div>
         </div>
-        <div style="font-size:.6rem;color:var(--text-muted);letter-spacing:.08em;font-family:'Orbitron',sans-serif;">ARROW KEYS / WASD / SWIPE</div>
+        <div class="tron-dpad" style="display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:4px;user-select:none;">
+          <div></div>
+          <button class="tron-dpad-btn" data-dir="up" style="grid-column:2;grid-row:1;" aria-label="Up">&#9650;</button>
+          <div></div>
+          <button class="tron-dpad-btn" data-dir="left" style="grid-column:1;grid-row:2;" aria-label="Left">&#9664;</button>
+          <div style="grid-column:2;grid-row:2;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:.4rem;color:var(--text-muted);letter-spacing:.05em;">D-PAD</div>
+          <button class="tron-dpad-btn" data-dir="right" style="grid-column:3;grid-row:2;" aria-label="Right">&#9654;</button>
+          <div></div>
+          <button class="tron-dpad-btn" data-dir="down" style="grid-column:2;grid-row:3;" aria-label="Down">&#9660;</button>
+          <div></div>
+        </div>
       </div>
     `;
 
@@ -104,6 +114,13 @@ const TronView = (() => {
       _soundOn = !_soundOn;
       const btn = document.getElementById('tron-sound');
       if (btn) btn.textContent = _soundOn ? 'SFX ON' : 'SFX OFF';
+    });
+    // D-pad buttons
+    const dirMap = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+    _el.querySelectorAll('.tron-dpad-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _onKey({ key: dirMap[btn.dataset.dir], preventDefault() {} });
+      });
     });
     window.addEventListener('keydown', _onKey);
     window.addEventListener('resize', _resize);
