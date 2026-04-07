@@ -11,6 +11,7 @@ const TronView = (() => {
   let _canvas, _ctx, _cell;
   let _snake, _dir, _nextDir, _food, _score, _hi, _alive, _timer, _el, _lives, _nextLifeAt;
   let _audioCtx, _soundOn = true, _paused = false;
+  let _humOsc, _humGain, _humLfo;
 
   /* ── Synthesized TRON sounds (Web Audio API) ── */
   function _initAudio() {
@@ -68,6 +69,60 @@ const TronView = (() => {
     setTimeout(() => _tone(600, 0.15, 'sawtooth', 0.06, 100), 80);
     setTimeout(() => _tone(300, 0.2, 'sawtooth', 0.05, 60), 200);
     setTimeout(() => _tone(100, 0.4, 'sawtooth', 0.04, 30), 350);
+  }
+
+  function _humStart() {
+    if (!_audioCtx || _humOsc) return;
+    // TRON light-cycle whir — layered oscillators through bandpass filter
+    // Layer 1: mid-frequency turbine whine
+    _humOsc = _audioCtx.createOscillator();
+    _humOsc.type = 'sawtooth';
+    _humOsc.frequency.setValueAtTime(220, _audioCtx.currentTime);
+    // Layer 2: higher harmonic
+    _humLfo = _audioCtx.createOscillator();
+    _humLfo.type = 'square';
+    _humLfo.frequency.setValueAtTime(443, _audioCtx.currentTime);
+    // Bandpass filter — shapes it into a whir
+    const filter = _audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(350, _audioCtx.currentTime);
+    filter.Q.setValueAtTime(2, _audioCtx.currentTime);
+    _humOsc._filter = filter;
+    // Gain nodes
+    _humGain = _audioCtx.createGain();
+    const vol = _soundOn ? 0.015 : 0;
+    _humGain.gain.setValueAtTime(vol, _audioCtx.currentTime);
+    const layer2Gain = _audioCtx.createGain();
+    layer2Gain.gain.setValueAtTime(vol * 0.4, _audioCtx.currentTime);
+    _humOsc._layer2Gain = layer2Gain;
+    // Connect: oscs → filter → gain → output
+    _humOsc.connect(filter);
+    _humLfo.connect(layer2Gain).connect(filter);
+    filter.connect(_humGain).connect(_audioCtx.destination);
+    _humOsc.start();
+    _humLfo.start();
+  }
+
+  function _humStop() {
+    if (_humOsc) { _humOsc.stop(); _humOsc = null; }
+    if (_humLfo) { _humLfo.stop(); _humLfo = null; }
+    _humGain = null;
+  }
+
+  function _humUpdate() {
+    if (!_humOsc || !_humGain) return;
+    // Pitch rises with speed (score)
+    // Pitch rises with speed — turbine whine gets higher
+    const freq = 220 + _score * 4;
+    _humOsc.frequency.setValueAtTime(Math.min(freq, 500), _audioCtx.currentTime);
+    if (_humLfo) _humLfo.frequency.setValueAtTime(Math.min(freq * 2, 1000), _audioCtx.currentTime);
+    if (_humOsc._filter) _humOsc._filter.frequency.setValueAtTime(Math.min(freq * 1.5, 700), _audioCtx.currentTime);
+    _humGain.gain.setValueAtTime(_soundOn ? 0.015 : 0, _audioCtx.currentTime);
+  }
+
+  function _humPause(paused) {
+    if (!_humGain || !_audioCtx) return;
+    _humGain.gain.setValueAtTime(paused ? 0 : (_soundOn ? 0.015 : 0), _audioCtx.currentTime);
   }
 
   function render(el) {
@@ -135,6 +190,7 @@ const TronView = (() => {
     _paused = !_paused;
     const btn = document.getElementById('tron-pause');
     if (btn) btn.textContent = _paused ? 'RESUME' : 'PAUSE';
+    _humPause(_paused);
     if (_paused) {
       clearInterval(_timer);
       _drawPaused();
@@ -189,6 +245,7 @@ const TronView = (() => {
 
   function destroy() {
     clearInterval(_timer);
+    _humStop();
     window.removeEventListener('keydown', _onKey);
     window.removeEventListener('resize', _resize);
     if (_canvas) {
@@ -218,7 +275,9 @@ const TronView = (() => {
       return;
     }
     _initAudio();
+    _humStop();
     _sfxStart();
+    setTimeout(() => _humStart(), 400);
     const overlay = document.getElementById('tron-overlay');
     if (overlay) overlay.style.display = 'none';
     _snake = [{ x: 16, y: 16 }, { x: 15, y: 16 }, { x: 14, y: 16 }];
@@ -302,6 +361,7 @@ const TronView = (() => {
         _sfxEat();
       }
       _updateHUD();
+      _humUpdate();
       _spawnFood();
       // Speed up
       clearInterval(_timer);
@@ -320,14 +380,16 @@ const TronView = (() => {
 
     if (_lives > 0) {
       _sfxDeath();
+      _humPause(true);
       _alive = false;
       _draw();
-      setTimeout(() => _respawn(), 800);
+      setTimeout(() => { _respawn(); _humPause(false); }, 800);
       return;
     }
 
     // Final death
     _sfxDerez();
+    _humStop();
     _alive = false;
     if (_score > _hi) {
       _hi = _score;
