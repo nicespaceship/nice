@@ -10,7 +10,7 @@ const TronView = (() => {
 
   let _canvas, _ctx, _cell;
   let _snake, _dir, _nextDir, _food, _score, _hi, _alive, _timer, _el, _lives, _nextLifeAt;
-  let _audioCtx, _soundOn = true, _paused = false;
+  let _audioCtx, _soundOn = true, _paused = false, _respawning = false;
 
   /* ── Synthesized TRON sounds (Web Audio API) ── */
   function _initAudio() {
@@ -164,8 +164,8 @@ const TronView = (() => {
     const t = e.touches[0];
     _touchX = t.clientX;
     _touchY = t.clientY;
-    // Tap to start/restart
-    if (!_alive) { _start(); }
+    // Tap to start/restart (not during respawn)
+    if (!_alive && !_respawning) { _start(); }
   }
 
   function _onTouchEnd(e) {
@@ -228,6 +228,7 @@ const TronView = (() => {
     _lives = 3;
     _nextLifeAt = 100;
     _alive = true;
+    _respawning = false;
     _updateHUD();
     _spawnFood();
     clearInterval(_timer);
@@ -239,6 +240,7 @@ const TronView = (() => {
     _dir = { x: 1, y: 0 };
     _nextDir = { x: 1, y: 0 };
     _alive = true;
+    _respawning = false;
     _spawnFood();
     clearInterval(_timer);
     _timer = setInterval(_tick, _speed());
@@ -259,7 +261,8 @@ const TronView = (() => {
   }
 
   function _onKey(e) {
-    if (!_alive && (e.key === 'Enter' || e.key === ' ')) { _start(); return; }
+    if (!_alive && !_respawning && (e.key === 'Enter' || e.key === ' ')) { _start(); return; }
+    if (_respawning) return;
     if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { _togglePause(); e.preventDefault(); return; }
     if (_paused) return;
     const map = {
@@ -321,6 +324,7 @@ const TronView = (() => {
     if (_lives > 0) {
       _sfxDeath();
       _alive = false;
+      _respawning = true;
       _draw();
       setTimeout(() => _respawn(), 800);
       return;
