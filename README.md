@@ -78,7 +78,7 @@ See [CLAUDE.md](./CLAUDE.md) for the full architecture reference.
 | AI | 6 LLM providers via nice-ai proxy with SSE streaming |
 | Integrations | MCP protocol (Gmail, Calendar, Drive) |
 | Payments | Stripe (token packages) |
-| Deployment | Vercel (auto-deploy from GitHub) |
+| Deployment | Cloudflare Pages (auto-deploy from GitHub) |
 | Testing | Vitest (343 unit) + Playwright (14 E2E) |
 
 ## Testing
