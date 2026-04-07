@@ -259,7 +259,9 @@ const SchematicView = (() => {
     return '<div class="schematic-wired">' +
       '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
-      '<div class="schematic-center">' + svg + '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' + '</div>' +
+      '<div class="schematic-center">' + svg +
+        '<div class="jv-arc-reactor" aria-hidden="true"><div class="jv-arc-ring"><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div></div><div class="jv-arc-inner-ring"></div><div class="jv-arc-core"></div></div>' +
+        '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' + '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';
   }

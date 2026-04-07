@@ -261,7 +261,7 @@ const PromptPanel = (() => {
     'synthwave': 'synthwave',
     'arctic': 'arctic',
     'volcanic': 'volcanic', 'molten': 'volcanic', 'lava': 'volcanic',
-    'steampunk': 'steampunk',
+    'jarvis': 'jarvis', 'j.a.r.v.i.s.': 'jarvis', 'j.a.r.v.i.s': 'jarvis', 'stark': 'jarvis', 'iron man': 'jarvis',
     'forest': 'forest', 'jungle': 'forest',
     'ultraviolet': 'ultraviolet', 'uv': 'ultraviolet',
   };
@@ -1246,7 +1246,7 @@ THEME SWITCHING: Users can ask you to change the visual theme. When they ask to 
 [THEME: themename]
 This triggers an automatic theme switch. Available themes:
 Built-in: spaceship, robotech, navigator, solar, matrix, retro, lcars, pixel
-Extended: cyberpunk, ocean, sunset, holo, synthwave, arctic, volcanic, steampunk, forest, ultraviolet
+Extended: cyberpunk, ocean, sunset, holo, synthwave, arctic, volcanic, jarvis, forest, ultraviolet
 
 NEVER DO THIS:
 - Never list multiple spaceships — pick ONE and commit to it
