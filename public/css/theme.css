@@ -1563,29 +1563,29 @@
 [data-theme="navigator"] body::before {
   content:''; position:fixed; bottom:38%; left:-8%;
   width:3px; height:1px;
-  background:#00e5ff;
+  background:#18a0fb;
   box-shadow:
-    0 0 4px #00e5ff, 0 0 10px rgba(0,229,255,0.5),
-    -8px 0 3px rgba(0,229,255,0.5),
-    -20px 0 4px rgba(0,229,255,0.4),
-    -36px 0 5px rgba(0,229,255,0.3),
-    -56px 0 6px rgba(0,229,255,0.2),
-    -80px 0 7px rgba(0,229,255,0.1);
-  pointer-events:none; z-index:1;
+    0 0 4px #18a0fb, 0 0 10px rgba(24,160,251,0.5),
+    -8px 0 3px rgba(24,160,251,0.5),
+    -20px 0 4px rgba(24,160,251,0.4),
+    -36px 0 5px rgba(24,160,251,0.3),
+    -56px 0 6px rgba(24,160,251,0.2),
+    -80px 0 7px rgba(24,160,251,0.1);
+  pointer-events:none; z-index:0;
   animation:tron-cycle-right 8s linear infinite;
 }
 /* Horizontal cycle 2 — travels left, mid grid */
 [data-theme="navigator"] body::after {
   content:''; position:fixed; bottom:30%; right:-8%;
   width:3px; height:1px;
-  background:rgba(0,229,255,0.9);
+  background:rgba(24,160,251,0.9);
   box-shadow:
-    0 0 4px rgba(0,229,255,0.6), 0 0 8px rgba(0,229,255,0.3),
-    8px 0 3px rgba(0,229,255,0.4),
-    20px 0 4px rgba(0,229,255,0.3),
-    36px 0 5px rgba(0,229,255,0.2),
-    56px 0 6px rgba(0,229,255,0.1);
-  pointer-events:none; z-index:1;
+    0 0 4px rgba(24,160,251,0.6), 0 0 8px rgba(24,160,251,0.3),
+    8px 0 3px rgba(24,160,251,0.4),
+    20px 0 4px rgba(24,160,251,0.3),
+    36px 0 5px rgba(24,160,251,0.2),
+    56px 0 6px rgba(24,160,251,0.1);
+  pointer-events:none; z-index:0;
   animation:tron-cycle-left 11s linear infinite 2s;
 }
 /* Horizontal cycle 3 — travels right, lower grid */
@@ -1599,7 +1599,7 @@
     -18px 0 3px rgba(0,229,255,0.3),
     -32px 0 4px rgba(0,229,255,0.2),
     -50px 0 5px rgba(0,229,255,0.1);
-  pointer-events:none; z-index:1;
+  pointer-events:none; z-index:0;
   animation:tron-cycle-right 14s linear infinite 5s;
 }
 /* Horizontal cycle 4 — travels left, near bottom */
@@ -1613,7 +1613,7 @@
     16px 0 3px rgba(0,229,255,0.2),
     28px 0 4px rgba(0,229,255,0.15),
     44px 0 5px rgba(0,229,255,0.08);
-  pointer-events:none; z-index:1;
+  pointer-events:none; z-index:0;
   animation:tron-cycle-left 16s linear infinite 8s;
 }
 /* Horizontal cycle 5 — fast, travels right, top of grid */
@@ -1626,7 +1626,7 @@
     -6px 0 2px rgba(0,229,255,0.3),
     -14px 0 3px rgba(0,229,255,0.2),
     -24px 0 4px rgba(0,229,255,0.1);
-  pointer-events:none; z-index:1;
+  pointer-events:none; z-index:0;
   animation:tron-cycle-right 6s linear infinite 1s;
 }
 
