@@ -119,6 +119,16 @@ const Theme = (() => {
     _applyOfficeLabels(name === 'office' || name === 'office-dark');
     _applyLcarsLabels(name === 'lcars');
     _updateDarkLightIcon();
+
+    // If leaving The Grid, destroy TRON game and reset to default tab
+    if (name !== 'navigator' && typeof TronView !== 'undefined' && TronView.destroy) {
+      TronView.destroy();
+      const tronTab = document.querySelector('.bp-type-tab[data-tab="tron"]');
+      if (tronTab && tronTab.classList.contains('active')) {
+        const schTab = document.querySelector('.bp-type-tab[data-tab="schematic"]');
+        if (schTab) schTab.click();
+      }
+    }
   }
 
   const _OFFICE_LABELS = {
