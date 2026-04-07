@@ -22,7 +22,7 @@ At the start of each session, run `git worktree prune` and delete any stale `cla
 - Never force-add files that are in `.gitignore`.
 
 ## Project Overview
-**NICE™** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Vercel via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
+**NICE™** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Cloudflare Pages via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
 
 NICE IS the LLM provider — users never deal with API keys. NICE holds all provider keys server-side. Users toggle which models they want active. Free tier = Gemini 2.5 Flash. Premium models cost tokens (purchased via Stripe).
 
@@ -358,8 +358,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
 
 ## Tool Preferences
-- **CLI first.** Always prefer CLI tools over browser/GUI for GitHub (`gh`), Vercel (`npx vercel`), Supabase (`npx supabase`), npm, and git operations. CLI is faster, scriptable, and doesn't depend on browser rendering.
-- **Vercel CLI**: `npx vercel deploy --prod`, `npx vercel domains add`, `npx vercel project rm`
+- **CLI first.** Always prefer CLI tools over browser/GUI for GitHub (`gh`), Supabase (`npx supabase`), npm, and git operations. CLI is faster, scriptable, and doesn't depend on browser rendering.
 - **Supabase CLI**: `npx supabase functions deploy`, `npx supabase secrets set`, `npx supabase db push`
 - **GitHub CLI**: `gh pr create`, `gh issue list`, `gh repo view`
 - Fall back to browser automation only when CLI doesn't support the operation.
@@ -375,21 +374,18 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **Theme-aware.** Use CSS custom properties (`var(--accent)`, `var(--bg)`), never hardcoded colors.
 
 ## Deployment
-- **Platform**: Vercel (auto-deploy from `main` branch)
-- **Domains**: `nicespaceship.ai` (app, served at root via rewrite), `nicespaceship.com` (community, upcoming)
+- **Platform**: Cloudflare Pages (auto-deploy from `main` branch)
+- **Domains**: `nicespaceship.ai` (app), `nicespaceship.com` (community site, deployed from `www/`)
 - **Repo**: `github.com/nicespaceship/nice`
-- **Supabase**: 11 edge functions deployed via `npx supabase functions deploy`
+- **Supabase**: 11 edge functions deployed via `npx supabase functions deploy` (source is proprietary, not in repo)
 - **Stripe**: 3 token packages with payment links
 - **PWA**: Service Worker v36 with offline fallback, periodic sync (12h), push notifications
 - **Build**: `node scripts/build.js` → 865KB minified bundle (78 scripts)
-- **Manual deploy**: `npx vercel deploy --prod`
 
-### Vercel Routing
-- Root `/` rewrites to `/app/index.html` (app served at domain root)
-- `/app/*` rewrites to `/app/index.html` (SPA catch-all)
-- 12 redirects for legacy paths (`/pricing` → `/#/wallet`, `/blueprints` → `/#/bridge`, etc.)
+### Cloudflare Pages Routing
+- `nicespaceship.ai`: app served at root via `_redirects` and `_headers`
+- `nicespaceship.com`: community site deployed from `www/` directory
 - Security headers: HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy
-- Cache: HTML = no-cache, JS/CSS = 60s + stale-while-revalidate, public assets = 1hr
 
 ## Environment Variables (Supabase Secrets)
 | Variable | Used By | Required |

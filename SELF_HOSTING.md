@@ -76,8 +76,8 @@ To enable Gmail, Calendar, and Drive access for agents:
 
 | Platform | How |
 |----------|-----|
-| **Vercel** | Connect GitHub repo, auto-deploys on push |
-| **Netlify** | Same as Vercel — connect and deploy |
+| **Cloudflare Pages** | Connect GitHub repo, auto-deploys on push |
+| **Netlify** | Same as Cloudflare Pages — connect and deploy |
 | **Docker** | `docker compose up -d` |
 | **Any static host** | Upload `index.html`, `app/`, `assets/`, `public/` |
 | **GitHub Pages** | Enable in repo settings |
