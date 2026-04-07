@@ -32,6 +32,10 @@ const HomeView = (() => {
       </div>
     `;
 
+    // Lock scroll on greeting view (no conversation)
+    if (!hasMessages) el.style.overflow = 'hidden';
+    else el.style.overflow = '';
+
     // Bind new chat button
     el.querySelector('#chat-home-new')?.addEventListener('click', () => {
       try { localStorage.removeItem('nice-ai-messages'); } catch {}
