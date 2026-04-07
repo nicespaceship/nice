@@ -122,8 +122,11 @@ jobs:
           STAMP=$(date +%s)
           sed -i "s/const CACHE_VERSION = [0-9]*/const CACHE_VERSION = ${STAMP}/" app/sw.js
 
+      - name: Generate root index from app
+        run: cp app/index.html index.html
+
       - name: Deploy nicespaceship.ai (app)
-        run: npx wrangler pages deploy . --project-name nicespaceship-ai --branch main
+        run: npx wrangler pages deploy . --project-name nicespaceship-ai --branch main --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
