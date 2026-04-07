@@ -1,3 +1,6 @@
+# Proprietary edge functions (deployed via supabase CLI, not public)
+supabase/functions/
+
 # Logs
 *.log
 !logs/
