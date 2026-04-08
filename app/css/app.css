@@ -2751,9 +2751,8 @@
 .bp-type-tabs {
   position:sticky; top:0; z-index:20;
   background:var(--bg, #080808);
-  padding-top:8px;
-  margin-top:-8px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  -webkit-transform:translateZ(0);
+  transform:translateZ(0);
 }
 .bp-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .bp-title { font-family:var(--font-b); font-size:1.2rem; font-weight:700; margin:0; }
