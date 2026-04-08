@@ -314,7 +314,17 @@
    Most styling comes from CSS custom properties in the theme definition. ── */
 [data-theme="office"]::after { display: none !important; }
 [data-theme="office"] .tcg-card::before { display: none; }
-[data-theme="office"] .app-sidebar { background: #a0a0a8; }
+[data-theme="office"] .app-sidebar { background:#7285A5; }
+[data-theme="office"] .app-sidebar .side-link { color:rgba(255,255,255,0.75); }
+[data-theme="office"] .app-sidebar .side-link:hover { color:#fff; background:rgba(255,255,255,0.1); }
+[data-theme="office"] .app-sidebar .side-link.active { color:#fff; background:rgba(255,255,255,0.15); }
+[data-theme="office"] .app-sidebar .side-link svg { color:rgba(255,255,255,0.6); }
+[data-theme="office"] .app-sidebar .app-brand-text { color:#fff; }
+[data-theme="office"] .app-sidebar .side-header { border-bottom-color:rgba(255,255,255,0.15); }
+[data-theme="office"] .app-sidebar .side-footer { border-top-color:rgba(255,255,255,0.15); }
+[data-theme="office"] .app-sidebar .hdr-username { color:rgba(255,255,255,0.8); }
+[data-theme="office"] .app-sidebar .side-section-label { color:rgba(255,255,255,0.5); }
+[data-theme="office"] .app-sidebar .side-folder-toggle { color:rgba(255,255,255,0.6); }
 [data-theme="office-dark"] .app-sidebar { background: #111114; }
 
 /* ─────────────────────────────────────────────────────────────────
