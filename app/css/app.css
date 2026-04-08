@@ -2833,8 +2833,8 @@
 .bpl-action-btn.bpl-activated { border-color:var(--color-success)60; color:var(--color-success); background:var(--color-success)20; }
 .bpl-action-btn.bpl-activated:hover { border-color:#8b3a3a; color:#cc5555; background:transparent; }
 
-.bp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:26px; overflow:hidden; }
-.bp-card-wrap { min-width:0; overflow:hidden; }
+.bp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:26px; }
+.bp-card-wrap { min-width:0; }
 .bp-card {
   display:flex; flex-direction:column;
   border:var(--border-width) solid var(--border); background:var(--panel-bg);
@@ -5325,7 +5325,7 @@
 
 
 /* Hover elevation + glow */
-.tcg-card { transition:transform .25s ease, box-shadow .25s ease; min-width:0; overflow:hidden; perspective:800px; }
+.tcg-card { transition:transform .25s ease, box-shadow .25s ease; min-width:0; perspective:800px; }
 .tcg-card:hover {
   transform:translateY(-6px);
   box-shadow:0 12px 40px rgba(0,0,0,.4), 0 0 20px rgba(0,0,0,.2);
