@@ -2748,7 +2748,13 @@
    BLUEPRINTS VIEW
 ───────────────────────────────────────────────────────────────── */
 .bp-wrap { max-width:var(--width-full); margin:0 auto; display:flex; flex-direction:column; gap:20px; overflow:visible; }
-.bp-type-tabs { position:sticky; top:0; z-index:20; background:var(--bg, #080808); }
+.bp-type-tabs {
+  position:sticky; top:0; z-index:20;
+  background:var(--bg, #080808);
+  padding-top:8px;
+  margin-top:-8px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+}
 .bp-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .bp-title { font-family:var(--font-b); font-size:1.2rem; font-weight:700; margin:0; }
 .bp-sub { font-family:var(--font-b); font-size:.62rem; letter-spacing:.1em; color:var(--text-muted); margin:4px 0 0 0; }
