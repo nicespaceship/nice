@@ -364,14 +364,32 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - Fall back to browser automation only when CLI doesn't support the operation.
 
 ## Coding Guidelines
+
+### PRIORITY: No shortcuts, no hacks, no band-aids.
+**Always implement the correct architectural solution.** Never use quick fixes, padding hacks, inline style overrides, or CSS `!important` as workarounds. If a fix requires restructuring HTML or refactoring CSS, do that. If you don't understand the root cause, investigate until you do — don't patch symptoms. Every change must work correctly on **desktop, tablet, AND mobile** — test all three, not just the one you're working on.
+
+**CSS rules:**
+- ONE scrolling container per view (`.app-view-content`). Never create nested scrollers with `overflow-x:hidden` (forces `overflow-y:auto`). Use `overflow:visible` on all view wraps.
+- Never use `padding`/`margin` hacks to mask layout issues. Fix the actual positioning.
+- Never set `position:relative` on elements that need `position:sticky` — it breaks sticky.
+- All theme CSS overrides must use opaque backgrounds on sticky elements (no `rgba` transparency).
+- Consolidate — never scatter the same selector across multiple `@media` blocks. One source of truth per rule.
+
+**JS rules:**
+- Use CSS classes (`.view-no-scroll`, `.hidden`) instead of inline `el.style.overflow`/`el.style.display` whenever possible.
+- Guard all variable access before game/module initialization (`if (!_dir) return`).
+- Clean up event listeners and DOM state in `destroy()` methods.
+
+### General
 - **Read before write.** Never modify a file you haven't read. Understand existing patterns.
 - **Prefer editing over creating.** Don't create new files when extending an existing module works.
 - **No speculative abstractions.** Three similar lines > premature helper function.
 - **No unnecessary comments.** Only explain *why*, never *what*. The code shows what.
 - **Escape user content.** Always use `Utils.esc()` before inserting into DOM. No raw `innerHTML` with user data.
 - **Test after changes.** Run `npm test` after editing JS. All 343 tests must pass.
-- **Mobile-first.** Check changes at 375px. Breakpoints: 480px, 640px, 768px.
+- **Mobile-first.** Check changes at 375px. Breakpoints: 480px, 640px, 768px. Always verify desktop + tablet + mobile.
 - **Theme-aware.** Use CSS custom properties (`var(--accent)`, `var(--bg)`), never hardcoded colors.
+- **SSOT.** Before adding a rule, check if one already exists. Never duplicate selectors across media queries.
 
 ## Deployment
 - **Platform**: Cloudflare Pages (auto-deploy from `main` branch)
