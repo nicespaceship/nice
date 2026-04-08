@@ -990,17 +990,29 @@ const NICE = (() => {
 
     list.innerHTML = sorted.map(c => {
       const active = c.id === activeId ? ' side-chat-active' : '';
-      const pin = c.pinned ? '<span style="margin-left:auto;font-size:.55rem;opacity:.5">📌</span>' : '';
-      const title = Utils.esc((c.title || 'Untitled').slice(0, 35));
+      const pin = c.pinned ? '<span class="side-chat-pin">📌</span>' : '';
+      const title = Utils.esc((c.title || 'Untitled').slice(0, 30));
       return `<div class="side-folder-item side-chat-item${active}" data-conv-id="${c.id}" title="${Utils.esc(c.title)}">
         <span class="side-chat-title">${title}</span>${pin}
+        <button class="side-chat-dots" data-conv-id="${c.id}" aria-label="Chat options">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
       </div>`;
     }).join('');
 
-    // Bind click and context menu
+    // Bind click, 3-dot menu, and context menu
     list.querySelectorAll('.side-chat-item').forEach(item => {
       const id = item.dataset.convId;
-      item.addEventListener('click', () => _loadConversation(id));
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.side-chat-dots')) return; // don't load when clicking dots
+        _loadConversation(id);
+      });
+      // 3-dot menu button
+      item.querySelector('.side-chat-dots')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        _showChatMenu(id, rect.right, rect.bottom);
+      });
       item.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         _showChatMenu(id, e.clientX, e.clientY);

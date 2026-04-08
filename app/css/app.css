@@ -1346,6 +1346,19 @@
 /* Active chat item */
 .side-folder-item.side-chat-active { background:var(--surface2); color:var(--text); font-weight:600; }
 
+/* Chat item layout */
+.side-chat-item { position:relative; }
+.side-chat-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.side-chat-pin { font-size:.55rem; opacity:.5; flex-shrink:0; }
+.side-chat-dots {
+  background:none; border:none; color:var(--text-muted); cursor:pointer;
+  padding:2px; border-radius:4px; flex-shrink:0; display:flex;
+  align-items:center; justify-content:center; opacity:0;
+  transition:opacity .15s, background .15s;
+}
+.side-chat-item:hover .side-chat-dots { opacity:1; }
+.side-chat-dots:hover { background:var(--surface); color:var(--text); }
+
 /* Chat context menu */
 .side-chat-menu {
   position:fixed; z-index:999; min-width:180px;
