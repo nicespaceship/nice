@@ -3737,7 +3737,7 @@
   .bp-grid { grid-template-columns:1fr; }
   .tcg-card { width:100% !important; }
   /* Bridge toolbar — compact spacing on mobile */
-  .bp-type-tabs { margin-bottom:6px !important; }
+  .bp-type-tabs { margin-bottom:6px !important; position:sticky; top:0; z-index:20; background:var(--bg, #080808); }
   .bp-sub-tabs { gap:4px; margin-bottom:4px; }
   .bp-search-row { gap:3px; margin-bottom:2px; }
   .bp-search-row .search-input { font-size:.75rem; padding:4px 8px; }

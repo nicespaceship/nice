@@ -190,7 +190,6 @@ const BlueprintsView = (() => {
           <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
         </div>
 
-        <div class="bp-progression-bar" id="bp-progression-bar"></div>
         <div class="bp-result-bar" id="bp-result-bar" aria-live="polite"></div>
 
         <div id="bp-activated-wrap"></div>
