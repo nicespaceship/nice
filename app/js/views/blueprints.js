@@ -117,10 +117,10 @@ const BlueprintsView = (() => {
     const embedded = opts && opts.embedded;
     const user = State.get('user');
 
-    el.innerHTML = `
-      <div class="bp-wrap">
-
-        <!-- Type Tabs -->
+    // Render tabs into fixed container (outside scroll area)
+    const fixedTabs = document.getElementById('app-fixed-tabs');
+    if (fixedTabs) {
+      fixedTabs.innerHTML = `
         <div class="bp-type-tabs" id="bp-type-tabs">
           <button class="bp-type-tab" data-tab="schematic">Schematic</button>
           <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
@@ -130,7 +130,11 @@ const BlueprintsView = (() => {
           <button class="bp-type-tab" data-tab="log">Log</button>
           <span style="flex:1"></span>
           <button class="bp-type-tab bp-tab-tron" data-tab="tron">TRON</button>
-        </div>
+        </div>`;
+    }
+
+    el.innerHTML = `
+      <div class="bp-wrap">
 
         <!-- Blueprints sub-tabs (Spaceships / Agents) -->
         <div class="bp-sub-tabs" id="bp-sub-tabs">

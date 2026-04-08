@@ -123,8 +123,9 @@ const Router = (() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const hasContent = _el.children.length > 0;
 
-    // Clean up view-specific classes from previous render
+    // Clean up view-specific state from previous render
     _el.classList.remove('view-no-scroll');
+    document.getElementById('app-fixed-tabs')?.replaceChildren();
 
     if (reducedMotion || !hasContent) {
       // Instant swap (first render or reduced motion)
