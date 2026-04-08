@@ -2537,5 +2537,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   function setContext(ctx) { _ideContext = ctx; }
   function getContext() { return _ideContext; }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext };
+  function _reload() {
+    _loadMessages();
+    // Re-render the home view if we're on it
+    if (window.location.hash === '#/' || window.location.hash === '') {
+      const el = document.getElementById('app-view');
+      if (el && typeof HomeView !== 'undefined') HomeView.render(el);
+    }
+  }
+
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, _reload, _md: typeof _md !== 'undefined' ? _md : null };
 })();

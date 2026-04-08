@@ -691,7 +691,8 @@ const NICE = (() => {
       }
     }
 
-    // ── Missions folder (collapsible) ──
+    // ── Chats + Missions folders (collapsible) ──
+    _initChatsFolder();
     _initMissionsFolder();
   }
 
@@ -742,6 +743,280 @@ const NICE = (() => {
         ${title}
       </a>`;
     }).join('');
+  }
+
+  /* ── Chats folder (collapsible, conversation history) ── */
+  const CONVS_KEY = 'nice-conversations';
+  const ACTIVE_CONV_KEY = 'nice-active-conv';
+
+  function _getConversations() {
+    try { return JSON.parse(localStorage.getItem(CONVS_KEY) || '[]'); } catch { return []; }
+  }
+  function _saveConversations(convs) {
+    try { localStorage.setItem(CONVS_KEY, JSON.stringify(convs)); } catch {}
+  }
+  function _getActiveConvId() { return localStorage.getItem(ACTIVE_CONV_KEY); }
+  function _setActiveConvId(id) { localStorage.setItem(ACTIVE_CONV_KEY, id); }
+
+  function _migrateMessages() {
+    // One-time migration: move flat nice-ai-messages into first conversation
+    const convs = _getConversations();
+    if (convs.length > 0) return;
+    try {
+      const raw = localStorage.getItem('nice-ai-messages');
+      const msgs = raw ? JSON.parse(raw) : [];
+      if (msgs.length > 0) {
+        const firstUserMsg = msgs.find(m => m.role === 'user');
+        const title = firstUserMsg ? firstUserMsg.text.slice(0, 40) : 'Chat';
+        const conv = {
+          id: 'conv-' + Date.now(),
+          title,
+          createdAt: msgs[0].ts || Date.now(),
+          updatedAt: msgs[msgs.length - 1].ts || Date.now(),
+          pinned: false,
+          messages: msgs,
+        };
+        _saveConversations([conv]);
+        _setActiveConvId(conv.id);
+      }
+    } catch {}
+  }
+
+  function _newConversation() {
+    const convs = _getConversations();
+    const conv = {
+      id: 'conv-' + Date.now(),
+      title: 'New Chat',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      pinned: false,
+      messages: [],
+    };
+    convs.unshift(conv);
+    _saveConversations(convs);
+    _setActiveConvId(conv.id);
+    // Clear prompt panel messages
+    localStorage.setItem('nice-ai-messages', '[]');
+    if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
+    _renderChatsList();
+    // Navigate home to show clean state
+    window.location.hash = '#/';
+  }
+
+  function _loadConversation(id) {
+    // Save current conversation first
+    _saveActiveConversation();
+    const convs = _getConversations();
+    const conv = convs.find(c => c.id === id);
+    if (!conv) return;
+    _setActiveConvId(id);
+    localStorage.setItem('nice-ai-messages', JSON.stringify(conv.messages || []));
+    if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
+    _renderChatsList();
+    window.location.hash = '#/';
+  }
+
+  function _saveActiveConversation() {
+    const id = _getActiveConvId();
+    if (!id) return;
+    const convs = _getConversations();
+    const conv = convs.find(c => c.id === id);
+    if (!conv) return;
+    try {
+      const msgs = JSON.parse(localStorage.getItem('nice-ai-messages') || '[]');
+      conv.messages = msgs;
+      conv.updatedAt = Date.now();
+      if (msgs.length > 0 && conv.title === 'New Chat') {
+        const firstUser = msgs.find(m => m.role === 'user');
+        if (firstUser) conv.title = firstUser.text.slice(0, 40);
+      }
+      _saveConversations(convs);
+    } catch {}
+  }
+
+  function _deleteConversation(id) {
+    let convs = _getConversations();
+    convs = convs.filter(c => c.id !== id);
+    _saveConversations(convs);
+    if (_getActiveConvId() === id) {
+      if (convs.length > 0) {
+        _loadConversation(convs[0].id);
+      } else {
+        _setActiveConvId('');
+        localStorage.setItem('nice-ai-messages', '[]');
+        if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
+        window.location.hash = '#/';
+      }
+    }
+    _renderChatsList();
+  }
+
+  function _pinConversation(id) {
+    const convs = _getConversations();
+    const conv = convs.find(c => c.id === id);
+    if (conv) conv.pinned = !conv.pinned;
+    _saveConversations(convs);
+    _renderChatsList();
+  }
+
+  function _renameConversation(id) {
+    const item = document.querySelector(`.side-chat-item[data-conv-id="${id}"] .side-chat-title`);
+    if (!item) return;
+    const current = item.textContent;
+    item.contentEditable = 'true';
+    item.focus();
+    // Select all text
+    const range = document.createRange();
+    range.selectNodeContents(item);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    const finish = () => {
+      item.contentEditable = 'false';
+      const newTitle = item.textContent.trim() || current;
+      const convs = _getConversations();
+      const conv = convs.find(c => c.id === id);
+      if (conv) conv.title = newTitle.slice(0, 60);
+      _saveConversations(convs);
+    };
+    item.addEventListener('blur', finish, { once: true });
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); item.blur(); }
+      if (e.key === 'Escape') { item.textContent = current; item.blur(); }
+    });
+  }
+
+  function _shareConversation(id) {
+    const convs = _getConversations();
+    const conv = convs.find(c => c.id === id);
+    if (!conv || !conv.messages.length) return;
+    const text = conv.messages.map(m => (m.role === 'user' ? 'You' : 'NICE') + ': ' + m.text).join('\n\n');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Copied', message: 'Conversation copied to clipboard', type: 'success' });
+      });
+    }
+  }
+
+  let _chatMenuEl = null;
+  function _showChatMenu(id, x, y) {
+    _closeChatMenu();
+    const menu = document.createElement('div');
+    menu.className = 'side-chat-menu';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    const convs = _getConversations();
+    const conv = convs.find(c => c.id === id);
+    const pinLabel = conv?.pinned ? 'Unpin' : 'Pin';
+    menu.innerHTML = `
+      <button class="side-chat-menu-item" data-action="share">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/></svg>
+        Share conversation
+      </button>
+      <button class="side-chat-menu-item" data-action="pin">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9"/></svg>
+        ${pinLabel}
+      </button>
+      <button class="side-chat-menu-item" data-action="rename">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
+        Rename
+      </button>
+      <button class="side-chat-menu-item side-chat-menu-item--danger" data-action="delete">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+        Delete
+      </button>`;
+    document.body.appendChild(menu);
+    _chatMenuEl = menu;
+
+    // Keep menu in viewport
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
+    if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
+
+    menu.addEventListener('click', (e) => {
+      const action = e.target.closest('[data-action]')?.dataset.action;
+      if (!action) return;
+      _closeChatMenu();
+      if (action === 'share') _shareConversation(id);
+      else if (action === 'pin') _pinConversation(id);
+      else if (action === 'rename') _renameConversation(id);
+      else if (action === 'delete') _deleteConversation(id);
+    });
+
+    // Close on click outside
+    setTimeout(() => document.addEventListener('click', _closeChatMenu, { once: true }), 10);
+  }
+
+  function _closeChatMenu() {
+    if (_chatMenuEl) { _chatMenuEl.remove(); _chatMenuEl = null; }
+  }
+
+  function _initChatsFolder() {
+    _migrateMessages();
+
+    const newBtn = document.getElementById('side-chat-new');
+
+    if (newBtn) {
+      newBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        _newConversation();
+      });
+    }
+
+    // Auto-save active conversation periodically
+    setInterval(_saveActiveConversation, 30000);
+    window.addEventListener('beforeunload', _saveActiveConversation);
+
+    _renderChatsList();
+  }
+
+  function _renderChatsList() {
+    const list = document.getElementById('side-chats-list');
+    if (!list) return;
+    const convs = _getConversations();
+    const activeId = _getActiveConvId();
+
+    // Sort: pinned first, then by updatedAt desc
+    const sorted = [...convs].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return b.updatedAt - a.updatedAt;
+    }).slice(0, 20);
+
+    if (!sorted.length) {
+      list.innerHTML = '<div class="side-folder-item" style="opacity:.4;cursor:default">No chats yet</div>';
+      return;
+    }
+
+    list.innerHTML = sorted.map(c => {
+      const active = c.id === activeId ? ' side-chat-active' : '';
+      const pin = c.pinned ? '<span style="margin-left:auto;font-size:.55rem;opacity:.5">📌</span>' : '';
+      const title = Utils.esc((c.title || 'Untitled').slice(0, 35));
+      return `<div class="side-folder-item side-chat-item${active}" data-conv-id="${c.id}" title="${Utils.esc(c.title)}">
+        <span class="side-chat-title">${title}</span>${pin}
+      </div>`;
+    }).join('');
+
+    // Bind click and context menu
+    list.querySelectorAll('.side-chat-item').forEach(item => {
+      const id = item.dataset.convId;
+      item.addEventListener('click', () => _loadConversation(id));
+      item.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        _showChatMenu(id, e.clientX, e.clientY);
+      });
+      // Long-press for mobile
+      let _lp;
+      item.addEventListener('touchstart', (e) => {
+        _lp = setTimeout(() => {
+          e.preventDefault();
+          const t = e.touches[0];
+          _showChatMenu(id, t.clientX, t.clientY);
+        }, 500);
+      }, { passive: false });
+      item.addEventListener('touchend', () => clearTimeout(_lp));
+      item.addEventListener('touchmove', () => clearTimeout(_lp));
+    });
   }
 
   /* ── Ship → Theme auto-switching ── */

@@ -181,18 +181,28 @@
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
       <span>Code</span>
     </a>
-    <div class="side-folder" id="side-missions-folder">
-      <button class="side-folder-toggle" id="side-missions-toggle" aria-label="Toggle missions folder" aria-expanded="false">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-task"/></svg>
-        <span>Missions</span>
-        <svg class="side-folder-chevron icon icon-xs" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      <div class="side-folder-body" id="side-missions-list">
+    <div class="side-folder open" id="side-chats-folder">
+      <div class="side-folder-toggle" id="side-chats-toggle" role="button" tabindex="0" aria-label="Chats">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
+        <span>Chats</span>
+        <button class="side-chat-new" id="side-chat-new" title="New chat" aria-label="New chat">+</button>
+      </div>
+      <div class="side-folder-body side-chats-body" id="side-chats-list">
         <!-- Populated dynamically by nice.js -->
       </div>
     </div>
   </nav>
   <div id="sidebar-favorites" class="sidebar-favorites"></div>
+  <div class="side-folder side-folder-bottom" id="side-missions-folder">
+    <button class="side-folder-toggle" id="side-missions-toggle" aria-label="Toggle missions folder" aria-expanded="false">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-task"/></svg>
+      <span>Tasks</span>
+      <svg class="side-folder-chevron icon icon-xs" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="side-folder-body" id="side-missions-list">
+      <!-- Populated dynamically by nice.js -->
+    </div>
+  </div>
   <div class="side-footer">
     <div id="sidebar-presence"></div>
     <div class="side-footer-row">
