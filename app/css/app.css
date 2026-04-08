@@ -2748,7 +2748,8 @@
 /* ─────────────────────────────────────────────────────────────────
    BLUEPRINTS VIEW
 ───────────────────────────────────────────────────────────────── */
-.bp-wrap { max-width:var(--width-full); margin:0 auto; display:flex; flex-direction:column; gap:20px; }
+.bp-wrap { max-width:var(--width-full); margin:0 auto; display:flex; flex-direction:column; gap:20px; overflow:visible; }
+.bp-type-tabs { position:sticky; top:0; z-index:20; background:var(--bg, #080808); }
 .bp-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .bp-title { font-family:var(--font-b); font-size:1.2rem; font-weight:700; margin:0; }
 .bp-sub { font-family:var(--font-b); font-size:.62rem; letter-spacing:.1em; color:var(--text-muted); margin:4px 0 0 0; }
@@ -3737,7 +3738,7 @@
   .bp-grid { grid-template-columns:1fr; }
   .tcg-card { width:100% !important; }
   /* Bridge toolbar — compact spacing on mobile */
-  .bp-type-tabs { margin-bottom:6px !important; position:sticky; top:0; z-index:20; background:var(--bg, #080808); }
+  .bp-type-tabs { margin-bottom:6px !important; }
   .bp-sub-tabs { gap:4px; margin-bottom:4px; }
   .bp-search-row { gap:3px; margin-bottom:2px; }
   .bp-search-row .search-input { font-size:.75rem; padding:4px 8px; }
