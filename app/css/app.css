@@ -320,11 +320,57 @@
 [data-theme="office"] .app-sidebar .side-link.active { color:#fff; background:rgba(255,255,255,0.15); }
 [data-theme="office"] .app-sidebar .side-link svg { color:rgba(255,255,255,0.6); }
 [data-theme="office"] .app-sidebar .app-brand-text { color:#fff; }
-[data-theme="office"] .app-sidebar .side-header { border-bottom-color:rgba(255,255,255,0.15); }
-[data-theme="office"] .app-sidebar .side-footer { border-top-color:rgba(255,255,255,0.15); }
+[data-theme="office"] .app-sidebar .side-header { background:#0F52BA; border-bottom-color:rgba(255,255,255,0.15); }
+[data-theme="office"] .app-sidebar .side-footer { background:#0F52BA; border-top-color:rgba(255,255,255,0.15); }
 [data-theme="office"] .app-sidebar .hdr-username { color:rgba(255,255,255,0.8); }
 [data-theme="office"] .app-sidebar .side-section-label { color:rgba(255,255,255,0.5); }
-[data-theme="office"] .app-sidebar .side-folder-toggle { color:rgba(255,255,255,0.6); }
+[data-theme="office"] .app-sidebar .side-folder-toggle { color:#fff; }
+[data-theme="office"] .app-sidebar .side-mission-item { color:rgba(255,255,255,0.85); }
+[data-theme="office"] .app-sidebar .side-mission-item:hover { color:#fff; }
+[data-theme="office"] .app-sidebar .side-more-btn { color:rgba(255,255,255,0.7); }
+[data-theme="office"] .app-sidebar .hdr-user-badge { color:#fff; background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.2); }
+[data-theme="office"] .app-sidebar,
+[data-theme="office"] .app-sidebar * { color:#fff; }
+[data-theme="office"] .app-sidebar .side-link.active { color:#fff; background:rgba(255,255,255,0.15); }
+
+/* CTAs — pill shaped, solid filled */
+[data-theme="office"] .btn-primary,
+[data-theme="office"] .cd-btn-primary,
+[data-theme="office"] .cd-home-cta {
+  background:#0E4C92; color:#fff; border:none; border-radius:9999px;
+  padding:10px 24px; font-weight:600;
+}
+[data-theme="office"] .btn-primary:hover,
+[data-theme="office"] .cd-btn-primary:hover,
+[data-theme="office"] .cd-home-cta:hover {
+  background:#0a3d78;
+}
+[data-theme="office"] .btn {
+  border-radius:9999px;
+}
+
+/* Bridge tabs — non-active solid filled, active keeps current style */
+[data-theme="office"] .bp-type-tab {
+  background:#0E4C92; color:#fff; border:none; border-radius:9999px;
+}
+[data-theme="office"] .bp-type-tab:hover {
+  background:#0a3d78; color:#fff;
+}
+[data-theme="office"] .bp-type-tab.active {
+  background:#fff; color:#0E4C92; border:1px solid #d4d4d8;
+}
+
+/* Sub-tabs — same pattern */
+[data-theme="office"] .bp-sub-tab {
+  background:#0E4C92; color:#fff; border:none; border-radius:9999px;
+}
+[data-theme="office"] .bp-sub-tab:hover {
+  background:#0a3d78; color:#fff;
+}
+[data-theme="office"] .bp-sub-tab.active {
+  background:#fff; color:#0E4C92; border:1px solid #d4d4d8;
+}
+
 [data-theme="office-dark"] .app-sidebar { background: #111114; }
 
 /* ─────────────────────────────────────────────────────────────────
