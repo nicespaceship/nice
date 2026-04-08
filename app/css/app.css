@@ -1241,7 +1241,6 @@
   transition:width .3s ease;
 }
 .app-sidebar.open { width:280px; }
-.app-side-nav { flex:1; overflow-y:auto; }
 .app-sidebar-overlay {
   display:none; position:fixed; inset:0; z-index:299;
   background:rgba(0,0,0,.5);
@@ -1299,7 +1298,7 @@
 }
 .side-popover-item:hover { background:var(--surface); color:var(--text); }
 
-.app-side-nav { display:flex; flex-direction:column; padding:8px; gap:2px; flex:1; overflow-y:hidden; }
+.app-side-nav { display:flex; flex-direction:column; padding:8px; gap:2px; flex:1; overflow-y:auto; }
 .side-link {
   display:flex; align-items:center; gap:10px; padding:10px 12px;
   color:var(--text-muted); text-decoration:none; font-family:var(--font-b);
@@ -5144,12 +5143,11 @@
   .mc-bp-mini { flex:0 0 72px; width:72px; height:92px; }
 }
 
-/* Prevent horizontal overflow everywhere on mobile */
+/* Prevent horizontal overflow on mobile — overflow:visible so .app-view-content is the sole scroller (no double scroll) */
 @media (max-width:768px) {
   .bridge-wrap, .log-wrap, .log-view-wrap, .dock-wrap, .tc-wrap, .wfe-wrap,
-  .agents-wrap, .fleet-wrap, .ana-wrap,
-  .missions-wrap { overflow-x:hidden; max-width:100vw; }
-  .bp-wrap { overflow:visible; max-width:100vw; }
+  .agents-wrap, .fleet-wrap, .bp-wrap, .ana-wrap, .missions-wrap,
+  .cost-wrap, .integ-wrap, .security-wrap, .tasks-wrap { overflow:visible; max-width:100vw; }
 
   /* Ensure filter inputs don't overflow */
   .filter-select, .filter-input { max-width:100%; box-sizing:border-box; }
