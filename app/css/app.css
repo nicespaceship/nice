@@ -5146,8 +5146,9 @@
 /* Prevent horizontal overflow everywhere on mobile */
 @media (max-width:768px) {
   .bridge-wrap, .log-wrap, .log-view-wrap, .dock-wrap, .tc-wrap, .wfe-wrap,
-  .agents-wrap, .fleet-wrap, .bp-wrap, .ana-wrap,
+  .agents-wrap, .fleet-wrap, .ana-wrap,
   .missions-wrap { overflow-x:hidden; max-width:100vw; }
+  .bp-wrap { overflow:visible; max-width:100vw; }
 
   /* Ensure filter inputs don't overflow */
   .filter-select, .filter-input { max-width:100%; box-sizing:border-box; }
