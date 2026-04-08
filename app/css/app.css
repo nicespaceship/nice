@@ -322,6 +322,8 @@
 [data-theme="office"] .app-sidebar .app-brand-text { color:#fff; }
 [data-theme="office"] .app-sidebar .side-header #btn-hud:hover,
 [data-theme="office"] .app-sidebar .side-header #sidebar-toggle:hover { color:#0E4C92; background:#fff; }
+[data-theme="office"] .app-sidebar .side-header #btn-hud:hover *,
+[data-theme="office"] .app-sidebar .side-header #sidebar-toggle:hover * { color:#0E4C92; }
 [data-theme="office"] .hud-alert-dropdown { color:#0E4C92; }
 [data-theme="office"] .hud-alert-title { color:#0E4C92; }
 [data-theme="office"] .hud-alert-item { color:#0E4C92; }
