@@ -1344,7 +1344,8 @@
 [data-theme="office"] .side-chat-new:hover { background:#fff; color:#0E4C92; border-color:#fff; }
 
 /* Active chat item */
-.side-folder-item.side-chat-active { background:var(--surface2); color:var(--text); font-weight:600; }
+.side-folder-item.side-chat-active { background:none; color:var(--accent, #0E4C92); font-weight:600; }
+[data-theme="office"] .side-folder-item.side-chat-active { color:#0E4C92; }
 
 /* Chat item layout */
 .side-chat-item { position:relative; }
