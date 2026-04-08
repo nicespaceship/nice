@@ -322,6 +322,9 @@
 [data-theme="office"] .app-sidebar .app-brand-text { color:#fff; }
 [data-theme="office"] .app-sidebar .side-header #btn-hud:hover,
 [data-theme="office"] .app-sidebar .side-header #sidebar-toggle:hover { color:#0E4C92; background:#fff; }
+[data-theme="office"] .hud-alert-dropdown { color:#0E4C92; }
+[data-theme="office"] .hud-alert-title { color:#0E4C92; }
+[data-theme="office"] .hud-alert-item { color:#0E4C92; }
 [data-theme="office"] .app-sidebar .side-header { background:#0E4C92; border-bottom-color:rgba(255,255,255,0.15); }
 [data-theme="office"] .app-sidebar .side-footer { background:#0E4C92; border-top-color:rgba(255,255,255,0.15); }
 [data-theme="office"] .app-sidebar .hdr-username { color:rgba(255,255,255,0.8); }
