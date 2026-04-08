@@ -134,13 +134,15 @@ const Theme = (() => {
   const _OFFICE_LABELS = {
     'Schematic': 'Overview', 'Missions': 'Tasks',
     'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
-    'Bridge': 'Office', 'Deploy': 'Activate', 'Deployed': 'Active',
+    'Bridge': 'The Office', 'Deploy': 'Activate', 'Deployed': 'Active',
     'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'OVERVIEW',
     'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
     'Spaceships': 'Businesses', 'Spaceship': 'Business',
     'Ship': 'Business', 'Create Spaceship': 'Create Business', 'Create New Spaceship': 'Create New Business',
     'Crew': 'Staff',
     "Captain's Log": 'Audit Trail', "Ship's Log": 'Chat History',
+    'Sign in to NICE': 'Sign in to The Office',
+    'NICE™': 'The Office',
     'spaceships': 'businesses', 'spaceship': 'business', 'crew': 'staff',
   };
   // Placeholder overrides for Office theme (attribute values the DOM text swapper can't reach)
