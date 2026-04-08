@@ -33,8 +33,7 @@ const HomeView = (() => {
     `;
 
     // Lock scroll on greeting view (no conversation)
-    if (!hasMessages) el.style.overflow = 'hidden';
-    else el.style.overflow = '';
+    el.classList.toggle('view-no-scroll', !hasMessages);
 
     // Bind new chat button
     el.querySelector('#chat-home-new')?.addEventListener('click', () => {

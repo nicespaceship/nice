@@ -3,6 +3,9 @@
    Mobile-first PWA styles. Inherits theme tokens from theme.css.
 ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Utility classes ── */
+.view-no-scroll { overflow:hidden !important; }
+
 /* TRON tab — only visible on The Grid theme */
 .bp-tab-tron { display:none !important; }
 
@@ -1533,7 +1536,7 @@
   .app-sidebar:not(.open) .side-header { justify-content:space-between; padding:16px 16px 12px; }
   .app-sidebar:not(.open) .side-link { justify-content:initial; padding:10px 16px; }
   .app-main { padding:0; }
-  .app-view-content { padding:8px; padding-bottom:140px; }
+  .app-view-content { padding:8px; padding-bottom:120px; }
 }
 
 
@@ -3245,7 +3248,7 @@
   position:relative;
 }
 .app-view-content {
-  flex:1; overflow-y:overlay; overflow-y:auto; padding:24px; padding-bottom:140px;
+  flex:1; overflow-y:auto; padding:24px; padding-bottom:140px;
   transition:opacity .3s ease;
   scrollbar-width:thin; scrollbar-color:transparent transparent;
 }
@@ -3732,8 +3735,7 @@
   .builder-row { grid-template-columns:1fr; }
   .task-row-main { flex-wrap:wrap; }
   .bp-grid { grid-template-columns:1fr; }
-  .bp-card-wrap { min-width:0; }
-  .tcg-card { min-width:0; width:100% !important; }
+  .tcg-card { width:100% !important; }
   /* Bridge toolbar — compact spacing on mobile */
   .bp-type-tabs { margin-bottom:6px !important; }
   .bp-sub-tabs { gap:4px; margin-bottom:4px; }
@@ -5143,7 +5145,6 @@
 
 /* Prevent horizontal overflow everywhere on mobile */
 @media (max-width:768px) {
-  .app-main { overflow-x:hidden; }
   .bridge-wrap, .log-wrap, .log-view-wrap, .dock-wrap, .tc-wrap, .wfe-wrap,
   .agents-wrap, .fleet-wrap, .bp-wrap, .ana-wrap,
   .missions-wrap { overflow-x:hidden; max-width:100vw; }
@@ -5324,7 +5325,7 @@
 
 
 /* Hover elevation + glow */
-.tcg-card { transition:transform .25s ease, box-shadow .25s ease; min-width:0; overflow:hidden; }
+.tcg-card { transition:transform .25s ease, box-shadow .25s ease; min-width:0; overflow:hidden; perspective:800px; }
 .tcg-card:hover {
   transform:translateY(-6px);
   box-shadow:0 12px 40px rgba(0,0,0,.4), 0 0 20px rgba(0,0,0,.2);
@@ -5408,8 +5409,7 @@
 .tcg-card[data-rarity="legendary"] .tcg-art::after { border-color:var(--color-warning); }
 .tcg-card[data-rarity="mythic"] .tcg-art::after { border-color:#ff2d55; }
 
-/* 3D tilt on hover (CSS-only subtle version) */
-.tcg-card { perspective:800px; }
+/* 3D tilt on hover (CSS-only subtle version — perspective merged into main .tcg-card rule) */
 .tcg-card:hover .tcg-name-bar { transform:translateZ(10px); }
 .tcg-card:hover .tcg-stats { transform:translateZ(8px); }
 

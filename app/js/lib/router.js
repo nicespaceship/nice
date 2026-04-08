@@ -123,6 +123,9 @@ const Router = (() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const hasContent = _el.children.length > 0;
 
+    // Clean up view-specific classes from previous render
+    _el.classList.remove('view-no-scroll');
+
     if (reducedMotion || !hasContent) {
       // Instant swap (first render or reduced motion)
       _el.innerHTML = '';
