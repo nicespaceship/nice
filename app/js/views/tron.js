@@ -74,6 +74,9 @@ const TronView = (() => {
     _el = el;
     _hi = parseInt(localStorage.getItem('nice-tron-hi') || '0', 10);
 
+    // Lock parent scroll so swipes control the game, not the page
+    el.closest('.app-view-content')?.classList.add('view-no-scroll');
+
     el.innerHTML = `
       <div class="tron-game" style="display:flex;flex-direction:column;align-items:center;padding:24px 0;gap:16px;position:relative;z-index:10;">
         <div class="tron-hud" style="display:flex;gap:32px;font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">
@@ -127,6 +130,7 @@ const TronView = (() => {
     window.addEventListener('keydown', _onKey);
     window.addEventListener('resize', _resize);
     _canvas.addEventListener('touchstart', _onTouchStart, { passive: false });
+    _canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     _canvas.addEventListener('touchend', _onTouchEnd, { passive: false });
   }
 
@@ -195,6 +199,8 @@ const TronView = (() => {
       _canvas.removeEventListener('touchstart', _onTouchStart);
       _canvas.removeEventListener('touchend', _onTouchEnd);
     }
+    // Unlock parent scroll
+    _el?.closest('.app-view-content')?.classList.remove('view-no-scroll');
   }
 
   function _resize() {
