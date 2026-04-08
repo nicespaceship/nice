@@ -320,7 +320,8 @@
 [data-theme="office"] .app-sidebar .side-link.active { color:#fff; background:rgba(255,255,255,0.15); }
 [data-theme="office"] .app-sidebar .side-link svg { color:rgba(255,255,255,0.6); }
 [data-theme="office"] .app-sidebar .app-brand-text { color:#fff; }
-[data-theme="office"] .app-sidebar .side-header #btn-hud:hover { color:#0E4C92; background:#fff; }
+[data-theme="office"] .app-sidebar .side-header #btn-hud:hover,
+[data-theme="office"] .app-sidebar .side-header #sidebar-toggle:hover { color:#0E4C92; background:#fff; }
 [data-theme="office"] .app-sidebar .side-header { background:#0E4C92; border-bottom-color:rgba(255,255,255,0.15); }
 [data-theme="office"] .app-sidebar .side-footer { background:#0E4C92; border-top-color:rgba(255,255,255,0.15); }
 [data-theme="office"] .app-sidebar .hdr-username { color:rgba(255,255,255,0.8); }
