@@ -170,7 +170,7 @@ const TronView = (() => {
 
   function _onTouchEnd(e) {
     e.preventDefault();
-    if (!_alive) return;
+    if (!_alive || !_dir) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - _touchX;
     const dy = t.clientY - _touchY;
@@ -261,6 +261,7 @@ const TronView = (() => {
   }
 
   function _onKey(e) {
+    if (!_dir) return; // game not initialized yet
     if (!_alive && !_respawning && (e.key === 'Enter' || e.key === ' ')) { _start(); return; }
     if (_respawning) return;
     if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { _togglePause(); e.preventDefault(); return; }
