@@ -74,8 +74,10 @@ const TronView = (() => {
     _el = el;
     _hi = parseInt(localStorage.getItem('nice-tron-hi') || '0', 10);
 
-    // Lock parent scroll so swipes control the game, not the page
+    // Lock ALL scroll so swipes control the game, not the page
     el.closest('.app-view-content')?.classList.add('view-no-scroll');
+    document.body.classList.add('view-no-scroll');
+    document.documentElement.classList.add('view-no-scroll');
 
     el.innerHTML = `
       <div class="tron-game" style="display:flex;flex-direction:column;align-items:center;padding:24px 0;gap:16px;position:relative;z-index:10;">
@@ -112,6 +114,9 @@ const TronView = (() => {
     _ctx = _canvas.getContext('2d');
     _resize();
     _drawEmpty();
+
+    // Prevent page scroll on entire game area (mobile)
+    el.querySelector('.tron-game')?.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
     document.getElementById('tron-start')?.addEventListener('click', _start);
     document.getElementById('tron-sound')?.addEventListener('click', () => {
@@ -199,8 +204,10 @@ const TronView = (() => {
       _canvas.removeEventListener('touchstart', _onTouchStart);
       _canvas.removeEventListener('touchend', _onTouchEnd);
     }
-    // Unlock parent scroll
+    // Unlock all scroll
     _el?.closest('.app-view-content')?.classList.remove('view-no-scroll');
+    document.body.classList.remove('view-no-scroll');
+    document.documentElement.classList.remove('view-no-scroll');
   }
 
   function _resize() {
