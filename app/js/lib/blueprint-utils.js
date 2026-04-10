@@ -167,5 +167,37 @@ const BlueprintUtils = (() => {
   /** Build slot array for a specific count (used by gamification for XP-gated classes) */
   function buildSlots(count, maxRarity) { return _buildClassSlots(count, maxRarity); }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, buildSlots, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
+  /* ── Model id humanizer ──
+     Turns LLM ids into display-ready names. Used by the drawer detail panel
+     and any other surface that wants to show "Claude Opus 4.6" instead of
+     "claude-opus-4-6". Falls back to a kebab-case → Title Case transform. */
+  const _MODEL_NAMES = {
+    'nice-auto':                   'NICE Auto',
+    'gemini-2.5-flash':            'Gemini 2.5 Flash',
+    'gemini-2.5-pro':              'Gemini 2.5 Pro',
+    'gemini-2.0-flash-lite':       'Gemini 2.0 Lite',
+    'claude-haiku-4-5-20251001':   'Claude Haiku 4.5',
+    'claude-haiku-4-5':            'Claude Haiku 4.5',
+    'claude-sonnet-4-6':           'Claude Sonnet 4.6',
+    'claude-sonnet-4-20250514':    'Claude Sonnet 4',
+    'claude-opus-4-6':             'Claude Opus 4.6',
+    'claude-opus-4':               'Claude Opus 4',
+    'gpt-5.2':                     'GPT-5.2',
+    'gpt-5-mini':                  'GPT-5 Mini',
+    'gpt-4o':                      'GPT-4o',
+    'mistral-large-latest':        'Mistral Large 3',
+    'deepseek-chat':               'DeepSeek V3',
+    'grok-4':                      'Grok 4',
+  };
+  function humanizeModel(id) {
+    if (!id || typeof id !== 'string') return '';
+    if (_MODEL_NAMES[id]) return _MODEL_NAMES[id];
+    // Generic fallback: kebab-case → Title Case, leaving numbers + dots intact
+    return id.split('-').map(function(part) {
+      if (/^\d/.test(part)) return part; // keep version segments as-is
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    }).join(' ');
+  }
+
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, buildSlots, humanizeModel, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
 })();

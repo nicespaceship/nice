@@ -133,6 +133,7 @@ const CardRenderer = (() => {
 
     conns.forEach(pair => {
       const a = positions[pair[0]], b = positions[pair[1]];
+      if (!a || !b) return;
       svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#3b82f6" stroke-width="0.6" opacity="0.1"/>`;
     });
 
@@ -140,7 +141,11 @@ const CardRenderer = (() => {
       svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#3b82f6" stroke-width="0.8" opacity="0.12"/>`;
     });
 
-    slots.forEach((slot, i) => {
+    // Cap slot rendering to the number of available positions (class-3 has
+    // 10 slots, class-5 has 24, but the position layout only goes up to 12).
+    const renderSlots = slots.slice(0, positions.length);
+
+    renderSlots.forEach((slot, i) => {
       const p = positions[i];
       const color = SLOT_COLORS[slot.max] || '#6366f1';
       const r = 14;
@@ -150,7 +155,7 @@ const CardRenderer = (() => {
       svg += `<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="12" font-weight="300" opacity="0.6">+</text>`;
     });
 
-    slots.forEach((slot, i) => {
+    renderSlots.forEach((slot, i) => {
       const p = positions[i];
       const spd = serial.speeds[i] || 0;
       const dur = 20 - (spd * 1.5);
@@ -163,6 +168,7 @@ const CardRenderer = (() => {
     const travelSpeeds = serial.speeds.slice(n);
     conns.forEach((pair, ci) => {
       const a = positions[pair[0]], b = positions[pair[1]];
+      if (!a || !b) return;
       const spd = travelSpeeds[ci % travelSpeeds.length] || 3;
       const dur = 6 + (9 - spd) * 1.2;
       const dotR = 1.2 + (spd * 0.08);
@@ -338,6 +344,7 @@ const CardRenderer = (() => {
       <div class="tcg-name-bar">
         <span class="tcg-name"${nameEditable}>${_esc(displayName)}</span>
         ${subtitle ? `<span class="tcg-subtitle">${_esc(subtitle)}</span>` : ''}
+        ${_tierPill(bp)}
         ${statusDot}
       </div>
       <div class="tcg-art">
@@ -398,6 +405,7 @@ const CardRenderer = (() => {
       <div class="tcg-grid-info">
         <span class="tcg-grid-name">${name}</span>
         ${badgeHTML}
+        ${_tierPill(data)}
       </div>
       ${statsHTML}
     </div>`;
@@ -528,6 +536,19 @@ const CardRenderer = (() => {
   /* ── Helper: get agent rarity (delegates to BlueprintUtils SSOT) ── */
   function _getAgentRarity(data) {
     return BlueprintUtils.getRarity(data);
+  }
+
+  /* ── Helper: render the runtime tier pill (FREE / PRO) ──
+     Reads blueprint.config.model_profile.tier so users can tell at a
+     glance which agents will cost tokens before they activate them.
+     Returns empty string when the blueprint has no model_profile. ── */
+  function _tierPill(bp) {
+    const tier = bp && bp.config && bp.config.model_profile && bp.config.model_profile.tier;
+    if (!tier) return '';
+    const t = String(tier).toLowerCase();
+    if (t !== 'free' && t !== 'premium') return '';
+    const label = t === 'premium' ? 'PRO' : 'FREE';
+    return '<span class="tcg-tier-pill tcg-tier-pill--' + t + '" title="' + (t === 'premium' ? 'Premium model — costs tokens' : 'Free model — no token cost') + '">' + label + '</span>';
   }
 
   /* ── Custom name/role persistence ── */

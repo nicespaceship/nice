@@ -1250,7 +1250,7 @@ const BlueprintStore = (() => {
             }
           }
 
-          // Rarity filter (agents: Common/Rare/etc, spaceships: class-1/class-2/etc — both stored in `rarity` column)
+          // Rarity filter (all types use Common/Rare/Epic/Legendary/Mythic in the `rarity` column)
           if (rarity) {
             q = q.eq('rarity', rarity);
           }

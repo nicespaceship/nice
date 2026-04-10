@@ -32,13 +32,21 @@ const AgentExecutor = (() => {
       mcpToolIds = McpBridge.loadTools();
     }
 
-    // Resolve available tools (explicit + MCP)
+    // Resolve available tools (explicit + MCP).
+    // Blueprint tools may use display names ("Web Search") — ToolRegistry.resolve
+    // handles id, alias, and normalized-name lookup so the executor binds real tools.
     const allToolIds = [...toolIds, ...mcpToolIds];
     const availableTools = [];
+    const seen = new Set();
     if (typeof ToolRegistry !== 'undefined') {
-      allToolIds.forEach(id => {
-        const tool = ToolRegistry.get(id);
-        if (tool) availableTools.push(tool);
+      allToolIds.forEach(nameOrId => {
+        const tool = (typeof ToolRegistry.resolve === 'function')
+          ? ToolRegistry.resolve(nameOrId)
+          : ToolRegistry.get(nameOrId);
+        if (tool && !seen.has(tool.id)) {
+          seen.add(tool.id);
+          availableTools.push(tool);
+        }
       });
     }
 

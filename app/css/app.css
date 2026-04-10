@@ -314,6 +314,9 @@
    Most styling comes from CSS custom properties in the theme definition. ── */
 [data-theme="office"]::after { display: none !important; }
 [data-theme="office"] .tcg-card::before { display: none; }
+/* Office: drop the dark badge background, use sapphire text directly on the light card art */
+[data-theme="office"] .tcg-serial-code { background: transparent; color: #0E4C92; backdrop-filter: none; }
+[data-theme="office"] .tcg-art-role .tcg-serial-code { color: #0E4C92; }
 [data-theme="office"] .app-sidebar { background:#7285A5; }
 [data-theme="office"] .app-sidebar .side-link { color:rgba(255,255,255,0.75); }
 [data-theme="office"] .app-sidebar .side-link:hover { color:#fff; background:rgba(255,255,255,0.1); }
@@ -5448,6 +5451,34 @@
 .tcg-card[data-tier="flagship"],
 .tcg-card-grid[data-tier="flagship"],
 .tcg-card-compact[data-tier="flagship"]          { border-color:var(--color-warning)40; box-shadow:0 0 16px rgba(245,158,11,.2); }
+
+
+/* ── Runtime tier pill (FREE / PRO) — model_profile.tier indicator ──
+   Shown on full + grid cards so users can tell at a glance which agents
+   cost tokens before activating. Semantic colors override the active
+   theme so the meaning is consistent: green = free, gold = premium. */
+.tcg-tier-pill {
+  display:inline-block;
+  font-size:.55rem;
+  line-height:1;
+  padding:2px 5px;
+  border-radius:3px;
+  border:1px solid;
+  letter-spacing:.06em;
+  font-family:var(--font-b, system-ui, sans-serif);
+  font-weight:700;
+  text-transform:uppercase;
+  vertical-align:middle;
+  margin-left:4px;
+  flex-shrink:0;
+}
+.tcg-tier-pill--free    { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,.08); }
+.tcg-tier-pill--premium { color:#f59e0b; border-color:#f59e0b; background:rgba(245,158,11,.08); }
+/* Office (light) theme — dark hues for WCAG AA contrast against #e8e8ec.
+   Default green/gold are 1.7:1 against the light background — both fail.
+   green-800 and amber-800 reach 5.3:1 and 6.6:1 respectively. */
+[data-theme="office"] .tcg-tier-pill--free    { color:#166534; border-color:#166534; background:rgba(22,101,52,.10); }
+[data-theme="office"] .tcg-tier-pill--premium { color:#92400e; border-color:#92400e; background:rgba(146,64,14,.10); }
 
 
 /* ── Card enhancements — glass, shimmer, glow, hover lift ── */

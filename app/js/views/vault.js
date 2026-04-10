@@ -15,8 +15,9 @@ const VaultView = (() => {
     { id: 'gemini-2.5-flash',    name: 'Gemini 2.5 Flash',   provider: 'Google',    icon: 'circle', tier: 'free',    speed: 'fast',   quality: 'good',    desc: 'Fast & free. Great for most tasks.' },
     { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Lite',  provider: 'Google',    icon: 'circle', tier: 'free',    speed: 'fastest', quality: 'basic',   desc: 'Ultra-fast for simple tasks.' },
     // Premium
-    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'Anthropic', icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'Best balance of speed and intelligence.' },
-    { id: 'claude-opus-4-6',     name: 'Claude Opus 4',       provider: 'Anthropic', icon: 'circle', tier: 'premium', speed: 'slow',   quality: 'best',    desc: 'Most capable model. Complex reasoning.' },
+    { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', provider: 'Anthropic', icon: 'circle', tier: 'premium', speed: 'fastest', quality: 'good',     desc: 'Fast, cheap-premium. Default for Epic-tier agents.' },
+    { id: 'claude-sonnet-4-6',   name: 'Claude Sonnet 4.6',   provider: 'Anthropic', icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'Best balance of speed and intelligence. Default for Legendary agents.' },
+    { id: 'claude-opus-4-6',     name: 'Claude Opus 4.6',     provider: 'Anthropic', icon: 'circle', tier: 'premium', speed: 'slow',   quality: 'best',    desc: 'Most capable model. Default for Mythic agents.' },
     { id: 'gpt-5.2',             name: 'GPT-5.2',             provider: 'OpenAI',    icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'excellent', desc: 'OpenAI\'s latest flagship model.' },
     { id: 'gpt-5-mini',          name: 'GPT-5 Mini',          provider: 'OpenAI',    icon: 'circle', tier: 'premium', speed: 'fast',   quality: 'good',    desc: 'Fast and affordable from OpenAI.' },
     { id: 'gemini-2.5-pro',      name: 'Gemini 2.5 Pro',      provider: 'Google',    icon: 'circle', tier: 'premium', speed: 'medium', quality: 'excellent', desc: 'Google\'s most capable model.' },

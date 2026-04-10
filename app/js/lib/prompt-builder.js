@@ -46,10 +46,6 @@ const PromptBuilder = (() => {
       parts.push('Tools available: ' + tools.join(', ') + '.');
     }
 
-    // ── Operating Parameters ──
-    const statsLine = _statsLine(blueprint.stats);
-    if (statsLine) parts.push(statsLine);
-
     // ── Classification ──
     const rarity = blueprint.rarity || '';
     if (rarity) parts.push('Classification: ' + rarity + '.');
@@ -62,6 +58,23 @@ const PromptBuilder = (() => {
       if (slotPart) {
         parts.push(slotPart + ' Coordinate with your fellow agents through the shared Ship\'s Log.');
       }
+    }
+
+    // ── Output Schema (structured output contract) ──
+    var outputSchema = (blueprint.config && blueprint.config.output_schema) || blueprint.output_schema;
+    var schemaSection = _renderOutputSchema(outputSchema);
+    if (schemaSection) parts.push(schemaSection);
+
+    // ── Example I/O (few-shot prime) ──
+    var exampleIO = (blueprint.config && blueprint.config.example_io) || blueprint.example_io;
+    var exampleSection = _renderExamples(exampleIO);
+    if (exampleSection) parts.push(exampleSection);
+
+    // ── Eval Criteria (how quality is judged) ──
+    var evalCriteria = (blueprint.config && blueprint.config.eval_criteria) || blueprint.eval_criteria;
+    if (Array.isArray(evalCriteria) && evalCriteria.length) {
+      parts.push('Quality criteria (your output will be judged against these):\n' +
+        evalCriteria.map(function(c) { return '- ' + c; }).join('\n'));
     }
 
     // ── Structured Persona (if defined) ──
@@ -107,15 +120,48 @@ const PromptBuilder = (() => {
     return [];
   }
 
-  /* ── Build one-line stats summary ── */
-  function _statsLine(stats) {
-    if (!stats) return '';
-    var parts = [];
-    if (stats.acc) parts.push('Accuracy: ' + stats.acc);
-    if (stats.cap) parts.push('Capacity: ' + stats.cap);
-    if (stats.spd) parts.push('Speed: ' + stats.spd);
-    if (!parts.length) return '';
-    return 'Operating parameters: ' + parts.join(', ') + '.';
+  /* ── Render an output schema into a prompt section ──
+     Accepts either a JSON Schema object (with "properties") or a flat
+     { field: "type" } shape that blueprint authors prefer for brevity. ── */
+  function _renderOutputSchema(schema) {
+    if (!schema || typeof schema !== 'object') return '';
+    var lines = [];
+    var props = (schema.properties && typeof schema.properties === 'object') ? schema.properties : schema;
+    var keys = Object.keys(props);
+    if (!keys.length) return '';
+    keys.forEach(function(key) {
+      var val = props[key];
+      if (val && typeof val === 'object') {
+        var type = val.type || 'any';
+        var desc = val.description ? ' — ' + val.description : '';
+        lines.push('- ' + key + ' (' + type + ')' + desc);
+      } else {
+        // Flat shape: { subject: "string", body: "string" }
+        lines.push('- ' + key + ' (' + String(val) + ')');
+      }
+    });
+    var header = schema.description
+      ? 'Output format — ' + schema.description + ':'
+      : 'Output format. Respond with a JSON object matching this shape:';
+    return header + '\n' + lines.join('\n');
+  }
+
+  /* ── Render few-shot examples into a prompt section ── */
+  function _renderExamples(examples) {
+    if (!Array.isArray(examples) || !examples.length) return '';
+    var blocks = [];
+    // Cap at 3 examples to keep the prompt tight.
+    examples.slice(0, 3).forEach(function(ex, i) {
+      if (!ex || typeof ex !== 'object') return;
+      var input = ex.input !== undefined ? ex.input : ex.in;
+      var output = ex.output !== undefined ? ex.output : ex.out;
+      if (input === undefined || output === undefined) return;
+      var inStr = typeof input === 'string' ? input : JSON.stringify(input, null, 2);
+      var outStr = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+      blocks.push('Example ' + (i + 1) + ':\nInput: ' + inStr + '\nOutput: ' + outStr);
+    });
+    if (!blocks.length) return '';
+    return blocks.join('\n\n');
   }
 
   return { build };

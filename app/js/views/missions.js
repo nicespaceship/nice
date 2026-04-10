@@ -335,10 +335,11 @@ const MissionsView = (() => {
 
   function _shortModel(modelId) {
     const shorts = {
-      'gemini-2.5-flash': 'Gemini Flash', 'gemini-2.0-lite': 'Gemini Lite', 'gemini-2.5-pro': 'Gemini Pro',
-      'claude-sonnet-4-6': 'Claude Sonnet', 'claude-opus-4': 'Claude Opus',
+      'gemini-2.5-flash': 'Gemini Flash', 'gemini-2.0-flash-lite': 'Gemini Lite', 'gemini-2.5-pro': 'Gemini Pro',
+      'claude-haiku-4-5-20251001': 'Claude Haiku', 'claude-sonnet-4-6': 'Claude Sonnet', 'claude-opus-4-6': 'Claude Opus',
       'gpt-5.2': 'GPT-5.2', 'gpt-5-mini': 'GPT-5 Mini',
-      'mistral-large-3': 'Mistral Large', 'deepseek-v3': 'DeepSeek V3', 'grok-4': 'Grok 4',
+      'mistral-large-latest': 'Mistral Large', 'deepseek-chat': 'DeepSeek V3', 'grok-4': 'Grok 4',
+      'nice-auto': 'NICE Auto',
     };
     return shorts[modelId] || modelId;
   }
