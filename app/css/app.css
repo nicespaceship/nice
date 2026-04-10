@@ -314,6 +314,9 @@
    Most styling comes from CSS custom properties in the theme definition. ── */
 [data-theme="office"]::after { display: none !important; }
 [data-theme="office"] .tcg-card::before { display: none; }
+/* Serial code badges have dark bg (rgba(0,0,0,.55)) — text must be light on Office */
+[data-theme="office"] .tcg-serial-code { color: rgba(255,255,255,0.85); }
+[data-theme="office"] .tcg-art-role .tcg-serial-code { color: rgba(255,255,255,0.9); }
 [data-theme="office"] .app-sidebar { background:#7285A5; }
 [data-theme="office"] .app-sidebar .side-link { color:rgba(255,255,255,0.75); }
 [data-theme="office"] .app-sidebar .side-link:hover { color:#fff; background:rgba(255,255,255,0.1); }
