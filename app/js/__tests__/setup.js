@@ -119,6 +119,7 @@ loadScriptGlobal('lib/command-palette.js');
 loadScriptGlobal('lib/blueprint-markdown.js');
 loadScriptGlobal('lib/prompt-builder.js');
 loadScriptGlobal('lib/mission-router.js');
+loadScriptGlobal('lib/tool-registry.js');
 loadScriptGlobal('lib/virtual-fs.js');
 loadScriptGlobal('lib/browser-tools.js');
 

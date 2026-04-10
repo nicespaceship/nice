@@ -2,12 +2,20 @@
    NICE — Tool Registry
    Registry of tools that agents can use during execution.
    Each tool has: id, name, description, execute(input), schema.
-   Built-in tools: web-search, code-gen, data-transform, summarize, calculator.
+   Supports name/alias resolution so blueprints can reference tools by
+   human-readable label (e.g. "Web Search" → "web-search").
 ═══════════════════════════════════════════════════════════════════ */
 
 const ToolRegistry = (() => {
 
   const _tools = new Map();
+  const _aliases = new Map(); // normalized name → tool id
+
+  /* ── Normalize a label for fuzzy lookup ── */
+  function _normalize(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
 
   /* ── Register a tool ── */
   function register(tool) {
@@ -22,12 +30,45 @@ const ToolRegistry = (() => {
       schema:      tool.schema || {},
       execute:     tool.execute,
     });
+    // Auto-alias on the display name so "Web Search" resolves to "web-search".
+    // First-registration wins — later tools registering the same display name
+    // (e.g. browser-search also named "Web Search") do not clobber the alias.
+    // Explicit registerAlias() calls always override.
+    const nameKey = _normalize(tool.name);
+    if (nameKey && !_aliases.has(nameKey)) _aliases.set(nameKey, tool.id);
+    // Always allow the bare id to resolve to itself
+    const idKey = _normalize(tool.id);
+    if (idKey && !_aliases.has(idKey)) _aliases.set(idKey, tool.id);
     return true;
   }
 
-  /* ── Get a tool by id ── */
+  /* ── Register an alias so blueprints can reference tools by friendly label ── */
+  function registerAlias(alias, toolId) {
+    if (!alias || !toolId) return false;
+    _aliases.set(_normalize(alias), toolId);
+    return true;
+  }
+
+  /* ── Get a tool by exact id ── */
   function get(id) {
     return _tools.get(id) || null;
+  }
+
+  /* ── Resolve a tool by id, display name, or alias ── */
+  function resolve(nameOrId) {
+    if (!nameOrId || typeof nameOrId !== 'string') return null;
+    // 1. Direct id hit
+    const direct = _tools.get(nameOrId);
+    if (direct) return direct;
+    // 2. Alias / normalized name lookup
+    const normalized = _normalize(nameOrId);
+    const aliasedId = _aliases.get(normalized);
+    if (aliasedId) return _tools.get(aliasedId) || null;
+    // 3. Try normalized id match (in case blueprint stores "Web-Search")
+    for (const [id, tool] of _tools) {
+      if (_normalize(id) === normalized) return tool;
+    }
+    return null;
   }
 
   /* ── List all registered tools ── */
@@ -35,9 +76,9 @@ const ToolRegistry = (() => {
     return Array.from(_tools.values());
   }
 
-  /* ── Execute a tool by id ── */
+  /* ── Execute a tool by id, alias, or display name ── */
   async function execute(toolId, input) {
-    const tool = _tools.get(toolId);
+    const tool = resolve(toolId);
     if (!tool) throw new Error('Tool not found: ' + toolId);
     try {
       return await tool.execute(input);
@@ -309,5 +350,204 @@ const ToolRegistry = (() => {
     return rows;
   }
 
-  return { register, get, list, execute, getSchemas };
+  /* ═══ Core Primitives ═══
+     Universally-useful tools that don't require external auth.
+     MCP-gated tools (Gmail, Slack, Jira, etc.) come from McpBridge.
+  ═══ */
+
+  /* ── fetch-url: HTTP GET via browser-proxy edge function ── */
+  register({
+    id:          'fetch-url',
+    name:        'Fetch URL',
+    description: 'Fetches the contents of a web page or API endpoint and returns cleaned text with links and metadata.',
+    schema: {
+      type: 'object',
+      properties: {
+        url:      { type: 'string', description: 'Full URL to fetch (must include https://)' },
+        selector: { type: 'string', description: 'Optional CSS selector to extract a specific region of the page' },
+      },
+      required: ['url'],
+    },
+    execute: async (input) => {
+      if (!input || !input.url) throw new Error('url is required');
+      if (typeof SB === 'undefined' || !SB.client) {
+        throw new Error('Supabase not available — sign in to fetch URLs');
+      }
+      const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
+      if (!supabaseUrl) throw new Error('Supabase URL not configured');
+      const res = await fetch(supabaseUrl + '/functions/v1/browser-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: input.url, selector: input.selector || undefined }),
+      });
+      if (!res.ok) throw new Error('fetch-url ' + res.status + ': ' + (await res.text()));
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      return data;
+    },
+  });
+
+  /* ── current-time: Return current time / date in various formats ── */
+  register({
+    id:          'current-time',
+    name:        'Current Time',
+    description: 'Returns the current date and time. Use this whenever you need to know "now" — do not guess the date.',
+    schema: {
+      type: 'object',
+      properties: {
+        timezone: { type: 'string', description: 'IANA timezone name (e.g. America/Los_Angeles). Defaults to UTC.' },
+        format:   { type: 'string', enum: ['iso', 'unix', 'human'], description: 'Output format (default iso)' },
+      },
+    },
+    execute: async (input) => {
+      const now = new Date();
+      const fmt = (input && input.format) || 'iso';
+      const tz = (input && input.timezone) || 'UTC';
+      if (fmt === 'unix') return { unix: Math.floor(now.getTime() / 1000), iso: now.toISOString() };
+      if (fmt === 'human') {
+        try {
+          return { human: new Intl.DateTimeFormat('en-US', {
+            timeZone: tz, dateStyle: 'full', timeStyle: 'long',
+          }).format(now), iso: now.toISOString() };
+        } catch (e) {
+          return { human: now.toString(), iso: now.toISOString() };
+        }
+      }
+      return { iso: now.toISOString(), unix: Math.floor(now.getTime() / 1000) };
+    },
+  });
+
+  /* ── parse-json: Safely parse a JSON string ── */
+  register({
+    id:          'parse-json',
+    name:        'Parse JSON',
+    description: 'Parses a JSON string into a structured object. Returns { parsed } or { error } if invalid.',
+    schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'The JSON string to parse' },
+      },
+      required: ['text'],
+    },
+    execute: async (input) => {
+      if (!input || typeof input.text !== 'string') throw new Error('text is required');
+      try {
+        return { parsed: JSON.parse(input.text) };
+      } catch (e) {
+        return { error: 'Invalid JSON: ' + e.message };
+      }
+    },
+  });
+
+  /* ── extract-regex: Extract matches from text with a regex ── */
+  register({
+    id:          'extract-regex',
+    name:        'Extract Regex',
+    description: 'Extracts matches from text using a regular expression. Returns an array of matches (with capture groups).',
+    schema: {
+      type: 'object',
+      properties: {
+        text:    { type: 'string', description: 'The text to search' },
+        pattern: { type: 'string', description: 'A JavaScript regex pattern (no leading/trailing slashes)' },
+        flags:   { type: 'string', description: 'Regex flags, e.g. "gi" (default "g")' },
+      },
+      required: ['text', 'pattern'],
+    },
+    execute: async (input) => {
+      if (!input || !input.text || !input.pattern) throw new Error('text and pattern are required');
+      const flags = input.flags && /^[gimsuy]+$/.test(input.flags) ? input.flags : 'g';
+      let re;
+      try {
+        re = new RegExp(input.pattern, flags.includes('g') ? flags : flags + 'g');
+      } catch (e) {
+        throw new Error('Invalid regex: ' + e.message);
+      }
+      const matches = [];
+      let m;
+      let guard = 0;
+      while ((m = re.exec(input.text)) !== null && guard++ < 1000) {
+        matches.push({ match: m[0], groups: m.slice(1), index: m.index });
+        if (m.index === re.lastIndex) re.lastIndex++;
+      }
+      return { count: matches.length, matches };
+    },
+  });
+
+  /* ── format-date: Format a date string or timestamp ── */
+  register({
+    id:          'format-date',
+    name:        'Format Date',
+    description: 'Formats a date (ISO string or unix timestamp) into a human-readable string using locale and timezone.',
+    schema: {
+      type: 'object',
+      properties: {
+        date:     { type: 'string', description: 'ISO date string or unix timestamp (string or number)' },
+        locale:   { type: 'string', description: 'BCP 47 locale (default en-US)' },
+        timezone: { type: 'string', description: 'IANA timezone name (default UTC)' },
+        style:    { type: 'string', enum: ['short', 'medium', 'long', 'full'], description: 'Date style (default medium)' },
+      },
+      required: ['date'],
+    },
+    execute: async (input) => {
+      if (!input || input.date === undefined) throw new Error('date is required');
+      let d;
+      if (typeof input.date === 'number' || /^\d+$/.test(String(input.date))) {
+        const n = Number(input.date);
+        d = new Date(n < 1e12 ? n * 1000 : n); // seconds vs ms
+      } else {
+        d = new Date(input.date);
+      }
+      if (isNaN(d.getTime())) throw new Error('Invalid date: ' + input.date);
+      const locale = input.locale || 'en-US';
+      const tz = input.timezone || 'UTC';
+      const style = input.style || 'medium';
+      try {
+        const fmt = new Intl.DateTimeFormat(locale, {
+          timeZone: tz, dateStyle: style, timeStyle: style,
+        });
+        return { formatted: fmt.format(d), iso: d.toISOString() };
+      } catch (e) {
+        return { formatted: d.toString(), iso: d.toISOString() };
+      }
+    },
+  });
+
+  /* ═══ Alias Registrations ═══
+     Map human-readable labels used by blueprints to actual tool ids.
+     Auto-normalized lookup also handles case and spacing variants, but
+     explicit aliases cover labels that don't share the tool's display name.
+  ═══ */
+  // Web search variants
+  registerAlias('web search',       'web-search');
+  registerAlias('search',           'web-search');
+  registerAlias('google search',    'web-search');
+  registerAlias('google',           'web-search');
+  registerAlias('scraping',         'web-search');
+  // Summarize variants
+  registerAlias('summary gen',      'summarize');
+  registerAlias('summary',          'summarize');
+  registerAlias('text summary',     'summarize');
+  // Calculator variants
+  registerAlias('math',             'calculator');
+  registerAlias('compute',          'calculator');
+  // Code-gen variants
+  registerAlias('code review',      'code-gen');
+  registerAlias('code',             'code-gen');
+  registerAlias('actions builder',  'code-gen');
+  // Data transform variants
+  registerAlias('analytics',        'data-transform');
+  registerAlias('data',             'data-transform');
+  registerAlias('database',         'data-transform');
+  registerAlias('query',            'data-transform');
+  // Fetch URL variants
+  registerAlias('http',             'fetch-url');
+  registerAlias('http request',     'fetch-url');
+  registerAlias('browser',          'fetch-url');
+  registerAlias('repo analytics',   'fetch-url');
+  // Time variants
+  registerAlias('now',              'current-time');
+  registerAlias('datetime',         'current-time');
+  registerAlias('clock',            'current-time');
+
+  return { register, registerAlias, get, resolve, list, execute, getSchemas };
 })();
