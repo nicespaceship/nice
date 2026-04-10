@@ -303,7 +303,9 @@ const BlueprintsView = (() => {
     }
 
     const rendered = CR.render('agent', 'full', bp, { clickClass: 'bp-card-clickable' });
-    return `<div class="bp-card-wrap">${rendered}${connectBtn ? `<div class="bp-card-buttons">${connectBtn}</div>` : ''}</div>`;
+    const communityBadge = bp._community ? '<span class="bp-community-badge">Community</span>' : '';
+    const userBadge = bp._community && bp._creator_id === (State.get('user')?.id) ? '<span class="bp-yours-badge">Yours</span>' : '';
+    return `<div class="bp-card-wrap">${rendered}${communityBadge}${userBadge}${connectBtn ? `<div class="bp-card-buttons">${connectBtn}</div>` : ''}</div>`;
   }
 
   /* ── List-row renderer (horizontal row with key info) ── */
@@ -374,15 +376,27 @@ const BlueprintsView = (() => {
 
     if (!blueprints.length) {
       grid.className = 'tcg-grid bp-view-empty';
-      grid.innerHTML = `
-        <div class="app-empty">
-          <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <h2>No Blueprints Found</h2>
-          <p>Try adjusting your filters or search terms.</p>
-          <div class="app-empty-acts">
-            <button class="btn btn-sm bp-empty-clear">Clear Filters</button>
-          </div>
-        </div>`;
+      if (_subTab === 'community') {
+        grid.innerHTML = `
+          <div class="app-empty">
+            <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <h2>No Community Blueprints Yet</h2>
+            <p>Be the first to share! Publish one of your agents to the community.</p>
+            <div class="app-empty-acts">
+              <a href="#/bridge?tab=agent" class="btn btn-sm btn-primary">Browse Your Agents</a>
+            </div>
+          </div>`;
+      } else {
+        grid.innerHTML = `
+          <div class="app-empty">
+            <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <h2>No Blueprints Found</h2>
+            <p>Try adjusting your filters or search terms.</p>
+            <div class="app-empty-acts">
+              <button class="btn btn-sm bp-empty-clear">Clear Filters</button>
+            </div>
+          </div>`;
+      }
       grid.querySelector('.bp-empty-clear')?.addEventListener('click', () => {
         const searchEl = document.getElementById('bp-search');
         if (searchEl) searchEl.value = '';
@@ -1823,6 +1837,16 @@ const BlueprintsView = (() => {
     drawer.innerHTML = _renderDrawerContent(bp, type);
     _bindDrawerActions(bp, type);
 
+    // Async: load user's existing rating for community blueprints
+    if (bp._community && bp._submission_id && typeof BlueprintStore !== 'undefined') {
+      BlueprintStore.getUserRating(bp._submission_id).then(userRating => {
+        if (userRating > 0) {
+          const container = document.getElementById('bp-drawer-stars');
+          if (container) container.innerHTML = _renderInteractiveStars(bp.rating || 0, userRating, bp._submission_id);
+        }
+      }).catch(() => {});
+    }
+
     requestAnimationFrame(() => {
       drawer.classList.add('open');
       overlay.classList.add('open');
@@ -2177,8 +2201,9 @@ const BlueprintsView = (() => {
 
     // Publish to Community
     drawer.querySelector('.bp-drawer-publish')?.addEventListener('click', () => {
-      confirmDeactivate(bp.name + ' to Community', async () => {
+      _confirmPublish(bp.name, async () => {
         await _publishBlueprint(bp.id);
+        _closeDrawer();
       });
     });
 
@@ -2644,6 +2669,26 @@ const BlueprintsView = (() => {
     } catch (err) {
       console.warn('Publish failed:', err.message);
     }
+  }
+
+  /* ── Publish confirmation dialog ── */
+  function _confirmPublish(name, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'bp-confirm-overlay';
+    overlay.innerHTML = `
+      <div class="bp-confirm-modal">
+        <h3>Publish to Community</h3>
+        <p>Share <span class="bp-confirm-name">${_esc(name)}</span> with the NICE community?</p>
+        <p class="bp-confirm-warning" style="color:var(--text-muted)">Other users will be able to browse, rate, and activate this blueprint.</p>
+        <div class="bp-confirm-actions">
+          <button class="bp-confirm-cancel">Cancel</button>
+          <button class="bp-confirm-submit" style="background:var(--accent);color:#fff">Publish</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.bp-confirm-cancel').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.bp-confirm-submit').addEventListener('click', () => { overlay.remove(); onConfirm(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   }
 
   /* ── Removal confirmation dialog ── */

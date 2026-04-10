@@ -2922,8 +2922,20 @@
 .bp-view-btn.active { color:var(--accent); background:var(--panel-bg); box-shadow:0 0 4px var(--glow, rgba(255,255,255,.05)); }
 
 /* ── Card Wrapper (card + buttons below) ── */
-.bp-card-wrap { display:flex; flex-direction:column; }
+.bp-card-wrap { display:flex; flex-direction:column; position:relative; }
 .bp-card-wrap .tcg-card { margin:0; }
+.bp-community-badge {
+  position:absolute; top:6px; left:6px; z-index:2;
+  background:var(--accent); color:#fff; font-size:.55rem; font-weight:700;
+  padding:2px 7px; border-radius:4px; text-transform:uppercase;
+  letter-spacing:.03em; font-family:var(--font-b);
+}
+.bp-yours-badge {
+  position:absolute; top:6px; right:6px; z-index:2;
+  background:var(--color-success, #22c55e); color:#fff; font-size:.55rem; font-weight:700;
+  padding:2px 7px; border-radius:4px; text-transform:uppercase;
+  font-family:var(--font-b);
+}
 .bp-card-buttons { display:flex; gap:6px; padding:8px 4px; align-items:center; }
 .bp-card-buttons .c-btn { flex:1; font-size:.62rem; padding:5px 10px; justify-content:center; }
 
