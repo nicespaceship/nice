@@ -205,7 +205,7 @@ const AuthModal = (() => {
         provider: 'google',
         options: {
           redirectTo: location.origin + '/app/#/',
-          scopes: 'email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/drive.readonly',
+          scopes: 'email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.file',
           queryParams: { access_type: 'offline', prompt: 'consent' },
         }
       });
