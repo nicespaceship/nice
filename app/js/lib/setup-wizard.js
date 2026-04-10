@@ -32,12 +32,12 @@ const SetupWizard = (() => {
 
   /* ── Should the wizard auto-open? ── */
   function shouldShow() {
-    return !localStorage.getItem('nice-onboarded');
+    return !localStorage.getItem(Utils.KEYS.onboarded);
   }
 
   /* ── Mark onboarding complete ── */
   function _markDone() {
-    localStorage.setItem('nice-onboarded', '1');
+    localStorage.setItem(Utils.KEYS.onboarded, '1');
   }
 
   /* ══════════════════════════════════════════════════════════════ */
@@ -588,9 +588,9 @@ Needs help with: ${needLabels.join(', ')}`;
 
       // Persist custom agents to localStorage
       try {
-        const storedAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        const storedAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
         storedAgents.push(...newAgentObjects);
-        localStorage.setItem('nice-custom-agents', JSON.stringify(storedAgents));
+        localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(storedAgents));
       } catch {}
 
       const newShip = { id: shipId, ...shipData };
@@ -599,9 +599,9 @@ Needs help with: ${needLabels.join(', ')}`;
 
       // Persist custom ship to localStorage
       try {
-        const stored = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+        const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
         stored.push(newShip);
-        localStorage.setItem('nice-custom-ships', JSON.stringify(stored));
+        localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(stored));
       } catch {}
     }
 

@@ -30,9 +30,9 @@ const AgentBuilderView = (() => {
     } else {
       _renderForm(el, null);
       // Check for imported blueprint from Bridge
-      const importJson = sessionStorage.getItem('nice-import-bp');
+      const importJson = sessionStorage.getItem(Utils.KEYS.importBp);
       if (importJson) {
-        sessionStorage.removeItem('nice-import-bp');
+        sessionStorage.removeItem(Utils.KEYS.importBp);
         try { const bp = JSON.parse(importJson); if (bp.type === 'agent' || !bp.type) _populateForm(bp); } catch(e) {}
       }
     }
@@ -270,7 +270,7 @@ const AgentBuilderView = (() => {
       const sel = document.getElementById('b-template');
       if (!sel || !sel.value) return;
       const templates = _getTemplates().filter(t => t.id !== sel.value);
-      localStorage.setItem('nice-agent-templates', JSON.stringify(templates));
+      localStorage.setItem(Utils.KEYS.agentTemplates, JSON.stringify(templates));
       sel.querySelector('option[value="' + sel.value + '"]')?.remove();
       sel.value = '';
     });
@@ -357,7 +357,7 @@ const AgentBuilderView = (() => {
   }
 
   function _getTemplates() {
-    try { return JSON.parse(localStorage.getItem('nice-agent-templates') || '[]'); }
+    try { return JSON.parse(localStorage.getItem(Utils.KEYS.agentTemplates) || '[]'); }
     catch { return []; }
   }
 
@@ -432,10 +432,10 @@ const AgentBuilderView = (() => {
         const guestId = 'guest-agent-' + Date.now();
         row.id = existingAgent?.id || guestId;
         row._guest = true;
-        const custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
         const idx = custom.findIndex(a => a.id === row.id);
         if (idx >= 0) custom[idx] = row; else custom.push(row);
-        localStorage.setItem('nice-custom-agents', JSON.stringify(custom));
+        localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(custom));
         // Add to State
         const agents = State.get('agents') || [];
         const si = agents.findIndex(a => a.id === row.id);

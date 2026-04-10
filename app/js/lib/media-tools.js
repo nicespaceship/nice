@@ -154,7 +154,7 @@ const MediaTools = (() => {
   /* ── Store reference for result rendering ── */
   function _storeGeneratedImage(result) {
     try {
-      const images = JSON.parse(sessionStorage.getItem('nice-generated-images') || '[]');
+      const images = JSON.parse(sessionStorage.getItem(Utils.KEYS.generatedImages) || '[]');
       images.push({
         url: result.stored_url || result.url,
         prompt: result.revised_prompt || '',
@@ -162,7 +162,7 @@ const MediaTools = (() => {
         model: result.model,
         timestamp: Date.now(),
       });
-      sessionStorage.setItem('nice-generated-images', JSON.stringify(images));
+      sessionStorage.setItem(Utils.KEYS.generatedImages, JSON.stringify(images));
     } catch {}
   }
 

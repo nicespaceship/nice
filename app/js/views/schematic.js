@@ -130,8 +130,8 @@ const SchematicView = (() => {
     const shipSelect = el.querySelector('#sch-ship-select');
     if (shipSelect) {
       shipSelect.addEventListener('change', () => {
-        localStorage.setItem('nice-mc-ship', shipSelect.value);
-        window.dispatchEvent(new StorageEvent('storage', { key: 'nice-mc-ship', newValue: shipSelect.value }));
+        localStorage.setItem(Utils.KEYS.mcShip, shipSelect.value);
+        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: shipSelect.value }));
         render(el);
       });
     }
@@ -143,8 +143,8 @@ const SchematicView = (() => {
         const currentIdx = activatedShips.findIndex(s => s.id === (activeShip?.id));
         const nextIdx = (currentIdx + 1) % activatedShips.length;
         const nextId = activatedShips[nextIdx].id;
-        localStorage.setItem('nice-mc-ship', nextId);
-        window.dispatchEvent(new StorageEvent('storage', { key: 'nice-mc-ship', newValue: nextId }));
+        localStorage.setItem(Utils.KEYS.mcShip, nextId);
+        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: nextId }));
         render(el);
       });
     }
@@ -468,7 +468,7 @@ const SchematicView = (() => {
   }
 
   function _getShipId() {
-    const stored = localStorage.getItem('nice-mc-ship');
+    const stored = localStorage.getItem(Utils.KEYS.mcShip);
     if (stored) return _normalizeShipId(stored);
     const ships = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
     if (ships.length) return _normalizeShipId(ships[0].id);
@@ -528,7 +528,7 @@ const SchematicView = (() => {
     // Check localStorage for custom agents (Crew Designer, survives reload)
     if (!bp) {
       try {
-        const stored = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
         const agent = stored.find(a => a.id === bpId);
         if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || 'Agent', rarity: 'Common' };
       } catch {}

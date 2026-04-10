@@ -44,7 +44,7 @@ const Subscription = (() => {
       const plan = _subscription.plan || 'free';
       return PLAN_ALIASES[plan] || plan;
     }
-    const legacy = localStorage.getItem('nice-plan');
+    const legacy = localStorage.getItem(Utils.KEYS.plan);
     if (legacy) return PLAN_ALIASES[legacy] || legacy;
     return 'free';
   }

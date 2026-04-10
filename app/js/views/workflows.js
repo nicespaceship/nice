@@ -10,7 +10,7 @@ const WorkflowsView = (() => {
   const title = 'Workflows';
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
-  const STORAGE_KEY = 'nice-workflows';
+  const STORAGE_KEY = Utils.KEYS.workflows;
   let _migrated = false;
 
   function render(el) {
@@ -211,7 +211,7 @@ const WorkflowDetailView = (() => {
   const title = 'Workflow Editor';
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
-  const STORAGE_KEY = 'nice-workflows';
+  const STORAGE_KEY = Utils.KEYS.workflows;
   let _wf = null;
   let _selectedNode = null;
   let _connecting = null; // {fromId}

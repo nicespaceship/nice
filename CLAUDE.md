@@ -29,7 +29,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
 - Region: `us-west-1`
-- 800+ blueprints (agents + spaceships + fleets)
+- 924 blueprints (687 agents + 237 spaceships)
 
 ### Edge Functions (11)
 | Function | Purpose |
@@ -49,7 +49,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ### Database Tables
 | Table | Purpose |
 |-------|---------|
-| `blueprints` | Agent + spaceship blueprint catalog (800+ seeded) |
+| `blueprints` | Agent + spaceship blueprint catalog (924 seeded) |
 | `shared_blueprints` | Blueprint sharing via links (8-char codes, 30-day expiry) |
 | `profiles` | Public user profile data (extends auth.users) |
 | `user_agents` | Activated agent instances per user |
@@ -101,7 +101,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 │       ├── nice.js         # Main orchestrator (init, auth, routing, error handling)
 │       ├── lib/            # 36 shared IIFE modules
 │       ├── views/          # 24 view modules
-│       └── __tests__/      # 19 Vitest test files (343 tests)
+│       └── __tests__/      # 22 Vitest test files (405 tests)
 ├── supabase/
 │   └── functions/          # 8 Deno edge functions
 ├── e2e/
@@ -121,12 +121,16 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 | Skin | Aesthetic | Source |
 |------|-----------|--------|
 | NICE (default) | Premium dark command center | Built-in |
-| The Office | Light/warm corporate, real-world terminology | Built-in |
-| Navigator | Electric blue TRON grid | Built-in |
-| Matrix | Digital rain green, terminal | Built-in |
+| HAL-9000 | Sci-fi red/dark HUD | Built-in |
+| The Grid | Electric blue TRON grid | Built-in |
+| The Matrix | Digital rain green, terminal | Built-in |
 | LCARS | Star Trek modular, pastels | Built-in |
 | J.A.R.V.I.S. | Holographic blue HUD, arc reactor | Built-in |
-| + 5 more | Pod, Gundam, 16-bit, Solar, Retro | Built-in |
+| Cyberpunk | Neon pink/cyan, dark | Built-in |
+| RX-78-2 | Gundam blue/red military | Built-in |
+| 16-BIT | Retro pixel art, gold/navy | Built-in |
+| The Office | Light/warm corporate, real-world terminology | Built-in |
+| The Office (dark) | Dark variant of The Office | Custom |
 
 ### Skin CSS Variables
 - `--bg`, `--bg-alt` — background colors
@@ -292,7 +296,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 
 ## Testing
 
-### Unit Tests (Vitest) — 343 tests across 19 files
+### Unit Tests (Vitest) — 405 tests across 22 files
 ```bash
 npm test          # Run all tests
 npm run test:watch  # Watch mode
@@ -306,14 +310,19 @@ Test files: `app/js/__tests__/*.test.js`
 - `router.test.js` — Route matching, param extraction (8 tests)
 - `ship-log.test.js` — Conversation persistence, LLM calls
 - `mission-runner.test.js` — Mission lifecycle management
-- `llm-config.test.js` — Model selection from enabled_models
+- `llm-config.test.js` — Model selection, model_profile precedence
 - `blueprint-store.test.js` — Blueprint CRUD operations
+- `blueprint-markdown.test.js` — Markdown rendering
+- `blueprint-utils-humanize.test.js` — Model name humanizer (11 tests)
+- `card-renderer-tier-pill.test.js` — FREE/PRO tier pill rendering (11 tests)
+- `tool-registry.test.js` — Tool resolver, aliases, primitives (20 tests)
 - `keyboard.test.js` — Shortcut binding and chord system
 - `notify.test.js` — Toast notification system
-- `prompt-builder.test.js` — System prompt construction
+- `prompt-builder.test.js` — System prompt construction, output_schema, eval_criteria
 - `supabase.test.js` — Supabase client wrapper
 - `home-view.test.js` — Home view rendering
 - `missions-view.test.js` — Missions view rendering
+- `virtual-fs.test.js` — Virtual filesystem operations
 
 ### E2E Tests (Playwright) — 14 tests
 ```bash
@@ -330,7 +339,7 @@ npm run test:e2e  # Run all E2E tests
 - `navigateTo(page, hash, title)` — navigates and waits for document.title update
 
 ### CI/CD
-GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (343 tests) → playwright (14 tests) → bundle size check
+GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (405 tests) → playwright (14 tests) → bundle size check
 
 **CI is strict** — both unit and E2E failures block merges.
 
@@ -349,7 +358,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 |------|--------------|-------|
 | Blueprint data | `BlueprintStore` + Supabase `blueprints` table | Never hardcode blueprint lists |
 | Crew slots, rarity, ship classes | `BlueprintUtils` (`blueprint-utils.js`) | Loaded before card-renderer |
-| localStorage keys | `Utils.KEYS` (28 constants) | Never use raw string keys |
+| localStorage keys | `Utils.KEYS` (63 constants) | Never use raw string keys |
 | State keys | `State.KEYS` (10 constants) | Never use raw string keys |
 | Theme definitions | `THEMES` array in `nice.js` → `Theme.BUILTIN` | No separate theme list |
 | Ranks & XP | `Gamification.RANKS` / `XP_ACTIONS` | Never duplicate rank data |
@@ -386,7 +395,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **No speculative abstractions.** Three similar lines > premature helper function.
 - **No unnecessary comments.** Only explain *why*, never *what*. The code shows what.
 - **Escape user content.** Always use `Utils.esc()` before inserting into DOM. No raw `innerHTML` with user data.
-- **Test after changes.** Run `npm test` after editing JS. All 343 tests must pass.
+- **Test after changes.** Run `npm test` after editing JS. All 405 tests must pass.
 - **Mobile-first.** Check changes at 375px. Breakpoints: 480px, 640px, 768px. Always verify desktop + tablet + mobile.
 - **Theme-aware.** Use CSS custom properties (`var(--accent)`, `var(--bg)`), never hardcoded colors.
 - **SSOT.** Before adding a rule, check if one already exists. Never duplicate selectors across media queries.

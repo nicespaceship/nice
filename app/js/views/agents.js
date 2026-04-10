@@ -9,7 +9,7 @@ const AgentsView = (() => {
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
   let _channel = null;
-  let _viewMode = localStorage.getItem('nice-agents-view') || 'full';
+  let _viewMode = localStorage.getItem(Utils.KEYS.agentsView) || 'full';
 
   const _AGENT_VIEW_MODES = [
     { id: 'full',    icon: '&#9638;',       tip: 'Gallery' },
@@ -23,7 +23,7 @@ const AgentsView = (() => {
 
   function render(el) {
     const user = State.get('user');
-    _viewMode = localStorage.getItem('nice-agents-view') || 'full';
+    _viewMode = localStorage.getItem(Utils.KEYS.agentsView) || 'full';
 
     el.innerHTML = `
       <div class="agents-wrap">
@@ -308,7 +308,7 @@ const AgentsView = (() => {
       const btn = e.target.closest('[data-view-mode]');
       if (!btn) return;
       _viewMode = btn.dataset.viewMode;
-      localStorage.setItem('nice-agents-view', _viewMode);
+      localStorage.setItem(Utils.KEYS.agentsView, _viewMode);
       // Update active button
       document.querySelectorAll('#agents-view-modes .mc-dock-view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -700,7 +700,7 @@ const AgentDetailView = (() => {
       document.getElementById('btn-save-template')?.addEventListener('click', () => {
         const name = prompt('Template name:', agent.name + ' Template');
         if (!name) return;
-        const templates = JSON.parse(localStorage.getItem('nice-agent-templates') || '[]');
+        const templates = JSON.parse(localStorage.getItem(Utils.KEYS.agentTemplates) || '[]');
         templates.push({
           id: 'tmpl-' + Date.now(),
           name: name.trim(),
@@ -710,7 +710,7 @@ const AgentDetailView = (() => {
           config: { ...(agent.config || {}) },
           created_at: new Date().toISOString()
         });
-        localStorage.setItem('nice-agent-templates', JSON.stringify(templates));
+        localStorage.setItem(Utils.KEYS.agentTemplates, JSON.stringify(templates));
         if (typeof Notify !== 'undefined') {
           Notify.send({ title: 'Template Saved', message: '"' + name.trim() + '" saved to templates.', type: 'system' });
         }

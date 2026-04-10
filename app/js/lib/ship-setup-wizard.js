@@ -416,7 +416,7 @@ const ShipSetupWizard = (() => {
       actions.querySelector('#ship-wiz-close').addEventListener('click', close);
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {
         close();
-        localStorage.setItem('nice-mc-ship', 'bp-' + _blueprint.id);
+        localStorage.setItem(Utils.KEYS.mcShip, 'bp-' + _blueprint.id);
         // Navigate to schematic — use temporary hash to force re-render
         location.hash = '#/_reload';
         setTimeout(() => { location.hash = '#/bridge?tab=schematic'; }, 50);
@@ -513,9 +513,9 @@ const ShipSetupWizard = (() => {
               State.set('agents', agents);
             }
             try {
-              const stored = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+              const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
               stored.push(newAgent);
-              localStorage.setItem('nice-custom-agents', JSON.stringify(stored));
+              localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
             } catch {}
           }
 
@@ -553,9 +553,9 @@ const ShipSetupWizard = (() => {
           State.set('agents', agents);
         }
         try {
-          const stored = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+          const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
           stored.push(newAgent);
-          localStorage.setItem('nice-custom-agents', JSON.stringify(stored));
+          localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
         } catch {}
         _data.slotAssignments[i] = newAgent.id;
         resolvedAgentIds.push(newAgent.id);

@@ -37,7 +37,7 @@ const HomeView = (() => {
 
     // Bind new chat button
     el.querySelector('#chat-home-new')?.addEventListener('click', () => {
-      try { localStorage.removeItem('nice-ai-messages'); } catch {}
+      try { localStorage.removeItem(Utils.KEYS.aiMessages); } catch {}
       render(el);
     });
 
@@ -66,7 +66,7 @@ const HomeView = (() => {
   function _renderConversation() {
     let messages = [];
     try {
-      const raw = localStorage.getItem('nice-ai-messages');
+      const raw = localStorage.getItem(Utils.KEYS.aiMessages);
       messages = raw ? JSON.parse(raw) : [];
     } catch { messages = []; }
 
@@ -99,7 +99,7 @@ const HomeView = (() => {
 
   function _hasMessages() {
     try {
-      const raw = localStorage.getItem('nice-ai-messages');
+      const raw = localStorage.getItem(Utils.KEYS.aiMessages);
       const msgs = raw ? JSON.parse(raw) : [];
       return msgs.length > 0;
     } catch { return false; }

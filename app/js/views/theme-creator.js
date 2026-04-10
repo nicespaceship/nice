@@ -7,7 +7,7 @@
 
 const ThemeCreatorView = (() => {
   const title = 'Theme Editor';
-  const STORAGE_KEY = 'nice-custom-themes';
+  const STORAGE_KEY = Utils.KEYS.customThemes;
 
   const CSS_VARS = [
     { key: '--bg',        label: 'Background',       default: '#080808' },
@@ -73,7 +73,7 @@ const ThemeCreatorView = (() => {
   // Set of loaded Google Font families (avoid duplicate <link> tags)
   const _loadedFonts = new Set();
 
-  const LIVE_KEY = 'nice-gui-settings';
+  const LIVE_KEY = Utils.KEYS.guiSettings;
   let _liveValues = {};
   let _selectedTheme = null;
 
@@ -561,7 +561,7 @@ const ThemeCreatorView = (() => {
   }
 
   /* ── HUD Dock Selection ── */
-  const DOCK_STORAGE_KEY = 'nice-hud-dock-themes';
+  const DOCK_STORAGE_KEY = Utils.KEYS.hudDockThemes;
 
   function _getDockSelection() {
     try {

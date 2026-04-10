@@ -241,7 +241,7 @@ const MissionRouter = (() => {
     var bp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(agentId) : null;
     if (!bp) {
       try {
-        var custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+        var custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
         bp = custom.find(function(a) { return a.id === agentId; }) || null;
       } catch (e) {}
     }

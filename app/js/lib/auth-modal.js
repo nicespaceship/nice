@@ -152,11 +152,11 @@ const AuthModal = (() => {
       // localStorage flag persists for next browser launch detection
       // sessionStorage flag marks current tab as active session
       if (!remember) {
-        localStorage.setItem('nice-ephemeral-session', '1');
-        sessionStorage.setItem('nice-ephemeral-session', '1');
+        localStorage.setItem(Utils.KEYS.ephemeralSession, '1');
+        sessionStorage.setItem(Utils.KEYS.ephemeralSession, '1');
       } else {
-        localStorage.removeItem('nice-ephemeral-session');
-        sessionStorage.removeItem('nice-ephemeral-session');
+        localStorage.removeItem(Utils.KEYS.ephemeralSession);
+        sessionStorage.removeItem(Utils.KEYS.ephemeralSession);
       }
       close();
       // Re-render current view by re-navigating to the current hash

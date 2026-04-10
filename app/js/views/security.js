@@ -8,7 +8,7 @@ const SecurityView = (() => {
   const title = 'Security';
 
   let _activeTab = 'overview';
-  const LS_KEY = 'nice-security-checklist';
+  const LS_KEY = Utils.KEYS.securityChecklist;
 
   /* ── Demo threat events ─────────────────────────────────────── */
   const DEMO_THREATS = [

@@ -88,7 +88,7 @@ const BlueprintsView = (() => {
   let _activeTab = 'schematic';
   let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship' or 'agent'
   const _mobileDefault = window.innerWidth <= 768 ? 'compact' : 'card';
-  let _viewMode = localStorage.getItem('nice-bp-view') || _mobileDefault;
+  let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || _mobileDefault;
   if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _mobileDefault;
   let _colSort = { key: null, dir: 'asc' }; // column header sort state
 
@@ -233,7 +233,7 @@ const BlueprintsView = (() => {
   }
 
   function _getUserRatings() {
-    try { return JSON.parse(localStorage.getItem('nice-bp-ratings') || '{}'); } catch(e) { return {}; }
+    try { return JSON.parse(localStorage.getItem(Utils.KEYS.bpRatings) || '{}'); } catch(e) { return {}; }
   }
 
   function _showPreview(bpId) {
@@ -1585,7 +1585,7 @@ const BlueprintsView = (() => {
       const btn = e.target.closest('.bp-view-btn');
       if (!btn) return;
       _viewMode = btn.dataset.view;
-      localStorage.setItem('nice-bp-view', _viewMode);
+      localStorage.setItem(Utils.KEYS.bpView, _viewMode);
       document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       _applyFilters();
@@ -1661,7 +1661,7 @@ const BlueprintsView = (() => {
             Router.navigate('#/bridge/agents/new');
           }
           // Store parsed data for the builder to pick up
-          sessionStorage.setItem('nice-import-bp', JSON.stringify(bp));
+          sessionStorage.setItem(Utils.KEYS.importBp, JSON.stringify(bp));
           if (typeof Notify !== 'undefined') Notify.send('Blueprint parsed — fill in the builder form', 'success');
         });
       }

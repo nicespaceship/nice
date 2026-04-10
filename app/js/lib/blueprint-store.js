@@ -103,7 +103,7 @@ const BlueprintStore = (() => {
    */
   function _resolveNewAgents() {
     let dirty = false;
-    const customAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+    const customAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
     const customById = new Map(customAgents.map(a => [a.id, a]));
 
     for (const [shipId, state] of Object.entries(_shipState)) {
@@ -207,7 +207,7 @@ const BlueprintStore = (() => {
     }
 
     if (dirty) {
-      localStorage.setItem('nice-custom-agents', JSON.stringify(customAgents));
+      localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(customAgents));
       _persistAgents();
       _persistShipState();
     }
@@ -760,7 +760,7 @@ const BlueprintStore = (() => {
       a = (State.get('agents') || []).find(a => a.id === id);
       if (a) return a;
     }
-    try { a = (JSON.parse(localStorage.getItem('nice-custom-agents') || '[]')).find(a => a.id === id); } catch {}
+    try { a = (JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]')).find(a => a.id === id); } catch {}
     return a || null;
   }
 
@@ -887,7 +887,7 @@ const BlueprintStore = (() => {
         bp = (State.get('agents') || []).find(a => a.id === bpId);
       }
       if (!bp) {
-        try { bp = (JSON.parse(localStorage.getItem('nice-custom-agents') || '[]')).find(a => a.id === bpId); } catch {}
+        try { bp = (JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]')).find(a => a.id === bpId); } catch {}
       }
       if (!bp) return;
       const lookupId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
@@ -992,9 +992,9 @@ const BlueprintStore = (() => {
         _activatedAgentIds = _activatedAgentIds.filter(id => id !== agentId);
         // Also remove from custom agents
         try {
-          const custom = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+          const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
           const filtered = custom.filter(a => a.id !== agentId);
-          if (filtered.length !== custom.length) localStorage.setItem('nice-custom-agents', JSON.stringify(filtered));
+          if (filtered.length !== custom.length) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
         } catch {}
       }
       _persistAgents();
@@ -1072,7 +1072,7 @@ const BlueprintStore = (() => {
       // Also check localStorage for persisted custom ships
       if (!bp) {
         try {
-          const stored = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+          const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
           bp = stored.find(s => s.id === bpId || s.id === shipId);
         } catch {}
       }
@@ -1472,7 +1472,7 @@ const BlueprintStore = (() => {
 
     // Migrate guest agents
     try {
-      const guestAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+      const guestAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
       const toMigrate = guestAgents.filter(a => a._guest);
       for (const agent of toMigrate) {
         const { _guest, id, ...row } = agent;
@@ -1487,13 +1487,13 @@ const BlueprintStore = (() => {
           }
         } catch (e) { /* skip duplicates */ }
       }
-      localStorage.setItem('nice-custom-agents', JSON.stringify(guestAgents));
+      localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(guestAgents));
       _persistAgents();
     } catch {}
 
     // Migrate guest ships
     try {
-      const guestShips = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+      const guestShips = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
       const toMigrate = guestShips.filter(s => s._guest);
       for (const ship of toMigrate) {
         const { _guest, id, ...row } = ship;
@@ -1507,7 +1507,7 @@ const BlueprintStore = (() => {
           }
         } catch (e) { /* skip duplicates */ }
       }
-      localStorage.setItem('nice-custom-ships', JSON.stringify(guestShips));
+      localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(guestShips));
       _persistShips();
     } catch {}
 

@@ -104,7 +104,7 @@ const DockView = (() => {
     container.querySelectorAll('.dock-ship-card').forEach(card => {
       card.addEventListener('click', () => {
         const id = card.dataset.shipId;
-        localStorage.setItem('nice-mc-ship', id);
+        localStorage.setItem(Utils.KEYS.mcShip, id);
         render(document.getElementById('app-view'));
       });
     });
@@ -613,7 +613,7 @@ const DockView = (() => {
   }
 
   function _getShipId() {
-    const stored = localStorage.getItem('nice-mc-ship');
+    const stored = localStorage.getItem(Utils.KEYS.mcShip);
     if (stored) return _normalizeShipId(stored);
     const ships = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
     return ships.length ? _normalizeShipId(ships[0].id) : null;
