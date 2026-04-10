@@ -784,8 +784,7 @@ const BlueprintsView = (() => {
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
     if (rarity !== 'all') {
-      if (type === 'spaceship') items = items.filter(b => b.recommended_class === rarity);
-      else items = items.filter(b => (b.rarity || 'Common') === rarity);
+      items = items.filter(b => (b.rarity || 'Common') === rarity);
     }
 
     // Hide section if all activated items are filtered out
@@ -910,8 +909,7 @@ const BlueprintsView = (() => {
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
     if (rarity !== 'all') {
-      if (_subTab === 'spaceship') list = list.filter(b => b.recommended_class === rarity);
-      else list = list.filter(b => (b.rarity || 'Common') === rarity);
+      list = list.filter(b => (b.rarity || 'Common') === rarity);
     }
 
     if (sort === 'popular') {
