@@ -140,7 +140,7 @@ const BlueprintsView = (() => {
         <div class="bp-sub-tabs" id="bp-sub-tabs">
           <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="community">Community <span class="bp-tab-count">0</span></button>
+          <button class="bp-sub-tab" data-sub="community">Forge <span class="bp-tab-count">0</span></button>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -303,7 +303,7 @@ const BlueprintsView = (() => {
     }
 
     const rendered = CR.render('agent', 'full', bp, { clickClass: 'bp-card-clickable' });
-    const communityBadge = bp._community ? '<span class="bp-community-badge">Community</span>' : '';
+    const communityBadge = bp._community ? '<span class="bp-community-badge">Forge</span>' : '';
     const userBadge = bp._community && bp._creator_id === (State.get('user')?.id) ? '<span class="bp-yours-badge">Yours</span>' : '';
     return `<div class="bp-card-wrap">${rendered}${communityBadge}${userBadge}${connectBtn ? `<div class="bp-card-buttons">${connectBtn}</div>` : ''}</div>`;
   }
@@ -380,8 +380,8 @@ const BlueprintsView = (() => {
         grid.innerHTML = `
           <div class="app-empty">
             <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <h2>No Community Blueprints Yet</h2>
-            <p>Be the first to share! Publish one of your agents to the community.</p>
+            <h2>The Forge is Empty</h2>
+            <p>Be the first to share! Publish one of your agents to the Forge.</p>
             <div class="app-empty-acts">
               <a href="#/bridge?tab=agent" class="btn btn-sm btn-primary">Browse Your Agents</a>
             </div>
@@ -2021,7 +2021,7 @@ const BlueprintsView = (() => {
       // Publish to community (for user-created agents)
       const userAgents = State.get('agents') || [];
       if (userAgents.find(a => a.id === bp.id)) {
-        btns.push(`<button class="btn btn-sm bp-drawer-publish" data-id="${bp.id}">Publish to Community</button>`);
+        btns.push(`<button class="btn btn-sm bp-drawer-publish" data-id="${bp.id}">Publish to Forge</button>`);
       }
     } else if (type === 'community') {
       btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-activate" data-id="${bp._submission_id}">Activate Agent</button>`);
@@ -2663,7 +2663,7 @@ const BlueprintsView = (() => {
         status: 'approved',
       });
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Published!', message: `${agent.name} is now in the Community marketplace.`, type: 'success' });
+        Notify.send({ title: 'Published!', message: `${agent.name} is now in the Forge.`, type: 'success' });
       }
       if (typeof Gamification !== 'undefined') Gamification.addXP('publish_blueprint');
     } catch (err) {
@@ -2677,9 +2677,9 @@ const BlueprintsView = (() => {
     overlay.className = 'bp-confirm-overlay';
     overlay.innerHTML = `
       <div class="bp-confirm-modal">
-        <h3>Publish to Community</h3>
-        <p>Share <span class="bp-confirm-name">${_esc(name)}</span> with the NICE community?</p>
-        <p class="bp-confirm-warning" style="color:var(--text-muted)">Other users will be able to browse, rate, and activate this blueprint.</p>
+        <h3>Publish to the Forge</h3>
+        <p>Share <span class="bp-confirm-name">${_esc(name)}</span> with the NICE fleet?</p>
+        <p class="bp-confirm-warning" style="color:var(--text-muted)">Other pilots will be able to browse, rate, and activate this blueprint.</p>
         <div class="bp-confirm-actions">
           <button class="bp-confirm-cancel">Cancel</button>
           <button class="bp-confirm-submit" style="background:var(--accent);color:#fff">Publish</button>
