@@ -7044,6 +7044,9 @@
 .bp-drawer-social .bp-star { cursor:pointer; font-size:1rem; }
 .bp-drawer-social .bp-star.filled { color:var(--color-warning); }
 .bp-drawer-social .bp-star:hover { color:#fbbf24; }
+.bp-star-interactive { transition:transform .12s; cursor:pointer; }
+.bp-star-interactive:hover { transform:scale(1.3); }
+.bp-star.user-rated { color:var(--accent); }
 .bp-drawer-deps {
   background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.3);
   border-radius:var(--radius); padding:10px 14px; font-size:.75rem;
