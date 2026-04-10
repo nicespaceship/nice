@@ -122,6 +122,8 @@ loadScriptGlobal('lib/mission-router.js');
 loadScriptGlobal('lib/tool-registry.js');
 loadScriptGlobal('lib/virtual-fs.js');
 loadScriptGlobal('lib/browser-tools.js');
+loadScriptGlobal('lib/blueprint-utils.js');
+loadScriptGlobal('lib/card-renderer.js');
 
 // Reset helper
 beforeEach(() => {

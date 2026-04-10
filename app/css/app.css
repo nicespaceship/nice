@@ -5450,6 +5450,29 @@
 .tcg-card-compact[data-tier="flagship"]          { border-color:var(--color-warning)40; box-shadow:0 0 16px rgba(245,158,11,.2); }
 
 
+/* ── Runtime tier pill (FREE / PRO) — model_profile.tier indicator ──
+   Shown on full + grid cards so users can tell at a glance which agents
+   cost tokens before activating. Semantic colors override the active
+   theme so the meaning is consistent: green = free, gold = premium. */
+.tcg-tier-pill {
+  display:inline-block;
+  font-size:.55rem;
+  line-height:1;
+  padding:2px 5px;
+  border-radius:3px;
+  border:1px solid;
+  letter-spacing:.06em;
+  font-family:var(--font-b, system-ui, sans-serif);
+  font-weight:700;
+  text-transform:uppercase;
+  vertical-align:middle;
+  margin-left:4px;
+  flex-shrink:0;
+}
+.tcg-tier-pill--free    { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,.08); }
+.tcg-tier-pill--premium { color:#f59e0b; border-color:#f59e0b; background:rgba(245,158,11,.08); }
+
+
 /* ── Card enhancements — glass, shimmer, glow, hover lift ── */
 
 
