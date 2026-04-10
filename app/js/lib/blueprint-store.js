@@ -1417,6 +1417,91 @@ const BlueprintStore = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     Community Marketplace
+  ═══════════════════════════════════════════════════════════════ */
+
+  function _mapSubmissionToBlueprint(r) {
+    const d = r.agent_data || {};
+    return {
+      id: r.id, name: d.name || 'Community Agent',
+      category: d.category || d.config?.role || 'Custom',
+      rarity: d.rarity || 'Common',
+      rating: r.avg_rating || 0, downloads: r.download_count || 0,
+      description: d.description || '', art: d.art || 'intelligence',
+      flavor: d.flavor || '', card_num: 'CM-' + String(r.id).slice(-3),
+      agentType: d.config?.type || 'Agent', type: 'agent',
+      tags: d.tags || ['community'], caps: d.caps || [],
+      stats: d.stats || {}, config: d.config || {},
+      _community: true, _submission_id: r.id,
+      _creator_id: r.user_id, created_at: r.created_at,
+    };
+  }
+
+  async function listCommunityBlueprints() {
+    if (typeof SB === 'undefined' || !SB.isReady() || !SB.client) return [];
+    try {
+      const { data, error } = await SB.client.from('blueprint_submissions')
+        .select('*').eq('status', 'approved')
+        .order('created_at', { ascending: false }).limit(200);
+      if (error) throw error;
+      return (data || []).map(_mapSubmissionToBlueprint);
+    } catch (e) {
+      console.warn('[BlueprintStore] Community load failed:', e.message);
+      return [];
+    }
+  }
+
+  async function rateBlueprint(submissionId, rating) {
+    const c = SB.client;
+    if (!c) throw new Error('Not connected');
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) throw new Error('Sign in to rate');
+
+    const { error } = await c.from('blueprint_ratings')
+      .upsert({ user_id: user.id, blueprint_id: submissionId, rating },
+              { onConflict: 'user_id,blueprint_id' });
+    if (error) throw error;
+
+    // Recompute average
+    const { data: ratings } = await c.from('blueprint_ratings')
+      .select('rating').eq('blueprint_id', submissionId);
+    if (ratings && ratings.length) {
+      const avg = ratings.reduce((s, r) => s + r.rating, 0) / ratings.length;
+      await c.from('blueprint_submissions')
+        .update({ avg_rating: Math.round(avg * 100) / 100 })
+        .eq('id', submissionId);
+    }
+    return true;
+  }
+
+  async function getUserRating(submissionId) {
+    const c = SB.client;
+    if (!c) return 0;
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) return 0;
+    try {
+      const { data } = await c.from('blueprint_ratings')
+        .select('rating').eq('user_id', user.id).eq('blueprint_id', submissionId)
+        .maybeSingle();
+      return data?.rating || 0;
+    } catch { return 0; }
+  }
+
+  async function incrementDownloadCount(submissionId) {
+    const c = SB.client;
+    if (!c) return;
+    try {
+      const { data } = await c.from('blueprint_submissions')
+        .select('download_count').eq('id', submissionId).single();
+      if (data) {
+        c.from('blueprint_submissions')
+          .update({ download_count: (data.download_count || 0) + 1 })
+          .eq('id', submissionId).then(() => {});
+      }
+    } catch {}
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      Public API
   ═══════════════════════════════════════════════════════════════ */
 
@@ -1459,6 +1544,9 @@ const BlueprintStore = (() => {
 
     // Sharing
     shareBlueprint, importSharedBlueprint,
+
+    // Community marketplace
+    listCommunityBlueprints, rateBlueprint, getUserRating, incrementDownloadCount,
   };
 
   /**

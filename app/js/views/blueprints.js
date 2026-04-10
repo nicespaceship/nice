@@ -140,6 +140,7 @@ const BlueprintsView = (() => {
         <div class="bp-sub-tabs" id="bp-sub-tabs">
           <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
+          <button class="bp-sub-tab" data-sub="community">Community <span class="bp-tab-count">0</span></button>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -211,7 +212,7 @@ const BlueprintsView = (() => {
     const _tabParam = _hashParams.get('tab');
     const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'log', 'tron'];
     if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-    else if (_tabParam === 'spaceship' || _tabParam === 'agent') { _activeTab = 'blueprints'; _subTab = _tabParam; }
+    else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'community') { _activeTab = 'blueprints'; _subTab = _tabParam; }
     else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
     else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
     else if (_hash === '#/log') _activeTab = 'missions';
@@ -603,6 +604,15 @@ const BlueprintsView = (() => {
     return s;
   }
 
+  function _renderInteractiveStars(avgRating, userRating, submissionId) {
+    let s = '';
+    for (let i = 1; i <= 5; i++) {
+      const cls = i <= userRating ? 'user-rated' : i <= Math.round(avgRating) ? 'filled' : '';
+      s += `<span class="bp-star bp-star-interactive ${cls}" data-rating="${i}" data-submission="${_esc(submissionId)}">★</span>`;
+    }
+    return s;
+  }
+
   function _formatNum(n) {
     if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
     return String(n);
@@ -840,6 +850,40 @@ const BlueprintsView = (() => {
     // Show loading state
     _isLoading = true;
     _showLoadingState(append);
+
+    // Community sub-tab: separate data source
+    if (_subTab === 'community') {
+      try {
+        const all = await BlueprintStore.listCommunityBlueprints();
+        _communityBlueprints = all;
+        let filtered = all;
+        if (q) {
+          const tokens = q.toLowerCase().split(/\s+/);
+          filtered = all.filter(b => {
+            const hay = ((b.name || '') + ' ' + (b.description || '') + ' ' + (b.tags || []).join(' ')).toLowerCase();
+            return tokens.every(t => hay.includes(t));
+          });
+        }
+        if (category) filtered = filtered.filter(b => (b.category || '').toLowerCase() === category.toLowerCase());
+        if (rarity !== 'all') filtered = filtered.filter(b => (b.rarity || 'Common') === rarity);
+        if (sort === 'rating') filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        else if (sort === 'popular') filtered.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
+        _currentResults = filtered;
+        _totalResults = filtered.length;
+        const badge = document.querySelector('.bp-sub-tab[data-sub="community"] .bp-tab-count');
+        if (badge) badge.textContent = all.length;
+        _renderGrid(_currentResults);
+        _renderLoadMore();
+        _updateResultBar(q, rarity);
+      } catch (err) {
+        console.warn('[Blueprints] Community load failed:', err);
+        _currentResults = [];
+        _renderGrid([]);
+      } finally {
+        _isLoading = false;
+      }
+      return;
+    }
 
     try {
       const result = await BlueprintStore.searchCatalog({
@@ -1736,6 +1780,9 @@ const BlueprintsView = (() => {
     const stateAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
     const ua = stateAgents.find(b => b.id === bpId);
     if (ua) return { bp: ua, type: 'agent' };
+    // Community blueprints
+    const comm = _communityBlueprints.find(b => b.id === bpId);
+    if (comm) return { bp: comm, type: 'community' };
     return null;
   }
 
@@ -1835,9 +1882,12 @@ const BlueprintsView = (() => {
 
     // Social row
     const connCount = _connCount(bp);
-    const ratingHTML = _renderStars(bp.rating || 0);
+    const isCommunity = bp._community && bp._submission_id;
+    const ratingHTML = isCommunity
+      ? _renderInteractiveStars(bp.rating || 0, 0, bp._submission_id)
+      : _renderStars(bp.rating || 0);
     const socialHTML = `<div class="bp-drawer-social">
-      <span class="bp-stars">${ratingHTML}</span>
+      <span class="bp-stars" id="bp-drawer-stars">${ratingHTML}</span>
       <span style="opacity:.6;font-size:.75rem">${_formatNum(bp.downloads || connCount)} installs</span>
     </div>`;
 
@@ -1944,6 +1994,13 @@ const BlueprintsView = (() => {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="agent">Message ${_esc(bp.name)}</button>`);
       }
       btns.push(`<button class="btn btn-sm bp-drawer-nav" data-route="#/agents/${encodeURIComponent(bp.id)}">View Agent &rarr;</button>`);
+      // Publish to community (for user-created agents)
+      const userAgents = State.get('agents') || [];
+      if (userAgents.find(a => a.id === bp.id)) {
+        btns.push(`<button class="btn btn-sm bp-drawer-publish" data-id="${bp.id}">Publish to Community</button>`);
+      }
+    } else if (type === 'community') {
+      btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-activate" data-id="${bp._submission_id}">Activate Agent</button>`);
     } else if (type === 'spaceship') {
       const isAct = BlueprintStore.isShipActivated(bp.id);
       if (isAct) {
@@ -2090,6 +2147,66 @@ const BlueprintsView = (() => {
     // Related blueprint clicks
     drawer.querySelectorAll('.bp-drawer-related-card').forEach(card => {
       card.addEventListener('click', () => _openDrawer(card.dataset.id));
+    });
+
+    // Interactive star rating (community blueprints)
+    drawer.querySelectorAll('.bp-star-interactive').forEach(star => {
+      star.addEventListener('click', async () => {
+        const rating = parseInt(star.dataset.rating, 10);
+        const subId = star.dataset.submission;
+        if (!rating || !subId) return;
+        try {
+          await BlueprintStore.rateBlueprint(subId, rating);
+          // Update stars inline
+          const container = document.getElementById('bp-drawer-stars');
+          if (container) container.innerHTML = _renderInteractiveStars(rating, rating, subId);
+          // Re-bind new star elements
+          container?.querySelectorAll('.bp-star-interactive').forEach(s => {
+            s.addEventListener('click', async () => {
+              const r = parseInt(s.dataset.rating, 10);
+              await BlueprintStore.rateBlueprint(subId, r);
+              if (container) container.innerHTML = _renderInteractiveStars(r, r, subId);
+            });
+          });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Rated!', message: `You gave ${rating} star${rating !== 1 ? 's' : ''}`, type: 'success' });
+        } catch (err) {
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Rating failed', message: err.message, type: 'error' });
+        }
+      });
+    });
+
+    // Publish to Community
+    drawer.querySelector('.bp-drawer-publish')?.addEventListener('click', () => {
+      confirmDeactivate(bp.name + ' to Community', async () => {
+        await _publishBlueprint(bp.id);
+      });
+    });
+
+    // Activate community blueprint
+    drawer.querySelector('.bp-drawer-community-activate')?.addEventListener('click', async () => {
+      const subId = bp._submission_id;
+      if (!subId) return;
+      const user = State.get('user');
+      if (!user) return;
+      try {
+        // Create user agent from community blueprint data
+        const agentData = {
+          user_id: user.id,
+          name: bp.name,
+          role: bp.config?.role || bp.category || 'Custom',
+          type: bp.config?.type || 'Agent',
+          llm_engine: bp.config?.llm_engine || 'gemini-2.5-flash',
+          config: bp.config || {},
+          rarity: bp.rarity || 'Common',
+        };
+        await SB.db('user_agents').create(agentData);
+        BlueprintStore.incrementDownloadCount(subId);
+        if (typeof Gamification !== 'undefined') Gamification.addXP('create_robot');
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Activated!', message: `${bp.name} added to your agents.`, type: 'success' });
+        _closeDrawer();
+      } catch (err) {
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Activation failed', message: err.message, type: 'error' });
+      }
     });
   }
 
@@ -2518,11 +2635,12 @@ const BlueprintsView = (() => {
           },
           tags: ['community'],
         },
-        status: 'pending',
+        status: 'approved',
       });
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Blueprint Submitted', message: `${agent.name} submitted for community review.`, type: 'system' });
+        Notify.send({ title: 'Published!', message: `${agent.name} is now in the Community marketplace.`, type: 'success' });
       }
+      if (typeof Gamification !== 'undefined') Gamification.addXP('publish_blueprint');
     } catch (err) {
       console.warn('Publish failed:', err.message);
     }
