@@ -90,5 +90,143 @@ describe('PromptBuilder', () => {
     expect(result).not.toContain('Tools available:');
     expect(result).not.toContain('Operating parameters:');
     expect(result).not.toContain('Classification:');
+    expect(result).not.toContain('Output format');
+    expect(result).not.toContain('Example 1:');
+    expect(result).not.toContain('Quality criteria');
+  });
+
+  describe('output_schema', () => {
+    it('renders a flat shape into a JSON-shaped output section', () => {
+      const bp = {
+        name: 'Email Bot',
+        config: {
+          role: 'Comms',
+          output_schema: { subject: 'string', body: 'string', to: 'email' },
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('Output format');
+      expect(result).toContain('- subject (string)');
+      expect(result).toContain('- body (string)');
+      expect(result).toContain('- to (email)');
+    });
+
+    it('renders a JSON Schema with properties + descriptions', () => {
+      const bp = {
+        name: 'Order Bot',
+        config: {
+          role: 'Ops',
+          output_schema: {
+            description: 'an order confirmation',
+            properties: {
+              order_id: { type: 'string', description: 'Stripe order id' },
+              total:    { type: 'number' },
+            },
+          },
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('Output format — an order confirmation:');
+      expect(result).toContain('- order_id (string) — Stripe order id');
+      expect(result).toContain('- total (number)');
+    });
+
+    it('skips an empty schema', () => {
+      const bp = { name: 'X', config: { role: 'Ops', output_schema: {} } };
+      const result = PromptBuilder.build(bp);
+      expect(result).not.toContain('Output format');
+    });
+  });
+
+  describe('example_io', () => {
+    it('renders one example with string input/output', () => {
+      const bp = {
+        name: 'Echo',
+        config: {
+          role: 'Test',
+          example_io: [{ input: 'say hello', output: 'hello' }],
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('Example 1:');
+      expect(result).toContain('Input: say hello');
+      expect(result).toContain('Output: hello');
+    });
+
+    it('serializes object input/output as JSON', () => {
+      const bp = {
+        name: 'JSON Bot',
+        config: {
+          role: 'Data',
+          example_io: [{
+            input:  { user: 'alice', action: 'login' },
+            output: { ok: true, ts: 123 },
+          }],
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('"user": "alice"');
+      expect(result).toContain('"ok": true');
+    });
+
+    it('caps at 3 examples', () => {
+      const bp = {
+        name: 'Many',
+        config: {
+          role: 'Ops',
+          example_io: [
+            { input: 'a', output: '1' },
+            { input: 'b', output: '2' },
+            { input: 'c', output: '3' },
+            { input: 'd', output: '4' },
+            { input: 'e', output: '5' },
+          ],
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('Example 1:');
+      expect(result).toContain('Example 2:');
+      expect(result).toContain('Example 3:');
+      expect(result).not.toContain('Example 4:');
+    });
+
+    it('skips malformed examples missing input or output', () => {
+      const bp = {
+        name: 'Bad',
+        config: {
+          role: 'X',
+          example_io: [{ input: 'orphan' }, null, { output: 'nope' }],
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).not.toContain('Example 1:');
+    });
+  });
+
+  describe('eval_criteria', () => {
+    it('renders quality criteria as a bulleted list', () => {
+      const bp = {
+        name: 'Strict Bot',
+        config: {
+          role: 'QA',
+          eval_criteria: [
+            'Output is valid JSON',
+            'All fields are present',
+            'Tone matches the brand voice',
+          ],
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('Quality criteria');
+      expect(result).toContain('- Output is valid JSON');
+      expect(result).toContain('- All fields are present');
+      expect(result).toContain('- Tone matches the brand voice');
+    });
+
+    it('skips empty criteria array', () => {
+      const bp = { name: 'X', config: { role: 'X', eval_criteria: [] } };
+      const result = PromptBuilder.build(bp);
+      expect(result).not.toContain('Quality criteria');
+    });
   });
 });
