@@ -25,19 +25,41 @@ const LLMConfig = (() => {
 
   /**
    * Full config from a blueprint object.
+   *
+   * Resolution order for model + params:
+   *   1. blueprint.config.model_profile (preferred — explicit declaration)
+   *   2. blueprint.config.llm_engine    (legacy — single field)
+   *   3. blueprint.stats                (cosmetic — derived envelope)
+   *
    * @param {Object} bp - Blueprint with stats & config
-   * @returns {Object} LLM params + model
+   * @returns {Object} { model, fallback?, temperature, max_tokens, stream, rate_limit, tier? }
    */
   function forBlueprint(bp) {
-    const params = fromStats(bp.stats || {});
-    let model = (bp.config && bp.config.llm_engine) || 'claude-haiku-4-5-20251001';
-    // Resolve NICE Auto via Model Intelligence
+    const params = fromStats((bp && bp.stats) || {});
+    const cfg = (bp && bp.config) || {};
+    const profile = cfg.model_profile || null;
+
+    // Model selection — model_profile.preferred wins, then llm_engine
+    let model = (profile && profile.preferred) || cfg.llm_engine || 'claude-haiku-4-5-20251001';
     if (model === 'nice-auto' && typeof ModelIntel !== 'undefined') {
-      const enabled = State.get('enabled_models') || {};
+      const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
       const connected = Object.keys(enabled).filter(k => enabled[k]);
-      model = ModelIntel.bestModel(bp.id, connected) || 'claude-haiku-4-5-20251001';
+      model = ModelIntel.bestModel(bp && bp.id, connected) || 'claude-haiku-4-5-20251001';
     }
     params.model = model;
+
+    // model_profile overrides — explicit values trump stat-derived envelope
+    if (profile) {
+      if (profile.fallback) params.fallback = profile.fallback;
+      if (typeof profile.temperature === 'number') {
+        params.temperature = Math.max(0, Math.min(2, profile.temperature));
+      }
+      if (typeof profile.max_output_tokens === 'number' && profile.max_output_tokens > 0) {
+        params.max_tokens = Math.round(profile.max_output_tokens);
+      }
+      if (profile.tier) params.tier = profile.tier;
+    }
+
     return params;
   }
 

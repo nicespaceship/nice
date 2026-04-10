@@ -46,10 +46,6 @@ const PromptBuilder = (() => {
       parts.push('Tools available: ' + tools.join(', ') + '.');
     }
 
-    // ── Operating Parameters ──
-    const statsLine = _statsLine(blueprint.stats);
-    if (statsLine) parts.push(statsLine);
-
     // ── Classification ──
     const rarity = blueprint.rarity || '';
     if (rarity) parts.push('Classification: ' + rarity + '.');
@@ -166,17 +162,6 @@ const PromptBuilder = (() => {
     });
     if (!blocks.length) return '';
     return blocks.join('\n\n');
-  }
-
-  /* ── Build one-line stats summary ── */
-  function _statsLine(stats) {
-    if (!stats) return '';
-    var parts = [];
-    if (stats.acc) parts.push('Accuracy: ' + stats.acc);
-    if (stats.cap) parts.push('Capacity: ' + stats.cap);
-    if (stats.spd) parts.push('Speed: ' + stats.spd);
-    if (!parts.length) return '';
-    return 'Operating parameters: ' + parts.join(', ') + '.';
   }
 
   return { build };

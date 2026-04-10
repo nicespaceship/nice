@@ -73,6 +73,72 @@ describe('LLMConfig', () => {
     });
   });
 
+  describe('forBlueprint with model_profile', () => {
+    it('uses model_profile.preferred over llm_engine', () => {
+      const bp = {
+        config: {
+          llm_engine: 'gpt-4o',
+          model_profile: { preferred: 'claude-opus-4-6' },
+        },
+      };
+      expect(LLMConfig.forBlueprint(bp).model).toBe('claude-opus-4-6');
+    });
+
+    it('falls back to llm_engine when model_profile is absent', () => {
+      const bp = { config: { llm_engine: 'gpt-4o' } };
+      expect(LLMConfig.forBlueprint(bp).model).toBe('gpt-4o');
+    });
+
+    it('overrides stat-derived temperature with model_profile.temperature', () => {
+      const bp = {
+        stats: { acc: 100 }, // would otherwise produce temperature: 0.1
+        config: { model_profile: { preferred: 'gemini-2.5-flash', temperature: 0.85 } },
+      };
+      expect(LLMConfig.forBlueprint(bp).temperature).toBe(0.85);
+    });
+
+    it('clamps temperature to [0, 2]', () => {
+      const high = LLMConfig.forBlueprint({ config: { model_profile: { temperature: 5 } } });
+      const low  = LLMConfig.forBlueprint({ config: { model_profile: { temperature: -1 } } });
+      expect(high.temperature).toBe(2);
+      expect(low.temperature).toBe(0);
+    });
+
+    it('overrides max_tokens with model_profile.max_output_tokens', () => {
+      const bp = {
+        stats: { pwr: 50 }, // would otherwise produce ~4352
+        config: { model_profile: { max_output_tokens: 1024 } },
+      };
+      expect(LLMConfig.forBlueprint(bp).max_tokens).toBe(1024);
+    });
+
+    it('exposes fallback model and tier when present', () => {
+      const bp = {
+        config: {
+          model_profile: {
+            preferred: 'claude-sonnet-4-6',
+            fallback:  'gemini-2.5-flash',
+            tier:      'premium',
+          },
+        },
+      };
+      const cfg = LLMConfig.forBlueprint(bp);
+      expect(cfg.model).toBe('claude-sonnet-4-6');
+      expect(cfg.fallback).toBe('gemini-2.5-flash');
+      expect(cfg.tier).toBe('premium');
+    });
+
+    it('ignores invalid max_output_tokens (non-number, zero, negative)', () => {
+      const bp1 = { stats: { pwr: 50 }, config: { model_profile: { max_output_tokens: 0 } } };
+      const bp2 = { stats: { pwr: 50 }, config: { model_profile: { max_output_tokens: -100 } } };
+      const bp3 = { stats: { pwr: 50 }, config: { model_profile: { max_output_tokens: '1024' } } };
+      // All three should fall back to stat-derived max_tokens (~4352 for pwr 50)
+      expect(LLMConfig.forBlueprint(bp1).max_tokens).toBeGreaterThan(1000);
+      expect(LLMConfig.forBlueprint(bp2).max_tokens).toBeGreaterThan(1000);
+      expect(LLMConfig.forBlueprint(bp3).max_tokens).toBeGreaterThan(1000);
+    });
+  });
+
   describe('_num (via fromStats)', () => {
     it('should handle string percentages', () => {
       // acc of "94%" → 94 numeric → temperature ≈ 0.06 → clamped to 0.1

@@ -46,9 +46,17 @@ describe('PromptBuilder', () => {
     expect(result).toContain('- Web, paper & database search');
     expect(result).toContain('- 2,000 briefings/month');
     expect(result).toContain('Tools available: Web Search, Database, Summarize.');
-    expect(result).toContain('Accuracy: 94%');
     expect(result).toContain('Classification: Rare.');
     expect(result).toContain('The first question is never the last.');
+  });
+
+  it('does not include cosmetic stats in the prompt (handled by LLMConfig)', () => {
+    const result = PromptBuilder.build(FULL_BLUEPRINT);
+    expect(result).not.toContain('Operating parameters');
+    expect(result).not.toContain('Accuracy:');
+    expect(result).not.toContain('Speed:');
+    // Raw HTML entities from the stats payload should never reach the prompt
+    expect(result).not.toContain('&#8734;');
   });
 
   it('includes crew context when provided', () => {
