@@ -49,10 +49,16 @@ const MissionsView = (() => {
               <input type="text" id="task-search" class="search-input" placeholder="Search missions..." />
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" id="btn-new-task">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-            New Mission
-          </button>
+          <div style="display:flex;gap:8px">
+            <a href="#/workflows" class="btn btn-sm" style="text-decoration:none">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
+              Workflows
+            </a>
+            <button class="btn btn-primary btn-sm" id="btn-new-task">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
+              New Mission
+            </button>
+          </div>
         </div>
 
         <!-- Gauge Strip -->
