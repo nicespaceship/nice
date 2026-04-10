@@ -1871,10 +1871,30 @@ const BlueprintsView = (() => {
     if (type === 'agent') {
       const c = bp.config || {};
       const s = bp.stats || {};
+      const profile = c.model_profile || null;
+      const _humanize = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.humanizeModel)
+        ? BlueprintUtils.humanizeModel
+        : (id) => id || '—';
+
       rows.push(['Role', c.role || bp.category || '—']);
       rows.push(['Type', c.type || '—']);
-      const modelLabel = c.llm_engine === 'nice-auto' ? 'NICE Auto' : (c.llm_engine || '—');
-      rows.push(['Model', modelLabel]);
+      // Runtime model — model_profile.preferred wins, falls back to legacy llm_engine
+      const modelId = (profile && profile.preferred) || c.llm_engine || '';
+      rows.push(['Model', modelId ? _humanize(modelId) : '—']);
+      // Surface the rest of model_profile so users see what they're getting
+      if (profile) {
+        if (profile.tier) {
+          const tierLabel = profile.tier === 'premium' ? 'Premium (token cost)' : 'Free (no cost)';
+          rows.push(['Tier', tierLabel]);
+        }
+        if (profile.fallback) rows.push(['Fallback', _humanize(profile.fallback)]);
+        if (typeof profile.temperature === 'number') {
+          rows.push(['Temperature', String(profile.temperature)]);
+        }
+        if (typeof profile.max_output_tokens === 'number') {
+          rows.push(['Max Output', profile.max_output_tokens.toLocaleString() + ' tokens']);
+        }
+      }
       rows.push(['Rarity', bp.rarity || 'Common']);
       if (s.spd) rows.push(['Speed', s.spd]);
       if (s.acc) rows.push(['Accuracy', s.acc]);
