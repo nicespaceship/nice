@@ -70,7 +70,7 @@ describe('ShipLog', () => {
     sessionStorage.clear();
     State._reset();
     // Ensure LLM connection check passes
-    State.set('enabled_models', { 'gemini-2.5-flash': true, 'claude-sonnet-4-20250514': true });
+    State.set('enabled_models', { 'gemini-2.5-flash': true, 'claude-sonnet-4-6': true });
   });
 
   describe('append', () => {
@@ -258,7 +258,7 @@ describe('ShipLog', () => {
       expect(result.content).toBeTruthy();
 
       // Restore for other tests
-      State.set('enabled_models', { 'gemini-2.5-flash': true, 'claude-sonnet-4-20250514': true });
+      State.set('enabled_models', { 'gemini-2.5-flash': true, 'claude-sonnet-4-6': true });
     });
   });
 

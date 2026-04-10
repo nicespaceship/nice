@@ -42,12 +42,13 @@ const CrewDesigner = (() => {
   const FLOW_ICONS = { sequential: '→', parallel: '⇉', router: '⤳', hierarchical: '⬡' };
 
   const MODELS = [
-    { id: 'gemini-2.5-flash', label: 'Gemini Flash', tier: 'free' },
-    { id: 'gemini-2.0-lite', label: 'Gemini Lite', tier: 'free' },
-    { id: 'claude-sonnet-4-20250514', label: 'Claude Sonnet', tier: 'premium' },
-    { id: 'claude-opus-4-20250514', label: 'Claude Opus', tier: 'premium' },
-    { id: 'gpt-5.2', label: 'GPT-5.2', tier: 'premium' },
-    { id: 'gemini-2.5-pro', label: 'Gemini Pro', tier: 'premium' },
+    { id: 'gemini-2.5-flash',          label: 'Gemini Flash',     tier: 'free' },
+    { id: 'gemini-2.0-flash-lite',     label: 'Gemini Lite',      tier: 'free' },
+    { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', tier: 'premium' },
+    { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6', tier: 'premium' },
+    { id: 'claude-opus-4-6',           label: 'Claude Opus 4.6',  tier: 'premium' },
+    { id: 'gpt-5.2',                   label: 'GPT-5.2',          tier: 'premium' },
+    { id: 'gemini-2.5-pro',            label: 'Gemini Pro',       tier: 'premium' },
   ];
 
   /* ══════════════════════════════════════════════════════════════ */
@@ -225,7 +226,7 @@ Return ONLY valid JSON (no markdown, no explanation) in this exact format:
 Rules:
 - 2-6 agents based on complexity
 - flow_pattern: "sequential" when tasks chain A→B→C; "parallel" when independent; "router" when one triages to specialists; "hierarchical" when captain delegates
-- Default model: "gemini-2.5-flash" (free). Use "claude-sonnet-4-20250514" only for complex reasoning roles
+- Default model: "gemini-2.5-flash" (free). Use "claude-sonnet-4-6" only for complex reasoning roles
 - Tools from: web-search, code-gen, summarize, gmail, google-drive, google-calendar, calculator, data-transform
 - integrations_needed: only external services agents need (gmail, google-drive, google-calendar)
 - Creative, role-specific agent names
