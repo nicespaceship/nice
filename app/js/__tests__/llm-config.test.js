@@ -61,7 +61,7 @@ describe('LLMConfig', () => {
       expect(cfg.stream).toBe(true);
     });
 
-    it('should default model to claude-haiku-4-5-20251001', () => {
+    it('should default model to claude-haiku-4-5-20251001 when no profile or llm_engine', () => {
       const cfg = LLMConfig.forBlueprint({ stats: {} });
       expect(cfg.model).toBe('claude-haiku-4-5-20251001');
     });
@@ -126,6 +126,40 @@ describe('LLMConfig', () => {
       expect(cfg.model).toBe('claude-sonnet-4-6');
       expect(cfg.fallback).toBe('gemini-2.5-flash');
       expect(cfg.tier).toBe('premium');
+    });
+
+    it('uses model_profile.fallback when nice-auto cannot resolve', () => {
+      // ModelIntel is undefined in test env so nice-auto cannot learn
+      const bp = {
+        config: {
+          model_profile: {
+            preferred: 'nice-auto',
+            fallback:  'gemini-2.5-flash',
+            tier:      'free',
+          },
+        },
+      };
+      expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2.5-flash');
+    });
+
+    it('falls back to gemini-2.5-flash (free tier) when nice-auto has no profile fallback', () => {
+      const bp = { config: { llm_engine: 'nice-auto' } };
+      expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2.5-flash');
+    });
+
+    it('does not silently upgrade free-tier nice-auto agents to premium models', () => {
+      const bp = {
+        config: {
+          model_profile: {
+            preferred: 'nice-auto',
+            fallback:  'gemini-2.5-flash',
+            tier:      'free',
+          },
+        },
+      };
+      const cfg = LLMConfig.forBlueprint(bp);
+      expect(cfg.model).not.toMatch(/claude/);
+      expect(cfg.tier).toBe('free');
     });
 
     it('ignores invalid max_output_tokens (non-number, zero, negative)', () => {

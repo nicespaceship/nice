@@ -39,12 +39,19 @@ const LLMConfig = (() => {
     const cfg = (bp && bp.config) || {};
     const profile = cfg.model_profile || null;
 
-    // Model selection — model_profile.preferred wins, then llm_engine
+    // Model selection — model_profile.preferred wins, then llm_engine.
+    // For nice-auto, ask ModelIntel; if it returns nothing, fall back to
+    // model_profile.fallback (NOT a hardcoded premium default — that would
+    // silently upgrade free-tier agents to premium models).
     let model = (profile && profile.preferred) || cfg.llm_engine || 'claude-haiku-4-5-20251001';
-    if (model === 'nice-auto' && typeof ModelIntel !== 'undefined') {
-      const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
-      const connected = Object.keys(enabled).filter(k => enabled[k]);
-      model = ModelIntel.bestModel(bp && bp.id, connected) || 'claude-haiku-4-5-20251001';
+    if (model === 'nice-auto') {
+      let learned = null;
+      if (typeof ModelIntel !== 'undefined') {
+        const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+        const connected = Object.keys(enabled).filter(k => enabled[k]);
+        learned = ModelIntel.bestModel(bp && bp.id, connected);
+      }
+      model = learned || (profile && profile.fallback) || 'gemini-2.5-flash';
     }
     params.model = model;
 
