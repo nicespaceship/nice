@@ -552,7 +552,7 @@ const CardRenderer = (() => {
   }
 
   /* ── Custom name/role persistence ── */
-  const _CUSTOM_KEY = 'nice-bp-custom-labels';
+  const _CUSTOM_KEY = Utils.KEYS.bpCustomLabels;
   function getCustomLabels(id) {
     try { const m = JSON.parse(localStorage.getItem(_CUSTOM_KEY) || '{}'); return m[id] || {}; } catch(e) { return {}; }
   }

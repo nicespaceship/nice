@@ -375,9 +375,9 @@ const SpaceshipBuilderView = (() => {
         State.set('spaceships', ships);
         // Persist guest ships to localStorage
         if (!user) {
-          const custom = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+          const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
           custom.push(shipObj);
-          localStorage.setItem('nice-custom-ships', JSON.stringify(custom));
+          localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(custom));
         }
         if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateShip(shipId);
         _showSetupChoice(shipId, { name, category, description: desc, flavor, tags, slotCount: cls.slots.length, slots: row.slots });

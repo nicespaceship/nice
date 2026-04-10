@@ -38,7 +38,7 @@ const ContentQueue = (() => {
 
     // Merge with localStorage fallback
     try {
-      const local = JSON.parse(localStorage.getItem('nice-content-queue') || '[]');
+      const local = JSON.parse(localStorage.getItem(Utils.KEYS.contentQueue) || '[]');
       local.forEach(item => {
         if (!items.find(i => i.id === item.id)) items.push(item);
       });
@@ -287,21 +287,21 @@ const ContentQueue = (() => {
 
   function _persistLocal(draft) {
     try {
-      const items = JSON.parse(localStorage.getItem('nice-content-queue') || '[]');
+      const items = JSON.parse(localStorage.getItem(Utils.KEYS.contentQueue) || '[]');
       items.unshift(draft);
       // Keep max 100 items
       if (items.length > 100) items.length = 100;
-      localStorage.setItem('nice-content-queue', JSON.stringify(items));
+      localStorage.setItem(Utils.KEYS.contentQueue, JSON.stringify(items));
     } catch {}
   }
 
   function _updateLocal(id, updates) {
     try {
-      const items = JSON.parse(localStorage.getItem('nice-content-queue') || '[]');
+      const items = JSON.parse(localStorage.getItem(Utils.KEYS.contentQueue) || '[]');
       const item = items.find(i => i.id === id);
       if (item) {
         Object.assign(item, updates);
-        localStorage.setItem('nice-content-queue', JSON.stringify(items));
+        localStorage.setItem(Utils.KEYS.contentQueue, JSON.stringify(items));
       }
     } catch {}
   }

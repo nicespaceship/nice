@@ -72,7 +72,7 @@ const TronView = (() => {
 
   function render(el) {
     _el = el;
-    _hi = parseInt(localStorage.getItem('nice-tron-hi') || '0', 10);
+    _hi = parseInt(localStorage.getItem(Utils.KEYS.tronHighScore) || '0', 10);
 
     // Lock ALL scroll so swipes control the game, not the page
     el.closest('.app-view-content')?.classList.add('view-no-scroll');
@@ -349,7 +349,7 @@ const TronView = (() => {
     _alive = false;
     if (_score > _hi) {
       _hi = _score;
-      localStorage.setItem('nice-tron-hi', String(_hi));
+      localStorage.setItem(Utils.KEYS.tronHighScore, String(_hi));
       const hiEl = document.getElementById('tron-hi');
       if (hiEl) hiEl.textContent = _hi;
     }

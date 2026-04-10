@@ -133,7 +133,7 @@ const CostView = (() => {
   }
 
   function _loadBudget() {
-    const saved = localStorage.getItem('nice-budget');
+    const saved = localStorage.getItem(Utils.KEYS.budget);
     if (saved) {
       try {
         const b = JSON.parse(saved);
@@ -144,7 +144,7 @@ const CostView = (() => {
   }
 
   function _getBudget() {
-    const saved = localStorage.getItem('nice-budget');
+    const saved = localStorage.getItem(Utils.KEYS.budget);
     if (saved) {
       try { return JSON.parse(saved); } catch(e) {}
     }
@@ -549,7 +549,7 @@ const CostView = (() => {
       e.preventDefault();
       const limit = parseFloat(document.getElementById('b-limit').value) || 50;
       const alert = parseInt(document.getElementById('b-alert').value, 10) || 80;
-      localStorage.setItem('nice-budget', JSON.stringify({ limit, alert }));
+      localStorage.setItem(Utils.KEYS.budget, JSON.stringify({ limit, alert }));
       document.getElementById('modal-budget')?.classList.remove('open');
       _loadCosts();
     });

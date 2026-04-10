@@ -325,10 +325,10 @@ const Gamification = (() => {
   async function initFromDB() {
     // Migrate legacy achievement IDs
     try {
-      const raw = localStorage.getItem('nice-achievements');
+      const raw = localStorage.getItem(Utils.KEYS.achievements);
       if (raw) {
         const migrated = raw.replace(/first-robot/g, 'first-agent').replace(/robot-army/g, 'agent-army');
-        if (migrated !== raw) _store('nice-achievements', migrated);
+        if (migrated !== raw) _store(Utils.KEYS.achievements, migrated);
       }
     } catch {}
 
@@ -434,7 +434,7 @@ const Gamification = (() => {
       : 100;
 
     // Tokens: derived from remaining budget (simplified)
-    const budget = JSON.parse(localStorage.getItem('nice-budget') || '{"limit":50,"alert":80}');
+    const budget = JSON.parse(localStorage.getItem(Utils.KEYS.budget) || '{"limit":50,"alert":80}');
     const tokens = Math.max(0, Math.min(100, 100 - (budget.alert || 80) + 20));
 
     // Shield: % of completed missions
@@ -505,7 +505,7 @@ const Gamification = (() => {
 
   /* ─── Achievements ─── */
 
-  const ACH_STORAGE = 'nice-achievements';
+  const ACH_STORAGE = Utils.KEYS.achievements;
   const ACHIEVEMENTS = [
     { id: 'first-agent',        name: 'First Agent',        desc: 'Create your first agent',           icon: 'bot' },
     { id: 'agent-army',         name: 'Agent Army',         desc: 'Have 5+ agents',                    icon: '🦾' },
@@ -598,7 +598,7 @@ const Gamification = (() => {
   function getResources() {
     const agents = State.get('agents') || [];
     const missions = State.get('missions') || [];
-    const budget = JSON.parse(localStorage.getItem('nice-budget') || '{"limit":50,"alert":80}');
+    const budget = JSON.parse(localStorage.getItem(Utils.KEYS.budget) || '{"limit":50,"alert":80}');
 
     // Tokens — derived from remaining budget (100 = fully funded)
     const tokens = Math.max(0, Math.min(100, 100 - (budget.alert || 80) + 20));
@@ -900,12 +900,12 @@ const Gamification = (() => {
 
   function _updateStreak() {
     const today = new Date().toDateString();
-    const lastActive = localStorage.getItem('nice-last-active');
+    const lastActive = localStorage.getItem(Utils.KEYS.lastActive);
 
     if (lastActive === today) return; // Already counted today
 
     const yesterday = new Date(Date.now() - 86400000).toDateString();
-    let streak = parseInt(localStorage.getItem('nice-streak') || '0', 10);
+    let streak = parseInt(localStorage.getItem(Utils.KEYS.streak) || '0', 10);
 
     if (lastActive === yesterday) {
       streak += 1;
@@ -913,18 +913,18 @@ const Gamification = (() => {
       streak = 1;
     }
 
-    _store('nice-streak', String(streak));
-    _store('nice-last-active', today);
+    _store(Utils.KEYS.streak, String(streak));
+    _store(Utils.KEYS.lastActive, today);
   }
 
   function getStreak() {
-    const lastActive = localStorage.getItem('nice-last-active');
+    const lastActive = localStorage.getItem(Utils.KEYS.lastActive);
     const today = new Date().toDateString();
     const yesterday = new Date(Date.now() - 86400000).toDateString();
 
     // If last active was neither today nor yesterday, streak is broken
     if (lastActive !== today && lastActive !== yesterday) return 0;
-    return parseInt(localStorage.getItem('nice-streak') || '0', 10);
+    return parseInt(localStorage.getItem(Utils.KEYS.streak) || '0', 10);
   }
 
   return {

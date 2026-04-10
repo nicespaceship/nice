@@ -54,6 +54,11 @@ globalThis.Router = { navigate: vi.fn(), path: () => '/', on: () => {}, init: ()
 globalThis.Utils = {
   esc: (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
   timeAgo: () => 'just now',
+  KEYS: {
+    aiMessages: 'nice-ai-messages',
+    conversations: 'nice-conversations',
+    activeConv: 'nice-active-conv',
+  },
 };
 
 // Mock PromptPanel

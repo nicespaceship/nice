@@ -33,7 +33,7 @@ const Notify = (() => {
    */
   function send({ title, message, type = 'system', undo }) {
     // Check settings
-    const settings = JSON.parse(localStorage.getItem('nice-settings') || '{}');
+    const settings = JSON.parse(localStorage.getItem(Utils.KEYS.settings) || '{}');
     if (settings.notifications === false) return;
 
     // Check per-category settings

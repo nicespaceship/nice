@@ -92,6 +92,18 @@ const Utils = (() => {
     callsign: 'nice-callsign',
     highContrast: 'nice-high-contrast',
     sidebarOrder: 'nice-sidebar-order',
+    mcShip: 'nice-mc-ship',
+    mcSlots: 'nice-mc-slots',
+    conversations: 'nice-conversations',
+    activeConv: 'nice-active-conv',
+    ephemeralSession: 'nice-ephemeral-session',
+    utmFirst: 'nice-utm-first',
+    utmLast: 'nice-utm-last',
+    importBp: 'nice-import-bp',
+    generatedImages: 'nice-generated-images',
+    securityChecklist: 'nice-security-checklist',
+    shipProfiles: 'nice-ship-profiles',
+    tronHighScore: 'nice-tron-hi',
   };
 
   return { esc, timeAgo, formatDate, formatDateTime, icon, KEYS };

@@ -329,11 +329,11 @@ const MissionRunner = (() => {
   function awardAgentXP(agentId, xp) {
     if (!agentId) return;
     try {
-      const stats = JSON.parse(localStorage.getItem('nice-agent-stats') || '{}');
+      const stats = JSON.parse(localStorage.getItem(Utils.KEYS.agentStats) || '{}');
       if (!stats[agentId]) stats[agentId] = { xp: 0, missions: 0, approved: 0, rejected: 0 };
       stats[agentId].xp = (stats[agentId].xp || 0) + xp;
       stats[agentId].missions = (stats[agentId].missions || 0) + 1;
-      localStorage.setItem('nice-agent-stats', JSON.stringify(stats));
+      localStorage.setItem(Utils.KEYS.agentStats, JSON.stringify(stats));
 
       // Check for rarity evolution
       const totalXP = stats[agentId].xp;
@@ -363,7 +363,7 @@ const MissionRunner = (() => {
 
   function getAgentStats(agentId) {
     try {
-      const stats = JSON.parse(localStorage.getItem('nice-agent-stats') || '{}');
+      const stats = JSON.parse(localStorage.getItem(Utils.KEYS.agentStats) || '{}');
       return stats[agentId] || { xp: 0, missions: 0, approved: 0, rejected: 0 };
     } catch { return { xp: 0, missions: 0, approved: 0, rejected: 0 }; }
   }

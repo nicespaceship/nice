@@ -524,7 +524,7 @@ Rules:
 
   function _isIntegrationConnected(name) {
     try {
-      const conns = State.get('mcp_connections') || JSON.parse(localStorage.getItem('nice-mcp-connections') || '[]');
+      const conns = State.get('mcp_connections') || JSON.parse(localStorage.getItem(Utils.KEYS.mcpConnections) || '[]');
       return conns.some(c => c.name?.toLowerCase().includes(name) || c.type?.toLowerCase().includes(name));
     } catch { return false; }
   }
@@ -667,9 +667,9 @@ Rules:
 
         // Persist custom agents to localStorage
         try {
-          const storedAgents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+          const storedAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
           storedAgents.push(...newAgentObjects);
-          localStorage.setItem('nice-custom-agents', JSON.stringify(storedAgents));
+          localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(storedAgents));
         } catch {}
 
         const newShip = { id: shipId, ...shipData };
@@ -678,9 +678,9 @@ Rules:
 
         // Persist custom ship to localStorage so it survives reloads
         try {
-          const stored = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
+          const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
           stored.push(newShip);
-          localStorage.setItem('nice-custom-ships', JSON.stringify(stored));
+          localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(stored));
         } catch {}
       }
 
@@ -759,8 +759,8 @@ Rules:
 
   function _restoreCustomData() {
     try {
-      const ships = JSON.parse(localStorage.getItem('nice-custom-ships') || '[]');
-      const agents = JSON.parse(localStorage.getItem('nice-custom-agents') || '[]');
+      const ships = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
+      const agents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
       if (ships.length && typeof State !== 'undefined') {
         const existing = State.get('spaceships') || [];
         const merged = [...existing];

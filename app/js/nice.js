@@ -256,7 +256,7 @@ const Theme = (() => {
     // Use saved selection or show all
     let dockIds = filterIds;
     if (!dockIds) {
-      try { dockIds = JSON.parse(localStorage.getItem('nice-hud-dock-themes')); } catch {}
+      try { dockIds = JSON.parse(localStorage.getItem(Utils.KEYS.hudDockThemes)); } catch {}
     }
     const themes = (Array.isArray(dockIds) && dockIds.length)
       ? THEMES.filter(t => dockIds.includes(t.id))
@@ -703,11 +703,11 @@ const NICE = (() => {
     const folder = document.getElementById('side-missions-folder');
     if (toggle && folder) {
       // Restore open state
-      if (localStorage.getItem('nice-missions-folder') !== '0') folder.classList.add('open');
+      if (localStorage.getItem(Utils.KEYS.missionsFolder) !== '0') folder.classList.add('open');
       toggle.addEventListener('click', () => {
         const isOpen = folder.classList.toggle('open');
         toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        localStorage.setItem('nice-missions-folder', isOpen ? '1' : '0');
+        localStorage.setItem(Utils.KEYS.missionsFolder, isOpen ? '1' : '0');
       });
       // Set initial aria state
       if (folder.classList.contains('open')) toggle.setAttribute('aria-expanded', 'true');
@@ -748,8 +748,8 @@ const NICE = (() => {
   }
 
   /* ── Chats folder (collapsible, conversation history) ── */
-  const CONVS_KEY = 'nice-conversations';
-  const ACTIVE_CONV_KEY = 'nice-active-conv';
+  const CONVS_KEY = Utils.KEYS.conversations;
+  const ACTIVE_CONV_KEY = Utils.KEYS.activeConv;
 
   function _getConversations() {
     try { return JSON.parse(localStorage.getItem(CONVS_KEY) || '[]'); } catch { return []; }
@@ -765,7 +765,7 @@ const NICE = (() => {
     const convs = _getConversations();
     if (convs.length > 0) return;
     try {
-      const raw = localStorage.getItem('nice-ai-messages');
+      const raw = localStorage.getItem(Utils.KEYS.aiMessages);
       const msgs = raw ? JSON.parse(raw) : [];
       if (msgs.length > 0) {
         const firstUserMsg = msgs.find(m => m.role === 'user');
@@ -798,7 +798,7 @@ const NICE = (() => {
     _saveConversations(convs);
     _setActiveConvId(conv.id);
     // Clear prompt panel messages
-    localStorage.setItem('nice-ai-messages', '[]');
+    localStorage.setItem(Utils.KEYS.aiMessages, '[]');
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     _renderChatsList();
     // Navigate home to show clean state
@@ -812,7 +812,7 @@ const NICE = (() => {
     const conv = convs.find(c => c.id === id);
     if (!conv) return;
     _setActiveConvId(id);
-    localStorage.setItem('nice-ai-messages', JSON.stringify(conv.messages || []));
+    localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify(conv.messages || []));
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     _renderChatsList();
     window.location.hash = '#/';
@@ -825,7 +825,7 @@ const NICE = (() => {
     const conv = convs.find(c => c.id === id);
     if (!conv) return;
     try {
-      const msgs = JSON.parse(localStorage.getItem('nice-ai-messages') || '[]');
+      const msgs = JSON.parse(localStorage.getItem(Utils.KEYS.aiMessages) || '[]');
       conv.messages = msgs;
       conv.updatedAt = Date.now();
       if (msgs.length > 0 && conv.title === 'New Chat') {
@@ -845,7 +845,7 @@ const NICE = (() => {
         _loadConversation(convs[0].id);
       } else {
         _setActiveConvId('');
-        localStorage.setItem('nice-ai-messages', '[]');
+        localStorage.setItem(Utils.KEYS.aiMessages, '[]');
         if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
         window.location.hash = '#/';
       }
@@ -1037,7 +1037,7 @@ const NICE = (() => {
   /* Ship-theme: switching ships triggers theme check via storage event */
   function _initShipThemeWatcher() {
     window.addEventListener('storage', (e) => {
-      if (e.key === 'nice-mc-ship') _checkShipTheme(e.newValue);
+      if (e.key === Utils.KEYS.mcShip) _checkShipTheme(e.newValue);
     });
   }
 
@@ -1354,8 +1354,8 @@ const NICE = (() => {
     }
 
     // Ephemeral session: if "Remember me" was unchecked, sign out on new browser session
-    if (localStorage.getItem('nice-ephemeral-session') === '1' && !sessionStorage.getItem('nice-ephemeral-session')) {
-      localStorage.removeItem('nice-ephemeral-session');
+    if (localStorage.getItem(Utils.KEYS.ephemeralSession) === '1' && !sessionStorage.getItem(Utils.KEYS.ephemeralSession)) {
+      localStorage.removeItem(Utils.KEYS.ephemeralSession);
       SB.auth.signOut().catch(() => {});
     }
 
@@ -1429,20 +1429,20 @@ const NICE = (() => {
   async function _checkFirstRun(user) {
     if (!user) return;
     // Check both the new simple flag and legacy per-user flag
-    if (localStorage.getItem('nice-onboarded') || localStorage.getItem('nice-onboarded-' + user.id)) return;
+    if (localStorage.getItem(Utils.KEYS.onboarded) || localStorage.getItem('nice-onboarded-' + user.id)) return;
     // Wait a moment for the app to settle
     await new Promise(r => setTimeout(r, 1500));
     // Check if user has any spaceships — skip wizard if they do
     const ships = State.get('user_spaceships') || [];
     if (ships.length > 0) {
-      localStorage.setItem('nice-onboarded', '1');
+      localStorage.setItem(Utils.KEYS.onboarded, '1');
       return;
     }
     // Try loading from DB
     try {
       const dbShips = await SB.db('user_spaceships').list({ user_id: user.id, limit: 1 });
       if (dbShips && dbShips.length > 0) {
-        localStorage.setItem('nice-onboarded', '1');
+        localStorage.setItem(Utils.KEYS.onboarded, '1');
         return;
       }
     } catch { /* proceed to wizard */ }
@@ -1458,8 +1458,8 @@ const NICE = (() => {
     const migrated = localStorage.getItem('nice-mc-migrated-' + user.id);
     if (migrated) return;
 
-    const localShip = localStorage.getItem('nice-mc-ship');
-    const localSlots = (() => { try { return JSON.parse(localStorage.getItem('nice-mc-slots') || '{}'); } catch { return {}; } })();
+    const localShip = localStorage.getItem(Utils.KEYS.mcShip);
+    const localSlots = (() => { try { return JSON.parse(localStorage.getItem(Utils.KEYS.mcSlots) || '{}'); } catch { return {}; } })();
     if (!localShip && !Object.keys(localSlots).length) return;
 
     try {
@@ -1613,8 +1613,8 @@ const NICE = (() => {
   /* ── localStorage migration (ATM → NICE) ── */
   function _migrateStorage() {
     const migrations = [
-      ['atm-settings', 'nice-settings'],
-      ['atm-budget', 'nice-budget'],
+      ['atm-settings', Utils.KEYS.settings],
+      ['atm-budget', Utils.KEYS.budget],
     ];
     migrations.forEach(([oldKey, newKey]) => {
       if (!localStorage.getItem(newKey) && localStorage.getItem(oldKey)) {
@@ -1839,7 +1839,7 @@ const NICE = (() => {
   let _draggedNavLink = null;
 
   function _applySidebarOrder() {
-    const saved = localStorage.getItem('nice-sidebar-order');
+    const saved = localStorage.getItem(Utils.KEYS.sidebarOrder);
     if (!saved) return;
     try {
       const order = JSON.parse(saved);
@@ -1856,7 +1856,7 @@ const NICE = (() => {
     const container = document.getElementById('nav-group-main-items');
     if (!container) return;
     const order = Array.from(container.querySelectorAll('.side-link')).map(l => l.dataset.view);
-    localStorage.setItem('nice-sidebar-order', JSON.stringify(order));
+    localStorage.setItem(Utils.KEYS.sidebarOrder, JSON.stringify(order));
   }
 
   function _initSidebarDnD() {
@@ -1932,11 +1932,11 @@ const NICE = (() => {
     if (!Object.keys(captured).length) return;
 
     // First-touch: never overwrite
-    if (!localStorage.getItem('nice-utm-first')) {
-      localStorage.setItem('nice-utm-first', JSON.stringify(captured));
+    if (!localStorage.getItem(Utils.KEYS.utmFirst)) {
+      localStorage.setItem(Utils.KEYS.utmFirst, JSON.stringify(captured));
     }
     // Last-touch: always overwrite
-    localStorage.setItem('nice-utm-last', JSON.stringify(captured));
+    localStorage.setItem(Utils.KEYS.utmLast, JSON.stringify(captured));
   }
 
   /* ── Step 50: Pull-to-refresh ── */
@@ -2060,7 +2060,7 @@ const NICE = (() => {
     if (typeof Skin !== 'undefined') Skin.init();
     if (typeof ThemeCreatorView !== 'undefined' && ThemeCreatorView.restoreSaved) ThemeCreatorView.restoreSaved();
     // Restore high contrast mode (Step 54)
-    if (localStorage.getItem('nice-high-contrast') === '1') {
+    if (localStorage.getItem(Utils.KEYS.highContrast) === '1') {
       document.documentElement.setAttribute('data-contrast', 'high');
     }
     _initSidebar();

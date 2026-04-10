@@ -35,7 +35,7 @@ const EngineeringView = (() => {
   function render(el) {
     _el = el;
     // Restore last project
-    _activeProject = localStorage.getItem('nice-ide-last-project') || null;
+    _activeProject = localStorage.getItem(Utils.KEYS.ideLastProject) || null;
     const p = _activeProject ? VirtualFS.getProject(_activeProject) : null;
     if (_activeProject && !p) _activeProject = null;
 
@@ -131,7 +131,7 @@ const EngineeringView = (() => {
       if (!name) return;
       const id = VirtualFS.createProject(name, template);
       _activeProject = id;
-      localStorage.setItem('nice-ide-last-project', id);
+      localStorage.setItem(Utils.KEYS.ideLastProject, id);
       _openTabs = [];
       _activeFile = null;
       // Auto-open first file
@@ -147,7 +147,7 @@ const EngineeringView = (() => {
     const open = e.target.closest('[data-open-project]');
     if (open) {
       _activeProject = open.dataset.openProject;
-      localStorage.setItem('nice-ide-last-project', _activeProject);
+      localStorage.setItem(Utils.KEYS.ideLastProject, _activeProject);
       _openTabs = [];
       _activeFile = null;
       const files = VirtualFS.listFiles(_activeProject);
@@ -164,7 +164,7 @@ const EngineeringView = (() => {
     const name = description.slice(0, 40).replace(/[^\w\s-]/g, '').trim() || 'AI Project';
     const id = VirtualFS.createProject(name, 'blank');
     _activeProject = id;
-    localStorage.setItem('nice-ide-last-project', id);
+    localStorage.setItem(Utils.KEYS.ideLastProject, id);
     _openTabs = [{ path: 'index.html', dirty: false }];
     _activeFile = 'index.html';
     _aiMessages = [];
@@ -280,7 +280,7 @@ const EngineeringView = (() => {
     _renderAIMessages();
 
     // Restore layout
-    try { const layout = JSON.parse(localStorage.getItem('nice-ide-layout') || '{}'); if (layout.bottomHeight) _bottomHeight = layout.bottomHeight; } catch {}
+    try { const layout = JSON.parse(localStorage.getItem(Utils.KEYS.ideLayout) || '{}'); if (layout.bottomHeight) _bottomHeight = layout.bottomHeight; } catch {}
 
     // Listen for file changes
     if (typeof State !== 'undefined') {
@@ -905,7 +905,7 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     // New project
     if (e.target.closest('#ide-new-proj-btn')) {
       _activeProject = null;
-      localStorage.removeItem('nice-ide-last-project');
+      localStorage.removeItem(Utils.KEYS.ideLastProject);
       _renderProjectPicker(_el);
       return;
     }
@@ -1136,7 +1136,7 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
           resizeBottom.classList.remove('dragging');
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
-          localStorage.setItem('nice-ide-layout', JSON.stringify({ bottomHeight: _bottomHeight }));
+          localStorage.setItem(Utils.KEYS.ideLayout, JSON.stringify({ bottomHeight: _bottomHeight }));
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);

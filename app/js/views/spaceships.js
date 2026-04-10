@@ -25,7 +25,7 @@ const SpaceshipsView = (() => {
     const input = document.getElementById('nice-ai-input');
     if (input) { input.placeholder = 'Mission for ' + (bp.name || 'Ship') + '…'; input.focus(); }
   }
-  let _viewMode = localStorage.getItem('nice-ships-view') || 'full';
+  let _viewMode = localStorage.getItem(Utils.KEYS.shipsView) || 'full';
   const _SHIP_VIEW_MODES = [
     { id: 'full',    icon: '&#9638;',       tip: 'Gallery' },
     { id: 'grid',    icon: '&#9638;&#9638;', tip: 'Grid' },
@@ -36,7 +36,7 @@ const SpaceshipsView = (() => {
   function render(el) {
     const user = State.get('user');
 
-    _viewMode = localStorage.getItem('nice-ships-view') || 'full';
+    _viewMode = localStorage.getItem(Utils.KEYS.shipsView) || 'full';
 
     el.innerHTML = `
       <div class="fleet-wrap">
@@ -481,7 +481,7 @@ const SpaceshipsView = (() => {
       const btn = e.target.closest('[data-view-mode]');
       if (!btn) return;
       _viewMode = btn.dataset.viewMode;
-      localStorage.setItem('nice-ships-view', _viewMode);
+      localStorage.setItem(Utils.KEYS.shipsView, _viewMode);
       document.querySelectorAll('#ships-view-modes .mc-dock-view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const list = document.getElementById('fleets-list');
@@ -795,7 +795,7 @@ const SpaceshipDetailView = (() => {
   /* ── Ship state persistence delegated to BlueprintStore ── */
 
   /* ── Ship Profile: icon, name, description persistence ── */
-  const _PROFILE_KEY = 'nice-ship-profiles';
+  const _PROFILE_KEY = Utils.KEYS.shipProfiles;
 
   function _getShipProfile(id) {
     try { const m = JSON.parse(localStorage.getItem(_PROFILE_KEY) || '{}'); return m[id] || {}; } catch(e) { return {}; }
