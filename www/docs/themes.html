@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Themes & Customization — NICE Documentation</title>
+  <meta name="description" content="Customize NICE with built-in themes and the Theme Creator." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <div class="docs-layout">
+    <nav class="docs-sidebar" id="docs-sidebar">
+      <h4>Getting Started</h4>
+      <a href="/docs/getting-started">Quick Start</a>
+      <h4>Core Concepts</h4>
+      <a href="/docs/concepts">Spaceships & Agents</a>
+      <a href="/docs/blueprints">Blueprints</a>
+      <a href="/docs/missions">Missions & Workflows</a>
+      <h4>Platform</h4>
+      <a href="/docs/ai-models">AI Models</a>
+      <a href="/docs/integrations">Integrations</a>
+      <a href="/docs/themes" class="active">Themes</a>
+    </nav>
+    <main class="docs-content">
+      <h1>Themes & Customization</h1>
+      <p>NICE ships with 11 built-in themes and a full Theme Creator for custom skins.</p>
+
+      <h2>Built-in Themes</h2>
+      <table>
+        <thead><tr><th>Theme</th><th>Style</th></tr></thead>
+        <tbody>
+          <tr><td>NICE</td><td>Premium dark command center (default)</td></tr>
+          <tr><td>HAL-9000</td><td>Sci-fi red/dark HUD</td></tr>
+          <tr><td>The Grid</td><td>Electric blue TRON-inspired grid</td></tr>
+          <tr><td>The Matrix</td><td>Digital rain green, terminal aesthetic</td></tr>
+          <tr><td>LCARS</td><td>Star Trek modular pastels</td></tr>
+          <tr><td>J.A.R.V.I.S.</td><td>Holographic blue HUD with arc reactor</td></tr>
+          <tr><td>Cyberpunk</td><td>Neon pink/cyan on dark</td></tr>
+          <tr><td>RX-78-2</td><td>Gundam blue/red military</td></tr>
+          <tr><td>16-BIT</td><td>Retro pixel art, gold/navy</td></tr>
+          <tr><td>The Office</td><td>Light/warm corporate with real-world terminology</td></tr>
+          <tr><td>The Office (dark)</td><td>Dark variant of The Office</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Switching Themes</h2>
+      <p>Click the <strong>theme button</strong> in the sidebar footer or go to <strong>Settings</strong>. Your choice persists across sessions.</p>
+      <p>Some themes change more than colors — The Office replaces sci-fi terminology with corporate language (Spaceships become "Departments", Agents become "Employees").</p>
+
+      <h2>Theme Creator</h2>
+      <p>Build your own theme at <strong>#/theme-editor</strong>. The editor gives you live controls for every CSS variable:</p>
+      <ul>
+        <li><strong>Colors</strong> — background, text, accent, borders, panels, glow effects</li>
+        <li><strong>Typography</strong> — heading, body, and monospace font families</li>
+        <li><strong>Shapes</strong> — border radius for cards, buttons, and panels</li>
+      </ul>
+      <p>Changes preview instantly. Export your theme as JSON to share with others or import themes from the community.</p>
+
+      <h2>CSS Custom Properties</h2>
+      <p>All NICE components use CSS custom properties for theming. The core variables:</p>
+      <table>
+        <thead><tr><th>Variable</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>--bg</code>, <code>--bg-alt</code></td><td>Background colors</td></tr>
+          <tr><td><code>--text</code>, <code>--text-muted</code></td><td>Text colors</td></tr>
+          <tr><td><code>--accent</code>, <code>--accent2</code></td><td>Primary and secondary accent</td></tr>
+          <tr><td><code>--border</code>, <code>--border-hi</code></td><td>Border colors</td></tr>
+          <tr><td><code>--panel-bg</code>, <code>--panel-border</code></td><td>Panel styling</td></tr>
+          <tr><td><code>--glow</code>, <code>--glow-hi</code></td><td>Glow and shadow effects</td></tr>
+          <tr><td><code>--font-h</code>, <code>--font-b</code>, <code>--font-m</code></td><td>Heading, body, monospace fonts</td></tr>
+          <tr><td><code>--radius</code></td><td>Global border radius</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Theme-Aware Development</h2>
+      <p>When building custom components or contributing to NICE:</p>
+      <ul>
+        <li>Always use <code>var(--accent)</code> instead of hardcoded colors</li>
+        <li>Use <code>var(--panel-bg)</code> for card and panel backgrounds</li>
+        <li>Test your changes across at least 3 themes (NICE, The Office, Matrix)</li>
+        <li>Sticky elements need opaque backgrounds — never use <code>rgba</code> transparency on sticky headers</li>
+      </ul>
+    </main>
+  </div>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+</body>
+</html>

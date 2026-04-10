@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Missions & Workflows — NICE Documentation</title>
+  <meta name="description" content="Run AI missions, chain workflows, and automate tasks with NICE agents." />
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <div class="docs-layout">
+    <nav class="docs-sidebar" id="docs-sidebar">
+      <h4>Getting Started</h4>
+      <a href="/docs/getting-started">Quick Start</a>
+      <h4>Core Concepts</h4>
+      <a href="/docs/concepts">Spaceships & Agents</a>
+      <a href="/docs/blueprints">Blueprints</a>
+      <a href="/docs/missions" class="active">Missions & Workflows</a>
+      <h4>Platform</h4>
+      <a href="/docs/ai-models">AI Models</a>
+      <a href="/docs/integrations">Integrations</a>
+      <a href="/docs/themes">Themes</a>
+    </nav>
+    <main class="docs-content">
+      <h1>Missions & Workflows</h1>
+      <p>Missions are the unit of work in NICE. Every time you ask an agent to do something, it creates a mission. Workflows chain missions together.</p>
+
+      <h2>Running a Mission</h2>
+      <p>Open the <strong>Prompt Panel</strong> at the bottom of the screen (or press <code>Cmd+K</code>) and type your request. NICE does the rest:</p>
+      <ol>
+        <li><strong>Routing</strong> — MissionRouter picks the best agent on your active spaceship for the task</li>
+        <li><strong>Model selection</strong> — the agent's preferred model is chosen (or NICE Auto picks one)</li>
+        <li><strong>Execution</strong> — the agent runs the task, optionally calling tools (web search, email, etc.)</li>
+        <li><strong>Result</strong> — output appears in the Missions tab with full markdown rendering</li>
+      </ol>
+
+      <h2>Mission Statuses</h2>
+      <table>
+        <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>queued</code></td><td>Mission created, waiting to start</td></tr>
+          <tr><td><code>running</code></td><td>Agent is actively working on the task</td></tr>
+          <tr><td><code>completed</code></td><td>Task finished successfully</td></tr>
+          <tr><td><code>failed</code></td><td>Something went wrong (click to see error details)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Mission Actions</h2>
+      <ul>
+        <li><strong>Run</strong> — execute a single mission</li>
+        <li><strong>Run All</strong> — execute all queued missions on a spaceship</li>
+        <li><strong>Retry</strong> — re-run a failed mission with the same parameters</li>
+      </ul>
+      <p>Completed missions show a <strong>model badge</strong> indicating which AI model was used.</p>
+
+      <h2>Streaming</h2>
+      <p>Premium models (Claude, GPT-5) support <strong>streaming responses</strong> via Server-Sent Events. You see the agent's output in real time as it types. Free models (Gemini Flash) return the full response once complete.</p>
+
+      <h2>Workflows</h2>
+      <p>Workflows chain multiple missions into a sequence. Each step can use a different agent and pass its output to the next step.</p>
+      <p>Example workflow for a marketing campaign:</p>
+      <ol>
+        <li><strong>Research Agent</strong> — analyze competitor campaigns</li>
+        <li><strong>Strategy Agent</strong> — draft a campaign plan based on research</li>
+        <li><strong>Content Agent</strong> — write copy following the plan</li>
+        <li><strong>Review Agent</strong> — proofread and refine</li>
+      </ol>
+
+      <h2>Scheduled Missions</h2>
+      <p>Missions can run on a schedule — daily, weekly, or custom. Set up recurring tasks like:</p>
+      <ul>
+        <li>Daily email digest at 9am</li>
+        <li>Weekly analytics report every Monday</li>
+        <li>Social media content generation every weekday</li>
+      </ul>
+      <p>Schedules are managed in the Mission Scheduler, accessible from any spaceship detail view.</p>
+
+      <h2>Token Usage</h2>
+      <p>Each mission consumes tokens based on the model used. Free models (Gemini Flash) cost zero tokens. Premium models deduct from your balance. Check usage in <strong>Security > Wallet</strong>.</p>
+    </main>
+  </div>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/theme-lite.js"></script>
+  <script src="/js/nav.js"></script>
+  <script>ThemeLite.init(); Nav.render(); Nav.renderFooter();</script>
+</body>
+</html>
