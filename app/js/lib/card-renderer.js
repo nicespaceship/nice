@@ -133,6 +133,7 @@ const CardRenderer = (() => {
 
     conns.forEach(pair => {
       const a = positions[pair[0]], b = positions[pair[1]];
+      if (!a || !b) return;
       svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#3b82f6" stroke-width="0.6" opacity="0.1"/>`;
     });
 
@@ -140,7 +141,11 @@ const CardRenderer = (() => {
       svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#3b82f6" stroke-width="0.8" opacity="0.12"/>`;
     });
 
-    slots.forEach((slot, i) => {
+    // Cap slot rendering to the number of available positions (class-3 has
+    // 10 slots, class-5 has 24, but the position layout only goes up to 12).
+    const renderSlots = slots.slice(0, positions.length);
+
+    renderSlots.forEach((slot, i) => {
       const p = positions[i];
       const color = SLOT_COLORS[slot.max] || '#6366f1';
       const r = 14;
@@ -150,7 +155,7 @@ const CardRenderer = (() => {
       svg += `<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="12" font-weight="300" opacity="0.6">+</text>`;
     });
 
-    slots.forEach((slot, i) => {
+    renderSlots.forEach((slot, i) => {
       const p = positions[i];
       const spd = serial.speeds[i] || 0;
       const dur = 20 - (spd * 1.5);
@@ -163,6 +168,7 @@ const CardRenderer = (() => {
     const travelSpeeds = serial.speeds.slice(n);
     conns.forEach((pair, ci) => {
       const a = positions[pair[0]], b = positions[pair[1]];
+      if (!a || !b) return;
       const spd = travelSpeeds[ci % travelSpeeds.length] || 3;
       const dur = 6 + (9 - spd) * 1.2;
       const dotR = 1.2 + (spd * 0.08);
