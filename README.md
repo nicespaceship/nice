@@ -4,7 +4,7 @@
 
 NICE is an open-source platform for building, deploying, and managing AI agent workflows. Browse 800+ pre-built blueprints, activate a team of AI agents, and let them handle your marketing, content, analytics, scheduling, and operations. One platform replaces the 5-15 SaaS tools you're paying for today.
 
-**[Try it free](https://nicespaceship.ai)** | **[Academy](https://nicespaceship.com/academy)** | **[Community (Reddit)](https://reddit.com/r/nicespaceship)**
+**[Try it free](https://nicespaceship.ai)** | **[Docs](https://nicespaceship.com/docs)** | **[Community (Reddit)](https://reddit.com/r/nicespaceship)**
 
 ---
 

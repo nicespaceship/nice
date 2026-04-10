@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   EngineeringView — In-App IDE
+   EngineeringView — In-App IDE + Error Monitoring
    Route: #/engineering
    ═══════════════════════════════════════════════════════════════════ */
 const EngineeringView = (() => {
@@ -8,6 +8,7 @@ const EngineeringView = (() => {
 
   /* ── Private state ── */
   let _el = null;
+  let _activeTab = 'code'; // 'code' | 'errors'
   let _activeProject = null;
   let _activeFile = null;
   let _openTabs = []; // [{ path, dirty }]
@@ -34,6 +35,44 @@ const EngineeringView = (() => {
   ══════════════════════════════════════════════════════════════════ */
   function render(el) {
     _el = el;
+
+    // Read tab from URL (?tab=errors)
+    const params = new URLSearchParams(location.hash.split('?')[1] || '');
+    _activeTab = params.get('tab') === 'errors' ? 'errors' : 'code';
+
+    // Tab bar
+    el.innerHTML = `
+      <div class="eng-tabs">
+        <button class="eng-tab${_activeTab === 'code' ? ' active' : ''}" data-eng-tab="code">Code</button>
+        <button class="eng-tab${_activeTab === 'errors' ? ' active' : ''}" data-eng-tab="errors">Errors</button>
+      </div>
+      <div class="eng-tab-body" id="eng-tab-body"></div>
+    `;
+
+    el.querySelector('.eng-tabs').addEventListener('click', e => {
+      const tab = e.target.closest('[data-eng-tab]');
+      if (!tab || tab.dataset.engTab === _activeTab) return;
+      _activeTab = tab.dataset.engTab;
+      history.replaceState(null, '', `#/engineering${_activeTab === 'errors' ? '?tab=errors' : ''}`);
+      el.querySelectorAll('.eng-tab').forEach(t => t.classList.toggle('active', t.dataset.engTab === _activeTab));
+      _renderActiveTab();
+    });
+
+    _renderActiveTab();
+  }
+
+  function _renderActiveTab() {
+    const body = document.getElementById('eng-tab-body');
+    if (!body) return;
+    body.innerHTML = '';
+    if (_activeTab === 'errors') {
+      _renderErrorDashboard(body);
+    } else {
+      _renderCodeTab(body);
+    }
+  }
+
+  function _renderCodeTab(el) {
     // Restore last project
     _activeProject = localStorage.getItem(Utils.KEYS.ideLastProject) || null;
     const p = _activeProject ? VirtualFS.getProject(_activeProject) : null;
@@ -1142,6 +1181,251 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
         document.addEventListener('mouseup', onUp);
       });
     }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     ERROR MONITORING DASHBOARD
+  ══════════════════════════════════════════════════════════════════ */
+  let _errFilter = 'all'; // 'all' | 'js' | 'render' | 'network'
+  let _errTimeRange = '24h'; // '1h' | '24h' | '7d' | '30d'
+  let _errData = [];
+  let _errLoading = false;
+
+  async function _renderErrorDashboard(el) {
+    el.innerHTML = `
+      <div class="eng-errors">
+        <div class="eng-errors-toolbar">
+          <div class="eng-errors-filters">
+            <select id="eng-err-time" class="eng-select">
+              <option value="1h"${_errTimeRange === '1h' ? ' selected' : ''}>Last hour</option>
+              <option value="24h"${_errTimeRange === '24h' ? ' selected' : ''}>Last 24 hours</option>
+              <option value="7d"${_errTimeRange === '7d' ? ' selected' : ''}>Last 7 days</option>
+              <option value="30d"${_errTimeRange === '30d' ? ' selected' : ''}>Last 30 days</option>
+            </select>
+            <select id="eng-err-filter" class="eng-select">
+              <option value="all"${_errFilter === 'all' ? ' selected' : ''}>All errors</option>
+              <option value="js"${_errFilter === 'js' ? ' selected' : ''}>JS errors</option>
+              <option value="render"${_errFilter === 'render' ? ' selected' : ''}>Render errors</option>
+              <option value="network"${_errFilter === 'network' ? ' selected' : ''}>Network errors</option>
+            </select>
+          </div>
+          <button class="btn btn-sm" id="eng-err-refresh" title="Refresh">↻ Refresh</button>
+        </div>
+        <div id="eng-err-stats" class="eng-err-stats"></div>
+        <div id="eng-err-chart" class="eng-err-chart"></div>
+        <div id="eng-err-list" class="eng-err-list"></div>
+      </div>
+    `;
+
+    document.getElementById('eng-err-time')?.addEventListener('change', e => {
+      _errTimeRange = e.target.value;
+      _fetchAndRenderErrors();
+    });
+    document.getElementById('eng-err-filter')?.addEventListener('change', e => {
+      _errFilter = e.target.value;
+      _renderErrorList();
+      _renderErrorStats();
+    });
+    document.getElementById('eng-err-refresh')?.addEventListener('click', _fetchAndRenderErrors);
+
+    await _fetchAndRenderErrors();
+  }
+
+  async function _fetchAndRenderErrors() {
+    if (_errLoading) return;
+    _errLoading = true;
+
+    const listEl = document.getElementById('eng-err-list');
+    if (listEl) listEl.innerHTML = '<div class="eng-err-loading">Loading errors…</div>';
+
+    try {
+      const c = SB.client();
+      if (!c) { _errData = []; return; }
+
+      const now = new Date();
+      const offsets = { '1h': 3600e3, '24h': 86400e3, '7d': 604800e3, '30d': 2592000e3 };
+      const since = new Date(now - (offsets[_errTimeRange] || 86400e3)).toISOString();
+
+      const { data, error } = await c.from('error_log')
+        .select('*')
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (error) throw error;
+      _errData = data || [];
+    } catch (err) {
+      _errData = [];
+      console.warn('Error fetching error_log:', err.message);
+    } finally {
+      _errLoading = false;
+    }
+
+    _renderErrorStats();
+    _renderErrorChart();
+    _renderErrorList();
+  }
+
+  function _getFilteredErrors() {
+    if (_errFilter === 'all') return _errData;
+    return _errData.filter(e => {
+      const src = (e.source || '').toLowerCase();
+      const msg = (e.message || '').toLowerCase();
+      if (_errFilter === 'render') return src.includes('router') || src.includes('render');
+      if (_errFilter === 'network') return msg.includes('fetch') || msg.includes('network') || msg.includes('cors') || msg.includes('timeout');
+      return true; // 'js' = everything else
+    });
+  }
+
+  function _renderErrorStats() {
+    const el = document.getElementById('eng-err-stats');
+    if (!el) return;
+    const filtered = _getFilteredErrors();
+    const total = filtered.length;
+
+    // Group by message for unique count
+    const grouped = new Map();
+    for (const e of filtered) {
+      const key = (e.message || 'Unknown').slice(0, 100);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(e);
+    }
+    const unique = grouped.size;
+
+    // Affected users
+    const users = new Set(filtered.map(e => e.user_id).filter(Boolean));
+
+    // Errors in last hour
+    const hourAgo = Date.now() - 3600e3;
+    const recentCount = filtered.filter(e => new Date(e.created_at).getTime() > hourAgo).length;
+
+    el.innerHTML = `
+      <div class="eng-stat-card">
+        <div class="eng-stat-val">${total}</div>
+        <div class="eng-stat-label">Total errors</div>
+      </div>
+      <div class="eng-stat-card">
+        <div class="eng-stat-val">${unique}</div>
+        <div class="eng-stat-label">Unique errors</div>
+      </div>
+      <div class="eng-stat-card">
+        <div class="eng-stat-val">${users.size}</div>
+        <div class="eng-stat-label">Affected users</div>
+      </div>
+      <div class="eng-stat-card">
+        <div class="eng-stat-val">${recentCount}</div>
+        <div class="eng-stat-label">Last hour</div>
+      </div>
+    `;
+  }
+
+  function _renderErrorChart() {
+    const el = document.getElementById('eng-err-chart');
+    if (!el) return;
+    const filtered = _getFilteredErrors();
+
+    if (!filtered.length) {
+      el.innerHTML = '';
+      return;
+    }
+
+    // Bucket errors into time slots
+    const bucketCount = 24;
+    const offsets = { '1h': 3600e3, '24h': 86400e3, '7d': 604800e3, '30d': 2592000e3 };
+    const range = offsets[_errTimeRange] || 86400e3;
+    const bucketSize = range / bucketCount;
+    const now = Date.now();
+    const buckets = new Array(bucketCount).fill(0);
+
+    for (const e of filtered) {
+      const t = new Date(e.created_at).getTime();
+      const idx = Math.min(bucketCount - 1, Math.floor((now - t) / bucketSize));
+      buckets[bucketCount - 1 - idx]++;
+    }
+
+    const max = Math.max(1, ...buckets);
+    const bars = buckets.map((count, i) => {
+      const h = Math.round((count / max) * 100);
+      const title = `${count} error${count !== 1 ? 's' : ''}`;
+      return `<div class="eng-chart-bar" style="height:${h}%" title="${_esc(title)}" data-count="${count}"></div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="eng-chart-label">Error frequency</div>
+      <div class="eng-chart-bars">${bars}</div>
+    `;
+  }
+
+  function _renderErrorList() {
+    const el = document.getElementById('eng-err-list');
+    if (!el) return;
+    const filtered = _getFilteredErrors();
+
+    if (!filtered.length) {
+      el.innerHTML = `
+        <div class="eng-err-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <h3>No errors</h3>
+          <p>No errors recorded in the selected time range. That's great!</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Group by message
+    const grouped = new Map();
+    for (const e of filtered) {
+      const key = (e.message || 'Unknown').slice(0, 120);
+      if (!grouped.has(key)) grouped.set(key, { message: key, errors: [], firstSeen: e.created_at, lastSeen: e.created_at });
+      const g = grouped.get(key);
+      g.errors.push(e);
+      if (e.created_at < g.firstSeen) g.firstSeen = e.created_at;
+      if (e.created_at > g.lastSeen) g.lastSeen = e.created_at;
+    }
+
+    // Sort by count descending
+    const groups = [...grouped.values()].sort((a, b) => b.errors.length - a.errors.length);
+
+    const rows = groups.map(g => {
+      const latest = g.errors[0];
+      const ago = _timeAgo(g.lastSeen);
+      const sourceTag = latest.source ? `<span class="eng-err-source">${_esc(latest.source.slice(0, 40))}</span>` : '';
+      return `
+        <details class="eng-err-group">
+          <summary class="eng-err-summary">
+            <span class="eng-err-count">${g.errors.length}</span>
+            <div class="eng-err-info">
+              <div class="eng-err-msg">${_esc(g.message)}</div>
+              <div class="eng-err-meta">${sourceTag}<span>${ago}</span></div>
+            </div>
+          </summary>
+          <div class="eng-err-detail">
+            ${g.errors.slice(0, 10).map(e => `
+              <div class="eng-err-entry">
+                <div class="eng-err-entry-time">${new Date(e.created_at).toLocaleString()}</div>
+                ${e.source ? `<div class="eng-err-entry-row"><strong>Source:</strong> ${_esc(e.source)}${e.line ? `:${e.line}` : ''}${e.col ? `:${e.col}` : ''}</div>` : ''}
+                ${e.url ? `<div class="eng-err-entry-row"><strong>URL:</strong> ${_esc(e.url)}</div>` : ''}
+                ${e.stack ? `<pre class="eng-err-stack">${_esc(e.stack)}</pre>` : ''}
+                ${e.user_agent ? `<div class="eng-err-entry-row eng-err-ua">${_esc(e.user_agent.slice(0, 80))}</div>` : ''}
+              </div>
+            `).join('')}
+            ${g.errors.length > 10 ? `<div class="eng-err-more">+ ${g.errors.length - 10} more occurrences</div>` : ''}
+          </div>
+        </details>
+      `;
+    }).join('');
+
+    el.innerHTML = rows;
+  }
+
+  function _timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    if (diff < 60e3) return 'just now';
+    if (diff < 3600e3) return Math.floor(diff / 60e3) + 'm ago';
+    if (diff < 86400e3) return Math.floor(diff / 3600e3) + 'h ago';
+    return Math.floor(diff / 86400e3) + 'd ago';
   }
 
   /* ══════════════════════════════════════════════════════════════════

@@ -54,6 +54,42 @@ const HomeView = (() => {
 
   function _renderEmptyGreeting() {
     const hudRings = '<div class="jv-sch-hud" aria-hidden="true"><div class="jv-hud-r jv-hud-r1"></div><div class="jv-hud-r jv-hud-r2"></div><div class="jv-hud-r jv-hud-r3"></div><div class="jv-hud-r jv-hud-r4"></div><div class="jv-hud-r jv-hud-r5"></div><div class="jv-hud-r jv-hud-r6"></div><div class="jv-hud-ticks"></div></div>';
+    const ships = State.get('user_spaceships') || [];
+    const hasTeam = ships.length > 0;
+
+    if (hasTeam) {
+      // Returning user: show quick actions
+      const ship = ships[0];
+      const agents = State.get('user_agents') || [];
+      const crewCount = agents.filter(a => a.spaceship_id === ship.id).length;
+      return `
+        <div class="chat-home-empty">
+          ${hudRings}
+          <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
+          <div class="home-active-ship">
+            <div class="home-ship-name">${_esc(ship.name || 'Your Spaceship')}</div>
+            <div class="home-ship-meta">${crewCount} agent${crewCount !== 1 ? 's' : ''} deployed</div>
+          </div>
+          <div class="home-quick-actions">
+            <a href="#/bridge?tab=schematic" class="home-action">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-grid"/></svg>
+              Schematic
+            </a>
+            <a href="#/bridge?tab=missions" class="home-action">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-task"/></svg>
+              Missions
+            </a>
+            <a href="#/bridge" class="home-action">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-monitor"/></svg>
+              Bridge
+            </a>
+          </div>
+          <p class="home-hint">Type a message below to run a mission</p>
+        </div>
+      `;
+    }
+
+    // New user: show build CTA
     return `
       <div class="chat-home-empty">
         ${hudRings}

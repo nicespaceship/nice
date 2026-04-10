@@ -103,6 +103,10 @@ const SetupWizard = (() => {
     const actions = _overlay.querySelector('#wiz-actions');
     const progress = _overlay.querySelector('#wiz-progress');
 
+    // Track funnel
+    const stepNames = ['describe', 'needs', 'generate', 'deploy'];
+    if (typeof AuditLog !== 'undefined') AuditLog.add('wizard_step', { step: n, name: stepNames[n] || n });
+
     // Progress dots
     progress.innerHTML = Array.from({ length: TOTAL_STEPS }, (_, i) =>
       `<span class="wizard-dot${i === n ? ' active' : ''}${i < n ? ' done' : ''}">${i < n ? '&#10003;' : i + 1}</span>`

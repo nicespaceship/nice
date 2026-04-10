@@ -224,6 +224,46 @@ const ContentQueue = (() => {
     return { success: false, error: 'Supabase not available' };
   }
 
+  async function schedule(id, platform, scheduledAt) {
+    // Schedule an approved item for future publishing
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+    const item = items.find(i => i.id === id);
+    if (!item) return { success: false, error: 'Item not found' };
+    if (item.approval_status !== 'approved') {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Not approved', message: 'Approve content before scheduling', type: 'warning' });
+      return { success: false, error: 'Must be approved first' };
+    }
+
+    if (typeof SB !== 'undefined' && SB.isReady()) {
+      try {
+        const sbUrl = SB.url || 'https://zacllshbgmnwsmliteqx.supabase.co';
+        const session = await SB.auth().getSession();
+        const token = session?.data?.session?.access_token;
+        if (!token) return { success: false, error: 'Not authenticated' };
+
+        const res = await fetch(sbUrl + '/functions/v1/social-mcp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            jsonrpc: '2.0', method: 'tools/call', id: Date.now(),
+            params: { name: 'social_schedule_post', arguments: { post_id: id, platform, scheduled_at: scheduledAt } },
+          }),
+        });
+        const data = await res.json();
+        if (data.result) {
+          _updateStatus(id, 'scheduled');
+          _updateLocal(id, { metadata: { ...(item.metadata || {}), scheduled_at: scheduledAt, platform } });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Scheduled', message: `Post scheduled for ${new Date(scheduledAt).toLocaleString()}`, type: 'success' });
+          return { success: true };
+        }
+        return { success: false, error: data.error?.message || 'Schedule failed' };
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
+    }
+    return { success: false, error: 'Supabase not available' };
+  }
+
   function exportApproved() {
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
     const approved = items.filter(i => i.approval_status === 'approved');
@@ -362,7 +402,7 @@ const ContentQueue = (() => {
   /* ══════════════════════════════════════════════════════════════ */
 
   return {
-    load, createDraft, approve, reject, edit, copy, publish, exportApproved,
+    load, createDraft, approve, reject, edit, copy, publish, schedule, exportApproved,
     getTypeMeta, getContent, timeAgo, renderMarkdown,
   };
 })();

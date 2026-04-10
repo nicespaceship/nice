@@ -1535,7 +1535,7 @@ const NICE = (() => {
     Router.on('/analytics', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
     Router.on('/cost', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
     Router.on('/board', { title: 'Bridge', render: () => { location.hash = '#/'; } });
-    Router.on('/workflows', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
+    if (typeof WorkflowsView !== 'undefined') Router.on('/workflows', WorkflowsView);
 
     // Ecosystem routes (kept)
     Router.on('/connectors', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
