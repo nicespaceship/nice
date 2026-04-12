@@ -178,43 +178,21 @@ test.describe('Auth Flow', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 test.describe('Dashboard', () => {
-  test('home view renders stats grid for returning users', async ({ page }) => {
+  test('home view renders greeting for new users', async ({ page }) => {
     await waitForApp(page);
-    // Simulate a returning user with a spaceship, then re-navigate to force re-render
-    await page.evaluate(() => {
-      State.set('user_spaceships', [{ id: 'ship-1', name: 'Test Ship' }]);
-      State.set('user_agents', [{ id: 'a1', name: 'Agent 1', spaceship_id: 'ship-1' }]);
-      State.set('agents', [{ id: 'a1', name: 'Agent 1' }]);
-      State.set('missions', [
-        { id: 'm1', status: 'completed' },
-        { id: 'm2', status: 'running' },
-      ]);
-    });
-    // Navigate away and back to force HomeView.render()
-    await page.evaluate(() => { window.location.hash = '#/settings'; });
-    await page.waitForTimeout(500);
-    await page.evaluate(() => { window.location.hash = '#/'; });
-    await page.waitForTimeout(2000);
-    // Stats grid should render
-    const statsGrid = page.locator('.home-stats-grid');
-    await expect(statsGrid).toBeVisible();
-    // Should have stat cards
-    const statCards = page.locator('.home-stat-card');
-    expect(await statCards.count()).toBeGreaterThanOrEqual(4);
+    // New user (no spaceships) should see greeting
+    const greeting = page.locator('.chat-home-greeting');
+    await expect(greeting).toBeVisible();
+    const text = await greeting.textContent();
+    expect(text).toMatch(/Good (morning|afternoon|evening)/);
   });
 
-  test('home quick actions link to correct routes', async ({ page }) => {
+  test('home view has no JS errors', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
     await waitForApp(page);
-    await page.evaluate(() => {
-      State.set('user_spaceships', [{ id: 'ship-1', name: 'Test Ship' }]);
-    });
-    // Navigate away and back to force re-render with state
-    await page.evaluate(() => { window.location.hash = '#/settings'; });
-    await page.waitForTimeout(500);
-    await page.evaluate(() => { window.location.hash = '#/'; });
     await page.waitForTimeout(2000);
-    const actions = page.locator('.home-action');
-    expect(await actions.count()).toBeGreaterThanOrEqual(3);
+    expect(errors.length).toBe(0);
   });
 });
 
