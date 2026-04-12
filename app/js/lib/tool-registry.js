@@ -71,6 +71,17 @@ const ToolRegistry = (() => {
     return null;
   }
 
+  /* ── Remove a tool by id ── */
+  function deregister(id) {
+    if (!id) return false;
+    const existed = _tools.delete(id);
+    // Clean up aliases pointing to this tool
+    for (const [alias, targetId] of _aliases) {
+      if (targetId === id) _aliases.delete(alias);
+    }
+    return existed;
+  }
+
   /* ── List all registered tools ── */
   function list() {
     return Array.from(_tools.values());
@@ -103,11 +114,11 @@ const ToolRegistry = (() => {
 
   /* ═══ Built-in Tools ═══ */
 
-  /* ── web-search: Search web via edge function ── */
+  /* ── web-search: Real search via browser-proxy → DuckDuckGo ── */
   register({
     id:          'web-search',
     name:        'Web Search',
-    description: 'Searches the web for information on a given query. Returns relevant results.',
+    description: 'Searches the web for information using DuckDuckGo. Returns real search results with titles, URLs, and snippets.',
     schema: {
       type: 'object',
       properties: {
@@ -117,18 +128,29 @@ const ToolRegistry = (() => {
       required: ['query'],
     },
     execute: async (input) => {
-      if (typeof SB === 'undefined' || !SB.functions) {
-        throw new Error('Supabase functions not available');
+      if (typeof SB === 'undefined' || !SB.client) {
+        throw new Error('Supabase not available — sign in to search the web');
       }
-      const { data, error } = await SB.functions.invoke('nice-ai', {
-        body: {
-          messages: [{ role: 'user', content: `Search the web for: ${input.query}\n\nReturn the top ${input.limit || 5} results as a JSON array with fields: title, url, snippet.` }],
-          systemPrompt: 'You are a web search assistant. Return structured search results.',
-          config: { model: 'claude-haiku-4-5-20251001', max_tokens: 1024 },
-        },
+      const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
+      if (!supabaseUrl) throw new Error('Supabase URL not configured');
+      const searchUrl = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(input.query);
+      const res = await fetch(supabaseUrl + '/functions/v1/browser-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: searchUrl }),
       });
-      if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Web search failed');
-      return data;
+      if (!res.ok) throw new Error('Search failed (' + res.status + ')');
+      const page = await res.json();
+      if (page.error) throw new Error(page.error);
+      // Extract results from the page text
+      const limit = input.limit || 5;
+      const lines = (page.text || '').split('\n').filter(l => l.trim().length > 10);
+      const links = (page.links || [])
+        .filter(l => !l.includes('duckduckgo.com') && !l.includes('duck.co'))
+        .slice(0, limit);
+      const content = lines.slice(0, limit * 4).join('\n');
+      return 'Search results for "' + input.query + '":\n\n' + content +
+        '\n\nTop Links:\n' + links.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n');
     },
   });
 
@@ -512,6 +534,62 @@ const ToolRegistry = (() => {
     },
   });
 
+  /* ── delegate: Invoke another agent by role or name ── */
+  register({
+    id:          'delegate',
+    name:        'Delegate to Agent',
+    description: 'Delegate a subtask to another agent on the same spaceship by role (e.g. "Research", "Content") or by name. The other agent executes the subtask and returns the result.',
+    schema: {
+      type: 'object',
+      properties: {
+        role:   { type: 'string', description: 'Role of the agent to delegate to (e.g. "Research", "Engineering", "Content", "Marketing")' },
+        name:   { type: 'string', description: 'Exact name of the agent (alternative to role)' },
+        task:   { type: 'string', description: 'The subtask to delegate — be specific about what output you need' },
+      },
+      required: ['task'],
+    },
+    execute: async (input) => {
+      if (!input || !input.task) throw new Error('task is required');
+      const agents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+      if (!agents.length) throw new Error('No agents available to delegate to');
+
+      // Find target agent by name or role
+      let target = null;
+      if (input.name) {
+        target = agents.find(a => (a.name || '').toLowerCase() === input.name.toLowerCase());
+      }
+      if (!target && input.role) {
+        target = agents.find(a => {
+          const r = (a.config?.role || a.role || a.category || '').toLowerCase();
+          return r === input.role.toLowerCase();
+        });
+      }
+      if (!target) {
+        // Fallback: pick the first agent with a matching keyword in name
+        const keyword = (input.role || input.name || '').toLowerCase();
+        target = agents.find(a => (a.name || '').toLowerCase().includes(keyword));
+      }
+      if (!target) throw new Error('No agent found matching role "' + (input.role || '') + '" or name "' + (input.name || '') + '"');
+
+      // Build a minimal blueprint for the delegate
+      const bp = {
+        id: target.id,
+        name: target.name,
+        config: target.config || { role: target.role || 'General', tools: [], llm_engine: 'gemini-2.5-flash' },
+        description: target.description || '',
+        flavor: '',
+      };
+
+      // Execute via ShipLog (single-shot, no nested tool loops to prevent runaway)
+      if (typeof ShipLog !== 'undefined') {
+        const result = await ShipLog.execute('delegation', bp, input.task);
+        return result ? result.content : 'No response from delegate agent.';
+      }
+
+      throw new Error('ShipLog not available for delegation');
+    },
+  });
+
   /* ═══ Alias Registrations ═══
      Map human-readable labels used by blueprints to actual tool ids.
      Auto-normalized lookup also handles case and spacing variants, but
@@ -549,5 +627,10 @@ const ToolRegistry = (() => {
   registerAlias('datetime',         'current-time');
   registerAlias('clock',            'current-time');
 
-  return { register, registerAlias, get, resolve, list, execute, getSchemas };
+  // Delegate variants
+  registerAlias('hand off',         'delegate');
+  registerAlias('assign',           'delegate');
+  registerAlias('ask agent',        'delegate');
+
+  return { register, registerAlias, deregister, get, resolve, list, execute, getSchemas };
 })();

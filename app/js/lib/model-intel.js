@@ -45,6 +45,9 @@ const ModelIntel = (() => {
     if (totalRuns === 10 && typeof Gamification !== 'undefined') {
       Gamification.addXP('model_intel_milestone');
     }
+
+    // Debounced sync to server (every 10th log call)
+    if (m.runs % 10 === 0) syncToServer();
   }
 
   /* ── Auto-select best model ── */
@@ -127,8 +130,58 @@ const ModelIntel = (() => {
     _save();
   }
 
+  /* ── Sync intel data to Supabase for cross-device persistence ── */
+  async function syncToServer() {
+    if (typeof SB === 'undefined' || !SB.isReady()) return;
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) return;
+    try {
+      await SB.db('profiles').update(user.id, {
+        model_intel: JSON.stringify(_data),
+      });
+    } catch (e) {
+      console.warn('[ModelIntel] Sync failed:', e.message);
+    }
+  }
+
+  /* ── Load intel from Supabase (merges with localStorage, server wins on conflict) ── */
+  async function syncFromServer() {
+    if (typeof SB === 'undefined' || !SB.isReady()) return;
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) return;
+    try {
+      const profile = await SB.db('profiles').get(user.id);
+      if (profile && profile.model_intel) {
+        const remote = JSON.parse(profile.model_intel);
+        // Merge: for each blueprint, merge model run data (server wins on conflict)
+        for (const bpId of Object.keys(remote)) {
+          if (!_data[bpId]) {
+            _data[bpId] = remote[bpId];
+          } else {
+            // Merge models — keep the one with more runs
+            const localModels = _data[bpId].models || {};
+            const remoteModels = remote[bpId].models || {};
+            for (const modelId of Object.keys(remoteModels)) {
+              if (!localModels[modelId] || remoteModels[modelId].runs > localModels[modelId].runs) {
+                localModels[modelId] = remoteModels[modelId];
+              }
+            }
+            _data[bpId].models = localModels;
+            // Preserve user preference from either source
+            if (remote[bpId].preferredModel && !_data[bpId].preferredModel) {
+              _data[bpId].preferredModel = remote[bpId].preferredModel;
+            }
+          }
+        }
+        _save();
+      }
+    } catch (e) {
+      console.warn('[ModelIntel] Server sync load failed:', e.message);
+    }
+  }
+
   // Auto-init
   init();
 
-  return { log, bestModel, getProfile, setPreference, getPreference, reset, init };
+  return { log, bestModel, getProfile, setPreference, getPreference, reset, init, syncToServer, syncFromServer };
 })();

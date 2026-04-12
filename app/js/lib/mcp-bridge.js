@@ -61,10 +61,10 @@ const McpBridge = (() => {
    * Call after agent execution to clean up.
    */
   function unloadTools() {
-    if (typeof ToolRegistry !== 'undefined') {
-      // ToolRegistry doesn't have a deregister method,
-      // but we track IDs so callers know which are MCP tools
-      // Tools will be overwritten on next loadTools() call
+    if (typeof ToolRegistry !== 'undefined' && typeof ToolRegistry.deregister === 'function') {
+      for (const id of _registeredToolIds) {
+        ToolRegistry.deregister(id);
+      }
     }
     _registeredToolIds.length = 0;
   }

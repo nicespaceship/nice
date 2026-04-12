@@ -137,6 +137,57 @@ describe('ToolRegistry', () => {
     });
   });
 
+  describe('deregister', () => {
+    it('exposes deregister function', () => {
+      expect(typeof ToolRegistry.deregister).toBe('function');
+    });
+
+    it('removes a registered tool by id', () => {
+      ToolRegistry.register({
+        id: 'test-ephemeral',
+        name: 'Ephemeral Tool',
+        description: 'Test tool to be removed',
+        execute: async () => 'ok',
+      });
+      expect(ToolRegistry.get('test-ephemeral')).toBeTruthy();
+      const removed = ToolRegistry.deregister('test-ephemeral');
+      expect(removed).toBe(true);
+      expect(ToolRegistry.get('test-ephemeral')).toBeNull();
+    });
+
+    it('returns false for non-existent tool', () => {
+      expect(ToolRegistry.deregister('does-not-exist')).toBe(false);
+    });
+
+    it('cleans up aliases pointing to deregistered tool', () => {
+      ToolRegistry.register({
+        id: 'test-alias-cleanup',
+        name: 'Alias Cleanup Test',
+        description: 'Test',
+        execute: async () => 'ok',
+      });
+      ToolRegistry.registerAlias('cleanup-alias', 'test-alias-cleanup');
+      expect(ToolRegistry.resolve('cleanup-alias')?.id).toBe('test-alias-cleanup');
+      ToolRegistry.deregister('test-alias-cleanup');
+      expect(ToolRegistry.resolve('cleanup-alias')).toBeNull();
+    });
+  });
+
+  describe('delegate tool', () => {
+    it('registers delegate tool with correct schema', () => {
+      const tool = ToolRegistry.get('delegate');
+      expect(tool).toBeTruthy();
+      expect(tool.name).toBe('Delegate to Agent');
+      expect(tool.schema.required).toContain('task');
+    });
+
+    it('resolves delegate aliases', () => {
+      expect(ToolRegistry.resolve('hand off')?.id).toBe('delegate');
+      expect(ToolRegistry.resolve('assign')?.id).toBe('delegate');
+      expect(ToolRegistry.resolve('ask agent')?.id).toBe('delegate');
+    });
+  });
+
   describe('execute via alias', () => {
     it('executes a tool when called by display name', async () => {
       const result = await ToolRegistry.execute('Calculator', { expression: '10 / 2' });

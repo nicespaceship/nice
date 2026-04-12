@@ -11,7 +11,7 @@ const IntegrationsView = (() => {
   /* ── MCP Server Catalog ───────────────────────────────────────── */
   const MCP_CATALOG = [
     /* Productivity & Workspace */
-    { id:'google',       name:'Google Workspace',  desc:'Gmail, Drive, Calendar, Docs',       icon:'mail',      tools:['gmail','drive','calendar','docs'],            transport:'streamable-http', auth:'oauth',   cat:'workspace' },
+    { id:'google',       name:'Google Workspace',  desc:'Gmail, Drive, Calendar — read & write',icon:'mail',     tools:['gmail_search','gmail_read','gmail_send','gmail_draft','drive_search','drive_read','calendar_list','calendar_create','calendar_update'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
     { id:'slack',        name:'Slack',             desc:'Channels, DMs, threads',             icon:'chat',      tools:['channels','messages','threads'],              transport:'streamable-http', auth:'oauth',   cat:'workspace' },
     { id:'notion',       name:'Notion',            desc:'Pages, databases, blocks',           icon:'file',      tools:['pages','databases','search'],                 transport:'streamable-http', auth:'oauth',   cat:'workspace' },
     { id:'confluence',   name:'Confluence',        desc:'Wiki, documentation, spaces',        icon:'file',      tools:['pages','spaces','search','comments'],         transport:'streamable-http', auth:'oauth',   cat:'workspace' },

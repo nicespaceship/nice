@@ -36,6 +36,10 @@ const PromptPanel = (() => {
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
 
+  /* ── Multi-turn Agent Conversation (via AgentExecutor.converse) ── */
+  let _activeConversation = null; // { controller, agentBp, agentLabel }
+
+
   /* ── Randomized empty-state prompts ── */
   const _EMPTY_PROMPTS = [
     'Your agents are standing by…',
@@ -574,7 +578,11 @@ const PromptPanel = (() => {
 
         const cardClass = m.error ? 'monitor-card monitor-card-error' : 'monitor-card';
 
-        html += `<div class="${cardClass}">${agentLabel}<div class="monitor-card-text">${_md(clean)}</div>${actionsHtml}${retryHtml}${stepsHtml}` +
+        const convIndicator = m.conversing
+          ? '<div class="monitor-conv-indicator"><span class="monitor-conv-dot"></span> Conversation active — reply to continue</div>'
+          : '';
+
+        html += `<div class="${cardClass}">${agentLabel}<div class="monitor-card-text">${_md(clean)}</div>${actionsHtml}${retryHtml}${stepsHtml}${convIndicator}` +
           `<div class="monitor-card-meta">${modelBadge}${time ? (modelBadge ? ' · ' : '') + time : ''}</div>` +
         `</div>`;
       }
@@ -757,6 +765,7 @@ const PromptPanel = (() => {
 
     if (lower === '/clear') {
       _messages = [];
+      _activeConversation = null;
       _saveMessages();
       _hideMonitor();
       if (_monitorContent) _monitorContent.innerHTML = '';
@@ -1557,31 +1566,133 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
       };
 
-      AgentExecutor.execute(agentBp, text, {
-        tools: agentBp.config.tools,
-        spaceshipId,
-        onStep,
-      }).then(result => {
-        _removeMonitorThinking();
-        document.getElementById('monitor-step-indicator')?.remove();
-        _messages.push({
-          role: 'assistant', text: result.finalAnswer,
-          agent: agentLabel, steps: result.steps, ts: Date.now(),
+      // Multi-turn: reuse existing conversation with this agent, or start a new one
+      const _isSameAgent = _activeConversation && _activeConversation.agentBp &&
+        _activeConversation.agentBp.id === agentBp.id;
+
+      if (_isSameAgent && _activeConversation.controller) {
+        // Continue existing conversation
+        _activeConversation.controller.send(text).then(result => {
+          _removeMonitorThinking();
+          document.getElementById('monitor-step-indicator')?.remove();
+          _messages.push({
+            role: 'assistant', text: result.text,
+            agent: agentLabel, steps: result.steps, ts: Date.now(),
+            conversing: !result.done,
+          });
+          _saveMessages();
+          _renderMonitor();
+          _sending = false;
+          if (sendBtn) sendBtn.disabled = false;
+        }).catch((err) => {
+          _removeMonitorThinking();
+          document.getElementById('monitor-step-indicator')?.remove();
+          const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
+          _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
+          _saveMessages();
+          _renderMonitor();
+          _sending = false;
+          if (sendBtn) sendBtn.disabled = false;
         });
-        _saveMessages();
-        _renderMonitor();
-        _sending = false;
-        if (sendBtn) sendBtn.disabled = false;
-      }).catch(() => {
-        _removeMonitorThinking();
-        document.getElementById('monitor-step-indicator')?.remove();
-        const { text: responseText, agent } = _getResponse(text);
-        _messages.push({ role: 'assistant', text: responseText, agent, ts: Date.now() });
-        _saveMessages();
-        _renderMonitor();
-        _sending = false;
-        if (sendBtn) sendBtn.disabled = false;
-      });
+      } else {
+        // Start fresh conversation via converse() if available, else fallback to execute()
+        if (typeof AgentExecutor.converse === 'function') {
+          // Resolve approval mode for side-effect tool gating
+          let _approvalMode = null;
+          if (typeof ShipBehaviors !== 'undefined') {
+            _approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
+          }
+
+          const controller = AgentExecutor.converse(agentBp, {
+            tools: agentBp.config.tools,
+            spaceshipId,
+            onStep,
+            approvalMode: _approvalMode,
+            onApprovalNeeded: (action) => {
+              return new Promise((resolve) => {
+                _removeMonitorThinking();
+                const approvalEl = document.createElement('div');
+                approvalEl.className = 'monitor-approval';
+                approvalEl.innerHTML =
+                  '<div class="monitor-approval-title">⚠️ Action requires approval</div>' +
+                  '<div class="monitor-approval-detail">' +
+                    '<strong>Tool:</strong> ' + _esc(action.tool) + '<br>' +
+                    '<strong>Input:</strong> <code>' + _esc(JSON.stringify(action.input).substring(0, 200)) + '</code>' +
+                  '</div>' +
+                  '<div class="monitor-approval-btns">' +
+                    '<button class="btn btn-sm btn-primary" id="monitor-approve">Approve</button>' +
+                    '<button class="btn btn-sm" id="monitor-deny">Deny</button>' +
+                  '</div>';
+                _monitorContent?.appendChild(approvalEl);
+                const monitorEl = document.getElementById('nice-monitor');
+                if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
+                document.getElementById('monitor-approve')?.addEventListener('click', () => {
+                  approvalEl.remove();
+                  _addMonitorThinking('Executing approved action…');
+                  resolve(true);
+                });
+                document.getElementById('monitor-deny')?.addEventListener('click', () => {
+                  approvalEl.remove();
+                  _addMonitorThinking('Finding an alternative…');
+                  resolve(false);
+                });
+              });
+            },
+          });
+          _activeConversation = { controller, agentBp, agentLabel };
+
+          controller.send(text).then(result => {
+            _removeMonitorThinking();
+            document.getElementById('monitor-step-indicator')?.remove();
+            _messages.push({
+              role: 'assistant', text: result.text,
+              agent: agentLabel, steps: result.steps, ts: Date.now(),
+              conversing: !result.done,
+            });
+            _saveMessages();
+            _renderMonitor();
+            _sending = false;
+            if (sendBtn) sendBtn.disabled = false;
+          }).catch((err) => {
+            _removeMonitorThinking();
+            document.getElementById('monitor-step-indicator')?.remove();
+            _activeConversation = null;
+            const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
+            _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
+            _saveMessages();
+            _renderMonitor();
+            _sending = false;
+            if (sendBtn) sendBtn.disabled = false;
+          });
+        } else {
+          // Fallback: single-shot execute
+          AgentExecutor.execute(agentBp, text, {
+            tools: agentBp.config.tools,
+            spaceshipId,
+            onStep,
+          }).then(result => {
+            _removeMonitorThinking();
+            document.getElementById('monitor-step-indicator')?.remove();
+            _messages.push({
+              role: 'assistant', text: result.finalAnswer,
+              agent: agentLabel, steps: result.steps, ts: Date.now(),
+            });
+            _saveMessages();
+            _renderMonitor();
+            _sending = false;
+            if (sendBtn) sendBtn.disabled = false;
+          }).catch((err) => {
+            _removeMonitorThinking();
+            document.getElementById('monitor-step-indicator')?.remove();
+            const errorText = '⚠️ **Agent execution failed**\n\n' + (err.message || 'Connection to AI service unavailable.') + '\n\nCheck your connection and try again.';
+            _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
+            _saveMessages();
+            _renderMonitor();
+            _sending = false;
+            if (sendBtn) sendBtn.disabled = false;
+          });
+        }
+      }
     } else if (typeof MissionRouter !== 'undefined' && bpId && !agentBp) {
       // Spaceship selected, no specific agent → route via MissionRouter
       const spaceshipId = bpId;
@@ -1642,11 +1753,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         _renderMonitor();
         _sending = false;
         if (sendBtn) sendBtn.disabled = false;
-      }).catch(() => {
+      }).catch((err) => {
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
-        const { text: responseText, agent } = _getResponse(text);
-        _messages.push({ role: 'assistant', text: responseText, agent, ts: Date.now() });
+        const errorText = '⚠️ **Routing failed**\n\n' + (err.message || 'Could not reach AI service.') + '\n\nCheck your connection and try again.';
+        _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
         _sending = false;
@@ -1686,11 +1797,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         _renderMonitor();
         _sending = false;
         if (sendBtn) sendBtn.disabled = false;
-      }).catch(() => {
+      }).catch((err) => {
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
-        const { text: responseText, agent } = _getResponse(text);
-        _messages.push({ role: 'assistant', text: responseText, agent, ts: Date.now() });
+        const errorText = '⚠️ **Request failed**\n\n' + (err.message || 'Could not reach AI service.') + '\n\nCheck your connection and try again.';
+        _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
         _sending = false;
@@ -1780,7 +1891,18 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             _sending = false;
             if (sendBtn) sendBtn.disabled = false;
           } else {
-            _finishMock();
+            // LLM returned empty — show error instead of fake response
+            _removeMonitorThinking();
+            document.getElementById('monitor-stream')?.remove();
+            _messages.push({
+              role: 'assistant',
+              text: '⚠️ **No response from AI service.** Sign in and enable a model in Security → Integrations to get started.',
+              agent: 'NICE', ts: Date.now(), error: true,
+            });
+            _saveMessages();
+            _renderMonitor();
+            _sending = false;
+            if (sendBtn) sendBtn.disabled = false;
           }
         }).catch(err => {
           _removeMonitorThinking();

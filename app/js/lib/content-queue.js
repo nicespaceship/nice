@@ -401,8 +401,45 @@ const ContentQueue = (() => {
   /*  PUBLIC API                                                    */
   /* ══════════════════════════════════════════════════════════════ */
 
+  /* ── Check for scheduled posts that are due for publishing ── */
+  let _scheduleCheckId = null;
+
+  async function checkScheduledPosts() {
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+    const now = new Date();
+
+    for (const item of items) {
+      if (item.approval_status !== 'scheduled') continue;
+      const scheduledAt = item.metadata?.scheduled_at;
+      if (!scheduledAt) continue;
+      if (new Date(scheduledAt) > now) continue;
+
+      // Due for publish
+      const platform = item.metadata?.platform || 'buffer';
+      const result = await publish(item.id, platform);
+      if (result.success) {
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Scheduled Post Published', message: item.content?.substring(0, 50) + '…', type: 'success' });
+        }
+      } else {
+        console.warn('[ContentQueue] Scheduled publish failed:', item.id, result.error);
+      }
+    }
+  }
+
+  function startScheduleChecker() {
+    if (_scheduleCheckId) return;
+    _scheduleCheckId = setInterval(checkScheduledPosts, 60000);
+    checkScheduledPosts(); // immediate check
+  }
+
+  function stopScheduleChecker() {
+    if (_scheduleCheckId) { clearInterval(_scheduleCheckId); _scheduleCheckId = null; }
+  }
+
   return {
     load, createDraft, approve, reject, edit, copy, publish, schedule, exportApproved,
     getTypeMeta, getContent, timeAgo, renderMarkdown,
+    checkScheduledPosts, startScheduleChecker, stopScheduleChecker,
   };
 })();

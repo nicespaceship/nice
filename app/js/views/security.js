@@ -22,6 +22,28 @@ const SecurityView = (() => {
     { ts: Date.now() - 9000000,severity:'low',    msg:'Compliance checklist updated — score improved to B+' },
   ];
 
+  /* ── Build threat events from real AuditLog data ── */
+  function _getThreats() {
+    if (typeof AuditLog !== 'undefined') {
+      const logs = AuditLog.list();
+      if (logs.length) {
+        // Map audit entries to threat-like events, most recent first
+        return logs.slice(-20).reverse().map(entry => {
+          const action = entry.action || entry.type || 'activity';
+          let severity = 'low';
+          if (/fail|error|denied|reject|exceed/i.test(action + ' ' + (entry.description || ''))) severity = 'high';
+          else if (/auth|token|budget|warning/i.test(action + ' ' + (entry.description || ''))) severity = 'medium';
+          return {
+            ts: new Date(entry.timestamp || entry.ts || Date.now()).getTime(),
+            severity,
+            msg: (entry.description || action.replace(/_/g, ' ')).substring(0, 120),
+          };
+        });
+      }
+    }
+    return DEMO_THREATS; // fallback for fresh installs
+  }
+
   /* ── Compliance checklist items ─────────────────────────────── */
   const CHECKLIST_ITEMS = [
     { id:'keys-rotated',      label:'API keys rotated within 90 days',      category:'Secrets' },
@@ -192,8 +214,8 @@ const SecurityView = (() => {
               <span class="security-stat-label">Agents Monitored</span>
             </div>
             <div class="security-stat">
-              <span class="status-dot ${DEMO_THREATS.filter(t=>t.severity==='high').length ? 'dot-r' : 'dot-g'}"></span>
-              <span class="security-stat-num">${DEMO_THREATS.filter(t=>t.severity==='high').length}</span>
+              <span class="status-dot ${_getThreats().filter(t=>t.severity==='high').length ? 'dot-r' : 'dot-g'}"></span>
+              <span class="security-stat-num">${_getThreats().filter(t=>t.severity==='high').length}</span>
               <span class="security-stat-label">High Threats</span>
             </div>
           </div>
@@ -299,7 +321,7 @@ const SecurityView = (() => {
           </h3>
           <p class="text-muted" style="margin:0 0 12px">Recent security events across your fleet.</p>
           <div class="security-events" id="sec-events">
-            ${DEMO_THREATS.map(t => `
+            ${_getThreats().map(t => `
               <div class="security-event">
                 <span class="sev-dot" style="background:${_sevColor(t.severity)}" title="${t.severity}"></span>
                 <span class="event-msg">${t.msg}</span>

@@ -141,12 +141,11 @@ const SettingsView = (() => {
               <span class="settings-row-desc">LLM engine for new agents.</span>
             </div>
             <select id="set-model" class="filter-select">
-              ${(typeof _getAvailableModels === 'function' ? _getAvailableModels() : [
-                { id: 'claude-4', label: 'Claude 4 Opus', available: true },
-                { id: 'claude-3.5', label: 'Claude 3.5 Sonnet', available: true },
-                { id: 'gpt-4o', label: 'GPT-4o', available: true },
-                { id: 'gemini-2', label: 'Gemini 2', available: true },
-              ]).map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${settings.defaultModel === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (no key)' : ''}</option>`).join('')}
+              ${(typeof VaultView !== 'undefined' && VaultView.MODEL_CATALOG
+                ? VaultView.MODEL_CATALOG.map(m => ({ id: m.id, label: m.name, available: true }))
+                : typeof _getAvailableModels === 'function' ? _getAvailableModels()
+                : [{ id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', available: true }]
+              ).map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${settings.defaultModel === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (no key)' : ''}</option>`).join('')}
             </select>
           </div>
           <div class="settings-row">

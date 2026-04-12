@@ -174,6 +174,85 @@ test.describe('Auth Flow', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
+// Dashboard & Agentic Features
+// ═══════════════════════════════════════════════════════════════════
+
+test.describe('Dashboard', () => {
+  test('home view renders greeting for new users', async ({ page }) => {
+    await waitForApp(page);
+    // New user (no spaceships) should see greeting
+    const greeting = page.locator('.chat-home-greeting');
+    await expect(greeting).toBeVisible();
+    const text = await greeting.textContent();
+    expect(text).toMatch(/Good (morning|afternoon|evening)/);
+  });
+
+  test('home view has no JS errors', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await waitForApp(page);
+    await page.waitForTimeout(2000);
+    expect(errors.length).toBe(0);
+  });
+});
+
+test.describe('Agentic Features', () => {
+  test('AgentExecutor.converse is available', async ({ page }) => {
+    await waitForApp(page);
+    const hasConverse = await page.evaluate(() => typeof AgentExecutor?.converse === 'function');
+    expect(hasConverse).toBe(true);
+  });
+
+  test('ToolRegistry.deregister is available', async ({ page }) => {
+    await waitForApp(page);
+    const hasDeregister = await page.evaluate(() => typeof ToolRegistry?.deregister === 'function');
+    expect(hasDeregister).toBe(true);
+  });
+
+  test('delegate tool is registered', async ({ page }) => {
+    await waitForApp(page);
+    const hasDelegateTool = await page.evaluate(() => ToolRegistry?.get('delegate') !== null);
+    expect(hasDelegateTool).toBe(true);
+  });
+
+  test('AgentMemory API is available', async ({ page }) => {
+    await waitForApp(page);
+    const apis = await page.evaluate(() => ({
+      getMemory: typeof AgentMemory?.getMemory === 'function',
+      learn: typeof AgentMemory?.learn === 'function',
+      buildPromptContext: typeof AgentMemory?.buildPromptContext === 'function',
+    }));
+    expect(apis.getMemory).toBe(true);
+    expect(apis.learn).toBe(true);
+    expect(apis.buildPromptContext).toBe(true);
+  });
+
+  test('ShipBehaviors enforces budget', async ({ page }) => {
+    await waitForApp(page);
+    const result = await page.evaluate(() => {
+      const shipId = 'e2e-test-ship';
+      ShipBehaviors.setBehavior(shipId, 'dailyBudget', 1000);
+      ShipBehaviors.setBehavior(shipId, 'budgetUsedToday', 900);
+      const canSpend = ShipBehaviors.checkBudget(shipId, 50);
+      const cantSpend = ShipBehaviors.checkBudget(shipId, 200);
+      return { canSpend, cantSpend };
+    });
+    expect(result.canSpend).toBe(true);
+    expect(result.cantSpend).toBe(false);
+  });
+});
+
+test.describe('Blueprint Filters', () => {
+  test('tier filter dropdown exists on bridge view', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/bridge', 'Bridge');
+    await page.waitForTimeout(1500);
+    const tierFilter = page.locator('#bp-tier');
+    await expect(tierFilter).toBeAttached();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
 // Performance — load time and navigation speed
 // ═══════════════════════════════════════════════════════════════════
 

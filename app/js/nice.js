@@ -1367,6 +1367,9 @@ const NICE = (() => {
         if (typeof BlueprintStore !== 'undefined' && BlueprintStore.migrateGuestState) BlueprintStore.migrateGuestState();
         _loadTokenBalance(user);
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
+        // Sync cross-device data
+        if (typeof ModelIntel !== 'undefined' && ModelIntel.syncFromServer) ModelIntel.syncFromServer().catch(() => {});
+        if (typeof MissionScheduler !== 'undefined' && MissionScheduler.syncFromServer) MissionScheduler.syncFromServer().catch(() => {});
         // First-run check: show setup wizard for new users with no spaceships
         _checkFirstRun(user);
       }

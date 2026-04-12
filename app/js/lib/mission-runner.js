@@ -119,6 +119,33 @@ const MissionRunner = (() => {
     // If no spaceship, create a temporary context ID
     if (!spaceshipId) spaceshipId = 'mission-' + missionId;
 
+    // 3b. Enforce maxConcurrent (if configured for this spaceship)
+    if (spaceshipId && typeof ShipBehaviors !== 'undefined') {
+      const behaviors = ShipBehaviors.getBehaviors(spaceshipId);
+      if (behaviors.maxConcurrent > 0) {
+        const missions = State.get('missions') || [];
+        const runningCount = missions.filter(m => m.status === 'running').length;
+        if (runningCount >= behaviors.maxConcurrent) {
+          const msg = 'Max concurrent missions reached (' + runningCount + '/' + behaviors.maxConcurrent + '). Mission queued — will run when a slot opens.';
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Queued', message: msg, type: 'info' });
+          return null; // stays in queued status
+        }
+      }
+    }
+
+    // 3c. Enforce daily token budget (if configured for this spaceship)
+    if (spaceshipId && typeof ShipBehaviors !== 'undefined') {
+      const estimatedTokens = 2048; // conservative estimate for a single mission
+      if (!ShipBehaviors.checkBudget(spaceshipId, estimatedTokens)) {
+        const behaviors = ShipBehaviors.getBehaviors(spaceshipId);
+        const failMsg = 'Daily token budget exceeded (' + behaviors.budgetUsedToday + '/' + behaviors.dailyBudget + '). Mission deferred until budget resets.';
+        await SB.db('tasks').update(missionId, { status: 'failed', result: failMsg, updated_at: new Date().toISOString() }).catch(() => {});
+        _updateLocalMission(missionId, { status: 'failed', result: failMsg });
+        _notify(user.id, 'warning', 'Budget Exceeded', failMsg);
+        return null;
+      }
+    }
+
     // 4. Transition to running
     try {
       await SB.db('tasks').update(missionId, { status: 'running', progress: 10, updated_at: new Date().toISOString() });
@@ -188,10 +215,17 @@ const MissionRunner = (() => {
       const _hasTools = _hasExplicitTools || _hasMcpTools;
       let result;
 
+      // Resolve approval mode from ShipBehaviors
+      let _approvalMode = null;
+      if (spaceshipId && typeof ShipBehaviors !== 'undefined') {
+        _approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
+      }
+
       if (_hasTools && typeof AgentExecutor !== 'undefined') {
         const execResult = await AgentExecutor.execute(agentBp, missionPrompt, {
           tools: agentBp.config.tools,
           spaceshipId,
+          approvalMode: _approvalMode,
           onStep: (step) => {
             // Update progress based on steps
             const stepProgress = Math.min(10 + (step.index / (agentBp.config.maxSteps || 5)) * 70, 80);
@@ -229,6 +263,32 @@ const MissionRunner = (() => {
         updated_at: now,
       });
       _updateLocalMission(missionId, { status: 'review', progress: 100, result: result.content, approval_status: 'draft', metadata });
+
+      // Post-execution quality scoring using blueprint eval_criteria
+      let qualityReview = null;
+      if (typeof QualityGate !== 'undefined' && result.content) {
+        const evalCriteria = agentBp?.config?.eval_criteria || agentBp?.eval_criteria;
+        const criteria = Array.isArray(evalCriteria) && evalCriteria.length
+          ? evalCriteria
+          : ['relevance', 'quality', 'completeness'];
+        try {
+          qualityReview = await QualityGate.review(mission.title, result.content, { criteria });
+          metadata.quality_score = qualityReview.score;
+          metadata.quality_pass = qualityReview.pass;
+          metadata.quality_feedback = qualityReview.feedback;
+        } catch { /* non-critical */ }
+      }
+
+      // Deduct tokens from spaceship daily budget
+      if (spaceshipId && typeof ShipBehaviors !== 'undefined') {
+        const tokensUsed = result.metadata?.totalTokens || result.metadata?.tokens_used || 500;
+        ShipBehaviors.deductBudget(spaceshipId, tokensUsed);
+      }
+
+      // Auto-learn from completed mission (memory updated on approval/rejection)
+      if (typeof AgentMemory !== 'undefined' && agentBp && agentBp.id) {
+        AgentMemory.learn(agentBp.id, { task: mission.title, content: result.content, metadata: result.metadata }, 'approved');
+      }
 
       // XP awarded on approval, not on generation
       // (Gamification.addXP('complete_mission') moved to approve action)

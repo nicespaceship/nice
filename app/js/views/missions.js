@@ -67,6 +67,9 @@ const MissionsView = (() => {
         <!-- Pipeline -->
         <div class="mc-pipeline" id="mc-pipeline"></div>
 
+        <!-- Scheduled Missions -->
+        <div class="mc-schedules" id="mc-schedules"></div>
+
         <!-- Mission Feed -->
         <div class="mc-feed" id="mc-feed">${_skeletonRows(6)}</div>
 
@@ -443,7 +446,57 @@ const MissionsView = (() => {
   function _onMissionsChanged(missions) {
     _renderGauges(missions);
     _renderPipeline(missions);
+    _renderSchedules();
     _applyFilters();
+  }
+
+  function _renderSchedules() {
+    const wrap = document.getElementById('mc-schedules');
+    if (!wrap) return;
+    if (typeof MissionScheduler === 'undefined') { wrap.innerHTML = ''; return; }
+
+    const schedules = MissionScheduler.list();
+    if (!schedules.length) { wrap.innerHTML = ''; return; }
+
+    wrap.innerHTML = `
+      <div class="mc-sched-section">
+        <div class="mc-sched-hdr">
+          <h3 class="mc-sched-title">Scheduled Missions</h3>
+          <span class="mc-sched-count">${schedules.length}</span>
+        </div>
+        <div class="mc-sched-list">
+          ${schedules.map(s => {
+            const desc = MissionScheduler.describe(s.cron);
+            const lastRun = s.lastRun ? _timeAgo(s.lastRun) : 'never';
+            return `
+              <div class="mc-sched-row ${s.enabled ? '' : 'mc-sched-disabled'}">
+                <div class="mc-sched-info">
+                  <span class="mc-sched-name">${_esc(s.template.title)}</span>
+                  <span class="mc-sched-desc">${_esc(desc)} · Last run: ${lastRun}</span>
+                </div>
+                <div class="mc-sched-actions">
+                  <button class="btn btn-xs mc-sched-toggle" data-id="${_esc(s.id)}" data-enabled="${s.enabled}">${s.enabled ? 'Pause' : 'Resume'}</button>
+                  <button class="btn btn-xs mc-sched-delete" data-id="${_esc(s.id)}">Remove</button>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+
+    wrap.querySelectorAll('.mc-sched-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const isEnabled = btn.dataset.enabled === 'true';
+        MissionScheduler.setEnabled(id, !isEnabled);
+        _renderSchedules();
+      });
+    });
+    wrap.querySelectorAll('.mc-sched-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        MissionScheduler.unschedule(btn.dataset.id);
+        _renderSchedules();
+      });
+    });
   }
 
   async function _loadMissions() {
@@ -548,7 +601,35 @@ const MissionsView = (() => {
     finally { btn.disabled = false; btn.textContent = 'Create Mission'; }
   }
 
-  function _subscribeRealtime() { _channel = SB.realtime.subscribe('tasks', () => _loadMissions()); }
+  function _subscribeRealtime() {
+    _channel = SB.realtime.subscribe('tasks', (payload) => {
+      if (!payload || !payload.new) { _loadMissions(); return; }
+      // Incremental update: merge the changed row into State instead of full reload
+      const updated = payload.new;
+      const missions = State.get('missions') || [];
+      const idx = missions.findIndex(m => m.id === updated.id);
+      if (idx !== -1) {
+        // Check for status transition → trigger notification
+        const old = missions[idx];
+        if (old.status !== updated.status) {
+          if (updated.status === 'review' && typeof Notify !== 'undefined') {
+            Notify.send({ title: 'Mission Ready', message: updated.title, type: 'success' });
+          }
+          if (updated.status === 'failed' && typeof Notify !== 'undefined') {
+            Notify.send({ title: 'Mission Failed', message: updated.title, type: 'error' });
+          }
+        }
+        missions[idx] = { ...missions[idx], ...updated };
+        State.set('missions', [...missions]);
+      } else if (payload.eventType === 'INSERT') {
+        missions.unshift(updated);
+        State.set('missions', [...missions]);
+      } else {
+        // Unknown row — full reload
+        _loadMissions();
+      }
+    });
+  }
 
   function destroy() {
     if (_channel) { SB.realtime.unsubscribe(_channel); _channel = null; }
@@ -715,6 +796,8 @@ const MissionDetailView = (() => {
                 ${metadata.tokens_used ? `<div class="detail-kv-row"><span class="kv-label">Tokens Used</span><span class="kv-val">${metadata.tokens_used.toLocaleString()}</span></div>` : ''}
                 ${metadata.fuel_cost ? `<div class="detail-kv-row"><span class="kv-label">Fuel Cost</span><span class="kv-val">${metadata.fuel_cost}</span></div>` : ''}
                 ${metadata.temperature ? `<div class="detail-kv-row"><span class="kv-label">Temperature</span><span class="kv-val">${metadata.temperature}</span></div>` : ''}
+                ${metadata.quality_score !== undefined ? `<div class="detail-kv-row"><span class="kv-label">Quality Score</span><span class="kv-val"><span class="mission-quality-badge ${metadata.quality_pass ? 'quality-pass' : 'quality-fail'}">${metadata.quality_score}/10</span></span></div>` : ''}
+                ${metadata.quality_feedback ? `<div class="detail-kv-row"><span class="kv-label">Quality Review</span><span class="kv-val" style="font-size:.78rem">${_esc(metadata.quality_feedback)}</span></div>` : ''}
               </div>
             </div>
           ` : ''}
