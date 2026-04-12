@@ -17,7 +17,6 @@ const SCRIPTS = [
   'app/js/lib/state.js',
   'app/js/lib/utils.js',
   'app/js/lib/skin.js',
-  'app/js/lib/skin-packs.js',
   'app/js/lib/rate-limiter.js',
   'app/js/lib/supabase.js',
   'app/js/lib/offline-queue.js',
