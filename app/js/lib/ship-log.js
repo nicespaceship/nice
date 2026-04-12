@@ -168,7 +168,15 @@ const ShipLog = (() => {
         : (Array.isArray(rawContent) && rawContent[0]?.text) || String(rawContent || '');
       response.content = textContent;
 
-      const tokensUsed = response.usage ? (response.usage.input_tokens + response.usage.output_tokens) : Math.floor(textContent.length / 4);
+      // Prefer API-reported token counts; fall back to length estimate only as last resort
+      let tokensUsed = 0;
+      if (response.usage && (response.usage.input_tokens || response.usage.output_tokens)) {
+        tokensUsed = (response.usage.input_tokens || 0) + (response.usage.output_tokens || 0);
+      } else if (response.usage && response.usage.total_tokens) {
+        tokensUsed = response.usage.total_tokens;
+      } else {
+        tokensUsed = Math.floor(textContent.length / 4);
+      }
       metadata = {
         model:       response.model || llmConfig.model || 'gemini-2.5-flash',
         tokens_used: tokensUsed,
@@ -308,66 +316,6 @@ const ShipLog = (() => {
     }
 
     return { content: fullContent, model, usage: { input_tokens: 0, output_tokens: Math.floor(fullContent.length / 4) } };
-  }
-
-  /* ── Mock response pool (fallback when LLM calls fail) ── */
-  const _ROLE_RESPONSES = {
-    Research: [
-      'I found 3 relevant sources on this topic. The key findings suggest a significant shift in market dynamics, with emerging players disrupting traditional approaches. I\'ll compile the full briefing.',
-      'Cross-referencing databases now. Initial analysis shows strong correlation between the variables you mentioned. Generating executive summary.',
-      'Research scan complete. 12 sources analyzed across academic papers, industry reports, and news. The consensus points toward a bullish outlook.',
-    ],
-    Analytics: [
-      'Dataset processed. Key insight: there\'s a 23% variance between Q3 and Q4 metrics that warrants investigation. Chart attached.',
-      'Running regression analysis on the provided data. Preliminary results show a strong positive correlation (r=0.87). Full report generating.',
-      'Anomaly detected in row 847 — outlier exceeds 3 standard deviations. Flagged for review. Summary dashboard updated.',
-    ],
-    Content: [
-      'Draft generated. 800 words, SEO-optimized with your target keywords. Tone matches brand guidelines. Ready for review.',
-      'Created 3 content variants for A/B testing. Each targets a different audience segment. Scheduling for optimal posting times.',
-      'Newsletter copy complete. Subject line options: 3 high-CTR variants based on historical performance data.',
-    ],
-    Engineering: [
-      'Code review complete. 2 critical issues flagged: potential SQL injection on line 47 and an unhandled promise rejection. PR comments added.',
-      'Infrastructure audit done. Current setup handles 10K RPM — recommend adding a CDN layer and connection pooling to reach 50K target.',
-      'Test suite generated: 15 unit tests, 4 integration tests. Coverage increased from 62% to 89%. All passing.',
-    ],
-    Ops: [
-      'Workflow optimized. Removed 3 redundant approval steps — estimated time savings: 4 hours per sprint cycle.',
-      'Sprint planning complete. 12 tasks assigned across the team based on capacity and skill match. Blockers flagged.',
-      'SLA report generated. 99.7% uptime this quarter. Two incidents tracked: both resolved under 15 minutes.',
-    ],
-    Sales: [
-      'Lead scoring complete. 47 leads qualified this week — 12 marked hot with decision-maker engagement signals detected.',
-      'Proposal drafted for the enterprise deal. Customized ROI section based on their public financials. Ready for your review.',
-      'Pipeline analysis: $2.3M in active opportunities. Recommend prioritizing 3 deals closing this month.',
-    ],
-    Support: [
-      'Ticket triage complete. 23 new tickets: 5 critical (SLA < 2h), 12 standard, 6 low-priority. Auto-responses sent for FAQs.',
-      'Customer satisfaction report: 94.2% CSAT this week. Trending up from 91.8%. Top issue: onboarding confusion — knowledge base article drafted.',
-      'Escalation handled. Root cause identified as a config mismatch. Fix deployed. Customer notified with resolution summary.',
-    ],
-    Legal: [
-      'Contract review complete. 3 non-standard clauses flagged: indemnification scope, IP assignment timing, and termination notice period.',
-      'Compliance checklist generated for GDPR and SOC 2 requirements. 2 gaps identified with remediation recommendations.',
-      'NDA template updated with the latest regulatory requirements. Track-changes version attached for your review.',
-    ],
-    Marketing: [
-      'Campaign brief generated. Target audience segmented into 3 cohorts based on engagement data. Creative recommendations included.',
-      'Ad copy variants ready: 5 headlines, 3 descriptions. Predicted CTR improvement: 18% based on historical benchmarks.',
-      'Competitive positioning analysis complete. We have clear differentiation in 3 areas. Messaging framework updated.',
-    ],
-    default: [
-      'Task acknowledged. Processing your request now. I\'ll have results shortly.',
-      'Analyzing the situation. Based on available data, here are my initial recommendations.',
-      'Request received. Running the workflow now. Stand by for results.',
-    ],
-  };
-
-  function _mockResponse(blueprint, prompt) {
-    const role = (blueprint && blueprint.config && blueprint.config.role) || 'default';
-    const pool = _ROLE_RESPONSES[role] || _ROLE_RESPONSES.default;
-    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   /**

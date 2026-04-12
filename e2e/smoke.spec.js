@@ -180,7 +180,7 @@ test.describe('Auth Flow', () => {
 test.describe('Dashboard', () => {
   test('home view renders stats grid for returning users', async ({ page }) => {
     await waitForApp(page);
-    // Simulate a returning user with a spaceship
+    // Simulate a returning user with a spaceship, then re-navigate to force re-render
     await page.evaluate(() => {
       State.set('user_spaceships', [{ id: 'ship-1', name: 'Test Ship' }]);
       State.set('user_agents', [{ id: 'a1', name: 'Agent 1', spaceship_id: 'ship-1' }]);
@@ -189,9 +189,12 @@ test.describe('Dashboard', () => {
         { id: 'm1', status: 'completed' },
         { id: 'm2', status: 'running' },
       ]);
-      window.location.hash = '#/';
     });
-    await page.waitForTimeout(1500);
+    // Navigate away and back to force HomeView.render()
+    await page.evaluate(() => { window.location.hash = '#/settings'; });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => { window.location.hash = '#/'; });
+    await page.waitForTimeout(2000);
     // Stats grid should render
     const statsGrid = page.locator('.home-stats-grid');
     await expect(statsGrid).toBeVisible();
@@ -204,9 +207,12 @@ test.describe('Dashboard', () => {
     await waitForApp(page);
     await page.evaluate(() => {
       State.set('user_spaceships', [{ id: 'ship-1', name: 'Test Ship' }]);
-      window.location.hash = '#/';
     });
-    await page.waitForTimeout(1500);
+    // Navigate away and back to force re-render with state
+    await page.evaluate(() => { window.location.hash = '#/settings'; });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => { window.location.hash = '#/'; });
+    await page.waitForTimeout(2000);
     const actions = page.locator('.home-action');
     expect(await actions.count()).toBeGreaterThanOrEqual(3);
   });
