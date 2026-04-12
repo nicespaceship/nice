@@ -693,8 +693,104 @@ const AgentDetailView = (() => {
             ` : '<p class="text-muted" style="font-size:.82rem">No missions assigned yet.</p>'}
           </div>
 
+          ${(() => {
+            if (typeof AgentMemory === 'undefined') return '';
+            const mem = AgentMemory.getMemory(agentId);
+            if (!mem) return '';
+            const hasFacts = mem.facts && mem.facts.length;
+            const hasSuccess = mem.successPatterns && mem.successPatterns.length;
+            const hasFailure = mem.failurePatterns && mem.failurePatterns.length;
+            const hasContext = mem.context && Object.keys(mem.context).length;
+            if (!hasFacts && !hasSuccess && !hasFailure && !hasContext) {
+              return `
+                <div class="detail-section">
+                  <h3 class="detail-section-title">Agent Memory</h3>
+                  <p class="text-muted" style="font-size:.82rem">No learned facts yet. Memory builds as this agent completes missions.</p>
+                </div>`;
+            }
+            let memHtml = '<div class="detail-section"><h3 class="detail-section-title">Agent Memory</h3>';
+            if (hasContext) {
+              memHtml += '<div class="mem-group"><div class="mem-group-label">Business Context</div>';
+              Object.entries(mem.context).forEach(([k, v]) => {
+                memHtml += '<div class="mem-fact"><span class="mem-key">' + _esc(k) + ':</span> ' + _esc(String(v)) + '</div>';
+              });
+              memHtml += '</div>';
+            }
+            if (hasFacts) {
+              memHtml += '<div class="mem-group"><div class="mem-group-label">Learned Facts <span class="mem-count">' + mem.facts.length + '</span></div>';
+              mem.facts.slice(-10).reverse().forEach(f => {
+                memHtml += '<div class="mem-fact">' + _esc(f) + '</div>';
+              });
+              memHtml += '</div>';
+            }
+            if (hasSuccess) {
+              memHtml += '<div class="mem-group"><div class="mem-group-label">What Worked <span class="mem-count">' + mem.successPatterns.length + '</span></div>';
+              mem.successPatterns.slice(-5).reverse().forEach(s => {
+                memHtml += '<div class="mem-fact mem-success">"' + _esc(s.task) + '" — ' + _esc(s.result || s.approach).substring(0, 80) + '</div>';
+              });
+              memHtml += '</div>';
+            }
+            if (hasFailure) {
+              memHtml += '<div class="mem-group"><div class="mem-group-label">What to Avoid <span class="mem-count">' + mem.failurePatterns.length + '</span></div>';
+              mem.failurePatterns.slice(-5).reverse().forEach(f => {
+                memHtml += '<div class="mem-fact mem-failure">"' + _esc(f.task) + '" — ' + _esc(f.reason).substring(0, 80) + '</div>';
+              });
+              memHtml += '</div>';
+            }
+            memHtml += '<button class="btn btn-xs" id="btn-clear-memory" style="margin-top:8px">Clear Memory</button>';
+            memHtml += '</div>';
+            return memHtml;
+          })()}
+
+          <div id="agent-workspace"></div>
+
         </div>
       `;
+
+      // Render agent workspace (VirtualFS)
+      (() => {
+        if (typeof VirtualFS === 'undefined') return;
+        const wsEl = document.getElementById('agent-workspace');
+        if (!wsEl) return;
+        const projectId = 'agent-' + agentId;
+        const project = VirtualFS.getProject(projectId);
+        if (!project) {
+          wsEl.innerHTML = `
+            <div class="detail-section">
+              <h3 class="detail-section-title">Workspace</h3>
+              <p class="text-muted" style="font-size:.82rem">No files yet. Agents create files here during missions.</p>
+              <button class="btn btn-xs" id="btn-create-workspace">Initialize Workspace</button>
+            </div>`;
+          document.getElementById('btn-create-workspace')?.addEventListener('click', () => {
+            VirtualFS.createProject(projectId, agent.name + ' Workspace');
+            render(el, params);
+          });
+        } else {
+          const files = VirtualFS.listFiles(projectId);
+          const fileListHtml = files.length
+            ? files.map(f => {
+                const content = VirtualFS.getFile(projectId, f);
+                const size = content ? content.length : 0;
+                const sizeStr = size > 1024 ? (size / 1024).toFixed(1) + ' KB' : size + ' B';
+                return '<div class="ws-file"><span class="ws-file-name">' + _esc(f) + '</span><span class="ws-file-size">' + sizeStr + '</span></div>';
+              }).join('')
+            : '<p class="text-muted" style="font-size:.82rem">Workspace is empty.</p>';
+          wsEl.innerHTML = `
+            <div class="detail-section">
+              <h3 class="detail-section-title">Workspace <span style="font-size:.68rem;color:var(--text-muted);font-weight:400">${files.length} file${files.length !== 1 ? 's' : ''}</span></h3>
+              <div class="ws-file-list">${fileListHtml}</div>
+            </div>`;
+        }
+      })();
+
+      // Clear agent memory
+      document.getElementById('btn-clear-memory')?.addEventListener('click', () => {
+        if (typeof AgentMemory !== 'undefined') {
+          AgentMemory.clear(agentId);
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Memory Cleared', message: agent.name + ' memory reset.', type: 'system' });
+          render(el, params);
+        }
+      });
 
       // Save as template
       document.getElementById('btn-save-template')?.addEventListener('click', () => {

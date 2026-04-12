@@ -483,9 +483,13 @@ const WorkflowDetailView = (() => {
         };
         nodeEl.classList.add('selected');
 
+        const GRID = 20; // snap-to-grid spacing in px
         const onMove = (ev) => {
-          node.x = Math.max(0, ev.clientX - _dragging.offsetX - _dragging.rect.left);
-          node.y = Math.max(0, ev.clientY - _dragging.offsetY - _dragging.rect.top);
+          let rawX = Math.max(0, ev.clientX - _dragging.offsetX - _dragging.rect.left);
+          let rawY = Math.max(0, ev.clientY - _dragging.offsetY - _dragging.rect.top);
+          // Snap to grid
+          node.x = Math.round(rawX / GRID) * GRID;
+          node.y = Math.round(rawY / GRID) * GRID;
           nodeEl.style.left = node.x + 'px';
           nodeEl.style.top = node.y + 'px';
           _drawConnections();
@@ -494,6 +498,7 @@ const WorkflowDetailView = (() => {
           _dragging = null;
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
+          _saveWorkflow();
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);

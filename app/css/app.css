@@ -2787,6 +2787,65 @@
 .quality-pass { color:var(--color-success, #4ade80); background:rgba(74,222,128,0.1); }
 .quality-fail { color:var(--color-error, #f87171); background:rgba(248,113,113,0.1); }
 
+/* Agent workspace file list */
+.ws-file-list { display:flex; flex-direction:column; gap:2px; }
+.ws-file {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:5px 10px; border-radius:4px;
+  font-family:var(--font-m); font-size:.78rem; color:var(--text);
+  background:var(--bg-alt); border:1px solid var(--border);
+}
+.ws-file-name { font-weight:500; }
+.ws-file-size { font-size:.65rem; color:var(--text-muted); }
+
+/* Scheduled missions dashboard */
+.mc-sched-section { margin:12px 0; }
+.mc-sched-hdr {
+  display:flex; align-items:center; gap:8px; margin-bottom:8px;
+}
+.mc-sched-title {
+  font-family:var(--font-b); font-size:.8rem; font-weight:600;
+  color:var(--text); margin:0;
+}
+.mc-sched-count {
+  font-family:var(--font-b); font-size:.65rem; background:var(--accent);
+  color:var(--bg); padding:1px 7px; border-radius:9px; font-weight:600;
+}
+.mc-sched-list { display:flex; flex-direction:column; gap:4px; }
+.mc-sched-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 12px; border-radius:var(--radius);
+  background:var(--panel-bg, var(--bg-alt)); border:1px solid var(--border);
+}
+.mc-sched-disabled { opacity:.5; }
+.mc-sched-info { display:flex; flex-direction:column; gap:2px; }
+.mc-sched-name {
+  font-family:var(--font-b); font-size:.8rem; font-weight:600; color:var(--text);
+}
+.mc-sched-desc {
+  font-family:var(--font-b); font-size:.68rem; color:var(--text-muted);
+}
+.mc-sched-actions { display:flex; gap:6px; }
+
+/* Agent memory viewer */
+.mem-group { margin-bottom:12px; }
+.mem-group-label {
+  font-family:var(--font-b); font-size:.7rem; font-weight:600;
+  color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em;
+  margin-bottom:4px;
+}
+.mem-count {
+  font-weight:400; color:var(--accent); margin-left:4px;
+}
+.mem-fact {
+  font-family:var(--font-b); font-size:.78rem; color:var(--text);
+  padding:4px 8px; border-left:2px solid var(--border); margin:3px 0;
+  line-height:1.4;
+}
+.mem-key { font-weight:600; color:var(--accent); }
+.mem-success { border-left-color:var(--color-success, #4ade80); }
+.mem-failure { border-left-color:var(--color-error, #f87171); }
+
 /* Priority tags */
 .task-priority-tag {
   font-family:var(--font-b); font-size:.48rem; letter-spacing:.08em;
