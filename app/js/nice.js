@@ -1554,6 +1554,7 @@ const NICE = (() => {
     Router.on('/workflows/:id', WorkflowDetailView);
     if (typeof ShipLogView !== 'undefined') Router.on('/ship-log', ShipLogView);
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
+    if (typeof DocsView !== 'undefined') Router.on('/docs', DocsView);
     if (typeof EngineeringView !== 'undefined') Router.on('/engineering', EngineeringView);
   }
 
