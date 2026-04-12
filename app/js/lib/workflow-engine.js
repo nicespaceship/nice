@@ -20,9 +20,15 @@ const WorkflowEngine = (() => {
 
     const order = _topoSort(workflow.nodes, workflow.connections);
 
+    // Track pruned nodes from branch decisions
+    workflow._prunedNodes = new Set();
+
     for (const nodeId of order) {
       const node = workflow.nodes.find(n => n.id === nodeId);
       if (!node) continue;
+
+      // Skip nodes pruned by branch decisions
+      if (workflow._prunedNodes.has(nodeId)) continue;
 
       if (typeof opts.onNodeStart === 'function') {
         try { opts.onNodeStart(node); } catch (e) { /* ignore */ }
@@ -163,10 +169,15 @@ const WorkflowEngine = (() => {
 
     items = items.slice(0, maxIterations);
 
-    // Find downstream nodes connected from this loop node
+    // Find immediate downstream nodes connected from this loop node
     const downstreamIds = workflow.connections
       .filter(c => c.from === node.id)
       .map(c => c.to);
+
+    // Mark downstream nodes as handled by the loop — prevents double-execution
+    // in the main topo-sort loop
+    if (!workflow._prunedNodes) workflow._prunedNodes = new Set();
+    downstreamIds.forEach(id => workflow._prunedNodes.add(id));
 
     const results = [];
     for (const item of items) {
@@ -190,20 +201,56 @@ const WorkflowEngine = (() => {
 
   function _executeBranch(node, input, nodeResults, workflow) {
     const conditions = node.config.conditions || [];
+    let chosenTarget = null;
 
     for (const cond of conditions) {
       try {
         const result = { text: input, length: input.length, success: input.length > 0 };
         const pass = new Function('result', `return !!(${cond.expression})`)(result);
         if (pass && cond.targetNodeId) {
-          // Mark this branch as the chosen path — return input to pass through
-          return input;
+          chosenTarget = cond.targetNodeId;
+          break;
         }
       } catch { /* skip invalid expressions */ }
     }
 
-    // No condition matched — pass input through
+    // Prune unchosen branches: find all downstream connections from this
+    // branch node and mark unchosen paths so the main loop skips them.
+    // We collect all node IDs reachable only via non-chosen paths.
+    const downstreamIds = workflow.connections
+      .filter(c => c.from === node.id)
+      .map(c => c.to);
+
+    if (chosenTarget && downstreamIds.length > 1) {
+      const prunedRoots = downstreamIds.filter(id => id !== chosenTarget);
+      const prunedSet = _collectDescendants(prunedRoots, workflow.connections, chosenTarget);
+      // Store pruned node IDs on the workflow object for the main loop to skip
+      if (!workflow._prunedNodes) workflow._prunedNodes = new Set();
+      prunedSet.forEach(id => workflow._prunedNodes.add(id));
+    }
+
     return input;
+  }
+
+  /** Collect all descendants of rootIds via connections, excluding protectedId subtree. */
+  function _collectDescendants(rootIds, connections, protectedId) {
+    const pruned = new Set();
+    const queue = [...rootIds];
+    // Build adjacency for downstream lookup
+    const adj = {};
+    connections.forEach(c => {
+      if (!adj[c.from]) adj[c.from] = [];
+      adj[c.from].push(c.to);
+    });
+    while (queue.length) {
+      const id = queue.shift();
+      if (id === protectedId || pruned.has(id)) continue;
+      pruned.add(id);
+      (adj[id] || []).forEach(child => {
+        if (!pruned.has(child) && child !== protectedId) queue.push(child);
+      });
+    }
+    return pruned;
   }
 
   async function _executeWebhook(node, input) {

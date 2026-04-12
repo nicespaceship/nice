@@ -124,6 +124,11 @@ loadScriptGlobal('lib/virtual-fs.js');
 loadScriptGlobal('lib/browser-tools.js');
 loadScriptGlobal('lib/blueprint-utils.js');
 loadScriptGlobal('lib/card-renderer.js');
+loadScriptGlobal('lib/agent-memory.js');
+loadScriptGlobal('lib/ship-behaviors.js');
+loadScriptGlobal('lib/mcp-bridge.js');
+loadScriptGlobal('lib/model-intel.js');
+loadScriptGlobal('lib/agent-executor.js');
 
 // Reset helper
 beforeEach(() => {

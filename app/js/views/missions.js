@@ -715,6 +715,8 @@ const MissionDetailView = (() => {
                 ${metadata.tokens_used ? `<div class="detail-kv-row"><span class="kv-label">Tokens Used</span><span class="kv-val">${metadata.tokens_used.toLocaleString()}</span></div>` : ''}
                 ${metadata.fuel_cost ? `<div class="detail-kv-row"><span class="kv-label">Fuel Cost</span><span class="kv-val">${metadata.fuel_cost}</span></div>` : ''}
                 ${metadata.temperature ? `<div class="detail-kv-row"><span class="kv-label">Temperature</span><span class="kv-val">${metadata.temperature}</span></div>` : ''}
+                ${metadata.quality_score !== undefined ? `<div class="detail-kv-row"><span class="kv-label">Quality Score</span><span class="kv-val"><span class="mission-quality-badge ${metadata.quality_pass ? 'quality-pass' : 'quality-fail'}">${metadata.quality_score}/10</span></span></div>` : ''}
+                ${metadata.quality_feedback ? `<div class="detail-kv-row"><span class="kv-label">Quality Review</span><span class="kv-val" style="font-size:.78rem">${_esc(metadata.quality_feedback)}</span></div>` : ''}
               </div>
             </div>
           ` : ''}

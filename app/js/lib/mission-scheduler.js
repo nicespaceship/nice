@@ -282,5 +282,84 @@ const MissionScheduler = (() => {
     return 'Unknown schedule';
   }
 
-  return { schedule, unschedule, list, setEnabled, check, start, stop, describe };
+  /* ── Sync schedules to Supabase for server-side persistence ── */
+  async function syncToServer() {
+    if (typeof SB === 'undefined' || !SB.isReady()) return;
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) return;
+    const schedules = _load();
+    if (!schedules.length) return;
+
+    try {
+      // Upsert each schedule to a server table
+      for (const entry of schedules) {
+        await SB.db('tasks').create({
+          user_id: user.id,
+          title: entry.template.title,
+          status: 'scheduled',
+          priority: entry.template.priority || 'medium',
+          agent_id: entry.template.agent_id || null,
+          agent_name: entry.template.agent_name || null,
+          metadata: {
+            schedule_id: entry.id,
+            cron: entry.cron,
+            enabled: entry.enabled,
+            scheduled: true,
+            server_cron: true,
+          },
+        }).catch(() => {}); // skip duplicates
+      }
+    } catch (err) {
+      console.warn('[MissionScheduler] Server sync failed:', err.message);
+    }
+  }
+
+  /* ── Load server-side schedules and merge with local ── */
+  async function syncFromServer() {
+    if (typeof SB === 'undefined' || !SB.isReady()) return;
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) return;
+
+    try {
+      const { data } = await SB.client
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'scheduled')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!data || !data.length) return;
+
+      const local = _load();
+      const localIds = new Set(local.map(s => s.id));
+
+      for (const row of data) {
+        const schedId = row.metadata?.schedule_id;
+        if (schedId && !localIds.has(schedId)) {
+          // Import server schedule that doesn't exist locally
+          local.push({
+            id: schedId,
+            cron: row.metadata?.cron || 'daily 09:00',
+            cronParsed: _parseCron(row.metadata?.cron || 'daily 09:00'),
+            template: {
+              title: row.title,
+              agent_id: row.agent_id,
+              agent_name: row.agent_name,
+              priority: row.priority || 'medium',
+              metadata: row.metadata || {},
+            },
+            enabled: row.metadata?.enabled !== false,
+            lastRun: null,
+            createdAt: row.created_at,
+          });
+        }
+      }
+      _save(local);
+    } catch (err) {
+      console.warn('[MissionScheduler] Server sync load failed:', err.message);
+    }
+  }
+
+  return { schedule, unschedule, list, setEnabled, check, start, stop, describe, syncToServer, syncFromServer };
 })();

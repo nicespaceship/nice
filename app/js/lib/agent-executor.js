@@ -63,8 +63,19 @@ const AgentExecutor = (() => {
 
     const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
 
+    // Inject agent memory context into conversation if available
+    let memoryContext = '';
+    if (typeof AgentMemory !== 'undefined' && agentBlueprint && agentBlueprint.id) {
+      memoryContext = AgentMemory.buildPromptContext(agentBlueprint.id);
+    }
+
     const steps = [];
-    let conversationMessages = [{ role: 'user', content: prompt }];
+    let conversationMessages = [];
+    if (memoryContext) {
+      conversationMessages.push({ role: 'user', content: memoryContext + '\n\n---\n\n' + prompt });
+    } else {
+      conversationMessages.push({ role: 'user', content: prompt });
+    }
     let totalTokens = 0;
 
     for (let i = 0; i < maxSteps; i++) {
@@ -113,6 +124,32 @@ const AgentExecutor = (() => {
       }
 
       if (parsed.action) {
+        // Check approval mode — side-effect tools require user confirmation
+        if (opts.approvalMode === 'review' && _isSideEffectTool(parsed.action)) {
+          const pendingAction = {
+            tool: parsed.action,
+            input: parsed.actionInput,
+            thought: parsed.thought,
+            stepIndex: i + 1,
+          };
+          // Signal the caller that approval is needed
+          if (typeof opts.onApprovalNeeded === 'function') {
+            const approved = await opts.onApprovalNeeded(pendingAction);
+            if (!approved) {
+              const step = {
+                index: i + 1, thought: parsed.thought, action: parsed.action,
+                actionInput: parsed.actionInput, observation: 'Action blocked — user declined approval.',
+                finalAnswer: null,
+              };
+              steps.push(step);
+              if (onStep) onStep(step);
+              conversationMessages.push({ role: 'assistant', content: text });
+              conversationMessages.push({ role: 'user', content: 'Observation: Action was declined by the user. Try a different approach or provide a Final Answer.' });
+              continue;
+            }
+          }
+        }
+
         // Execute the tool
         let observation;
         try {
@@ -211,6 +248,14 @@ const AgentExecutor = (() => {
   function _parseReActResponse(text) {
     const result = { thought: null, action: null, actionInput: null, finalAnswer: null };
 
+    // Try structured JSON tool call format first (native LLM tool use)
+    // Models may return: {"tool_call": {"name": "...", "arguments": {...}}, "thought": "..."}
+    // Or: {"action": "...", "action_input": {...}, "thought": "..."}
+    const jsonResult = _tryParseStructuredCall(text);
+    if (jsonResult) return jsonResult;
+
+    // Fall back to text-based ReAct parsing
+
     // Extract Thought
     const thoughtMatch = text.match(/Thought:\s*([\s\S]*?)(?=\n(?:Action:|Final Answer:)|$)/i);
     if (thoughtMatch) result.thought = thoughtMatch[1].trim();
@@ -250,6 +295,45 @@ const AgentExecutor = (() => {
     }
 
     return result;
+  }
+
+  /* ── Try to parse structured JSON tool calls from LLM output ── */
+  function _tryParseStructuredCall(text) {
+    if (!text || typeof text !== 'string') return null;
+    // Look for a JSON object in the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    try {
+      const obj = JSON.parse(jsonMatch[0]);
+      // Format 1: { tool_call: { name, arguments }, thought }
+      if (obj.tool_call && obj.tool_call.name) {
+        return {
+          thought: obj.thought || null,
+          action: obj.tool_call.name,
+          actionInput: obj.tool_call.arguments || {},
+          finalAnswer: null,
+        };
+      }
+      // Format 2: { action, action_input, thought }
+      if (obj.action && typeof obj.action === 'string' && !obj.final_answer) {
+        return {
+          thought: obj.thought || null,
+          action: obj.action,
+          actionInput: obj.action_input || obj.actionInput || {},
+          finalAnswer: null,
+        };
+      }
+      // Format 3: { final_answer, thought }
+      if (obj.final_answer) {
+        return {
+          thought: obj.thought || null,
+          action: null,
+          actionInput: null,
+          finalAnswer: obj.final_answer,
+        };
+      }
+    } catch { /* not valid JSON — fall through to text parsing */ }
+    return null;
   }
 
   /* ── Call LLM via ShipLog's edge function ── */
@@ -312,5 +396,153 @@ const AgentExecutor = (() => {
     throw new Error('ShipLog not available for single-shot execution');
   }
 
-  return { execute };
+  /* ── Detect tools with external side effects (send, publish, write, delete) ── */
+  function _isSideEffectTool(toolId) {
+    if (!toolId || typeof toolId !== 'string') return false;
+    const sideEffectPatterns = [
+      'send', 'publish', 'post', 'create', 'delete', 'update', 'write',
+      'gmail_send', 'calendar_create', 'social_create', 'slack_send',
+    ];
+    const normalized = toolId.toLowerCase();
+    return sideEffectPatterns.some(p => normalized.includes(p));
+  }
+
+  /**
+   * Multi-turn conversation mode. Maintains message history across turns.
+   * The agent can signal "need more info" by returning a question, or
+   * provide a "Final Answer" to end the conversation.
+   *
+   * @param {Object} agentBlueprint - Blueprint with id, name, config, flavor
+   * @param {Object} opts
+   *   - tools: string[] of tool IDs
+   *   - maxSteps: number per turn (default 5)
+   *   - spaceshipId: string
+   *   - onStep: function(step) callback per step
+   *   - onTurn: function(turnResult) callback per turn
+   * @returns {Object} Conversation controller with send(), history(), reset()
+   */
+  function converse(agentBlueprint, opts) {
+    opts = opts || {};
+    const history = [];
+    const toolIds = opts.tools || [];
+    const spaceshipId = opts.spaceshipId || 'default-ship';
+    let totalTokens = 0;
+
+    // Build memory context once at conversation start
+    let memoryContext = '';
+    if (typeof AgentMemory !== 'undefined' && agentBlueprint && agentBlueprint.id) {
+      memoryContext = AgentMemory.buildPromptContext(agentBlueprint.id);
+    }
+
+    // Load tool descriptions once
+    let mcpToolIds = [];
+    if (typeof McpBridge !== 'undefined') mcpToolIds = McpBridge.loadTools();
+    const allToolIds = [...toolIds, ...mcpToolIds];
+    const availableTools = [];
+    const seen = new Set();
+    if (typeof ToolRegistry !== 'undefined') {
+      allToolIds.forEach(nameOrId => {
+        const tool = (typeof ToolRegistry.resolve === 'function')
+          ? ToolRegistry.resolve(nameOrId)
+          : ToolRegistry.get(nameOrId);
+        if (tool && !seen.has(tool.id)) {
+          seen.add(tool.id);
+          availableTools.push(tool);
+        }
+      });
+    }
+    const toolDescriptions = availableTools.map(t =>
+      t.name + ' (id: ' + t.id + '): ' + t.description +
+      (t.schema && t.schema.properties ? '\n  Input: ' + JSON.stringify(t.schema.properties) : '')
+    ).join('\n\n');
+
+    const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
+
+    /**
+     * Send a user message and get the agent's response.
+     * Returns the agent's text (final answer or clarifying question).
+     */
+    async function send(userMessage) {
+      history.push({ role: 'user', content: userMessage });
+      const startMs = Date.now();
+
+      // Build messages: system + memory + full history
+      const messages = [];
+      if (memoryContext && history.length === 1) {
+        // Inject memory only on first turn
+        messages.push({ role: 'user', content: memoryContext + '\n\n---\n\n' + userMessage });
+      } else {
+        messages.push(...history);
+      }
+
+      // Run ReAct loop for this turn
+      const maxSteps = opts.maxSteps || 5;
+      let conversationMessages = [...messages];
+      const steps = [];
+
+      for (let i = 0; i < maxSteps; i++) {
+        let llmResponse;
+        try {
+          llmResponse = await _callLLM(agentBlueprint, systemPrompt, conversationMessages, spaceshipId);
+        } catch (err) {
+          const errorMsg = 'Error: ' + (err.message || 'LLM call failed');
+          history.push({ role: 'assistant', content: errorMsg });
+          return { text: errorMsg, steps, done: false, error: true };
+        }
+        totalTokens += llmResponse.tokensUsed || 0;
+        let text = llmResponse.content || '';
+        if (Array.isArray(text)) text = text.map(c => c.text || c).join('');
+        if (typeof text !== 'string') text = String(text);
+
+        const parsed = _parseReActResponse(text);
+
+        if (parsed.finalAnswer) {
+          steps.push({ index: i + 1, thought: parsed.thought, finalAnswer: parsed.finalAnswer });
+          if (opts.onStep) opts.onStep(steps[steps.length - 1]);
+          history.push({ role: 'assistant', content: parsed.finalAnswer });
+          const turnResult = { text: parsed.finalAnswer, steps, done: true, totalTokens, duration: Date.now() - startMs };
+          if (opts.onTurn) opts.onTurn(turnResult);
+          return turnResult;
+        }
+
+        if (parsed.action) {
+          let observation;
+          try {
+            const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {});
+            observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+          } catch (err) {
+            observation = 'Error: ' + (err.message || 'Tool execution failed');
+          }
+          steps.push({ index: i + 1, thought: parsed.thought, action: parsed.action, actionInput: parsed.actionInput, observation });
+          if (opts.onStep) opts.onStep(steps[steps.length - 1]);
+          conversationMessages.push({ role: 'assistant', content: text });
+          conversationMessages.push({ role: 'user', content: 'Observation: ' + observation });
+        } else {
+          // No action, no final answer — treat as a clarifying question
+          steps.push({ index: i + 1, thought: parsed.thought || text, finalAnswer: text });
+          if (opts.onStep) opts.onStep(steps[steps.length - 1]);
+          history.push({ role: 'assistant', content: text });
+          const turnResult = { text, steps, done: false, totalTokens, duration: Date.now() - startMs };
+          if (opts.onTurn) opts.onTurn(turnResult);
+          return turnResult;
+        }
+      }
+
+      // Max steps reached
+      const lastStep = steps[steps.length - 1];
+      const fallback = lastStep ? (lastStep.observation || lastStep.thought || 'Reached maximum steps.') : 'No response.';
+      history.push({ role: 'assistant', content: fallback });
+      const turnResult = { text: fallback, steps, done: false, totalTokens, duration: Date.now() - startMs, maxStepsReached: true };
+      if (opts.onTurn) opts.onTurn(turnResult);
+      return turnResult;
+    }
+
+    function getHistory() { return [...history]; }
+    function reset() { history.length = 0; totalTokens = 0; }
+    function getTokensUsed() { return totalTokens; }
+
+    return { send, history: getHistory, reset, getTokensUsed };
+  }
+
+  return { execute, converse };
 })();
