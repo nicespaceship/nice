@@ -3803,6 +3803,17 @@
 .nice-ai-voice-select:hover { border-color:var(--accent); color:var(--text); }
 .nice-ai-voice-select:focus { outline:none; border-color:var(--accent); }
 .nice-ai-voice-select option { background:var(--bg); color:var(--text); }
+.nice-ai-jarvis-label {
+  font-family:var(--font-h, var(--font-b));
+  font-size:.65rem;
+  letter-spacing:.08em;
+  color:var(--accent);
+  text-transform:uppercase;
+  padding:4px 8px;
+  border:1px solid var(--accent);
+  border-radius:6px;
+  opacity:.8;
+}
 
 .nice-ai-voice-btn, .nice-ai-send-btn {
   background:transparent; color:var(--text-muted);
