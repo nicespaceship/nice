@@ -47,6 +47,19 @@ const HomeView = (() => {
       else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
     });
 
+    // Dismiss checklist
+    el.querySelector('#home-cl-dismiss')?.addEventListener('click', () => {
+      localStorage.setItem('nice-checklist-dismissed', '1');
+      document.getElementById('home-checklist')?.remove();
+    });
+
+    // Checklist: "Run first mission" item opens prompt panel
+    el.querySelectorAll('.home-cl-item:not(.done):not([href])').forEach(item => {
+      item.addEventListener('click', () => {
+        if (typeof PromptPanel !== 'undefined') PromptPanel.show();
+      });
+    });
+
     // Scroll conversation to bottom
     const feed = el.querySelector('#chat-home-feed');
     if (feed) feed.scrollTop = feed.scrollHeight;
@@ -128,6 +141,8 @@ const HomeView = (() => {
             </div>
           </div>
 
+          ${_renderChecklist(agents, missions, completed)}
+
           ${recentActivity ? '<div class="home-activity"><div class="home-activity-title">Recent Activity</div>' + recentActivity + '</div>' : ''}
 
           <div class="home-active-ship">
@@ -157,14 +172,135 @@ const HomeView = (() => {
       `;
     }
 
-    // New user: show build CTA
+    // New user / guest: show build CTA + feature preview
+    const isGuest = !State.get('user');
     return `
       <div class="chat-home-empty">
         ${hudRings}
         <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
-        <button class="btn cd-btn-primary cd-home-cta" id="home-build-team" style="margin-top:24px;padding:12px 28px;font-size:.9rem;">Build an AI Team</button>
+        <p class="home-tagline">Build, deploy, and manage AI agent teams</p>
+        <button class="btn cd-btn-primary cd-home-cta" id="home-build-team" style="margin-top:16px;padding:12px 28px;font-size:.9rem;">Build an AI Team</button>
+        ${isGuest ? '<p class="home-guest-hint">Sign in to deploy agents and run missions</p>' : ''}
+        <div class="home-features">
+          <div class="home-feature">
+            <div class="home-feature-icon">🤖</div>
+            <div class="home-feature-title">900+ Blueprints</div>
+            <div class="home-feature-desc">Pre-built agents for writing, coding, research, design, and more</div>
+          </div>
+          <div class="home-feature">
+            <div class="home-feature-icon">🚀</div>
+            <div class="home-feature-title">Multi-Agent Teams</div>
+            <div class="home-feature-desc">Spaceships orchestrate crews that collaborate on complex tasks</div>
+          </div>
+          <div class="home-feature">
+            <div class="home-feature-icon">🔌</div>
+            <div class="home-feature-title">Integrations</div>
+            <div class="home-feature-desc">Connect Gmail, Calendar, Drive, Slack, and any MCP server</div>
+          </div>
+          <div class="home-feature">
+            <div class="home-feature-icon">⚡</div>
+            <div class="home-feature-title">Free to Start</div>
+            <div class="home-feature-desc">100K free tokens + unlimited Gemini 2.5 Flash — no credit card</div>
+          </div>
+        </div>
       </div>
     `;
+  }
+
+  /* ── Onboarding Checklist ── */
+  function _renderChecklist(agents, missions, completedCount) {
+    // Don't show if user dismissed it
+    if (localStorage.getItem('nice-checklist-dismissed')) return '';
+
+    const steps = [
+      {
+        id: 'team',
+        label: 'Deploy a spaceship',
+        desc: 'Create your AI team',
+        done: (State.get('user_spaceships') || []).length > 0,
+        action: '#/bridge?tab=spaceship',
+      },
+      {
+        id: 'agent',
+        label: 'Activate an agent',
+        desc: 'Add a crew member to your fleet',
+        done: agents.length > 0,
+        action: '#/bridge',
+      },
+      {
+        id: 'mission',
+        label: 'Run your first mission',
+        desc: 'Send a task to any agent',
+        done: completedCount > 0,
+        action: null, // prompt panel
+      },
+      {
+        id: 'integration',
+        label: 'Connect an integration',
+        desc: 'Link Gmail, Calendar, or Drive',
+        done: _hasIntegration(),
+        action: '#/security?tab=integrations',
+      },
+      {
+        id: 'model',
+        label: 'Enable a premium model',
+        desc: 'Try Claude, GPT, or Gemini Pro',
+        done: _hasPremiumModel(),
+        action: '#/security?tab=integrations',
+      },
+    ];
+
+    const doneCount = steps.filter(s => s.done).length;
+
+    // Hide checklist if all steps complete
+    if (doneCount >= steps.length) return '';
+
+    const pct = Math.round((doneCount / steps.length) * 100);
+
+    const items = steps.map(s => `
+      <a ${s.action ? 'href="' + s.action + '"' : ''} class="home-cl-item${s.done ? ' done' : ''}" ${!s.action ? 'role="button" tabindex="0"' : ''}>
+        <span class="home-cl-check">${s.done ? '✓' : ''}</span>
+        <span class="home-cl-text">
+          <span class="home-cl-label">${s.label}</span>
+          <span class="home-cl-desc">${s.desc}</span>
+        </span>
+        ${!s.done ? '<span class="home-cl-arrow">→</span>' : ''}
+      </a>
+    `).join('');
+
+    return `
+      <div class="home-checklist" id="home-checklist">
+        <div class="home-cl-header">
+          <div>
+            <div class="home-cl-title">Getting Started</div>
+            <div class="home-cl-progress-text">${doneCount} of ${steps.length} complete</div>
+          </div>
+          <button class="home-cl-dismiss" id="home-cl-dismiss" title="Dismiss">&times;</button>
+        </div>
+        <div class="home-cl-bar"><div class="home-cl-bar-fill" style="width:${pct}%"></div></div>
+        <div class="home-cl-items">${items}</div>
+      </div>
+    `;
+  }
+
+  function _hasIntegration() {
+    try {
+      const conns = JSON.parse(localStorage.getItem(Utils.KEYS.mcpConnections) || '[]');
+      if (conns.length > 0) return true;
+    } catch {}
+    const mcpState = State.get('mcp_connections');
+    return Array.isArray(mcpState) && mcpState.length > 0;
+  }
+
+  function _hasPremiumModel() {
+    try {
+      const models = JSON.parse(localStorage.getItem(Utils.KEYS.enabledModels) || '{}');
+      // Any non-free model enabled
+      return Object.entries(models).some(([id, enabled]) => {
+        if (!enabled) return false;
+        return !id.includes('flash') && !id.includes('lite');
+      });
+    } catch { return false; }
   }
 
   function _renderConversation() {

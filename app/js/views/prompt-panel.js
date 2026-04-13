@@ -32,6 +32,7 @@ const PromptPanel = (() => {
   let _micStream = null;
   let _waveAnimId = null;
   let _ttsEnabled = localStorage.getItem(Utils.KEYS.tts) === 'true';
+  let _ttsAudio = null; // Current OpenAI TTS Audio element (for cancellation)
 
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
@@ -2057,6 +2058,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
               <select class="nice-ai-voice-select" id="nice-ai-voice-select" title="Select voice" style="display:none">
                 <option value="">Loading voices…</option>
               </select>
+              <span class="nice-ai-jarvis-label" id="nice-ai-jarvis-voice" style="display:none">J.A.R.V.I.S.</span>
               <select class="nice-ai-mode-select" id="nice-ai-mode" title="Orchestration mode">
                 <option value="auto" selected>Auto</option>
                 <option value="pipeline">Pipeline</option>
@@ -2262,14 +2264,35 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       localStorage.setItem(Utils.KEYS.tts, _ttsEnabled);
       const btn = _panel.querySelector('#nice-ai-tts');
       if (btn) btn.classList.toggle('active', _ttsEnabled);
-      const voiceSel = _panel.querySelector('#nice-ai-voice-select');
-      if (voiceSel) voiceSel.style.display = _ttsEnabled ? '' : 'none';
+      _updateTTSUI();
       if (_ttsEnabled) {
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Voice On', message: 'NICE will speak responses.', type: 'system' });
+        const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
+        const voiceName = theme === 'jarvis' ? 'J.A.R.V.I.S.' : 'Voice';
+        if (typeof Notify !== 'undefined') Notify.send({ title: voiceName + ' On', message: theme === 'jarvis' ? 'J.A.R.V.I.S. will speak responses.' : 'NICE will speak responses.', type: 'system' });
       } else {
-        speechSynthesis.cancel();
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Voice Off', message: 'NICE responses are text only.', type: 'system' });
+        _stopTTS();
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Voice Off', message: 'Responses are text only.', type: 'system' });
       }
+    });
+
+    // Theme-aware TTS UI: show JARVIS label or voice selector
+    function _updateTTSUI() {
+      const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
+      const voiceSel = _panel?.querySelector('#nice-ai-voice-select');
+      const jarvisLabel = _panel?.querySelector('#nice-ai-jarvis-voice');
+      const isJarvis = theme === 'jarvis';
+      if (voiceSel) voiceSel.style.display = (!isJarvis && _ttsEnabled) ? '' : 'none';
+      if (jarvisLabel) jarvisLabel.style.display = (isJarvis && _ttsEnabled) ? '' : 'none';
+    }
+    _updateTTSUI();
+
+    // Listen for theme changes to update TTS UI
+    if (typeof State !== 'undefined') {
+      State.on('theme', _updateTTSUI);
+    }
+    // Also catch Theme.set() which writes to localStorage
+    window.addEventListener('storage', (e) => {
+      if (e.key === Utils.KEYS.theme) _updateTTSUI();
     });
 
     // Voice selector
@@ -2493,8 +2516,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   /* ── Text-to-Speech ── */
   function _speak(text) {
-    if (!_ttsEnabled || !window.speechSynthesis) return;
-    speechSynthesis.cancel();
+    if (!_ttsEnabled || !text) return;
+    _stopTTS();
+
+    const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
+    if (theme === 'jarvis') return _speakOpenAI(text);
+
+    // All other themes: browser speechSynthesis
+    if (!window.speechSynthesis) return;
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 1.05;
     utter.pitch = 0.95;
@@ -2506,6 +2535,51 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
                       voices.find(v => v.lang.startsWith('en'));
     if (preferred) utter.voice = preferred;
     speechSynthesis.speak(utter);
+  }
+
+  async function _speakOpenAI(text) {
+    try {
+      if (typeof SB === 'undefined' || !SB.client) return;
+      const c = SB.client;
+      const supabaseUrl = c.supabaseUrl || c._supabaseUrl;
+      const session = (await c.auth.getSession())?.data?.session;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/nice-tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ text: text.slice(0, 4096), voice: 'onyx', speed: 1.0 }),
+      });
+
+      if (!res.ok) throw new Error('TTS ' + res.status);
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      _ttsAudio = audio;
+      audio.onended = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
+      audio.onerror = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
+      audio.play();
+    } catch (err) {
+      console.warn('[TTS] OpenAI failed, falling back to browser:', err.message);
+      if (window.speechSynthesis) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 0.95;
+        utter.pitch = 0.85;
+        const voices = speechSynthesis.getVoices();
+        const brit = voices.find(v => v.lang === 'en-GB' && v.name.includes('Daniel')) ||
+                     voices.find(v => v.lang.startsWith('en'));
+        if (brit) utter.voice = brit;
+        speechSynthesis.speak(utter);
+      }
+    }
+  }
+
+  function _stopTTS() {
+    if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.src = ''; _ttsAudio = null; }
+    if (window.speechSynthesis) speechSynthesis.cancel();
   }
 
   /* ── Init / Destroy ── */
@@ -2528,6 +2602,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   }
 
   function destroy() {
+    _stopTTS();
     _hideMonitor();
     _panel?.remove();
     _panel = null;
