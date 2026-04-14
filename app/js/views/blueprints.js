@@ -467,8 +467,8 @@ const BlueprintsView = (() => {
         const id = btn.dataset.id;
         if (BlueprintStore.isShipActivated(id)) {
           const bp = _findShipBp(id);
-          confirmDeactivate(bp?.name || 'this spaceship', () => {
-            BlueprintStore.deactivateShip(id);
+          confirmDeactivate(bp?.name || 'this spaceship', async () => {
+            await BlueprintStore.deactivateShip(id);
             if (typeof Notify !== 'undefined' && bp) Notify.send({ title: 'Spaceship Removed', message: `${bp.name} has been removed.`, type: 'info' });
             _applyFilters();
           });
@@ -558,8 +558,8 @@ const BlueprintsView = (() => {
         if (type === 'spaceship') {
           if (BlueprintStore.isShipActivated(id)) {
             const bp = BlueprintStore.getSpaceship(id);
-            confirmDeactivate(bp?.name || 'this spaceship', () => {
-              BlueprintStore.deactivateShip(id);
+            confirmDeactivate(bp?.name || 'this spaceship', async () => {
+              await BlueprintStore.deactivateShip(id);
               if (typeof Notify !== 'undefined' && bp) Notify.send({ title: 'Spaceship Removed', message: `${bp.name} has been removed.`, type: 'info' });
               _applyFilters();
             });
@@ -2089,7 +2089,7 @@ const BlueprintsView = (() => {
         if (t === 'spaceship') {
           if (BlueprintStore.isShipActivated(id)) {
             const b = _findBp(id)?.bp;
-            confirmDeactivate(b?.name || 'this spaceship', () => { BlueprintStore.deactivateShip(id); _applyFilters(); _openDrawer(id); });
+            confirmDeactivate(b?.name || 'this spaceship', async () => { await BlueprintStore.deactivateShip(id); _applyFilters(); _openDrawer(id); });
           } else {
             _closeDrawer();
             const bp = _findShipBp(id);

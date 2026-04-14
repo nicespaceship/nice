@@ -960,7 +960,7 @@ const BlueprintStore = (() => {
     return true;
   }
 
-  function deactivateShip(bpId) {
+  async function deactivateShip(bpId) {
     // Normalize: find the matching ID in the array (with or without bp- prefix)
     const match = _activatedShipIds.find(id => id === bpId || 'bp-' + id === bpId || id === 'bp-' + bpId);
     if (!match) return;
@@ -968,56 +968,106 @@ const BlueprintStore = (() => {
     _persistShips();
     _syncDeactivation(bpId, 'spaceship');
 
-    // Cascade: deactivate agents assigned to this ship
-    const shipId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
-    const state = _shipState[shipId];
-    if (state) {
-      const agentIdsToRemove = new Set();
-      if (state.slot_assignments) {
-        Object.values(state.slot_assignments).forEach(id => { if (id) agentIdsToRemove.add(id); });
-      }
-      if (state.agent_ids) {
-        state.agent_ids.forEach(id => { if (id) agentIdsToRemove.add(id); });
-      }
+    // Resolve _shipState entry — keys may be raw id (DB-loaded ships) or bp-prefixed (catalog wizard)
+    const stateKeyVariants = [match, bpId, 'bp-' + match, 'bp-' + bpId];
+    let stateKey = null;
+    let state = null;
+    for (const k of stateKeyVariants) {
+      if (k && _shipState[k]) { stateKey = k; state = _shipState[k]; break; }
+    }
 
-      // Only remove agents not assigned to another active ship
-      const otherShipAgents = new Set();
-      for (const [otherKey, otherState] of Object.entries(_shipState)) {
-        if (otherKey === shipId || !otherState?.slot_assignments) continue;
-        Object.values(otherState.slot_assignments).forEach(id => { if (id) otherShipAgents.add(id); });
-      }
+    // Resolve State.spaceships entry as a fallback source for slot data
+    let stateShip = null;
+    if (typeof State !== 'undefined') {
+      const ships = State.get('spaceships') || [];
+      stateShip = ships.find(s =>
+        s.id === match || s.id === bpId ||
+        s.id === 'bp-' + match || s.id === 'bp-' + bpId
+      );
+    }
 
-      for (const agentId of agentIdsToRemove) {
-        if (otherShipAgents.has(agentId)) continue;
-        _activatedAgentIds = _activatedAgentIds.filter(id => id !== agentId);
-        // Also remove from custom agents
-        try {
-          const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-          const filtered = custom.filter(a => a.id !== agentId);
-          if (filtered.length !== custom.length) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
-        } catch {}
+    // Collect every agent ID assigned to this ship from any source
+    const agentIdsToRemove = new Set();
+    const collect = (src) => {
+      if (!src) return;
+      if (src.slot_assignments) {
+        Object.values(src.slot_assignments).forEach(id => { if (id) agentIdsToRemove.add(id); });
       }
-      _persistAgents();
-
-      // Remove from State.agents
-      if (typeof State !== 'undefined') {
-        const agents = State.get('agents') || [];
-        const cleaned = agents.filter(a => !agentIdsToRemove.has(a.id) || otherShipAgents.has(a.id));
-        if (cleaned.length !== agents.length) State.set('agents', cleaned);
+      if (src.agent_ids) {
+        src.agent_ids.forEach(id => { if (id) agentIdsToRemove.add(id); });
       }
+    };
+    collect(state);
+    collect(stateShip);
+    collect(stateShip?.config);
 
-      delete _shipState[shipId];
+    // Only remove agents that aren't on another active ship
+    const otherShipAgents = new Set();
+    for (const [otherKey, otherState] of Object.entries(_shipState)) {
+      if (otherKey === stateKey || !otherState?.slot_assignments) continue;
+      Object.values(otherState.slot_assignments).forEach(id => { if (id) otherShipAgents.add(id); });
+    }
+
+    const removedAgentIds = [];
+    for (const agentId of agentIdsToRemove) {
+      if (otherShipAgents.has(agentId)) continue;
+      removedAgentIds.push(agentId);
+      _activatedAgentIds = _activatedAgentIds.filter(id => id !== agentId);
+      try {
+        const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+        const filtered = custom.filter(a => a.id !== agentId);
+        if (filtered.length !== custom.length) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
+      } catch {}
+    }
+    if (removedAgentIds.length) _persistAgents();
+
+    // Remove from State.agents (in-memory)
+    if (typeof State !== 'undefined' && removedAgentIds.length) {
+      const agents = State.get('agents') || [];
+      const removeSet = new Set(removedAgentIds);
+      const cleaned = agents.filter(a => !removeSet.has(a.id));
+      if (cleaned.length !== agents.length) State.set('agents', cleaned);
+    }
+
+    // Drop the _shipState entry under whichever key it lived
+    if (stateKey) {
+      delete _shipState[stateKey];
       _persistShipState();
     }
 
-    // Cascade: remove from State.spaceships
+    // Remove from State.spaceships (in-memory) — match every plausible id form
     if (typeof State !== 'undefined') {
       const spaceships = State.get('spaceships') || [];
-      const filtered = spaceships.filter(s => s.id !== shipId);
+      const filtered = spaceships.filter(s => {
+        if (stateShip && s.id === stateShip.id) return false;
+        return s.id !== match && s.id !== bpId &&
+               s.id !== 'bp-' + match && s.id !== 'bp-' + bpId;
+      });
       if (filtered.length !== spaceships.length) State.set('spaceships', filtered);
     }
 
     _fireShipState();
+    if (removedAgentIds.length) _fireAgentState();
+
+    // Persist deletion to Supabase so the ship and its agents don't reappear on reload
+    if (_canSync()) {
+      const shipRowId = (stateShip?.id && _isUuid(stateShip.id)) ? stateShip.id
+        : (_isUuid(match) ? match : null);
+      if (shipRowId) {
+        try { await SB.db('user_spaceships').remove(shipRowId); }
+        catch (e) { console.warn('[BlueprintStore] user_spaceships delete failed:', e.message); }
+      }
+      for (const agentId of removedAgentIds) {
+        if (_isUuid(agentId)) {
+          try { await SB.db('user_agents').remove(agentId); }
+          catch (e) { console.warn('[BlueprintStore] user_agents delete failed:', e.message); }
+        }
+      }
+    }
+  }
+
+  function _isUuid(s) {
+    return typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
   }
 
   /**
