@@ -10,6 +10,10 @@ const Theme = (() => {
   // BUILTIN derived from THEMES — no separate list to maintain
   let BUILTIN; // set after THEMES definition
 
+  // Local key constants — Theme loads before Utils, so can't use Utils.KEYS
+  const _K_THEME = 'ns-theme';
+  const _K_FONT  = 'ns-font';
+
   // CSS var keys to clear when switching themes
   const VAR_KEYS = ['--bg','--bg2','--bg-alt','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--panel-border','--nav-bg','--nav-bg-dk','--nav-text','--nav-text-muted','--nav-text-dim','--nav-border','--nav-surface','--nav-surface2','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
 
@@ -64,7 +68,7 @@ const Theme = (() => {
     // ── Apply new theme ──
     if (BUILTIN.includes(name)) {
       document.documentElement.setAttribute('data-theme', name);
-      localStorage.setItem('ns-theme', name);
+      localStorage.setItem(_K_THEME, name);
       // Apply inline color vars for themes not defined in theme.css
       if (t && t.data) {
         const td = t.data;
@@ -97,7 +101,7 @@ const Theme = (() => {
         document.documentElement.style.setProperty('--font-b', td.fonts['--font-b']);
       }
       if (td.radius) document.documentElement.style.setProperty('--radius', td.radius);
-      localStorage.setItem('ns-theme', name);
+      localStorage.setItem(_K_THEME, name);
     }
 
     // Highlight active dock button
@@ -230,7 +234,7 @@ const Theme = (() => {
   }
 
   function toggleDarkLight() {
-    const current = localStorage.getItem('ns-theme') || 'spaceship';
+    const current = localStorage.getItem(_K_THEME) || 'spaceship';
     if (current === 'office') set('office-dark');
     else if (current === 'office-dark') set('office');
     // No-op for all other themes — toggle is hidden
@@ -239,7 +243,7 @@ const Theme = (() => {
   function _updateDarkLightIcon() {
     const btn = document.getElementById('btn-darklight');
     if (!btn) return;
-    const current = localStorage.getItem('ns-theme') || 'spaceship';
+    const current = localStorage.getItem(_K_THEME) || 'spaceship';
     const isOffice = current === 'office' || current === 'office-dark';
     btn.style.display = isOffice ? '' : 'none';
     if (isOffice) {
@@ -269,7 +273,7 @@ const Theme = (() => {
     }).join('');
 
     // Highlight current
-    const current = localStorage.getItem('ns-theme') || 'spaceship';
+    const current = localStorage.getItem(_K_THEME) || 'spaceship';
     document.querySelectorAll('.db').forEach(b => b.classList.remove('active'));
     document.querySelector(`.db[data-theme-id="${current}"]`)?.classList.add('active');
   }
@@ -279,13 +283,13 @@ const Theme = (() => {
   function getTheme(id) { return THEMES.find(t => t.id === id) || null; }
 
   function init() {
-    const saved = localStorage.getItem('ns-theme') || 'spaceship';
+    const saved = localStorage.getItem(_K_THEME) || 'spaceship';
     renderDock();
     set(saved);
     _updateDarkLightIcon();
   }
 
-  function current() { return localStorage.getItem(typeof Utils !== 'undefined' ? Utils.KEYS.theme : 'ns-theme') || 'spaceship'; }
+  function current() { return localStorage.getItem(_K_THEME) || 'spaceship'; }
 
   return { set, init, toggleDarkLight, renderDock, list, getTheme, current, THEMES, BUILTIN };
 })();
@@ -294,6 +298,10 @@ const Theme = (() => {
    MODULE: Font Engine
 ───────────────────────────────────────────────────────────────── */
 const Font = (() => {
+  // Local key constants — Font loads before Utils
+  const _K_THEME = 'ns-theme';
+  const _K_FONT  = 'ns-font';
+
   const FONT_MAP = {
     auto:  null,
     clean: "'Inter', sans-serif",
@@ -314,7 +322,7 @@ const Font = (() => {
       root.style.removeProperty('--font-b');
       root.style.removeProperty('--font-d');
       // Re-apply theme fonts
-      const themeId = localStorage.getItem('ns-theme') || 'spaceship';
+      const themeId = localStorage.getItem(_K_THEME) || 'spaceship';
       const theme = Theme.THEMES.find(t => t.id === themeId);
       if (theme?.data?.fonts) {
         Object.entries(theme.data.fonts).forEach(([k, v]) => root.style.setProperty(k, v));
@@ -326,13 +334,13 @@ const Font = (() => {
       root.style.setProperty('--font-b', family);
       root.style.setProperty('--font-d', family);
     }
-    localStorage.setItem('ns-font', name);
+    localStorage.setItem(_K_FONT, name);
     document.querySelectorAll('.fb').forEach(b => b.classList.remove('active'));
     document.querySelector(`.fb[data-fid="${name}"]`)?.classList.add('active');
   }
 
   function init() {
-    const saved = localStorage.getItem('ns-font') || 'auto';
+    const saved = localStorage.getItem(_K_FONT) || 'auto';
     set(saved);
   }
 
@@ -1050,7 +1058,7 @@ const NICE = (() => {
       if (ship) search += ' ' + (ship.name || '').toLowerCase();
     }
     if (search.includes('enterprise') || search.includes('ncc-1701')) {
-      if (localStorage.getItem('ns-theme') !== 'lcars') {
+      if (localStorage.getItem(Utils.KEYS.theme) !== 'lcars') {
         Theme.set('lcars');
         if (typeof Notify !== 'undefined') Notify.send({ title: 'Theme Activated', message: 'LCARS interface engaged.', type: 'system' });
       }

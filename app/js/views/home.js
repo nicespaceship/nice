@@ -49,7 +49,7 @@ const HomeView = (() => {
 
     // Dismiss checklist
     el.querySelector('#home-cl-dismiss')?.addEventListener('click', () => {
-      localStorage.setItem('nice-checklist-dismissed', '1');
+      localStorage.setItem(Utils.KEYS.checklistDismissed, '1');
       document.getElementById('home-checklist')?.remove();
     });
 
@@ -210,7 +210,7 @@ const HomeView = (() => {
   /* ── Onboarding Checklist ── */
   function _renderChecklist(agents, missions, completedCount) {
     // Don't show if user dismissed it
-    if (localStorage.getItem('nice-checklist-dismissed')) return '';
+    if (localStorage.getItem(Utils.KEYS.checklistDismissed)) return '';
 
     const steps = [
       {

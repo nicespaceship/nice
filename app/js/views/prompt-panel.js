@@ -36,6 +36,8 @@ const PromptPanel = (() => {
   let _ttsBlobUrl = null;    // Blob URL to revoke on cleanup
   let _ttsAbort = null;      // AbortController for in-flight TTS fetch
   let _themeObserver = null;  // MutationObserver for theme changes
+  let _onHashChange = null;  // hashchange listener ref for cleanup
+  let _onEscKey = null;      // keydown listener ref for cleanup
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
 
@@ -2290,12 +2292,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     });
 
     // Update chips on route change + hide monitor on navigation
-    window.addEventListener('hashchange', () => {
+    _onHashChange = () => {
       _updateRouteContext();
       _updateSuggestionChips();
       // Auto-hide monitor when user navigates via sidebar
       if (_isMonitorActive()) _hideMonitor();
-    });
+    };
+    window.addEventListener('hashchange', _onHashChange);
 
     // Monitor back button
     document.getElementById('nice-monitor-back')?.addEventListener('click', () => {
@@ -2310,11 +2313,12 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     });
 
     // Global Escape to close monitor
-    document.addEventListener('keydown', (e) => {
+    _onEscKey = (e) => {
       if (e.key === 'Escape' && _isMonitorActive() && !_mentionPopup?.classList.contains('visible')) {
         _hideMonitor();
       }
-    });
+    };
+    document.addEventListener('keydown', _onEscKey);
   }
 
   function _updateMentionHighlight() {
@@ -2571,9 +2575,12 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
     if (_waveAnimId) { cancelAnimationFrame(_waveAnimId); _waveAnimId = null; }
     if (_audioCtx) { _audioCtx.close().catch(() => {}); _audioCtx = null; _analyser = null; }
-    // Stop JARVIS TTS
+    // Stop TTS and theme observer
     _ttsStop();
     if (_themeObserver) { _themeObserver.disconnect(); _themeObserver = null; }
+    // Remove global listeners
+    if (_onHashChange) { window.removeEventListener('hashchange', _onHashChange); _onHashChange = null; }
+    if (_onEscKey) { document.removeEventListener('keydown', _onEscKey); _onEscKey = null; }
     // Reset conversation state
     _activeFlow = null;
     _activeConversation = null;

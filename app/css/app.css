@@ -1556,6 +1556,8 @@
   margin-top:0; margin-left:56px;
   position:relative; z-index:1;
   transition:margin-left .3s ease;
+  height:100vh; overflow:hidden; overflow-x:hidden;
+  display:flex; flex-direction:column;
 }
 .app-sidebar.open ~ .app-main { margin-left:280px; }
 
@@ -3416,12 +3418,7 @@
 ───────────────────────────────────────────────────────────────── */
 .nice-ai-toggle { display:none; }
 
-/* ── App layout: flex column for monitor + prompt ── */
-.app-main {
-  height:100vh; overflow:hidden;
-  display:flex; flex-direction:column;
-  position:relative;
-}
+/* ── App layout: flex column for monitor + prompt (consolidated in .app-main above) ── */
 .app-view-content {
   flex:1; overflow-y:auto; padding:24px; padding-bottom:140px;
   transition:opacity .3s ease;
@@ -4450,8 +4447,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    PHASE 6: Responsive Fixes for New Features
 ═══════════════════════════════════════════════════════════════════ */
-.app-main { overflow-x:hidden; }
-
 @media (max-width:768px) {
   .cmd-palette { padding-top:10vh; }
   .cmd-palette-box { max-width:calc(100vw - 24px); margin:0 12px; }
