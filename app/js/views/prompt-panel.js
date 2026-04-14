@@ -31,6 +31,10 @@ const PromptPanel = (() => {
   let _analyser = null;
   let _micStream = null;
   let _waveAnimId = null;
+  let _ttsAudio = null;      // Current Audio element for JARVIS voice
+  let _ttsBlobUrl = null;    // Blob URL to revoke on cleanup
+  let _ttsAbort = null;      // AbortController for in-flight TTS fetch
+  let _themeObserver = null;  // MutationObserver for theme changes
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
 
@@ -585,6 +589,12 @@ const PromptPanel = (() => {
     const monitorEl = document.getElementById('nice-monitor');
     if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
 
+    // JARVIS auto-voice: speak the latest assistant message
+    const last = _messages[_messages.length - 1];
+    if (last && last.role === 'assistant' && !last.error) {
+      const { clean } = _parseActions(last.text);
+      _jarvisTtsSpeak(clean);
+    }
   }
 
   function _addMonitorThinking() {
@@ -1407,6 +1417,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (!input || _sending) return;
     const text = input.value.trim();
     if (!text) return;
+    _jarvisTtsStop();
 
     _hideMentionPopup();
 
@@ -2413,6 +2424,61 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (canvas) { canvas.classList.remove('active'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
   }
 
+  /* ── JARVIS TTS (ElevenLabs George — JARVIS theme only) ── */
+  async function _jarvisTtsSpeak(text) {
+    if (!text) return;
+    if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
+
+    _jarvisTtsStop();
+
+    if (typeof SB === 'undefined' || !SB.client) return;
+    const c = SB.client;
+    const supabaseUrl = c.supabaseUrl || c._supabaseUrl;
+    if (!supabaseUrl) return;
+
+    _ttsAbort = new AbortController();
+
+    try {
+      const session = (await c.auth.getSession())?.data?.session;
+      const res = await fetch(`${supabaseUrl}/functions/v1/nice-tts`, {
+        method: 'POST',
+        signal: _ttsAbort.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ text, provider: 'elevenlabs', voice: 'jarvis', speed: 1.0 }),
+      });
+
+      if (!res.ok) throw new Error('TTS ' + res.status);
+
+      const blob = await res.blob();
+      _ttsBlobUrl = URL.createObjectURL(blob);
+      _ttsAudio = new Audio(_ttsBlobUrl);
+      _ttsAudio.onended = () => _jarvisTtsCleanup();
+      _ttsAudio.onerror = () => _jarvisTtsCleanup();
+      _ttsAudio.play();
+    } catch (err) {
+      _jarvisTtsCleanup();
+      if (err.name === 'AbortError') return;
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Voice Unavailable', message: 'Could not reach voice service.', type: 'system' });
+      }
+    }
+  }
+
+  function _jarvisTtsStop() {
+    if (_ttsAbort) { _ttsAbort.abort(); _ttsAbort = null; }
+    if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.src = ''; }
+    _jarvisTtsCleanup();
+  }
+
+  function _jarvisTtsCleanup() {
+    if (_ttsBlobUrl) { URL.revokeObjectURL(_ttsBlobUrl); _ttsBlobUrl = null; }
+    _ttsAudio = null;
+    _ttsAbort = null;
+  }
+
   /* ── Init / Destroy ── */
   function init() {
     _loadMessages();
@@ -2422,7 +2488,15 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _populateLLMDropdown();
     _populateModelDropdown();
     _updateSuggestionChips();
-    // Restore resume button if there's a prior conversation
+    // JARVIS TTS: stop voice when switching away from JARVIS theme
+    _themeObserver = new MutationObserver(() => {
+      if (document.documentElement.getAttribute('data-theme') !== 'jarvis') {
+        _jarvisTtsStop();
+      }
+    });
+    _themeObserver.observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-theme']
+    });
     // Start hidden — shown when user clicks a card or triggers prompt
     hide();
   }
@@ -2435,6 +2509,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
     if (_waveAnimId) { cancelAnimationFrame(_waveAnimId); _waveAnimId = null; }
     if (_audioCtx) { _audioCtx.close().catch(() => {}); _audioCtx = null; _analyser = null; }
+    // Stop JARVIS TTS
+    _jarvisTtsStop();
+    if (_themeObserver) { _themeObserver.disconnect(); _themeObserver = null; }
     // Reset conversation state
     _activeFlow = null;
     _activeConversation = null;
