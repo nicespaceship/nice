@@ -31,27 +31,15 @@ const PromptPanel = (() => {
   let _analyser = null;
   let _micStream = null;
   let _waveAnimId = null;
-  let _ttsEnabled = localStorage.getItem(Utils.KEYS.tts) === 'true';
-  let _ttsAudio = null; // Current OpenAI TTS Audio element (for cancellation)
-
+  let _ttsAudio = null;      // Current Audio element for JARVIS voice
+  let _ttsBlobUrl = null;    // Blob URL to revoke on cleanup
+  let _ttsAbort = null;      // AbortController for in-flight TTS fetch
+  let _themeObserver = null;  // MutationObserver for theme changes
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
 
   /* ── Multi-turn Agent Conversation (via AgentExecutor.converse) ── */
   let _activeConversation = null; // { controller, agentBp, agentLabel }
-
-
-  /* ── Randomized empty-state prompts ── */
-  const _EMPTY_PROMPTS = [
-    'Your agents are standing by…',
-    'What\'s the mission?',
-    'Brief your agents…',
-    'Awaiting orders, Commander.',
-    'All systems nominal. What\'s next?',
-    '@ an agent or type a command…',
-    'Standing by for your signal…',
-    'Mission briefing…',
-  ];
 
   /* ── Generic NICE responses (no blueprint selected) ── */
   const _NS_RESPONSES = [
@@ -111,15 +99,6 @@ const PromptPanel = (() => {
       'Request processed. Everything looks good on my end.',
     ],
   };
-
-  const _SHIP_RESPONSES = [
-    'All agents online and standing by. What\'s the mission?',
-    'Ship systems nominal. Agents are coordinated and ready for tasking.',
-    'I\'ve briefed the agents on your request. Assigning tasks now.',
-    'Fleet-wide status: all agents operational. Awaiting your orders, Captain.',
-    'Running diagnostics across all assigned agents. Everything checks out.',
-    'Agent coordination complete. All agents are synced and ready.',
-  ];
 
   const _esc = Utils.esc;
 
@@ -610,11 +589,11 @@ const PromptPanel = (() => {
     const monitorEl = document.getElementById('nice-monitor');
     if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
 
-    // TTS: speak the latest assistant message (without action tags)
+    // JARVIS auto-voice: speak the latest assistant message
     const last = _messages[_messages.length - 1];
-    if (last && last.role === 'assistant' && last.text) {
-      const { clean: ttsText } = _parseActions(last.text);
-      _speak(ttsText);
+    if (last && last.role === 'assistant' && !last.error) {
+      const { clean } = _parseActions(last.text);
+      _jarvisTtsSpeak(clean);
     }
   }
 
@@ -1257,8 +1236,6 @@ PERSONALITY:
 - When the user says "JARVIS" or "J.A.R.V.I.S.", you respond naturally as if being addressed by name. "At your service, ${callsign}."
 - Sprinkle in references: "running diagnostics", "I've taken the liberty of...", "shall I put the kettle on?" (metaphorically)
 
-VOICE: Your responses will be spoken aloud via TTS. Write for the ear — natural cadence, no bullet lists, no markdown formatting in conversational responses. Use commas and dashes for pacing.
-
 EXAMPLE RESPONSES:
 - Greeting: "Good evening, ${callsign}. Systems are online, agents are standing by. What can I do for you?"
 - Business consultation: "A sushi restaurant — excellent taste, if you'll pardon the expression. I'd recommend crewing the Culinary Command Ship with the Social Media Manager for your Instagram presence, the Scheduling Coordinator for reservations, and the Review Sentinel to keep your online reputation spotless. What's consuming most of your time at the moment?"
@@ -1273,7 +1250,7 @@ IMPORTANT: Never break character. You ARE J.A.R.V.I.S. — sophisticated, Britis
 
     return `You are NICE, the AI mission control assistant for Nice Spaceship — an Agentic Intelligence platform that helps businesses automate their operations with AI agent fleets.
 
-PERSONALITY: Friendly, knowledgeable, consultative. Speak with a subtle space/sci-fi flair (mission, fleet, deploy). Keep responses concise (2-4 sentences max) for voice conversation flow.
+PERSONALITY: Friendly, knowledgeable, consultative. Speak with a subtle space/sci-fi flair (mission, fleet, deploy). Keep responses concise (2-4 sentences max).
 ADDRESS THE USER AS: "${callsign}" — always use this name when addressing them directly.
 
 ${_buildSystemPromptCore(xp, rank, agentCount, shipCount, currentView, catalogLines, shipLines, showRarity)}
@@ -1440,6 +1417,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (!input || _sending) return;
     const text = input.value.trim();
     if (!text) return;
+    _jarvisTtsStop();
 
     _hideMentionPopup();
 
@@ -2064,13 +2042,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="More options">+</button>
             <div class="nice-ai-toolbar-right">
-              <button class="nice-ai-tts-btn ${_ttsEnabled ? 'active' : ''}" id="nice-ai-tts" title="Toggle voice responses">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              </button>
-              <select class="nice-ai-voice-select" id="nice-ai-voice-select" title="Select voice" style="display:none">
-                <option value="">Loading voices…</option>
-              </select>
-              <span class="nice-ai-jarvis-label" id="nice-ai-jarvis-voice" style="display:none">J.A.R.V.I.S.</span>
               <select class="nice-ai-mode-select" id="nice-ai-mode" title="Orchestration mode">
                 <option value="auto" selected>Auto</option>
                 <option value="pipeline">Pipeline</option>
@@ -2218,16 +2189,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       if (waveCanvas) waveCanvas.classList.add('active');
       _startWaveform(waveCanvas);
 
-      // Enable TTS so NICE talks back when using voice
-      if (!_ttsEnabled) {
-        _ttsEnabled = true;
-        localStorage.setItem(Utils.KEYS.tts, 'true');
-        const ttsBtn = _panel.querySelector('#nice-ai-tts');
-        if (ttsBtn) ttsBtn.classList.add('active');
-        const voiceSel = _panel.querySelector('#nice-ai-voice-select');
-        if (voiceSel) voiceSel.style.display = '';
-      }
-
       _recognition.onresult = (event) => {
         let transcript = '';
         for (let i = 0; i < event.results.length; i++) {
@@ -2268,60 +2229,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       };
 
       _recognition.start();
-    });
-
-    // TTS toggle
-    _panel.querySelector('#nice-ai-tts')?.addEventListener('click', () => {
-      _ttsEnabled = !_ttsEnabled;
-      localStorage.setItem(Utils.KEYS.tts, _ttsEnabled);
-      const btn = _panel.querySelector('#nice-ai-tts');
-      if (btn) btn.classList.toggle('active', _ttsEnabled);
-      _updateTTSUI();
-      if (_ttsEnabled) {
-        const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
-        const voiceName = theme === 'jarvis' ? 'J.A.R.V.I.S.' : 'Voice';
-        if (typeof Notify !== 'undefined') Notify.send({ title: voiceName + ' On', message: theme === 'jarvis' ? 'J.A.R.V.I.S. will speak responses.' : 'NICE will speak responses.', type: 'system' });
-      } else {
-        _stopTTS();
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Voice Off', message: 'Responses are text only.', type: 'system' });
-      }
-    });
-
-    _updateTTSUI();
-
-    // Listen for theme changes to update TTS UI
-    if (typeof State !== 'undefined') {
-      State.on('theme', _updateTTSUI);
-    }
-    // Also catch Theme.set() which writes to localStorage
-    window.addEventListener('storage', (e) => {
-      if (e.key === Utils.KEYS.theme) _updateTTSUI();
-    });
-
-    // Voice selector
-    const _voiceSelect = _panel.querySelector('#nice-ai-voice-select');
-    function _populateVoices() {
-      if (!_voiceSelect || !window.speechSynthesis) return;
-      const allVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-      if (!allVoices.length) return;
-      const seen = new Set();
-      const voices = allVoices.filter(v => {
-        const label = v.name.replace(/\s*\(.*\)/, '');
-        if (seen.has(label)) return false;
-        seen.add(label);
-        return true;
-      });
-      const saved = localStorage.getItem(Utils.KEYS.ttsVoice) || '';
-      _voiceSelect.innerHTML = voices.map(v => {
-        const label = v.name.replace(/\s*\(.*\)/, '');
-        const sel = (saved ? v.name === saved : v.name.includes('Samantha')) ? ' selected' : '';
-        return `<option value="${v.name}"${sel}>${label}</option>`;
-      }).join('');
-    }
-    _populateVoices();
-    if (window.speechSynthesis) speechSynthesis.onvoiceschanged = _populateVoices;
-    _voiceSelect?.addEventListener('change', (e) => {
-      localStorage.setItem(Utils.KEYS.ttsVoice, e.target.value);
     });
 
     // Attach — coming soon
@@ -2517,82 +2424,59 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (canvas) { canvas.classList.remove('active'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
   }
 
-  /* ── Text-to-Speech ── */
-  function _speak(text) {
-    if (!_ttsEnabled || !text) return;
-    _stopTTS();
+  /* ── JARVIS TTS (ElevenLabs George — JARVIS theme only) ── */
+  async function _jarvisTtsSpeak(text) {
+    if (!text) return;
+    if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
 
-    const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
-    if (theme === 'jarvis') return _speakOpenAI(text);
+    _jarvisTtsStop();
 
-    // All other themes: browser speechSynthesis
-    if (!window.speechSynthesis) return;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.05;
-    utter.pitch = 0.95;
-    const voices = speechSynthesis.getVoices();
-    const savedVoice = localStorage.getItem(Utils.KEYS.ttsVoice);
-    const preferred = (savedVoice && voices.find(v => v.name === savedVoice)) ||
-                      voices.find(v => v.name.includes('Samantha')) ||
-                      voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||
-                      voices.find(v => v.lang.startsWith('en'));
-    if (preferred) utter.voice = preferred;
-    speechSynthesis.speak(utter);
-  }
+    if (typeof SB === 'undefined' || !SB.client) return;
+    const c = SB.client;
+    const supabaseUrl = c.supabaseUrl || c._supabaseUrl;
+    if (!supabaseUrl) return;
 
-  async function _speakOpenAI(text) {
+    _ttsAbort = new AbortController();
+
     try {
-      if (typeof SB === 'undefined' || !SB.client) return;
-      const c = SB.client;
-      const supabaseUrl = c.supabaseUrl || c._supabaseUrl;
       const session = (await c.auth.getSession())?.data?.session;
-
       const res = await fetch(`${supabaseUrl}/functions/v1/nice-tts`, {
         method: 'POST',
+        signal: _ttsAbort.signal,
         headers: {
           'Content-Type': 'application/json',
           ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ text: text.slice(0, 5000), provider: 'elevenlabs', voice: 'jarvis', speed: 1.0 }),
+        body: JSON.stringify({ text, provider: 'elevenlabs', voice: 'jarvis', speed: 1.0 }),
       });
 
       if (!res.ok) throw new Error('TTS ' + res.status);
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      _ttsAudio = audio;
-      audio.onended = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
-      audio.onerror = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
-      audio.play();
+      _ttsBlobUrl = URL.createObjectURL(blob);
+      _ttsAudio = new Audio(_ttsBlobUrl);
+      _ttsAudio.onended = () => _jarvisTtsCleanup();
+      _ttsAudio.onerror = () => _jarvisTtsCleanup();
+      _ttsAudio.play();
     } catch (err) {
-      console.warn('[TTS] ElevenLabs failed, falling back to browser:', err.message);
-      if (window.speechSynthesis) {
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.rate = 0.95;
-        utter.pitch = 0.85;
-        const voices = speechSynthesis.getVoices();
-        const brit = voices.find(v => v.lang === 'en-GB' && v.name.includes('Daniel')) ||
-                     voices.find(v => v.lang.startsWith('en'));
-        if (brit) utter.voice = brit;
-        speechSynthesis.speak(utter);
+      _jarvisTtsCleanup();
+      if (err.name === 'AbortError') return;
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Voice Unavailable', message: 'Could not reach voice service.', type: 'system' });
       }
     }
   }
 
-  function _stopTTS() {
-    if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.src = ''; _ttsAudio = null; }
-    if (window.speechSynthesis) speechSynthesis.cancel();
+  function _jarvisTtsStop() {
+    if (_ttsAbort) { _ttsAbort.abort(); _ttsAbort = null; }
+    if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.src = ''; }
+    _jarvisTtsCleanup();
   }
 
-  /* ── Theme-aware TTS UI ── */
-  function _updateTTSUI() {
-    const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
-    const voiceSel = _panel?.querySelector('#nice-ai-voice-select');
-    const jarvisLabel = _panel?.querySelector('#nice-ai-jarvis-voice');
-    const isJarvis = theme === 'jarvis';
-    if (voiceSel) voiceSel.style.display = (!isJarvis && _ttsEnabled) ? '' : 'none';
-    if (jarvisLabel) jarvisLabel.style.display = (isJarvis && _ttsEnabled) ? '' : 'none';
+  function _jarvisTtsCleanup() {
+    if (_ttsBlobUrl) { URL.revokeObjectURL(_ttsBlobUrl); _ttsBlobUrl = null; }
+    _ttsAudio = null;
+    _ttsAbort = null;
   }
 
   /* ── Init / Destroy ── */
@@ -2604,15 +2488,33 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _populateLLMDropdown();
     _populateModelDropdown();
     _updateSuggestionChips();
-    // Restore voice controls visibility from saved TTS state (theme-aware)
-    _updateTTSUI();
-    // Restore resume button if there's a prior conversation
+    // JARVIS TTS: stop voice when switching away from JARVIS theme
+    _themeObserver = new MutationObserver(() => {
+      if (document.documentElement.getAttribute('data-theme') !== 'jarvis') {
+        _jarvisTtsStop();
+      }
+    });
+    _themeObserver.observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-theme']
+    });
     // Start hidden — shown when user clicks a card or triggers prompt
     hide();
   }
 
   function destroy() {
-    _stopTTS();
+    // Abort in-flight LLM requests
+    if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
+    // Stop speech recognition & mic
+    if (_recognition) { try { _recognition.stop(); } catch (_) {} _recognition = null; }
+    if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+    if (_waveAnimId) { cancelAnimationFrame(_waveAnimId); _waveAnimId = null; }
+    if (_audioCtx) { _audioCtx.close().catch(() => {}); _audioCtx = null; _analyser = null; }
+    // Stop JARVIS TTS
+    _jarvisTtsStop();
+    if (_themeObserver) { _themeObserver.disconnect(); _themeObserver = null; }
+    // Reset conversation state
+    _activeFlow = null;
+    _activeConversation = null;
     _hideMonitor();
     _panel?.remove();
     _panel = null;

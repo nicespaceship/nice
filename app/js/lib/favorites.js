@@ -142,7 +142,7 @@ const Favorites = (() => {
   }
 
   /* ── Blueprint Favorites ── */
-  const BP_KEY = 'nice-bp-favorites';
+  const BP_KEY = Utils.KEYS.bpFavorites;
 
   function _loadBpFavs() {
     try { return JSON.parse(localStorage.getItem(BP_KEY)) || []; } catch { return []; }
