@@ -1385,10 +1385,8 @@ const NICE = (() => {
       if (user) { _migrateLocalSpaceships(user); _loadTokenBalance(user); }
       // Dev mode: auto-sign in anonymously for a real JWT (edge functions need it)
       if (!user && _isDevMode) {
-        SB.auth.signInAnonymously().catch(err => {
-          console.warn('[NICE] Anonymous sign-in unavailable:', err.message);
-          // Fallback: show auth modal so user can sign in with real credentials
-          if (typeof AuthModal !== 'undefined') AuthModal.show();
+        SB.auth.signInAnonymously().catch(() => {
+          // Anonymous auth not enabled — user can sign in via auth modal manually
         });
       }
     }).catch(() => {
