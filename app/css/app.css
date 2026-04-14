@@ -3788,12 +3788,14 @@
 .nice-ai-mode-select:hover { border-color:var(--accent); color:var(--text); }
 .nice-ai-mode-select:focus { outline:none; border-color:var(--accent); }
 .nice-ai-mode-select option { background:var(--bg); color:var(--text); }
-.nice-ai-voice-btn, .nice-ai-send-btn {
+.nice-ai-tts-mute, .nice-ai-voice-btn, .nice-ai-send-btn {
   background:transparent; color:var(--text-muted);
   border:1px solid var(--border); border-radius:6px;
   width:28px; height:28px; display:flex; align-items:center; justify-content:center;
   cursor:pointer; transition:all .15s; padding:0;
 }
+.nice-ai-tts-mute:hover { color:var(--accent); border-color:var(--accent); }
+.nice-ai-tts-mute.off { color:var(--text-muted); border-color:var(--border); opacity:.5; }
 .nice-ai-voice-btn:hover { color:var(--accent); border-color:var(--accent); }
 .nice-ai-voice-btn.listening {
   color:var(--color-error); border-color:var(--color-error); background:rgba(239,68,68,.1);

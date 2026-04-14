@@ -590,12 +590,12 @@ const PromptPanel = (() => {
     const monitorEl = document.getElementById('nice-monitor');
     if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
 
-    // JARVIS auto-voice: speak new assistant messages only
+    // Theme voice: auto-speak new assistant messages (if theme has a voice)
     const last = _messages[_messages.length - 1];
     if (last && last.role === 'assistant' && !last.error && last.ts && last.ts !== _lastSpokenTs) {
       _lastSpokenTs = last.ts;
       const { clean } = _parseActions(last.text);
-      _jarvisTtsSpeak(clean);
+      _ttsSpeak(clean);
     }
   }
 
@@ -1419,7 +1419,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (!input || _sending) return;
     const text = input.value.trim();
     if (!text) return;
-    _jarvisTtsStop();
+    _ttsStop();
 
     _hideMentionPopup();
 
@@ -2054,6 +2054,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model">
                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
               </select>
+              <button class="nice-ai-tts-mute" id="nice-ai-tts-mute" aria-label="JARVIS voice" title="JARVIS voice" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+              </button>
               <button class="nice-ai-voice-btn" id="nice-ai-voice" aria-label="Voice mode" title="Voice mode">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               </button>
@@ -2426,12 +2429,63 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (canvas) { canvas.classList.remove('active'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
   }
 
-  /* ── JARVIS TTS (ElevenLabs George — JARVIS theme only) ── */
-  async function _jarvisTtsSpeak(text) {
-    if (!text) return;
-    if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
+  /* ── Theme Voice — per-theme TTS via ElevenLabs ─────────────────
+     Add a row to THEME_VOICES to give any theme a voice.
+     The edge function resolves the voice key to an ElevenLabs voice ID.
+     Each theme's on/off state is stored independently in localStorage.
+  ────────────────────────────────────────────────────────────────── */
+  const THEME_VOICES = {
+    jarvis: { voice: 'jarvis', label: 'J.A.R.V.I.S.', provider: 'elevenlabs', speed: 1.0 },
+    // lcars:  { voice: 'lcars',  label: 'LCARS Computer', provider: 'elevenlabs', speed: 1.0 },
+    // matrix: { voice: 'matrix', label: 'The Oracle',    provider: 'elevenlabs', speed: 0.9 },
+  };
 
-    _jarvisTtsStop();
+  function _currentThemeVoice() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    return THEME_VOICES[theme] || null;
+  }
+
+  function _isVoiceOff() {
+    const tv = _currentThemeVoice();
+    if (!tv) return true;
+    const theme = document.documentElement.getAttribute('data-theme');
+    try {
+      const state = JSON.parse(localStorage.getItem(Utils.KEYS.voiceOff) || '{}');
+      return state[theme] === true;
+    } catch { return false; }
+  }
+
+  function _toggleVoice() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    if (!THEME_VOICES[theme]) return;
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem(Utils.KEYS.voiceOff) || '{}'); } catch {}
+    state[theme] = !state[theme];
+    localStorage.setItem(Utils.KEYS.voiceOff, JSON.stringify(state));
+    if (state[theme]) _ttsStop();
+    _syncVoiceToggle();
+  }
+
+  function _syncVoiceToggle() {
+    const btn = _panel?.querySelector('#nice-ai-tts-mute');
+    if (!btn) return;
+    const tv = _currentThemeVoice();
+    btn.style.display = tv ? '' : 'none';
+    if (!tv) return;
+    const off = _isVoiceOff();
+    btn.classList.toggle('off', off);
+    btn.title = off ? `Turn on ${tv.label} voice` : `Turn off ${tv.label} voice`;
+    btn.innerHTML = off
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+  }
+
+  async function _ttsSpeak(text) {
+    const tv = _currentThemeVoice();
+    if (!text || !tv) return;
+    if (_isVoiceOff()) return;
+
+    _ttsStop();
 
     if (typeof SB === 'undefined' || !SB.client) return;
     const c = SB.client;
@@ -2450,7 +2504,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           'apikey': SB._key,
           ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ text, provider: 'elevenlabs', voice: 'jarvis', speed: 1.0 }),
+        body: JSON.stringify({ text, provider: tv.provider, voice: tv.voice, speed: tv.speed }),
       });
 
       if (!res.ok) throw new Error('TTS ' + res.status);
@@ -2458,11 +2512,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       const blob = await res.blob();
       _ttsBlobUrl = URL.createObjectURL(blob);
       _ttsAudio = new Audio(_ttsBlobUrl);
-      _ttsAudio.onended = () => _jarvisTtsCleanup();
-      _ttsAudio.onerror = () => _jarvisTtsCleanup();
+      _ttsAudio.onended = () => _ttsCleanup();
+      _ttsAudio.onerror = () => _ttsCleanup();
       _ttsAudio.play();
     } catch (err) {
-      _jarvisTtsCleanup();
+      _ttsCleanup();
       if (err.name === 'AbortError') return;
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Voice Unavailable', message: 'Could not reach voice service.', type: 'system' });
@@ -2470,13 +2524,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     }
   }
 
-  function _jarvisTtsStop() {
+  function _ttsStop() {
     if (_ttsAbort) { _ttsAbort.abort(); _ttsAbort = null; }
     if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.src = ''; }
-    _jarvisTtsCleanup();
+    _ttsCleanup();
   }
 
-  function _jarvisTtsCleanup() {
+  function _ttsCleanup() {
     if (_ttsBlobUrl) { URL.revokeObjectURL(_ttsBlobUrl); _ttsBlobUrl = null; }
     _ttsAudio = null;
     _ttsAbort = null;
@@ -2491,15 +2545,20 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _populateLLMDropdown();
     _populateModelDropdown();
     _updateSuggestionChips();
-    // JARVIS TTS: stop voice when switching away from JARVIS theme
+    // Theme voice: stop playback on theme change, sync toggle button
     _themeObserver = new MutationObserver(() => {
       if (document.documentElement.getAttribute('data-theme') !== 'jarvis') {
-        _jarvisTtsStop();
+        _ttsStop();
       }
+      _syncVoiceToggle();
     });
     _themeObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ['data-theme']
     });
+    // Theme voice on/off toggle
+    const muteBtn = _panel?.querySelector('#nice-ai-tts-mute');
+    if (muteBtn) muteBtn.addEventListener('click', _toggleVoice);
+    _syncVoiceToggle();
     // Start hidden — shown when user clicks a card or triggers prompt
     hide();
   }
@@ -2513,7 +2572,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (_waveAnimId) { cancelAnimationFrame(_waveAnimId); _waveAnimId = null; }
     if (_audioCtx) { _audioCtx.close().catch(() => {}); _audioCtx = null; _analyser = null; }
     // Stop JARVIS TTS
-    _jarvisTtsStop();
+    _ttsStop();
     if (_themeObserver) { _themeObserver.disconnect(); _themeObserver = null; }
     // Reset conversation state
     _activeFlow = null;
