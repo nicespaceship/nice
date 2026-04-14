@@ -103,6 +103,7 @@ const Utils = (() => {
     securityChecklist: 'nice-security-checklist',
     shipProfiles: 'nice-ship-profiles',
     tronHighScore: 'nice-tron-hi',
+    voiceOff: 'nice-voice-off',
   };
 
   return { esc, timeAgo, formatDate, formatDateTime, icon, KEYS };

@@ -2,17 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "serve (static)",
-      "runtimeExecutable": "/opt/homebrew/bin/node",
-      "runtimeArgs": ["server.js"],
-      "port": 3000,
-      "autoPort": true
-    },
-    {
-      "name": "python (static)",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "3001"],
-      "port": 3001
+      "name": "Dev Server (Live Reload)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/dev-server.js"],
+      "port": 3000
     }
   ]
 }
