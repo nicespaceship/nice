@@ -206,11 +206,8 @@ const Router = (() => {
   function init(containerEl) {
     _el = containerEl;
     window.addEventListener('hashchange', _render);
-
-    // Set default hash if empty
-    if (!window.location.hash || window.location.hash === '#') {
-      window.location.hash = '#/';
-    }
+    // path() normalizes empty hash to '/', so we don't force '#/' onto the URL
+    // on first load — that was cosmetically polluting the address bar.
     _render();
   }
 
