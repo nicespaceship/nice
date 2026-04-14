@@ -296,8 +296,8 @@ const SpaceshipsView = (() => {
         e.stopPropagation();
         const bpId = btn.dataset.id;
         const name = btn.closest('.tcg-card')?.querySelector('.tcg-name-bar span')?.textContent || 'this spaceship';
-        const doDeactivate = () => {
-          if (typeof BlueprintStore !== 'undefined') BlueprintStore.deactivateShip(bpId);
+        const doDeactivate = async () => {
+          if (typeof BlueprintStore !== 'undefined') await BlueprintStore.deactivateShip(bpId);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Spaceship Removed', message: 'Blueprint removed from your fleet.', type: 'info' });
           _loadSpaceships();
         };
