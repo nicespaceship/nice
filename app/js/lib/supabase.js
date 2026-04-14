@@ -88,6 +88,14 @@ const SB = (() => {
       return data;
     },
 
+    async signInAnonymously() {
+      const c = client();
+      if (!c) throw new Error('Supabase not available');
+      const { data, error } = await c.auth.signInAnonymously();
+      if (error) throw error;
+      return data;
+    },
+
     async signOut() {
       const c = client();
       if (!c) throw new Error('Supabase not available');
