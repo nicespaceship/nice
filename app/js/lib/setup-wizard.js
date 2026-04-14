@@ -105,7 +105,7 @@ const SetupWizard = (() => {
 
     // Track funnel
     const stepNames = ['describe', 'needs', 'generate', 'deploy'];
-    if (typeof AuditLog !== 'undefined') AuditLog.add('wizard_step', { step: n, name: stepNames[n] || n });
+    if (typeof AuditLog !== 'undefined') AuditLog.log('wizard_step', { step: n, name: stepNames[n] || n });
 
     // Progress dots
     progress.innerHTML = Array.from({ length: TOTAL_STEPS }, (_, i) =>
