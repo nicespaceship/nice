@@ -1298,7 +1298,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   function _getSelectedModel() {
     const modelSelect = _panel?.querySelector('#nice-ai-model');
-    const val = modelSelect?.value || 'claude-4-sonnet';
+    const val = modelSelect?.value || 'gemini-2.5-flash';
     // Check LLM_MODELS registry first (supports all providers)
     if (typeof LLM_MODELS !== 'undefined') {
       const entry = LLM_MODELS.find(m => m.id === val);
@@ -1306,9 +1306,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     }
     // Legacy fallback
     const modelMap = {
-      'nice-4':      'claude-4-sonnet',
-      'nice-4-mini': 'claude-4-sonnet',
-      'nice-3':      'claude-4-sonnet',
+      'nice-4':      'gemini-2.5-flash',
+      'nice-4-mini': 'gemini-2.5-flash',
+      'nice-3':      'gemini-2.5-flash',
+      'claude-4-sonnet': 'gemini-2.5-flash',
     };
     return { id: modelMap[val] || val, label: val };
   }
@@ -1970,12 +1971,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const select = _panel?.querySelector('#nice-ai-model');
     if (!select || typeof LLM_MODELS === 'undefined' || typeof LLM_PROVIDERS === 'undefined') return;
     const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
-    const enabledIds = Object.keys(enabled).filter(k => enabled[k]);
-    if (!enabledIds.length && !LLM_MODELS.length) return; // keep default option
+    // Only show enabled models (free models default to on)
+    const enabledModels = LLM_MODELS.filter(m => enabled[m.id]);
+    if (!enabledModels.length) return; // keep default Gemini option
     select.innerHTML = '';
-    // Group models by provider, show all providers with enabled models
+    // Group by provider, only show providers with enabled models
     LLM_PROVIDERS.forEach(p => {
-      const models = LLM_MODELS.filter(m => m.provider === p.id);
+      const models = enabledModels.filter(m => m.provider === p.id);
       if (!models.length) return;
       const grp = document.createElement('optgroup');
       grp.label = p.name;
@@ -1987,8 +1989,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       });
       select.appendChild(grp);
     });
-    // Default to first connected model
-    if (select.options.length) select.selectedIndex = 0;
+    // Default to Gemini 2.5 Flash if available, otherwise first option
+    const gemini = select.querySelector('option[value="gemini-2.5-flash"]');
+    if (gemini) gemini.selected = true;
+    else if (select.options.length) select.selectedIndex = 0;
   }
 
   /* ═══ @Mention Autocomplete ═══ */
@@ -2075,7 +2079,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
                 <option value="loop">Quality Loop</option>
               </select>
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model">
-                <option value="claude-4-sonnet" selected>Claude Sonnet</option>
+                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
               </select>
               <button class="nice-ai-voice-btn" id="nice-ai-voice" aria-label="Voice mode" title="Voice mode">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
