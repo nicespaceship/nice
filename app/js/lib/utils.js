@@ -104,6 +104,7 @@ const Utils = (() => {
     shipProfiles: 'nice-ship-profiles',
     tronHighScore: 'nice-tron-hi',
     voiceOff: 'nice-voice-off',
+    checklistDismissed: 'nice-checklist-dismissed',
   };
 
   return { esc, timeAgo, formatDate, formatDateTime, icon, KEYS };
