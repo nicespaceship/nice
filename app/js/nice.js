@@ -1344,14 +1344,7 @@ const NICE = (() => {
 
   /* ── Auth state listener ── */
   function _initAuth() {
-    // Dev mode: bypass auth on localhost
     const _isDevMode = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    if (_isDevMode) {
-      const devUser = { id: 'dev-user', email: 'dev@nicespaceship.com', name: 'Commander' };
-      State.set('user', devUser);
-      _updateAuthUI(devUser);
-      return;
-    }
 
     // Ephemeral session: if "Remember me" was unchecked, sign out on new browser session
     if (localStorage.getItem(Utils.KEYS.ephemeralSession) === '1' && !sessionStorage.getItem(Utils.KEYS.ephemeralSession)) {
@@ -1390,6 +1383,12 @@ const NICE = (() => {
       State.set('user', user);
       _updateAuthUI(user);
       if (user) { _migrateLocalSpaceships(user); _loadTokenBalance(user); }
+      // Dev mode: auto-sign in anonymously for a real JWT (edge functions need it)
+      if (!user && _isDevMode) {
+        SB.auth.signInAnonymously().catch(() => {
+          // Anonymous auth not enabled — user can sign in via auth modal manually
+        });
+      }
     }).catch(() => {
       State.set('user', null);
       _updateAuthUI(null);
