@@ -31,6 +31,7 @@ const PromptPanel = (() => {
   let _analyser = null;
   let _micStream = null;
   let _waveAnimId = null;
+  let _lastSpokenTs = 0;     // Timestamp of last spoken message (prevent replays)
   let _ttsAudio = null;      // Current Audio element for JARVIS voice
   let _ttsBlobUrl = null;    // Blob URL to revoke on cleanup
   let _ttsAbort = null;      // AbortController for in-flight TTS fetch
@@ -589,9 +590,10 @@ const PromptPanel = (() => {
     const monitorEl = document.getElementById('nice-monitor');
     if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
 
-    // JARVIS auto-voice: speak the latest assistant message
+    // JARVIS auto-voice: speak new assistant messages only
     const last = _messages[_messages.length - 1];
-    if (last && last.role === 'assistant' && !last.error) {
+    if (last && last.role === 'assistant' && !last.error && last.ts && last.ts !== _lastSpokenTs) {
+      _lastSpokenTs = last.ts;
       const { clean } = _parseActions(last.text);
       _jarvisTtsSpeak(clean);
     }
@@ -1323,7 +1325,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       if (session?.access_token) authHeader = `Bearer ${session.access_token}`;
     } catch { /* anon ok for free models */ }
 
-    const headers = { 'Content-Type': 'application/json' };
+    const headers = { 'Content-Type': 'application/json', 'apikey': SB._key };
     if (authHeader) headers['Authorization'] = authHeader;
 
     const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
@@ -2445,6 +2447,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         signal: _ttsAbort.signal,
         headers: {
           'Content-Type': 'application/json',
+          'apikey': SB._key,
           ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
         },
         body: JSON.stringify({ text, provider: 'elevenlabs', voice: 'jarvis', speed: 1.0 }),
