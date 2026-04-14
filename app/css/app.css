@@ -621,9 +621,8 @@
 [data-theme="gundam"] .chat-pill:hover {
   background: #e8c840 !important;
 }
-/* Model & voice dropdowns — same gray as other buttons */
-[data-theme="gundam"] .nice-ai-model-select,
-[data-theme="gundam"] .nice-ai-voice-select {
+/* Model dropdown — same gray as other buttons */
+[data-theme="gundam"] .nice-ai-model-select {
   background: #3a3f55 !important;
   color: #fff !important;
   border-color: #5a5f75 !important;
@@ -1031,8 +1030,7 @@
   font-size: 7px !important;
   padding: 4px 10px !important;
 }
-[data-theme="16bit"] .nice-ai-model-select,
-[data-theme="16bit"] .nice-ai-voice-select {
+[data-theme="16bit"] .nice-ai-model-select {
   font-size: 8px;
 }
 [data-theme="16bit"] .nice-ai-input-area button {
@@ -3790,31 +3788,6 @@
 .nice-ai-mode-select:hover { border-color:var(--accent); color:var(--text); }
 .nice-ai-mode-select:focus { outline:none; border-color:var(--accent); }
 .nice-ai-mode-select option { background:var(--bg); color:var(--text); }
-.nice-ai-voice-select {
-  background:transparent; color:var(--text-muted);
-  border:1px solid var(--border); border-radius:6px;
-  padding:4px 8px; font-family:var(--font-b); font-size:.68rem;
-  letter-spacing:.03em; cursor:pointer; max-width:110px;
-  appearance:none; -webkit-appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 6px center;
-  padding-right:20px; text-overflow:ellipsis;
-}
-.nice-ai-voice-select:hover { border-color:var(--accent); color:var(--text); }
-.nice-ai-voice-select:focus { outline:none; border-color:var(--accent); }
-.nice-ai-voice-select option { background:var(--bg); color:var(--text); }
-.nice-ai-jarvis-label {
-  font-family:var(--font-h, var(--font-b));
-  font-size:.65rem;
-  letter-spacing:.08em;
-  color:var(--accent);
-  text-transform:uppercase;
-  padding:4px 8px;
-  border:1px solid var(--accent);
-  border-radius:6px;
-  opacity:.8;
-}
-
 .nice-ai-voice-btn, .nice-ai-send-btn {
   background:transparent; color:var(--text-muted);
   border:1px solid var(--border); border-radius:6px;
@@ -3844,16 +3817,6 @@
   display:none; width:100%; height:40px; border-radius:var(--radius);
 }
 .nice-ai-waveform.active { display:block; margin:8px 0 4px; }
-
-/* TTS toggle button */
-.nice-ai-tts-btn {
-  background:transparent; color:var(--text-muted);
-  border:1px solid var(--border); border-radius:6px;
-  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; transition:all .15s; padding:0;
-}
-.nice-ai-tts-btn:hover { color:var(--accent); border-color:var(--accent); }
-.nice-ai-tts-btn.active { color:var(--accent); border-color:var(--accent); background:rgba(255,255,255,.05); }
 
 /* Contextual suggestion chips — removed */
 .nice-ai-chips { display:none; }
@@ -4470,83 +4433,6 @@
   color:var(--accent); min-width:22px; text-align:center;
 }
 
-/* ── Onboarding Tour ── */
-.onb-overlay { position:fixed; inset:0; z-index:500; }
-.onb-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.7); }
-.onb-spotlight {
-  position:fixed; border:2px solid var(--accent); border-radius:var(--radius);
-  box-shadow:0 0 0 9999px rgba(0,0,0,.6); z-index:501;
-  transition:all .3s ease; pointer-events:none;
-}
-.onb-tooltip {
-  z-index:502; background:var(--panel-bg, #111); border:1px solid var(--accent);
-  border-radius:var(--radius); padding:20px; width:300px;
-  box-shadow:0 8px 32px rgba(0,0,0,.4);
-}
-.onb-tooltip-step { font-family:var(--font-b); font-size:.55rem; color:var(--accent); letter-spacing:.12em; margin-bottom:6px; }
-.onb-tooltip-title { font-family:var(--font-d, var(--font-h)); font-size:.95rem; font-weight:700; margin:0 0 6px 0; color:var(--text); }
-.onb-tooltip-text { font-size:.78rem; color:var(--text-muted); line-height:1.6; margin:0 0 14px 0; }
-.onb-tooltip-actions { display:flex; gap:8px; justify-content:flex-end; }
-
-/* ── Tutorial Mission Overlay ── */
-.tut-mission-overlay .onb-spotlight {
-  animation:tutSpotlightPulse 2s ease-in-out infinite;
-}
-@keyframes tutSpotlightPulse {
-  0%,100% { box-shadow:0 0 0 9999px rgba(0,0,0,.6), 0 0 12px 2px var(--accent); }
-  50% { box-shadow:0 0 0 9999px rgba(0,0,0,.6), 0 0 24px 6px var(--accent); }
-}
-
-.tut-mission-overlay .onb-tooltip {
-  animation:tutTooltipEnter .3s ease forwards;
-}
-@keyframes tutTooltipEnter {
-  from { opacity:0; transform:translateY(8px); }
-  to { opacity:1; transform:translateY(0); }
-}
-
-/* Tooltip arrow */
-.tut-mission-overlay .onb-tooltip::before {
-  content:''; position:absolute; width:0; height:0;
-  border:8px solid transparent;
-}
-.tut-mission-overlay .onb-tooltip[data-arrow="left"]::before {
-  left:-16px; top:20px; border-right-color:var(--accent);
-}
-.tut-mission-overlay .onb-tooltip[data-arrow="right"]::before {
-  right:-16px; top:20px; border-left-color:var(--accent);
-}
-.tut-mission-overlay .onb-tooltip[data-arrow="top"]::before {
-  top:-16px; left:24px; border-bottom-color:var(--accent);
-}
-.tut-mission-overlay .onb-tooltip[data-arrow="bottom"]::before {
-  bottom:-16px; left:24px; border-top-color:var(--accent);
-}
-
-/* Step counter badge */
-.tut-step-badge {
-  display:inline-flex; align-items:center; justify-content:center;
-  font-family:var(--font-b); font-size:.55rem; letter-spacing:.12em;
-  color:var(--accent); background:var(--accent)15; border:1px solid var(--accent)40;
-  border-radius:var(--radius); padding:2px 10px; margin-bottom:6px;
-}
-
-/* Progress bar at overlay bottom */
-.tut-progress-track {
-  position:fixed; bottom:0; left:0; right:0; height:4px;
-  background:rgba(255,255,255,.08); z-index:503;
-}
-.tut-progress-fill {
-  height:100%; background:var(--accent); border-radius:0 2px 2px 0;
-  transition:width .4s ease;
-}
-
-@media (prefers-reduced-motion:reduce) {
-  .tut-mission-overlay .onb-spotlight { animation:none!important; }
-  .tut-mission-overlay .onb-tooltip { animation:none!important; opacity:1!important; transform:none!important; }
-  .tut-progress-fill { transition:none!important; }
-}
-
 /* ═══════════════════════════════════════════════════════════════════
    PHASE 3: Agent Templates
 ═══════════════════════════════════════════════════════════════════ */
@@ -4567,7 +4453,6 @@
 @media (max-width:768px) {
   .cmd-palette { padding-top:10vh; }
   .cmd-palette-box { max-width:calc(100vw - 24px); margin:0 12px; }
-  .onb-tooltip { width:calc(100vw - 48px); max-width:300px; }
   .kb-shortcut-grid { font-size:.72rem; }
   .builder-template-row { flex-wrap:wrap; }
 }
@@ -4575,7 +4460,6 @@
 @media (max-width:480px) {
   .cmd-palette { padding-top:5vh; }
   .cmd-result { min-height:44px; }
-  .onb-tooltip-actions .btn { min-height:44px; }
   .kb-row kbd { min-height:28px; display:inline-flex; align-items:center; }
 }
 
