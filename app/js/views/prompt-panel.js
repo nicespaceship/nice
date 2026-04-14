@@ -2287,15 +2287,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       }
     });
 
-    // Theme-aware TTS UI: show JARVIS label or voice selector
-    function _updateTTSUI() {
-      const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
-      const voiceSel = _panel?.querySelector('#nice-ai-voice-select');
-      const jarvisLabel = _panel?.querySelector('#nice-ai-jarvis-voice');
-      const isJarvis = theme === 'jarvis';
-      if (voiceSel) voiceSel.style.display = (!isJarvis && _ttsEnabled) ? '' : 'none';
-      if (jarvisLabel) jarvisLabel.style.display = (isJarvis && _ttsEnabled) ? '' : 'none';
-    }
     _updateTTSUI();
 
     // Listen for theme changes to update TTS UI
@@ -2594,6 +2585,16 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (window.speechSynthesis) speechSynthesis.cancel();
   }
 
+  /* ── Theme-aware TTS UI ── */
+  function _updateTTSUI() {
+    const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
+    const voiceSel = _panel?.querySelector('#nice-ai-voice-select');
+    const jarvisLabel = _panel?.querySelector('#nice-ai-jarvis-voice');
+    const isJarvis = theme === 'jarvis';
+    if (voiceSel) voiceSel.style.display = (!isJarvis && _ttsEnabled) ? '' : 'none';
+    if (jarvisLabel) jarvisLabel.style.display = (isJarvis && _ttsEnabled) ? '' : 'none';
+  }
+
   /* ── Init / Destroy ── */
   function init() {
     _loadMessages();
@@ -2603,11 +2604,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _populateLLMDropdown();
     _populateModelDropdown();
     _updateSuggestionChips();
-    // Restore voice controls visibility from saved TTS state
-    if (_ttsEnabled) {
-      const voiceSel = _panel?.querySelector('#nice-ai-voice-select');
-      if (voiceSel) voiceSel.style.display = '';
-    }
+    // Restore voice controls visibility from saved TTS state (theme-aware)
+    _updateTTSUI();
     // Restore resume button if there's a prior conversation
     // Start hidden — shown when user clicks a card or triggers prompt
     hide();
