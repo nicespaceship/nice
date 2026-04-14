@@ -157,25 +157,30 @@ describe('BlueprintStore', () => {
       expect(BlueprintStore.getShipState(shipUuid)).toBeNull();
     });
 
-    it('keeps agents that are also assigned to another active ship', async () => {
+    it('enforces one-ship-per-agent invariant on saveShipState (agent detached from prior ship)', () => {
       BlueprintStore.activateShip('ship-01');
       BlueprintStore.activateShip('ship-02');
-      BlueprintStore.activateAgent('shared-agent');
-      BlueprintStore.activateAgent('solo-agent');
+      BlueprintStore.activateAgent('crew-pilot');
+
+      // Assign pilot to ship-01 first
       BlueprintStore.saveShipState('bp-ship-01', {
-        slot_assignments: { 0: 'shared-agent', 1: 'solo-agent' },
-        agent_ids: ['shared-agent', 'solo-agent'],
+        slot_assignments: { 0: 'crew-pilot' },
+        agent_ids: ['crew-pilot'],
       });
+      expect(BlueprintStore.getShipState('bp-ship-01').slot_assignments[0]).toBe('crew-pilot');
+
+      // Now assign same pilot to ship-02 — should be removed from ship-01 automatically
       BlueprintStore.saveShipState('bp-ship-02', {
-        slot_assignments: { 0: 'shared-agent' },
-        agent_ids: ['shared-agent'],
+        slot_assignments: { 0: 'crew-pilot' },
+        agent_ids: ['crew-pilot'],
       });
 
-      await BlueprintStore.deactivateShip('ship-01');
-
-      expect(BlueprintStore.isAgentActivated('solo-agent')).toBe(false);
-      expect(BlueprintStore.isAgentActivated('shared-agent')).toBe(true);
-      expect(BlueprintStore.isShipActivated('ship-02')).toBe(true);
+      const ship1 = BlueprintStore.getShipState('bp-ship-01');
+      const ship2 = BlueprintStore.getShipState('bp-ship-02');
+      expect(ship2.slot_assignments[0]).toBe('crew-pilot');
+      expect(ship2.agent_ids).toContain('crew-pilot');
+      expect(ship1.slot_assignments[0]).toBeNull();
+      expect(ship1.agent_ids).not.toContain('crew-pilot');
     });
 
     it('falls back to State.spaceships for agent ids when _shipState is empty', async () => {

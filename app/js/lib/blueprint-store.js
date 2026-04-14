@@ -986,7 +986,9 @@ const BlueprintStore = (() => {
       );
     }
 
-    // Collect every agent ID assigned to this ship from any source
+    // Collect every agent ID assigned to this ship from any source.
+    // Crew belongs to exactly one ship (invariant enforced by reassignAgentToShip
+    // and the dedup pass in _resolveNewAgents), so every agent found here is removed.
     const agentIdsToRemove = new Set();
     const collect = (src) => {
       if (!src) return;
@@ -1001,16 +1003,8 @@ const BlueprintStore = (() => {
     collect(stateShip);
     collect(stateShip?.config);
 
-    // Only remove agents that aren't on another active ship
-    const otherShipAgents = new Set();
-    for (const [otherKey, otherState] of Object.entries(_shipState)) {
-      if (otherKey === stateKey || !otherState?.slot_assignments) continue;
-      Object.values(otherState.slot_assignments).forEach(id => { if (id) otherShipAgents.add(id); });
-    }
-
     const removedAgentIds = [];
     for (const agentId of agentIdsToRemove) {
-      if (otherShipAgents.has(agentId)) continue;
       removedAgentIds.push(agentId);
       _activatedAgentIds = _activatedAgentIds.filter(id => id !== agentId);
       try {
@@ -1169,6 +1163,27 @@ const BlueprintStore = (() => {
       agent_ids: state.agent_ids || [],
     };
     if (state.class_id) _shipState[shipId].class_id = state.class_id;
+
+    // Enforce invariant: crew belongs to exactly one ship. Detach every agent
+    // assigned here from any other ship's slots before we persist.
+    const assignedAgents = new Set();
+    Object.values(_shipState[shipId].slot_assignments).forEach(id => { if (id) assignedAgents.add(id); });
+    (_shipState[shipId].agent_ids || []).forEach(id => { if (id) assignedAgents.add(id); });
+    for (const agentId of assignedAgents) {
+      for (const otherKey of Object.keys(_shipState)) {
+        if (otherKey === shipId) continue;
+        const os = _shipState[otherKey];
+        if (os?.slot_assignments) {
+          for (const slotKey of Object.keys(os.slot_assignments)) {
+            if (os.slot_assignments[slotKey] === agentId) os.slot_assignments[slotKey] = null;
+          }
+        }
+        if (Array.isArray(os?.agent_ids)) {
+          os.agent_ids = os.agent_ids.filter(id => id !== agentId);
+        }
+      }
+    }
+
     _persistShipState();
   }
 
