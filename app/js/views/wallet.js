@@ -12,20 +12,23 @@ const WalletView = (() => {
   const title = 'Wallet';
   const _esc = Utils.esc;
 
-  /* ── Top-up Packages (Pro subscribers only) ──
-     Replaces the old $4.99 / $19.99 / $69.99 lineup with two
-     pool-targeted packs at $29.99 and $49.99. The actual Stripe
-     payment link will be wired in PR #4 — for now these point
-     at the legacy URLs as a placeholder so the wallet works
-     end-to-end against today's Stripe products. */
-  const TOP_UPS = [
-    { id: 'standard-boost', pool: 'standard', name: 'Standard Boost', tokens: 1000, price: '$29.99', desc: '+1,000 standard tokens. Never expires.', url: 'https://buy.stripe.com/aFa5kC7d63FudUF37q33W03' },
-    { id: 'standard-max',   pool: 'standard', name: 'Standard Max',   tokens: 2500, price: '$49.99', desc: '+2,500 standard tokens. Best value.',  badge: 'Best Value', url: 'https://buy.stripe.com/9B628qbtmek8aIt37q33W04' },
-    { id: 'claude-boost',   pool: 'claude',   name: 'Claude Boost',   tokens: 500,  price: '$29.99', desc: '+500 Claude tokens. Never expires.',  url: 'https://buy.stripe.com/aFa5kC7d63FudUF37q33W03' },
-    { id: 'claude-max',     pool: 'claude',   name: 'Claude Max',     tokens: 1250, price: '$49.99', desc: '+1,250 Claude tokens. Best value.',  badge: 'Best Value', url: 'https://buy.stripe.com/9B628qbtmek8aIt37q33W04' },
-    { id: 'premium-boost',  pool: 'premium',  name: 'Premium Boost',  tokens: 500,  price: '$29.99', desc: '+500 Premium tokens. Never expires.', url: 'https://buy.stripe.com/aFa5kC7d63FudUF37q33W03' },
-    { id: 'premium-max',    pool: 'premium',  name: 'Premium Max',    tokens: 1250, price: '$49.99', desc: '+1,250 Premium tokens. Best value.',  badge: 'Best Value', url: 'https://buy.stripe.com/9B628qbtmek8aIt37q33W04' },
-  ];
+  /* ── Top-up Packages — sourced from StripeConfig SSOT ────────
+     All 6 packs live in app/js/lib/stripe-config.js with real
+     live-mode product/price/payment-link IDs. Wallet just renders
+     whatever StripeConfig exposes. */
+  function _getTopUps() {
+    if (typeof StripeConfig === 'undefined') return [];
+    return StripeConfig.listTopUps().map(t => ({
+      id: t.id,
+      pool: t.pool,
+      name: t.name,
+      tokens: t.tokens,
+      price: '$' + t.price.toFixed(2),
+      desc: t.desc,
+      badge: t.badge || '',
+      url: t.paymentLinkUrl,
+    }));
+  }
 
   /* ── Render ─────────────────────────────────────────────────── */
   function render(el) {
@@ -76,7 +79,7 @@ const WalletView = (() => {
             <p class="wallet-locked-note">🔒 Subscribe to Pro to buy token top-ups.</p>
           ` : `
             <div class="wallet-topup-grid">
-              ${TOP_UPS.filter(t => _topupVisibleForUser(t, userAddons)).map(t => _renderTopUp(t)).join('')}
+              ${_getTopUps().filter(t => _topupVisibleForUser(t, userAddons)).map(t => _renderTopUp(t)).join('')}
             </div>
           `}
         </div>
@@ -276,5 +279,5 @@ const WalletView = (() => {
     }
   }
 
-  return { title, render, TOP_UPS };
+  return { title, render };
 })();
