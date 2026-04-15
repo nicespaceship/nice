@@ -283,15 +283,25 @@ const IntegrationsView = (() => {
           }
         </div>`;
       }
+      // When the MCP is connected we have real tool IDs from the
+      // server — render those with read/write badges. Otherwise fall
+      // back to the catalog preview list.
+      const realTools = connected ? (conn.available_tools || []) : [];
+      const toolPills = connected && realTools.length
+        ? _renderToolPills(realTools)
+        : mcp.tools.map(t => `<span class="mcp-tool-pill">${t}</span>`).join('');
+
+      const scopeBadge = connected ? _renderScopeBadge(realTools) : '';
+
       return `<div class="mcp-catalog-card ${connected ? 'mcp-catalog-card--connected' : ''}" data-cat="${mcp.cat}">
         <div class="mcp-catalog-top">
           <div class="mcp-catalog-icon"><svg class="icon icon-md" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${mcp.icon}"/></svg></div>
           <div class="mcp-catalog-info">
-            <span class="mcp-catalog-name">${mcp.name}</span>
+            <span class="mcp-catalog-name">${mcp.name}${scopeBadge}</span>
             <span class="mcp-catalog-desc">${mcp.desc}</span>
           </div>
         </div>
-        <div class="mcp-catalog-tools">${mcp.tools.map(t => `<span class="mcp-tool-pill">${t}</span>`).join('')}</div>
+        <div class="mcp-catalog-tools">${toolPills}</div>
         <div class="mcp-catalog-footer">
           <span class="mcp-catalog-transport mono">${mcp.transport}</span>
           ${connected
@@ -301,6 +311,41 @@ const IntegrationsView = (() => {
         </div>
       </div>`;
     }).join('');
+  }
+
+  /* ── Tool classification helpers ──────────────────────────────── */
+
+  /** Classify a tool ID as 'read' or 'write' using the same patterns
+      the agent-executor uses to decide which calls need approval. */
+  function _classifyTool(toolId) {
+    if (typeof AgentExecutor !== 'undefined' && AgentExecutor.classifyTool) {
+      return AgentExecutor.classifyTool(toolId);
+    }
+    // Fallback — keep in sync with AgentExecutor.classifyTool
+    const patterns = ['send', 'publish', 'post', 'create', 'delete',
+      'update', 'write', 'upload', 'reply', 'archive', 'move',
+      'rename', 'remove', 'drop', 'put', 'patch', 'insert',
+      'destroy', 'revoke', 'cancel', 'schedule'];
+    const n = String(toolId || '').toLowerCase();
+    return patterns.some(p => n.includes(p)) ? 'write' : 'read';
+  }
+
+  /** Render the tool pill list with read/write coloring. */
+  function _renderToolPills(tools) {
+    return tools.map(t => {
+      const kind = _classifyTool(t);
+      return `<span class="mcp-tool-pill mcp-tool-pill--${kind}" title="${kind === 'write' ? 'Write / side-effect tool — needs approval when review mode is on' : 'Read-only tool'}">${t}</span>`;
+    }).join('');
+  }
+
+  /** Derive a "Read only" / "Read + Write" badge from the tool set. */
+  function _renderScopeBadge(tools) {
+    if (!Array.isArray(tools) || !tools.length) return '';
+    const hasWrite = tools.some(t => _classifyTool(t) === 'write');
+    if (hasWrite) {
+      return ' <span class="mcp-scope-badge mcp-scope-badge--write" title="This connection can make changes on your behalf">R+W</span>';
+    }
+    return ' <span class="mcp-scope-badge mcp-scope-badge--read" title="This connection can only read data">R</span>';
   }
 
   /* ── Filter & View Logic ─────────────────────────────────────── */

@@ -53,6 +53,79 @@ describe('AgentExecutor', () => {
       expect(AgentExecutor).toBeDefined();
     });
   });
+
+  describe('classifyTool / _isSideEffectTool', () => {
+    it('exposes the helpers on the module', () => {
+      expect(typeof AgentExecutor.classifyTool).toBe('function');
+      expect(typeof AgentExecutor._isSideEffectTool).toBe('function');
+    });
+
+    // The tools below cover every write tool currently seeded in
+    // integrations.js. If any of these slip through the pattern list,
+    // the Integrations UI will mislabel the pill AND the agent will
+    // skip the approval gate in `review` mode, so the test is a real
+    // safety rail against regressions.
+    const WRITE_TOOLS = [
+      // Gmail
+      'gmail_send_message',
+      'gmail_create_draft',
+      'gmail_reply_message',
+      // Calendar
+      'calendar_create_event',
+      'calendar_update_event',
+      'calendar_delete_event',
+      // Drive
+      'drive_create_file',
+      'drive_update_file',
+      'drive_upload_file',
+      // Social
+      'social_create_post',
+      'social_publish_post',
+      'social_schedule_post',
+      // Slack / generic
+      'slack_send_message',
+      'slack_post_message',
+      // Payments (future — just make sure the pattern catches them)
+      'stripe_create_charge',
+      'stripe_refund_charge',
+    ];
+
+    const READ_TOOLS = [
+      'gmail_search_messages',
+      'gmail_read_message',
+      'gmail_list_labels',
+      'calendar_list_events',
+      'calendar_get_event',
+      'calendar_list_calendars',
+      'drive_search_files',
+      'drive_get_file',
+      'drive_read_file',
+      'web_search',
+      'calculator',
+    ];
+
+    WRITE_TOOLS.forEach(tool => {
+      it('flags ' + tool + ' as a side-effect tool', () => {
+        expect(AgentExecutor._isSideEffectTool(tool)).toBe(true);
+        expect(AgentExecutor.classifyTool(tool)).toBe('write');
+      });
+    });
+
+    READ_TOOLS.forEach(tool => {
+      it('does not flag ' + tool + ' as a side-effect tool', () => {
+        expect(AgentExecutor._isSideEffectTool(tool)).toBe(false);
+        expect(AgentExecutor.classifyTool(tool)).toBe('read');
+      });
+    });
+
+    it('handles empty and malformed tool IDs', () => {
+      expect(AgentExecutor._isSideEffectTool('')).toBe(false);
+      expect(AgentExecutor._isSideEffectTool(null)).toBe(false);
+      expect(AgentExecutor._isSideEffectTool(undefined)).toBe(false);
+      expect(AgentExecutor._isSideEffectTool(42)).toBe(false);
+      expect(AgentExecutor.classifyTool('')).toBe('read');
+    });
+  });
 });
 
 describe('AgentMemory', () => {

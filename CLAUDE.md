@@ -350,9 +350,13 @@ GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security a
 ## Google Workspace Integration
 - OAuth flow for any Google account (Gmail, Workspace, any domain)
 - `google-oauth` edge function: `/authorize` → Google consent → `/callback` → stores tokens
-- MCP servers: gmail-mcp, calendar-mcp, drive-mcp
+- MCP servers: gmail-mcp (read + send/draft/reply), calendar-mcp (read + create/update/delete events), drive-mcp (read + create/update/upload files)
 - `mcp-gateway` auto-refreshes expired OAuth tokens before tool calls
-- Scopes: gmail.readonly, calendar.readonly, drive.readonly
+- **Requested scopes** (hardcoded in [auth-modal.js](app/js/lib/auth-modal.js:208)):
+  - `https://www.googleapis.com/auth/gmail.modify` — full mailbox access except delete
+  - `https://www.googleapis.com/auth/calendar` — full calendar access
+  - `https://www.googleapis.com/auth/drive.file` — files created or opened by the app
+- Write tools are gated by `ShipBehaviors.approvalMode` — in `review` mode, any tool whose name matches the `SIDE_EFFECT_PATTERNS` list in `agent-executor.js` triggers an inline approval prompt before execution
 - Domain-wide delegation fallback for @nicespaceship.com internal users
 
 ## Single Source of Truth (SSOT)

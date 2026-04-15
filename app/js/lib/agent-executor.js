@@ -396,15 +396,44 @@ const AgentExecutor = (() => {
     throw new Error('ShipLog not available for single-shot execution');
   }
 
-  /* ── Detect tools with external side effects (send, publish, write, delete) ── */
+  /* ── Detect tools with external side effects ──
+     The list below catches anything that mutates state on a remote
+     system — mail sends, calendar writes, file uploads, social posts,
+     payments, etc. Keep it intentionally broad: a false positive just
+     means one extra approval click when `approvalMode === 'review'`;
+     a false negative means a destructive action slips through silently.
+
+     Every pattern here is tested against the full tool catalog in
+     agent-executor.test.js. When you add a new MCP write tool, either
+     pick a name that contains one of these substrings or add a new
+     pattern to the list. */
+  const SIDE_EFFECT_PATTERNS = [
+    // Generic mutation verbs
+    'send', 'publish', 'post', 'create', 'delete', 'update', 'write',
+    'upload', 'reply', 'archive', 'move', 'rename', 'remove', 'drop',
+    'put', 'patch', 'insert', 'destroy', 'revoke', 'cancel', 'schedule',
+    // Tool-prefix fast paths for common destructive surfaces
+    'gmail_send', 'gmail_reply', 'gmail_draft',
+    'calendar_create', 'calendar_update', 'calendar_delete',
+    'drive_create', 'drive_update', 'drive_upload',
+    'social_create', 'social_publish', 'social_schedule',
+    'slack_send', 'slack_post', 'stripe_charge', 'stripe_refund',
+  ];
+
   function _isSideEffectTool(toolId) {
     if (!toolId || typeof toolId !== 'string') return false;
-    const sideEffectPatterns = [
-      'send', 'publish', 'post', 'create', 'delete', 'update', 'write',
-      'gmail_send', 'calendar_create', 'social_create', 'slack_send',
-    ];
     const normalized = toolId.toLowerCase();
-    return sideEffectPatterns.some(p => normalized.includes(p));
+    return SIDE_EFFECT_PATTERNS.some(p => normalized.includes(p));
+  }
+
+  /**
+   * Classify a tool as read-only vs write/destructive. Used by the
+   * Integrations view to badge each tool pill so users can see at a
+   * glance what a connection is capable of. Returns 'write' for any
+   * side-effect tool, 'read' otherwise.
+   */
+  function classifyTool(toolId) {
+    return _isSideEffectTool(toolId) ? 'write' : 'read';
   }
 
   /**
@@ -544,5 +573,5 @@ const AgentExecutor = (() => {
     return { send, history: getHistory, reset, getTokensUsed };
   }
 
-  return { execute, converse };
+  return { execute, converse, classifyTool, _isSideEffectTool };
 })();
