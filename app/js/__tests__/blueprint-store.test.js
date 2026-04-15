@@ -201,5 +201,119 @@ describe('BlueprintStore', () => {
       expect(BlueprintStore.isAgentActivated('fallback-agent')).toBe(false);
       expect((globalThis.State.get('spaceships') || []).find(s => s.id === shipUuid)).toBeUndefined();
     });
+
+    it('cleans orphaned agents when deactivated ship had no persisted state (the real bug)', async () => {
+      // Reproduces the leak: a user activated a ship in a prior session, its
+      // _shipState row was never populated, and the ship entry in State.spaceships
+      // also lacks slot_assignments. deactivateShip's main cleanup finds nothing
+      // to remove, so the safety-net cleanupOrphans call has to do the work.
+      const shipUuid = '11111111-2222-4333-8444-555555555555';
+      BlueprintStore.activateShip(shipUuid);
+      BlueprintStore.activateAgent('orphan-alpha');
+      BlueprintStore.activateAgent('orphan-beta');
+
+      // Ship has an entry in State but no slot data anywhere
+      globalThis.State.set('spaceships', [{ id: shipUuid, name: 'Mystery Ship' }]);
+      globalThis.State.set('agents', [
+        { id: 'orphan-alpha', name: 'Alpha' },
+        { id: 'orphan-beta', name: 'Beta' },
+      ]);
+
+      await BlueprintStore.deactivateShip(shipUuid);
+
+      expect(BlueprintStore.isShipActivated(shipUuid)).toBe(false);
+      expect(BlueprintStore.isAgentActivated('orphan-alpha')).toBe(false);
+      expect(BlueprintStore.isAgentActivated('orphan-beta')).toBe(false);
+      expect(globalThis.State.get('agents')).toEqual([]);
+    });
+  });
+
+  describe('cleanupOrphans', () => {
+    beforeEach(() => {
+      // DB gated out so we only test local cleanup
+      globalThis.SB = undefined;
+    });
+
+    it('returns empty array when no orphans exist', async () => {
+      BlueprintStore.activateShip('ship-01');
+      BlueprintStore.activateAgent('crew-a');
+      BlueprintStore.saveShipState('ship-01', {
+        slot_assignments: { 0: 'crew-a' },
+        agent_ids: ['crew-a'],
+      });
+
+      const removed = await BlueprintStore.cleanupOrphans();
+
+      expect(removed).toEqual([]);
+      expect(BlueprintStore.isAgentActivated('crew-a')).toBe(true);
+    });
+
+    it('preserves catalog blueprint agents (bp-agent-*) not on any ship', async () => {
+      BlueprintStore.activateAgent('bp-agent-05');
+
+      const removed = await BlueprintStore.cleanupOrphans();
+
+      expect(removed).toEqual([]);
+      expect(BlueprintStore.isAgentActivated('bp-agent-05')).toBe(true);
+    });
+
+    it('preserves __new__ placeholder agents awaiting resolution', async () => {
+      BlueprintStore.activateAgent('__new__Pilot');
+
+      const removed = await BlueprintStore.cleanupOrphans();
+
+      expect(removed).toEqual([]);
+      expect(BlueprintStore.isAgentActivated('__new__Pilot')).toBe(true);
+    });
+
+    it('removes orphans from _activatedAgentIds, State.agents, and custom agents localStorage', async () => {
+      BlueprintStore.activateAgent('orphan-1');
+      BlueprintStore.activateAgent('orphan-2');
+      globalThis.State.set('agents', [
+        { id: 'orphan-1', name: 'First' },
+        { id: 'orphan-2', name: 'Second' },
+      ]);
+      globalThis.localStorage.setItem(
+        globalThis.Utils.KEYS.customAgents,
+        JSON.stringify([{ id: 'orphan-1', name: 'First' }]),
+      );
+
+      const removed = await BlueprintStore.cleanupOrphans();
+
+      expect(removed.sort()).toEqual(['orphan-1', 'orphan-2']);
+      expect(BlueprintStore.isAgentActivated('orphan-1')).toBe(false);
+      expect(BlueprintStore.isAgentActivated('orphan-2')).toBe(false);
+      expect(globalThis.State.get('agents')).toEqual([]);
+      const custom = JSON.parse(globalThis.localStorage.getItem(globalThis.Utils.KEYS.customAgents) || '[]');
+      expect(custom).toEqual([]);
+    });
+
+    it('honors slot assignments on State.spaceships even when _shipState is empty', async () => {
+      const shipUuid = '22222222-3333-4444-8555-666666666666';
+      BlueprintStore.activateShip(shipUuid);
+      BlueprintStore.activateAgent('guarded-agent');
+      // _shipState is empty but State.spaceships has the slot mapping
+      globalThis.State.set('spaceships', [{
+        id: shipUuid,
+        config: { slot_assignments: { 0: 'guarded-agent' } },
+      }]);
+      globalThis.State.set('agents', [{ id: 'guarded-agent', name: 'Guarded' }]);
+
+      const removed = await BlueprintStore.cleanupOrphans();
+
+      expect(removed).toEqual([]);
+      expect(BlueprintStore.isAgentActivated('guarded-agent')).toBe(true);
+    });
+
+    it('is idempotent — a second call is a no-op', async () => {
+      BlueprintStore.activateAgent('orphan-x');
+      globalThis.State.set('agents', [{ id: 'orphan-x', name: 'X' }]);
+
+      const first = await BlueprintStore.cleanupOrphans();
+      const second = await BlueprintStore.cleanupOrphans();
+
+      expect(first).toEqual(['orphan-x']);
+      expect(second).toEqual([]);
+    });
   });
 });
