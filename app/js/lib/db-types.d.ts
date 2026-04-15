@@ -149,18 +149,6 @@ declare namespace DB {
     updated_at?: string | null;
   }
 
-  /** Table: academy_progress */
-  interface AcademyProgress {
-    id?: string;
-    user_id?: string | null;
-    track_id: string;
-    module_id: string;
-    status?: string | null;
-    completed_at?: string | null;
-    created_at?: string | null;
-    updated_at?: string | null;
-  }
-
   /** Table: blueprint_submissions */
   interface BlueprintSubmissions {
     id?: string;

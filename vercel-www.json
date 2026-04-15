@@ -6,7 +6,6 @@
   "rewrites": [
     { "source": "/", "destination": "/www/index.html" },
     { "source": "/blueprints", "destination": "/www/blueprints.html" },
-    { "source": "/academy", "destination": "/www/academy.html" },
     { "source": "/about", "destination": "/www/about.html" },
     { "source": "/benduffey", "destination": "/www/benduffey.html" },
     { "source": "/privacy", "destination": "/www/privacy.html" },
