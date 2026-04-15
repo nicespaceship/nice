@@ -442,15 +442,28 @@ const ShipSetupWizard = (() => {
     const crew = _getCrewDefs();
 
     // 1. Activate blueprint
+    // Pass {force:true} so the rarity gate in activateShip doesn't silently
+    // reject ships the user has already committed to via the wizard. The
+    // card-level 🔒 lock has already prevented unauthorized users from
+    // reaching this step; re-checking here only broke the state layers.
     if (statusEl) statusEl.textContent = 'Activating blueprint...';
     if (typeof BlueprintStore !== 'undefined') {
-      BlueprintStore.activateShip(_blueprint.id);
+      const activated = BlueprintStore.activateShip(_blueprint.id, { force: true });
+      if (!activated && !BlueprintStore.isShipActivated(_blueprint.id)) {
+        console.warn('[ShipSetupWizard] activateShip returned false and ship is not activated; state layers may drift');
+      }
     }
     await _wait(400);
 
     // 2. Save slot assignments
+    // The wizard historically keyed ship state under `'bp-' + _blueprint.id`
+    // to avoid collision with catalog entries. That convention meant the
+    // wizard wrote to one id and activateShip wrote to another, leaving
+    // `_activatedShipIds`, `_shipState`, and `State.spaceships` using three
+    // different ids for the same ship. Use the catalog id directly so every
+    // storage layer shares one canonical id.
     if (statusEl) statusEl.textContent = 'Assigning agents to stations...';
-    const shipStateId = 'bp-' + _blueprint.id;
+    const shipStateId = _blueprint.id;
     const agentIds = Object.values(_data.slotAssignments).filter(Boolean);
     if (typeof BlueprintStore !== 'undefined') {
       BlueprintStore.saveShipState(shipStateId, {
