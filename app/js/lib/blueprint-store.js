@@ -71,6 +71,12 @@ const BlueprintStore = (() => {
     // Purge stale IDs that no longer exist in catalog
     _purgeStaleIds();
 
+    // Sweep any agents whose parent ship was already removed — heals users
+    // who already have orphans from prior deactivateShip calls that missed
+    // them. Idempotent and no-op for clean state.
+    try { await cleanupOrphans(); }
+    catch (e) { console.warn('[BlueprintStore] init cleanupOrphans failed:', e.message); }
+
     _ready = true;
 
     // Fire initial State events so views pick up activation data
@@ -1058,6 +1064,11 @@ const BlueprintStore = (() => {
         }
       }
     }
+
+    // Safety net: sweep any agents whose slot mapping was missing from both
+    // _shipState and State.spaceships at the moment of deletion. Without this
+    // catch, those agents leak into "YOUR AGENTS" forever.
+    await cleanupOrphans();
   }
 
   function _isUuid(s) {
@@ -1065,28 +1076,106 @@ const BlueprintStore = (() => {
   }
 
   /**
-   * Remove activated agent IDs that are not assigned to any active ship.
-   * Safe to call any time — idempotent.
+   * Remove agents that aren't assigned to any active ship — comprehensive
+   * cleanup across every persistence layer. Safe to call any time; idempotent.
+   *
+   * Cleans: `_activatedAgentIds`, `State.agents`, `customAgents` localStorage,
+   * `_uuidMap`, and `user_agents` Supabase rows (UUIDs only, when signed in).
+   *
+   * Protected from removal:
+   *   - agents assigned to a slot on any active ship (via `_shipState`
+   *     OR `State.spaceships` — the latter covers DB-loaded ships whose
+   *     `_shipState` row was never populated, which is the exact case
+   *     that leaks crew when a ship is removed)
+   *   - catalog blueprint agents (`bp-agent-*`)
+   *   - unresolved placeholders (`__new__*`) — `_resolveNewAgents` owns these
+   *
+   * @returns {Promise<string[]>} IDs of orphans that were removed
    */
-  function cleanupOrphans() {
+  async function cleanupOrphans() {
+    // Build set of agent IDs that are currently assigned to a live ship.
     const assignedAgents = new Set();
-    for (const [, state] of Object.entries(_shipState)) {
-      if (state?.slot_assignments) {
-        Object.values(state.slot_assignments).forEach(id => { if (id) assignedAgents.add(id); });
+    const collect = (src) => {
+      if (!src) return;
+      if (src.slot_assignments) {
+        Object.values(src.slot_assignments).forEach(id => { if (id) assignedAgents.add(id); });
       }
-      if (state?.agent_ids) {
-        state.agent_ids.forEach(id => { if (id) assignedAgents.add(id); });
+      if (src.agent_ids) {
+        src.agent_ids.forEach(id => { if (id) assignedAgents.add(id); });
+      }
+    };
+    for (const [, state] of Object.entries(_shipState)) collect(state);
+    if (typeof State !== 'undefined') {
+      const spaceships = State.get('spaceships') || [];
+      spaceships.forEach(s => { collect(s); collect(s?.config); });
+    }
+
+    const isOrphan = (id) => {
+      if (!id || typeof id !== 'string') return false;
+      if (assignedAgents.has(id)) return false;
+      if (id.startsWith('bp-agent-')) return false;
+      if (id.startsWith('__new__')) return false;
+      return true;
+    };
+
+    // Gather every agent ID referenced anywhere locally, then filter to orphans.
+    const allLocalAgents = new Set();
+    _activatedAgentIds.forEach(id => allLocalAgents.add(id));
+    if (typeof State !== 'undefined') {
+      (State.get('agents') || []).forEach(a => { if (a?.id) allLocalAgents.add(a.id); });
+    }
+    try {
+      const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+      custom.forEach(a => { if (a?.id) allLocalAgents.add(a.id); });
+    } catch {}
+
+    const orphanIds = [...allLocalAgents].filter(isOrphan);
+    if (!orphanIds.length) return [];
+
+    const orphanSet = new Set(orphanIds);
+
+    // 1. _activatedAgentIds
+    const beforeCount = _activatedAgentIds.length;
+    _activatedAgentIds = _activatedAgentIds.filter(id => !orphanSet.has(id));
+    if (_activatedAgentIds.length !== beforeCount) _persistAgents();
+
+    // 2. State.agents (in-memory + subscriber notification)
+    if (typeof State !== 'undefined') {
+      const agents = State.get('agents') || [];
+      const cleaned = agents.filter(a => !orphanSet.has(a?.id));
+      if (cleaned.length !== agents.length) State.set('agents', cleaned);
+    }
+
+    // 3. customAgents localStorage
+    try {
+      const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+      const filtered = custom.filter(a => !orphanSet.has(a?.id));
+      if (filtered.length !== custom.length) {
+        localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
+      }
+    } catch {}
+
+    // 4. _uuidMap — drop mappings for removed local IDs
+    let uuidMapDirty = false;
+    for (const id of orphanIds) {
+      if (_uuidMap[id]) { delete _uuidMap[id]; uuidMapDirty = true; }
+    }
+    if (uuidMapDirty) {
+      try { localStorage.setItem(_KEYS.uuidMap, JSON.stringify(_uuidMap)); } catch {}
+    }
+
+    // 5. Supabase user_agents — delete only proper UUIDs, only when signed in.
+    if (_canSync()) {
+      for (const agentId of orphanIds) {
+        if (_isUuid(agentId)) {
+          try { await SB.db('user_agents').remove(agentId); }
+          catch (e) { console.warn('[BlueprintStore] cleanupOrphans remove failed:', e.message); }
+        }
       }
     }
-    const before = _activatedAgentIds.length;
-    _activatedAgentIds = _activatedAgentIds.filter(id => {
-      // Keep agents that are assigned to a ship, or are catalog blueprints (bp-agent-*)
-      if (assignedAgents.has(id)) return true;
-      if (id.startsWith('bp-agent-')) return true;
-      // Custom agents not on any ship → orphan
-      return false;
-    });
-    if (_activatedAgentIds.length !== before) _persistAgents();
+
+    _fireAgentState();
+    return orphanIds;
   }
 
   function isShipActivated(bpId) {
