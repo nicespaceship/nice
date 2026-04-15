@@ -422,17 +422,32 @@ const DocsView = (() => {
       <h1 class="docs-h1">Tokens &amp; XP</h1>
       <p class="docs-intro">NICE uses two systems: tokens for AI model usage and XP for progression.</p>
 
-      <h2 class="docs-h2">Tokens</h2>
-      <p>Tokens are the currency for premium AI models. Free models (Gemini Flash) don't cost tokens.</p>
+      <h2 class="docs-h2">Subscriptions</h2>
+      <p>Gemini 2.5 Flash is free for everyone, always. Paid plans unlock larger model pools and more slots.</p>
       <table class="docs-table">
-        <thead><tr><th>Package</th><th>Tokens</th><th>Price</th></tr></thead>
+        <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
-          <tr><td>Starter</td><td>500,000</td><td>$4.99</td></tr>
-          <tr><td>Pro</td><td>5,000,000</td><td>$19.99</td></tr>
-          <tr><td>Enterprise</td><td>25,000,000</td><td>$69.99</td></tr>
+          <tr><td>Free</td><td>$0</td><td>6 slots, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month, all non-flagship models</td></tr>
+          <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude Sonnet 4.6 &amp; Opus 4.6, 500 Claude tokens/month</td></tr>
+          <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 3.1 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
       </table>
-      <p>New accounts receive 100,000 free tokens to try premium models.</p>
+
+      <h2 class="docs-h2">Token Top-ups</h2>
+      <p>Need more headroom? Pro subscribers can buy top-ups that never expire. Each top-up credits the matching pool.</p>
+      <table class="docs-table">
+        <thead><tr><th>Pack</th><th>Pool</th><th>Tokens</th><th>Price</th></tr></thead>
+        <tbody>
+          <tr><td>Standard Boost</td><td>Standard</td><td>+1,000</td><td>$29.99</td></tr>
+          <tr><td>Standard Max</td><td>Standard</td><td>+2,500</td><td>$49.99</td></tr>
+          <tr><td>Claude Boost</td><td>Claude</td><td>+500</td><td>$29.99</td></tr>
+          <tr><td>Claude Max</td><td>Claude</td><td>+1,250</td><td>$49.99</td></tr>
+          <tr><td>Premium Boost</td><td>Premium</td><td>+500</td><td>$29.99</td></tr>
+          <tr><td>Premium Max</td><td>Premium</td><td>+1,250</td><td>$49.99</td></tr>
+        </tbody>
+      </table>
+      <p>Each pool is independent — Claude tokens cost more per message because Claude models are more expensive. Max packs are the best value (17% discount).</p>
 
       <h2 class="docs-h2">XP &amp; Ranks</h2>
       <p>Earn XP by using NICE. Every action contributes to your rank progression:</p>
