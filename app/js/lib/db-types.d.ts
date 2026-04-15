@@ -13,6 +13,7 @@ declare namespace DB {
     achievements?: Record<string, unknown> | null;
     created_at?: string | null;
     updated_at?: string | null;
+    stripe_customer_id?: string | null;
   }
 
   /** Table: user_agents */
@@ -90,6 +91,17 @@ declare namespace DB {
     created_at?: string | null;
   }
 
+  /** Table: fuel_purchases */
+  interface FuelPurchases {
+    id?: string;
+    user_id?: string | null;
+    amount?: number;
+    fuel_amount?: number;
+    payment_method?: string | null;
+    stripe_session_id?: string | null;
+    created_at?: string | null;
+  }
+
   /** Table: audit_log */
   interface AuditLog {
     id?: string;
@@ -136,4 +148,210 @@ declare namespace DB {
     created_at?: string | null;
     updated_at?: string | null;
   }
+
+  /** Table: academy_progress */
+  interface AcademyProgress {
+    id?: string;
+    user_id?: string | null;
+    track_id: string;
+    module_id: string;
+    status?: string | null;
+    completed_at?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: blueprint_submissions */
+  interface BlueprintSubmissions {
+    id?: string;
+    user_id?: string | null;
+    agent_data?: Record<string, unknown>;
+    status?: string | null;
+    avg_rating?: number | null;
+    download_count?: number | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: user_workflows */
+  interface UserWorkflows {
+    id: string;
+    user_id?: string | null;
+    name?: string;
+    nodes?: string | null;
+    connections?: string | null;
+    trigger?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: referrals */
+  interface Referrals {
+    id?: string;
+    referrer_id?: string | null;
+    referred_id?: string | null;
+    status?: string | null;
+    bonus_fuel_sent?: number | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: blueprint_ratings */
+  interface BlueprintRatings {
+    id?: string;
+    user_id?: string | null;
+    blueprint_id: string;
+    rating?: number | null;
+    created_at?: string | null;
+  }
+
+  /** Table: integrations */
+  interface Integrations {
+    id?: string;
+    user_id?: string | null;
+    service: string;
+    status?: string | null;
+    config?: Record<string, unknown> | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: station_invites */
+  interface StationInvites {
+    id?: string;
+    station_id: string;
+    invited_email: string;
+    invited_by?: string | null;
+    status?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: user_shared_agents */
+  interface UserSharedAgents {
+    id?: string;
+    agent_id: string;
+    shared_by?: string | null;
+    shared_with_email: string;
+    permissions?: string | null;
+    created_at?: string | null;
+  }
+
+  /** Table: workflow_runs */
+  interface WorkflowRuns {
+    id?: string;
+    user_id?: string | null;
+    workflow_id: string;
+    status?: string | null;
+    started_at?: string | null;
+    completed_at?: string | null;
+    result?: Record<string, unknown> | null;
+    created_at?: string | null;
+  }
+
+  /** Table: subscriptions */
+  interface Subscriptions {
+    id?: string;
+    user_id: string;
+    stripe_customer_id?: string | null;
+    stripe_subscription_id?: string | null;
+    plan?: string;
+    status?: string;
+    current_period_start?: string | null;
+    current_period_end?: string | null;
+    cancel_at_period_end?: boolean | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+    addons?: string[];
+  }
+
+  /** Table: fuel_transactions */
+  interface FuelTransactions {
+    id?: string;
+    user_id: string;
+    type: string;
+    amount: number;
+    balance_after: number;
+    description?: string | null;
+    reference_id?: string | null;
+    created_at?: string | null;
+  }
+
+  /** Table: blueprints */
+  interface Blueprints {
+    id: string;
+    serial_key: string;
+    type: string;
+    name: string;
+    description?: string | null;
+    flavor?: string | null;
+    category?: string | null;
+    rarity?: string | null;
+    tags?: string[] | null;
+    config?: Record<string, unknown> | null;
+    stats?: Record<string, unknown> | null;
+    metadata?: Record<string, unknown> | null;
+    is_public?: boolean | null;
+    creator_id?: string | null;
+    rating_avg?: number | null;
+    activation_count?: number | null;
+    search_vector?: unknown | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: mcp_connections */
+  interface McpConnections {
+    id?: string;
+    user_id: string;
+    spaceship_id: string;
+    name: string;
+    server_url?: string | null;
+    transport?: string;
+    auth_type?: string;
+    auth_config?: Record<string, unknown> | null;
+    available_tools?: Record<string, unknown> | null;
+    status?: string;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: api_connections */
+  interface ApiConnections {
+    id?: string;
+    user_id: string;
+    service: string;
+    api_key_ref?: string | null;
+    spaceship_ids?: string[] | null;
+    status?: string;
+    config?: Record<string, unknown> | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }
+
+  /** Table: token_balances */
+  interface TokenBalances {
+    user_id: string;
+    balance?: number;
+    free_tier_remaining?: number;
+    lifetime_purchased?: number;
+    lifetime_used?: number;
+    updated_at?: string;
+    pools?: Record<string, unknown>;
+    period_end?: string | null;
+  }
+
+  /** Table: token_transactions */
+  interface TokenTransactions {
+    id?: string;
+    user_id: string;
+    type: string;
+    pool?: string;
+    amount: number;
+    balance_after: number;
+    description?: string | null;
+    reference_id?: string | null;
+    created_at?: string;
+  }
+
 }
