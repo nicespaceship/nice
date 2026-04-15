@@ -80,57 +80,69 @@ const VaultView = (() => {
     const userAddons = typeof Subscription !== 'undefined' && Subscription.getAddons ? Subscription.getAddons() : [];
     const enabled = State.get('enabled_models') || _defaultEnabled();
 
+    // Resolve the active stack (or pick a default for the user)
+    if (typeof Stacks !== 'undefined' && !Stacks.activeStack()) {
+      const def = Stacks.defaultStackForUser({ pro: isPro, addons: userAddons });
+      Stacks.applyStack(def);
+    }
+    const activeStackId = typeof Stacks !== 'undefined' ? Stacks.activeStack() : null;
+    const advancedOpen = localStorage.getItem('nice-vault-advanced') === '1';
+
     el.innerHTML = `
       <div class="vault-wrap">
 
         <!-- Token Balance Bars (one per active pool) -->
         ${_renderBalanceBars(pools, isPro, userAddons)}
 
-        <!-- Free Tier (always available) -->
-        <div class="vault-section">
+        <!-- Stack Picker (primary UX) -->
+        <div class="vault-section vault-stacks-section">
           <div class="vault-section-hdr">
-            <h3 class="vault-section-title">Free</h3>
-            <span class="vault-section-badge tier-free">Always available — no tokens consumed</span>
+            <h3 class="vault-section-title">Choose a Stack</h3>
+            <span class="vault-section-badge tier-standard">Bundled model presets · Switch anytime</span>
           </div>
-          <div class="vault-model-grid">
-            ${_freeModels().map(m => _renderModelCard(m, enabled, true)).join('')}
+          <p class="vault-stacks-intro">Pick the stack that matches what you're doing. Each stack pre-configures 4–6 models so NICE Auto can route every task to the right one. You can also fine-tune individual models below.</p>
+          <div class="vault-stack-grid">
+            ${typeof Stacks !== 'undefined' ? Stacks.listStacks().map(s => _renderStackCard(s, activeStackId, isPro, userAddons)).join('') : ''}
           </div>
         </div>
 
-        <!-- Standard Pool (Pro plan) -->
+        <!-- Advanced model toggles (collapsed by default) -->
         <div class="vault-section">
           <div class="vault-section-hdr">
-            <h3 class="vault-section-title">Standard</h3>
-            ${_sectionBadge('standard', isPro, userAddons)}
+            <h3 class="vault-section-title">Advanced — individual models</h3>
+            <button class="btn btn-sm" id="vault-advanced-toggle">${advancedOpen ? 'Hide' : 'Show'}</button>
           </div>
-          <div class="vault-model-grid">
-            ${_modelsByPool('standard').map(m => _renderModelCard(m, enabled, isPro)).join('')}
+          <p class="vault-stacks-intro">Override the active stack by toggling specific models. Useful for power users who want to mix-and-match across stacks.</p>
+          <div class="vault-advanced-body" ${advancedOpen ? '' : 'hidden'}>
+            <!-- Free Tier (always available) -->
+            <div class="vault-subsection">
+              <h4 class="vault-subsection-title">Free</h4>
+              <div class="vault-model-grid">
+                ${_freeModels().map(m => _renderModelCard(m, enabled, true)).join('')}
+              </div>
+            </div>
+            <!-- Standard Pool (Pro plan) -->
+            <div class="vault-subsection">
+              <h4 class="vault-subsection-title">Standard ${_sectionBadge('standard', isPro, userAddons)}</h4>
+              <div class="vault-model-grid">
+                ${_modelsByPool('standard').map(m => _renderModelCard(m, enabled, isPro)).join('')}
+              </div>
+            </div>
+            <!-- Claude Pool (Claude add-on) -->
+            <div class="vault-subsection">
+              <h4 class="vault-subsection-title">Claude ${_sectionBadge('claude', isPro, userAddons)}</h4>
+              <div class="vault-model-grid">
+                ${_modelsByPool('claude').map(m => _renderModelCard(m, enabled, isPro && userAddons.includes('claude'))).join('')}
+              </div>
+            </div>
+            <!-- Premium Pool (Premium add-on) -->
+            <div class="vault-subsection">
+              <h4 class="vault-subsection-title">Premium ${_sectionBadge('premium', isPro, userAddons)}</h4>
+              <div class="vault-model-grid">
+                ${_modelsByPool('premium').map(m => _renderModelCard(m, enabled, isPro && userAddons.includes('premium'))).join('')}
+              </div>
+            </div>
           </div>
-          ${!isPro ? _upsellBanner('Pro', 'Subscribe to Pro for $9.99/mo to unlock all 8 Standard models.') : ''}
-        </div>
-
-        <!-- Claude Pool (Claude add-on) -->
-        <div class="vault-section">
-          <div class="vault-section-hdr">
-            <h3 class="vault-section-title">Claude</h3>
-            ${_sectionBadge('claude', isPro, userAddons)}
-          </div>
-          <div class="vault-model-grid">
-            ${_modelsByPool('claude').map(m => _renderModelCard(m, enabled, isPro && userAddons.includes('claude'))).join('')}
-          </div>
-          ${!(isPro && userAddons.includes('claude')) ? _upsellBanner('Claude add-on', 'Add the Claude add-on for $9.99/mo to unlock Claude 4.6 Sonnet and Opus.') : ''}
-        </div>
-
-        <!-- Premium Pool (Premium add-on) -->
-        <div class="vault-section">
-          <div class="vault-section-hdr">
-            <h3 class="vault-section-title">Premium</h3>
-            ${_sectionBadge('premium', isPro, userAddons)}
-          </div>
-          <div class="vault-model-grid">
-            ${_modelsByPool('premium').map(m => _renderModelCard(m, enabled, isPro && userAddons.includes('premium'))).join('')}
-          </div>
-          ${!(isPro && userAddons.includes('premium')) ? _upsellBanner('Premium add-on', 'Add the Premium add-on for $9.99/mo to unlock GPT-5.4 Pro, Codex, OpenAI o3, and Gemini 3.1 Pro.') : ''}
         </div>
 
         <!-- Stats footer -->
@@ -143,13 +155,52 @@ const VaultView = (() => {
           <div class="vault-stat">
             <span class="status-dot dot-g"></span>
             <span class="vault-stat-num">NICE Auto</span>
-            <span class="vault-stat-label">Picks the best model for each task</span>
+            <span class="vault-stat-label">Routes to the best model in your active stack</span>
           </div>
         </div>
       </div>
     `;
 
     _bindEvents(el);
+  }
+
+  /* ── Stack card ────────────────────────────────────────────── */
+  function _renderStackCard(stack, activeStackId, isPro, addons) {
+    const unlocked = Stacks.isStackUnlocked(stack.id, { pro: isPro, addons });
+    const isActive = stack.id === activeStackId;
+    const lockReason = unlocked ? null : Stacks.lockReason(stack.id, { pro: isPro, addons });
+
+    const modelChips = stack.models.map(id => {
+      const m = MODEL_CATALOG.find(x => x.id === id);
+      const name = m?.name || id;
+      const w = TokenConfig.weightFor(id);
+      const wLabel = w === 0 ? 'free' : `${w}t`;
+      return `<span class="vault-stack-chip" title="${_esc(wLabel)}">${_esc(name)}</span>`;
+    }).join('');
+
+    let cta;
+    if (isActive) {
+      cta = `<button class="btn btn-sm" disabled>Active</button>`;
+    } else if (unlocked) {
+      cta = `<button class="btn btn-sm btn-primary" data-activate-stack="${stack.id}">Activate</button>`;
+    } else {
+      cta = `<button class="btn btn-sm" data-unlock-stack="${stack.id}">${_esc(lockReason)}</button>`;
+    }
+
+    return `
+      <div class="vault-stack-card ${isActive ? 'vault-stack-active' : ''} ${unlocked ? '' : 'vault-stack-locked'}" data-stack="${stack.id}">
+        <div class="vault-stack-hdr">
+          <span class="vault-stack-icon">${stack.icon}</span>
+          <div class="vault-stack-name-wrap">
+            <span class="vault-stack-name">${_esc(stack.name)}</span>
+            <span class="vault-stack-tagline">${_esc(stack.tagline)}</span>
+          </div>
+        </div>
+        <p class="vault-stack-desc">${_esc(stack.description)}</p>
+        <div class="vault-stack-chips">${modelChips}</div>
+        <div class="vault-stack-actions">${cta}</div>
+      </div>
+    `;
   }
 
   /* ── Balance bars ─────────────────────────────────────────────── */
@@ -270,6 +321,52 @@ const VaultView = (() => {
         }
       });
     });
+
+    // Stack activation
+    el.querySelectorAll('[data-activate-stack]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.activateStack;
+        if (typeof Stacks === 'undefined') return;
+        if (!Stacks.applyStack(id)) return;
+        const stack = Stacks.getStack(id);
+        if (typeof Notify !== 'undefined' && stack) {
+          Notify.send({
+            title: stack.name + ' activated',
+            message: stack.tagline + ' · ' + stack.models.length + ' models enabled',
+            type: 'system',
+          });
+        }
+        // Re-render to reflect the new active state
+        render(el);
+      });
+    });
+
+    // Locked stack → upsell
+    el.querySelectorAll('[data-unlock-stack]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (typeof UpgradeModal !== 'undefined') UpgradeModal.open();
+        else if (typeof Router !== 'undefined') Router.navigate('/security?tab=wallet');
+      });
+    });
+
+    // Advanced toggle (show/hide individual model grid)
+    const advBtn = el.querySelector('#vault-advanced-toggle');
+    if (advBtn) {
+      advBtn.addEventListener('click', () => {
+        const body = el.querySelector('.vault-advanced-body');
+        if (!body) return;
+        const isHidden = body.hasAttribute('hidden');
+        if (isHidden) {
+          body.removeAttribute('hidden');
+          advBtn.textContent = 'Hide';
+          localStorage.setItem('nice-vault-advanced', '1');
+        } else {
+          body.setAttribute('hidden', '');
+          advBtn.textContent = 'Show';
+          localStorage.removeItem('nice-vault-advanced');
+        }
+      });
+    }
 
     // Upgrade-to-Pro CTA (visible to free users)
     const upgradeBtn = el.querySelector('#vault-upgrade');

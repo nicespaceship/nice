@@ -7108,6 +7108,143 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   Stacks (Vault picker) — added in PR #3
+   The Vault model picker now leads with curated 4-6 model
+   bundles. Individual model toggles live in a collapsible
+   "Advanced" subsection underneath.
+════════════════════════════════════════════════════════════ */
+
+.vault-stacks-section { margin-bottom: 24px; }
+.vault-stacks-intro {
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.vault-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.vault-stack-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  padding: 1.25rem 1.25rem 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  position: relative;
+}
+.vault-stack-card:hover {
+  border-color: var(--border-hi, #71717a);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+}
+.vault-stack-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(99,102,241,.14);
+}
+.vault-stack-active::before {
+  content: 'ACTIVE';
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-b, Inter, sans-serif);
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+.vault-stack-locked {
+  opacity: .55;
+  filter: grayscale(.4);
+}
+.vault-stack-locked:hover {
+  opacity: .85;
+  filter: grayscale(0);
+}
+
+.vault-stack-hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.vault-stack-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.vault-stack-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.vault-stack-name {
+  font-family: var(--font-b, Inter, sans-serif);
+  font-size: 1rem;
+  font-weight: 600;
+}
+.vault-stack-tagline {
+  font-family: var(--font-b, Inter, sans-serif);
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+.vault-stack-desc {
+  font-family: var(--font-b, Inter, sans-serif);
+  font-size: .78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.vault-stack-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.vault-stack-chip {
+  font-family: var(--font-m, monospace);
+  font-size: .65rem;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: var(--text);
+}
+.vault-stack-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.vault-stack-actions button {
+  min-width: 100px;
+}
+
+/* Advanced (individual model toggles) subsection */
+.vault-subsection { margin-bottom: 16px; }
+.vault-subsection-title {
+  font-family: var(--font-b, Inter, sans-serif);
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .vault-stack-grid { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════
    Pricing rework: plan cards, dual-pool balances, addon upsells
    Used by wallet.js, vault.js, and upgrade-modal.js (PR #2 rework).
 ════════════════════════════════════════════════════════════ */
