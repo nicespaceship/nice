@@ -8317,6 +8317,190 @@ body.preview-active .nice-ai {
   .eng-errors-filters { flex-wrap:wrap; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Marketplace
+═══════════════════════════════════════════════════════════════════ */
+.mk-wrap {
+  padding:20px; max-width:1100px; margin:0 auto;
+}
+.mk-header { margin-bottom:16px; }
+.mk-title {
+  margin:0 0 4px; font-size:1.4rem; color:var(--text);
+  font-family:var(--font-h, var(--font-b));
+}
+.mk-sub {
+  margin:0; font-size:.82rem; color:var(--text-muted);
+}
+
+.mk-tabs {
+  display:flex; gap:0; border-bottom:1px solid var(--border);
+  margin-bottom:16px;
+}
+.mk-tab {
+  padding:10px 20px; font-size:.8rem; font-family:var(--font-b);
+  background:none; border:none; color:var(--text-muted); cursor:pointer;
+  border-bottom:2px solid transparent; transition:color .15s, border-color .15s;
+}
+.mk-tab:hover { color:var(--text); }
+.mk-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+.mk-toolbar {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:12px; margin-bottom:16px; flex-wrap:wrap;
+}
+.mk-filters { display:flex; gap:8px; }
+.mk-select {
+  background:var(--panel-bg, var(--bg-alt)); color:var(--text);
+  border:1px solid var(--border); border-radius:6px;
+  padding:6px 10px; font-size:.8rem; font-family:var(--font-b);
+}
+.mk-loading, .mk-empty {
+  text-align:center; padding:48px 20px; color:var(--text-muted);
+}
+.mk-empty h3 { color:var(--text); margin:12px 0 4px; }
+.mk-empty p { font-size:.82rem; margin-bottom:12px; }
+
+.mk-listings {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+  gap:14px;
+}
+
+.mk-card {
+  display:flex; flex-direction:column;
+  padding:16px; gap:10px;
+  background:var(--panel-bg, var(--bg-alt)); border:1px solid var(--border);
+  border-radius:10px;
+  transition:border-color .15s, transform .15s;
+}
+.mk-card:hover {
+  border-color:var(--accent);
+  transform:translateY(-1px);
+}
+
+.mk-card-top {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:.7rem;
+}
+.mk-category {
+  background:var(--bg-alt, var(--surface));
+  color:var(--accent);
+  padding:2px 8px; border-radius:10px;
+  font-size:.62rem; font-weight:700; letter-spacing:.06em;
+  font-family:var(--font-b);
+  border:1px solid var(--border);
+}
+.mk-rating { display:flex; align-items:center; gap:6px; }
+.mk-rating-num {
+  font-size:.72rem; color:var(--text-muted);
+  font-family:var(--font-m, monospace);
+}
+.mk-star {
+  color:var(--border-hi, var(--border));
+  font-size:.8rem; line-height:1;
+}
+.mk-star.on { color:#f59e0b; }
+.mk-star.half {
+  background:linear-gradient(90deg, #f59e0b 50%, var(--border-hi, var(--border)) 50%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.mk-card-title {
+  margin:0; font-size:.95rem; color:var(--text);
+  font-family:var(--font-b);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.mk-card-desc {
+  margin:0; font-size:.78rem; color:var(--text-muted);
+  line-height:1.5;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.mk-tags { display:flex; flex-wrap:wrap; gap:4px; }
+.mk-tag {
+  background:var(--bg-alt, var(--surface)); color:var(--text-muted);
+  padding:2px 8px; border-radius:10px;
+  font-size:.65rem; border:1px solid var(--border);
+}
+
+.mk-meta {
+  display:flex; gap:12px; font-size:.7rem; color:var(--text-muted);
+  margin-top:auto;
+  font-family:var(--font-m, monospace);
+}
+
+.mk-card-actions {
+  display:flex; justify-content:space-between; align-items:center;
+  padding-top:10px; border-top:1px solid var(--border); gap:10px;
+}
+.mk-your-rating { display:flex; gap:2px; }
+.mk-star-btn {
+  background:none; border:none; cursor:pointer; padding:0 1px;
+  color:var(--border-hi, var(--border));
+  font-size:1rem; line-height:1;
+  transition:color .12s, transform .12s;
+}
+.mk-star-btn:hover { transform:scale(1.15); }
+.mk-star-btn.on { color:#f59e0b; }
+
+/* ── Submit tab ── */
+.mk-submit { display:flex; flex-direction:column; gap:16px; }
+.mk-submit-intro {
+  font-size:.82rem; color:var(--text-muted); margin:0;
+}
+.mk-submit-candidates {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+  gap:14px;
+}
+.mk-submit-card {
+  padding:16px;
+  background:var(--panel-bg, var(--bg-alt)); border:1px solid var(--border);
+  border-radius:10px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.mk-submit-card-head {
+  display:flex; align-items:center; gap:8px;
+}
+.mk-submit-card-title {
+  margin:0; font-size:.9rem; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.mk-submit-card-desc {
+  margin:0; font-size:.76rem; color:var(--text-muted); line-height:1.45;
+}
+.mk-submit-form {
+  display:flex; flex-direction:column; gap:8px;
+  padding-top:10px; border-top:1px solid var(--border);
+}
+.mk-submit-label {
+  display:flex; flex-direction:column; gap:4px;
+  font-size:.72rem; color:var(--text-muted); font-family:var(--font-b);
+  letter-spacing:.04em;
+}
+.mk-submit-label input,
+.mk-submit-label textarea {
+  background:var(--bg); color:var(--text);
+  border:1px solid var(--border); border-radius:6px;
+  padding:7px 10px; font-size:.78rem;
+  font-family:var(--font-b);
+  resize:vertical;
+}
+.mk-submit-label input:focus,
+.mk-submit-label textarea:focus {
+  outline:none; border-color:var(--accent);
+}
+
+@media (max-width:640px) {
+  .mk-wrap { padding:12px; }
+  .mk-toolbar { flex-direction:column; align-items:stretch; }
+  .mk-filters { flex-wrap:wrap; }
+  .mk-listings, .mk-submit-candidates { grid-template-columns:1fr; }
+}
+
 /* ── Funnel Dashboard ──
    Shares the .eng-tab framing with the Error dashboard; only the
    funnel-specific row / bar / percentage styles live here. */
