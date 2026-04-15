@@ -71,6 +71,15 @@ const BlueprintStore = (() => {
     // Purge stale IDs that no longer exist in catalog
     _purgeStaleIds();
 
+    // Heal legacy state drift: ships deployed via the old ShipSetupWizard
+    // (pre-SSOT rewrite) used the 'bp-' + catalog_id convention for
+    // _shipState keys and State.spaceships entry ids, while _activatedShipIds
+    // held the plain catalog id. After the SSOT rewrite those layers share
+    // one id, but existing users carry the divergence forward. This pass
+    // canonicalises them on the next boot — idempotent for clean state.
+    try { _reconcileShipState(); }
+    catch (e) { console.warn('[BlueprintStore] init _reconcileShipState failed:', e.message); }
+
     // Sweep any agents whose parent ship was already removed — heals users
     // who already have orphans from prior deactivateShip calls that missed
     // them. Idempotent and no-op for clean state.
@@ -82,6 +91,111 @@ const BlueprintStore = (() => {
     // Fire initial State events so views pick up activation data
     _fireAgentState();
     _fireShipState();
+  }
+
+  /**
+   * Reconcile every ship-state store so `State.spaceships` is authoritative
+   * and the legacy caches (`_activatedShipIds`, `_shipState`) are consistent
+   * derived views.
+   *
+   * Performs, in order:
+   *
+   * 1. **Migrate `'bp-' + id` prefixes.** Old wizard-deployed ships keyed
+   *    `_shipState` under `'bp-' + catalogId` but `_activatedShipIds` under
+   *    `catalogId`. Rename the `_shipState` key to the plain id if the plain
+   *    id already exists in `_activatedShipIds`, so both stores share one
+   *    canonical form. Same treatment for `State.spaceships[*].id`.
+   *
+   * 2. **Backfill `State.spaceships` entries for activated ships.** Any id
+   *    in `_activatedShipIds` that lacks a corresponding `State.spaceships`
+   *    entry gets a minimal synthesised entry from catalog data. This is
+   *    the critical step — before the SSOT rewrite, activateShip could
+   *    update `_activatedShipIds` without touching State, so existing users
+   *    have drift to heal.
+   *
+   * 3. **Backfill `_activatedShipIds` from `State.spaceships`.** Any entry
+   *    in `State.spaceships` whose id isn't in `_activatedShipIds` gets
+   *    pushed in. Covers the inverse drift case (custom ships loaded from
+   *    user_spaceships but never activated locally).
+   *
+   * Idempotent: running on already-canonical state is a no-op.
+   */
+  function _reconcileShipState() {
+    if (typeof State === 'undefined') return;
+    let dirty = false;
+
+    // --- 1. Migrate 'bp-' prefix in _shipState ---
+    const shipStateKeys = Object.keys(_shipState);
+    for (const key of shipStateKeys) {
+      if (key.startsWith('bp-')) {
+        const plain = key.slice(3);
+        if (!_shipState[plain] && _activatedShipIds.includes(plain)) {
+          _shipState[plain] = _shipState[key];
+          delete _shipState[key];
+          dirty = true;
+        }
+      }
+    }
+
+    // --- 1b. Migrate 'bp-' prefix on State.spaceships entry ids ---
+    const spaceships = State.get('spaceships') || [];
+    let spaceshipsDirty = false;
+    for (const ship of spaceships) {
+      if (ship && typeof ship.id === 'string' && ship.id.startsWith('bp-')) {
+        const plain = ship.id.slice(3);
+        // Only rename if another entry with the plain id isn't already present
+        const collision = spaceships.find(s => s !== ship && s.id === plain);
+        if (!collision && _activatedShipIds.includes(plain)) {
+          ship.id = plain;
+          if (!ship.blueprint_id) ship.blueprint_id = plain;
+          spaceshipsDirty = true;
+        }
+      }
+    }
+
+    // --- 2. Backfill State.spaceships from _activatedShipIds ---
+    for (const actId of _activatedShipIds) {
+      if (!actId) continue;
+      const exists = spaceships.some(s => s && (
+        s.id === actId || s.blueprint_id === actId ||
+        s.id === 'bp-' + actId || s.blueprint_id === 'bp-' + actId ||
+        (actId.startsWith('bp-') && (s.id === actId.slice(3) || s.blueprint_id === actId.slice(3)))
+      ));
+      if (exists) continue;
+      const catalogBp = getSpaceship(actId) || getSpaceship(actId.startsWith('bp-') ? actId.slice(3) : 'bp-' + actId);
+      if (!catalogBp) continue; // Custom ship without a catalog — would have a State entry from _loadUserCreations
+      spaceships.push({
+        id: actId,
+        blueprint_id: catalogBp.id || actId,
+        name: catalogBp.name || actId,
+        type: 'spaceship',
+        rarity: catalogBp.rarity || 'Common',
+        category: catalogBp.category || '',
+        description: catalogBp.description || '',
+        flavor: catalogBp.flavor || '',
+        tags: catalogBp.tags || [],
+        stats: catalogBp.stats || {},
+        metadata: catalogBp.metadata || {},
+        status: _shipState[actId]?.status || 'standby',
+        slot_assignments: _shipState[actId]?.slot_assignments || {},
+        agent_ids: _shipState[actId]?.agent_ids || [],
+        config: { slot_assignments: _shipState[actId]?.slot_assignments || {} },
+        created_at: new Date().toISOString(),
+      });
+      spaceshipsDirty = true;
+    }
+
+    // --- 3. Backfill _activatedShipIds from State.spaceships ---
+    for (const ship of spaceships) {
+      if (!ship?.id) continue;
+      if (!_activatedShipIds.includes(ship.id)) {
+        _activatedShipIds.push(ship.id);
+        dirty = true;
+      }
+    }
+
+    if (dirty) { _persistShips(); _persistShipState(); }
+    if (spaceshipsDirty) { State.set('spaceships', spaceships); }
   }
 
   function _loadSeeds() {
@@ -941,26 +1055,110 @@ const BlueprintStore = (() => {
      SPACESHIP activation
   ═══════════════════════════════════════════════════════════════ */
 
-  function activateShip(bpId) {
-    if (_activatedShipIds.includes(bpId)) return;
-
-    // Rarity gate: check if user's rank allows this rarity
-    var bp = getSpaceship(bpId);
-    if (!bp) {
-      var stateShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
-      bp = stateShips.find(function(s) { return s.id === bpId; });
-    }
-    var rarity = bp ? (bp.rarity || 'Common') : 'Common';
-    if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
-      if (typeof Notify !== 'undefined') {
-        var rank = Gamification.getRank();
-        Notify.send('Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), 'warning');
+  /**
+   * Activate a ship — the single entry point that guarantees every state
+   * layer reflects ownership before it returns.
+   *
+   * SSOT contract: after a successful activateShip call, the ship exists
+   * in `State.spaceships` (canonical) AND `_activatedShipIds` (legacy
+   * derived cache). `isShipActivated(bpId)` is guaranteed to return true.
+   *
+   * Callers may pass:
+   *   - A catalog id (`'ship-52'`) — a minimal State.spaceships entry is
+   *     synthesized from the catalog blueprint if none exists yet.
+   *   - A DB row UUID — assumes State.spaceships already has the entry
+   *     (loaded from user_spaceships); only updates `_activatedShipIds`.
+   *
+   * Rarity gate: only applied when `options.force` is falsy. The gate is
+   * a UX safety check for generic entry points (command palette, console),
+   * redundant with the UI-level `🔒 Rarity` lock on the blueprint card,
+   * and NOT a security boundary — Supabase RLS is the real gate.
+   *
+   * The ShipSetupWizard passes `force: true` because by the time the
+   * wizard reaches its deploy step the user has already cleared the UI
+   * lock AND committed three steps of choices. Silently rejecting the
+   * final push here was the root cause of Mythic ships showing "Deploy"
+   * after being fully deployed.
+   *
+   * @param {string} bpId
+   * @param {{force?: boolean}} [options]
+   * @returns {boolean} true if the ship is now activated (or was already),
+   *                    false only when the rarity gate rejects a non-force push.
+   */
+  function activateShip(bpId, options) {
+    if (!bpId) return false;
+    // Fast path: already activated under any id form the resolver recognizes.
+    // This prevents duplicate State.spaceships entries on re-activation.
+    if (_resolveActivatedShipId(bpId)) {
+      if (!_activatedShipIds.includes(bpId)) {
+        _activatedShipIds.push(bpId);
+        _persistShips();
       }
-      return false;
+      return true;
     }
 
-    _activatedShipIds.push(bpId);
-    _persistShips();
+    const force = !!(options && options.force);
+
+    // Resolve blueprint metadata (for rarity gate + State synthesis)
+    let catalogBp = getSpaceship(bpId);
+    if (!catalogBp) {
+      const variants = _bpIdVariants(bpId);
+      for (const v of variants) {
+        catalogBp = getSpaceship(v);
+        if (catalogBp) break;
+      }
+    }
+    const rarity = catalogBp ? (catalogBp.rarity || 'Common') : 'Common';
+
+    if (!force) {
+      if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
+        if (typeof Notify !== 'undefined') {
+          const rank = Gamification.getRank();
+          Notify.send('Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), 'warning');
+        }
+        return false;
+      }
+    }
+
+    // 1. Legacy cache — stay in lockstep with State.spaceships
+    if (!_activatedShipIds.includes(bpId)) {
+      _activatedShipIds.push(bpId);
+      _persistShips();
+    }
+
+    // 2. SSOT — ensure a State.spaceships entry exists for this ship.
+    //    If the caller already populated State (wizard path), don't clobber.
+    //    Otherwise synthesize a minimal entry from catalog data so downstream
+    //    queries (isShipActivated, getActivatedShips, drawer, catalog card)
+    //    have something authoritative to find.
+    if (typeof State !== 'undefined') {
+      const spaceships = State.get('spaceships') || [];
+      const existing = spaceships.find(s =>
+        s && (s.id === bpId || s.blueprint_id === bpId
+           || s.id === 'bp-' + bpId || s.blueprint_id === 'bp-' + bpId
+           || (typeof bpId === 'string' && bpId.startsWith('bp-') && (s.id === bpId.slice(3) || s.blueprint_id === bpId.slice(3))))
+      );
+      if (!existing && catalogBp) {
+        spaceships.push({
+          id: bpId,
+          blueprint_id: bpId,
+          name: catalogBp.name || bpId,
+          type: 'spaceship',
+          rarity: catalogBp.rarity || 'Common',
+          category: catalogBp.category || '',
+          description: catalogBp.description || '',
+          flavor: catalogBp.flavor || '',
+          tags: catalogBp.tags || [],
+          stats: catalogBp.stats || {},
+          metadata: catalogBp.metadata || {},
+          status: 'standby',
+          config: { slot_assignments: {} },
+          created_at: new Date().toISOString(),
+        });
+        State.set('spaceships', spaceships);
+      }
+    }
+
     _syncActivation(bpId, 'spaceship');
     _fireShipState();
     return true;
@@ -1194,42 +1392,66 @@ const BlueprintStore = (() => {
   }
 
   /**
-   * Resolve a blueprint id to the actual id it's activated under, or null.
+   * Resolve a blueprint id to the actual id under which the ship exists in
+   * the user's local state, or null if the ship isn't in state at all.
    *
-   * Handles four identity shapes a ship can have:
-   *   1. Direct match: id is already in _activatedShipIds (catalog flow — wizard
-   *      pushes the catalog id)
-   *   2. bp- prefix variant: e.g. querying 'ship-52' when 'bp-ship-52' is activated
-   *   3. Blueprint-id indirection: _activatedShipIds holds a DB row UUID
-   *      (from user_spaceships), and that row's State.spaceships entry carries
-   *      blueprint_id === the queried catalog id. Ships loaded by
-   *      _loadUserCreations take this path — the activated id is a UUID, not
-   *      the catalog id, so direct match fails.
-   *   4. Both: caller is holding the UUID already — direct match covers it.
+   * A ship is considered "activated" if it appears in ANY of these places:
    *
-   * @returns {string|null} The id under which the ship is activated, or null
-   *                        if the ship is not activated at all.
+   *   1. `_activatedShipIds` — direct or bp- prefix variant match.
+   *      (Wizard path for unlocked rarities: catalog id pushed directly.)
+   *
+   *   2. `State.spaceships[*].id` — exact or bp- variant match.
+   *      Covers wizard-deployed ships whose State entry keys under
+   *      `'bp-' + catalog-id` even when `_activatedShipIds` got the plain id.
+   *
+   *   3. `State.spaceships[*].blueprint_id` — catalog-id reverse lookup.
+   *      Covers ships loaded from `user_spaceships` where `_activatedShipIds`
+   *      holds the DB row UUID (not the catalog id), AND ships whose
+   *      `activateShip()` call silently failed (rarity gate, any other
+   *      reason) but whose State entry was still populated. This is the
+   *      case that was missing for Mythic ships — `activateShip()` never
+   *      pushed the catalog id because the rarity gate rejected it, so the
+   *      previous version of this resolver had nothing in
+   *      `_activatedShipIds` to walk through.
+   *
+   * Rationale: if the user has the ship in State at all — however it got
+   * there — the catalog card should reflect that. Trusting State.spaceships
+   * as a source of truth makes this resilient to every upstream bug that
+   * forgets to populate `_activatedShipIds`.
+   *
+   * @returns {string|null} The id the ship is activated under (either the
+   *                        entry in _activatedShipIds OR the State.spaceships
+   *                        row id), or null if the ship is not present
+   *                        anywhere in local state.
    */
   function _resolveActivatedShipId(bpId) {
     if (!bpId) return null;
+    const queryVariants = new Set(_bpIdVariants(bpId));
 
-    // 1 + 2. Direct / prefix-variant match against _activatedShipIds.
-    for (const variant of _bpIdVariants(bpId)) {
+    // 1. Direct / prefix-variant match against _activatedShipIds.
+    for (const variant of queryVariants) {
       if (_activatedShipIds.includes(variant)) return variant;
     }
 
-    // 3. Blueprint-id indirection via State.spaceships. For every activated
-    //    ship, check whether its blueprint_id maps to the queried id.
+    // 2 + 3. Scan State.spaceships unconditionally. The ship is considered
+    //        activated if its id OR its blueprint_id matches the query in any
+    //        variant. Walking State directly means we don't depend on
+    //        _activatedShipIds being in sync, which was the bug that kept
+    //        Mythic (and silently-rarity-gated) ships showing Deploy.
     if (typeof State !== 'undefined') {
       const spaceships = State.get('spaceships') || [];
-      const queryVariants = new Set(_bpIdVariants(bpId));
-      for (const activatedId of _activatedShipIds) {
-        const ship = spaceships.find(s => s.id === activatedId);
-        if (!ship) continue;
+      for (const ship of spaceships) {
+        if (!ship || !ship.id) continue;
+        // Match by id (or bp- variant)
+        for (const sv of _bpIdVariants(ship.id)) {
+          if (queryVariants.has(sv)) return ship.id;
+        }
+        // Match by blueprint_id (or bp- variant)
         const linked = ship.blueprint_id || ship.blueprintId;
-        if (!linked) continue;
-        for (const lv of _bpIdVariants(linked)) {
-          if (queryVariants.has(lv)) return activatedId;
+        if (linked) {
+          for (const lv of _bpIdVariants(linked)) {
+            if (queryVariants.has(lv)) return ship.id;
+          }
         }
       }
     }
