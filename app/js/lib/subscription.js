@@ -156,44 +156,95 @@ const Subscription = (() => {
 
   /* ── Stripe Integration ── */
 
-  async function subscribe(planId) {
-    if (typeof SB === 'undefined' || !SB.isReady()) return;
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return;
-
+  /** Open a Stripe payment link in a new tab. Used as a fallback
+      when the proprietary stripe-subscribe edge function isn't
+      configured or errors out. */
+  function _openPaymentLink(url) {
+    if (!url) return;
     try {
-      const result = await Promise.race([
-        SB.client.functions.invoke('stripe-subscribe', {
-          body: { planId, userId: user.id, email: user.email },
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
-      ]);
-      const { data, error } = result;
-      if (error) throw error;
-      if (data?.url) { try { const h = new URL(data.url).hostname; if (h.endsWith('.stripe.com') || h === 'checkout.stripe.com' || h === 'billing.stripe.com') { window.location.href = data.url; } else { throw new Error('Unexpected redirect domain: ' + h); } } catch (e) { throw new Error('Invalid checkout URL'); } }
-    } catch (err) {
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Subscription Error', message: err.message || 'Failed to start checkout', type: 'error' });
+      const h = new URL(url).hostname;
+      if (!(h.endsWith('.stripe.com') || h === 'buy.stripe.com' || h === 'checkout.stripe.com' || h === 'billing.stripe.com')) {
+        throw new Error('Unexpected redirect domain: ' + h);
       }
+      window.open(url, '_blank', 'noopener');
+    } catch (e) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Invalid checkout URL', message: e.message || 'Could not open Stripe', type: 'error' });
+      }
+    }
+  }
+
+  async function subscribe(planId) {
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Sign in to subscribe.', type: 'warning' });
+      return;
+    }
+
+    // Prefer the edge function (single subscription with items). Fall
+    // back to the payment link if it errors or isn't deployed.
+    if (typeof SB !== 'undefined' && SB.isReady && SB.isReady()) {
+      try {
+        const result = await Promise.race([
+          SB.client.functions.invoke('stripe-subscribe', {
+            body: { planId, userId: user.id, email: user.email },
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
+        ]);
+        const { data, error } = result;
+        if (error) throw error;
+        if (data?.url) {
+          _openPaymentLink(data.url);
+          return;
+        }
+      } catch {
+        // fall through to payment link
+      }
+    }
+
+    // Fallback: open the StripeConfig payment link for the requested plan
+    const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(planId) : null;
+    if (cfg?.paymentLinkUrl) {
+      _openPaymentLink(cfg.paymentLinkUrl);
+    } else if (typeof Notify !== 'undefined') {
+      Notify.send({ title: 'Subscription Error', message: 'No Stripe product for ' + planId, type: 'error' });
     }
   }
 
   /** Add or remove an add-on. addonId is 'claude' or 'premium'. */
   async function setAddon(addonId, enabled) {
-    if (typeof SB === 'undefined' || !SB.isReady()) return;
     const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return;
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Sign in to manage add-ons.', type: 'warning' });
+      return;
+    }
 
-    try {
-      const { data, error } = await SB.client.functions.invoke('stripe-subscribe', {
-        body: { action: enabled ? 'addon_add' : 'addon_remove', addonId, userId: user.id, email: user.email },
-      });
-      if (error) throw error;
-      if (data?.url) { try { const h = new URL(data.url).hostname; if (h.endsWith('.stripe.com') || h === 'checkout.stripe.com' || h === 'billing.stripe.com') { window.location.href = data.url; } else { throw new Error('Unexpected redirect domain: ' + h); } } catch (e) { throw new Error('Invalid checkout URL'); } }
-    } catch (err) {
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Add-on Error', message: err.message || 'Failed to update add-on', type: 'error' });
+    // Removal always goes through the billing portal (Stripe's cancel UI).
+    if (!enabled) {
+      return openBillingPortal();
+    }
+
+    // Add: try the edge function first, fall back to payment link
+    if (typeof SB !== 'undefined' && SB.isReady && SB.isReady()) {
+      try {
+        const { data, error } = await SB.client.functions.invoke('stripe-subscribe', {
+          body: { action: 'addon_add', addonId, userId: user.id, email: user.email },
+        });
+        if (error) throw error;
+        if (data?.url) {
+          _openPaymentLink(data.url);
+          return;
+        }
+      } catch {
+        // fall through to payment link
       }
+    }
+
+    const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(addonId) : null;
+    if (cfg?.paymentLinkUrl) {
+      _openPaymentLink(cfg.paymentLinkUrl);
+    } else if (typeof Notify !== 'undefined') {
+      Notify.send({ title: 'Add-on Error', message: 'No Stripe product for ' + addonId, type: 'error' });
     }
   }
 
