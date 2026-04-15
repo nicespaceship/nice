@@ -293,7 +293,7 @@ const BlueprintsView = (() => {
       if (isLocked) {
         deployBtn = `<button class="c-btn bp-deploy-ship-btn bp-locked" data-id="${bp.id}" disabled title="Reach ${shipRarity} rank to deploy">🔒 ${shipRarity}</button>`;
       } else {
-        deployBtn = `<button class="c-btn bp-deploy-ship-btn${isShipActivated ? ' bp-activated' : ''}" data-id="${bp.id}">${isShipActivated ? 'Deployed' : 'Deploy'}</button>`;
+        deployBtn = `<button class="c-btn bp-deploy-ship-btn${isShipActivated ? ' bp-activated' : ''}" data-id="${bp.id}">${isShipActivated ? 'Remove' : 'Deploy'}</button>`;
       }
       const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'bp-card-clickable' });
       return `<div class="bp-card-wrap">${rendered}<div class="bp-card-buttons">${deployBtn}</div></div>`;
@@ -357,7 +357,7 @@ const BlueprintsView = (() => {
     if (!isActivated && typeof BlueprintStore !== 'undefined') {
       if (type === 'spaceship') isActivated = BlueprintStore.isShipActivated(bp.id);
     }
-    const actLabel = isActivated ? 'Deployed' : 'Deploy';
+    const actLabel = isActivated ? 'Remove' : 'Deploy';
     const actClass = isActivated ? ' bpl-activated' : '';
     const showAction = type !== 'agent';
 
@@ -460,12 +460,6 @@ const BlueprintsView = (() => {
       });
     });
 
-    // Deployed → Remove on hover for spaceship deployed buttons
-    container.querySelectorAll('.bp-deploy-ship-btn.bp-activated').forEach(btn => {
-      btn.addEventListener('mouseenter', () => { btn.textContent = 'Remove'; });
-      btn.addEventListener('mouseleave', () => { btn.textContent = 'Deployed'; });
-    });
-
     // Activate/Deactivate spaceship buttons → open setup wizard
     container.querySelectorAll('.bp-deploy-ship-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -545,14 +539,6 @@ const BlueprintsView = (() => {
           _applyFilters();
         }
       });
-    });
-
-    // Deployed → Remove on hover for list view spaceship buttons
-    container.querySelectorAll('.bpl-action-btn.bpl-activated').forEach(btn => {
-      if (btn.dataset.type === 'spaceship') {
-        btn.addEventListener('mouseenter', () => { btn.textContent = 'Remove'; });
-        btn.addEventListener('mouseleave', () => { btn.textContent = 'Deployed'; });
-      }
     });
 
     // List view activate/deactivate buttons
@@ -2209,7 +2195,7 @@ const BlueprintsView = (() => {
       const isAct = BlueprintStore.isShipActivated(bp.id);
       if (isAct) {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="spaceship">Message ${_esc(bp.name)}</button>`);
-        btns.push(`<button class="btn btn-sm bp-drawer-activate" data-id="${bp.id}" data-type="spaceship">&#10003; Deployed</button>`);
+        btns.push(`<button class="btn btn-sm bp-drawer-activate" data-id="${bp.id}" data-type="spaceship">Remove</button>`);
       } else {
         btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Setup Spaceship</button>`);
       }
@@ -2871,15 +2857,43 @@ const BlueprintsView = (() => {
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   }
 
-  /* ── Removal confirmation dialog ── */
+  /* ── Removal confirmation dialog ──
+     Destructive actions re-authenticate. Email/password users must re-enter
+     their password (verified via signInWithPassword). OAuth users — who have
+     no password to check — must type the blueprint name instead. Signed-out
+     users fall through to a plain yes/no since there's no DB write to gate.
+  ─────────────────────────────────────────────────────────────────── */
   function confirmDeactivate(name, onConfirm) {
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    const provider = user?.app_metadata?.provider
+      || user?.app_metadata?.providers?.[0]
+      || null;
+    // mode: 'simple' (no user) | 'password' (email auth) | 'typed' (oauth)
+    const mode = !user ? 'simple' : (provider === 'email' || !provider ? 'password' : 'typed');
+    const safeName = _esc(name);
+
+    const challengeHTML = mode === 'password'
+      ? `<input type="password" class="bp-confirm-input" placeholder="Enter your password" autocomplete="current-password" />`
+      : mode === 'typed'
+        ? `<input type="text" class="bp-confirm-input" placeholder="Type blueprint name to confirm" autocomplete="off" spellcheck="false" />`
+        : '';
+    const helperHTML = mode === 'typed'
+      ? `<p class="bp-confirm-helper">Your account uses ${_esc(provider || 'single sign-on')}. Type <span class="bp-confirm-name">${safeName}</span> to confirm.</p>`
+      : '';
+    const errorHTML = mode !== 'simple'
+      ? `<p class="bp-confirm-error" hidden></p>`
+      : '';
+
     const overlay = document.createElement('div');
     overlay.className = 'bp-confirm-overlay';
     overlay.innerHTML = `
       <div class="bp-confirm-modal">
         <h3>Remove Blueprint</h3>
-        <p>Are you sure you want to remove <span class="bp-confirm-name">${name}</span>?</p>
-        <p class="bp-confirm-warning">This will remove it from your roster. You can add it back anytime from the Blueprints.</p>
+        <p>Are you sure you want to remove <span class="bp-confirm-name">${safeName}</span>?</p>
+        <p class="bp-confirm-warning">This will permanently remove it from your roster and delete its crew. You can add it back anytime from the Blueprints.</p>
+        ${helperHTML}
+        ${challengeHTML}
+        ${errorHTML}
         <div class="bp-confirm-actions">
           <button class="bp-confirm-cancel">Cancel</button>
           <button class="bp-confirm-submit">Remove</button>
@@ -2887,12 +2901,73 @@ const BlueprintsView = (() => {
       </div>`;
     document.body.appendChild(overlay);
 
-    overlay.querySelector('.bp-confirm-cancel').addEventListener('click', () => overlay.remove());
-    overlay.querySelector('.bp-confirm-submit').addEventListener('click', () => {
-      overlay.remove();
+    const submitBtn = overlay.querySelector('.bp-confirm-submit');
+    const cancelBtn = overlay.querySelector('.bp-confirm-cancel');
+    const input = overlay.querySelector('.bp-confirm-input');
+    const errEl = overlay.querySelector('.bp-confirm-error');
+
+    if (input) setTimeout(() => input.focus(), 50);
+
+    const close = () => overlay.remove();
+    const showError = (msg) => {
+      if (!errEl) return;
+      errEl.textContent = msg;
+      errEl.hidden = false;
+    };
+    const clearError = () => {
+      if (!errEl) return;
+      errEl.hidden = true;
+      errEl.textContent = '';
+    };
+
+    const doSubmit = async () => {
+      clearError();
+
+      if (mode === 'simple') {
+        close();
+        onConfirm();
+        return;
+      }
+
+      if (mode === 'password') {
+        const pw = input?.value || '';
+        if (!pw) { showError('Password required.'); return; }
+        if (typeof SB === 'undefined' || !SB.auth || !user?.email) {
+          showError('Cannot verify right now — please try again.');
+          return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verifying…';
+        try {
+          await SB.auth.signIn(user.email, pw);
+          close();
+          onConfirm();
+        } catch {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Remove';
+          showError('Incorrect password.');
+          if (input) { input.value = ''; input.focus(); }
+        }
+        return;
+      }
+
+      // typed mode: match blueprint name exactly (case-insensitive, trimmed)
+      const entered = (input?.value || '').trim().toLowerCase();
+      if (entered !== name.trim().toLowerCase()) {
+        showError(`Type "${name}" to confirm.`);
+        return;
+      }
+      close();
       onConfirm();
+    };
+
+    cancelBtn.addEventListener('click', close);
+    submitBtn.addEventListener('click', doSubmit);
+    input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doSubmit(); }
+      else if (e.key === 'Escape') close();
     });
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   }
 
   function renderEmbedded(el) { return render(el, { embedded: true }); }

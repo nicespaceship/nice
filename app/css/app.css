@@ -3397,8 +3397,20 @@
 .bp-confirm-modal p { font-size:.82rem; color:var(--text-muted); margin:0 0 .75rem; line-height:1.5; }
 .bp-confirm-name { font-weight:700; color:var(--text); }
 .bp-confirm-warning { font-size:.75rem; color:var(--color-warning); margin-bottom:1rem; }
+.bp-confirm-helper { font-size:.75rem; color:var(--text-muted); margin:.25rem 0 .75rem; line-height:1.4; }
+.bp-confirm-input {
+  width:100%; box-sizing:border-box; padding:10px 12px; margin:0 0 .75rem;
+  background:var(--bg, #000); color:var(--text); border:1px solid var(--border);
+  border-radius:var(--radius, 6px); font-family:var(--font-b); font-size:.85rem;
+}
+.bp-confirm-input:focus { outline:none; border-color:var(--accent); }
+.bp-confirm-error {
+  font-size:.75rem; color:var(--color-error); margin:0 0 .75rem;
+  text-align:left; line-height:1.4;
+}
 .bp-confirm-actions { display:flex; gap:8px; justify-content:center; }
 .bp-confirm-actions button { padding:8px 20px; border-radius:var(--radius, 6px); font-size:.82rem; cursor:pointer; border:1px solid var(--border); }
+.bp-confirm-actions button[disabled] { opacity:.6; cursor:wait; }
 .bp-confirm-cancel { background:transparent; color:var(--text-muted); }
 .bp-confirm-cancel:hover { border-color:var(--text-muted); }
 .bp-confirm-submit { background:var(--color-error)20; color:var(--color-error); border-color:var(--color-error)60; font-weight:600; }
