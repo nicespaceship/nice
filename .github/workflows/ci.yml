@@ -31,6 +31,17 @@ jobs:
           sed -i "s/const CACHE_VERSION = [0-9]*/const CACHE_VERSION = ${STAMP}/" app/sw.js
           echo "SW cache version stamped: ${STAMP} (${SHA})"
 
+      - name: Stamp app/index.html script+css version params
+        run: |
+          # The ?v= query params on <script> and <link> tags are the browser's
+          # HTTP cache key. Without bumping them per-deploy, users with a
+          # cached copy of blueprint-store.js?v=40 never re-fetch — even after
+          # the service worker updates. Stamping them forces a fresh download.
+          STAMP=$(date +%s)
+          sed -i -E "s/\?v=[a-zA-Z0-9_.-]+/?v=${STAMP}/g" app/index.html
+          COUNT=$(grep -c "?v=${STAMP}" app/index.html || echo 0)
+          echo "Stamped ${COUNT} asset version params → ?v=${STAMP}"
+
       - name: Verify build
         run: npm run build
 
@@ -121,6 +132,17 @@ jobs:
         run: |
           STAMP=$(date +%s)
           sed -i "s/const CACHE_VERSION = [0-9]*/const CACHE_VERSION = ${STAMP}/" app/sw.js
+
+      - name: Stamp app/index.html script+css version params
+        run: |
+          # The ?v= query params on <script> and <link> tags are the browser's
+          # HTTP cache key. Without bumping them per-deploy, users with a
+          # cached copy of blueprint-store.js?v=40 never re-fetch — even after
+          # the service worker updates. Stamping them forces a fresh download.
+          STAMP=$(date +%s)
+          sed -i -E "s/\?v=[a-zA-Z0-9_.-]+/?v=${STAMP}/g" app/index.html
+          COUNT=$(grep -c "?v=${STAMP}" app/index.html || echo 0)
+          echo "Stamped ${COUNT} asset version params → ?v=${STAMP}"
 
       - name: Generate root index from app
         run: cp app/index.html index.html
