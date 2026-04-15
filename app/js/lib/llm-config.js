@@ -43,7 +43,10 @@ const LLMConfig = (() => {
     // For nice-auto, ask ModelIntel; if it returns nothing, fall back to
     // model_profile.fallback (NOT a hardcoded premium default — that would
     // silently upgrade free-tier agents to premium models).
-    let model = (profile && profile.preferred) || cfg.llm_engine || 'claude-haiku-4-5-20251001';
+    // Default model is the always-free Gemini 2.5 Flash so an agent
+    // without an explicit profile can never accidentally drain a paid
+    // pool. Premium models must be set explicitly via model_profile.
+    let model = (profile && profile.preferred) || cfg.llm_engine || 'gemini-2-5-flash';
     if (model === 'nice-auto') {
       let learned = null;
       if (typeof ModelIntel !== 'undefined') {
@@ -51,7 +54,7 @@ const LLMConfig = (() => {
         const connected = Object.keys(enabled).filter(k => enabled[k]);
         learned = ModelIntel.bestModel(bp && bp.id, connected);
       }
-      model = learned || (profile && profile.fallback) || 'gemini-2.5-flash';
+      model = learned || (profile && profile.fallback) || 'gemini-2-5-flash';
     }
     params.model = model;
 

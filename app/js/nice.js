@@ -1414,7 +1414,14 @@ const NICE = (() => {
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
-      State.set('token_balance', data || { balance: 0, free_tier_remaining: 100000, lifetime_purchased: 0, lifetime_used: 0 });
+      // Default empty pools shape — no free trial grant. New free users
+      // run Gemini 2.5 Flash only; tokens unlock when they subscribe to Pro.
+      const fallback = {
+        pools: { standard: { allowance: 0, used: 0, purchased: 0 }, claude: { allowance: 0, used: 0, purchased: 0 }, premium: { allowance: 0, used: 0, purchased: 0 } },
+        // Legacy columns kept readable for backward compatibility:
+        balance: 0, free_tier_remaining: 0, lifetime_purchased: 0, lifetime_used: 0,
+      };
+      State.set('token_balance', data || fallback);
     } catch (err) {
       console.warn('[NICE] Failed to load token balance:', err.message);
     }

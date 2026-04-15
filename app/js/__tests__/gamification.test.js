@@ -90,14 +90,25 @@ describe('Gamification', () => {
   });
 
   describe('Slot Progression', () => {
-    it('RANKS have slots and maxRarity fields', () => {
-      expect(Gamification.RANKS[0].slots).toBe(6);        // Ensign = 6 slots
-      expect(Gamification.RANKS[0].maxRarity).toBe('Common');
-      expect(Gamification.RANKS[5].slots).toBe(12);       // Captain = 12 slots
-      expect(Gamification.RANKS[5].maxRarity).toBe('Legendary');
+    it('RANKS all have 6 slots — slot count is sub-based, not rank-based', () => {
+      // Every rank now grants 6 slots — Pro subscription (handled in
+      // Subscription.getSlotLimit) is the only thing that bumps it to 12.
+      for (const rank of Gamification.RANKS) {
+        expect(rank.slots).toBe(6);
+      }
     });
 
-    it('getMaxSlots returns 6 at 0 XP', () => {
+    it('RANKS still have maxRarity progression (Common → Legendary)', () => {
+      expect(Gamification.RANKS[0].maxRarity).toBe('Common');
+      expect(Gamification.RANKS[5].maxRarity).toBe('Legendary'); // Captain
+      // Fleet Admiral caps at Legendary — Mythic is milestone-only
+      const fleetAdmiral = Gamification.RANKS[Gamification.RANKS.length - 1];
+      expect(fleetAdmiral.name).toBe('Fleet Admiral');
+      expect(fleetAdmiral.maxRarity).toBe('Legendary');
+    });
+
+    it('getMaxSlots returns 6 for free user (no Subscription)', () => {
+      // setup.js does not load Subscription, so getMaxSlots falls back to 6
       expect(Gamification.getMaxSlots()).toBe(6);
     });
 
@@ -261,28 +272,32 @@ describe('Gamification', () => {
       expect(cls.slots[0].maxRarity).toBe('Common');
     });
 
-    it('class-2: 8 slots, Rare max rarity', () => {
+    it('class-2: 6 slots, Rare max rarity', () => {
+      // Slot count is now sub-based, not class-based — every free
+      // class is 6 slots; Pro upgrade to class-5 jumps to 12.
       const cls = Gamification.getSpaceshipClass('class-2');
-      expect(cls.slots).toHaveLength(8);
+      expect(cls.slots).toHaveLength(6);
       expect(cls.maxRarity).toBe('Rare');
     });
 
-    it('class-3: 10 slots, Epic max rarity', () => {
+    it('class-3: 6 slots, Epic max rarity', () => {
       const cls = Gamification.getSpaceshipClass('class-3');
-      expect(cls.slots).toHaveLength(10);
+      expect(cls.slots).toHaveLength(6);
       expect(cls.maxRarity).toBe('Epic');
     });
 
-    it('class-4: 12 slots, Legendary max rarity', () => {
+    it('class-4: 6 slots, Legendary max rarity', () => {
       const cls = Gamification.getSpaceshipClass('class-4');
-      expect(cls.slots).toHaveLength(12);
+      expect(cls.slots).toHaveLength(6);
       expect(cls.maxRarity).toBe('Legendary');
     });
 
-    it('class-5: 24 slots, Mythic (subscription)', () => {
+    it('class-5: 12 Legendary slots (Pro subscription)', () => {
+      // Pro plan grants 12 slots and instant Legendary; Mythic is
+      // milestone-only, never granted by class or subscription.
       const cls = Gamification.getSpaceshipClass('class-5');
-      expect(cls.slots).toHaveLength(24);
-      expect(cls.maxRarity).toBe('Mythic');
+      expect(cls.slots).toHaveLength(12);
+      expect(cls.maxRarity).toBe('Legendary');
       expect(cls.subscription).toBe(true);
     });
 
@@ -470,14 +485,12 @@ describe('Gamification', () => {
       expect(Gamification.isRarityUnlocked('Legendary')).toBe(true);
     });
 
-    it('should block Mythic below Fleet Admiral', () => {
-      localStorage.setItem('nice-xp', '2000000');
-      expect(Gamification.isRarityUnlocked('Mythic')).toBe(false);
-    });
-
-    it('should unlock Mythic only at Fleet Admiral (2.5M XP)', () => {
+    it('should never unlock Mythic via rank — Mythic is milestone-only', () => {
+      // Even at the highest rank (Fleet Admiral, 2.5M XP), Mythic is
+      // not granted by rank or subscription. It's earned through
+      // milestone achievements outside the rank ladder.
       localStorage.setItem('nice-xp', '2500000');
-      expect(Gamification.isRarityUnlocked('Mythic')).toBe(true);
+      expect(Gamification.isRarityUnlocked('Mythic')).toBe(false);
     });
   });
 
