@@ -70,6 +70,9 @@ const SetupWizard = (() => {
     document.addEventListener('keydown', _onKey);
     requestAnimationFrame(() => _overlay?.classList.add('open'));
     _showStep(0);
+
+    // Funnel: wizard opened. Deduped per-user inside Onboarding.track.
+    if (typeof Onboarding !== 'undefined') Onboarding.track(Onboarding.EVENTS.WIZARD_START);
   }
 
   function close() {
@@ -294,6 +297,18 @@ const SetupWizard = (() => {
       _data.agentCount = agentCount;
       _markDone();
       if (typeof Gamification !== 'undefined') Gamification.unlockAchievement('first-deployment');
+
+      // Funnel: wizard successfully deployed a crew. The first_spaceship
+      // event is emitted automatically by Onboarding once user_spaceships
+      // state gets refreshed — we only emit wizard_complete here so we
+      // can distinguish "finished via wizard" from "skipped and created
+      // a ship by hand".
+      if (typeof Onboarding !== 'undefined') {
+        Onboarding.track(Onboarding.EVENTS.WIZARD_COMPLETE, {
+          ship_id: shipId,
+          agent_count: agentCount,
+        });
+      }
 
       // Build a suggested first mission based on crew
       const crewRoles = ((_data.agents || []).map(a => a.role || a.name)).slice(0, 3).join(', ');

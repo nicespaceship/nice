@@ -1384,7 +1384,14 @@ const NICE = (() => {
       if (typeof AuditLog !== 'undefined') {
         AuditLog.log('auth', { description: user ? 'Signed in as ' + (user.email || 'user') : 'Signed out' });
       }
+      // Onboarding module listens to the State user key and emits
+      // signup_complete for fresh accounts — no direct call needed.
     });
+
+    // Initialize onboarding funnel tracking once the auth listener is wired
+    // up. Onboarding.init() subscribes to State.on('user'|'user_spaceships'|
+    // 'missions') and emits once-per-user events into audit_log.
+    if (typeof Onboarding !== 'undefined') Onboarding.init();
 
     // Check initial session
     SB.auth.getUser().then(user => {
