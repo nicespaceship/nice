@@ -266,10 +266,14 @@ Models defined in `VaultView.MODEL_CATALOG`. Users toggle models on/off. State k
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 
 ### Token Credit System
-- 100K free tokens per new user
-- Stripe packages: Starter ($4.99/500K), Pro ($19.99/5M), Enterprise ($69.99/25M)
-- `nice-ai` checks balance before premium calls (402 if insufficient)
-- Free Gemini models don't consume tokens
+- Three independent pools: **Standard**, **Claude**, **Premium** — each tied to its own subscription
+- Gemini 2.5 Flash is free and unlimited for everyone (no pool)
+- NICE Pro ($9.99/mo) → 1,000 Standard tokens/month + non-flagship models
+- Claude Add-on (+$9.99/mo) → 500 Claude tokens/month + Sonnet 4.6 / Opus 4.6
+- Premium Add-on (+$9.99/mo) → 500 Premium tokens/month + GPT-5.4 Pro / Codex / o3 / Gemini 3.1 Pro
+- Top-ups (Pro only): Boost ($29.99) and Max ($49.99) packs per pool, never expire
+- `StripeConfig` ([app/js/lib/stripe-config.js](app/js/lib/stripe-config.js)) is SSOT for all product/price/payment-link IDs
+- `nice-ai` checks the matching pool before premium calls (402 if insufficient)
 - Usage tracked per request (fire-and-forget deduction)
 
 ### Key localStorage Keys

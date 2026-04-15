@@ -58,21 +58,32 @@
       <p>You can also manually assign a model to any agent in the Agent Builder.</p>
 
       <h2>Token System</h2>
-      <p>Free models (Gemini Flash, Gemini Lite) never cost tokens. Premium models consume tokens per request.</p>
-      <p>Every new account gets <strong>100K free tokens</strong>. After that, purchase token packages:</p>
+      <p>Gemini 2.5 Flash is unlimited and free for everyone. Other models draw from one of three pools, each tied to a subscription:</p>
       <table>
-        <thead><tr><th>Package</th><th>Price</th><th>~Requests</th></tr></thead>
+        <thead><tr><th>Pool</th><th>Covers</th><th>Monthly allowance</th></tr></thead>
         <tbody>
-          <tr><td>500K tokens</td><td>$4.99</td><td>~250</td></tr>
-          <tr><td>5M tokens</td><td>$19.99</td><td>~2,500</td></tr>
-          <tr><td>25M tokens</td><td>$49.99</td><td>~12,500</td></tr>
+          <tr><td>Standard</td><td>All non-flagship models (Gemini 2.5 Pro, GPT-5 mini, DeepSeek R1, Mistral Large 3, Grok 4.1 Fast, etc.)</td><td>1,000 with NICE Pro ($9.99/mo)</td></tr>
+          <tr><td>Claude</td><td>Claude 4.6 Sonnet (3/msg), Claude 4.6 Opus (10/msg)</td><td>500 with Claude Add-on (+$9.99/mo)</td></tr>
+          <tr><td>Premium</td><td>GPT-5.4 Pro (5/msg), GPT-5.3 Codex (5/msg), OpenAI o3 (15/msg), Gemini 3.1 Pro (3/msg)</td><td>500 with Premium Add-on (+$9.99/mo)</td></tr>
         </tbody>
       </table>
-      <p>Token usage is tracked per request. The <code>nice-ai</code> edge function checks your balance before making premium calls and returns a 402 if insufficient.</p>
+      <p>Pools are independent — Claude tokens can't be spent on GPT-5.4 Pro, and vice versa. Each pool also has dedicated top-ups that never expire:</p>
+      <table>
+        <thead><tr><th>Top-up</th><th>Pool</th><th>Tokens</th><th>Price</th></tr></thead>
+        <tbody>
+          <tr><td>Standard Boost</td><td>Standard</td><td>+1,000</td><td>$29.99</td></tr>
+          <tr><td>Standard Max</td><td>Standard</td><td>+2,500</td><td>$49.99</td></tr>
+          <tr><td>Claude Boost</td><td>Claude</td><td>+500</td><td>$29.99</td></tr>
+          <tr><td>Claude Max</td><td>Claude</td><td>+1,250</td><td>$49.99</td></tr>
+          <tr><td>Premium Boost</td><td>Premium</td><td>+500</td><td>$29.99</td></tr>
+          <tr><td>Premium Max</td><td>Premium</td><td>+1,250</td><td>$49.99</td></tr>
+        </tbody>
+      </table>
+      <p>Max packs are the best value (17% discount). The <code>nice-ai</code> edge function checks the matching pool before making a premium call and returns a 402 if insufficient.</p>
 
       <h2>Enabling Models</h2>
-      <p>Models are toggled on/off in <strong>Security > Integrations</strong>. Only enabled models are available for agent assignment and auto-routing.</p>
-      <p>Free tier users have Gemini Flash enabled by default. Pro subscribers can enable all 17 models.</p>
+      <p>Models are toggled on/off in <strong>Security &gt; Integrations</strong>. Only enabled models are available for agent assignment and auto-routing.</p>
+      <p>Free tier users have Gemini 2.5 Flash enabled by default. Pro subscribers can enable all non-flagship models. Claude and Premium add-ons unlock their respective frontier models on top of that.</p>
 
       <h2>Next Steps</h2>
       <ul>
