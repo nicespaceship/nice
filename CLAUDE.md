@@ -92,18 +92,19 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 │   └── js/
 │       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD
 ├── app/                    # NICE™ SPA Dashboard
-│   ├── index.html          # SPA shell (78 script tags in dependency order)
+│   ├── index.html          # SPA shell (72 script tags in dependency order)
 │   ├── manifest.json       # PWA manifest
-│   ├── sw.js               # Service Worker v36 (offline, periodic sync, push)
+│   ├── sw.js               # Service Worker v41 (offline, periodic sync, push)
 │   ├── css/
 │   │   └── app.css         # NICE component styles (8000+ lines)
 │   └── js/
 │       ├── nice.js         # Main orchestrator (init, auth, routing, error handling)
-│       ├── lib/            # 36 shared IIFE modules
-│       ├── views/          # 24 view modules
-│       └── __tests__/      # 22 Vitest test files (405 tests)
+│       ├── lib/            # 52 shared IIFE modules
+│       ├── views/          # 28 view modules
+│       └── __tests__/      # 29 Vitest test files (575 tests)
 ├── supabase/
-│   └── functions/          # 8 Deno edge functions
+│   └── migrations/         # DB migrations (edge function source is proprietary, not in repo)
+├── www/                    # Marketing site (nicespaceship.com)
 ├── e2e/
 │   └── smoke.spec.js       # 14 Playwright E2E tests
 ├── desktop/                # Electron desktop wrapper
@@ -158,7 +159,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 49 modules
+### Lib Modules (`app/js/lib/`) — 52 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -196,7 +197,10 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `ContentQueue` | `content-queue.js` | Social media content queue |
 | `VirtualFS` | `virtual-fs.js` | Virtual file system for agent file operations |
 | `Skin` | `skin.js` | Skin system (CSS variable overrides) |
-| `SkinPacks` | `skin-packs.js` | Premium skin definitions |
+| `Stacks` | `stacks.js` | Curated LLM bundle definitions for Stack Picker |
+| `StripeConfig` | `stripe-config.js` | SSOT for Stripe product/price/payment-link IDs |
+| `TokenConfig` | `token-config.js` | SSOT for token pool definitions and pricing |
+| `Onboarding` | `onboarding.js` | Onboarding funnel analytics (6 instrumented events) |
 | `Subscription` | `subscription.js` | Stripe subscription management |
 | `WorkflowEngine` | `workflow-engine.js` | Multi-step workflow execution |
 | `AuthModal` | `auth-modal.js` | Sign-in/sign-up modal |
@@ -211,11 +215,14 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
 | `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
 
-### View Modules (`app/js/views/`) — 25 views
+### View Modules (`app/js/views/`) — 28 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
 | `BlueprintsView` | `blueprints.js` | `#/bridge` | Bridge |
+| `MarketplaceView` | `marketplace.js` | `#/marketplace` | Community Marketplace |
+| `DocsView` | `docs.js` | `#/docs` | Documentation |
+| `TronView` | `tron.js` | `#/tron` | Tron |
 | `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
 | `AgentBuilderView` | `agent-builder.js` | `#/bridge/agents/new` | Agent Builder |
 | `SpaceshipDetailView` | `spaceships.js` | `#/bridge/spaceships/:id` | Ship Detail |
@@ -300,7 +307,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 
 ## Testing
 
-### Unit Tests (Vitest) — 405 tests across 22 files
+### Unit Tests (Vitest) — 575 tests across 29 files
 ```bash
 npm test          # Run all tests
 npm run test:watch  # Watch mode
@@ -343,7 +350,7 @@ npm run test:e2e  # Run all E2E tests
 - `navigateTo(page, hash, title)` — navigates and waits for document.title update
 
 ### CI/CD
-GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (405 tests) → playwright (14 tests) → bundle size check
+GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (575 tests) → playwright (14 tests) → bundle size check
 
 **CI is strict** — both unit and E2E failures block merges.
 
@@ -366,7 +373,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 |------|--------------|-------|
 | Blueprint data | `BlueprintStore` + Supabase `blueprints` table | Never hardcode blueprint lists |
 | Crew slots, rarity, ship classes | `BlueprintUtils` (`blueprint-utils.js`) | Loaded before card-renderer |
-| localStorage keys | `Utils.KEYS` (63 constants) | Never use raw string keys |
+| localStorage keys | `Utils.KEYS` (64 constants) | Never use raw string keys |
 | State keys | `State.KEYS` (10 constants) | Never use raw string keys |
 | Theme definitions | `THEMES` array in `nice.js` → `Theme.BUILTIN` | No separate theme list |
 | Ranks & XP | `Gamification.RANKS` / `XP_ACTIONS` | Never duplicate rank data |
@@ -403,7 +410,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **No speculative abstractions.** Three similar lines > premature helper function.
 - **No unnecessary comments.** Only explain *why*, never *what*. The code shows what.
 - **Escape user content.** Always use `Utils.esc()` before inserting into DOM. No raw `innerHTML` with user data.
-- **Test after changes.** Run `npm test` after editing JS. All 405 tests must pass.
+- **Test after changes.** Run `npm test` after editing JS. All 575 tests must pass.
 - **Mobile-first.** Check changes at 375px. Breakpoints: 480px, 640px, 768px. Always verify desktop + tablet + mobile.
 - **Theme-aware.** Use CSS custom properties (`var(--accent)`, `var(--bg)`), never hardcoded colors.
 - **SSOT.** Before adding a rule, check if one already exists. Never duplicate selectors across media queries.
@@ -413,9 +420,9 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **Domains**: `nicespaceship.ai` (app), `nicespaceship.com` (community site, deployed from `www/`)
 - **Repo**: `github.com/nicespaceship/nice`
 - **Supabase**: 11 edge functions deployed via `npx supabase functions deploy` (source is proprietary, not in repo)
-- **Stripe**: 3 token packages with payment links
-- **PWA**: Service Worker v36 with offline fallback, periodic sync (12h), push notifications
-- **Build**: `node scripts/build.js` → 865KB minified bundle (78 scripts)
+- **Stripe**: 9 live products — NICE Pro + Claude Add-on + Premium Add-on + 6 top-up packs (Standard/Claude/Premium × Boost/Max), all wired via `StripeConfig` SSOT
+- **PWA**: Service Worker v41 with offline fallback, periodic sync (12h), push notifications
+- **Build**: `node scripts/build.js` → 951KB minified bundle (72 scripts)
 
 ### Cloudflare Pages Routing
 - `nicespaceship.ai`: app served at root via `_redirects` and `_headers`
