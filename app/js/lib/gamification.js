@@ -12,21 +12,33 @@ const Gamification = (() => {
     catch (e) { console.warn('[Gamification] localStorage write failed:', key, e.name); }
   }
 
-  /* ── Crew Ranks (slots = max crew slots unlocked at this rank) ── */
+  /* ── Crew Ranks ──
+     Slots are no longer tied to rank — every rank gives 6 slots
+     because slot count is purely a subscription perk now (Free = 6,
+     Pro = 12, see Subscription.getSlotLimit). The `slots` field is
+     retained for backward compatibility with views that read it
+     directly, but `getMaxSlots()` is the authoritative source.
+
+     Rank still gates rarity via maxRarity. Free users grind XP to
+     unlock Common → Rare → Epic → Legendary. Pro users skip the
+     grind by getting Legendary instantly via Subscription.isPro().
+
+     Mythic is intentionally NOT a rank-granted rarity — it's
+     milestone-only prestige earned by both Free and Pro users
+     through achievements (handled outside the rank ladder). */
   const RANKS = [
-    { name: 'Ensign',            xp: 0,       badge: '⬡',     slots: 6,  classId: 'class-1', maxRarity: 'Common' },
-    { name: 'Lieutenant JG',     xp: 10000,   badge: '⬡⬡',    slots: 6,  classId: 'class-1', maxRarity: 'Common' },
-    { name: 'Lieutenant',        xp: 25000,   badge: '⬡⬡⬡',   slots: 8,  classId: 'class-2', maxRarity: 'Rare' },
-    { name: 'Lt Commander',      xp: 50000,   badge: '⬡⬡⬡⬡',  slots: 8,  classId: 'class-2', maxRarity: 'Rare' },
-    { name: 'Commander',         xp: 100000,  badge: '★',      slots: 10, classId: 'class-3', maxRarity: 'Epic' },
-    { name: 'Captain',           xp: 200000,  badge: '★★',     slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Fleet Captain',     xp: 350000,  badge: '★★★',    slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Commodore',         xp: 500000,  badge: '✦',      slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Rear Admiral',      xp: 750000,  badge: '✦✦',     slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Vice Admiral',      xp: 1000000, badge: '✦✦✦',    slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Admiral',           xp: 1500000, badge: '✦✦✦✦',   slots: 12, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Fleet Admiral',     xp: 2500000, badge: '✦✦✦✦✦',  slots: 12, classId: 'class-5', maxRarity: 'Mythic' },
-    // Fleet Admiral is the only rank that can activate Mythic blueprints
+    { name: 'Ensign',            xp: 0,       badge: '⬡',     slots: 6, classId: 'class-1', maxRarity: 'Common' },
+    { name: 'Lieutenant JG',     xp: 10000,   badge: '⬡⬡',    slots: 6, classId: 'class-1', maxRarity: 'Common' },
+    { name: 'Lieutenant',        xp: 25000,   badge: '⬡⬡⬡',   slots: 6, classId: 'class-2', maxRarity: 'Rare' },
+    { name: 'Lt Commander',      xp: 50000,   badge: '⬡⬡⬡⬡',  slots: 6, classId: 'class-2', maxRarity: 'Rare' },
+    { name: 'Commander',         xp: 100000,  badge: '★',      slots: 6, classId: 'class-3', maxRarity: 'Epic' },
+    { name: 'Captain',           xp: 200000,  badge: '★★',     slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
+    { name: 'Fleet Captain',     xp: 350000,  badge: '★★★',    slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
+    { name: 'Commodore',         xp: 500000,  badge: '✦',      slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
+    { name: 'Rear Admiral',      xp: 750000,  badge: '✦✦',     slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
+    { name: 'Vice Admiral',      xp: 1000000, badge: '✦✦✦',    slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
+    { name: 'Admiral',           xp: 1500000, badge: '✦✦✦✦',   slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
+    { name: 'Fleet Admiral',     xp: 2500000, badge: '✦✦✦✦✦',  slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
   ];
 
   /* ── XP Rewards ── */
@@ -153,7 +165,12 @@ const Gamification = (() => {
     });
   }
 
-  /* ── Spaceship Classes (5-tier progression model) ── */
+  /* ── Spaceship Classes (5-tier progression model) ──
+     class-1 → class-4 are the free user's progression (Common → Legendary
+     via XP rank). class-5 is the Pro plan tier — same 12 Legendary slots
+     but unlocked by subscription instead of XP grinding.
+     Mythic doesn't appear here — it's milestone-only and granted on
+     individual blueprints, not via spaceship class. */
   const SPACESHIP_CLASSES = [
     {
       id: 'class-1', maxRarity: 'Common', xpRequired: 0,
@@ -161,19 +178,19 @@ const Gamification = (() => {
     },
     {
       id: 'class-2', maxRarity: 'Rare', xpRequired: 25000,
-      slots: _buildSlots(8, 'Rare'),
+      slots: _buildSlots(6, 'Rare'),
     },
     {
       id: 'class-3', maxRarity: 'Epic', xpRequired: 100000,
-      slots: _buildSlots(10, 'Epic'),
+      slots: _buildSlots(6, 'Epic'),
     },
     {
       id: 'class-4', maxRarity: 'Legendary', xpRequired: 200000,
-      slots: _buildSlots(12, 'Legendary'),
+      slots: _buildSlots(6, 'Legendary'),
     },
     {
-      id: 'class-5', maxRarity: 'Mythic', xpRequired: 0, subscription: true,
-      slots: _buildSlots(24, 'Mythic'), // Unlimited — subscription only
+      id: 'class-5', maxRarity: 'Legendary', xpRequired: 0, subscription: true,
+      slots: _buildSlots(12, 'Legendary'), // Pro plan: 12 Legendary slots
     },
   ];
 
@@ -181,21 +198,23 @@ const Gamification = (() => {
     return (RARITY_ORDER[agentRarity] || 0) <= (RARITY_ORDER[slotMaxRarity] || 0);
   }
 
-  /** Check if user's current rank allows activating a given rarity */
+  /** Check if a user can activate blueprints of the given rarity.
+      - Pro subscribers unlock Legendary instantly (skip the grind).
+      - Free users use their rank.maxRarity (Common → Legendary at Captain).
+      - Mythic is never granted by rank or subscription — it's milestone-only. */
   function isRarityUnlocked(rarity) {
     var rank = getRank();
     var maxOrder = RARITY_ORDER[rank.maxRarity || 'Common'] || 0;
-    // Subscription unlocks Legendary (not Mythic — Mythic requires Fleet Admiral)
-    if (typeof Subscription !== 'undefined' && Subscription.isActive && Subscription.isActive()) {
-      maxOrder = Math.max(maxOrder, RARITY_ORDER['Legendary'] || 4);
+    if (typeof Subscription !== 'undefined' && Subscription.isPro && Subscription.isPro()) {
+      maxOrder = Math.max(maxOrder, RARITY_ORDER['Legendary'] || 3);
     }
     return (RARITY_ORDER[rarity] || 0) <= maxOrder;
   }
 
-  /** Get the current class based on XP rank + subscription */
+  /** Get the spaceship class for the current user.
+      Pro = class-5 (12 Legendary slots). Free uses rank classId. */
   function getCurrentClass() {
-    // Subscription = Class 5
-    if (typeof Subscription !== 'undefined' && Subscription.isActive && Subscription.isActive()) {
+    if (typeof Subscription !== 'undefined' && Subscription.isPro && Subscription.isPro()) {
       return SPACESHIP_CLASSES.find(function(c) { return c.id === 'class-5'; }) || SPACESHIP_CLASSES[4];
     }
     var rank = getRank();
@@ -203,23 +222,23 @@ const Gamification = (() => {
     return SPACESHIP_CLASSES.find(function(c) { return c.id === classId; }) || SPACESHIP_CLASSES[0];
   }
 
-  /** Get max slots for current XP rank. Subscription = unlimited. */
+  /** Slot count is purely subscription-based: Free = 6, Pro = 12.
+      Rank no longer scales slots — that's only a rarity gate now. */
   function getMaxSlots() {
-    // Subscription override = unlimited
-    if (typeof Subscription !== 'undefined' && Subscription.isActive && Subscription.isActive()) {
-      return 99;
+    if (typeof Subscription !== 'undefined' && Subscription.getSlotLimit) {
+      return Subscription.getSlotLimit();
     }
-    var rank = getRank();
-    return rank.slots || 6;
+    // Fallback for environments where Subscription isn't loaded
+    return 6;
   }
 
   /** Generate a slot template for N slots (dynamic, no class dependency).
-   *  Free tier: 6 Common slots. Subscription: 12 Legendary slots.
-   *  Mythic is never a builder option — it must be earned through evolution. */
+   *  Free tier: 6 slots. Pro: 12 slots. Slot maxRarity follows the
+   *  user's rank-or-subscription unlock — Pro users get Legendary slots. */
   function getSlotTemplate(slotCount) {
-    var isSub = typeof Subscription !== 'undefined' && Subscription.isActive && Subscription.isActive();
-    slotCount = slotCount || (isSub ? 12 : getMaxSlots());
-    var maxRarity = isSub ? 'Legendary' : 'Common';
+    var isPro = typeof Subscription !== 'undefined' && Subscription.isPro && Subscription.isPro();
+    slotCount = slotCount || getMaxSlots();
+    var maxRarity = isPro ? 'Legendary' : (getRank().maxRarity || 'Common');
     var slots = [];
     for (var i = 0; i < slotCount; i++) {
       slots.push({ id: i, maxRarity: maxRarity, label: SLOT_LABELS[i] || 'Agent ' + (i + 1) });

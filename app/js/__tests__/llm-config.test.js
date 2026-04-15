@@ -61,9 +61,11 @@ describe('LLMConfig', () => {
       expect(cfg.stream).toBe(true);
     });
 
-    it('should default model to claude-haiku-4-5-20251001 when no profile or llm_engine', () => {
+    it('should default model to gemini-2-5-flash (free) when no profile or llm_engine', () => {
+      // Free Gemini is the safe default — agents without an explicit
+      // profile can never accidentally drain a paid pool.
       const cfg = LLMConfig.forBlueprint({ stats: {} });
-      expect(cfg.model).toBe('claude-haiku-4-5-20251001');
+      expect(cfg.model).toBe('gemini-2-5-flash');
     });
 
     it('should handle blueprint with no stats', () => {
@@ -142,9 +144,9 @@ describe('LLMConfig', () => {
       expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2.5-flash');
     });
 
-    it('falls back to gemini-2.5-flash (free tier) when nice-auto has no profile fallback', () => {
+    it('falls back to gemini-2-5-flash (free tier) when nice-auto has no profile fallback', () => {
       const bp = { config: { llm_engine: 'nice-auto' } };
-      expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2.5-flash');
+      expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2-5-flash');
     });
 
     it('does not silently upgrade free-tier nice-auto agents to premium models', () => {
