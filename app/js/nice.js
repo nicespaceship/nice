@@ -1577,6 +1577,7 @@ const NICE = (() => {
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
     if (typeof DocsView !== 'undefined') Router.on('/docs', DocsView);
     if (typeof EngineeringView !== 'undefined') Router.on('/engineering', EngineeringView);
+    if (typeof MarketplaceView !== 'undefined') Router.on('/marketplace', MarketplaceView);
   }
 
   /* ── Modal helpers ── */
