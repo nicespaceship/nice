@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["scripts/dev-server.js"],
       "port": 3000
+    },
+    {
+      "name": "Marketing Site",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "www", "-l", "3100", "--no-clipboard"],
+      "port": 3100
     }
   ]
 }
