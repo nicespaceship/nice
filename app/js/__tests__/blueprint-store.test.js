@@ -228,6 +228,63 @@ describe('BlueprintStore', () => {
     });
   });
 
+  describe('isShipActivated — blueprint_id indirection', () => {
+    beforeEach(() => { globalThis.SB = undefined; });
+
+    it('returns true for a catalog id when the ship is activated under a DB UUID (user_spaceships load path)', () => {
+      // Simulate what _loadUserCreations does: push the DB row UUID into
+      // _activatedShipIds and add a corresponding entry to State.spaceships
+      // whose blueprint_id links back to the catalog ship.
+      const shipUuid = 'aaaa1111-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+      BlueprintStore.activateShip(shipUuid);
+      globalThis.State.set('spaceships', [{
+        id: shipUuid,
+        name: 'My Legendary Fleet',
+        rarity: 'Legendary',
+        blueprint_id: 'ship-01', // catalog id
+      }]);
+
+      expect(BlueprintStore.isShipActivated(shipUuid)).toBe(true);
+      expect(BlueprintStore.isShipActivated('ship-01')).toBe(true);
+      expect(BlueprintStore.isShipActivated('bp-ship-01')).toBe(true);
+    });
+
+    it('returns false when no activated ship links to the queried catalog id', () => {
+      const shipUuid = 'bbbb2222-cccc-4ddd-8eee-ffffffffffff';
+      BlueprintStore.activateShip(shipUuid);
+      globalThis.State.set('spaceships', [{
+        id: shipUuid,
+        blueprint_id: 'ship-02',
+      }]);
+
+      expect(BlueprintStore.isShipActivated('ship-99')).toBe(false);
+    });
+
+    it('deactivateShip resolves a catalog id to its UUID and removes the right ship', async () => {
+      const shipUuid = 'cccc3333-dddd-4eee-8fff-aaaaaaaaaaaa';
+      BlueprintStore.activateShip(shipUuid);
+      BlueprintStore.saveShipState(shipUuid, {
+        slot_assignments: { 0: 'crew-legendary' },
+        agent_ids: ['crew-legendary'],
+      });
+      BlueprintStore.activateAgent('crew-legendary');
+      globalThis.State.set('spaceships', [{
+        id: shipUuid,
+        name: 'Legendary Destroyer',
+        rarity: 'Legendary',
+        blueprint_id: 'ship-01',
+      }]);
+
+      // Caller passes the CATALOG id (as the catalog card does), not the UUID
+      await BlueprintStore.deactivateShip('ship-01');
+
+      expect(BlueprintStore.isShipActivated('ship-01')).toBe(false);
+      expect(BlueprintStore.isShipActivated(shipUuid)).toBe(false);
+      expect(BlueprintStore.isAgentActivated('crew-legendary')).toBe(false);
+      expect(BlueprintStore.getShipState(shipUuid)).toBeNull();
+    });
+  });
+
   describe('cleanupOrphans', () => {
     beforeEach(() => {
       // DB gated out so we only test local cleanup

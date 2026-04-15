@@ -967,12 +967,15 @@ const BlueprintStore = (() => {
   }
 
   async function deactivateShip(bpId) {
-    // Normalize: find the matching ID in the array (with or without bp- prefix)
-    const match = _activatedShipIds.find(id => id === bpId || 'bp-' + id === bpId || id === 'bp-' + bpId);
+    // Resolve the caller's id (catalog id, bp- variant, or UUID) to the id
+    // the ship is actually activated under. Without this, clicking Remove on
+    // a catalog card for a ship that was loaded from user_spaceships (where
+    // _activatedShipIds holds the DB UUID) silently no-ops.
+    const match = _resolveActivatedShipId(bpId);
     if (!match) return;
     _activatedShipIds = _activatedShipIds.filter(id => id !== match);
     _persistShips();
-    _syncDeactivation(bpId, 'spaceship');
+    _syncDeactivation(match, 'spaceship');
 
     // Resolve _shipState entry — keys may be raw id (DB-loaded ships) or bp-prefixed (catalog wizard)
     const stateKeyVariants = [match, bpId, 'bp-' + match, 'bp-' + bpId];
@@ -1178,11 +1181,64 @@ const BlueprintStore = (() => {
     return orphanIds;
   }
 
+  /**
+   * Normalize a blueprint id to the set of equivalent forms we'll match on.
+   * Handles bp- prefix + strip variants in one place.
+   */
+  function _bpIdVariants(bpId) {
+    if (!bpId || typeof bpId !== 'string') return [];
+    const set = new Set([bpId]);
+    if (bpId.startsWith('bp-')) set.add(bpId.slice(3));
+    else set.add('bp-' + bpId);
+    return [...set];
+  }
+
+  /**
+   * Resolve a blueprint id to the actual id it's activated under, or null.
+   *
+   * Handles four identity shapes a ship can have:
+   *   1. Direct match: id is already in _activatedShipIds (catalog flow — wizard
+   *      pushes the catalog id)
+   *   2. bp- prefix variant: e.g. querying 'ship-52' when 'bp-ship-52' is activated
+   *   3. Blueprint-id indirection: _activatedShipIds holds a DB row UUID
+   *      (from user_spaceships), and that row's State.spaceships entry carries
+   *      blueprint_id === the queried catalog id. Ships loaded by
+   *      _loadUserCreations take this path — the activated id is a UUID, not
+   *      the catalog id, so direct match fails.
+   *   4. Both: caller is holding the UUID already — direct match covers it.
+   *
+   * @returns {string|null} The id under which the ship is activated, or null
+   *                        if the ship is not activated at all.
+   */
+  function _resolveActivatedShipId(bpId) {
+    if (!bpId) return null;
+
+    // 1 + 2. Direct / prefix-variant match against _activatedShipIds.
+    for (const variant of _bpIdVariants(bpId)) {
+      if (_activatedShipIds.includes(variant)) return variant;
+    }
+
+    // 3. Blueprint-id indirection via State.spaceships. For every activated
+    //    ship, check whether its blueprint_id maps to the queried id.
+    if (typeof State !== 'undefined') {
+      const spaceships = State.get('spaceships') || [];
+      const queryVariants = new Set(_bpIdVariants(bpId));
+      for (const activatedId of _activatedShipIds) {
+        const ship = spaceships.find(s => s.id === activatedId);
+        if (!ship) continue;
+        const linked = ship.blueprint_id || ship.blueprintId;
+        if (!linked) continue;
+        for (const lv of _bpIdVariants(linked)) {
+          if (queryVariants.has(lv)) return activatedId;
+        }
+      }
+    }
+
+    return null;
+  }
+
   function isShipActivated(bpId) {
-    if (_activatedShipIds.includes(bpId)) return true;
-    // Check without bp- prefix (activated IDs don't have it)
-    if (bpId.startsWith('bp-')) return _activatedShipIds.includes(bpId.slice(3));
-    return _activatedShipIds.includes('bp-' + bpId);
+    return _resolveActivatedShipId(bpId) !== null;
   }
 
   function getActivatedShipIds() {
