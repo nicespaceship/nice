@@ -12,6 +12,14 @@ const WalletView = (() => {
   const title = 'Wallet';
   const _esc = Utils.esc;
 
+  // Capitalize a pool id for display ("standard" → "Standard"). Use everywhere
+  // the pool name is shown to the user so balance cards, top-up cards, and
+  // transaction rows stay in sync.
+  const _poolLabel = (pool) => {
+    const id = String(pool || 'standard');
+    return id.charAt(0).toUpperCase() + id.slice(1);
+  };
+
   /* ── Top-up Packages — sourced from StripeConfig SSOT ────────
      All 6 packs live in app/js/lib/stripe-config.js with real
      live-mode product/price/payment-link IDs. Wallet just renders
@@ -167,7 +175,7 @@ const WalletView = (() => {
     const total = allowanceLeft + (p.purchased || 0);
     const allowance = TokenConfig.monthlyAllowance(poolId);
     const pct = allowance > 0 ? Math.min(100, Math.round((allowanceLeft / allowance) * 100)) : 0;
-    const label = (Subscription?.PLANS?.[poolId === 'standard' ? 'pro' : null]?.label) || (poolId.charAt(0).toUpperCase() + poolId.slice(1));
+    const label = _poolLabel(poolId);
     return `
       <div class="wallet-balance-card">
         <div class="wallet-balance-main">
@@ -199,7 +207,7 @@ const WalletView = (() => {
         ${t.badge ? `<span class="wallet-package-badge">${_esc(t.badge)}</span>` : ''}
         <span class="wallet-package-name">${_esc(t.name)}</span>
         <span class="wallet-package-tokens">${t.tokens.toLocaleString()}</span>
-        <span class="wallet-package-tokens-label">${_esc(t.pool)} tokens</span>
+        <span class="wallet-package-tokens-label">${_esc(_poolLabel(t.pool))} tokens</span>
         <span class="wallet-package-price">${_esc(t.price)}</span>
         <p class="wallet-package-desc">${_esc(t.desc)}</p>
         <a href="${t.url}" target="_blank" rel="noopener" class="btn btn-sm btn-primary wallet-buy-btn">Buy</a>
@@ -256,9 +264,10 @@ const WalletView = (() => {
               : tx.type === 'subscription_credit' ? 'gift'
               : tx.type === 'addon_credit' ? 'gift'
               : 'bot';
-            const label = tx.type === 'purchase_credit' ? `Top-up (${tx.pool || 'standard'})`
+            const poolName = _poolLabel(tx.pool);
+            const label = tx.type === 'purchase_credit' ? `Top-up (${poolName})`
               : tx.type === 'subscription_credit' ? 'Pro monthly allowance'
-              : tx.type === 'addon_credit' ? `${(tx.pool || 'addon')} add-on allowance`
+              : tx.type === 'addon_credit' ? `${poolName} add-on allowance`
               : tx.description || (tx.reference_id ? `Used ${tx.reference_id}` : 'Agent usage');
             const date = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
             return `
@@ -266,7 +275,7 @@ const WalletView = (() => {
                 <span class="wallet-tx-icon">${icon}</span>
                 <div class="wallet-tx-info">
                   <span class="wallet-tx-label">${_esc(label)}</span>
-                  <span class="wallet-tx-date">${date} · ${_esc(tx.pool || 'standard')}</span>
+                  <span class="wallet-tx-date">${date} · ${_esc(poolName)}</span>
                 </div>
                 <span class="wallet-tx-amount ${isCredit ? 'tx-credit' : 'tx-debit'}">${isCredit ? '+' : ''}${tx.amount.toLocaleString()}</span>
               </div>
