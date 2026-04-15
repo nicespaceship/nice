@@ -24,20 +24,30 @@
 
 const TokenConfig = (() => {
   /* ── Pool definitions ─────────────────────────────────────── */
+  /* Each pool has its own monthly allowance and is unlocked by the
+     base Pro plan or by an add-on. Adding a new flagship family is
+     a config change here plus a new entry in the MODELS map below. */
   const POOLS = {
     standard: {
       id: 'standard',
       label: 'Standard',
-      description: 'Pro plan models — Gemini Pro, GPT-5 Mini, DeepSeek, Mistral, Grok.',
+      description: 'Pro plan models — GPT-5 mini, DeepSeek R1, Mistral, Kimi, GLM-5, Command R+, Grok 4.1, Llama 4 Scout.',
       monthlyAllowance: 1000,       // Pro plan grants this every billing cycle
       requiresAddon: null,          // no add-on needed; included in Pro
     },
     claude: {
       id: 'claude',
       label: 'Claude',
-      description: 'Claude add-on — Haiku, Sonnet 4, Opus 4.',
+      description: 'Claude add-on — Sonnet 4.6, Opus 4.6.',
       monthlyAllowance: 500,        // Claude add-on grants this every billing cycle
       requiresAddon: 'claude',
+    },
+    premium: {
+      id: 'premium',
+      label: 'Premium',
+      description: 'Premium add-on — GPT-5.4 Pro, GPT-5.3 Codex, OpenAI o3, Gemini 3.1 Pro.',
+      monthlyAllowance: 500,        // Premium add-on grants this every billing cycle
+      requiresAddon: 'premium',
     },
   };
 
@@ -45,23 +55,33 @@ const TokenConfig = (() => {
   /* Weight is how many pool tokens a SINGLE message on that model
      consumes. Weights roughly mirror the provider's real cost ratio
      so every SKU stays profitable regardless of which model a user
-     prefers. Models with weight 0 never debit (e.g. Gemini Flash). */
+     prefers. Models with weight 0 never debit (e.g. Gemini Flash).
+
+     The 15 entries below correspond to the top-15 LLM lineup; any
+     model not listed is treated as `free` by isFreeModel(). */
   const MODELS = {
     // ── Free tier (no pool, always free)
-    'gemini-2.5-flash':   { pool: null,       weight: 0, tier: 'free'     },
-    'gemini-2.0-lite':    { pool: null,       weight: 0, tier: 'free'     },
+    'gemini-2-5-flash':   { pool: null,       weight: 0,  tier: 'free'     },
 
-    // ── Standard pool (Pro plan)
-    'gemini-2.5-pro':     { pool: 'standard', weight: 1, tier: 'standard' },
-    'gpt-5-mini':         { pool: 'standard', weight: 1, tier: 'standard' },
-    'deepseek-v3':        { pool: 'standard', weight: 1, tier: 'standard' },
-    'mistral-large-3':    { pool: 'standard', weight: 1, tier: 'standard' },
-    'grok-4':             { pool: 'standard', weight: 2, tier: 'standard' },
+    // ── Standard pool (Pro plan, no add-on)
+    'gpt-5-mini':         { pool: 'standard', weight: 1,  tier: 'standard' },
+    'deepseek-r1':        { pool: 'standard', weight: 1,  tier: 'standard' },
+    'mistral-large-3':    { pool: 'standard', weight: 1,  tier: 'standard' },
+    'kimi-k2-5':          { pool: 'standard', weight: 1,  tier: 'standard' },
+    'glm-5':              { pool: 'standard', weight: 1,  tier: 'standard' },
+    'command-r-plus':     { pool: 'standard', weight: 1,  tier: 'standard' },
+    'llama-4-scout':      { pool: 'standard', weight: 1,  tier: 'standard' },
+    'grok-4-1-fast':      { pool: 'standard', weight: 2,  tier: 'standard' },
 
     // ── Claude pool (Claude add-on)
-    'claude-haiku-4':     { pool: 'claude',   weight: 1,  tier: 'claude'  },
-    'claude-sonnet-4':    { pool: 'claude',   weight: 3,  tier: 'claude'  },
-    'claude-opus-4':      { pool: 'claude',   weight: 10, tier: 'claude'  },
+    'claude-4-6-sonnet':  { pool: 'claude',   weight: 3,  tier: 'claude'   },
+    'claude-4-6-opus':    { pool: 'claude',   weight: 10, tier: 'claude'   },
+
+    // ── Premium pool (Premium add-on)
+    'gpt-5-4-pro':        { pool: 'premium',  weight: 5,  tier: 'premium'  },
+    'gpt-5-3-codex':      { pool: 'premium',  weight: 5,  tier: 'premium'  },
+    'openai-o3':          { pool: 'premium',  weight: 15, tier: 'premium'  },
+    'gemini-3-1-pro':     { pool: 'premium',  weight: 3,  tier: 'premium'  },
   };
 
   /* ── Lookups ──────────────────────────────────────────────── */
