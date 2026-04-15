@@ -46,6 +46,7 @@ const Utils = (() => {
     darkTheme: 'ns-dark-theme',
     font: 'ns-font',
     enabledModels: 'nice-enabled-models',
+    activeStack: 'nice-active-stack',
     xp: 'nice-xp',
     achievements: 'nice-achievements',
     auditLog: 'nice-audit-log',

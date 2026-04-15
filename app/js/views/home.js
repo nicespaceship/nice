@@ -98,8 +98,8 @@ const HomeView = (() => {
 
       // Recent activity (last 5 audit log entries)
       let recentActivity = '';
-      if (typeof AuditLog !== 'undefined') {
-        const logs = AuditLog.list().slice(-5).reverse();
+      if (typeof AuditLog !== 'undefined' && typeof AuditLog.getEntries === 'function') {
+        const logs = AuditLog.getEntries().slice(-5).reverse();
         if (logs.length) {
           recentActivity = logs.map(l => {
             const ago = _timeAgo(l.timestamp || l.ts);
