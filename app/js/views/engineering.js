@@ -36,15 +36,17 @@ const EngineeringView = (() => {
   function render(el) {
     _el = el;
 
-    // Read tab from URL (?tab=errors)
+    // Read tab from URL (?tab=errors|funnel)
     const params = new URLSearchParams(location.hash.split('?')[1] || '');
-    _activeTab = params.get('tab') === 'errors' ? 'errors' : 'code';
+    const urlTab = params.get('tab');
+    _activeTab = (urlTab === 'errors' || urlTab === 'funnel') ? urlTab : 'code';
 
     // Tab bar
     el.innerHTML = `
       <div class="eng-tabs">
         <button class="eng-tab${_activeTab === 'code' ? ' active' : ''}" data-eng-tab="code">Code</button>
         <button class="eng-tab${_activeTab === 'errors' ? ' active' : ''}" data-eng-tab="errors">Errors</button>
+        <button class="eng-tab${_activeTab === 'funnel' ? ' active' : ''}" data-eng-tab="funnel">Funnel</button>
       </div>
       <div class="eng-tab-body" id="eng-tab-body"></div>
     `;
@@ -53,7 +55,8 @@ const EngineeringView = (() => {
       const tab = e.target.closest('[data-eng-tab]');
       if (!tab || tab.dataset.engTab === _activeTab) return;
       _activeTab = tab.dataset.engTab;
-      history.replaceState(null, '', `#/engineering${_activeTab === 'errors' ? '?tab=errors' : ''}`);
+      const suffix = _activeTab === 'code' ? '' : ('?tab=' + _activeTab);
+      history.replaceState(null, '', '#/engineering' + suffix);
       el.querySelectorAll('.eng-tab').forEach(t => t.classList.toggle('active', t.dataset.engTab === _activeTab));
       _renderActiveTab();
     });
@@ -67,6 +70,8 @@ const EngineeringView = (() => {
     body.innerHTML = '';
     if (_activeTab === 'errors') {
       _renderErrorDashboard(body);
+    } else if (_activeTab === 'funnel') {
+      _renderFunnelDashboard(body);
     } else {
       _renderCodeTab(body);
     }
@@ -1426,6 +1431,149 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     if (diff < 3600e3) return Math.floor(diff / 60e3) + 'm ago';
     if (diff < 86400e3) return Math.floor(diff / 3600e3) + 'h ago';
     return Math.floor(diff / 86400e3) + 'd ago';
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     ONBOARDING FUNNEL DASHBOARD
+     Queries Onboarding.loadFunnel() (which reads audit_log for
+     `onboarding.*` events) and renders a conversion funnel so we can
+     see signup → wizard → first spaceship → first mission drop-off.
+  ══════════════════════════════════════════════════════════════════ */
+  let _funnelRange = '7d'; // '24h' | '7d' | '30d' | 'all'
+  let _funnelLoading = false;
+
+  async function _renderFunnelDashboard(el) {
+    el.innerHTML = `
+      <div class="eng-funnel">
+        <div class="eng-funnel-toolbar">
+          <div class="eng-funnel-filters">
+            <select id="eng-fun-range" class="eng-select">
+              <option value="24h"${_funnelRange === '24h' ? ' selected' : ''}>Last 24 hours</option>
+              <option value="7d"${_funnelRange === '7d'  ? ' selected' : ''}>Last 7 days</option>
+              <option value="30d"${_funnelRange === '30d' ? ' selected' : ''}>Last 30 days</option>
+              <option value="all"${_funnelRange === 'all' ? ' selected' : ''}>All time</option>
+            </select>
+          </div>
+          <button class="btn btn-sm" id="eng-fun-refresh" title="Refresh">↻ Refresh</button>
+        </div>
+        <div class="eng-funnel-header">
+          <h2 class="eng-funnel-title">Onboarding Funnel</h2>
+          <p class="eng-funnel-sub">Unique users per milestone, sourced from <code>audit_log</code>.</p>
+        </div>
+        <div id="eng-fun-body" class="eng-funnel-body">
+          <div class="eng-err-loading">Loading funnel…</div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('eng-fun-range')?.addEventListener('change', e => {
+      _funnelRange = e.target.value;
+      _fetchAndRenderFunnel();
+    });
+    document.getElementById('eng-fun-refresh')?.addEventListener('click', _fetchAndRenderFunnel);
+
+    await _fetchAndRenderFunnel();
+  }
+
+  async function _fetchAndRenderFunnel() {
+    if (_funnelLoading) return;
+    _funnelLoading = true;
+
+    const body = document.getElementById('eng-fun-body');
+    if (body) body.innerHTML = '<div class="eng-err-loading">Loading funnel…</div>';
+
+    let result = null;
+    try {
+      if (typeof Onboarding !== 'undefined') {
+        result = await Onboarding.loadFunnel(_funnelRange);
+      }
+    } catch (err) {
+      console.warn('[Engineering] Funnel load failed:', err && err.message);
+    } finally {
+      _funnelLoading = false;
+    }
+
+    if (!body) return;
+
+    if (!result || !result.available) {
+      body.innerHTML = `
+        <div class="eng-err-empty">
+          <h3>Funnel data unavailable</h3>
+          <p>Sign in and make sure Supabase is reachable to see onboarding data.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (!result.total) {
+      body.innerHTML = `
+        <div class="eng-err-empty">
+          <h3>No onboarding events yet</h3>
+          <p>Funnel events start flowing once a new user signs up and runs through the wizard in this time range.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const steps = result.steps || [];
+    const top = steps[0] ? steps[0].count : 0;
+    const maxBar = Math.max(1, ...steps.map(s => s.count));
+
+    const rows = steps.map((step, i) => {
+      const pct = maxBar > 0 ? Math.round((step.count / maxBar) * 100) : 0;
+      const overall = step.conversion;         // vs top of funnel
+      const vsPrev  = step.step_rate;          // vs previous step
+      const vsPrevLabel = i === 0 ? '—' : _pct(vsPrev);
+      const dropPct = i === 0 ? 0 : Math.max(0, 1 - vsPrev);
+      const isDrop  = i > 0 && dropPct >= 0.3; // highlight steps losing 30%+
+
+      return `
+        <div class="eng-fun-row${isDrop ? ' eng-fun-drop' : ''}">
+          <div class="eng-fun-row-label">
+            <span class="eng-fun-step">${i + 1}</span>
+            <span class="eng-fun-name">${_esc(step.label)}</span>
+          </div>
+          <div class="eng-fun-bar-wrap">
+            <div class="eng-fun-bar" style="width:${pct}%"></div>
+            <span class="eng-fun-count">${step.count.toLocaleString()} user${step.count === 1 ? '' : 's'}</span>
+          </div>
+          <div class="eng-fun-pcts">
+            <span class="eng-fun-pct" title="Share of step 1 users who reached this step">${_pct(overall)}</span>
+            <span class="eng-fun-step-rate" title="Share of previous step who reached this step">${vsPrevLabel}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const bottom = steps[steps.length - 1];
+    const bottomRate = top > 0 && bottom ? bottom.conversion : 0;
+
+    body.innerHTML = `
+      <div class="eng-fun-summary">
+        <div class="eng-stat-card">
+          <div class="eng-stat-val">${top.toLocaleString()}</div>
+          <div class="eng-stat-label">Signups in range</div>
+        </div>
+        <div class="eng-stat-card">
+          <div class="eng-stat-val">${bottom ? bottom.count.toLocaleString() : '0'}</div>
+          <div class="eng-stat-label">Finished first mission</div>
+        </div>
+        <div class="eng-stat-card">
+          <div class="eng-stat-val">${_pct(bottomRate)}</div>
+          <div class="eng-stat-label">End-to-end conversion</div>
+        </div>
+      </div>
+      <div class="eng-fun-legend">
+        <span><span class="eng-fun-legend-dot eng-fun-legend-overall"></span>% of signups</span>
+        <span><span class="eng-fun-legend-dot eng-fun-legend-step"></span>% of previous step</span>
+      </div>
+      <div class="eng-fun-list">${rows}</div>
+    `;
+  }
+
+  function _pct(ratio) {
+    if (!ratio && ratio !== 0) return '—';
+    return Math.round(ratio * 100) + '%';
   }
 
   /* ══════════════════════════════════════════════════════════════════

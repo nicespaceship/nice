@@ -112,6 +112,7 @@ globalThis.State = (() => {
 // Load real IIFE modules into global scope (order matters for dependencies)
 loadScriptGlobal('lib/utils.js');
 loadScriptGlobal('lib/audit-log.js');
+loadScriptGlobal('lib/onboarding.js');  // Depends on AuditLog + State (both already available)
 loadScriptGlobal('lib/notify.js');      // Before Gamification (Gamification calls Notify.send)
 loadScriptGlobal('lib/gamification.js');
 loadScriptGlobal('lib/data-io.js');
