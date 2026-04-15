@@ -36,38 +36,42 @@
 
       <h3>Setup</h3>
       <ol>
-        <li>Go to <strong>Security > Integrations</strong></li>
+        <li>Go to <strong>Security &gt; Integrations</strong></li>
         <li>Click <strong>Sign in with Google</strong></li>
-        <li>Authorize the requested scopes (read-only by default)</li>
+        <li>Review and authorize the requested scopes on the Google consent screen</li>
       </ol>
-      <p>Once connected, the <code>mcp-gateway</code> automatically refreshes expired OAuth tokens before each tool call.</p>
+      <p>Once connected, the <code>mcp-gateway</code> automatically refreshes expired OAuth tokens before each tool call. Each connection card in the Integrations view shows an <code>R</code> (read only) or <code>R+W</code> (read and write) badge so you can see at a glance what the agents on that ship can do.</p>
 
       <h3>Gmail</h3>
-      <p>Scope: <code>gmail.readonly</code></p>
-      <p>Your agents can:</p>
+      <p>Scope: <code>https://www.googleapis.com/auth/gmail.modify</code></p>
+      <p>Your agents can read your mail and take actions on it:</p>
       <ul>
         <li>Search emails by sender, subject, date, or content</li>
         <li>Read full email content and attachments</li>
         <li>List and filter by labels</li>
+        <li>Send new emails, reply to existing threads, create drafts</li>
       </ul>
 
       <h3>Calendar</h3>
-      <p>Scope: <code>calendar.readonly</code></p>
-      <p>Your agents can:</p>
+      <p>Scope: <code>https://www.googleapis.com/auth/calendar</code></p>
+      <p>Your agents can read your calendar and modify it:</p>
       <ul>
-        <li>List upcoming events</li>
-        <li>Check availability</li>
+        <li>List upcoming events and check availability</li>
         <li>Read event details (attendees, location, description)</li>
+        <li>Create, update, or delete events</li>
       </ul>
 
       <h3>Drive</h3>
-      <p>Scope: <code>drive.readonly</code></p>
-      <p>Your agents can:</p>
+      <p>Scope: <code>https://www.googleapis.com/auth/drive.file</code></p>
+      <p>Your agents can work with files the app creates or opens — nothing else on your Drive is visible:</p>
       <ul>
-        <li>Search files by name, type, or content</li>
-        <li>Read document content</li>
-        <li>List files in folders</li>
+        <li>Search and read files the app has already touched</li>
+        <li>Create new files and folders</li>
+        <li>Update file contents and upload new versions</li>
       </ul>
+
+      <h3>Approval mode</h3>
+      <p>Any write tool (send, create, update, delete, upload, reply, etc.) can be gated by a per-spaceship <strong>approval mode</strong>. In <code>review</code> mode the agent pauses before every side-effecting action and asks you to approve or deny inline. Switch to <code>autonomous</code> to let the agent run uninterrupted. You can change this per ship in the Bridge &gt; Ship Behaviors panel.</p>
 
       <h2>MCP Servers</h2>
       <p>NICE uses the <strong>Model Context Protocol</strong> (MCP) for all integrations. MCP servers expose tools that agents can call during missions.</p>
