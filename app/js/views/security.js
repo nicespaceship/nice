@@ -24,8 +24,8 @@ const SecurityView = (() => {
 
   /* ── Build threat events from real AuditLog data ── */
   function _getThreats() {
-    if (typeof AuditLog !== 'undefined') {
-      const logs = AuditLog.list();
+    if (typeof AuditLog !== 'undefined' && typeof AuditLog.getEntries === 'function') {
+      const logs = AuditLog.getEntries();
       if (logs.length) {
         // Map audit entries to threat-like events, most recent first
         return logs.slice(-20).reverse().map(entry => {
