@@ -14,6 +14,24 @@ const ContentQueue = (() => {
     general: { icon: '📝', label: 'Content',     color: '#94a3b8' },
   };
 
+  /* ══════════════════════════════════════════════════════════════
+     Supported social platforms for the publish / schedule flow.
+     The actual publishing happens server-side via social-mcp — this
+     list just drives the client-side picker UI. Keep it in sync with
+     the platforms the edge function recognizes (buffer routes to any
+     destination channel on its account, the others go direct).
+  ══════════════════════════════════════════════════════════════ */
+  const PLATFORMS = [
+    { id: 'buffer',    label: 'Buffer',           icon: '🟣', desc: 'Cross-post to all channels connected in Buffer' },
+    { id: 'x',         label: 'X (Twitter)',      icon: '🐦', desc: 'Post directly to your X timeline' },
+    { id: 'linkedin',  label: 'LinkedIn',         icon: '💼', desc: 'Post to your LinkedIn feed' },
+    { id: 'instagram', label: 'Instagram',        icon: '📸', desc: 'Publish to your Instagram account' },
+    { id: 'facebook',  label: 'Facebook',         icon: '📘', desc: 'Post to your Facebook page' },
+  ];
+
+  function getPlatforms() { return PLATFORMS.slice(); }
+  function getPlatform(id) { return PLATFORMS.find(p => p.id === id) || null; }
+
   /* ══════════════════════════════════════════════════════════════ */
   /*  CRUD Operations                                               */
   /* ══════════════════════════════════════════════════════════════ */
@@ -437,8 +455,59 @@ const ContentQueue = (() => {
     if (_scheduleCheckId) { clearInterval(_scheduleCheckId); _scheduleCheckId = null; }
   }
 
+  /* ══════════════════════════════════════════════════════════════
+     Counts helper — used by the Outbox tab badge so the user can see
+     at a glance how many drafts are waiting without switching tabs.
+     Reads from State so the number updates reactively as agents
+     produce new drafts.
+  ══════════════════════════════════════════════════════════════ */
+  function getCounts() {
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+    return {
+      total:    items.length,
+      draft:    items.filter(i => (i.approval_status || 'draft') === 'draft').length,
+      approved: items.filter(i => i.approval_status === 'approved').length,
+      rejected: items.filter(i => i.approval_status === 'rejected').length,
+      scheduled: items.filter(i => i.approval_status === 'scheduled').length,
+      published: items.filter(i => i.approval_status === 'published').length,
+    };
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     Batch publish — fan out one item to multiple platforms.
+     Returns an array of per-platform results so the caller can show
+     a mixed success/failure summary.
+  ══════════════════════════════════════════════════════════════ */
+  async function publishTo(id, platforms) {
+    const list = Array.isArray(platforms) && platforms.length ? platforms : [];
+    if (!list.length) return [];
+    const results = [];
+    for (const platform of list) {
+      /* eslint-disable no-await-in-loop */
+      const r = await publish(id, platform);
+      results.push({ platform, ...r });
+      /* eslint-enable no-await-in-loop */
+    }
+    return results;
+  }
+
+  async function scheduleTo(id, platforms, scheduledAt) {
+    const list = Array.isArray(platforms) && platforms.length ? platforms : [];
+    if (!list.length) return [];
+    if (!scheduledAt) return [{ success: false, error: 'Missing scheduled time' }];
+    const results = [];
+    for (const platform of list) {
+      /* eslint-disable no-await-in-loop */
+      const r = await schedule(id, platform, scheduledAt);
+      results.push({ platform, ...r });
+      /* eslint-enable no-await-in-loop */
+    }
+    return results;
+  }
+
   return {
     load, createDraft, approve, reject, edit, copy, publish, schedule, exportApproved,
+    publishTo, scheduleTo, getPlatforms, getPlatform, getCounts,
     getTypeMeta, getContent, timeAgo, renderMarkdown,
     checkScheduledPosts, startScheduleChecker, stopScheduleChecker,
   };

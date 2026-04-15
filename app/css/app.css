@@ -4929,6 +4929,119 @@
 .outbox-detail-actions .btn { padding:6px 14px; border-radius:var(--radius, 6px); border:1px solid var(--border, #333); background:transparent; color:var(--text-muted, #aaa); font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; cursor:pointer; transition:all .15s; }
 .outbox-detail-actions .btn:hover { border-color:var(--accent, #a5b4fc); color:var(--text, #fff); }
 
+/* ── Platform picker (Publish / Schedule) ─────────────────────── */
+.outbox-picker-overlay {
+  position:fixed; inset:0; z-index:9100;
+  background:rgba(0,0,0,.65);
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.outbox-picker-panel {
+  background:var(--bg-alt, #18181b);
+  border:1px solid var(--border, #333);
+  border-radius:var(--radius, 12px);
+  max-width:520px; width:92%;
+  max-height:85vh; overflow:hidden;
+  display:flex; flex-direction:column;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+.outbox-picker-head {
+  display:flex; align-items:center; gap:10px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border, #333);
+}
+.outbox-picker-title {
+  margin:0; font-size:.92rem; font-family:var(--font-b);
+  color:var(--text); flex:1;
+}
+.outbox-picker-close {
+  width:28px; height:28px; border-radius:50%;
+  border:1px solid var(--border); background:transparent;
+  color:var(--text-muted); font-size:1.1rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.outbox-picker-close:hover { border-color:var(--accent); color:var(--text); }
+
+.outbox-picker-body {
+  padding:16px 18px; overflow-y:auto; flex:1;
+  display:flex; flex-direction:column; gap:12px;
+}
+.outbox-picker-intro {
+  margin:0; font-size:.78rem; color:var(--text-muted); line-height:1.5;
+}
+.outbox-picker-list {
+  display:flex; flex-direction:column; gap:6px;
+}
+.outbox-picker-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--radius, 8px);
+  cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.outbox-picker-row:hover { border-color:var(--accent); }
+.outbox-picker-row:has(input:checked) {
+  border-color:var(--accent);
+  background:rgba(165, 180, 252, 0.08);
+}
+.outbox-picker-check {
+  width:16px; height:16px; accent-color:var(--accent);
+  flex-shrink:0;
+}
+.outbox-picker-icon { font-size:1.1rem; flex-shrink:0; }
+.outbox-picker-info {
+  display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;
+}
+.outbox-picker-name {
+  font-size:.82rem; color:var(--text); font-family:var(--font-b); font-weight:600;
+}
+.outbox-picker-desc {
+  font-size:.68rem; color:var(--text-muted);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+.outbox-picker-label {
+  display:flex; flex-direction:column; gap:6px;
+  font-size:.72rem; font-family:var(--font-b);
+  color:var(--text-muted); letter-spacing:.04em;
+}
+.outbox-picker-when {
+  background:var(--bg); color:var(--text);
+  border:1px solid var(--border); border-radius:6px;
+  padding:8px 10px; font-size:.82rem;
+  font-family:var(--font-b);
+}
+.outbox-picker-when:focus { outline:none; border-color:var(--accent); }
+
+.outbox-picker-status {
+  display:flex; flex-direction:column; gap:6px;
+  font-size:.72rem;
+}
+.outbox-picker-ok  { color:#22c55e; }
+.outbox-picker-err { color:#ef4444; }
+
+.outbox-picker-actions {
+  display:flex; justify-content:flex-end; gap:8px;
+  padding:12px 18px;
+  border-top:1px solid var(--border);
+}
+
+/* Red alert badge variant used on the Outbox tab for pending drafts */
+.bp-tab-count--alert {
+  background:#f97316;
+  color:#09090b;
+  border-color:#f97316;
+}
+
+@media (max-width:640px) {
+  .outbox-picker-panel { width:96%; max-height:92vh; }
+  .outbox-picker-head, .outbox-picker-body, .outbox-picker-actions {
+    padding-left:14px; padding-right:14px;
+  }
+}
+
 /* List View */
 .outbox-feed { display:flex; flex-direction:column; gap:12px; }
 .outbox-card { border-radius:var(--radius, 10px); border:1px solid var(--border, #333); background:var(--bg-alt, #18181b); overflow:hidden; transition:border-color .15s; }

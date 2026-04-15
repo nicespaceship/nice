@@ -120,12 +120,18 @@ const BlueprintsView = (() => {
     // Render tabs into fixed container (outside scroll area)
     const fixedTabs = document.getElementById('app-fixed-tabs');
     if (fixedTabs) {
+      const draftCount = (typeof ContentQueue !== 'undefined' && ContentQueue.getCounts)
+        ? (ContentQueue.getCounts().draft || 0)
+        : 0;
+      const outboxBadge = draftCount > 0
+        ? ` <span class="bp-tab-count bp-tab-count--alert">${draftCount}</span>`
+        : '';
       fixedTabs.innerHTML = `
         <div class="bp-type-tabs" id="bp-type-tabs">
           <button class="bp-type-tab" data-tab="schematic">Schematic</button>
           <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
           <button class="bp-type-tab" data-tab="missions">Missions</button>
-          <button class="bp-type-tab" data-tab="outbox">Outbox</button>
+          <button class="bp-type-tab" data-tab="outbox">Outbox${outboxBadge}</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
           <span style="flex:1"></span>
@@ -1412,6 +1418,10 @@ const BlueprintsView = (() => {
             <button class="btn outbox-edit-btn">&#9998; Edit</button>
             <button class="btn outbox-reject-btn">&#10005; Reject</button>
           ` : ''}
+          ${status === 'approved' && (item.content_type === 'social') ? `
+            <button class="btn btn-primary outbox-publish-btn">&#x21AA; Publish</button>
+            <button class="btn outbox-schedule-btn">&#x23F1; Schedule</button>
+          ` : ''}
           ${status === 'approved' ? `<button class="btn outbox-edit-btn">&#9998; Edit</button>` : ''}
           <button class="btn outbox-copy-btn">Copy</button>
         </div>
@@ -1544,11 +1554,152 @@ const BlueprintsView = (() => {
       if (e.target.closest('.outbox-cancel-btn')) {
         _renderOutbox(el);
       }
+      if (e.target.closest('.outbox-publish-btn')) {
+        _showPlatformPicker(el, id, 'publish');
+      }
+      if (e.target.closest('.outbox-schedule-btn')) {
+        _showPlatformPicker(el, id, 'schedule');
+      }
     });
 
     // Export button
     el.querySelector('#outbox-export')?.addEventListener('click', () => {
       if (typeof ContentQueue !== 'undefined') ContentQueue.exportApproved();
+    });
+  }
+
+  /* ── Platform picker modal for Publish / Schedule ──
+     Opens a small dialog with a checkbox list of supported platforms
+     and, when mode === 'schedule', a datetime input. On submit it
+     calls ContentQueue.publishTo / scheduleTo which fan out to each
+     selected platform in turn and return per-platform results. */
+  function _showPlatformPicker(parentEl, itemId, mode) {
+    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
+    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
+    if (!CQ) return;
+
+    const platforms = CQ.getPlatforms();
+    const isSchedule = mode === 'schedule';
+    const title = isSchedule ? 'Schedule Post' : 'Publish Post';
+    const submitLabel = isSchedule ? 'Schedule' : 'Publish now';
+
+    // Default the schedule input to "one hour from now" in the user's
+    // local timezone, formatted for <input type="datetime-local">.
+    const defaultWhen = (() => {
+      const d = new Date(Date.now() + 60 * 60 * 1000);
+      const tz = d.getTimezoneOffset() * 60000;
+      return new Date(d - tz).toISOString().slice(0, 16);
+    })();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'outbox-picker-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', title);
+    overlay.innerHTML = `
+      <div class="outbox-picker-panel">
+        <div class="outbox-picker-head">
+          <h3 class="outbox-picker-title">${_e(title)}</h3>
+          <button class="btn btn-xs outbox-picker-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="outbox-picker-body">
+          <p class="outbox-picker-intro">Pick one or more platforms. Each selected destination gets its own publish call to the Social MCP.</p>
+          <div class="outbox-picker-list">
+            ${platforms.map(p => `
+              <label class="outbox-picker-row">
+                <input type="checkbox" class="outbox-picker-check" value="${_e(p.id)}" />
+                <span class="outbox-picker-icon">${_e(p.icon)}</span>
+                <span class="outbox-picker-info">
+                  <span class="outbox-picker-name">${_e(p.label)}</span>
+                  <span class="outbox-picker-desc">${_e(p.desc)}</span>
+                </span>
+              </label>
+            `).join('')}
+          </div>
+          ${isSchedule ? `
+            <label class="outbox-picker-label">
+              Schedule for
+              <input type="datetime-local" class="outbox-picker-when" value="${_e(defaultWhen)}" />
+            </label>
+          ` : ''}
+          <div class="outbox-picker-status" id="outbox-picker-status"></div>
+        </div>
+        <div class="outbox-picker-actions">
+          <button class="btn btn-sm outbox-picker-cancel">Cancel</button>
+          <button class="btn btn-sm btn-primary outbox-picker-submit" disabled>${_e(submitLabel)}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    const closeOverlay = () => {
+      overlay.remove();
+      document.body.style.overflow = '';
+    };
+
+    const submitBtn = overlay.querySelector('.outbox-picker-submit');
+    const statusEl  = overlay.querySelector('#outbox-picker-status');
+
+    const refreshSubmit = () => {
+      const any = overlay.querySelectorAll('.outbox-picker-check:checked').length > 0;
+      submitBtn.disabled = !any;
+    };
+
+    overlay.querySelectorAll('.outbox-picker-check').forEach(cb => {
+      cb.addEventListener('change', refreshSubmit);
+    });
+
+    overlay.querySelector('.outbox-picker-close')?.addEventListener('click', closeOverlay);
+    overlay.querySelector('.outbox-picker-cancel')?.addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+    document.addEventListener('keydown', function onKey(e) {
+      if (e.key === 'Escape') { closeOverlay(); document.removeEventListener('keydown', onKey); }
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      const selected = Array.from(overlay.querySelectorAll('.outbox-picker-check:checked')).map(c => c.value);
+      if (!selected.length) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = isSchedule ? 'Scheduling…' : 'Publishing…';
+      statusEl.innerHTML = '';
+
+      let results = [];
+      try {
+        if (isSchedule) {
+          const whenEl = overlay.querySelector('.outbox-picker-when');
+          const whenIso = whenEl && whenEl.value ? new Date(whenEl.value).toISOString() : null;
+          if (!whenIso) {
+            statusEl.innerHTML = '<span class="outbox-picker-err">Pick a schedule time.</span>';
+            submitBtn.disabled = false;
+            submitBtn.textContent = submitLabel;
+            return;
+          }
+          results = await CQ.scheduleTo(itemId, selected, whenIso);
+        } else {
+          results = await CQ.publishTo(itemId, selected);
+        }
+      } catch (err) {
+        results = selected.map(p => ({ platform: p, success: false, error: err && err.message || 'unknown error' }));
+      }
+
+      const ok = results.filter(r => r.success).map(r => r.platform);
+      const fail = results.filter(r => !r.success);
+
+      if (!fail.length) {
+        closeOverlay();
+        _renderOutbox(parentEl);
+      } else {
+        statusEl.innerHTML = `
+          ${ok.length ? `<div class="outbox-picker-ok">Succeeded on: ${ok.map(_e).join(', ')}</div>` : ''}
+          <div class="outbox-picker-err">Failed on: ${fail.map(f => _e(f.platform) + ' (' + _e(f.error || 'error') + ')').join('; ')}</div>
+        `;
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitLabel;
+        // Still refresh the outbox so any partial successes reflect
+        _renderOutbox(parentEl);
+      }
     });
   }
 
@@ -1579,6 +1730,10 @@ const BlueprintsView = (() => {
             <button class="btn outbox-approve-btn">&#10003; Approve</button>
             <button class="btn outbox-reject-btn">&#10005; Reject</button>
           ` : ''}
+          ${status === 'approved' && item.content_type === 'social' ? `
+            <button class="btn btn-primary outbox-publish-btn">&#x21AA; Publish</button>
+            <button class="btn outbox-schedule-btn">&#x23F1; Schedule</button>
+          ` : ''}
           <button class="btn outbox-copy-btn">Copy</button>
         </div>
       </div>
@@ -1601,6 +1756,14 @@ const BlueprintsView = (() => {
       }
       if (e.target.closest('.outbox-copy-btn')) {
         if (typeof ContentQueue !== 'undefined') await ContentQueue.copy(item.id);
+      }
+      if (e.target.closest('.outbox-publish-btn')) {
+        overlay.remove();
+        _showPlatformPicker(parentEl, item.id, 'publish');
+      }
+      if (e.target.closest('.outbox-schedule-btn')) {
+        overlay.remove();
+        _showPlatformPicker(parentEl, item.id, 'schedule');
       }
     });
 

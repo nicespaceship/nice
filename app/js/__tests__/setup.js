@@ -113,6 +113,7 @@ globalThis.State = (() => {
 loadScriptGlobal('lib/utils.js');
 loadScriptGlobal('lib/audit-log.js');
 loadScriptGlobal('lib/onboarding.js');  // Depends on AuditLog + State (both already available)
+loadScriptGlobal('lib/content-queue.js'); // Depends on Utils + State
 loadScriptGlobal('lib/notify.js');      // Before Gamification (Gamification calls Notify.send)
 loadScriptGlobal('lib/gamification.js');
 loadScriptGlobal('lib/data-io.js');
