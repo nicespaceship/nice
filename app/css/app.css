@@ -7108,6 +7108,191 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   Pricing rework: plan cards, dual-pool balances, addon upsells
+   Used by wallet.js, vault.js, and upgrade-modal.js (PR #2 rework).
+════════════════════════════════════════════════════════════ */
+
+/* ── Self-host banner (paywall disabled) ─────────────────── */
+.wallet-self-host-banner {
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.25);
+  border-radius: var(--radius, 10px);
+  padding: 12px 16px;
+  font-size: .8rem;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.wallet-self-host-banner code {
+  background: rgba(0,0,0,.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: .72rem;
+}
+
+/* ── Plan card grid (Free, Pro, Claude add-on, Premium add-on) */
+.wallet-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.wallet-plan-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.wallet-plan-card:hover { border-color: var(--border-hi, #71717a); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+.wallet-plan-current { border-color: var(--accent); box-shadow: 0 0 16px rgba(99,102,241,.1); }
+.wallet-addon-card { border-style: dashed; }
+
+.wallet-plan-icon { font-size: 1.6rem; line-height: 1; }
+.wallet-plan-name { font-family: var(--font-b, Inter, sans-serif); font-size: 1rem; font-weight: 600; }
+.wallet-plan-price { font-family: var(--font-b, Inter, sans-serif); font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+.wallet-plan-slots { font-family: var(--font-b, Inter, sans-serif); font-size: .75rem; color: var(--text-muted); }
+.wallet-plan-desc { font-family: var(--font-b, Inter, sans-serif); font-size: .78rem; color: var(--text-muted); line-height: 1.5; margin: 4px 0 8px 0; flex: 1; }
+.wallet-plan-card button { width: 100%; }
+
+/* ── Dual/triple pool balance cards ────────────────────────── */
+.wallet-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.wallet-balance-bar {
+  height: 8px;
+  background: rgba(255,255,255,.05);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.wallet-balance-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2, var(--accent)));
+  transition: width .3s;
+}
+
+/* ── Top-up packages — pool-tinted variants ────────────────── */
+.wallet-topup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.wallet-package--standard { /* default look */ }
+.wallet-package--claude { border-color: rgba(205,127,50,.4); }
+.wallet-package--claude .wallet-package-tokens { color: #cd7f32; }
+.wallet-package--premium { border-color: rgba(16,185,129,.4); }
+.wallet-package--premium .wallet-package-tokens { color: #10b981; }
+.wallet-package-desc { font-size: .72rem; color: var(--text-muted); margin: 4px 0 8px 0; text-align: center; }
+
+.wallet-locked-note {
+  font-size: .85rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--panel-bg);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius, 10px);
+}
+
+/* ── Vault pool gating ─────────────────────────────────────── */
+.vault-balance-sub {
+  display: block;
+  font-family: var(--font-b, Inter, sans-serif);
+  font-size: .65rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.vault-section-badge.tier-standard { background: rgba(99,102,241,.12); color: var(--accent); border: 1px solid rgba(99,102,241,.25); }
+.vault-section-badge.tier-claude   { background: rgba(205,127,50,.12); color: #cd7f32;     border: 1px solid rgba(205,127,50,.25); }
+.vault-section-badge.tier-premium  { background: rgba(16,185,129,.12); color: #10b981;     border: 1px solid rgba(16,185,129,.25); }
+.vault-section-badge.tier-locked   { background: rgba(255,255,255,.05); color: var(--text-muted); border: 1px dashed var(--border); }
+
+.vault-model-card.tier-standard.active { box-shadow: 0 0 12px rgba(99,102,241,.08); }
+.vault-model-card.tier-claude.active   { box-shadow: 0 0 12px rgba(205,127,50,.08); }
+.vault-model-card.tier-premium.active  { box-shadow: 0 0 12px rgba(16,185,129,.08); }
+
+.vault-model-locked {
+  opacity: .45 !important;
+  filter: grayscale(.5);
+  pointer-events: none;
+}
+
+.vault-upsell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,.03);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius, 10px);
+  margin-top: 12px;
+}
+.vault-upsell-icon { font-size: 1.2rem; }
+.vault-upsell-copy { flex: 1; font-size: .8rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
+
+/* ── Upgrade modal: Pro comparison table ───────────────────── */
+.upgrade-modal-pro {
+  max-width: 640px;
+}
+.upgrade-modal-tagline {
+  text-align: center;
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin: 0 0 1.5rem 0;
+}
+.upgrade-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+  margin-bottom: 1.5rem;
+}
+.upgrade-compare th, .upgrade-compare td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.upgrade-compare thead th {
+  font-family: var(--font-b, Inter, sans-serif);
+  font-weight: 600;
+  font-size: .9rem;
+  border-bottom: 2px solid var(--border);
+}
+.upgrade-compare tbody th {
+  font-family: var(--font-b, Inter, sans-serif);
+  font-weight: 500;
+  color: var(--text-muted);
+  width: 30%;
+}
+.upgrade-compare-pro {
+  background: rgba(99,102,241,.04);
+  color: var(--accent);
+}
+.upgrade-compare td small { color: var(--text-muted); }
+.upgrade-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+  .wallet-plan-grid, .wallet-balance-grid { grid-template-columns: 1fr; }
+  .wallet-topup-grid { grid-template-columns: 1fr 1fr; }
+  .upgrade-compare { font-size: .72rem; }
+  .upgrade-compare th, .upgrade-compare td { padding: 6px 8px; }
+  .upgrade-compare tbody th { width: 35%; }
+}
+@media (max-width: 480px) {
+  .wallet-topup-grid { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════
    Blueprint Detail Drawer, Card Flip, Compare, Hangar
 ════════════════════════════════════════════════════════════ */
 
