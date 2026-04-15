@@ -49,17 +49,45 @@ function pascalCase(str) {
   return str.replace(/(^|_)(\w)/g, (_, __, c) => c.toUpperCase());
 }
 
+function parseColumn(trimmed) {
+  const colRe = /^\s*(\w+)\s+(\w+(?:\([^)]*\))?(?:\s*\[\])?)/;
+  const colMatch = trimmed.match(colRe);
+  if (!colMatch) return null;
+
+  const colName = colMatch[1];
+  const colType = colMatch[2];
+  if (['PRIMARY', 'FOREIGN', 'UNIQUE', 'CHECK', 'CONSTRAINT', 'INDEX'].includes(colName.toUpperCase())) return null;
+
+  const isArray = /\[\]/.test(colType);
+  const baseType = colType.replace(/\[\]/, '').trim();
+  const tsBase = sqlTypeToTs(baseType);
+  const tsType = isArray ? `${tsBase}[]` : tsBase;
+
+  const isNullable = !/NOT\s+NULL/i.test(trimmed) && !/PRIMARY\s+KEY/i.test(trimmed);
+  const hasDefault = /DEFAULT/i.test(trimmed);
+
+  return {
+    name: colName,
+    type: tsType,
+    nullable: isNullable,
+    optional: hasDefault || isNullable,
+  };
+}
+
 function parseMigrations() {
   const files = fs.readdirSync(MIGRATIONS_DIR)
     .filter(f => f.endsWith('.sql'))
     .sort();
 
-  const tables = [];
+  const tablesByName = new Map();
   const tableRe = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s*\(([\s\S]*?)\);/gi;
-  const colRe = /^\s*(\w+)\s+(\w+(?:\([^)]*\))?)/;
+  // ALTER TABLE foo ADD COLUMN [IF NOT EXISTS] bar <type> …;
+  const alterRe = /ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?([\s\S]*?);/gi;
 
   for (const file of files) {
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf-8');
+
+    // Pass 1: CREATE TABLE
     let match;
     while ((match = tableRe.exec(sql)) !== null) {
       const tableName = match[1];
@@ -68,36 +96,42 @@ function parseMigrations() {
 
       for (const line of body.split('\n')) {
         const trimmed = line.trim();
-        // Skip constraints, comments, empty lines
         if (!trimmed || /^(--|PRIMARY|FOREIGN|UNIQUE|CHECK|CONSTRAINT|ALTER|ENABLE)/i.test(trimmed)) continue;
-
-        const colMatch = trimmed.match(colRe);
-        if (colMatch) {
-          const colName = colMatch[1];
-          const colType = colMatch[2];
-          // Skip SQL keywords used as pseudo-columns
-          if (['PRIMARY', 'FOREIGN', 'UNIQUE', 'CHECK', 'CONSTRAINT', 'INDEX'].includes(colName.toUpperCase())) continue;
-
-          const isNullable = !/NOT\s+NULL/i.test(trimmed) && !/PRIMARY\s+KEY/i.test(trimmed);
-          const hasDefault = /DEFAULT/i.test(trimmed);
-          const tsType = sqlTypeToTs(colType);
-
-          columns.push({
-            name: colName,
-            type: tsType,
-            nullable: isNullable,
-            optional: hasDefault || isNullable,
-          });
-        }
+        const col = parseColumn(trimmed);
+        if (col) columns.push(col);
       }
 
       if (columns.length) {
-        tables.push({ name: tableName, interfaceName: pascalCase(tableName), columns });
+        const existing = tablesByName.get(tableName);
+        if (existing) {
+          // Merge: prefer latest CREATE TABLE shape but keep any previously
+          // appended ALTER columns that aren't already defined.
+          const names = new Set(columns.map(c => c.name));
+          for (const c of existing.columns) if (!names.has(c.name)) columns.push(c);
+        }
+        tablesByName.set(tableName, {
+          name: tableName,
+          interfaceName: pascalCase(tableName),
+          columns,
+        });
       }
+    }
+
+    // Pass 2: ALTER TABLE ADD COLUMN — appends onto any table already seen
+    let alter;
+    while ((alter = alterRe.exec(sql)) !== null) {
+      const tableName = alter[1];
+      const body = alter[2].trim();
+      const col = parseColumn(body);
+      if (!col) continue;
+      const existing = tablesByName.get(tableName);
+      if (!existing) continue; // skip columns for tables we haven't modeled
+      if (existing.columns.some(c => c.name === col.name)) continue;
+      existing.columns.push(col);
     }
   }
 
-  return tables;
+  return Array.from(tablesByName.values());
 }
 
 function generateDts(tables) {
