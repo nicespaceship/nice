@@ -1,6 +1,14 @@
 # Proprietary edge functions (deployed via supabase CLI, not public)
 supabase/functions/
 
+# Local Supabase CLI state (keep config.toml and migrations/, ignore everything else)
+supabase/.branches/
+supabase/.temp/
+supabase/.env.local
+
+# Claude Code local state (plans, skills, worktrees, launch config)
+.claude/
+
 # Logs
 *.log
 !logs/
