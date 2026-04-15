@@ -3408,6 +3408,12 @@
   font-size:.75rem; color:var(--color-error); margin:0 0 .75rem;
   text-align:left; line-height:1.4;
 }
+.bp-confirm-switch {
+  display:block; width:100%; background:none; border:none; padding:0 0 .75rem;
+  color:var(--text-muted); font-family:var(--font-b); font-size:.72rem;
+  text-decoration:underline; cursor:pointer; text-align:center;
+}
+.bp-confirm-switch:hover { color:var(--accent); }
 .bp-confirm-actions { display:flex; gap:8px; justify-content:center; }
 .bp-confirm-actions button { padding:8px 20px; border-radius:var(--radius, 6px); font-size:.82rem; cursor:pointer; border:1px solid var(--border); }
 .bp-confirm-actions button[disabled] { opacity:.6; cursor:wait; }

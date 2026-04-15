@@ -2862,27 +2862,40 @@ const BlueprintsView = (() => {
      their password (verified via signInWithPassword). OAuth users — who have
      no password to check — must type the blueprint name instead. Signed-out
      users fall through to a plain yes/no since there's no DB write to gate.
+
+     Detection uses user.identities[].provider as the primary source: if any
+     identity has provider === 'email' the user has a password, otherwise
+     they're OAuth-only. app_metadata.provider is a fallback for shapes where
+     identities isn't populated. On any ambiguity we default to TYPED mode —
+     better to ask for a name match than lock the user out of their own data.
+
+     Every mode also surfaces a "Use blueprint name instead" escape hatch so
+     even if detection is wrong, nobody gets stuck.
   ─────────────────────────────────────────────────────────────────── */
+  function _detectAuthMode(user) {
+    if (!user) return { mode: 'simple', provider: null };
+    // Primary signal: identities array (most reliable for OAuth vs email)
+    if (Array.isArray(user.identities) && user.identities.length) {
+      const hasEmail = user.identities.some(i => i?.provider === 'email');
+      if (hasEmail) return { mode: 'password', provider: 'email' };
+      const first = user.identities.find(i => i?.provider)?.provider || 'oauth';
+      return { mode: 'typed', provider: first };
+    }
+    // Fallback: app_metadata
+    const amp = user.app_metadata?.provider
+      || user.app_metadata?.providers?.[0]
+      || null;
+    if (amp === 'email') return { mode: 'password', provider: 'email' };
+    if (amp) return { mode: 'typed', provider: amp };
+    // Unknown — default to typed. Locking a user out is worse than asking
+    // them to type a name.
+    return { mode: 'typed', provider: 'single sign-on' };
+  }
+
   function confirmDeactivate(name, onConfirm) {
     const user = typeof State !== 'undefined' ? State.get('user') : null;
-    const provider = user?.app_metadata?.provider
-      || user?.app_metadata?.providers?.[0]
-      || null;
-    // mode: 'simple' (no user) | 'password' (email auth) | 'typed' (oauth)
-    const mode = !user ? 'simple' : (provider === 'email' || !provider ? 'password' : 'typed');
+    let { mode, provider } = _detectAuthMode(user);
     const safeName = _esc(name);
-
-    const challengeHTML = mode === 'password'
-      ? `<input type="password" class="bp-confirm-input" placeholder="Enter your password" autocomplete="current-password" />`
-      : mode === 'typed'
-        ? `<input type="text" class="bp-confirm-input" placeholder="Type blueprint name to confirm" autocomplete="off" spellcheck="false" />`
-        : '';
-    const helperHTML = mode === 'typed'
-      ? `<p class="bp-confirm-helper">Your account uses ${_esc(provider || 'single sign-on')}. Type <span class="bp-confirm-name">${safeName}</span> to confirm.</p>`
-      : '';
-    const errorHTML = mode !== 'simple'
-      ? `<p class="bp-confirm-error" hidden></p>`
-      : '';
 
     const overlay = document.createElement('div');
     overlay.className = 'bp-confirm-overlay';
@@ -2891,9 +2904,10 @@ const BlueprintsView = (() => {
         <h3>Remove Blueprint</h3>
         <p>Are you sure you want to remove <span class="bp-confirm-name">${safeName}</span>?</p>
         <p class="bp-confirm-warning">This will permanently remove it from your roster and delete its crew. You can add it back anytime from the Blueprints.</p>
-        ${helperHTML}
-        ${challengeHTML}
-        ${errorHTML}
+        <p class="bp-confirm-helper" data-role="helper" hidden></p>
+        <input data-role="input" class="bp-confirm-input" hidden />
+        <button type="button" class="bp-confirm-switch" data-role="switch" hidden></button>
+        <p class="bp-confirm-error" data-role="error" hidden></p>
         <div class="bp-confirm-actions">
           <button class="bp-confirm-cancel">Cancel</button>
           <button class="bp-confirm-submit">Remove</button>
@@ -2903,22 +2917,47 @@ const BlueprintsView = (() => {
 
     const submitBtn = overlay.querySelector('.bp-confirm-submit');
     const cancelBtn = overlay.querySelector('.bp-confirm-cancel');
-    const input = overlay.querySelector('.bp-confirm-input');
-    const errEl = overlay.querySelector('.bp-confirm-error');
-
-    if (input) setTimeout(() => input.focus(), 50);
+    const input     = overlay.querySelector('[data-role="input"]');
+    const helper    = overlay.querySelector('[data-role="helper"]');
+    const errEl     = overlay.querySelector('[data-role="error"]');
+    const switchBtn = overlay.querySelector('[data-role="switch"]');
 
     const close = () => overlay.remove();
-    const showError = (msg) => {
-      if (!errEl) return;
-      errEl.textContent = msg;
-      errEl.hidden = false;
+    const showError = (msg) => { if (errEl) { errEl.textContent = msg; errEl.hidden = false; } };
+    const clearError = () => { if (errEl) { errEl.hidden = true; errEl.textContent = ''; } };
+
+    const applyMode = () => {
+      clearError();
+      if (mode === 'simple') {
+        input.hidden = true;
+        helper.hidden = true;
+        switchBtn.hidden = true;
+        return;
+      }
+      if (mode === 'password') {
+        input.hidden = false;
+        input.type = 'password';
+        input.value = '';
+        input.placeholder = 'Enter your password';
+        input.setAttribute('autocomplete', 'current-password');
+        helper.hidden = true;
+        switchBtn.hidden = false;
+        switchBtn.textContent = "Don't have a password? Type blueprint name instead";
+      } else { // typed
+        input.hidden = false;
+        input.type = 'text';
+        input.value = '';
+        input.placeholder = 'Type blueprint name to confirm';
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('spellcheck', 'false');
+        helper.hidden = false;
+        helper.innerHTML = `Your account uses ${_esc(provider || 'single sign-on')}. Type <span class="bp-confirm-name">${safeName}</span> to confirm.`;
+        switchBtn.hidden = true;
+      }
+      setTimeout(() => input.focus(), 50);
     };
-    const clearError = () => {
-      if (!errEl) return;
-      errEl.hidden = true;
-      errEl.textContent = '';
-    };
+
+    applyMode();
 
     const doSubmit = async () => {
       clearError();
@@ -2945,7 +2984,7 @@ const BlueprintsView = (() => {
         } catch {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Remove';
-          showError('Incorrect password.');
+          showError('Incorrect password. Click the link below if this isn’t your account.');
           if (input) { input.value = ''; input.focus(); }
         }
         return;
@@ -2961,6 +3000,11 @@ const BlueprintsView = (() => {
       onConfirm();
     };
 
+    switchBtn.addEventListener('click', () => {
+      mode = 'typed';
+      provider = provider || 'sign-in';
+      applyMode();
+    });
     cancelBtn.addEventListener('click', close);
     submitBtn.addEventListener('click', doSubmit);
     input?.addEventListener('keydown', (e) => {
