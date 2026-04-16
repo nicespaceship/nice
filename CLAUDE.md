@@ -29,7 +29,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
 - Region: `us-west-1`
-- 924 blueprints (687 agents + 237 spaceships)
+- 924 catalog blueprints (687 agents + 237 spaceships) + 8 community blueprints = 932 total, partitioned via the `scope` column
 
 ### Edge Functions (11)
 | Function | Purpose |
@@ -49,7 +49,9 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ### Database Tables
 | Table | Purpose |
 |-------|---------|
-| `blueprints` | Agent + spaceship blueprint catalog (924 seeded) |
+| `blueprints` | Agent + spaceship blueprints. `scope='catalog'` = seeded library (924), `scope='community'` = user-published/marketplace content |
+| `marketplace_listings` | Community blueprint listings — pointers at `blueprints` rows with ratings/downloads/publish state |
+| `marketplace_reviews` | Per-user ratings + comments on marketplace listings |
 | `shared_blueprints` | Blueprint sharing via links (8-char codes, 30-day expiry) |
 | `profiles` | Public user profile data (extends auth.users) |
 | `user_agents` | Activated agent instances per user |
@@ -62,8 +64,6 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 | `token_balances` | Per-user token balance (free tier + purchased) |
 | `token_transactions` | Purchase/usage transaction log |
 | `workflow_runs` | Workflow execution history |
-| `blueprint_ratings` | Community blueprint ratings |
-| `blueprint_submissions` | Community-submitted blueprints |
 | `notifications` | System notifications |
 | `error_log` | Client-side error reporting |
 | `vault_secrets` | Encrypted credential storage |
@@ -100,7 +100,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 │   └── js/
 │       ├── nice.js         # Main orchestrator (init, auth, routing, error handling)
 │       ├── lib/            # 52 shared IIFE modules
-│       ├── views/          # 28 view modules
+│       ├── views/          # 27 view modules
 │       └── __tests__/      # 29 Vitest test files (575 tests)
 ├── supabase/
 │   └── migrations/         # DB migrations (edge function source is proprietary, not in repo)
@@ -215,13 +215,12 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
 | `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
 
-### View Modules (`app/js/views/`) — 28 views
+### View Modules (`app/js/views/`) — 27 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
-| `BlueprintsView` | `blueprints.js` | `#/bridge` | Bridge |
-| `MarketplaceView` | `marketplace.js` | `#/marketplace` | Community Marketplace |
-| `DocsView` | `docs.js` | `#/docs` | Documentation |
+| `BlueprintsView` | `blueprints.js` | `#/bridge` | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log / Documentation / TRON; Blueprints sub-tabs: Spaceships / Agents — community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community) |
+| `DocsView` | `docs.js` | `#/bridge?tab=documentation` (legacy `#/docs` redirects) | Documentation |
 | `TronView` | `tron.js` | `#/tron` | Tron |
 | `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
 | `AgentBuilderView` | `agent-builder.js` | `#/bridge/agents/new` | Agent Builder |

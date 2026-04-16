@@ -1575,9 +1575,14 @@ const NICE = (() => {
     Router.on('/workflows/:id', WorkflowDetailView);
     if (typeof ShipLogView !== 'undefined') Router.on('/ship-log', ShipLogView);
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
-    if (typeof DocsView !== 'undefined') Router.on('/docs', DocsView);
+    // Legacy #/docs route → redirect into Bridge's Documentation tab
+    Router.on('/docs', { render: () => { location.hash = '#/bridge?tab=documentation'; }, title: 'Documentation' });
     if (typeof EngineeringView !== 'undefined') Router.on('/engineering', EngineeringView);
-    if (typeof MarketplaceView !== 'undefined') Router.on('/marketplace', MarketplaceView);
+    // Legacy #/marketplace route → unified Blueprints browse, Community-filtered.
+    // Marketplace is no longer a separate surface — community blueprints live
+    // alongside the seeded catalog in the Agents sub-tab, discriminated by a
+    // COMMUNITY badge and filterable via the Source pill.
+    Router.on('/marketplace', { render: () => { location.hash = '#/bridge?tab=agent&source=community'; }, title: 'Community Blueprints' });
   }
 
   /* ── Modal helpers ── */

@@ -22,7 +22,7 @@ const BlueprintsView = (() => {
 
   const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
-  /* ── Ship blueprint lookup (SEED + BlueprintStore for community ships) ── */
+  /* ── Ship blueprint lookup (via BlueprintStore catalog) ── */
   function _findShipBp(id) {
     // SPACESHIP_SEED is defined later but this function is only called at runtime
     const seed = typeof SPACESHIP_SEED !== 'undefined' ? SPACESHIP_SEED : [];
@@ -87,6 +87,10 @@ const BlueprintsView = (() => {
 
   let _activeTab = 'schematic';
   let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship' or 'agent'
+  // Source filter: 'all' mixes catalog + community blueprints; 'official'
+  // narrows to the seeded NICE library; 'community' narrows to user-
+  // published content. Replaces the old standalone Marketplace sub-tab.
+  let _sourceFilter = 'all';
   const _mobileDefault = window.innerWidth <= 768 ? 'compact' : 'card';
   let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || _mobileDefault;
   if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _mobileDefault;
@@ -96,6 +100,11 @@ const BlueprintsView = (() => {
   let _currentPage = 1;
   let _totalResults = 0;
   let _isLoading = false;
+  // Monotonic sequence for overlapping _applyFilters calls. Each call
+  // captures its seq at entry and checks it against _applySeq after each
+  // await — if another call has started in the meantime, the older one
+  // aborts silently instead of overwriting the grid with stale results.
+  let _applySeq = 0;
   let _currentResults = [];
   const _PAGE_SIZE = 24;
   let _searchTimer = null;
@@ -117,6 +126,27 @@ const BlueprintsView = (() => {
     const embedded = opts && opts.embedded;
     const user = State.get('user');
 
+    // Parse URL state BEFORE the first innerHTML assignment so the template
+    // renders with the correct initial `_sourceFilter` / `_subTab` / etc.
+    // Otherwise the filter pills start on their defaults and get silently
+    // out-of-sync with the actual data fetch driven by _sourceFilter.
+    {
+      const _hash = (window.location.hash || '').split('?')[0];
+      const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
+      const _tabParam = _hashParams.get('tab');
+      const _sourceParam = _hashParams.get('source');
+      const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log', 'documentation', 'tron'];
+      if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
+      else if (_tabParam === 'spaceship' || _tabParam === 'agent') { _activeTab = 'blueprints'; _subTab = _tabParam; }
+      else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
+      else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
+      else if (_hash === '#/log') _activeTab = 'missions';
+      else _activeTab = 'schematic';
+      if (_sourceParam === 'official' || _sourceParam === 'community' || _sourceParam === 'all') {
+        _sourceFilter = _sourceParam;
+      }
+    }
+
     // Render tabs into fixed container (outside scroll area)
     const fixedTabs = document.getElementById('app-fixed-tabs');
     if (fixedTabs) {
@@ -134,6 +164,7 @@ const BlueprintsView = (() => {
           <button class="bp-type-tab" data-tab="outbox">Outbox${outboxBadge}</button>
           <button class="bp-type-tab" data-tab="operations">Operations</button>
           <button class="bp-type-tab" data-tab="log">Log</button>
+          <button class="bp-type-tab" data-tab="documentation">Documentation</button>
           <span style="flex:1"></span>
           <button class="bp-type-tab bp-tab-tron" data-tab="tron">TRON</button>
         </div>`;
@@ -146,7 +177,6 @@ const BlueprintsView = (() => {
         <div class="bp-sub-tabs" id="bp-sub-tabs">
           <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="community">Forge <span class="bp-tab-count">0</span></button>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -179,6 +209,11 @@ const BlueprintsView = (() => {
             <option value="free">Free</option>
             <option value="premium">Premium</option>
           </select>
+          <div class="bp-source-filter" id="bp-source-filter" role="group" aria-label="Filter by source">
+            <button class="bp-source-btn${_sourceFilter==='all'?' active':''}"       data-source="all"       aria-pressed="${_sourceFilter==='all'}">All</button>
+            <button class="bp-source-btn${_sourceFilter==='official'?' active':''}"  data-source="official"  aria-pressed="${_sourceFilter==='official'}">Official</button>
+            <button class="bp-source-btn${_sourceFilter==='community'?' active':''}" data-source="community" aria-pressed="${_sourceFilter==='community'}">Community</button>
+          </div>
           <div class="bp-rarity-filters" id="bp-rarity-filters" role="group" aria-label="Filter by rarity">
             <button class="bp-rarity-btn active" data-rarity="all" aria-pressed="true">All</button>
             <button class="bp-rarity-btn" data-rarity="Common" aria-pressed="false">Common</button>
@@ -217,18 +252,6 @@ const BlueprintsView = (() => {
 
     `;
 
-    // Detect active tab from hash route or query param
-    const _hash = (window.location.hash || '').split('?')[0];
-    const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
-    const _tabParam = _hashParams.get('tab');
-    const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'log', 'tron'];
-    if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-    else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'community') { _activeTab = 'blueprints'; _subTab = _tabParam; }
-    else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
-    else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
-    else if (_hash === '#/log') _activeTab = 'missions';
-    else _activeTab = 'schematic';
-
     // Highlight the correct tab + sub-tab buttons
     document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`.bp-type-tab[data-tab="${_activeTab}"]`)?.classList.add('active');
@@ -240,7 +263,6 @@ const BlueprintsView = (() => {
 
     _bindEvents();
     if (_activeTab === 'blueprints') _applyFilters(); // async — renders activated section + paginated grid
-    _loadCommunityBlueprints();
     _handleDeepLink();
   }
 
@@ -302,7 +324,8 @@ const BlueprintsView = (() => {
         deployBtn = `<button class="c-btn bp-deploy-ship-btn" data-id="${bp.id}">Deploy</button>`;
       }
       const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'bp-card-clickable' });
-      return `<div class="bp-card-wrap">${rendered}<div class="bp-card-buttons">${deployBtn}</div></div>`;
+      const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">COMMUNITY</span>' : '';
+      return `<div class="bp-card-wrap">${scopeBadge}${rendered}<div class="bp-card-buttons">${deployBtn}</div></div>`;
     }
 
     // ── Agent Blueprint Card ──
@@ -320,9 +343,8 @@ const BlueprintsView = (() => {
     }
 
     const rendered = CR.render('agent', 'full', bp, { clickClass: 'bp-card-clickable' });
-    const communityBadge = bp._community ? '<span class="bp-community-badge">Forge</span>' : '';
-    const userBadge = bp._community && bp._creator_id === (State.get('user')?.id) ? '<span class="bp-yours-badge">Yours</span>' : '';
-    return `<div class="bp-card-wrap">${rendered}${communityBadge}${userBadge}${connectBtn ? `<div class="bp-card-buttons">${connectBtn}</div>` : ''}</div>`;
+    const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">COMMUNITY</span>' : '';
+    return `<div class="bp-card-wrap">${scopeBadge}${rendered}${connectBtn ? `<div class="bp-card-buttons">${connectBtn}</div>` : ''}</div>`;
   }
 
   /* ── List-row renderer (horizontal row with key info) ── */
@@ -393,27 +415,15 @@ const BlueprintsView = (() => {
 
     if (!blueprints.length) {
       grid.className = 'tcg-grid bp-view-empty';
-      if (_subTab === 'community') {
-        grid.innerHTML = `
-          <div class="app-empty">
-            <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <h2>The Forge is Empty</h2>
-            <p>Be the first to share! Publish one of your agents to the Forge.</p>
-            <div class="app-empty-acts">
-              <a href="#/bridge?tab=agent" class="btn btn-sm btn-primary">Browse Your Agents</a>
-            </div>
-          </div>`;
-      } else {
-        grid.innerHTML = `
-          <div class="app-empty">
-            <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <h2>No Blueprints Found</h2>
-            <p>Try adjusting your filters or search terms.</p>
-            <div class="app-empty-acts">
-              <button class="btn btn-sm bp-empty-clear">Clear Filters</button>
-            </div>
-          </div>`;
-      }
+      grid.innerHTML = `
+        <div class="app-empty">
+          <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <h2>No Blueprints Found</h2>
+          <p>Try adjusting your filters or search terms.</p>
+          <div class="app-empty-acts">
+            <button class="btn btn-sm bp-empty-clear">Clear Filters</button>
+          </div>
+        </div>`;
       grid.querySelector('.bp-empty-clear')?.addEventListener('click', () => {
         const searchEl = document.getElementById('bp-search');
         if (searchEl) searchEl.value = '';
@@ -618,15 +628,6 @@ const BlueprintsView = (() => {
     for (let i = 0; i < full; i++) s += '<span class="bp-star filled">★</span>';
     if (half) s += '<span class="bp-star half">★</span>';
     for (let i = full + (half ? 1 : 0); i < 5; i++) s += '<span class="bp-star">★</span>';
-    return s;
-  }
-
-  function _renderInteractiveStars(avgRating, userRating, submissionId) {
-    let s = '';
-    for (let i = 1; i <= 5; i++) {
-      const cls = i <= userRating ? 'user-rated' : i <= Math.round(avgRating) ? 'filled' : '';
-      s += `<span class="bp-star bp-star-interactive ${cls}" data-rating="${i}" data-submission="${_esc(submissionId)}">★</span>`;
-    }
     return s;
   }
 
@@ -847,7 +848,13 @@ const BlueprintsView = (() => {
   }
 
   async function _applyFilters(append) {
-    if (_isLoading) return;
+    // Bump the epoch — any concurrent _applyFilters call will see a newer
+    // seq and abort its render. We intentionally do NOT short-circuit on
+    // _isLoading: a newer call should supersede an older one, not be
+    // dropped by it (which used to leave stale results on screen when
+    // the user rapid-fired filter changes).
+    const mySeq = ++_applySeq;
+    const isCurrent = () => mySeq === _applySeq;
 
     // Reset pagination when not appending
     if (!append) {
@@ -868,40 +875,6 @@ const BlueprintsView = (() => {
     _isLoading = true;
     _showLoadingState(append);
 
-    // Community sub-tab: separate data source
-    if (_subTab === 'community') {
-      try {
-        const all = await BlueprintStore.listCommunityBlueprints();
-        _communityBlueprints = all;
-        let filtered = all;
-        if (q) {
-          const tokens = q.toLowerCase().split(/\s+/);
-          filtered = all.filter(b => {
-            const hay = ((b.name || '') + ' ' + (b.description || '') + ' ' + (b.tags || []).join(' ')).toLowerCase();
-            return tokens.every(t => hay.includes(t));
-          });
-        }
-        if (category) filtered = filtered.filter(b => (b.category || '').toLowerCase() === category.toLowerCase());
-        if (rarity !== 'all') filtered = filtered.filter(b => (b.rarity || 'Common') === rarity);
-        if (sort === 'rating') filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        else if (sort === 'popular') filtered.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
-        _currentResults = filtered;
-        _totalResults = filtered.length;
-        const badge = document.querySelector('.bp-sub-tab[data-sub="community"] .bp-tab-count');
-        if (badge) badge.textContent = all.length;
-        _renderGrid(_currentResults);
-        _renderLoadMore();
-        _updateResultBar(q, rarity);
-      } catch (err) {
-        console.warn('[Blueprints] Community load failed:', err);
-        _currentResults = [];
-        _renderGrid([]);
-      } finally {
-        _isLoading = false;
-      }
-      return;
-    }
-
     try {
       const result = await BlueprintStore.searchCatalog({
         type: _subTab === 'spaceship' ? 'spaceship' : 'agent',
@@ -911,7 +884,10 @@ const BlueprintsView = (() => {
         sort: sort,
         page: _currentPage,
         perPage: _PAGE_SIZE,
+        scope: _sourceFilter,
       });
+
+      if (!isCurrent()) return; // a newer call took over
 
       if (append) {
         _currentResults = _currentResults.concat(result.results);
@@ -938,10 +914,11 @@ const BlueprintsView = (() => {
       _renderLoadMore();
 
     } catch (err) {
+      if (!isCurrent()) return;
       console.warn('[Blueprints] Search failed, falling back to local:', err);
       _applyFiltersLocal();
     } finally {
-      _isLoading = false;
+      if (isCurrent()) _isLoading = false;
     }
   }
 
@@ -1141,7 +1118,7 @@ const BlueprintsView = (() => {
     const loadMore = document.getElementById('bp-load-more');
 
     const subTabs = document.getElementById('bp-sub-tabs');
-    const isLogTab = ['missions', 'outbox', 'operations', 'log', 'tron'].includes(_activeTab);
+    const isLogTab = ['missions', 'outbox', 'operations', 'log', 'documentation', 'tron'].includes(_activeTab);
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
@@ -1187,6 +1164,8 @@ const BlueprintsView = (() => {
       AnalyticsView.render(el);
     } else if (_activeTab === 'log' && typeof AuditLogView !== 'undefined') {
       AuditLogView.render(el);
+    } else if (_activeTab === 'documentation' && typeof DocsView !== 'undefined') {
+      DocsView.render(el);
     } else if (_activeTab === 'tron' && typeof TronView !== 'undefined') {
       TronView.render(el);
     } else {
@@ -1831,6 +1810,26 @@ const BlueprintsView = (() => {
       _applyFilters();
     });
 
+    document.getElementById('bp-source-filter')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.bp-source-btn');
+      if (!btn) return;
+      _sourceFilter = btn.dataset.source;
+      document.querySelectorAll('.bp-source-btn').forEach(b => {
+        const on = b.dataset.source === _sourceFilter;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      // Reflect in the URL so the filter is shareable / survives reloads
+      const base = (location.hash || '').split('?')[0] || '#/bridge';
+      const params = new URLSearchParams((location.hash || '').split('?')[1] || '');
+      if (_sourceFilter === 'all') params.delete('source');
+      else params.set('source', _sourceFilter);
+      if (!params.has('tab')) params.set('tab', _subTab);
+      const qs = params.toString();
+      history.replaceState(null, '', base + (qs ? '?' + qs : ''));
+      _applyFilters();
+    });
+
     // Search Blueprints button — switches to Blueprints tab and focuses search
     document.getElementById('btn-bp-search-focus')?.addEventListener('click', () => {
       const bpTab = document.querySelector('[data-tab="blueprints"]');
@@ -1949,6 +1948,15 @@ const BlueprintsView = (() => {
 
   function _findBp(bpId) {
     const BS = typeof BlueprintStore !== 'undefined' ? BlueprintStore : null;
+    // Community blueprints that came back in _currentResults carry their
+    // joined `listing` sidecar — prefer that row so the drawer has the
+    // listing_id for install/rate actions. Falls through to catalog
+    // lookups for rows not in the current result set.
+    const cr = _currentResults.find(b => b.id === bpId);
+    if (cr) {
+      if ((cr.type || 'agent') === 'spaceship') return { bp: cr, type: 'spaceship' };
+      return { bp: cr, type: 'agent' };
+    }
     const a = SEED.find(b => b.id === bpId) || _remoteBlueprints.find(b => b.id === bpId)
       || (BS && BS.getAgent(bpId));
     if (a) return { bp: a, type: 'agent' };
@@ -1966,9 +1974,6 @@ const BlueprintsView = (() => {
     const stateAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
     const ua = stateAgents.find(b => b.id === bpId);
     if (ua) return { bp: ua, type: 'agent' };
-    // Community blueprints
-    const comm = _communityBlueprints.find(b => b.id === bpId);
-    if (comm) return { bp: comm, type: 'community' };
     return null;
   }
 
@@ -2008,16 +2013,6 @@ const BlueprintsView = (() => {
 
     drawer.innerHTML = _renderDrawerContent(bp, type);
     _bindDrawerActions(bp, type);
-
-    // Async: load user's existing rating for community blueprints
-    if (bp._community && bp._submission_id && typeof BlueprintStore !== 'undefined') {
-      BlueprintStore.getUserRating(bp._submission_id).then(userRating => {
-        if (userRating > 0) {
-          const container = document.getElementById('bp-drawer-stars');
-          if (container) container.innerHTML = _renderInteractiveStars(bp.rating || 0, userRating, bp._submission_id);
-        }
-      }).catch(() => {});
-    }
 
     requestAnimationFrame(() => {
       drawer.classList.add('open');
@@ -2078,12 +2073,8 @@ const BlueprintsView = (() => {
 
     // Social row
     const connCount = _connCount(bp);
-    const isCommunity = bp._community && bp._submission_id;
-    const ratingHTML = isCommunity
-      ? _renderInteractiveStars(bp.rating || 0, 0, bp._submission_id)
-      : _renderStars(bp.rating || 0);
     const socialHTML = `<div class="bp-drawer-social">
-      <span class="bp-stars" id="bp-drawer-stars">${ratingHTML}</span>
+      <span class="bp-stars" id="bp-drawer-stars">${_renderStars(bp.rating || 0)}</span>
       <span style="opacity:.6;font-size:.75rem">${_formatNum(bp.downloads || connCount)} installs</span>
     </div>`;
 
@@ -2185,18 +2176,18 @@ const BlueprintsView = (() => {
 
   function _renderDrawerActions(bp, type) {
     const btns = [];
+    const isCommunity = bp && bp.scope === 'community';
+    const listingId = bp && bp.listing && bp.listing.id;
     if (type === 'agent') {
       if (BlueprintStore.isAgentActivated(bp.id)) {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="agent">Message ${_esc(bp.name)}</button>`);
+      } else if (isCommunity) {
+        // Community agents use "Install" wording — same underlying
+        // activation flow (rarity gate + persistence) via BlueprintStore,
+        // plus the listing download counter bump for discovery stats.
+        btns.push(`<button class="btn btn-primary btn-sm bp-drawer-mp-install" data-id="${bp.id}" data-listing="${_esc(listingId || '')}">Install</button>`);
       }
       btns.push(`<button class="btn btn-sm bp-drawer-nav" data-route="#/agents/${encodeURIComponent(bp.id)}">View Agent &rarr;</button>`);
-      // Publish to community (for user-created agents)
-      const userAgents = State.get('agents') || [];
-      if (userAgents.find(a => a.id === bp.id)) {
-        btns.push(`<button class="btn btn-sm bp-drawer-publish" data-id="${bp.id}">Publish to Forge</button>`);
-      }
-    } else if (type === 'community') {
-      btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-activate" data-id="${bp._submission_id}">Activate Agent</button>`);
     } else if (type === 'spaceship') {
       const isAct = BlueprintStore.isShipActivated(bp.id);
       if (isAct) {
@@ -2259,6 +2250,24 @@ const BlueprintsView = (() => {
     // NICE
     drawer.querySelectorAll('.bp-drawer-nice').forEach(btn => {
       btn.addEventListener('click', () => _promptActivatedCard(bp.id, type));
+    });
+
+    // Marketplace install — delegates to BlueprintStore.activateAgent so
+    // rarity gates, persistence, and realtime sync all work for free.
+    drawer.querySelectorAll('.bp-drawer-mp-install').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const listingId = btn.dataset.listing;
+        const ok = BlueprintStore.activateAgent(id);
+        if (ok === false) return; // rarity gate already notified the user
+        if (listingId) BlueprintStore.incrementMarketplaceDownloads(listingId);
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Installed', message: `${bp.name} added to your agents.`, type: 'task_complete' });
+        }
+        if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
+        _applyFilters();
+        _openDrawer(id);
+      });
     });
 
     // Navigate
@@ -2345,66 +2354,6 @@ const BlueprintsView = (() => {
       card.addEventListener('click', () => _openDrawer(card.dataset.id));
     });
 
-    // Interactive star rating (community blueprints)
-    drawer.querySelectorAll('.bp-star-interactive').forEach(star => {
-      star.addEventListener('click', async () => {
-        const rating = parseInt(star.dataset.rating, 10);
-        const subId = star.dataset.submission;
-        if (!rating || !subId) return;
-        try {
-          await BlueprintStore.rateBlueprint(subId, rating);
-          // Update stars inline
-          const container = document.getElementById('bp-drawer-stars');
-          if (container) container.innerHTML = _renderInteractiveStars(rating, rating, subId);
-          // Re-bind new star elements
-          container?.querySelectorAll('.bp-star-interactive').forEach(s => {
-            s.addEventListener('click', async () => {
-              const r = parseInt(s.dataset.rating, 10);
-              await BlueprintStore.rateBlueprint(subId, r);
-              if (container) container.innerHTML = _renderInteractiveStars(r, r, subId);
-            });
-          });
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Rated!', message: `You gave ${rating} star${rating !== 1 ? 's' : ''}`, type: 'success' });
-        } catch (err) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Rating failed', message: err.message, type: 'error' });
-        }
-      });
-    });
-
-    // Publish to Community
-    drawer.querySelector('.bp-drawer-publish')?.addEventListener('click', () => {
-      _confirmPublish(bp.name, async () => {
-        await _publishBlueprint(bp.id);
-        _closeDrawer();
-      });
-    });
-
-    // Activate community blueprint
-    drawer.querySelector('.bp-drawer-community-activate')?.addEventListener('click', async () => {
-      const subId = bp._submission_id;
-      if (!subId) return;
-      const user = State.get('user');
-      if (!user) return;
-      try {
-        // Create user agent from community blueprint data
-        const agentData = {
-          user_id: user.id,
-          name: bp.name,
-          role: bp.config?.role || bp.category || 'Custom',
-          type: bp.config?.type || 'Agent',
-          llm_engine: bp.config?.llm_engine || 'gemini-2.5-flash',
-          config: bp.config || {},
-          rarity: bp.rarity || 'Common',
-        };
-        await SB.db('user_agents').create(agentData);
-        BlueprintStore.incrementDownloadCount(subId);
-        if (typeof Gamification !== 'undefined') Gamification.addXP('create_robot');
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Activated!', message: `${bp.name} added to your agents.`, type: 'success' });
-        _closeDrawer();
-      } catch (err) {
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Activation failed', message: err.message, type: 'error' });
-      }
-    });
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -2777,92 +2726,6 @@ const BlueprintsView = (() => {
     return SPACESHIP_SEED.find(b => b.id === bpId) || null;
   }
 
-  /* ── Community Blueprints ── */
-  let _communityBlueprints = [];
-
-  async function _loadCommunityBlueprints() {
-    try {
-      const rows = await SB.db('blueprint_submissions').list({ status: 'approved' });
-      if (rows && rows.length) {
-        _communityBlueprints = rows.map(r => ({
-          id: r.id,
-          name: r.agent_data?.name || 'Community Agent',
-          category: r.agent_data?.category || r.agent_data?.config?.role || 'Custom',
-          rarity: r.agent_data?.rarity || 'Common',
-          rating: r.avg_rating || 0,
-          downloads: r.download_count || 0,
-          description: r.agent_data?.description || '',
-          art: r.agent_data?.art || 'intelligence',
-          flavor: r.agent_data?.flavor || '',
-          card_num: 'CM-' + String(r.id).slice(-3),
-          agentType: r.agent_data?.config?.type || 'Agent',
-          tags: r.agent_data?.tags || ['community'],
-          caps: r.agent_data?.caps || [],
-          stats: r.agent_data?.stats || {},
-          config: r.agent_data?.config || {},
-          _community: true,
-          _submission_id: r.id,
-        }));
-      }
-    } catch (err) {
-      console.warn('Failed to load community blueprints:', err.message);
-    }
-  }
-
-  async function _publishBlueprint(agentId) {
-    const user = State.get('user');
-    if (!user) return;
-    const agents = State.get('agents') || [];
-    const agent = agents.find(a => a.id === agentId);
-    if (!agent) return;
-
-    try {
-      await SB.db('blueprint_submissions').create({
-        user_id: user.id,
-        agent_data: {
-          name: agent.name,
-          category: agent.role || 'Custom',
-          rarity: 'Common',
-          description: 'Community-published agent: ' + agent.name,
-          config: {
-            role: agent.role,
-            type: agent.type,
-            llm_engine: agent.llm_engine,
-            tools: (agent.config || {}).tools || [],
-          },
-          tags: ['community'],
-        },
-        status: 'approved',
-      });
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Published!', message: `${agent.name} is now in the Forge.`, type: 'success' });
-      }
-      if (typeof Gamification !== 'undefined') Gamification.addXP('publish_blueprint');
-    } catch (err) {
-      console.warn('Publish failed:', err.message);
-    }
-  }
-
-  /* ── Publish confirmation dialog ── */
-  function _confirmPublish(name, onConfirm) {
-    const overlay = document.createElement('div');
-    overlay.className = 'bp-confirm-overlay';
-    overlay.innerHTML = `
-      <div class="bp-confirm-modal">
-        <h3>Publish to the Forge</h3>
-        <p>Share <span class="bp-confirm-name">${_esc(name)}</span> with the NICE fleet?</p>
-        <p class="bp-confirm-warning" style="color:var(--text-muted)">Other pilots will be able to browse, rate, and activate this blueprint.</p>
-        <div class="bp-confirm-actions">
-          <button class="bp-confirm-cancel">Cancel</button>
-          <button class="bp-confirm-submit" style="background:var(--accent);color:#fff">Publish</button>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
-    overlay.querySelector('.bp-confirm-cancel').addEventListener('click', () => overlay.remove());
-    overlay.querySelector('.bp-confirm-submit').addEventListener('click', () => { overlay.remove(); onConfirm(); });
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  }
-
   /* ── Removal confirmation dialog ──
      Destructive actions re-authenticate. Email/password users must re-enter
      their password (verified via signInWithPassword). OAuth users — who have
@@ -3026,5 +2889,5 @@ const BlueprintsView = (() => {
     serialHash: typeof CardRenderer !== 'undefined' ? CardRenderer.serialHash : _serialHash,
     avatarArt: typeof CardRenderer !== 'undefined' ? CardRenderer.avatarArt : _avatarArt,
     categoryColors: typeof CardRenderer !== 'undefined' ? CardRenderer.CATEGORY_COLORS : _categoryColors,
-    publishBlueprint: _publishBlueprint, confirmDeactivate, openDrawer: _openDrawer, closeDrawer: _closeDrawer };
+    confirmDeactivate, openDrawer: _openDrawer, closeDrawer: _closeDrawer };
 })();

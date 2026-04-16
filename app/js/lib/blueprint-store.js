@@ -599,6 +599,11 @@ const BlueprintStore = (() => {
       const c = SB.client;
       if (!c || typeof c.from !== 'function') { _catalogLoaded = true; return; }
 
+      // Load both catalog AND community scopes. The scope discriminator
+      // is applied by the list/search methods (which filter to scope='catalog'
+      // for Agents/Spaceships browsing), not at the cache level — a
+      // single-row lookup by ID must succeed regardless of scope, so
+      // activated marketplace blueprints still resolve after install.
       const { data: rows, error } = await c
         .from('blueprints')
         .select('*')
@@ -887,8 +892,14 @@ const BlueprintStore = (() => {
   function listAgents(filter) {
     // Trigger lazy catalog load (non-blocking — returns seeds immediately)
     if (!_catalogLoaded) _loadCatalogFromDB();
+    // Returns both catalog and community scopes — community blueprints
+    // live alongside the seeded library in the same browse, discriminated
+    // by a COMMUNITY badge on the card. Callers that want to filter by
+    // scope pass it through searchCatalog({ scope }).
     if (!filter) return [..._agents];
     let list = [..._agents];
+    if (filter.scope === 'official') list = list.filter(a => (a.scope || 'catalog') === 'catalog');
+    else if (filter.scope === 'community') list = list.filter(a => a.scope === 'community');
     if (filter.rarity) list = list.filter(a => a.rarity === filter.rarity);
     if (filter.category) list = list.filter(a => a.category === filter.category);
     if (filter.search) {
@@ -909,6 +920,7 @@ const BlueprintStore = (() => {
   function listSpaceships() {
     // Trigger lazy catalog load (non-blocking — returns seeds immediately)
     if (!_catalogLoaded) _loadCatalogFromDB();
+    // Returns both catalog and community scopes — see listAgents.
     return [..._spaceships];
   }
 
@@ -1656,6 +1668,11 @@ const BlueprintStore = (() => {
     sort = 'popular',
     page = 1,
     perPage = 24,
+    // Scope filter: 'all' (default) surfaces both official catalog blueprints
+    // and community-published ones side-by-side. 'official' narrows to the
+    // seeded library; 'community' narrows to user-published blueprints.
+    // This replaces the old separate Marketplace sub-tab.
+    scope = 'all',
   } = {}) {
     const from = (page - 1) * perPage;
     const to = from + perPage - 1;
@@ -1665,10 +1682,17 @@ const BlueprintStore = (() => {
       try {
         const c = SB.client;
         if (c && typeof c.from === 'function') {
+          // Left-join the published listing so community rows carry their
+          // rating / downloads / listing_id in a single round trip. Catalog
+          // rows get an empty array for `listing` (hence normalized below).
           let q = c.from('blueprints')
-            .select('*', { count: 'exact' })
+            .select('*, listing:marketplace_listings!left(id, rating, rating_count, downloads, author_id, status)', { count: 'exact' })
             .eq('is_public', true)
             .eq('type', type);
+
+          // Scope filter: omit → all; 'official' → catalog; 'community' → community.
+          if (scope === 'official') q = q.eq('scope', 'catalog');
+          else if (scope === 'community') q = q.eq('scope', 'community');
 
           // Full-text search via tsvector (GIN-indexed), with ilike fallback for short queries
           if (query) {
@@ -1712,9 +1736,19 @@ const BlueprintStore = (() => {
             const total = count ?? rows.length;
             // If DB has fewer blueprints than local seeds (not fully seeded), use local
             const localCount = type === 'spaceship' ? _spaceships.length : _agents.length;
-            if (total < localCount && !query && !rarity && !category) {
-              return _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage });
+            if (total < localCount && !query && !rarity && !category && scope === 'all') {
+              return _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage, scope });
             }
+
+            // Normalize the listing sidecar: PostgREST returns left-join
+            // embeds as an array. Collapse it to a single object (or null
+            // if the row isn't listed) so callers don't have to unwrap it.
+            rows.forEach(r => {
+              if (Array.isArray(r.listing)) {
+                const published = r.listing.find(l => l && l.status === 'published');
+                r.listing = published || null;
+              }
+            });
 
             // Client-side rarity sort (no DB column for sort order)
             if (sort === 'rarity-desc' || sort === 'rarity-asc') {
@@ -1738,12 +1772,16 @@ const BlueprintStore = (() => {
     }
 
     // Offline fallback: filter in-memory seeds
-    return _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage });
+    return _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage, scope });
   }
 
-  function _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage }) {
+  function _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage, scope = 'all' }) {
     let list = type === 'spaceship' ? [..._spaceships] : [..._agents];
     const q = (query || '').toLowerCase();
+
+    // Scope filter (parallels the server query)
+    if (scope === 'official') list = list.filter(b => (b.scope || 'catalog') === 'catalog');
+    else if (scope === 'community') list = list.filter(b => b.scope === 'community');
 
     if (q) {
       const tokens = q.split(/\s+/).filter(Boolean);
@@ -1849,88 +1887,177 @@ const BlueprintStore = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     Community Marketplace
+     Marketplace
+     ────────────────────────────────────────────────────────────────
+     Community blueprints live in the same `blueprints` table as the
+     seeded catalog (discriminated by `scope='community'`). A
+     `marketplace_listings` row sits alongside each one to carry
+     rating / downloads / author / publish state.
+
+     searchCatalog() left-joins the listing so every community card
+     comes back with its listing sidecar in a single round trip — so
+     there's no separate Marketplace list API. The helpers below are
+     only for the actions (rate / install counter / publish / review
+     lookup) that can't be bundled into the browse query.
   ═══════════════════════════════════════════════════════════════ */
 
-  function _mapSubmissionToBlueprint(r) {
-    const d = r.agent_data || {};
+  async function getMyMarketplaceReview(listingId) {
+    if (!SB?.client) return null;
+    const user = State.get('user');
+    if (!user) return null;
+    try {
+      const { data } = await SB.client
+        .from('marketplace_reviews')
+        .select('rating, comment')
+        .eq('listing_id', listingId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return data || null;
+    } catch { return null; }
+  }
+
+  /**
+   * Pure rating-math helper extracted for unit testing.
+   *
+   * Running average update:
+   *   - First rating from this user (oldRating == null) → append to average
+   *   - Updated rating → swap the user's old value for the new one
+   *
+   * The division-by-zero guard is there for the (impossible but cheap to
+   * defend against) case of updating a rating on a listing with count 0.
+   */
+  function recomputeRating(prevAvg, prevCount, oldRating, newRating) {
+    if (oldRating == null) {
+      const count = prevCount + 1;
+      return { rating: (prevAvg * prevCount + newRating) / count, rating_count: count };
+    }
+    if (prevCount <= 0) return { rating: prevAvg, rating_count: prevCount };
     return {
-      id: r.id, name: d.name || 'Community Agent',
-      category: d.category || d.config?.role || 'Custom',
-      rarity: d.rarity || 'Common',
-      rating: r.avg_rating || 0, downloads: r.download_count || 0,
-      description: d.description || '', art: d.art || 'intelligence',
-      flavor: d.flavor || '', card_num: 'CM-' + String(r.id).slice(-3),
-      agentType: d.config?.type || 'Agent', type: 'agent',
-      tags: d.tags || ['community'], caps: d.caps || [],
-      stats: d.stats || {}, config: d.config || {},
-      _community: true, _submission_id: r.id,
-      _creator_id: r.user_id, created_at: r.created_at,
+      rating: (prevAvg * prevCount - oldRating + newRating) / prevCount,
+      rating_count: prevCount,
     };
   }
 
-  async function listCommunityBlueprints() {
-    if (typeof SB === 'undefined' || !SB.isReady() || !SB.client) return [];
-    try {
-      const { data, error } = await SB.client.from('blueprint_submissions')
-        .select('*').eq('status', 'approved')
-        .order('created_at', { ascending: false }).limit(200);
-      if (error) throw error;
-      return (data || []).map(_mapSubmissionToBlueprint);
-    } catch (e) {
-      console.warn('[BlueprintStore] Community load failed:', e.message);
-      return [];
-    }
-  }
-
-  async function rateBlueprint(submissionId, rating) {
-    const c = SB.client;
+  async function rateMarketplaceListing(listingId, rating) {
+    const c = SB?.client;
     if (!c) throw new Error('Not connected');
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    const user = State.get('user');
     if (!user) throw new Error('Sign in to rate');
 
-    const { error } = await c.from('blueprint_ratings')
-      .upsert({ user_id: user.id, blueprint_id: submissionId, rating },
-              { onConflict: 'user_id,blueprint_id' });
-    if (error) throw error;
-
-    // Recompute average
-    const { data: ratings } = await c.from('blueprint_ratings')
-      .select('rating').eq('blueprint_id', submissionId);
-    if (ratings && ratings.length) {
-      const avg = ratings.reduce((s, r) => s + r.rating, 0) / ratings.length;
-      await c.from('blueprint_submissions')
-        .update({ avg_rating: Math.round(avg * 100) / 100 })
-        .eq('id', submissionId);
+    // Pull the current listing so we can recompute the running average
+    // client-side for instant feedback. Source of truth is still the DB.
+    const { data: listing, error: lerr } = await c
+      .from('marketplace_listings')
+      .select('id, rating, rating_count, author_id')
+      .eq('id', listingId)
+      .maybeSingle();
+    if (lerr) throw lerr;
+    if (!listing) throw new Error('Listing not found');
+    if (listing.author_id && listing.author_id === user.id) {
+      throw new Error("You can't rate your own listing");
     }
-    return true;
-  }
 
-  async function getUserRating(submissionId) {
-    const c = SB.client;
-    if (!c) return 0;
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return 0;
+    // Check for an existing review so we know whether to insert or update
+    const { data: existing } = await c
+      .from('marketplace_reviews')
+      .select('rating')
+      .eq('listing_id', listingId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await c
+        .from('marketplace_reviews')
+        .update({ rating })
+        .eq('listing_id', listingId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+    } else {
+      const { error } = await c
+        .from('marketplace_reviews')
+        .insert({ listing_id: listingId, user_id: user.id, rating });
+      if (error) throw error;
+    }
+
+    const next = recomputeRating(
+      Number(listing.rating || 0),
+      Number(listing.rating_count || 0),
+      existing ? existing.rating : null,
+      rating
+    );
+
+    // Best-effort write-back. A concurrent rating would race — the next
+    // fetch picks up the authoritative value recomputed server-side.
     try {
-      const { data } = await c.from('blueprint_ratings')
-        .select('rating').eq('user_id', user.id).eq('blueprint_id', submissionId)
-        .maybeSingle();
-      return data?.rating || 0;
-    } catch { return 0; }
+      await c.from('marketplace_listings')
+        .update({ rating: next.rating, rating_count: next.rating_count })
+        .eq('id', listingId);
+    } catch { /* non-critical */ }
+
+    return next;
   }
 
-  async function incrementDownloadCount(submissionId) {
-    const c = SB.client;
+  async function incrementMarketplaceDownloads(listingId) {
+    const c = SB?.client;
     if (!c) return;
     try {
-      const { data } = await c.from('blueprint_submissions')
-        .select('download_count').eq('id', submissionId).single();
+      const { data } = await c
+        .from('marketplace_listings')
+        .select('downloads')
+        .eq('id', listingId)
+        .maybeSingle();
       if (data) {
-        c.from('blueprint_submissions')
-          .update({ download_count: (data.download_count || 0) + 1 })
-          .eq('id', submissionId).then(() => {});
+        c.from('marketplace_listings')
+          .update({ downloads: (data.downloads || 0) + 1 })
+          .eq('id', listingId).then(() => {});
       }
-    } catch {}
+    } catch { /* non-critical */ }
+  }
+
+  async function publishToMarketplace(blueprintId, { title, description, tags } = {}) {
+    const c = SB?.client;
+    if (!c) throw new Error('Not connected');
+    const user = State.get('user');
+    if (!user) throw new Error('Sign in to publish');
+
+    // Fetch the blueprint so we can default title/description off it
+    const { data: bp, error: berr } = await c
+      .from('blueprints')
+      .select('id, type, name, description, tags, creator_id, is_public')
+      .eq('id', blueprintId)
+      .maybeSingle();
+    if (berr) throw berr;
+    if (!bp) throw new Error('Blueprint not found');
+    if (bp.creator_id && bp.creator_id !== user.id) {
+      throw new Error("You can only publish blueprints you created");
+    }
+
+    // Don't double-publish. Authors get one active listing per blueprint.
+    const { data: existing } = await c
+      .from('marketplace_listings')
+      .select('id')
+      .eq('blueprint_id', blueprintId)
+      .eq('author_id', user.id)
+      .eq('status', 'published')
+      .maybeSingle();
+    if (existing) {
+      throw new Error('This blueprint is already published');
+    }
+
+    const payload = {
+      blueprint_id: blueprintId,
+      author_id:    user.id,
+      title:        (title || bp.name || 'Untitled').slice(0, 80),
+      description:  (description || bp.description || '').slice(0, 400),
+      category:     bp.type === 'spaceship' ? 'spaceship' : 'agent',
+      tags:         Array.isArray(tags) ? tags : (bp.tags || []),
+      version:      '1.0.0',
+      status:       'published',
+    };
+
+    const { data, error } = await c.from('marketplace_listings').insert(payload).select().maybeSingle();
+    if (error) throw error;
+    return data;
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -1977,8 +2104,10 @@ const BlueprintStore = (() => {
     // Sharing
     shareBlueprint, importSharedBlueprint,
 
-    // Community marketplace
-    listCommunityBlueprints, rateBlueprint, getUserRating, incrementDownloadCount,
+    // Marketplace — listing browse is handled by searchCatalog with its
+    // left-join on marketplace_listings; these are the action helpers.
+    getMyMarketplaceReview, rateMarketplaceListing,
+    incrementMarketplaceDownloads, publishToMarketplace, recomputeRating,
   };
 
   /**

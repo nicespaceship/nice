@@ -149,18 +149,6 @@ declare namespace DB {
     updated_at?: string | null;
   }
 
-  /** Table: blueprint_submissions */
-  interface BlueprintSubmissions {
-    id?: string;
-    user_id?: string | null;
-    agent_data?: Record<string, unknown>;
-    status?: string | null;
-    avg_rating?: number | null;
-    download_count?: number | null;
-    created_at?: string | null;
-    updated_at?: string | null;
-  }
-
   /** Table: user_workflows */
   interface UserWorkflows {
     id: string;
@@ -182,15 +170,6 @@ declare namespace DB {
     bonus_fuel_sent?: number | null;
     created_at?: string | null;
     updated_at?: string | null;
-  }
-
-  /** Table: blueprint_ratings */
-  interface BlueprintRatings {
-    id?: string;
-    user_id?: string | null;
-    blueprint_id: string;
-    rating?: number | null;
-    created_at?: string | null;
   }
 
   /** Table: integrations */
