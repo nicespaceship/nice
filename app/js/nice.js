@@ -146,6 +146,11 @@ const Theme = (() => {
         if (schTab) schTab.click();
       }
     }
+
+    // Re-render the current view so any theme-specific DOM (Schematic's arc
+    // reactor, JARVIS HUD rings, etc.) gets rebuilt against the new theme
+    // instead of carrying stale markup from the previous one.
+    if (typeof Router !== 'undefined' && Router.refresh) Router.refresh();
   }
 
   // J.A.R.V.I.S.: butler personality layer. Only body copy / toast titles /
