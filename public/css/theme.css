@@ -2374,7 +2374,7 @@
 [data-theme="jarvis"] .detail-section {
   border: 1px solid rgba(0,229,255,0.15);
   border-radius: 3px;
-  background: rgba(14,26,46,0.6);
+  background: rgba(14,26,46,0.92);
   backdrop-filter: blur(8px);
   box-shadow:
     0 2px 12px rgba(0,0,0,0.3),
@@ -2476,7 +2476,7 @@
   border:1px solid rgba(0,229,255,0.15);
   border-left:3px solid rgba(0,229,255,0.4);
   border-radius:3px;
-  background:rgba(14,26,46,0.6);
+  background:rgba(14,26,46,0.92);
   box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 /* TCG cards — holographic frame */
@@ -2770,7 +2770,7 @@
   top:50%; left:calc(50% + 28px);
   transform:translate(-50%,-50%);
   width:min(620px, 85vmin); height:min(620px, 85vmin);
-  pointer-events:none; z-index:1;
+  pointer-events:none; z-index:0;
   opacity:0.5;
   transition:opacity 200ms ease;
 }
@@ -3263,7 +3263,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 [data-theme="jarvis"] .tc-section::after { content:''; display:none; }
 [data-theme="jarvis"] .mcp-catalog-card {
   border:1px solid rgba(0,229,255,0.15); border-radius:3px;
-  background:rgba(14,26,46,0.6);
+  background:rgba(14,26,46,0.92);
   box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 [data-theme="jarvis"] .mcp-catalog-card::before {
