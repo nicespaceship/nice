@@ -3192,9 +3192,6 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 [data-theme="jarvis"] .side-mission-item { color: rgba(0,229,255,0.6); }
 [data-theme="jarvis"] .side-mission-item:hover { background: rgba(0,229,255,0.06); }
 
-/* Marketing page overrides */
-[data-theme="jarvis"] nav:not(.app-side-nav) { border-bottom: 1px solid rgba(0,229,255,0.15); }
-
 /* ═══════════════════════════════════════════════════════════════════
    J.A.R.V.I.S. — Holographic HUD Immersion
    Arc reactor glow, holographic scan lines, translucent panels,
@@ -3979,16 +3976,6 @@ body {
 /* ─────────────────────────────────────────────────────────────────
    MODULE: NAV
 ───────────────────────────────────────────────────────────────── */
-nav:not(.app-side-nav) {
-  position: fixed; top: 26px; left: 0; right: 0; z-index: 100;
-  height: 56px;
-  background: var(--nav-bg);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(18px);
-  box-shadow: var(--glow);
-  transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
-}
-[data-theme="lcars"] nav:not(.app-side-nav) { border-bottom: 3px solid var(--accent); }
 .nav-inner {
   max-width: 1280px; margin: 0 auto; padding: 0 24px;
   height: 100%; display: flex; align-items: center; justify-content: space-between;
