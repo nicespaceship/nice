@@ -547,6 +547,9 @@ const BlueprintStore = (() => {
             description: cfg.description || '',
             flavor: cfg.flavor || '',
             caps: cfg.caps || [],
+            tags: cfg.tags || [],
+            persona: cfg.persona || null,
+            model_profile: cfg.model_profile || null,
             created_at: a.created_at,
           });
           if (!_activatedAgentIds.includes(a.id)) {

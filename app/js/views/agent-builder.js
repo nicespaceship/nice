@@ -179,6 +179,33 @@ const AgentBuilderView = (() => {
             </div>
           </fieldset>
 
+          <!-- ADVANCED -->
+          <details class="builder-section builder-advanced" ${(config.persona || agent?.tags?.length || config.tags?.length || config.model_profile) ? 'open' : ''}>
+            <summary class="builder-legend">Advanced</summary>
+            <div class="auth-field">
+              <label for="b-tone">Tone</label>
+              <input type="text" id="b-tone" maxlength="120" placeholder="e.g. dry and concise · warm and encouraging · clinical" value="${_esc(config.persona?.tone || agent?.persona?.tone || '')}" />
+              <p class="builder-hint">Short phrase. Joins the system prompt as <code>Tone: …</code>.</p>
+            </div>
+            <div class="auth-field">
+              <label for="b-constraints">Constraints</label>
+              <textarea id="b-constraints" rows="3" maxlength="1000" placeholder="One rule per line. e.g.&#10;Never invent statistics&#10;Always cite the source URL">${_esc((config.persona?.constraints || agent?.persona?.constraints || []).join('\n'))}</textarea>
+              <p class="builder-hint">Hard rules. One per line. Renders as a bullet list in the system prompt.</p>
+            </div>
+            <div class="builder-row">
+              <div class="auth-field">
+                <label for="b-tags">Tags</label>
+                <input type="text" id="b-tags" maxlength="200" placeholder="e.g. research, b2b, q1-launch" value="${_esc((agent?.tags || config.tags || []).join(', '))}" />
+                <p class="builder-hint">Search keywords. Comma-separated.</p>
+              </div>
+              <div class="auth-field">
+                <label for="b-max-tokens">Max output tokens</label>
+                <input type="number" id="b-max-tokens" min="256" max="32000" step="128" placeholder="auto" value="${config.model_profile?.max_output_tokens || ''}" />
+                <p class="builder-hint">Hard cap on response length. Leave blank to derive from stats.</p>
+              </div>
+            </div>
+          </details>
+
           <!-- ACTIONS -->
           <div class="builder-actions">
             <div class="builder-rarity-preview" id="builder-rarity-preview"></div>
@@ -412,6 +439,13 @@ const AgentBuilderView = (() => {
     const instructions = (document.getElementById('b-instructions')?.value || '').trim();
     const skills = (document.getElementById('b-skills')?.value || '')
       .split(',').map(s => s.trim()).filter(Boolean);
+    const tone = (document.getElementById('b-tone')?.value || '').trim();
+    const constraints = (document.getElementById('b-constraints')?.value || '')
+      .split('\n').map(s => s.trim()).filter(Boolean);
+    const tags = (document.getElementById('b-tags')?.value || '')
+      .split(',').map(s => s.trim()).filter(Boolean);
+    const maxTokensRaw = (document.getElementById('b-max-tokens')?.value || '').trim();
+    const maxTokens = maxTokensRaw ? parseInt(maxTokensRaw, 10) : null;
 
     if (!name) {
       errEl.textContent = 'Agent name is required.';
@@ -432,21 +466,34 @@ const AgentBuilderView = (() => {
       return;
     }
 
+    // Persona — only attach when there's actually content (avoids
+    // littering the config with empty objects on minimal agents).
+    const persona = {};
+    if (tone) persona.tone = tone;
+    if (constraints.length) persona.constraints = constraints;
+    // model_profile — only set when the user overrode the stat-derived
+    // envelope (LLMConfig falls back to stats when absent).
+    const modelProfile = {};
+    if (maxTokens && maxTokens > 0) modelProfile.max_output_tokens = maxTokens;
+
     const row = {
       name,
       role,
       type,
       status: existingAgent?.status || 'idle',
       // user_agents has no top-level columns for llm_engine, description,
-      // flavor, or caps — they live inside the config JSONB (matches
-      // setup-wizard / crew-designer inserts). Loader surfaces them back
-      // to top-level on State.agents items.
+      // flavor, caps, tags, persona, or model_profile — they live inside
+      // the config JSONB (matches setup-wizard / crew-designer inserts).
+      // Loader surfaces them back to top-level on State.agents items.
       config: {
         tools, memory, temperature: temp,
         llm_engine: model,
         description,
         flavor: instructions,
         caps: skills,
+        tags,
+        ...(Object.keys(persona).length ? { persona } : {}),
+        ...(Object.keys(modelProfile).length ? { model_profile: modelProfile } : {}),
       },
       rarity: BlueprintUtils.getRarity({ config: { tools, memory, temperature: temp }, llm_engine: model, type }),
     };
@@ -503,6 +550,19 @@ const AgentBuilderView = (() => {
     const instructions = (document.getElementById('b-instructions')?.value || '').trim();
     const skills = (document.getElementById('b-skills')?.value || '')
       .split(',').map(s => s.trim()).filter(Boolean);
+    const tone = (document.getElementById('b-tone')?.value || '').trim();
+    const constraints = (document.getElementById('b-constraints')?.value || '')
+      .split('\n').map(s => s.trim()).filter(Boolean);
+    const tags = (document.getElementById('b-tags')?.value || '')
+      .split(',').map(s => s.trim()).filter(Boolean);
+    const maxTokensRaw = (document.getElementById('b-max-tokens')?.value || '').trim();
+    const maxTokens = maxTokensRaw ? parseInt(maxTokensRaw, 10) : null;
+
+    const persona = {};
+    if (tone) persona.tone = tone;
+    if (constraints.length) persona.constraints = constraints;
+    const modelProfile = {};
+    if (maxTokens && maxTokens > 0) modelProfile.max_output_tokens = maxTokens;
 
     return {
       type: 'agent',
@@ -518,12 +578,15 @@ const AgentBuilderView = (() => {
         description: description,
         flavor: instructions,
         caps: skills,
+        tags: tags,
+        ...(Object.keys(persona).length ? { persona } : {}),
+        ...(Object.keys(modelProfile).length ? { model_profile: modelProfile } : {}),
       },
       stats: {},
       metadata: { agentType: type, caps: skills },
       description: description || agent?.description || '',
       flavor: instructions || agent?.flavor || '',
-      tags: agent?.tags || [],
+      tags: tags.length ? tags : (agent?.tags || []),
       rarity: agent?.rarity || 'Common',
       serial_key: agent?.serial_key || '',
     };
@@ -559,6 +622,14 @@ const AgentBuilderView = (() => {
     if (el('b-skills')) {
       const caps = cfg.caps || (bp.metadata && bp.metadata.caps) || bp.caps || [];
       el('b-skills').value = caps.join(', ');
+    }
+    const persona = cfg.persona || bp.persona || {};
+    if (el('b-tone')) el('b-tone').value = persona.tone || '';
+    if (el('b-constraints')) el('b-constraints').value = (persona.constraints || []).join('\n');
+    if (el('b-tags')) el('b-tags').value = (bp.tags || cfg.tags || []).join(', ');
+    if (el('b-max-tokens')) {
+      const mp = cfg.model_profile || bp.model_profile || {};
+      el('b-max-tokens').value = mp.max_output_tokens || '';
     }
   }
 
