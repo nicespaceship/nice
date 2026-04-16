@@ -1125,17 +1125,15 @@ const BlueprintsView = (() => {
     // Sub-tabs (Spaceships/Agents) — only show when Blueprints tab active
     if (subTabs) subTabs.style.display = isBlueprintsTab ? '' : 'none';
 
-    // Catalog UI (search, filters, grid)
+    // Catalog UI (search, filters, grid, toolbar actions) — only on Blueprints tab
     const catalogDisplay = isBlueprintsTab ? '' : 'none';
     if (searchRow) searchRow.style.display = catalogDisplay;
     if (resultBar) resultBar.style.display = catalogDisplay;
     if (activatedWrap) activatedWrap.style.display = catalogDisplay;
     if (grid) grid.style.display = catalogDisplay;
     if (loadMore) loadMore.style.display = catalogDisplay;
-
-    // Hide toolbar actions on TRON tab
     const toolbarActions = document.getElementById('bp-toolbar-actions');
-    if (toolbarActions) toolbarActions.style.display = (_activeTab === 'tron') ? 'none' : '';
+    if (toolbarActions) toolbarActions.style.display = catalogDisplay;
 
     // Schematic
     if (schematicEl) {
