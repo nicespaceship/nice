@@ -2487,6 +2487,8 @@
   display:inline-block; min-width:28px; text-align:center;
 }
 .builder-hint { font-family:var(--font-b); font-size:.62rem; color:var(--text-dim); margin:0 0 10px 0; }
+.builder-hint a { color:var(--accent); text-decoration:underline; }
+.builder-hint a:hover { color:var(--accent2); }
 .builder-actions { display:flex; align-items:center; gap:12px; }
 .builder-rarity-preview { font-size:.75rem; }
 .builder-actions .auth-error { flex:1; margin:0; }
