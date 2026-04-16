@@ -86,7 +86,7 @@ const BlueprintsView = (() => {
   const SPACESHIP_SEED = [];
 
   let _activeTab = 'schematic';
-  let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship', 'agent', or 'custom' (My Blueprints)
+  let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship', 'agent', or 'workshop' (custom builds + imports)
   // Source filter: 'all' mixes catalog + community blueprints; 'official'
   // narrows to the seeded NICE library; 'community' narrows to user-
   // published content. Replaces the old standalone Marketplace sub-tab.
@@ -137,7 +137,7 @@ const BlueprintsView = (() => {
       const _sourceParam = _hashParams.get('source');
       const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log', 'documentation', 'tron'];
       if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-      else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'custom') { _activeTab = 'blueprints'; _subTab = _tabParam; }
+      else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
       else if (_hash === '#/log') _activeTab = 'missions';
@@ -177,7 +177,7 @@ const BlueprintsView = (() => {
         <div class="bp-sub-tabs" id="bp-sub-tabs">
           <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="custom">My Blueprints <span class="bp-tab-count">${_myBlueprintCount()}</span></button>
+          <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -847,14 +847,14 @@ const BlueprintsView = (() => {
     if (section) _bindCardEvents(section);
   }
 
-  function _myBlueprintCount() {
+  function _workshopCount() {
     if (typeof BlueprintStore === 'undefined' || !BlueprintStore.listMyBlueprints) return 0;
     const my = BlueprintStore.listMyBlueprints();
     return my.spaceships.length + my.agents.length;
   }
 
-  /* ── My Blueprints — custom builds + imports for both ships and agents ── */
-  function _renderMyBlueprints() {
+  /* ── Workshop — custom builds + imports for both ships and agents ── */
+  function _renderWorkshop() {
     _renderProgressionBar();
     const wrap = document.getElementById('bp-activated-wrap');
     const grid = document.getElementById('bp-grid');
@@ -896,8 +896,8 @@ const BlueprintsView = (() => {
     if (!ships.length && !agents.length) {
       const totalRaw = my.spaceships.length + my.agents.length;
       const empty = totalRaw === 0
-        ? `<p class="bp-activated-empty">No custom blueprints yet. Use <strong>+ Create</strong> or <strong>Import Blueprint</strong> to add your own.</p>`
-        : `<p class="bp-activated-empty">No custom blueprints match the current filter.</p>`;
+        ? `<p class="bp-activated-empty">Workshop is empty. Use <strong>+ Create</strong> or <strong>Import Blueprint</strong> to add your own builds.</p>`
+        : `<p class="bp-activated-empty">No workshop blueprints match the current filter.</p>`;
       wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
       return;
     }
@@ -918,7 +918,7 @@ const BlueprintsView = (() => {
         cardsHTML = items.map(bp => _tcgCardHTML(bp, type)).join('');
       }
       return `<div class="bp-activated-section">
-        <h3 class="bp-activated-title">MY ${label} <span class="bp-activated-count">${items.length}</span></h3>
+        <h3 class="bp-activated-title">${label} <span class="bp-activated-count">${items.length}</span></h3>
         <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
       </div>`;
     };
@@ -936,10 +936,10 @@ const BlueprintsView = (() => {
     const mySeq = ++_applySeq;
     const isCurrent = () => mySeq === _applySeq;
 
-    // My Blueprints sub-tab — entirely client-side render of custom
-    // builds + imports. Skip the catalog query and just paint the grid.
-    if (_subTab === 'custom') {
-      _renderMyBlueprints();
+    // Workshop sub-tab — entirely client-side render of custom builds +
+    // imports. Skip the catalog query and just paint the grid.
+    if (_subTab === 'workshop') {
+      _renderWorkshop();
       return;
     }
 
