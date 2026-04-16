@@ -380,9 +380,17 @@ const Gamification = (() => {
   }
 
   function _skinnedRanks() {
-    const skinNames = typeof Skin !== 'undefined' && Skin.list('ranks');
-    if (!skinNames || skinNames.length !== RANKS.length) return RANKS;
-    return RANKS.map((r, i) => ({ ...r, name: skinNames[i] }));
+    // Prefer the active theme's `copy.ranks` — each theme owns its own
+    // rank vocabulary (e.g. JARVIS → Mark I…Iron Man). Falls through to
+    // the legacy Skin.list('ranks') hook, then to the default RANKS.
+    let names = null;
+    if (typeof Theme !== 'undefined' && Theme.getTheme && Theme.current) {
+      const t = Theme.getTheme(Theme.current());
+      if (t && t.copy && Array.isArray(t.copy.ranks)) names = t.copy.ranks;
+    }
+    if (!names && typeof Skin !== 'undefined') names = Skin.list('ranks');
+    if (!names || names.length !== RANKS.length) return RANKS;
+    return RANKS.map((r, i) => ({ ...r, name: names[i] }));
   }
 
   function getRank(xp) {

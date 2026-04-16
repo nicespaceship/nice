@@ -79,6 +79,15 @@ const Notify = (() => {
     };
     const color = colors[type] || 'var(--accent)';
 
+    // Theme-aware voice — let the active theme rewrite title/message so
+    // toasts inherit the theme's personality (e.g. "Installed" →
+    // "Protocol engaged, sir." under J.A.R.V.I.S.). No-op when no theme
+    // owns a label map.
+    if (typeof Theme !== 'undefined' && typeof Theme.rewrite === 'function') {
+      title = Theme.rewrite(title);
+      message = Theme.rewrite(message);
+    }
+
     const toast = document.createElement('div');
     toast.className = 'notify-toast';
     toast.innerHTML = `
