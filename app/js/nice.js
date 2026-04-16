@@ -122,9 +122,9 @@ const Theme = (() => {
       meta.setAttribute('content', bg || '#080808');
     }
 
-    // Theme-specific terminology
-    _applyOfficeLabels(name === 'office' || name === 'office-dark');
-    _applyLcarsLabels(name === 'lcars');
+    // Theme-specific personality (body copy / toasts / placeholders / ranks)
+    // — tab, button, sidebar, and brand labels stay constant across themes
+    // for docs and onboarding consistency.
     _applyJarvisLabels(name === 'jarvis');
     _updateDarkLightIcon();
     // Refresh the sidebar rank badge so theme-scoped rank overlays (e.g.
@@ -148,93 +148,14 @@ const Theme = (() => {
     }
   }
 
-  const _OFFICE_LABELS = {
-    'Schematic': 'Overview', 'Missions': 'Tasks',
-    'Outbox': 'Communications', 'Operations': 'Analytics', 'Log': 'Activity',
-    'Bridge': 'The Office', 'Deploy': 'Activate', 'Deployed': 'Active',
-    'DEPLOYED': 'ACTIVE', 'SCHEMATIC': 'OVERVIEW',
-    'MISSIONS': 'TASKS', 'OUTBOX': 'COMMS', 'OPERATIONS': 'ANALYTICS', 'LOG': 'ACTIVITY',
-    'Spaceships': 'Businesses', 'Spaceship': 'Business',
-    'Ship': 'Business', 'Create Spaceship': 'Create Business', 'Create New Spaceship': 'Create New Business',
-    'Crew': 'Staff',
-    "Captain's Log": 'Audit Trail', "Ship's Log": 'Chat History',
-    'Sign in to NICE': 'Sign in to The Office',
-    'NICE™': 'The Office',
-    'spaceships': 'businesses', 'spaceship': 'business', 'crew': 'staff',
-  };
-  // Placeholder overrides for Office theme (attribute values the DOM text swapper can't reach)
-  const _OFFICE_PLACEHOLDERS = {
-    'e.g. AURORA, VANGUARD, NEXUS': 'e.g. Acme Corp, Bright Solutions, Peak Digital',
-    'What does this spaceship do?': 'Define your business objectives and key deliverables',
-    'e.g. Ship faster. Scale smarter.': 'e.g. Automate operations. Scale without headcount.',
-    'Comma-separated: saas, startup, tech': 'Comma-separated: marketing, sales, ops',
-    'Search by name, description, or tags...': 'Search by name, description, or tags...',
-  };
-  // Reverse map for restoring originals
-  const _OFFICE_REVERSE = Object.fromEntries(Object.entries(_OFFICE_LABELS).map(([k,v]) => [v,k]));
-  let _officeActive = false;
-  let _officeObserver = null;
-
-  function _applyOfficeLabels(on) {
-    if (on === _officeActive) return;
-    _officeActive = on;
-    const map = on ? _OFFICE_LABELS : _OFFICE_REVERSE;
-    _swapTextInDOM(map);
-    // Observe DOM changes to re-apply on tab switches / view renders
-    if (on && !_officeObserver) {
-      _officeObserver = new MutationObserver(() => { if (_officeActive) _swapTextInDOM(_OFFICE_LABELS); });
-      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
-      _officeObserver.observe(main, { childList: true, subtree: true, characterData: true });
-    } else if (!on && _officeObserver) {
-      _officeObserver.disconnect();
-      _officeObserver = null;
-    }
-  }
-
-  // LCARS: swap Code back to Engineering
-  const _LCARS_LABELS = { 'Code': 'Engineering' };
-  const _LCARS_REVERSE = { 'Engineering': 'Code' };
-  let _lcarsActive = false;
-  let _lcarsObserver = null;
-
-  function _applyLcarsLabels(on) {
-    if (on === _lcarsActive) return;
-    _lcarsActive = on;
-    const map = on ? _LCARS_LABELS : _LCARS_REVERSE;
-    _swapTextInDOM(map);
-    if (on && !_lcarsObserver) {
-      _lcarsObserver = new MutationObserver(() => { if (_lcarsActive) _swapTextInDOM(_LCARS_LABELS); });
-      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
-      _lcarsObserver.observe(main, { childList: true, subtree: true, characterData: true });
-    } else if (!on && _lcarsObserver) {
-      _lcarsObserver.disconnect();
-      _lcarsObserver = null;
-    }
-  }
-
-  // J.A.R.V.I.S.: workshop vocabulary + butler personality. Nouns swap for
-  // the holographic HUD / Stark-lab aesthetic; distinctive phrases get the
-  // formal-with-dry-wit flavour (the "sir" address, anticipatory phrasing).
-  // Only full phrases that are unlikely to appear in other contexts are
-  // swapped — single-word verbs stay conservative to avoid over-matching.
+  // J.A.R.V.I.S.: butler personality layer. Only body copy / toast titles /
+  // placeholders swap — nav tabs, sub-tabs, sidebar links, and button
+  // labels stay constant across themes so docs and onboarding stay
+  // consistent. Distinctive phrases get the formal-with-dry-wit flavour
+  // (the "sir" address, anticipatory phrasing). Keys are full sentences
+  // unlikely to appear in other contexts, to avoid cross-context matches.
   const _JARVIS_LABELS = {
-    // Nav / tab vocabulary
-    'Schematic': 'Overview', 'Missions': 'Directives',
-    'Outbox': 'Dispatch', 'Operations': 'Diagnostics', 'Log': 'Telemetry',
-    'Bridge': 'Workshop', 'Deploy': 'Engage', 'Deployed': 'Engaged',
-    'DEPLOYED': 'ENGAGED', 'SCHEMATIC': 'OVERVIEW',
-    'MISSIONS': 'DIRECTIVES', 'OUTBOX': 'DISPATCH',
-    'OPERATIONS': 'DIAGNOSTICS', 'LOG': 'TELEMETRY',
-    'Spaceships': 'Systems', 'Spaceship': 'System',
-    'Ship': 'System', 'Create Spaceship': 'Create System',
-    'Create New Spaceship': 'Create New System',
-    'Agents': 'Protocols', 'Agent': 'Protocol',
-    'Crew': 'Subsystems',
-    "Captain's Log": 'Session Log', "Ship's Log": 'System Log',
-    'Sign in to NICE': 'Sign in to J.A.R.V.I.S.',
-    'NICE™': 'J.A.R.V.I.S.',
-    'spaceships': 'systems', 'spaceship': 'system', 'crew': 'subsystems',
-    // Personality — empty states (distinctive full phrases)
+    // Empty states
     'No agents deployed yet. Browse below.': 'No protocols engaged, sir. Browse below.',
     'No spaceships deployed yet. Browse below.': 'No systems engaged, sir. Browse below.',
     'No agents deployed yet.': 'No protocols engaged, sir.',
@@ -249,7 +170,7 @@ const Theme = (() => {
     'No eligible blueprints': 'Nothing eligible, sir',
     'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
     'No Blueprints Found': 'Nothing in the archive, sir',
-    // Personality — toast/notification prefixes
+    // Toast titles
     'Installed': 'Protocol engaged, sir.',
     'Activated!': 'Protocol engaged, sir.',
     'Published!': 'Protocol filed, sir.',
@@ -325,21 +246,13 @@ const Theme = (() => {
         el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(re, map[k]); });
       }
     });
-    // Placeholder attributes (input, textarea) — each active theme gets its
-    // own map applied, falling back to reverse maps for inactive themes so
-    // placeholders restore cleanly when themes are swapped.
-    const phCandidates = [];
-    phCandidates.push(_officeActive
-      ? _OFFICE_PLACEHOLDERS
-      : Object.fromEntries(Object.entries(_OFFICE_PLACEHOLDERS).map(([k,v]) => [v,k])));
-    phCandidates.push(_jarvisActive
-      ? _JARVIS_PLACEHOLDERS
-      : _JARVIS_PLACEHOLDERS_REVERSE);
+    // Placeholder attributes (input, textarea) — J.A.R.V.I.S. is the only
+    // theme with placeholder personality right now. Forward-map when active,
+    // reverse-map otherwise so placeholders restore cleanly on theme swap.
+    const phMap = _jarvisActive ? _JARVIS_PLACEHOLDERS : _JARVIS_PLACEHOLDERS_REVERSE;
     document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
       const ph = el.getAttribute('placeholder');
-      for (const phMap of phCandidates) {
-        if (phMap[ph]) { el.setAttribute('placeholder', phMap[ph]); break; }
-      }
+      if (phMap[ph]) el.setAttribute('placeholder', phMap[ph]);
     });
   }
 
@@ -409,10 +322,7 @@ const Theme = (() => {
    */
   function rewrite(text) {
     if (typeof text !== 'string' || !text) return text;
-    let map = null;
-    if (_officeActive) map = _OFFICE_LABELS;
-    else if (_jarvisActive) map = _JARVIS_LABELS;
-    else if (_lcarsActive) map = _LCARS_LABELS;
+    const map = _jarvisActive ? _JARVIS_LABELS : null;
     if (!map) return text;
     // Longest-first so full-phrase keys win over single-word ones
     const keys = Object.keys(map).sort((a, b) => b.length - a.length);
