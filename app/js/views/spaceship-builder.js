@@ -37,8 +37,8 @@ const SpaceshipBuilderView = (() => {
 
   async function _loadForEdit(el, id) {
     try {
-      const ship = await SB.db('user_spaceships').get(id);
-      _renderForm(el, ship);
+      const raw = await SB.db('user_spaceships').get(id);
+      _renderForm(el, _hoistForForm(raw));
     } catch (err) {
       el.innerHTML = `
         <div class="app-empty">
@@ -47,6 +47,23 @@ const SpaceshipBuilderView = (() => {
           <div class="app-empty-acts"><a href="#/bridge?tab=spaceship" class="btn btn-sm">Back to Blueprints</a></div>
         </div>`;
     }
+  }
+
+  /**
+   * Normalize a user_spaceships row for the form: hoist config JSONB (new shape)
+   * or legacy `slots` bag to top-level so the form's read paths don't need to
+   * care which shape the row was saved in.
+   */
+  function _hoistForForm(raw) {
+    if (!raw) return raw;
+    const cfg = (raw.config && Object.keys(raw.config).length ? raw.config : raw.slots) || {};
+    return Object.assign({}, raw, {
+      category:         raw.category        || cfg.category || '',
+      description:      raw.description     || cfg.description || '',
+      flavor:           raw.flavor          || cfg.flavor || '',
+      tags:             raw.tags            || cfg.tags || [],
+      slot_assignments: raw.slot_assignments || cfg.slot_assignments || {},
+    });
   }
 
   function _renderForm(el, ship) {
@@ -327,18 +344,26 @@ const SpaceshipBuilderView = (() => {
     }
 
     const cls = _getSlotConfig();
+    // Ship rarity mirrors the class capacity (Scout=Common, Frigate=Rare, …).
+    // Assigned crew can only be ≤ this rarity, so the class cap is the ceiling.
+    const rarity = cls.slots[0]?.max || 'Common';
+    const configBody = {
+      description: desc,
+      flavor,
+      tags,
+      slot_assignments: slots,
+      stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
+      caps: [category + ' operations', cls.slots.length + ' agent slots'],
+    };
     const row = {
       name,
       status: existingShip?.status || 'standby',
-      slots: {
-        category,
-        description: desc,
-        flavor,
-        tags,
-        slot_assignments: slots,
-        stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
-        caps: [category + ' operations', cls.slots.length + ' agent slots'],
-      },
+      category,
+      rarity,
+      config: configBody,
+      // Dual-write `slots` as a compatibility mirror until the loader stops
+      // reading from it (tracked as the Stage A4 drop-slots migration).
+      slots: Object.assign({ category }, configBody),
     };
 
     try {
@@ -365,7 +390,7 @@ const SpaceshipBuilderView = (() => {
         }
         const shipObj = {
           id: shipId, name, category, description: desc, flavor, tags, type: 'spaceship',
-          rarity: 'Common', status: 'standby', _guest: !user,
+          rarity, status: 'standby', _guest: !user,
           config: { slot_assignments: slots },
           stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
           metadata: { caps: [category + ' operations', cls.slots.length + ' agent slots'] },
