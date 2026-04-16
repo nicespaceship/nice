@@ -125,10 +125,9 @@ describe('HomeView', () => {
     expect(greeting.textContent).toMatch(/Good (morning|afternoon|evening)/);
   });
 
-  it('pills are now in PromptPanel, not HomeView', () => {
+  it('does not render action pills', () => {
     const el = document.getElementById('test-el');
     HomeView.render(el);
-    // Pills moved to the unified PromptPanel — HomeView just renders greeting
     const pills = el.querySelectorAll('.chat-pill');
     expect(pills.length).toBe(0);
   });
@@ -172,14 +171,5 @@ describe('HomeView', () => {
     HomeView.render(el);
     const newBtn = el.querySelector('#chat-home-new');
     expect(newBtn).toBeTruthy();
-  });
-
-  it('pills have data-prefill attributes', () => {
-    const el = document.getElementById('test-el');
-    HomeView.render(el);
-    const pills = el.querySelectorAll('.chat-pill');
-    pills.forEach(p => {
-      expect(p.dataset.prefill).toBeTruthy();
-    });
   });
 });

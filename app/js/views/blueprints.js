@@ -86,7 +86,7 @@ const BlueprintsView = (() => {
   const SPACESHIP_SEED = [];
 
   let _activeTab = 'schematic';
-  let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship' or 'agent'
+  let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship', 'agent', or 'workshop' (custom builds + imports)
   // Source filter: 'all' mixes catalog + community blueprints; 'official'
   // narrows to the seeded NICE library; 'community' narrows to user-
   // published content. Replaces the old standalone Marketplace sub-tab.
@@ -137,7 +137,7 @@ const BlueprintsView = (() => {
       const _sourceParam = _hashParams.get('source');
       const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log', 'documentation', 'tron'];
       if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-      else if (_tabParam === 'spaceship' || _tabParam === 'agent') { _activeTab = 'blueprints'; _subTab = _tabParam; }
+      else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
       else if (_hash === '#/log') _activeTab = 'missions';
@@ -177,6 +177,7 @@ const BlueprintsView = (() => {
         <div class="bp-sub-tabs" id="bp-sub-tabs">
           <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
+          <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -236,7 +237,6 @@ const BlueprintsView = (() => {
         </div>
 
         <div class="bp-toolbar-actions" id="bp-toolbar-actions">
-          <button class="btn btn-sm" id="btn-bp-search-focus">Search Blueprints</button>
           <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create">+ Create</a>
           <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
         </div>
@@ -847,6 +847,86 @@ const BlueprintsView = (() => {
     if (section) _bindCardEvents(section);
   }
 
+  function _workshopCount() {
+    if (typeof BlueprintStore === 'undefined' || !BlueprintStore.listMyBlueprints) return 0;
+    const my = BlueprintStore.listMyBlueprints();
+    return my.spaceships.length + my.agents.length;
+  }
+
+  /* ── Workshop — custom builds + imports for both ships and agents ── */
+  function _renderWorkshop() {
+    _renderProgressionBar();
+    const wrap = document.getElementById('bp-activated-wrap');
+    const grid = document.getElementById('bp-grid');
+    const loadMore = document.getElementById('bp-load-more');
+    const resultBar = document.getElementById('bp-result-bar');
+    if (!wrap) return;
+
+    // The catalog grid + result bar + load-more are not used on this tab
+    if (grid) grid.innerHTML = '';
+    if (loadMore) loadMore.innerHTML = '';
+    if (resultBar) resultBar.textContent = '';
+
+    if (typeof BlueprintStore === 'undefined' || !BlueprintStore.listMyBlueprints) {
+      wrap.innerHTML = '';
+      return;
+    }
+
+    const my = BlueprintStore.listMyBlueprints();
+
+    // Apply the same client-side filters the activated section uses, so
+    // search / rarity narrowing keeps working on this tab.
+    const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
+    const rarityBtn = document.querySelector('.bp-rarity-btn.active');
+    const rarity = rarityBtn?.dataset.rarity || 'all';
+    const filterFn = (b) => {
+      if (q) {
+        const name = (b.name || '').toLowerCase();
+        const desc = (b.description || b.desc || '').toLowerCase();
+        const tags = (b.tags || []).join(' ').toLowerCase();
+        if (!name.includes(q) && !desc.includes(q) && !tags.includes(q)) return false;
+      }
+      if (rarity !== 'all' && (b.rarity || 'Common') !== rarity) return false;
+      return true;
+    };
+
+    const ships = my.spaceships.filter(filterFn).map(s => Object.assign({}, s, { type: 'spaceship', _forceActive: true }));
+    const agents = my.agents.filter(filterFn).map(a => Object.assign({}, a, { type: 'agent', _forceActive: true }));
+
+    if (!ships.length && !agents.length) {
+      const totalRaw = my.spaceships.length + my.agents.length;
+      const empty = totalRaw === 0
+        ? `<p class="bp-activated-empty">Workshop is empty. Use <strong>+ Create</strong> or <strong>Import Blueprint</strong> to add your own builds.</p>`
+        : `<p class="bp-activated-empty">No workshop blueprints match the current filter.</p>`;
+      wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
+      return;
+    }
+
+    const renderSection = (label, items, type) => {
+      if (!items.length) return '';
+      let cardsHTML;
+      if (_viewMode === 'list') {
+        let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
+        if (type === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
+        const header = `<div class="bpl-row bpl-header">
+          <span class="bpl-rarity"></span><span class="bpl-name">Name</span><span class="bpl-cat">Category</span>
+          <span class="bpl-desc">Description</span><span class="bpl-stat1">${sh1}</span><span class="bpl-stat2">${sh2}</span>
+          <span class="bpl-stat3">${sh3}</span><span class="bpl-rating">Rating</span><span class="bpl-dl">Connected</span>
+          <span></span><span class="bpl-action"></span></div>`;
+        cardsHTML = header + items.map(bp => _listRowHTML(bp, type)).join('');
+      } else {
+        cardsHTML = items.map(bp => _tcgCardHTML(bp, type)).join('');
+      }
+      return `<div class="bp-activated-section">
+        <h3 class="bp-activated-title">${label} <span class="bp-activated-count">${items.length}</span></h3>
+        <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
+      </div>`;
+    };
+
+    wrap.innerHTML = renderSection('SPACESHIPS', ships, 'spaceship') + renderSection('AGENTS', agents, 'agent');
+    wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
+  }
+
   async function _applyFilters(append) {
     // Bump the epoch — any concurrent _applyFilters call will see a newer
     // seq and abort its render. We intentionally do NOT short-circuit on
@@ -855,6 +935,13 @@ const BlueprintsView = (() => {
     // the user rapid-fired filter changes).
     const mySeq = ++_applySeq;
     const isCurrent = () => mySeq === _applySeq;
+
+    // Workshop sub-tab — entirely client-side render of custom builds +
+    // imports. Skip the catalog query and just paint the grid.
+    if (_subTab === 'workshop') {
+      _renderWorkshop();
+      return;
+    }
 
     // Reset pagination when not appending
     if (!append) {
@@ -1125,17 +1212,15 @@ const BlueprintsView = (() => {
     // Sub-tabs (Spaceships/Agents) — only show when Blueprints tab active
     if (subTabs) subTabs.style.display = isBlueprintsTab ? '' : 'none';
 
-    // Catalog UI (search, filters, grid)
+    // Catalog UI (search, filters, grid, toolbar actions) — only on Blueprints tab
     const catalogDisplay = isBlueprintsTab ? '' : 'none';
     if (searchRow) searchRow.style.display = catalogDisplay;
     if (resultBar) resultBar.style.display = catalogDisplay;
     if (activatedWrap) activatedWrap.style.display = catalogDisplay;
     if (grid) grid.style.display = catalogDisplay;
     if (loadMore) loadMore.style.display = catalogDisplay;
-
-    // Hide toolbar actions on TRON tab
     const toolbarActions = document.getElementById('bp-toolbar-actions');
-    if (toolbarActions) toolbarActions.style.display = (_activeTab === 'tron') ? 'none' : '';
+    if (toolbarActions) toolbarActions.style.display = catalogDisplay;
 
     // Schematic
     if (schematicEl) {
@@ -1828,16 +1913,6 @@ const BlueprintsView = (() => {
       const qs = params.toString();
       history.replaceState(null, '', base + (qs ? '?' + qs : ''));
       _applyFilters();
-    });
-
-    // Search Blueprints button — switches to Blueprints tab and focuses search
-    document.getElementById('btn-bp-search-focus')?.addEventListener('click', () => {
-      const bpTab = document.querySelector('[data-tab="blueprints"]');
-      if (bpTab && !bpTab.classList.contains('active')) bpTab.click();
-      setTimeout(() => {
-        const search = document.getElementById('bp-search');
-        if (search) { search.focus(); search.select(); }
-      }, 50);
     });
 
     // Import Blueprint button

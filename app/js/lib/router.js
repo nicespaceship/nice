@@ -202,6 +202,12 @@ const Router = (() => {
     });
   }
 
+  /* Re-render the current view (e.g. after a theme change so any
+     theme-specific DOM the previous view rendered gets rebuilt fresh). */
+  function refresh() {
+    if (_el) _render();
+  }
+
   /* Start listening */
   function init(containerEl) {
     _el = containerEl;
@@ -211,5 +217,5 @@ const Router = (() => {
     _render();
   }
 
-  return { on, navigate, path, query, hashQuery, init };
+  return { on, navigate, path, query, hashQuery, init, refresh };
 })();
