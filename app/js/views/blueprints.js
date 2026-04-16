@@ -236,7 +236,6 @@ const BlueprintsView = (() => {
         </div>
 
         <div class="bp-toolbar-actions" id="bp-toolbar-actions">
-          <button class="btn btn-sm" id="btn-bp-search-focus">Search Blueprints</button>
           <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create">+ Create</a>
           <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
         </div>
@@ -1826,16 +1825,6 @@ const BlueprintsView = (() => {
       const qs = params.toString();
       history.replaceState(null, '', base + (qs ? '?' + qs : ''));
       _applyFilters();
-    });
-
-    // Search Blueprints button — switches to Blueprints tab and focuses search
-    document.getElementById('btn-bp-search-focus')?.addEventListener('click', () => {
-      const bpTab = document.querySelector('[data-tab="blueprints"]');
-      if (bpTab && !bpTab.classList.contains('active')) bpTab.click();
-      setTimeout(() => {
-        const search = document.getElementById('bp-search');
-        if (search) { search.focus(); search.select(); }
-      }, 50);
     });
 
     // Import Blueprint button
