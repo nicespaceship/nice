@@ -2868,6 +2868,86 @@ body:has(.app-sidebar.open) [data-theme="jarvis"]:not(.jv-pp-reactor-off) .jv-pp
   transition:opacity 200ms ease;
 }
 
+/* ── Call Mode overlay — JARVIS finish ──
+   JARVIS is the only theme that exposes Call Mode. Layout lives in app.css;
+   these rules tint the overlay to match the holographic HUD aesthetic and
+   ensure the reactor keeps its full brightness (override the 0.5 idle
+   opacity the global reactor uses so the core reads as the centerpiece). */
+[data-theme="jarvis"] .nice-ai-call-backdrop {
+  background:radial-gradient(ellipse at center, rgba(2,13,28,0.78) 0%, rgba(0,6,16,0.96) 85%);
+}
+[data-theme="jarvis"] .nice-ai-call-status {
+  color:rgba(0,229,255,0.82);
+  text-shadow:0 0 12px rgba(0,229,255,0.35);
+}
+[data-theme="jarvis"] .nice-ai-call-user {
+  color:rgba(178,235,242,0.88);
+}
+[data-theme="jarvis"] .nice-ai-call-assistant {
+  color:#e0f7fa;
+  text-shadow:0 0 18px rgba(0,229,255,0.25), 0 1px 14px rgba(0,0,0,.7);
+}
+[data-theme="jarvis"] .nice-ai-call-user::before {
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.7), transparent);
+  width:48px; height:1px;
+}
+[data-theme="jarvis"] .nice-ai-call-end {
+  background:rgba(30,6,10,0.55);
+  border-color:rgba(255,99,99,0.55);
+  color:#ffcdd2;
+  box-shadow:0 0 14px rgba(255,80,80,0.22), inset 0 0 10px rgba(255,80,80,0.08);
+}
+[data-theme="jarvis"] .nice-ai-call-end:hover {
+  background:rgba(60,10,14,0.7);
+  border-color:rgba(255,120,120,0.85);
+  color:#ffebee;
+}
+/* Reactor must stay bright + centered on top of the overlay during a call.
+   `data-theme` and `.nice-call-mode` both live on <html>, so the selectors
+   combine on the same element (no descendant space). This override also
+   defeats `.jv-pp-reactor-off` (set on the Schematic route) so the reactor
+   always renders during a call — and re-supplies the size/position that
+   normally comes from the `:not(.jv-pp-reactor-off)` rule. */
+html.nice-call-mode[data-theme="jarvis"] .jv-pp-reactor {
+  display:block;
+  position:fixed;
+  top:50%; left:50%;
+  transform:translate(-50%, -50%);
+  width:min(620px, 85vmin); height:min(620px, 85vmin);
+  opacity:1;
+  z-index:9510;  /* above the call backdrop (9500) */
+  pointer-events:none;
+}
+/* The app content (Schematic, Bridge, everything) is irrelevant during a
+   call — the overlay + reactor own the viewport. Hide .app-main so the
+   Schematic's in-view reactor and HUD rings don't bleed through the
+   backdrop-filter. Reactor lives outside .app-main (body child) so it
+   stays visible. */
+html.nice-call-mode .app-main,
+html.nice-call-mode .app-sidebar,
+html.nice-call-mode .app-topbar,
+html.nice-call-mode .hud-alert-container { visibility:hidden; }
+
+/* Call button — holographic blue ring when idle, brighter when on a call */
+[data-theme="jarvis"] .nice-ai-call-btn {
+  color:rgba(0,229,255,0.78);
+  border-color:rgba(0,229,255,0.45);
+}
+[data-theme="jarvis"] .nice-ai-call-btn:hover {
+  color:#e0f7fa; border-color:rgba(0,229,255,0.85);
+  box-shadow:0 0 10px rgba(0,229,255,0.35);
+}
+[data-theme="jarvis"] .nice-ai-call-btn.active {
+  color:#e0f7fa; border-color:rgba(0,229,255,0.95);
+  background:rgba(0,229,255,0.14);
+  box-shadow:0 0 14px rgba(0,229,255,0.45);
+  animation:jv-call-btn-pulse 2s ease-in-out infinite;
+}
+@keyframes jv-call-btn-pulse {
+  0%, 100% { box-shadow:0 0 10px rgba(0,229,255,0.35); }
+  50% { box-shadow:0 0 18px rgba(0,229,255,0.6); }
+}
+
 /* ── Schematic mini-chat — JARVIS replies inline without leaving the view ──
    Sits above the core inside `.schematic-center`. Only renders on JARVIS
    (Office/NICE keep the full-monitor behaviour). Hidden when the full monitor
