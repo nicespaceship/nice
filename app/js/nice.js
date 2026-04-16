@@ -30,7 +30,10 @@ const Theme = (() => {
     { id:'lcars', name:'LCARS', builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' } },
     { id:'jarvis', name:'J.A.R.V.I.S.', builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
-      data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' } },
+      data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' },
+      // Rank overlay — Iron Man's workshop ladder. 12 entries, one per
+      // default rank position, consumed by Gamification._skinnedRanks().
+      copy:{ ranks:['Mark I','Mark II','Mark III','Mark IV','Mark V','Mark VI','Mark VII','Mark VIII','Mark IX','Mark XLII','Mark L','Iron Man'] } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' } },
     { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
@@ -122,7 +125,17 @@ const Theme = (() => {
     // Theme-specific terminology
     _applyOfficeLabels(name === 'office' || name === 'office-dark');
     _applyLcarsLabels(name === 'lcars');
+    _applyJarvisLabels(name === 'jarvis');
     _updateDarkLightIcon();
+    // Refresh the sidebar rank badge so theme-scoped rank overlays (e.g.
+    // JARVIS → Mark I…Iron Man) land immediately instead of on next login.
+    try {
+      const badgeEl = document.getElementById('hdr-user-badge');
+      if (badgeEl && typeof Gamification !== 'undefined' && Gamification.getRank) {
+        const rank = Gamification.getRank();
+        if (rank && rank.name) badgeEl.textContent = rank.name.toUpperCase();
+      }
+    } catch { /* pre-init — rank will render on next update */ }
 
     // If leaving The Grid, destroy TRON game and reset to default tab
     if (name !== 'navigator' && typeof TronView !== 'undefined' && TronView.destroy) {
@@ -199,6 +212,81 @@ const Theme = (() => {
     }
   }
 
+  // J.A.R.V.I.S.: workshop vocabulary + butler personality. Nouns swap for
+  // the holographic HUD / Stark-lab aesthetic; distinctive phrases get the
+  // formal-with-dry-wit flavour (the "sir" address, anticipatory phrasing).
+  // Only full phrases that are unlikely to appear in other contexts are
+  // swapped — single-word verbs stay conservative to avoid over-matching.
+  const _JARVIS_LABELS = {
+    // Nav / tab vocabulary
+    'Schematic': 'Overview', 'Missions': 'Directives',
+    'Outbox': 'Dispatch', 'Operations': 'Diagnostics', 'Log': 'Telemetry',
+    'Bridge': 'Workshop', 'Deploy': 'Engage', 'Deployed': 'Engaged',
+    'DEPLOYED': 'ENGAGED', 'SCHEMATIC': 'OVERVIEW',
+    'MISSIONS': 'DIRECTIVES', 'OUTBOX': 'DISPATCH',
+    'OPERATIONS': 'DIAGNOSTICS', 'LOG': 'TELEMETRY',
+    'Spaceships': 'Systems', 'Spaceship': 'System',
+    'Ship': 'System', 'Create Spaceship': 'Create System',
+    'Create New Spaceship': 'Create New System',
+    'Agents': 'Protocols', 'Agent': 'Protocol',
+    'Crew': 'Subsystems',
+    "Captain's Log": 'Session Log', "Ship's Log": 'System Log',
+    'Sign in to NICE': 'Sign in to J.A.R.V.I.S.',
+    'NICE™': 'J.A.R.V.I.S.',
+    'spaceships': 'systems', 'spaceship': 'system', 'crew': 'subsystems',
+    // Personality — empty states (distinctive full phrases)
+    'No agents deployed yet. Browse below.': 'No protocols engaged, sir. Browse below.',
+    'No spaceships deployed yet. Browse below.': 'No systems engaged, sir. Browse below.',
+    'No agents deployed yet.': 'No protocols engaged, sir.',
+    'No spaceships deployed.': 'No systems engaged, sir.',
+    'No agents yet.': 'No protocols active, sir.',
+    'No missions yet.': 'No directives active, sir.',
+    'No missions assigned yet.': 'No directives assigned, sir.',
+    'No agents found': 'No protocols match, sir',
+    'No results found': 'No results, sir',
+    'No results': 'Nothing to report, sir',
+    'No chats yet': 'No active sessions, sir',
+    'No eligible blueprints': 'Nothing eligible, sir',
+    'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
+    'No Blueprints Found': 'Nothing in the archive, sir',
+    // Personality — toast/notification prefixes
+    'Installed': 'Protocol engaged, sir.',
+    'Activated!': 'Protocol engaged, sir.',
+    'Published!': 'Protocol filed, sir.',
+    'Rated!': 'Rating logged, sir.',
+    'Copied to clipboard': 'Logged to clipboard, sir.',
+  };
+  const _JARVIS_PLACEHOLDERS = {
+    'Ask NICE\u2026': 'At your service, sir\u2026',
+    'Ask NICE...': 'At your service, sir...',
+  };
+  const _JARVIS_REVERSE = Object.fromEntries(Object.entries(_JARVIS_LABELS).map(([k,v]) => [v,k]));
+  const _JARVIS_PLACEHOLDERS_REVERSE = Object.fromEntries(Object.entries(_JARVIS_PLACEHOLDERS).map(([k,v]) => [v,k]));
+  let _jarvisActive = false;
+  let _jarvisObserver = null;
+
+  function _applyJarvisLabels(on) {
+    if (on === _jarvisActive) return;
+    _jarvisActive = on;
+    const map = on ? _JARVIS_LABELS : _JARVIS_REVERSE;
+    _swapTextInDOM(map);
+    // Placeholders aren't caught by the office-routed placeholder swap when
+    // a non-office theme is active; handle JARVIS's set explicitly.
+    const phMap = on ? _JARVIS_PLACEHOLDERS : _JARVIS_PLACEHOLDERS_REVERSE;
+    document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
+      const ph = el.getAttribute('placeholder');
+      if (phMap[ph]) el.setAttribute('placeholder', phMap[ph]);
+    });
+    if (on && !_jarvisObserver) {
+      _jarvisObserver = new MutationObserver(() => { if (_jarvisActive) _swapTextInDOM(_JARVIS_LABELS); });
+      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
+      _jarvisObserver.observe(main, { childList: true, subtree: true, characterData: true });
+    } else if (!on && _jarvisObserver) {
+      _jarvisObserver.disconnect();
+      _jarvisObserver = null;
+    }
+  }
+
   function _swapTextInDOM(map) {
     // Sort keys longest-first to prevent partial matches (e.g. "Spaceships" before "Spaceship")
     const keys = Object.keys(map).sort((a, b) => b.length - a.length);
@@ -219,17 +307,39 @@ const Theme = (() => {
         nodes.forEach(n => { if (n.textContent.includes(k)) n.textContent = n.textContent.replace(k, map[k]); });
       }
     });
-    // Hero header text, buttons, labels, legends
-    document.querySelectorAll('.bridge-hero-meta, h2, h3, p, .wizard-title, .bp-card-type, .btn-primary, .btn-sm, .builder-sub, .builder-legend, .builder-hint, legend, label').forEach(el => {
+    // Hero header text, buttons, labels, legends, toast content
+    // (.notify-toast-title / .notify-toast-msg cover runtime notifications —
+    // toasts are appended to body so the MutationObserver catches new ones.)
+    //
+    // Word-boundary guards stop short keys (e.g. "Log" → "Telemetry") from
+    // matching inside larger words like "Logged". \b is added at either end
+    // only when the key begins/ends with a word character — keys that start
+    // or end with punctuation (e.g. "Browse below.") skip the boundary on
+    // that side because \b requires a word-char-adjacent position.
+    document.querySelectorAll('.bridge-hero-meta, h2, h3, p, .wizard-title, .bp-card-type, .btn-primary, .btn-sm, .builder-sub, .builder-legend, .builder-hint, legend, label, .notify-toast-title, .notify-toast-msg').forEach(el => {
       for (const k of keys) {
-        el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), map[k]); });
+        const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pre  = /^\w/.test(k) ? '\\b' : '';
+        const post = /\w$/.test(k) ? '\\b' : '';
+        const re = new RegExp(pre + escaped + post, 'g');
+        el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(re, map[k]); });
       }
     });
-    // Placeholder attributes (input, textarea)
-    const phMap = _officeActive ? _OFFICE_PLACEHOLDERS : Object.fromEntries(Object.entries(_OFFICE_PLACEHOLDERS).map(([k,v]) => [v,k]));
+    // Placeholder attributes (input, textarea) — each active theme gets its
+    // own map applied, falling back to reverse maps for inactive themes so
+    // placeholders restore cleanly when themes are swapped.
+    const phCandidates = [];
+    phCandidates.push(_officeActive
+      ? _OFFICE_PLACEHOLDERS
+      : Object.fromEntries(Object.entries(_OFFICE_PLACEHOLDERS).map(([k,v]) => [v,k])));
+    phCandidates.push(_jarvisActive
+      ? _JARVIS_PLACEHOLDERS
+      : _JARVIS_PLACEHOLDERS_REVERSE);
     document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
       const ph = el.getAttribute('placeholder');
-      if (phMap[ph]) el.setAttribute('placeholder', phMap[ph]);
+      for (const phMap of phCandidates) {
+        if (phMap[ph]) { el.setAttribute('placeholder', phMap[ph]); break; }
+      }
     });
   }
 
@@ -291,7 +401,33 @@ const Theme = (() => {
 
   function current() { return localStorage.getItem(_K_THEME) || 'spaceship'; }
 
-  return { set, init, toggleDarkLight, renderDock, list, getTheme, current, THEMES, BUILTIN };
+  /**
+   * Apply the active theme's personality label map to a string. Used by
+   * callers that render dynamic text outside the DOM text-swap's reach —
+   * notifications, in-place generated messages, etc. Pure function: no
+   * DOM side effects. Returns the input unchanged if no theme owns a map.
+   */
+  function rewrite(text) {
+    if (typeof text !== 'string' || !text) return text;
+    let map = null;
+    if (_officeActive) map = _OFFICE_LABELS;
+    else if (_jarvisActive) map = _JARVIS_LABELS;
+    else if (_lcarsActive) map = _LCARS_LABELS;
+    if (!map) return text;
+    // Longest-first so full-phrase keys win over single-word ones
+    const keys = Object.keys(map).sort((a, b) => b.length - a.length);
+    let out = text;
+    for (const k of keys) {
+      if (!out.includes(k)) continue;
+      const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pre  = /^\w/.test(k) ? '\\b' : '';
+      const post = /\w$/.test(k) ? '\\b' : '';
+      out = out.replace(new RegExp(pre + escaped + post, 'g'), map[k]);
+    }
+    return out;
+  }
+
+  return { set, init, toggleDarkLight, renderDock, list, getTheme, current, rewrite, THEMES, BUILTIN };
 })();
 
 /* ─────────────────────────────────────────────────────────────────
