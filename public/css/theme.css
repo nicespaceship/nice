@@ -294,12 +294,6 @@
   transition: all .15s;
 }
 [data-theme="spaceship"] .nice-ai-chip:hover { border-color: var(--border-hi); color: var(--text); }
-[data-theme="spaceship"] .chat-pill {
-  border-radius: 9999px; border: 1px solid var(--border);
-  background: transparent; color: var(--text-muted);
-  transition: all .15s;
-}
-[data-theme="spaceship"] .chat-pill:hover { border-color: var(--accent2); color: var(--text); background: rgba(224,231,255,0.04); }
 
 /* Schematic */
 [data-theme="spaceship"] .schematic-wired .tcg-card-mini { border-radius: var(--radius); }
@@ -351,14 +345,6 @@
 [data-theme="spaceship"] .nice-ai-input-area:focus-within {
   border-color: var(--accent2);
   box-shadow: 0 0 0 2px rgba(165,180,252,0.12), 0 0 20px rgba(165,180,252,0.06);
-}
-
-/* Chat pills — filled hover + glow */
-[data-theme="spaceship"] .chat-pill:hover {
-  border-color: var(--accent2);
-  color: var(--accent);
-  background: rgba(165,180,252,0.08);
-  box-shadow: 0 0 12px rgba(165,180,252,0.08);
 }
 
 /* Active sidebar — left accent bar + icon glow */
@@ -692,14 +678,6 @@
   border-radius:4px; border:1px solid #d0d0ce; background:transparent; color:#888; font-size:.6rem;
 }
 [data-theme="robotech"] .nice-ai-chip:hover { border-color:#999; color:#1a1a1a; }
-[data-theme="robotech"] .chat-pill {
-  border-radius:9999px; border:1px solid #d0d0ce; background:transparent; color:#888;
-}
-[data-theme="robotech"] .chat-pill:hover { border-color:#999; color:#1a1a1a; }
-[data-theme="robotech"] .nice-ai-pills .nice-ai-pill {
-  border:1px solid #d0d0ce; border-radius:4px; background:transparent; color:#888; transition:all .15s;
-}
-[data-theme="robotech"] .nice-ai-pills .nice-ai-pill:hover { border-color:#999; color:#1a1a1a; }
 
 /* ── Schematic ── */
 [data-theme="robotech"] .schematic-wired .tcg-card-mini { border-radius:4px; border-color:#d0d0ce; }
@@ -1435,16 +1413,6 @@
   background: rgba(24,160,251,0.1); color: #18a0fb; border-color: rgba(24,160,251,0.4);
   box-shadow: 0 0 8px rgba(24,160,251,0.15);
 }
-[data-theme="navigator"] .chat-pill {
-  border-radius: 9999px; border: 1px solid rgba(24,160,251,0.15);
-  background: transparent; color: rgba(24,160,251,0.5);
-  font-family: var(--font-h);
-}
-[data-theme="navigator"] .chat-pill:hover {
-  background: rgba(24,160,251,0.1); color: #18a0fb;
-  box-shadow: 0 0 8px rgba(24,160,251,0.15);
-}
-
 /* Schematic cards — circuit board glow */
 [data-theme="navigator"] .schematic-wired .tcg-card-mini {
   border-color: rgba(24,160,251,0.3);
@@ -1702,19 +1670,6 @@
   text-shadow:0 0 8px rgba(0,229,255,0.4);
 }
 
-/* ── 10. Prompt Pills — disc fragments ── */
-[data-theme="navigator"] .nice-ai-pills .nice-ai-pill {
-  border:1px solid rgba(0,229,255,0.15); border-radius:2px;
-  background:transparent; color:rgba(0,229,255,0.5);
-  font-family:var(--font-h); text-transform:uppercase; letter-spacing:.08em; font-size:.6rem;
-}
-[data-theme="navigator"] .nice-ai-pills .nice-ai-pill:hover {
-  border-color:#00e5ff; color:#00e5ff;
-  box-shadow:0 0 12px rgba(0,229,255,0.2);
-  background:rgba(0,229,255,0.06);
-  text-shadow:0 0 6px rgba(0,229,255,0.4);
-}
-
 /* ── 11. Progress Bars — energy conduit ── */
 [data-theme="navigator"] progress,
 [data-theme="navigator"] .progress-bar {
@@ -1877,11 +1832,6 @@
   color: rgba(0,255,65,0.6); font-family: 'Fira Code', monospace; font-size: 11px;
 }
 [data-theme="matrix"] .nice-ai-chip:hover { background: rgba(0,255,65,0.1); color: #00ff41; }
-[data-theme="matrix"] .chat-pill {
-  border-radius: 0; border: 1px solid rgba(0,255,65,0.2); background: transparent;
-  color: rgba(0,255,65,0.5);
-}
-[data-theme="matrix"] .chat-pill:hover { background: rgba(0,255,65,0.08); color: #00ff41; }
 [data-theme="matrix"] .tcg-card {
   box-shadow: 0 0 20px rgba(0,255,65,0.08); border-color: rgba(0,255,65,0.25);
 }
@@ -2312,11 +2262,6 @@
   font-weight:700; text-transform:uppercase;
 }
 [data-theme="lcars"] .nice-ai-chip:hover { background:#ff9966; }
-[data-theme="lcars"] .chat-pill {
-  border-radius:9999px; background:#666688; color:#000; border:none;
-  font-weight:700; text-transform:uppercase;
-}
-[data-theme="lcars"] .chat-pill:hover { background:#ff9966; color:#000; }
 
 /* Scrollbar */
 [data-theme="lcars"] ::-webkit-scrollbar { width:8px; }
@@ -2603,11 +2548,6 @@
   font-weight: 500; text-transform: uppercase;
 }
 [data-theme="jarvis"] .nice-ai-chip:hover { background: rgba(0,229,255,0.12); color: #18ffff; }
-[data-theme="jarvis"] .chat-pill {
-  border-radius: 9999px; border: 1px solid rgba(0,229,255,0.15);
-  background: rgba(0,229,255,0.04); color: rgba(0,229,255,0.6);
-}
-[data-theme="jarvis"] .chat-pill:hover { background: rgba(0,229,255,0.1); color: #18ffff; }
 
 /* Schematic cards */
 [data-theme="jarvis"] .schematic-wired .tcg-card-mini {
@@ -3453,17 +3393,6 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   background:rgba(14,26,46,0.7);
   box-shadow:0 0 12px rgba(0,229,255,0.05);
 }
-[data-theme="jarvis"] .nice-ai-pills .nice-ai-pill {
-  border:1px solid rgba(0,229,255,0.15); border-radius:3px;
-  background:rgba(0,229,255,0.04);
-  color:rgba(0,229,255,0.6); font-family:'Exo 2', sans-serif;
-  font-weight:500; text-transform:uppercase; letter-spacing:.08em; font-size:.65rem;
-}
-[data-theme="jarvis"] .nice-ai-pills .nice-ai-pill:hover {
-  background:rgba(0,229,255,0.12); color:#18ffff;
-  border-color:rgba(0,229,255,0.4);
-}
-
 /* ── 16. Security tabs ── */
 [data-theme="jarvis"] .security-tab {
   border-radius:3px; font-family:'Exo 2', sans-serif;
@@ -3730,16 +3659,6 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   clip-path:polygon(0 4px, 4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px));
 }
 
-/* Prompt panel — notched neon terminal */
-[data-theme="cyberpunk"] .nice-ai-pills .nice-ai-pill {
-  clip-path:polygon(0 3px, 3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px));
-  border-color:#2a2a4a;
-}
-[data-theme="cyberpunk"] .nice-ai-pills .nice-ai-pill:hover {
-  border-color:#ff2d6f; color:#ff2d6f;
-  box-shadow:0 0 8px rgba(255,45,111,0.2);
-}
-
 /* Sidebar — dark with neon accents */
 [data-theme="cyberpunk"] .app-sidebar {
   border-right:1px solid rgba(255,45,111,0.15);
@@ -3933,20 +3852,6 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   clip-path:polygon(0 3px, 3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px));
   text-transform:uppercase; letter-spacing:.08em; font-size:.6rem;
 }
-
-/* ── 21. Prompt Pills — HUD button treatment ── */
-[data-theme="cyberpunk"] .nice-ai-pills .nice-ai-pill {
-  clip-path:polygon(0 4px, 4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px));
-  border:1px solid rgba(255,45,111,0.2); background:rgba(18,18,38,0.8);
-  font-family:'Fira Code', monospace; text-transform:uppercase; letter-spacing:.06em; font-size:.65rem;
-  transition:all .15s;
-}
-[data-theme="cyberpunk"] .nice-ai-pills .nice-ai-pill:hover {
-  border-color:#ff2d6f; color:#ff2d6f;
-  box-shadow:0 0 10px rgba(255,45,111,0.2), inset 0 0 20px rgba(255,45,111,0.05);
-  background:rgba(255,45,111,0.08);
-}
-[data-theme="cyberpunk"] .nice-ai-pills .nice-ai-pill svg { stroke:currentColor; }
 
 /* ── 22. Select Dropdowns — angular ── */
 [data-theme="cyberpunk"] select,

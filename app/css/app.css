@@ -611,16 +611,6 @@
   background: #e8c840;
   color: #1a1a2a;
 }
-/* Chat pills (Research, Mission, Code, etc.) */
-[data-theme="gundam"] .chat-pill {
-  background: #d4a017 !important;
-  border-color: #e8c840 !important;
-  color: #1a1a2a !important;
-  font-weight: 600;
-}
-[data-theme="gundam"] .chat-pill:hover {
-  background: #e8c840 !important;
-}
 /* Model dropdown — same gray as other buttons */
 [data-theme="gundam"] .nice-ai-model-select {
   background: #3a3f55 !important;
@@ -1025,10 +1015,6 @@
 [data-theme="16bit"] .nice-ai-chip:hover {
   border-color: #e2b714;
   background: #2e4068;
-}
-[data-theme="16bit"] .chat-pill {
-  font-size: 7px !important;
-  padding: 4px 10px !important;
 }
 [data-theme="16bit"] .nice-ai-model-select {
   font-size: 8px;
@@ -3748,7 +3734,6 @@
 }
 /* All interactive children need pointer-events restored */
 .nice-ai-input-area { pointer-events:auto; }
-.nice-ai-pills { pointer-events:auto; }
 .nice-ai-chips { pointer-events:auto; }
 .nice-ai-close {
   position:absolute; top:-2px; right:0; z-index:5;
@@ -4468,23 +4453,6 @@ html.nice-call-mode .nice-ai-chips { display:none; }
   .home-features { grid-template-columns:1fr; max-width:320px; }
 }
 
-/* Quick action pills */
-.chat-home-pills {
-  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
-  padding:10px 0 20px;
-}
-.chat-pill {
-  display:flex; align-items:center; gap:5px;
-  padding:8px 20px; border-radius:9999px;
-  background:none; border:1px solid var(--border);
-  color:var(--text-muted); font-family:var(--font-b);
-  font-size:.78rem; cursor:pointer; transition:all .2s;
-}
-.chat-pill:hover {
-  border-color:var(--accent); color:var(--text);
-  background:var(--panel-bg);
-}
-
 /* Conversation state */
 .chat-home-conv {
   flex:1; display:flex; flex-direction:column;
@@ -4507,8 +4475,6 @@ html.nice-call-mode .nice-ai-chips { display:none; }
 /* Input wrap — legacy, no longer used */
 @media (max-width:600px) {
   .chat-home-greeting { font-size:1.2rem; }
-  .chat-home-pills { gap:6px; }
-  .chat-pill { padding:6px 12px; font-size:.72rem; }
 }
 
 /* ── Bridge Stats ── */
@@ -9316,8 +9282,6 @@ body.preview-active .nice-ai {
   .nice-ai-toolbar { flex-wrap:wrap; gap:4px; }
   .nice-ai-toolbar-right { gap:4px; }
   .nice-ai-mode-select, .nice-ai-model-select { font-size:.65rem; padding:3px 16px 3px 6px; max-width:100px; }
-  .nice-ai-pills { flex-wrap:wrap; gap:6px; }
-  .chat-pill { font-size:.72rem; padding:6px 10px; }
 }
 
 /* ── Modals: full-width on small screens ── */
