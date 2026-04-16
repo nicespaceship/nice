@@ -924,6 +924,34 @@ const BlueprintStore = (() => {
     return [..._spaceships];
   }
 
+  /**
+   * List the user's own blueprints — custom builds and imports, distinct
+   * from catalog activations. Splits by type so the view can render them
+   * in two sections.
+   *
+   * Source of truth:
+   * - State.spaceships / State.agents — entries WITHOUT `blueprint_id`
+   *   are user-built (catalog activations carry the blueprint_id link).
+   * - localStorage `customShips` / `customAgents` — the guest/offline
+   *   path before sign-in syncs to user_spaceships / user_agents.
+   */
+  function listMyBlueprints() {
+    const ships = ((typeof State !== 'undefined' ? State.get('spaceships') : null) || [])
+      .filter(s => s && !s.blueprint_id);
+    const agents = ((typeof State !== 'undefined' ? State.get('agents') : null) || [])
+      .filter(a => a && !a.blueprint_id);
+    const seen = new Set([...ships.map(s => s.id), ...agents.map(a => a.id)]);
+    try {
+      const guestShips = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
+      guestShips.forEach(s => { if (s && s.id && !seen.has(s.id)) { ships.push(s); seen.add(s.id); } });
+    } catch {}
+    try {
+      const guestAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+      guestAgents.forEach(a => { if (a && a.id && !seen.has(a.id)) { agents.push(a); seen.add(a.id); } });
+    } catch {}
+    return { spaceships: ships, agents: agents };
+  }
+
   function get(id) {
     return getAgent(id) || getSpaceship(id);
   }
@@ -2070,6 +2098,7 @@ const BlueprintStore = (() => {
 
     // Catalog queries
     getAgent, listAgents, getSpaceship, listSpaceships,
+    listMyBlueprints,
     get,
 
     // Agent activation
