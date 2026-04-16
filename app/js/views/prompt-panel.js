@@ -62,7 +62,16 @@ const PromptPanel = (() => {
   let _callSilenceSince = 0;      // ms timestamp silence started after speech
   let _callSpeechStart = 0;       // ms timestamp current speech started
   let _callRecognition = null;    // SpeechRecognition for captions + transcript
-  let _callTranscript = '';       // live user transcript (committed on silence)
+  /* Transcript is built from three layers so interim results REPLACE prior
+     interim (not accumulate), while finalized text persists across the
+     auto-restarts the browser does when it stops hearing speech.
+       committed = finals from prior recognition sessions this turn
+       sessionFinal = finals from the current recognition session
+       sessionInterim = latest interim from the current session (replaces itself)
+     Display + commit = committed + sessionFinal + sessionInterim. */
+  let _callCommittedFinal = '';
+  let _callSessionFinal = '';
+  let _callSessionInterim = '';
   let _callAbortCtrl = null;      // aborts in-flight LLM call on end/barge-in
 
   /* ── Option D: auto-arm mic after JARVIS speaks (regular flow) ──
@@ -2974,12 +2983,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (_callPhase === 'thinking' && rms > CALL_RMS_THRESHOLD * CALL_RMS_BARGE_MULT) {
       if (_callAbortCtrl) { try { _callAbortCtrl.abort(); } catch {} _callAbortCtrl = null; }
       _setCallCaption('assistant', '');
-      _callTranscript = '';
+      _callResetTranscript();
       _callSpeechStart = now;
       _callVoiceActive = true;
       _callSilenceSince = 0;
       _setCallPhase('listening');
-      _callEnsureRecognitionRunning();
+      // Recycle recognition so event.results starts fresh for the new turn
+      if (_callRecognition) { try { _callRecognition.stop(); } catch {} }
+      else _callEnsureRecognitionRunning();
       _callVadRaf = requestAnimationFrame(_callVadLoop);
       return;
     }
@@ -2989,11 +3000,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       _ttsStop();
       _setCallCaption('assistant', '');
       _setCallPhase('listening');
-      _callTranscript = '';
+      _callResetTranscript();
       _callSpeechStart = now;
       _callVoiceActive = true;
       _callSilenceSince = 0;
-      _callEnsureRecognitionRunning();
+      // Recycle recognition so event.results starts fresh for the new turn
+      if (_callRecognition) { try { _callRecognition.stop(); } catch {} }
+      else _callEnsureRecognitionRunning();
       _callVadRaf = requestAnimationFrame(_callVadLoop);
       return;
     }
@@ -3025,23 +3038,39 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _callRecognition.lang = 'en-US';
     _callRecognition.interimResults = true;
     _callRecognition.continuous = true;
-    _callTranscript = '';
+    _callCommittedFinal = '';
+    _callSessionFinal = '';
+    _callSessionInterim = '';
 
     _callRecognition.onresult = (event) => {
       if (!_callMode) return;
-      let transcript = '';
-      // Only use results from this recognition session (not the cumulative
-      // onresult index across restarts)
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
+      // Walk the full results list — event.results already contains both
+      // finalized and interim portions. Partition by isFinal so interim
+      // REPLACES itself on each event instead of accumulating. resultIndex
+      // is not safe for this partitioning; it only signals which index
+      // changed in THIS event.
+      let sf = '', si = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        const t = r[0].transcript;
+        if (r.isFinal) sf += t; else si += t;
       }
-      // Append to running transcript for live caption feel across restarts
-      _callTranscript = (_callTranscript ? _callTranscript + ' ' : '') + transcript;
-      if (_callPhase === 'listening') _setCallCaption('user', _callTranscript);
+      _callSessionFinal = sf;
+      _callSessionInterim = si;
+      if (_callPhase === 'listening') {
+        _setCallCaption('user', _callLiveTranscript());
+      }
     };
 
     _callRecognition.onend = () => {
-      // Auto-restart while in call mode (recognition stops on silence naturally)
+      // Promote the current session's finals to committed, so the next
+      // (auto-restarted) session starts with a clean results list but we
+      // keep what the user already said.
+      if (_callSessionFinal) {
+        _callCommittedFinal = (_callCommittedFinal ? _callCommittedFinal + ' ' : '') + _callSessionFinal.trim();
+      }
+      _callSessionFinal = '';
+      _callSessionInterim = '';
       if (_callMode) {
         try { _callRecognition && _callRecognition.start(); } catch {}
       }
@@ -3054,6 +3083,15 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     };
 
     try { _callRecognition.start(); } catch {}
+  }
+
+  /* Live transcript built from the three layers (see state-var block). */
+  function _callLiveTranscript() {
+    const parts = [];
+    if (_callCommittedFinal) parts.push(_callCommittedFinal);
+    if (_callSessionFinal) parts.push(_callSessionFinal.trim());
+    if (_callSessionInterim) parts.push(_callSessionInterim.trim());
+    return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
   }
 
   function _callEnsureRecognitionRunning() {
@@ -3070,13 +3108,28 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       try { _callRecognition.stop(); } catch {}
       _callRecognition = null;
     }
-    _callTranscript = '';
+    _callCommittedFinal = '';
+    _callSessionFinal = '';
+    _callSessionInterim = '';
+  }
+
+  function _callResetTranscript() {
+    _callCommittedFinal = '';
+    _callSessionFinal = '';
+    _callSessionInterim = '';
   }
 
   async function _callCommitTurn() {
-    const text = (_callTranscript || '').trim();
-    _callTranscript = '';
+    const text = _callLiveTranscript();
+    _callResetTranscript();
     if (!text || text.length < 2) return;
+    // Recycle the recognition session so event.results starts empty for
+    // the next turn — otherwise the just-committed results persist and
+    // the next onresult re-includes them as final text.
+    if (_callMode && _callRecognition) {
+      try { _callRecognition.stop(); } catch {}
+      // onend will restart the session, firing fresh (empty) event.results
+    }
     _setCallPhase('thinking');
     _setCallCaption('user', text);
     _setCallCaption('assistant', '');
