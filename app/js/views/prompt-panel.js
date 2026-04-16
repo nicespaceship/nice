@@ -44,6 +44,40 @@ const PromptPanel = (() => {
   let _themeObserver = null;  // MutationObserver for theme changes
   let _onHashChange = null;  // hashchange listener ref for cleanup
   let _onEscKey = null;      // keydown listener ref for cleanup
+  let _onTtsEnded = null;    // One-shot hook fired when current TTS finishes
+
+  /* ── Call Mode (hands-free JARVIS conversation) ─────────────────
+     Full-screen overlay, continuous listening with RMS-based VAD,
+     auto-send on silence, TTS reply, barge-in on user voice, loop.
+     JARVIS-only — button hidden for every other theme. */
+  let _callMode = false;          // in an active call
+  let _callPhase = 'idle';        // 'idle' | 'listening' | 'thinking' | 'speaking'
+  let _callOverlay = null;        // the full-screen overlay element
+  let _callStream = null;         // mic MediaStream (kept for entire call)
+  let _callAudioCtx = null;       // AudioContext for VAD analyser
+  let _callAnalyser = null;       // AnalyserNode on mic input
+  let _callVadData = null;        // Float32Array for RMS samples
+  let _callVadRaf = null;         // rAF handle for VAD loop
+  let _callVoiceActive = false;   // currently speaking (above RMS threshold)
+  let _callSilenceSince = 0;      // ms timestamp silence started after speech
+  let _callSpeechStart = 0;       // ms timestamp current speech started
+  let _callRecognition = null;    // SpeechRecognition for captions + transcript
+  let _callTranscript = '';       // live user transcript (committed on silence)
+  let _callAbortCtrl = null;      // aborts in-flight LLM call on end/barge-in
+
+  /* ── Option D: auto-arm mic after JARVIS speaks (regular flow) ──
+     When the user sends via the mic button, track it so that after TTS
+     finishes we auto-open the mic for a brief window. Any manual typing
+     or non-voice send resets the flag. */
+  let _lastSendWasVoice = false;
+  let _autoArmTimer = null;       // setTimeout handle for auto-arm delay
+
+  /* VAD tuning constants */
+  const CALL_RMS_THRESHOLD  = 0.030;  // base threshold above quiet-room noise
+  const CALL_RMS_BARGE_MULT = 1.5;    // require stronger signal to interrupt TTS
+  const CALL_SILENCE_MS     = 1200;   // silence before auto-send
+  const CALL_SPEECH_MIN_MS  = 250;    // minimum speech to avoid spurious sends
+
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
 
@@ -1360,20 +1394,33 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
     if (!supabaseUrl) return null;
 
-    // Abort any in-flight request before starting a new one
-    if (_abortCtrl) { try { _abortCtrl.abort(); } catch {} }
-    _abortCtrl = new AbortController();
+    // Use caller-supplied signal (Call Mode barge-in) or the shared in-flight
+    // abort controller for the default send path.
+    let signal;
+    if (opts.abortSignal) {
+      signal = opts.abortSignal;
+    } else {
+      if (_abortCtrl) { try { _abortCtrl.abort(); } catch {} }
+      _abortCtrl = new AbortController();
+      signal = _abortCtrl.signal;
+    }
 
     // Build conversation history (last 20 messages)
     const history = _messages.slice(-20).map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.text,
     }));
-    // Prepend system prompt as first message
-    history.unshift({ role: 'system', content: _buildSystemPrompt() });
+    // Prepend system prompt as first message (allow caller override for Call Mode)
+    history.unshift({ role: 'system', content: opts.systemOverride || _buildSystemPrompt() });
     history.push({ role: 'user', content: userText });
 
-    const { id: model, label: modelLabel } = _getSelectedModel();
+    const sel = _getSelectedModel();
+    const model = opts.modelOverride || sel.id;
+    const modelLabel = opts.modelOverride
+      ? (typeof LLM_MODELS !== 'undefined'
+          ? (LLM_MODELS.find(m => m.id === opts.modelOverride)?.label || opts.modelOverride)
+          : opts.modelOverride)
+      : sel.label;
     const wantStream = !!opts.onChunk;
 
     // Get auth token for nice-ai (requires Supabase session)
@@ -1389,7 +1436,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
       method: 'POST',
       headers,
-      signal: _abortCtrl.signal,
+      signal,
       body: JSON.stringify({
         model,
         messages: history,
@@ -2115,6 +2162,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
               <button class="nice-ai-tts-mute" id="nice-ai-tts-mute" aria-label="JARVIS voice" title="JARVIS voice" style="display:none">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
               </button>
+              <button class="nice-ai-call-btn" id="nice-ai-call" aria-label="Call J.A.R.V.I.S." title="Call J.A.R.V.I.S." style="display:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </button>
               <button class="nice-ai-voice-btn" id="nice-ai-voice" aria-label="Voice mode" title="Voice mode">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               </button>
@@ -2172,6 +2222,35 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       document.body.appendChild(reactor);
     }
 
+    // Call Mode overlay — full-screen dim + captions. Mounts as a body child so
+    // its z-index and fixed positioning are independent of the prompt panel's
+    // transform-created containing block (same rationale as the reactor). The
+    // reactor itself shows through this overlay's transparent center.
+    if (!document.getElementById('nice-ai-call-overlay')) {
+      const co = document.createElement('div');
+      co.id = 'nice-ai-call-overlay';
+      co.className = 'nice-ai-call';
+      co.setAttribute('aria-hidden', 'true');
+      co.innerHTML = ''
+        + '<div class="nice-ai-call-backdrop"></div>'
+        + '<div class="nice-ai-call-inner">'
+        +   '<div class="nice-ai-call-status" id="nice-ai-call-status">Connecting…</div>'
+        +   '<div class="nice-ai-call-caption nice-ai-call-user" id="nice-ai-call-user-caption"></div>'
+        +   '<div class="nice-ai-call-reactor-slot" aria-hidden="true"></div>'
+        +   '<div class="nice-ai-call-caption nice-ai-call-assistant" id="nice-ai-call-assistant-caption"></div>'
+        +   '<div class="nice-ai-call-controls">'
+        +     '<button class="nice-ai-call-end" id="nice-ai-call-end" aria-label="End call" title="End call (Esc)">'
+        +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-3.07-3.51"/><line x1="22" y1="2" x2="2" y2="22"/></svg>'
+        +       '<span>End</span>'
+        +     '</button>'
+        +   '</div>'
+        + '</div>';
+      document.body.appendChild(co);
+      _callOverlay = co;
+    } else {
+      _callOverlay = document.getElementById('nice-ai-call-overlay');
+    }
+
     // Cache monitor elements
     _appMain = document.querySelector('.app-main');
     _monitor = document.getElementById('nice-monitor');
@@ -2218,8 +2297,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const modeSelect = _panel.querySelector('#nice-ai-mode');
     if (modeSelect) modeSelect.addEventListener('change', () => { _activeMode = modeSelect.value; });
 
-    // Send button (NS logo)
-    _panel.querySelector('#nice-ai-send')?.addEventListener('click', _send);
+    // Send button (NS logo) — manual send cancels any pending auto-arm
+    _panel.querySelector('#nice-ai-send')?.addEventListener('click', () => { _cancelAutoArm(); _send(); });
 
     // Action pills — prefill input + set intent for routing
     _panel.querySelectorAll('.chat-pill').forEach(btn => {
@@ -2249,83 +2328,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
     // Voice mode — tap-to-talk (like Claude Code)
     // Tap 1: start listening. Tap 2: stop & send.
-    const _micIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
-    const _stopIcon = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+    _panel.querySelector('#nice-ai-voice')?.addEventListener('click', _toggleVoiceCapture);
 
-    _panel.querySelector('#nice-ai-voice')?.addEventListener('click', () => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Not Supported', message: 'Voice input is not supported in this browser.', type: 'system' });
-        return;
-      }
-
-      const voiceBtn = _panel.querySelector('#nice-ai-voice');
-      const input = _panel.querySelector('#nice-ai-input');
-      const waveCanvas = _panel.querySelector('#nice-ai-waveform');
-      if (!input) return;
-
-      // Tap 2: already listening → stop, send
-      if (_recognition) {
-        _recognition.stop();
-        return; // onend handler will fire and send
-      }
-
-      // Tap 1: start listening
-      _recognition = new SpeechRecognition();
-      _recognition.lang = 'en-US';
-      _recognition.interimResults = true;
-      _recognition.continuous = true; // keep listening until user taps stop
-
-      const existing = input.value;
-      if (voiceBtn) {
-        voiceBtn.classList.add('listening');
-        voiceBtn.title = 'Stop & send';
-        voiceBtn.innerHTML = _stopIcon;
-      }
-      if (waveCanvas) waveCanvas.classList.add('active');
-      _startWaveform(waveCanvas);
-
-      _recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        input.value = existing + (existing ? ' ' : '') + transcript;
-        input.dispatchEvent(new Event('input'));
-      };
-
-      _recognition.onend = () => {
-        // Reset button to mic
-        if (voiceBtn) {
-          voiceBtn.classList.remove('listening');
-          voiceBtn.title = 'Voice mode';
-          voiceBtn.innerHTML = _micIcon;
-        }
-        _stopWaveform();
-        _recognition = null;
-
-        // Auto-send if there's content
-        if (input.value.trim() && input.value !== existing) {
-          input.dispatchEvent(new Event('input'));
-          _send();
-        }
-      };
-
-      _recognition.onerror = (e) => {
-        if (voiceBtn) {
-          voiceBtn.classList.remove('listening');
-          voiceBtn.title = 'Voice mode';
-          voiceBtn.innerHTML = _micIcon;
-        }
-        _stopWaveform();
-        _recognition = null;
-        if (e.error === 'not-allowed') {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Mic Blocked', message: 'Allow microphone access to use voice mode.', type: 'system' });
-        }
-      };
-
-      _recognition.start();
+    // Call Mode (JARVIS-only hands-free conversation)
+    _panel.querySelector('#nice-ai-call')?.addEventListener('click', () => {
+      if (_callMode) _callEnd('User ended call.');
+      else _callEnter();
     });
+    document.getElementById('nice-ai-call-end')?.addEventListener('click', () => _callEnd('User ended call.'));
 
     // Attach — coming soon
     _panel.querySelector('#nice-ai-attach')?.addEventListener('click', () => {
@@ -2348,13 +2358,15 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         if (e.key === 'Escape') { _hideMonitor(); }
       });
 
-      textarea.addEventListener('input', () => {
+      textarea.addEventListener('input', (e) => {
         textarea.style.height = '36px';
         textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
         _handleMentionInput(textarea);
         // Toggle voice/send button swap
         const container = _panel.querySelector('.nice-ai-input-container');
         if (container) container.classList.toggle('has-text', textarea.value.trim().length > 0);
+        // Real keystrokes (not programmatic dispatch) break the voice follow-up chain
+        if (e.isTrusted) _cancelAutoArm();
       });
     }
 
@@ -2415,9 +2427,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
     });
 
-    // Global Escape to close monitor
+    // Global Escape: close Call Mode first, then monitor
     _onEscKey = (e) => {
-      if (e.key === 'Escape' && _isMonitorActive() && !_mentionPopup?.classList.contains('visible')) {
+      if (e.key !== 'Escape') return;
+      if (_callMode) { _callEnd('User ended call.'); return; }
+      if (_isMonitorActive() && !_mentionPopup?.classList.contains('visible')) {
         _hideMonitor();
       }
     };
@@ -2720,6 +2734,408 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // If TTS is still playing, keep 'speaking' — its onended will set idle.
   }
 
+  /* ── Tap-to-talk mic (refactored) + auto-arm follow-up ──
+     The mic button is a one-shot: tap to start, tap to stop+send. After TTS
+     finishes speaking the reply, if the send was voice-initiated, we re-arm
+     the mic for AUTO_ARM_MS so a follow-up question flows without tapping. */
+  const _MIC_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+  const _STOP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+  function _toggleVoiceCapture() {
+    // If in Call Mode the button is hidden; guard anyway.
+    if (_callMode) return;
+    if (_recognition) { _recognition.stop(); return; }
+    _startVoiceCapture(/*autoArmed=*/false);
+  }
+
+  function _startVoiceCapture(autoArmed) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Not Supported', message: 'Voice input is not supported in this browser.', type: 'system' });
+      return;
+    }
+    const voiceBtn = _panel?.querySelector('#nice-ai-voice');
+    const input = _panel?.querySelector('#nice-ai-input');
+    const waveCanvas = _panel?.querySelector('#nice-ai-waveform');
+    if (!input) return;
+
+    _cancelAutoArm();
+    _recognition = new SR();
+    _recognition.lang = 'en-US';
+    _recognition.interimResults = true;
+    _recognition.continuous = true;
+
+    const existing = input.value;
+    if (voiceBtn) {
+      voiceBtn.classList.add('listening');
+      voiceBtn.classList.toggle('auto-armed', !!autoArmed);
+      voiceBtn.title = autoArmed ? 'Follow-up — tap to cancel' : 'Stop & send';
+      voiceBtn.innerHTML = _STOP_SVG;
+    }
+    if (waveCanvas) waveCanvas.classList.add('active');
+    _startWaveform(waveCanvas);
+
+    _recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
+      input.value = existing + (existing ? ' ' : '') + transcript;
+      input.dispatchEvent(new Event('input'));
+    };
+
+    _recognition.onend = () => {
+      if (voiceBtn) {
+        voiceBtn.classList.remove('listening', 'auto-armed');
+        voiceBtn.title = 'Voice mode';
+        voiceBtn.innerHTML = _MIC_SVG;
+      }
+      _stopWaveform();
+      _recognition = null;
+      if (input.value.trim() && input.value !== existing) {
+        _lastSendWasVoice = true;
+        input.dispatchEvent(new Event('input'));
+        _send();
+      }
+    };
+
+    _recognition.onerror = (e) => {
+      if (voiceBtn) {
+        voiceBtn.classList.remove('listening', 'auto-armed');
+        voiceBtn.title = 'Voice mode';
+        voiceBtn.innerHTML = _MIC_SVG;
+      }
+      _stopWaveform();
+      _recognition = null;
+      if (e.error === 'not-allowed' && typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Mic Blocked', message: 'Allow microphone access to use voice mode.', type: 'system' });
+      }
+    };
+
+    try { _recognition.start(); } catch {}
+  }
+
+  /* Auto-arm the mic for a follow-up after JARVIS finishes speaking. Only
+     fires when the triggering send was voice-initiated — typing or clicking
+     send manually resets the flag. Cancels silently on theme change, Call
+     Mode enter, or any explicit mic click. */
+  function _scheduleAutoArm() {
+    if (_callMode || !_lastSendWasVoice) return;
+    if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    _cancelAutoArm();
+    // Small settle delay so TTS audio stream fully releases before re-opening
+    // the mic (avoids brief mic-check artifacts on some browsers)
+    _autoArmTimer = setTimeout(() => {
+      _autoArmTimer = null;
+      if (_callMode || !_panel) return;
+      if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
+      if (_recognition) return; // user already started
+      _startVoiceCapture(true);
+    }, 200);
+  }
+
+  function _cancelAutoArm() {
+    if (_autoArmTimer) { clearTimeout(_autoArmTimer); _autoArmTimer = null; }
+    _lastSendWasVoice = false;
+  }
+
+  /* ── Call Mode engine ─────────────────────────────────────────
+     Hands-free JARVIS conversation. Mic stays open for the full call,
+     VAD detects end-of-speech to auto-send, TTS plays reply, loop repeats.
+     Full barge-in: voice activity during speaking cuts TTS immediately. */
+  function _syncCallButton() {
+    const btn = _panel?.querySelector('#nice-ai-call');
+    if (!btn) return;
+    const theme = document.documentElement.getAttribute('data-theme');
+    const available = theme === 'jarvis' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    btn.style.display = available ? '' : 'none';
+    btn.classList.toggle('active', _callMode);
+  }
+
+  async function _callEnter() {
+    if (_callMode) return;
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign in required', message: 'Call Mode needs an account to stream voice.', type: 'system' });
+      return;
+    }
+    _cancelAutoArm();
+    // Stop any in-flight text-mode activity so Call Mode owns the channel
+    _ttsStop();
+    if (_recognition) { try { _recognition.stop(); } catch {} _recognition = null; }
+    _stopWaveform();
+
+    _callMode = true;
+    document.documentElement.classList.add('nice-call-mode');
+    _syncCallButton();
+    _setCallPhase('connecting');
+    _setCallCaption('user', '');
+    _setCallCaption('assistant', '');
+
+    const ok = await _callStartMic();
+    if (!ok) return; // _callEnd already ran with an error message
+
+    _callStartRecognition();
+    _setCallPhase('listening');
+  }
+
+  function _callEnd(reason) {
+    if (!_callMode && !_callOverlay) return;
+    _callMode = false;
+    if (_callAbortCtrl) { try { _callAbortCtrl.abort(); } catch {} _callAbortCtrl = null; }
+    _ttsStop();
+    _callStopRecognition();
+    _callStopMic();
+    document.documentElement.classList.remove('nice-call-mode');
+    _setCallPhase('idle');
+    _syncCallButton();
+    if (reason && typeof Notify !== 'undefined' && /denied|unavailable|failed/i.test(reason)) {
+      Notify.send({ title: 'Call Mode', message: reason, type: 'system' });
+    }
+  }
+
+  function _setCallPhase(phase) {
+    _callPhase = phase;
+    if (_callOverlay) _callOverlay.dataset.phase = phase;
+    const statusEl = document.getElementById('nice-ai-call-status');
+    if (statusEl) {
+      const label = (
+        phase === 'listening' ? 'Listening…' :
+        phase === 'thinking'  ? 'Thinking…' :
+        phase === 'speaking'  ? 'Speaking' :
+        phase === 'connecting'? 'Connecting…' :
+        'Call ended'
+      );
+      statusEl.textContent = label;
+    }
+    // Drive the reactor state so the arc reactor reacts to the call loop
+    _setJvState(phase === 'speaking' ? 'speaking' : phase === 'thinking' ? 'streaming' : 'idle');
+  }
+
+  function _setCallCaption(which, text) {
+    const el = document.getElementById(which === 'user' ? 'nice-ai-call-user-caption' : 'nice-ai-call-assistant-caption');
+    if (!el) return;
+    el.textContent = text || '';
+    el.classList.toggle('empty', !text);
+  }
+
+  async function _callStartMic() {
+    try {
+      _callStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+    } catch (e) {
+      _callEnd(e && e.name === 'NotAllowedError' ? 'Microphone access denied.' : 'Microphone unavailable.');
+      return false;
+    }
+    try {
+      _callAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = _callAudioCtx.createMediaStreamSource(_callStream);
+      _callAnalyser = _callAudioCtx.createAnalyser();
+      _callAnalyser.fftSize = 1024;
+      _callAnalyser.smoothingTimeConstant = 0.2;
+      src.connect(_callAnalyser);
+      _callVadData = new Float32Array(_callAnalyser.fftSize);
+      _callVoiceActive = false;
+      _callSilenceSince = 0;
+      _callSpeechStart = 0;
+      _callVadLoop();
+      return true;
+    } catch {
+      _callEnd('Audio engine failed to start.');
+      return false;
+    }
+  }
+
+  function _callStopMic() {
+    if (_callVadRaf) { cancelAnimationFrame(_callVadRaf); _callVadRaf = null; }
+    try { _callAnalyser?.disconnect(); } catch {}
+    _callAnalyser = null;
+    _callVadData = null;
+    if (_callAudioCtx) { _callAudioCtx.close().catch(() => {}); _callAudioCtx = null; }
+    if (_callStream) { _callStream.getTracks().forEach(t => t.stop()); _callStream = null; }
+    _callVoiceActive = false;
+    _callSilenceSince = 0;
+    _callSpeechStart = 0;
+  }
+
+  function _callVadLoop() {
+    if (!_callAnalyser || !_callVadData) return;
+    _callAnalyser.getFloatTimeDomainData(_callVadData);
+    let sum = 0;
+    for (let i = 0; i < _callVadData.length; i++) sum += _callVadData[i] * _callVadData[i];
+    const rms = Math.sqrt(sum / _callVadData.length);
+    const now = performance.now();
+
+    // Barge-in during thinking: user interrupts before JARVIS starts speaking
+    // (LLM still streaming). Abort the in-flight LLM request and swap to a
+    // fresh listening turn — the user has changed their mind. Higher threshold
+    // so keyboard clicks / mouse clicks don't falsely trigger.
+    if (_callPhase === 'thinking' && rms > CALL_RMS_THRESHOLD * CALL_RMS_BARGE_MULT) {
+      if (_callAbortCtrl) { try { _callAbortCtrl.abort(); } catch {} _callAbortCtrl = null; }
+      _setCallCaption('assistant', '');
+      _callTranscript = '';
+      _callSpeechStart = now;
+      _callVoiceActive = true;
+      _callSilenceSince = 0;
+      _setCallPhase('listening');
+      _callEnsureRecognitionRunning();
+      _callVadRaf = requestAnimationFrame(_callVadLoop);
+      return;
+    }
+
+    // Barge-in while JARVIS is speaking → kill TTS, switch to listening
+    if (_callPhase === 'speaking' && rms > CALL_RMS_THRESHOLD * CALL_RMS_BARGE_MULT) {
+      _ttsStop();
+      _setCallCaption('assistant', '');
+      _setCallPhase('listening');
+      _callTranscript = '';
+      _callSpeechStart = now;
+      _callVoiceActive = true;
+      _callSilenceSince = 0;
+      _callEnsureRecognitionRunning();
+      _callVadRaf = requestAnimationFrame(_callVadLoop);
+      return;
+    }
+
+    if (_callPhase === 'listening') {
+      if (rms > CALL_RMS_THRESHOLD) {
+        if (!_callVoiceActive) { _callVoiceActive = true; _callSpeechStart = now; }
+        _callSilenceSince = 0;
+      } else if (_callVoiceActive) {
+        if (!_callSilenceSince) _callSilenceSince = now;
+        const spoke = _callSpeechStart && (_callSilenceSince - _callSpeechStart) >= CALL_SPEECH_MIN_MS;
+        if (spoke && (now - _callSilenceSince) >= CALL_SILENCE_MS) {
+          _callVoiceActive = false;
+          _callSilenceSince = 0;
+          _callSpeechStart = 0;
+          _callCommitTurn();
+        }
+      }
+    }
+
+    _callVadRaf = requestAnimationFrame(_callVadLoop);
+  }
+
+  function _callStartRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { _callEnd('Voice recognition unavailable.'); return; }
+    _callStopRecognition();
+    _callRecognition = new SR();
+    _callRecognition.lang = 'en-US';
+    _callRecognition.interimResults = true;
+    _callRecognition.continuous = true;
+    _callTranscript = '';
+
+    _callRecognition.onresult = (event) => {
+      if (!_callMode) return;
+      let transcript = '';
+      // Only use results from this recognition session (not the cumulative
+      // onresult index across restarts)
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      // Append to running transcript for live caption feel across restarts
+      _callTranscript = (_callTranscript ? _callTranscript + ' ' : '') + transcript;
+      if (_callPhase === 'listening') _setCallCaption('user', _callTranscript);
+    };
+
+    _callRecognition.onend = () => {
+      // Auto-restart while in call mode (recognition stops on silence naturally)
+      if (_callMode) {
+        try { _callRecognition && _callRecognition.start(); } catch {}
+      }
+    };
+
+    _callRecognition.onerror = (e) => {
+      if (!_callMode) return;
+      if (e.error === 'not-allowed') _callEnd('Microphone access denied.');
+      // 'no-speech' / 'aborted' are recoverable — onend restarts
+    };
+
+    try { _callRecognition.start(); } catch {}
+  }
+
+  function _callEnsureRecognitionRunning() {
+    if (!_callMode) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    if (!_callRecognition) { _callStartRecognition(); return; }
+    try { _callRecognition.start(); } catch { /* already running */ }
+  }
+
+  function _callStopRecognition() {
+    if (_callRecognition) {
+      try { _callRecognition.onend = null; _callRecognition.onresult = null; _callRecognition.onerror = null; } catch {}
+      try { _callRecognition.stop(); } catch {}
+      _callRecognition = null;
+    }
+    _callTranscript = '';
+  }
+
+  async function _callCommitTurn() {
+    const text = (_callTranscript || '').trim();
+    _callTranscript = '';
+    if (!text || text.length < 2) return;
+    _setCallPhase('thinking');
+    _setCallCaption('user', text);
+    _setCallCaption('assistant', '');
+
+    _messages.push({ role: 'user', text, ts: Date.now() });
+    _saveMessages();
+
+    let replyText = '';
+    // Own abort controller so barge-in / end-call can cancel THIS turn's
+    // request without disturbing the module-level _abortCtrl used by the
+    // default send path.
+    _callAbortCtrl = new AbortController();
+    try {
+      const result = await _callEdgeLLM(text, {
+        onChunk: (chunk) => {
+          if (!_callMode) return;
+          replyText += chunk;
+          _setCallCaption('assistant', replyText);
+        },
+        systemOverride: _buildCallSystemPrompt(),
+        modelOverride: 'gemini-2.5-flash',
+        abortSignal: _callAbortCtrl.signal,
+      });
+      if (result && result.text) replyText = result.text;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // barge-in or call end
+      replyText = 'My apologies — the line went quiet. Shall we try again?';
+      if (_callMode) _setCallCaption('assistant', replyText);
+    }
+    _callAbortCtrl = null;
+    if (!_callMode) return;
+
+    if (replyText) {
+      _messages.push({ role: 'assistant', text: replyText, agent: 'J.A.R.V.I.S.', ts: Date.now() });
+      _saveMessages();
+    }
+
+    if (!replyText || !_currentThemeVoice() || _isVoiceOff()) {
+      // No voice → skip speaking, loop back to listening
+      _setCallPhase('listening');
+      return;
+    }
+
+    _setCallPhase('speaking');
+    _onTtsEnded = () => {
+      if (!_callMode) return;
+      _setCallCaption('assistant', '');
+      _setCallPhase('listening');
+    };
+    _ttsSpeak(replyText);
+  }
+
+  function _buildCallSystemPrompt() {
+    const base = _buildSystemPrompt();
+    return base + '\n\nCONVERSATION MODE (VOICE): You are on a live voice call. ' +
+      'Reply in ≤3 short sentences. Plain prose only — no markdown, no code blocks, no lists, no URLs. ' +
+      'Write exactly as you would speak, so the reply can be read aloud. If the user asks for code or long output, acknowledge briefly and offer to send the details to the monitor.';
+  }
+
   async function _ttsSpeak(text) {
     const tv = _currentThemeVoice();
     if (!text || !tv) return;
@@ -2753,8 +3169,16 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       _ttsBlobUrl = URL.createObjectURL(blob);
       _ttsAudio = new Audio(_ttsBlobUrl);
       _ttsAudio.onplay = () => { _setJvState('speaking'); _reactorAttachAnalyser(_ttsAudio); };
-      _ttsAudio.onended = () => { _reactorDetachAnalyser(); _ttsCleanup(); _setJvState(_sending ? 'streaming' : 'idle'); };
-      _ttsAudio.onerror = () => { _reactorDetachAnalyser(); _ttsCleanup(); _setJvState(_sending ? 'streaming' : 'idle'); };
+      const _ttsFinish = () => {
+        _reactorDetachAnalyser();
+        _ttsCleanup();
+        _setJvState(_sending ? 'streaming' : 'idle');
+        const hook = _onTtsEnded; _onTtsEnded = null;
+        if (hook) { try { hook(); } catch {} }
+        if (!_callMode) _scheduleAutoArm();
+      };
+      _ttsAudio.onended = _ttsFinish;
+      _ttsAudio.onerror = _ttsFinish;
       // play() returns a Promise that rejects if playback is interrupted
       // mid-flight — which happens every time a streaming message triggers
       // a new _ttsSpeak() and _ttsStop() revokes the prior blob URL. The
@@ -2797,10 +3221,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _updateSuggestionChips();
     // Theme voice: stop playback on theme change, sync toggle button + reactor
     _themeObserver = new MutationObserver(() => {
-      if (document.documentElement.getAttribute('data-theme') !== 'jarvis') {
+      const theme = document.documentElement.getAttribute('data-theme');
+      if (theme !== 'jarvis') {
         _ttsStop();
+        _cancelAutoArm();
+        if (_callMode) _callEnd('Theme changed.');
       }
       _syncVoiceToggle();
+      _syncCallButton();
       _syncReactorVisibility();
     });
     _themeObserver.observe(document.documentElement, {
@@ -2810,6 +3238,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const muteBtn = _panel?.querySelector('#nice-ai-tts-mute');
     if (muteBtn) muteBtn.addEventListener('click', _toggleVoice);
     _syncVoiceToggle();
+    _syncCallButton();
     // Initial reactor sync (hashchange listener is wired in _bindEvents)
     _syncReactorVisibility();
     _setJvState('idle');
@@ -2822,6 +3251,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   }
 
   function destroy() {
+    // End call mode first (stops its own mic, VAD, recognition, TTS)
+    if (_callMode) _callEnd('Session ended.');
+    _cancelAutoArm();
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
     // Stop speech recognition & mic
