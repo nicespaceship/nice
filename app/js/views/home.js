@@ -60,7 +60,6 @@ const HomeView = (() => {
   }
 
   function _renderEmptyGreeting() {
-    const hudRings = '<div class="jv-sch-hud" aria-hidden="true"><div class="jv-hud-r jv-hud-r1"></div><div class="jv-hud-r jv-hud-r2"></div><div class="jv-hud-r jv-hud-r3"></div><div class="jv-hud-r jv-hud-r4"></div><div class="jv-hud-r jv-hud-r5"></div><div class="jv-hud-r jv-hud-r6"></div><div class="jv-hud-ticks"></div></div>';
     const ships = State.get('user_spaceships') || [];
     const hasTeam = ships.length > 0;
 
@@ -105,7 +104,6 @@ const HomeView = (() => {
 
       return `
         <div class="chat-home-empty">
-          ${hudRings}
           <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
 
           <div class="home-stats-grid">
@@ -170,7 +168,6 @@ const HomeView = (() => {
     const isGuest = !State.get('user');
     return `
       <div class="chat-home-empty">
-        ${hudRings}
         <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
         ${isGuest ? '<p class="home-guest-hint">Sign in to deploy agents and run missions</p>' : ''}
       </div>
