@@ -321,14 +321,12 @@
 
 /* CTAs — pill shaped, solid filled */
 [data-theme="office"] .btn-primary,
-[data-theme="office"] .cd-btn-primary,
-[data-theme="office"] .cd-home-cta {
+[data-theme="office"] .cd-btn-primary {
   background:var(--nav-bg-dk); color:#fff; border:none; border-radius:9999px;
   padding:10px 24px; font-weight:600;
 }
 [data-theme="office"] .btn-primary:hover,
-[data-theme="office"] .cd-btn-primary:hover,
-[data-theme="office"] .cd-home-cta:hover {
+[data-theme="office"] .cd-btn-primary:hover {
   background:#0a3d78;
 }
 [data-theme="office"] .btn { border-radius:9999px; }
@@ -4228,11 +4226,12 @@ html.nice-call-mode .nice-ai-chips { display:none; }
   padding:0 20px;
 }
 
-/* Empty state — centered greeting */
+/* Empty state — greeting anchored above the HUD/reactor */
 .chat-home-empty {
   flex:1; display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
+  align-items:center; justify-content:flex-start;
   min-height:0; position:relative;
+  padding-top:48px;
 }
 .chat-home-greeting {
   font-family:var(--font-b); font-size:1.6rem; font-weight:700;
@@ -4307,46 +4306,12 @@ html.nice-call-mode .nice-ai-chips { display:none; }
 .home-activity-time { color:var(--text-muted); font-size:.65rem; }
 
 /* ── Onboarding: Feature Preview ── */
-.home-tagline {
-  font-size:.88rem;
-  color:var(--text-muted);
-  margin:4px 0 0;
-  line-height:1.4;
-}
 .home-guest-hint {
   font-size:.75rem;
   color:var(--text-muted);
   margin:8px 0 0;
   opacity:.7;
 }
-.home-features {
-  display:grid;
-  grid-template-columns:repeat(2, 1fr);
-  gap:10px;
-  margin-top:28px;
-  max-width:480px;
-  width:100%;
-  text-align:left;
-}
-.home-feature {
-  padding:14px;
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  background:var(--bg-alt);
-}
-.home-feature-icon { font-size:1.1rem; margin-bottom:4px; }
-.home-feature-title {
-  font-family:var(--font-h);
-  font-size:.8rem;
-  color:var(--text);
-  margin-bottom:3px;
-}
-.home-feature-desc {
-  font-size:.72rem;
-  color:var(--text-muted);
-  line-height:1.4;
-}
-
 /* ── Onboarding: Checklist ── */
 .home-checklist {
   max-width:480px;
@@ -4450,7 +4415,6 @@ html.nice-call-mode .nice-ai-chips { display:none; }
 @media (max-width:480px) {
   .home-quick-actions { flex-direction:column; align-items:center; }
   .home-stats-grid { grid-template-columns:repeat(2, 1fr); max-width:280px; }
-  .home-features { grid-template-columns:1fr; max-width:320px; }
 }
 
 /* Conversation state */
