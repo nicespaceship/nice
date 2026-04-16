@@ -957,7 +957,17 @@ const SpaceshipDetailView = (() => {
       // Normalize DB columns to expected shape
       if (fleet.blueprint_id && !fleet.class_id) fleet.class_id = fleet.blueprint_id;
       if (!fleet.class_id) fleet.class_id = 'class-1';
-      if (fleet.slots && !fleet.slot_assignments) fleet.slot_assignments = fleet.slots;
+      if (!fleet.slot_assignments) {
+        // Pick fresh slot_assignments across the dual-shape `slots` column and
+        // the newer `config.slot_assignments`. See blueprint-store.js loader
+        // for the full decision tree — same rules apply here for single-row
+        // fetches via `_loadSpaceship`.
+        const _bagSlots = fleet.slots && fleet.slots.slot_assignments;
+        const _plainSlots = fleet.slots && !fleet.slots.slot_assignments && Object.keys(fleet.slots).length
+          ? fleet.slots : null;
+        const _cfgSlots = fleet.config && fleet.config.slot_assignments;
+        fleet.slot_assignments = _bagSlots || _plainSlots || _cfgSlots || null;
+      }
       if (!fleet.slot_assignments) {
         fleet.slot_assignments = {};
         (fleet.agent_ids || []).forEach((aid, i) => { fleet.slot_assignments[i] = aid; });

@@ -452,26 +452,49 @@ const BlueprintStore = (() => {
         const stateShips = State.get('spaceships') || [];
         const existingIds = new Set(stateShips.map(s => s.id));
         ships.forEach(s => {
-          const meta = s.slots || {};
+          // Prefer the new `config` JSONB for structural fields (description,
+          // flavor, tags, stats, caps). Fall back to legacy `slots` for rows
+          // that predate the schema parity migration.
+          const cfg = (s.config && Object.keys(s.config).length) ? s.config : {};
+          const legacySlots = s.slots || {};
+          const meta = Object.keys(cfg).length ? cfg : legacySlots;
+
+          // slot_assignments is a special case. In-place dock/undock flows
+          // (see app/js/views/spaceships.js _addAgent / _removeAgentFromSlot)
+          // overwrite the `slots` column with a plain { slotId: agentId } map,
+          // which makes the `slots` column the freshest source for crew data
+          // after the first dock. Detect shape:
+          //   * legacySlots.slot_assignments present → builder's bag output
+          //   * legacySlots non-empty, no slot_assignments key → plain map
+          //     written by a dock flow, treat as assignments directly
+          //   * legacySlots empty → use config.slot_assignments
+          var freshAssignments;
+          if (legacySlots.slot_assignments) {
+            freshAssignments = legacySlots.slot_assignments;
+          } else if (Object.keys(legacySlots).length) {
+            freshAssignments = legacySlots;
+          } else {
+            freshAssignments = cfg.slot_assignments || {};
+          }
+
           // Cross-reference blueprint catalog for rarity/stats if blueprint_id exists
           var catalogBp = null;
           if (s.blueprint_id) {
             catalogBp = getSpaceship(s.blueprint_id) || getSpaceship('bp-' + s.blueprint_id);
           }
           if (!existingIds.has(s.id)) {
-            var crewCount = 0;
-            if (meta.slot_assignments) crewCount = Object.keys(meta.slot_assignments).length;
-            else if (Array.isArray(meta.crew)) crewCount = meta.crew.length;
+            var crewCount = Object.keys(freshAssignments).length;
+            if (!crewCount && Array.isArray(meta.crew)) crewCount = meta.crew.length;
 
             stateShips.push({
               id: s.id, name: s.name, type: 'spaceship',
-              category: (catalogBp && catalogBp.category) || meta.category || '',
+              category: s.category || (catalogBp && catalogBp.category) || meta.category || '',
               description: (catalogBp && catalogBp.description) || meta.description || '',
               flavor: (catalogBp && catalogBp.flavor) || meta.flavor || '',
               tags: (catalogBp && catalogBp.tags) || meta.tags || [],
-              rarity: (catalogBp && catalogBp.rarity) || meta.rarity || 'Common',
+              rarity: s.rarity || (catalogBp && catalogBp.rarity) || meta.rarity || 'Common',
               status: s.status || 'standby',
-              config: { slot_assignments: meta.slot_assignments || {} },
+              config: { slot_assignments: freshAssignments },
               stats: (catalogBp && catalogBp.stats) || meta.stats || { crew: String(crewCount), slots: '6' },
               metadata: (catalogBp && catalogBp.metadata) || { caps: meta.caps || [] },
               blueprint_id: s.blueprint_id,
@@ -485,7 +508,7 @@ const BlueprintStore = (() => {
           }
           // Always restore ship state (slot assignments) from DB
           // Handle both formats: slot_assignments object and crew array
-          var assignments = meta.slot_assignments || {};
+          var assignments = Object.assign({}, freshAssignments);
           var agentIds = [];
           if (Object.keys(assignments).length) {
             agentIds = Object.values(assignments).filter(Boolean);
