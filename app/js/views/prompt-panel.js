@@ -2518,7 +2518,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       _ttsAudio = new Audio(_ttsBlobUrl);
       _ttsAudio.onended = () => _ttsCleanup();
       _ttsAudio.onerror = () => _ttsCleanup();
-      _ttsAudio.play();
+      // play() returns a Promise that rejects if playback is interrupted
+      // mid-flight — which happens every time a streaming message triggers
+      // a new _ttsSpeak() and _ttsStop() revokes the prior blob URL. The
+      // onerror handler already handles cleanup; we just need to keep the
+      // rejection from surfacing as an "Async Error" toast. Autoplay
+      // blocks land here too — silent-fail is the right UX for a
+      // best-effort voice feature.
+      _ttsAudio.play().catch(() => { /* suppressed — see above */ });
     } catch (err) {
       _ttsCleanup();
       if (err.name === 'AbortError') return;
