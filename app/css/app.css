@@ -2486,6 +2486,11 @@
 .builder-advanced > summary::after { content:'▸'; margin-left:auto; color:var(--text-muted); transition:transform .15s; font-size:.7rem; }
 .builder-advanced[open] > summary::after { transform:rotate(90deg); }
 .builder-advanced[open] > * + * { margin-top:14px; }
+/* Example I/O pair editor — input | output | remove */
+.b-example-pair { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-bottom:8px; align-items:start; }
+.b-example-pair textarea { width:100%; resize:vertical; min-height:54px; padding:6px 8px; font-family:var(--font-m); font-size:.78rem; }
+.b-example-pair .b-ex-remove { padding:4px 10px; font-family:var(--font-m); }
+.builder-md-status.error, .builder-hint.error { color:#ef4444; }
 .builder-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px; }
 .builder-select { width:100%; padding:8px 12px; }
 .builder-range { width:100%; accent-color:var(--accent); }

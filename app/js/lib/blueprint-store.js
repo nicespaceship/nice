@@ -550,6 +550,9 @@ const BlueprintStore = (() => {
             tags: cfg.tags || [],
             persona: cfg.persona || null,
             model_profile: cfg.model_profile || null,
+            output_schema: cfg.output_schema || null,
+            example_io: cfg.example_io || [],
+            eval_criteria: cfg.eval_criteria || [],
             created_at: a.created_at,
           });
           if (!_activatedAgentIds.includes(a.id)) {

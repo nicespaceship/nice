@@ -53,6 +53,56 @@ const AgentBuilderView = (() => {
     }
   }
 
+  /* ── Helpers for schema/examples editors ── */
+  function _serializeSchema(schema) {
+    if (!schema || typeof schema !== 'object') return '';
+    try { return JSON.stringify(schema, null, 2); } catch { return ''; }
+  }
+  function _exampleRowHTML(input, output) {
+    return `
+      <div class="b-example-pair">
+        <textarea class="b-ex-input" rows="2" placeholder="Input">${_esc(input || '')}</textarea>
+        <textarea class="b-ex-output" rows="2" placeholder="Output">${_esc(output || '')}</textarea>
+        <button type="button" class="btn btn-sm b-ex-remove" aria-label="Remove example">×</button>
+      </div>`;
+  }
+  function _renderExampleRows(examples) {
+    if (!Array.isArray(examples) || !examples.length) return _exampleRowHTML('', '');
+    return examples.slice(0, 3).map(ex => {
+      const input  = ex.input  !== undefined ? ex.input  : ex.in;
+      const output = ex.output !== undefined ? ex.output : ex.out;
+      const inStr  = typeof input  === 'string' ? input  : (input  != null ? JSON.stringify(input,  null, 2) : '');
+      const outStr = typeof output === 'string' ? output : (output != null ? JSON.stringify(output, null, 2) : '');
+      return _exampleRowHTML(inStr, outStr);
+    }).join('');
+  }
+  function _readExamplesFromForm() {
+    const rows = document.querySelectorAll('#b-examples .b-example-pair');
+    const out = [];
+    rows.forEach(row => {
+      const input  = (row.querySelector('.b-ex-input')?.value  || '').trim();
+      const output = (row.querySelector('.b-ex-output')?.value || '').trim();
+      if (input && output) out.push({ input, output });
+    });
+    return out;
+  }
+  function _readSchemaFromForm() {
+    const raw = (document.getElementById('b-output-schema')?.value || '').trim();
+    const status = document.getElementById('b-output-schema-status');
+    if (!raw) { if (status) status.classList.remove('error'); return null; }
+    try {
+      const parsed = JSON.parse(raw);
+      if (status) { status.textContent = 'Valid JSON.'; status.classList.remove('error'); }
+      return (parsed && typeof parsed === 'object') ? parsed : null;
+    } catch (e) {
+      if (status) {
+        status.textContent = 'Invalid JSON: ' + e.message;
+        status.classList.add('error');
+      }
+      return null;
+    }
+  }
+
   function _renderForm(el, agent) {
     const isEdit = !!agent;
     const config = agent?.config || {};
@@ -182,6 +232,7 @@ const AgentBuilderView = (() => {
           <!-- ADVANCED -->
           <details class="builder-section builder-advanced" ${(config.persona || agent?.tags?.length || config.tags?.length || config.model_profile) ? 'open' : ''}>
             <summary class="builder-legend">Advanced</summary>
+            <p class="builder-hint" style="margin-top:8px">Persona, search, and sampling overrides.</p>
             <div class="auth-field">
               <label for="b-tone">Tone</label>
               <input type="text" id="b-tone" maxlength="120" placeholder="e.g. dry and concise · warm and encouraging · clinical" value="${_esc(config.persona?.tone || agent?.persona?.tone || '')}" />
@@ -203,6 +254,30 @@ const AgentBuilderView = (() => {
                 <input type="number" id="b-max-tokens" min="256" max="32000" step="128" placeholder="auto" value="${config.model_profile?.max_output_tokens || ''}" />
                 <p class="builder-hint">Hard cap on response length. Leave blank to derive from stats.</p>
               </div>
+            </div>
+          </details>
+
+          <!-- SCHEMA & EVALS -->
+          <details class="builder-section builder-advanced" ${(config.output_schema || agent?.output_schema || config.example_io?.length || agent?.example_io?.length || config.eval_criteria?.length || agent?.eval_criteria?.length) ? 'open' : ''}>
+            <summary class="builder-legend">Schema &amp; Evals</summary>
+            <p class="builder-hint" style="margin-top:8px">Structured output, few-shot examples, and quality criteria. Power-user fields — leave empty for free-form agents.</p>
+            <div class="auth-field">
+              <label for="b-output-schema">Output schema (JSON)</label>
+              <textarea id="b-output-schema" rows="4" placeholder='{ "title": "string", "summary": "string", "tags": "string[]" }' spellcheck="false">${_esc(_serializeSchema(config.output_schema || agent?.output_schema))}</textarea>
+              <p class="builder-hint" id="b-output-schema-status">JSON Schema or shorthand <code>{ field: "type" }</code>. Tells the agent to respond with this shape.</p>
+            </div>
+            <div class="auth-field">
+              <label>Example I/O</label>
+              <p class="builder-hint" style="margin-bottom:8px">Few-shot pairs. Cap of 3 — extras are dropped from the prompt.</p>
+              <div id="b-examples">
+                ${_renderExampleRows(config.example_io || agent?.example_io || [])}
+              </div>
+              <button type="button" class="btn btn-sm" id="b-example-add">+ Add example</button>
+            </div>
+            <div class="auth-field">
+              <label for="b-eval-criteria">Eval criteria</label>
+              <textarea id="b-eval-criteria" rows="3" maxlength="1000" placeholder="One criterion per line. e.g.&#10;Cites at least one source&#10;Stays under 200 words">${_esc((config.eval_criteria || agent?.eval_criteria || []).join('\n'))}</textarea>
+              <p class="builder-hint">How output quality is judged. Renders as a bullet rubric in the system prompt.</p>
             </div>
           </details>
 
@@ -280,6 +355,30 @@ const AgentBuilderView = (() => {
         _updateRarityPreview();
       });
     });
+
+    // Example I/O — add / remove rows (cap at 3, matching prompt cap)
+    document.getElementById('b-example-add')?.addEventListener('click', () => {
+      const wrap = document.getElementById('b-examples');
+      if (!wrap) return;
+      if (wrap.querySelectorAll('.b-example-pair').length >= 3) return;
+      wrap.insertAdjacentHTML('beforeend', _exampleRowHTML('', ''));
+    });
+    document.getElementById('b-examples')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.b-ex-remove');
+      if (!btn) return;
+      const row = btn.closest('.b-example-pair');
+      const wrap = document.getElementById('b-examples');
+      // Always keep one empty row visible so the editor doesn't collapse to nothing
+      if (wrap && wrap.querySelectorAll('.b-example-pair').length <= 1) {
+        row.querySelector('.b-ex-input').value = '';
+        row.querySelector('.b-ex-output').value = '';
+      } else {
+        row.remove();
+      }
+    });
+
+    // Output schema — live JSON validation
+    document.getElementById('b-output-schema')?.addEventListener('input', _debounce(_readSchemaFromForm, 250));
 
     // Live rarity preview — update on any form change
     ['b-model', 'b-type', 'b-role'].forEach(id => {
@@ -446,6 +545,10 @@ const AgentBuilderView = (() => {
       .split(',').map(s => s.trim()).filter(Boolean);
     const maxTokensRaw = (document.getElementById('b-max-tokens')?.value || '').trim();
     const maxTokens = maxTokensRaw ? parseInt(maxTokensRaw, 10) : null;
+    const outputSchema = _readSchemaFromForm();
+    const exampleIO = _readExamplesFromForm();
+    const evalCriteria = (document.getElementById('b-eval-criteria')?.value || '')
+      .split('\n').map(s => s.trim()).filter(Boolean);
 
     if (!name) {
       errEl.textContent = 'Agent name is required.';
@@ -461,6 +564,15 @@ const AgentBuilderView = (() => {
     }
     if (!model) {
       errEl.textContent = 'Please select a model.';
+      btn.disabled = false;
+      btn.textContent = existingAgent ? 'Save Changes' : 'Create Agent';
+      return;
+    }
+    // Reject save if the user typed something into Output Schema that
+    // didn't parse as JSON — silently dropping their work would be worse.
+    const rawSchema = (document.getElementById('b-output-schema')?.value || '').trim();
+    if (rawSchema && !outputSchema) {
+      errEl.textContent = 'Output schema is not valid JSON. Fix or clear it before saving.';
       btn.disabled = false;
       btn.textContent = existingAgent ? 'Save Changes' : 'Create Agent';
       return;
@@ -482,9 +594,10 @@ const AgentBuilderView = (() => {
       type,
       status: existingAgent?.status || 'idle',
       // user_agents has no top-level columns for llm_engine, description,
-      // flavor, caps, tags, persona, or model_profile — they live inside
-      // the config JSONB (matches setup-wizard / crew-designer inserts).
-      // Loader surfaces them back to top-level on State.agents items.
+      // flavor, caps, tags, persona, model_profile, output_schema,
+      // example_io, or eval_criteria — they live inside the config JSONB
+      // (matches setup-wizard / crew-designer inserts). Loader surfaces
+      // them back to top-level on State.agents items.
       config: {
         tools, memory, temperature: temp,
         llm_engine: model,
@@ -492,6 +605,9 @@ const AgentBuilderView = (() => {
         flavor: instructions,
         caps: skills,
         tags,
+        ...(outputSchema ? { output_schema: outputSchema } : {}),
+        ...(exampleIO.length ? { example_io: exampleIO } : {}),
+        ...(evalCriteria.length ? { eval_criteria: evalCriteria } : {}),
         ...(Object.keys(persona).length ? { persona } : {}),
         ...(Object.keys(modelProfile).length ? { model_profile: modelProfile } : {}),
       },
@@ -557,6 +673,10 @@ const AgentBuilderView = (() => {
       .split(',').map(s => s.trim()).filter(Boolean);
     const maxTokensRaw = (document.getElementById('b-max-tokens')?.value || '').trim();
     const maxTokens = maxTokensRaw ? parseInt(maxTokensRaw, 10) : null;
+    const outputSchema = _readSchemaFromForm();
+    const exampleIO = _readExamplesFromForm();
+    const evalCriteria = (document.getElementById('b-eval-criteria')?.value || '')
+      .split('\n').map(s => s.trim()).filter(Boolean);
 
     const persona = {};
     if (tone) persona.tone = tone;
@@ -579,6 +699,9 @@ const AgentBuilderView = (() => {
         flavor: instructions,
         caps: skills,
         tags: tags,
+        ...(outputSchema ? { output_schema: outputSchema } : {}),
+        ...(exampleIO.length ? { example_io: exampleIO } : {}),
+        ...(evalCriteria.length ? { eval_criteria: evalCriteria } : {}),
         ...(Object.keys(persona).length ? { persona } : {}),
         ...(Object.keys(modelProfile).length ? { model_profile: modelProfile } : {}),
       },
@@ -631,6 +754,10 @@ const AgentBuilderView = (() => {
       const mp = cfg.model_profile || bp.model_profile || {};
       el('b-max-tokens').value = mp.max_output_tokens || '';
     }
+    if (el('b-output-schema')) el('b-output-schema').value = _serializeSchema(cfg.output_schema || bp.output_schema);
+    const examplesEl = document.getElementById('b-examples');
+    if (examplesEl) examplesEl.innerHTML = _renderExampleRows(cfg.example_io || bp.example_io || []);
+    if (el('b-eval-criteria')) el('b-eval-criteria').value = (cfg.eval_criteria || bp.eval_criteria || []).join('\n');
   }
 
   /** Show validation status for markdown textarea */
