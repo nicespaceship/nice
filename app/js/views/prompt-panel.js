@@ -2190,22 +2190,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       reactor.className = 'jv-pp-reactor';
       reactor.setAttribute('aria-hidden', 'true');
       reactor.dataset.state = 'idle';
-      reactor.innerHTML = ''
-        + '<div class="jv-sch-hud" aria-hidden="true">'
-        +   '<div class="jv-hud-r jv-hud-r1"></div>'
-        +   '<div class="jv-hud-r jv-hud-r2"></div>'
-        +   '<div class="jv-hud-r jv-hud-r3"></div>'
-        +   '<div class="jv-hud-r jv-hud-r4"></div>'
-        +   '<div class="jv-hud-r jv-hud-r5"></div>'
-        +   '<div class="jv-hud-r jv-hud-r6"></div>'
-        +   '<div class="jv-hud-ticks"></div>'
-        +   '<canvas class="jv-eq-canvas" width="800" height="800"></canvas>'
-        + '</div>'
-        + '<div class="jv-arc-reactor">'
-        +   '<div class="jv-arc-ring">' + '<div class="jv-arc-seg"></div>'.repeat(10) + '</div>'
-        +   '<div class="jv-arc-inner-ring"></div>'
-        +   '<div class="jv-arc-core"></div>'
-        + '</div>';
+      reactor.innerHTML = JarvisHUD.hud() + JarvisHUD.arcReactor();
       document.body.appendChild(reactor);
     }
 

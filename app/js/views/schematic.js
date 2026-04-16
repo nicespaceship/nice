@@ -260,8 +260,8 @@ const SchematicView = (() => {
       '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
       '<div class="schematic-center">' + svg +
-        '<div class="jv-arc-reactor" aria-hidden="true"><div class="jv-arc-ring"><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div></div><div class="jv-arc-inner-ring"></div><div class="jv-arc-core"></div></div>' +
-        '<div class="jv-sch-hud" aria-hidden="true"><div class="jv-hud-r jv-hud-r1"></div><div class="jv-hud-r jv-hud-r2"></div><div class="jv-hud-r jv-hud-r3"></div><div class="jv-hud-r jv-hud-r4"></div><div class="jv-hud-r jv-hud-r5"></div><div class="jv-hud-r jv-hud-r6"></div><div class="jv-hud-ticks"></div><canvas class="jv-eq-canvas" width="800" height="800"></canvas></div>' +
+        JarvisHUD.arcReactor() +
+        JarvisHUD.hud() +
         '<div class="sch-mini-chat" aria-live="polite">' +
           '<div class="sch-mini-chat-content"><span class="sch-mini-chat-idle">Standing by, Sir.</span></div>' +
           '<button class="sch-mini-expand" type="button" aria-label="Open full chat" title="Open full chat">' +
