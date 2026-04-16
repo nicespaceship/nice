@@ -259,14 +259,24 @@
 
 /* Inputs */
 [data-theme="spaceship"] input[type="text"],
+[data-theme="spaceship"] input[type="number"],
+[data-theme="spaceship"] input[type="email"],
+[data-theme="spaceship"] input[type="password"],
+[data-theme="spaceship"] textarea,
 [data-theme="spaceship"] .search-input {
   border: 1px solid var(--border);
   background: rgba(9,9,11,0.8); color: var(--text);
   font-family: var(--font-b); font-size: .75rem;
   transition: border-color .15s, box-shadow .15s;
 }
+[data-theme="spaceship"] input::placeholder,
+[data-theme="spaceship"] textarea::placeholder { color: var(--text-muted); }
 [data-theme="spaceship"] input[type="text"]:focus,
-[data-theme="spaceship"] .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); }
+[data-theme="spaceship"] input[type="number"]:focus,
+[data-theme="spaceship"] input[type="email"]:focus,
+[data-theme="spaceship"] input[type="password"]:focus,
+[data-theme="spaceship"] textarea:focus,
+[data-theme="spaceship"] .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); outline: none; }
 [data-theme="spaceship"] select {
   border: 1px solid var(--border); color: var(--text);
   background: rgba(9,9,11,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
@@ -649,12 +659,21 @@
 
 /* ── Inputs ── */
 [data-theme="robotech"] input[type="text"],
+[data-theme="robotech"] input[type="number"],
+[data-theme="robotech"] input[type="email"],
+[data-theme="robotech"] input[type="password"],
+[data-theme="robotech"] textarea,
 [data-theme="robotech"] .search-input {
   border-radius:4px; border:1px solid #d0d0ce; background:#fff; color:#1a1a1a; font-size:.75rem;
 }
 [data-theme="robotech"] input[type="text"]:focus,
-[data-theme="robotech"] .search-input:focus { border-color:#999; }
-[data-theme="robotech"] input::placeholder { color:#bbb; }
+[data-theme="robotech"] input[type="number"]:focus,
+[data-theme="robotech"] input[type="email"]:focus,
+[data-theme="robotech"] input[type="password"]:focus,
+[data-theme="robotech"] textarea:focus,
+[data-theme="robotech"] .search-input:focus { border-color:#999; outline: none; }
+[data-theme="robotech"] input::placeholder,
+[data-theme="robotech"] textarea::placeholder { color:#bbb; }
 [data-theme="robotech"] select {
   border-radius:4px; border:1px solid #d0d0ce; color:#1a1a1a;
   background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
@@ -1362,6 +1381,10 @@
 
 /* Input fields — holographic */
 [data-theme="navigator"] input[type="text"],
+[data-theme="navigator"] input[type="number"],
+[data-theme="navigator"] input[type="email"],
+[data-theme="navigator"] input[type="password"],
+[data-theme="navigator"] textarea,
 [data-theme="navigator"] .search-input {
   border-radius: 2px;
   border: 1px solid rgba(24,160,251,0.2);
@@ -1370,10 +1393,17 @@
   font-family: var(--font-h);
   font-size: .7rem;
 }
+[data-theme="navigator"] input::placeholder,
+[data-theme="navigator"] textarea::placeholder { color: rgba(24,160,251,0.4); }
 [data-theme="navigator"] input[type="text"]:focus,
+[data-theme="navigator"] input[type="number"]:focus,
+[data-theme="navigator"] input[type="email"]:focus,
+[data-theme="navigator"] input[type="password"]:focus,
+[data-theme="navigator"] textarea:focus,
 [data-theme="navigator"] .search-input:focus {
   border-color: #18a0fb;
   box-shadow: 0 0 12px rgba(24,160,251,0.2), inset 0 0 8px rgba(24,160,251,0.05);
+  outline: none;
 }
 [data-theme="navigator"] select {
   border-radius: 2px; border: 1px solid rgba(24,160,251,0.2); color: #18a0fb;
@@ -1807,13 +1837,23 @@
 [data-theme="matrix"] .mc-card-failed { border-left: 3px solid #ff2020; }
 [data-theme="matrix"] .mc-card-review { border-left: 3px solid #00ccaa; }
 [data-theme="matrix"] input[type="text"],
+[data-theme="matrix"] input[type="number"],
+[data-theme="matrix"] input[type="email"],
+[data-theme="matrix"] input[type="password"],
+[data-theme="matrix"] textarea,
 [data-theme="matrix"] .search-input {
   border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
   color: #00ff41; font-family: 'Fira Code', monospace;
 }
+[data-theme="matrix"] input::placeholder,
+[data-theme="matrix"] textarea::placeholder { color: rgba(0,255,65,0.4); }
 [data-theme="matrix"] input[type="text"]:focus,
+[data-theme="matrix"] input[type="number"]:focus,
+[data-theme="matrix"] input[type="email"]:focus,
+[data-theme="matrix"] input[type="password"]:focus,
+[data-theme="matrix"] textarea:focus,
 [data-theme="matrix"] .search-input:focus {
-  border-color: #00ff41; box-shadow: 0 0 8px rgba(0,255,65,0.2);
+  border-color: #00ff41; box-shadow: 0 0 8px rgba(0,255,65,0.2); outline: none;
 }
 [data-theme="matrix"] select {
   border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
@@ -2229,12 +2269,19 @@
 
 /* Input fields */
 [data-theme="lcars"] input[type="text"],
+[data-theme="lcars"] input[type="number"],
+[data-theme="lcars"] input[type="email"],
+[data-theme="lcars"] input[type="password"],
+[data-theme="lcars"] textarea,
 [data-theme="lcars"] .search-input {
   border-radius:24px;
   border:2px solid #666688;
   background:#000;
   color:#ff9966;
 }
+[data-theme="lcars"] textarea { border-radius:18px; }
+[data-theme="lcars"] input::placeholder,
+[data-theme="lcars"] textarea::placeholder { color:rgba(255,153,102,0.45); }
 [data-theme="lcars"] select {
   border-radius:24px; border:2px solid #666688; color:#ff9966;
   appearance:none; -webkit-appearance:none;
@@ -2246,8 +2293,12 @@
   border-radius:24px;
 }
 [data-theme="lcars"] input[type="text"]:focus,
+[data-theme="lcars"] input[type="number"]:focus,
+[data-theme="lcars"] input[type="email"]:focus,
+[data-theme="lcars"] input[type="password"]:focus,
+[data-theme="lcars"] textarea:focus,
 [data-theme="lcars"] .search-input:focus {
-  border-color:#cc99ff;
+  border-color:#cc99ff; outline:none;
 }
 
 /* Prompt panel */
