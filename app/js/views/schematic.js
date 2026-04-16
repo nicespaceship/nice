@@ -261,7 +261,13 @@ const SchematicView = (() => {
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
       '<div class="schematic-center">' + svg +
         '<div class="jv-arc-reactor" aria-hidden="true"><div class="jv-arc-ring"><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div><div class="jv-arc-seg"></div></div><div class="jv-arc-inner-ring"></div><div class="jv-arc-core"></div></div>' +
-        '<div class="jv-sch-hud" aria-hidden="true"><div class="jv-hud-r jv-hud-r1"></div><div class="jv-hud-r jv-hud-r2"></div><div class="jv-hud-r jv-hud-r3"></div><div class="jv-hud-r jv-hud-r4"></div><div class="jv-hud-r jv-hud-r5"></div><div class="jv-hud-r jv-hud-r6"></div><div class="jv-hud-ticks"></div></div>' +
+        '<div class="jv-sch-hud" aria-hidden="true"><div class="jv-hud-r jv-hud-r1"></div><div class="jv-hud-r jv-hud-r2"></div><div class="jv-hud-r jv-hud-r3"></div><div class="jv-hud-r jv-hud-r4"></div><div class="jv-hud-r jv-hud-r5"></div><div class="jv-hud-r jv-hud-r6"></div><div class="jv-hud-ticks"></div><canvas class="jv-eq-canvas" width="800" height="800"></canvas></div>' +
+        '<div class="sch-mini-chat" aria-live="polite">' +
+          '<div class="sch-mini-chat-content"><span class="sch-mini-chat-idle">Standing by, Sir.</span></div>' +
+          '<button class="sch-mini-expand" type="button" aria-label="Open full chat" title="Open full chat">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+          '</button>' +
+        '</div>' +
         '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' + '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';
@@ -294,8 +300,13 @@ const SchematicView = (() => {
     let dotIdx = 0;
 
     const isStacked = getComputedStyle(container).flexDirection === 'column';
+    const isJarvis = document.documentElement.getAttribute('data-theme') === 'jarvis';
 
     cards.forEach((card, i) => {
+      // JARVIS theme: the arc reactor + HUD is the whole visual — no traces
+      // between the core and the crew cards. Skip path + dot generation.
+      if (isJarvis) return;
+
       // Use the inner mini card (or empty slot) for precise center, fall back to wrapper
       const inner = card.querySelector('.tcg-card-mini') || card.querySelector('.schematic-empty-slot') || card;
       const cardRect = inner.getBoundingClientRect();
@@ -309,13 +320,8 @@ const SchematicView = (() => {
       const dash = filled ? '' : ' stroke-dasharray="3 5"';
       const sw = filled ? '.8' : '.4';
       let d;
-      const isJarvis = document.documentElement.getAttribute('data-theme') === 'jarvis';
 
-      if (isJarvis) {
-        // Circuit-trace style: direct angled line from card to core
-        // Each line is a simple straight shot — no shared segments
-        d = 'M' + cardCx + ',' + cardCy + ' L' + rcx + ',' + rcy;
-      } else if (isStacked) {
+      if (isStacked) {
         const cpOff = Math.abs(rcy - cardCy) * 0.55;
         const cp1y = isLeft ? cardCy + cpOff : cardCy - cpOff;
         const cp2y = isLeft ? rcy - cpOff * 0.3 : rcy + cpOff * 0.3;

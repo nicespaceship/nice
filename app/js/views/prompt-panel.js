@@ -15,7 +15,7 @@ const PromptPanel = (() => {
   let _monitorContent = null;
   let _appMain = null;
   let _messages = [];
-  let _sending = false;
+  let _sending = /*init:*/false;
   let _abortCtrl = null; // AbortController for in-flight LLM requests
   let _mentionPopup = null;
   let _mentionItems = [];
@@ -35,6 +35,12 @@ const PromptPanel = (() => {
   let _ttsAudio = null;      // Current Audio element for JARVIS voice
   let _ttsBlobUrl = null;    // Blob URL to revoke on cleanup
   let _ttsAbort = null;      // AbortController for in-flight TTS fetch
+  let _ttsAnalyser = null;   // AnalyserNode on TTS playback for reactor reactivity
+  let _ttsSrcNode = null;    // MediaElementSourceNode for TTS audio
+  let _ttsDataArr = null;    // Uint8Array for frequency samples
+  let _reactorRafId = null;  // rAF handle for reactor audio-driven animation
+  let _miniObserver = null;  // MutationObserver mirroring replies into Schematic mini-chat
+  let _miniExpanded = false; // User clicked the expand button → route to full monitor once
   let _themeObserver = null;  // MutationObserver for theme changes
   let _onHashChange = null;  // hashchange listener ref for cleanup
   let _onEscKey = null;      // keydown listener ref for cleanup
@@ -223,12 +229,62 @@ const PromptPanel = (() => {
 
   function _showMonitor() {
     if (!_appMain) return;
+    // On the Schematic, keep the user in-view — responses render into the
+    // mini-chat panel above the reactor. The expand button opts in to the
+    // full monitor overlay by setting `_miniExpanded`.
+    if (_isOnSchematicInView() && !_miniExpanded) {
+      _ensureMiniObserver();
+      _updateMiniChat();
+      _syncReactorVisibility();
+      return;
+    }
     _appMain.classList.add('monitor-active');
+    _syncReactorVisibility();
   }
 
   function _hideMonitor() {
     if (!_appMain) return;
     _appMain.classList.remove('monitor-active');
+    _miniExpanded = false;
+    _syncReactorVisibility();
+  }
+
+  function _isOnSchematicInView() {
+    const sw = document.querySelector('.schematic-wired');
+    return !!(sw && sw.offsetParent !== null);
+  }
+  /* Mirror the latest assistant response into the Schematic's mini-chat
+     panel. Prefers live-streaming text while a response is in flight; falls
+     back to the last complete assistant message; otherwise shows the idle
+     placeholder. */
+  function _updateMiniChat() {
+    const mini = document.querySelector('.sch-mini-chat-content');
+    if (!mini) return;
+    const streamText = document.getElementById('monitor-stream-text');
+    if (streamText && streamText.innerHTML.trim()) {
+      mini.innerHTML = streamText.innerHTML;
+      mini.scrollTop = mini.scrollHeight;
+      return;
+    }
+    for (let i = _messages.length - 1; i >= 0; i--) {
+      const m = _messages[i];
+      if (m && m.role === 'assistant' && m.text) {
+        mini.innerHTML = (typeof _md === 'function' && typeof _parseActions === 'function')
+          ? _md(_parseActions(m.text).clean)
+          : String(m.text);
+        mini.scrollTop = 0;
+        return;
+      }
+    }
+    mini.innerHTML = '<span class="sch-mini-chat-idle">Standing by, Sir.</span>';
+  }
+  /* Observe the monitor content for any mutation — streaming appends, final
+     render, error cards, thinking indicator — and echo into the mini panel
+     whenever it's on screen. Single observer, created lazily. */
+  function _ensureMiniObserver() {
+    if (_miniObserver || !_monitorContent) return;
+    _miniObserver = new MutationObserver(() => _updateMiniChat());
+    _miniObserver.observe(_monitorContent, { childList: true, subtree: true, characterData: true });
   }
 
   function _isMonitorActive() {
@@ -462,7 +518,7 @@ const PromptPanel = (() => {
       _messages[_messages.length - 1].text += `\n\n**Error creating mission:** ${e.message}`;
       _saveMessages();
       _renderMonitor();
-      _sending = false;
+      _setSending(false);
       if (sendBtn) sendBtn.disabled = false;
       return;
     }
@@ -502,7 +558,7 @@ const PromptPanel = (() => {
 
     _saveMessages();
     _renderMonitor();
-    _sending = false;
+    _setSending(false);
     if (sendBtn) sendBtn.disabled = false;
   }
 
@@ -1511,7 +1567,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     input.style.height = '36px';
     const _inputContainer = _panel?.querySelector('.nice-ai-input-container');
     if (_inputContainer) _inputContainer.classList.remove('has-text');
-    _sending = true;
+    _setSending(true);
 
     const sendBtn = _panel?.querySelector('#nice-ai-send');
     if (sendBtn) sendBtn.disabled = true;
@@ -1574,7 +1630,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           });
           _saveMessages();
           _renderMonitor();
-          _sending = false;
+          _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         }).catch((err) => {
           _removeMonitorThinking();
@@ -1583,7 +1639,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
           _saveMessages();
           _renderMonitor();
-          _sending = false;
+          _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         });
       } else {
@@ -1643,7 +1699,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             });
             _saveMessages();
             _renderMonitor();
-            _sending = false;
+            _setSending(false);
             if (sendBtn) sendBtn.disabled = false;
           }).catch((err) => {
             _removeMonitorThinking();
@@ -1653,7 +1709,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
-            _sending = false;
+            _setSending(false);
             if (sendBtn) sendBtn.disabled = false;
           });
         } else {
@@ -1671,7 +1727,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             });
             _saveMessages();
             _renderMonitor();
-            _sending = false;
+            _setSending(false);
             if (sendBtn) sendBtn.disabled = false;
           }).catch((err) => {
             _removeMonitorThinking();
@@ -1680,7 +1736,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
-            _sending = false;
+            _setSending(false);
             if (sendBtn) sendBtn.disabled = false;
           });
         }
@@ -1743,7 +1799,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         _messages.push({ role: 'assistant', text: content, agent: agentName + modeLabel, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _sending = false;
+        _setSending(false);
         if (sendBtn) sendBtn.disabled = false;
       }).catch((err) => {
         _removeMonitorThinking();
@@ -1752,7 +1808,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _sending = false;
+        _setSending(false);
         if (sendBtn) sendBtn.disabled = false;
       });
 
@@ -1787,7 +1843,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         _messages.push({ role: 'assistant', text: result.content, agent: agentName, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _sending = false;
+        _setSending(false);
         if (sendBtn) sendBtn.disabled = false;
       }).catch((err) => {
         _removeMonitorThinking();
@@ -1796,7 +1852,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
         _saveMessages();
         _renderMonitor();
-        _sending = false;
+        _setSending(false);
         if (sendBtn) sendBtn.disabled = false;
       });
     } else {
@@ -1809,7 +1865,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           _messages.push({ role: 'assistant', text: responseText, agent, ts: Date.now() });
           _saveMessages();
           _renderMonitor();
-          _sending = false;
+          _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         }, delay);
       };
@@ -1827,7 +1883,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           _messages.push({ role: 'assistant', text: preCheck.text, agent: preCheck.agent, ts: Date.now() });
           _saveMessages();
           _renderMonitor();
-          _sending = false;
+          _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         }, delay);
       } else {
@@ -1880,7 +1936,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
               _renderMonitor();
             }
 
-            _sending = false;
+            _setSending(false);
             if (sendBtn) sendBtn.disabled = false;
           } else {
             // LLM returned empty — show error instead of fake response
@@ -1893,7 +1949,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             });
             _saveMessages();
             _renderMonitor();
-            _sending = false;
+            _setSending(false);
             if (sendBtn) sendBtn.disabled = false;
           }
         }).catch(err => {
@@ -1911,7 +1967,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           });
           _saveMessages();
           _renderMonitor();
-          _sending = false;
+          _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         });
       }
@@ -2082,6 +2138,39 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
     document.body.appendChild(_panel);
     _mentionPopup = _panel.querySelector('#nice-ai-mention-popup');
+
+    // Reactor mounts as a SEPARATE body child so its `position:fixed` resolves
+    // against the viewport. The prompt panel has a transform on its wrapper,
+    // which would otherwise create a containing block and pin the reactor to
+    // the prompt bar instead of the screen center.
+    //
+    // SSOT: this markup mirrors the Schematic's center reactor exactly — the
+    // full HUD (rings r1-r6, ticks, equaliser) plus the arc reactor — so every
+    // chat-prompt screen gets the same animation the Schematic renders.
+    if (!document.getElementById('jv-pp-reactor')) {
+      const reactor = document.createElement('div');
+      reactor.id = 'jv-pp-reactor';
+      reactor.className = 'jv-pp-reactor';
+      reactor.setAttribute('aria-hidden', 'true');
+      reactor.dataset.state = 'idle';
+      reactor.innerHTML = ''
+        + '<div class="jv-sch-hud" aria-hidden="true">'
+        +   '<div class="jv-hud-r jv-hud-r1"></div>'
+        +   '<div class="jv-hud-r jv-hud-r2"></div>'
+        +   '<div class="jv-hud-r jv-hud-r3"></div>'
+        +   '<div class="jv-hud-r jv-hud-r4"></div>'
+        +   '<div class="jv-hud-r jv-hud-r5"></div>'
+        +   '<div class="jv-hud-r jv-hud-r6"></div>'
+        +   '<div class="jv-hud-ticks"></div>'
+        +   '<canvas class="jv-eq-canvas" width="800" height="800"></canvas>'
+        + '</div>'
+        + '<div class="jv-arc-reactor">'
+        +   '<div class="jv-arc-ring">' + '<div class="jv-arc-seg"></div>'.repeat(10) + '</div>'
+        +   '<div class="jv-arc-inner-ring"></div>'
+        +   '<div class="jv-arc-core"></div>'
+        + '</div>';
+      document.body.appendChild(reactor);
+    }
 
     // Cache monitor elements
     _appMain = document.querySelector('.app-main');
@@ -2295,10 +2384,24 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _onHashChange = () => {
       _updateRouteContext();
       _updateSuggestionChips();
+      _syncReactorVisibility();
+      // Refresh the Schematic mini-chat when we land on it (wire observer + seed content)
+      setTimeout(() => {
+        if (_isOnSchematicInView()) { _ensureMiniObserver(); _updateMiniChat(); }
+      }, 150);
       // Auto-hide monitor when user navigates via sidebar
       if (_isMonitorActive()) _hideMonitor();
     };
     window.addEventListener('hashchange', _onHashChange);
+
+    // Delegated click for the Schematic mini-chat's expand button →
+    // opt into the full monitor overlay for the current response.
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.sch-mini-expand');
+      if (!btn) return;
+      _miniExpanded = true;
+      _showMonitor();
+    });
 
     // Monitor back button
     document.getElementById('nice-monitor-back')?.addEventListener('click', () => {
@@ -2484,6 +2587,139 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
   }
 
+  /* ── JARVIS reactor state + audio-reactive drive ──
+     _setJvState writes a global state on <html> so BOTH the prompt-panel
+     reactor and the in-view Schematic reactor + HUD equalizer can react.
+     _setJvVol writes --jv-vol (0..1) from a live AnalyserNode on TTS
+     playback, so the core breathes with JARVIS's voice. */
+  function _setJvState(state) {
+    document.documentElement.dataset.jvState = state;
+    const r = document.getElementById('jv-pp-reactor');
+    if (r) r.dataset.state = state;
+  }
+  function _setJvVol(v) {
+    document.documentElement.style.setProperty('--jv-vol', Math.max(0, Math.min(1, v)).toFixed(3));
+  }
+  function _syncReactorVisibility() {
+    // Hide the global reactor whenever a Schematic is rendered AND ON SCREEN —
+    // that page already has its own center-stage reactor. Detect by DOM
+    // presence + visibility, not route match, since the Schematic renders on
+    // multiple routes (`#/bridge?tab=schematic` and `#/bridge/spaceships/:id`)
+    // AND its DOM persists (display:none) after navigating away.
+    //
+    // When the monitor overlay is open, `.app-view-content` drops to
+    // opacity:0 — the Schematic is in layout but not visible to the user,
+    // so the global reactor SHOULD render on top. Factor that in.
+    const check = () => {
+      const sw = document.querySelector('.schematic-wired');
+      const swLaid = !!(sw && sw.offsetParent !== null);
+      const monitorActive = !!document.querySelector('.app-main.monitor-active');
+      const hide = swLaid && !monitorActive;
+      document.documentElement.classList.toggle('jv-pp-reactor-off', hide);
+    };
+    check();
+    requestAnimationFrame(check);
+    setTimeout(check, 250);
+  }
+  function _reactorAttachAnalyser(audio) {
+    try {
+      if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (_audioCtx.state === 'suspended') _audioCtx.resume();
+      _ttsSrcNode = _audioCtx.createMediaElementSource(audio);
+      _ttsAnalyser = _audioCtx.createAnalyser();
+      // 128 bins gives enough resolution for a visible EQ while staying cheap
+      _ttsAnalyser.fftSize = 256;
+      _ttsAnalyser.smoothingTimeConstant = 0.75;
+      _ttsSrcNode.connect(_ttsAnalyser);
+      _ttsAnalyser.connect(_audioCtx.destination);
+      _ttsDataArr = new Uint8Array(_ttsAnalyser.frequencyBinCount);
+      _reactorAudioLoop();
+    } catch (e) { /* Some browsers block createMediaElementSource on autoplay;
+                     fall through — the reactor will still pulse via keyframes. */ }
+  }
+  function _reactorDetachAnalyser() {
+    if (_reactorRafId) { cancelAnimationFrame(_reactorRafId); _reactorRafId = null; }
+    try { _ttsSrcNode?.disconnect(); } catch (e) {}
+    try { _ttsAnalyser?.disconnect(); } catch (e) {}
+    _ttsSrcNode = null; _ttsAnalyser = null; _ttsDataArr = null;
+    _setJvVol(0);
+    // Blank all EQ canvases so they don't hold the last frame
+    document.querySelectorAll('.jv-eq-canvas').forEach(c => {
+      const ctx = c.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, c.width, c.height);
+    });
+  }
+  function _reactorAudioLoop() {
+    if (!_ttsAnalyser || !_ttsDataArr) return;
+    _ttsAnalyser.getByteFrequencyData(_ttsDataArr);
+    // Weight bins 2..17 — speech fundamentals + first harmonics — for --jv-vol
+    let sum = 0, count = 0;
+    const n = Math.min(18, _ttsDataArr.length);
+    for (let i = 2; i < n; i++) { sum += _ttsDataArr[i]; count++; }
+    const vol = count ? (sum / count / 255) : 0;
+    // Gentle curve — mid-range voice should read as ~0.6, peaks ~1.0
+    _setJvVol(Math.min(1, vol * 1.6));
+    // Draw reactive EQ spectrum to every visible canvas (Schematic + global)
+    document.querySelectorAll('.jv-eq-canvas').forEach(c => _renderEqBars(c, _ttsDataArr));
+    _reactorRafId = requestAnimationFrame(_reactorAudioLoop);
+  }
+  /* Draw N radial EQ bars on the canvas — each bar's length comes from a
+     frequency bin of the AnalyserNode. Bars start at an inner radius (where
+     the static conic EQ sits) and extend outward based on amplitude, so the
+     spectrum actually rises and lowers with JARVIS's voice. */
+  function _renderEqBars(canvas, data) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const cx = W / 2;
+    const cy = H / 2;
+    // Bar geometry — tuned to overlay the conic EQ's ring (radius ~130 CSS
+    // in a 400 CSS / 800 internal canvas → 260 internal).
+    const innerR = W * 0.325;  // 260 at W=800
+    const minLen = W * 0.012;  //   9.6
+    const maxLen = W * 0.085;  //  68
+    const barCount = 64;
+    const step = (Math.PI * 2) / barCount;
+    const bins = data.length;
+    // Use bins 2..(bins/2) — skip DC/sub-bass and ultra-high; that's where
+    // speech energy lives. Map evenly across bars.
+    const binStart = 2;
+    const binEnd = Math.floor(bins * 0.5);
+    const binRange = binEnd - binStart;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < barCount; i++) {
+      // Mirror bars around the vertical axis so left/right sides show
+      // the same spectrum (classic EQ symmetry). Index 0 is at top.
+      const half = Math.min(i, barCount - i);
+      const binIdx = binStart + Math.floor((half / (barCount / 2)) * binRange);
+      const amp = (data[binIdx] || 0) / 255;           // 0..1
+      const curved = Math.pow(amp, 0.7);                // boost quiet bins
+      const len = minLen + curved * maxLen;
+      const angle = i * step - Math.PI / 2;
+      const x1 = cx + Math.cos(angle) * innerR;
+      const y1 = cy + Math.sin(angle) * innerR;
+      const x2 = cx + Math.cos(angle) * (innerR + len);
+      const y2 = cy + Math.sin(angle) * (innerR + len);
+      ctx.lineWidth = W * 0.009;                        // ~7 at 800
+      ctx.strokeStyle = 'rgba(0,229,255,' + (0.4 + curved * 0.55) + ')';
+      ctx.shadowColor = 'rgba(0,229,255,0.7)';
+      ctx.shadowBlur = 4 + curved * 14;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  }
+  function _setSending(v) {
+    _sending = v;
+    if (v) _setJvState('streaming');
+    else if (!_ttsAudio) _setJvState('idle');
+    // If TTS is still playing, keep 'speaking' — its onended will set idle.
+  }
+
   async function _ttsSpeak(text) {
     const tv = _currentThemeVoice();
     if (!text || !tv) return;
@@ -2516,8 +2752,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       const blob = await res.blob();
       _ttsBlobUrl = URL.createObjectURL(blob);
       _ttsAudio = new Audio(_ttsBlobUrl);
-      _ttsAudio.onended = () => _ttsCleanup();
-      _ttsAudio.onerror = () => _ttsCleanup();
+      _ttsAudio.onplay = () => { _setJvState('speaking'); _reactorAttachAnalyser(_ttsAudio); };
+      _ttsAudio.onended = () => { _reactorDetachAnalyser(); _ttsCleanup(); _setJvState(_sending ? 'streaming' : 'idle'); };
+      _ttsAudio.onerror = () => { _reactorDetachAnalyser(); _ttsCleanup(); _setJvState(_sending ? 'streaming' : 'idle'); };
       // play() returns a Promise that rejects if playback is interrupted
       // mid-flight — which happens every time a streaming message triggers
       // a new _ttsSpeak() and _ttsStop() revokes the prior blob URL. The
@@ -2538,7 +2775,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   function _ttsStop() {
     if (_ttsAbort) { _ttsAbort.abort(); _ttsAbort = null; }
     if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.src = ''; }
+    _reactorDetachAnalyser();
     _ttsCleanup();
+    _setJvState(_sending ? 'streaming' : 'idle');
   }
 
   function _ttsCleanup() {
@@ -2556,12 +2795,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _populateLLMDropdown();
     _populateModelDropdown();
     _updateSuggestionChips();
-    // Theme voice: stop playback on theme change, sync toggle button
+    // Theme voice: stop playback on theme change, sync toggle button + reactor
     _themeObserver = new MutationObserver(() => {
       if (document.documentElement.getAttribute('data-theme') !== 'jarvis') {
         _ttsStop();
       }
       _syncVoiceToggle();
+      _syncReactorVisibility();
     });
     _themeObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ['data-theme']
@@ -2570,6 +2810,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const muteBtn = _panel?.querySelector('#nice-ai-tts-mute');
     if (muteBtn) muteBtn.addEventListener('click', _toggleVoice);
     _syncVoiceToggle();
+    // Initial reactor sync (hashchange listener is wired in _bindEvents)
+    _syncReactorVisibility();
+    _setJvState('idle');
+    // Seed the Schematic mini-chat if we land directly on the Schematic tab
+    setTimeout(() => {
+      if (_isOnSchematicInView()) { _ensureMiniObserver(); _updateMiniChat(); }
+    }, 400);
     // Start hidden — shown when user clicks a card or triggers prompt
     hide();
   }
@@ -2585,6 +2832,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Stop TTS and theme observer
     _ttsStop();
     if (_themeObserver) { _themeObserver.disconnect(); _themeObserver = null; }
+    if (_miniObserver) { _miniObserver.disconnect(); _miniObserver = null; }
     // Remove global listeners
     if (_onHashChange) { window.removeEventListener('hashchange', _onHashChange); _onHashChange = null; }
     if (_onEscKey) { document.removeEventListener('keydown', _onEscKey); _onEscKey = null; }
