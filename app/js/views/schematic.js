@@ -474,13 +474,28 @@ const SchematicView = (() => {
   }
 
   function _getShipId() {
-    const stored = localStorage.getItem(Utils.KEYS.mcShip);
-    if (stored) return _normalizeShipId(stored);
-    const ships = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
-    if (ships.length) return _normalizeShipId(ships[0].id);
-    // Check custom ships from State (Crew Designer)
+    // Collect every ship the user could legitimately be pointing at: activated
+    // ships from BlueprintStore plus custom ships from State (Crew Designer).
+    const activated = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
     const custom = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
-    return custom.length ? _normalizeShipId(custom[0].id) : null;
+    const seen = new Set();
+    const available = [];
+    activated.forEach(s => { if (s && s.id && !seen.has(s.id)) { seen.add(s.id); available.push(s); } });
+    custom.forEach(s => { if (s && s.id && !seen.has(s.id)) { seen.add(s.id); available.push(s); } });
+
+    // Honour localStorage ONLY if the stored ID still matches a real ship —
+    // otherwise it's stale (old session, deleted ship, ID-scheme migration)
+    // and silently falls through. Self-heal by overwriting with the
+    // first-available ship so subsequent reads are consistent.
+    const stored = localStorage.getItem(Utils.KEYS.mcShip);
+    if (stored && seen.has(stored)) return _normalizeShipId(stored);
+
+    if (!available.length) return null;
+    const fallbackId = _normalizeShipId(available[0].id);
+    if (stored !== fallbackId) {
+      try { localStorage.setItem(Utils.KEYS.mcShip, fallbackId); } catch {}
+    }
+    return fallbackId;
   }
 
   function _getSlotMap() {
