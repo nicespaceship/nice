@@ -2667,33 +2667,42 @@
   box-shadow: inset 0 0 10px rgba(230,74,25,0.06), 0 0 8px rgba(230,74,25,0.08);
 }
 
-/* ── Arc Reactor — schematic core (JARVIS only) ── */
+/* ── Arc Reactor — JARVIS centerpiece core ──
+   SSOT: this rule sizes the reactor for BOTH the Schematic view and the
+   chat-prompt overlay. The reactor authors in 160px at its coil/core pixel
+   values; `scale(1.75)` bumps it to 280px visual — a medium size that sits
+   between the old Schematic core (160px) and the oversized chat core (520px),
+   while still fitting inside the HUD's r6 equaliser ring. */
 .jv-arc-reactor { display:none; }
 [data-theme="jarvis"] .jv-arc-reactor {
   display:block; position:absolute; z-index:2;
-  top:50%; left:50%; transform:translate(-50%,-50%);
-  width:140px; height:140px;
+  top:50%; left:50%; transform:translate(-50%,-50%) scale(1.75);
+  width:160px; height:160px;
 }
 
-/* Outer ring — 10 glowing segments arranged in a circle */
+/* Coil assembly — 10 trapezoidal coils, rotates slowly */
 [data-theme="jarvis"] .jv-arc-ring {
-  position:absolute; inset:0;
-  border-radius:50%;
+  position:absolute; inset:0; border-radius:50%;
+  animation:jv-arc-ring-rotate 60s linear infinite;
 }
 [data-theme="jarvis"] .jv-arc-seg {
-  position:absolute; top:0; left:50%; margin-left:-8px;
-  width:16px; height:140px;
+  position:absolute; top:0; left:50%; margin-left:-12px;
+  width:24px; height:160px;
   transform-origin:center center;
   pointer-events:none;
 }
+/* Trapezoidal copper-wound coil with horizontal wire striping */
 [data-theme="jarvis"] .jv-arc-seg::before {
   content:'';
-  position:absolute; top:2px; left:50%; transform:translateX(-50%);
-  width:14px; height:20px;
-  border-radius:4px;
-  background:linear-gradient(180deg, rgba(0,229,255,0.6), rgba(24,255,255,0.3));
-  box-shadow:0 0 8px rgba(0,229,255,0.5), 0 0 16px rgba(0,229,255,0.2);
-  animation:jv-seg-pulse 2.5s ease-in-out infinite;
+  position:absolute; top:3px; left:50%;
+  transform:translateX(-50%);
+  width:22px; height:34px;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.18) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #ffffff 0%, #cff3ff 18%, #4dd8ff 50%, #00a8d8 88%, #005a78 100%);
+  clip-path:polygon(10% 0%, 90% 0%, 68% 100%, 32% 100%);
+  filter:drop-shadow(0 0 6px rgba(140,240,255,0.55)) drop-shadow(0 0 12px rgba(0,229,255,0.3));
+  animation:jv-coil-life 2s ease-in-out infinite;
 }
 [data-theme="jarvis"] .jv-arc-seg:nth-child(1)  { transform:rotate(0deg); }
 [data-theme="jarvis"] .jv-arc-seg:nth-child(2)  { transform:rotate(36deg); }
@@ -2705,54 +2714,238 @@
 [data-theme="jarvis"] .jv-arc-seg:nth-child(8)  { transform:rotate(252deg); }
 [data-theme="jarvis"] .jv-arc-seg:nth-child(9)  { transform:rotate(288deg); }
 [data-theme="jarvis"] .jv-arc-seg:nth-child(10) { transform:rotate(324deg); }
-/* Stagger pulse per segment */
-[data-theme="jarvis"] .jv-arc-seg:nth-child(2)::before  { animation-delay:.25s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(3)::before  { animation-delay:.5s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(4)::before  { animation-delay:.75s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(5)::before  { animation-delay:1s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(6)::before  { animation-delay:1.25s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(7)::before  { animation-delay:1.5s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(8)::before  { animation-delay:1.75s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(9)::before  { animation-delay:2s; }
-[data-theme="jarvis"] .jv-arc-seg:nth-child(10)::before { animation-delay:2.25s; }
+/* Stagger surge/breath so a bright wave chases around the ring */
+[data-theme="jarvis"] .jv-arc-seg:nth-child(1)::before  { animation-delay:0s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(2)::before  { animation-delay:-0.2s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(3)::before  { animation-delay:-0.4s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(4)::before  { animation-delay:-0.6s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(5)::before  { animation-delay:-0.8s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(6)::before  { animation-delay:-1.0s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(7)::before  { animation-delay:-1.2s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(8)::before  { animation-delay:-1.4s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(9)::before  { animation-delay:-1.6s; }
+[data-theme="jarvis"] .jv-arc-seg:nth-child(10)::before { animation-delay:-1.8s; }
 
-/* Inner ring — glowing circle border */
+/* Metallic housing — brushed steel rim just inside coil tips */
 [data-theme="jarvis"] .jv-arc-inner-ring {
   position:absolute;
-  top:28px; left:28px; right:28px; bottom:28px;
+  top:38px; left:38px; right:38px; bottom:38px;
   border-radius:50%;
-  border:2px solid rgba(0,229,255,0.3);
-  box-shadow:0 0 12px rgba(0,229,255,0.15), inset 0 0 12px rgba(0,229,255,0.08);
-  animation:jv-ring-pulse 3s ease-in-out infinite;
+  border:2px solid rgba(140,210,235,0.45);
+  background:radial-gradient(circle, transparent 62%, rgba(0,229,255,0.08) 72%, transparent 85%);
+  box-shadow:
+    0 0 10px rgba(0,229,255,0.25),
+    inset 0 0 8px rgba(0,229,255,0.18),
+    inset 0 0 0 1px rgba(0,229,255,0.15);
+  animation:jv-ring-pulse 2s ease-in-out infinite;
+}
+/* Electrical arcs flickering between core and housing */
+[data-theme="jarvis"] .jv-arc-inner-ring::before {
+  content:'';
+  position:absolute; inset:-8%;
+  border-radius:50%;
+  background:conic-gradient(from 0deg,
+    transparent 0deg 12deg,    rgba(255,255,255,0.65) 12deg 13deg, transparent 13deg 95deg,
+    rgba(255,255,255,0.5) 95deg 96deg,  transparent 96deg 180deg,
+    rgba(255,255,255,0.55) 180deg 181deg, transparent 181deg 262deg,
+    rgba(255,255,255,0.4) 262deg 263deg,  transparent 263deg 360deg);
+  mask:radial-gradient(circle, transparent 30%, #000 32%, #000 48%, transparent 50%);
+  -webkit-mask:radial-gradient(circle, transparent 30%, #000 32%, #000 48%, transparent 50%);
+  filter:blur(0.5px);
+  animation:jv-arcs-spin 2.5s linear infinite, jv-arcs-flicker 0.6s steps(6,end) infinite;
+  pointer-events:none;
 }
 
-/* Core — bright white-blue center */
+/* Core — white-hot plasma center */
 [data-theme="jarvis"] .jv-arc-core {
   position:absolute;
   top:50%; left:50%; transform:translate(-50%,-50%);
-  width:40px; height:40px;
+  width:46px; height:46px; border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,
+    #ffffff 0%, #e6fbff 16%, #7ee5ff 40%,
+    rgba(0,229,255,0.55) 68%, rgba(0,229,255,0.18) 90%, transparent 100%);
+  box-shadow:
+    0 0 14px rgba(255,255,255,0.8),
+    0 0 28px rgba(120,240,255,0.55),
+    0 0 52px rgba(0,229,255,0.35),
+    0 0 84px rgba(0,229,255,0.18);
+  animation:jv-core-pulse 1.2s ease-in-out infinite;
+}
+/* Inner hot spot — sharper white throb */
+[data-theme="jarvis"] .jv-arc-core::before {
+  content:'';
+  position:absolute; inset:28%;
   border-radius:50%;
-  background:radial-gradient(circle, #e0f7fa 0%, #18ffff 30%, rgba(0,229,255,0.4) 60%, transparent 80%);
-  box-shadow:0 0 20px rgba(24,255,255,0.6), 0 0 40px rgba(0,229,255,0.3), 0 0 60px rgba(0,229,255,0.15);
-  animation:jv-core-pulse 2s ease-in-out infinite;
+  background:radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(220,250,255,0.5) 55%, transparent 100%);
+  filter:blur(1px);
+  animation:jv-core-hotspot 0.9s ease-in-out infinite alternate;
+  pointer-events:none;
 }
 
-@keyframes jv-seg-pulse {
-  0%,100% { opacity:0.5; box-shadow:0 0 6px rgba(0,229,255,0.3); }
-  50%     { opacity:1;   box-shadow:0 0 12px rgba(0,229,255,0.6), 0 0 24px rgba(0,229,255,0.2); }
+@keyframes jv-arc-ring-rotate { to { transform:rotate(360deg); } }
+@keyframes jv-coil-life {
+  0%   { filter:drop-shadow(0 0 4px rgba(120,240,255,0.35)) brightness(0.85); opacity:0.88; }
+  40%  { filter:drop-shadow(0 0 10px rgba(150,250,255,0.7)) drop-shadow(0 0 18px rgba(0,229,255,0.45)) brightness(1.2); opacity:1; }
+  90%  { filter:drop-shadow(0 0 5px rgba(120,240,255,0.4)) brightness(0.95); opacity:0.92; }
+  94%  { filter:drop-shadow(0 0 16px rgba(255,255,255,0.9)) drop-shadow(0 0 28px rgba(0,229,255,0.8)) brightness(2.2); opacity:1; }
+  100% { filter:drop-shadow(0 0 4px rgba(120,240,255,0.35)) brightness(0.85); opacity:0.88; }
 }
 @keyframes jv-ring-pulse {
-  0%,100% { border-color:rgba(0,229,255,0.25); box-shadow:0 0 10px rgba(0,229,255,0.1), inset 0 0 10px rgba(0,229,255,0.05); }
-  50%     { border-color:rgba(0,229,255,0.5);  box-shadow:0 0 18px rgba(0,229,255,0.25), inset 0 0 18px rgba(0,229,255,0.12); }
+  0%,100% { box-shadow:0 0 8px rgba(0,229,255,0.18), inset 0 0 6px rgba(0,229,255,0.12), inset 0 0 0 1px rgba(0,229,255,0.12); }
+  50%     { box-shadow:0 0 18px rgba(0,229,255,0.38), inset 0 0 14px rgba(0,229,255,0.22), inset 0 0 0 1px rgba(0,229,255,0.22); }
 }
 @keyframes jv-core-pulse {
-  0%,100% { box-shadow:0 0 16px rgba(24,255,255,0.5), 0 0 35px rgba(0,229,255,0.25); transform:translate(-50%,-50%) scale(1); }
-  50%     { box-shadow:0 0 24px rgba(24,255,255,0.8), 0 0 50px rgba(0,229,255,0.4), 0 0 80px rgba(0,229,255,0.15); transform:translate(-50%,-50%) scale(1.06); }
+  0%,100% { transform:translate(-50%,-50%) scale(1);    filter:brightness(1); }
+  50%     { transform:translate(-50%,-50%) scale(1.08); filter:brightness(1.3); }
+}
+@keyframes jv-core-hotspot {
+  from { opacity:0.75; transform:scale(0.9); }
+  to   { opacity:1;    transform:scale(1.15); }
+}
+@keyframes jv-arcs-spin { to { transform:rotate(360deg); } }
+@keyframes jv-arcs-flicker {
+  0%   { opacity:0.7; }
+  16%  { opacity:0.2; }
+  33%  { opacity:0.9; }
+  50%  { opacity:0.5; }
+  66%  { opacity:1;   }
+  83%  { opacity:0.35;}
+  100% { opacity:0.7; }
 }
 
 /* Hide default SVG reactor circles on JARVIS — arc reactor replaces them */
 [data-theme="jarvis"] .schematic-svg circle:not([class]) { opacity:0; }
 [data-theme="jarvis"] .schematic-svg .sch-core-hit { opacity:1; }
+
+/* ── Global reactor — Schematic centerpiece mirrored on every chat prompt ──
+   Hidden by default; shown on JARVIS theme everywhere except the Schematic
+   page (Ship Detail) where the in-view reactor already occupies the view.
+   The reactor mounts as a direct <body> child so `position:fixed` resolves
+   against the viewport (not the prompt panel's transform-created containing
+   block). JS toggles `.jv-pp-reactor-off` on <html> on the Schematic route.
+   The wrapper is sized to contain the full 600px Schematic HUD. */
+.jv-pp-reactor { display:none; }
+[data-theme="jarvis"]:not(.jv-pp-reactor-off) .jv-pp-reactor {
+  display:block; position:fixed;
+  top:50%; left:calc(50% + 28px);
+  transform:translate(-50%,-50%);
+  width:min(620px, 85vmin); height:min(620px, 85vmin);
+  pointer-events:none; z-index:1;
+  opacity:0.5;
+  transition:opacity 200ms ease;
+}
+/* Brighten when JARVIS is responding */
+[data-theme="jarvis"][data-jv-state="streaming"]:not(.jv-pp-reactor-off) .jv-pp-reactor { opacity:0.75; }
+[data-theme="jarvis"][data-jv-state="speaking"]:not(.jv-pp-reactor-off) .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }
+/* Track sidebar offset so the reactor stays centered on the main area */
+body:has(.app-sidebar.open) [data-theme="jarvis"]:not(.jv-pp-reactor-off) .jv-pp-reactor,
+.app-sidebar.open ~ .jv-pp-reactor {
+  left:calc(50% + 140px);
+}
+
+/* ── Audio-reactive drive (speaking state) ──
+   JS writes --jv-vol (0..1) on <html> from the TTS AnalyserNode and sets
+   data-jv-state="speaking". During speaking, the keyframe-driven core
+   animation is suppressed and replaced by a volume-driven transform/filter
+   so the core breathes in sync with JARVIS's voice. The EQ ring (Schematic
+   only) brightens/opacity-pulses with the same signal. */
+[data-theme="jarvis"][data-jv-state="speaking"] .jv-arc-core {
+  animation:none;
+  transform:translate(-50%,-50%) scale(calc(1 + var(--jv-vol, 0) * 0.32));
+  filter:brightness(calc(1 + var(--jv-vol, 0) * 0.9));
+  transition:transform 60ms linear, filter 60ms linear;
+}
+[data-theme="jarvis"][data-jv-state="speaking"] .jv-arc-inner-ring {
+  box-shadow:
+    0 0 calc(10px + 24px * var(--jv-vol, 0)) rgba(0,229,255, calc(0.22 + 0.5 * var(--jv-vol, 0))),
+    inset 0 0 calc(8px + 18px * var(--jv-vol, 0)) rgba(0,229,255, calc(0.15 + 0.4 * var(--jv-vol, 0))),
+    inset 0 0 0 1px rgba(0,229,255,0.2);
+}
+/* During speaking, the static conic-gradient EQ hands off to the reactive
+   canvas below — it draws real bars that rise/lower from the AnalyserNode. */
+[data-theme="jarvis"][data-jv-state="speaking"] .jv-hud-r6 {
+  opacity:0;
+  transition:opacity 200ms ease;
+}
+
+/* ── Schematic mini-chat — JARVIS replies inline without leaving the view ──
+   Sits above the core inside `.schematic-center`. Only renders on JARVIS
+   (Office/NICE keep the full-monitor behaviour). Hidden when the full monitor
+   overlay is open. The expand button opens the full monitor on demand. */
+.sch-mini-chat { display:none; }
+[data-theme="jarvis"] .schematic-wired .sch-mini-chat {
+  display:block; position:absolute;
+  /* Top edge aligns with the top blueprint slots; width matches the
+     prompt panel (820px) so the mini-chat reads as its in-view twin. */
+  top:0; left:50%; transform:translateX(-50%);
+  width:min(820px, 94%);
+  max-height:124px;
+  padding:10px 44px 10px 14px;
+  background:rgba(7,13,26,0.82);
+  border:1px solid rgba(0,229,255,0.3);
+  border-radius:10px;
+  color:#b2ebf2;
+  font-family:var(--font-b);
+  font-size:.82rem;
+  line-height:1.45;
+  overflow-y:auto;
+  z-index:4;
+  backdrop-filter:blur(6px);
+  box-shadow:0 0 14px rgba(0,229,255,0.15), inset 0 0 10px rgba(0,229,255,0.04);
+}
+.app-main.monitor-active .sch-mini-chat { display:none; }
+.sch-mini-chat-content { word-wrap:break-word; }
+.sch-mini-chat-content p { margin:0 0 6px; }
+.sch-mini-chat-content p:last-child { margin-bottom:0; }
+.sch-mini-chat-idle { opacity:.55; font-style:italic; }
+[data-theme="jarvis"] .sch-mini-expand {
+  position:absolute; top:6px; right:6px;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px;
+  background:rgba(0,229,255,0.08);
+  border:1px solid rgba(0,229,255,0.3);
+  border-radius:6px;
+  color:rgba(0,229,255,0.8);
+  cursor:pointer;
+  padding:0;
+  transition:color .15s, background .15s, border-color .15s;
+}
+[data-theme="jarvis"] .sch-mini-expand:hover {
+  color:#18ffff;
+  background:rgba(0,229,255,0.18);
+  border-color:rgba(0,229,255,0.55);
+}
+
+/* ── Reactive EQ spectrum canvas ──
+   Sits on top of the static conic EQ. JS draws ~64 radial bars each frame
+   from live TTS frequency data, so the spectrum actually rises and lowers
+   with JARVIS's voice. Hidden at rest; revealed during speaking. */
+.jv-eq-canvas {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:400px; height:400px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 200ms ease;
+  z-index:1;
+}
+[data-theme="jarvis"][data-jv-state="speaking"] .jv-eq-canvas {
+  opacity:1;
+}
+
+/* ── Streaming state — tokens arriving, no TTS yet: speed everything up ── */
+[data-theme="jarvis"][data-jv-state="streaming"] .jv-arc-ring {
+  animation-duration:24s;
+}
+[data-theme="jarvis"][data-jv-state="streaming"] .jv-arc-seg::before {
+  animation-duration:1.3s;
+}
+[data-theme="jarvis"][data-jv-state="streaming"] .jv-arc-core {
+  animation-duration:0.8s;
+}
+[data-theme="jarvis"][data-jv-state="streaming"] .jv-arc-inner-ring::before {
+  animation-duration:1.5s, 0.4s;
+}
 
 /* ── Schematic HUD — animated concentric rings ── */
 .jv-sch-hud { display:none; }
@@ -2925,9 +3118,12 @@
 }
 
 @media (prefers-reduced-motion:reduce) {
-  [data-theme="jarvis"] .jv-arc-seg::before { animation:none; opacity:0.7; }
+  [data-theme="jarvis"] .jv-arc-ring { animation:none; }
+  [data-theme="jarvis"] .jv-arc-seg::before { animation:none; opacity:0.85; filter:none; }
   [data-theme="jarvis"] .jv-arc-inner-ring { animation:none; }
+  [data-theme="jarvis"] .jv-arc-inner-ring::before { animation:none; opacity:0; }
   [data-theme="jarvis"] .jv-arc-core { animation:none; }
+  [data-theme="jarvis"] .jv-arc-core::before { animation:none; }
 }
 
 /* Card actions */
