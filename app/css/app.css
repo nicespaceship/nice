@@ -1740,7 +1740,7 @@
 .schematic-col-left { align-items:flex-end; }
 .schematic-col .schematic-card-slot:nth-child(even) { transform:translateX(110px); }
 .schematic-col-right .schematic-card-slot:nth-child(even) { transform:translateX(-110px); }
-.schematic-center { flex:1; min-width:40px; z-index:1; }
+.schematic-center { flex:1; min-width:40px; position:relative; z-index:3; }
 .schematic-svg { position:absolute; inset:0; z-index:0; }
 .schematic-svg path, .schematic-svg line { pointer-events:none; }
 .schematic-svg circle { pointer-events:none; }
