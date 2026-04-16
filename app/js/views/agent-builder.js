@@ -412,9 +412,10 @@ const AgentBuilderView = (() => {
       name,
       role,
       type,
-      llm_engine: model,
       status: existingAgent?.status || 'idle',
-      config: { tools, memory, temperature: temp },
+      // llm_engine lives inside config — there is no top-level llm_engine
+      // column on user_agents (matches setup-wizard / crew-designer inserts).
+      config: { tools, memory, temperature: temp, llm_engine: model },
       rarity: BlueprintUtils.getRarity({ config: { tools, memory, temperature: temp }, llm_engine: model, type }),
     };
 
