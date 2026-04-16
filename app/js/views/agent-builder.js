@@ -115,6 +115,26 @@ const AgentBuilderView = (() => {
                 </select>
               </div>
             </div>
+            <div class="auth-field">
+              <label for="b-description">Description</label>
+              <input type="text" id="b-description" maxlength="200" placeholder="One-line summary of what this agent does" value="${_esc(agent?.description || config.description || '')}" />
+              <p class="builder-hint">Surfaces in cards and the system prompt.</p>
+            </div>
+          </fieldset>
+
+          <!-- BEHAVIOR -->
+          <fieldset class="builder-section">
+            <legend class="builder-legend">Behavior</legend>
+            <div class="auth-field">
+              <label for="b-instructions">Instructions</label>
+              <textarea id="b-instructions" rows="4" maxlength="2000" placeholder="Persona, tone, rules. e.g. &quot;Be concise. Cite sources. Never speculate.&quot;">${_esc(agent?.flavor || config.flavor || '')}</textarea>
+              <p class="builder-hint">Free-form behavior guidance. Appended last in the system prompt to color tone.</p>
+            </div>
+            <div class="auth-field">
+              <label for="b-skills">Skills</label>
+              <input type="text" id="b-skills" maxlength="500" placeholder="e.g. competitive analysis, SQL, technical writing" value="${_esc((config.caps || agent?.metadata?.caps || agent?.caps || []).join(', '))}" />
+              <p class="builder-hint">Comma-separated capabilities. Distinct from tools — these describe what the agent can do.</p>
+            </div>
           </fieldset>
 
           <!-- ENGINE -->
@@ -388,6 +408,10 @@ const AgentBuilderView = (() => {
     const temp  = parseFloat(document.getElementById('b-temp').value);
     const memory = document.getElementById('b-memory').dataset.val === '1';
     const tools = [...document.querySelectorAll('#b-tools input:checked')].map(cb => cb.value);
+    const description  = (document.getElementById('b-description')?.value || '').trim();
+    const instructions = (document.getElementById('b-instructions')?.value || '').trim();
+    const skills = (document.getElementById('b-skills')?.value || '')
+      .split(',').map(s => s.trim()).filter(Boolean);
 
     if (!name) {
       errEl.textContent = 'Agent name is required.';
@@ -413,9 +437,17 @@ const AgentBuilderView = (() => {
       role,
       type,
       status: existingAgent?.status || 'idle',
-      // llm_engine lives inside config — there is no top-level llm_engine
-      // column on user_agents (matches setup-wizard / crew-designer inserts).
-      config: { tools, memory, temperature: temp, llm_engine: model },
+      // user_agents has no top-level columns for llm_engine, description,
+      // flavor, or caps — they live inside the config JSONB (matches
+      // setup-wizard / crew-designer inserts). Loader surfaces them back
+      // to top-level on State.agents items.
+      config: {
+        tools, memory, temperature: temp,
+        llm_engine: model,
+        description,
+        flavor: instructions,
+        caps: skills,
+      },
       rarity: BlueprintUtils.getRarity({ config: { tools, memory, temperature: temp }, llm_engine: model, type }),
     };
 
@@ -467,6 +499,10 @@ const AgentBuilderView = (() => {
     const temp  = parseFloat(document.getElementById('b-temp')?.value ?? 0.7);
     const memory = document.getElementById('b-memory')?.dataset?.val === '1';
     const tools = [...document.querySelectorAll('#b-tools input:checked')].map(cb => cb.value);
+    const description  = (document.getElementById('b-description')?.value || '').trim();
+    const instructions = (document.getElementById('b-instructions')?.value || '').trim();
+    const skills = (document.getElementById('b-skills')?.value || '')
+      .split(',').map(s => s.trim()).filter(Boolean);
 
     return {
       type: 'agent',
@@ -479,11 +515,14 @@ const AgentBuilderView = (() => {
         temperature: temp,
         memory: memory,
         tools: tools,
+        description: description,
+        flavor: instructions,
+        caps: skills,
       },
       stats: {},
-      metadata: { agentType: type },
-      description: agent?.description || '',
-      flavor: agent?.flavor || '',
+      metadata: { agentType: type, caps: skills },
+      description: description || agent?.description || '',
+      flavor: instructions || agent?.flavor || '',
       tags: agent?.tags || [],
       rarity: agent?.rarity || 'Common',
       serial_key: agent?.serial_key || '',
@@ -515,6 +554,12 @@ const AgentBuilderView = (() => {
       cb.checked = tools.includes(cb.value);
       cb.parentElement.classList.toggle('selected', cb.checked);
     });
+    if (el('b-description')) el('b-description').value = bp.description || cfg.description || '';
+    if (el('b-instructions')) el('b-instructions').value = bp.flavor || cfg.flavor || '';
+    if (el('b-skills')) {
+      const caps = cfg.caps || (bp.metadata && bp.metadata.caps) || bp.caps || [];
+      el('b-skills').value = caps.join(', ');
+    }
   }
 
   /** Show validation status for markdown textarea */

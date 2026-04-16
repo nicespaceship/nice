@@ -536,11 +536,17 @@ const BlueprintStore = (() => {
             return;
           }
           const cfg = a.config || {};
+          // Surface fields that live inside the config JSONB to top-level
+          // so card-renderer / PromptBuilder / search work with the same
+          // shape they use for catalog blueprints.
           stateAgents.push({
             id: a.id, name: a.name, type: 'agent',
             category: cfg.role || a.role || '', rarity: agentRarity,
             status: a.status || 'idle', config: cfg,
-            metadata: { agentType: cfg.type || 'Agent' },
+            metadata: { agentType: cfg.type || 'Agent', caps: cfg.caps || [] },
+            description: cfg.description || '',
+            flavor: cfg.flavor || '',
+            caps: cfg.caps || [],
             created_at: a.created_at,
           });
           if (!_activatedAgentIds.includes(a.id)) {
