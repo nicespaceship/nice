@@ -1980,38 +1980,24 @@ const BlueprintStore = (() => {
   }
 
   /**
-   * Pure rating-math helper extracted for unit testing.
+   * Upsert the caller's review and let the DB keep the listing aggregate
+   * in sync. A trigger on marketplace_reviews recomputes rating /
+   * rating_count from the actual review rows, so there's no client math
+   * to race.
    *
-   * Running average update:
-   *   - First rating from this user (oldRating == null) → append to average
-   *   - Updated rating → swap the user's old value for the new one
-   *
-   * The division-by-zero guard is there for the (impossible but cheap to
-   * defend against) case of updating a rating on a listing with count 0.
+   * Self-review is still blocked defensively before the network call —
+   * the RLS policy enforces it on the server, but catching it early
+   * gives a cleaner error message than a generic RLS violation.
    */
-  function recomputeRating(prevAvg, prevCount, oldRating, newRating) {
-    if (oldRating == null) {
-      const count = prevCount + 1;
-      return { rating: (prevAvg * prevCount + newRating) / count, rating_count: count };
-    }
-    if (prevCount <= 0) return { rating: prevAvg, rating_count: prevCount };
-    return {
-      rating: (prevAvg * prevCount - oldRating + newRating) / prevCount,
-      rating_count: prevCount,
-    };
-  }
-
   async function rateMarketplaceListing(listingId, rating) {
     const c = SB?.client;
     if (!c) throw new Error('Not connected');
     const user = State.get('user');
     if (!user) throw new Error('Sign in to rate');
 
-    // Pull the current listing so we can recompute the running average
-    // client-side for instant feedback. Source of truth is still the DB.
     const { data: listing, error: lerr } = await c
       .from('marketplace_listings')
-      .select('id, rating, rating_count, author_id')
+      .select('id, author_id')
       .eq('id', listingId)
       .maybeSingle();
     if (lerr) throw lerr;
@@ -2020,60 +2006,32 @@ const BlueprintStore = (() => {
       throw new Error("You can't rate your own listing");
     }
 
-    // Check for an existing review so we know whether to insert or update
-    const { data: existing } = await c
+    const { error: uerr } = await c
       .from('marketplace_reviews')
-      .select('rating')
-      .eq('listing_id', listingId)
-      .eq('user_id', user.id)
+      .upsert(
+        { listing_id: listingId, user_id: user.id, rating },
+        { onConflict: 'listing_id,user_id' }
+      );
+    if (uerr) throw uerr;
+
+    // Re-read the authoritative aggregate the trigger just computed.
+    const { data: after } = await c
+      .from('marketplace_listings')
+      .select('rating, rating_count')
+      .eq('id', listingId)
       .maybeSingle();
 
-    if (existing) {
-      const { error } = await c
-        .from('marketplace_reviews')
-        .update({ rating })
-        .eq('listing_id', listingId)
-        .eq('user_id', user.id);
-      if (error) throw error;
-    } else {
-      const { error } = await c
-        .from('marketplace_reviews')
-        .insert({ listing_id: listingId, user_id: user.id, rating });
-      if (error) throw error;
-    }
-
-    const next = recomputeRating(
-      Number(listing.rating || 0),
-      Number(listing.rating_count || 0),
-      existing ? existing.rating : null,
-      rating
-    );
-
-    // Best-effort write-back. A concurrent rating would race — the next
-    // fetch picks up the authoritative value recomputed server-side.
-    try {
-      await c.from('marketplace_listings')
-        .update({ rating: next.rating, rating_count: next.rating_count })
-        .eq('id', listingId);
-    } catch { /* non-critical */ }
-
-    return next;
+    return {
+      rating: Number(after?.rating || 0),
+      rating_count: Number(after?.rating_count || 0),
+    };
   }
 
   async function incrementMarketplaceDownloads(listingId) {
     const c = SB?.client;
     if (!c) return;
     try {
-      const { data } = await c
-        .from('marketplace_listings')
-        .select('downloads')
-        .eq('id', listingId)
-        .maybeSingle();
-      if (data) {
-        c.from('marketplace_listings')
-          .update({ downloads: (data.downloads || 0) + 1 })
-          .eq('id', listingId).then(() => {});
-      }
+      await c.rpc('increment_listing_download', { p_listing_id: listingId });
     } catch { /* non-critical */ }
   }
 
@@ -2171,7 +2129,7 @@ const BlueprintStore = (() => {
     // Marketplace — listing browse is handled by searchCatalog with its
     // left-join on marketplace_listings; these are the action helpers.
     getMyMarketplaceReview, rateMarketplaceListing,
-    incrementMarketplaceDownloads, publishToMarketplace, recomputeRating,
+    incrementMarketplaceDownloads, publishToMarketplace,
   };
 
   /**
