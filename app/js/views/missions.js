@@ -10,12 +10,14 @@ const MissionsView = (() => {
   const STATUSES   = ['queued','running','completed','failed'];
   const PRIORITIES = ['low','medium','high','critical'];
   const STATUS_META = {
-    queued:    { label: 'Queued',    color: '#f59e0b', icon: '◷' },
+    queued:    { label: 'Queued',    color: '#f59e0b', icon: 'clock' },
     running:   { label: 'Running',   color: '#6366f1', icon: 'zap' },
-    review:    { label: 'Review',    color: '#a855f7', icon: '◎' },
+    review:    { label: 'Review',    color: '#a855f7', icon: 'target' },
     completed: { label: 'Completed', color: '#22c55e', icon: 'check' },
     failed:    { label: 'Failed',    color: '#ef4444', icon: 'x' },
   };
+  const _statusIcon = (name) =>
+    `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${name}"/></svg>`;
 
   /* ── State ── */
   let _el = null;
@@ -174,7 +176,7 @@ const MissionsView = (() => {
       return `
         ${i > 0 ? '<div class="mc-pipe-line"><div class="mc-pipe-flow"></div></div>' : ''}
         <button class="mc-pipe-node ${active} ${isRunning ? 'mc-pipe-running' : ''}" data-status="${s}" style="--pipe-color:${meta.color}">
-          <span class="mc-pipe-icon">${meta.icon}</span>
+          <span class="mc-pipe-icon">${_statusIcon(meta.icon)}</span>
           <span class="mc-pipe-count">${counts[s]}</span>
           <span class="mc-pipe-label">${meta.label}</span>
         </button>`;
@@ -296,7 +298,7 @@ const MissionsView = (() => {
       <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}">
         <div class="mc-card-top">
           <input type="checkbox" class="mc-card-check" data-id="${m.id}" ${checked} />
-          <span class="mc-card-status" style="color:${meta.color}">${meta.icon}</span>
+          <span class="mc-card-status" style="color:${meta.color}">${_statusIcon(meta.icon)}</span>
           <span class="mc-card-pri priority-${m.priority}">${m.priority}</span>
         </div>
         <div class="mc-card-title">${_esc(m.title)}</div>
