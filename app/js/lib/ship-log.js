@@ -184,6 +184,9 @@ const ShipLog = (() => {
         context_len: context.length,
         source:      'llm',
       };
+      if (typeof LLMConfig !== 'undefined' && LLMConfig.reportFallback) {
+        LLMConfig.reportFallback(llmConfig.model, response.model);
+      }
       response = response.content;
 
     } catch (e) {
