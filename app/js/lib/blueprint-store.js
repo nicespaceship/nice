@@ -2035,50 +2035,173 @@ const BlueprintStore = (() => {
     } catch { /* non-critical */ }
   }
 
-  async function publishToMarketplace(blueprintId, { title, description, tags } = {}) {
+  /**
+   * Publish a user-built agent or spaceship to the community library.
+   *
+   * The source row lives in user_agents / user_spaceships; publishing creates
+   * an immutable snapshot in `blueprints` (scope='community') plus a
+   * marketplace_listings row. Re-publishing the same entity is blocked — the
+   * author must unpublish first, then edit, then re-publish, so consumers
+   * never see the blueprint change underneath them.
+   *
+   * Ships need special handling: the source's `slot_assignments` map points
+   * at the publisher's private agent UUIDs, which would be dangling FKs for
+   * any downloader. The slot shape is preserved via `slot_placeholders`
+   * so the download-as-clone path (Stage B3) can repopulate with the
+   * downloader's own agents.
+   *
+   * @param {{ type: 'agent'|'spaceship', id: string }} entity
+   * @param {{ title?: string, description?: string, tags?: string[] }} [opts]
+   */
+  async function publishToCommunity(entity, { title, description, tags } = {}) {
     const c = SB?.client;
     if (!c) throw new Error('Not connected');
     const user = State.get('user');
     if (!user) throw new Error('Sign in to publish');
+    if (!entity || !entity.id) throw new Error('Missing entity id');
 
-    // Fetch the blueprint so we can default title/description off it
-    const { data: bp, error: berr } = await c
-      .from('blueprints')
-      .select('id, type, name, description, tags, creator_id, is_public')
-      .eq('id', blueprintId)
+    const type = entity.type === 'spaceship' ? 'spaceship' : 'agent';
+    const sourceTable = type === 'spaceship' ? 'user_spaceships' : 'user_agents';
+
+    // Ownership check — also the only place we read the source, so we get
+    // the latest config at publish time. RLS will re-enforce this on the
+    // blueprints INSERT, but catching it here lets us return a clean error.
+    const { data: source, error: serr } = await c
+      .from(sourceTable)
+      .select('*')
+      .eq('id', entity.id)
+      .eq('user_id', user.id)
       .maybeSingle();
-    if (berr) throw berr;
-    if (!bp) throw new Error('Blueprint not found');
-    if (bp.creator_id && bp.creator_id !== user.id) {
-      throw new Error("You can only publish blueprints you created");
-    }
+    if (serr) throw serr;
+    if (!source) throw new Error('You can only publish things you created');
 
-    // Don't double-publish. Authors get one active listing per blueprint.
+    // Re-publish detection: blueprints.id = source.id for community rows,
+    // so a second publish would PK-conflict anyway — catch early for UX.
     const { data: existing } = await c
-      .from('marketplace_listings')
+      .from('blueprints')
       .select('id')
-      .eq('blueprint_id', blueprintId)
-      .eq('author_id', user.id)
-      .eq('status', 'published')
+      .eq('id', entity.id)
+      .eq('scope', 'community')
       .maybeSingle();
     if (existing) {
-      throw new Error('This blueprint is already published');
+      throw new Error('Already published — unpublish first to edit');
     }
 
-    const payload = {
-      blueprint_id: blueprintId,
-      author_id:    user.id,
-      title:        (title || bp.name || 'Untitled').slice(0, 80),
-      description:  (description || bp.description || '').slice(0, 400),
-      category:     bp.type === 'spaceship' ? 'spaceship' : 'agent',
-      tags:         Array.isArray(tags) ? tags : (bp.tags || []),
-      version:      '1.0.0',
-      status:       'published',
-    };
+    // Hoist structural fields from config → top-level blueprints columns.
+    const cfg = (source.config && Object.keys(source.config).length ? source.config : source.slots) || {};
+    const finalTitle = (title || source.name || 'Untitled').slice(0, 80);
+    const finalDesc  = (description || cfg.description || '').slice(0, 2000);
+    const finalTags  = Array.isArray(tags) ? tags : (cfg.tags || []);
+    const finalFlavor = (cfg.flavor || '').slice(0, 200);
 
-    const { data, error } = await c.from('marketplace_listings').insert(payload).select().maybeSingle();
-    if (error) throw error;
-    return data;
+    // Sanitize the config we snapshot into blueprints. Strip:
+    //  - Fields we hoisted to top-level (avoids duplicate storage)
+    //  - Guest / local state flags
+    //  - For ships: the user-specific slot_assignments, replaced by
+    //    slot_placeholders so downloaders can re-populate their own agents
+    const configSnapshot = Object.assign({}, cfg);
+    delete configSnapshot.description;
+    delete configSnapshot.flavor;
+    delete configSnapshot.tags;
+    delete configSnapshot._guest;
+    delete configSnapshot._custom;
+    delete configSnapshot._local;
+
+    if (type === 'spaceship') {
+      const slotMap = configSnapshot.slot_assignments || {};
+      configSnapshot.slot_placeholders = Object.keys(slotMap)
+        .map(k => parseInt(k, 10))
+        .filter(n => !isNaN(n))
+        .sort((a, b) => a - b)
+        .map(slot => ({ slot }));
+      delete configSnapshot.slot_assignments;
+    }
+
+    const category = type === 'spaceship'
+      ? (source.category || 'spaceship')
+      : (cfg.role || source.category || 'agent');
+    const rarity = source.rarity || 'Common';
+
+    // Use the source entity's UUID as the blueprint id — keeps the publish
+    // flow idempotent and makes re-publish detection a plain PK lookup.
+    const blueprintId = entity.id;
+    const serialKey = 'COMM-' + blueprintId.slice(0, 8).toUpperCase();
+
+    const { data: bp, error: berr } = await c
+      .from('blueprints')
+      .insert({
+        id:          blueprintId,
+        serial_key:  serialKey,
+        type,
+        name:        finalTitle,
+        description: finalDesc,
+        flavor:      finalFlavor,
+        category,
+        rarity,
+        tags:        finalTags,
+        config:      configSnapshot,
+        scope:       'community',
+        is_public:   true,
+        creator_id:  user.id,
+      })
+      .select()
+      .maybeSingle();
+    if (berr) throw berr;
+
+    const { data: listing, error: lerr } = await c
+      .from('marketplace_listings')
+      .insert({
+        blueprint_id: blueprintId,
+        author_id:    user.id,
+        title:        finalTitle,
+        description:  finalDesc.slice(0, 400),
+        category:     type === 'spaceship' ? 'spaceship' : 'agent',
+        tags:         finalTags,
+        status:       'published',
+      })
+      .select()
+      .maybeSingle();
+
+    if (lerr) {
+      // Roll back the blueprint so we don't leave a community row with no
+      // listing attached — that would make it unreachable via the browse UI
+      // but still count against the user's rate-limit budget in B4.
+      try { await c.from('blueprints').delete().eq('id', blueprintId); } catch { /* best effort */ }
+      throw lerr;
+    }
+
+    return { blueprint: bp, listing };
+  }
+
+  /**
+   * Unpublish a community blueprint the caller owns. Deletes both the
+   * marketplace_listings row and the community blueprints snapshot — the
+   * underlying user_agents / user_spaceships row is untouched, so the
+   * author can edit it and re-publish.
+   */
+  async function unpublishFromCommunity(blueprintId) {
+    const c = SB?.client;
+    if (!c) throw new Error('Not connected');
+    const user = State.get('user');
+    if (!user) throw new Error('Sign in to unpublish');
+    if (!blueprintId) throw new Error('Missing blueprint id');
+
+    const { error: lerr } = await c
+      .from('marketplace_listings')
+      .delete()
+      .eq('blueprint_id', blueprintId)
+      .eq('author_id', user.id);
+    if (lerr) throw lerr;
+
+    const { error: berr } = await c
+      .from('blueprints')
+      .delete()
+      .eq('id', blueprintId)
+      .eq('scope', 'community')
+      .eq('creator_id', user.id);
+    if (berr) throw berr;
+
+    return { ok: true };
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -2129,7 +2252,8 @@ const BlueprintStore = (() => {
     // Marketplace — listing browse is handled by searchCatalog with its
     // left-join on marketplace_listings; these are the action helpers.
     getMyMarketplaceReview, rateMarketplaceListing,
-    incrementMarketplaceDownloads, publishToMarketplace,
+    incrementMarketplaceDownloads,
+    publishToCommunity, unpublishFromCommunity,
   };
 
   /**
