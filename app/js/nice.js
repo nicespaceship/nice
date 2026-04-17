@@ -1511,14 +1511,11 @@ const NICE = (() => {
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
-      // Default empty pools shape — no free trial grant. New free users
-      // run Gemini 2.5 Flash only; tokens unlock when they subscribe to Pro.
-      const fallback = {
-        pools: { standard: { allowance: 0, used: 0, purchased: 0 }, claude: { allowance: 0, used: 0, purchased: 0 }, premium: { allowance: 0, used: 0, purchased: 0 } },
-        // Legacy columns kept readable for backward compatibility:
-        balance: 0, free_tier_remaining: 0, lifetime_purchased: 0, lifetime_used: 0,
-      };
-      State.set('token_balance', data || fallback);
+      // New free users have no row yet — the realtime subscription below
+      // populates State once the webhook creates one on first subscribe.
+      // UI reads `balance.pools` with optional chaining, so a missing row
+      // renders the zero-state correctly without a fabricated fallback.
+      if (data) State.set('token_balance', data);
     } catch (err) {
       console.warn('[NICE] Failed to load token balance:', err.message);
     }

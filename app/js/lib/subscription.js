@@ -156,9 +156,23 @@ const Subscription = (() => {
 
   /* ── Stripe Integration ── */
 
-  /** Open a Stripe payment link in a new tab. Used as a fallback
-      when the proprietary stripe-subscribe edge function isn't
-      configured or errors out. */
+  /** Attach the user's id + email to a Stripe payment link so the
+      webhook can map the resulting subscription back to the right
+      Supabase user without an email-only lookup. Every call that opens
+      a live Stripe URL must go through this. */
+  function _withUserRef(url, user) {
+    if (!url || !user) return url;
+    try {
+      const parsed = new URL(url);
+      if (user.id)    parsed.searchParams.set('client_reference_id', user.id);
+      if (user.email) parsed.searchParams.set('prefilled_email', user.email);
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  /** Open a Stripe payment link in a new tab. */
   function _openPaymentLink(url) {
     if (!url) return;
     try {
@@ -172,6 +186,63 @@ const Subscription = (() => {
         Notify.send({ title: 'Invalid checkout URL', message: e.message || 'Could not open Stripe', type: 'error' });
       }
     }
+  }
+
+  /** Ensure the current user has a `subscriptions` row. New users
+      hit this on first load; we insert a `plan=free, status=active`
+      record so UI queries have something to read and the webhook has
+      a target to update when they later subscribe.
+      No-op if the row already exists. */
+  async function _ensureRow(user) {
+    if (!user || !user.id) return;
+    if (typeof SB === 'undefined' || !SB.isReady()) return;
+    try {
+      const { data: existing } = await SB.client
+        .from('subscriptions')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (existing) return;
+      await SB.client.from('subscriptions').insert({
+        user_id: user.id,
+        plan:    'free',
+        status:  'active',
+        addons:  [],
+      });
+    } catch (err) {
+      console.warn('[Subscription] _ensureRow:', err && err.message);
+    }
+  }
+
+  /** Translate a 402 response from `nice-ai` into an actionable toast.
+      Returns true if the body was a billing error and was handled. */
+  function handleBillingError(body) {
+    if (!body || !body.code) return false;
+    if (typeof Notify === 'undefined') return true;
+
+    let title   = 'Payment required';
+    let message = body.error || 'Something went wrong.';
+    switch (body.code) {
+      case 'subscription_required':
+        title   = 'NICE Pro required';
+        message = body.error || 'Upgrade to NICE Pro to use this model.';
+        break;
+      case 'addon_required':
+        title   = ((body.required_addon || 'Add-on') + ' add-on required')
+                    .replace(/^\w/, (c) => c.toUpperCase());
+        message = body.error || 'Enable the add-on to use this model.';
+        break;
+      case 'insufficient_tokens':
+        title   = 'Out of ' + (body.pool || '') + ' tokens';
+        message = body.error || 'Top up your balance or switch to the free Gemini model.';
+        break;
+      case 'past_due':
+        title   = 'Payment failed';
+        message = body.error || 'Update your card in Wallet to continue.';
+        break;
+    }
+    Notify.send({ title, message, type: 'budget_alert' });
+    return true;
   }
 
   async function subscribe(planId) {
@@ -205,7 +276,7 @@ const Subscription = (() => {
     // Fallback: open the StripeConfig payment link for the requested plan
     const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(planId) : null;
     if (cfg?.paymentLinkUrl) {
-      _openPaymentLink(cfg.paymentLinkUrl);
+      _openPaymentLink(_withUserRef(cfg.paymentLinkUrl, user));
     } else if (typeof Notify !== 'undefined') {
       Notify.send({ title: 'Subscription Error', message: 'No Stripe product for ' + planId, type: 'error' });
     }
@@ -242,10 +313,27 @@ const Subscription = (() => {
 
     const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(addonId) : null;
     if (cfg?.paymentLinkUrl) {
-      _openPaymentLink(cfg.paymentLinkUrl);
+      _openPaymentLink(_withUserRef(cfg.paymentLinkUrl, user));
     } else if (typeof Notify !== 'undefined') {
       Notify.send({ title: 'Add-on Error', message: 'No Stripe product for ' + addonId, type: 'error' });
     }
+  }
+
+  /** Open a top-up pack checkout (one-time payment). Caller passes the
+      StripeConfig.TOP_UPS id ('standard-boost' etc.). The webhook
+      credits the right pool on completion. */
+  function buyTopUp(topUpId) {
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Sign in to buy tokens.', type: 'warning' });
+      return;
+    }
+    const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getTopUp(topUpId) : null;
+    if (!cfg?.paymentLinkUrl) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Top-up Error', message: 'No Stripe product for ' + topUpId, type: 'error' });
+      return;
+    }
+    _openPaymentLink(_withUserRef(cfg.paymentLinkUrl, user));
   }
 
   /** Legacy: kept for the upgrade modal in case it's still wired through
@@ -275,6 +363,8 @@ const Subscription = (() => {
   /* ── Init ── */
 
   async function init() {
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
+    if (user) await _ensureRow(user);
     await getSubscription();
   }
 
@@ -295,8 +385,10 @@ const Subscription = (() => {
     canUseShipClass,
     subscribe,
     setAddon,
+    buyTopUp,
     upgradeSpaceship,
     openBillingPortal,
+    handleBillingError,
     paywallEnabled: _paywallEnabled,
   };
 })();

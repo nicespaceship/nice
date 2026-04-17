@@ -357,7 +357,16 @@ const AgentExecutor = (() => {
       },
     });
 
-    if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Edge function error');
+    if (error) {
+      let body = null;
+      if (error.context && typeof error.context.json === 'function') {
+        try { body = await error.context.json(); } catch { /* not JSON */ }
+      }
+      if (body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+        Subscription.handleBillingError(body);
+      }
+      throw new Error((body && body.error) || (typeof error === 'string' ? error : error.message) || 'Edge function error');
+    }
     if (!data || data.error) throw new Error(data?.error || 'Empty response');
 
     // Normalize content: Gemini returns [{type:"text",text:"..."}]
@@ -368,10 +377,6 @@ const AgentExecutor = (() => {
     const tokensUsed = data.usage
       ? (data.usage.input_tokens + data.usage.output_tokens)
       : Math.floor(content.length / 4);
-
-    if (typeof LLMConfig !== 'undefined' && LLMConfig.reportFallback) {
-      LLMConfig.reportFallback(llmConfig.model, data.model);
-    }
 
     return {
       content,
