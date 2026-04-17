@@ -360,12 +360,58 @@ const Subscription = (() => {
     }
   }
 
+  /* ── Auto-enable models on entitlement change ──
+     When a user's subscription or add-on unlocks new pools, flip the
+     corresponding models on in `enabled_models` so they show up in
+     the chat + prompt-panel dropdowns without a manual trip to
+     Vault. Purely additive — we never toggle a model OFF here, so
+     an explicit user disable is preserved.
+     Tracked via a per-entitlement fingerprint in localStorage so
+     subsequent reloads at the same entitlement state don't override
+     later user toggles. */
+  const _AUTO_ENABLE_KEY = 'nice-subscription-last-entitlement';
+
+  function _autoEnableEntitled() {
+    if (typeof TokenConfig === 'undefined' || !TokenConfig.MODELS) return;
+    const pro = isPro();
+    const addons = getAddons().slice().sort();
+    const fingerprint = (pro ? 'pro' : 'free') + '|' + addons.join(',');
+
+    let previous = null;
+    try { previous = localStorage.getItem(_AUTO_ENABLE_KEY); } catch { /* ignore */ }
+    if (previous === fingerprint) return;
+
+    const current = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    const next = { ...current };
+    for (const [modelId, meta] of Object.entries(TokenConfig.MODELS)) {
+      // Free models are always enabled.
+      if (!meta || meta.pool === null || meta.weight === 0) {
+        next[modelId] = true;
+        continue;
+      }
+      const requiredAddon = (TokenConfig.POOLS?.[meta.pool] || {}).requiresAddon || null;
+      const entitled = pro && (!requiredAddon || addons.includes(requiredAddon));
+      if (entitled) next[modelId] = true;
+      // Not entitled → leave the existing value untouched. Flipping
+      // off would erase a user's explicit preference and is beyond
+      // this helper's scope.
+    }
+
+    if (typeof State !== 'undefined') State.set('enabled_models', next);
+    try {
+      const key = (typeof Utils !== 'undefined' && Utils.KEYS && Utils.KEYS.enabledModels) || 'nice-enabled-models';
+      localStorage.setItem(key, JSON.stringify(next));
+      localStorage.setItem(_AUTO_ENABLE_KEY, fingerprint);
+    } catch { /* ignore */ }
+  }
+
   /* ── Init ── */
 
   async function init() {
     const user = typeof State !== 'undefined' ? State.get('user') : null;
     if (user) await _ensureRow(user);
     await getSubscription();
+    _autoEnableEntitled();
   }
 
   return {
