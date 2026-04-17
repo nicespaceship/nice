@@ -2087,6 +2087,24 @@ const BlueprintStore = (() => {
       throw new Error('Already published — unpublish first to edit');
     }
 
+    // Rate-limit check: 5 community publishes per caller per 24 hours.
+    // The RPC returns GREATEST(0, 5 - count); 0 means the user has
+    // already hit the cap. The RPC runs as SECURITY DEFINER so the
+    // count it reads is authoritative — a client that skips this call
+    // will still succeed at the insert today, but B4 adds the server-
+    // side containment so the caller gets a clean "slow down" message
+    // instead of a surprise row if we later tighten the RLS.
+    try {
+      const { data: budget } = await c.rpc('check_publish_rate_limit');
+      if (typeof budget === 'number' && budget <= 0) {
+        throw new Error('Publish limit reached — you can publish 5 per day. Try again tomorrow.');
+      }
+    } catch (err) {
+      // RPC missing (pre-B4 DB) shouldn't block publish; only respect
+      // the budget-exceeded signal we threw ourselves above.
+      if (/Publish limit/.test(err.message || '')) throw err;
+    }
+
     // Hoist structural fields from config → top-level blueprints columns.
     const cfg = (source.config && Object.keys(source.config).length ? source.config : source.slots) || {};
     const finalTitle = (title || source.name || 'Untitled').slice(0, 80);
@@ -2320,6 +2338,44 @@ const BlueprintStore = (() => {
   }
 
   /**
+   * Report a community blueprint for moderation. Writes one row to
+   * community_reports; UNIQUE(blueprint_id, reporter_id) means the same
+   * caller can't stack reports. RLS blocks authors from reporting their
+   * own blueprints, and the server trigger auto-flips the listing to
+   * status='flagged' at >=3 distinct reporters.
+   *
+   * @param {string} blueprintId
+   * @param {{ reason: 'spam'|'offensive'|'malicious'|'copyright'|'broken'|'other', details?: string }} opts
+   */
+  async function reportCommunityBlueprint(blueprintId, { reason, details } = {}) {
+    const c = SB?.client;
+    if (!c) throw new Error('Not connected');
+    const user = State.get('user');
+    if (!user) throw new Error('Sign in to report');
+    if (!blueprintId) throw new Error('Missing blueprint id');
+    const validReasons = ['spam', 'offensive', 'malicious', 'copyright', 'broken', 'other'];
+    if (!validReasons.includes(reason)) throw new Error('Pick a reason');
+
+    const { error } = await c.from('community_reports').insert({
+      blueprint_id: blueprintId,
+      reporter_id:  user.id,
+      reason,
+      details:      details ? String(details).slice(0, 1000) : null,
+    });
+    if (error) {
+      // Surface the two most common failures with friendly language
+      if (error.code === '23505' || /duplicate/.test(error.message || '')) {
+        throw new Error("You've already reported this.");
+      }
+      if (error.code === '42501' || /row-level security/.test(error.message || '')) {
+        throw new Error("You can't report your own blueprint.");
+      }
+      throw error;
+    }
+    return { ok: true };
+  }
+
+  /**
    * Has the current user already downloaded this community blueprint?
    * Backed by State.agents / State.spaceships scanning for rows whose
    * blueprint_id matches — so no extra DB round-trip per card.
@@ -2383,6 +2439,7 @@ const BlueprintStore = (() => {
     incrementMarketplaceDownloads,
     publishToCommunity, unpublishFromCommunity,
     downloadCommunityBlueprint, hasDownloadedCommunity,
+    reportCommunityBlueprint,
   };
 
   /**
