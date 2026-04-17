@@ -131,59 +131,8 @@ describe('BlueprintStore.reportCommunityBlueprint', () => {
   });
 });
 
-describe('BlueprintStore.publishToCommunity — rate limit', () => {
-  beforeEach(() => {
-    globalThis.State._reset();
-    globalThis.State.set('user', { id: 'user-rl' });
-  });
-
-  it('throws a friendly error when the RPC reports 0 budget', async () => {
-    const mock = makeMock({
-      readers: {
-        user_agents: () => ({ id: 'agent-1', name: 'A', user_id: 'user-rl', rarity: 'Common', config: {} }),
-        blueprints:  () => null,
-      },
-      rpcResponse: { check_publish_rate_limit: 0 },
-    });
-    globalThis.SB = mock;
-
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'agent-1' }))
-      .rejects.toThrow('Publish limit reached');
-    // Budget exceeded short-circuits — no blueprint / listing writes
-    expect(mock.calls.inserts.filter(c => c.table === 'blueprints').length).toBe(0);
-    expect(mock.calls.inserts.filter(c => c.table === 'marketplace_listings').length).toBe(0);
-  });
-
-  it('proceeds normally when the RPC reports budget > 0', async () => {
-    const mock = makeMock({
-      readers: {
-        user_agents: () => ({ id: 'agent-1', name: 'A', user_id: 'user-rl', rarity: 'Common', config: {} }),
-        blueprints:  () => null,
-      },
-      rpcResponse: { check_publish_rate_limit: 3 },
-    });
-    globalThis.SB = mock;
-
-    const result = await BlueprintStore.publishToCommunity({ type: 'agent', id: 'agent-1' });
-    expect(result.blueprint).toBeDefined();
-    expect(result.listing).toBeDefined();
-    expect(mock.calls.rpc.some(c => c.fn === 'check_publish_rate_limit')).toBe(true);
-  });
-
-  it('proceeds when the RPC is missing (pre-B4 DBs)', async () => {
-    // If the RPC returns null (Supabase behaviour for unknown function via
-    // PostgREST in some configurations) or throws, we shouldn't block the
-    // user — only a definitive 0 budget signal is a stop condition.
-    const mock = makeMock({
-      readers: {
-        user_agents: () => ({ id: 'agent-1', name: 'A', user_id: 'user-rl', rarity: 'Common', config: {} }),
-        blueprints:  () => null,
-      },
-      rpcResponse: { check_publish_rate_limit: null },
-    });
-    globalThis.SB = mock;
-
-    const result = await BlueprintStore.publishToCommunity({ type: 'agent', id: 'agent-1' });
-    expect(result.blueprint).toBeDefined();
-  });
-});
+// Rate-limit enforcement moved server-side in Stage C1 — the
+// community-submit edge function calls check_publish_rate_limit before
+// any write. Client-side tests for publishToCommunity now live in
+// blueprint-store-publish.test.js; see the `rate_limited` error-mapping
+// case there for the caller-visible behavior.
