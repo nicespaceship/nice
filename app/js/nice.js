@@ -1418,6 +1418,7 @@ const NICE = (() => {
         _migrateLocalSpaceships(user);
         if (typeof BlueprintStore !== 'undefined' && BlueprintStore.migrateGuestState) BlueprintStore.migrateGuestState();
         _loadTokenBalance(user);
+        _loadAdminFlag(user);
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
         // Sync cross-device data
         if (typeof ModelIntel !== 'undefined' && ModelIntel.syncFromServer) ModelIntel.syncFromServer().catch(() => {});
@@ -1448,7 +1449,7 @@ const NICE = (() => {
     SB.auth.getUser().then(user => {
       State.set('user', user);
       _updateAuthUI(user);
-      if (user) { _migrateLocalSpaceships(user); _loadTokenBalance(user); }
+      if (user) { _migrateLocalSpaceships(user); _loadTokenBalance(user); _loadAdminFlag(user); }
       // Dev mode: auto-sign in anonymously for a real JWT (edge functions need it)
       if (!user && _isDevMode) {
         SB.auth.signInAnonymously().catch(() => {
@@ -1459,6 +1460,44 @@ const NICE = (() => {
       State.set('user', null);
       _updateAuthUI(null);
     });
+  }
+
+  /* ── Admin Flag ──
+     Calls the is_admin() RPC and attaches the boolean to the user object
+     in State. The sidebar + ModerationView read it; any admin-gated UI
+     should treat a missing flag as "not admin" and let the server-side
+     RPC reject if someone forges the flag. */
+  async function _loadAdminFlag(user) {
+    if (!user || !SB.isReady()) return;
+    try {
+      const { data } = await SB.client.rpc('is_admin');
+      const flag = data === true;
+      const current = State.get('user');
+      if (current && current.id === user.id) {
+        State.set('user', Object.assign({}, current, { is_admin: flag }));
+      }
+    } catch (err) {
+      // RPC missing (pre-C3.5 DBs) should not block the app — flag stays
+      // undefined, admin surfaces stay hidden, non-admin UX is the default.
+      console.warn('[NICE] Admin flag lookup failed:', err?.message);
+    }
+  }
+
+  /* ── Admin-only sidebar links ──
+     Elements marked .admin-only are `hidden` by default. We flip them
+     visible when State.user carries is_admin=true, and revert on sign-out
+     or revocation. Sidebar is the only admin-only surface for v1; if more
+     admin links appear the same class makes them all pick up the toggle. */
+  function _initAdminSurfaces() {
+    const apply = (user) => {
+      const show = !!(user && user.is_admin);
+      document.querySelectorAll('.admin-only').forEach(el => {
+        if (show) el.removeAttribute('hidden');
+        else      el.setAttribute('hidden', '');
+      });
+    };
+    apply(State.get('user'));
+    State.on('user', apply);
   }
 
   /* ── Token Balance ── */
@@ -1617,6 +1656,7 @@ const NICE = (() => {
     Router.on('/integrations', { title: 'Integrations', render: () => { location.hash = '#/security?tab=integrations'; } });
     Router.on('/vault', { title: 'Vault', render: () => { location.hash = '#/security?tab=vault'; } });
     Router.on('/security', SecurityView);
+    if (typeof ModerationView !== 'undefined') Router.on('/moderation', ModerationView);
     Router.on('/profile', ProfileView);
     if (typeof AlertsView !== 'undefined') Router.on('/alerts', AlertsView);
     Router.on('/settings', SettingsView);
@@ -2152,6 +2192,7 @@ const NICE = (() => {
     _initHUD();
     _initBellDropdown();
     _initAuth();
+    _initAdminSurfaces();
     _initRoutes();
     _registerSW();
     _initPWAInstall();
