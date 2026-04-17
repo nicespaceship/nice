@@ -16,23 +16,39 @@ const CommunityPublish = (() => {
   let _modalEl = null;
 
   /**
-   * Check whether an entity is already published to community. Returns
-   * a boolean; swallows errors and returns false — the worst case is
-   * showing the "Publish" button against an already-published entity,
-   * at which point the DB UNIQUE will block the insert and we surface
-   * a clean error message.
+   * Fetch the current submission state for an entity. Returns the
+   * marketplace_listings row sidecar (status + review_notes + timestamps)
+   * or null if the entity was never submitted. Swallows errors and
+   * returns null — worst case the UI shows the Submit button against
+   * a queued entity, which the DB UNIQUE blocks with a clean error.
+   *
+   * Submission state drives the button rendering in renderActionButton:
+   *   null             → "Submit for review"
+   *   pending_review   → "Pending review" (disabled)
+   *   published        → "Unpublish"
+   *   rejected         → "Edit and resubmit" + author-facing reason
+   *   flagged          → "Under moderator review" (disabled)
+   *   unlisted/removed → "Submit for review" (treated as not-published)
    */
-  async function isPublished(entityId) {
-    if (!entityId || typeof SB === 'undefined' || !SB?.client) return false;
+  async function getSubmissionState(entityId) {
+    if (!entityId || typeof SB === 'undefined' || !SB?.client) return null;
     try {
       const { data } = await SB.client
-        .from('blueprints')
-        .select('id')
-        .eq('id', entityId)
-        .eq('scope', 'community')
+        .from('marketplace_listings')
+        .select('status, review_notes, reviewed_at')
+        .eq('blueprint_id', entityId)
         .maybeSingle();
-      return !!data;
-    } catch { return false; }
+      return data || null;
+    } catch { return null; }
+  }
+
+  /**
+   * Back-compat shim for callers still using the old boolean check.
+   * True only when the listing is actually publicly visible.
+   */
+  async function isPublished(entityId) {
+    const state = await getSubmissionState(entityId);
+    return !!state && state.status === 'published';
   }
 
   /**
@@ -193,27 +209,73 @@ const CommunityPublish = (() => {
   }
 
   /**
-   * Render a "Publish" / "Unpublished" action button as an HTML string
-   * for detail views to drop into their action bar. Caller is responsible
-   * for the click handler via delegation on a stable id.
+   * Render the submission-state action button for a detail view's
+   * action bar. Accepts either the submission-state row from
+   * getSubmissionState (preferred) or a boolean for back-compat.
+   * Caller delegates click handling on a stable id.
    */
-  function renderActionButton(isPublishedNow) {
-    if (isPublishedNow) {
+  function renderActionButton(stateOrBool) {
+    // Back-compat: boolean true means "published", false means no state
+    const state = typeof stateOrBool === 'boolean'
+      ? (stateOrBool ? { status: 'published' } : null)
+      : stateOrBool;
+    const status = state && state.status;
+
+    // No listing (never submitted, or withdrawn/removed) → offer submit
+    if (!state || status === 'unlisted' || status === 'removed') {
+      return `
+        <button class="btn btn-sm" data-action="community-publish" title="Submit this blueprint for community review">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-share"/></svg>
+          Submit for review
+        </button>`;
+    }
+
+    if (status === 'pending_review') {
+      return `
+        <button class="btn btn-sm" data-action="community-withdraw" title="Withdraw this submission">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-alert"/></svg>
+          Pending review — withdraw
+        </button>`;
+    }
+
+    if (status === 'published') {
       return `
         <button class="btn btn-sm btn-danger" data-action="community-unpublish" title="Remove from community library">
           <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
           Unpublish
         </button>`;
     }
+
+    if (status === 'rejected') {
+      const reasonAttr = state.review_notes
+        ? ` data-reason="${_esc(state.review_notes).replace(/"/g, '&quot;')}"`
+        : '';
+      return `
+        <button class="btn btn-sm btn-danger" data-action="community-rejected"${reasonAttr} title="See rejection reason and resubmit">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-alert"/></svg>
+          Rejected — see reason
+        </button>`;
+    }
+
+    if (status === 'flagged') {
+      return `
+        <button class="btn btn-sm btn-danger" disabled title="This listing was flagged by community reports and is under moderator review">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-alert"/></svg>
+          Under moderator review
+        </button>`;
+    }
+
+    // Unknown status — fall back to offering submit
     return `
-      <button class="btn btn-sm" data-action="community-publish" title="Share this blueprint with the community">
+      <button class="btn btn-sm" data-action="community-publish" title="Submit this blueprint for community review">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-share"/></svg>
-        Publish
+        Submit for review
       </button>`;
   }
 
   return {
     isPublished,
+    getSubmissionState,
     openPublishModal,
     confirmUnpublish,
     renderActionButton,
