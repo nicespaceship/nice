@@ -70,15 +70,191 @@ const ModerationView = (() => {
           </div>
         </div>
 
-        <div id="mod-queue" class="moderation-queue">
-          <div class="loading-state"><p>Loading pending reviews…</p></div>
-        </div>
+        <section class="moderation-reviewer-status" id="mod-reviewer-status">
+          <div class="loading-state"><p>Checking reviewer status\u2026</p></div>
+        </section>
+
+        <section class="moderation-section">
+          <h3 class="moderation-section-title">Pending review</h3>
+          <div id="mod-queue" class="moderation-queue">
+            <div class="loading-state"><p>Loading pending reviews\u2026</p></div>
+          </div>
+        </section>
+
+        <section class="moderation-section">
+          <div class="moderation-section-header">
+            <h3 class="moderation-section-title">Recent decisions</h3>
+            <button class="btn btn-sm" id="mod-recent-refresh">Refresh</button>
+          </div>
+          <div id="mod-recent" class="moderation-recent">
+            <div class="loading-state"><p>Loading recent decisions\u2026</p></div>
+          </div>
+        </section>
       </div>
     `;
 
-    document.getElementById('mod-refresh')?.addEventListener('click', () => _loadQueue());
+    document.getElementById('mod-refresh')?.addEventListener('click', () => {
+      _loadReviewerStatus();
+      _loadQueue();
+      _loadRecentDecisions();
+    });
+    document.getElementById('mod-recent-refresh')?.addEventListener('click', _loadRecentDecisions);
+    _loadReviewerStatus();
     _loadQueue();
+    _loadRecentDecisions();
   }
+
+  /* ── Reviewer status + kill switches ───────────────────────────── */
+
+  async function _loadReviewerStatus() {
+    const container = document.getElementById('mod-reviewer-status');
+    if (!container) return;
+    try {
+      const { data, error } = await SB.client.rpc('admin_reviewer_status');
+      if (error) throw error;
+      const row = Array.isArray(data) && data[0] ? data[0] : null;
+      if (!row) throw new Error('admin_reviewer_status returned no row');
+      container.innerHTML = _renderReviewerStatus(row);
+      _bindReviewerControls(row);
+    } catch (err) {
+      container.innerHTML = `
+        <div class="app-empty" style="padding:12px 16px">
+          <p class="text-muted">Couldn't load reviewer status: ${_esc(err.message || 'unknown error')}</p>
+        </div>`;
+    }
+  }
+
+  function _renderReviewerStatus(row) {
+    const { armed, endpoint_set, key_preview, key_updated_at } = row;
+    const pausedBadge = armed
+      ? `<span class="moderation-badge moderation-badge-armed">AUTO-REVIEW ARMED</span>`
+      : `<span class="moderation-badge moderation-badge-paused">AUTO-REVIEW PAUSED</span>`;
+    const keyInfo = key_preview
+      ? `<div class="moderation-kv"><span class="kv-label">Service key</span><span class="kv-val mono">${_esc(key_preview)}</span></div>`
+      : `<div class="moderation-kv"><span class="kv-label">Service key</span><span class="kv-val text-muted">— not set —</span></div>`;
+    const endpointRow = `<div class="moderation-kv"><span class="kv-label">Endpoint URL</span><span class="kv-val">${endpoint_set ? 'configured' : '<span class="text-muted">not set</span>'}</span></div>`;
+    const updatedRow = key_updated_at
+      ? `<div class="moderation-kv"><span class="kv-label">Key updated</span><span class="kv-val">${new Date(key_updated_at).toLocaleString()}</span></div>`
+      : '';
+    const actions = armed
+      ? `<button class="btn btn-sm btn-danger" data-action="pause-reviewer">Pause reviewer</button>`
+      : `<button class="btn btn-sm btn-primary" data-action="resume-reviewer">Resume reviewer\u2026</button>`;
+
+    return `
+      <div class="moderation-status-card">
+        <div class="moderation-status-head">
+          ${pausedBadge}
+          <div class="moderation-status-actions">${actions}</div>
+        </div>
+        <div class="moderation-status-body">
+          ${endpointRow}
+          ${keyInfo}
+          ${updatedRow}
+          ${armed
+            ? '<p class="text-muted" style="font-size:.78rem;margin:8px 0 0">New pending_review submissions auto-fire the reviewer agent. Decisions land via community_decision within seconds.</p>'
+            : '<p class="text-muted" style="font-size:.78rem;margin:8px 0 0">Auto-review is off. New pending_review submissions queue here for manual approval / rejection.</p>'}
+        </div>
+        <div class="moderation-status-error" data-role="error" hidden></div>
+      </div>`;
+  }
+
+  function _bindReviewerControls(_currentRow) {
+    const container = document.getElementById('mod-reviewer-status');
+    if (!container) return;
+    const errEl = container.querySelector('[data-role="error"]');
+    const showError = (msg) => { if (errEl) { errEl.textContent = msg; errEl.hidden = false; } };
+
+    container.querySelector('[data-action="pause-reviewer"]')?.addEventListener('click', async (e) => {
+      if (!window.confirm('Pause auto-review? New submissions will queue here for manual decisions until you resume.')) return;
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Pausing\u2026';
+      try {
+        const { error } = await SB.client.rpc('admin_pause_reviewer');
+        if (error) throw error;
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Reviewer paused', message: 'Submissions queue here until resumed.', type: 'system' });
+        _loadReviewerStatus();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Pause reviewer';
+        showError(err.message || 'Pause failed');
+      }
+    });
+
+    container.querySelector('[data-action="resume-reviewer"]')?.addEventListener('click', async () => {
+      const key = window.prompt('Paste the service-role key from Supabase Studio \u2192 Settings \u2192 API:\n\n(It starts with `eyJ\u2026` and has two dots.)');
+      if (!key || !key.trim()) return;
+      try {
+        const { error } = await SB.client.rpc('admin_resume_reviewer', { p_service_key: key.trim() });
+        if (error) throw error;
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Reviewer resumed', message: 'New submissions will auto-review within seconds.', type: 'system' });
+        _loadReviewerStatus();
+      } catch (err) {
+        showError(err.message || 'Resume failed');
+      }
+    });
+  }
+
+
+  /* ── Recent decisions ──────────────────────────────────────────── */
+
+  async function _loadRecentDecisions() {
+    const container = document.getElementById('mod-recent');
+    if (!container) return;
+    container.innerHTML = `<div class="loading-state"><p>Loading recent decisions\u2026</p></div>`;
+    try {
+      const { data, error } = await SB.client.rpc('admin_recent_decisions', { p_limit: 20 });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      if (!rows.length) {
+        container.innerHTML = `<p class="text-muted" style="padding:12px 16px;font-size:.82rem">No decisions yet \u2014 every review will show up here once it lands.</p>`;
+        return;
+      }
+      container.innerHTML = rows.map(_renderRecentRow).join('');
+    } catch (err) {
+      container.innerHTML = `<p class="text-muted" style="padding:12px 16px;font-size:.82rem">Couldn't load: ${_esc(err.message || 'unknown error')}</p>`;
+    }
+  }
+
+  function _renderRecentRow(row) {
+    const reviewed = new Date(row.reviewed_at);
+    const ageMin = Math.max(1, Math.round((Date.now() - reviewed.getTime()) / 60000));
+    const ageLabel = ageMin < 60 ? `${ageMin}m ago`
+                   : ageMin < 1440 ? `${Math.round(ageMin / 60)}h ago`
+                   : `${Math.round(ageMin / 1440)}d ago`;
+    const statusBadge = row.status === 'published' ? 'moderation-badge-approved'
+                      : row.status === 'rejected'  ? 'moderation-badge-rejected'
+                      : row.status === 'flagged'   ? 'moderation-badge-paused'
+                      : 'moderation-badge-default';
+    const actorBadge = row.was_automated
+      ? '<span class="moderation-actor moderation-actor-auto">auto</span>'
+      : '<span class="moderation-actor moderation-actor-manual">admin</span>';
+    const safetyJson = _esc(JSON.stringify(row.safety_scores || {}, null, 2));
+    const notesLine = row.review_notes
+      ? `<div class="moderation-recent-notes"><strong>Notes:</strong> ${_esc(row.review_notes)}</div>`
+      : '';
+    return `
+      <article class="moderation-recent-row">
+        <header class="moderation-recent-head">
+          <div>
+            <span class="moderation-badge ${statusBadge}">${_esc(row.status)}</span>
+            ${actorBadge}
+            <span class="moderation-recent-title">${_esc(row.title || '(untitled)')}</span>
+          </div>
+          <div class="moderation-recent-meta">
+            <span class="moderation-recent-policy mono">${_esc(row.policy_version || '\u2014')}</span>
+            <span class="moderation-recent-age">${ageLabel}</span>
+          </div>
+        </header>
+        ${notesLine}
+        <div class="moderation-recent-author text-muted" style="font-size:.78rem">by ${_esc(row.author_email || row.blueprint_id || 'unknown')}</div>
+        <details class="moderation-recent-audit">
+          <summary>Full audit (safety_scores)</summary>
+          <pre>${safetyJson}</pre>
+        </details>
+      </article>`;
+  }
+
 
   async function _loadQueue() {
     const container = document.getElementById('mod-queue');
