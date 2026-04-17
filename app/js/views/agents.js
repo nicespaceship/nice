@@ -837,8 +837,8 @@ const AgentDetailView = (() => {
         const slot = document.getElementById('community-publish-slot');
         const renderSlot = async () => {
           if (!slot) return;
-          const published = await CommunityPublish.isPublished(agent.id);
-          slot.innerHTML = CommunityPublish.renderActionButton(published);
+          const state = await CommunityPublish.getSubmissionState(agent.id);
+          slot.innerHTML = CommunityPublish.renderActionButton(state);
         };
         renderSlot();
         // Delegated click handler survives button re-renders
@@ -852,10 +852,29 @@ const AgentDetailView = (() => {
             description: agent.config?.description || agent.description,
             tags: agent.config?.tags || agent.tags,
           };
-          if (btn.dataset.action === 'community-publish') {
+          const action = btn.dataset.action;
+          if (action === 'community-publish') {
             CommunityPublish.openPublishModal(entity, { onSuccess: renderSlot });
-          } else if (btn.dataset.action === 'community-unpublish') {
+          } else if (action === 'community-unpublish' || action === 'community-withdraw') {
+            // Both end up at the same RPC — the row (listing + community
+            // blueprint) is removed regardless of whether it was already
+            // published or still pending review. Copy varies only in the
+            // confirm prompt shown to the user.
             CommunityPublish.confirmUnpublish(entity, { onSuccess: renderSlot });
+          } else if (action === 'community-rejected') {
+            const reason = btn.dataset.reason || 'No reason given.';
+            if (typeof Notify !== 'undefined') {
+              Notify.send({
+                title: 'Submission rejected',
+                message: reason + ' — edit your blueprint and resubmit when ready.',
+                type: 'agent_error',
+              });
+            }
+            // After acknowledging, let the user resubmit by clearing the
+            // rejected listing and opening the publish modal fresh.
+            CommunityPublish.confirmUnpublish(entity, {
+              onSuccess: () => CommunityPublish.openPublishModal(entity, { onSuccess: renderSlot }),
+            });
           }
         });
       }

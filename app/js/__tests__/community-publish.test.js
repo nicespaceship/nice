@@ -88,36 +88,67 @@ const code = readFileSync(resolve(__dir, '../lib/community-publish.js'), 'utf-8'
   .replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
 eval(code);
 
-describe('CommunityPublish.isPublished', () => {
+/** Build a mock SB.client whose marketplace_listings read returns the
+ *  provided listing row (or null). All other tables resolve to null. */
+function listingMock(listing) {
+  return {
+    client: {
+      from(table) {
+        return {
+          select() { return this; },
+          eq() { return this; },
+          maybeSingle: async () => ({ data: table === 'marketplace_listings' ? listing : null }),
+        };
+      },
+    },
+  };
+}
+
+describe('CommunityPublish.getSubmissionState', () => {
   beforeEach(() => { Notify._sent = []; });
 
-  it('returns true when a community blueprints row exists', async () => {
+  it('returns the listing row for a submitted entity', async () => {
+    sbMock = listingMock({ status: 'pending_review', review_notes: null, reviewed_at: null });
+    const state = await CommunityPublish.getSubmissionState('agent-1');
+    expect(state).toEqual({ status: 'pending_review', review_notes: null, reviewed_at: null });
+  });
+
+  it('returns null when no listing exists', async () => {
+    sbMock = listingMock(null);
+    expect(await CommunityPublish.getSubmissionState('agent-1')).toBeNull();
+  });
+
+  it('swallows errors and returns null', async () => {
     sbMock = {
       client: {
         from() {
           return {
             select() { return this; },
             eq() { return this; },
-            maybeSingle: async () => ({ data: { id: 'agent-1' } }),
+            maybeSingle: async () => { throw new Error('boom'); },
           };
         },
       },
     };
+    expect(await CommunityPublish.getSubmissionState('agent-1')).toBeNull();
+  });
+});
+
+describe('CommunityPublish.isPublished (back-compat)', () => {
+  beforeEach(() => { Notify._sent = []; });
+
+  it('returns true only when the listing status is published', async () => {
+    sbMock = listingMock({ status: 'published' });
     expect(await CommunityPublish.isPublished('agent-1')).toBe(true);
   });
 
-  it('returns false when no community row exists', async () => {
-    sbMock = {
-      client: {
-        from() {
-          return {
-            select() { return this; },
-            eq() { return this; },
-            maybeSingle: async () => ({ data: null }),
-          };
-        },
-      },
-    };
+  it('returns false while the listing is pending review', async () => {
+    sbMock = listingMock({ status: 'pending_review' });
+    expect(await CommunityPublish.isPublished('agent-1')).toBe(false);
+  });
+
+  it('returns false when no listing exists', async () => {
+    sbMock = listingMock(null);
     expect(await CommunityPublish.isPublished('agent-1')).toBe(false);
   });
 
@@ -143,18 +174,52 @@ describe('CommunityPublish.isPublished', () => {
 });
 
 describe('CommunityPublish.renderActionButton', () => {
-  it('renders Publish when not published', () => {
-    const html = CommunityPublish.renderActionButton(false);
+  it('renders Submit for review when no listing exists', () => {
+    const html = CommunityPublish.renderActionButton(null);
     expect(html).toContain('community-publish');
-    expect(html).toContain('Publish');
+    expect(html).toContain('Submit for review');
     expect(html).not.toContain('Unpublish');
+    expect(html).not.toContain('disabled');
   });
 
-  it('renders Unpublish when published', () => {
-    const html = CommunityPublish.renderActionButton(true);
+  it('renders a withdraw button for pending_review', () => {
+    const html = CommunityPublish.renderActionButton({ status: 'pending_review' });
+    expect(html).toContain('community-withdraw');
+    expect(html).toContain('Pending review');
+  });
+
+  it('renders Unpublish for published', () => {
+    const html = CommunityPublish.renderActionButton({ status: 'published' });
     expect(html).toContain('community-unpublish');
     expect(html).toContain('Unpublish');
     expect(html).toContain('btn-danger');
+  });
+
+  it('renders Rejected with reason attribute', () => {
+    const html = CommunityPublish.renderActionButton({
+      status: 'rejected',
+      review_notes: 'Contains trademarked names',
+    });
+    expect(html).toContain('community-rejected');
+    expect(html).toContain('Rejected');
+    expect(html).toContain('Contains trademarked names');
+  });
+
+  it('renders a disabled button for flagged listings', () => {
+    const html = CommunityPublish.renderActionButton({ status: 'flagged' });
+    expect(html).toContain('Under moderator review');
+    expect(html).toContain('disabled');
+  });
+
+  it('back-compat: boolean true renders Unpublish, false renders Submit', () => {
+    expect(CommunityPublish.renderActionButton(true)).toContain('Unpublish');
+    expect(CommunityPublish.renderActionButton(false)).toContain('Submit for review');
+  });
+
+  it('unknown statuses fall back to Submit for review', () => {
+    const html = CommunityPublish.renderActionButton({ status: 'unknown-future-state' });
+    expect(html).toContain('community-publish');
+    expect(html).toContain('Submit for review');
   });
 });
 

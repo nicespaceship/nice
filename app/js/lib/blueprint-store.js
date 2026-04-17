@@ -2166,6 +2166,11 @@ const BlueprintStore = (() => {
       .maybeSingle();
     if (berr) throw berr;
 
+    // Submissions enter the queue as pending_review. The forthcoming
+    // Community Moderator (Stage C3) will move them to 'published' or
+    // 'rejected' autonomously; until C3 ships, service-role moderators
+    // approve manually via the admin route. The author sees their own
+    // pending row via marketplace_listings_author_read.
     const { data: listing, error: lerr } = await c
       .from('marketplace_listings')
       .insert({
@@ -2175,7 +2180,7 @@ const BlueprintStore = (() => {
         description:  finalDesc.slice(0, 400),
         category:     type === 'spaceship' ? 'spaceship' : 'agent',
         tags:         finalTags,
-        status:       'published',
+        status:       'pending_review',
       })
       .select()
       .maybeSingle();

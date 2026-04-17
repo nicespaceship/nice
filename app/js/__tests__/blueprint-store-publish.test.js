@@ -173,7 +173,9 @@ describe('BlueprintStore.publishToCommunity', () => {
     expect(listingInsert.payload.author_id).toBe('user-A');
     expect(listingInsert.payload.title).toBe('Custom Title');
     expect(listingInsert.payload.category).toBe('agent');
-    expect(listingInsert.payload.status).toBe('published');
+    // Submissions enter the queue as pending_review — the reviewer
+    // pipeline is what flips them to 'published' or 'rejected'.
+    expect(listingInsert.payload.status).toBe('pending_review');
     expect(listingInsert.payload.tags).toEqual(['curated']);
 
     expect(result.blueprint).toBeDefined();

@@ -1153,8 +1153,8 @@ const SpaceshipDetailView = (() => {
         const slot = document.getElementById('community-publish-slot');
         const renderSlot = async () => {
           if (!slot) return;
-          const published = await CommunityPublish.isPublished(fleet.id);
-          slot.innerHTML = CommunityPublish.renderActionButton(published);
+          const state = await CommunityPublish.getSubmissionState(fleet.id);
+          slot.innerHTML = CommunityPublish.renderActionButton(state);
         };
         renderSlot();
         slot?.addEventListener('click', (e) => {
@@ -1168,10 +1168,23 @@ const SpaceshipDetailView = (() => {
             description: cfg.description || fleet.description,
             tags: cfg.tags || fleet.tags,
           };
-          if (btn.dataset.action === 'community-publish') {
+          const action = btn.dataset.action;
+          if (action === 'community-publish') {
             CommunityPublish.openPublishModal(entity, { onSuccess: renderSlot });
-          } else if (btn.dataset.action === 'community-unpublish') {
+          } else if (action === 'community-unpublish' || action === 'community-withdraw') {
             CommunityPublish.confirmUnpublish(entity, { onSuccess: renderSlot });
+          } else if (action === 'community-rejected') {
+            const reason = btn.dataset.reason || 'No reason given.';
+            if (typeof Notify !== 'undefined') {
+              Notify.send({
+                title: 'Submission rejected',
+                message: reason + ' — edit your blueprint and resubmit when ready.',
+                type: 'agent_error',
+              });
+            }
+            CommunityPublish.confirmUnpublish(entity, {
+              onSuccess: () => CommunityPublish.openPublishModal(entity, { onSuccess: renderSlot }),
+            });
           }
         });
       }
