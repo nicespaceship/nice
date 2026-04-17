@@ -185,7 +185,6 @@ const BlueprintUtils = (() => {
     'gpt-5.2':                     'GPT-5.2',
     'gpt-5-mini':                  'GPT-5 Mini',
     'gpt-4o':                      'GPT-4o',
-    'deepseek-chat':               'DeepSeek V3',
     'grok-4':                      'Grok 4',
   };
   function humanizeModel(id) {

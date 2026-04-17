@@ -34,7 +34,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ### Edge Functions (11)
 | Function | Purpose |
 |----------|---------|
-| `nice-ai` | Multi-provider LLM proxy (Gemini, Anthropic, OpenAI, Mistral, DeepSeek, xAI) |
+| `nice-ai` | Multi-provider LLM proxy (Gemini, Anthropic, OpenAI, xAI, Groq/Llama) |
 | `nice-media` | Image/video generation proxy (Imagen 3, Veo 2, DALL-E 3, Flux) |
 | `gmail-mcp` | Gmail MCP server (search, read, labels) — OAuth + service account dual auth |
 | `calendar-mcp` | Google Calendar MCP server (events, calendars) |
@@ -265,7 +265,6 @@ Models defined in `VaultView.MODEL_CATALOG`. Users toggle models on/off. State k
 | GPT-5.2 | OpenAI | Premium | Flagship |
 | GPT-5 Mini | OpenAI | Premium | Fast + cheap |
 | Gemini 2.5 Pro | Google | Premium | Complex tasks |
-| DeepSeek V3 | DeepSeek | Budget | Affordable |
 | Grok 4 | xAI | Premium | Real-time knowledge |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.

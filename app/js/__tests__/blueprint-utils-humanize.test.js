@@ -24,7 +24,6 @@ describe('BlueprintUtils.humanizeModel', () => {
     });
 
     it('humanizes other provider ids', () => {
-      expect(h('deepseek-chat')).toBe('DeepSeek V3');
       expect(h('grok-4')).toBe('Grok 4');
     });
 

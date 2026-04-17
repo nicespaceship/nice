@@ -345,13 +345,13 @@ const MissionRunner = (() => {
 
   /* ── Estimated performance metrics (cost/speed approximation per model) ── */
   function _simSpeed(modelId) {
-    const tiers = { 'claude-4-opus': 4500, 'gpt-4o': 3500, 'gemini-2': 3000, 'mistral-large': 3200, 'grok-3': 3800, 'claude-4-sonnet': 2500, 'gpt-4o-mini': 1800, 'gemini-2-flash': 1500, 'codestral': 2200, 'grok-3-mini': 2000, 'sonar-pro': 3000, 'sonar': 1800, 'deepseek-chat': 2000, 'deepseek-reasoner': 5000 };
+    const tiers = { 'claude-4-opus': 4500, 'gpt-4o': 3500, 'gemini-2': 3000, 'grok-3': 3800, 'claude-4-sonnet': 2500, 'gpt-4o-mini': 1800, 'gemini-2-flash': 1500, 'codestral': 2200, 'grok-3-mini': 2000, 'sonar-pro': 3000, 'sonar': 1800 };
     const base = tiers[modelId] || 2500;
     return base + Math.round(Math.random() * 2000 - 1000);
   }
 
   function _simCost(modelId) {
-    const tiers = { 'claude-4-opus': 0.15, 'gpt-4o': 0.12, 'gemini-2': 0.08, 'mistral-large': 0.08, 'grok-3': 0.10, 'claude-4-sonnet': 0.06, 'gpt-4o-mini': 0.02, 'gemini-2-flash': 0.01, 'codestral': 0.04, 'grok-3-mini': 0.03, 'sonar-pro': 0.05, 'sonar': 0.01, 'deepseek-chat': 0.01, 'deepseek-reasoner': 0.06 };
+    const tiers = { 'claude-4-opus': 0.15, 'gpt-4o': 0.12, 'gemini-2': 0.08, 'grok-3': 0.10, 'claude-4-sonnet': 0.06, 'gpt-4o-mini': 0.02, 'gemini-2-flash': 0.01, 'codestral': 0.04, 'grok-3-mini': 0.03, 'sonar-pro': 0.05, 'sonar': 0.01 };
     const base = tiers[modelId] || 0.05;
     return +(base + Math.random() * 0.05).toFixed(4);
   }

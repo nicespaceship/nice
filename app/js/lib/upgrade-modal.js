@@ -65,7 +65,7 @@ const UpgradeModal = (() => {
             <tr>
               <th>Standard models</th>
               <td>—</td>
-              <td><strong>6 models</strong> (GPT-5 mini, DeepSeek R1, Kimi, GLM-5, Llama Scout, Grok 4.1)</td>
+              <td><strong>4 models</strong> (GPT-5 mini, GLM-5, Llama Scout, Grok 4.1)</td>
             </tr>
             <tr>
               <th>Monthly tokens</th>
