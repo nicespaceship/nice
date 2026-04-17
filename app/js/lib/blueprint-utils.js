@@ -168,24 +168,58 @@ const BlueprintUtils = (() => {
   function buildSlots(count, maxRarity) { return _buildClassSlots(count, maxRarity); }
 
   /* ── Model id humanizer ──
-     Turns LLM ids into display-ready names. Used by the drawer detail panel
-     and any other surface that wants to show "Claude Opus 4.6" instead of
-     "claude-opus-4-6". Falls back to a kebab-case → Title Case transform. */
+     Turns LLM ids into display-ready names. `humanizeModel` returns the
+     full product name ("Claude Opus 4.6") — used in drawers, detail
+     panels, anywhere with horizontal room. `humanizeModelShort` returns
+     a compact pill-friendly variant ("Claude Opus") — used on mission
+     cards, badges, status pills, and other tight layouts. Both fall
+     back to a kebab-case → Title Case transform for ids not listed. */
   const _MODEL_NAMES = {
     'nice-auto':                   'NICE Auto',
     'gemini-2.5-flash':            'Gemini 2.5 Flash',
+    'gemini-2-5-flash':            'Gemini 2.5 Flash',
     'gemini-2.5-pro':              'Gemini 2.5 Pro',
+    'gemini-3-1-pro':              'Gemini 3.1 Pro',
     'gemini-2.0-flash-lite':       'Gemini 2.0 Lite',
     'claude-haiku-4-5-20251001':   'Claude Haiku 4.5',
     'claude-haiku-4-5':            'Claude Haiku 4.5',
     'claude-sonnet-4-6':           'Claude Sonnet 4.6',
+    'claude-4-6-sonnet':           'Claude Sonnet 4.6',
     'claude-sonnet-4-20250514':    'Claude Sonnet 4',
     'claude-opus-4-6':             'Claude Opus 4.6',
+    'claude-4-6-opus':             'Claude Opus 4.6',
     'claude-opus-4':               'Claude Opus 4',
     'gpt-5.2':                     'GPT-5.2',
     'gpt-5-mini':                  'GPT-5 Mini',
+    'gpt-5-4-pro':                 'GPT-5.4 Pro',
+    'gpt-5-3-codex':               'GPT-5.3 Codex',
+    'openai-o3':                   'OpenAI o3',
     'gpt-4o':                      'GPT-4o',
     'grok-4':                      'Grok 4',
+    'grok-4-1-fast':               'Grok 4.1 Fast',
+    'llama-4-scout':               'Llama 4 Scout',
+  };
+  const _MODEL_SHORT_NAMES = {
+    'nice-auto':                   'NICE Auto',
+    'gemini-2.5-flash':            'Gemini Flash',
+    'gemini-2-5-flash':            'Gemini Flash',
+    'gemini-2.5-pro':              'Gemini Pro',
+    'gemini-3-1-pro':              'Gemini Pro',
+    'gemini-2.0-flash-lite':       'Gemini Lite',
+    'claude-haiku-4-5-20251001':   'Claude Haiku',
+    'claude-haiku-4-5':            'Claude Haiku',
+    'claude-sonnet-4-6':           'Claude Sonnet',
+    'claude-4-6-sonnet':           'Claude Sonnet',
+    'claude-opus-4-6':             'Claude Opus',
+    'claude-4-6-opus':             'Claude Opus',
+    'gpt-5.2':                     'GPT-5.2',
+    'gpt-5-mini':                  'GPT-5 Mini',
+    'gpt-5-4-pro':                 'GPT-5.4 Pro',
+    'gpt-5-3-codex':               'GPT-5.3 Codex',
+    'openai-o3':                   'o3',
+    'grok-4':                      'Grok 4',
+    'grok-4-1-fast':               'Grok Fast',
+    'llama-4-scout':               'Llama Scout',
   };
   function humanizeModel(id) {
     if (!id || typeof id !== 'string') return '';
@@ -196,6 +230,10 @@ const BlueprintUtils = (() => {
       return part.charAt(0).toUpperCase() + part.slice(1);
     }).join(' ');
   }
+  function humanizeModelShort(id) {
+    if (!id || typeof id !== 'string') return '';
+    return _MODEL_SHORT_NAMES[id] || humanizeModel(id);
+  }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, buildSlots, humanizeModel, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, buildSlots, humanizeModel, humanizeModelShort, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
 })();

@@ -344,15 +344,12 @@ const MissionsView = (() => {
     return colors[role] || 'var(--accent)';
   }
 
+  // Delegates to BlueprintUtils.humanizeModelShort — the SSOT for model
+  // display names. See blueprint-utils.js:_MODEL_SHORT_NAMES.
   function _shortModel(modelId) {
-    const shorts = {
-      'gemini-2.5-flash': 'Gemini Flash', 'gemini-2.0-flash-lite': 'Gemini Lite', 'gemini-2.5-pro': 'Gemini Pro',
-      'claude-haiku-4-5-20251001': 'Claude Haiku', 'claude-sonnet-4-6': 'Claude Sonnet', 'claude-opus-4-6': 'Claude Opus',
-      'gpt-5.2': 'GPT-5.2', 'gpt-5-mini': 'GPT-5 Mini',
-      'grok-4': 'Grok 4', 'llama-4-scout': 'Llama 4 Scout',
-      'nice-auto': 'NICE Auto',
-    };
-    return shorts[modelId] || modelId;
+    return (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.humanizeModelShort)
+      ? BlueprintUtils.humanizeModelShort(modelId)
+      : (modelId || '');
   }
 
   function _missionAgeClass(createdAt) {

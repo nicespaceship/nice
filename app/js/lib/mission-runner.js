@@ -160,7 +160,6 @@ const MissionRunner = (() => {
 
     if (hasVideoTool && taskMentionsVideo && typeof MediaTools !== 'undefined') {
       // Direct video generation — don't trust LLM to pick the right tool
-      console.log('[MissionRunner] Direct video generation for:', missionId);
       _updateLocalMission(missionId, { status: 'running', progress: 20 });
       try {
         const videoResult = await MediaTools.generate(mission.title, { type: 'video', aspect_ratio: '9:16', duration: 5 });
