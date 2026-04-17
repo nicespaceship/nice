@@ -266,7 +266,6 @@ Models defined in `VaultView.MODEL_CATALOG`. Users toggle models on/off. State k
 | GPT-5 Mini | OpenAI | Premium | Fast + cheap |
 | Gemini 2.5 Pro | Google | Premium | Complex tasks |
 | DeepSeek V3 | DeepSeek | Budget | Affordable |
-| Mistral Large 3 | Mistral | Budget | Multilingual |
 | Grok 4 | xAI | Premium | Real-time knowledge |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.

@@ -23,10 +23,8 @@ const VaultView = (() => {
     // ── Standard pool (Pro)
     { id: 'gpt-5-mini',       name: 'GPT-5 mini',       provider: 'OpenAI',    speed: 'fast',    quality: 'good',      desc: 'Low-cost, reliable general intelligence. Default workhorse.', icon: 'circle' },
     { id: 'deepseek-r1',      name: 'DeepSeek R1',      provider: 'DeepSeek',  speed: 'medium',  quality: 'excellent', desc: 'Elite reasoning at a fraction of competitors\' costs.',      icon: 'cpu'    },
-    { id: 'mistral-large-3',  name: 'Mistral Large 3',  provider: 'Mistral AI', speed: 'fast',   quality: 'good',      desc: 'Multilingual flagship. Strong European data-residency focus.', icon: 'circle' },
     { id: 'kimi-k2-5',        name: 'Kimi K2.5',        provider: 'Moonshot',  speed: 'fast',    quality: 'good',      desc: 'Optimized for multi-step agentic task execution.',           icon: 'circle' },
     { id: 'glm-5',            name: 'GLM-5',            provider: 'Zhipu AI',  speed: 'fast',    quality: 'good',      desc: 'Highly capable open-weight flagship from Zhipu.',            icon: 'circle' },
-    { id: 'command-r-plus',   name: 'Command R+',       provider: 'Cohere',    speed: 'fast',    quality: 'good',      desc: 'Optimized for tool use and enterprise RAG retrieval.',       icon: 'circle' },
     { id: 'llama-4-scout',    name: 'Llama 4 Scout',    provider: 'Meta',      speed: 'medium',  quality: 'good',      desc: '10M context window for local and air-gapped environments.',  icon: 'circle' },
     { id: 'grok-4-1-fast',    name: 'Grok 4.1 Fast',    provider: 'xAI',       speed: 'fast',    quality: 'excellent', desc: 'Industry-leading 2M token context window. Real-time research.', icon: 'circle' },
 
