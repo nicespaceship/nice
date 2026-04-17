@@ -12,8 +12,8 @@
    maps cleanly to mission count. See fuelToMessages() below.
 
    POOLS:
-     standard  — included in Pro. Covers Gemini Pro, GPT-5 Mini,
-                 DeepSeek, Mistral, Grok, etc.
+     standard  — included in Pro. Covers GPT-5 Mini, GLM-5,
+                 Llama 4 Scout, Grok 4.1 Fast.
      claude    — Claude add-on. Covers Claude Haiku / Sonnet / Opus.
                  Expensive models have higher weights so Opus can't
                  drain a month's allowance in a dozen messages.
@@ -31,7 +31,7 @@ const TokenConfig = (() => {
     standard: {
       id: 'standard',
       label: 'Standard',
-      description: 'Pro plan models — GPT-5 mini, DeepSeek R1, Kimi, GLM-5, Grok 4.1, Llama 4 Scout.',
+      description: 'Pro plan models — GPT-5 mini, GLM-5, Grok 4.1, Llama 4 Scout.',
       monthlyAllowance: 1000,       // Pro plan grants this every billing cycle
       requiresAddon: null,          // no add-on needed; included in Pro
     },
@@ -57,7 +57,7 @@ const TokenConfig = (() => {
      so every SKU stays profitable regardless of which model a user
      prefers. Models with weight 0 never debit (e.g. Gemini Flash).
 
-     The 13 entries below correspond to the current LLM lineup; any
+     The 11 entries below correspond to the current LLM lineup; any
      model not listed is treated as `free` by isFreeModel(). */
   const MODELS = {
     // ── Free tier (no pool, always free)
@@ -65,8 +65,6 @@ const TokenConfig = (() => {
 
     // ── Standard pool (Pro plan, no add-on)
     'gpt-5-mini':         { pool: 'standard', weight: 1,  tier: 'standard' },
-    'deepseek-r1':        { pool: 'standard', weight: 1,  tier: 'standard' },
-    'kimi-k2-5':          { pool: 'standard', weight: 1,  tier: 'standard' },
     'glm-5':              { pool: 'standard', weight: 1,  tier: 'standard' },
     'llama-4-scout':      { pool: 'standard', weight: 1,  tier: 'standard' },
     'grok-4-1-fast':      { pool: 'standard', weight: 2,  tier: 'standard' },

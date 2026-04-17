@@ -18,7 +18,7 @@ NICE is an open-source platform for building, deploying, and managing AI agent w
 ## Features
 
 - **800+ Blueprints** — Pre-built AI workflow templates for every type of business
-- **Multi-LLM Routing** — 10 models from 6 providers (Gemini, Claude, GPT-5, Mistral, DeepSeek, Grok). NICE picks the best model for each task.
+- **Multi-LLM Routing** — 12 models from 5 active providers (Gemini, Claude, GPT-5, Grok, Llama via Groq). NICE picks the best model for each task.
 - **Multi-Agent Orchestration** — Pipeline, Parallel, Hierarchical, and Quality Loop patterns
 - **Drag-and-Drop Slots** — Visual agent assignment, no coding required
 - **Google Workspace Integration** — Gmail, Calendar, Drive connected via MCP protocol
