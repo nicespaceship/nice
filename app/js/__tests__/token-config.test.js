@@ -42,7 +42,7 @@ describe('TokenConfig — pool + model catalog', () => {
   });
 });
 
-describe('TokenConfig — model → pool mapping (top 15)', () => {
+describe('TokenConfig — model → pool mapping', () => {
   it('Gemini 2.5 Flash is free (no pool, no weight)', () => {
     expect(TokenConfig.poolFor('gemini-2-5-flash')).toBeNull();
     expect(TokenConfig.weightFor('gemini-2-5-flash')).toBe(0);
@@ -54,11 +54,18 @@ describe('TokenConfig — model → pool mapping (top 15)', () => {
     expect(TokenConfig.weightFor('gpt-5-mini')).toBe(1);
   });
 
-  it('DeepSeek R1, Mistral Large 3, Kimi K2.5, GLM-5, Command R+, and Llama 4 Scout are all standard pool weight 1', () => {
-    for (const id of ['deepseek-r1', 'mistral-large-3', 'kimi-k2-5', 'glm-5', 'command-r-plus', 'llama-4-scout']) {
+  it('DeepSeek R1, Kimi K2.5, GLM-5, and Llama 4 Scout are all standard pool weight 1', () => {
+    for (const id of ['deepseek-r1', 'kimi-k2-5', 'glm-5', 'llama-4-scout']) {
       expect(TokenConfig.poolFor(id)).toBe('standard');
       expect(TokenConfig.weightFor(id)).toBe(1);
     }
+  });
+
+  it('Mistral Large 3 and Command R+ are not in the catalog (removed for cost)', () => {
+    expect(TokenConfig.poolFor('mistral-large-3')).toBeNull();
+    expect(TokenConfig.poolFor('command-r-plus')).toBeNull();
+    expect(TokenConfig.isFreeModel('mistral-large-3')).toBe(true);
+    expect(TokenConfig.isFreeModel('command-r-plus')).toBe(true);
   });
 
   it('Grok 4.1 Fast consumes 2 standard tokens (heavier weight, 2M context)', () => {
