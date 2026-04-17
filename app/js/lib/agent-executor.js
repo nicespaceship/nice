@@ -369,6 +369,10 @@ const AgentExecutor = (() => {
       ? (data.usage.input_tokens + data.usage.output_tokens)
       : Math.floor(content.length / 4);
 
+    if (typeof LLMConfig !== 'undefined' && LLMConfig.reportFallback) {
+      LLMConfig.reportFallback(llmConfig.model, data.model);
+    }
+
     return {
       content,
       model:      data.model || llmConfig.model,
