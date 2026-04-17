@@ -643,6 +643,7 @@ const SpaceshipsView = (() => {
 /* ── Spaceship Detail — Computing Panel with Slot Formation ── */
 const SpaceshipDetailView = (() => {
   const title = 'Spaceship Detail';
+  const _esc = Utils.esc;
   let _channel = null;
   let _draggedAgentId = null;
   let _draggedAgentRarity = null;
