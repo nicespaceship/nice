@@ -251,6 +251,7 @@ const ModerationView = (() => {
         return;
       }
       container.innerHTML = rows.map(_renderRecentRow).join('');
+      _bindRecentOverrides();
     } catch (err) {
       container.innerHTML = `<p class="text-muted" style="padding:12px 16px;font-size:.82rem">Couldn't load: ${_esc(err.message || 'unknown error')}</p>`;
     }
@@ -273,8 +274,22 @@ const ModerationView = (() => {
     const notesLine = row.review_notes
       ? `<div class="moderation-recent-notes"><strong>Notes:</strong> ${_esc(row.review_notes)}</div>`
       : '';
+
+    // Per-status override buttons. Each transitions to exactly one
+    // target status via the matching admin_* RPC. Status not listed
+    // (e.g. 'removed', 'pending_review') gets no override — those are
+    // either terminal or belong to the queue section, not recent.
+    let overrides = '';
+    if (row.status === 'flagged') {
+      overrides = `<button class="btn btn-sm" data-action="restore-flagged">Restore to published</button>`;
+    } else if (row.status === 'published') {
+      overrides = `<button class="btn btn-sm btn-danger" data-action="unpublish-listing">Unpublish\u2026</button>`;
+    } else if (row.status === 'rejected') {
+      overrides = `<button class="btn btn-sm" data-action="reopen-rejection">Re-open for re-review</button>`;
+    }
+
     return `
-      <article class="moderation-recent-row">
+      <article class="moderation-recent-row" data-listing-id="${_esc(row.listing_id)}">
         <header class="moderation-recent-head">
           <div>
             <span class="moderation-badge ${statusBadge}">${_esc(row.status)}</span>
@@ -288,11 +303,79 @@ const ModerationView = (() => {
         </header>
         ${notesLine}
         <div class="moderation-recent-author text-muted" style="font-size:.78rem">by ${_esc(row.author_email || row.blueprint_id || 'unknown')}</div>
+        ${overrides ? `<div class="moderation-recent-overrides">${overrides}</div>` : ''}
         <details class="moderation-recent-audit">
           <summary>Full audit (safety_scores)</summary>
           <pre>${safetyJson}</pre>
         </details>
+        <div class="moderation-recent-error" data-role="error" hidden></div>
       </article>`;
+  }
+
+  /**
+   * Bind click handlers on every recent-decisions row's override button.
+   * Called after _renderRecentRow populates the list. Each transition
+   * maps to a specific admin_* RPC with matching confirm / prompt UX.
+   */
+  function _bindRecentOverrides() {
+    document.querySelectorAll('.moderation-recent-row').forEach(row => {
+      const listingId = row.dataset.listingId;
+      const errEl = row.querySelector('[data-role="error"]');
+      const showError = (msg) => { if (errEl) { errEl.textContent = msg; errEl.hidden = false; } };
+
+      row.querySelector('[data-action="restore-flagged"]')?.addEventListener('click', async (e) => {
+        if (!window.confirm('Un-flag and republish this listing?\n\nIt will be public in the community library again.')) return;
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Restoring\u2026';
+        try {
+          const { error } = await SB.client.rpc('admin_restore_flagged', { p_listing_id: listingId, p_notes: null });
+          if (error) throw error;
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Restored', message: 'Listing is public again.', type: 'system' });
+          _loadRecentDecisions();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Restore to published';
+          showError(err.message || 'Restore failed');
+        }
+      });
+
+      row.querySelector('[data-action="unpublish-listing"]')?.addEventListener('click', async (e) => {
+        const reason = window.prompt('Reason for unpublishing (the author sees this):');
+        if (!reason || !reason.trim()) return;
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Unpublishing\u2026';
+        try {
+          const { error } = await SB.client.rpc('admin_unpublish_listing', { p_listing_id: listingId, p_reason: reason.trim() });
+          if (error) throw error;
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Unpublished', message: 'Listing is flagged and hidden from the library.', type: 'system' });
+          _loadRecentDecisions();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Unpublish\u2026';
+          showError(err.message || 'Unpublish failed');
+        }
+      });
+
+      row.querySelector('[data-action="reopen-rejection"]')?.addEventListener('click', async (e) => {
+        if (!window.confirm('Re-open this rejection for another review?\n\nIt moves back into the pending queue. The author gets a second chance without having to resubmit.')) return;
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Re-opening\u2026';
+        try {
+          const { error } = await SB.client.rpc('admin_reopen_rejection', { p_listing_id: listingId, p_notes: null });
+          if (error) throw error;
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Re-opened', message: 'Listing is back in the pending queue.', type: 'system' });
+          _loadQueue();
+          _loadRecentDecisions();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Re-open for re-review';
+          showError(err.message || 'Re-open failed');
+        }
+      });
+    });
   }
 
 
