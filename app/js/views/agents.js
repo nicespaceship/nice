@@ -598,6 +598,12 @@ const AgentDetailView = (() => {
       const dotClass = agent.status === 'active' ? 'dot-g dot-pulse' : agent.status === 'error' ? 'dot-r' : agent.status === 'paused' ? 'dot-a' : 'dot-g';
       const initials = (agent.name || 'AG').slice(0, 2).toUpperCase();
 
+      // Community publish button is only meaningful for user-built agents
+      // the current user owns. Catalog rows fall back to BlueprintStore
+      // and carry no user_id; those never show the button.
+      const _user = State.get('user');
+      const _canPublish = !!(_user && agent.user_id && agent.user_id === _user.id);
+
       // Load missions for this agent
       let missions = [];
       try { missions = await SB.db('tasks').list({ agentId: agent.id, orderBy: 'created_at', limit: 10 }); } catch(e) {}
@@ -618,6 +624,7 @@ const AgentDetailView = (() => {
               Save as Template
             </button>
             <button class="btn btn-sm" id="btn-copy-md" data-id="${id}">Copy Blueprint</button>
+            ${_canPublish ? '<span id="community-publish-slot"></span>' : ''}
           </div>
 
           <div class="detail-header">
@@ -822,6 +829,36 @@ const AgentDetailView = (() => {
           if (typeof Notify !== 'undefined') Notify.send('Blueprint copied to clipboard', 'success');
         });
       });
+
+      // Community publish button — async render based on published state.
+      // Hosts a single slot that renders as either "Publish" or "Unpublish"
+      // depending on whether a community blueprints row exists for this id.
+      if (_canPublish && typeof CommunityPublish !== 'undefined') {
+        const slot = document.getElementById('community-publish-slot');
+        const renderSlot = async () => {
+          if (!slot) return;
+          const published = await CommunityPublish.isPublished(agent.id);
+          slot.innerHTML = CommunityPublish.renderActionButton(published);
+        };
+        renderSlot();
+        // Delegated click handler survives button re-renders
+        slot?.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          const entity = {
+            type: 'agent',
+            id: agent.id,
+            name: agent.name,
+            description: agent.config?.description || agent.description,
+            tags: agent.config?.tags || agent.tags,
+          };
+          if (btn.dataset.action === 'community-publish') {
+            CommunityPublish.openPublishModal(entity, { onSuccess: renderSlot });
+          } else if (btn.dataset.action === 'community-unpublish') {
+            CommunityPublish.confirmUnpublish(entity, { onSuccess: renderSlot });
+          }
+        });
+      }
 
       _channel = SB.realtime.subscribe('user_agents', (payload) => {
         if (payload.new?.id === id || payload.old?.id === id) _loadAgent(el, id);

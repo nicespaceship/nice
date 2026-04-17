@@ -643,6 +643,7 @@ const SpaceshipsView = (() => {
 /* ── Spaceship Detail — Computing Panel with Slot Formation ── */
 const SpaceshipDetailView = (() => {
   const title = 'Spaceship Detail';
+  const _esc = Utils.esc;
   let _channel = null;
   let _draggedAgentId = null;
   let _draggedAgentRarity = null;
@@ -1053,6 +1054,12 @@ const SpaceshipDetailView = (() => {
       const spaceshipClass = typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate() : { id:'dynamic', name:'Ship', slots:[{id:0,maxRarity:'Mythic',label:'Bridge'},{id:1,maxRarity:'Legendary',label:'Ops'}] };
       const assignedIds = new Set(Object.values(fleet.slot_assignments || {}).filter(Boolean));
 
+      // Community publish is only offered for user-built ships owned by
+      // the current viewer. Catalog ships loaded via BlueprintStore have
+      // no user_id, so the slot stays hidden.
+      const _user = State.get('user');
+      const _canPublish = !!(_user && fleet.user_id && fleet.user_id === _user.id);
+
       el.innerHTML = `
         <div class="detail-wrap">
           <div class="detail-back">
@@ -1060,6 +1067,7 @@ const SpaceshipDetailView = (() => {
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
               Back to Spaceships
             </a>
+            ${_canPublish ? '<span id="community-publish-slot"></span>' : ''}
           </div>
 
           <div class="detail-header">
@@ -1137,6 +1145,36 @@ const SpaceshipDetailView = (() => {
       _bindShipProfile(el, id);
       _bindBehaviors(el, id);
       _initSlotDnD(el, id, fleet, allAgents, agentMap, spaceshipClass);
+
+      // Community publish button — owns its own async state check and
+      // delegated click handler so the slot stays in sync across
+      // publish/unpublish round-trips without re-rendering the whole view.
+      if (_canPublish && typeof CommunityPublish !== 'undefined') {
+        const slot = document.getElementById('community-publish-slot');
+        const renderSlot = async () => {
+          if (!slot) return;
+          const published = await CommunityPublish.isPublished(fleet.id);
+          slot.innerHTML = CommunityPublish.renderActionButton(published);
+        };
+        renderSlot();
+        slot?.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          const cfg = fleet.config || {};
+          const entity = {
+            type: 'spaceship',
+            id: fleet.id,
+            name: fleet.name,
+            description: cfg.description || fleet.description,
+            tags: cfg.tags || fleet.tags,
+          };
+          if (btn.dataset.action === 'community-publish') {
+            CommunityPublish.openPublishModal(entity, { onSuccess: renderSlot });
+          } else if (btn.dataset.action === 'community-unpublish') {
+            CommunityPublish.confirmUnpublish(entity, { onSuccess: renderSlot });
+          }
+        });
+      }
 
       _channel = SB.realtime.subscribe('fleets', (payload) => {
         if (payload.new?.id === id || payload.old?.id === id) _loadSpaceship(el, id);
