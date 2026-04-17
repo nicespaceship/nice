@@ -137,8 +137,10 @@ const ModerationView = (() => {
       ? `<div class="moderation-kv"><span class="kv-label">Key updated</span><span class="kv-val">${new Date(key_updated_at).toLocaleString()}</span></div>`
       : '';
     const actions = armed
-      ? `<button class="btn btn-sm btn-danger" data-action="pause-reviewer">Pause reviewer</button>`
-      : `<button class="btn btn-sm btn-primary" data-action="resume-reviewer">Resume reviewer\u2026</button>`;
+      ? `<button class="btn btn-sm btn-danger" data-action="pause-reviewer">Pause reviewer</button>
+         <button class="btn btn-sm btn-danger" data-action="rollback-auto" title="Flag every auto-approval in the last N hours">Rollback auto-approvals\u2026</button>`
+      : `<button class="btn btn-sm btn-primary" data-action="resume-reviewer">Resume reviewer\u2026</button>
+         <button class="btn btn-sm btn-danger" data-action="rollback-auto" title="Flag every auto-approval in the last N hours">Rollback auto-approvals\u2026</button>`;
 
     return `
       <div class="moderation-status-card">
@@ -191,6 +193,44 @@ const ModerationView = (() => {
         _loadReviewerStatus();
       } catch (err) {
         showError(err.message || 'Resume failed');
+      }
+    });
+
+    container.querySelector('[data-action="rollback-auto"]')?.addEventListener('click', async () => {
+      const raw = window.prompt(
+        'Rollback auto-approvals from the last how many hours? (1-168)\n\n' +
+        'Only listings approved by the reviewer agent are affected.\n' +
+        'Your manual approvals and already-flagged listings are untouched.',
+        '24'
+      );
+      if (!raw) return;
+      const hours = parseInt(raw, 10);
+      if (isNaN(hours) || hours < 1 || hours > 168) {
+        showError('Enter a number between 1 and 168');
+        return;
+      }
+      if (!window.confirm(
+        `Flag every auto-approval from the last ${hours} hour${hours === 1 ? '' : 's'}?\n\n` +
+        `Flagged listings disappear from the community library and surface in your queue for re-review.`
+      )) return;
+      try {
+        const { data, error } = await SB.client.rpc('admin_rollback_auto_approvals', { p_hours: hours });
+        if (error) throw error;
+        const row = Array.isArray(data) && data[0] ? data[0] : null;
+        const count = row?.affected_count ?? 0;
+        if (typeof Notify !== 'undefined') {
+          Notify.send({
+            title: count > 0 ? `Rolled back ${count} listing${count === 1 ? '' : 's'}` : 'No matching auto-approvals',
+            message: count > 0
+              ? `Flagged and hidden from the community library. Re-review them in the queue.`
+              : `Nothing to roll back in the last ${hours}h window.`,
+            type: 'system',
+          });
+        }
+        _loadQueue();
+        _loadRecentDecisions();
+      } catch (err) {
+        showError(err.message || 'Rollback failed');
       }
     });
   }
