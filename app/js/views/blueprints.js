@@ -2107,6 +2107,75 @@ const BlueprintsView = (() => {
     _unbindDrawerKeyboard();
   }
 
+  /**
+   * Minimal report-a-community-blueprint modal. Reasons match the
+   * CHECK constraint on community_reports.reason; the server auto-flags
+   * the listing once 3 distinct reporters submit.
+   */
+  function _openReportModal(bp) {
+    document.getElementById('bp-report-modal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'bp-report-modal';
+    overlay.className = 'modal-overlay open';
+    overlay.innerHTML = `
+      <div class="modal-box" style="max-width:440px">
+        <div class="modal-hdr">
+          <h3 class="modal-title">Report ${_esc(bp.name || 'blueprint')}</h3>
+          <button class="modal-close" id="bp-report-close" aria-label="Close">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 12px">
+            Reports are reviewed by moderators. A blueprint is auto-hidden after three distinct reports.
+          </p>
+          <div class="auth-field">
+            <label for="bp-report-reason">Reason</label>
+            <select id="bp-report-reason" class="filter-select">
+              <option value="spam">Spam</option>
+              <option value="offensive">Offensive content</option>
+              <option value="malicious">Malicious / unsafe prompts</option>
+              <option value="copyright">Copyright / impersonation</option>
+              <option value="broken">Broken or non-functional</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="auth-field">
+            <label for="bp-report-details">Details (optional)</label>
+            <textarea id="bp-report-details" rows="3" maxlength="1000"
+              style="width:100%;resize:vertical;background:var(--bg-alt);border:1px solid var(--border);color:var(--text);padding:8px;font-family:var(--font-b);font-size:.82rem;border-radius:6px"></textarea>
+          </div>
+          <div class="auth-error" id="bp-report-error"></div>
+          <button class="auth-submit" id="bp-report-submit">Submit report</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#bp-report-close').addEventListener('click', close);
+    overlay.querySelector('#bp-report-submit').addEventListener('click', async () => {
+      const reason = overlay.querySelector('#bp-report-reason').value;
+      const details = overlay.querySelector('#bp-report-details').value.trim();
+      const errEl = overlay.querySelector('#bp-report-error');
+      const btn = overlay.querySelector('#bp-report-submit');
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+      try {
+        await BlueprintStore.reportCommunityBlueprint(bp.id, { reason, details: details || undefined });
+        close();
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Report submitted', message: 'Thanks — moderators will take a look.', type: 'system' });
+        }
+      } catch (err) {
+        errEl.textContent = err.message || 'Report failed.';
+        btn.disabled = false;
+        btn.textContent = 'Submit report';
+      }
+    });
+  }
+
   function _renderDrawerContent(bp, type) {
     const CR = typeof CardRenderer !== 'undefined' ? CardRenderer : null;
     const serial = CR ? CR.serialHash(bp.id || bp.name) : _serialHash(bp.id || bp.name);
@@ -2294,6 +2363,14 @@ const BlueprintsView = (() => {
       btns.push(`<button class="btn btn-sm bp-drawer-copy-bp" data-id="${bp.id}" data-type="${type}" title="Copy as text">Copy Blueprint</button>`);
     }
     btns.push(`<button class="btn btn-sm bp-drawer-share" data-id="${bp.id}" title="Share">&#8599; Share</button>`);
+    // Report is offered for community content the viewer doesn't own.
+    // Server RLS still blocks self-reports — the client check just keeps
+    // the button out of the owner's face.
+    const viewer = typeof State !== 'undefined' ? State.get('user') : null;
+    const isOwnCommunity = isCommunity && viewer && bp.creator_id && bp.creator_id === viewer.id;
+    if (isCommunity && !isOwnCommunity) {
+      btns.push(`<button class="btn btn-sm bp-drawer-report" data-id="${bp.id}" title="Report this blueprint">Report</button>`);
+    }
     return btns.join('');
   }
 
@@ -2385,6 +2462,11 @@ const BlueprintsView = (() => {
         if (typeof Router !== 'undefined') Router.navigate(route);
         else location.hash = route;
       });
+    });
+
+    // Report — open a minimal reason picker and submit to BlueprintStore.
+    drawer.querySelectorAll('.bp-drawer-report').forEach(btn => {
+      btn.addEventListener('click', () => _openReportModal(bp));
     });
 
     // Ship Setup Wizard
