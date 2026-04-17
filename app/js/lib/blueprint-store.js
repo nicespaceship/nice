@@ -2204,6 +2204,134 @@ const BlueprintStore = (() => {
     return { ok: true };
   }
 
+  /**
+   * Install a community blueprint into the caller's own user_agents /
+   * user_spaceships. Unlike catalog activation — which is a pure
+   * reference recorded in blueprint_activations — this creates a fresh
+   * row the downloader fully owns: they can edit, re-publish, delete.
+   *
+   * The new row's blueprint_id is set to the source community blueprint's
+   * id, which doubles as the lineage pointer (so the UI can surface
+   * "installed from @author's X" later) and the "already downloaded"
+   * detection key used by hasDownloadedCommunity().
+   *
+   * For ships, slot_placeholders from the community snapshot is expanded
+   * into an empty slot_assignments map keyed by the original slot index —
+   * the publisher's private agent UUIDs were already stripped at publish
+   * time, so the downloader's setup wizard picks up empty slots to fill.
+   *
+   * Fires a best-effort increment_listing_download RPC after the insert.
+   *
+   * @param {string} blueprintId — community blueprints.id
+   * @param {{ listingId?: string }} [opts]
+   * @returns {{ id, type, name, blueprint_id }} the new user row
+   */
+  async function downloadCommunityBlueprint(blueprintId, { listingId } = {}) {
+    const c = SB?.client;
+    if (!c) throw new Error('Not connected');
+    const user = State.get('user');
+    if (!user) throw new Error('Sign in to install');
+    if (!blueprintId) throw new Error('Missing blueprint id');
+
+    const { data: bp, error: berr } = await c
+      .from('blueprints')
+      .select('*')
+      .eq('id', blueprintId)
+      .eq('scope', 'community')
+      .maybeSingle();
+    if (berr) throw berr;
+    if (!bp) throw new Error('This blueprint is not available in the community');
+
+    const type = bp.type === 'spaceship' ? 'spaceship' : 'agent';
+    const table = type === 'spaceship' ? 'user_spaceships' : 'user_agents';
+
+    // Sanitize the snapshotted config. Drop scope-bound / author-bound
+    // fields that shouldn't propagate into the downloader's own row.
+    const cfg = Object.assign({}, bp.config || {});
+
+    if (type === 'spaceship') {
+      // Expand slot_placeholders into an empty assignments map keyed by
+      // slot index. The wizard / Schematic will resolve these into real
+      // agent ids the downloader picks for themselves.
+      const placeholders = Array.isArray(cfg.slot_placeholders) ? cfg.slot_placeholders : [];
+      const assignments = {};
+      placeholders.forEach((p) => {
+        const idx = typeof p === 'object' ? p.slot : p;
+        if (idx != null && !isNaN(Number(idx))) assignments[String(idx)] = null;
+      });
+      cfg.slot_assignments = assignments;
+      delete cfg.slot_placeholders;
+    }
+
+    // Put back hoisted top-level fields so the downloader's copy surfaces
+    // description / flavor / tags through the existing loaders.
+    if (bp.description) cfg.description = bp.description;
+    if (bp.flavor)      cfg.flavor      = bp.flavor;
+    if (Array.isArray(bp.tags) && bp.tags.length) cfg.tags = bp.tags;
+
+    const row = type === 'spaceship'
+      ? {
+          user_id:      user.id,
+          name:         bp.name || 'Untitled',
+          blueprint_id: blueprintId,
+          category:     bp.category || null,
+          rarity:       bp.rarity || 'Common',
+          status:       'standby',
+          config:       cfg,
+          // Keep the legacy `slots` mirror in sync for one release; see
+          // supabase/migrations/20260416000001_user_spaceships_config_columns.sql
+          slots:        Object.assign({ category: bp.category || null }, cfg),
+        }
+      : {
+          user_id:      user.id,
+          name:         bp.name || 'Untitled',
+          blueprint_id: blueprintId,
+          config:       cfg,
+          rarity:       bp.rarity || 'Common',
+          status:       'idle',
+        };
+
+    const { data: created, error: ierr } = await c
+      .from(table)
+      .insert(row)
+      .select()
+      .maybeSingle();
+    if (ierr) throw ierr;
+
+    // Increment the download counter on the listing. Best effort — we
+    // already wrote the row, and the RPC is RLS-gated server-side.
+    if (listingId) {
+      try { await c.rpc('increment_listing_download', { p_listing_id: listingId }); }
+      catch { /* swallow — counter is not load-bearing */ }
+    }
+
+    // Mirror the new row into State so the browse UI can immediately
+    // reflect "already downloaded" without a full reload.
+    try {
+      const stateKey = type === 'spaceship' ? 'spaceships' : 'agents';
+      const arr = State.get(stateKey) || [];
+      if (!arr.some(e => e.id === created.id)) {
+        arr.push(Object.assign({ type }, created));
+        State.set(stateKey, arr);
+      }
+    } catch { /* state update failure is not load-bearing */ }
+
+    return created;
+  }
+
+  /**
+   * Has the current user already downloaded this community blueprint?
+   * Backed by State.agents / State.spaceships scanning for rows whose
+   * blueprint_id matches — so no extra DB round-trip per card.
+   */
+  function hasDownloadedCommunity(blueprintId) {
+    if (!blueprintId) return false;
+    const agents = State.get('agents') || [];
+    if (agents.some(a => a.blueprint_id === blueprintId)) return true;
+    const ships = State.get('spaceships') || [];
+    return ships.some(s => s.blueprint_id === blueprintId);
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      Public API
   ═══════════════════════════════════════════════════════════════ */
@@ -2254,6 +2382,7 @@ const BlueprintStore = (() => {
     getMyMarketplaceReview, rateMarketplaceListing,
     incrementMarketplaceDownloads,
     publishToCommunity, unpublishFromCommunity,
+    downloadCommunityBlueprint, hasDownloadedCommunity,
   };
 
   /**
