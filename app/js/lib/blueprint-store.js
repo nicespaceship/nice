@@ -2036,19 +2036,18 @@ const BlueprintStore = (() => {
   }
 
   /**
-   * Publish a user-built agent or spaceship to the community library.
+   * Submit a user-built agent or spaceship to the community library.
    *
-   * The source row lives in user_agents / user_spaceships; publishing creates
-   * an immutable snapshot in `blueprints` (scope='community') plus a
-   * marketplace_listings row. Re-publishing the same entity is blocked — the
-   * author must unpublish first, then edit, then re-publish, so consumers
-   * never see the blueprint change underneath them.
+   * The entire gate stack runs server-side in the community-submit edge
+   * function: ownership check, re-publish detection, rate limit, secret
+   * scan, schema validation, config sanitization (for ships: stripping
+   * user-specific agent IDs from slot_assignments and replacing with
+   * slot_placeholders), content hashing, blueprint+listing insert with
+   * rollback. The client is a thin wrapper that maps error codes to
+   * actionable messages.
    *
-   * Ships need special handling: the source's `slot_assignments` map points
-   * at the publisher's private agent UUIDs, which would be dangling FKs for
-   * any downloader. The slot shape is preserved via `slot_placeholders`
-   * so the download-as-clone path (Stage B3) can repopulate with the
-   * downloader's own agents.
+   * Putting the gates on the client would let anyone with a browser
+   * devtools session bypass them — they have to live server-side.
    *
    * @param {{ type: 'agent'|'spaceship', id: string }} entity
    * @param {{ title?: string, description?: string, tags?: string[] }} [opts]
@@ -2061,139 +2060,48 @@ const BlueprintStore = (() => {
     if (!entity || !entity.id) throw new Error('Missing entity id');
 
     const type = entity.type === 'spaceship' ? 'spaceship' : 'agent';
-    const sourceTable = type === 'spaceship' ? 'user_spaceships' : 'user_agents';
 
-    // Ownership check — also the only place we read the source, so we get
-    // the latest config at publish time. RLS will re-enforce this on the
-    // blueprints INSERT, but catching it here lets us return a clean error.
-    const { data: source, error: serr } = await c
-      .from(sourceTable)
-      .select('*')
-      .eq('id', entity.id)
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (serr) throw serr;
-    if (!source) throw new Error('You can only publish things you created');
+    const { data, error } = await c.functions.invoke('community-submit', {
+      body: { entity_id: entity.id, entity_type: type, title, description, tags },
+    });
 
-    // Re-publish detection: blueprints.id = source.id for community rows,
-    // so a second publish would PK-conflict anyway — catch early for UX.
-    const { data: existing } = await c
-      .from('blueprints')
-      .select('id')
-      .eq('id', entity.id)
-      .eq('scope', 'community')
-      .maybeSingle();
-    if (existing) {
-      throw new Error('Already published — unpublish first to edit');
-    }
-
-    // Rate-limit check: 5 community publishes per caller per 24 hours.
-    // The RPC returns GREATEST(0, 5 - count); 0 means the user has
-    // already hit the cap. The RPC runs as SECURITY DEFINER so the
-    // count it reads is authoritative — a client that skips this call
-    // will still succeed at the insert today, but B4 adds the server-
-    // side containment so the caller gets a clean "slow down" message
-    // instead of a surprise row if we later tighten the RLS.
-    try {
-      const { data: budget } = await c.rpc('check_publish_rate_limit');
-      if (typeof budget === 'number' && budget <= 0) {
-        throw new Error('Publish limit reached — you can publish 5 per day. Try again tomorrow.');
+    // The Supabase client wraps any non-2xx into `error`; the response body
+    // still comes through (on recent client versions) as `data`, but older
+    // ones bury it in error.context. Try both so we surface the server's
+    // actionable message regardless of client version.
+    if (error) {
+      let srv = null;
+      if (data && typeof data === 'object') srv = data;
+      else if (error && error.context && typeof error.context.json === 'function') {
+        try { srv = await error.context.json(); } catch { /* ignore */ }
       }
-    } catch (err) {
-      // RPC missing (pre-B4 DB) shouldn't block publish; only respect
-      // the budget-exceeded signal we threw ourselves above.
-      if (/Publish limit/.test(err.message || '')) throw err;
+      throw new Error(_friendlyPublishError(srv, error));
     }
+    if (data && data.error) throw new Error(_friendlyPublishError(data));
+    return { blueprint: data.blueprint, listing: data.listing, content_hash: data.content_hash };
+  }
 
-    // Hoist structural fields from config → top-level blueprints columns.
-    const cfg = (source.config && Object.keys(source.config).length ? source.config : source.slots) || {};
-    const finalTitle = (title || source.name || 'Untitled').slice(0, 80);
-    const finalDesc  = (description || cfg.description || '').slice(0, 2000);
-    const finalTags  = Array.isArray(tags) ? tags : (cfg.tags || []);
-    const finalFlavor = (cfg.flavor || '').slice(0, 200);
-
-    // Sanitize the config we snapshot into blueprints. Strip:
-    //  - Fields we hoisted to top-level (avoids duplicate storage)
-    //  - Guest / local state flags
-    //  - For ships: the user-specific slot_assignments, replaced by
-    //    slot_placeholders so downloaders can re-populate their own agents
-    const configSnapshot = Object.assign({}, cfg);
-    delete configSnapshot.description;
-    delete configSnapshot.flavor;
-    delete configSnapshot.tags;
-    delete configSnapshot._guest;
-    delete configSnapshot._custom;
-    delete configSnapshot._local;
-
-    if (type === 'spaceship') {
-      const slotMap = configSnapshot.slot_assignments || {};
-      configSnapshot.slot_placeholders = Object.keys(slotMap)
-        .map(k => parseInt(k, 10))
-        .filter(n => !isNaN(n))
-        .sort((a, b) => a - b)
-        .map(slot => ({ slot }));
-      delete configSnapshot.slot_assignments;
+  /**
+   * Map edge-function error codes to actionable user-facing messages.
+   * Keeping this mapping on the client (not in the edge function) lets
+   * copy change without redeploying the function.
+   */
+  function _friendlyPublishError(srv, fallbackErr) {
+    if (!srv || !srv.error) {
+      return (fallbackErr && fallbackErr.message) || 'Submission failed';
     }
-
-    const category = type === 'spaceship'
-      ? (source.category || 'spaceship')
-      : (cfg.role || source.category || 'agent');
-    const rarity = source.rarity || 'Common';
-
-    // Use the source entity's UUID as the blueprint id — keeps the publish
-    // flow idempotent and makes re-publish detection a plain PK lookup.
-    const blueprintId = entity.id;
-    const serialKey = 'COMM-' + blueprintId.slice(0, 8).toUpperCase();
-
-    const { data: bp, error: berr } = await c
-      .from('blueprints')
-      .insert({
-        id:          blueprintId,
-        serial_key:  serialKey,
-        type,
-        name:        finalTitle,
-        description: finalDesc,
-        flavor:      finalFlavor,
-        category,
-        rarity,
-        tags:        finalTags,
-        config:      configSnapshot,
-        scope:       'community',
-        is_public:   true,
-        creator_id:  user.id,
-      })
-      .select()
-      .maybeSingle();
-    if (berr) throw berr;
-
-    // Submissions enter the queue as pending_review. The forthcoming
-    // Community Moderator (Stage C3) will move them to 'published' or
-    // 'rejected' autonomously; until C3 ships, service-role moderators
-    // approve manually via the admin route. The author sees their own
-    // pending row via marketplace_listings_author_read.
-    const { data: listing, error: lerr } = await c
-      .from('marketplace_listings')
-      .insert({
-        blueprint_id: blueprintId,
-        author_id:    user.id,
-        title:        finalTitle,
-        description:  finalDesc.slice(0, 400),
-        category:     type === 'spaceship' ? 'spaceship' : 'agent',
-        tags:         finalTags,
-        status:       'pending_review',
-      })
-      .select()
-      .maybeSingle();
-
-    if (lerr) {
-      // Roll back the blueprint so we don't leave a community row with no
-      // listing attached — that would make it unreachable via the browse UI
-      // but still count against the user's rate-limit budget in B4.
-      try { await c.from('blueprints').delete().eq('id', blueprintId); } catch { /* best effort */ }
-      throw lerr;
+    switch (srv.error) {
+      case 'secret_detected':        return srv.message || 'Your submission contains a credential. Remove it and try again.';
+      case 'schema_invalid':         return srv.message || 'Blueprint configuration is invalid.';
+      case 'not_owner':              return srv.message || 'You can only publish things you created';
+      case 'already_published':      return srv.message || 'Already published — unpublish first to edit';
+      case 'rate_limited':           return srv.message || 'Publish limit reached — you can publish 5 per day. Try again tomorrow.';
+      case 'blueprint_insert_failed':
+      case 'listing_insert_failed':  return 'Submission failed while saving. Please try again.';
+      case 'invalid_request':        return srv.message || 'Invalid submission';
+      case 'unauthorized':           return 'Sign in to publish';
+      default:                       return srv.message || 'Submission failed';
     }
-
-    return { blueprint: bp, listing };
   }
 
   /**
