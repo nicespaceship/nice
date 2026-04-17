@@ -2253,14 +2253,19 @@ const BlueprintsView = (() => {
     const btns = [];
     const isCommunity = bp && bp.scope === 'community';
     const listingId = bp && bp.listing && bp.listing.id;
+    const alreadyCloned = isCommunity && BlueprintStore.hasDownloadedCommunity(bp.id);
     if (type === 'agent') {
       if (BlueprintStore.isAgentActivated(bp.id)) {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="agent">Message ${_esc(bp.name)}</button>`);
       } else if (isCommunity) {
-        // Community agents use "Install" wording — same underlying
-        // activation flow (rarity gate + persistence) via BlueprintStore,
-        // plus the listing download counter bump for discovery stats.
-        btns.push(`<button class="btn btn-primary btn-sm bp-drawer-mp-install" data-id="${bp.id}" data-listing="${_esc(listingId || '')}">Install</button>`);
+        // Community install clones the blueprint into the downloader's
+        // own user_agents row so they can edit and re-publish. Distinct
+        // from catalog activation (which is a pure reference).
+        if (alreadyCloned) {
+          btns.push(`<button class="btn btn-sm bp-drawer-community-installed" disabled>Installed</button>`);
+        } else {
+          btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="agent" data-listing="${_esc(listingId || '')}">Install</button>`);
+        }
       }
       btns.push(`<button class="btn btn-sm bp-drawer-nav" data-route="#/agents/${encodeURIComponent(bp.id)}">View Agent &rarr;</button>`);
     } else if (type === 'spaceship') {
@@ -2268,6 +2273,15 @@ const BlueprintsView = (() => {
       if (isAct) {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="spaceship">Message ${_esc(bp.name)}</button>`);
         btns.push(`<button class="btn btn-sm bp-drawer-activate" data-id="${bp.id}" data-type="spaceship">Remove</button>`);
+      } else if (isCommunity) {
+        // Community ships also install-as-clone — the downloader gets
+        // their own user_spaceships row with empty slot assignments
+        // expanded from the published slot_placeholders.
+        if (alreadyCloned) {
+          btns.push(`<button class="btn btn-sm bp-drawer-community-installed" disabled>Installed</button>`);
+        } else {
+          btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="spaceship" data-listing="${_esc(listingId || '')}">Install</button>`);
+        }
       } else {
         btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Setup Spaceship</button>`);
       }
@@ -2327,21 +2341,39 @@ const BlueprintsView = (() => {
       btn.addEventListener('click', () => _promptActivatedCard(bp.id, type));
     });
 
-    // Marketplace install — delegates to BlueprintStore.activateAgent so
-    // rarity gates, persistence, and realtime sync all work for free.
-    drawer.querySelectorAll('.bp-drawer-mp-install').forEach(btn => {
+    // Community install — clones the blueprint into the downloader's own
+    // user_agents / user_spaceships row via downloadCommunityBlueprint.
+    // They get a row they fully own (edit / re-publish / delete), and
+    // blueprint_id points back to the community snapshot for lineage.
+    drawer.querySelectorAll('.bp-drawer-community-install').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
+        const t = btn.dataset.type;
         const listingId = btn.dataset.listing;
-        const ok = BlueprintStore.activateAgent(id);
-        if (ok === false) return; // rarity gate already notified the user
-        if (listingId) BlueprintStore.incrementMarketplaceDownloads(listingId);
-        if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Installed', message: `${bp.name} added to your agents.`, type: 'task_complete' });
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Installing…';
+        try {
+          const created = await BlueprintStore.downloadCommunityBlueprint(id, { listingId: listingId || null });
+          if (typeof Notify !== 'undefined') {
+            const label = t === 'spaceship' ? 'your fleet' : 'your agents';
+            Notify.send({ title: 'Installed', message: `${bp.name} added to ${label}.`, type: 'task_complete' });
+          }
+          if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
+          _applyFilters();
+          _openDrawer(id);
+          // For ships, nudge the user toward setup so they can populate
+          // the empty slot assignments expanded from slot_placeholders.
+          if (t === 'spaceship' && created?.id && typeof Router !== 'undefined') {
+            Router.navigate(`#/bridge/spaceships/${created.id}`);
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          if (typeof Notify !== 'undefined') {
+            Notify.send({ title: 'Install failed', message: err.message || 'Try again.', type: 'agent_error' });
+          }
         }
-        if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
-        _applyFilters();
-        _openDrawer(id);
       });
     });
 
