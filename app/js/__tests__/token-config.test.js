@@ -54,15 +54,13 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('gpt-5-mini')).toBe(1);
   });
 
-  it('GLM-5 and Llama 4 Scout are standard pool weight 1', () => {
-    for (const id of ['glm-5', 'llama-4-scout']) {
-      expect(TokenConfig.poolFor(id)).toBe('standard');
-      expect(TokenConfig.weightFor(id)).toBe(1);
-    }
+  it('Llama 4 Scout is standard pool weight 1', () => {
+    expect(TokenConfig.poolFor('llama-4-scout')).toBe('standard');
+    expect(TokenConfig.weightFor('llama-4-scout')).toBe(1);
   });
 
-  it('Mistral Large 3, Command R+, DeepSeek R1, and Kimi K2.5 are not in the catalog (removed for cost/provider-unreachable)', () => {
-    for (const id of ['mistral-large-3', 'command-r-plus', 'deepseek-r1', 'kimi-k2-5']) {
+  it('Mistral Large 3, Command R+, DeepSeek R1, Kimi K2.5, and GLM-5 are not in the catalog (removed for cost/provider-unreachable)', () => {
+    for (const id of ['mistral-large-3', 'command-r-plus', 'deepseek-r1', 'kimi-k2-5', 'glm-5']) {
       expect(TokenConfig.poolFor(id)).toBeNull();
       expect(TokenConfig.isFreeModel(id)).toBe(true);
     }

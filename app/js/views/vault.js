@@ -22,7 +22,6 @@ const VaultView = (() => {
 
     // ── Standard pool (Pro)
     { id: 'gpt-5-mini',       name: 'GPT-5 mini',       provider: 'OpenAI',    speed: 'fast',    quality: 'good',      desc: 'Low-cost, reliable general intelligence. Default workhorse.', icon: 'circle' },
-    { id: 'glm-5',            name: 'GLM-5',            provider: 'Zhipu AI',  speed: 'fast',    quality: 'good',      desc: 'Highly capable open-weight flagship from Zhipu.',            icon: 'circle' },
     { id: 'llama-4-scout',    name: 'Llama 4 Scout',    provider: 'Meta',      speed: 'medium',  quality: 'good',      desc: '10M context window for local and air-gapped environments.',  icon: 'circle' },
     { id: 'grok-4-1-fast',    name: 'Grok 4.1 Fast',    provider: 'xAI',       speed: 'fast',    quality: 'excellent', desc: 'Industry-leading 2M token context window. Real-time research.', icon: 'circle' },
 
