@@ -202,6 +202,10 @@ const WalletView = (() => {
   }
 
   function _renderTopUp(t) {
+    // Route through Subscription.buyTopUp so client_reference_id +
+    // prefilled_email get attached to the Stripe URL. A raw <a href>
+    // would leave the webhook no way to map the purchase to a user
+    // without an email-match fallback.
     return `
       <div class="wallet-package wallet-package--${t.pool}">
         ${t.badge ? `<span class="wallet-package-badge">${_esc(t.badge)}</span>` : ''}
@@ -210,7 +214,7 @@ const WalletView = (() => {
         <span class="wallet-package-tokens-label">${_esc(_poolLabel(t.pool))} tokens</span>
         <span class="wallet-package-price">${_esc(t.price)}</span>
         <p class="wallet-package-desc">${_esc(t.desc)}</p>
-        <a href="${t.url}" target="_blank" rel="noopener" class="btn btn-sm btn-primary wallet-buy-btn">Buy</a>
+        <button type="button" class="btn btn-sm btn-primary wallet-buy-btn" data-topup-id="${_esc(t.id)}">Buy</button>
       </div>
     `;
   }
@@ -232,6 +236,13 @@ const WalletView = (() => {
         }
       });
     });
+
+    el.querySelectorAll('button[data-topup-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.topupId;
+        if (id && Subscription?.buyTopUp) Subscription.buyTopUp(id);
+      });
+    });
   }
 
   /* ── Load Transactions from DB ──────────────────────────────── */
@@ -247,7 +258,7 @@ const WalletView = (() => {
 
       const { data, error } = await SB.client
         .from('token_transactions')
-        .select('type, pool, amount, balance_after, description, reference_id, created_at')
+        .select('type, pool, amount, balance_after, model, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -259,17 +270,20 @@ const WalletView = (() => {
       container.innerHTML = `
         <div class="wallet-tx-list">
           ${data.map(tx => {
-            const isCredit = tx.amount > 0;
-            const icon = tx.type === 'purchase_credit' ? 'credit-card'
-              : tx.type === 'subscription_credit' ? 'gift'
-              : tx.type === 'addon_credit' ? 'gift'
+            // The ledger writer uses these types:
+            //   'topup'            — one-time pool credit (Stripe payment link)
+            //   'allowance_grant'  — monthly subscription grant
+            //   'debit'            — per-model use by nice-ai
+            const isCredit = tx.type !== 'debit';
+            const icon = tx.type === 'topup' ? 'credit-card'
+              : tx.type === 'allowance_grant' ? 'gift'
               : 'bot';
             const poolName = _poolLabel(tx.pool);
-            const label = tx.type === 'purchase_credit' ? `Top-up (${poolName})`
-              : tx.type === 'subscription_credit' ? 'Pro monthly allowance'
-              : tx.type === 'addon_credit' ? `${poolName} add-on allowance`
-              : tx.description || (tx.reference_id ? `Used ${tx.reference_id}` : 'Agent usage');
+            const label = tx.type === 'topup' ? `Top-up (${poolName})`
+              : tx.type === 'allowance_grant' ? `${poolName} allowance`
+              : tx.model ? `${tx.model}` : 'Agent usage';
             const date = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            const display = isCredit ? '+' + tx.amount.toLocaleString() : '-' + tx.amount.toLocaleString();
             return `
               <div class="wallet-tx-row">
                 <span class="wallet-tx-icon">${icon}</span>
@@ -277,7 +291,7 @@ const WalletView = (() => {
                   <span class="wallet-tx-label">${_esc(label)}</span>
                   <span class="wallet-tx-date">${date} · ${_esc(poolName)}</span>
                 </div>
-                <span class="wallet-tx-amount ${isCredit ? 'tx-credit' : 'tx-debit'}">${isCredit ? '+' : ''}${tx.amount.toLocaleString()}</span>
+                <span class="wallet-tx-amount ${isCredit ? 'tx-credit' : 'tx-debit'}">${display}</span>
               </div>
             `;
           }).join('')}

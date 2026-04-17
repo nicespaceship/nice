@@ -73,68 +73,6 @@ const LLMConfig = (() => {
     return params;
   }
 
-  /* ── Fallback detection ──
-     Compares the requested model id against the one the server actually
-     used. When they belong to different families (e.g. claude-opus →
-     gemini-flash) we treat it as a downgrade and report it once per
-     session. Same family with a revision bump (claude-opus-4-6 vs
-     claude-opus-4-6-20251022) is NOT a fallback — we strip trailing
-     version/date tokens before comparing. `nice-auto` is never a
-     fallback: resolving the best available model is the whole point. */
-
-  function _familyKey(id) {
-    if (!id) return '';
-    const s = String(id).toLowerCase()
-      .replace(/\./g, '-')
-      .replace(/-latest$/, '')
-      .replace(/-\d{8}$/, '');
-    return s.split('-').filter(function(p) {
-      return p && !/^\d+(\-\d+)*$/.test(p);
-    }).join('-');
-  }
-
-  function detectFallback(requested, actual) {
-    const reqKey = _familyKey(requested);
-    const actKey = _familyKey(actual);
-    const humanize = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.humanizeModel)
-      ? BlueprintUtils.humanizeModel
-      : function(id) { return id || ''; };
-    const downgraded = !!(
-      reqKey && actKey &&
-      reqKey !== 'nice-auto' &&
-      reqKey !== actKey
-    );
-    return {
-      downgraded: downgraded,
-      requested: requested || '',
-      actual: actual || '',
-      requestedKey: reqKey,
-      actualKey: actKey,
-      requestedLabel: humanize(requested),
-      actualLabel: humanize(actual),
-    };
-  }
-
-  const _reported = new Set();
-  function reportFallback(requested, actual) {
-    const result = detectFallback(requested, actual);
-    if (!result.downgraded) return result;
-    const key = result.requestedKey + '>' + result.actualKey;
-    if (_reported.has(key)) return result;
-    _reported.add(key);
-    if (typeof Notify !== 'undefined' && typeof Notify.send === 'function') {
-      Notify.send({
-        type:    'system',
-        title:   'Model fallback',
-        message: 'Using ' + result.actualLabel + ' instead of ' + result.requestedLabel + '.',
-      });
-    }
-    return result;
-  }
-
-  /* Test hook — reset dedup cache. Not part of the public runtime API. */
-  function _resetFallbackCache() { _reported.clear(); }
-
   /**
    * Parse stat strings (e.g. "4.2s", "94%", "2K", "82") to 0-100 numeric.
    * Blueprint stats come as display strings — normalize them.
@@ -153,5 +91,5 @@ const LLMConfig = (() => {
     return isNaN(n) ? 50 : Math.max(0, Math.min(100, n));
   }
 
-  return { fromStats, forBlueprint, detectFallback, reportFallback, _resetFallbackCache };
+  return { fromStats, forBlueprint };
 })();

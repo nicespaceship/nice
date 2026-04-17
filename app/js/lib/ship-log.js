@@ -184,9 +184,6 @@ const ShipLog = (() => {
         context_len: context.length,
         source:      'llm',
       };
-      if (typeof LLMConfig !== 'undefined' && LLMConfig.reportFallback) {
-        LLMConfig.reportFallback(llmConfig.model, response.model);
-      }
       response = response.content;
 
     } catch (e) {
@@ -248,14 +245,28 @@ const ShipLog = (() => {
     };
   }
 
-  /* ── Real LLM call via nice-ai Edge Function ── */
+  /* ── Real LLM call via nice-ai Edge Function ──
+     On HTTP 402 the body carries `{ error, code, ... }` identifying a
+     billing gap (subscription_required | addon_required |
+     insufficient_tokens | past_due). Subscription.handleBillingError
+     shows the right CTA toast; we still throw so the caller knows the
+     call failed. */
   async function _callLLM(blueprint, prompt, context, config) {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
     const params = _buildLLMParams(blueprint, prompt, context, config);
     const { data, error } = await SB.functions.invoke('nice-ai', { body: params });
 
-    if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Edge function error');
+    if (error) {
+      let body = null;
+      if (error.context && typeof error.context.json === 'function') {
+        try { body = await error.context.json(); } catch { /* not JSON */ }
+      }
+      if (body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+        Subscription.handleBillingError(body);
+      }
+      throw new Error((body && body.error) || (typeof error === 'string' ? error : error.message) || 'Edge function error');
+    }
     if (!data || data.error) throw new Error(data?.error || 'Empty response from edge function');
 
     return data;
@@ -285,7 +296,13 @@ const ShipLog = (() => {
     });
 
     if (!res.ok) {
-      const err = await res.text();
+      let body = null;
+      try { body = await res.clone().json(); } catch { /* not JSON */ }
+      if (res.status === 402 && body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+        Subscription.handleBillingError(body);
+        throw new Error(body.error || `Payment required`);
+      }
+      const err = body?.error || (await res.text());
       throw new Error(`Streaming error (${res.status}): ${err}`);
     }
 
