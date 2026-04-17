@@ -272,15 +272,15 @@ const WalletView = (() => {
           ${data.map(tx => {
             // The ledger writer uses these types:
             //   'topup'            — one-time pool credit (Stripe payment link)
-            //   'allowance_grant'  — monthly subscription grant
+            //   'subscription_grant'  — monthly subscription grant
             //   'debit'            — per-model use by nice-ai
             const isCredit = tx.type !== 'debit';
             const icon = tx.type === 'topup' ? 'credit-card'
-              : tx.type === 'allowance_grant' ? 'gift'
+              : tx.type === 'subscription_grant' ? 'gift'
               : 'bot';
             const poolName = _poolLabel(tx.pool);
             const label = tx.type === 'topup' ? `Top-up (${poolName})`
-              : tx.type === 'allowance_grant' ? `${poolName} allowance`
+              : tx.type === 'subscription_grant' ? `${poolName} allowance`
               : tx.model ? `${tx.model}` : 'Agent usage';
             const date = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
             const display = isCredit ? '+' + tx.amount.toLocaleString() : '-' + tx.amount.toLocaleString();
