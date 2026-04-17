@@ -14,12 +14,12 @@ planning to self-host, read this first so you know what you're working with.
 
 Everything you need to run a working NICE SPA on your own infrastructure:
 
-- **Frontend SPA** — `app/` (49 lib modules, 25 views, skin system, gamification, tests)
+- **Frontend SPA** — `app/` (54 lib modules, 28 views, skin system, gamification, tests)
 - **Database schema** — `migrations/` (Postgres / Supabase migrations)
 - **Blueprints catalog** — 924 pre-built agents + spaceships seeded via migrations
 - **Self-hosting guide** — [`SELF_HOSTING.md`](./SELF_HOSTING.md) + `docker-compose.yml`
 - **Landing site** — `www/`
-- **Tests** — 437 unit tests (Vitest) + 22 E2E tests (Playwright)
+- **Tests** — 652 unit tests (Vitest) + 14 E2E tests (Playwright)
 - **Build tooling** — `scripts/build.js`, CI workflow, type generator
 
 You can clone this repo, run `docker compose up`, point it at your own
@@ -37,7 +37,7 @@ The parts of NICE that are only available at **https://nicespaceship.ai**:
   - `mcp-gateway`, `gmail-mcp`, `calendar-mcp`, `drive-mcp`, `social-mcp`
   - `google-oauth`, `blueprint-search`, `browser-proxy`
 - **NICE SPACESHIP's Stripe products** (payment links, price IDs, webhook secrets)
-- **NICE SPACESHIP's provider API keys** (Anthropic, OpenAI, Google AI, Mistral, etc.)
+- **NICE SPACESHIP's provider API keys** (Anthropic, OpenAI, Google AI, xAI, Groq)
 - **Hosted infrastructure** (the actual Supabase project, Cloudflare Pages deployment, domain)
 
 These are the parts NICE SPACESHIP operates as a managed service. They're

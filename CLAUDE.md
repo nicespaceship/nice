@@ -92,16 +92,16 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 │   └── js/
 │       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD
 ├── app/                    # NICE™ SPA Dashboard
-│   ├── index.html          # SPA shell (72 script tags in dependency order)
+│   ├── index.html          # SPA shell (86 script tags in dependency order)
 │   ├── manifest.json       # PWA manifest
 │   ├── sw.js               # Service Worker v41 (offline, periodic sync, push)
 │   ├── css/
 │   │   └── app.css         # NICE component styles (8000+ lines)
 │   └── js/
 │       ├── nice.js         # Main orchestrator (init, auth, routing, error handling)
-│       ├── lib/            # 52 shared IIFE modules
-│       ├── views/          # 27 view modules
-│       └── __tests__/      # 29 Vitest test files (575 tests)
+│       ├── lib/            # 54 shared IIFE modules
+│       ├── views/          # 28 view modules
+│       └── __tests__/      # 34 Vitest test files (652 tests)
 ├── supabase/
 │   └── migrations/         # DB migrations (edge function source is proprietary, not in repo)
 ├── www/                    # Marketing site (nicespaceship.com)
@@ -304,7 +304,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 
 ## Testing
 
-### Unit Tests (Vitest) — 575 tests across 29 files
+### Unit Tests (Vitest) — 652 tests across 34 files
 ```bash
 npm test          # Run all tests
 npm run test:watch  # Watch mode
@@ -347,7 +347,7 @@ npm run test:e2e  # Run all E2E tests
 - `navigateTo(page, hash, title)` — navigates and waits for document.title update
 
 ### CI/CD
-GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (575 tests) → playwright (14 tests) → bundle size check
+GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security audit → SW version stamp → verify build → vitest (652 tests) → playwright (14 tests) → bundle size check
 
 **CI is strict** — both unit and E2E failures block merges.
 
@@ -407,7 +407,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **No speculative abstractions.** Three similar lines > premature helper function.
 - **No unnecessary comments.** Only explain *why*, never *what*. The code shows what.
 - **Escape user content.** Always use `Utils.esc()` before inserting into DOM. No raw `innerHTML` with user data.
-- **Test after changes.** Run `npm test` after editing JS. All 575 tests must pass.
+- **Test after changes.** Run `npm test` after editing JS. All 652 tests must pass.
 - **Mobile-first.** Check changes at 375px. Breakpoints: 480px, 640px, 768px. Always verify desktop + tablet + mobile.
 - **Theme-aware.** Use CSS custom properties (`var(--accent)`, `var(--bg)`), never hardcoded colors.
 - **SSOT.** Before adding a rule, check if one already exists. Never duplicate selectors across media queries.
@@ -435,9 +435,8 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | `GOOGLE_AI_API_KEY` | nice-ai, nice-media | Yes (free tier) |
 | `ANTHROPIC_API_KEY` | nice-ai | Premium models |
 | `OPENAI_API_KEY` | nice-ai, nice-media | Premium models |
-| `MISTRAL_API_KEY` | nice-ai | Budget models |
-| `DEEPSEEK_API_KEY` | nice-ai | Budget models |
-| `XAI_API_KEY` | nice-ai | Budget models |
+| `XAI_API_KEY` | nice-ai | Grok models (standard pool) |
+| `GROQ_API_KEY` | nice-ai | Llama models (standard pool, hosted on Groq) |
 | `GOOGLE_CLIENT_ID` | google-oauth, mcp-gateway | For OAuth |
 | `GOOGLE_CLIENT_SECRET` | google-oauth, mcp-gateway | For OAuth |
 | `GOOGLE_SERVICE_ACCOUNT` | gmail-mcp | Domain-wide delegation |

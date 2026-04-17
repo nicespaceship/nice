@@ -203,12 +203,11 @@ const PromptPanel = (() => {
 
   /* ── Fallback AI connectors ── */
   const _AI_CONNECTORS_FALLBACK = [
-    { id: 'int-anthropic', name: 'Anthropic', status: 'connected' },
-    { id: 'int-openai',    name: 'OpenAI',    status: 'available' },
+    { id: 'int-anthropic', name: 'Anthropic',     status: 'connected' },
+    { id: 'int-openai',    name: 'OpenAI',        status: 'available' },
     { id: 'int-gemini',    name: 'Google Gemini', status: 'available' },
-    { id: 'int-mistral',   name: 'Mistral',   status: 'available' },
-    { id: 'int-cohere',    name: 'Cohere',    status: 'available' },
-    { id: 'int-huggingface', name: 'Hugging Face', status: 'available' },
+    { id: 'int-xai',       name: 'xAI',           status: 'available' },
+    { id: 'int-groq',      name: 'Groq (Llama)',  status: 'available' },
   ];
 
   function _getAIConnectors() {
