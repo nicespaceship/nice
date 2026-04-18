@@ -164,29 +164,25 @@ const WalletView = (() => {
     const isCurrent = (planId === 'pro' && isPro) || (planId === 'free' && !isPro);
     const price = plan.price === 0 ? 'Free' : `$${plan.price}/mo`;
     const slots = `${plan.slots} slots`;
-    // Cancel lives on the currently-active subscription's own card, not
-    // on the Free card. For users currently on Pro, the Pro card shows
-    // Cancel; the Free card is just informational.
-    let action = '';
-    let label  = 'Current plan';
+    // Free card is purely informational — no button. Current plan is
+    // indicated by the highlighted border (wallet-plan-current).
+    // Pro card shows either Cancel (for Pro users) or Upgrade (for Free).
+    let button = '';
     if (planId === 'pro') {
-      if (isPro) { action = 'cancel-pro'; label = 'Cancel Pro'; }
-      else       { action = 'subscribe-pro'; label = 'Upgrade to Pro'; }
-    } else {
-      // Free card
-      label = isCurrent ? 'Current plan' : 'Included with Pro';
+      if (isPro) {
+        button = `<button class="btn btn-sm btn-primary" data-action="cancel-pro">Cancel Pro</button>`;
+      } else {
+        button = `<button class="btn btn-sm btn-primary" data-action="subscribe-pro">Upgrade to Pro</button>`;
+      }
     }
-    const disabled = !action;
     return `
       <div class="wallet-plan-card ${isCurrent ? 'wallet-plan-current' : ''}" data-plan="${planId}">
-        <div class="wallet-plan-icon">${plan.icon || ''}</div>
+        ${plan.icon ? `<div class="wallet-plan-icon">${plan.icon}</div>` : ''}
         <div class="wallet-plan-name">${_esc(plan.label || planId)}</div>
         <div class="wallet-plan-price">${price}</div>
         <div class="wallet-plan-slots">${_esc(slots)}</div>
         <p class="wallet-plan-desc">${_esc(plan.desc || '')}</p>
-        <button class="btn btn-sm ${disabled ? '' : 'btn-primary'}" data-action="${action}" ${disabled ? 'disabled' : ''}>
-          ${_esc(label)}
-        </button>
+        ${button}
       </div>
     `;
   }
@@ -208,7 +204,7 @@ const WalletView = (() => {
     const disabled = !action;
     return `
       <div class="wallet-plan-card wallet-addon-card ${isActive ? 'wallet-plan-current' : ''}" data-addon="${addonId}">
-        <div class="wallet-plan-icon">${addon.icon || ''}</div>
+        ${addon.icon ? `<div class="wallet-plan-icon">${addon.icon}</div>` : ''}
         <div class="wallet-plan-name">${_esc(addon.label || addonId)} add-on</div>
         <div class="wallet-plan-price">+$${addon.price}/mo</div>
         <div class="wallet-plan-slots">${_esc('Add-on for Pro')}</div>
