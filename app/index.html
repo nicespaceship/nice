@@ -387,6 +387,11 @@
 <script defer src="./js/views/profile.js?v=41"></script>
 <script defer src="./js/views/alerts.js?v=41"></script>
 <script defer src="./js/views/agents.js?v=41"></script>
+<!-- vault.js must load BEFORE agent-builder.js — agent-builder captures
+     VaultView.MODEL_CATALOG into `LLM_MODELS` as a const at script-execute
+     time. If vault.js runs after, LLM_MODELS is frozen as an empty array
+     and the prompt-panel model dropdown can never show paid models. -->
+<script defer src="./js/views/vault.js?v=41"></script>
 <script defer src="./js/views/agent-builder.js?v=41"></script>
 <script defer src="./js/views/spaceship-builder.js?v=41"></script>
 <script defer src="./js/views/missions.js?v=41"></script>
@@ -396,7 +401,6 @@
 <script defer src="./js/views/blueprints.js?v=41"></script>
 <script defer src="./js/views/analytics.js?v=41"></script>
 <script defer src="./js/views/cost.js?v=41"></script>
-<script defer src="./js/views/vault.js?v=41"></script>
 <script defer src="./js/views/integrations.js?v=41"></script>
 <script defer src="./js/views/security.js?v=41"></script>
 <script defer src="./js/views/moderation.js?v=41"></script>
