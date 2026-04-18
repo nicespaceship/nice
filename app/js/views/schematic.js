@@ -260,8 +260,6 @@ const SchematicView = (() => {
       '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
       '<div class="schematic-center">' + svg +
-        JarvisHUD.arcReactor() +
-        JarvisHUD.hud() +
         '<div class="sch-mini-chat" aria-live="polite">' +
           '<div class="sch-mini-chat-content"><span class="sch-mini-chat-idle">Standing by, Sir.</span></div>' +
           '<button class="sch-mini-expand" type="button" aria-label="Open full chat" title="Open full chat">' +

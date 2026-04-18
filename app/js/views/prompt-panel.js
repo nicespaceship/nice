@@ -2560,25 +2560,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     document.documentElement.style.setProperty('--jv-vol', Math.max(0, Math.min(1, v)).toFixed(3));
   }
   function _syncReactorVisibility() {
-    // Hide the global reactor whenever a Schematic is rendered AND ON SCREEN —
-    // that page already has its own center-stage reactor. Detect by DOM
-    // presence + visibility, not route match, since the Schematic renders on
-    // multiple routes (`#/bridge?tab=schematic` and `#/bridge/spaceships/:id`)
-    // AND its DOM persists (display:none) after navigating away.
-    //
-    // When the monitor overlay is open, `.app-view-content` drops to
-    // opacity:0 — the Schematic is in layout but not visible to the user,
-    // so the global reactor SHOULD render on top. Factor that in.
-    const check = () => {
-      const sw = document.querySelector('.schematic-wired');
-      const swLaid = !!(sw && sw.offsetParent !== null);
-      const monitorActive = !!document.querySelector('.app-main.monitor-active');
-      const hide = swLaid && !monitorActive;
-      document.documentElement.classList.toggle('jv-pp-reactor-off', hide);
-    };
-    check();
-    requestAnimationFrame(check);
-    setTimeout(check, 250);
+    // The global reactor is the single core for every JARVIS view, anchored to
+    // viewport center. The Schematic no longer renders an in-view duplicate,
+    // so there's nothing to hide for. Clear the legacy off-flag in case it
+    // was set by an older session.
+    document.documentElement.classList.remove('jv-pp-reactor-off');
   }
   function _reactorAttachAnalyser(audio) {
     try {
