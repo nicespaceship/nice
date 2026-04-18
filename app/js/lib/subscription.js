@@ -379,9 +379,32 @@ const Subscription = (() => {
 
     let previous = null;
     try { previous = localStorage.getItem(_AUTO_ENABLE_KEY); } catch { /* ignore */ }
-    if (previous === fingerprint) return;
 
-    const current = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    // Always hydrate the starting set from State or localStorage.
+    // State is in-memory and empty on a fresh page load; localStorage
+    // survives reloads. Without this, a returning user whose fingerprint
+    // already matches ends up with State.enabled_models undefined
+    // because we'd short-circuit before writing State, even though
+    // localStorage had the entitlement map intact.
+    let current = null;
+    if (typeof State !== 'undefined') current = State.get('enabled_models');
+    if (!current) {
+      try {
+        const key = (typeof Utils !== 'undefined' && Utils.KEYS && Utils.KEYS.enabledModels) || 'nice-enabled-models';
+        const saved = localStorage.getItem(key);
+        if (saved) current = JSON.parse(saved);
+      } catch { /* ignore */ }
+    }
+    current = current || {};
+
+    // Entitlement unchanged → sync State from whatever we hydrated and
+    // exit without stomping the user's explicit toggles.
+    if (previous === fingerprint) {
+      if (typeof State !== 'undefined') State.set('enabled_models', current);
+      return;
+    }
+
+    // Entitlement widened (or first run) — expand with newly-entitled models.
     const next = { ...current };
     for (const [modelId, meta] of Object.entries(TokenConfig.MODELS)) {
       // Free models are always enabled.
