@@ -39,10 +39,18 @@ const WalletView = (() => {
   }
 
   /* ── Render ─────────────────────────────────────────────────── */
-  function render(el) {
+  async function render(el) {
     const user = State.get('user');
     const balance = State.get('token_balance') || {};
     const pools = balance.pools || {};
+    // Await the subscription read up front. Without this, a fresh load
+    // on /security?tab=wallet renders before Subscription.init has had
+    // a chance to populate its cache — so isPro() returns false and
+    // every add-on card shows "Pro required" despite the user being
+    // on Pro in the DB.
+    if (typeof Subscription !== 'undefined' && Subscription.getSubscription) {
+      try { await Subscription.getSubscription(); } catch { /* ignore */ }
+    }
     const isPro = typeof Subscription !== 'undefined' && Subscription.isPro && Subscription.isPro();
     const userAddons = typeof Subscription !== 'undefined' && Subscription.getAddons ? Subscription.getAddons() : [];
     const paywallEnabled = typeof Subscription !== 'undefined' && Subscription.paywallEnabled ? Subscription.paywallEnabled() : true;
