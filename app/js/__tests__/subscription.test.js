@@ -15,7 +15,28 @@ globalThis.localStorage = {
   setItem(k, v) { this._s[k] = v; },
   removeItem(k) { delete this._s[k]; },
 };
-globalThis.Utils = { KEYS: { plan: 'nice-plan' } };
+globalThis.Utils = { KEYS: { plan: 'nice-plan', enabledModels: 'nice-enabled-models' } };
+
+// Do NOT redefine localStorage or State — the global setup.js already
+// provides mocks for both (with State._reset for beforeEach cleanup).
+// Patch localStorage._s onto the global mock so our existing tests'
+// reset semantics still work the way they used to.
+if (!globalThis.localStorage._s) globalThis.localStorage._s = {};
+const _realGet = globalThis.localStorage.getItem.bind(globalThis.localStorage);
+const _realSet = globalThis.localStorage.setItem.bind(globalThis.localStorage);
+// Bridge the _s proxy for tests that poke it directly.
+globalThis.localStorage._s = new Proxy({}, {
+  get: (_, k) => _realGet(k),
+  set: (_, k, v) => { _realSet(k, v); return true; },
+  deleteProperty: (_, k) => { globalThis.localStorage.removeItem(k); return true; },
+});
+
+// TokenConfig is needed by _autoEnableEntitled but isn't in setup.
+{
+  let tcCode = readFileSync(resolve(__dir, '../lib/token-config.js'), 'utf-8');
+  tcCode = tcCode.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
+  eval(tcCode);
+}
 
 // Load subscription.js as an IIFE.
 let code = readFileSync(resolve(__dir, '../lib/subscription.js'), 'utf-8');
@@ -133,6 +154,81 @@ describe('Subscription paywall-disabled bypass (self-hosters)', () => {
   it('respects an explicit paywallEnabled:true setting', () => {
     window.NICE_CONFIG = { paywallEnabled: true };
     expect(Subscription.paywallEnabled()).toBe(true);
+    delete window.NICE_CONFIG;
+  });
+});
+
+describe('Subscription auto-enable hydrates State on repeat init', () => {
+  beforeEach(() => {
+    globalThis.Notify = { send: vi.fn() };
+    localStorage._s = {};
+    State.set('enabled_models', undefined);
+  });
+
+  it('populates State.enabled_models from localStorage when fingerprint already matches', async () => {
+    // Simulates the production bug: a returning user lands on the app
+    // with localStorage carrying an entitlement fingerprint from a prior
+    // session. State is fresh (undefined). Without the hydration fix,
+    // the fingerprint-matches early-return would leave State empty and
+    // the prompt-panel dropdown would show only the default Gemini.
+
+    window.NICE_CONFIG = { paywallEnabled: false }; // forces pro+both add-ons
+    localStorage._s['nice-enabled-models'] = JSON.stringify({
+      'gemini-2-5-flash': true,
+      'gpt-5-mini': true,
+      'llama-4-scout': true,
+      'claude-4-6-sonnet': false,
+    });
+    localStorage._s['nice-subscription-last-entitlement'] = 'pro|claude,premium';
+    State.set('enabled_models', undefined);
+
+    await Subscription.init();
+
+    const afterInit = State.get('enabled_models');
+    expect(afterInit).toBeDefined();
+    expect(typeof afterInit).toBe('object');
+    expect(afterInit['gemini-2-5-flash']).toBe(true);
+    expect(afterInit['gpt-5-mini']).toBe(true);
+    expect(afterInit['llama-4-scout']).toBe(true);
+
+    delete window.NICE_CONFIG;
+  });
+
+  it('widens the entitlement set when fingerprint changes (free → pro)', async () => {
+    // Represents an upgrade: last session was free, this session is pro.
+    // The function should expand the set to include newly-entitled
+    // models and update the fingerprint.
+
+    window.NICE_CONFIG = { paywallEnabled: false };
+    localStorage._s['nice-subscription-last-entitlement'] = 'free|';
+    localStorage._s['nice-enabled-models'] = JSON.stringify({
+      'gemini-2-5-flash': true,
+    });
+
+    await Subscription.init();
+
+    const afterInit = State.get('enabled_models');
+    expect(afterInit['gpt-5-mini']).toBe(true);
+    expect(afterInit['claude-4-6-sonnet']).toBe(true);
+    expect(localStorage._s['nice-subscription-last-entitlement']).toBe('pro|claude,premium');
+
+    delete window.NICE_CONFIG;
+  });
+
+  it('is a no-op when fingerprint matches and State already has the data', async () => {
+    window.NICE_CONFIG = { paywallEnabled: false };
+    const pristine = { 'gemini-2-5-flash': true, 'gpt-5-mini': true };
+    State.set('enabled_models', pristine);
+    localStorage._s['nice-subscription-last-entitlement'] = 'pro|claude,premium';
+    localStorage._s['nice-enabled-models'] = JSON.stringify(pristine);
+
+    await Subscription.init();
+
+    // State is resynced from current state — the same object shape.
+    const afterInit = State.get('enabled_models');
+    expect(afterInit['gemini-2-5-flash']).toBe(true);
+    expect(afterInit['gpt-5-mini']).toBe(true);
+
     delete window.NICE_CONFIG;
   });
 });
