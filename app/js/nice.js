@@ -36,7 +36,10 @@ const Theme = (() => {
       copy:{ ranks:['Mark I','Mark II','Mark III','Mark IV','Mark V','Mark VI','Mark VII','Mark VIII','Mark IX','Mark XLII','Mark L','Iron Man'] },
       // Reactor — arc reactor + HUD ring stack. CoreReactor reads this and
       // mounts the markup centered on the viewport on every JARVIS view.
-      reactor:{ html:() => JarvisHUD.hud() + JarvisHUD.arcReactor() } },
+      reactor:{ html:() => JarvisHUD.hud() + JarvisHUD.arcReactor() },
+      // Voice — CoreVoice forwards { provider, voice, speed } to the
+      // `nice-tts` edge function. `label` is shown on the mute toggle.
+      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'J.A.R.V.I.S.' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' } },
     { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
@@ -132,6 +135,10 @@ const Theme = (() => {
     // Repaint the centerpiece reactor with the new theme's markup. Themes
     // without a registered `reactor` clear it (CoreReactor handles both).
     if (typeof CoreReactor !== 'undefined' && CoreReactor.paint) CoreReactor.paint();
+    // Stop any in-flight TTS so the prior theme's voice doesn't keep talking
+    // after the user swaps. Speech for the new theme will start fresh on the
+    // next reply.
+    if (typeof CoreVoice !== 'undefined' && CoreVoice.stop) CoreVoice.stop();
     _updateDarkLightIcon();
     // Refresh the sidebar rank badge so theme-scoped rank overlays (e.g.
     // JARVIS → Mark I…Iron Man) land immediately instead of on next login.
