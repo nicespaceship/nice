@@ -79,11 +79,23 @@ const Subscription = (() => {
     return cfg.paywallEnabled !== false;
   }
 
-  /* ── Subscription Queries ── */
+  /* ── Subscription Queries ──
+     A user can have multiple subscription rows — one per Stripe
+     subscription. Pro is one row, each add-on is its own row (each
+     Payment Link creates a separate Stripe subscription). This
+     function fetches all rows and aggregates them into one synthetic
+     subscription shape: plan=pro if any row is pro+active; addons is
+     the union of active addons; status reflects the most-permissive
+     active state. */
+
+  /** Raw rows, keyed by subscription id. Useful for views that need to
+      enumerate every subscription (e.g. settings, admin). */
+  let _subscriptionRows = [];
 
   async function getSubscription() {
     if (!_paywallEnabled()) {
       _subscription = { plan: 'pro', status: 'active', addons: ['claude', 'premium'], current_period_end: null };
+      _subscriptionRows = [_subscription];
       return _subscription;
     }
     if (typeof SB === 'undefined' || !SB.isReady()) return _fallback();
@@ -91,12 +103,57 @@ const Subscription = (() => {
     if (!user) return _fallback();
 
     try {
-      const { data } = await SB.client.from('subscriptions').select('*').eq('user_id', user.id).single();
-      _subscription = data;
-      return data || _fallback();
+      const { data } = await SB.client
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id);
+      const rows = Array.isArray(data) ? data : (data ? [data] : []);
+      _subscriptionRows = rows;
+      _subscription = _aggregate(rows);
+      return _subscription;
     } catch {
       return _fallback();
     }
+  }
+
+  /** Aggregate multiple subscription rows into one synthetic view.
+      Callers that need per-row detail should read getSubscriptionRows. */
+  function _aggregate(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return _fallback();
+    // Only active-ish rows contribute to plan + addons.
+    const liveRows = rows.filter((r) => {
+      const s = r.status || 'active';
+      return s === 'active' || s === 'trialing';
+    });
+    let plan = 'free';
+    const addonsSet = new Set();
+    for (const r of liveRows) {
+      if ((r.plan || 'free') === 'pro') plan = 'pro';
+      if (Array.isArray(r.addons)) for (const a of r.addons) addonsSet.add(a);
+    }
+    // Status priority: past_due surfaces if any row is past_due; otherwise
+    // active if any live row exists; else canceled/first-row status.
+    let status = 'active';
+    if (rows.some((r) => r.status === 'past_due')) status = 'past_due';
+    else if (liveRows.length === 0) status = rows[0].status || 'canceled';
+    // Earliest current_period_end across live rows — conservative.
+    let currentPeriodEnd = null;
+    for (const r of liveRows) {
+      if (!r.current_period_end) continue;
+      if (!currentPeriodEnd || r.current_period_end < currentPeriodEnd) {
+        currentPeriodEnd = r.current_period_end;
+      }
+    }
+    return {
+      plan,
+      status,
+      addons: Array.from(addonsSet),
+      current_period_end: currentPeriodEnd,
+    };
+  }
+
+  function getSubscriptionRows() {
+    return _subscriptionRows.slice();
   }
 
   function _fallback() {
@@ -444,6 +501,7 @@ const Subscription = (() => {
     ADDONS,
     init,
     getSubscription,
+    getSubscriptionRows,
     getCurrentPlan,
     getPlanTier,
     getAddons,
