@@ -254,12 +254,17 @@ const Subscription = (() => {
     if (!user || !user.id) return;
     if (typeof SB === 'undefined' || !SB.isReady()) return;
     try {
+      // A user can own multiple subscription rows (Pro + add-ons each
+      // live in their own row). Use a limit-1 array select — NOT
+      // .maybeSingle() — so this doesn't throw when the row count is
+      // >1 and fall through to inserting yet another empty bootstrap
+      // row on every reload.
       const { data: existing } = await SB.client
         .from('subscriptions')
-        .select('user_id')
+        .select('id')
         .eq('user_id', user.id)
-        .maybeSingle();
-      if (existing) return;
+        .limit(1);
+      if (Array.isArray(existing) && existing.length > 0) return;
       await SB.client.from('subscriptions').insert({
         user_id: user.id,
         plan:    'free',
