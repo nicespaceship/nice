@@ -389,15 +389,37 @@ const Subscription = (() => {
 
   async function openBillingPortal() {
     if (typeof SB === 'undefined' || !SB.isReady()) return;
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return;
+    const session = await SB.client.auth.getSession();
+    const accessToken = session?.data?.session?.access_token;
+    if (!accessToken) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Billing Error', message: 'Sign in first.', type: 'error' });
+      }
+      return;
+    }
 
+    // Raw fetch instead of supabase-js `functions.invoke` so we can
+    // surface the real error body on non-2xx. The wrapper otherwise
+    // collapses everything to "Edge Function returned a non-2xx
+    // status code", which hides the Stripe error text.
     try {
-      const { data, error } = await SB.client.functions.invoke('stripe-portal', {
-        body: { userId: user.id },
+      const res = await fetch('https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/stripe-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({}),
       });
-      if (error) throw error;
-      if (data?.url) { try { const h = new URL(data.url).hostname; if (h.endsWith('.stripe.com') || h === 'checkout.stripe.com' || h === 'billing.stripe.com') { window.location.href = data.url; } else { throw new Error('Unexpected redirect domain: ' + h); } } catch (e) { throw new Error('Invalid checkout URL'); } }
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error || `HTTP ${res.status}`);
+      }
+      const url = payload?.url;
+      if (!url) throw new Error('No portal URL returned.');
+      const h = new URL(url).hostname;
+      if (!h.endsWith('.stripe.com')) throw new Error('Unexpected redirect domain: ' + h);
+      window.location.href = url;
     } catch (err) {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Billing Error', message: err.message || 'Failed to open billing portal', type: 'error' });
