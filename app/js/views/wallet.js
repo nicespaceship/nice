@@ -177,7 +177,7 @@ const WalletView = (() => {
     }
     return `
       <div class="wallet-plan-card ${isCurrent ? 'wallet-plan-current' : ''}" data-plan="${planId}">
-        <div class="wallet-plan-icon">${plan.icon || ''}</div>
+        ${plan.icon ? `<div class="wallet-plan-icon">${plan.icon}</div>` : ''}
         <div class="wallet-plan-name">${_esc(plan.label || planId)}</div>
         <div class="wallet-plan-price">${price}</div>
         <div class="wallet-plan-slots">${_esc(slots)}</div>
@@ -204,7 +204,7 @@ const WalletView = (() => {
     const disabled = !action;
     return `
       <div class="wallet-plan-card wallet-addon-card ${isActive ? 'wallet-plan-current' : ''}" data-addon="${addonId}">
-        <div class="wallet-plan-icon">${addon.icon || ''}</div>
+        ${addon.icon ? `<div class="wallet-plan-icon">${addon.icon}</div>` : ''}
         <div class="wallet-plan-name">${_esc(addon.label || addonId)} add-on</div>
         <div class="wallet-plan-price">+$${addon.price}/mo</div>
         <div class="wallet-plan-slots">${_esc('Add-on for Pro')}</div>
