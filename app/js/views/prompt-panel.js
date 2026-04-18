@@ -3208,6 +3208,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _populateLLMDropdown();
     _populateModelDropdown();
     _updateSuggestionChips();
+    // Re-populate the model dropdown whenever entitlements change —
+    // subscription.js auto-enables Pro/add-on models on sign-in, which
+    // often lands after this panel's init() has already built the
+    // dropdown from the initial (free-only) enabled_models state.
+    if (typeof State !== 'undefined' && State.on) {
+      State.on('enabled_models', () => _populateModelDropdown());
+    }
     // Theme voice: stop playback on theme change, sync toggle button + reactor
     _themeObserver = new MutationObserver(() => {
       const theme = document.documentElement.getAttribute('data-theme');
