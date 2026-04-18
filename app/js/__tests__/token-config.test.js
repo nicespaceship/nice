@@ -76,9 +76,9 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('claude-4-6-sonnet')).toBe(3);
   });
 
-  it('Claude 4.6 Opus consumes 10 claude tokens (premium flagship)', () => {
-    expect(TokenConfig.poolFor('claude-4-6-opus')).toBe('claude');
-    expect(TokenConfig.weightFor('claude-4-6-opus')).toBe(10);
+  it('Claude 4.7 Opus consumes 10 claude tokens (premium flagship)', () => {
+    expect(TokenConfig.poolFor('claude-4-7-opus')).toBe('claude');
+    expect(TokenConfig.weightFor('claude-4-7-opus')).toBe(10);
   });
 
   it('GPT-5.4 Pro and GPT-5.3 Codex are premium pool weight 5', () => {
@@ -111,7 +111,7 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(standard).not.toContain('claude-4-6-sonnet');
 
     const claude = TokenConfig.modelsInPool('claude');
-    expect(claude).toEqual(expect.arrayContaining(['claude-4-6-sonnet', 'claude-4-6-opus']));
+    expect(claude).toEqual(expect.arrayContaining(['claude-4-6-sonnet', 'claude-4-7-opus']));
     expect(claude).not.toContain('gpt-5-mini');
 
     const premium = TokenConfig.modelsInPool('premium');
@@ -150,7 +150,7 @@ describe('TokenConfig — balance math', () => {
     const pools = { claude: { allowance: 500, used: 0, purchased: 0 } };
     expect(TokenConfig.messagesRemainingFor(pools, 'claude-4-6-sonnet')).toBe(166);
     // Same budget on Opus (10/msg) = 50 messages
-    expect(TokenConfig.messagesRemainingFor(pools, 'claude-4-6-opus')).toBe(50);
+    expect(TokenConfig.messagesRemainingFor(pools, 'claude-4-7-opus')).toBe(50);
   });
 
   it('messagesRemainingFor on premium pool divides by weight', () => {
@@ -198,7 +198,7 @@ describe('TokenConfig — balance math', () => {
 
 describe('TokenConfig — previewDebit', () => {
   it('returns the pool + weight for a paid model', () => {
-    expect(TokenConfig.previewDebit('claude-4-6-opus')).toEqual({ pool: 'claude', amount: 10 });
+    expect(TokenConfig.previewDebit('claude-4-7-opus')).toEqual({ pool: 'claude', amount: 10 });
     expect(TokenConfig.previewDebit('gpt-5-mini')).toEqual({ pool: 'standard', amount: 1 });
     expect(TokenConfig.previewDebit('openai-o3')).toEqual({ pool: 'premium', amount: 15 });
   });

@@ -27,7 +27,7 @@ const VaultView = (() => {
 
     // ── Claude pool (Claude add-on)
     { id: 'claude-4-6-sonnet', name: 'Claude 4.6 Sonnet', provider: 'Anthropic', speed: 'fast',  quality: 'excellent', desc: 'Best balance of speed, cost, and intelligence. Production default.', icon: 'circle' },
-    { id: 'claude-4-6-opus',   name: 'Claude 4.6 Opus',   provider: 'Anthropic', speed: 'slow',  quality: 'best',      desc: 'Expert writing and nuanced synthesis. Premium flagship.',           icon: 'circle' },
+    { id: 'claude-4-7-opus',   name: 'Claude 4.7 Opus',   provider: 'Anthropic', speed: 'slow',  quality: 'best',      desc: 'Expert writing and nuanced synthesis. Premium flagship.',           icon: 'circle' },
 
     // ── Premium pool (Premium add-on)
     { id: 'gpt-5-4-pro',      name: 'GPT-5.4 Pro',     provider: 'OpenAI',    speed: 'medium',  quality: 'best',      desc: '1M context, 128K output, multimodal. OpenAI\'s flagship.',     icon: 'circle' },

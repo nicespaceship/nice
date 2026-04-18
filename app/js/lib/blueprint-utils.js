@@ -169,7 +169,7 @@ const BlueprintUtils = (() => {
 
   /* ── Model id humanizer ──
      Turns LLM ids into display-ready names. `humanizeModel` returns the
-     full product name ("Claude Opus 4.6") — used in drawers, detail
+     full product name ("Claude Opus 4.7") — used in drawers, detail
      panels, anywhere with horizontal room. `humanizeModelShort` returns
      a compact pill-friendly variant ("Claude Opus") — used on mission
      cards, badges, status pills, and other tight layouts. Both fall
@@ -186,8 +186,8 @@ const BlueprintUtils = (() => {
     'claude-sonnet-4-6':           'Claude Sonnet 4.6',
     'claude-4-6-sonnet':           'Claude Sonnet 4.6',
     'claude-sonnet-4-20250514':    'Claude Sonnet 4',
-    'claude-opus-4-6':             'Claude Opus 4.6',
-    'claude-4-6-opus':             'Claude Opus 4.6',
+    'claude-opus-4-7':             'Claude Opus 4.7',
+    'claude-4-7-opus':             'Claude Opus 4.7',
     'claude-opus-4':               'Claude Opus 4',
     'gpt-5.2':                     'GPT-5.2',
     'gpt-5-mini':                  'GPT-5 Mini',
@@ -211,7 +211,7 @@ const BlueprintUtils = (() => {
     'claude-sonnet-4-6':           'Claude Sonnet',
     'claude-4-6-sonnet':           'Claude Sonnet',
     'claude-opus-4-6':             'Claude Opus',
-    'claude-4-6-opus':             'Claude Opus',
+    'claude-4-7-opus':             'Claude Opus',
     'gpt-5.2':                     'GPT-5.2',
     'gpt-5-mini':                  'GPT-5 Mini',
     'gpt-5-4-pro':                 'GPT-5.4 Pro',
