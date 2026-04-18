@@ -70,7 +70,7 @@ const TokenConfig = (() => {
 
     // ── Claude pool (Claude add-on)
     'claude-4-6-sonnet':  { pool: 'claude',   weight: 3,  tier: 'claude'   },
-    'claude-4-6-opus':    { pool: 'claude',   weight: 10, tier: 'claude'   },
+    'claude-4-7-opus':    { pool: 'claude',   weight: 10, tier: 'claude'   },
 
     // ── Premium pool (Premium add-on)
     'gpt-5-4-pro':        { pool: 'premium',  weight: 5,  tier: 'premium'  },

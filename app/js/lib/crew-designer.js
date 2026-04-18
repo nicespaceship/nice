@@ -46,7 +46,7 @@ const CrewDesigner = (() => {
     { id: 'gemini-2.0-flash-lite',     label: 'Gemini Lite',      tier: 'free' },
     { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', tier: 'premium' },
     { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6', tier: 'premium' },
-    { id: 'claude-opus-4-6',           label: 'Claude Opus 4.6',  tier: 'premium' },
+    { id: 'claude-opus-4-6',           label: 'Claude Opus 4.7',  tier: 'premium' },
     { id: 'gpt-5.2',                   label: 'GPT-5.2',          tier: 'premium' },
     { id: 'gemini-2.5-pro',            label: 'Gemini Pro',       tier: 'premium' },
   ];

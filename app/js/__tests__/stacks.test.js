@@ -67,7 +67,7 @@ describe('Stacks — catalog shape', () => {
   it('allStackModels returns a deduped union', () => {
     const all = Stacks.allStackModels();
     expect(all).toContain('gemini-2-5-flash');
-    expect(all).toContain('claude-4-6-opus');
+    expect(all).toContain('claude-4-7-opus');
     expect(all).toContain('openai-o3');
     // No duplicates
     expect(all.length).toBe(new Set(all).size);
@@ -184,7 +184,7 @@ describe('Stacks — applyStack', () => {
   it('writes enabled_models with exactly the stack\'s models on (plus free models)', () => {
     Stacks.applyStack('writer');
     const enabled = JSON.parse(localStorage.getItem('nice-enabled-models'));
-    expect(enabled['claude-4-6-opus']).toBe(true);
+    expect(enabled['claude-4-7-opus']).toBe(true);
     expect(enabled['claude-4-6-sonnet']).toBe(true);
     expect(enabled['gpt-5-mini']).toBe(true);
     expect(enabled['gemini-2-5-flash']).toBe(true);
@@ -198,7 +198,7 @@ describe('Stacks — applyStack', () => {
     Stacks.applyStack('builder');
     const enabled = JSON.parse(localStorage.getItem('nice-enabled-models'));
     expect(enabled['gpt-5-3-codex']).toBe(true);
-    expect(enabled['claude-4-6-opus']).toBe(false);  // writer-specific, should be off now
+    expect(enabled['claude-4-7-opus']).toBe(false);  // writer-specific, should be off now
     expect(enabled['claude-4-6-sonnet']).toBe(false);
   });
 });
@@ -215,7 +215,7 @@ describe('Stacks — routeFor', () => {
 
   it('routes Writer polish tasks to Claude Opus', () => {
     Stacks.applyStack('writer');
-    expect(Stacks.routeFor('polish')).toBe('claude-4-6-opus');
+    expect(Stacks.routeFor('polish')).toBe('claude-4-7-opus');
   });
 
   it('routes Researcher long-context tasks to Grok 4.1 Fast', () => {
@@ -231,7 +231,7 @@ describe('Stacks — routeFor', () => {
   it('falls back to default routing when category is unknown', () => {
     Stacks.applyStack('writer');
     // 'unknown_category' isn't in writer's routing map → falls back to first model
-    expect(Stacks.routeFor('unknown_category')).toBe('claude-4-6-opus');
+    expect(Stacks.routeFor('unknown_category')).toBe('claude-4-7-opus');
   });
 
   it('falls back to gemini-2-5-flash when no stack is active', () => {

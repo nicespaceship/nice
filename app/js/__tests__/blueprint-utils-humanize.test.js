@@ -5,7 +5,7 @@ describe('BlueprintUtils.humanizeModel', () => {
 
   describe('known model ids', () => {
     it('humanizes Claude family ids', () => {
-      expect(h('claude-opus-4-6')).toBe('Claude Opus 4.6');
+      expect(h('claude-opus-4-7')).toBe('Claude Opus 4.7');
       expect(h('claude-sonnet-4-6')).toBe('Claude Sonnet 4.6');
       expect(h('claude-haiku-4-5-20251001')).toBe('Claude Haiku 4.5');
       expect(h('claude-haiku-4-5')).toBe('Claude Haiku 4.5');
@@ -32,7 +32,7 @@ describe('BlueprintUtils.humanizeModel', () => {
     it('humanizes the full 10-model catalog ids', () => {
       expect(h('gemini-2-5-flash')).toBe('Gemini 2.5 Flash');
       expect(h('claude-4-6-sonnet')).toBe('Claude Sonnet 4.6');
-      expect(h('claude-4-6-opus')).toBe('Claude Opus 4.6');
+      expect(h('claude-4-7-opus')).toBe('Claude Opus 4.7');
       expect(h('gpt-5-4-pro')).toBe('GPT-5.4 Pro');
       expect(h('gpt-5-3-codex')).toBe('GPT-5.3 Codex');
       expect(h('openai-o3')).toBe('OpenAI o3');
@@ -50,7 +50,7 @@ describe('BlueprintUtils.humanizeModel', () => {
     it('returns the short form for known ids', () => {
       expect(s('gemini-2-5-flash')).toBe('Gemini Flash');
       expect(s('claude-4-6-sonnet')).toBe('Claude Sonnet');
-      expect(s('claude-4-6-opus')).toBe('Claude Opus');
+      expect(s('claude-4-7-opus')).toBe('Claude Opus');
       expect(s('gpt-5-mini')).toBe('GPT-5 Mini');
       expect(s('openai-o3')).toBe('o3');
       expect(s('grok-4-1-fast')).toBe('Grok Fast');
