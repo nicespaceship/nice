@@ -85,7 +85,7 @@ const UpgradeModal = (() => {
             <tr>
               <th>Premium add-on</th>
               <td>—</td>
-              <td>+$9.99/mo for GPT-5.4 Pro, Codex, o3, Gemini 3.1 Pro</td>
+              <td>+$9.99/mo for GPT-5.4 Pro, Codex, o3, Gemini 2.5 Pro</td>
             </tr>
           </tbody>
         </table>

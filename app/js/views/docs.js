@@ -430,7 +430,7 @@ const DocsView = (() => {
           <tr><td>Free</td><td>$0</td><td>6 slots, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
           <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month, all non-flagship models</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude Sonnet 4.6 &amp; Opus 4.6, 500 Claude tokens/month</td></tr>
-          <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 3.1 Pro, 500 Premium tokens/month</td></tr>
+          <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
       </table>
 

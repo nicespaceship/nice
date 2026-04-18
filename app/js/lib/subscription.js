@@ -2,9 +2,9 @@
    NICE — Subscription Management
    Two-plan model: Free → Pro ($9.99/mo) with optional add-ons.
      - Pro = 12 slots, instant Legendary, 1,000 standard tokens/month
-     - Claude add-on = +500 claude tokens/mo, unlocks Sonnet 4.6 / Opus 4.6
+     - Claude add-on = +500 claude tokens/mo, unlocks Sonnet 4.6 / Opus 4.7
      - Premium add-on = +500 premium tokens/mo, unlocks GPT-5.4 Pro,
-       GPT-5.3 Codex, OpenAI o3, Gemini 3.1 Pro
+       GPT-5.3 Codex, OpenAI o3, Gemini 2.5 Pro
    Self-hosters can disable the paywall entirely by setting
      window.NICE_CONFIG = { paywallEnabled: false }
    in their HTML — every user is then treated as a full Pro subscriber
@@ -43,7 +43,7 @@ const Subscription = (() => {
       label: 'Claude',
       icon: '🧠',
       color: '#cd7f32',
-      desc: '500 Claude tokens/month. Unlocks Claude 4.6 Sonnet and Opus.',
+      desc: '500 Claude tokens/month. Unlocks Claude 4.6 Sonnet and 4.7 Opus.',
     },
     premium: {
       id: 'premium',
@@ -51,7 +51,7 @@ const Subscription = (() => {
       label: 'Premium',
       icon: '🚀',
       color: '#10b981',
-      desc: '500 Premium tokens/month. Unlocks GPT-5.4 Pro, Codex, OpenAI o3, Gemini 3.1 Pro.',
+      desc: '500 Premium tokens/month. Unlocks GPT-5.4 Pro, Codex, OpenAI o3, Gemini 2.5 Pro.',
     },
   };
 

@@ -33,7 +33,7 @@ const VaultView = (() => {
     { id: 'gpt-5-4-pro',      name: 'GPT-5.4 Pro',     provider: 'OpenAI',    speed: 'medium',  quality: 'best',      desc: '1M context, 128K output, multimodal. OpenAI\'s flagship.',     icon: 'circle' },
     { id: 'gpt-5-3-codex',    name: 'GPT-5.3 Codex',   provider: 'OpenAI',    speed: 'fast',    quality: 'excellent', desc: 'Specialized for agentic coding tasks. Code flagship.',          icon: 'circle' },
     { id: 'openai-o3',        name: 'OpenAI o3',       provider: 'OpenAI',    speed: 'slow',    quality: 'best',      desc: 'Frontier-level reasoning and STEM solving. Hardest problems.',  icon: 'circle' },
-    { id: 'gemini-3-1-pro',   name: 'Gemini 3.1 Pro',  provider: 'Google',    speed: 'medium',  quality: 'excellent', desc: 'Native multimodal synthesis. 1M+ token context window.',         icon: 'circle' },
+    { id: 'gemini-2-5-pro',   name: 'Gemini 2.5 Pro',  provider: 'Google',    speed: 'medium',  quality: 'excellent', desc: 'Native multimodal synthesis. 1M+ token context window.',         icon: 'circle' },
   ];
 
   const POOL_LABELS = { standard: 'STANDARD', claude: 'CLAUDE', premium: 'PREMIUM' };
