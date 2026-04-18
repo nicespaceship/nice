@@ -1419,6 +1419,11 @@ const NICE = (() => {
         if (typeof BlueprintStore !== 'undefined' && BlueprintStore.migrateGuestState) BlueprintStore.migrateGuestState();
         _loadTokenBalance(user);
         _loadAdminFlag(user);
+        // Load subscription + auto-enable entitled models. Settings view
+        // also calls this, but the app needs it up front so the prompt
+        // panel's model dropdown populates with the user's paid-tier
+        // models the moment they land on any view.
+        if (typeof Subscription !== 'undefined' && Subscription.init) Subscription.init().catch(() => {});
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
         // Sync cross-device data
         if (typeof ModelIntel !== 'undefined' && ModelIntel.syncFromServer) ModelIntel.syncFromServer().catch(() => {});
