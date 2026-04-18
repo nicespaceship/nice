@@ -143,7 +143,7 @@ const WalletView = (() => {
     const isCurrent = (planId === 'pro' && isPro) || (planId === 'free' && !isPro);
     const price = plan.price === 0 ? 'Free' : `$${plan.price}/mo`;
     const slots = `${plan.slots} slots`;
-    const ctaLabel = isCurrent ? 'Current plan' : (planId === 'pro' ? 'Upgrade to Pro' : 'Downgrade');
+    const ctaLabel = isCurrent ? 'Current plan' : (planId === 'pro' ? 'Upgrade to Pro' : 'Cancel Pro');
     return `
       <div class="wallet-plan-card ${isCurrent ? 'wallet-plan-current' : ''}" data-plan="${planId}">
         <div class="wallet-plan-icon">${plan.icon || ''}</div>

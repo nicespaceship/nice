@@ -99,7 +99,21 @@ const Subscription = (() => {
       return _subscription;
     }
     if (typeof SB === 'undefined' || !SB.isReady()) return _fallback();
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
+
+    // Read the user directly from the Supabase session rather than
+    // State.user. On page reload the auth session restore is async:
+    // calling views may run before State.user is populated, which
+    // would otherwise poison the subscription cache with a `free`
+    // fallback. getSession() awaits the restore, so this call reflects
+    // reality.
+    let user = null;
+    try {
+      const { data } = await SB.client.auth.getSession();
+      user = data?.session?.user ?? null;
+    } catch { /* ignore */ }
+    if (!user) {
+      user = typeof State !== 'undefined' ? State.get('user') : null;
+    }
     if (!user) return _fallback();
 
     try {
@@ -242,37 +256,6 @@ const Subscription = (() => {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Invalid checkout URL', message: e.message || 'Could not open Stripe', type: 'error' });
       }
-    }
-  }
-
-  /** Ensure the current user has a `subscriptions` row. New users
-      hit this on first load; we insert a `plan=free, status=active`
-      record so UI queries have something to read and the webhook has
-      a target to update when they later subscribe.
-      No-op if the row already exists. */
-  async function _ensureRow(user) {
-    if (!user || !user.id) return;
-    if (typeof SB === 'undefined' || !SB.isReady()) return;
-    try {
-      // A user can own multiple subscription rows (Pro + add-ons each
-      // live in their own row). Use a limit-1 array select — NOT
-      // .maybeSingle() — so this doesn't throw when the row count is
-      // >1 and fall through to inserting yet another empty bootstrap
-      // row on every reload.
-      const { data: existing } = await SB.client
-        .from('subscriptions')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1);
-      if (Array.isArray(existing) && existing.length > 0) return;
-      await SB.client.from('subscriptions').insert({
-        user_id: user.id,
-        plan:    'free',
-        status:  'active',
-        addons:  [],
-      });
-    } catch (err) {
-      console.warn('[Subscription] _ensureRow:', err && err.message);
     }
   }
 
@@ -493,8 +476,6 @@ const Subscription = (() => {
   /* ── Init ── */
 
   async function init() {
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (user) await _ensureRow(user);
     await getSubscription();
     _autoEnableEntitled();
   }
