@@ -2828,7 +2828,7 @@
 .jv-pp-reactor { display:none; }
 [data-theme="jarvis"]:not(.jv-pp-reactor-off) .jv-pp-reactor {
   display:block; position:fixed;
-  top:50%; left:calc(50% + 28px);
+  top:50%; left:50%;
   transform:translate(-50%,-50%);
   width:min(620px, 85vmin); height:min(620px, 85vmin);
   pointer-events:none; z-index:0;
@@ -2838,11 +2838,6 @@
 /* Brighten when JARVIS is responding */
 [data-theme="jarvis"][data-jv-state="streaming"]:not(.jv-pp-reactor-off) .jv-pp-reactor { opacity:0.75; }
 [data-theme="jarvis"][data-jv-state="speaking"]:not(.jv-pp-reactor-off) .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }
-/* Track sidebar offset so the reactor stays centered on the main area */
-body:has(.app-sidebar.open) [data-theme="jarvis"]:not(.jv-pp-reactor-off) .jv-pp-reactor,
-.app-sidebar.open ~ .jv-pp-reactor {
-  left:calc(50% + 140px);
-}
 
 /* ── Audio-reactive drive (speaking state) ──
    JS writes --jv-vol (0..1) on <html> from the TTS AnalyserNode and sets
