@@ -36,7 +36,7 @@ describe('BlueprintUtils.humanizeModel', () => {
       expect(h('gpt-5-4-pro')).toBe('GPT-5.4 Pro');
       expect(h('gpt-5-3-codex')).toBe('GPT-5.3 Codex');
       expect(h('openai-o3')).toBe('OpenAI o3');
-      expect(h('gemini-3-1-pro')).toBe('Gemini 3.1 Pro');
+      expect(h('gemini-2-5-pro')).toBe('Gemini 2.5 Pro');
     });
 
     it('humanizes the nice-auto magic id', () => {

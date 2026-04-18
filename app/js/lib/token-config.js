@@ -45,7 +45,7 @@ const TokenConfig = (() => {
     premium: {
       id: 'premium',
       label: 'Premium',
-      description: 'Premium add-on — GPT-5.4 Pro, GPT-5.3 Codex, OpenAI o3, Gemini 3.1 Pro.',
+      description: 'Premium add-on — GPT-5.4 Pro, GPT-5.3 Codex, OpenAI o3, Gemini 2.5 Pro.',
       monthlyAllowance: 500,        // Premium add-on grants this every billing cycle
       requiresAddon: 'premium',
     },
@@ -76,7 +76,7 @@ const TokenConfig = (() => {
     'gpt-5-4-pro':        { pool: 'premium',  weight: 5,  tier: 'premium'  },
     'gpt-5-3-codex':      { pool: 'premium',  weight: 5,  tier: 'premium'  },
     'openai-o3':          { pool: 'premium',  weight: 15, tier: 'premium'  },
-    'gemini-3-1-pro':     { pool: 'premium',  weight: 3,  tier: 'premium'  },
+    'gemini-2-5-pro':     { pool: 'premium',  weight: 3,  tier: 'premium'  },
   };
 
   /* ── Lookups ──────────────────────────────────────────────── */

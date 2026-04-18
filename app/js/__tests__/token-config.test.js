@@ -93,9 +93,9 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('openai-o3')).toBe(15);
   });
 
-  it('Gemini 3.1 Pro consumes 3 premium tokens', () => {
-    expect(TokenConfig.poolFor('gemini-3-1-pro')).toBe('premium');
-    expect(TokenConfig.weightFor('gemini-3-1-pro')).toBe(3);
+  it('Gemini 2.5 Pro consumes 3 premium tokens', () => {
+    expect(TokenConfig.poolFor('gemini-2-5-pro')).toBe('premium');
+    expect(TokenConfig.weightFor('gemini-2-5-pro')).toBe(3);
   });
 
   it('unknown models default to free (conservative behavior)', () => {
@@ -115,7 +115,7 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(claude).not.toContain('gpt-5-mini');
 
     const premium = TokenConfig.modelsInPool('premium');
-    expect(premium).toEqual(expect.arrayContaining(['gpt-5-4-pro', 'gpt-5-3-codex', 'openai-o3', 'gemini-3-1-pro']));
+    expect(premium).toEqual(expect.arrayContaining(['gpt-5-4-pro', 'gpt-5-3-codex', 'openai-o3', 'gemini-2-5-pro']));
     expect(premium).not.toContain('claude-4-6-sonnet');
   });
 });
