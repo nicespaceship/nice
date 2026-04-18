@@ -20,6 +20,24 @@ const WalletView = (() => {
     return id.charAt(0).toUpperCase() + id.slice(1);
   };
 
+  /* ── Wait for State.token_balance to populate ──
+     Fetched by nice.js on startup; wallet first paint needs to wait
+     for that or the pools render as zeros. Resolves as soon as the
+     key appears, or after 3s to avoid blocking the UI indefinitely. */
+  function _awaitBalance() {
+    return new Promise((resolve) => {
+      if (typeof State === 'undefined') return resolve();
+      if (State.get('token_balance')) return resolve();
+      const start = Date.now();
+      const iv = setInterval(() => {
+        if (State.get('token_balance') || Date.now() - start > 3000) {
+          clearInterval(iv);
+          resolve();
+        }
+      }, 50);
+    });
+  }
+
   /* ── Top-up Packages — sourced from StripeConfig SSOT ────────
      All 6 packs live in app/js/lib/stripe-config.js with real
      live-mode product/price/payment-link IDs. Wallet just renders
@@ -40,17 +58,20 @@ const WalletView = (() => {
 
   /* ── Render ─────────────────────────────────────────────────── */
   async function render(el) {
-    const user = State.get('user');
-    const balance = State.get('token_balance') || {};
-    const pools = balance.pools || {};
-    // Await the subscription read up front so the first paint reflects
-    // the actual server state. Without this, a fresh load on the wallet
-    // page renders before Subscription.init has populated its cache —
-    // so isPro() returns false and every add-on card shows "Pro required"
-    // despite the user being on Pro in the DB.
+    // Await subscription + balance before first paint so token pools and
+    // plan gating reflect the actual server state. On a fresh reload
+    // State.token_balance is empty until nice.js finishes loading; the
+    // wallet used to paint zeros before the fetch landed. Same story for
+    // subscription — without the await, isPro() returned false on reload
+    // and everything rendered as "Pro required".
     if (typeof Subscription !== 'undefined' && Subscription.getSubscription) {
       try { await Subscription.getSubscription(); } catch { /* ignore */ }
     }
+    try { await _awaitBalance(); } catch { /* ignore */ }
+
+    const user = State.get('user');
+    const balance = State.get('token_balance') || {};
+    const pools = balance.pools || {};
     const isPro = typeof Subscription !== 'undefined' && Subscription.isPro && Subscription.isPro();
     const userAddons = typeof Subscription !== 'undefined' && Subscription.getAddons ? Subscription.getAddons() : [];
     const paywallEnabled = typeof Subscription !== 'undefined' && Subscription.paywallEnabled ? Subscription.paywallEnabled() : true;
@@ -143,7 +164,19 @@ const WalletView = (() => {
     const isCurrent = (planId === 'pro' && isPro) || (planId === 'free' && !isPro);
     const price = plan.price === 0 ? 'Free' : `$${plan.price}/mo`;
     const slots = `${plan.slots} slots`;
-    const ctaLabel = isCurrent ? 'Current plan' : (planId === 'pro' ? 'Upgrade to Pro' : 'Cancel Pro');
+    // Cancel lives on the currently-active subscription's own card, not
+    // on the Free card. For users currently on Pro, the Pro card shows
+    // Cancel; the Free card is just informational.
+    let action = '';
+    let label  = 'Current plan';
+    if (planId === 'pro') {
+      if (isPro) { action = 'cancel-pro'; label = 'Cancel Pro'; }
+      else       { action = 'subscribe-pro'; label = 'Upgrade to Pro'; }
+    } else {
+      // Free card
+      label = isCurrent ? 'Current plan' : 'Included with Pro';
+    }
+    const disabled = !action;
     return `
       <div class="wallet-plan-card ${isCurrent ? 'wallet-plan-current' : ''}" data-plan="${planId}">
         <div class="wallet-plan-icon">${plan.icon || ''}</div>
@@ -151,8 +184,8 @@ const WalletView = (() => {
         <div class="wallet-plan-price">${price}</div>
         <div class="wallet-plan-slots">${_esc(slots)}</div>
         <p class="wallet-plan-desc">${_esc(plan.desc || '')}</p>
-        <button class="btn btn-sm ${isCurrent ? '' : 'btn-primary'}" data-action="${isCurrent ? '' : (planId === 'pro' ? 'subscribe-pro' : 'cancel-pro')}" ${isCurrent ? 'disabled' : ''}>
-          ${_esc(ctaLabel)}
+        <button class="btn btn-sm ${disabled ? '' : 'btn-primary'}" data-action="${action}" ${disabled ? 'disabled' : ''}>
+          ${_esc(label)}
         </button>
       </div>
     `;
@@ -161,7 +194,18 @@ const WalletView = (() => {
   function _renderAddonCard(addonId, isPro, userAddons) {
     const addon = Subscription?.ADDONS?.[addonId] || {};
     const isActive = userAddons.includes(addonId);
-    const ctaLabel = !isPro ? 'Pro required' : isActive ? 'Active' : 'Add ($' + addon.price + '/mo)';
+    // Each add-on owns its own cancel button when active, since each
+    // is a separate Stripe subscription. Inactive add-on shows Add.
+    let action = '';
+    let label  = 'Pro required';
+    if (!isPro) {
+      action = ''; label = 'Pro required';
+    } else if (isActive) {
+      action = 'cancel-' + addonId; label = 'Cancel add-on';
+    } else {
+      action = 'add-' + addonId; label = 'Add ($' + addon.price + '/mo)';
+    }
+    const disabled = !action;
     return `
       <div class="wallet-plan-card wallet-addon-card ${isActive ? 'wallet-plan-current' : ''}" data-addon="${addonId}">
         <div class="wallet-plan-icon">${addon.icon || ''}</div>
@@ -169,8 +213,8 @@ const WalletView = (() => {
         <div class="wallet-plan-price">+$${addon.price}/mo</div>
         <div class="wallet-plan-slots">${_esc('Add-on for Pro')}</div>
         <p class="wallet-plan-desc">${_esc(addon.desc || '')}</p>
-        <button class="btn btn-sm ${isActive ? '' : 'btn-primary'}" data-action="${isPro ? (isActive ? 'remove-' + addonId : 'add-' + addonId) : ''}" ${(!isPro || isActive) ? 'disabled' : ''}>
-          ${_esc(ctaLabel)}
+        <button class="btn btn-sm btn-primary" data-action="${action}" ${disabled ? 'disabled' : ''}>
+          ${_esc(label)}
         </button>
       </div>
     `;
@@ -236,11 +280,13 @@ const WalletView = (() => {
         if (action === 'subscribe-pro' && Subscription?.subscribe) {
           Subscription.subscribe('pro');
         } else if (action === 'cancel-pro' && Subscription?.openBillingPortal) {
-          Subscription.openBillingPortal();
+          Subscription.openBillingPortal('pro');
+        } else if (action === 'cancel-claude' && Subscription?.openBillingPortal) {
+          Subscription.openBillingPortal('claude');
+        } else if (action === 'cancel-premium' && Subscription?.openBillingPortal) {
+          Subscription.openBillingPortal('premium');
         } else if (action.startsWith('add-') && Subscription?.setAddon) {
           Subscription.setAddon(action.slice(4), true);
-        } else if (action.startsWith('remove-') && Subscription?.setAddon) {
-          Subscription.setAddon(action.slice(7), false);
         }
       });
     });

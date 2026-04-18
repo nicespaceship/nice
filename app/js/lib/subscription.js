@@ -387,7 +387,7 @@ const Subscription = (() => {
     return subscribe(planId);
   }
 
-  async function openBillingPortal() {
+  async function openBillingPortal(prefer) {
     if (typeof SB === 'undefined' || !SB.isReady()) return;
     const session = await SB.client.auth.getSession();
     const accessToken = session?.data?.session?.access_token;
@@ -402,6 +402,10 @@ const Subscription = (() => {
     // surface the real error body on non-2xx. The wrapper otherwise
     // collapses everything to "Edge Function returned a non-2xx
     // status code", which hides the Stripe error text.
+    const body = {};
+    if (prefer === 'pro' || prefer === 'claude' || prefer === 'premium') {
+      body.prefer = prefer;
+    }
     try {
       const res = await fetch('https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/stripe-portal', {
         method: 'POST',
@@ -409,7 +413,7 @@ const Subscription = (() => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify(body),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
