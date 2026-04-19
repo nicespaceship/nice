@@ -22,18 +22,69 @@ const Theme = (() => {
     { id:'spaceship', name:'NICE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
       data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' } },
     { id:'robotech', name:'HAL-9000', builtin:true, accent:'#999', preview:['#f2f2f0','#999','#ef4444'],
-      data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--bg-alt':'#ffffff','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--text-dim':'#aaaaaa','--glow':'none','--panel-bg':'#fff','--panel-border':'#d0d0ce' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' } },
+      data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--bg-alt':'#ffffff','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--text-dim':'#aaaaaa','--glow':'none','--panel-bg':'#fff','--panel-border':'#d0d0ce' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
+      // Personality scaffold — fill in `ranks` (12 entries to override the
+      // Starfleet ladder), `labels` / `placeholders` (full-sentence keys
+      // only — short fragments leak into chat), `voice` (CoreVoice forwards
+      // {provider, voice, speed} to nice-tts), `reactor` (CoreReactor reads
+      // .html()). Personality direction: clinical, third-person, evenly-
+      // measured. "I'm sorry, Dave. I'm afraid I can't do that." energy.
+      copy:{ /* ranks:[], labels:{}, placeholders:{} */ }
+      /* voice:{ provider, voice, speed, label:'HAL 9000' } */
+      /* reactor:{ html:() => '<div class="hal-eye">...</div>' } */ },
     { id:'navigator', name:'The Grid', builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(24,120,220,0.05)','--surface2':'rgba(24,120,220,0.09)','--border':'rgba(24,160,251,0.25)','--border-hi':'rgba(24,160,251,0.6)','--accent':'#18a0fb','--accent2':'#0a6bc4','--text':'#c0d8f0','--text-muted':'rgba(24,160,251,0.55)','--glow':'0 0 16px rgba(24,160,251,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' } },
     { id:'matrix', name:'The Matrix', builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
-      data:{ colors:{ '--bg':'#000800','--bg2':'#000c00','--surface':'rgba(0,255,65,0.04)','--surface2':'rgba(0,255,65,0.08)','--border':'rgba(0,255,65,0.2)','--border-hi':'rgba(0,255,65,0.5)','--accent':'#00ff41','--accent2':'#00aa2a','--text':'#00ff41','--text-muted':'rgba(0,255,65,0.5)','--glow':'0 0 12px rgba(0,255,65,0.3)','--panel-bg':'rgba(0,6,0,0.97)' }, fonts:{ '--font-h':"'Fira Code', monospace", '--font-b':"'Fira Code', monospace" }, radius:'0px' } },
+      data:{ colors:{ '--bg':'#000800','--bg2':'#000c00','--surface':'rgba(0,255,65,0.04)','--surface2':'rgba(0,255,65,0.08)','--border':'rgba(0,255,65,0.2)','--border-hi':'rgba(0,255,65,0.5)','--accent':'#00ff41','--accent2':'#00aa2a','--text':'#00ff41','--text-muted':'rgba(0,255,65,0.5)','--glow':'0 0 12px rgba(0,255,65,0.3)','--panel-bg':'rgba(0,6,0,0.97)' }, fonts:{ '--font-h':"'Fira Code', monospace", '--font-b':"'Fira Code', monospace" }, radius:'0px' },
+      // Personality scaffold — see HAL-9000 entry for the contract.
+      // Direction: terminal/oracle voice. "Wake up, Neo." "Follow the
+      // white rabbit." Operators → The One rank ladder.
+      copy:{ /* ranks:[], labels:{}, placeholders:{} */ }
+      /* voice:{ provider, voice, speed, label:'The Oracle' } */ },
     { id:'lcars', name:'LCARS', builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
-      data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' } },
+      data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' },
+      // Personality scaffold — see HAL-9000 entry for the contract.
+      // Direction: Starfleet ops dispatch. "Acknowledged.", "Awaiting
+      // input.", "Computer." Default Starfleet ranks already match — no
+      // ranks override needed unless we want LCARS-specific titles.
+      copy:{ /* labels:{}, placeholders:{} */ }
+      /* voice:{ provider, voice, speed, label:'LCARS Computer' } */ },
     { id:'jarvis', name:'J.A.R.V.I.S.', builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
       data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' },
-      // Rank overlay — Iron Man's workshop ladder. 12 entries, one per
-      // default rank position, consumed by Gamification._skinnedRanks().
-      copy:{ ranks:['Mark I','Mark II','Mark III','Mark IV','Mark V','Mark VI','Mark VII','Mark VIII','Mark IX','Mark XLII','Mark L','Iron Man'] },
+      // Personality bundle. `ranks` overlays Gamification._skinnedRanks();
+      // `labels` and `placeholders` feed Theme.rewrite + the in-DOM swap.
+      // Keys must be full sentences — short fragments would catch chat
+      // content. Per the #99 rule, nav/tab/sidebar labels stay constant.
+      copy:{
+        ranks:['Mark I','Mark II','Mark III','Mark IV','Mark V','Mark VI','Mark VII','Mark VIII','Mark IX','Mark XLII','Mark L','Iron Man'],
+        labels:{
+          // Empty states
+          'No agents deployed yet. Browse below.': 'No protocols engaged, sir. Browse below.',
+          'No spaceships deployed yet. Browse below.': 'No systems engaged, sir. Browse below.',
+          'No agents deployed yet.': 'No protocols engaged, sir.',
+          'No spaceships deployed.': 'No systems engaged, sir.',
+          'No agents yet.': 'No protocols active, sir.',
+          'No missions yet.': 'No directives active, sir.',
+          'No missions assigned yet.': 'No directives assigned, sir.',
+          'No agents found': 'No protocols match, sir',
+          'No results found': 'No results, sir',
+          'No results': 'Nothing to report, sir',
+          'No chats yet': 'No active sessions, sir',
+          'No eligible blueprints': 'Nothing eligible, sir',
+          'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
+          'No Blueprints Found': 'Nothing in the archive, sir',
+          // Toast titles
+          'Installed': 'Protocol engaged, sir.',
+          'Activated!': 'Protocol engaged, sir.',
+          'Published!': 'Protocol filed, sir.',
+          'Rated!': 'Rating logged, sir.',
+          'Copied to clipboard': 'Logged to clipboard, sir.',
+        },
+        placeholders:{
+          'Ask NICE\u2026': 'At your service, sir\u2026',
+          'Ask NICE...': 'At your service, sir...',
+        },
+      },
       // Reactor — arc reactor + HUD ring stack. CoreReactor reads this and
       // mounts the markup centered on the viewport on every JARVIS view.
       reactor:{ html:() => JarvisHUD.hud() + JarvisHUD.arcReactor() },
@@ -130,8 +181,10 @@ const Theme = (() => {
 
     // Theme-specific personality (body copy / toasts / placeholders / ranks)
     // — tab, button, sidebar, and brand labels stay constant across themes
-    // for docs and onboarding consistency.
-    _applyJarvisLabels(name === 'jarvis');
+    // for docs and onboarding consistency. Reads `copy.labels` and
+    // `copy.placeholders` off the active theme entry; no-op for themes
+    // without a personality bundle.
+    _applyThemeLabels(name);
     // Repaint the centerpiece reactor with the new theme's markup. Themes
     // without a registered `reactor` clear it (CoreReactor handles both).
     if (typeof CoreReactor !== 'undefined' && CoreReactor.paint) CoreReactor.paint();
@@ -166,64 +219,66 @@ const Theme = (() => {
     if (typeof Router !== 'undefined' && Router.refresh) Router.refresh();
   }
 
-  // J.A.R.V.I.S.: butler personality layer. Only body copy / toast titles /
-  // placeholders swap — nav tabs, sub-tabs, sidebar links, and button
-  // labels stay constant across themes so docs and onboarding stay
-  // consistent. Distinctive phrases get the formal-with-dry-wit flavour
-  // (the "sir" address, anticipatory phrasing). Keys are full sentences
-  // unlikely to appear in other contexts, to avoid cross-context matches.
-  const _JARVIS_LABELS = {
-    // Empty states
-    'No agents deployed yet. Browse below.': 'No protocols engaged, sir. Browse below.',
-    'No spaceships deployed yet. Browse below.': 'No systems engaged, sir. Browse below.',
-    'No agents deployed yet.': 'No protocols engaged, sir.',
-    'No spaceships deployed.': 'No systems engaged, sir.',
-    'No agents yet.': 'No protocols active, sir.',
-    'No missions yet.': 'No directives active, sir.',
-    'No missions assigned yet.': 'No directives assigned, sir.',
-    'No agents found': 'No protocols match, sir',
-    'No results found': 'No results, sir',
-    'No results': 'Nothing to report, sir',
-    'No chats yet': 'No active sessions, sir',
-    'No eligible blueprints': 'Nothing eligible, sir',
-    'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
-    'No Blueprints Found': 'Nothing in the archive, sir',
-    // Toast titles
-    'Installed': 'Protocol engaged, sir.',
-    'Activated!': 'Protocol engaged, sir.',
-    'Published!': 'Protocol filed, sir.',
-    'Rated!': 'Rating logged, sir.',
-    'Copied to clipboard': 'Logged to clipboard, sir.',
-  };
-  const _JARVIS_PLACEHOLDERS = {
-    'Ask NICE\u2026': 'At your service, sir\u2026',
-    'Ask NICE...': 'At your service, sir...',
-  };
-  const _JARVIS_REVERSE = Object.fromEntries(Object.entries(_JARVIS_LABELS).map(([k,v]) => [v,k]));
-  const _JARVIS_PLACEHOLDERS_REVERSE = Object.fromEntries(Object.entries(_JARVIS_PLACEHOLDERS).map(([k,v]) => [v,k]));
-  let _jarvisActive = false;
-  let _jarvisObserver = null;
+  // Theme personality layer. Each theme entry can declare:
+  //   copy: { labels: {...}, placeholders: {...} }
+  // `labels` swap text content in body copy, toasts, and headers via the
+  // selectors in _swapTextInDOM. `placeholders` swap input/textarea
+  // placeholder attributes. Only body copy / toast titles / placeholders
+  // swap — nav tabs, sub-tabs, sidebar links, and button labels stay
+  // constant across themes (per the #99 rule) so docs and onboarding stay
+  // consistent. Keys must be full sentences unlikely to appear in other
+  // contexts, to avoid cross-context matches.
+  let _activeLabelTheme = null;     // theme id whose labels are currently in DOM
+  let _labelObserver = null;
+  function _themeLabels(themeId) {
+    const t = THEMES.find(x => x.id === themeId);
+    return (t && t.copy && t.copy.labels) || null;
+  }
+  function _themePlaceholders(themeId) {
+    const t = THEMES.find(x => x.id === themeId);
+    return (t && t.copy && t.copy.placeholders) || null;
+  }
+  function _reverseMap(m) {
+    return m ? Object.fromEntries(Object.entries(m).map(([k,v]) => [v,k])) : null;
+  }
 
-  function _applyJarvisLabels(on) {
-    if (on === _jarvisActive) return;
-    _jarvisActive = on;
-    const map = on ? _JARVIS_LABELS : _JARVIS_REVERSE;
-    _swapTextInDOM(map);
-    // Placeholders aren't caught by the office-routed placeholder swap when
-    // a non-office theme is active; handle JARVIS's set explicitly.
-    const phMap = on ? _JARVIS_PLACEHOLDERS : _JARVIS_PLACEHOLDERS_REVERSE;
+  function _applyThemeLabels(themeId) {
+    if (themeId === _activeLabelTheme) return;
+    // Revert the previously active theme's swap (if any) before applying
+    // the new one — otherwise prior text stays JARVISified after a swap.
+    if (_activeLabelTheme) {
+      const prev = _themeLabels(_activeLabelTheme);
+      const prevPh = _themePlaceholders(_activeLabelTheme);
+      if (prev) _swapTextInDOM(_reverseMap(prev));
+      if (prevPh) _swapPlaceholders(_reverseMap(prevPh));
+    }
+    _activeLabelTheme = themeId;
+    const next = _themeLabels(themeId);
+    const nextPh = _themePlaceholders(themeId);
+    if (next) _swapTextInDOM(next);
+    if (nextPh) _swapPlaceholders(nextPh);
+    // Observer keeps swapping new DOM as views render. Run it whenever
+    // *any* theme has a label map — disconnect when the active theme has
+    // no labels of its own.
+    const needsObserver = !!next;
+    if (needsObserver && !_labelObserver) {
+      _labelObserver = new MutationObserver(() => {
+        const m = _activeLabelTheme && _themeLabels(_activeLabelTheme);
+        if (m) _swapTextInDOM(m);
+      });
+      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
+      _labelObserver.observe(main, { childList: true, subtree: true, characterData: true });
+    } else if (!needsObserver && _labelObserver) {
+      _labelObserver.disconnect();
+      _labelObserver = null;
+    }
+  }
+
+  function _swapPlaceholders(map) {
     document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
       const ph = el.getAttribute('placeholder');
-      if (phMap[ph]) el.setAttribute('placeholder', phMap[ph]);
+      if (map[ph]) el.setAttribute('placeholder', map[ph]);
     });
-    if (on && !_jarvisObserver) {
-      _jarvisObserver = new MutationObserver(() => { if (_jarvisActive) _swapTextInDOM(_JARVIS_LABELS); });
-      const main = document.querySelector('main') || document.querySelector('.app-main') || document.body;
-      _jarvisObserver.observe(main, { childList: true, subtree: true, characterData: true });
-    } else if (!on && _jarvisObserver) {
-      _jarvisObserver.disconnect();
-      _jarvisObserver = null;
-    }
   }
 
   function _swapTextInDOM(map) {
@@ -264,14 +319,11 @@ const Theme = (() => {
         el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.includes(k)) n.textContent = n.textContent.replace(re, map[k]); });
       }
     });
-    // Placeholder attributes (input, textarea) — J.A.R.V.I.S. is the only
-    // theme with placeholder personality right now. Forward-map when active,
-    // reverse-map otherwise so placeholders restore cleanly on theme swap.
-    const phMap = _jarvisActive ? _JARVIS_PLACEHOLDERS : _JARVIS_PLACEHOLDERS_REVERSE;
-    document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
-      const ph = el.getAttribute('placeholder');
-      if (phMap[ph]) el.setAttribute('placeholder', phMap[ph]);
-    });
+    // Placeholder attributes — pull from the active theme's placeholders
+    // map (no-op if the theme doesn't define one). Revert paths in
+    // _applyThemeLabels handle the reverse-map case explicitly.
+    const ph = _activeLabelTheme && _themePlaceholders(_activeLabelTheme);
+    if (ph) _swapPlaceholders(ph);
   }
 
   function toggleDarkLight() {
@@ -336,11 +388,12 @@ const Theme = (() => {
    * Apply the active theme's personality label map to a string. Used by
    * callers that render dynamic text outside the DOM text-swap's reach —
    * notifications, in-place generated messages, etc. Pure function: no
-   * DOM side effects. Returns the input unchanged if no theme owns a map.
+   * DOM side effects. Returns the input unchanged if the active theme has
+   * no `copy.labels` map.
    */
   function rewrite(text) {
     if (typeof text !== 'string' || !text) return text;
-    const map = _jarvisActive ? _JARVIS_LABELS : null;
+    const map = _activeLabelTheme && _themeLabels(_activeLabelTheme);
     if (!map) return text;
     // Longest-first so full-phrase keys win over single-word ones
     const keys = Object.keys(map).sort((a, b) => b.length - a.length);
