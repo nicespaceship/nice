@@ -36,11 +36,7 @@ const PromptPanel = (() => {
   let _onEscKey = null;      // keydown listener ref for cleanup
   let _onTtsEnded = null;    // One-shot hook fired when current TTS finishes
 
-  /* Call Mode (hands-free JARVIS conversation) is owned by `CallMode`
-     (app/js/lib/call-mode.js). This file just queries `CallMode.isActive()`
-     for guards and wires its dependency callbacks at init time. */
-
-  /* ── Option D: auto-arm mic after JARVIS speaks (regular flow) ──
+  /* ── Option D: auto-arm mic after the assistant speaks ──
      When the user sends via the mic button, track it so that after TTS
      finishes we auto-open the mic for a brief window. Any manual typing
      or non-voice send resets the flag. */
@@ -1348,8 +1344,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
     if (!supabaseUrl) return null;
 
-    // Use caller-supplied signal (Call Mode barge-in) or the shared in-flight
-    // abort controller for the default send path.
+    // Use caller-supplied signal (e.g. an external cancel) or the shared
+    // in-flight abort controller for the default send path.
     let signal;
     if (opts.abortSignal) {
       signal = opts.abortSignal;
@@ -1364,7 +1360,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.text,
     }));
-    // Prepend system prompt as first message (allow caller override for Call Mode)
+    // Prepend system prompt as first message (allow caller override)
     history.unshift({ role: 'system', content: opts.systemOverride || _buildSystemPrompt() });
     history.push({ role: 'user', content: userText });
 
@@ -2116,9 +2112,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
               <button class="nice-ai-tts-mute" id="nice-ai-tts-mute" aria-label="JARVIS voice" title="JARVIS voice" style="display:none">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
               </button>
-              <button class="nice-ai-call-btn" id="nice-ai-call" aria-label="Call J.A.R.V.I.S." title="Call J.A.R.V.I.S." style="display:none">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              </button>
               <button class="nice-ai-voice-btn" id="nice-ai-voice" aria-label="Voice mode" title="Voice mode">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               </button>
@@ -2140,10 +2133,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // its `position:fixed` resolves against the viewport, not against the
     // prompt panel's transform-created containing block.
     if (typeof CoreReactor !== 'undefined') CoreReactor.init();
-
-    // Call Mode overlay markup is owned by `CallMode` (mounted on body via
-    // CallMode.init()) so the prompt panel doesn't carry voice-conversation
-    // chrome it never queries directly.
 
     // Cache monitor elements
     _appMain = document.querySelector('.app-main');
@@ -2197,9 +2186,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Voice mode — tap-to-talk (like Claude Code)
     // Tap 1: start listening. Tap 2: stop & send.
     _panel.querySelector('#nice-ai-voice')?.addEventListener('click', _toggleVoiceCapture);
-
-    // Call Mode trigger button + end-call button click handlers are wired
-    // by `CallMode.init()` so this file doesn't own that interaction.
 
     // Attach — coming soon
     _panel.querySelector('#nice-ai-attach')?.addEventListener('click', () => {
@@ -2290,10 +2276,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
     });
 
-    // Global Escape: close Call Mode first, then monitor
+    // Global Escape: close the monitor overlay
     _onEscKey = (e) => {
       if (e.key !== 'Escape') return;
-      if (CallMode.isActive()) { CallMode.end('User ended call.'); return; }
       if (_isMonitorActive() && !_mentionPopup?.classList.contains('visible')) {
         _hideMonitor();
       }
@@ -2456,8 +2441,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   const _STOP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
 
   function _toggleVoiceCapture() {
-    // If in Call Mode the button is hidden; guard anyway.
-    if (CallMode.isActive()) return;
     if (_recognition) { _recognition.stop(); return; }
     _startVoiceCapture(/*autoArmed=*/false);
   }
@@ -2532,7 +2515,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
      send manually resets the flag. Cancels silently on theme change, Call
      Mode enter, or any explicit mic click. */
   function _scheduleAutoArm() {
-    if (CallMode.isActive() || !_lastSendWasVoice) return;
+    if (!_lastSendWasVoice) return;
     if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
@@ -2541,7 +2524,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // the mic (avoids brief mic-check artifacts on some browsers)
     _autoArmTimer = setTimeout(() => {
       _autoArmTimer = null;
-      if (CallMode.isActive() || !_panel) return;
+      if (!_panel) return;
       if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
       if (_recognition) return; // user already started
       _startVoiceCapture(true);
@@ -2556,9 +2539,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   /* ── TTS playback wrappers ──
      CoreVoice owns the fetch + playback + analyser-attach. These thin
-     wrappers preserve the "post-TTS state restoration" + "auto-arm mic"
-     + "_onTtsEnded one-shot hook" behaviour that's specific to the
-     prompt panel, since neither belongs in the voice library. */
+     wrappers preserve the post-TTS state restoration, _onTtsEnded
+     one-shot hook, and auto-arm-mic scheduling that are specific to the
+     prompt panel and don't belong in the voice library. */
   function _ttsSpeak(text) {
     if (!text || !CoreVoice.canSpeak()) return;
     CoreVoice.speak(text, {
@@ -2566,7 +2549,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         CoreReactor.setState(_sending ? 'streaming' : 'idle');
         const hook = _onTtsEnded; _onTtsEnded = null;
         if (hook) { try { hook(); } catch {} }
-        if (!CallMode.isActive()) _scheduleAutoArm();
+        _scheduleAutoArm();
       },
     });
   }
@@ -2581,22 +2564,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _loadMessages();
     _buildDOM();
     _bindEvents();
-    // Wire CallMode after DOM exists — it needs the panel root to find
-    // the trigger button and binds its own click handlers + overlay.
-    CallMode.init({
-      panelEl: _panel,
-      requestReply: (text, opts) => _callEdgeLLM(text, opts),
-      buildSystemPrompt: () => _buildSystemPrompt(),
-      pushMessage: (msg) => { _messages.push(msg); _saveMessages(); },
-      speakReply: (text, opts) => CoreVoice.speak(text, opts),
-      stopTts: () => _ttsStop(),
-      beforeEnter: () => {
-        _cancelAutoArm();
-        _ttsStop();
-        if (_recognition) { try { _recognition.stop(); } catch {} _recognition = null; }
-        _stopWaveform();
-      },
-    });
     _populateBlueprintDropdown();
     _populateLLMDropdown();
     _populateModelDropdown();
@@ -2608,16 +2575,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (typeof State !== 'undefined' && State.on) {
       State.on('enabled_models', () => _populateModelDropdown());
     }
-    // Theme voice: stop playback on theme change, sync toggle button + reactor
+    // Theme voice: stop playback on theme change, sync mute button + reactor
     _themeObserver = new MutationObserver(() => {
       const theme = document.documentElement.getAttribute('data-theme');
       if (theme !== 'jarvis') {
         _ttsStop();
         _cancelAutoArm();
-        if (CallMode.isActive()) CallMode.end('Theme changed.');
       }
       _syncVoiceToggle();
-      CallMode.syncButton();
     });
     _themeObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ['data-theme']
@@ -2626,7 +2591,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const muteBtn = _panel?.querySelector('#nice-ai-tts-mute');
     if (muteBtn) muteBtn.addEventListener('click', _toggleVoice);
     _syncVoiceToggle();
-    CallMode.syncButton();
     CoreReactor.setState('idle');
     // Seed the Schematic mini-chat if we land directly on the Schematic tab
     setTimeout(() => {
@@ -2637,8 +2601,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   }
 
   function destroy() {
-    // End call mode first (stops its own mic, VAD, recognition, TTS)
-    if (CallMode.isActive()) CallMode.end('Session ended.');
     _cancelAutoArm();
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
