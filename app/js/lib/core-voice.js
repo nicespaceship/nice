@@ -81,13 +81,21 @@ const CoreVoice = (() => {
 
     stop();
     _endHook = (opts && opts.onEnd) || null;
-    _abort = new AbortController();
+    // Capture our controller locally so this call's fetch uses OUR signal,
+    // not whatever a later speak() overwrites `_abort` with. Also used as a
+    // generation token — if `_abort` has changed by the time async work
+    // resumes, a newer speak() has superseded us and we must bail before
+    // clobbering the newer call's state.
+    const abortCtrl = new AbortController();
+    _abort = abortCtrl;
+    const signal = abortCtrl.signal;
 
     try {
       const session = (await c.auth.getSession())?.data?.session;
+      if (_abort !== abortCtrl) return; // superseded during getSession()
       const res = await fetch(supabaseUrl + '/functions/v1/nice-tts', {
         method: 'POST',
-        signal: _abort.signal,
+        signal,
         headers: {
           'Content-Type': 'application/json',
           'apikey': SB._key,
@@ -99,6 +107,7 @@ const CoreVoice = (() => {
       if (!res.ok) throw new Error('TTS ' + res.status);
 
       const blob = await res.blob();
+      if (_abort !== abortCtrl) return; // superseded after fetch resolved
       _blobUrl = URL.createObjectURL(blob);
       _audio = new Audio(_blobUrl);
       _audio.onplay = () => {

@@ -69,6 +69,11 @@ const CoreReactor = (() => {
    * in sync with the voice.
    */
   function attachAnalyser(audioEl) {
+    // Defensive: if a previous analyser is still wired (caller forgot to
+    // detach), tear it down first. Otherwise _src / _analyser would be
+    // overwritten without `disconnect()`, leaving the prior nodes in the
+    // audio graph + the prior rAF loop running against stale buffers.
+    if (_src || _analyser || _rafId) detachAnalyser();
     try {
       if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (_audioCtx.state === 'suspended') _audioCtx.resume();

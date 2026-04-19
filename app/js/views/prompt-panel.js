@@ -35,7 +35,6 @@ const PromptPanel = (() => {
   let _onHashChange = null;  // hashchange listener ref for cleanup
   let _onEscKey = null;      // keydown listener ref for cleanup
   let _onCapsLockKey = null; // global keydown listener for Caps Lock toggle-to-talk
-  let _onTtsEnded = null;    // One-shot hook fired when current TTS finishes
 
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
@@ -2527,16 +2526,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   /* ── TTS playback wrapper ──
      CoreVoice owns the fetch + playback + analyser-attach. This wrapper
-     preserves the post-TTS state restoration + _onTtsEnded one-shot hook
-     that are specific to the prompt panel. */
+     preserves the post-TTS reactor state restoration that's specific to
+     the prompt panel (idle vs streaming while the LLM is still producing
+     text). */
   function _ttsSpeak(text) {
     if (!text || !CoreVoice.canSpeak()) return;
     CoreVoice.speak(text, {
-      onEnd: () => {
-        CoreReactor.setState(_sending ? 'streaming' : 'idle');
-        const hook = _onTtsEnded; _onTtsEnded = null;
-        if (hook) { try { hook(); } catch {} }
-      },
+      onEnd: () => { CoreReactor.setState(_sending ? 'streaming' : 'idle'); },
     });
   }
 
