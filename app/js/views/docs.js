@@ -310,6 +310,39 @@ const DocsView = (() => {
 
       <h2 class="docs-h2">Streaming</h2>
       <p>Mission results stream in real-time via SSE (Server-Sent Events). You see tokens appear as the AI generates them — no waiting for the full response.</p>
+
+      <h2 class="docs-h2">Orchestration Modes</h2>
+      <p>When you have a <strong>spaceship</strong> selected (multiple crew agents), the dropdown next to the model picker in the prompt panel lets you choose how the crew handles your task. Single-agent or NICE chats always use Auto.</p>
+      <table class="docs-table">
+        <thead><tr><th>Mode</th><th>What it does</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Auto</strong></td>
+            <td>Default. An LLM router reads your prompt + the crew manifest and picks the <strong>single best agent</strong> for the task.</td>
+            <td>Most chats. Let NICE decide who's most qualified.</td>
+          </tr>
+          <tr>
+            <td><strong>Pipeline</strong></td>
+            <td>Sequential assembly line. Agent 1's output feeds Agent 2 as context, then 2 → 3, etc. Each agent refines the prior agent's work.</td>
+            <td>Multi-step workflows where each stage builds on the last (research → draft → polish).</td>
+          </tr>
+          <tr>
+            <td><strong>Parallel</strong></td>
+            <td>All crew agents run the <strong>same prompt simultaneously</strong>; their outputs are merged into one combined result.</td>
+            <td>Brainstorming, multi-perspective analysis, generating variations to compare.</td>
+          </tr>
+          <tr>
+            <td><strong>Hierarchical</strong></td>
+            <td>A captain agent decomposes the task into subtasks, assigns each to the right crew member by role, collects results, and synthesizes a final answer.</td>
+            <td>Complex tasks that need planning + delegation + synthesis. Manager-and-team pattern.</td>
+          </tr>
+          <tr>
+            <td><strong>Quality Loop</strong></td>
+            <td>One agent runs the task → a reviewer scores 1–10 with feedback → if the score is below threshold (default 7), the agent retries with the feedback. Up to 3 iterations.</td>
+            <td>High-stakes outputs where you want self-correcting refinement before you read it.</td>
+          </tr>
+        </tbody>
+      </table>
     `,
 
     'workflows': () => `
