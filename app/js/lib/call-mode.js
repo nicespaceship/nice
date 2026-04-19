@@ -174,8 +174,22 @@ const CallMode = (() => {
     el.id = 'nice-ai-mic-help';
     el.className = 'nice-ai-mic-help';
     el.hidden = true;
+    // Honest framing: the fix lives in browser chrome, not in the page,
+    // so the modal IS a visual guide pointing the user at where to click,
+    // not a fake button that pretends to grant permission. The pulsing
+    // arrow at the top points up toward the URL bar's lock icon — the
+    // only place a denied permission can actually be reset. The "Try
+    // Again" button is a retry (in case the user already enabled it),
+    // not a magical fix; the permissions.onchange watcher does the real
+    // magic of auto-resuming when the user flips the setting.
     el.innerHTML = ''
       + '<div class="nice-ai-mic-help-backdrop"></div>'
+      + '<div class="nice-ai-mic-help-arrow" aria-hidden="true">'
+      +   '<svg viewBox="0 0 32 64" width="32" height="64">'
+      +     '<path d="M16 60 L16 6 M6 16 L16 6 L26 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+      +   '</svg>'
+      +   '<div class="nice-ai-mic-help-arrow-label">Look up here</div>'
+      + '</div>'
       + '<div class="nice-ai-mic-help-card" role="dialog" aria-labelledby="nice-ai-mic-help-title">'
       +   '<div class="nice-ai-mic-help-icon" aria-hidden="true">'
       +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36">'
@@ -187,11 +201,16 @@ const CallMode = (() => {
       +     '</svg>'
       +   '</div>'
       +   '<h2 id="nice-ai-mic-help-title" class="nice-ai-mic-help-title">Microphone Access Needed</h2>'
-      +   '<p class="nice-ai-mic-help-body">Call Mode needs your microphone, but your browser has it blocked for this site.</p>'
-      +   '<p class="nice-ai-mic-help-hint">Click <strong>Allow Microphone</strong> below — your browser will surface its permission control near the address bar. Set Microphone to <strong>Allow</strong>, and the call will open automatically.</p>'
+      +   '<p class="nice-ai-mic-help-body">Your browser has blocked microphone access for this site. NICE can\u2019t reset that from here \u2014 it has to come from your browser. Three steps:</p>'
+      +   '<ol class="nice-ai-mic-help-steps">'
+      +     '<li><span class="nice-ai-mic-help-step-num">1</span><span class="nice-ai-mic-help-step-text">Click the <strong>lock icon</strong> in the address bar at the top of your browser</span></li>'
+      +     '<li><span class="nice-ai-mic-help-step-num">2</span><span class="nice-ai-mic-help-step-text">Set <strong>Microphone</strong> to <strong>Allow</strong></span></li>'
+      +     '<li><span class="nice-ai-mic-help-step-num">3</span><span class="nice-ai-mic-help-step-text">The call opens automatically \u2014 or click <strong>Try Again</strong> below</span></li>'
+      +   '</ol>'
+      +   '<div class="nice-ai-mic-help-status" id="nice-ai-mic-help-status" hidden></div>'
       +   '<div class="nice-ai-mic-help-actions">'
       +     '<button type="button" class="nice-ai-mic-help-cancel" id="nice-ai-mic-help-cancel">Cancel</button>'
-      +     '<button type="button" class="nice-ai-mic-help-allow" id="nice-ai-mic-help-allow">Allow Microphone</button>'
+      +     '<button type="button" class="nice-ai-mic-help-allow" id="nice-ai-mic-help-allow">Try Again</button>'
       +   '</div>'
       + '</div>';
     document.body.appendChild(el);
@@ -203,22 +222,31 @@ const CallMode = (() => {
   }
 
   /**
-   * Re-attempt getUserMedia from a fresh user gesture. Two outcomes:
-   *   - State has flipped to `prompt` or `granted` (user reset it before
-   *     clicking) → success → close modal + open the call.
-   *   - State still `denied` → silent reject + Chrome's URL-bar reminder
-   *     appears. We keep the modal open; the onchange watcher will
-   *     auto-resume when the user flips the setting from there.
+   * Retry getUserMedia from a fresh user gesture. Two outcomes:
+   *   - State has flipped to `prompt` or `granted` (user enabled it via
+   *     the lock icon before clicking) → success → close modal + open
+   *     the call.
+   *   - State still `denied` → silent reject. Show a clear "still
+   *     blocked" status under the steps so the user knows their click
+   *     was registered and that the fix lives in browser chrome.
    */
   async function _attemptMicGrant() {
+    const status = document.getElementById('nice-ai-mic-help-status');
+    if (status) {
+      status.hidden = false;
+      status.className = 'nice-ai-mic-help-status checking';
+      status.textContent = 'Checking\u2026';
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(t => t.stop());  // release immediately; enter() will re-acquire
+      stream.getTracks().forEach(t => t.stop());
       _hideMicHelp();
       enter();
     } catch {
-      // Stay open. Browser is showing its reminder UI now; the onchange
-      // listener picks up when the user grants from there.
+      if (status) {
+        status.className = 'nice-ai-mic-help-status blocked';
+        status.innerHTML = 'Still blocked. Use the <strong>lock icon</strong> in the address bar above \u2014 NICE can\u2019t override your browser\u2019s mic setting.';
+      }
     }
   }
 
