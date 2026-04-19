@@ -36,33 +36,9 @@ const PromptPanel = (() => {
   let _onEscKey = null;      // keydown listener ref for cleanup
   let _onTtsEnded = null;    // One-shot hook fired when current TTS finishes
 
-  /* ── Call Mode (hands-free JARVIS conversation) ─────────────────
-     Full-screen overlay, continuous listening with RMS-based VAD,
-     auto-send on silence, TTS reply, barge-in on user voice, loop.
-     JARVIS-only — button hidden for every other theme. */
-  let _callMode = false;          // in an active call
-  let _callPhase = 'idle';        // 'idle' | 'listening' | 'thinking' | 'speaking'
-  let _callOverlay = null;        // the full-screen overlay element
-  let _callStream = null;         // mic MediaStream (kept for entire call)
-  let _callAudioCtx = null;       // AudioContext for VAD analyser
-  let _callAnalyser = null;       // AnalyserNode on mic input
-  let _callVadData = null;        // Float32Array for RMS samples
-  let _callVadRaf = null;         // rAF handle for VAD loop
-  let _callVoiceActive = false;   // currently speaking (above RMS threshold)
-  let _callSilenceSince = 0;      // ms timestamp silence started after speech
-  let _callSpeechStart = 0;       // ms timestamp current speech started
-  let _callRecognition = null;    // SpeechRecognition for captions + transcript
-  /* Transcript is built from three layers so interim results REPLACE prior
-     interim (not accumulate), while finalized text persists across the
-     auto-restarts the browser does when it stops hearing speech.
-       committed = finals from prior recognition sessions this turn
-       sessionFinal = finals from the current recognition session
-       sessionInterim = latest interim from the current session (replaces itself)
-     Display + commit = committed + sessionFinal + sessionInterim. */
-  let _callCommittedFinal = '';
-  let _callSessionFinal = '';
-  let _callSessionInterim = '';
-  let _callAbortCtrl = null;      // aborts in-flight LLM call on end/barge-in
+  /* Call Mode (hands-free JARVIS conversation) is owned by `CallMode`
+     (app/js/lib/call-mode.js). This file just queries `CallMode.isActive()`
+     for guards and wires its dependency callbacks at init time. */
 
   /* ── Option D: auto-arm mic after JARVIS speaks (regular flow) ──
      When the user sends via the mic button, track it so that after TTS
@@ -70,12 +46,6 @@ const PromptPanel = (() => {
      or non-voice send resets the flag. */
   let _lastSendWasVoice = false;
   let _autoArmTimer = null;       // setTimeout handle for auto-arm delay
-
-  /* VAD tuning constants */
-  const CALL_RMS_THRESHOLD  = 0.030;  // base threshold above quiet-room noise
-  const CALL_RMS_BARGE_MULT = 1.5;    // require stronger signal to interrupt TTS
-  const CALL_SILENCE_MS     = 1200;   // silence before auto-send
-  const CALL_SPEECH_MIN_MS  = 250;    // minimum speech to avoid spurious sends
 
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
@@ -2171,34 +2141,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // prompt panel's transform-created containing block.
     if (typeof CoreReactor !== 'undefined') CoreReactor.init();
 
-    // Call Mode overlay — full-screen dim + captions. Mounts as a body child so
-    // its z-index and fixed positioning are independent of the prompt panel's
-    // transform-created containing block (same rationale as the reactor). The
-    // reactor itself shows through this overlay's transparent center.
-    if (!document.getElementById('nice-ai-call-overlay')) {
-      const co = document.createElement('div');
-      co.id = 'nice-ai-call-overlay';
-      co.className = 'nice-ai-call';
-      co.setAttribute('aria-hidden', 'true');
-      co.innerHTML = ''
-        + '<div class="nice-ai-call-backdrop"></div>'
-        + '<div class="nice-ai-call-inner">'
-        +   '<div class="nice-ai-call-status" id="nice-ai-call-status">Connecting…</div>'
-        +   '<div class="nice-ai-call-caption nice-ai-call-user" id="nice-ai-call-user-caption"></div>'
-        +   '<div class="nice-ai-call-reactor-slot" aria-hidden="true"></div>'
-        +   '<div class="nice-ai-call-caption nice-ai-call-assistant" id="nice-ai-call-assistant-caption"></div>'
-        +   '<div class="nice-ai-call-controls">'
-        +     '<button class="nice-ai-call-end" id="nice-ai-call-end" aria-label="End call" title="End call (Esc)">'
-        +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-3.07-3.51"/><line x1="22" y1="2" x2="2" y2="22"/></svg>'
-        +       '<span>End</span>'
-        +     '</button>'
-        +   '</div>'
-        + '</div>';
-      document.body.appendChild(co);
-      _callOverlay = co;
-    } else {
-      _callOverlay = document.getElementById('nice-ai-call-overlay');
-    }
+    // Call Mode overlay markup is owned by `CallMode` (mounted on body via
+    // CallMode.init()) so the prompt panel doesn't carry voice-conversation
+    // chrome it never queries directly.
 
     // Cache monitor elements
     _appMain = document.querySelector('.app-main');
@@ -2253,12 +2198,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Tap 1: start listening. Tap 2: stop & send.
     _panel.querySelector('#nice-ai-voice')?.addEventListener('click', _toggleVoiceCapture);
 
-    // Call Mode (JARVIS-only hands-free conversation)
-    _panel.querySelector('#nice-ai-call')?.addEventListener('click', () => {
-      if (_callMode) _callEnd('User ended call.');
-      else _callEnter();
-    });
-    document.getElementById('nice-ai-call-end')?.addEventListener('click', () => _callEnd('User ended call.'));
+    // Call Mode trigger button + end-call button click handlers are wired
+    // by `CallMode.init()` so this file doesn't own that interaction.
 
     // Attach — coming soon
     _panel.querySelector('#nice-ai-attach')?.addEventListener('click', () => {
@@ -2352,7 +2293,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Global Escape: close Call Mode first, then monitor
     _onEscKey = (e) => {
       if (e.key !== 'Escape') return;
-      if (_callMode) { _callEnd('User ended call.'); return; }
+      if (CallMode.isActive()) { CallMode.end('User ended call.'); return; }
       if (_isMonitorActive() && !_mentionPopup?.classList.contains('visible')) {
         _hideMonitor();
       }
@@ -2516,7 +2457,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   function _toggleVoiceCapture() {
     // If in Call Mode the button is hidden; guard anyway.
-    if (_callMode) return;
+    if (CallMode.isActive()) return;
     if (_recognition) { _recognition.stop(); return; }
     _startVoiceCapture(/*autoArmed=*/false);
   }
@@ -2591,7 +2532,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
      send manually resets the flag. Cancels silently on theme change, Call
      Mode enter, or any explicit mic click. */
   function _scheduleAutoArm() {
-    if (_callMode || !_lastSendWasVoice) return;
+    if (CallMode.isActive() || !_lastSendWasVoice) return;
     if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
@@ -2600,7 +2541,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // the mic (avoids brief mic-check artifacts on some browsers)
     _autoArmTimer = setTimeout(() => {
       _autoArmTimer = null;
-      if (_callMode || !_panel) return;
+      if (CallMode.isActive() || !_panel) return;
       if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
       if (_recognition) return; // user already started
       _startVoiceCapture(true);
@@ -2612,346 +2553,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _lastSendWasVoice = false;
   }
 
-  /* ── Call Mode engine ─────────────────────────────────────────
-     Hands-free JARVIS conversation. Mic stays open for the full call,
-     VAD detects end-of-speech to auto-send, TTS plays reply, loop repeats.
-     Full barge-in: voice activity during speaking cuts TTS immediately. */
-  function _syncCallButton() {
-    const btn = _panel?.querySelector('#nice-ai-call');
-    if (!btn) return;
-    const theme = document.documentElement.getAttribute('data-theme');
-    const available = theme === 'jarvis' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-    btn.style.display = available ? '' : 'none';
-    btn.classList.toggle('active', _callMode);
-  }
-
-  async function _callEnter() {
-    if (_callMode) return;
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign in required', message: 'Call Mode needs an account to stream voice.', type: 'system' });
-      return;
-    }
-    _cancelAutoArm();
-    // Stop any in-flight text-mode activity so Call Mode owns the channel
-    _ttsStop();
-    if (_recognition) { try { _recognition.stop(); } catch {} _recognition = null; }
-    _stopWaveform();
-
-    _callMode = true;
-    document.documentElement.classList.add('nice-call-mode');
-    _syncCallButton();
-    _setCallPhase('connecting');
-    _setCallCaption('user', '');
-    _setCallCaption('assistant', '');
-
-    const ok = await _callStartMic();
-    if (!ok) return; // _callEnd already ran with an error message
-
-    _callStartRecognition();
-    _setCallPhase('listening');
-  }
-
-  function _callEnd(reason) {
-    if (!_callMode && !_callOverlay) return;
-    _callMode = false;
-    if (_callAbortCtrl) { try { _callAbortCtrl.abort(); } catch {} _callAbortCtrl = null; }
-    _ttsStop();
-    _callStopRecognition();
-    _callStopMic();
-    document.documentElement.classList.remove('nice-call-mode');
-    _setCallPhase('idle');
-    _syncCallButton();
-    if (reason && typeof Notify !== 'undefined' && /denied|unavailable|failed/i.test(reason)) {
-      Notify.send({ title: 'Call Mode', message: reason, type: 'system' });
-    }
-  }
-
-  function _setCallPhase(phase) {
-    _callPhase = phase;
-    if (_callOverlay) _callOverlay.dataset.phase = phase;
-    const statusEl = document.getElementById('nice-ai-call-status');
-    if (statusEl) {
-      const label = (
-        phase === 'listening' ? 'Listening…' :
-        phase === 'thinking'  ? 'Thinking…' :
-        phase === 'speaking'  ? 'Speaking' :
-        phase === 'connecting'? 'Connecting…' :
-        'Call ended'
-      );
-      statusEl.textContent = label;
-    }
-    // Drive the reactor state so the arc reactor reacts to the call loop
-    CoreReactor.setState(phase === 'speaking' ? 'speaking' : phase === 'thinking' ? 'streaming' : 'idle');
-  }
-
-  function _setCallCaption(which, text) {
-    const el = document.getElementById(which === 'user' ? 'nice-ai-call-user-caption' : 'nice-ai-call-assistant-caption');
-    if (!el) return;
-    el.textContent = text || '';
-    el.classList.toggle('empty', !text);
-  }
-
-  async function _callStartMic() {
-    try {
-      _callStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-      });
-    } catch (e) {
-      _callEnd(e && e.name === 'NotAllowedError' ? 'Microphone access denied.' : 'Microphone unavailable.');
-      return false;
-    }
-    try {
-      _callAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const src = _callAudioCtx.createMediaStreamSource(_callStream);
-      _callAnalyser = _callAudioCtx.createAnalyser();
-      _callAnalyser.fftSize = 1024;
-      _callAnalyser.smoothingTimeConstant = 0.2;
-      src.connect(_callAnalyser);
-      _callVadData = new Float32Array(_callAnalyser.fftSize);
-      _callVoiceActive = false;
-      _callSilenceSince = 0;
-      _callSpeechStart = 0;
-      _callVadLoop();
-      return true;
-    } catch {
-      _callEnd('Audio engine failed to start.');
-      return false;
-    }
-  }
-
-  function _callStopMic() {
-    if (_callVadRaf) { cancelAnimationFrame(_callVadRaf); _callVadRaf = null; }
-    try { _callAnalyser?.disconnect(); } catch {}
-    _callAnalyser = null;
-    _callVadData = null;
-    if (_callAudioCtx) { _callAudioCtx.close().catch(() => {}); _callAudioCtx = null; }
-    if (_callStream) { _callStream.getTracks().forEach(t => t.stop()); _callStream = null; }
-    _callVoiceActive = false;
-    _callSilenceSince = 0;
-    _callSpeechStart = 0;
-  }
-
-  function _callVadLoop() {
-    if (!_callAnalyser || !_callVadData) return;
-    _callAnalyser.getFloatTimeDomainData(_callVadData);
-    let sum = 0;
-    for (let i = 0; i < _callVadData.length; i++) sum += _callVadData[i] * _callVadData[i];
-    const rms = Math.sqrt(sum / _callVadData.length);
-    const now = performance.now();
-
-    // Barge-in during thinking: user interrupts before JARVIS starts speaking
-    // (LLM still streaming). Abort the in-flight LLM request and swap to a
-    // fresh listening turn — the user has changed their mind. Higher threshold
-    // so keyboard clicks / mouse clicks don't falsely trigger.
-    if (_callPhase === 'thinking' && rms > CALL_RMS_THRESHOLD * CALL_RMS_BARGE_MULT) {
-      if (_callAbortCtrl) { try { _callAbortCtrl.abort(); } catch {} _callAbortCtrl = null; }
-      _setCallCaption('assistant', '');
-      _callResetTranscript();
-      _callSpeechStart = now;
-      _callVoiceActive = true;
-      _callSilenceSince = 0;
-      _setCallPhase('listening');
-      // Recycle recognition so event.results starts fresh for the new turn
-      if (_callRecognition) { try { _callRecognition.stop(); } catch {} }
-      else _callEnsureRecognitionRunning();
-      _callVadRaf = requestAnimationFrame(_callVadLoop);
-      return;
-    }
-
-    // Barge-in while JARVIS is speaking → kill TTS, switch to listening
-    if (_callPhase === 'speaking' && rms > CALL_RMS_THRESHOLD * CALL_RMS_BARGE_MULT) {
-      _ttsStop();
-      _setCallCaption('assistant', '');
-      _setCallPhase('listening');
-      _callResetTranscript();
-      _callSpeechStart = now;
-      _callVoiceActive = true;
-      _callSilenceSince = 0;
-      // Recycle recognition so event.results starts fresh for the new turn
-      if (_callRecognition) { try { _callRecognition.stop(); } catch {} }
-      else _callEnsureRecognitionRunning();
-      _callVadRaf = requestAnimationFrame(_callVadLoop);
-      return;
-    }
-
-    if (_callPhase === 'listening') {
-      if (rms > CALL_RMS_THRESHOLD) {
-        if (!_callVoiceActive) { _callVoiceActive = true; _callSpeechStart = now; }
-        _callSilenceSince = 0;
-      } else if (_callVoiceActive) {
-        if (!_callSilenceSince) _callSilenceSince = now;
-        const spoke = _callSpeechStart && (_callSilenceSince - _callSpeechStart) >= CALL_SPEECH_MIN_MS;
-        if (spoke && (now - _callSilenceSince) >= CALL_SILENCE_MS) {
-          _callVoiceActive = false;
-          _callSilenceSince = 0;
-          _callSpeechStart = 0;
-          _callCommitTurn();
-        }
-      }
-    }
-
-    _callVadRaf = requestAnimationFrame(_callVadLoop);
-  }
-
-  function _callStartRecognition() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { _callEnd('Voice recognition unavailable.'); return; }
-    _callStopRecognition();
-    _callRecognition = new SR();
-    _callRecognition.lang = 'en-US';
-    _callRecognition.interimResults = true;
-    _callRecognition.continuous = true;
-    _callCommittedFinal = '';
-    _callSessionFinal = '';
-    _callSessionInterim = '';
-
-    _callRecognition.onresult = (event) => {
-      if (!_callMode) return;
-      // Walk the full results list — event.results already contains both
-      // finalized and interim portions. Partition by isFinal so interim
-      // REPLACES itself on each event instead of accumulating. resultIndex
-      // is not safe for this partitioning; it only signals which index
-      // changed in THIS event.
-      let sf = '', si = '';
-      for (let i = 0; i < event.results.length; i++) {
-        const r = event.results[i];
-        const t = r[0].transcript;
-        if (r.isFinal) sf += t; else si += t;
-      }
-      _callSessionFinal = sf;
-      _callSessionInterim = si;
-      if (_callPhase === 'listening') {
-        _setCallCaption('user', _callLiveTranscript());
-      }
-    };
-
-    _callRecognition.onend = () => {
-      // Promote the current session's finals to committed, so the next
-      // (auto-restarted) session starts with a clean results list but we
-      // keep what the user already said.
-      if (_callSessionFinal) {
-        _callCommittedFinal = (_callCommittedFinal ? _callCommittedFinal + ' ' : '') + _callSessionFinal.trim();
-      }
-      _callSessionFinal = '';
-      _callSessionInterim = '';
-      if (_callMode) {
-        try { _callRecognition && _callRecognition.start(); } catch {}
-      }
-    };
-
-    _callRecognition.onerror = (e) => {
-      if (!_callMode) return;
-      if (e.error === 'not-allowed') _callEnd('Microphone access denied.');
-      // 'no-speech' / 'aborted' are recoverable — onend restarts
-    };
-
-    try { _callRecognition.start(); } catch {}
-  }
-
-  /* Live transcript built from the three layers (see state-var block). */
-  function _callLiveTranscript() {
-    const parts = [];
-    if (_callCommittedFinal) parts.push(_callCommittedFinal);
-    if (_callSessionFinal) parts.push(_callSessionFinal.trim());
-    if (_callSessionInterim) parts.push(_callSessionInterim.trim());
-    return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-  }
-
-  function _callEnsureRecognitionRunning() {
-    if (!_callMode) return;
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    if (!_callRecognition) { _callStartRecognition(); return; }
-    try { _callRecognition.start(); } catch { /* already running */ }
-  }
-
-  function _callStopRecognition() {
-    if (_callRecognition) {
-      try { _callRecognition.onend = null; _callRecognition.onresult = null; _callRecognition.onerror = null; } catch {}
-      try { _callRecognition.stop(); } catch {}
-      _callRecognition = null;
-    }
-    _callCommittedFinal = '';
-    _callSessionFinal = '';
-    _callSessionInterim = '';
-  }
-
-  function _callResetTranscript() {
-    _callCommittedFinal = '';
-    _callSessionFinal = '';
-    _callSessionInterim = '';
-  }
-
-  async function _callCommitTurn() {
-    const text = _callLiveTranscript();
-    _callResetTranscript();
-    if (!text || text.length < 2) return;
-    // Recycle the recognition session so event.results starts empty for
-    // the next turn — otherwise the just-committed results persist and
-    // the next onresult re-includes them as final text.
-    if (_callMode && _callRecognition) {
-      try { _callRecognition.stop(); } catch {}
-      // onend will restart the session, firing fresh (empty) event.results
-    }
-    _setCallPhase('thinking');
-    _setCallCaption('user', text);
-    _setCallCaption('assistant', '');
-
-    _messages.push({ role: 'user', text, ts: Date.now() });
-    _saveMessages();
-
-    let replyText = '';
-    // Own abort controller so barge-in / end-call can cancel THIS turn's
-    // request without disturbing the module-level _abortCtrl used by the
-    // default send path.
-    _callAbortCtrl = new AbortController();
-    try {
-      const result = await _callEdgeLLM(text, {
-        onChunk: (chunk) => {
-          if (!_callMode) return;
-          replyText += chunk;
-          _setCallCaption('assistant', replyText);
-        },
-        systemOverride: _buildCallSystemPrompt(),
-        modelOverride: 'gemini-2.5-flash',
-        abortSignal: _callAbortCtrl.signal,
-      });
-      if (result && result.text) replyText = result.text;
-    } catch (err) {
-      if (err && err.name === 'AbortError') return; // barge-in or call end
-      replyText = 'My apologies — the line went quiet. Shall we try again?';
-      if (_callMode) _setCallCaption('assistant', replyText);
-    }
-    _callAbortCtrl = null;
-    if (!_callMode) return;
-
-    if (replyText) {
-      _messages.push({ role: 'assistant', text: replyText, agent: 'J.A.R.V.I.S.', ts: Date.now() });
-      _saveMessages();
-    }
-
-    if (!replyText || !CoreVoice.canSpeak()) {
-      // No voice → skip speaking, loop back to listening
-      _setCallPhase('listening');
-      return;
-    }
-
-    _setCallPhase('speaking');
-    _onTtsEnded = () => {
-      if (!_callMode) return;
-      _setCallCaption('assistant', '');
-      _setCallPhase('listening');
-    };
-    _ttsSpeak(replyText);
-  }
-
-  function _buildCallSystemPrompt() {
-    const base = _buildSystemPrompt();
-    return base + '\n\nCONVERSATION MODE (VOICE): You are on a live voice call. ' +
-      'Reply in ≤3 short sentences. Plain prose only — no markdown, no code blocks, no lists, no URLs. ' +
-      'Write exactly as you would speak, so the reply can be read aloud. If the user asks for code or long output, acknowledge briefly and offer to send the details to the monitor.';
-  }
 
   /* ── TTS playback wrappers ──
      CoreVoice owns the fetch + playback + analyser-attach. These thin
@@ -2965,7 +2566,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         CoreReactor.setState(_sending ? 'streaming' : 'idle');
         const hook = _onTtsEnded; _onTtsEnded = null;
         if (hook) { try { hook(); } catch {} }
-        if (!_callMode) _scheduleAutoArm();
+        if (!CallMode.isActive()) _scheduleAutoArm();
       },
     });
   }
@@ -2980,6 +2581,22 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _loadMessages();
     _buildDOM();
     _bindEvents();
+    // Wire CallMode after DOM exists — it needs the panel root to find
+    // the trigger button and binds its own click handlers + overlay.
+    CallMode.init({
+      panelEl: _panel,
+      requestReply: (text, opts) => _callEdgeLLM(text, opts),
+      buildSystemPrompt: () => _buildSystemPrompt(),
+      pushMessage: (msg) => { _messages.push(msg); _saveMessages(); },
+      speakReply: (text, opts) => CoreVoice.speak(text, opts),
+      stopTts: () => _ttsStop(),
+      beforeEnter: () => {
+        _cancelAutoArm();
+        _ttsStop();
+        if (_recognition) { try { _recognition.stop(); } catch {} _recognition = null; }
+        _stopWaveform();
+      },
+    });
     _populateBlueprintDropdown();
     _populateLLMDropdown();
     _populateModelDropdown();
@@ -2997,10 +2614,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       if (theme !== 'jarvis') {
         _ttsStop();
         _cancelAutoArm();
-        if (_callMode) _callEnd('Theme changed.');
+        if (CallMode.isActive()) CallMode.end('Theme changed.');
       }
       _syncVoiceToggle();
-      _syncCallButton();
+      CallMode.syncButton();
     });
     _themeObserver.observe(document.documentElement, {
       attributes: true, attributeFilter: ['data-theme']
@@ -3009,7 +2626,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const muteBtn = _panel?.querySelector('#nice-ai-tts-mute');
     if (muteBtn) muteBtn.addEventListener('click', _toggleVoice);
     _syncVoiceToggle();
-    _syncCallButton();
+    CallMode.syncButton();
     CoreReactor.setState('idle');
     // Seed the Schematic mini-chat if we land directly on the Schematic tab
     setTimeout(() => {
@@ -3021,7 +2638,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   function destroy() {
     // End call mode first (stops its own mic, VAD, recognition, TTS)
-    if (_callMode) _callEnd('Session ended.');
+    if (CallMode.isActive()) CallMode.end('Session ended.');
     _cancelAutoArm();
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
