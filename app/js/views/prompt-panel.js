@@ -29,9 +29,6 @@ const PromptPanel = (() => {
   let _micStream = null;
   let _waveAnimId = null;
   let _lastSpokenTs = 0;     // Timestamp of last spoken message (prevent replays)
-  let _ttsAudio = null;      // Current Audio element for JARVIS voice
-  let _ttsBlobUrl = null;    // Blob URL to revoke on cleanup
-  let _ttsAbort = null;      // AbortController for in-flight TTS fetch
   let _miniObserver = null;  // MutationObserver mirroring replies into Schematic mini-chat
   let _miniExpanded = false; // User clicked the expand button → route to full monitor once
   let _themeObserver = null;  // MutationObserver for theme changes
@@ -2475,50 +2472,22 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (canvas) { canvas.classList.remove('active'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
   }
 
-  /* ── Theme Voice — per-theme TTS via ElevenLabs ─────────────────
-     Add a row to THEME_VOICES to give any theme a voice.
-     The edge function resolves the voice key to an ElevenLabs voice ID.
-     Each theme's on/off state is stored independently in localStorage.
-  ────────────────────────────────────────────────────────────────── */
-  const THEME_VOICES = {
-    jarvis: { voice: 'jarvis', label: 'J.A.R.V.I.S.', provider: 'elevenlabs', speed: 1.0 },
-    // lcars:  { voice: 'lcars',  label: 'LCARS Computer', provider: 'elevenlabs', speed: 1.0 },
-    // matrix: { voice: 'matrix', label: 'The Oracle',    provider: 'elevenlabs', speed: 0.9 },
-  };
-
-  function _currentThemeVoice() {
-    const theme = document.documentElement.getAttribute('data-theme');
-    return THEME_VOICES[theme] || null;
-  }
-
-  function _isVoiceOff() {
-    const tv = _currentThemeVoice();
-    if (!tv) return true;
-    const theme = document.documentElement.getAttribute('data-theme');
-    try {
-      const state = JSON.parse(localStorage.getItem(Utils.KEYS.voiceOff) || '{}');
-      return state[theme] === true;
-    } catch { return false; }
-  }
-
+  /* ── Theme Voice toggle (UI only) ──
+     CoreVoice (app/js/lib/core-voice.js) owns the per-theme voice config,
+     mute persistence, TTS fetch, and playback. This file just keeps the
+     toolbar mute button in sync. */
   function _toggleVoice() {
-    const theme = document.documentElement.getAttribute('data-theme');
-    if (!THEME_VOICES[theme]) return;
-    let state = {};
-    try { state = JSON.parse(localStorage.getItem(Utils.KEYS.voiceOff) || '{}'); } catch {}
-    state[theme] = !state[theme];
-    localStorage.setItem(Utils.KEYS.voiceOff, JSON.stringify(state));
-    if (state[theme]) _ttsStop();
+    CoreVoice.toggleMute();
     _syncVoiceToggle();
   }
 
   function _syncVoiceToggle() {
     const btn = _panel?.querySelector('#nice-ai-tts-mute');
     if (!btn) return;
-    const tv = _currentThemeVoice();
+    const tv = CoreVoice.getConfig();
     btn.style.display = tv ? '' : 'none';
     if (!tv) return;
-    const off = _isVoiceOff();
+    const off = CoreVoice.isMuted();
     btn.classList.toggle('off', off);
     btn.title = off ? `Turn on ${tv.label} voice` : `Turn off ${tv.label} voice`;
     btn.innerHTML = off
@@ -2533,8 +2502,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   function _setSending(v) {
     _sending = v;
     if (v) CoreReactor.setState('streaming');
-    else if (!_ttsAudio) CoreReactor.setState('idle');
-    // If TTS is still playing, keep 'speaking' — its onended will set idle.
+    else if (!CoreVoice.isSpeaking()) CoreReactor.setState('idle');
+    // If TTS is still playing, keep 'speaking' — CoreVoice.onEnd restores
+    // the post-TTS state via the speak() callback in _ttsSpeak.
   }
 
   /* ── Tap-to-talk mic (refactored) + auto-arm follow-up ──
@@ -2961,7 +2931,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       _saveMessages();
     }
 
-    if (!replyText || !_currentThemeVoice() || _isVoiceOff()) {
+    if (!replyText || !CoreVoice.canSpeak()) {
       // No voice → skip speaking, loop back to listening
       _setCallPhase('listening');
       return;
@@ -2983,78 +2953,26 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       'Write exactly as you would speak, so the reply can be read aloud. If the user asks for code or long output, acknowledge briefly and offer to send the details to the monitor.';
   }
 
-  async function _ttsSpeak(text) {
-    const tv = _currentThemeVoice();
-    if (!text || !tv) return;
-    if (_isVoiceOff()) return;
-
-    _ttsStop();
-
-    if (typeof SB === 'undefined' || !SB.client) return;
-    const c = SB.client;
-    const supabaseUrl = c.supabaseUrl || c._supabaseUrl;
-    if (!supabaseUrl) return;
-
-    _ttsAbort = new AbortController();
-
-    try {
-      const session = (await c.auth.getSession())?.data?.session;
-      const res = await fetch(`${supabaseUrl}/functions/v1/nice-tts`, {
-        method: 'POST',
-        signal: _ttsAbort.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SB._key,
-          ...(session ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify({ text, provider: tv.provider, voice: tv.voice, speed: tv.speed }),
-      });
-
-      if (!res.ok) throw new Error('TTS ' + res.status);
-
-      const blob = await res.blob();
-      _ttsBlobUrl = URL.createObjectURL(blob);
-      _ttsAudio = new Audio(_ttsBlobUrl);
-      _ttsAudio.onplay = () => { CoreReactor.setState('speaking'); CoreReactor.attachAnalyser(_ttsAudio); };
-      const _ttsFinish = () => {
-        CoreReactor.detachAnalyser();
-        _ttsCleanup();
+  /* ── TTS playback wrappers ──
+     CoreVoice owns the fetch + playback + analyser-attach. These thin
+     wrappers preserve the "post-TTS state restoration" + "auto-arm mic"
+     + "_onTtsEnded one-shot hook" behaviour that's specific to the
+     prompt panel, since neither belongs in the voice library. */
+  function _ttsSpeak(text) {
+    if (!text || !CoreVoice.canSpeak()) return;
+    CoreVoice.speak(text, {
+      onEnd: () => {
         CoreReactor.setState(_sending ? 'streaming' : 'idle');
         const hook = _onTtsEnded; _onTtsEnded = null;
         if (hook) { try { hook(); } catch {} }
         if (!_callMode) _scheduleAutoArm();
-      };
-      _ttsAudio.onended = _ttsFinish;
-      _ttsAudio.onerror = _ttsFinish;
-      // play() returns a Promise that rejects if playback is interrupted
-      // mid-flight — which happens every time a streaming message triggers
-      // a new _ttsSpeak() and _ttsStop() revokes the prior blob URL. The
-      // onerror handler already handles cleanup; we just need to keep the
-      // rejection from surfacing as an "Async Error" toast. Autoplay
-      // blocks land here too — silent-fail is the right UX for a
-      // best-effort voice feature.
-      _ttsAudio.play().catch(() => { /* suppressed — see above */ });
-    } catch (err) {
-      _ttsCleanup();
-      if (err.name === 'AbortError') return;
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Voice Unavailable', message: 'Could not reach voice service.', type: 'system' });
-      }
-    }
+      },
+    });
   }
 
   function _ttsStop() {
-    if (_ttsAbort) { _ttsAbort.abort(); _ttsAbort = null; }
-    if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.src = ''; }
-    CoreReactor.detachAnalyser();
-    _ttsCleanup();
+    CoreVoice.stop();
     CoreReactor.setState(_sending ? 'streaming' : 'idle');
-  }
-
-  function _ttsCleanup() {
-    if (_ttsBlobUrl) { URL.revokeObjectURL(_ttsBlobUrl); _ttsBlobUrl = null; }
-    _ttsAudio = null;
-    _ttsAbort = null;
   }
 
   /* ── Init / Destroy ── */
