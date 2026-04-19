@@ -37,13 +37,6 @@ const PromptPanel = (() => {
   let _onCapsLockKey = null; // global keydown listener for Caps Lock toggle-to-talk
   let _onTtsEnded = null;    // One-shot hook fired when current TTS finishes
 
-  /* ── Option D: auto-arm mic after the assistant speaks ──
-     When the user sends via the mic button, track it so that after TTS
-     finishes we auto-open the mic for a brief window. Any manual typing
-     or non-voice send resets the flag. */
-  let _lastSendWasVoice = false;
-  let _autoArmTimer = null;       // setTimeout handle for auto-arm delay
-
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
 
@@ -2181,8 +2174,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const modeSelect = _panel.querySelector('#nice-ai-mode');
     if (modeSelect) modeSelect.addEventListener('change', () => { _activeMode = modeSelect.value; });
 
-    // Send button (NS logo) — manual send cancels any pending auto-arm
-    _panel.querySelector('#nice-ai-send')?.addEventListener('click', () => { _cancelAutoArm(); _send(); });
+    // Send button (NS logo)
+    _panel.querySelector('#nice-ai-send')?.addEventListener('click', () => _send());
 
     // Dictate — tap-to-talk (press Caps Lock for the keyboard shortcut).
     // Tap 1: start listening. Tap 2: stop & send.
@@ -2216,8 +2209,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         // Toggle voice/send button swap
         const container = _panel.querySelector('.nice-ai-input-container');
         if (container) container.classList.toggle('has-text', textarea.value.trim().length > 0);
-        // Real keystrokes (not programmatic dispatch) break the voice follow-up chain
-        if (e.isTrusted) _cancelAutoArm();
       });
     }
 
@@ -2469,10 +2460,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
   function _toggleVoiceCapture() {
     if (_recognition) { _recognition.stop(); return; }
-    _startVoiceCapture(/*autoArmed=*/false);
+    _startVoiceCapture();
   }
 
-  function _startVoiceCapture(autoArmed) {
+  function _startVoiceCapture() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Not Supported', message: 'Voice input is not supported in this browser.', type: 'system' });
@@ -2483,7 +2474,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const waveCanvas = _panel?.querySelector('#nice-ai-waveform');
     if (!input) return;
 
-    _cancelAutoArm();
     _recognition = new SR();
     _recognition.lang = 'en-US';
     _recognition.interimResults = true;
@@ -2492,8 +2482,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const existing = input.value;
     if (voiceBtn) {
       voiceBtn.classList.add('listening');
-      voiceBtn.classList.toggle('auto-armed', !!autoArmed);
-      voiceBtn.title = autoArmed ? 'Follow-up — tap to cancel' : 'Stop & send';
+      voiceBtn.title = 'Stop & send';
       voiceBtn.innerHTML = _STOP_SVG;
     }
     if (waveCanvas) waveCanvas.classList.add('active');
@@ -2508,14 +2497,13 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
     _recognition.onend = () => {
       if (voiceBtn) {
-        voiceBtn.classList.remove('listening', 'auto-armed');
+        voiceBtn.classList.remove('listening');
         voiceBtn.title = 'Dictate (Caps Lock)';
         voiceBtn.innerHTML = _MIC_SVG;
       }
       _stopWaveform();
       _recognition = null;
       if (input.value.trim() && input.value !== existing) {
-        _lastSendWasVoice = true;
         input.dispatchEvent(new Event('input'));
         _send();
       }
@@ -2523,7 +2511,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
     _recognition.onerror = (e) => {
       if (voiceBtn) {
-        voiceBtn.classList.remove('listening', 'auto-armed');
+        voiceBtn.classList.remove('listening');
         voiceBtn.title = 'Dictate (Caps Lock)';
         voiceBtn.innerHTML = _MIC_SVG;
       }
@@ -2537,38 +2525,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     try { _recognition.start(); } catch {}
   }
 
-  /* Auto-arm the mic for a follow-up after JARVIS finishes speaking. Only
-     fires when the triggering send was voice-initiated — typing or clicking
-     send manually resets the flag. Cancels silently on theme change, Call
-     Mode enter, or any explicit mic click. */
-  function _scheduleAutoArm() {
-    if (!_lastSendWasVoice) return;
-    if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    _cancelAutoArm();
-    // Small settle delay so TTS audio stream fully releases before re-opening
-    // the mic (avoids brief mic-check artifacts on some browsers)
-    _autoArmTimer = setTimeout(() => {
-      _autoArmTimer = null;
-      if (!_panel) return;
-      if (document.documentElement.getAttribute('data-theme') !== 'jarvis') return;
-      if (_recognition) return; // user already started
-      _startVoiceCapture(true);
-    }, 200);
-  }
-
-  function _cancelAutoArm() {
-    if (_autoArmTimer) { clearTimeout(_autoArmTimer); _autoArmTimer = null; }
-    _lastSendWasVoice = false;
-  }
-
-
-  /* ── TTS playback wrappers ──
-     CoreVoice owns the fetch + playback + analyser-attach. These thin
-     wrappers preserve the post-TTS state restoration, _onTtsEnded
-     one-shot hook, and auto-arm-mic scheduling that are specific to the
-     prompt panel and don't belong in the voice library. */
+  /* ── TTS playback wrapper ──
+     CoreVoice owns the fetch + playback + analyser-attach. This wrapper
+     preserves the post-TTS state restoration + _onTtsEnded one-shot hook
+     that are specific to the prompt panel. */
   function _ttsSpeak(text) {
     if (!text || !CoreVoice.canSpeak()) return;
     CoreVoice.speak(text, {
@@ -2576,7 +2536,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         CoreReactor.setState(_sending ? 'streaming' : 'idle');
         const hook = _onTtsEnded; _onTtsEnded = null;
         if (hook) { try { hook(); } catch {} }
-        _scheduleAutoArm();
       },
     });
   }
@@ -2605,10 +2564,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Theme voice: stop playback on theme change, sync mute button + reactor
     _themeObserver = new MutationObserver(() => {
       const theme = document.documentElement.getAttribute('data-theme');
-      if (theme !== 'jarvis') {
-        _ttsStop();
-        _cancelAutoArm();
-      }
+      if (theme !== 'jarvis') _ttsStop();
       _syncVoiceToggle();
     });
     _themeObserver.observe(document.documentElement, {
@@ -2628,7 +2584,6 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   }
 
   function destroy() {
-    _cancelAutoArm();
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
     // Stop speech recognition & mic
