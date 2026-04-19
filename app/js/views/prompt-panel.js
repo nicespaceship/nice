@@ -34,6 +34,7 @@ const PromptPanel = (() => {
   let _themeObserver = null;  // MutationObserver for theme changes
   let _onHashChange = null;  // hashchange listener ref for cleanup
   let _onEscKey = null;      // keydown listener ref for cleanup
+  let _onCapsLockKey = null; // global keydown listener for Caps Lock toggle-to-talk
   let _onTtsEnded = null;    // One-shot hook fired when current TTS finishes
 
   /* ── Option D: auto-arm mic after the assistant speaks ──
@@ -2284,6 +2285,32 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       }
     };
     document.addEventListener('keydown', _onEscKey);
+
+    // Global Caps Lock: toggle-to-talk shortcut.
+    //   Press once → start voice capture (mic on)
+    //   Press again → stop + auto-send (same as the mic button)
+    // Only intercepts when no input/textarea/contenteditable is focused
+    // AND the mic isn't already running, so users can still use Caps Lock
+    // to caps-toggle while typing. Once the mic is open we accept any
+    // Caps Lock press as the stop+send signal regardless of focus, so
+    // the user can stop talking from anywhere.
+    _onCapsLockKey = (e) => {
+      if (e.code !== 'CapsLock') return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+      // If voice capture is currently running, any Caps Lock stops + sends.
+      if (_recognition) { _toggleVoiceCapture(); return; }
+      // Otherwise only intercept when not editing text — preserves normal
+      // Caps Lock behaviour inside inputs.
+      const t = document.activeElement;
+      const isEditing = t && (
+        t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable
+      );
+      if (isEditing) return;
+      _toggleVoiceCapture();
+    };
+    document.addEventListener('keydown', _onCapsLockKey);
   }
 
   function _updateMentionHighlight() {
@@ -2616,6 +2643,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Remove global listeners
     if (_onHashChange) { window.removeEventListener('hashchange', _onHashChange); _onHashChange = null; }
     if (_onEscKey) { document.removeEventListener('keydown', _onEscKey); _onEscKey = null; }
+    if (_onCapsLockKey) { document.removeEventListener('keydown', _onCapsLockKey); _onCapsLockKey = null; }
     // Reset conversation state
     _activeFlow = null;
     _activeConversation = null;
