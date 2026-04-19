@@ -4251,6 +4251,17 @@ html.nice-call-mode .nice-ai-chips { display:none; }
   height:100%; overflow:hidden;
   max-width:720px; margin:0 auto;
   padding:0 20px;
+  /* Compensate for `.app-main { margin-left: <sidebar-w> }` so the home
+     block centers on the viewport, not in the post-sidebar content area —
+     same viewport-anchored discipline as the reactor (PR #146). Mobile
+     (<=768px) uses a slide-over sidebar; .app-main has no margin offset
+     there, so no compensation is needed. */
+  position:relative;
+  transition:left .3s ease;
+}
+@media (min-width: 769px) {
+  .chat-home { left:-28px; }                      /* -(56px collapsed / 2) */
+  .app-sidebar.open ~ .app-main .chat-home { left:-140px; }  /* -(280px open / 2) */
 }
 
 /* Empty state — greeting anchored above the HUD/reactor */
