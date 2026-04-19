@@ -802,7 +802,12 @@
     inset 0 0 20px rgba(0,0,0,0.6),
     inset 0 2px 4px rgba(0,0,0,0.4);
   animation:hal-eye-pulse 3s ease-in-out infinite;
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  /* Track the shared reactor anchor (same CSS vars the global
+     CoreReactor reads) so the HAL eye stays over the reactor even when
+     `.schematic-center` stretches on decluttered mobile. */
+  position:fixed;
+  top:var(--reactor-y, 50%); left:var(--reactor-x, 50%);
+  transform:translate(-50%,-50%);
 }
 /* Lens flare / reflection — slow rotation for animation feel */
 @keyframes hal-reflect-rotate {
@@ -2084,10 +2089,11 @@
 /* Sidebar favorites */
 [data-theme="lcars"] .sidebar-favorites { padding-top:4px; }
 
-/* HUD panel — LCARS styled */
+/* HUD panel — LCARS styled. Don't override `position` here — the base
+   rule uses `position:fixed` now that the panel is a body-level element
+   (was `relative` when the panel lived inside the sidebar). */
 [data-theme="lcars"] .app-hud-panel {
-  background:#000; border:2px solid #666688; border-radius:0 0 24px 0; margin:0;
-  position:relative; z-index:10;
+  background:#000; border:2px solid #666688; border-radius:0 0 24px 0;
 }
 [data-theme="lcars"] .app-hud-panel .dock-lbl { color:#ff9966; }
 [data-theme="lcars"] .app-hud-panel .dock-lbl a { color:#ff9966; }
@@ -2814,25 +2820,28 @@
   100% { opacity:0.7; }
 }
 
-/* Hide default SVG reactor circles on JARVIS — arc reactor replaces them */
-[data-theme="jarvis"] .schematic-svg circle:not([class]) { opacity:0; }
-[data-theme="jarvis"] .schematic-svg .sch-core-hit { opacity:1; }
-
-/* ── Core reactor — viewport-centered centerpiece on every theme ──
+/* ── Core reactor — content-centered centerpiece on every theme ──
    Mounts as a direct <body> child so `position:fixed` resolves against
    the viewport (not the prompt panel's transform-created containing
    block). CoreReactor paints theme-specific markup into the wrapper —
    JARVIS uses its arc-reactor + HUD stack; every other theme uses the
    shared DefaultCore SVG (concentric rings tinted by var(--accent)).
-   The wrapper is sized to contain the full 600px JARVIS HUD; the
-   default core scales down via SVG preserveAspectRatio. */
+
+   Position is driven by `--reactor-x` / `--reactor-y` on <html> so
+   views that need the core anchored to a specific content region
+   (Schematic anchors to `.schematic-wired` center so crew cards, radar
+   sonar rings, and core all converge on the same point) can retarget
+   it without fighting position:fixed. Defaults to viewport center. */
 .jv-pp-reactor {
   position:fixed;
-  top:50%; left:50%;
+  top:var(--reactor-y, 50%); left:var(--reactor-x, 50%);
   transform:translate(-50%,-50%);
   width:min(620px, 85vmin); height:min(620px, 85vmin);
   pointer-events:none; z-index:0;
   opacity:0.5;
+  /* Only transition opacity — top/left snap to the new anchor immediately
+     so theme switches (which change mini-chat height → reactor target)
+     don't interpolate through a stale position for 200ms. */
   transition:opacity 200ms ease;
 }
 /* Brighten when responding (state machine writes data-jv-state on <html>) */
@@ -2945,28 +2954,34 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 }
 
 /* ── Schematic mini-chat — JARVIS replies inline without leaving the view ──
-   Sits above the core inside `.schematic-center`. Only renders on JARVIS
-   (Office/NICE keep the full-monitor behaviour). Hidden when the full monitor
-   overlay is open. The expand button opens the full monitor on demand. */
-.sch-mini-chat { display:none; }
-[data-theme="jarvis"] .schematic-wired .sch-mini-chat {
-  display:block; position:absolute;
-  /* Top edge aligns with the top blueprint slots; width matches the
-     prompt panel (820px) so the mini-chat reads as its in-view twin. */
+   Sits at the top of the crew arena inside `.schematic-wired` (not the
+   narrow center column — that collapses to ~40px on mobile). Width
+   matches the prompt panel (820px) so the mini-chat reads as its in-view
+   twin. Default styling uses theme tokens so every theme picks up its
+   own palette; JARVIS keeps a holographic cyan override below. Hidden
+   when the full monitor overlay is open. */
+.schematic-wired .sch-mini-chat {
+  position:absolute;
   top:0; left:50%; transform:translateX(-50%);
   width:min(820px, 94%);
   max-height:124px;
   padding:10px 44px 10px 14px;
-  background:rgba(7,13,26,0.82);
-  border:1px solid rgba(0,229,255,0.3);
-  border-radius:10px;
-  color:#b2ebf2;
+  background:var(--panel-bg, rgba(24,24,27,0.82));
+  border:1px solid var(--border);
+  border-radius:var(--radius, 10px);
+  color:var(--text);
   font-family:var(--font-b);
   font-size:.82rem;
   line-height:1.45;
   overflow-y:auto;
   z-index:4;
   backdrop-filter:blur(6px);
+  box-shadow:var(--glow-hi, 0 0 14px rgba(0,0,0,0.12));
+}
+[data-theme="jarvis"] .schematic-wired .sch-mini-chat {
+  background:rgba(7,13,26,0.82);
+  border-color:rgba(0,229,255,0.3);
+  color:#b2ebf2;
   box-shadow:0 0 14px rgba(0,229,255,0.15), inset 0 0 10px rgba(0,229,255,0.04);
 }
 .app-main.monitor-active .sch-mini-chat { display:none; }
@@ -2974,22 +2989,48 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 .sch-mini-chat-content p { margin:0 0 6px; }
 .sch-mini-chat-content p:last-child { margin-bottom:0; }
 .sch-mini-chat-idle { opacity:.55; font-style:italic; }
-[data-theme="jarvis"] .sch-mini-expand {
+.sch-mini-expand {
   position:absolute; top:6px; right:6px;
   display:inline-flex; align-items:center; justify-content:center;
   width:26px; height:26px;
-  background:rgba(0,229,255,0.08);
-  border:1px solid rgba(0,229,255,0.3);
+  background:color-mix(in srgb, var(--accent) 12%, transparent);
+  border:1px solid var(--border);
   border-radius:6px;
-  color:rgba(0,229,255,0.8);
+  color:var(--accent);
   cursor:pointer;
   padding:0;
   transition:color .15s, background .15s, border-color .15s;
+}
+.sch-mini-expand:hover {
+  background:color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color:var(--accent);
+}
+[data-theme="jarvis"] .sch-mini-expand {
+  background:rgba(0,229,255,0.08);
+  border-color:rgba(0,229,255,0.3);
+  color:rgba(0,229,255,0.8);
 }
 [data-theme="jarvis"] .sch-mini-expand:hover {
   color:#18ffff;
   background:rgba(0,229,255,0.18);
   border-color:rgba(0,229,255,0.55);
+}
+@media (max-width:600px) {
+  /* Sit above the crew stack in normal flow instead of overlaying the top
+     cards — absolute positioning was overlapping the Admiral/President
+     row on narrow viewports. The radar canvas (`inset:0`) still paints
+     behind the mini-chat because the canvas fills the wired container. */
+  .schematic-wired .sch-mini-chat {
+    position:relative;
+    top:auto; left:auto; transform:none;
+    width:94%;
+    margin:0 auto 8px;
+    max-height:64px;
+    padding:7px 34px 7px 10px;
+    font-size:.72rem;
+    line-height:1.35;
+  }
+  .sch-mini-expand { width:22px; height:22px; top:4px; right:4px; }
 }
 
 /* ── Reactive EQ spectrum canvas ──

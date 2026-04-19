@@ -77,6 +77,7 @@ const Theme = (() => {
           'No eligible blueprints': 'Nothing eligible, sir',
           'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
           'No Blueprints Found': 'Nothing in the archive, sir',
+          'Standing by.': 'Standing by, sir.',
           // Toast titles. Values must be UNIQUE — `_reverseMap` uses
           // `Object.fromEntries` which silently collapses duplicate values,
           // corrupting the revert pass when JARVIS deactivates.
@@ -184,9 +185,12 @@ const Theme = (() => {
     document.querySelectorAll('.db').forEach(b => b.classList.remove('active'));
     document.querySelector(`.db[data-theme-id="${name}"]`)?.classList.add('active');
 
-    // Update active theme name label
+    // Update active theme name labels — HUD panel + mobile top bar.
+    const themeLabel = (t ? t.name : name).toUpperCase();
     const nameEl = document.getElementById('active-theme-name');
-    if (nameEl) nameEl.textContent = (t ? t.name : name).toUpperCase();
+    if (nameEl) nameEl.textContent = themeLabel;
+    const mobileLabel = document.getElementById('mobile-bar-theme');
+    if (mobileLabel) mobileLabel.textContent = themeLabel;
 
     // Update theme-color meta for PWA
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -326,7 +330,7 @@ const Theme = (() => {
     // only when the key begins/ends with a word character — keys that start
     // or end with punctuation (e.g. "Browse below.") skip the boundary on
     // that side because \b requires a word-char-adjacent position.
-    document.querySelectorAll('.bridge-hero-meta, h2, h3, p, .wizard-title, .bp-card-type, .btn-primary, .btn-sm, .builder-sub, .builder-legend, .builder-hint, legend, label, .notify-toast-title, .notify-toast-msg').forEach(el => {
+    document.querySelectorAll('.bridge-hero-meta, h2, h3, p, .wizard-title, .bp-card-type, .btn-primary, .btn-sm, .builder-sub, .builder-legend, .builder-hint, legend, label, .notify-toast-title, .notify-toast-msg, .sch-mini-chat-idle').forEach(el => {
       for (const k of keys) {
         const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const pre  = /^\w/.test(k) ? '\\b' : '';
@@ -1420,15 +1424,24 @@ const NICE = (() => {
     const panel = document.getElementById('app-hud-panel');
 
     if (btn && panel) {
+      const mobileBtn = document.getElementById('btn-hud-mobile');
+      const _isMobile = () => window.matchMedia('(max-width:768px)').matches;
       const toggleHUD = () => {
         const sidebar = document.getElementById('app-sidebar');
-        if (sidebar && !sidebar.classList.contains('open')) {
+        // Desktop: HUD panel lives in the sidebar so we need the drawer
+        // open for it to be visible. Mobile: CSS repositions the panel
+        // as a dropdown under the top bar, so leave the sidebar closed.
+        if (sidebar && !sidebar.classList.contains('open') && !_isMobile()) {
           sidebar.classList.add('open');
         }
         panel.classList.toggle('open');
         btn.classList.toggle('active');
+        if (mobileBtn) mobileBtn.classList.toggle('active');
       };
       btn.addEventListener('click', toggleHUD);
+      // Mobile mirror — same toggle, hooked from the mobile top bar so
+      // users don't need to open the sidebar drawer first.
+      if (mobileBtn) mobileBtn.addEventListener('click', toggleHUD);
 
       // Close on outside click
       // Alert badge dropdown
@@ -1459,9 +1472,15 @@ const NICE = (() => {
       }
 
       document.addEventListener('click', e => {
-        if (!panel.contains(e.target) && e.target !== btn) {
+        // Keep the mobile HUD trigger in the exclusion list — otherwise
+        // its toggle-open immediately trips this outside-click handler
+        // (mobileBtn isn't inside `panel`) and closes the panel.
+        const clickedTrigger = e.target === btn ||
+          (mobileBtn && (e.target === mobileBtn || mobileBtn.contains(e.target)));
+        if (!panel.contains(e.target) && !clickedTrigger) {
           panel.classList.remove('open');
           btn.classList.remove('active');
+          if (mobileBtn) mobileBtn.classList.remove('active');
         }
         if (alertDropdown && !alertDropdown.contains(e.target) && e.target !== alertBadge) {
           alertDropdown.classList.remove('open');

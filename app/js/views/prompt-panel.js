@@ -264,7 +264,7 @@ const PromptPanel = (() => {
         return;
       }
     }
-    mini.innerHTML = '<span class="sch-mini-chat-idle">Standing by, Sir.</span>';
+    mini.innerHTML = '<span class="sch-mini-chat-idle">Standing by.</span>';
   }
   /* Observe the monitor content for any mutation — streaming appends, final
      render, error cards, thinking indicator — and echo into the mini panel
@@ -2719,8 +2719,12 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
     // If explicitly shown on this route (e.g. reactor/card click), keep it visible
     if (_manualShow) return;
-    // Only show by default on the home page
-    if (path === '/') { if (_panel) _panel.style.display = ''; }
+    // Default-visible routes: Home, and the Schematic tab of the Bridge —
+    // both centre on the core reactor and expect a prompt surface below it.
+    const onSchematic = path.startsWith('/bridge') &&
+      (/tab=schematic/.test(location.hash) || !/tab=/.test(location.hash));
+    const showByDefault = path === '/' || onSchematic;
+    if (showByDefault) { if (_panel) _panel.style.display = ''; }
     else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
   }
 

@@ -3074,7 +3074,15 @@ const BlueprintsView = (() => {
 
   function renderEmbedded(el) { return render(el, { embedded: true }); }
 
-  return { title, render, renderEmbedded, _getSpaceshipSeed, SEED, SPACESHIP_SEED,
+  // Tear down any Bridge sub-views that register their own lifecycle so their
+  // side effects (Schematic sets --reactor-x/y on <html>; Tron owns a canvas
+  // loop) don't leak into the next route.
+  function destroy() {
+    if (typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
+    if (typeof TronView !== 'undefined' && TronView.destroy) TronView.destroy();
+  }
+
+  return { title, render, renderEmbedded, destroy, _getSpaceshipSeed, SEED, SPACESHIP_SEED,
     serialHash: typeof CardRenderer !== 'undefined' ? CardRenderer.serialHash : _serialHash,
     avatarArt: typeof CardRenderer !== 'undefined' ? CardRenderer.avatarArt : _avatarArt,
     categoryColors: typeof CardRenderer !== 'undefined' ? CardRenderer.CATEGORY_COLORS : _categoryColors,
