@@ -98,17 +98,12 @@ const CallMode = (() => {
     }
     // Pre-flight mic permission check. Browsers do NOT re-prompt once an
     // origin is in `denied` state, so getUserMedia would silently throw
-    // NotAllowedError without ever showing a dialog. Surface an actionable
-    // toast instead of flashing the connecting overlay only to bail.
+    // NotAllowedError without ever showing a dialog. Show the help modal
+    // with a real CTA instead of flashing the connecting overlay just to
+    // bail on a silent reject.
     const blocked = await _isMicBlocked();
     if (blocked) {
-      if (typeof Notify !== 'undefined') {
-        Notify.send({
-          title: 'Microphone blocked',
-          message: 'Click the lock icon in the address bar, set Microphone to "Allow", then reload.',
-          type: 'system',
-        });
-      }
+      _showMicHelp();
       return;
     }
     if (_deps && _deps.beforeEnter) _deps.beforeEnter();
@@ -139,6 +134,119 @@ const CallMode = (() => {
       const status = await navigator.permissions.query({ name: 'microphone' });
       return status.state === 'denied';
     } catch { return false; }
+  }
+
+  /* ── Mic help modal ──
+     Browsers don't expose a way for JavaScript to programmatically reset
+     a denied permission — only the user can flip it via the URL bar lock
+     icon. We do two things to make recovery one-click instead of a wall
+     of text:
+       1. The "Allow Microphone" button calls getUserMedia() from a fresh
+          user gesture. If the user has since reset the setting, the OS
+          dialog appears. If still denied, Chrome surfaces its in-browser
+          "Microphone blocked" reminder near the lock icon — directing
+          attention to where the fix lives.
+       2. permissions.query.onchange listens for the user flipping the
+          setting in the address bar. The moment it flips to `granted`,
+          we close the modal and start the call automatically — no
+          reload, no second click. */
+  let _micHelpEl = null;
+  let _micPermStatus = null;
+  let _micPermChangeBound = false;
+
+  function _showMicHelp() {
+    _ensureMicHelp();
+    if (_micHelpEl) _micHelpEl.hidden = false;
+    _bindMicPermChange();
+  }
+
+  function _hideMicHelp() {
+    if (_micHelpEl) _micHelpEl.hidden = true;
+    _unbindMicPermChange();
+  }
+
+  function _ensureMicHelp() {
+    if (document.getElementById('nice-ai-mic-help')) {
+      _micHelpEl = document.getElementById('nice-ai-mic-help');
+      return;
+    }
+    const el = document.createElement('div');
+    el.id = 'nice-ai-mic-help';
+    el.className = 'nice-ai-mic-help';
+    el.hidden = true;
+    el.innerHTML = ''
+      + '<div class="nice-ai-mic-help-backdrop"></div>'
+      + '<div class="nice-ai-mic-help-card" role="dialog" aria-labelledby="nice-ai-mic-help-title">'
+      +   '<div class="nice-ai-mic-help-icon" aria-hidden="true">'
+      +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36">'
+      +       '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>'
+      +       '<path d="M19 10v2a7 7 0 0 1-14 0v-2"/>'
+      +       '<line x1="12" y1="19" x2="12" y2="23"/>'
+      +       '<line x1="8" y1="23" x2="16" y2="23"/>'
+      +       '<line x1="2" y1="2" x2="22" y2="22" stroke="rgba(255,80,80,.85)" stroke-width="2"/>'
+      +     '</svg>'
+      +   '</div>'
+      +   '<h2 id="nice-ai-mic-help-title" class="nice-ai-mic-help-title">Microphone Access Needed</h2>'
+      +   '<p class="nice-ai-mic-help-body">Call Mode needs your microphone, but your browser has it blocked for this site.</p>'
+      +   '<p class="nice-ai-mic-help-hint">Click <strong>Allow Microphone</strong> below — your browser will surface its permission control near the address bar. Set Microphone to <strong>Allow</strong>, and the call will open automatically.</p>'
+      +   '<div class="nice-ai-mic-help-actions">'
+      +     '<button type="button" class="nice-ai-mic-help-cancel" id="nice-ai-mic-help-cancel">Cancel</button>'
+      +     '<button type="button" class="nice-ai-mic-help-allow" id="nice-ai-mic-help-allow">Allow Microphone</button>'
+      +   '</div>'
+      + '</div>';
+    document.body.appendChild(el);
+    _micHelpEl = el;
+
+    el.querySelector('#nice-ai-mic-help-cancel').addEventListener('click', _hideMicHelp);
+    el.querySelector('.nice-ai-mic-help-backdrop').addEventListener('click', _hideMicHelp);
+    el.querySelector('#nice-ai-mic-help-allow').addEventListener('click', _attemptMicGrant);
+  }
+
+  /**
+   * Re-attempt getUserMedia from a fresh user gesture. Two outcomes:
+   *   - State has flipped to `prompt` or `granted` (user reset it before
+   *     clicking) → success → close modal + open the call.
+   *   - State still `denied` → silent reject + Chrome's URL-bar reminder
+   *     appears. We keep the modal open; the onchange watcher will
+   *     auto-resume when the user flips the setting from there.
+   */
+  async function _attemptMicGrant() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());  // release immediately; enter() will re-acquire
+      _hideMicHelp();
+      enter();
+    } catch {
+      // Stay open. Browser is showing its reminder UI now; the onchange
+      // listener picks up when the user grants from there.
+    }
+  }
+
+  function _bindMicPermChange() {
+    if (_micPermChangeBound) return;
+    if (!navigator.permissions || !navigator.permissions.query) return;
+    navigator.permissions.query({ name: 'microphone' }).then((status) => {
+      _micPermStatus = status;
+      _micPermChangeBound = true;
+      status.addEventListener('change', _onMicPermChange);
+    }).catch(() => { /* no-op — Permissions API unavailable */ });
+  }
+
+  function _unbindMicPermChange() {
+    if (!_micPermChangeBound) return;
+    if (_micPermStatus) {
+      try { _micPermStatus.removeEventListener('change', _onMicPermChange); } catch {}
+    }
+    _micPermStatus = null;
+    _micPermChangeBound = false;
+  }
+
+  function _onMicPermChange() {
+    if (!_micPermStatus) return;
+    if (_micPermStatus.state === 'granted' || _micPermStatus.state === 'prompt') {
+      _hideMicHelp();
+      enter();
+    }
   }
 
   function end(reason) {

@@ -4031,6 +4031,86 @@ html.nice-call-mode .nice-ai-chips { display:none; }
   .nice-ai-call-reactor-slot { min-height:min(380px, 70vmin); }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   Mic Help Modal — shown when getUserMedia is in `denied` state.
+   Browsers don't let JS reset permissions; the modal's "Allow
+   Microphone" button calls getUserMedia (so Chrome surfaces its
+   URL-bar reminder) and a permissions.onchange watcher auto-resumes
+   the call the moment the user flips the setting.
+   ══════════════════════════════════════════════════════════════════ */
+.nice-ai-mic-help {
+  position:fixed; inset:0; z-index:9600;
+  display:flex; align-items:center; justify-content:center;
+  animation:niceMicHelpFade 180ms ease-out;
+}
+.nice-ai-mic-help[hidden] { display:none; }
+@keyframes niceMicHelpFade { from { opacity:0; } to { opacity:1; } }
+.nice-ai-mic-help-backdrop {
+  position:absolute; inset:0;
+  background:rgba(2,6,15,0.78);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  cursor:pointer;
+}
+.nice-ai-mic-help-card {
+  position:relative; z-index:1;
+  background:var(--panel-bg, #0c1422);
+  border:1px solid var(--border-hi, var(--border));
+  border-radius:var(--radius, 12px);
+  padding:32px 28px 24px;
+  max-width:min(440px, calc(100vw - 32px));
+  text-align:center;
+  box-shadow:0 24px 60px rgba(0,0,0,.5), var(--glow);
+  animation:niceMicHelpRise 220ms cubic-bezier(.2,.7,.2,1.2);
+}
+@keyframes niceMicHelpRise { from { transform:translateY(8px) scale(.97); opacity:0; } to { transform:translateY(0) scale(1); opacity:1; } }
+.nice-ai-mic-help-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:64px; height:64px; margin:0 auto 16px;
+  border-radius:50%;
+  background:color-mix(in srgb, var(--accent) 8%, transparent);
+  color:var(--accent);
+}
+.nice-ai-mic-help-title {
+  font-family:var(--font-h); font-size:1.05rem; font-weight:600;
+  color:var(--text); margin:0 0 12px; letter-spacing:.01em;
+}
+.nice-ai-mic-help-body {
+  font-family:var(--font-b); font-size:.85rem; color:var(--text);
+  margin:0 0 10px; line-height:1.5;
+}
+.nice-ai-mic-help-hint {
+  font-family:var(--font-b); font-size:.78rem; color:var(--text-muted);
+  margin:0 0 22px; line-height:1.55;
+}
+.nice-ai-mic-help-hint strong { color:var(--text); font-weight:600; }
+.nice-ai-mic-help-actions {
+  display:flex; gap:10px; justify-content:center;
+}
+.nice-ai-mic-help-cancel,
+.nice-ai-mic-help-allow {
+  font-family:var(--font-b); font-size:.82rem; font-weight:600;
+  padding:10px 20px; border-radius:var(--btn-radius, 8px);
+  cursor:pointer; transition:background .15s, border-color .15s, color .15s;
+}
+.nice-ai-mic-help-cancel {
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text-muted);
+}
+.nice-ai-mic-help-cancel:hover {
+  border-color:var(--border-hi);
+  color:var(--text);
+}
+.nice-ai-mic-help-allow {
+  background:var(--accent);
+  border:1px solid var(--accent);
+  color:var(--bg);
+}
+.nice-ai-mic-help-allow:hover {
+  background:var(--accent2, var(--accent));
+  border-color:var(--accent2, var(--accent));
+}
+
 /* Resume conversation button */
 .nice-ai-resume {
   display:flex; align-items:center; justify-content:center; gap:6px;
