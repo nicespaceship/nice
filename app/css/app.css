@@ -218,23 +218,30 @@
 /* ─────────────────────────────────────────────────────────────────
    HUD PANEL (inline sidebar, slides open pushing nav down)
 ───────────────────────────────────────────────────────────────── */
+/* Desktop: panel is a body-level element but positioned over the
+   sidebar's visual slot (just below the sidebar header). Previously
+   lived inside the sidebar and flexed it open; now fixed to the same
+   viewport coordinates with a slide-in via max-height + opacity. */
 .app-hud-panel {
+  position:fixed;
+  top:56px; left:8px; width:264px;
   max-height:0; overflow:hidden; opacity:0;
   padding:0 12px;
-  border-bottom:0 solid var(--border);
   display:flex; flex-direction:column; gap:10px;
-  transition:max-height .3s ease, opacity .25s ease, padding .3s ease, border-bottom-width .3s ease;
-  flex-shrink:0;
+  transition:max-height .3s ease, opacity .25s ease, padding .3s ease;
   background:var(--bg2, #18181b);
   color:var(--text);
-  margin:0 8px;
   border-radius:0 0 var(--radius, 10px) var(--radius, 10px);
+  z-index:303;
+  pointer-events:none;
 }
 .app-hud-panel.open {
   max-height:280px; opacity:1;
   padding:14px 12px;
   border-bottom:var(--border-width, 1px) solid var(--border);
+  pointer-events:auto;
 }
+
 .hud-row { display:flex; align-items:center; gap:6px; }
 .hud-row-sep { height:1px; background:var(--border); margin:2px 0; opacity:.5; }
 .hud-notif-row { justify-content:space-between; padding:2px 0; }
@@ -1560,6 +1567,22 @@
 .app-sidebar:not(.open) .sidebar-section-label,
 .app-sidebar:not(.open) .side-divider,
 .app-sidebar:not(.open) .app-hud-panel { display:none; }
+
+/* Mobile: the panel drops down from under the mobile top bar as a
+   full-width header dropdown. Base rule already sets position:fixed;
+   here we override only the anchor + dimensions for the mobile layout. */
+@media (max-width:768px) {
+  .app-hud-panel {
+    top:48px; left:0; width:auto; right:0;
+    border-radius:0;
+    background:var(--nav-bg, var(--bg2, #18181b));
+    backdrop-filter:blur(18px);
+  }
+  .app-hud-panel.open {
+    max-height:360px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+  }
+}
 .app-sidebar:not(.open) .side-header { justify-content:center; padding:8px; }
 .app-sidebar:not(.open) .side-header-actions { flex-direction:column; gap:4px; }
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
@@ -1593,6 +1616,32 @@
   cursor:pointer; padding:8px; display:flex; align-items:center; text-decoration:none;
 }
 .mobile-bar-btn:hover { color:var(--accent); }
+.mobile-bar-right { display:flex; align-items:center; gap:2px; }
+/* Theme name label — centered in the mobile top bar, same anchoring
+   pattern the hidden NICE brand uses. Takes priority over the brand
+   (brand is display:none on mobile). Long names get an ellipsis so
+   they never collide with the side buttons. */
+.mobile-bar-theme {
+  display:none;
+  position:absolute; left:50%; transform:translateX(-50%);
+  font-family:var(--font-b); font-size:.7rem; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent);
+  white-space:nowrap;
+  max-width:180px; overflow:hidden; text-overflow:ellipsis;
+  pointer-events:none;
+}
+@media (max-width:768px) {
+  .mobile-bar-theme { display:inline-block; }
+}
+.mobile-bar-btn-hud {
+  font-family:var(--font-b); font-size:.65rem; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase;
+  padding:6px 8px; border:1px solid var(--border); border-radius:4px;
+  color:var(--text-muted);
+}
+.mobile-bar-btn-hud.active,
+.mobile-bar-btn-hud:hover { color:var(--accent); border-color:var(--accent); }
 .app-mobile-bar .app-brand-text {
   font-family:var(--font-b); font-size:.85rem; font-weight:700;
   letter-spacing:.14em; color:var(--accent);
@@ -1748,13 +1797,23 @@
 .schematic-col .schematic-card-slot:nth-child(even) { transform:translateX(110px); }
 .schematic-col-right .schematic-card-slot:nth-child(even) { transform:translateX(-110px); }
 .schematic-center { flex:1; min-width:40px; position:relative; z-index:3; }
-.schematic-svg { position:absolute; inset:0; z-index:0; }
-.schematic-svg path, .schematic-svg line { pointer-events:none; }
-.schematic-svg circle { pointer-events:none; }
-.schematic-svg circle.sch-core-hit { pointer-events:all !important; cursor:pointer; }
+/* Wires paint beneath the global CoreReactor (body-mounted, z-index:0)
+   so the reactor sits in front of the traces. `.schematic-wired` doesn't
+   create a stacking context (no z-index), so z:-1 here stacks directly
+   against the reactor — not against the wired's own background. */
+.schematic-svg { position:absolute; inset:0; z-index:-1; }
+.schematic-svg path, .schematic-svg line, .schematic-svg circle { pointer-events:none; }
 /* HTML overlay for reactor core click (sits above SVG + slots) */
+/* Click hit-target for the core — tracks the same CSS vars the global
+   CoreReactor reads so it always sits on the reactor's visual center,
+   even when the Schematic retargets the reactor away from the wired
+   geometric center (e.g. decluttered mobile, where `.schematic-center`
+   stretches under a fixed prompt panel). Falls back to wired-center via
+   its enclosing stacking context when the vars aren't set. */
 .sch-core-hit-overlay {
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  position:fixed;
+  top:var(--reactor-y, 50%); left:var(--reactor-x, 50%);
+  transform:translate(-50%,-50%);
   width:120px; height:120px; border-radius:50%;
   cursor:pointer; z-index:5; pointer-events:auto;
   transition:box-shadow .3s, background .3s;
@@ -1892,6 +1951,17 @@
   .schematic-col-left, .schematic-col-right { align-items:center; }
   .schematic-col .schematic-card-slot:nth-child(even) { transform:none; }
   .schematic-center { min-height:100px; }
+  /* Declutter mode — crew cards + wires hidden so the reactor core and
+     mini-chat own the viewport. Radar sonar rings stay visible as the
+     backdrop. */
+  .schematic-wired.schematic-declutter .schematic-col,
+  .schematic-wired.schematic-declutter .schematic-svg { display:none; }
+}
+/* Declutter toggle — mobile-only; hidden on desktop. */
+.sch-declutter-toggle { display:none; }
+.sch-declutter-toggle svg { display:block; }
+@media (max-width:600px) {
+  .sch-declutter-toggle { display:inline-flex; align-items:center; justify-content:center; }
 }
 
 @media (prefers-reduced-motion:reduce) {

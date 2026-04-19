@@ -10,6 +10,21 @@ const SchematicView = (() => {
 
   let _heroView = 'schematic';
   let _resizeTimer = null;
+  let _wiredRO = null;
+  // Mobile-only: when true, hide the crew cards + wires so the reactor
+  // core + mini-chat own the viewport (better for ship-level prompts on
+  // narrow screens). Persisted across visits. Defaults to ON on mobile
+  // (fresh session, no stored preference) so first-time mobile users
+  // land on the focused ship view; desktop keeps the full crew layout.
+  const _KEY_DECLUTTER = 'nice-sch-declutter';
+  let _declutter = (function(){
+    try {
+      const stored = localStorage.getItem(_KEY_DECLUTTER);
+      if (stored === '1') return true;
+      if (stored === '0') return false;
+      return window.matchMedia('(max-width:600px)').matches;
+    } catch (e) { return false; }
+  })();
 
   function render(el) {
     const shipId = _getShipId();
@@ -44,6 +59,13 @@ const SchematicView = (() => {
     const tabsHTML = tabs.map(t =>
       `<button class="bridge-hero-tab ${_heroView === t.id ? 'active' : ''}" data-view="${t.id}">${t.label}</button>`
     ).join('');
+    // Declutter toggle — mobile-only (hidden on desktop via CSS). Shows as an
+    // eye icon that swaps between open/closed based on `_declutter` state.
+    const eyeIcon = _declutter
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.6 19.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.6 19.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const declutterLabel = _declutter ? 'Show cards' : 'Hide cards';
+    const declutterHTML = `<button class="bridge-hero-tab sch-declutter-toggle${_declutter ? ' active' : ''}" id="sch-declutter" type="button" aria-pressed="${_declutter}" aria-label="${declutterLabel}" title="${declutterLabel}">${eyeIcon}</button>`;
 
     // Ship selector dropdown
     const shipOptions = activatedShips.map(s =>
@@ -63,7 +85,7 @@ const SchematicView = (() => {
         <div class="bridge-hero-controls">
           ${switchBtnHTML}
           ${shipSelectHTML}
-          <div class="bridge-hero-tabs">${tabsHTML}</div>
+          <div class="bridge-hero-tabs">${tabsHTML}${declutterHTML}</div>
         </div>
       </div>
     `;
@@ -83,13 +105,19 @@ const SchematicView = (() => {
 
     if (_heroView === 'schematic') {
       requestAnimationFrame(() => {
-        _wireSchematic();
+        // Double-rAF the initial wire: first frame paints the new markup
+        // (so fresh mini-chat / cards have measurable box rects), second
+        // frame runs the measurement once layout has settled. Prevents a
+        // brief flash on theme swaps where the first measurement ran
+        // against mid-transition mini-chat metrics.
+        requestAnimationFrame(() => _wireSchematic());
+        _observeWired();
         const cvs = el.querySelector('.sch-radar-canvas');
         if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
           DockView._initRadar(cvs);
         }
         // Core click → prefill prompt with spaceship name (HTML overlay above SVG + slots)
-        const coreHit = el.querySelector('.sch-core-hit-overlay') || el.querySelector('.sch-core-hit');
+        const coreHit = el.querySelector('.sch-core-hit-overlay');
         if (coreHit) {
           coreHit.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -103,13 +131,27 @@ const SchematicView = (() => {
       });
     }
 
-    // Tab click handlers
-    el.querySelectorAll('.bridge-hero-tab').forEach(tab => {
+    // Tab click handlers — skip the declutter toggle (no data-view; it has
+    // its own handler below that flips the mobile-hide state in place).
+    el.querySelectorAll('.bridge-hero-tab[data-view]').forEach(tab => {
       tab.addEventListener('click', () => {
         _heroView = tab.dataset.view;
         render(el);
       });
     });
+
+    // Declutter toggle — mobile-only. Hides crew cards + wires so the
+    // reactor core + mini-chat own the viewport. Toggles a class on
+    // `.schematic-wired`; CSS handles the actual hiding so no re-render
+    // or DOM churn is needed.
+    const declutterBtn = el.querySelector('#sch-declutter');
+    if (declutterBtn) {
+      declutterBtn.addEventListener('click', () => {
+        _declutter = !_declutter;
+        try { localStorage.setItem(_KEY_DECLUTTER, _declutter ? '1' : '0'); } catch (e) {}
+        render(el);
+      });
+    }
 
     // Slot click → prefill prompt with @AgentName
     el.querySelectorAll('.bridge-slot-filled, .schematic-card-slot[data-bp-id]').forEach(slot => {
@@ -254,19 +296,30 @@ const SchematicView = (() => {
 
     const leftHTML = leftCrew.map(c => _miniCard(c, 'left')).join('');
     const rightHTML = rightCrew.map(c => _miniCard(c, 'right')).join('');
+    // SVG sits at the wired level (not inside `.schematic-center`) so it
+    // naturally covers the full crew arena — lines from edge cards in the
+    // side columns don't get clipped by the narrower center column, and
+    // its coordinate space matches the wired container's rect 1:1.
     const svg = '<svg class="schematic-svg" preserveAspectRatio="none"></svg>';
 
-    return '<div class="schematic-wired">' +
+    // Mini-chat sits at the wired level (not inside `.schematic-center`).
+    // On mobile the center column collapses to ~40px wide, so a
+    // percentage width inside it renders as a one-character-per-line
+    // sliver. Anchoring to the wired container gives it the full crew
+    // arena width on every breakpoint.
+    return '<div class="schematic-wired' + (_declutter ? ' schematic-declutter' : '') + '">' +
       '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
+      svg +
+      '<div class="sch-mini-chat" aria-live="polite">' +
+        '<div class="sch-mini-chat-content"><span class="sch-mini-chat-idle">Standing by.</span></div>' +
+        '<button class="sch-mini-expand" type="button" aria-label="Open full chat" title="Open full chat">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+        '</button>' +
+      '</div>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
-      '<div class="schematic-center">' + svg +
-        '<div class="sch-mini-chat" aria-live="polite">' +
-          '<div class="sch-mini-chat-content"><span class="sch-mini-chat-idle">Standing by, Sir.</span></div>' +
-          '<button class="sch-mini-expand" type="button" aria-label="Open full chat" title="Open full chat">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
-          '</button>' +
-        '</div>' +
-        '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' + '</div>' +
+      '<div class="schematic-center">' +
+        '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' +
+      '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';
   }
@@ -281,30 +334,54 @@ const SchematicView = (() => {
     if (!cards.length) return;
 
     const cRect = container.getBoundingClientRect();
-    const centerEl = container.querySelector('.schematic-center');
-    const centerRect = centerEl.getBoundingClientRect();
-
-    const rcx = centerRect.left - cRect.left + centerRect.width / 2;
-    const rcy = centerRect.top - cRect.top + centerRect.height / 2;
-
     const w = cRect.width;
     const h = cRect.height;
+
+    // SVG sits inside `.schematic-wired` with `position:absolute; inset:0`,
+    // so its painted area matches the wired rect 1:1. viewBox = pixel dims
+    // keeps the coordinate space identical to wired-local coordinates.
     svgEl.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-    svgEl.style.width = w + 'px';
-    svgEl.style.height = h + 'px';
+
+    // Reactor convergence point = wired center by default. Radar sonar
+    // rings, the click overlay, and the global CoreReactor (via the CSS
+    // var override below) all land on this same point so everything reads
+    // concentric. When decluttered on mobile the wired collapses to ~144
+    // tall (no cards, no wires) while the prompt panel is fixed at the
+    // bottom and the mini-chat sits at the top — the meaningful centre is
+    // the middle of that empty stretch, not the middle of the tiny wired.
+    const rcx = w / 2;
+    let rcy = h / 2;
+    const decluttered = container.classList.contains('schematic-declutter');
+    if (decluttered && window.innerWidth <= 600) {
+      const miniChat = container.querySelector('.sch-mini-chat');
+      const miniChatRect = miniChat ? miniChat.getBoundingClientRect() : null;
+      const topBound = miniChatRect ? miniChatRect.bottom : cRect.top;
+      // Prompt panel is `position:fixed`, so offsetParent is always null —
+      // check the computed display + rect height instead of offsetParent.
+      const promptEl = document.getElementById('nice-ai');
+      const promptVisible = promptEl &&
+        getComputedStyle(promptEl).display !== 'none';
+      const promptRect = promptVisible ? promptEl.getBoundingClientRect() : null;
+      const bottomBound = promptRect && promptRect.height > 0
+        ? promptRect.top : window.innerHeight;
+      const visibleCenterY = (topBound + bottomBound) / 2;
+      rcy = visibleCenterY - cRect.top;
+    }
+
+    // Retarget the global `.jv-pp-reactor` to the convergence point while
+    // the Schematic is mounted. Other views don't set these vars, so they
+    // fall back to viewport center per the default in theme.css.
+    const docEl = document.documentElement;
+    docEl.style.setProperty('--reactor-x', (cRect.left + rcx) + 'px');
+    docEl.style.setProperty('--reactor-y', (cRect.top + rcy) + 'px');
 
     let paths = '';
     let dots = '';
     let dotIdx = 0;
 
     const isStacked = getComputedStyle(container).flexDirection === 'column';
-    const isJarvis = document.documentElement.getAttribute('data-theme') === 'jarvis';
 
     cards.forEach((card, i) => {
-      // JARVIS theme: the arc reactor + HUD is the whole visual — no traces
-      // between the core and the crew cards. Skip path + dot generation.
-      if (isJarvis) return;
-
       // Use the inner mini card (or empty slot) for precise center, fall back to wrapper
       const inner = card.querySelector('.tcg-card-mini') || card.querySelector('.schematic-empty-slot') || card;
       const cardRect = inner.getBoundingClientRect();
@@ -355,18 +432,10 @@ const SchematicView = (() => {
       }
     });
 
-    const reactor = '<circle cx="' + rcx + '" cy="' + rcy + '" r="90" fill="var(--accent,#fff)" opacity=".04">' +
-      '<animate attributeName="r" values="80;100;80" dur="3s" repeatCount="indefinite"/>' +
-      '<animate attributeName="opacity" values=".02;.07;.02" dur="3s" repeatCount="indefinite"/>' +
-    '</circle>' +
-    '<circle cx="' + rcx + '" cy="' + rcy + '" r="48" fill="var(--accent,#fff)" opacity=".08">' +
-      '<animate attributeName="r" values="42;54;42" dur="2.5s" repeatCount="indefinite"/>' +
-      '<animate attributeName="opacity" values=".05;.12;.05" dur="2.5s" repeatCount="indefinite"/>' +
-    '</circle>' +
-    '<circle cx="' + rcx + '" cy="' + rcy + '" r="21" fill="var(--accent,#fff)" opacity=".9"/>' +
-    '<circle class="sch-core-hit" cx="' + rcx + '" cy="' + rcy + '" r="50" fill="transparent" style="cursor:pointer;pointer-events:all"/>';
-
-    svgEl.innerHTML = paths + reactor + dots;
+    // No local reactor circles — the global CoreReactor (positioned via
+    // the CSS vars above) is the single centerpiece. The HTML overlay
+    // `.sch-core-hit-overlay` in `.schematic-center` owns the click hit.
+    svgEl.innerHTML = paths + dots;
   }
 
   function _renderHeroSlots(shipClass, slotMap, activeShip) {
@@ -560,16 +629,55 @@ const SchematicView = (() => {
   }
 
   function _onResize() {
-    clearTimeout(_resizeTimer);
-    _resizeTimer = setTimeout(_wireSchematic, 150);
+    // Collapse burst events (sidebar CSS transition, font load, theme
+    // swap) into a single rAF — fast enough to feel instant, still safe
+    // from re-entrant layout thrash.
+    if (_resizeTimer) return;
+    _resizeTimer = requestAnimationFrame(() => {
+      _resizeTimer = null;
+      _wireSchematic();
+    });
+  }
+
+  // A window `resize` only fires when the viewport changes, but the
+  // reactor target also shifts when the sidebar expands/collapses, the
+  // theme swaps (fonts/metrics redraw the mini-chat), or the wired
+  // reflows. The wired alone isn't enough — `.schematic-center` is
+  // `flex:1`, so when the mini-chat grows/shrinks the center absorbs it
+  // and wired stays the same height. Observe the mini-chat too so theme
+  // swaps recompute the reactor center even when wired doesn't resize.
+  function _observeWired() {
+    if (!('ResizeObserver' in window)) return;
+    const wired = document.querySelector('.schematic-wired');
+    if (!wired) return;
+    if (_wiredRO) _wiredRO.disconnect();
+    _wiredRO = new ResizeObserver(_onResize);
+    _wiredRO.observe(wired);
+    const mini = wired.querySelector('.sch-mini-chat');
+    if (mini) _wiredRO.observe(mini);
   }
 
   function destroy() {
-    clearTimeout(_resizeTimer);
+    if (_resizeTimer) { cancelAnimationFrame(_resizeTimer); _resizeTimer = null; }
     window.removeEventListener('resize', _onResize);
+    if (_wiredRO) { _wiredRO.disconnect(); _wiredRO = null; }
     // Clean up radar canvas
     if (typeof DockView !== 'undefined' && DockView._stopRadar) {
       DockView._stopRadar();
+    }
+    // Release the core-reactor anchor so other views get viewport-centered.
+    // Skip the clear when destroy fires as part of an in-place re-render
+    // (e.g. Theme.set → Router.refresh while still on the Schematic route)
+    // — clearing + re-setting leaves a one-frame window at fallback 50%,
+    // which reads as a visible reactor jump. We only release when the
+    // user is actually navigating away from the Schematic.
+    const hash = location.hash || '';
+    const stillOnSchematic = hash.includes('bridge') &&
+      (/tab=schematic/.test(hash) || !/tab=/.test(hash));
+    if (!stillOnSchematic) {
+      const docEl = document.documentElement;
+      docEl.style.removeProperty('--reactor-x');
+      docEl.style.removeProperty('--reactor-y');
     }
   }
 

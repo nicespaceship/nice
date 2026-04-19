@@ -147,31 +147,6 @@
     </div>
   </div>
 
-  <!-- HUD PANEL (inline, slides open pushing nav down) -->
-  <div class="app-hud-panel" id="app-hud-panel">
-    <div class="hud-row" style="justify-content:space-between">
-      <span class="dock-lbl"><span id="active-theme-name" class="dock-lbl-val" style="text-transform:uppercase"></span></span>
-      <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-sun"/></svg>
-      </button>
-    </div>
-    <div class="hud-row" id="theme-dock-btns">
-      <!-- Rendered dynamically by Theme.renderDock() -->
-    </div>
-    <div class="hud-row-sep"></div>
-    <div class="hud-row">
-      <span class="dock-lbl">FONT</span>
-      <button class="fb fb-auto"  data-fid="auto"  data-tip="Auto"    aria-label="Auto">A</button>
-      <button class="fb fb-clean" data-fid="clean" data-tip="Inter"   aria-label="Inter">A</button>
-      <button class="fb fb-space" data-fid="space" data-tip="Orbitron" aria-label="Orbitron">A</button>
-      <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani" aria-label="Rajdhani">A</button>
-      <button class="fb fb-code"  data-fid="code"  data-tip="Fira"    aria-label="Fira Code">A</button>
-      <button class="fb fb-serif" data-fid="serif" data-tip="Playfair" aria-label="Playfair">A</button>
-      <button class="fb fb-mono"  data-fid="mono"  data-tip="Share"   aria-label="Share Tech">A</button>
-      <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"   aria-label="Pixel">A</button>
-    </div>
-  </div>
-
   <nav class="app-side-nav">
     <a href="#/bridge" class="side-link active" data-view="blueprints">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-monitor"/></svg>
@@ -257,6 +232,37 @@
   </div>
 </div>
 
+<!-- HUD PANEL — lives at body level (not inside .app-sidebar) so it
+     can anchor to the viewport on mobile. The sidebar gets `transform`
+     on mobile to slide as a drawer, which creates a new containing
+     block for fixed descendants — so an in-sidebar panel can't
+     dropdown from the top of the viewport. CSS handles both modes:
+     desktop slides it in the sidebar's visual slot; mobile floats it
+     under the top bar. -->
+<div class="app-hud-panel" id="app-hud-panel">
+  <div class="hud-row" style="justify-content:space-between">
+    <span class="dock-lbl"><span id="active-theme-name" class="dock-lbl-val" style="text-transform:uppercase"></span></span>
+    <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-sun"/></svg>
+    </button>
+  </div>
+  <div class="hud-row" id="theme-dock-btns">
+    <!-- Rendered dynamically by Theme.renderDock() -->
+  </div>
+  <div class="hud-row-sep"></div>
+  <div class="hud-row">
+    <span class="dock-lbl">FONT</span>
+    <button class="fb fb-auto"  data-fid="auto"  data-tip="Auto"    aria-label="Auto">A</button>
+    <button class="fb fb-clean" data-fid="clean" data-tip="Inter"   aria-label="Inter">A</button>
+    <button class="fb fb-space" data-fid="space" data-tip="Orbitron" aria-label="Orbitron">A</button>
+    <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani" aria-label="Rajdhani">A</button>
+    <button class="fb fb-code"  data-fid="code"  data-tip="Fira"    aria-label="Fira Code">A</button>
+    <button class="fb fb-serif" data-fid="serif" data-tip="Playfair" aria-label="Playfair">A</button>
+    <button class="fb fb-mono"  data-fid="mono"  data-tip="Share"   aria-label="Share Tech">A</button>
+    <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"   aria-label="Pixel">A</button>
+  </div>
+</div>
+
 <!-- Sidebar overlay for mobile -->
 <div class="app-sidebar-overlay" id="sidebar-overlay"></div>
 
@@ -267,9 +273,13 @@
     <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-menu"/></svg>
   </button>
   <span class="app-brand-text">NICE</span>
-  <a href="#/profile" class="mobile-bar-btn" aria-label="Profile">
-    <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-profile"/></svg>
-  </a>
+  <span class="mobile-bar-theme" id="mobile-bar-theme" aria-hidden="true"></span>
+  <div class="mobile-bar-right">
+    <button class="mobile-bar-btn mobile-bar-btn-hud" id="btn-hud-mobile" aria-label="HUD" title="HUD">HUD</button>
+    <a href="#/profile" class="mobile-bar-btn" aria-label="Profile">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-profile"/></svg>
+    </a>
+  </div>
 </div>
 
 <!-- ═══ MAIN CONTENT ═══ -->
