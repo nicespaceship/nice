@@ -77,8 +77,10 @@ const Theme = (() => {
           'No eligible blueprints': 'Nothing eligible, sir',
           'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
           'No Blueprints Found': 'Nothing in the archive, sir',
-          // Toast titles
-          'Installed': 'Protocol engaged, sir.',
+          // Toast titles. Values must be UNIQUE — `_reverseMap` uses
+          // `Object.fromEntries` which silently collapses duplicate values,
+          // corrupting the revert pass when JARVIS deactivates.
+          'Installed': 'Protocol installed, sir.',
           'Activated!': 'Protocol engaged, sir.',
           'Published!': 'Protocol filed, sir.',
           'Rated!': 'Rating logged, sir.',
