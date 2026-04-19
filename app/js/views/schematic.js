@@ -116,16 +116,18 @@ const SchematicView = (() => {
         if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
           DockView._initRadar(cvs);
         }
-        // Core click → prefill prompt with spaceship name (HTML overlay above SVG + slots)
+        // Core click → open prompt panel, prefill @Ship, and start dictation.
+        // Maps the centrepiece to the "activate the AI to listen" gesture:
+        // one tap, user speaks, transcript auto-sends when they stop.
         const coreHit = el.querySelector('.sch-core-hit-overlay');
         if (coreHit) {
           coreHit.addEventListener('click', (e) => {
             e.stopPropagation();
             const shipName = activeShip?.name || 'Ship';
-            if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
-              PromptPanel.show();
-              PromptPanel.prefill('@' + shipName + ' ');
-            }
+            if (typeof PromptPanel === 'undefined') return;
+            if (PromptPanel.show) PromptPanel.show();
+            if (PromptPanel.prefill) PromptPanel.prefill('@' + shipName + ' ');
+            if (PromptPanel.startDictation) PromptPanel.startDictation();
           });
         }
       });
@@ -318,7 +320,7 @@ const SchematicView = (() => {
       '</div>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
       '<div class="schematic-center">' +
-        '<div class="sch-core-hit-overlay" title="Send a mission to this ship"></div>' +
+        '<div class="sch-core-hit-overlay" title="Tap to speak a mission"></div>' +
       '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';

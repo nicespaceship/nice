@@ -2462,6 +2462,12 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _startVoiceCapture();
   }
 
+  function startDictation() {
+    if (!_panel) return;
+    if (_recognition) return;
+    _startVoiceCapture();
+  }
+
   function _startVoiceCapture() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
@@ -2742,5 +2748,5 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     }
   }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, _reload, _md: typeof _md !== 'undefined' ? _md : null };
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _md: typeof _md !== 'undefined' ? _md : null };
 })();
