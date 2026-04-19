@@ -96,6 +96,21 @@ const CallMode = (() => {
       }
       return;
     }
+    // Pre-flight mic permission check. Browsers do NOT re-prompt once an
+    // origin is in `denied` state, so getUserMedia would silently throw
+    // NotAllowedError without ever showing a dialog. Surface an actionable
+    // toast instead of flashing the connecting overlay only to bail.
+    const blocked = await _isMicBlocked();
+    if (blocked) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({
+          title: 'Microphone blocked',
+          message: 'Click the lock icon in the address bar, set Microphone to "Allow", then reload.',
+          type: 'system',
+        });
+      }
+      return;
+    }
     if (_deps && _deps.beforeEnter) _deps.beforeEnter();
 
     _active = true;
@@ -109,6 +124,21 @@ const CallMode = (() => {
     if (!ok) return; // end() already ran with an error message
     _startRecognition();
     _setPhase('listening');
+  }
+
+  /**
+   * Returns true when the origin's microphone permission is in `denied`
+   * state — browsers won't re-prompt from this state. Returns false when
+   * the state is `prompt` or `granted` (or when the Permissions API is
+   * unavailable, since older browsers fall through to the getUserMedia
+   * dialog directly).
+   */
+  async function _isMicBlocked() {
+    try {
+      if (!navigator.permissions || !navigator.permissions.query) return false;
+      const status = await navigator.permissions.query({ name: 'microphone' });
+      return status.state === 'denied';
+    } catch { return false; }
   }
 
   function end(reason) {
@@ -200,7 +230,15 @@ const CallMode = (() => {
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
     } catch (e) {
-      end(e && e.name === 'NotAllowedError' ? 'Microphone access denied.' : 'Microphone unavailable.');
+      // Fallback path — the pre-flight check in enter() catches `denied`
+      // upstream, but a race (user revokes mid-call) or unsupported
+      // Permissions API can still land here. Mirror the actionable copy
+      // so the toast tells the user how to recover.
+      end(
+        e && e.name === 'NotAllowedError'
+          ? 'Microphone blocked. Click the lock icon in the address bar, set Microphone to "Allow", then reload.'
+          : 'Microphone unavailable. Check that no other app is using it.'
+      );
       return false;
     }
     try {
