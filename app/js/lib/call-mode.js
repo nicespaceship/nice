@@ -96,16 +96,12 @@ const CallMode = (() => {
       }
       return;
     }
-    // Pre-flight mic permission check. Browsers do NOT re-prompt once an
-    // origin is in `denied` state, so getUserMedia would silently throw
-    // NotAllowedError without ever showing a dialog. Show the help modal
-    // with a real CTA instead of flashing the connecting overlay just to
-    // bail on a silent reject.
-    const blocked = await _isMicBlocked();
-    if (blocked) {
-      _showMicHelp();
-      return;
-    }
+    // No pre-flight permissions check — its `denied` answer can lag the
+    // real state (e.g. user just enabled mic via the lock icon but the
+    // tab hasn't refreshed its cache), so trusting it would falsely
+    // block users who already granted. Always try getUserMedia first;
+    // the browser is the source of truth. _startMic surfaces the
+    // visual help modal on NotAllowedError.
     if (_deps && _deps.beforeEnter) _deps.beforeEnter();
 
     _active = true;
@@ -116,40 +112,27 @@ const CallMode = (() => {
     _setCaption('assistant', '');
 
     const ok = await _startMic();
-    if (!ok) return; // end() already ran with an error message
+    if (!ok) return; // _startMic handled cleanup + error UX
     _startRecognition();
     _setPhase('listening');
   }
 
-  /**
-   * Returns true when the origin's microphone permission is in `denied`
-   * state — browsers won't re-prompt from this state. Returns false when
-   * the state is `prompt` or `granted` (or when the Permissions API is
-   * unavailable, since older browsers fall through to the getUserMedia
-   * dialog directly).
-   */
-  async function _isMicBlocked() {
-    try {
-      if (!navigator.permissions || !navigator.permissions.query) return false;
-      const status = await navigator.permissions.query({ name: 'microphone' });
-      return status.state === 'denied';
-    } catch { return false; }
-  }
-
   /* ── Mic help modal ──
      Browsers don't expose a way for JavaScript to programmatically reset
-     a denied permission — only the user can flip it via the URL bar lock
-     icon. We do two things to make recovery one-click instead of a wall
-     of text:
-       1. The "Allow Microphone" button calls getUserMedia() from a fresh
-          user gesture. If the user has since reset the setting, the OS
-          dialog appears. If still denied, Chrome surfaces its in-browser
-          "Microphone blocked" reminder near the lock icon — directing
-          attention to where the fix lives.
-       2. permissions.query.onchange listens for the user flipping the
-          setting in the address bar. The moment it flips to `granted`,
-          we close the modal and start the call automatically — no
-          reload, no second click. */
+     a denied permission — only the user can flip it via the URL bar's
+     site-permissions control. The modal is an honest visual guide with
+     copy + arrow tailored to the user's browser context (lock vs
+     sliders vs AA vs PWA standalone), pointing them at where the fix
+     actually lives.
+
+     Triggered by getUserMedia rejecting with NotAllowedError — never
+     pre-flighted via Permissions API, since its `denied` answer can
+     lag the real state and falsely block users who already granted.
+
+     Try Again button retries getUserMedia (in case the user just
+     enabled it). The permissions.query.onchange watcher does the magic:
+     the moment the user flips the setting via the address bar, the
+     modal closes and the call opens automatically — no second click. */
   let _micHelpEl = null;
   let _micPermStatus = null;
   let _micPermChangeBound = false;
@@ -165,31 +148,138 @@ const CallMode = (() => {
     _unbindMicPermChange();
   }
 
+  /**
+   * Detect the user's browser context so the mic-help guide can match
+   * what they actually see. "lock icon" is wrong for ~half of users:
+   * Chrome ≥117 shows a sliders/tune icon, Safari shows "AA", PWA
+   * standalone has no URL bar at all, mobile may auto-hide it. Returns
+   * { kind, iconLabel, instructions } so the modal can render the right
+   * copy for each case.
+   */
+  function _detectMicHelpContext() {
+    const ua = navigator.userAgent || '';
+    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || window.navigator.standalone === true;
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg/i.test(ua);
+    const isFirefox = /Firefox|FxiOS/i.test(ua);
+    const isEdge = /Edg\//.test(ua);
+    const isChrome = /Chrome|CriOS|Chromium/i.test(ua) && !isEdge;
+
+    if (isStandalone) {
+      return {
+        kind: 'standalone',
+        iconLabel: 'system settings',
+        showArrow: false,
+        steps: [
+          'Open your device <strong>Settings</strong> app (NICE has no address bar in installed mode)',
+          'Find <strong>NICE</strong> in the apps list \u2014 or under <strong>Browser → Site Settings</strong> for nicespaceship.ai',
+          'Set <strong>Microphone</strong> to <strong>Allow</strong>, then return here',
+        ],
+      };
+    }
+    if (isIOS && isSafari) {
+      return {
+        kind: 'safari-ios',
+        iconLabel: 'AA',
+        showArrow: true,
+        arrowLabel: 'Tap up here',
+        steps: [
+          'Tap the <strong>AA</strong> button on the left of the address bar',
+          'Tap <strong>Website Settings</strong> \u2192 <strong>Microphone</strong> \u2192 <strong>Allow</strong>',
+          'The call opens automatically \u2014 or tap <strong>Try Again</strong> below',
+        ],
+      };
+    }
+    if (isSafari) {
+      return {
+        kind: 'safari-mac',
+        iconLabel: 'AA',
+        showArrow: true,
+        arrowLabel: 'Look up here',
+        steps: [
+          'Click the <strong>AA</strong> button on the left of the address bar',
+          'Click <strong>Website Settings</strong> \u2192 set <strong>Microphone</strong> to <strong>Allow</strong>',
+          'The call opens automatically \u2014 or click <strong>Try Again</strong> below',
+        ],
+      };
+    }
+    if (isFirefox) {
+      return {
+        kind: 'firefox',
+        iconLabel: 'shield/lock',
+        showArrow: true,
+        arrowLabel: 'Look up here',
+        steps: [
+          'Click the <strong>shield</strong> or <strong>lock</strong> icon on the left of the address bar',
+          'Find the <strong>Microphone</strong> permission and remove the block',
+          'The call opens automatically \u2014 or click <strong>Try Again</strong> below',
+        ],
+      };
+    }
+    if (isAndroid && isChrome) {
+      return {
+        kind: 'chrome-android',
+        iconLabel: 'tune/lock icon',
+        showArrow: true,
+        arrowLabel: 'Tap up here',
+        steps: [
+          'Tap the <strong>tune</strong> or <strong>lock</strong> icon to the left of the address bar',
+          'Tap <strong>Permissions</strong> \u2192 <strong>Microphone</strong> \u2192 <strong>Allow</strong>',
+          'The call opens automatically \u2014 or tap <strong>Try Again</strong> below',
+        ],
+      };
+    }
+    // Chrome, Edge, Brave, Vivaldi, Arc, anything Chromium-based on desktop
+    return {
+      kind: 'chromium-desktop',
+      iconLabel: 'tune/lock icon',
+      showArrow: true,
+      arrowLabel: 'Look up here',
+      steps: [
+        'Click the <strong>tune</strong> icon (sliders) or <strong>lock</strong> icon on the left of the address bar',
+        'Find <strong>Microphone</strong> in the dropdown and set it to <strong>Allow</strong>',
+        'The call opens automatically \u2014 or click <strong>Try Again</strong> below',
+      ],
+    };
+  }
+
   function _ensureMicHelp() {
     if (document.getElementById('nice-ai-mic-help')) {
       _micHelpEl = document.getElementById('nice-ai-mic-help');
       return;
     }
+    const ctx = _detectMicHelpContext();
     const el = document.createElement('div');
     el.id = 'nice-ai-mic-help';
     el.className = 'nice-ai-mic-help';
+    el.dataset.context = ctx.kind;
     el.hidden = true;
-    // Honest framing: the fix lives in browser chrome, not in the page,
-    // so the modal IS a visual guide pointing the user at where to click,
-    // not a fake button that pretends to grant permission. The pulsing
-    // arrow at the top points up toward the URL bar's lock icon — the
-    // only place a denied permission can actually be reset. The "Try
-    // Again" button is a retry (in case the user already enabled it),
-    // not a magical fix; the permissions.onchange watcher does the real
-    // magic of auto-resuming when the user flips the setting.
+    // Honest framing: the fix lives in browser chrome (or OS settings in
+    // standalone PWA mode), not in the page. The modal IS a visual guide
+    // pointing the user at where to click, with copy + arrow tailored to
+    // their browser. The "Try Again" button retries getUserMedia in case
+    // the user's already granted; the permissions.onchange watcher does
+    // the real magic of auto-resuming when the user flips the setting.
+    const arrowHtml = ctx.showArrow
+      ? '<div class="nice-ai-mic-help-arrow" aria-hidden="true">'
+        +   '<svg viewBox="0 0 32 64" width="32" height="64">'
+        +     '<path d="M16 60 L16 6 M6 16 L16 6 L26 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+        +   '</svg>'
+        +   '<div class="nice-ai-mic-help-arrow-label">' + ctx.arrowLabel + '</div>'
+        + '</div>'
+      : '';
+    const stepsHtml = ctx.steps.map((s, i) =>
+      '<li><span class="nice-ai-mic-help-step-num">' + (i + 1) + '</span>'
+        + '<span class="nice-ai-mic-help-step-text">' + s + '</span></li>'
+    ).join('');
+    const bodyText = ctx.kind === 'standalone'
+      ? 'NICE is running as an installed app, so there\u2019s no browser address bar to grant mic from. The fix lives in your device\u2019s settings:'
+      : 'Your browser has blocked microphone access for this site. NICE can\u2019t reset that from here \u2014 it has to come from your browser. Here\u2019s where to look:';
     el.innerHTML = ''
       + '<div class="nice-ai-mic-help-backdrop"></div>'
-      + '<div class="nice-ai-mic-help-arrow" aria-hidden="true">'
-      +   '<svg viewBox="0 0 32 64" width="32" height="64">'
-      +     '<path d="M16 60 L16 6 M6 16 L16 6 L26 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
-      +   '</svg>'
-      +   '<div class="nice-ai-mic-help-arrow-label">Look up here</div>'
-      + '</div>'
+      + arrowHtml
       + '<div class="nice-ai-mic-help-card" role="dialog" aria-labelledby="nice-ai-mic-help-title">'
       +   '<div class="nice-ai-mic-help-icon" aria-hidden="true">'
       +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36">'
@@ -201,12 +291,8 @@ const CallMode = (() => {
       +     '</svg>'
       +   '</div>'
       +   '<h2 id="nice-ai-mic-help-title" class="nice-ai-mic-help-title">Microphone Access Needed</h2>'
-      +   '<p class="nice-ai-mic-help-body">Your browser has blocked microphone access for this site. NICE can\u2019t reset that from here \u2014 it has to come from your browser. Three steps:</p>'
-      +   '<ol class="nice-ai-mic-help-steps">'
-      +     '<li><span class="nice-ai-mic-help-step-num">1</span><span class="nice-ai-mic-help-step-text">Click the <strong>lock icon</strong> in the address bar at the top of your browser</span></li>'
-      +     '<li><span class="nice-ai-mic-help-step-num">2</span><span class="nice-ai-mic-help-step-text">Set <strong>Microphone</strong> to <strong>Allow</strong></span></li>'
-      +     '<li><span class="nice-ai-mic-help-step-num">3</span><span class="nice-ai-mic-help-step-text">The call opens automatically \u2014 or click <strong>Try Again</strong> below</span></li>'
-      +   '</ol>'
+      +   '<p class="nice-ai-mic-help-body">' + bodyText + '</p>'
+      +   '<ol class="nice-ai-mic-help-steps">' + stepsHtml + '</ol>'
       +   '<div class="nice-ai-mic-help-status" id="nice-ai-mic-help-status" hidden></div>'
       +   '<div class="nice-ai-mic-help-actions">'
       +     '<button type="button" class="nice-ai-mic-help-cancel" id="nice-ai-mic-help-cancel">Cancel</button>'
@@ -366,15 +452,17 @@ const CallMode = (() => {
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
     } catch (e) {
-      // Fallback path — the pre-flight check in enter() catches `denied`
-      // upstream, but a race (user revokes mid-call) or unsupported
-      // Permissions API can still land here. Mirror the actionable copy
-      // so the toast tells the user how to recover.
-      end(
-        e && e.name === 'NotAllowedError'
-          ? 'Microphone blocked. Click the lock icon in the address bar, set Microphone to "Allow", then reload.'
-          : 'Microphone unavailable. Check that no other app is using it.'
-      );
+      // NotAllowedError is the canonical "user has blocked this origin"
+      // signal. Drop the connecting overlay quietly and surface the
+      // visual mic-help modal (which now shows browser-aware copy +
+      // arrow at the URL bar). Other errors (NotFoundError, hardware
+      // busy, etc.) get the simpler toast.
+      if (e && e.name === 'NotAllowedError') {
+        end();              // cleanup state without notification toast
+        _showMicHelp();     // visual guide owns the recovery UX
+        return false;
+      }
+      end('Microphone unavailable. Check that no other app is using it.');
       return false;
     }
     try {
