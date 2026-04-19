@@ -2818,16 +2818,16 @@
 [data-theme="jarvis"] .schematic-svg circle:not([class]) { opacity:0; }
 [data-theme="jarvis"] .schematic-svg .sch-core-hit { opacity:1; }
 
-/* ── Global reactor — Schematic centerpiece mirrored on every chat prompt ──
-   Hidden by default; shown on JARVIS theme everywhere except the Schematic
-   page (Ship Detail) where the in-view reactor already occupies the view.
-   The reactor mounts as a direct <body> child so `position:fixed` resolves
-   against the viewport (not the prompt panel's transform-created containing
-   block). JS toggles `.jv-pp-reactor-off` on <html> on the Schematic route.
-   The wrapper is sized to contain the full 600px Schematic HUD. */
-.jv-pp-reactor { display:none; }
-[data-theme="jarvis"]:not(.jv-pp-reactor-off) .jv-pp-reactor {
-  display:block; position:fixed;
+/* ── Core reactor — viewport-centered centerpiece on every theme ──
+   Mounts as a direct <body> child so `position:fixed` resolves against
+   the viewport (not the prompt panel's transform-created containing
+   block). CoreReactor paints theme-specific markup into the wrapper —
+   JARVIS uses its arc-reactor + HUD stack; every other theme uses the
+   shared DefaultCore SVG (concentric rings tinted by var(--accent)).
+   The wrapper is sized to contain the full 600px JARVIS HUD; the
+   default core scales down via SVG preserveAspectRatio. */
+.jv-pp-reactor {
+  position:fixed;
   top:50%; left:50%;
   transform:translate(-50%,-50%);
   width:min(620px, 85vmin); height:min(620px, 85vmin);
@@ -2835,9 +2835,9 @@
   opacity:0.5;
   transition:opacity 200ms ease;
 }
-/* Brighten when JARVIS is responding */
-[data-theme="jarvis"][data-jv-state="streaming"]:not(.jv-pp-reactor-off) .jv-pp-reactor { opacity:0.75; }
-[data-theme="jarvis"][data-jv-state="speaking"]:not(.jv-pp-reactor-off) .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }
+/* Brighten when responding (state machine writes data-jv-state on <html>) */
+[data-jv-state="streaming"] .jv-pp-reactor { opacity:0.75; }
+[data-jv-state="speaking"] .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }
 
 /* ── Audio-reactive drive (speaking state) ──
    JS writes --jv-vol (0..1) on <html> from the TTS AnalyserNode and sets
