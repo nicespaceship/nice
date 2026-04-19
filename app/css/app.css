@@ -3790,7 +3790,11 @@
 }
 .nice-ai-input {
   flex:1; resize:none; height:36px; max-height:120px;
-  padding:0; border:none;
+  /* 8px top/bottom centers the 1.5-line-height text in the 36px box;
+     14px left/right gives the placeholder breathing room from the
+     border. box-sizing:border-box keeps the 36px height intact, and
+     scrollHeight-driven autogrow already accounts for padding. */
+  padding:8px 14px; border:none;
   background:transparent; color:var(--text);
   font-family:var(--font-b); font-size:.84rem;
   line-height:1.5; overflow-y:auto;
