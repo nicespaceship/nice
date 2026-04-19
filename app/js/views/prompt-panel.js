@@ -2113,7 +2113,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
               <button class="nice-ai-tts-mute" id="nice-ai-tts-mute" aria-label="JARVIS voice" title="JARVIS voice" style="display:none">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
               </button>
-              <button class="nice-ai-voice-btn" id="nice-ai-voice" aria-label="Voice mode" title="Voice mode">
+              <button class="nice-ai-voice-btn" id="nice-ai-voice" aria-label="Dictate" title="Dictate (Caps Lock)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               </button>
               <button class="nice-ai-send-btn" id="nice-ai-send" aria-label="Send" title="Send message">
@@ -2184,7 +2184,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Send button (NS logo) — manual send cancels any pending auto-arm
     _panel.querySelector('#nice-ai-send')?.addEventListener('click', () => { _cancelAutoArm(); _send(); });
 
-    // Voice mode — tap-to-talk (like Claude Code)
+    // Dictate — tap-to-talk (press Caps Lock for the keyboard shortcut).
     // Tap 1: start listening. Tap 2: stop & send.
     _panel.querySelector('#nice-ai-voice')?.addEventListener('click', _toggleVoiceCapture);
 
@@ -2509,7 +2509,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _recognition.onend = () => {
       if (voiceBtn) {
         voiceBtn.classList.remove('listening', 'auto-armed');
-        voiceBtn.title = 'Voice mode';
+        voiceBtn.title = 'Dictate (Caps Lock)';
         voiceBtn.innerHTML = _MIC_SVG;
       }
       _stopWaveform();
@@ -2524,7 +2524,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     _recognition.onerror = (e) => {
       if (voiceBtn) {
         voiceBtn.classList.remove('listening', 'auto-armed');
-        voiceBtn.title = 'Voice mode';
+        voiceBtn.title = 'Dictate (Caps Lock)';
         voiceBtn.innerHTML = _MIC_SVG;
       }
       _stopWaveform();
