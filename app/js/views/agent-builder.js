@@ -787,7 +787,8 @@ const LLM_PROVIDERS = [...new Set((typeof VaultView !== 'undefined' ? VaultView.
 });
 
 const LLM_MODELS = (typeof VaultView !== 'undefined' ? VaultView.MODEL_CATALOG : []).map(m => ({
-  id: m.id, label: m.name, provider: m.provider.toLowerCase().replace(/\s/g, '')
+  id: m.id, label: m.name, provider: m.provider.toLowerCase().replace(/\s/g, ''),
+  vision: m.vision === true,
 }));
 
 function _getConnectedProviders() {

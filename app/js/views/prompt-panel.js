@@ -23,6 +23,17 @@ const PromptPanel = (() => {
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
   let _activeMode = 'auto'; // orchestration mode: auto, pipeline, parallel, hierarchical, loop
 
+  /* ── Image attachments (staged until send) ── */
+  // { id, dataUrl, mimeType, name, size } — mimeType/data extracted client-side,
+  // dataUrl kept for preview thumbnails and sent as { type:"image_url" } part.
+  let _pendingAttachments = [];
+  const _ATTACH_MAX_COUNT = 4;
+  const _ATTACH_MAX_BYTES = 5 * 1024 * 1024; // 5MB per image
+  // Previous model-select value — used to revert when a user tries to switch
+  // to a non-vision model while images are staged.
+  let _lastModelValue = null;
+  const _VISION_FALLBACK_MODEL = 'gemini-2.5-flash';
+
   let _recognition = null;
   let _audioCtx = null;
   let _analyser = null;
@@ -211,7 +222,18 @@ const PromptPanel = (() => {
   }
 
   function _saveMessages() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_messages)); } catch {}
+    try {
+      // Attachments contain base64 data URLs that can exceed the 5MB
+      // localStorage quota after a few messages. Strip them from the
+      // persisted copy — in-session _messages keeps the full data for
+      // history replay within the current page load.
+      const persistable = _messages.map(m => {
+        if (!m.attachments || !m.attachments.length) return m;
+        const { attachments, ...rest } = m;
+        return { ...rest, attachmentPlaceholders: attachments.map(a => ({ name: a.name, mimeType: a.mimeType })) };
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+    } catch {}
   }
 
   /* ════════════════════════════════════════════════════════════
@@ -551,7 +573,19 @@ const PromptPanel = (() => {
     let html = '';
     for (const m of _messages) {
       if (m.role === 'user') {
-        html += `<div class="monitor-user-msg"><div class="monitor-user-bubble">${_esc(m.text)}</div></div>`;
+        let attachHtml = '';
+        if (m.attachments && m.attachments.length) {
+          attachHtml = '<div class="monitor-user-attachments">' + m.attachments.map(a =>
+            `<img class="monitor-user-thumb" alt="${_esc(a.name || '')}" src="${_esc(a.dataUrl)}">`
+          ).join('') + '</div>';
+        } else if (m.attachmentPlaceholders && m.attachmentPlaceholders.length) {
+          // Reload: image data was dropped from localStorage; show a ghost chip.
+          attachHtml = '<div class="monitor-user-attachments">' + m.attachmentPlaceholders.map(a =>
+            `<div class="monitor-user-thumb monitor-user-thumb-placeholder" title="${_esc(a.name || 'image')}">📎</div>`
+          ).join('') + '</div>';
+        }
+        const bubble = m.text ? `<div class="monitor-user-bubble">${_esc(m.text)}</div>` : '';
+        html += `<div class="monitor-user-msg">${attachHtml}${bubble}</div>`;
       } else if (m.role === 'system') {
         html += `<div class="monitor-system-msg">${_esc(m.text)}</div>`;
       } else {
@@ -1310,6 +1344,150 @@ Good response: "Let's get your agents deployed, ${callsign}! I'll launch the AI 
 IMPORTANT: Never break character. You ARE the ship's computer. When they describe a business need, translate it into NICE terms and recommend specific named blueprints from the catalog.`;
   }
 
+  /* ── Image attachment helpers ── */
+
+  function _modelSupportsVision(id) {
+    if (typeof LLM_MODELS === 'undefined') return true; // be permissive if registry missing
+    // The default select option uses a dotted id (`gemini-2.5-flash`) while
+    // the catalog uses dashed (`gemini-2-5-flash`). Match either form.
+    const norm = (s) => String(s || '').replace(/\./g, '-');
+    const entry = LLM_MODELS.find(m => m.id === id || norm(m.id) === norm(id));
+    return entry ? entry.vision !== false : true;
+  }
+
+  function _selectedModelSupportsVision() {
+    const sel = _getSelectedModel();
+    return _modelSupportsVision(sel.id);
+  }
+
+  /**
+   * Runs after the model dropdown populates. Snapshots the current value
+   * so the model-change guard knows what to revert to.
+   */
+  function _syncAttachVisibility() {
+    const select = _panel?.querySelector('#nice-ai-model');
+    if (!select) return;
+    _lastModelValue = select.value;
+  }
+
+  /**
+   * Model-change guard. If the user tries to switch to a non-vision model
+   * while images are staged, revert the select and tell them why. Never
+   * silently drop attachments — the user's work is load-bearing.
+   */
+  function _onModelSelectChange() {
+    const select = _panel?.querySelector('#nice-ai-model');
+    if (!select) return;
+    const newVal = select.value;
+    if (_pendingAttachments.length > 0 && !_modelSupportsVision(newVal)) {
+      // Revert to the previous selection.
+      if (_lastModelValue) select.value = _lastModelValue;
+      if (typeof Notify !== 'undefined') {
+        Notify.send({
+          title: "Can't switch model",
+          message: 'Detach the staged image first — the target model doesn\'t read images.',
+          type: 'warning',
+        });
+      }
+      return;
+    }
+    _lastModelValue = newVal;
+  }
+
+  /**
+   * Soft-fallback entry point for the attach button. If the currently
+   * selected model can't read images, we auto-switch to the free Gemini
+   * 2.5 Flash model (known-good vision) and notify the user — rather than
+   * hiding the button, which leaves people hunting for an invisible UI.
+   */
+  function _ensureVisionModelForAttach() {
+    if (_selectedModelSupportsVision()) return true;
+    const select = _panel?.querySelector('#nice-ai-model');
+    if (!select) return false;
+    // The dropdown may not contain the fallback model if the user hasn't
+    // enabled it (or if enabled_models state is mid-migration). If so we
+    // bail gracefully and let the user know they need a vision model.
+    const opt = Array.from(select.options).find(o =>
+      o.value === _VISION_FALLBACK_MODEL || o.value === 'gemini-2-5-flash'
+    );
+    if (!opt) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({
+          title: 'No vision model available',
+          message: 'Enable Gemini 2.5 Flash in Security → Integrations to attach images.',
+          type: 'warning',
+        });
+      }
+      return false;
+    }
+    select.value = opt.value;
+    _lastModelValue = opt.value;
+    if (typeof Notify !== 'undefined') {
+      Notify.send({
+        title: 'Switched to Gemini 2.5 Flash',
+        message: 'Auto-selected a vision-capable model for your image.',
+        type: 'system',
+      });
+    }
+    return true;
+  }
+
+  function _fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function _stageAttachment(file) {
+    if (!file || !file.type?.startsWith('image/')) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Unsupported file', message: 'Only images can be attached in this release.', type: 'system' });
+      }
+      return;
+    }
+    if (file.size > _ATTACH_MAX_BYTES) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Image too large', message: `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB — max ${_ATTACH_MAX_BYTES / 1024 / 1024}MB.`, type: 'system' });
+      }
+      return;
+    }
+    if (_pendingAttachments.length >= _ATTACH_MAX_COUNT) return;
+
+    try {
+      const dataUrl = await _fileToDataUrl(file);
+      _pendingAttachments.push({
+        id: 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        dataUrl,
+        mimeType: file.type,
+        name: file.name,
+        size: file.size,
+      });
+      _renderAttachments();
+    } catch (err) {
+      console.warn('[NICE] Failed to read attachment:', err);
+    }
+  }
+
+  function _renderAttachments() {
+    const row = _panel?.querySelector('#nice-ai-attachments');
+    if (!row) return;
+    if (_pendingAttachments.length === 0) {
+      row.hidden = true;
+      row.innerHTML = '';
+      return;
+    }
+    row.hidden = false;
+    row.innerHTML = _pendingAttachments.map(a =>
+      `<div class="nice-ai-attach-chip" data-attach-id="${_esc(a.id)}" title="${_esc(a.name)}">
+        <img class="nice-ai-attach-thumb" alt="" src="${_esc(a.dataUrl)}">
+        <button class="nice-ai-attach-remove" data-attach-id="${_esc(a.id)}" aria-label="Remove attachment" title="Remove">×</button>
+      </div>`
+    ).join('');
+  }
+
   function _getSelectedModel() {
     const modelSelect = _panel?.querySelector('#nice-ai-model');
     const val = modelSelect?.value || 'gemini-2.5-flash';
@@ -1348,14 +1526,44 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       signal = _abortCtrl.signal;
     }
 
-    // Build conversation history (last 20 messages)
-    const history = _messages.slice(-20).map(m => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
-      content: m.text,
-    }));
+    // Build conversation history from _messages (last 20 turns). The most
+    // recent message is usually the user turn that triggered this call —
+    // drop it from the "past" slice so we don't emit the same turn twice
+    // when we append `userText` below.
+    const past = _messages.slice(-20);
+    const lastPast = past[past.length - 1];
+    const lastIsCurrent = !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
+    const historyMsgs = lastIsCurrent ? past.slice(0, -1) : past;
+
+    // If a message has image attachments, emit OpenAI-style content parts —
+    // the nice-ai edge function translates to each provider's native shape.
+    const history = historyMsgs.map(m => {
+      const role = m.role === 'assistant' ? 'assistant' : 'user';
+      if (m.attachments && m.attachments.length) {
+        const parts = [];
+        if (m.text) parts.push({ type: 'text', text: m.text });
+        for (const a of m.attachments) parts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
+        return { role, content: parts };
+      }
+      return { role, content: m.text };
+    });
+
     // Prepend system prompt as first message (allow caller override)
     history.unshift({ role: 'system', content: opts.systemOverride || _buildSystemPrompt() });
-    history.push({ role: 'user', content: userText });
+
+    // Append the final user turn. Attachment source (priority):
+    //   1. opts.attachments (external callers can supply their own),
+    //   2. attachments on the just-pushed user message in _messages.
+    const currentAttachments = (opts.attachments && opts.attachments.length)
+      ? opts.attachments
+      : (lastIsCurrent ? (lastPast.attachments || []) : []);
+    if (currentAttachments.length) {
+      const parts = userText ? [{ type: 'text', text: userText }] : [];
+      for (const a of currentAttachments) parts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
+      history.push({ role: 'user', content: parts });
+    } else {
+      history.push({ role: 'user', content: userText });
+    }
 
     const sel = _getSelectedModel();
     const model = opts.modelOverride || sel.id;
@@ -1537,10 +1745,18 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       }
     }
 
+    // Snapshot + clear staged attachments here so both the guest and
+    // signed-in paths preserve the thumbnails on the user bubble.
+    const sentAttachments = _pendingAttachments.slice();
+    _pendingAttachments = [];
+    _renderAttachments();
+
     // Guest mode: prompt sign-in before AI execution
     const user = State.get('user');
     if (!user) {
-      _messages.push({ role: 'user', text, ts: Date.now() });
+      const guestMsg = { role: 'user', text, ts: Date.now() };
+      if (sentAttachments.length) guestMsg.attachments = sentAttachments;
+      _messages.push(guestMsg);
       _messages.push({ role: 'assistant', text: '🔒 Sign in to run missions and chat with your agents. Your blueprints and configurations will be saved.\n\n<button class="btn btn-primary btn-sm" onclick="NICE.openModal(\'modal-auth\')">Sign In to Launch</button>', agent: 'NICE', ts: Date.now() });
       _saveMessages();
       _renderMonitor();
@@ -1550,7 +1766,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     }
 
     // Add user message and show on monitor
-    _messages.push({ role: 'user', text, ts: Date.now() });
+    const userMsg = { role: 'user', text, ts: Date.now() };
+    if (sentAttachments.length) userMsg.attachments = sentAttachments;
+    _messages.push(userMsg);
     _saveMessages();
     _renderMonitor();
     input.value = '';
@@ -2021,6 +2239,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const gemini = select.querySelector('option[value="gemini-2.5-flash"]');
     if (gemini) gemini.selected = true;
     else if (select.options.length) select.selectedIndex = 0;
+    _syncAttachVisibility();
   }
 
   /* ═══ @Mention Autocomplete ═══ */
@@ -2085,12 +2304,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       <div class="nice-ai-input-area">
         <div class="nice-ai-mention-popup" id="nice-ai-mention-popup"></div>
         <div class="nice-ai-input-container">
+          <div class="nice-ai-attachments" id="nice-ai-attachments" hidden></div>
           <div class="nice-ai-input-row">
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
           <canvas class="nice-ai-waveform" id="nice-ai-waveform" height="40"></canvas>
+          <input type="file" id="nice-ai-file-input" accept="image/*" multiple hidden>
           <div class="nice-ai-toolbar">
-            <button class="nice-ai-tool-btn" id="nice-ai-attach" title="More options">+</button>
+            <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image" aria-label="Attach image">+</button>
             <div class="nice-ai-toolbar-right">
               <select class="nice-ai-mode-select" id="nice-ai-mode" title="Orchestration mode">
                 <option value="auto" selected>Auto</option>
@@ -2180,12 +2401,45 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Tap 1: start listening. Tap 2: stop & send.
     _panel.querySelector('#nice-ai-voice')?.addEventListener('click', _toggleVoiceCapture);
 
-    // Attach — coming soon
+    // Attach — opens native file picker (images only, MVP). If the selected
+    // model doesn't support vision we silently switch to Gemini Flash rather
+    // than hiding the button, so attach is always discoverable.
+    const fileInput = _panel.querySelector('#nice-ai-file-input');
     _panel.querySelector('#nice-ai-attach')?.addEventListener('click', () => {
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Coming Soon', message: 'File & media attachments are coming in a future update.', type: 'system' });
+      if (_pendingAttachments.length >= _ATTACH_MAX_COUNT) {
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Limit reached', message: `Max ${_ATTACH_MAX_COUNT} images per message.`, type: 'system' });
+        }
+        return;
       }
+      if (!_ensureVisionModelForAttach()) return;
+      fileInput?.click();
     });
+    fileInput?.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      e.target.value = ''; // allow re-selecting the same file later
+      const room = _ATTACH_MAX_COUNT - _pendingAttachments.length;
+      if (files.length > room) {
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Limit reached', message: `Max ${_ATTACH_MAX_COUNT} images per message — kept first ${Math.max(0, room)}.`, type: 'system' });
+        }
+      }
+      // Slice synchronously so concurrent async reads can't overshoot the cap.
+      for (const f of files.slice(0, Math.max(0, room))) _stageAttachment(f);
+    });
+
+    // Attachment chip remove (delegated)
+    _panel.querySelector('#nice-ai-attachments')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.nice-ai-attach-remove');
+      if (!btn) return;
+      const id = btn.dataset.attachId;
+      _pendingAttachments = _pendingAttachments.filter(a => a.id !== id);
+      _renderAttachments();
+    });
+
+    // Model select change → guard against switching to a non-vision model
+    // while images are staged.
+    _panel.querySelector('#nice-ai-model')?.addEventListener('change', _onModelSelectChange);
 
     // Textarea auto-resize + keyboard + @mention
     const textarea = _panel.querySelector('#nice-ai-input');
