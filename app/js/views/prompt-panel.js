@@ -1376,20 +1376,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     return entry[cap] !== false;
   }
 
-  /** Map an attachment's `kind` to the model capability flag it needs. */
-  function _capabilityForKind(kind) {
-    if (kind === 'image') return 'vision';
-    if (kind === 'pdf')   return 'pdf';
-    if (kind === 'audio') return 'audio';
-    if (kind === 'video') return 'video';
-    return null; // text is passthrough — works on any model
-  }
-
   /** Set of capabilities required by currently staged attachments. */
   function _requiredCapabilitiesForPending() {
     const caps = new Set();
     for (const a of _pendingAttachments) {
-      const c = _capabilityForKind(a.kind);
+      const c = AttachmentUtils.requiredCapability(a.kind);
       if (c) caps.add(c);
     }
     return caps;
@@ -1512,7 +1503,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
     // Ensure the selected model can read this modality. Text files don't
     // need any capability — they're inlined as text.
-    const cap = _capabilityForKind(kind);
+    const cap = AttachmentUtils.requiredCapability(kind);
     if (!_ensureModelForCapability(cap)) return;
 
     try {
