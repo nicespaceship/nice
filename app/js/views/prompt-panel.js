@@ -2986,11 +2986,79 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     CoreReactor.setState(_sending ? 'streaming' : 'idle');
   }
 
+  /* ── Drag & drop ──
+     Listens at the window level so users can drop files anywhere in the
+     app. Uses a counter for nested dragenter/dragleave events (DOM fires
+     one per element boundary, so a simple boolean flicker misses cases). */
+  let _dndInitialized = false;
+  let _dndOverlay = null;
+  let _dndCounter = 0;
+  function _initDragDrop() {
+    if (_dndInitialized) return;
+    _dndInitialized = true;
+
+    _dndOverlay = document.createElement('div');
+    _dndOverlay.className = 'nice-ai-drop-overlay';
+    _dndOverlay.innerHTML =
+      '<div class="nice-ai-drop-overlay-inner">' +
+        '<div class="nice-ai-drop-overlay-icon">⤓</div>' +
+        '<div class="nice-ai-drop-overlay-label">Drop to attach</div>' +
+        '<div class="nice-ai-drop-overlay-hint">Images · PDFs · Audio · Video · Text</div>' +
+      '</div>';
+    document.body.appendChild(_dndOverlay);
+
+    const hasFiles = (e) => {
+      const types = e.dataTransfer && e.dataTransfer.types;
+      if (!types) return false;
+      for (let i = 0; i < types.length; i++) if (types[i] === 'Files') return true;
+      return false;
+    };
+    const showOverlay = () => _dndOverlay.classList.add('visible');
+    const hideOverlay = () => { _dndCounter = 0; _dndOverlay.classList.remove('visible'); };
+
+    window.addEventListener('dragenter', (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      _dndCounter++;
+      showOverlay();
+    });
+    window.addEventListener('dragover', (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    });
+    window.addEventListener('dragleave', (e) => {
+      if (!hasFiles(e)) return;
+      _dndCounter = Math.max(0, _dndCounter - 1);
+      if (_dndCounter === 0) hideOverlay();
+    });
+    window.addEventListener('drop', (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      hideOverlay();
+      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+      if (!files.length) return;
+      const room = _ATTACH_MAX_COUNT - _pendingAttachments.length;
+      if (files.length > room && typeof Notify !== 'undefined') {
+        Notify.send({
+          title: 'Limit reached',
+          message: `Max ${_ATTACH_MAX_COUNT} files per message — kept first ${Math.max(0, room)}.`,
+          type: 'system',
+        });
+      }
+      for (const f of files.slice(0, Math.max(0, room))) _stageAttachment(f);
+    });
+    // If the user drags out of the window entirely, browsers sometimes
+    // skip the final dragleave. Mouseleave on document catches that.
+    window.addEventListener('blur', hideOverlay);
+  }
+
   /* ── Init / Destroy ── */
   function init() {
     _loadMessages();
     _buildDOM();
     _bindEvents();
+    _initDragDrop();
     _populateBlueprintDropdown();
     _populateLLMDropdown();
     _populateModelDropdown();
