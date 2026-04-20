@@ -46,6 +46,18 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 | `blueprint-search` | Full-text blueprint catalog search |
 | `browser-proxy` | Fetches web pages for agent browser tools; returns clean text |
 
+### Edge Function JWT Verification
+The Supabase project signs JWTs with **ES256** (asymmetric). Functions called directly from the client with a user JWT must declare `verify_jwt = false` in [`supabase/config.toml`](supabase/config.toml) and deploy with `npx supabase functions deploy <name> --no-verify-jwt`. Otherwise the platform gateway rejects every authenticated call before it hits the function with:
+
+```json
+{"code":"UNAUTHORIZED_UNSUPPORTED_TOKEN_ALGORITHM","message":"Unsupported JWT algorithm ES256"}
+```
+
+The function still validates the user internally via `supabase.auth.getUser()` — GoTrue handles ES256 natively.
+
+**Applied to:** `nice-ai` (PR #173, 2026-04-20).
+**Not-yet-audited follow-up** (flip the same flag when reports of 401s surface): the other 8 edge functions above plus `nice-tts`. Check the response body, not just the status code — the gateway only surfaces the `UNSUPPORTED_TOKEN_ALGORITHM` code in the body.
+
 ### Database Tables
 | Table | Purpose |
 |-------|---------|
@@ -244,7 +256,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `WorkflowDetailView` | `workflows.js` | `#/workflows/:id` | Workflow Detail |
 | `ThemeCreatorView` | `theme-creator.js` | `#/theme-editor` | Theme Editor |
 | `EngineeringView` | `engineering.js` | `#/engineering` | Engineering |
-| `PromptPanel` | `prompt-panel.js` | (global overlay) | Prompt Panel |
+| `PromptPanel` | `prompt-panel.js` | (global overlay) | Prompt Panel — multimodal attachments (images/PDFs/audio/video/text) via `+` button or drag-and-drop, up to 4 files/message, soft-fallback to Gemini Flash if current model lacks the needed capability |
 
 ### Security Page Tabs
 | Tab | Content |
@@ -256,16 +268,20 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 ### AI Model System
 Models defined in `VaultView.MODEL_CATALOG`. Users toggle models on/off. State key: `enabled_models`.
 
-| Model | Provider | Tier | Notes |
-|-------|----------|------|-------|
-| Gemini 2.5 Flash | Google | Free | Default for all users |
-| Gemini 2.0 Lite | Google | Free | Ultra-fast |
-| Claude Sonnet 4 | Anthropic | Premium | Best reasoning |
-| Claude Opus 4 | Anthropic | Premium | Most capable |
-| GPT-5.2 | OpenAI | Premium | Flagship |
-| GPT-5 Mini | OpenAI | Premium | Fast + cheap |
-| Gemini 2.5 Pro | Google | Premium | Complex tasks |
-| Grok 4 | xAI | Premium | Real-time knowledge |
+Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each `MODEL_CATALOG` entry and drive prompt-panel gating. Text/code attachments are inlined as fenced blocks in the text part and need no capability flag.
+
+| Model | Provider | Tier | vision | pdf | audio | video | Notes |
+|-------|----------|------|--------|-----|-------|-------|-------|
+| Gemini 2.5 Flash | Google | Free | ✓ | ✓ | ✓ | ✓ | Default for all users; attachment fallback target |
+| Gemini 2.5 Pro | Google | Premium | ✓ | ✓ | ✓ | ✓ | Complex tasks |
+| Claude 4.6 Sonnet | Anthropic | Premium | ✓ | ✓ | ✗ | ✗ | Best reasoning |
+| Claude 4.7 Opus | Anthropic | Premium | ✓ | ✓ | ✗ | ✗ | Most capable |
+| GPT-5 Mini | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Fast + cheap |
+| GPT-5.4 Pro | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Flagship |
+| o3 | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Reasoning |
+| Grok | xAI | Premium | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
+| Llama (Groq) | Meta | Standard | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
+| Codex | OpenAI | Premium | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 
@@ -376,6 +392,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Ranks & XP | `Gamification.RANKS` / `XP_ACTIONS` | Never duplicate rank data |
 | Card rendering | `CardRenderer.render()` | ONE renderer for all card types |
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
+| Attachment gating | `MODEL_CATALOG.vision` / `pdf` / `audio` / `video` | Per-model capability flags consumed by prompt-panel soft-fallback and model-change guard |
 | Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
 
 ## Tool Preferences
