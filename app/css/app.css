@@ -321,6 +321,11 @@
 [data-theme="office"] .tcg-art-role .tcg-serial-code { color: var(--nav-bg-dk); }
 
 /* Header button hovers — invert to white bg on dark header */
+/* Header controls sit on the navy --nav-bg-dk band — read as white by default */
+[data-theme="office"] .side-header #btn-hud,
+[data-theme="office"] .side-header #sidebar-toggle {
+  color:var(--nav-text); border-color:rgba(255,255,255,0.35);
+}
 [data-theme="office"] .side-header #btn-hud:hover,
 [data-theme="office"] .side-header #sidebar-toggle:hover { color:var(--nav-bg-dk); background:#fff; }
 [data-theme="office"] .side-header #btn-hud:hover *,
@@ -564,15 +569,15 @@
 /* ── Inputs — cockpit HUD style ── */
 [data-theme="gundam"] input[type="text"],
 [data-theme="gundam"] input[type="search"],
-[data-theme="gundam"] textarea,
-[data-theme="gundam"] select {
+[data-theme="gundam"] textarea:not(.nice-ai-input),
+[data-theme="gundam"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   font-family: 'Rajdhani', sans-serif;
   border: 1px solid #3a3f55;
   background: #12131a;
   color: #e0e0e8;
 }
 [data-theme="gundam"] input:focus,
-[data-theme="gundam"] textarea:focus {
+[data-theme="gundam"] textarea:not(.nice-ai-input):focus {
   border-color: #2b4e8c;
   box-shadow: 0 0 8px rgba(43,78,140,0.3);
 }
@@ -587,24 +592,14 @@
   color: #1a1a2a;
 }
 [data-theme="gundam"] .nice-ai-input {
-  color: #fff !important;
-  background: #3a3f55 !important;
-  border-radius: 8px !important;
-  padding-left: 16px !important;
+  color: #1a1a2a;
 }
 [data-theme="gundam"] .nice-ai-input::placeholder {
-  color: #b0b4c8;
-}
-[data-theme="gundam"] .nice-ai-input-area button,
-[data-theme="gundam"] .nice-ai-input-area select {
-  color: #fff;
-  border-color: #5a5f75;
-  background: #3a3f55;
-  border-radius: 8px !important;
+  color: #6b7088;
 }
 [data-theme="gundam"] .nice-ai-input-area svg {
-  color: #fff;
-  stroke: #fff;
+  color: #1a1a2a;
+  stroke: #1a1a2a;
 }
 [data-theme="gundam"] .nice-ai-chip {
   background: #d4a017;
@@ -615,13 +610,6 @@
 [data-theme="gundam"] .nice-ai-chip:hover {
   background: #e8c840;
   color: #1a1a2a;
-}
-/* Model dropdown — same gray as other buttons */
-[data-theme="gundam"] .nice-ai-model-select {
-  background: #3a3f55 !important;
-  color: #fff !important;
-  border-color: #5a5f75 !important;
-  border-radius: 8px !important;
 }
 
 /* ── Schematic header panel — Gundam red ── */
@@ -975,8 +963,8 @@
 /* ── Input fields — RPG text entry window ── */
 [data-theme="16bit"] input[type="text"],
 [data-theme="16bit"] input[type="search"],
-[data-theme="16bit"] textarea,
-[data-theme="16bit"] select {
+[data-theme="16bit"] textarea:not(.nice-ai-input),
+[data-theme="16bit"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   font-family: 'Press Start 2P', cursive;
   font-size: 10px;
   border: 3px solid #2e4068;
@@ -988,8 +976,8 @@
   padding: 10px 12px;
 }
 [data-theme="16bit"] input:focus,
-[data-theme="16bit"] textarea:focus,
-[data-theme="16bit"] select:focus {
+[data-theme="16bit"] textarea:not(.nice-ai-input):focus,
+[data-theme="16bit"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select):focus {
   border-color: #e2b714;
   box-shadow:
     inset 2px 2px 0 rgba(0,0,0,0.5),
@@ -1161,7 +1149,7 @@
 }
 
 /* ── Select dropdowns ── */
-[data-theme="16bit"] select {
+[data-theme="16bit"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   font-family: 'Press Start 2P', cursive;
   font-size: 9px;
   -webkit-appearance: none;
@@ -1318,7 +1306,6 @@
 .side-chat-item:hover .side-chat-dots,
 .side-chat-item:focus-within .side-chat-dots,
 .side-chat-item.side-chat-active .side-chat-dots { opacity:1; }
-.side-chat-dots:hover { background:var(--surface); color:var(--text); }
 @media (hover:none) {
   .side-chat-dots { opacity:1; }
 }
@@ -1362,7 +1349,6 @@
   transition:background .15s, color .15s;
   flex:1; min-width:0;
 }
-.side-user-card:hover { background:var(--nav-surface, var(--surface)); color:var(--nav-text, var(--text)); }
 .side-more-btn {
   display:flex; align-items:center; justify-content:center;
   width:32px; height:32px; flex-shrink:0;
@@ -1370,7 +1356,6 @@
   color:var(--nav-text-muted, var(--text-muted)); cursor:pointer;
   transition:color .2s, background .2s;
 }
-.side-more-btn:hover { color:var(--nav-text, var(--text)); background:var(--nav-surface, var(--surface)); }
 .side-footer { position:relative; }
 .side-popover {
   display:none; position:absolute; bottom:100%; left:8px; right:8px;
@@ -1400,7 +1385,19 @@
   transition:background .15s, color .15s;
 }
 .side-link svg { color:var(--nav-text-dim, currentColor); }
-.side-link:hover { background:var(--nav-surface, var(--surface)); color:var(--nav-text, var(--text)); }
+/* ── SSOT: shared hover state for sidebar interactive surfaces ──
+   Any element inside .app-sidebar that responds to hover uses the nav
+   palette fallback chain (--nav-surface → --surface, --nav-text → --text).
+   Popover/menu items that float OUTSIDE the sidebar chrome keep their own
+   bare --surface hover so they read against --panel-bg, not --nav-bg. */
+.side-link:hover,
+.side-user-card:hover,
+.side-more-btn:hover,
+.side-folder-toggle:hover,
+.side-chat-dots:hover {
+  background:var(--nav-surface, var(--surface));
+  color:var(--nav-text, var(--text));
+}
 .side-link[draggable="true"] { cursor:grab; }
 .side-link[draggable="true"]:active { cursor:grabbing; }
 .side-link.side-dragging { opacity:.35; transform:scale(.95); }
@@ -1416,7 +1413,6 @@
   font-size:.78rem; border-radius:var(--radius); cursor:pointer;
   transition:background .15s, color .15s;
 }
-.side-folder-toggle:hover { background:var(--nav-surface, var(--surface)); color:var(--nav-text, var(--text)); }
 .side-folder-chevron {
   margin-left:auto; width:14px; height:14px; transition:transform .2s;
 }
@@ -3848,7 +3844,8 @@
 }
 .nice-ai-close:hover { opacity:1; color:var(--text, #fff); }
 
-/* Input area — single outer shell with border (no nested borders) */
+/* Input area — outer shell. Border is intentional (subtle at rest, accent on
+   focus). The textarea INSIDE stays borderless — see .nice-ai-input. */
 .nice-ai-input-area {
   position:relative;
   background:var(--panel-bg, var(--bg-alt));
@@ -3891,56 +3888,66 @@
   padding-top:8px; margin-top:4px;
   border-top:1px solid color-mix(in srgb, var(--border) 50%, transparent);
 }
-.nice-ai-tool-btn {
+/* ── SSOT: Prompt-panel toolbar controls ──
+   All toolbar buttons + selects share the same borderless shell.
+   Hover = subtle tinted fill, no border — Claude-style. */
+.nice-ai-tool-btn,
+.nice-ai-model-select,
+.nice-ai-mode-select,
+.nice-ai-tts-mute,
+.nice-ai-voice-btn,
+.nice-ai-send-btn {
   background:transparent; color:var(--text-muted);
-  border:1px solid var(--border); border-radius:6px; cursor:pointer;
-  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
-  font-size:.9rem; font-family:var(--font-b);
-  transition:color .15s, border-color .15s;
+  border:none; border-radius:6px; cursor:pointer;
+  font-family:var(--font-b);
+  transition:background-color .15s, color .15s, opacity .15s;
 }
-.nice-ai-tool-btn:hover { color:var(--accent); border-color:var(--accent); }
+/* Shared hover — subtle tinted fill that adapts to light/dark themes */
+.nice-ai-tool-btn:hover,
+.nice-ai-model-select:hover,
+.nice-ai-mode-select:hover,
+.nice-ai-tts-mute:hover,
+.nice-ai-voice-btn:hover {
+  background:color-mix(in srgb, var(--text) 8%, transparent);
+  color:var(--text);
+}
+.nice-ai-model-select:focus,
+.nice-ai-mode-select:focus { outline:none; }
 
-.nice-ai-toolbar-right {
-  display:flex; align-items:center; gap:8px;
+/* Square icon buttons */
+.nice-ai-tool-btn,
+.nice-ai-tts-mute,
+.nice-ai-voice-btn,
+.nice-ai-send-btn {
+  width:28px; height:28px; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem;
 }
-.nice-ai-model-select {
-  background:transparent; color:var(--text-muted);
-  border:1px solid var(--border); border-radius:6px;
-  padding:4px 8px; font-family:var(--font-b); font-size:.68rem;
-  letter-spacing:.03em; cursor:pointer;
-  appearance:none; -webkit-appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 6px center;
-  padding-right:20px;
-}
-.nice-ai-model-select:hover { border-color:var(--accent); color:var(--text); }
-.nice-ai-model-select:focus { outline:none; border-color:var(--accent); }
-.nice-ai-model-select option { background:var(--bg); color:var(--text); }
+
+/* Pill selects — shared style (model + mode) */
+.nice-ai-model-select,
 .nice-ai-mode-select {
-  background:transparent; color:var(--text-muted);
-  border:1px solid var(--border); border-radius:6px;
-  padding:4px 8px; font-family:var(--font-b); font-size:.68rem;
-  letter-spacing:.03em; cursor:pointer;
+  padding:4px 20px 4px 8px;
+  font-size:.68rem; letter-spacing:.03em;
   appearance:none; -webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 6px center;
-  padding-right:20px;
 }
-.nice-ai-mode-select:hover { border-color:var(--accent); color:var(--text); }
-.nice-ai-mode-select:focus { outline:none; border-color:var(--accent); }
+.nice-ai-model-select option,
 .nice-ai-mode-select option { background:var(--bg); color:var(--text); }
-.nice-ai-tts-mute, .nice-ai-voice-btn, .nice-ai-send-btn {
-  background:transparent; color:var(--text-muted);
-  border:1px solid var(--border); border-radius:6px;
-  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; transition:all .15s; padding:0;
-}
-.nice-ai-tts-mute:hover { color:var(--accent); border-color:var(--accent); }
-.nice-ai-tts-mute.off { color:var(--text-muted); border-color:var(--border); opacity:.5; }
-.nice-ai-voice-btn:hover { color:var(--accent); border-color:var(--accent); }
+
+.nice-ai-toolbar-right { display:flex; align-items:center; gap:8px; }
+
+/* TTS mute off — dimmed */
+.nice-ai-tts-mute.off { opacity:.5; }
+
+/* Voice record — red pulse while listening */
 .nice-ai-voice-btn.listening {
-  color:var(--color-error); border-color:var(--color-error); background:rgba(239,68,68,.1);
+  color:var(--color-error); background:rgba(239,68,68,.1);
   animation:voicePulse 1.2s ease-in-out infinite;
+}
+.nice-ai-voice-btn.listening:hover {
+  color:var(--color-error); background:rgba(239,68,68,.18);
 }
 @keyframes voicePulse {
   0%, 100% { box-shadow:0 0 0 0 rgba(239,68,68,.3); }
@@ -3949,8 +3956,10 @@
 /* Keep listening (stop) button visible even when voice is filling input */
 .nice-ai-input-container.has-text .nice-ai-voice-btn.listening { display:flex; }
 .nice-ai-input-container.has-text .nice-ai-voice-btn.listening ~ .nice-ai-send-btn { display:none; }
-.nice-ai-send-btn { display:none; background:var(--accent); color:var(--bg); border-color:var(--accent); }
-.nice-ai-send-btn:hover { opacity:.85; }
+
+/* Send button — accent-filled pill (visible only when input has text) */
+.nice-ai-send-btn { display:none; background:var(--accent); color:var(--bg); }
+.nice-ai-send-btn:hover { background:var(--accent); color:var(--bg); opacity:.85; }
 /* When input has text: hide voice, show send */
 .nice-ai-input-container.has-text .nice-ai-voice-btn { display:none; }
 .nice-ai-input-container.has-text .nice-ai-send-btn { display:flex; }

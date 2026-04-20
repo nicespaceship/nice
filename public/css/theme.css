@@ -262,7 +262,7 @@
 [data-theme="spaceship"] input[type="number"],
 [data-theme="spaceship"] input[type="email"],
 [data-theme="spaceship"] input[type="password"],
-[data-theme="spaceship"] textarea,
+[data-theme="spaceship"] textarea:not(.nice-ai-input),
 [data-theme="spaceship"] .search-input {
   border: 1px solid var(--border);
   background: rgba(9,9,11,0.8); color: var(--text);
@@ -277,7 +277,7 @@
 [data-theme="spaceship"] input[type="password"]:focus,
 [data-theme="spaceship"] textarea:focus,
 [data-theme="spaceship"] .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(165,180,252,0.1); outline: none; }
-[data-theme="spaceship"] select {
+[data-theme="spaceship"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border: 1px solid var(--border); color: var(--text);
   background: rgba(9,9,11,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
@@ -662,7 +662,7 @@
 [data-theme="robotech"] input[type="number"],
 [data-theme="robotech"] input[type="email"],
 [data-theme="robotech"] input[type="password"],
-[data-theme="robotech"] textarea,
+[data-theme="robotech"] textarea:not(.nice-ai-input),
 [data-theme="robotech"] .search-input {
   border-radius:4px; border:1px solid #d0d0ce; background:#fff; color:#1a1a1a; font-size:.75rem;
 }
@@ -674,7 +674,7 @@
 [data-theme="robotech"] .search-input:focus { border-color:#999; outline: none; }
 [data-theme="robotech"] input::placeholder,
 [data-theme="robotech"] textarea::placeholder { color:#bbb; }
-[data-theme="robotech"] select {
+[data-theme="robotech"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border-radius:4px; border:1px solid #d0d0ce; color:#1a1a1a;
   background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance:none; -webkit-appearance:none;
@@ -1389,7 +1389,7 @@
 [data-theme="navigator"] input[type="number"],
 [data-theme="navigator"] input[type="email"],
 [data-theme="navigator"] input[type="password"],
-[data-theme="navigator"] textarea,
+[data-theme="navigator"] textarea:not(.nice-ai-input),
 [data-theme="navigator"] .search-input {
   border-radius: 2px;
   border: 1px solid rgba(24,160,251,0.2);
@@ -1410,7 +1410,7 @@
   box-shadow: 0 0 12px rgba(24,160,251,0.2), inset 0 0 8px rgba(24,160,251,0.05);
   outline: none;
 }
-[data-theme="navigator"] select {
+[data-theme="navigator"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border-radius: 2px; border: 1px solid rgba(24,160,251,0.2); color: #18a0fb;
   background: rgba(24,160,251,0.03) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   font-family: var(--font-h); font-size: .65rem;
@@ -1845,7 +1845,7 @@
 [data-theme="matrix"] input[type="number"],
 [data-theme="matrix"] input[type="email"],
 [data-theme="matrix"] input[type="password"],
-[data-theme="matrix"] textarea,
+[data-theme="matrix"] textarea:not(.nice-ai-input),
 [data-theme="matrix"] .search-input {
   border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
   color: #00ff41; font-family: 'Fira Code', monospace;
@@ -1860,7 +1860,7 @@
 [data-theme="matrix"] .search-input:focus {
   border-color: #00ff41; box-shadow: 0 0 8px rgba(0,255,65,0.2); outline: none;
 }
-[data-theme="matrix"] select {
+[data-theme="matrix"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border-radius: 0; background: rgba(0,8,0,0.6); border: 1px solid rgba(0,255,65,0.2);
   color: #00ff41; font-family: 'Fira Code', monospace;
 }
@@ -2278,17 +2278,17 @@
 [data-theme="lcars"] input[type="number"],
 [data-theme="lcars"] input[type="email"],
 [data-theme="lcars"] input[type="password"],
-[data-theme="lcars"] textarea,
+[data-theme="lcars"] textarea:not(.nice-ai-input),
 [data-theme="lcars"] .search-input {
   border-radius:24px;
   border:2px solid #666688;
   background:#000;
   color:#ff9966;
 }
-[data-theme="lcars"] textarea { border-radius:18px; }
+[data-theme="lcars"] textarea:not(.nice-ai-input) { border-radius:18px; }
 [data-theme="lcars"] input::placeholder,
-[data-theme="lcars"] textarea::placeholder { color:rgba(255,153,102,0.45); }
-[data-theme="lcars"] select {
+[data-theme="lcars"] textarea:not(.nice-ai-input)::placeholder { color:rgba(255,153,102,0.45); }
+[data-theme="lcars"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border-radius:24px; border:2px solid #666688; color:#ff9966;
   appearance:none; -webkit-appearance:none;
   background:#000 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ff9966' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
@@ -2302,7 +2302,7 @@
 [data-theme="lcars"] input[type="number"]:focus,
 [data-theme="lcars"] input[type="email"]:focus,
 [data-theme="lcars"] input[type="password"]:focus,
-[data-theme="lcars"] textarea:focus,
+[data-theme="lcars"] textarea:not(.nice-ai-input):focus,
 [data-theme="lcars"] .search-input:focus {
   border-color:#cc99ff; outline:none;
 }
@@ -2570,7 +2570,7 @@
 [data-theme="jarvis"] input[type="number"],
 [data-theme="jarvis"] input[type="email"],
 [data-theme="jarvis"] input[type="password"],
-[data-theme="jarvis"] textarea,
+[data-theme="jarvis"] textarea:not(.nice-ai-input),
 [data-theme="jarvis"] .search-input {
   border-radius: 3px;
   border: 1px solid rgba(0,229,255,0.15);
@@ -2578,15 +2578,15 @@
   color: #b2ebf2;
   font-family: 'Inter', sans-serif;
 }
-[data-theme="jarvis"] textarea::placeholder,
+[data-theme="jarvis"] textarea:not(.nice-ai-input)::placeholder,
 [data-theme="jarvis"] input::placeholder { color: rgba(0,229,255,0.35); }
 [data-theme="jarvis"] input[type="text"]:focus,
 [data-theme="jarvis"] input[type="number"]:focus,
 [data-theme="jarvis"] input[type="email"]:focus,
 [data-theme="jarvis"] input[type="password"]:focus,
-[data-theme="jarvis"] textarea:focus,
+[data-theme="jarvis"] textarea:not(.nice-ai-input):focus,
 [data-theme="jarvis"] .search-input:focus { border-color: #00e5ff; box-shadow: 0 0 8px rgba(0,229,255,0.15); outline: none; }
-[data-theme="jarvis"] select {
+[data-theme="jarvis"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border-radius: 3px; border: 1px solid rgba(0,229,255,0.15); color: #b2ebf2;
   background: rgba(7,13,26,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234fc3f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
@@ -3645,14 +3645,17 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 
 /* ── 9. Hacking Cursor on Inputs ── */
 [data-theme="cyberpunk"] input[type="text"],
-[data-theme="cyberpunk"] textarea,
-[data-theme="cyberpunk"] .search-input,
-[data-theme="cyberpunk"] .nice-ai-input {
+[data-theme="cyberpunk"] textarea:not(.nice-ai-input),
+[data-theme="cyberpunk"] .search-input {
   border-radius:2px; border:1px solid #2a2a4a; background:#0a0a0f; color:#00fff5;
   caret-color:#00fff5; font-family:'Fira Code', monospace;
 }
+/* Prompt textarea — borderless, transparent (panel .nice-ai-input-area owns the frame) */
+[data-theme="cyberpunk"] .nice-ai-input {
+  color:#00fff5; caret-color:#00fff5; font-family:'Fira Code', monospace;
+}
 [data-theme="cyberpunk"] input[type="text"]:focus,
-[data-theme="cyberpunk"] textarea:focus,
+[data-theme="cyberpunk"] textarea:not(.nice-ai-input):focus,
 [data-theme="cyberpunk"] .search-input:focus {
   border-color:#ff2d6f;
   box-shadow:0 0 8px rgba(255,45,111,0.2), inset 0 0 12px rgba(0,255,245,0.03);
@@ -3948,13 +3951,13 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 }
 
 /* ── 22. Select Dropdowns — angular ── */
-[data-theme="cyberpunk"] select,
+[data-theme="cyberpunk"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select),
 [data-theme="cyberpunk"] .filter-select {
   border-radius:0; border:1px solid #2a2a4a; background:#0a0a0f; color:#e0e0ff;
   font-family:'Fira Code', monospace; appearance:none; -webkit-appearance:none;
   clip-path:polygon(0 3px, 3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px));
 }
-[data-theme="cyberpunk"] select:focus,
+[data-theme="cyberpunk"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select):focus,
 [data-theme="cyberpunk"] .filter-select:focus { border-color:#ff2d6f; box-shadow:0 0 8px rgba(255,45,111,0.2); }
 
 /* ── Reduced motion — disable all animations ── */

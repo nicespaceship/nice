@@ -50,6 +50,10 @@ const ProfileView = (() => {
               <label for="si-pass">Password</label>
               <input type="password" id="si-pass" required autocomplete="current-password" placeholder="Enter password" />
             </div>
+            <label class="auth-remember">
+              <input type="checkbox" id="si-remember" checked />
+              <span>Keep me signed in</span>
+            </label>
             <div class="auth-error" id="si-error"></div>
             <button type="submit" class="auth-submit" id="si-btn">Sign In</button>
           </form>
@@ -228,6 +232,7 @@ const ProfileView = (() => {
     const pass  = document.getElementById('si-pass').value;
     const errEl = document.getElementById('si-error');
     const btn   = document.getElementById('si-btn');
+    const remember = document.getElementById('si-remember')?.checked !== false;
 
     errEl.textContent = '';
     btn.disabled = true;
@@ -235,6 +240,14 @@ const ProfileView = (() => {
 
     try {
       await SB.auth.signIn(email, pass);
+      // Ephemeral session flag: unchecked → nice.js signs out on next browser launch.
+      if (!remember) {
+        localStorage.setItem(Utils.KEYS.ephemeralSession, '1');
+        sessionStorage.setItem(Utils.KEYS.ephemeralSession, '1');
+      } else {
+        localStorage.removeItem(Utils.KEYS.ephemeralSession);
+        sessionStorage.removeItem(Utils.KEYS.ephemeralSession);
+      }
       const hq = Router.hashQuery();
       Router.navigate(hq.redirect ? '#' + hq.redirect : '#/');
     } catch (err) {
