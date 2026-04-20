@@ -33,65 +33,11 @@ const PromptPanel = (() => {
      user prompt, so every provider (not just vision/pdf-capable ones) can
      see them. */
   let _pendingAttachments = [];
-  const _ATTACH_MAX_COUNT = 4;
-  const _ATTACH_MAX_BYTES_IMAGE = 5  * 1024 * 1024; // 5MB per image
-  const _ATTACH_MAX_BYTES_PDF   = 10 * 1024 * 1024; // 10MB per PDF
-  const _ATTACH_MAX_BYTES_TEXT  = 1  * 1024 * 1024; // 1MB per text/code file
-  const _ATTACH_MAX_BYTES_AUDIO = 20 * 1024 * 1024; // 20MB per audio (Gemini inline cap)
-  const _ATTACH_MAX_BYTES_VIDEO = 20 * 1024 * 1024; // 20MB per video (Gemini inline cap)
   // Previous model-select value — used to revert when a user tries to switch
   // to a model that doesn't support a currently-staged attachment type.
   let _lastModelValue = null;
-  const _ATTACH_FALLBACK_MODEL = 'gemini-2.5-flash';
-  // MIME whitelists. File picker accepts a broader surface than these; the
-  // stage helper enforces the real policy.
-  const _TEXT_MIME_PREFIXES = ['text/'];
-  const _TEXT_MIME_EXTRAS   = [
-    'application/json', 'application/xml', 'application/yaml', 'application/x-yaml',
-    'application/javascript', 'application/typescript', 'application/sql',
-    'application/x-sh', 'application/toml',
-    'application/rtf', 'text/rtf',
-    'application/graphql', 'application/x-latex', 'application/x-tex',
-    'application/x-yaml', 'application/x-toml',
-    'application/ld+json', 'application/x-ndjson', 'application/jsonl',
-    'application/x-httpd-php',
-  ];
-  // Accept-list for common text/code files that browsers report with empty or
-  // `application/octet-stream` mimetypes. Grouped by category for sanity.
-  const _TEXT_EXTENSIONS = new RegExp('\\.(' + [
-    // docs & plain text
-    'txt', 'md', 'markdown', 'mdx', 'rtf', 'log', 'rst', 'org', 'adoc', 'asciidoc', 'tex', 'bib',
-    // data & data-ish
-    'csv', 'tsv', 'json', 'ndjson', 'jsonl', 'geojson', 'ya?ml', 'xml', 'diff', 'patch', 'srt', 'vtt',
-    // config / infra
-    'toml', 'ini', 'cfg', 'conf', 'env', 'properties', 'dockerignore', 'dockerfile', 'gitignore',
-    'tf', 'tfvars', 'hcl', 'cmake', 'bazel', 'bzl', 'gradle', 'sbt',
-    // schemas / query langs
-    'graphql', 'gql', 'proto', 'thrift', 'cypher', 'rq',
-    // web / styles
-    'html?', 'htm', 'css', 'scss', 'sass', 'less',
-    // js/ts
-    'js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'svelte', 'vue', 'astro',
-    // python
-    'py', 'pyi', 'pyw',
-    // systems / compiled
-    'c', 'h', 'cpp', 'cxx', 'cc', 'hpp', 'hxx', 'cs', 'swift', 'rs', 'go', 'mod', 'sum',
-    'java', 'kt', 'kts', 'scala', 'sc', 'groovy', 'dart', 'zig', 'nim', 'nims', 'v',
-    // scientific / functional
-    'r', 'rmd', 'jl', 'ml', 'mli', 'fs', 'fsx', 'fsi', 'hs', 'lhs',
-    // scripting
-    'sh', 'bash', 'zsh', 'fish', 'ps1', 'pl', 'lua', 'rb', 'php', 'tcl',
-    // apple / mobile
-    'm', 'mm',
-    // hardware / assembly
-    'asm', 's', 'sv', 'svh', 'vhdl', 'vhd',
-    // web3 / chain
-    'sol', 'move', 'cairo',
-    // clojure / erlang / elixir
-    'clj', 'cljs', 'cljc', 'edn', 'ex', 'exs', 'erl', 'hrl',
-    // database
-    'sql',
-  ].join('|') + ')$', 'i');
+  // Classification rules + size caps live in AttachmentUtils (lib/attachment-utils.js)
+  // so they can be unit-tested without booting the panel.
 
   let _recognition = null;
   let _audioCtx = null;
@@ -1502,7 +1448,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const select = _panel?.querySelector('#nice-ai-model');
     if (!select) return false;
     const opt = Array.from(select.options).find(o =>
-      o.value === _ATTACH_FALLBACK_MODEL || o.value === 'gemini-2-5-flash'
+      o.value === AttachmentUtils.FALLBACK_MODEL || o.value === 'gemini-2-5-flash'
     );
     const humanSingular = { vision: 'image', pdf: 'PDF', audio: 'audio', video: 'video' }[cap] || cap;
     const humanPlural   = { vision: 'images', pdf: 'PDFs', audio: 'audio', video: 'video' }[cap] || cap;
@@ -1537,42 +1483,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     });
   }
 
-  // Extensions we recognize even when the browser reports empty or
-  // application/octet-stream for MIME.
-  const _AUDIO_EXTENSIONS = /\.(mp3|wav|m4a|aac|ogg|oga|flac|opus|weba)$/i;
-  const _VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|mkv|mpeg|mpg|avi|3gp|3g2|wmv|flv)$/i;
-
-  /** Decide which bucket a file belongs to. Returns null if unsupported. */
-  function _classifyFile(file) {
-    const type = (file.type || '').toLowerCase();
-    const name = (file.name || '').toLowerCase();
-    if (type.startsWith('image/')) return 'image';
-    if (type.startsWith('audio/')) return 'audio';
-    if (type.startsWith('video/')) return 'video';
-    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
-    if (_TEXT_MIME_PREFIXES.some(p => type.startsWith(p))) return 'text';
-    if (_TEXT_MIME_EXTRAS.includes(type)) return 'text';
-    // Browser sometimes reports empty or octet-stream mimetype for media or
-    // code files; fall back to extension matching.
-    if (type === '' || type === 'application/octet-stream') {
-      if (_AUDIO_EXTENSIONS.test(name)) return 'audio';
-      if (_VIDEO_EXTENSIONS.test(name)) return 'video';
-      if (_TEXT_EXTENSIONS.test(name))  return 'text';
-    }
-    return null;
-  }
-
-  function _attachMaxBytesFor(kind) {
-    if (kind === 'image') return _ATTACH_MAX_BYTES_IMAGE;
-    if (kind === 'pdf')   return _ATTACH_MAX_BYTES_PDF;
-    if (kind === 'audio') return _ATTACH_MAX_BYTES_AUDIO;
-    if (kind === 'video') return _ATTACH_MAX_BYTES_VIDEO;
-    return _ATTACH_MAX_BYTES_TEXT;
-  }
-
   async function _stageAttachment(file) {
     if (!file) return;
-    const kind = _classifyFile(file);
+    const kind = AttachmentUtils.classify(file);
     if (!kind) {
       if (typeof Notify !== 'undefined') {
         Notify.send({
@@ -1583,7 +1496,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       }
       return;
     }
-    const maxBytes = _attachMaxBytesFor(kind);
+    const maxBytes = AttachmentUtils.maxBytes(kind);
     if (file.size > maxBytes) {
       if (typeof Notify !== 'undefined') {
         const kindLabel = { image: 'images', pdf: 'PDFs', audio: 'audio files', video: 'video files', text: 'text files' }[kind] || kind;
@@ -1595,7 +1508,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       }
       return;
     }
-    if (_pendingAttachments.length >= _ATTACH_MAX_COUNT) return;
+    if (_pendingAttachments.length >= AttachmentUtils.MAX_COUNT) return;
 
     // Ensure the selected model can read this modality. Text files don't
     // need any capability — they're inlined as text.
@@ -2592,9 +2505,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Gemini Flash if needed; text files just get inlined into the prompt.
     const fileInput = _panel.querySelector('#nice-ai-file-input');
     _panel.querySelector('#nice-ai-attach')?.addEventListener('click', () => {
-      if (_pendingAttachments.length >= _ATTACH_MAX_COUNT) {
+      if (_pendingAttachments.length >= AttachmentUtils.MAX_COUNT) {
         if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Limit reached', message: `Max ${_ATTACH_MAX_COUNT} files per message.`, type: 'system' });
+          Notify.send({ title: 'Limit reached', message: `Max ${AttachmentUtils.MAX_COUNT} files per message.`, type: 'system' });
         }
         return;
       }
@@ -2603,10 +2516,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     fileInput?.addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
       e.target.value = ''; // allow re-selecting the same file later
-      const room = _ATTACH_MAX_COUNT - _pendingAttachments.length;
+      const room = AttachmentUtils.MAX_COUNT - _pendingAttachments.length;
       if (files.length > room) {
         if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Limit reached', message: `Max ${_ATTACH_MAX_COUNT} images per message — kept first ${Math.max(0, room)}.`, type: 'system' });
+          Notify.send({ title: 'Limit reached', message: `Max ${AttachmentUtils.MAX_COUNT} images per message — kept first ${Math.max(0, room)}.`, type: 'system' });
         }
       }
       // Slice synchronously so concurrent async reads can't overshoot the cap.
@@ -2665,11 +2578,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         }
         if (!files.length) return;
         e.preventDefault();
-        const room = _ATTACH_MAX_COUNT - _pendingAttachments.length;
+        const room = AttachmentUtils.MAX_COUNT - _pendingAttachments.length;
         if (files.length > room && typeof Notify !== 'undefined') {
           Notify.send({
             title: 'Limit reached',
-            message: `Max ${_ATTACH_MAX_COUNT} files per message — kept first ${Math.max(0, room)}.`,
+            message: `Max ${AttachmentUtils.MAX_COUNT} files per message — kept first ${Math.max(0, room)}.`,
             type: 'system',
           });
         }
@@ -3065,11 +2978,11 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       hideOverlay();
       const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
       if (!files.length) return;
-      const room = _ATTACH_MAX_COUNT - _pendingAttachments.length;
+      const room = AttachmentUtils.MAX_COUNT - _pendingAttachments.length;
       if (files.length > room && typeof Notify !== 'undefined') {
         Notify.send({
           title: 'Limit reached',
-          message: `Max ${_ATTACH_MAX_COUNT} files per message — kept first ${Math.max(0, room)}.`,
+          message: `Max ${AttachmentUtils.MAX_COUNT} files per message — kept first ${Math.max(0, room)}.`,
           type: 'system',
         });
       }
