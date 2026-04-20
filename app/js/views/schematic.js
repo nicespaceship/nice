@@ -28,7 +28,7 @@ const SchematicView = (() => {
 
   function render(el) {
     const shipId = _getShipId();
-    let activatedShips = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
+    let activatedShips = (typeof Blueprints !== 'undefined') ? Blueprints.getActivatedShips() : [];
     // Include custom ships from State (created by Crew Designer)
     const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
     customShips.forEach(cs => { if (!activatedShips.find(s => s.id === cs.id)) activatedShips.push(cs); });
@@ -252,8 +252,8 @@ const SchematicView = (() => {
   }
 
   function _assignToSlot(shipId, slotId, bpId) {
-    if (!shipId || typeof BlueprintStore === 'undefined') return;
-    const current = BlueprintStore.getShipState(shipId) || {};
+    if (!shipId || typeof Blueprints === 'undefined') return;
+    const current = Blueprints.getShipState(shipId) || {};
     const assignments = { ...(current.slot_assignments || {}) };
     if (bpId) {
       assignments[String(slotId)] = bpId;
@@ -262,7 +262,7 @@ const SchematicView = (() => {
     }
     const agentIds = Object.values(assignments).filter(Boolean);
     const status = agentIds.length > 0 ? 'deployed' : 'docked';
-    BlueprintStore.saveShipState(shipId, { slot_assignments: assignments, agent_ids: agentIds, status });
+    Blueprints.saveShipState(shipId, { slot_assignments: assignments, agent_ids: agentIds, status });
   }
 
   function _renderHeroSchematic(shipClass, slotMap) {
@@ -504,9 +504,9 @@ const SchematicView = (() => {
 
   function _getAvailableAgents(slotMap) {
     const agents = [];
-    // From BlueprintStore
-    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.listAgents) {
-      agents.push(...BlueprintStore.listAgents());
+    // From Blueprints
+    if (typeof Blueprints !== 'undefined' && Blueprints.listAgents) {
+      agents.push(...Blueprints.listAgents());
     }
     // From BlueprintsView SEED as fallback
     if (!agents.length && typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) {
@@ -521,8 +521,8 @@ const SchematicView = (() => {
     if (!activeShip) return null;
     const shipId = activeShip.id;
     const rawId = shipId ? shipId.replace(/^bp-/, '') : '';
-    const ship = (typeof BlueprintStore !== 'undefined')
-      ? (BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId))
+    const ship = (typeof Blueprints !== 'undefined')
+      ? (Blueprints.getSpaceship(rawId) || Blueprints.getSpaceship(shipId))
       : null;
     if (!ship || !ship.crew || !ship.crew[slotIdx]) return null;
     const crew = ship.crew[slotIdx];
@@ -544,8 +544,8 @@ const SchematicView = (() => {
 
   function _getShipId() {
     // Collect every ship the user could legitimately be pointing at: activated
-    // ships from BlueprintStore plus custom ships from State (Crew Designer).
-    const activated = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getActivatedShips() : [];
+    // ships from Blueprints plus custom ships from State (Crew Designer).
+    const activated = (typeof Blueprints !== 'undefined') ? Blueprints.getActivatedShips() : [];
     const custom = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
     const seen = new Set();
     const available = [];
@@ -570,8 +570,8 @@ const SchematicView = (() => {
   function _getSlotMap() {
     const shipId = _getShipId();
     if (!shipId) return {};
-    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.getShipState) {
-      const saved = BlueprintStore.getShipState(shipId);
+    if (typeof Blueprints !== 'undefined' && Blueprints.getShipState) {
+      const saved = Blueprints.getShipState(shipId);
       if (saved && saved.slot_assignments && Object.keys(saved.slot_assignments).length) {
         return { ...saved.slot_assignments };
       }
@@ -583,7 +583,7 @@ const SchematicView = (() => {
       return { ...customShip.slot_assignments };
     }
     const rawId = shipId.replace(/^bp-/, '');
-    const bp = (typeof BlueprintStore !== 'undefined') ? (BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId)) : null;
+    const bp = (typeof Blueprints !== 'undefined') ? (Blueprints.getSpaceship(rawId) || Blueprints.getSpaceship(shipId)) : null;
     if (bp && bp.crew && bp.crew.length) {
       const map = {};
       bp.crew.forEach((c, i) => { map[String(i)] = '__new__' + (c.label || c.name || 'Agent ' + (i + 1)); });
@@ -600,9 +600,9 @@ const SchematicView = (() => {
       // Look up rarity from the ship's crew data
       let crewRarity = 'Common';
       const shipId = _getShipId();
-      if (shipId && typeof BlueprintStore !== 'undefined') {
+      if (shipId && typeof Blueprints !== 'undefined') {
         const rawId = shipId.replace(/^bp-/, '');
-        const ship = BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId);
+        const ship = Blueprints.getSpaceship(rawId) || Blueprints.getSpaceship(shipId);
         if (ship) {
           const crewMember = (ship.crew || []).find(c => c.label === agentName);
           if (crewMember?.rarity) crewRarity = crewMember.rarity;
@@ -610,7 +610,7 @@ const SchematicView = (() => {
       }
       bp = { id: bpId, name: agentName, category: 'Agent', rarity: crewRarity };
     }
-    if (!bp && typeof BlueprintStore !== 'undefined') bp = BlueprintStore.getAgent(bpId);
+    if (!bp && typeof Blueprints !== 'undefined') bp = Blueprints.getAgent(bpId);
     if (!bp) {
       const agent = (typeof State !== 'undefined' && State.get('agents') || []).find(r => r.id === bpId);
       if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || agent.category, rarity: agent.rarity || 'Common' };

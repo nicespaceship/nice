@@ -123,7 +123,7 @@ const AgentsView = (() => {
 
   async function _loadAgents() {
     // Primary source: terminal-activated blueprints
-    const bpAgents = BlueprintStore.getActivatedAgents();
+    const bpAgents = Blueprints.getActivatedAgents();
     let customAgents = [];
     // Also load custom-built agents from Supabase (Agent Builder only)
     try {
@@ -202,7 +202,7 @@ const AgentsView = (() => {
         const bpId = btn.dataset.id;
         const name = btn.closest('.tcg-card')?.querySelector('.tcg-name-bar span')?.textContent || 'this agent';
         const doDeactivate = () => {
-          BlueprintStore.deactivateAgent(bpId);
+          Blueprints.deactivateAgent(bpId);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Agent Removed', message: 'Blueprint removed from your roster.', type: 'info' });
           _loadAgents();
         };
@@ -216,7 +216,7 @@ const AgentsView = (() => {
   function _agentCard(a) {
     // Use full blueprint data so card is EXACT match of Blueprint Catalog
     const bpId = a.blueprint_id || (a.id?.startsWith('bp-') ? a.id.slice(3) : null);
-    const fullBp = bpId && typeof BlueprintStore !== 'undefined' && BlueprintStore.getAgent ? BlueprintStore.getAgent(bpId) : null;
+    const fullBp = bpId && typeof Blueprints !== 'undefined' && Blueprints.getAgent ? Blueprints.getAgent(bpId) : null;
     const bp = Object.assign({}, fullBp || {}, a);
 
     if (typeof CardRenderer !== 'undefined') {
@@ -423,7 +423,7 @@ const AgentsView = (() => {
       const copyBtn = document.getElementById('share-link-copy');
       if (genBtn) genBtn.textContent = 'Generating…';
       try {
-        const code = await BlueprintStore.shareBlueprint(_shareAgentId, 'agent');
+        const code = await Blueprints.shareBlueprint(_shareAgentId, 'agent');
         const shareUrl = `${location.origin}/app/#/share/${code}`;
         if (urlInput) urlInput.value = shareUrl;
         if (copyBtn) copyBtn.style.display = '';
@@ -589,9 +589,9 @@ const AgentDetailView = (() => {
       } catch(e) {
         agent = (State.get('agents') || []).find(a => a.id === id);
       }
-      // Fallback: BlueprintStore catalog (handles bp- prefix IDs)
-      if (!agent && typeof BlueprintStore !== 'undefined') {
-        agent = BlueprintStore.getAgent(id) || BlueprintStore.getAgent(id.replace(/^bp-/, ''));
+      // Fallback: Blueprints catalog (handles bp- prefix IDs)
+      if (!agent && typeof Blueprints !== 'undefined') {
+        agent = Blueprints.getAgent(id) || Blueprints.getAgent(id.replace(/^bp-/, ''));
       }
       if (!agent) throw new Error('Agent not found');
       const config = agent.config || {};
@@ -599,7 +599,7 @@ const AgentDetailView = (() => {
       const initials = (agent.name || 'AG').slice(0, 2).toUpperCase();
 
       // Community publish button is only meaningful for user-built agents
-      // the current user owns. Catalog rows fall back to BlueprintStore
+      // the current user owns. Catalog rows fall back to Blueprints
       // and carry no user_id; those never show the button.
       const _user = State.get('user');
       const _canPublish = !!(_user && agent.user_id && agent.user_id === _user.id);

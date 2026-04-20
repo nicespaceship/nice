@@ -1,5 +1,5 @@
 /**
- * Verifies that the marketplace action helpers in blueprint-store.js talk
+ * Verifies that the marketplace action helpers in blueprints.js talk
  * to Supabase via the right server-authoritative paths after Stage B1:
  *   - rateMarketplaceListing upserts into marketplace_reviews and re-reads
  *     the listing aggregate (no client-side math anymore — a DB trigger
@@ -14,12 +14,12 @@ globalThis.BlueprintsView = {
   SPACESHIP_SEED: [],
 };
 
-// Load BlueprintStore into globals
+// Load Blueprints into globals
 const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
 const { fileURLToPath } = await import('url');
 const __dir = dirname(fileURLToPath(import.meta.url));
-let code = readFileSync(resolve(__dir, '../lib/blueprint-store.js'), 'utf-8');
+let code = readFileSync(resolve(__dir, '../lib/blueprints.js'), 'utf-8');
 code = code.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
 eval(code);
 
@@ -62,7 +62,7 @@ function makeMockClient({ listing, aggregateAfter } = {}) {
   };
 }
 
-describe('BlueprintStore — marketplace action helpers', () => {
+describe('Blueprints — marketplace action helpers', () => {
   beforeEach(() => {
     globalThis.State._reset();
     globalThis.State.set('user', { id: 'user-1' });
@@ -75,7 +75,7 @@ describe('BlueprintStore — marketplace action helpers', () => {
     });
     globalThis.SB = mock;
 
-    const result = await BlueprintStore.rateMarketplaceListing('L1', 5);
+    const result = await Blueprints.rateMarketplaceListing('L1', 5);
 
     expect(result).toEqual({ rating: 4.5, rating_count: 2 });
 
@@ -101,7 +101,7 @@ describe('BlueprintStore — marketplace action helpers', () => {
     });
     globalThis.SB = mock;
 
-    await expect(BlueprintStore.rateMarketplaceListing('L1', 5))
+    await expect(Blueprints.rateMarketplaceListing('L1', 5))
       .rejects.toThrow("can't rate your own listing");
 
     const upserts = mock.calls.from.filter(c => c.op === 'upsert');
@@ -112,7 +112,7 @@ describe('BlueprintStore — marketplace action helpers', () => {
     globalThis.State._reset(); // no user
     globalThis.SB = makeMockClient();
 
-    await expect(BlueprintStore.rateMarketplaceListing('L1', 5))
+    await expect(Blueprints.rateMarketplaceListing('L1', 5))
       .rejects.toThrow('Sign in to rate');
   });
 
@@ -120,7 +120,7 @@ describe('BlueprintStore — marketplace action helpers', () => {
     const mock = makeMockClient();
     globalThis.SB = mock;
 
-    await BlueprintStore.incrementMarketplaceDownloads('L1');
+    await Blueprints.incrementMarketplaceDownloads('L1');
 
     expect(mock.calls.rpc).toEqual([
       { fn: 'increment_listing_download', args: { p_listing_id: 'L1' } },
@@ -136,6 +136,6 @@ describe('BlueprintStore — marketplace action helpers', () => {
       },
     };
     // Must not throw
-    await expect(BlueprintStore.incrementMarketplaceDownloads('L1')).resolves.toBeUndefined();
+    await expect(Blueprints.incrementMarketplaceDownloads('L1')).resolves.toBeUndefined();
   });
 });

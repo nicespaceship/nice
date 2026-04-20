@@ -28,7 +28,7 @@ const BlueprintMarkdown = (() => {
   /**
    * Parse a markdown blueprint string into a blueprint object.
    * @param {string} md - Markdown string with --- frontmatter ---
-   * @returns {Object} Blueprint object compatible with BlueprintStore
+   * @returns {Object} Blueprint object compatible with Blueprints
    */
   function parse(md) {
     if (!md || typeof md !== 'string') return null;
@@ -419,9 +419,9 @@ const BlueprintMarkdown = (() => {
     if (!id) return '—';
     // Not a UUID — already a name or bp-id
     if (id.length < 30 && !id.includes('-')) return id;
-    // Check BlueprintStore
-    if (typeof BlueprintStore !== 'undefined') {
-      var bp = BlueprintStore.getAgent(id);
+    // Check Blueprints
+    if (typeof Blueprints !== 'undefined') {
+      var bp = Blueprints.getAgent(id);
       if (bp && bp.name) return bp.name;
     }
     // Check State

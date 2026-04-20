@@ -198,7 +198,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `ShipTemplates` | `ship-templates.js` | Pre-built spaceship templates |
 | `LLMConfig` | `llm-config.js` | Model selection from enabled_models state |
 | `ModelIntel` | `model-intel.js` | Learns optimal models from mission history |
-| `BlueprintStore` | `blueprint-store.js` | Blueprint catalog with Supabase sync + sharing |
+| `Blueprints` | `blueprints.js` | Blueprint catalog with Supabase sync + sharing |
 | `BlueprintMarkdown` | `blueprint-markdown.js` | Markdown rendering for blueprint descriptions |
 | `CardRenderer` | `card-renderer.js` | Unified TCG card template renderer |
 | `CrewDesigner` | `crew-designer.js` | Describe → Design → Deploy crew builder |
@@ -335,7 +335,7 @@ Test files: `app/js/__tests__/*.test.js`
 - `ship-log.test.js` — Conversation persistence, LLM calls
 - `mission-runner.test.js` — Mission lifecycle management
 - `llm-config.test.js` — Model selection, model_profile precedence
-- `blueprint-store.test.js` — Blueprint CRUD operations
+- `blueprints.test.js` — Blueprint CRUD operations
 - `blueprint-markdown.test.js` — Markdown rendering
 - `blueprint-utils-humanize.test.js` — Model name humanizer (11 tests)
 - `card-renderer-tier-pill.test.js` — FREE/PRO tier pill rendering (11 tests)
@@ -384,7 +384,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 
 | Data | SSOT Location | Notes |
 |------|--------------|-------|
-| Blueprint data | `BlueprintStore` + Supabase `blueprints` table | Never hardcode blueprint lists |
+| Blueprint data | `Blueprints` + Supabase `blueprints` table | Never hardcode blueprint lists |
 | Crew slots, rarity, ship classes | `BlueprintUtils` (`blueprint-utils.js`) | Loaded before card-renderer |
 | localStorage keys | `Utils.KEYS` (64 constants) | Never use raw string keys |
 | State keys | `State.KEYS` (10 constants) | Never use raw string keys |

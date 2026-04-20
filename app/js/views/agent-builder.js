@@ -637,7 +637,7 @@ const AgentBuilderView = (() => {
         const si = agents.findIndex(a => a.id === row.id);
         if (si >= 0) agents[si] = row; else agents.push(row);
         State.set('agents', agents);
-        if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateAgent(row.id);
+        if (typeof Blueprints !== 'undefined') Blueprints.activateAgent(row.id);
       }
       if (typeof Gamification !== 'undefined' && !existingAgent) {
         Gamification.addXP('create_agent');

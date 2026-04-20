@@ -18,7 +18,7 @@ const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
 const { fileURLToPath } = await import('url');
 const __dir = dirname(fileURLToPath(import.meta.url));
-let code = readFileSync(resolve(__dir, '../lib/blueprint-store.js'), 'utf-8');
+let code = readFileSync(resolve(__dir, '../lib/blueprints.js'), 'utf-8');
 code = code.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
 eval(code);
 
@@ -66,7 +66,7 @@ function makeMock({ readers = {}, insertErrors = {}, rpcResponse = {} } = {}) {
   };
 }
 
-describe('BlueprintStore.reportCommunityBlueprint', () => {
+describe('Blueprints.reportCommunityBlueprint', () => {
   beforeEach(() => {
     globalThis.State._reset();
     globalThis.State.set('user', { id: 'reporter-X' });
@@ -75,15 +75,15 @@ describe('BlueprintStore.reportCommunityBlueprint', () => {
   it('rejects unauthenticated callers', async () => {
     globalThis.State._reset();
     globalThis.SB = makeMock();
-    await expect(BlueprintStore.reportCommunityBlueprint('bp-1', { reason: 'spam' }))
+    await expect(Blueprints.reportCommunityBlueprint('bp-1', { reason: 'spam' }))
       .rejects.toThrow('Sign in to report');
   });
 
   it('rejects unknown reasons', async () => {
     globalThis.SB = makeMock();
-    await expect(BlueprintStore.reportCommunityBlueprint('bp-1', { reason: 'whatever' }))
+    await expect(Blueprints.reportCommunityBlueprint('bp-1', { reason: 'whatever' }))
       .rejects.toThrow('Pick a reason');
-    await expect(BlueprintStore.reportCommunityBlueprint('bp-1', {}))
+    await expect(Blueprints.reportCommunityBlueprint('bp-1', {}))
       .rejects.toThrow('Pick a reason');
   });
 
@@ -91,7 +91,7 @@ describe('BlueprintStore.reportCommunityBlueprint', () => {
     const mock = makeMock();
     globalThis.SB = mock;
 
-    const result = await BlueprintStore.reportCommunityBlueprint('bp-1', {
+    const result = await Blueprints.reportCommunityBlueprint('bp-1', {
       reason: 'offensive',
       details: 'nsfw images',
     });
@@ -111,7 +111,7 @@ describe('BlueprintStore.reportCommunityBlueprint', () => {
     const mock = makeMock();
     globalThis.SB = mock;
     const longDetails = 'x'.repeat(5000);
-    await BlueprintStore.reportCommunityBlueprint('bp-1', { reason: 'spam', details: longDetails });
+    await Blueprints.reportCommunityBlueprint('bp-1', { reason: 'spam', details: longDetails });
     const report = mock.calls.inserts.find(c => c.table === 'community_reports');
     expect(report.payload.details.length).toBe(1000);
   });
@@ -119,14 +119,14 @@ describe('BlueprintStore.reportCommunityBlueprint', () => {
   it('translates UNIQUE violation into a friendly duplicate message', async () => {
     const mock = makeMock({ insertErrors: { community_reports: { code: '23505', message: 'duplicate key' } } });
     globalThis.SB = mock;
-    await expect(BlueprintStore.reportCommunityBlueprint('bp-1', { reason: 'spam' }))
+    await expect(Blueprints.reportCommunityBlueprint('bp-1', { reason: 'spam' }))
       .rejects.toThrow("already reported");
   });
 
   it('translates RLS rejection into a clean self-report message', async () => {
     const mock = makeMock({ insertErrors: { community_reports: { code: '42501', message: 'row-level security' } } });
     globalThis.SB = mock;
-    await expect(BlueprintStore.reportCommunityBlueprint('bp-1', { reason: 'spam' }))
+    await expect(Blueprints.reportCommunityBlueprint('bp-1', { reason: 'spam' }))
       .rejects.toThrow("your own blueprint");
   });
 });
@@ -134,5 +134,5 @@ describe('BlueprintStore.reportCommunityBlueprint', () => {
 // Rate-limit enforcement moved server-side in Stage C1 — the
 // community-submit edge function calls check_publish_rate_limit before
 // any write. Client-side tests for publishToCommunity now live in
-// blueprint-store-publish.test.js; see the `rate_limited` error-mapping
+// blueprints-publish.test.js; see the `rate_limited` error-mapping
 // case there for the caller-visible behavior.

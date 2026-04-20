@@ -640,18 +640,18 @@ Rules:
         } catch (e) { console.warn('[CrewDesigner] Ship create fallback to local:', e); }
       }
 
-      // 3. Activate in BlueprintStore
+      // 3. Activate in Blueprints
       setStatus('Activating crew...');
-      if (typeof BlueprintStore !== 'undefined') {
+      if (typeof Blueprints !== 'undefined') {
         try {
-          BlueprintStore.activateShip(shipId);
-          BlueprintStore.saveShipState(shipId, {
+          Blueprints.activateShip(shipId);
+          Blueprints.saveShipState(shipId, {
             slot_assignments: slotAssignments,
             status: 'deployed',
             agent_ids: createdAgentIds,
           });
-          createdAgentIds.forEach(id => BlueprintStore.activateAgent(id));
-        } catch (e) { console.warn('[CrewDesigner] BlueprintStore activation error:', e); }
+          createdAgentIds.forEach(id => Blueprints.activateAgent(id));
+        } catch (e) { console.warn('[CrewDesigner] Blueprints activation error:', e); }
       }
 
       // 4. Update State
@@ -773,14 +773,14 @@ Rules:
         agents.forEach(a => { if (!merged.find(e => e.id === a.id)) merged.push(a); });
         if (merged.length > existing.length) State.set('agents', merged);
       }
-      // Ensure BlueprintStore knows about custom ships
-      if (ships.length && typeof BlueprintStore !== 'undefined') {
+      // Ensure Blueprints knows about custom ships
+      if (ships.length && typeof Blueprints !== 'undefined') {
         ships.forEach(s => {
-          if (!BlueprintStore.isShipActivated(s.id)) {
-            BlueprintStore.activateShip(s.id);
+          if (!Blueprints.isShipActivated(s.id)) {
+            Blueprints.activateShip(s.id);
           }
-          if (s.slot_assignments && !BlueprintStore.getShipState(s.id)?.slot_assignments) {
-            BlueprintStore.saveShipState(s.id, {
+          if (s.slot_assignments && !Blueprints.getShipState(s.id)?.slot_assignments) {
+            Blueprints.saveShipState(s.id, {
               slot_assignments: s.slot_assignments,
               status: s.status || 'deployed',
               agent_ids: Object.values(s.slot_assignments),
@@ -791,7 +791,7 @@ Rules:
     } catch (e) { console.warn('[CrewDesigner] restore error:', e); }
   }
 
-  // Run on load after a short delay to ensure State/BlueprintStore are ready
+  // Run on load after a short delay to ensure State/Blueprints are ready
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(_restoreCustomData, 500));

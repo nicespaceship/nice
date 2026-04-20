@@ -551,12 +551,12 @@ const MissionsView = (() => {
     const select = document.getElementById('t-agent');
     if (select) {
       let agents = State.get('agents') || [];
-      if (!agents.length && typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedAgents) {
-        agents = BlueprintStore.getActivatedAgents().map(a => ({ id: a.id, name: a.name, status: 'active' }));
+      if (!agents.length && typeof Blueprints !== 'undefined' && Blueprints.getActivatedAgents) {
+        agents = Blueprints.getActivatedAgents().map(a => ({ id: a.id, name: a.name, status: 'active' }));
       }
-      if (!agents.length && typeof BlueprintStore !== 'undefined') {
-        await BlueprintStore.ensureCatalogLoaded();
-        agents = BlueprintStore.listAgents().map(a => ({ id: a.id, name: a.name, status: a.rarity || 'available' }));
+      if (!agents.length && typeof Blueprints !== 'undefined') {
+        await Blueprints.ensureCatalogLoaded();
+        agents = Blueprints.listAgents().map(a => ({ id: a.id, name: a.name, status: a.rarity || 'available' }));
       }
       select.innerHTML = '<option value="">Unassigned</option>' +
         agents.map(a => `<option value="${a.id}">${_esc(a.name)}${a.status ? ' (' + a.status + ')' : ''}</option>`).join('');
@@ -1102,7 +1102,7 @@ const SharedReportView = (() => {
 
   async function _loadSharedBlueprint(el, code) {
     try {
-      const shared = await BlueprintStore.importSharedBlueprint(code);
+      const shared = await Blueprints.importSharedBlueprint(code);
       const bp = shared.data;
       el.innerHTML = `
         <div class="detail-wrap">
@@ -1135,9 +1135,9 @@ const SharedReportView = (() => {
         if (btn) btn.textContent = 'Importing...';
         try {
           if (shared.type === 'agent') {
-            await BlueprintStore.activateAgent(bp.id || 'shared-' + code);
+            await Blueprints.activateAgent(bp.id || 'shared-' + code);
           } else {
-            await BlueprintStore.activateShip(bp.id || 'shared-' + code);
+            await Blueprints.activateShip(bp.id || 'shared-' + code);
           }
           if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Imported!', message: bp.name + ' added to your collection.', type: 'system' });

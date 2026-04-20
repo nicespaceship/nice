@@ -66,8 +66,8 @@ const LogView = (() => {
     const xp = typeof Gamification !== 'undefined' && Gamification.getXP ? Gamification.getXP() : 0;
     const rank = typeof Gamification !== 'undefined' && Gamification.getRank ? (Gamification.getRank()?.name || 'Ensign') : 'Ensign';
     const tokens = typeof Gamification !== 'undefined' && Gamification.getResources ? (Gamification.getResources()?.tokens || 0) : 0;
-    const agentCount = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getActivatedAgentIds().length : 0;
-    const shipCount = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getActivatedShipIds().length : 0;
+    const agentCount = typeof Blueprints !== 'undefined' ? Blueprints.getActivatedAgentIds().length : 0;
+    const shipCount = typeof Blueprints !== 'undefined' ? Blueprints.getActivatedShipIds().length : 0;
 
     const statsHTML = `<div class="mc-stats-strip">
       <div class="mc-stat-card"><span class="mc-stat-label">Rank</span><span class="mc-stat-value">${rank}</span></div>

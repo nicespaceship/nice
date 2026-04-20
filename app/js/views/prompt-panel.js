@@ -196,7 +196,7 @@ const PromptPanel = (() => {
         const agents = [];
         for (const [slotIdx, agentId] of Object.entries(slotMap)) {
           if (!agentId) continue;
-          const bp = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getAgent(agentId)
+          const bp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(agentId)
             : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === agentId) : null;
           if (bp) agents.push({ id: bp.id, name: bp.name, role: bp.config?.role || 'Custom', slot: slotIdx });
         }
@@ -210,7 +210,7 @@ const PromptPanel = (() => {
       const agents = [];
       for (const [slotIdx, bpId] of Object.entries(slotMap)) {
         if (!bpId) continue;
-        const bp = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getAgent(bpId)
+        const bp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(bpId)
           : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === bpId) : null;
         if (bp) agents.push({ id: bp.id, name: bp.name, role: bp.config?.role || 'Custom', slot: slotIdx });
       }
@@ -386,8 +386,8 @@ const PromptPanel = (() => {
           const a = agents.find(a => a.name.toLowerCase().includes(agentHint.toLowerCase()));
           if (a) { agentId = a.supabase_id || a.id; agentName = a.name; }
           // Don't use bp- IDs for Supabase — resolve to UUID
-          if (agentId && agentId.startsWith('bp-') && typeof BlueprintStore !== 'undefined') {
-            agentId = BlueprintStore.getAgentUuid(agentId) || null;
+          if (agentId && agentId.startsWith('bp-') && typeof Blueprints !== 'undefined') {
+            agentId = Blueprints.getAgentUuid(agentId) || null;
           }
         }
         try {
@@ -424,12 +424,12 @@ const PromptPanel = (() => {
       }
       case 'activate_blueprint': {
         const [bpId] = params;
-        if (typeof BlueprintStore !== 'undefined' && typeof BlueprintsView !== 'undefined') {
-          if (!BlueprintStore.isAgentActivated(bpId)) {
-            BlueprintStore.activateAgent(bpId);
+        if (typeof Blueprints !== 'undefined' && typeof BlueprintsView !== 'undefined') {
+          if (!Blueprints.isAgentActivated(bpId)) {
+            Blueprints.activateAgent(bpId);
             if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint');
             // Add to local State
-            const bp = BlueprintStore.getAgent(bpId);
+            const bp = Blueprints.getAgent(bpId);
             if (bp) {
               const agents = State.get('agents') || [];
               if (!agents.find(a => a.id === 'bp-' + bpId)) {
@@ -440,7 +440,7 @@ const PromptPanel = (() => {
           }
           return { ok: true, msg: `Blueprint ${bpId} added.` };
         }
-        return { ok: false, msg: 'BlueprintStore not available' };
+        return { ok: false, msg: 'Blueprints not available' };
       }
       case 'run_mission': {
         const [missionId] = params;
@@ -506,8 +506,8 @@ const PromptPanel = (() => {
     let agentId = null;
     if (agent) {
       agentId = agent.supabase_id || null;
-      if (!agentId && agent.id?.startsWith('bp-') && typeof BlueprintStore !== 'undefined') {
-        agentId = BlueprintStore.getAgentUuid(agent.id);
+      if (!agentId && agent.id?.startsWith('bp-') && typeof Blueprints !== 'undefined') {
+        agentId = Blueprints.getAgentUuid(agent.id);
       }
     }
 
@@ -1880,7 +1880,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
 
     let agentBp = null;
     if (mentioned) {
-      agentBp = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.getAgent(mentioned.id)
+      agentBp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(mentioned.id)
         : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === mentioned.id) : null;
     } else if (_routeAgent) {
       agentBp = _routeAgent;
@@ -2277,7 +2277,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const select = _panel?.querySelector('#nice-ai-bp-select');
     if (!select) return;
     select.innerHTML = '<option value="">Blueprint</option>';
-    const ships = (typeof BlueprintStore !== 'undefined') ? BlueprintStore.listSpaceships()
+    const ships = (typeof Blueprints !== 'undefined') ? Blueprints.listSpaceships()
       : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
     if (ships.length) {
       const grp1 = document.createElement('optgroup');
@@ -3134,7 +3134,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       const agentId = agentMatch[1];
       // Try to resolve agent name
       let agent = null;
-      if (typeof BlueprintStore !== 'undefined') agent = BlueprintStore.getAgent(agentId);
+      if (typeof Blueprints !== 'undefined') agent = Blueprints.getAgent(agentId);
       if (!agent) {
         const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
         agent = agents.find(a => a.id === agentId);

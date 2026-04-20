@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
-// BlueprintStore depends on BlueprintsView for seeds
+// Blueprints depends on BlueprintsView for seeds
 globalThis.BlueprintsView = {
   SEED: [
     { id: 'sa1', name: 'Web Researcher', config: { role: 'Research' }, category: 'Research', rarity: 'Common' },
@@ -37,16 +37,16 @@ globalThis.SB = {
   realtime: { subscribe: () => ({}) },
 };
 
-// Load BlueprintStore into globals
+// Load Blueprints into globals
 const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
 const { fileURLToPath } = await import('url');
 const __dir = dirname(fileURLToPath(import.meta.url));
-let code = readFileSync(resolve(__dir, '../lib/blueprint-store.js'), 'utf-8');
+let code = readFileSync(resolve(__dir, '../lib/blueprints.js'), 'utf-8');
 code = code.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
 eval(code);
 
-describe('BlueprintStore — user_spaceships hoisting', () => {
+describe('Blueprints — user_spaceships hoisting', () => {
   beforeEach(() => {
     _shipRows = [];
     _agentRows = [];
@@ -71,7 +71,7 @@ describe('BlueprintStore — user_spaceships hoisting', () => {
       slots: {},                   // empty — no legacy data
       created_at: '2026-04-16T00:00:00Z',
     }];
-    await BlueprintStore.init();
+    await Blueprints.init();
 
     const ship = (globalThis.State.get('spaceships') || []).find(s => s.id === 'ship-uuid-1');
     expect(ship).toBeDefined();
@@ -98,7 +98,7 @@ describe('BlueprintStore — user_spaceships hoisting', () => {
       slots: { 0: 'fresh-agent-a', 1: 'fresh-agent-b' },  // plain map written by _addAgent
       created_at: '2026-04-16T00:00:00Z',
     }];
-    await BlueprintStore.init();
+    await Blueprints.init();
 
     const ship = (globalThis.State.get('spaceships') || []).find(s => s.id === 'ship-uuid-2');
     expect(ship).toBeDefined();
@@ -129,7 +129,7 @@ describe('BlueprintStore — user_spaceships hoisting', () => {
       },
       created_at: '2026-04-01T00:00:00Z',
     }];
-    await BlueprintStore.init();
+    await Blueprints.init();
 
     const ship = (globalThis.State.get('spaceships') || []).find(s => s.id === 'ship-uuid-3');
     expect(ship).toBeDefined();
@@ -152,7 +152,7 @@ describe('BlueprintStore — user_spaceships hoisting', () => {
       slots: {},
       created_at: '2026-04-16T00:00:00Z',
     }];
-    await BlueprintStore.init();
+    await Blueprints.init();
 
     const ship = (globalThis.State.get('spaceships') || []).find(s => s.id === 'ship-uuid-4');
     expect(ship).toBeDefined();

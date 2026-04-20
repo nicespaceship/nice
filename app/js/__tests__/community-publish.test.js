@@ -1,7 +1,7 @@
 /**
  * Tests for the CommunityPublish UI helper (app/js/lib/community-publish.js).
  * Covers the DOM-free surface: isPublished, renderActionButton, and the
- * modal / confirm flows wired to the Stage B2 BlueprintStore helpers.
+ * modal / confirm flows wired to the Stage B2 Blueprints helpers.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -66,9 +66,9 @@ installDomStub();
 globalThis.Utils = { esc: (s) => String(s ?? '') };
 globalThis.Notify = { _sent: [], send(args) { this._sent.push(args); } };
 
-// Fresh BlueprintStore mock per test
+// Fresh Blueprints mock per test
 let bpStoreMock;
-globalThis.BlueprintStore = {
+globalThis.Blueprints = {
   publishToCommunity: (...args) => bpStoreMock.publish(...args),
   unpublishFromCommunity: (...args) => bpStoreMock.unpublish(...args),
 };
@@ -226,7 +226,7 @@ describe('CommunityPublish.renderActionButton', () => {
 describe('CommunityPublish.confirmUnpublish', () => {
   beforeEach(() => { Notify._sent = []; });
 
-  it('calls BlueprintStore.unpublishFromCommunity and fires onSuccess', async () => {
+  it('calls Blueprints.unpublishFromCommunity and fires onSuccess', async () => {
     bpStoreMock = {
       unpublish: vi.fn(async () => ({ ok: true })),
     };

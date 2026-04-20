@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 describe('MissionRouter', () => {
 
   beforeEach(() => {
-    // Mock BlueprintStore
-    globalThis.BlueprintStore = {
+    // Mock Blueprints
+    globalThis.Blueprints = {
       getShipState: vi.fn(),
       getSpaceship: vi.fn(),
       getAgent: vi.fn(),
@@ -19,24 +19,24 @@ describe('MissionRouter', () => {
   describe('buildCrewManifest', () => {
 
     it('returns empty array when no ship state', () => {
-      BlueprintStore.getShipState.mockReturnValue(null);
+      Blueprints.getShipState.mockReturnValue(null);
       expect(MissionRouter.buildCrewManifest('ship-1')).toEqual([]);
     });
 
     it('returns empty array when no slot assignments', () => {
-      BlueprintStore.getShipState.mockReturnValue({ slot_assignments: {} });
+      Blueprints.getShipState.mockReturnValue({ slot_assignments: {} });
       expect(MissionRouter.buildCrewManifest('ship-1')).toEqual([]);
     });
 
     it('builds manifest from slot assignments', () => {
-      BlueprintStore.getShipState.mockReturnValue({
+      Blueprints.getShipState.mockReturnValue({
         slot_assignments: { '0': 'bp-agent-01', '1': 'bp-agent-02' },
       });
-      BlueprintStore.getSpaceship.mockReturnValue({
+      Blueprints.getSpaceship.mockReturnValue({
         name: 'Test Ship',
         metadata: { crew: [{ label: 'Commander' }, { label: 'Engineer' }] },
       });
-      BlueprintStore.getAgent.mockImplementation((id) => {
+      Blueprints.getAgent.mockImplementation((id) => {
         if (id === 'bp-agent-01') return {
           id: 'bp-agent-01', name: 'Alpha', description: 'Research agent',
           config: { role: 'Research', tools: ['web-search'] },
@@ -60,11 +60,11 @@ describe('MissionRouter', () => {
     });
 
     it('skips empty slots', () => {
-      BlueprintStore.getShipState.mockReturnValue({
+      Blueprints.getShipState.mockReturnValue({
         slot_assignments: { '0': 'bp-agent-01', '1': null, '2': 'bp-agent-03' },
       });
-      BlueprintStore.getSpaceship.mockReturnValue({ name: 'Ship', metadata: {} });
-      BlueprintStore.getAgent.mockImplementation((id) => {
+      Blueprints.getSpaceship.mockReturnValue({ name: 'Ship', metadata: {} });
+      Blueprints.getAgent.mockImplementation((id) => {
         if (id === 'bp-agent-01') return { id: 'bp-agent-01', name: 'A', config: {}, metadata: {} };
         if (id === 'bp-agent-03') return { id: 'bp-agent-03', name: 'C', config: {}, metadata: {} };
         return null;
@@ -78,8 +78,8 @@ describe('MissionRouter', () => {
   describe('route', () => {
 
     it('returns direct result when no crew', async () => {
-      BlueprintStore.getShipState.mockReturnValue({ slot_assignments: {} });
-      BlueprintStore.getSpaceship.mockReturnValue({ name: 'Empty Ship' });
+      Blueprints.getShipState.mockReturnValue({ slot_assignments: {} });
+      Blueprints.getSpaceship.mockReturnValue({ name: 'Empty Ship' });
 
       const { routing, result } = await MissionRouter.route('ship-1', 'Hello');
       expect(routing).toBeNull();
@@ -87,11 +87,11 @@ describe('MissionRouter', () => {
     });
 
     it('skips LLM routing with single crew member', async () => {
-      BlueprintStore.getShipState.mockReturnValue({
+      Blueprints.getShipState.mockReturnValue({
         slot_assignments: { '0': 'bp-agent-01' },
       });
-      BlueprintStore.getSpaceship.mockReturnValue({ name: 'Solo Ship', metadata: {} });
-      BlueprintStore.getAgent.mockReturnValue({
+      Blueprints.getSpaceship.mockReturnValue({ name: 'Solo Ship', metadata: {} });
+      Blueprints.getAgent.mockReturnValue({
         id: 'bp-agent-01', name: 'Solo', config: {}, metadata: {},
       });
 

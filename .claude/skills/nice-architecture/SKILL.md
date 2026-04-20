@@ -1,6 +1,6 @@
 ---
 name: nice-architecture
-description: NICE SPA architecture reference — IIFE modules, State pub/sub, routing, BlueprintStore, Gamification. Auto-triggers when working on NICE features or understanding codebase structure.
+description: NICE SPA architecture reference — IIFE modules, State pub/sub, routing, Blueprints, Gamification. Auto-triggers when working on NICE features or understanding codebase structure.
 user-invocable: true
 ---
 
@@ -45,15 +45,15 @@ Router.navigate('#/path');              // Navigate
 Router.current();                       // Get current route info
 ```
 
-### BlueprintStore (data layer)
+### Blueprints (data layer)
 ```javascript
-BlueprintStore.getAgent(id);            // Get agent blueprint
-BlueprintStore.getSpaceship(id);        // Get spaceship blueprint
-BlueprintStore.getActivatedAgents();    // All activated agents
-BlueprintStore.getActivatedShips();     // All activated ships
-BlueprintStore.activateAgent(bpId);     // Activate a blueprint
-BlueprintStore.deactivateAgent(bpId);   // Deactivate
-BlueprintStore.saveShipState(id, state); // Save slot assignments
+Blueprints.getAgent(id);            // Get agent blueprint
+Blueprints.getSpaceship(id);        // Get spaceship blueprint
+Blueprints.getActivatedAgents();    // All activated agents
+Blueprints.getActivatedShips();     // All activated ships
+Blueprints.activateAgent(bpId);     // Activate a blueprint
+Blueprints.deactivateAgent(bpId);   // Deactivate
+Blueprints.saveShipState(id, state); // Save slot assignments
 ```
 
 ### Gamification

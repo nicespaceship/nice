@@ -25,7 +25,7 @@ const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
 const { fileURLToPath } = await import('url');
 const __dir = dirname(fileURLToPath(import.meta.url));
-let code = readFileSync(resolve(__dir, '../lib/blueprint-store.js'), 'utf-8');
+let code = readFileSync(resolve(__dir, '../lib/blueprints.js'), 'utf-8');
 code = code.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
 eval(code);
 
@@ -57,7 +57,7 @@ function invokeMock({ data = null, error = null } = {}) {
   };
 }
 
-describe('BlueprintStore.publishToCommunity — client wrapper', () => {
+describe('Blueprints.publishToCommunity — client wrapper', () => {
   beforeEach(() => {
     globalThis.State._reset();
     globalThis.State.set('user', { id: 'user-A' });
@@ -68,7 +68,7 @@ describe('BlueprintStore.publishToCommunity — client wrapper', () => {
     const mock = invokeMock();
     globalThis.SB = mock;
 
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow('Sign in to publish');
     expect(mock.calls.length).toBe(0);
   });
@@ -77,7 +77,7 @@ describe('BlueprintStore.publishToCommunity — client wrapper', () => {
     const mock = invokeMock();
     globalThis.SB = mock;
 
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent' }))
       .rejects.toThrow('Missing entity id');
     expect(mock.calls.length).toBe(0);
   });
@@ -92,7 +92,7 @@ describe('BlueprintStore.publishToCommunity — client wrapper', () => {
     });
     globalThis.SB = mock;
 
-    const result = await BlueprintStore.publishToCommunity(
+    const result = await Blueprints.publishToCommunity(
       { type: 'agent', id: 'a1' },
       { title: 'Custom', description: 'Desc', tags: ['x', 'y'] }
     );
@@ -115,11 +115,11 @@ describe('BlueprintStore.publishToCommunity — client wrapper', () => {
     const mock = invokeMock({ data: { blueprint: {}, listing: {}, content_hash: 'h' } });
     globalThis.SB = mock;
 
-    await BlueprintStore.publishToCommunity({ type: 'spaceship', id: 'ship-1' });
+    await Blueprints.publishToCommunity({ type: 'spaceship', id: 'ship-1' });
     expect(mock.calls[0].body.entity_type).toBe('spaceship');
 
     // Any other type coerces to 'agent' (defensive)
-    await BlueprintStore.publishToCommunity({ type: 'something_weird', id: 'a2' });
+    await Blueprints.publishToCommunity({ type: 'something_weird', id: 'a2' });
     expect(mock.calls[1].body.entity_type).toBe('agent');
   });
 
@@ -133,7 +133,7 @@ describe('BlueprintStore.publishToCommunity — client wrapper', () => {
     });
     globalThis.SB = mock;
 
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow(/credential/i);
   });
 
@@ -147,28 +147,28 @@ describe('BlueprintStore.publishToCommunity — client wrapper', () => {
     });
     globalThis.SB = mock;
 
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow(/temperature/);
   });
 
   it('maps not_owner to the friendly ownership message', async () => {
     const mock = invokeMock({ data: { error: 'not_owner' } });
     globalThis.SB = mock;
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow(/you created/);
   });
 
   it('maps already_published to the unpublish-first message', async () => {
     const mock = invokeMock({ data: { error: 'already_published' } });
     globalThis.SB = mock;
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow(/unpublish first/);
   });
 
   it('maps rate_limited to the 5-per-day message', async () => {
     const mock = invokeMock({ data: { error: 'rate_limited' } });
     globalThis.SB = mock;
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow(/5 per day/);
   });
 
@@ -179,19 +179,19 @@ describe('BlueprintStore.publishToCommunity — client wrapper', () => {
       data: { error: 'secret_detected', message: 'Remove your API key' },
     });
     globalThis.SB = mock;
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow('Remove your API key');
   });
 
   it('falls back to the transport error message when no body is available', async () => {
     const mock = invokeMock({ error: new Error('Network down'), data: null });
     globalThis.SB = mock;
-    await expect(BlueprintStore.publishToCommunity({ type: 'agent', id: 'a1' }))
+    await expect(Blueprints.publishToCommunity({ type: 'agent', id: 'a1' }))
       .rejects.toThrow('Network down');
   });
 });
 
-describe('BlueprintStore.unpublishFromCommunity', () => {
+describe('Blueprints.unpublishFromCommunity', () => {
   beforeEach(() => {
     globalThis.State._reset();
     globalThis.State.set('user', { id: 'user-A' });
@@ -200,13 +200,13 @@ describe('BlueprintStore.unpublishFromCommunity', () => {
   it('throws on unauthenticated callers', async () => {
     globalThis.State._reset();
     globalThis.SB = invokeMock();
-    await expect(BlueprintStore.unpublishFromCommunity('bp-1'))
+    await expect(Blueprints.unpublishFromCommunity('bp-1'))
       .rejects.toThrow('Sign in to unpublish');
   });
 
   it('throws when the blueprint id is missing', async () => {
     globalThis.SB = invokeMock();
-    await expect(BlueprintStore.unpublishFromCommunity())
+    await expect(Blueprints.unpublishFromCommunity())
       .rejects.toThrow('Missing blueprint id');
   });
 });

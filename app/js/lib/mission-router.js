@@ -20,8 +20,8 @@ const MissionRouter = (() => {
 
     // Build crew manifest
     var crew = buildCrewManifest(spaceshipId);
-    var shipBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getSpaceship(spaceshipId) : null;
-    if (!shipBp) shipBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getSpaceship(spaceshipId.replace(/^bp-/, '')) : null;
+    var shipBp = typeof Blueprints !== 'undefined' ? Blueprints.getSpaceship(spaceshipId) : null;
+    if (!shipBp) shipBp = typeof Blueprints !== 'undefined' ? Blueprints.getSpaceship(spaceshipId.replace(/^bp-/, '')) : null;
     var shipName = shipBp ? shipBp.name : 'Ship';
 
     // Skip routing if 0 or 1 crew — execute directly
@@ -33,7 +33,7 @@ const MissionRouter = (() => {
     }
 
     if (crew.length === 1) {
-      var soloBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(crew[0].agent_id) : null;
+      var soloBp = typeof Blueprints !== 'undefined' ? Blueprints.getAgent(crew[0].agent_id) : null;
       var soloResult = await _executeAgent(spaceshipId, soloBp, prompt, opts);
       return {
         routing: { agentId: crew[0].agent_id, agentName: crew[0].name, reasoning: 'Only crew member' },
@@ -51,7 +51,7 @@ const MissionRouter = (() => {
           return r.includes(intentCat.toLowerCase());
         });
         if (intentMatch) {
-          var intentBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(intentMatch.agent_id) : null;
+          var intentBp = typeof Blueprints !== 'undefined' ? Blueprints.getAgent(intentMatch.agent_id) : null;
           if (opts.onRouting) opts.onRouting({ agentId: intentMatch.agent_id, agentName: intentMatch.name, reasoning: 'Matched ' + opts.intent + ' intent' });
           var intentResult = await _executeAgent(spaceshipId, intentBp, prompt, opts);
           return {
@@ -107,7 +107,7 @@ const MissionRouter = (() => {
     }
 
     // Execute with the chosen agent
-    var chosenBp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(chosenId) : null;
+    var chosenBp = typeof Blueprints !== 'undefined' ? Blueprints.getAgent(chosenId) : null;
     var result = await _executeAgent(spaceshipId, chosenBp, prompt, opts);
 
     return { routing: routingMeta, result: result };
@@ -119,12 +119,12 @@ const MissionRouter = (() => {
    * @returns {Array<{ agent_id, name, slot_label, role, capabilities, tools, description }>}
    */
   function buildCrewManifest(spaceshipId) {
-    if (typeof BlueprintStore === 'undefined') return [];
+    if (typeof Blueprints === 'undefined') return [];
 
-    var state = BlueprintStore.getShipState(spaceshipId);
+    var state = Blueprints.getShipState(spaceshipId);
     if (!state || !state.slot_assignments) return [];
 
-    var shipBp = BlueprintStore.getSpaceship(spaceshipId) || BlueprintStore.getSpaceship(spaceshipId.replace(/^bp-/, ''));
+    var shipBp = Blueprints.getSpaceship(spaceshipId) || Blueprints.getSpaceship(spaceshipId.replace(/^bp-/, ''));
     var crewNodes = (typeof BlueprintUtils !== 'undefined') ? BlueprintUtils.getCrewDefs(shipBp) : ((shipBp && shipBp.metadata && shipBp.metadata.crew) || (shipBp && shipBp.crew) || []);
 
     var manifest = [];
@@ -134,7 +134,7 @@ const MissionRouter = (() => {
       var agentId = assignments[slotIdx];
       if (!agentId) return;
 
-      var bp = BlueprintStore.getAgent(agentId);
+      var bp = Blueprints.getAgent(agentId);
       if (!bp) return;
 
       var slotLabel = crewNodes[parseInt(slotIdx)] ? crewNodes[parseInt(slotIdx)].label : 'Crew ' + slotIdx;
@@ -236,9 +236,9 @@ const MissionRouter = (() => {
     return { content: 'No execution engine available.', agent: 'NICE' };
   }
 
-  /* ── Helper: resolve agent blueprint by ID (BlueprintStore + localStorage custom agents) ── */
+  /* ── Helper: resolve agent blueprint by ID (Blueprints + localStorage custom agents) ── */
   function _resolveAgent(agentId) {
-    var bp = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getAgent(agentId) : null;
+    var bp = typeof Blueprints !== 'undefined' ? Blueprints.getAgent(agentId) : null;
     if (!bp) {
       try {
         var custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');

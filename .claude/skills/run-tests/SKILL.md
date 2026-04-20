@@ -20,7 +20,7 @@ Test files: `app/js/__tests__/*.test.js`
 - data-io.test.js (5) — Export/import
 - command-palette.test.js (10) — Fuzzy search
 - router.test.js (8) — Route matching, params
-- blueprint-store.test.js — Activation, lookups
+- blueprints.test.js — Activation, lookups
 - ship-log.test.js — Agent execution
 - home-view.test.js — Tab rendering
 

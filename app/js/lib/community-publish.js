@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Community Publish
    ───────────────────────────────────────────────────────────────────
-   UI helpers on top of BlueprintStore.publishToCommunity /
+   UI helpers on top of Blueprints.publishToCommunity /
    unpublishFromCommunity. Owns the publish modal, the published-state
    check, and the unpublish confirm flow so AgentDetailView and
    SpaceshipDetailView share one implementation.
@@ -148,7 +148,7 @@ const CommunityPublish = (() => {
       freshBtn.textContent = 'Publishing…';
 
       try {
-        const result = await BlueprintStore.publishToCommunity(
+        const result = await Blueprints.publishToCommunity(
           { type: entity.type, id: entity.id },
           { title, description, tags }
         );
@@ -187,7 +187,7 @@ const CommunityPublish = (() => {
 
     (async () => {
       try {
-        await BlueprintStore.unpublishFromCommunity(entity.id);
+        await Blueprints.unpublishFromCommunity(entity.id);
         if (typeof Notify !== 'undefined') {
           Notify.send({
             title: 'Unpublished',

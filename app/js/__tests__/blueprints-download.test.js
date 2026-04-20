@@ -18,7 +18,7 @@ const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
 const { fileURLToPath } = await import('url');
 const __dir = dirname(fileURLToPath(import.meta.url));
-let code = readFileSync(resolve(__dir, '../lib/blueprint-store.js'), 'utf-8');
+let code = readFileSync(resolve(__dir, '../lib/blueprints.js'), 'utf-8');
 code = code.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
 eval(code);
 
@@ -53,7 +53,7 @@ function makeMock({ readers = {}, insertErrors = {}, inserted } = {}) {
   };
 }
 
-describe('BlueprintStore.downloadCommunityBlueprint', () => {
+describe('Blueprints.downloadCommunityBlueprint', () => {
   beforeEach(() => {
     globalThis.State._reset();
     globalThis.State.set('user', { id: 'user-dl' });
@@ -62,13 +62,13 @@ describe('BlueprintStore.downloadCommunityBlueprint', () => {
   it('rejects unauthenticated callers', async () => {
     globalThis.State._reset();
     globalThis.SB = makeMock();
-    await expect(BlueprintStore.downloadCommunityBlueprint('bp-1'))
+    await expect(Blueprints.downloadCommunityBlueprint('bp-1'))
       .rejects.toThrow('Sign in to install');
   });
 
   it('rejects when the blueprint is not in community scope', async () => {
     globalThis.SB = makeMock({ readers: { blueprints: () => null } });
-    await expect(BlueprintStore.downloadCommunityBlueprint('bp-does-not-exist'))
+    await expect(Blueprints.downloadCommunityBlueprint('bp-does-not-exist'))
       .rejects.toThrow('not available');
   });
 
@@ -85,7 +85,7 @@ describe('BlueprintStore.downloadCommunityBlueprint', () => {
     });
     globalThis.SB = mock;
 
-    const created = await BlueprintStore.downloadCommunityBlueprint('community-agent-1', { listingId: 'list-123' });
+    const created = await Blueprints.downloadCommunityBlueprint('community-agent-1', { listingId: 'list-123' });
 
     // Row insert shape
     const insert = mock.calls.inserts.find(c => c.table === 'user_agents');
@@ -128,7 +128,7 @@ describe('BlueprintStore.downloadCommunityBlueprint', () => {
     });
     globalThis.SB = mock;
 
-    await BlueprintStore.downloadCommunityBlueprint('community-ship-1');
+    await Blueprints.downloadCommunityBlueprint('community-ship-1');
 
     const insert = mock.calls.inserts.find(c => c.table === 'user_spaceships');
     expect(insert).toBeDefined();
@@ -161,7 +161,7 @@ describe('BlueprintStore.downloadCommunityBlueprint', () => {
     });
     globalThis.SB = mock;
 
-    await BlueprintStore.downloadCommunityBlueprint('community-ship-evil');
+    await Blueprints.downloadCommunityBlueprint('community-ship-evil');
 
     const insert = mock.calls.inserts.find(c => c.table === 'user_spaceships');
     // Leaked UUID replaced with null — the downloader fills in their own agent
@@ -197,33 +197,33 @@ describe('BlueprintStore.downloadCommunityBlueprint', () => {
 
     // Must not throw — counter is best-effort
     await expect(
-      BlueprintStore.downloadCommunityBlueprint('bp-1', { listingId: 'list-1' })
+      Blueprints.downloadCommunityBlueprint('bp-1', { listingId: 'list-1' })
     ).resolves.toBeDefined();
     expect(mock.calls.inserts.length).toBe(1);
   });
 });
 
-describe('BlueprintStore.hasDownloadedCommunity', () => {
+describe('Blueprints.hasDownloadedCommunity', () => {
   beforeEach(() => { globalThis.State._reset(); });
 
   it('returns true when an agent row links back to the community blueprint', () => {
     globalThis.State.set('agents', [{ id: 'local-1', blueprint_id: 'comm-agent-1' }]);
-    expect(BlueprintStore.hasDownloadedCommunity('comm-agent-1')).toBe(true);
+    expect(Blueprints.hasDownloadedCommunity('comm-agent-1')).toBe(true);
   });
 
   it('returns true when a ship row links back to the community blueprint', () => {
     globalThis.State.set('spaceships', [{ id: 'local-ship', blueprint_id: 'comm-ship-1' }]);
-    expect(BlueprintStore.hasDownloadedCommunity('comm-ship-1')).toBe(true);
+    expect(Blueprints.hasDownloadedCommunity('comm-ship-1')).toBe(true);
   });
 
   it('returns false when no rows link back', () => {
     globalThis.State.set('agents', [{ id: 'a', blueprint_id: 'other' }]);
     globalThis.State.set('spaceships', [{ id: 's', blueprint_id: 'other' }]);
-    expect(BlueprintStore.hasDownloadedCommunity('comm-x')).toBe(false);
+    expect(Blueprints.hasDownloadedCommunity('comm-x')).toBe(false);
   });
 
   it('returns false on missing id', () => {
-    expect(BlueprintStore.hasDownloadedCommunity(null)).toBe(false);
-    expect(BlueprintStore.hasDownloadedCommunity('')).toBe(false);
+    expect(Blueprints.hasDownloadedCommunity(null)).toBe(false);
+    expect(Blueprints.hasDownloadedCommunity('')).toBe(false);
   });
 });
