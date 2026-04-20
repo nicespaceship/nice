@@ -34,7 +34,7 @@ const AuthModal = (() => {
           </div>
           <label class="auth-remember">
             <input type="checkbox" id="am-si-remember" checked />
-            <span>Remember me</span>
+            <span>Keep me signed in</span>
           </label>
           <div class="auth-error" id="am-si-error"></div>
           <button type="submit" class="auth-submit" id="am-si-btn">Sign In</button>
