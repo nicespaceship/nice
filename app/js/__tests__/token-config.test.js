@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-// Load TokenConfig as a global IIFE (same pattern as other blueprint-store test)
+// Load TokenConfig as a global IIFE (same pattern as other blueprints test)
 const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
 const { fileURLToPath } = await import('url');

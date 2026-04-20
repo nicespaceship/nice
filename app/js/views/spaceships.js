@@ -11,8 +11,8 @@ const SpaceshipsView = (() => {
 
   function _promptShipMission(id) {
     if (typeof PromptPanel === 'undefined') return;
-    const bp = (typeof BlueprintStore !== 'undefined')
-      ? (BlueprintStore.getSpaceship(id) || BlueprintStore.getSpaceship(id.replace(/^bp-/, '')))
+    const bp = (typeof Blueprints !== 'undefined')
+      ? (Blueprints.getSpaceship(id) || Blueprints.getSpaceship(id.replace(/^bp-/, '')))
       : null;
     if (!bp) return;
     const caps = bp.caps || bp.metadata?.caps || [];
@@ -150,7 +150,7 @@ const SpaceshipsView = (() => {
 
   async function _loadSpaceships() {
     // Primary source: terminal-activated blueprints
-    const bpShips = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getActivatedShips() : [];
+    const bpShips = typeof Blueprints !== 'undefined' ? Blueprints.getActivatedShips() : [];
     let customShips = [];
     // Also load custom-built spaceships from Supabase (Guided Setup only)
     try {
@@ -238,7 +238,7 @@ const SpaceshipsView = (() => {
       if (typeof CardRenderer !== 'undefined') {
         // Use full blueprint so card is EXACT match of Blueprint Catalog
         const bpId = f.blueprint_id || (f.id?.startsWith('bp-') ? f.id.slice(3) : null);
-        const fullBp = bpId && typeof BlueprintStore !== 'undefined' && BlueprintStore.getSpaceship ? BlueprintStore.getSpaceship(bpId) : null;
+        const fullBp = bpId && typeof Blueprints !== 'undefined' && Blueprints.getSpaceship ? Blueprints.getSpaceship(bpId) : null;
         const shipData = Object.assign({}, fullBp || {}, f);
         shipData._members = members;
 
@@ -297,7 +297,7 @@ const SpaceshipsView = (() => {
         const bpId = btn.dataset.id;
         const name = btn.closest('.tcg-card')?.querySelector('.tcg-name-bar span')?.textContent || 'this spaceship';
         const doDeactivate = async () => {
-          if (typeof BlueprintStore !== 'undefined') await BlueprintStore.deactivateShip(bpId);
+          if (typeof Blueprints !== 'undefined') await Blueprints.deactivateShip(bpId);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Spaceship Removed', message: 'Blueprint removed from your fleet.', type: 'info' });
           _loadSpaceships();
         };
@@ -793,7 +793,7 @@ const SpaceshipDetailView = (() => {
     `;
   }
 
-  /* ── Ship state persistence delegated to BlueprintStore ── */
+  /* ── Ship state persistence delegated to Blueprints ── */
 
   /* ── Ship Profile: icon, name, description persistence ── */
   const _PROFILE_KEY = Utils.KEYS.shipProfiles;
@@ -960,7 +960,7 @@ const SpaceshipDetailView = (() => {
       if (!fleet.class_id) fleet.class_id = 'class-1';
       if (!fleet.slot_assignments) {
         // Pick fresh slot_assignments across the dual-shape `slots` column and
-        // the newer `config.slot_assignments`. See blueprint-store.js loader
+        // the newer `config.slot_assignments`. See blueprints.js loader
         // for the full decision tree — same rules apply here for single-row
         // fetches via `_loadSpaceship`.
         const _bagSlots = fleet.slots && fleet.slots.slot_assignments;
@@ -984,7 +984,7 @@ const SpaceshipDetailView = (() => {
           const spaceships = State.get('spaceships') || [];
           const ls = spaceships.find(f => f.id === id);
           if (ls) { ls.status = 'docked'; State.set('spaceships', spaceships); }
-          BlueprintStore.saveShipState(id, fleet);
+          Blueprints.saveShipState(id, fleet);
         }
       }
 
@@ -1006,14 +1006,14 @@ const SpaceshipDetailView = (() => {
           fresh.forEach(a => { agentMap[a.id] = a; });
         } catch(e) {}
       }
-      // Merge terminal-activated agents (from BlueprintStore)
+      // Merge terminal-activated agents (from Blueprints)
       try {
-        const activated = typeof BlueprintStore !== 'undefined' ? BlueprintStore.getActivatedAgentIds() : [];
+        const activated = typeof Blueprints !== 'undefined' ? Blueprints.getActivatedAgentIds() : [];
         activated.forEach(bpId => {
           const activatedId = 'bp-' + bpId;
           if (agentMap[activatedId]) return; // already in list
           let bp = null;
-          if (typeof BlueprintStore !== 'undefined' && BlueprintStore.getAgent) bp = BlueprintStore.getAgent(bpId);
+          if (typeof Blueprints !== 'undefined' && Blueprints.getAgent) bp = Blueprints.getAgent(bpId);
           if (!bp && typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) bp = BlueprintsView.SEED.find(b => b.id === bpId);
           if (bp) {
             const custom = typeof CardRenderer !== 'undefined' ? CardRenderer.getCustomLabels(activatedId) : {};
@@ -1055,7 +1055,7 @@ const SpaceshipDetailView = (() => {
       const assignedIds = new Set(Object.values(fleet.slot_assignments || {}).filter(Boolean));
 
       // Community publish is only offered for user-built ships owned by
-      // the current viewer. Catalog ships loaded via BlueprintStore have
+      // the current viewer. Catalog ships loaded via Blueprints have
       // no user_id, so the slot stays hidden.
       const _user = State.get('user');
       const _canPublish = !!(_user && fleet.user_id && fleet.user_id === _user.id);
@@ -1205,7 +1205,7 @@ const SpaceshipDetailView = (() => {
 
   function _renderInventory(allAgents, assignedIds, spaceshipClass) {
     // Only show terminal-activated agents and custom-built agents
-    const activatedBpIds = typeof BlueprintStore !== 'undefined' ? new Set(BlueprintStore.getActivatedAgentIds()) : new Set();
+    const activatedBpIds = typeof Blueprints !== 'undefined' ? new Set(Blueprints.getActivatedAgentIds()) : new Set();
     const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary'];
     // Determine max allowed rarity from ship slots
     const maxSlotRarityIdx = spaceshipClass
@@ -1214,7 +1214,7 @@ const SpaceshipDetailView = (() => {
     const allowedRarities = new Set(rarityOrder.slice(0, maxSlotRarityIdx + 1));
 
     const activated = allAgents.filter(a => {
-      // Must be genuinely activated — check BlueprintStore activation list
+      // Must be genuinely activated — check Blueprints activation list
       const bpId = a.blueprint_id || a.id.replace(/^bp-/, '');
       const isActivated = activatedBpIds.has(a.id) || activatedBpIds.has(bpId) || a.imported_via || a._custom;
       if (!isActivated) return false;
@@ -1427,7 +1427,7 @@ const SpaceshipDetailView = (() => {
       spaceships.push(copy);
     }
     State.set('spaceships', spaceships);
-    BlueprintStore.saveShipState(id, fleet);
+    Blueprints.saveShipState(id, fleet);
 
     try {
       await SB.db('user_spaceships').update(id, { slots: assignments });
@@ -1456,7 +1456,7 @@ const SpaceshipDetailView = (() => {
       const spaceships2 = State.get('spaceships') || [];
       const ls = spaceships2.find(f => f.id === id);
       if (ls) { ls.status = 'deployed'; State.set('spaceships', spaceships2); }
-      BlueprintStore.saveShipState(id, fleet);
+      Blueprints.saveShipState(id, fleet);
       try { await SB.db('user_spaceships').update(id, { status: 'deployed' }); } catch(e) {}
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Spaceship Launched', message: `${fleet.name || 'Spaceship'} is fully staffed and deployed!`, type: 'fleet_deployed' });
@@ -1489,7 +1489,7 @@ const SpaceshipDetailView = (() => {
       spaceships.push({ ...fleet, slots: assignments, slot_assignments: assignments, agent_ids: fleet.agent_ids });
     }
     State.set('spaceships', spaceships);
-    BlueprintStore.saveShipState(id, fleet);
+    Blueprints.saveShipState(id, fleet);
 
     try {
       await SB.db('user_spaceships').update(id, { slots: assignments, status: fleet.status });

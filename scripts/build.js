@@ -58,7 +58,7 @@ const SCRIPTS = [
   'app/js/lib/gamification.js',
   'app/js/lib/command-palette.js',
   'app/js/lib/keyboard.js',
-  'app/js/lib/blueprint-store.js',
+  'app/js/lib/blueprints.js',
   'app/js/lib/llm-config.js',
   'app/js/lib/model-intel.js',
   'app/js/lib/prompt-builder.js',

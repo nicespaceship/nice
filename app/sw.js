@@ -36,7 +36,7 @@ const PRECACHE_ASSETS = [
   '/app/js/lib/llm-config.js',
   '/app/js/lib/mission-runner.js',
   '/app/js/lib/auth-modal.js',
-  '/app/js/lib/blueprint-store.js',
+  '/app/js/lib/blueprints.js',
   '/app/js/lib/message-bar.js',
   // View modules
   '/app/js/views/home.js',

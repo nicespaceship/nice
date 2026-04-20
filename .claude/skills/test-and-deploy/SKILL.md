@@ -1,28 +1,28 @@
 ---
 name: test-and-deploy
-description: Run Vitest unit tests and Playwright E2E tests, then deploy to Vercel if all pass. Use when ready to ship changes.
+description: Run Vitest unit tests and Playwright E2E tests, then ship via push to main (Cloudflare Pages auto-deploys). Use when ready to ship changes.
 disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Test & Deploy
 
-Run all tests and deploy to Vercel if they pass.
+Run all tests and ship if they pass. Deploy is automatic via Cloudflare Pages on push to `main`.
 
 ## Steps
 
-1. **Unit tests**: Run `npm test` (Vitest, expects 236+ tests to pass)
-2. **E2E tests**: Run `npm run test:e2e` (Playwright, 30+ tests)
-3. **If any tests fail**: Report the failures and stop. Do NOT deploy.
+1. **Unit tests**: Run `npm test` — expect all tests to pass (~670+ as of 2026-04-20; grep the latest count before citing).
+2. **E2E tests**: Run `npm run test:e2e` — expect all Playwright tests to pass (~14 as of 2026-04-20).
+3. **If any tests fail**: Report the failures and stop. Do NOT ship.
 4. **If all pass**:
    - Show `git status` and `git diff --stat` so the user can review what will ship
-   - Ask the user to confirm before proceeding
-   - Commit with a descriptive message ending with `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
+   - Ask the user to confirm before committing
+   - Commit with a short imperative message. **Never add `Co-Authored-By: Claude` or any AI attribution** — Benjamin is the author (see `feedback_no_coauthor.md`).
    - Push to the current branch
-   - If on a feature branch, create or update the PR targeting `main`
-   - If on `main`, verify the Vercel deployment started via `gh api repos/NiceSpaceship/nicespaceship.com/deployments --jq '.[0] | {state, environment, created_at}'`
+   - If on a feature branch, open or update a PR targeting `main` with `gh pr create`
+   - If on `main`, verify the Cloudflare Pages deployment via `gh api repos/nicespaceship/nice/deployments --jq '.[0] | {state, environment, created_at}'` or the Cloudflare dashboard
 
 ## Notes
-- Never force-push or skip hooks
-- Never deploy with failing tests
-- The Vercel deployment is automatic on push to `main` — no manual deploy step needed
+- Deploy target is **Cloudflare Pages** (auto-deploy from `main` branch). Vercel is no longer used.
+- Repo is `nicespaceship/nice`.
+- Never force-push, skip hooks, or deploy with failing tests.

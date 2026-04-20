@@ -116,9 +116,9 @@ Rules:
           created_at: created.created_at || new Date().toISOString(),
         });
 
-        // Activate in BlueprintStore
-        if (typeof BlueprintStore !== 'undefined') {
-          BlueprintStore.activateAgent(created.id);
+        // Activate in Blueprints
+        if (typeof Blueprints !== 'undefined') {
+          Blueprints.activateAgent(created.id);
         }
       } catch (e) {
         console.warn('[CrewGenerator] Failed to save agent:', agent.name, e.message);
@@ -145,9 +145,9 @@ Rules:
           State.set('spaceships', ships);
         }
 
-        // Save ship state in BlueprintStore
-        if (typeof BlueprintStore !== 'undefined') {
-          BlueprintStore.saveShipState(spaceshipId, {
+        // Save ship state in Blueprints
+        if (typeof Blueprints !== 'undefined') {
+          Blueprints.saveShipState(spaceshipId, {
             slot_assignments: slotAssignments,
             status: 'deployed',
             agent_ids: savedAgents.map(function(a) { return a.id; }),
@@ -177,8 +177,8 @@ Rules:
     var user = State.get('user');
     if (!user) return { error: 'Not signed in' };
 
-    var bp = typeof BlueprintStore !== 'undefined'
-      ? (BlueprintStore.getSpaceship(blueprintId) || BlueprintStore.getSpaceship('bp-' + blueprintId))
+    var bp = typeof Blueprints !== 'undefined'
+      ? (Blueprints.getSpaceship(blueprintId) || Blueprints.getSpaceship('bp-' + blueprintId))
       : null;
     if (!bp) return { error: 'Blueprint not found: ' + blueprintId };
 
@@ -225,7 +225,7 @@ Rules:
           created_at: created.created_at || new Date().toISOString(),
         });
 
-        if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateAgent(created.id);
+        if (typeof Blueprints !== 'undefined') Blueprints.activateAgent(created.id);
       } catch (e) {
         console.warn('[CrewGenerator] Failed to create agent:', agentName, e.message);
       }
@@ -272,9 +272,9 @@ Rules:
       State.set('spaceships', stateShips);
 
       // Activate and save ship state
-      if (typeof BlueprintStore !== 'undefined') {
-        BlueprintStore.activateShip(shipCreated.id);
-        BlueprintStore.saveShipState(shipCreated.id, {
+      if (typeof Blueprints !== 'undefined') {
+        Blueprints.activateShip(shipCreated.id);
+        Blueprints.saveShipState(shipCreated.id, {
           slot_assignments: slotAssignments,
           status: 'deployed',
           agent_ids: savedAgents.map(function(a) { return a.id; }),

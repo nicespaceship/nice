@@ -156,8 +156,8 @@ const ShipLogView = (() => {
   }
 
   function _lookupAgentName(agentId) {
-    if (typeof BlueprintStore !== 'undefined') {
-      const bp = BlueprintStore.getAgent(agentId);
+    if (typeof Blueprints !== 'undefined') {
+      const bp = Blueprints.getAgent(agentId);
       if (bp) return bp.name;
     }
     return agentId;

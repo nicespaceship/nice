@@ -9,7 +9,7 @@
    All views should read/write activation through this module.
 ═══════════════════════════════════════════════════════════════════ */
 
-const BlueprintStore = (() => {
+const Blueprints = (() => {
   /* ── Catalog data ── */
   let _agents = [];
   let _spaceships = [];
@@ -59,7 +59,7 @@ const BlueprintStore = (() => {
         ]);
       }
     } catch (e) {
-      console.warn('[BlueprintStore] DB load failed, using seeds:', e.message);
+      console.warn('[Blueprints] DB load failed, using seeds:', e.message);
     }
 
     // Single mock-count pass after all loading is done
@@ -78,13 +78,13 @@ const BlueprintStore = (() => {
     // one id, but existing users carry the divergence forward. This pass
     // canonicalises them on the next boot — idempotent for clean state.
     try { _reconcileShipState(); }
-    catch (e) { console.warn('[BlueprintStore] init _reconcileShipState failed:', e.message); }
+    catch (e) { console.warn('[Blueprints] init _reconcileShipState failed:', e.message); }
 
     // Sweep any agents whose parent ship was already removed — heals users
     // who already have orphans from prior deactivateShip calls that missed
     // them. Idempotent and no-op for clean state.
     try { await cleanupOrphans(); }
-    catch (e) { console.warn('[BlueprintStore] init cleanupOrphans failed:', e.message); }
+    catch (e) { console.warn('[Blueprints] init cleanupOrphans failed:', e.message); }
 
     _ready = true;
 
@@ -586,7 +586,7 @@ const BlueprintStore = (() => {
         _persistAgents();
       }
     } catch (e) {
-      console.warn('[BlueprintStore] Failed to load user creations:', e.message);
+      console.warn('[Blueprints] Failed to load user creations:', e.message);
     }
   }
 
@@ -727,7 +727,7 @@ const BlueprintStore = (() => {
           if (resp.ok) return await resp.json();
         }
       } catch (e) {
-        console.warn('[BlueprintStore] Edge Function search failed, falling back:', e.message);
+        console.warn('[Blueprints] Edge Function search failed, falling back:', e.message);
       }
     }
 
@@ -827,7 +827,7 @@ const BlueprintStore = (() => {
       // Increment local count
       _connectedCounts[blueprintId] = (_connectedCounts[blueprintId] || 0) + 1;
     } catch (e) {
-      if (!String(e).includes('duplicate')) console.warn('[BlueprintStore] Activation sync failed:', e.message);
+      if (!String(e).includes('duplicate')) console.warn('[Blueprints] Activation sync failed:', e.message);
     }
   }
 
@@ -845,7 +845,7 @@ const BlueprintStore = (() => {
       // Decrement local count
       if (_connectedCounts[blueprintId] > 0) _connectedCounts[blueprintId]--;
     } catch (e) {
-      console.warn('[BlueprintStore] Deactivation sync failed:', e.message);
+      console.warn('[Blueprints] Deactivation sync failed:', e.message);
     }
   }
 
@@ -1331,12 +1331,12 @@ const BlueprintStore = (() => {
         : (_isUuid(match) ? match : null);
       if (shipRowId) {
         try { await SB.db('user_spaceships').remove(shipRowId); }
-        catch (e) { console.warn('[BlueprintStore] user_spaceships delete failed:', e.message); }
+        catch (e) { console.warn('[Blueprints] user_spaceships delete failed:', e.message); }
       }
       for (const agentId of removedAgentIds) {
         if (_isUuid(agentId)) {
           try { await SB.db('user_agents').remove(agentId); }
-          catch (e) { console.warn('[BlueprintStore] user_agents delete failed:', e.message); }
+          catch (e) { console.warn('[Blueprints] user_agents delete failed:', e.message); }
         }
       }
     }
@@ -1445,7 +1445,7 @@ const BlueprintStore = (() => {
       for (const agentId of orphanIds) {
         if (_isUuid(agentId)) {
           try { await SB.db('user_agents').remove(agentId); }
-          catch (e) { console.warn('[BlueprintStore] cleanupOrphans remove failed:', e.message); }
+          catch (e) { console.warn('[Blueprints] cleanupOrphans remove failed:', e.message); }
         }
       }
     }
@@ -1830,7 +1830,7 @@ const BlueprintStore = (() => {
           }
         }
       } catch (e) {
-        console.warn('[BlueprintStore] searchCatalog DB failed, falling back:', e.message);
+        console.warn('[Blueprints] searchCatalog DB failed, falling back:', e.message);
       }
     }
 

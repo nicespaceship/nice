@@ -30,8 +30,8 @@ const MissionRunner = (() => {
     // Strategy: agent_id → State lookup → Supabase lookup → spaceship crew → name match
     if (agentId) {
       agent = agents.find(a => a.id === agentId);
-      if (!agent && agentId.startsWith('bp-') && typeof BlueprintStore !== 'undefined') {
-        const uuid = BlueprintStore.getAgentUuid(agentId);
+      if (!agent && agentId.startsWith('bp-') && typeof Blueprints !== 'undefined') {
+        const uuid = Blueprints.getAgentUuid(agentId);
         if (uuid) {
           try { agent = await SB.db('user_agents').get(uuid); } catch {}
         }
@@ -69,8 +69,8 @@ const MissionRunner = (() => {
     // Build an agent blueprint-like object for ShipLog
     let agentBp = null;
     if (agent) {
-      if (agent.blueprint_id && typeof BlueprintStore !== 'undefined' && BlueprintStore.isReady()) {
-        agentBp = BlueprintStore.getAgent(agent.blueprint_id);
+      if (agent.blueprint_id && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
+        agentBp = Blueprints.getAgent(agent.blueprint_id);
       }
       if (!agentBp) {
         const cfg = agent.config || {};

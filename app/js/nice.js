@@ -1258,9 +1258,9 @@ const NICE = (() => {
   function _checkShipTheme(shipId) {
     if (!shipId) return;
     let search = shipId.toLowerCase();
-    if (typeof BlueprintStore !== 'undefined') {
+    if (typeof Blueprints !== 'undefined') {
       const rawId = shipId.replace(/^bp-/, '');
-      const ship = BlueprintStore.getSpaceship(rawId) || BlueprintStore.getSpaceship(shipId);
+      const ship = Blueprints.getSpaceship(rawId) || Blueprints.getSpaceship(shipId);
       if (ship) search += ' ' + (ship.name || '').toLowerCase();
     }
     if (search.includes('enterprise') || search.includes('ncc-1701')) {
@@ -1586,7 +1586,7 @@ const NICE = (() => {
       _updateAuthUI(user);
       if (user) {
         _migrateLocalSpaceships(user);
-        if (typeof BlueprintStore !== 'undefined' && BlueprintStore.migrateGuestState) BlueprintStore.migrateGuestState();
+        if (typeof Blueprints !== 'undefined' && Blueprints.migrateGuestState) Blueprints.migrateGuestState();
         _loadTokenBalance(user);
         _loadAdminFlag(user);
         // Load subscription + auto-enable entitled models. Settings view
@@ -1764,8 +1764,8 @@ const NICE = (() => {
         if (agentId) slots[idx] = agentId;
       }
 
-      const shipName = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getSpaceship(shipId))
-        ? BlueprintStore.getSpaceship(shipId).name : 'My Ship';
+      const shipName = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship(shipId))
+        ? Blueprints.getSpaceship(shipId).name : 'My Ship';
 
       await SB.db('user_spaceships').create({
         user_id: user.id,
@@ -2379,7 +2379,7 @@ const NICE = (() => {
     State.on('user', _updateHeaderUser);
 
     // Blueprint store (loads seeds immediately, fetches DB in background)
-    if (typeof BlueprintStore !== 'undefined') BlueprintStore.init();
+    if (typeof Blueprints !== 'undefined') Blueprints.init();
 
     // Ship-themed auto-switching
     _initShipThemeWatcher();

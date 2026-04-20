@@ -580,18 +580,18 @@ Needs help with: ${needLabels.join(', ')}`;
       } catch (e) { console.warn('[SetupWizard] Ship create fallback to local:', e); }
     }
 
-    // 3. Activate in BlueprintStore
+    // 3. Activate in Blueprints
     setStatus('Activating crew...');
-    if (typeof BlueprintStore !== 'undefined') {
+    if (typeof Blueprints !== 'undefined') {
       try {
-        BlueprintStore.activateShip(shipId);
-        BlueprintStore.saveShipState(shipId, {
+        Blueprints.activateShip(shipId);
+        Blueprints.saveShipState(shipId, {
           slot_assignments: slotAssignments,
           status: 'deployed',
           agent_ids: createdAgentIds,
         });
-        createdAgentIds.forEach(id => BlueprintStore.activateAgent(id));
-      } catch (e) { console.warn('[SetupWizard] BlueprintStore activation error:', e); }
+        createdAgentIds.forEach(id => Blueprints.activateAgent(id));
+      } catch (e) { console.warn('[SetupWizard] Blueprints activation error:', e); }
     }
 
     // 4. Update State

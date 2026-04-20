@@ -22,12 +22,12 @@ const BlueprintsView = (() => {
 
   const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
-  /* ── Ship blueprint lookup (via BlueprintStore catalog) ── */
+  /* ── Ship blueprint lookup (via Blueprints catalog) ── */
   function _findShipBp(id) {
     // SPACESHIP_SEED is defined later but this function is only called at runtime
     const seed = typeof SPACESHIP_SEED !== 'undefined' ? SPACESHIP_SEED : [];
     return seed.find(b => b.id === id)
-      || (typeof BlueprintStore !== 'undefined' ? BlueprintStore.getSpaceship(id) : null);
+      || (typeof Blueprints !== 'undefined' ? Blueprints.getSpaceship(id) : null);
   }
 
   /* ── Activated card → mission prompt with cap-derived chips ── */
@@ -52,8 +52,8 @@ const BlueprintsView = (() => {
   function _promptAgentMission(id) {
     if (typeof PromptPanel === 'undefined') return;
     const rawId = id.replace(/^bp-/, '');
-    const bp = (typeof BlueprintStore !== 'undefined')
-      ? (BlueprintStore.getAgent(id) || BlueprintStore.getAgent(rawId))
+    const bp = (typeof Blueprints !== 'undefined')
+      ? (Blueprints.getAgent(id) || Blueprints.getAgent(rawId))
       : null;
     if (!bp) return;
     const chips = _capChips(bp.caps || bp.metadata?.caps || bp.config?.tools || []);
@@ -79,10 +79,10 @@ const BlueprintsView = (() => {
   /* ── Slot Diagram Art — delegate to CardRenderer (SSOT) ── */
   function _slotDiagramArt(classId, serial) { return CardRenderer.slotDiagramArt(classId, serial); }
 
-  /* All blueprint data comes from Supabase via BlueprintStore */
+  /* All blueprint data comes from Supabase via Blueprints */
   const SEED = [];
 
-  /* ── Spaceship data comes from Supabase via BlueprintStore ── */
+  /* ── Spaceship data comes from Supabase via Blueprints ── */
   const SPACESHIP_SEED = [];
 
   let _activeTab = 'schematic';
@@ -118,8 +118,8 @@ const BlueprintsView = (() => {
   let _hangarItems = [];
 
   function _connCount(bp) {
-    return (typeof BlueprintStore !== 'undefined' && BlueprintStore.getConnectedCount)
-      ? BlueprintStore.getConnectedCount(bp.id) : 0;
+    return (typeof Blueprints !== 'undefined' && Blueprints.getConnectedCount)
+      ? Blueprints.getConnectedCount(bp.id) : 0;
   }
 
   function render(el, opts) {
@@ -175,8 +175,8 @@ const BlueprintsView = (() => {
 
         <!-- Blueprints sub-tabs (Spaceships / Agents) -->
         <div class="bp-sub-tabs" id="bp-sub-tabs">
-          <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listSpaceships() : SPACESHIP_SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof BlueprintStore !== 'undefined' ? BlueprintStore.listAgents() : SEED).length}</span></button>
+          <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
+          <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
         </div>
 
@@ -308,7 +308,7 @@ const BlueprintsView = (() => {
 
     if (type === 'spaceship') {
       const serial = _sh(bp.id || bp.name, 12);
-      const isShipActivated = bp._forceActive || BlueprintStore.isShipActivated(bp.id);
+      const isShipActivated = bp._forceActive || Blueprints.isShipActivated(bp.id);
       const shipRarity = bp.rarity || 'Common';
       const isLocked = typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(shipRarity);
       let deployBtn;
@@ -363,8 +363,8 @@ const BlueprintsView = (() => {
     const cat = bp.category || '';
     const name = _esc(bp.name);
     const desc = _esc(bp.description || bp.flavor || bp.desc || '');
-    const connCount = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getConnectedCount)
-      ? BlueprintStore.getConnectedCount(bp.id) : 0;
+    const connCount = (typeof Blueprints !== 'undefined' && Blueprints.getConnectedCount)
+      ? Blueprints.getConnectedCount(bp.id) : 0;
     const dlVal = connCount > 0 ? connCount : (bp.downloads || 0);
     const dl = dlVal > 0 ? dlVal.toLocaleString() : '—';
     const rating = bp.rating ? '★ ' + bp.rating : '—';
@@ -382,8 +382,8 @@ const BlueprintsView = (() => {
 
     // Determine activation state (not used for agents — no activate feature on crew cards)
     let isActivated = bp._forceActive || false;
-    if (!isActivated && typeof BlueprintStore !== 'undefined') {
-      if (type === 'spaceship') isActivated = BlueprintStore.isShipActivated(bp.id);
+    if (!isActivated && typeof Blueprints !== 'undefined') {
+      if (type === 'spaceship') isActivated = Blueprints.isShipActivated(bp.id);
     }
     const actLabel = isActivated ? 'Remove' : 'Deploy';
     const actClass = isActivated ? ' bpl-activated' : '';
@@ -481,10 +481,10 @@ const BlueprintsView = (() => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = btn.dataset.id;
-        if (BlueprintStore.isShipActivated(id)) {
+        if (Blueprints.isShipActivated(id)) {
           const bp = _findShipBp(id);
           confirmDeactivate(bp?.name || 'this spaceship', async () => {
-            await BlueprintStore.deactivateShip(id);
+            await Blueprints.deactivateShip(id);
             if (typeof Notify !== 'undefined' && bp) Notify.send({ title: 'Spaceship Removed', message: `${bp.name} has been removed.`, type: 'info' });
             _applyFilters();
           });
@@ -493,7 +493,7 @@ const BlueprintsView = (() => {
           if (bp && typeof ShipSetupWizard !== 'undefined') {
             ShipSetupWizard.open(bp, { onComplete: () => _applyFilters() });
           } else {
-            BlueprintStore.activateShip(id);
+            Blueprints.activateShip(id);
             if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint');
             _applyFilters();
           }
@@ -564,10 +564,10 @@ const BlueprintsView = (() => {
         const id = btn.dataset.id;
         const type = btn.dataset.type;
         if (type === 'spaceship') {
-          if (BlueprintStore.isShipActivated(id)) {
-            const bp = BlueprintStore.getSpaceship(id);
+          if (Blueprints.isShipActivated(id)) {
+            const bp = Blueprints.getSpaceship(id);
             confirmDeactivate(bp?.name || 'this spaceship', async () => {
-              await BlueprintStore.deactivateShip(id);
+              await Blueprints.deactivateShip(id);
               if (typeof Notify !== 'undefined' && bp) Notify.send({ title: 'Spaceship Removed', message: `${bp.name} has been removed.`, type: 'info' });
               _applyFilters();
             });
@@ -641,7 +641,7 @@ const BlueprintsView = (() => {
     if (!bp) return;
 
     // Local-first: track activation in localStorage regardless of Supabase
-    BlueprintStore.activateAgent(bpId);
+    Blueprints.activateAgent(bpId);
     if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint');
     if (typeof Notify !== 'undefined') {
       Notify.send({ title: 'Agent Added', message: `${bp.name} has been added.`, type: 'task_complete' });
@@ -687,8 +687,8 @@ const BlueprintsView = (() => {
           config:     { tools: bp.config.tools, temperature: 0.7, memory: true },
         });
         // Store the Supabase UUID so missions can reference this agent
-        if (created && created.id && typeof BlueprintStore !== 'undefined') {
-          BlueprintStore.setAgentUuid('bp-' + bpId, created.id);
+        if (created && created.id && typeof Blueprints !== 'undefined') {
+          Blueprints.setAgentUuid('bp-' + bpId, created.id);
         }
       } catch (e) { console.warn('Blueprint sync to cloud skipped:', e.message); }
 
@@ -706,9 +706,9 @@ const BlueprintsView = (() => {
   let _remoteBlueprints = [];
   async function _loadRemote() {
     try {
-      // Use BlueprintStore if available (already handles DB + seed merge)
-      if (typeof BlueprintStore !== 'undefined' && BlueprintStore.isReady()) {
-        _remoteBlueprints = BlueprintStore.listAgents();
+      // Use Blueprints if available (already handles DB + seed merge)
+      if (typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
+        _remoteBlueprints = Blueprints.listAgents();
         _applyFilters();
         return;
       }
@@ -723,13 +723,13 @@ const BlueprintsView = (() => {
   function _getAllBlueprints() {
 
     if (_subTab === 'spaceship') {
-      return (typeof BlueprintStore !== 'undefined') ? BlueprintStore.listSpaceships() : [...SPACESHIP_SEED];
+      return (typeof Blueprints !== 'undefined') ? Blueprints.listSpaceships() : [...SPACESHIP_SEED];
     }
     if (_remoteBlueprints.length) {
       const ids = new Set(_remoteBlueprints.map(b => b.id));
       return [..._remoteBlueprints, ...SEED.filter(b => !ids.has(b.id))];
     }
-    return (typeof BlueprintStore !== 'undefined') ? BlueprintStore.listAgents() : [...SEED];
+    return (typeof Blueprints !== 'undefined') ? Blueprints.listAgents() : [...SEED];
   }
 
   function _updateRarityFilters() {
@@ -767,18 +767,18 @@ const BlueprintsView = (() => {
     _renderProgressionBar();
     const wrap = document.getElementById('bp-activated-wrap');
     if (!wrap) return;
-    if (typeof BlueprintStore === 'undefined') { wrap.innerHTML = ''; return; }
+    if (typeof Blueprints === 'undefined') { wrap.innerHTML = ''; return; }
 
     let type, label, activated;
     if (_subTab === 'agent') {
       type = 'agent'; label = 'AGENTS';
-      activated = BlueprintStore.getActivatedAgents ? BlueprintStore.getActivatedAgents() : [];
+      activated = Blueprints.getActivatedAgents ? Blueprints.getActivatedAgents() : [];
       // Include custom agents from State (same merge pattern as Schematic)
       const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
       customAgents.forEach(ca => { if (ca && !activated.find(a => a.id === ca.id)) activated.push(ca); });
     } else if (_subTab === 'spaceship') {
       type = 'spaceship'; label = 'SPACESHIPS';
-      activated = BlueprintStore.getActivatedShips ? BlueprintStore.getActivatedShips() : [];
+      activated = Blueprints.getActivatedShips ? Blueprints.getActivatedShips() : [];
       // Include custom ships from State (same merge pattern as Schematic)
       const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
       customShips.forEach(cs => { if (cs && !activated.find(s => s.id === cs.id)) activated.push(cs); });
@@ -794,7 +794,7 @@ const BlueprintsView = (() => {
 
     // Merge instance data with blueprint — blueprint fields (rarity, name, etc.) take priority
     let items = activated.map(a => {
-      const getter = type === 'agent' ? BlueprintStore.getAgent : BlueprintStore.getSpaceship;
+      const getter = type === 'agent' ? Blueprints.getAgent : Blueprints.getSpaceship;
       const fullBp = getter ? getter(a.id || a.blueprint_id) : null;
       return Object.assign({}, a, fullBp || {}, { type, _forceActive: true, id: a.id || (fullBp && fullBp.id) });
     });
@@ -848,8 +848,8 @@ const BlueprintsView = (() => {
   }
 
   function _workshopCount() {
-    if (typeof BlueprintStore === 'undefined' || !BlueprintStore.listMyBlueprints) return 0;
-    const my = BlueprintStore.listMyBlueprints();
+    if (typeof Blueprints === 'undefined' || !Blueprints.listMyBlueprints) return 0;
+    const my = Blueprints.listMyBlueprints();
     return my.spaceships.length + my.agents.length;
   }
 
@@ -867,12 +867,12 @@ const BlueprintsView = (() => {
     if (loadMore) loadMore.innerHTML = '';
     if (resultBar) resultBar.textContent = '';
 
-    if (typeof BlueprintStore === 'undefined' || !BlueprintStore.listMyBlueprints) {
+    if (typeof Blueprints === 'undefined' || !Blueprints.listMyBlueprints) {
       wrap.innerHTML = '';
       return;
     }
 
-    const my = BlueprintStore.listMyBlueprints();
+    const my = Blueprints.listMyBlueprints();
 
     // Apply the same client-side filters the activated section uses, so
     // search / rarity narrowing keeps working on this tab.
@@ -963,7 +963,7 @@ const BlueprintsView = (() => {
     _showLoadingState(append);
 
     try {
-      const result = await BlueprintStore.searchCatalog({
+      const result = await Blueprints.searchCatalog({
         type: _subTab === 'spaceship' ? 'spaceship' : 'agent',
         query: q,
         rarity: rarity !== 'all' ? rarity : null,
@@ -1998,7 +1998,7 @@ const BlueprintsView = (() => {
   function _share(bpId) {
     const rawId = bpId.replace(/^bp-/, '');
     const bp = SEED.find(b => b.id === bpId) || SPACESHIP_SEED.find(b => b.id === bpId) || _remoteBlueprints.find(b => b.id === bpId)
-      || (typeof BlueprintStore !== 'undefined' && (BlueprintStore.getAgent(bpId) || BlueprintStore.getAgent(rawId) || BlueprintStore.getSpaceship(bpId) || BlueprintStore.getSpaceship(rawId)))
+      || (typeof Blueprints !== 'undefined' && (Blueprints.getAgent(bpId) || Blueprints.getAgent(rawId) || Blueprints.getSpaceship(bpId) || Blueprints.getSpaceship(rawId)))
       || null;
     if (!bp) return;
     const url = window.location.origin + '/app/#/bridge?bp=' + encodeURIComponent(bpId);
@@ -2022,7 +2022,7 @@ const BlueprintsView = (() => {
      ═══════════════════════════════════════════════════════════════ */
 
   function _findBp(bpId) {
-    const BS = typeof BlueprintStore !== 'undefined' ? BlueprintStore : null;
+    const BS = typeof Blueprints !== 'undefined' ? Blueprints : null;
     // Community blueprints that came back in _currentResults carry their
     // joined `listing` sidecar — prefer that row so the drawer has the
     // listing_id for install/rate actions. Falls through to catalog
@@ -2163,7 +2163,7 @@ const BlueprintsView = (() => {
       btn.disabled = true;
       btn.textContent = 'Submitting…';
       try {
-        await BlueprintStore.reportCommunityBlueprint(bp.id, { reason, details: details || undefined });
+        await Blueprints.reportCommunityBlueprint(bp.id, { reason, details: details || undefined });
         close();
         if (typeof Notify !== 'undefined') {
           Notify.send({ title: 'Report submitted', message: 'Thanks — moderators will take a look.', type: 'system' });
@@ -2322,9 +2322,9 @@ const BlueprintsView = (() => {
     const btns = [];
     const isCommunity = bp && bp.scope === 'community';
     const listingId = bp && bp.listing && bp.listing.id;
-    const alreadyCloned = isCommunity && BlueprintStore.hasDownloadedCommunity(bp.id);
+    const alreadyCloned = isCommunity && Blueprints.hasDownloadedCommunity(bp.id);
     if (type === 'agent') {
-      if (BlueprintStore.isAgentActivated(bp.id)) {
+      if (Blueprints.isAgentActivated(bp.id)) {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="agent">Message ${_esc(bp.name)}</button>`);
       } else if (isCommunity) {
         // Community install clones the blueprint into the downloader's
@@ -2338,7 +2338,7 @@ const BlueprintsView = (() => {
       }
       btns.push(`<button class="btn btn-sm bp-drawer-nav" data-route="#/agents/${encodeURIComponent(bp.id)}">View Agent &rarr;</button>`);
     } else if (type === 'spaceship') {
-      const isAct = BlueprintStore.isShipActivated(bp.id);
+      const isAct = Blueprints.isShipActivated(bp.id);
       if (isAct) {
         btns.push(`<button class="btn btn-sm bp-drawer-nice" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="spaceship">Message ${_esc(bp.name)}</button>`);
         btns.push(`<button class="btn btn-sm bp-drawer-activate" data-id="${bp.id}" data-type="spaceship">Remove</button>`);
@@ -2382,8 +2382,8 @@ const BlueprintsView = (() => {
 
     // Hero card click → mission prompt for activated blueprints
     const isActivated = type === 'spaceship'
-      ? BlueprintStore.isShipActivated(bp.id)
-      : BlueprintStore.isAgentActivated(bp.id);
+      ? Blueprints.isShipActivated(bp.id)
+      : Blueprints.isAgentActivated(bp.id);
     if (isActivated) {
       const heroCard = drawer.querySelector('.tcg-card');
       if (heroCard) {
@@ -2399,9 +2399,9 @@ const BlueprintsView = (() => {
         const id = btn.dataset.id;
         const t = btn.dataset.type;
         if (t === 'spaceship') {
-          if (BlueprintStore.isShipActivated(id)) {
+          if (Blueprints.isShipActivated(id)) {
             const b = _findBp(id)?.bp;
-            confirmDeactivate(b?.name || 'this spaceship', async () => { await BlueprintStore.deactivateShip(id); _applyFilters(); _openDrawer(id); });
+            confirmDeactivate(b?.name || 'this spaceship', async () => { await Blueprints.deactivateShip(id); _applyFilters(); _openDrawer(id); });
           } else {
             _closeDrawer();
             const bp = _findShipBp(id);
@@ -2431,7 +2431,7 @@ const BlueprintsView = (() => {
         const originalText = btn.textContent;
         btn.textContent = 'Installing…';
         try {
-          const created = await BlueprintStore.downloadCommunityBlueprint(id, { listingId: listingId || null });
+          const created = await Blueprints.downloadCommunityBlueprint(id, { listingId: listingId || null });
           if (typeof Notify !== 'undefined') {
             const label = t === 'spaceship' ? 'your fleet' : 'your agents';
             Notify.send({ title: 'Installed', message: `${bp.name} added to ${label}.`, type: 'task_complete' });
@@ -2464,7 +2464,7 @@ const BlueprintsView = (() => {
       });
     });
 
-    // Report — open a minimal reason picker and submit to BlueprintStore.
+    // Report — open a minimal reason picker and submit to Blueprints.
     drawer.querySelectorAll('.bp-drawer-report').forEach(btn => {
       btn.addEventListener('click', () => _openReportModal(bp));
     });
@@ -2746,7 +2746,7 @@ const BlueprintsView = (() => {
     // No hangar for crew cards
     if (type === 'agent') return;
     // Don't add already-activated items
-    if (type === 'spaceship' && BlueprintStore.isShipActivated(bpId)) return;
+    if (type === 'spaceship' && Blueprints.isShipActivated(bpId)) return;
     _hangarItems.push({ id: bpId, type: type, name: found.bp.name });
     _renderHangarBar();
   }
@@ -2801,7 +2801,7 @@ const BlueprintsView = (() => {
 
   function _activateAllHangar() {
     _hangarItems.forEach(h => {
-      if (h.type === 'spaceship') { BlueprintStore.activateShip(h.id); if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint'); }
+      if (h.type === 'spaceship') { Blueprints.activateShip(h.id); if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint'); }
     });
     const count = _hangarItems.length;
     _hangarItems = [];
@@ -2817,8 +2817,8 @@ const BlueprintsView = (() => {
   function _getDependencyHints(bp, type) {
     if (type === 'fleet') {
       const neededShips = parseInt(bp.stats?.ships, 10) || 0;
-      const activeShips = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedShipIds)
-        ? BlueprintStore.getActivatedShipIds().length : (State.get('spaceships') || []).length;
+      const activeShips = (typeof Blueprints !== 'undefined' && Blueprints.getActivatedShipIds)
+        ? Blueprints.getActivatedShipIds().length : (State.get('spaceships') || []).length;
       if (neededShips > 0 && activeShips < neededShips) {
         return `<div class="bp-drawer-deps">
           <span class="bp-deps-icon">&#9888;</span>

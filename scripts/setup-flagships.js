@@ -5,7 +5,7 @@
  * assigns their full 12-agent crews, and creates 10 real missions.
  *
  * Usage: paste into browser console on the NICE app, or load via <script>.
- *   - Requires: BlueprintStore, State, SB, Gamification globals
+ *   - Requires: Blueprints, State, SB, Gamification globals
  *   - Safe to run multiple times (idempotent activations)
  */
 (async function setupFlagships() {
@@ -13,7 +13,7 @@
 
   const log = (msg) => console.log(`[NICE Setup] ${msg}`);
 
-  if (typeof BlueprintStore === 'undefined') { console.error('[NICE Setup] BlueprintStore not loaded'); return; }
+  if (typeof Blueprints === 'undefined') { console.error('[NICE Setup] Blueprints not loaded'); return; }
   if (typeof State === 'undefined') { console.error('[NICE Setup] State not loaded'); return; }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -86,18 +86,18 @@
 
   function activateFleet(ship) {
     log(`Activating ${ship.name}...`);
-    BlueprintStore.activateShip(ship.shipId);
+    Blueprints.activateShip(ship.shipId);
 
     const slotAssignments = {};
     const agentIds = [];
 
     ship.crew.forEach(member => {
-      BlueprintStore.activateAgent(member.id);
+      Blueprints.activateAgent(member.id);
       slotAssignments[String(member.slot)] = member.id;
       agentIds.push(member.id);
     });
 
-    BlueprintStore.saveShipState(ship.shipId, {
+    Blueprints.saveShipState(ship.shipId, {
       slot_assignments: slotAssignments,
       status: 'deployed',
       agent_ids: agentIds,
@@ -170,12 +170,12 @@
   State.set('missions', allMissions);
   log(`State.missions updated: ${allMissions.length} total missions`);
 
-  // Refresh agents and spaceships from BlueprintStore
-  if (BlueprintStore.getActivatedAgents) {
-    State.set('agents', BlueprintStore.getActivatedAgents());
+  // Refresh agents and spaceships from Blueprints
+  if (Blueprints.getActivatedAgents) {
+    State.set('agents', Blueprints.getActivatedAgents());
   }
-  if (BlueprintStore.getActivatedShips) {
-    State.set('spaceships', BlueprintStore.getActivatedShips());
+  if (Blueprints.getActivatedShips) {
+    State.set('spaceships', Blueprints.getActivatedShips());
   }
 
   // Award XP

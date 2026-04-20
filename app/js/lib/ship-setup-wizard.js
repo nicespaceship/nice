@@ -110,9 +110,9 @@ const ShipSetupWizard = (() => {
   }
 
   function _getAgentCatalog() {
-    // Prefer BlueprintStore (full 261 agents from DB) over small static SEED
-    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.listAgents) {
-      const all = BlueprintStore.listAgents();
+    // Prefer Blueprints (full 261 agents from DB) over small static SEED
+    if (typeof Blueprints !== 'undefined' && Blueprints.listAgents) {
+      const all = Blueprints.listAgents();
       if (all.length) return [...all];
     }
     if (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED && BlueprintsView.SEED.length) return [...BlueprintsView.SEED];
@@ -121,8 +121,8 @@ const ShipSetupWizard = (() => {
 
   /** Ensure catalog is loaded before rendering dropdowns */
   async function _ensureCatalog() {
-    if (typeof BlueprintStore !== 'undefined' && BlueprintStore.ensureCatalogLoaded) {
-      await BlueprintStore.ensureCatalogLoaded();
+    if (typeof Blueprints !== 'undefined' && Blueprints.ensureCatalogLoaded) {
+      await Blueprints.ensureCatalogLoaded();
     }
   }
 
@@ -447,9 +447,9 @@ const ShipSetupWizard = (() => {
     // card-level 🔒 lock has already prevented unauthorized users from
     // reaching this step; re-checking here only broke the state layers.
     if (statusEl) statusEl.textContent = 'Activating blueprint...';
-    if (typeof BlueprintStore !== 'undefined') {
-      const activated = BlueprintStore.activateShip(_blueprint.id, { force: true });
-      if (!activated && !BlueprintStore.isShipActivated(_blueprint.id)) {
+    if (typeof Blueprints !== 'undefined') {
+      const activated = Blueprints.activateShip(_blueprint.id, { force: true });
+      if (!activated && !Blueprints.isShipActivated(_blueprint.id)) {
         console.warn('[ShipSetupWizard] activateShip returned false and ship is not activated; state layers may drift');
       }
     }
@@ -465,8 +465,8 @@ const ShipSetupWizard = (() => {
     if (statusEl) statusEl.textContent = 'Assigning agents to stations...';
     const shipStateId = _blueprint.id;
     const agentIds = Object.values(_data.slotAssignments).filter(Boolean);
-    if (typeof BlueprintStore !== 'undefined') {
-      BlueprintStore.saveShipState(shipStateId, {
+    if (typeof Blueprints !== 'undefined') {
+      Blueprints.saveShipState(shipStateId, {
         slot_assignments: _data.slotAssignments,
         status: 'deployed',
         agent_ids: agentIds,
@@ -479,7 +479,7 @@ const ShipSetupWizard = (() => {
     // 3. Activate assigned agents (or create from definitions)
     if (statusEl) statusEl.textContent = 'Activating agents...';
     const resolvedAgentIds = [];
-    if (typeof BlueprintStore !== 'undefined') {
+    if (typeof Blueprints !== 'undefined') {
       for (let i = 0; i < agentIds.length; i++) {
         const aid = agentIds[i];
         if (aid && aid.startsWith('__new__')) {
@@ -493,7 +493,7 @@ const ShipSetupWizard = (() => {
           let resolvedId;
           if (seedBp) {
             resolvedId = 'bp-' + seedBp.id;
-            BlueprintStore.activateAgent(seedBp.id);
+            Blueprints.activateAgent(seedBp.id);
             if (typeof State !== 'undefined') {
               const agents = State.get('agents') || [];
               if (!agents.find(a => a.id === resolvedId)) {
@@ -519,7 +519,7 @@ const ShipSetupWizard = (() => {
               flavor: `Auto-created for ${_data.shipName || _blueprint.name}.`,
             };
             resolvedId = newAgent.id;
-            BlueprintStore.activateAgent(newAgent.id);
+            Blueprints.activateAgent(newAgent.id);
             if (typeof State !== 'undefined') {
               const agents = State.get('agents') || [];
               agents.push(newAgent);
@@ -536,8 +536,8 @@ const ShipSetupWizard = (() => {
           const slotIdx = Object.entries(_data.slotAssignments).find(([, v]) => v === aid)?.[0];
           if (slotIdx !== undefined) _data.slotAssignments[parseInt(slotIdx, 10)] = resolvedId;
         } else if (aid) {
-          if (!BlueprintStore.isAgentActivated(aid)) {
-            BlueprintStore.activateAgent(aid);
+          if (!Blueprints.isAgentActivated(aid)) {
+            Blueprints.activateAgent(aid);
           }
           resolvedAgentIds.push(aid);
         }
@@ -559,7 +559,7 @@ const ShipSetupWizard = (() => {
           tags: [], activated: true,
           flavor: `Auto-created for ${slot.label} station.`,
         };
-        BlueprintStore.activateAgent(newAgent.id);
+        Blueprints.activateAgent(newAgent.id);
         if (typeof State !== 'undefined') {
           const agents = State.get('agents') || [];
           agents.push(newAgent);
@@ -577,8 +577,8 @@ const ShipSetupWizard = (() => {
     await _wait(300);
 
     // Re-save with resolved agent IDs
-    if (resolvedAgentIds.length && typeof BlueprintStore !== 'undefined') {
-      BlueprintStore.saveShipState(shipStateId, {
+    if (resolvedAgentIds.length && typeof Blueprints !== 'undefined') {
+      Blueprints.saveShipState(shipStateId, {
         slot_assignments: _data.slotAssignments,
         status: 'deployed',
         agent_ids: resolvedAgentIds,

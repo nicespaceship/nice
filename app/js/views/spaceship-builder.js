@@ -183,8 +183,8 @@ const SpaceshipBuilderView = (() => {
     if (!grid) return;
 
     // Get activated agents for dropdown
-    const agents = (typeof BlueprintStore !== 'undefined' && BlueprintStore.getActivatedAgents)
-      ? BlueprintStore.getActivatedAgents() : [];
+    const agents = (typeof Blueprints !== 'undefined' && Blueprints.getActivatedAgents)
+      ? Blueprints.getActivatedAgents() : [];
 
     const rarityOrder = { Common: 0, Rare: 1, Epic: 2, Legendary: 3 };
 
@@ -404,7 +404,7 @@ const SpaceshipBuilderView = (() => {
           custom.push(shipObj);
           localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(custom));
         }
-        if (typeof BlueprintStore !== 'undefined') BlueprintStore.activateShip(shipId);
+        if (typeof Blueprints !== 'undefined') Blueprints.activateShip(shipId);
         _showSetupChoice(shipId, { name, category, description: desc, flavor, tags, slotCount: cls.slots.length, slots: row.slots });
         return;
       }
