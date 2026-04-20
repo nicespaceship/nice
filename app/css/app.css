@@ -3809,7 +3809,7 @@
 
 /* ── Floating prompt bar ── */
 .nice-ai {
-  position:fixed; bottom:0; left:calc(50% + 28px); transform:translateX(-50%);
+  position:fixed; bottom:10px; left:calc(50% + 28px); transform:translateX(-50%);
   z-index:200; width:calc(100% - 104px); max-width:820px;
   display:flex; flex-direction:column;
   pointer-events:none;
