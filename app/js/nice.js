@@ -959,7 +959,22 @@ const NICE = (() => {
   }
 
   function _newConversation() {
+    // Persist the active chat's latest messages before we switch away.
+    _saveActiveConversation();
+
     const convs = _getConversations();
+    const activeId = _getActiveConvId();
+    const active = convs.find(c => c.id === activeId);
+
+    // Idempotency: if the active chat is already empty, just focus it
+    // instead of piling up duplicate "New Chat" entries.
+    if (active && (active.messages || []).length === 0) {
+      window.location.hash = '#/';
+      if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
+      _renderChatsList();
+      return;
+    }
+
     const conv = {
       id: 'conv-' + Date.now(),
       title: 'New Chat',
@@ -971,11 +986,9 @@ const NICE = (() => {
     convs.unshift(conv);
     _saveConversations(convs);
     _setActiveConvId(conv.id);
-    // Clear prompt panel messages
     localStorage.setItem(Utils.KEYS.aiMessages, '[]');
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     _renderChatsList();
-    // Navigate home to show clean state
     window.location.hash = '#/';
   }
 
@@ -1146,35 +1159,62 @@ const NICE = (() => {
     _renderChatsList();
   }
 
+  function _bucketConv(c) {
+    if (c.pinned) return 'pinned';
+    const ts = c.updatedAt || c.createdAt || 0;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const day = 86400000;
+    if (ts >= startOfToday) return 'today';
+    if (ts >= startOfToday - day) return 'yesterday';
+    if (ts >= startOfToday - 7 * day) return 'week';
+    if (ts >= startOfToday - 30 * day) return 'month';
+    return 'older';
+  }
+
+  const _BUCKET_ORDER = ['pinned', 'today', 'yesterday', 'week', 'month', 'older'];
+  const _BUCKET_LABELS = {
+    pinned: 'Pinned',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    week: 'Previous 7 Days',
+    month: 'Previous 30 Days',
+    older: 'Older',
+  };
+
   function _renderChatsList() {
     const list = document.getElementById('side-chats-list');
     if (!list) return;
     const convs = _getConversations();
     const activeId = _getActiveConvId();
 
-    // Sort: pinned first, then by updatedAt desc
-    const sorted = [...convs].sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      return b.updatedAt - a.updatedAt;
-    }).slice(0, 20);
+    const sorted = [...convs]
+      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+      .slice(0, 100);
 
     if (!sorted.length) {
       list.innerHTML = '<div class="side-folder-item" style="opacity:.4;cursor:default">No chats yet</div>';
       return;
     }
 
-    list.innerHTML = sorted.map(c => {
+    const groups = { pinned: [], today: [], yesterday: [], week: [], month: [], older: [] };
+    sorted.forEach(c => groups[_bucketConv(c)].push(c));
+
+    const renderItem = (c) => {
       const active = c.id === activeId ? ' side-chat-active' : '';
-      const pin = c.pinned ? '<span class="side-chat-pin">📌</span>' : '';
       const title = Utils.esc((c.title || 'Untitled').slice(0, 30));
       return `<div class="side-folder-item side-chat-item${active}" data-conv-id="${c.id}" title="${Utils.esc(c.title)}">
-        <span class="side-chat-title">${title}</span>${pin}
+        <span class="side-chat-title">${title}</span>
         <button class="side-chat-dots" data-conv-id="${c.id}" aria-label="Chat options">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
         </button>
       </div>`;
-    }).join('');
+    };
+
+    list.innerHTML = _BUCKET_ORDER
+      .filter(k => groups[k].length > 0)
+      .map(k => `<div class="side-chat-group-label">${_BUCKET_LABELS[k]}</div>${groups[k].map(renderItem).join('')}`)
+      .join('');
 
     // Bind click, 3-dot menu, and context menu
     list.querySelectorAll('.side-chat-item').forEach(item => {
@@ -2354,11 +2394,13 @@ const NICE = (() => {
       window.addEventListener('hashchange', () => {
         PromptPanel.syncRoute();
       });
-      // Brand logo click → navigate to home (chat)
+      // Brand logo click → start a new chat (Claude/ChatGPT pattern).
+      // _newConversation is idempotent: if the active chat is already empty,
+      // it just focuses it instead of piling up duplicate "New Chat" rows.
       const brandBtn = document.getElementById('nice-brand-btn');
       if (brandBtn) brandBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        location.hash = '#/';
+        _newConversation();
       });
     }
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.init();

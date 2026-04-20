@@ -1309,15 +1309,28 @@
 /* Chat item layout */
 .side-chat-item { position:relative; }
 .side-chat-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-.side-chat-pin { font-size:.55rem; opacity:.5; flex-shrink:0; }
 .side-chat-dots {
   background:none; border:none; color:var(--text-muted); cursor:pointer;
   padding:2px; border-radius:4px; flex-shrink:0; display:flex;
   align-items:center; justify-content:center; opacity:0;
   transition:opacity .15s, background .15s;
 }
-.side-chat-item:hover .side-chat-dots { opacity:1; }
+.side-chat-item:hover .side-chat-dots,
+.side-chat-item:focus-within .side-chat-dots,
+.side-chat-item.side-chat-active .side-chat-dots { opacity:1; }
 .side-chat-dots:hover { background:var(--surface); color:var(--text); }
+@media (hover:none) {
+  .side-chat-dots { opacity:1; }
+}
+
+/* Time-group labels (Pinned / Today / Yesterday / Previous 7 Days / etc.) */
+.side-chat-group-label {
+  font-family:var(--font-b); font-size:.6rem; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--nav-text-muted, var(--text-muted));
+  padding:12px 16px 4px; opacity:.55; user-select:none;
+}
+.side-chats-body .side-chat-group-label:first-child { padding-top:4px; }
 
 /* Chat context menu */
 .side-chat-menu {
@@ -2266,7 +2279,7 @@
 
 /* Mobile top bar — base styles defined above media query so display:flex wins */
 
-@media (max-width:480px) {
+@media (max-width:768px) {
   .app-mobile-bar .app-brand-text { display:none; }
 }
 
@@ -3809,7 +3822,7 @@
 
 /* ── Floating prompt bar ── */
 .nice-ai {
-  position:fixed; bottom:0; left:calc(50% + 28px); transform:translateX(-50%);
+  position:fixed; bottom:10px; left:calc(50% + 28px); transform:translateX(-50%);
   z-index:200; width:calc(100% - 104px); max-width:820px;
   display:flex; flex-direction:column;
   pointer-events:none;
