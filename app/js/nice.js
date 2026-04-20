@@ -22,29 +22,38 @@ const Theme = (() => {
     { id:'spaceship', name:'NICE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
       data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
-      // Voice — placeholder uses the JARVIS backend voice key until each
-      // theme picks its own; swap `voice` to repoint without touching code.
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'NICE' } },
+      // Voice — default voice every new user hears. Refined mid-baritone,
+      // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
+      voice:{ provider:'elevenlabs', voice:'nice', speed:0.9, label:'NICE',
+        settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'robotech', name:'HAL-9000', builtin:true, accent:'#999', preview:['#f2f2f0','#999','#ef4444'],
       data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--bg-alt':'#ffffff','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--text-dim':'#aaaaaa','--glow':'none','--panel-bg':'#fff','--panel-border':'#d0d0ce' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
       // Personality direction (TODO): clinical, third-person, evenly-
       // measured. "I'm sorry, Dave. I'm afraid I can't do that." energy.
-      // Fill `copy.ranks` / `labels` / `placeholders` and swap `voice` to
-      // a HAL-specific backend voice when polishing.
+      // Fill `copy.ranks` / `labels` / `placeholders` when polishing.
       copy:{ /* ranks:[], labels:{}, placeholders:{} */ },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'HAL 9000' } },
+      voice:{ provider:'elevenlabs', voice:'hal', speed:0.8, label:'HAL 9000',
+        // Slower than Majel, eerier consistency. Resolves to
+        // ELEVENLABS_HAL_VOICE_ID server-side.
+        settings:{ stability:0.9, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'navigator', name:'The Grid', builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(24,120,220,0.05)','--surface2':'rgba(24,120,220,0.09)','--border':'rgba(24,160,251,0.25)','--border-hi':'rgba(24,160,251,0.6)','--accent':'#18a0fb','--accent2':'#0a6bc4','--text':'#c0d8f0','--text-muted':'rgba(24,160,251,0.55)','--glow':'0 0 16px rgba(24,160,251,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'TRON' } },
+      voice:{ provider:'elevenlabs', voice:'grid', speed:0.9, label:'End of Line',
+        // ElevenLabs Voice Design — Grid system PA (CLU/End of Line vibe).
+        // Resolves to ELEVENLABS_GRID_VOICE_ID server-side.
+        settings:{ stability:0.8, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'matrix', name:'The Matrix', builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
       data:{ colors:{ '--bg':'#000800','--bg2':'#000c00','--surface':'rgba(0,255,65,0.04)','--surface2':'rgba(0,255,65,0.08)','--border':'rgba(0,255,65,0.2)','--border-hi':'rgba(0,255,65,0.5)','--accent':'#00ff41','--accent2':'#00aa2a','--text':'#00ff41','--text-muted':'rgba(0,255,65,0.5)','--glow':'0 0 12px rgba(0,255,65,0.3)','--panel-bg':'rgba(0,6,0,0.97)' }, fonts:{ '--font-h':"'Fira Code', monospace", '--font-b':"'Fira Code', monospace" }, radius:'0px' },
       // Personality direction (TODO): terminal/oracle voice. "Wake up,
       // Neo." "Follow the white rabbit." Operators → The One rank ladder.
       copy:{ /* ranks:[], labels:{}, placeholders:{} */ },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'The Oracle' } },
+      voice:{ provider:'elevenlabs', voice:'morpheus', speed:0.8, label:'Morpheus',
+        // Fishburne-style mentor baritone. Resolves to
+        // ELEVENLABS_MORPHEUS_VOICE_ID server-side.
+        settings:{ stability:0.75, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'lcars', name:'LCARS', builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' },
       // Personality direction (TODO): Starfleet ops dispatch. "Acknowledged.",
@@ -52,7 +61,10 @@ const Theme = (() => {
       // — no ranks override needed unless we want LCARS-specific titles.
       copy:{ /* labels:{}, placeholders:{} */ },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'LCARS Computer' } },
+      voice:{ provider:'elevenlabs', voice:'computer', speed:0.8, label:'Computer',
+        // Majel Barrett Roddenberry library voice — defaults locked, so tuning
+        // is sent per-request via voice_settings (forwarded by CoreVoice).
+        settings:{ stability:0.75, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'jarvis', name:'J.A.R.V.I.S.', builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
       data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' },
       // Personality bundle. `ranks` overlays Gamification._skinnedRanks();
@@ -95,29 +107,46 @@ const Theme = (() => {
       // Reactor — arc reactor + HUD ring stack. CoreReactor reads this and
       // mounts the markup centered on the viewport on every JARVIS view.
       reactor:{ html:() => JarvisHUD.hud() + JarvisHUD.arcReactor() },
-      // Voice — CoreVoice forwards { provider, voice, speed } to the
-      // `nice-tts` edge function. `label` is shown on the mute toggle.
+      // Voice — CoreVoice forwards { provider, voice, speed, voice_settings }
+      // to the `nice-tts` edge function. `label` is shown on the mute toggle.
+      // `settings` (optional) tunes the voice per-request — needed for library
+      // voices whose saved defaults are locked.
       voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'J.A.R.V.I.S.' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'Cyberpunk' } },
+      voice:{ provider:'elevenlabs', voice:'delamain', speed:0.95, label:'Delamain',
+        // Cyberpunk 2077 AI taxi-dispatch — calm British butler-AI vibe.
+        // Resolves to ELEVENLABS_DELAMAIN_VOICE_ID server-side.
+        settings:{ stability:0.75, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'RX-78-2' } },
+      voice:{ provider:'elevenlabs', voice:'operator', speed:0.9, label:'Operator',
+        // Anime-style female mobile suit operator with Japanese-English accent.
+        // Resolves to ELEVENLABS_OPERATOR_VOICE_ID server-side.
+        settings:{ stability:0.7, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'16-BIT' } },
+      voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, label:'Announcer',
+        // Classic 1990s arcade-cabinet announcer — Mortal Kombat / Street
+        // Fighter / NBA Jam vibe. Resolves to ELEVENLABS_ANNOUNCER_VOICE_ID
+        // server-side. Low stability lets the dramatic spikes through.
+        settings:{ stability:0.55, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'office', name:'The Office', builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
       data:{ colors:{ '--bg':'#e8e8ec','--bg2':'#dcdce0','--bg-alt':'#f0f0f2','--surface':'rgba(0,0,0,0.02)','--surface2':'#f5f5f7','--border':'#d4d4d8','--border-hi':'#0F52BA','--accent':'#0F52BA','--accent2':'#3b7dd8','--text':'#18181b','--text-muted':'#52525b','--text-dim':'#a1a1aa','--glow':'0 0 0 1px rgba(15,82,186,0.08)','--glow-hi':'0 0 12px rgba(15,82,186,0.12)','--panel-bg':'#ffffff','--panel-border':'#d4d4d8','--nav-bg':'#7285A5','--nav-bg-dk':'#0E4C92','--nav-text':'#ffffff','--nav-text-muted':'rgba(255,255,255,0.85)','--nav-text-dim':'rgba(255,255,255,0.6)','--nav-border':'rgba(255,255,255,0.15)','--nav-surface':'rgba(255,255,255,0.1)','--nav-surface2':'rgba(255,255,255,0.15)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'The Office' } },
+      voice:{ provider:'elevenlabs', voice:'dwight', speed:0.9, label:'Dwight',
+        // Dwight K. Schrute — declarative, emphatic, ASSISTANT TO the regional
+        // manager. Resolves to ELEVENLABS_DWIGHT_VOICE_ID server-side. Low
+        // stability so the emphatic spikes carry through.
+        settings:{ stability:0.55, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'office-dark', name:'The Office', builtin:false, accent:'#a5b4fc', preview:['#09090b','#a5b4fc','#e0e7ff'],
       data:{ colors:{ '--bg':'#09090b','--bg2':'#18181b','--bg-alt':'#18181b','--surface':'rgba(255,255,255,0.03)','--surface2':'#27272a','--border':'#3f3f46','--border-hi':'#71717a','--accent':'#e0e7ff','--accent2':'#a5b4fc','--text':'#fafafa','--text-muted':'#a1a1aa','--text-dim':'#3f3f46','--glow':'0 0 0 1px rgba(224,231,255,0.06)','--glow-hi':'0 0 12px rgba(224,231,255,0.08)','--panel-bg':'rgba(24,24,27,0.75)','--panel-border':'#3f3f46','--nav-bg':'#111114' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'The Office' } },
+      voice:{ provider:'elevenlabs', voice:'dwight', speed:0.9, label:'Dwight',
+        settings:{ stability:0.55, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
   ];
 
   BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
