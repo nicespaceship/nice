@@ -364,6 +364,14 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Per-function settings. `verify_jwt = false` disables the platform-level
+# JWT validation for nice-ai so it doesn't reject asymmetric ES256 tokens
+# from the new Supabase signing keys. The function still validates the
+# user internally via `supabase.auth.getUser()` against GoTrue, which
+# handles ES256 correctly.
+[functions.nice-ai]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
