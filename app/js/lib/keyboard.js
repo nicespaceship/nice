@@ -29,6 +29,7 @@ const Keyboard = (() => {
     { chord: ['?'],      label: 'Show Shortcuts',   action: () => Keyboard.showHelp() },
     // Modifier shortcuts (handled separately in _handleKey, listed here for help overlay)
     { chord: ['⌘','⇧','P'], label: 'Toggle Preview',  action: () => {} },
+    { chord: ['⌘','⇧','O'], label: 'New Chat',        action: () => {} },
   ];
 
   function init() {
@@ -41,6 +42,14 @@ const Keyboard = (() => {
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
       e.preventDefault();
       if (typeof PreviewPanel !== 'undefined') PreviewPanel.toggle();
+      return;
+    }
+
+    // Cmd/Ctrl+Shift+O → new chat (Claude/ChatGPT convention)
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
+      e.preventDefault();
+      const btn = document.getElementById('side-chat-new');
+      if (btn) btn.click();
       return;
     }
 
