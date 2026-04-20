@@ -29,11 +29,13 @@ const Theme = (() => {
       data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--bg-alt':'#ffffff','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--text-dim':'#aaaaaa','--glow':'none','--panel-bg':'#fff','--panel-border':'#d0d0ce' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
       // Personality direction (TODO): clinical, third-person, evenly-
       // measured. "I'm sorry, Dave. I'm afraid I can't do that." energy.
-      // Fill `copy.ranks` / `labels` / `placeholders` and swap `voice` to
-      // a HAL-specific backend voice when polishing.
+      // Fill `copy.ranks` / `labels` / `placeholders` when polishing.
       copy:{ /* ranks:[], labels:{}, placeholders:{} */ },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'HAL 9000' } },
+      voice:{ provider:'elevenlabs', voice:'hal', speed:0.9, label:'HAL 9000',
+        // Slower than Majel, eerier consistency. Resolves to
+        // ELEVENLABS_HAL_VOICE_ID server-side.
+        settings:{ stability:0.9, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'navigator', name:'The Grid', builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(24,120,220,0.05)','--surface2':'rgba(24,120,220,0.09)','--border':'rgba(24,160,251,0.25)','--border-hi':'rgba(24,160,251,0.6)','--accent':'#18a0fb','--accent2':'#0a6bc4','--text':'#c0d8f0','--text-muted':'rgba(24,160,251,0.55)','--glow':'0 0 16px rgba(24,160,251,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
