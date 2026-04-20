@@ -2266,7 +2266,7 @@
 
 /* Mobile top bar — base styles defined above media query so display:flex wins */
 
-@media (max-width:480px) {
+@media (max-width:768px) {
   .app-mobile-bar .app-brand-text { display:none; }
 }
 
