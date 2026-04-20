@@ -129,7 +129,11 @@ const Theme = (() => {
     { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'16-BIT' } },
+      voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, label:'Announcer',
+        // Classic 1990s arcade-cabinet announcer — Mortal Kombat / Street
+        // Fighter / NBA Jam vibe. Resolves to ELEVENLABS_ANNOUNCER_VOICE_ID
+        // server-side. Low stability lets the dramatic spikes through.
+        settings:{ stability:0.55, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'office', name:'The Office', builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
       data:{ colors:{ '--bg':'#e8e8ec','--bg2':'#dcdce0','--bg-alt':'#f0f0f2','--surface':'rgba(0,0,0,0.02)','--surface2':'#f5f5f7','--border':'#d4d4d8','--border-hi':'#0F52BA','--accent':'#0F52BA','--accent2':'#3b7dd8','--text':'#18181b','--text-muted':'#52525b','--text-dim':'#a1a1aa','--glow':'0 0 0 1px rgba(15,82,186,0.08)','--glow-hi':'0 0 12px rgba(15,82,186,0.12)','--panel-bg':'#ffffff','--panel-border':'#d4d4d8','--nav-bg':'#7285A5','--nav-bg-dk':'#0E4C92','--nav-text':'#ffffff','--nav-text-muted':'rgba(255,255,255,0.85)','--nav-text-dim':'rgba(255,255,255,0.6)','--nav-border':'rgba(255,255,255,0.15)','--nav-surface':'rgba(255,255,255,0.1)','--nav-surface2':'rgba(255,255,255,0.15)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
