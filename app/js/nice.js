@@ -52,7 +52,10 @@ const Theme = (() => {
       // — no ranks override needed unless we want LCARS-specific titles.
       copy:{ /* labels:{}, placeholders:{} */ },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'LCARS Computer' } },
+      voice:{ provider:'elevenlabs', voice:'computer', speed:1.0, label:'Computer',
+        // Majel Barrett Roddenberry library voice — defaults locked, so tuning
+        // is sent per-request via voice_settings (forwarded by CoreVoice).
+        settings:{ stability:0.75, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'jarvis', name:'J.A.R.V.I.S.', builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
       data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' },
       // Personality bundle. `ranks` overlays Gamification._skinnedRanks();
@@ -95,8 +98,10 @@ const Theme = (() => {
       // Reactor — arc reactor + HUD ring stack. CoreReactor reads this and
       // mounts the markup centered on the viewport on every JARVIS view.
       reactor:{ html:() => JarvisHUD.hud() + JarvisHUD.arcReactor() },
-      // Voice — CoreVoice forwards { provider, voice, speed } to the
-      // `nice-tts` edge function. `label` is shown on the mute toggle.
+      // Voice — CoreVoice forwards { provider, voice, speed, voice_settings }
+      // to the `nice-tts` edge function. `label` is shown on the mute toggle.
+      // `settings` (optional) tunes the voice per-request — needed for library
+      // voices whose saved defaults are locked.
       voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'J.A.R.V.I.S.' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },

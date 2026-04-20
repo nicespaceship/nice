@@ -101,7 +101,7 @@ const CoreVoice = (() => {
           'apikey': SB._key,
           ...(session ? { 'Authorization': 'Bearer ' + session.access_token } : {}),
         },
-        body: JSON.stringify({ text, provider: tv.provider, voice: tv.voice, speed: tv.speed }),
+        body: JSON.stringify({ text, provider: tv.provider, voice: tv.voice, speed: tv.speed, voice_settings: tv.settings }),
       });
 
       if (!res.ok) throw new Error('TTS ' + res.status);
