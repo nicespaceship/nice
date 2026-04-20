@@ -49,7 +49,10 @@ const Theme = (() => {
       // Neo." "Follow the white rabbit." Operators → The One rank ladder.
       copy:{ /* ranks:[], labels:{}, placeholders:{} */ },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'The Oracle' } },
+      voice:{ provider:'elevenlabs', voice:'morpheus', speed:0.95, label:'Morpheus',
+        // Fishburne-style mentor baritone. Resolves to
+        // ELEVENLABS_MORPHEUS_VOICE_ID server-side.
+        settings:{ stability:0.75, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'lcars', name:'LCARS', builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' },
       // Personality direction (TODO): Starfleet ops dispatch. "Acknowledged.",
