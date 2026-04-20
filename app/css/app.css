@@ -3865,6 +3865,37 @@
   box-shadow:none !important;
 }
 
+/* Drag-and-drop overlay — fills the viewport while files are being
+   dragged, hidden otherwise. Pointer-events:none so the drop event
+   still fires through it. Visible state gets a theme-aware dashed
+   border and centered instruction label. */
+.nice-ai-drop-overlay {
+  position:fixed; inset:0; z-index:10000;
+  display:none; pointer-events:none;
+  background:color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.nice-ai-drop-overlay.visible {
+  display:flex; align-items:center; justify-content:center;
+}
+.nice-ai-drop-overlay-inner {
+  padding:32px 48px; border-radius:16px;
+  border:2px dashed var(--accent);
+  background:color-mix(in srgb, var(--bg-alt) 90%, transparent);
+  text-align:center; max-width:480px;
+}
+.nice-ai-drop-overlay-icon {
+  font-size:2.5rem; line-height:1; color:var(--accent); margin-bottom:12px;
+}
+.nice-ai-drop-overlay-label {
+  font-family:var(--font-h); font-size:1.1rem; color:var(--text);
+  letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px;
+}
+.nice-ai-drop-overlay-hint {
+  font-family:var(--font-b); font-size:.78rem; color:var(--text-muted);
+}
+
 /* Attachment chip row — sits above the textarea when files are staged.
    Three chip variants share the row: image thumbs (56×56 square), file
    chips (wider, show filename + icon), and the × remove button. */
