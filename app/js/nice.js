@@ -115,7 +115,10 @@ const Theme = (() => {
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'Cyberpunk' } },
+      voice:{ provider:'elevenlabs', voice:'delamain', speed:0.95, label:'Delamain',
+        // Cyberpunk 2077 AI taxi-dispatch — calm British butler-AI vibe.
+        // Resolves to ELEVENLABS_DELAMAIN_VOICE_ID server-side.
+        settings:{ stability:0.75, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
