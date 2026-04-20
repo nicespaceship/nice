@@ -3865,7 +3865,9 @@
   box-shadow:none !important;
 }
 
-/* Attachment chip row — sits above the textarea when images are staged */
+/* Attachment chip row — sits above the textarea when files are staged.
+   Three chip variants share the row: image thumbs (56×56 square), file
+   chips (wider, show filename + icon), and the × remove button. */
 .nice-ai-attachments {
   display:flex; flex-wrap:wrap; gap:8px;
   padding:4px 2px 8px;
@@ -3878,8 +3880,23 @@
   background:var(--bg-alt);
   flex:0 0 auto;
 }
+.nice-ai-attach-chip-file {
+  width:auto; height:56px; max-width:200px;
+  display:flex; align-items:center; gap:8px;
+  padding:0 28px 0 10px; overflow:visible;
+}
 .nice-ai-attach-thumb {
   width:100%; height:100%; object-fit:cover; display:block;
+}
+.nice-ai-attach-file-icon {
+  font-size:1.1rem; line-height:1;
+  flex:0 0 auto;
+}
+.nice-ai-attach-file-name {
+  font-family:var(--font-b); font-size:.72rem;
+  color:var(--text); line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  min-width:0; flex:1;
 }
 .nice-ai-attach-remove {
   position:absolute; top:2px; right:2px;
@@ -3892,7 +3909,7 @@
 }
 .nice-ai-attach-remove:hover { background:rgba(0,0,0,.9); }
 
-/* Monitor — user-message image thumbnails */
+/* Monitor — user-message attachments (image thumbs + file chips) */
 .monitor-user-attachments {
   display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end;
   margin-bottom:6px;
@@ -3901,6 +3918,19 @@
   width:120px; max-height:120px; object-fit:cover;
   border-radius:10px; border:1px solid var(--border);
   display:block;
+}
+.monitor-user-thumb-file {
+  width:auto; height:auto; max-width:240px;
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; background:var(--bg-alt);
+  font-family:var(--font-b); font-size:.78rem; color:var(--text);
+}
+.monitor-user-thumb-icon {
+  font-size:1.1rem; line-height:1; flex:0 0 auto;
+}
+.monitor-user-thumb-name {
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  min-width:0;
 }
 .monitor-user-thumb-placeholder {
   width:56px; height:56px;

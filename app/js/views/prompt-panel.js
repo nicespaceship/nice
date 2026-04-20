@@ -23,16 +23,35 @@ const PromptPanel = (() => {
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
   let _activeMode = 'auto'; // orchestration mode: auto, pipeline, parallel, hierarchical, loop
 
-  /* ── Image attachments (staged until send) ── */
-  // { id, dataUrl, mimeType, name, size } — mimeType/data extracted client-side,
-  // dataUrl kept for preview thumbnails and sent as { type:"image_url" } part.
+  /* ── File attachments (staged until send) ──
+     Entries live on _pendingAttachments. Shape varies by `kind`:
+       kind="image": { id, kind, dataUrl, mimeType, name, size }
+       kind="pdf":   { id, kind, dataUrl, mimeType, name, size }
+       kind="text":  { id, kind, text,    mimeType, name, size }  ← already decoded
+     Images/PDFs render as thumbnails/icons and travel as canonical parts to
+     the edge function. Text files are read client-side and inlined into the
+     user prompt, so every provider (not just vision/pdf-capable ones) can
+     see them. */
   let _pendingAttachments = [];
   const _ATTACH_MAX_COUNT = 4;
-  const _ATTACH_MAX_BYTES = 5 * 1024 * 1024; // 5MB per image
+  const _ATTACH_MAX_BYTES_IMAGE = 5  * 1024 * 1024; // 5MB per image
+  const _ATTACH_MAX_BYTES_PDF   = 10 * 1024 * 1024; // 10MB per PDF
+  const _ATTACH_MAX_BYTES_TEXT  = 1  * 1024 * 1024; // 1MB per text/code file
   // Previous model-select value — used to revert when a user tries to switch
-  // to a non-vision model while images are staged.
+  // to a model that doesn't support a currently-staged attachment type.
   let _lastModelValue = null;
-  const _VISION_FALLBACK_MODEL = 'gemini-2.5-flash';
+  const _ATTACH_FALLBACK_MODEL = 'gemini-2.5-flash';
+  // MIME whitelists. File picker accepts a broader surface than these; the
+  // stage helper enforces the real policy.
+  const _TEXT_MIME_PREFIXES = ['text/'];
+  const _TEXT_MIME_EXTRAS   = [
+    'application/json', 'application/xml', 'application/yaml', 'application/x-yaml',
+    'application/javascript', 'application/typescript', 'application/sql',
+    'application/x-sh', 'application/toml',
+  ];
+  // Accept-list for common text/code files that browsers report with empty or
+  // `application/octet-stream` mimetypes (md, ts, tsx, sql, go, rs, etc.).
+  const _TEXT_EXTENSIONS = /\.(txt|md|markdown|csv|tsv|json|ya?ml|xml|html?|css|scss|less|js|mjs|cjs|jsx|ts|tsx|py|rb|go|rs|java|kt|c|h|cpp|hpp|cs|swift|php|pl|lua|sh|bash|zsh|fish|sql|toml|ini|conf|env|log|dockerfile|gitignore)$/i;
 
   let _recognition = null;
   let _audioCtx = null;
@@ -223,14 +242,19 @@ const PromptPanel = (() => {
 
   function _saveMessages() {
     try {
-      // Attachments contain base64 data URLs that can exceed the 5MB
-      // localStorage quota after a few messages. Strip them from the
-      // persisted copy — in-session _messages keeps the full data for
-      // history replay within the current page load.
+      // Attachments carry base64 payloads or full text-file contents that
+      // can exceed the 5MB localStorage quota after a few messages. Strip
+      // them from the persisted copy — in-session _messages keeps the full
+      // data for history replay within the current page load.
       const persistable = _messages.map(m => {
         if (!m.attachments || !m.attachments.length) return m;
         const { attachments, ...rest } = m;
-        return { ...rest, attachmentPlaceholders: attachments.map(a => ({ name: a.name, mimeType: a.mimeType })) };
+        return {
+          ...rest,
+          attachmentPlaceholders: attachments.map(a => ({
+            name: a.name, mimeType: a.mimeType, kind: a.kind,
+          })),
+        };
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
     } catch {}
@@ -575,14 +599,25 @@ const PromptPanel = (() => {
       if (m.role === 'user') {
         let attachHtml = '';
         if (m.attachments && m.attachments.length) {
-          attachHtml = '<div class="monitor-user-attachments">' + m.attachments.map(a =>
-            `<img class="monitor-user-thumb" alt="${_esc(a.name || '')}" src="${_esc(a.dataUrl)}">`
-          ).join('') + '</div>';
+          attachHtml = '<div class="monitor-user-attachments">' + m.attachments.map(a => {
+            // Legacy messages from the image-only release have no `kind` but
+            // do carry `dataUrl` — treat them as images.
+            const kind = a.kind || (a.dataUrl ? 'image' : 'text');
+            if (kind === 'image') {
+              return `<img class="monitor-user-thumb" alt="${_esc(a.name || '')}" src="${_esc(a.dataUrl)}">`;
+            }
+            const icon = kind === 'pdf' ? '📄' : '📝';
+            return `<div class="monitor-user-thumb monitor-user-thumb-file" title="${_esc(a.name || '')}">
+              <span class="monitor-user-thumb-icon">${icon}</span>
+              <span class="monitor-user-thumb-name">${_esc(a.name || '')}</span>
+            </div>`;
+          }).join('') + '</div>';
         } else if (m.attachmentPlaceholders && m.attachmentPlaceholders.length) {
-          // Reload: image data was dropped from localStorage; show a ghost chip.
-          attachHtml = '<div class="monitor-user-attachments">' + m.attachmentPlaceholders.map(a =>
-            `<div class="monitor-user-thumb monitor-user-thumb-placeholder" title="${_esc(a.name || 'image')}">📎</div>`
-          ).join('') + '</div>';
+          // Reload: full attachment payload was dropped from localStorage; show a ghost chip.
+          attachHtml = '<div class="monitor-user-attachments">' + m.attachmentPlaceholders.map(a => {
+            const icon = a.kind === 'pdf' ? '📄' : a.kind === 'text' ? '📝' : '📎';
+            return `<div class="monitor-user-thumb monitor-user-thumb-placeholder" title="${_esc(a.name || 'file')}">${icon}</div>`;
+          }).join('') + '</div>';
         }
         const bubble = m.text ? `<div class="monitor-user-bubble">${_esc(m.text)}</div>` : '';
         html += `<div class="monitor-user-msg">${attachHtml}${bubble}</div>`;
@@ -1344,20 +1379,38 @@ Good response: "Let's get your agents deployed, ${callsign}! I'll launch the AI 
 IMPORTANT: Never break character. You ARE the ship's computer. When they describe a business need, translate it into NICE terms and recommend specific named blueprints from the catalog.`;
   }
 
-  /* ── Image attachment helpers ── */
+  /* ── File attachment helpers ── */
 
-  function _modelSupportsVision(id) {
+  function _modelHasCapability(id, cap) {
     if (typeof LLM_MODELS === 'undefined') return true; // be permissive if registry missing
     // The default select option uses a dotted id (`gemini-2.5-flash`) while
     // the catalog uses dashed (`gemini-2-5-flash`). Match either form.
     const norm = (s) => String(s || '').replace(/\./g, '-');
     const entry = LLM_MODELS.find(m => m.id === id || norm(m.id) === norm(id));
-    return entry ? entry.vision !== false : true;
+    if (!entry) return true;
+    return entry[cap] !== false;
   }
 
-  function _selectedModelSupportsVision() {
-    const sel = _getSelectedModel();
-    return _modelSupportsVision(sel.id);
+  /** Map an attachment's `kind` to the model capability flag it needs. */
+  function _capabilityForKind(kind) {
+    if (kind === 'image') return 'vision';
+    if (kind === 'pdf')   return 'pdf';
+    return null; // text is passthrough — works on any model
+  }
+
+  /** Set of capabilities required by currently staged attachments. */
+  function _requiredCapabilitiesForPending() {
+    const caps = new Set();
+    for (const a of _pendingAttachments) {
+      const c = _capabilityForKind(a.kind);
+      if (c) caps.add(c);
+    }
+    return caps;
+  }
+
+  function _modelSatisfies(id, caps) {
+    for (const c of caps) if (!_modelHasCapability(id, c)) return false;
+    return true;
   }
 
   /**
@@ -1371,21 +1424,22 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   }
 
   /**
-   * Model-change guard. If the user tries to switch to a non-vision model
-   * while images are staged, revert the select and tell them why. Never
-   * silently drop attachments — the user's work is load-bearing.
+   * Model-change guard. If the user tries to switch to a model that can't
+   * read a currently-staged attachment type (image or PDF), revert the
+   * select and tell them why. Never silently drop attachments.
    */
   function _onModelSelectChange() {
     const select = _panel?.querySelector('#nice-ai-model');
     if (!select) return;
     const newVal = select.value;
-    if (_pendingAttachments.length > 0 && !_modelSupportsVision(newVal)) {
-      // Revert to the previous selection.
+    const caps = _requiredCapabilitiesForPending();
+    if (caps.size > 0 && !_modelSatisfies(newVal, caps)) {
       if (_lastModelValue) select.value = _lastModelValue;
       if (typeof Notify !== 'undefined') {
+        const human = Array.from(caps).map(c => c === 'vision' ? 'images' : c === 'pdf' ? 'PDFs' : c).join(' and ');
         Notify.send({
           title: "Can't switch model",
-          message: 'Detach the staged image first — the target model doesn\'t read images.',
+          message: `Detach the staged ${human} first — the target model can't read them.`,
           type: 'warning',
         });
       }
@@ -1395,26 +1449,25 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   }
 
   /**
-   * Soft-fallback entry point for the attach button. If the currently
-   * selected model can't read images, we auto-switch to the free Gemini
-   * 2.5 Flash model (known-good vision) and notify the user — rather than
-   * hiding the button, which leaves people hunting for an invisible UI.
+   * Soft-fallback entry point after a file is chosen. If the selected model
+   * can't read the file's modality, auto-switch to Gemini 2.5 Flash (our
+   * catch-all: images + PDFs + text) and toast why.
    */
-  function _ensureVisionModelForAttach() {
-    if (_selectedModelSupportsVision()) return true;
+  function _ensureModelForCapability(cap) {
+    if (!cap) return true; // text-file path — any model works
+    const sel = _getSelectedModel();
+    if (_modelHasCapability(sel.id, cap)) return true;
     const select = _panel?.querySelector('#nice-ai-model');
     if (!select) return false;
-    // The dropdown may not contain the fallback model if the user hasn't
-    // enabled it (or if enabled_models state is mid-migration). If so we
-    // bail gracefully and let the user know they need a vision model.
     const opt = Array.from(select.options).find(o =>
-      o.value === _VISION_FALLBACK_MODEL || o.value === 'gemini-2-5-flash'
+      o.value === _ATTACH_FALLBACK_MODEL || o.value === 'gemini-2-5-flash'
     );
     if (!opt) {
       if (typeof Notify !== 'undefined') {
+        const human = cap === 'vision' ? 'image' : cap === 'pdf' ? 'PDF' : cap;
         Notify.send({
-          title: 'No vision model available',
-          message: 'Enable Gemini 2.5 Flash in Security → Integrations to attach images.',
+          title: `No ${human}-capable model available`,
+          message: 'Enable Gemini 2.5 Flash in Security → Integrations to attach this file type.',
           type: 'warning',
         });
       }
@@ -1423,9 +1476,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     select.value = opt.value;
     _lastModelValue = opt.value;
     if (typeof Notify !== 'undefined') {
+      const human = cap === 'vision' ? 'images' : cap === 'pdf' ? 'PDFs' : cap;
       Notify.send({
         title: 'Switched to Gemini 2.5 Flash',
-        message: 'Auto-selected a vision-capable model for your image.',
+        message: `Auto-selected a model that reads ${human}.`,
         type: 'system',
       });
     }
@@ -1441,30 +1495,77 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     });
   }
 
+  /** Decide which bucket a file belongs to. Returns null if unsupported. */
+  function _classifyFile(file) {
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+    if (type.startsWith('image/')) return 'image';
+    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+    if (_TEXT_MIME_PREFIXES.some(p => type.startsWith(p))) return 'text';
+    if (_TEXT_MIME_EXTRAS.includes(type)) return 'text';
+    // Browser sometimes reports empty or octet-stream mimetype for markdown
+    // or code files; match by extension.
+    if ((type === '' || type === 'application/octet-stream') && _TEXT_EXTENSIONS.test(name)) return 'text';
+    return null;
+  }
+
+  function _attachMaxBytesFor(kind) {
+    if (kind === 'image') return _ATTACH_MAX_BYTES_IMAGE;
+    if (kind === 'pdf')   return _ATTACH_MAX_BYTES_PDF;
+    return _ATTACH_MAX_BYTES_TEXT;
+  }
+
   async function _stageAttachment(file) {
-    if (!file || !file.type?.startsWith('image/')) {
+    if (!file) return;
+    const kind = _classifyFile(file);
+    if (!kind) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Unsupported file', message: 'Only images can be attached in this release.', type: 'system' });
+        Notify.send({
+          title: 'Unsupported file',
+          message: `${file.name || 'File'} — only images, PDFs, and text/code files are supported.`,
+          type: 'warning',
+        });
       }
       return;
     }
-    if (file.size > _ATTACH_MAX_BYTES) {
+    const maxBytes = _attachMaxBytesFor(kind);
+    if (file.size > maxBytes) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Image too large', message: `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB — max ${_ATTACH_MAX_BYTES / 1024 / 1024}MB.`, type: 'system' });
+        Notify.send({
+          title: 'File too large',
+          message: `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB — max ${maxBytes / 1024 / 1024}MB for ${kind}s.`,
+          type: 'warning',
+        });
       }
       return;
     }
     if (_pendingAttachments.length >= _ATTACH_MAX_COUNT) return;
 
+    // Ensure the selected model can read this modality. Text files don't
+    // need any capability — they're inlined as text.
+    const cap = _capabilityForKind(kind);
+    if (!_ensureModelForCapability(cap)) return;
+
     try {
-      const dataUrl = await _fileToDataUrl(file);
-      _pendingAttachments.push({
-        id: 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-        dataUrl,
-        mimeType: file.type,
-        name: file.name,
-        size: file.size,
-      });
+      if (kind === 'text') {
+        const text = await file.text();
+        _pendingAttachments.push({
+          id: 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          kind, text,
+          mimeType: file.type || 'text/plain',
+          name: file.name,
+          size: file.size,
+        });
+      } else {
+        const dataUrl = await _fileToDataUrl(file);
+        _pendingAttachments.push({
+          id: 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+          kind, dataUrl,
+          mimeType: file.type || (kind === 'pdf' ? 'application/pdf' : 'application/octet-stream'),
+          name: file.name,
+          size: file.size,
+        });
+      }
       _renderAttachments();
     } catch (err) {
       console.warn('[NICE] Failed to read attachment:', err);
@@ -1480,12 +1581,19 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       return;
     }
     row.hidden = false;
-    row.innerHTML = _pendingAttachments.map(a =>
-      `<div class="nice-ai-attach-chip" data-attach-id="${_esc(a.id)}" title="${_esc(a.name)}">
-        <img class="nice-ai-attach-thumb" alt="" src="${_esc(a.dataUrl)}">
-        <button class="nice-ai-attach-remove" data-attach-id="${_esc(a.id)}" aria-label="Remove attachment" title="Remove">×</button>
-      </div>`
-    ).join('');
+    row.innerHTML = _pendingAttachments.map(a => {
+      const remove = `<button class="nice-ai-attach-remove" data-attach-id="${_esc(a.id)}" aria-label="Remove attachment" title="Remove">×</button>`;
+      if (a.kind === 'image') {
+        return `<div class="nice-ai-attach-chip" data-attach-id="${_esc(a.id)}" title="${_esc(a.name)}">
+          <img class="nice-ai-attach-thumb" alt="" src="${_esc(a.dataUrl)}">${remove}
+        </div>`;
+      }
+      const icon = a.kind === 'pdf' ? '📄' : '📝';
+      return `<div class="nice-ai-attach-chip nice-ai-attach-chip-file" data-attach-id="${_esc(a.id)}" title="${_esc(a.name)}">
+        <div class="nice-ai-attach-file-icon">${icon}</div>
+        <div class="nice-ai-attach-file-name">${_esc(a.name)}</div>${remove}
+      </div>`;
+    }).join('');
   }
 
   function _getSelectedModel() {
@@ -1535,17 +1643,39 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const lastIsCurrent = !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
     const historyMsgs = lastIsCurrent ? past.slice(0, -1) : past;
 
-    // If a message has image attachments, emit OpenAI-style content parts —
-    // the nice-ai edge function translates to each provider's native shape.
+    // Turn a message's text + attachments into the canonical part-array sent
+    // to the edge function. Text-file attachments get prepended as fenced
+    // blocks in the text part so every provider (even non-vision/PDF ones)
+    // can read them; images/PDFs become `image_url` / `document` parts.
+    const buildUserContent = (text, attachments) => {
+      if (!attachments || attachments.length === 0) return text;
+      const textPieces = [];
+      const mediaParts = [];
+      for (const a of attachments) {
+        // Legacy attachments (pre-multi-type) had no `kind`; infer from shape.
+        const kind = a.kind || (a.dataUrl ? 'image' : (a.text != null ? 'text' : null));
+        if (kind === 'text') {
+          textPieces.push(`Attached file \`${a.name}\`:\n\`\`\`\n${a.text}\n\`\`\``);
+        } else if (kind === 'pdf') {
+          mediaParts.push({ type: 'document', document: { url: a.dataUrl, name: a.name } });
+        } else if (kind === 'image') {
+          mediaParts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
+        }
+      }
+      const merged = [...textPieces, text].filter(Boolean).join('\n\n');
+      if (mediaParts.length === 0) return merged; // pure-text: keep string form
+      const parts = [];
+      if (merged) parts.push({ type: 'text', text: merged });
+      parts.push(...mediaParts);
+      return parts;
+    };
+
     const history = historyMsgs.map(m => {
       const role = m.role === 'assistant' ? 'assistant' : 'user';
-      if (m.attachments && m.attachments.length) {
-        const parts = [];
-        if (m.text) parts.push({ type: 'text', text: m.text });
-        for (const a of m.attachments) parts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
-        return { role, content: parts };
-      }
-      return { role, content: m.text };
+      const content = role === 'user'
+        ? buildUserContent(m.text, m.attachments)
+        : m.text;
+      return { role, content };
     });
 
     // Prepend system prompt as first message (allow caller override)
@@ -1557,13 +1687,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const currentAttachments = (opts.attachments && opts.attachments.length)
       ? opts.attachments
       : (lastIsCurrent ? (lastPast.attachments || []) : []);
-    if (currentAttachments.length) {
-      const parts = userText ? [{ type: 'text', text: userText }] : [];
-      for (const a of currentAttachments) parts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
-      history.push({ role: 'user', content: parts });
-    } else {
-      history.push({ role: 'user', content: userText });
-    }
+    history.push({ role: 'user', content: buildUserContent(userText, currentAttachments) });
 
     const sel = _getSelectedModel();
     const model = opts.modelOverride || sel.id;
@@ -2309,9 +2433,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
           <canvas class="nice-ai-waveform" id="nice-ai-waveform" height="40"></canvas>
-          <input type="file" id="nice-ai-file-input" accept="image/*" multiple hidden>
+          <input type="file" id="nice-ai-file-input" accept="image/*,application/pdf,text/*,.md,.markdown,.csv,.json,.yaml,.yml,.xml,.js,.mjs,.ts,.tsx,.jsx,.py,.go,.rs,.java,.kt,.c,.h,.cpp,.hpp,.cs,.swift,.php,.rb,.sql,.sh,.toml,.ini,.log" multiple hidden>
           <div class="nice-ai-toolbar">
-            <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image" aria-label="Attach image">+</button>
+            <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
               <select class="nice-ai-mode-select" id="nice-ai-mode" title="Orchestration mode">
                 <option value="auto" selected>Auto</option>
@@ -2401,18 +2525,17 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     // Tap 1: start listening. Tap 2: stop & send.
     _panel.querySelector('#nice-ai-voice')?.addEventListener('click', _toggleVoiceCapture);
 
-    // Attach — opens native file picker (images only, MVP). If the selected
-    // model doesn't support vision we silently switch to Gemini Flash rather
-    // than hiding the button, so attach is always discoverable.
+    // Attach — opens native file picker. File-type capability gating happens
+    // per-file in _stageAttachment: images/PDFs auto-switch the model to
+    // Gemini Flash if needed; text files just get inlined into the prompt.
     const fileInput = _panel.querySelector('#nice-ai-file-input');
     _panel.querySelector('#nice-ai-attach')?.addEventListener('click', () => {
       if (_pendingAttachments.length >= _ATTACH_MAX_COUNT) {
         if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Limit reached', message: `Max ${_ATTACH_MAX_COUNT} images per message.`, type: 'system' });
+          Notify.send({ title: 'Limit reached', message: `Max ${_ATTACH_MAX_COUNT} files per message.`, type: 'system' });
         }
         return;
       }
-      if (!_ensureVisionModelForAttach()) return;
       fileInput?.click();
     });
     fileInput?.addEventListener('change', (e) => {
