@@ -22,9 +22,10 @@ const Theme = (() => {
     { id:'spaceship', name:'NICE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
       data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
-      // Voice — placeholder uses the JARVIS backend voice key until each
-      // theme picks its own; swap `voice` to repoint without touching code.
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'NICE' } },
+      // Voice — KITT (William Daniels). Default voice every new user hears.
+      // Resolves to ELEVENLABS_KITT_VOICE_ID server-side.
+      voice:{ provider:'elevenlabs', voice:'kitt', speed:0.9, label:'KITT',
+        settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'robotech', name:'HAL-9000', builtin:true, accent:'#999', preview:['#f2f2f0','#999','#ef4444'],
       data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--bg-alt':'#ffffff','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--text-dim':'#aaaaaa','--glow':'none','--panel-bg':'#fff','--panel-border':'#d0d0ce' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
       // Personality direction (TODO): clinical, third-person, evenly-
