@@ -48,10 +48,11 @@ const PromptPanel = (() => {
     'application/json', 'application/xml', 'application/yaml', 'application/x-yaml',
     'application/javascript', 'application/typescript', 'application/sql',
     'application/x-sh', 'application/toml',
+    'application/rtf', 'text/rtf',
   ];
   // Accept-list for common text/code files that browsers report with empty or
-  // `application/octet-stream` mimetypes (md, ts, tsx, sql, go, rs, etc.).
-  const _TEXT_EXTENSIONS = /\.(txt|md|markdown|csv|tsv|json|ya?ml|xml|html?|css|scss|less|js|mjs|cjs|jsx|ts|tsx|py|rb|go|rs|java|kt|c|h|cpp|hpp|cs|swift|php|pl|lua|sh|bash|zsh|fish|sql|toml|ini|conf|env|log|dockerfile|gitignore)$/i;
+  // `application/octet-stream` mimetypes (md, ts, tsx, sql, go, rs, rtf, etc.).
+  const _TEXT_EXTENSIONS = /\.(txt|md|markdown|rtf|csv|tsv|json|ya?ml|xml|html?|css|scss|less|js|mjs|cjs|jsx|ts|tsx|py|rb|go|rs|java|kt|c|h|cpp|hpp|cs|swift|php|pl|lua|sh|bash|zsh|fish|sql|toml|ini|conf|env|log|dockerfile|gitignore)$/i;
 
   let _recognition = null;
   let _audioCtx = null;
@@ -2433,7 +2434,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
           <canvas class="nice-ai-waveform" id="nice-ai-waveform" height="40"></canvas>
-          <input type="file" id="nice-ai-file-input" accept="image/*,application/pdf,text/*,.md,.markdown,.csv,.json,.yaml,.yml,.xml,.js,.mjs,.ts,.tsx,.jsx,.py,.go,.rs,.java,.kt,.c,.h,.cpp,.hpp,.cs,.swift,.php,.rb,.sql,.sh,.toml,.ini,.log" multiple hidden>
+          <input type="file" id="nice-ai-file-input" accept="image/*,application/pdf,text/*,application/rtf,.md,.markdown,.rtf,.csv,.json,.yaml,.yml,.xml,.js,.mjs,.ts,.tsx,.jsx,.py,.go,.rs,.java,.kt,.c,.h,.cpp,.hpp,.cs,.swift,.php,.rb,.sql,.sh,.toml,.ini,.log" multiple hidden>
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
