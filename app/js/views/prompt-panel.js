@@ -49,10 +49,47 @@ const PromptPanel = (() => {
     'application/javascript', 'application/typescript', 'application/sql',
     'application/x-sh', 'application/toml',
     'application/rtf', 'text/rtf',
+    'application/graphql', 'application/x-latex', 'application/x-tex',
+    'application/x-yaml', 'application/x-toml',
+    'application/ld+json', 'application/x-ndjson', 'application/jsonl',
+    'application/x-httpd-php',
   ];
   // Accept-list for common text/code files that browsers report with empty or
-  // `application/octet-stream` mimetypes (md, ts, tsx, sql, go, rs, rtf, etc.).
-  const _TEXT_EXTENSIONS = /\.(txt|md|markdown|rtf|csv|tsv|json|ya?ml|xml|html?|css|scss|less|js|mjs|cjs|jsx|ts|tsx|py|rb|go|rs|java|kt|c|h|cpp|hpp|cs|swift|php|pl|lua|sh|bash|zsh|fish|sql|toml|ini|conf|env|log|dockerfile|gitignore)$/i;
+  // `application/octet-stream` mimetypes. Grouped by category for sanity.
+  const _TEXT_EXTENSIONS = new RegExp('\\.(' + [
+    // docs & plain text
+    'txt', 'md', 'markdown', 'mdx', 'rtf', 'log', 'rst', 'org', 'adoc', 'asciidoc', 'tex', 'bib',
+    // data & data-ish
+    'csv', 'tsv', 'json', 'ndjson', 'jsonl', 'geojson', 'ya?ml', 'xml', 'diff', 'patch', 'srt', 'vtt',
+    // config / infra
+    'toml', 'ini', 'cfg', 'conf', 'env', 'properties', 'dockerignore', 'dockerfile', 'gitignore',
+    'tf', 'tfvars', 'hcl', 'cmake', 'bazel', 'bzl', 'gradle', 'sbt',
+    // schemas / query langs
+    'graphql', 'gql', 'proto', 'thrift', 'cypher', 'rq',
+    // web / styles
+    'html?', 'htm', 'css', 'scss', 'sass', 'less',
+    // js/ts
+    'js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'svelte', 'vue', 'astro',
+    // python
+    'py', 'pyi', 'pyw',
+    // systems / compiled
+    'c', 'h', 'cpp', 'cxx', 'cc', 'hpp', 'hxx', 'cs', 'swift', 'rs', 'go', 'mod', 'sum',
+    'java', 'kt', 'kts', 'scala', 'sc', 'groovy', 'dart', 'zig', 'nim', 'nims', 'v',
+    // scientific / functional
+    'r', 'rmd', 'jl', 'ml', 'mli', 'fs', 'fsx', 'fsi', 'hs', 'lhs',
+    // scripting
+    'sh', 'bash', 'zsh', 'fish', 'ps1', 'pl', 'lua', 'rb', 'php', 'tcl',
+    // apple / mobile
+    'm', 'mm',
+    // hardware / assembly
+    'asm', 's', 'sv', 'svh', 'vhdl', 'vhd',
+    // web3 / chain
+    'sol', 'move', 'cairo',
+    // clojure / erlang / elixir
+    'clj', 'cljs', 'cljc', 'edn', 'ex', 'exs', 'erl', 'hrl',
+    // database
+    'sql',
+  ].join('|') + ')$', 'i');
 
   let _recognition = null;
   let _audioCtx = null;
@@ -2434,7 +2471,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
           <canvas class="nice-ai-waveform" id="nice-ai-waveform" height="40"></canvas>
-          <input type="file" id="nice-ai-file-input" accept="image/*,application/pdf,text/*,application/rtf,.md,.markdown,.rtf,.csv,.json,.yaml,.yml,.xml,.js,.mjs,.ts,.tsx,.jsx,.py,.go,.rs,.java,.kt,.c,.h,.cpp,.hpp,.cs,.swift,.php,.rb,.sql,.sh,.toml,.ini,.log" multiple hidden>
+          <input type="file" id="nice-ai-file-input" accept="image/*,application/pdf,text/*,application/rtf,application/json,application/xml,application/yaml,application/graphql,.txt,.md,.markdown,.mdx,.rtf,.log,.rst,.org,.adoc,.asciidoc,.tex,.bib,.csv,.tsv,.json,.ndjson,.jsonl,.geojson,.yaml,.yml,.xml,.diff,.patch,.srt,.vtt,.toml,.ini,.cfg,.conf,.env,.properties,.dockerignore,.dockerfile,.gitignore,.tf,.tfvars,.hcl,.cmake,.bazel,.bzl,.gradle,.sbt,.graphql,.gql,.proto,.thrift,.cypher,.rq,.html,.htm,.css,.scss,.sass,.less,.js,.mjs,.cjs,.jsx,.ts,.tsx,.svelte,.vue,.astro,.py,.pyi,.pyw,.c,.h,.cpp,.cxx,.cc,.hpp,.hxx,.cs,.swift,.rs,.go,.mod,.sum,.java,.kt,.kts,.scala,.sc,.groovy,.dart,.zig,.nim,.nims,.v,.r,.rmd,.jl,.ml,.mli,.fs,.fsx,.fsi,.hs,.lhs,.sh,.bash,.zsh,.fish,.ps1,.pl,.lua,.rb,.php,.tcl,.m,.mm,.asm,.s,.sv,.svh,.vhdl,.vhd,.sol,.move,.cairo,.clj,.cljs,.cljc,.edn,.ex,.exs,.erl,.hrl,.sql" multiple hidden>
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
