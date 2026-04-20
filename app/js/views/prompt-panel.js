@@ -2648,6 +2648,33 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         const container = _panel.querySelector('.nice-ai-input-container');
         if (container) container.classList.toggle('has-text', textarea.value.trim().length > 0);
       });
+
+      // Paste-from-clipboard (Cmd+V): screenshots and copied files route
+      // through the same staging pipeline as the + button and drag-drop.
+      // Only intercept when the clipboard carries file items — plain text
+      // paste falls through to the default textarea behavior.
+      textarea.addEventListener('paste', (e) => {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items || !items.length) return;
+        const files = [];
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].kind === 'file') {
+            const f = items[i].getAsFile();
+            if (f) files.push(f);
+          }
+        }
+        if (!files.length) return;
+        e.preventDefault();
+        const room = _ATTACH_MAX_COUNT - _pendingAttachments.length;
+        if (files.length > room && typeof Notify !== 'undefined') {
+          Notify.send({
+            title: 'Limit reached',
+            message: `Max ${_ATTACH_MAX_COUNT} files per message — kept first ${Math.max(0, room)}.`,
+            type: 'system',
+          });
+        }
+        for (const f of files.slice(0, Math.max(0, room))) _stageAttachment(f);
+      });
     }
 
     // @mention popup click
