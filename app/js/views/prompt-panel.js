@@ -37,6 +37,8 @@ const PromptPanel = (() => {
   const _ATTACH_MAX_BYTES_IMAGE = 5  * 1024 * 1024; // 5MB per image
   const _ATTACH_MAX_BYTES_PDF   = 10 * 1024 * 1024; // 10MB per PDF
   const _ATTACH_MAX_BYTES_TEXT  = 1  * 1024 * 1024; // 1MB per text/code file
+  const _ATTACH_MAX_BYTES_AUDIO = 20 * 1024 * 1024; // 20MB per audio (Gemini inline cap)
+  const _ATTACH_MAX_BYTES_VIDEO = 20 * 1024 * 1024; // 20MB per video (Gemini inline cap)
   // Previous model-select value — used to revert when a user tries to switch
   // to a model that doesn't support a currently-staged attachment type.
   let _lastModelValue = null;
@@ -636,6 +638,7 @@ const PromptPanel = (() => {
     for (const m of _messages) {
       if (m.role === 'user') {
         let attachHtml = '';
+        const monitorIconFor = k => k === 'pdf' ? '📄' : k === 'audio' ? '🎵' : k === 'video' ? '🎬' : k === 'text' ? '📝' : '📎';
         if (m.attachments && m.attachments.length) {
           attachHtml = '<div class="monitor-user-attachments">' + m.attachments.map(a => {
             // Legacy messages from the image-only release have no `kind` but
@@ -644,18 +647,16 @@ const PromptPanel = (() => {
             if (kind === 'image') {
               return `<img class="monitor-user-thumb" alt="${_esc(a.name || '')}" src="${_esc(a.dataUrl)}">`;
             }
-            const icon = kind === 'pdf' ? '📄' : '📝';
             return `<div class="monitor-user-thumb monitor-user-thumb-file" title="${_esc(a.name || '')}">
-              <span class="monitor-user-thumb-icon">${icon}</span>
+              <span class="monitor-user-thumb-icon">${monitorIconFor(kind)}</span>
               <span class="monitor-user-thumb-name">${_esc(a.name || '')}</span>
             </div>`;
           }).join('') + '</div>';
         } else if (m.attachmentPlaceholders && m.attachmentPlaceholders.length) {
           // Reload: full attachment payload was dropped from localStorage; show a ghost chip.
-          attachHtml = '<div class="monitor-user-attachments">' + m.attachmentPlaceholders.map(a => {
-            const icon = a.kind === 'pdf' ? '📄' : a.kind === 'text' ? '📝' : '📎';
-            return `<div class="monitor-user-thumb monitor-user-thumb-placeholder" title="${_esc(a.name || 'file')}">${icon}</div>`;
-          }).join('') + '</div>';
+          attachHtml = '<div class="monitor-user-attachments">' + m.attachmentPlaceholders.map(a =>
+            `<div class="monitor-user-thumb monitor-user-thumb-placeholder" title="${_esc(a.name || 'file')}">${monitorIconFor(a.kind)}</div>`
+          ).join('') + '</div>';
         }
         const bubble = m.text ? `<div class="monitor-user-bubble">${_esc(m.text)}</div>` : '';
         html += `<div class="monitor-user-msg">${attachHtml}${bubble}</div>`;
@@ -1433,6 +1434,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
   function _capabilityForKind(kind) {
     if (kind === 'image') return 'vision';
     if (kind === 'pdf')   return 'pdf';
+    if (kind === 'audio') return 'audio';
+    if (kind === 'video') return 'video';
     return null; // text is passthrough — works on any model
   }
 
@@ -1474,7 +1477,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     if (caps.size > 0 && !_modelSatisfies(newVal, caps)) {
       if (_lastModelValue) select.value = _lastModelValue;
       if (typeof Notify !== 'undefined') {
-        const human = Array.from(caps).map(c => c === 'vision' ? 'images' : c === 'pdf' ? 'PDFs' : c).join(' and ');
+        const humanMap = { vision: 'images', pdf: 'PDFs', audio: 'audio', video: 'video' };
+        const human = Array.from(caps).map(c => humanMap[c] || c).join(' and ');
         Notify.send({
           title: "Can't switch model",
           message: `Detach the staged ${human} first — the target model can't read them.`,
@@ -1500,11 +1504,12 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const opt = Array.from(select.options).find(o =>
       o.value === _ATTACH_FALLBACK_MODEL || o.value === 'gemini-2-5-flash'
     );
+    const humanSingular = { vision: 'image', pdf: 'PDF', audio: 'audio', video: 'video' }[cap] || cap;
+    const humanPlural   = { vision: 'images', pdf: 'PDFs', audio: 'audio', video: 'video' }[cap] || cap;
     if (!opt) {
       if (typeof Notify !== 'undefined') {
-        const human = cap === 'vision' ? 'image' : cap === 'pdf' ? 'PDF' : cap;
         Notify.send({
-          title: `No ${human}-capable model available`,
+          title: `No ${humanSingular}-capable model available`,
           message: 'Enable Gemini 2.5 Flash in Security → Integrations to attach this file type.',
           type: 'warning',
         });
@@ -1514,10 +1519,9 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     select.value = opt.value;
     _lastModelValue = opt.value;
     if (typeof Notify !== 'undefined') {
-      const human = cap === 'vision' ? 'images' : cap === 'pdf' ? 'PDFs' : cap;
       Notify.send({
         title: 'Switched to Gemini 2.5 Flash',
-        message: `Auto-selected a model that reads ${human}.`,
+        message: `Auto-selected a model that reads ${humanPlural}.`,
         type: 'system',
       });
     }
@@ -1533,23 +1537,36 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     });
   }
 
+  // Extensions we recognize even when the browser reports empty or
+  // application/octet-stream for MIME.
+  const _AUDIO_EXTENSIONS = /\.(mp3|wav|m4a|aac|ogg|oga|flac|opus|weba)$/i;
+  const _VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|mkv|mpeg|mpg|avi|3gp|3g2|wmv|flv)$/i;
+
   /** Decide which bucket a file belongs to. Returns null if unsupported. */
   function _classifyFile(file) {
     const type = (file.type || '').toLowerCase();
     const name = (file.name || '').toLowerCase();
     if (type.startsWith('image/')) return 'image';
+    if (type.startsWith('audio/')) return 'audio';
+    if (type.startsWith('video/')) return 'video';
     if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
     if (_TEXT_MIME_PREFIXES.some(p => type.startsWith(p))) return 'text';
     if (_TEXT_MIME_EXTRAS.includes(type)) return 'text';
-    // Browser sometimes reports empty or octet-stream mimetype for markdown
-    // or code files; match by extension.
-    if ((type === '' || type === 'application/octet-stream') && _TEXT_EXTENSIONS.test(name)) return 'text';
+    // Browser sometimes reports empty or octet-stream mimetype for media or
+    // code files; fall back to extension matching.
+    if (type === '' || type === 'application/octet-stream') {
+      if (_AUDIO_EXTENSIONS.test(name)) return 'audio';
+      if (_VIDEO_EXTENSIONS.test(name)) return 'video';
+      if (_TEXT_EXTENSIONS.test(name))  return 'text';
+    }
     return null;
   }
 
   function _attachMaxBytesFor(kind) {
     if (kind === 'image') return _ATTACH_MAX_BYTES_IMAGE;
     if (kind === 'pdf')   return _ATTACH_MAX_BYTES_PDF;
+    if (kind === 'audio') return _ATTACH_MAX_BYTES_AUDIO;
+    if (kind === 'video') return _ATTACH_MAX_BYTES_VIDEO;
     return _ATTACH_MAX_BYTES_TEXT;
   }
 
@@ -1560,7 +1577,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       if (typeof Notify !== 'undefined') {
         Notify.send({
           title: 'Unsupported file',
-          message: `${file.name || 'File'} — only images, PDFs, and text/code files are supported.`,
+          message: `${file.name || 'File'} — images, PDFs, audio, video, and text/code files only.`,
           type: 'warning',
         });
       }
@@ -1569,9 +1586,10 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
     const maxBytes = _attachMaxBytesFor(kind);
     if (file.size > maxBytes) {
       if (typeof Notify !== 'undefined') {
+        const kindLabel = { image: 'images', pdf: 'PDFs', audio: 'audio files', video: 'video files', text: 'text files' }[kind] || kind;
         Notify.send({
           title: 'File too large',
-          message: `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB — max ${maxBytes / 1024 / 1024}MB for ${kind}s.`,
+          message: `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB — max ${maxBytes / 1024 / 1024}MB for ${kindLabel}.`,
           type: 'warning',
         });
       }
@@ -1596,10 +1614,14 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
         });
       } else {
         const dataUrl = await _fileToDataUrl(file);
+        const fallbackMime = kind === 'pdf'   ? 'application/pdf'
+                           : kind === 'audio' ? 'audio/mpeg'
+                           : kind === 'video' ? 'video/mp4'
+                           :                    'application/octet-stream';
         _pendingAttachments.push({
           id: 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
           kind, dataUrl,
-          mimeType: file.type || (kind === 'pdf' ? 'application/pdf' : 'application/octet-stream'),
+          mimeType: file.type || fallbackMime,
           name: file.name,
           size: file.size,
         });
@@ -1619,6 +1641,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
       return;
     }
     row.hidden = false;
+    const iconFor = k => k === 'pdf' ? '📄' : k === 'audio' ? '🎵' : k === 'video' ? '🎬' : '📝';
     row.innerHTML = _pendingAttachments.map(a => {
       const remove = `<button class="nice-ai-attach-remove" data-attach-id="${_esc(a.id)}" aria-label="Remove attachment" title="Remove">×</button>`;
       if (a.kind === 'image') {
@@ -1626,9 +1649,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           <img class="nice-ai-attach-thumb" alt="" src="${_esc(a.dataUrl)}">${remove}
         </div>`;
       }
-      const icon = a.kind === 'pdf' ? '📄' : '📝';
       return `<div class="nice-ai-attach-chip nice-ai-attach-chip-file" data-attach-id="${_esc(a.id)}" title="${_esc(a.name)}">
-        <div class="nice-ai-attach-file-icon">${icon}</div>
+        <div class="nice-ai-attach-file-icon">${iconFor(a.kind)}</div>
         <div class="nice-ai-attach-file-name">${_esc(a.name)}</div>${remove}
       </div>`;
     }).join('');
@@ -1696,6 +1718,8 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
           textPieces.push(`Attached file \`${a.name}\`:\n\`\`\`\n${a.text}\n\`\`\``);
         } else if (kind === 'pdf') {
           mediaParts.push({ type: 'document', document: { url: a.dataUrl, name: a.name } });
+        } else if (kind === 'audio' || kind === 'video') {
+          mediaParts.push({ type: 'media', media: { url: a.dataUrl, name: a.name } });
         } else if (kind === 'image') {
           mediaParts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
         }
@@ -2471,7 +2495,7 @@ IMPORTANT: Never break character. You ARE the ship's computer. When they describ
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
           <canvas class="nice-ai-waveform" id="nice-ai-waveform" height="40"></canvas>
-          <input type="file" id="nice-ai-file-input" accept="image/*,application/pdf,text/*,application/rtf,application/json,application/xml,application/yaml,application/graphql,.txt,.md,.markdown,.mdx,.rtf,.log,.rst,.org,.adoc,.asciidoc,.tex,.bib,.csv,.tsv,.json,.ndjson,.jsonl,.geojson,.yaml,.yml,.xml,.diff,.patch,.srt,.vtt,.toml,.ini,.cfg,.conf,.env,.properties,.dockerignore,.dockerfile,.gitignore,.tf,.tfvars,.hcl,.cmake,.bazel,.bzl,.gradle,.sbt,.graphql,.gql,.proto,.thrift,.cypher,.rq,.html,.htm,.css,.scss,.sass,.less,.js,.mjs,.cjs,.jsx,.ts,.tsx,.svelte,.vue,.astro,.py,.pyi,.pyw,.c,.h,.cpp,.cxx,.cc,.hpp,.hxx,.cs,.swift,.rs,.go,.mod,.sum,.java,.kt,.kts,.scala,.sc,.groovy,.dart,.zig,.nim,.nims,.v,.r,.rmd,.jl,.ml,.mli,.fs,.fsx,.fsi,.hs,.lhs,.sh,.bash,.zsh,.fish,.ps1,.pl,.lua,.rb,.php,.tcl,.m,.mm,.asm,.s,.sv,.svh,.vhdl,.vhd,.sol,.move,.cairo,.clj,.cljs,.cljc,.edn,.ex,.exs,.erl,.hrl,.sql" multiple hidden>
+          <input type="file" id="nice-ai-file-input" accept="image/*,audio/*,video/*,application/pdf,text/*,application/rtf,application/json,application/xml,application/yaml,application/graphql,.txt,.md,.markdown,.mdx,.rtf,.log,.rst,.org,.adoc,.asciidoc,.tex,.bib,.csv,.tsv,.json,.ndjson,.jsonl,.geojson,.yaml,.yml,.xml,.diff,.patch,.srt,.vtt,.toml,.ini,.cfg,.conf,.env,.properties,.dockerignore,.dockerfile,.gitignore,.tf,.tfvars,.hcl,.cmake,.bazel,.bzl,.gradle,.sbt,.graphql,.gql,.proto,.thrift,.cypher,.rq,.html,.htm,.css,.scss,.sass,.less,.js,.mjs,.cjs,.jsx,.ts,.tsx,.svelte,.vue,.astro,.py,.pyi,.pyw,.c,.h,.cpp,.cxx,.cc,.hpp,.hxx,.cs,.swift,.rs,.go,.mod,.sum,.java,.kt,.kts,.scala,.sc,.groovy,.dart,.zig,.nim,.nims,.r,.rmd,.jl,.ml,.mli,.fs,.fsx,.fsi,.hs,.lhs,.sh,.bash,.zsh,.fish,.ps1,.pl,.lua,.rb,.php,.tcl,.m,.mm,.asm,.s,.sv,.svh,.vhdl,.vhd,.sol,.move,.cairo,.clj,.cljs,.cljc,.edn,.ex,.exs,.erl,.hrl,.sql,.mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.opus,.weba,.mp4,.mov,.m4v,.webm,.mkv,.mpeg,.mpg,.avi,.3gp,.3g2,.wmv,.flv" multiple hidden>
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
