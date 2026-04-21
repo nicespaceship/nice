@@ -330,7 +330,7 @@ const BlueprintsView = (() => {
 
         <div id="bp-activated-wrap"></div>
 
-        <div class="tcg-grid bp-view-${_viewMode}" id="bp-grid">
+        <div class="blueprint-grid bp-view-${_viewMode}" id="bp-grid">
           <!-- rendered by JS -->
         </div>
       </div>
@@ -385,14 +385,14 @@ const BlueprintsView = (() => {
         ? _toggleHTML(isActive, bp.id, 'bp-skin-btn')
         : `<button class="c-btn bp-skin-btn bp-purchase" data-id="${bp.id}">Buy ${priceFmt}</button>`;
       const previewBtn = !isActive ? `<button class="c-btn bp-skin-preview-btn" data-id="${bp.id}">Preview</button>` : '';
-      const copyPreview = bp.copy?.nav ? Object.entries(bp.copy.nav).slice(0, 4).map(([k,v]) => `<p class="tcg-cap" style="font-size:10px;opacity:0.7">${k} → ${_esc(v)}</p>`).join('') : '';
-      return `<div class="tcg-card bp-card-clickable skin-card" data-id="${bp.id}" data-type="skin" data-tags="${(bp.tags||[]).join(',')}">
-        <div class="tcg-name-bar"><span class="tcg-name">${_esc(bp.name)}</span><span class="tcg-rarity" style="color:#f59e0b">LEGENDARY</span></div>
-        <div class="tcg-art"><div class="tcg-art-serial" title="Serial: ${serial.code}"><span class="tcg-serial-code">${serial.code}</span></div><div class="tcg-art-class"><span class="tcg-serial-code" style="color:#f59e0b;border:1px solid #f59e0b">SKIN</span></div>${_pa(bp.name, bp.preview_colors || ['#080808','#ffffff','#888'], serial)}</div>
-        <div class="tcg-marquee"><div class="tcg-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
-        <div class="tcg-text-box"><p class="tcg-flavor">"${_esc(bp.flavor)}"</p>${copyPreview}</div>
-        <div class="tcg-stats"><div class="tcg-stat"><span class="tcg-stat-val">${Object.keys(bp.copy?.nav || {}).length}</span><span class="tcg-stat-lbl">LABELS</span></div><div class="tcg-stat"><span class="tcg-stat-val">${(bp.copy?.ranks || []).length}</span><span class="tcg-stat-lbl">RANKS</span></div><div class="tcg-stat"><span class="tcg-stat-val">${bp.effect ? '1' : '0'}</span><span class="tcg-stat-lbl">FX</span></div><div class="tcg-stat"><span class="tcg-stat-val">${priceFmt}</span><span class="tcg-stat-lbl">COST</span></div></div>
-        <div class="tcg-actions">${previewBtn}${actionBtn}</div>
+      const copyPreview = bp.copy?.nav ? Object.entries(bp.copy.nav).slice(0, 4).map(([k,v]) => `<p class="blueprint-card-cap" style="font-size:10px;opacity:0.7">${k} → ${_esc(v)}</p>`).join('') : '';
+      return `<div class="blueprint-card blueprint-clickable skin-card" data-id="${bp.id}" data-type="skin" data-tags="${(bp.tags||[]).join(',')}">
+        <div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(bp.name)}</span><span class="blueprint-card-rarity" style="color:#f59e0b">LEGENDARY</span></div>
+        <div class="blueprint-card-art"><div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div><div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:#f59e0b;border:1px solid #f59e0b">SKIN</span></div>${_pa(bp.name, bp.preview_colors || ['#080808','#ffffff','#888'], serial)}</div>
+        <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
+        <div class="blueprint-card-text-box"><p class="blueprint-card-flavor">"${_esc(bp.flavor)}"</p>${copyPreview}</div>
+        <div class="blueprint-card-stats"><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${Object.keys(bp.copy?.nav || {}).length}</span><span class="blueprint-card-stat-lbl">LABELS</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${(bp.copy?.ranks || []).length}</span><span class="blueprint-card-stat-lbl">RANKS</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${bp.effect ? '1' : '0'}</span><span class="blueprint-card-stat-lbl">FX</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${priceFmt}</span><span class="blueprint-card-stat-lbl">COST</span></div></div>
+        <div class="blueprint-card-actions">${previewBtn}${actionBtn}</div>
       </div>`;
     }
 
@@ -414,9 +414,9 @@ const BlueprintsView = (() => {
       } else {
         deployBtn = `<button class="c-btn bp-deploy-ship-btn" data-id="${bp.id}">Deploy</button>`;
       }
-      const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'bp-card-clickable' });
+      const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'blueprint-clickable' });
       const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">COMMUNITY</span>' : '';
-      return `<div class="bp-card-wrap">${scopeBadge}${rendered}<div class="bp-card-buttons">${deployBtn}</div></div>`;
+      return `<div class="blueprint-card-wrap">${scopeBadge}${rendered}<div class="blueprint-card-buttons">${deployBtn}</div></div>`;
     }
 
     // ── Agent Blueprint Card ──
@@ -433,9 +433,9 @@ const BlueprintsView = (() => {
       connectBtn = `<button class="c-btn bp-connect-btn ${isConn ? 'connected' : ''}" data-id="${bp.id}" data-integration="${integrationId}">${isConn ? '&#10003; Connected' : '&#9741; Connect'}</button>`;
     }
 
-    const rendered = CR.render('agent', 'full', bp, { clickClass: 'bp-card-clickable' });
+    const rendered = CR.render('agent', 'full', bp, { clickClass: 'blueprint-clickable' });
     const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">COMMUNITY</span>' : '';
-    return `<div class="bp-card-wrap">${scopeBadge}${rendered}${connectBtn ? `<div class="bp-card-buttons">${connectBtn}</div>` : ''}</div>`;
+    return `<div class="blueprint-card-wrap">${scopeBadge}${rendered}${connectBtn ? `<div class="blueprint-card-buttons">${connectBtn}</div>` : ''}</div>`;
   }
 
   /* ── List-row renderer (horizontal row with key info) ── */
@@ -480,7 +480,7 @@ const BlueprintsView = (() => {
     const actClass = isActivated ? ' bpl-activated' : '';
     const showAction = type !== 'agent';
 
-    return `<div class="bpl-row bp-card-clickable" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}">
+    return `<div class="bpl-row blueprint-clickable" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}">
       <span class="bpl-rarity" style="background:${dotColor}">${dotLabel}</span>
       <span class="bpl-name">${name}</span>
       <span class="bpl-cat">${cat}</span>
@@ -502,10 +502,10 @@ const BlueprintsView = (() => {
     if (!grid) return;
 
     // Update grid class for view mode
-    grid.className = 'tcg-grid bp-view-' + _viewMode;
+    grid.className = 'blueprint-grid bp-view-' + _viewMode;
 
     if (!blueprints.length) {
-      grid.className = 'tcg-grid bp-view-empty';
+      grid.className = 'blueprint-grid bp-view-empty';
       grid.innerHTML = `
         <div class="app-empty">
           <svg class="app-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -688,7 +688,7 @@ const BlueprintsView = (() => {
 
     // Card click → open drawer for ALL types, shift+click → compare mode
     // Activated spaceships → mission prompt instead of drawer
-    container.querySelectorAll('.bp-card-clickable').forEach(card => {
+    container.querySelectorAll('.blueprint-clickable').forEach(card => {
       card.style.cursor = 'pointer';
       card.addEventListener('click', (e) => {
         if (e.target.closest('.bp-deploy-btn') || e.target.closest('.bp-nice-btn') || e.target.closest('.bp-configure-btn') || e.target.closest('.bp-contact-btn') || e.target.closest('.bp-connect-btn') || e.target.closest('.bp-skin-btn') || e.target.closest('.bp-skin-preview-btn') || e.target.closest('.bpl-action-btn') || e.target.closest('.bp-hangar-add-btn')) return;
@@ -941,7 +941,7 @@ const BlueprintsView = (() => {
       }
       return `<div class="bp-activated-section">
         <h3 class="bp-activated-title">${label} <span class="bp-activated-count">${items.length}</span></h3>
-        <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
+        <div class="bp-activated-grid blueprint-grid bp-view-${_viewMode}">${cardsHTML}</div>
       </div>`;
     };
 
@@ -1031,7 +1031,7 @@ const BlueprintsView = (() => {
       }
       return `<div class="bp-activated-section">
         <h3 class="bp-activated-title">${label} <span class="bp-activated-count">${items.length}</span></h3>
-        <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
+        <div class="bp-activated-grid blueprint-grid bp-view-${_viewMode}">${cardsHTML}</div>
       </div>`;
     };
 
@@ -2272,9 +2272,9 @@ const BlueprintsView = (() => {
     _drawerBpIndex = _drawerBpList.indexOf(bpId);
 
     // Highlight selected card
-    document.querySelectorAll('.bp-card-selected').forEach(c => c.classList.remove('bp-card-selected'));
+    document.querySelectorAll('.blueprint-selected').forEach(c => c.classList.remove('blueprint-selected'));
     const card = document.querySelector(`[data-id="${CSS.escape(bpId)}"]`);
-    if (card) card.classList.add('bp-card-selected');
+    if (card) card.classList.add('blueprint-selected');
 
     let drawer = document.getElementById('bp-drawer');
     let overlay = document.getElementById('bp-drawer-overlay');
@@ -2307,7 +2307,7 @@ const BlueprintsView = (() => {
     const overlay = document.getElementById('bp-drawer-overlay');
     if (drawer) drawer.classList.remove('open');
     if (overlay) overlay.classList.remove('open');
-    document.querySelectorAll('.bp-card-selected').forEach(c => c.classList.remove('bp-card-selected'));
+    document.querySelectorAll('.blueprint-selected').forEach(c => c.classList.remove('blueprint-selected'));
     _drawerBpId = null;
     _unbindDrawerKeyboard();
   }
@@ -2387,15 +2387,15 @@ const BlueprintsView = (() => {
 
     // Hero card — clone the actual catalog card for exact match
     let heroHTML = '';
-    const sourceCard = document.querySelector(`.tcg-card[data-id="${CSS.escape(bp.id)}"]`);
+    const sourceCard = document.querySelector(`.blueprint-card[data-id="${CSS.escape(bp.id)}"]`);
     if (sourceCard) {
       const clone = sourceCard.cloneNode(true);
       // Remove interactive classes and actions from clone
-      clone.classList.remove('bp-card-clickable', 'bp-card-selected');
+      clone.classList.remove('blueprint-clickable', 'blueprint-selected');
       clone.style.pointerEvents = 'none';
       clone.style.margin = '0';
       clone.style.cursor = 'default';
-      const actions = clone.querySelector('.tcg-actions');
+      const actions = clone.querySelector('.blueprint-card-actions');
       if (actions) actions.remove();
       heroHTML = clone.outerHTML;
     } else if (type === 'skin') {
@@ -2403,7 +2403,7 @@ const BlueprintsView = (() => {
     } else if (CR) {
       heroHTML = CR.render(type, 'full', bp, {});
     } else {
-      heroHTML = `<div class="tcg-card" style="pointer-events:none"><div class="tcg-name-bar"><span class="tcg-name">${_esc(bp.name)}</span></div></div>`;
+      heroHTML = `<div class="blueprint-card" style="pointer-events:none"><div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(bp.name)}</span></div></div>`;
     }
 
     // Stats
@@ -2590,7 +2590,7 @@ const BlueprintsView = (() => {
       ? Blueprints.isShipActivated(bp.id)
       : Blueprints.isAgentActivated(bp.id);
     if (isActivated) {
-      const heroCard = drawer.querySelector('.tcg-card');
+      const heroCard = drawer.querySelector('.blueprint-card');
       if (heroCard) {
         heroCard.style.cursor = 'pointer';
         heroCard.style.pointerEvents = 'auto';
@@ -2867,7 +2867,7 @@ const BlueprintsView = (() => {
       if (!found) return '';
       const { bp, type } = found;
       const CR = typeof CardRenderer !== 'undefined' ? CardRenderer : null;
-      const cardHTML = CR ? CR.render(type, 'full', bp, {}) : `<div class="tcg-card"><div class="tcg-name-bar"><span class="tcg-name">${_esc(bp.name)}</span></div></div>`;
+      const cardHTML = CR ? CR.render(type, 'full', bp, {}) : `<div class="blueprint-card"><div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(bp.name)}</span></div></div>`;
 
       // Build stat rows for comparison
       const statsHTML = _renderDrawerStats(bp, type);
@@ -3107,7 +3107,7 @@ const BlueprintsView = (() => {
 
     // Small delay to let grid render, then open drawer
     setTimeout(() => {
-      const card = document.querySelector(`.tcg-card[data-id="${CSS.escape(bpId)}"]`);
+      const card = document.querySelector(`.blueprint-card[data-id="${CSS.escape(bpId)}"]`);
       if (card) {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }

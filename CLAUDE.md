@@ -199,11 +199,11 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 ### How to apply a token
 ```css
 /* Correct */
-.bp-card-title { font-size: var(--text-lg); font-weight: var(--fw-bold); line-height: var(--lh-snug); }
+.blueprint-tile-title { font-size: var(--text-lg); font-weight: var(--fw-bold); line-height: var(--lh-snug); }
 .eyebrow        { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-caps); font-weight: var(--fw-bold); }
 
 /* Wrong — raw values */
-.bp-card-title { font-size: 1.2rem; font-weight: 700; }
+.blueprint-tile-title { font-size: 1.2rem; font-weight: 700; }
 .eyebrow        { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; }
 ```
 
@@ -253,7 +253,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `ModelIntel` | `model-intel.js` | Learns optimal models from mission history |
 | `Blueprints` | `blueprints.js` | Blueprint catalog with Supabase sync + sharing |
 | `BlueprintMarkdown` | `blueprint-markdown.js` | Markdown rendering for blueprint descriptions |
-| `CardRenderer` | `card-renderer.js` | Unified TCG card template renderer |
+| `CardRenderer` | `card-renderer.js` | Unified blueprint card template renderer |
 | `CrewDesigner` | `crew-designer.js` | Describe → Design → Deploy crew builder |
 | `CrewGenerator` | `crew-generator.js` | AI crew generation from business description |
 | `CommunityPublish` | `community-publish.js` | Community publish/unpublish modal + submission state wiring shared by agent + spaceship detail views |

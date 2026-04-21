@@ -252,7 +252,7 @@ const SpaceshipsView = (() => {
         return CardRenderer.render('spaceship', 'full', shipData, {
           actions,
           footer,
-          clickClass: 'fleet-card bp-card-clickable'
+          clickClass: 'fleet-card blueprint-clickable'
         });
       }
 
@@ -295,7 +295,7 @@ const SpaceshipsView = (() => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const bpId = btn.dataset.id;
-        const name = btn.closest('.tcg-card')?.querySelector('.tcg-name-bar span')?.textContent || 'this spaceship';
+        const name = btn.closest('.blueprint-card')?.querySelector('.blueprint-card-name-bar span')?.textContent || 'this spaceship';
         const doDeactivate = async () => {
           if (typeof Blueprints !== 'undefined') await Blueprints.deactivateShip(bpId);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Spaceship Removed', message: 'Blueprint removed from your fleet.', type: 'info' });

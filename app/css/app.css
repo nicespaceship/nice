@@ -341,9 +341,9 @@
   font-weight: 600; letter-spacing: -0.02em;
 }
 [data-theme="office"]::after { display: none !important; }
-[data-theme="office"] .tcg-card::before { display: none; }
-[data-theme="office"] .tcg-serial-code { background: transparent; color: var(--nav-bg-dk); backdrop-filter: none; }
-[data-theme="office"] .tcg-art-role .tcg-serial-code { color: var(--nav-bg-dk); }
+[data-theme="office"] .blueprint-card::before { display: none; }
+[data-theme="office"] .blueprint-card-serial-code { background: transparent; color: var(--nav-bg-dk); backdrop-filter: none; }
+[data-theme="office"] .blueprint-card-art-role .blueprint-card-serial-code { color: var(--nav-bg-dk); }
 
 /* Header button hovers — invert to white bg on dark header */
 /* Header controls sit on the navy --nav-bg-dk band — read as white by default */
@@ -401,7 +401,7 @@
 }
 
 /* ── Mecha panel cards — armor plate segmentation ── */
-[data-theme="gundam"] .tcg-card {
+[data-theme="gundam"] .blueprint-card {
   border: 25px solid #3a3f55;
   background: linear-gradient(160deg, #1e2030 0%, #252838 100%);
   box-shadow:
@@ -411,7 +411,7 @@
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
 }
 /* Panel line accent on card top */
-[data-theme="gundam"] .tcg-card::before {
+[data-theme="gundam"] .blueprint-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -420,31 +420,31 @@
   z-index: 1;
 }
 /* Rarity border colors */
-[data-theme="gundam"] .tcg-card[data-rarity="common"]    { border-color: #e8e8e8; }
-[data-theme="gundam"] .tcg-card[data-rarity="rare"]      { border-color: #2b4e8c; }
-[data-theme="gundam"] .tcg-card[data-rarity="epic"]      { border-color: #7b3fa0; }
-[data-theme="gundam"] .tcg-card[data-rarity="legendary"] { border-color: #d4a017; }
-[data-theme="gundam"] .tcg-card[data-rarity="mythic"]    { border-color: #c0392b; }
+[data-theme="gundam"] .blueprint-card[data-rarity="common"]    { border-color: #e8e8e8; }
+[data-theme="gundam"] .blueprint-card[data-rarity="rare"]      { border-color: #2b4e8c; }
+[data-theme="gundam"] .blueprint-card[data-rarity="epic"]      { border-color: #7b3fa0; }
+[data-theme="gundam"] .blueprint-card[data-rarity="legendary"] { border-color: #d4a017; }
+[data-theme="gundam"] .blueprint-card[data-rarity="mythic"]    { border-color: #c0392b; }
 
 /* Mini cards — angular cut corners */
-[data-theme="gundam"] .tcg-card-mini {
+[data-theme="gundam"] .blueprint-card-mini {
   border: 2px solid #3a3f55;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
   background: linear-gradient(160deg, #1e2030, #252838);
 }
-[data-theme="gundam"] .tcg-card-mini[data-rarity="common"]    { border-color: #e8e8e8; }
-[data-theme="gundam"] .tcg-card-mini[data-rarity="rare"]      { border-color: #2b4e8c; }
-[data-theme="gundam"] .tcg-card-mini[data-rarity="epic"]      { border-color: #7b3fa0; }
-[data-theme="gundam"] .tcg-card-mini[data-rarity="legendary"] { border-color: #d4a017; }
-[data-theme="gundam"] .tcg-card-mini[data-rarity="mythic"]    { border-color: #c0392b; }
+[data-theme="gundam"] .blueprint-card-mini[data-rarity="common"]    { border-color: #e8e8e8; }
+[data-theme="gundam"] .blueprint-card-mini[data-rarity="rare"]      { border-color: #2b4e8c; }
+[data-theme="gundam"] .blueprint-card-mini[data-rarity="epic"]      { border-color: #7b3fa0; }
+[data-theme="gundam"] .blueprint-card-mini[data-rarity="legendary"] { border-color: #d4a017; }
+[data-theme="gundam"] .blueprint-card-mini[data-rarity="mythic"]    { border-color: #c0392b; }
 
 /* ── Card name bar — V-fin accent stripe ── */
-[data-theme="gundam"] .tcg-card .name-bar {
+[data-theme="gundam"] .blueprint-card .name-bar {
   background: linear-gradient(180deg, #252838 0%, #1e2030 100%);
   border-bottom: 2px solid #3a3f55;
   position: relative;
 }
-[data-theme="gundam"] .tcg-card .name-bar::after {
+[data-theme="gundam"] .blueprint-card .name-bar::after {
   content: '';
   position: absolute;
   bottom: -2px; left: 50%;
@@ -712,8 +712,8 @@
 }
 
 /* ── Rarity badges ── */
-[data-theme="gundam"] .tcg-mini-badge,
-[data-theme="gundam"] .bp-card-rarity {
+[data-theme="gundam"] .blueprint-card-mini-badge,
+[data-theme="gundam"] .blueprint-tile-rarity {
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
   text-transform: uppercase;
@@ -782,7 +782,7 @@
 [data-theme="16bit"] span, [data-theme="16bit"] label,
 [data-theme="16bit"] td, [data-theme="16bit"] th { font-size: 10px; line-height: 2; }
 [data-theme="16bit"] .topbar-tab { font-size: var(--text-sm); padding: 8px 14px; }
-[data-theme="16bit"] .bp-card-name { font-size: 11px; }
+[data-theme="16bit"] .blueprint-tile-name { font-size: 11px; }
 [data-theme="16bit"] .bridge-hero-name { font-size: 14px; }
 [data-theme="16bit"] .side-header .app-brand-text { font-size: 8px; }
 [data-theme="16bit"] .bridge-hero-meta { font-size: 9px; }
@@ -805,7 +805,7 @@
 }
 
 /* ── Card treatment — SNES item card with pixel bevel ── */
-[data-theme="16bit"] .tcg-card {
+[data-theme="16bit"] .blueprint-card {
   border-width: 10px !important;
   border-style: solid !important;
   box-shadow:
@@ -815,32 +815,32 @@
   background: #16213e;
 }
 /* Rarity border colors on full cards */
-[data-theme="16bit"] .tcg-card[data-rarity="common"]    { border-color: #94a3b8 !important; }
-[data-theme="16bit"] .tcg-card[data-rarity="rare"]      { border-color: #6366f1 !important; }
-[data-theme="16bit"] .tcg-card[data-rarity="epic"]      { border-color: #a855f7 !important; }
-[data-theme="16bit"] .tcg-card[data-rarity="legendary"] { border-color: #f59e0b !important; }
-[data-theme="16bit"] .tcg-card[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
-[data-theme="16bit"] .tcg-card .name-bar {
+[data-theme="16bit"] .blueprint-card[data-rarity="common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
+[data-theme="16bit"] .blueprint-card .name-bar {
   font-size: 8px;
   background: linear-gradient(180deg, #2e4068, #1f2b47);
   border-bottom: 3px solid #e2b714;
   padding: 8px;
   text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
 }
-[data-theme="16bit"] .tcg-card .text-box {
+[data-theme="16bit"] .blueprint-card .text-box {
   background: #0d1526;
   border: 2px solid #2e4068;
   box-shadow: inset 2px 2px 0 rgba(0,0,0,0.4);
   margin: 4px;
   padding: 8px;
 }
-[data-theme="16bit"] .tcg-card .stats {
+[data-theme="16bit"] .blueprint-card .stats {
   background: linear-gradient(180deg, #1f2b47, #16213e);
   border-top: 3px solid #e2b714;
 }
 
 /* Mini cards — smaller pixel bevel, rarity border from inline style */
-[data-theme="16bit"] .tcg-card-mini {
+[data-theme="16bit"] .blueprint-card-mini {
   border-width: 6px !important;
   border-style: solid !important;
   box-shadow:
@@ -849,18 +849,18 @@
     4px 4px 0 rgba(0,0,0,0.5);
   background: #16213e;
 }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="common"]    { border-color: #94a3b8 !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="rare"]      { border-color: #6366f1 !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="epic"]      { border-color: #a855f7 !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="legendary"] { border-color: #f59e0b !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
 /* Case-insensitive fallback (some paths use title case) */
-[data-theme="16bit"] .tcg-card-mini[data-rarity="Common"]    { border-color: #94a3b8 !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="Rare"]      { border-color: #6366f1 !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="Epic"]      { border-color: #a855f7 !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="Legendary"] { border-color: #f59e0b !important; }
-[data-theme="16bit"] .tcg-card-mini[data-rarity="Mythic"]    { border-color: #ff2d55 !important; }
-[data-theme="16bit"] .tcg-mini-name {
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="Common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="Rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="Epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="Legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .blueprint-card-mini[data-rarity="Mythic"]    { border-color: #ff2d55 !important; }
+[data-theme="16bit"] .blueprint-card-mini-name {
   font-size: 8px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
@@ -1102,8 +1102,8 @@
 }
 
 /* ── Rarity badges — chunky pixel labels ── */
-[data-theme="16bit"] .tcg-mini-badge,
-[data-theme="16bit"] .bp-card-rarity {
+[data-theme="16bit"] .blueprint-card-mini-badge,
+[data-theme="16bit"] .blueprint-tile-rarity {
   font-family: 'Press Start 2P', cursive;
   font-size: 7px;
   letter-spacing: 0.5px;
@@ -1213,24 +1213,24 @@
 }
 
 /* ── Card stats — RPG stat block ── */
-[data-theme="16bit"] .tcg-card .stat-label,
-[data-theme="16bit"] .tcg-card .stat-val {
+[data-theme="16bit"] .blueprint-card .stat-label,
+[data-theme="16bit"] .blueprint-card .stat-val {
   font-family: 'Press Start 2P', cursive;
   font-size: 9px;
 }
-[data-theme="16bit"] .bp-card-stat-label {
+[data-theme="16bit"] .blueprint-tile-stat-label {
   font-size: 7px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-[data-theme="16bit"] .bp-card-stat-val {
+[data-theme="16bit"] .blueprint-tile-stat-val {
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
   color: #e2b714;
 }
 
 /* ── Marquee ticker ── */
-[data-theme="16bit"] .tcg-card .marquee {
+[data-theme="16bit"] .blueprint-card .marquee {
   background: #0d1526;
   border-top: 2px solid #2e4068;
   border-bottom: 2px solid #2e4068;
@@ -1854,8 +1854,8 @@
   box-shadow:0 0 40px rgba(165,180,252,.15), 0 0 80px rgba(165,180,252,.05);
 }
 .schematic-card-slot { cursor:pointer; }
-.schematic-wired .schematic-card-slot .tcg-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:var(--panel-bg, transparent); position:relative; justify-content:center; align-items:center; overflow:visible; transition:box-shadow .3s, border-color .3s; }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .tcg-card-mini { box-shadow:0 0 20px rgba(165,180,252,.15), 0 0 40px rgba(165,180,252,.05); }
+.schematic-wired .schematic-card-slot .blueprint-card-mini { margin:0; font-size:.58em; width:80px; border-width:3px; border-radius:8px; padding:0; gap:0; background:var(--panel-bg, transparent); position:relative; justify-content:center; align-items:center; overflow:visible; transition:box-shadow .3s, border-color .3s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .blueprint-card-mini { box-shadow:0 0 20px rgba(165,180,252,.15), 0 0 40px rgba(165,180,252,.05); }
 /* Rotating outer border with notch */
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty) {
   position:relative;
@@ -1917,12 +1917,12 @@
 @keyframes sch-border-spin {
   to { --sch-notch-angle: 360deg; }
 }
-.schematic-wired .schematic-card-slot .tcg-mini-art {
+.schematic-wired .schematic-card-slot .blueprint-card-mini-art {
   background:transparent; position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%); z-index:0; width:76px; height:76px;
 }
 /* Power node aura — concentric vectorized rings like the reactor core */
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-mini-art::before {
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .blueprint-card-mini-art::before {
   content:''; position:absolute; top:50%; left:50%;
   width:50px; height:50px;
   transform:translate(-50%,-50%);
@@ -1933,7 +1933,7 @@
   animation:sch-aura-ring1 3s ease-in-out infinite;
   pointer-events:none;
 }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-mini-art::after {
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .blueprint-card-mini-art::after {
   content:''; position:absolute; top:50%; left:50%;
   width:30px; height:30px;
   transform:translate(-50%,-50%);
@@ -1956,17 +1956,17 @@
   0%, 100% { translate:0 0; }
   50%      { translate:0 -3px; }
 }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-card-mini {
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty) .blueprint-card-mini {
   animation:sch-card-float 4s ease-in-out infinite;
 }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(2) .tcg-card-mini { animation-delay:-1s; }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(3) .tcg-card-mini { animation-delay:-2s; }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(4) .tcg-card-mini { animation-delay:-3s; }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(5) .tcg-card-mini { animation-delay:-0.5s; }
-.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(6) .tcg-card-mini { animation-delay:-2.5s; }
-.schematic-wired .schematic-card-slot .tcg-card-mini { flex-direction:column; }
-.schematic-wired .schematic-card-slot .tcg-mini-name { position:relative; z-index:1; order:-1; margin-bottom:auto; padding-top:4px; white-space:normal; overflow:visible; text-overflow:unset; max-width:74px; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.schematic-wired .schematic-card-slot .tcg-mini-badge { position:relative; z-index:1; margin-top:auto; margin-bottom:4px; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(2) .blueprint-card-mini { animation-delay:-1s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(3) .blueprint-card-mini { animation-delay:-2s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(4) .blueprint-card-mini { animation-delay:-3s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(5) .blueprint-card-mini { animation-delay:-0.5s; }
+.schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(6) .blueprint-card-mini { animation-delay:-2.5s; }
+.schematic-wired .schematic-card-slot .blueprint-card-mini { flex-direction:column; }
+.schematic-wired .schematic-card-slot .blueprint-card-mini-name { position:relative; z-index:1; order:-1; margin-bottom:auto; padding-top:4px; white-space:normal; overflow:visible; text-overflow:unset; max-width:74px; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.schematic-wired .schematic-card-slot .blueprint-card-mini-badge { position:relative; z-index:1; margin-top:auto; margin-bottom:4px; }
 .schematic-wired .schematic-empty-slot { background:transparent; }
 .schematic-card-empty { opacity:.6; cursor:default; }
 .schematic-empty-slot { padding:4px 6px; border:3px solid rgba(255,60,60,.4); border-radius:var(--radius); background:transparent; aspect-ratio:5/7; width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow:0 0 8px rgba(255,60,60,.1); }
@@ -1996,17 +1996,17 @@
 }
 
 @media (prefers-reduced-motion:reduce) {
-  .schematic-wired .schematic-card-slot .tcg-card-mini,
+  .schematic-wired .schematic-card-slot .blueprint-card-mini,
   .schematic-wired .schematic-card-slot::after,
-  .schematic-wired .tcg-mini-art::before,
-  .schematic-wired .tcg-mini-art::after { animation:none !important; }
+  .schematic-wired .blueprint-card-mini-art::before,
+  .schematic-wired .blueprint-card-mini-art::after { animation:none !important; }
 }
 
 /* Crew Split (crew list + blueprint card side by side) */
 .bridge-crew-split { display:flex; gap:16px; width:100%; align-items:start; }
 .bridge-crew-list { flex:1; min-width:0; }
 .bridge-crew-card { flex:0 0 auto; width:500px; padding:0 25px; }
-.bridge-crew-card .tcg-card { margin:0; width:100%; pointer-events:none; }
+.bridge-crew-card .blueprint-card { margin:0; width:100%; pointer-events:none; }
 @media (max-width:600px) {
   .bridge-crew-split { flex-direction:column; }
   .bridge-crew-card { width:100%; padding:0; order:-1; }
@@ -2489,39 +2489,39 @@
 ───────────────────────────────────────────────────────────────── */
 .agents-wrap { max-width:var(--width-full); margin:0 auto; }
 .agents-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
-.agents-grid .tcg-card { margin:0; }
+.agents-grid .blueprint-card { margin:0; }
 /* Agent view modes */
 .agents-view-modes { display:flex; gap:4px; align-items:center; }
 .agents-view-full  { grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
 .agents-view-grid  { grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:12px; }
 .agents-view-compact { grid-template-columns:1fr; gap:8px; }
-.agents-view-compact .tcg-card-compact { flex-direction:row; align-items:center; gap:16px; padding:10px 16px; border:1px solid var(--border); border-radius:25px; background:var(--panel-bg); }
-.agents-view-compact .tcg-compact-art { width:48px; height:48px; flex:0 0 48px; }
-.agents-view-compact .tcg-compact-art svg { width:100%; height:100%; }
-.agents-view-compact .tcg-compact-body { flex:1; display:flex; flex-direction:row; align-items:center; gap:16px; min-width:0; }
-.agents-view-compact .tcg-compact-header { flex:0 0 auto; min-width:140px; display:flex; align-items:center; gap:8px; }
-.agents-view-compact .tcg-compact-name { font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
-.agents-view-compact .tcg-compact-meta { flex:1; display:flex; flex-wrap:wrap; gap:4px; align-items:center; min-width:0; }
-.agents-view-compact .tcg-compact-tools { flex:1; display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
-.agents-view-compact .tcg-compact-stats { flex:0 0 auto; display:flex; gap:10px; align-items:center; }
-.agents-view-compact .tcg-compact-actions { flex:0 0 auto; display:flex; gap:6px; align-items:center; }
+.agents-view-compact .blueprint-card-compact { flex-direction:row; align-items:center; gap:16px; padding:10px 16px; border:1px solid var(--border); border-radius:25px; background:var(--panel-bg); }
+.agents-view-compact .blueprint-card-compact-art { width:48px; height:48px; flex:0 0 48px; }
+.agents-view-compact .blueprint-card-compact-art svg { width:100%; height:100%; }
+.agents-view-compact .blueprint-card-compact-body { flex:1; display:flex; flex-direction:row; align-items:center; gap:16px; min-width:0; }
+.agents-view-compact .blueprint-card-compact-header { flex:0 0 auto; min-width:140px; display:flex; align-items:center; gap:8px; }
+.agents-view-compact .blueprint-card-compact-name { font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
+.agents-view-compact .blueprint-card-compact-meta { flex:1; display:flex; flex-wrap:wrap; gap:4px; align-items:center; min-width:0; }
+.agents-view-compact .blueprint-card-compact-tools { flex:1; display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+.agents-view-compact .blueprint-card-compact-stats { flex:0 0 auto; display:flex; gap:10px; align-items:center; }
+.agents-view-compact .blueprint-card-compact-actions { flex:0 0 auto; display:flex; gap:6px; align-items:center; }
 .agents-view-mini  { grid-template-columns:repeat(auto-fill, minmax(80px, 1fr)); gap:8px; }
 /* Spaceship view modes — .fleet-grid prefix for specificity over base .fleet-grid rule */
 .fleet-grid.ships-view-full    { grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
 .fleet-grid.ships-view-grid    { grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:12px; }
 .fleet-grid.ships-view-compact { grid-template-columns:1fr; gap:8px; }
-.fleet-grid.ships-view-compact .tcg-card-compact { flex-direction:row; align-items:center; gap:16px; padding:10px 16px; border:1px solid var(--border); border-radius:25px; background:var(--panel-bg); }
-.fleet-grid.ships-view-compact .tcg-compact-art { width:48px; height:48px; flex:0 0 48px; }
-.fleet-grid.ships-view-compact .tcg-compact-art svg { width:100%; height:100%; }
-.fleet-grid.ships-view-compact .tcg-compact-body { flex:1; display:flex; flex-direction:row; align-items:center; gap:16px; min-width:0; }
-.fleet-grid.ships-view-compact .tcg-compact-header { flex:0 0 auto; min-width:140px; display:flex; align-items:center; gap:8px; }
-.fleet-grid.ships-view-compact .tcg-compact-name { font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
-.fleet-grid.ships-view-compact .tcg-compact-meta { flex:1; display:flex; flex-wrap:wrap; gap:4px; align-items:center; min-width:0; }
-.fleet-grid.ships-view-compact .tcg-compact-stats { flex:0 0 auto; display:flex; gap:10px; align-items:center; }
-.fleet-grid.ships-view-compact .tcg-compact-actions { flex:0 0 auto; display:flex; gap:6px; align-items:center; }
+.fleet-grid.ships-view-compact .blueprint-card-compact { flex-direction:row; align-items:center; gap:16px; padding:10px 16px; border:1px solid var(--border); border-radius:25px; background:var(--panel-bg); }
+.fleet-grid.ships-view-compact .blueprint-card-compact-art { width:48px; height:48px; flex:0 0 48px; }
+.fleet-grid.ships-view-compact .blueprint-card-compact-art svg { width:100%; height:100%; }
+.fleet-grid.ships-view-compact .blueprint-card-compact-body { flex:1; display:flex; flex-direction:row; align-items:center; gap:16px; min-width:0; }
+.fleet-grid.ships-view-compact .blueprint-card-compact-header { flex:0 0 auto; min-width:140px; display:flex; align-items:center; gap:8px; }
+.fleet-grid.ships-view-compact .blueprint-card-compact-name { font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
+.fleet-grid.ships-view-compact .blueprint-card-compact-meta { flex:1; display:flex; flex-wrap:wrap; gap:4px; align-items:center; min-width:0; }
+.fleet-grid.ships-view-compact .blueprint-card-compact-stats { flex:0 0 auto; display:flex; gap:10px; align-items:center; }
+.fleet-grid.ships-view-compact .blueprint-card-compact-actions { flex:0 0 auto; display:flex; gap:6px; align-items:center; }
 .fleet-grid.ships-view-mini    { grid-template-columns:repeat(auto-fill, minmax(80px, 1fr)); gap:8px; }
-/* When old card classes are combined with .tcg-card, the TCG card styles must win */
-.tcg-card.agent-card, .tcg-card.fleet-card, .tcg-card.ms-card {
+/* When old card classes are combined with .blueprint-card, the TCG card styles must win */
+.blueprint-card.agent-card, .blueprint-card.fleet-card, .blueprint-card.ms-card {
   border:15px solid var(--border); border-radius:25px; padding:0; background:var(--panel-bg);
 }
 .agent-card {
@@ -2967,7 +2967,7 @@
 ───────────────────────────────────────────────────────────────── */
 .fleet-wrap { max-width:var(--width-full); margin:0 auto; }
 .fleet-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
-.fleet-grid .tcg-card { margin:0; }
+.fleet-grid .blueprint-card { margin:0; }
 .fleet-card {
   display:flex; flex-direction:column; gap:10px;
   padding:16px; border:var(--border-width) solid var(--border);
@@ -3065,10 +3065,10 @@
 .bp-view-btn.active { color:var(--accent); background:var(--panel-bg); box-shadow:0 0 4px var(--glow, rgba(255,255,255,.05)); }
 
 /* ── Card Wrapper (card + buttons below) ── */
-.bp-card-wrap { display:flex; flex-direction:column; position:relative; }
-.bp-card-wrap .tcg-card { margin:0; }
-.bp-card-buttons { display:flex; gap:6px; padding:8px 4px; align-items:center; }
-.bp-card-buttons .c-btn { flex:1; font-size:.62rem; padding:5px 10px; justify-content:center; }
+.blueprint-card-wrap { display:flex; flex-direction:column; position:relative; }
+.blueprint-card-wrap .blueprint-card { margin:0; }
+.blueprint-card-buttons { display:flex; gap:6px; padding:8px 4px; align-items:center; }
+.blueprint-card-buttons .c-btn { flex:1; font-size:.62rem; padding:5px 10px; justify-content:center; }
 
 /* Small "COMMUNITY" badge on cards for scope='community' blueprints.
    Sits top-left over the card so it reads at a glance without competing
@@ -3118,15 +3118,15 @@
 /* ── View Modes ── */
 .bp-view-card { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:26px; }
 .bp-view-compact { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; }
-.bp-view-compact .tcg-card { font-size:.85em; }
-.bp-view-compact .tcg-text-box { display:none; }
-.bp-view-compact .tcg-marquee { display:none; }
-.bp-view-compact .tcg-stats { gap:4px; }
-.bp-view-compact .tcg-stat { padding:4px 0; }
-.bp-view-compact .tcg-stat-val { font-size:.6rem; }
-.bp-view-compact .tcg-stat-lbl { font-size:.4rem; }
-.bp-view-compact .tcg-actions { padding:6px 8px; }
-.bp-view-compact .tcg-actions .c-btn { font-size:.55rem; padding:4px 8px; }
+.bp-view-compact .blueprint-card { font-size:.85em; }
+.bp-view-compact .blueprint-card-text-box { display:none; }
+.bp-view-compact .blueprint-card-marquee { display:none; }
+.bp-view-compact .blueprint-card-stats { gap:4px; }
+.bp-view-compact .blueprint-card-stat { padding:4px 0; }
+.bp-view-compact .blueprint-card-stat-val { font-size:.6rem; }
+.bp-view-compact .blueprint-card-stat-lbl { font-size:.4rem; }
+.bp-view-compact .blueprint-card-actions { padding:6px 8px; }
+.bp-view-compact .blueprint-card-actions .c-btn { font-size:.55rem; padding:4px 8px; }
 
 /* ── Empty State ── */
 .bp-view-empty { display:flex; justify-content:center; align-items:center; }
@@ -3154,41 +3154,41 @@
 .bpl-action-btn.bpl-activated:hover { border-color:#8b3a3a; color:#cc5555; background:transparent; }
 
 .bp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:26px; }
-.bp-card-wrap { min-width:0; }
-.bp-card {
+.blueprint-card-wrap { min-width:0; }
+.blueprint-tile {
   display:flex; flex-direction:column;
   border:var(--border-width) solid var(--border); background:var(--panel-bg);
   border-radius:var(--radius); overflow:hidden;
   transition:border-color .2s, box-shadow .2s, transform .15s;
 }
-.bp-card:hover { border-color:var(--border-hi); box-shadow:var(--glow); transform:translateY(-2px); }
-.bp-card-top {
+.blueprint-tile:hover { border-color:var(--border-hi); box-shadow:var(--glow); transform:translateY(-2px); }
+.blueprint-tile-top {
   display:flex; align-items:center; justify-content:space-between;
   padding:12px 14px 0; gap:8px;
 }
-.bp-card-icon { width:28px; height:28px; color:var(--accent); flex-shrink:0; }
+.blueprint-tile-icon { width:28px; height:28px; color:var(--accent); flex-shrink:0; }
 .bp-rarity {
   font-family:var(--font-b); font-size:.48rem; letter-spacing:.12em;
   padding:2px 8px; border:1px solid; text-transform:uppercase;
 }
-.bp-card-body { padding:10px 14px; flex:1; display:flex; flex-direction:column; gap:4px; }
-.bp-card-name { font-family:var(--font-b); font-size:.88rem; font-weight:700; margin:0; }
-.bp-card-cat { font-family:var(--font-b); font-size:.5rem; letter-spacing:.12em; color:var(--text-muted); text-transform:uppercase; }
-.bp-card-desc { font-family:var(--font-b); font-size:.74rem; color:var(--text-muted); line-height:1.5; margin:4px 0 0 0; }
-.bp-card-footer {
+.blueprint-tile-body { padding:10px 14px; flex:1; display:flex; flex-direction:column; gap:4px; }
+.blueprint-tile-name { font-family:var(--font-b); font-size:.88rem; font-weight:700; margin:0; }
+.blueprint-tile-cat { font-family:var(--font-b); font-size:.5rem; letter-spacing:.12em; color:var(--text-muted); text-transform:uppercase; }
+.blueprint-tile-desc { font-family:var(--font-b); font-size:.74rem; color:var(--text-muted); line-height:1.5; margin:4px 0 0 0; }
+.blueprint-tile-footer {
   display:flex; align-items:center; justify-content:space-between;
   padding:10px 14px; border-top:1px solid var(--border); gap:8px;
 }
-.bp-card-stats { display:flex; flex-direction:column; gap:2px; }
+.blueprint-tile-stats { display:flex; flex-direction:column; gap:2px; }
 .bp-stars { font-size:.72rem; }
 .bp-star { color:var(--text-dim); }
 .bp-star.filled { color:var(--color-warning); }
 .bp-star.half { color:var(--color-warning); opacity:.6; }
 .bp-downloads { font-family:var(--font-b); font-size:.48rem; letter-spacing:.08em; color:var(--text-dim); }
-.bp-card-actions { display:flex; align-items:center; gap:6px; }
+.blueprint-tile-actions { display:flex; align-items:center; gap:6px; }
 .bp-nice-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; }
 .bp-cert-btn { flex:0 0 auto !important; aspect-ratio:1; min-width:0; display:inline-flex; align-items:center; justify-content:center; }
-.bp-card-highlight { animation:bp-highlight 2s ease-out; }
+.blueprint-highlight { animation:bp-highlight 2s ease-out; }
 @keyframes bp-highlight { 0%,30% { box-shadow:0 0 0 3px var(--accent), var(--glow-hi); } 100% { box-shadow:none; } }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -3513,7 +3513,7 @@
 .settings-range-group { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 
 /* ── Blueprint Preview + Ratings ── */
-.bp-card-clickable { cursor:pointer; }
+.blueprint-clickable { cursor:pointer; }
 .bp-preview-rarity { font-size:.78rem; font-weight:600; margin-bottom:.5rem; }
 .bp-preview-desc { font-size:.82rem; color:var(--text-muted); line-height:1.5; margin-bottom:1rem; }
 .bp-preview-stats { display:flex; align-items:center; gap:1rem; margin-bottom:1rem; }
@@ -4200,7 +4200,7 @@
   .builder-row { grid-template-columns:1fr; }
   .task-row-main { flex-wrap:wrap; }
   .bp-grid { grid-template-columns:1fr; }
-  .tcg-card { width:100% !important; }
+  .blueprint-card { width:100% !important; }
   /* Bridge toolbar — compact spacing on mobile */
   .bp-type-tabs { margin-bottom:6px !important; }
   .bp-sub-tabs { gap:4px; margin-bottom:4px; }
@@ -4217,7 +4217,7 @@
   .bp-prog-track { max-width:100px; }
   .bp-activated-wrap { margin-bottom:4px; }
   /* Disable hover lift on touch devices */
-  .tcg-card:hover, .tcg-card-grid:hover, .tcg-card-compact:hover { transform:none !important; }
+  .blueprint-card:hover, .blueprint-card-grid:hover, .blueprint-card-compact:hover { transform:none !important; }
   .bp-view-card, .bp-view-compact { grid-template-columns:1fr !important; }
   .bpl-row { grid-template-columns:24px 1fr .6fr auto; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
@@ -4311,7 +4311,7 @@
 .ms-title { font-size:1.2rem; font-weight:700; }
 .ms-sub { font-size:.62rem; color:var(--text-muted, #888); margin-top:.25rem; }
 .ms-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
-.ms-grid .tcg-card { margin:0; }
+.ms-grid .blueprint-card { margin:0; }
 .ms-card { padding:1.25rem; border-radius:var(--radius, 8px); border:1px solid var(--border, #222); background:var(--panel-bg, #111); display:flex; flex-direction:column; gap:.75rem; transition:border-color .2s; }
 .ms-card:hover { border-color:var(--accent, #fff); }
 .ms-card-hdr { display:flex; justify-content:space-between; align-items:flex-start; gap:.5rem; }
@@ -5035,7 +5035,7 @@
   gap:10px; padding-bottom:8px; scroll-snap-type:x mandatory;
 }
 .mc-dock-scroll.mc-dock-dock > * { flex:0 0 auto; scroll-snap-align:start; }
-.mc-dock-scroll .tcg-card { margin:0; }
+.mc-dock-scroll .blueprint-card { margin:0; }
 .mc-dock-scroll::-webkit-scrollbar { height:4px; }
 .mc-dock-scroll::-webkit-scrollbar-track { background:transparent; }
 .mc-dock-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
@@ -5062,34 +5062,34 @@
 .mc-bp-mini-rarity { font-size:.5rem; padding:1px 6px; border-radius:var(--radius); color:#fff; text-transform:uppercase; letter-spacing:.03em; }
 
 /* Grid TCG Card (medium density) */
-.tcg-card-grid {
+.blueprint-card-grid {
   border:15px solid var(--border); border-radius:25px; padding:0;
   background:var(--panel-bg); display:flex; flex-direction:column;
   align-items:center; gap:6px; cursor:grab; user-select:none;
   transition:border-color .15s, box-shadow .15s, opacity .2s;
   aspect-ratio:5/7; overflow:hidden;
 }
-.tcg-card-grid:hover { border-color:var(--accent); box-shadow:0 0 8px var(--glow,rgba(255,255,255,.05)); }
-.tcg-card-grid.assigned { opacity:.35; cursor:default; pointer-events:none; }
-.tcg-card-grid.mc-bp-selected { border-color:var(--accent); box-shadow:0 0 12px var(--glow,rgba(255,255,255,.1)); }
-.tcg-grid-art { width:70px; height:70px; }
-.tcg-grid-art svg { width:100%; height:100%; }
-.tcg-grid-info { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; }
-.tcg-grid-name { font-family:var(--font-b); font-size:.7rem; font-weight:700; color:var(--text); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-.tcg-grid-badge { font-size:.5rem; padding:1px 6px; border:1px solid; border-radius:var(--radius); text-transform:uppercase; letter-spacing:.04em; font-family:var(--font-b); }
-.tcg-grid-stats { display:flex; gap:6px; justify-content:center; font-size:.5rem; color:var(--text-muted); font-family:var(--font-b); }
-.tcg-grid-stats b { color:var(--text); }
+.blueprint-card-grid:hover { border-color:var(--accent); box-shadow:0 0 8px var(--glow,rgba(255,255,255,.05)); }
+.blueprint-card-grid.assigned { opacity:.35; cursor:default; pointer-events:none; }
+.blueprint-card-grid.mc-bp-selected { border-color:var(--accent); box-shadow:0 0 12px var(--glow,rgba(255,255,255,.1)); }
+.blueprint-card-grid-art { width:70px; height:70px; }
+.blueprint-card-grid-art svg { width:100%; height:100%; }
+.blueprint-card-grid-info { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; }
+.blueprint-card-grid-name { font-family:var(--font-b); font-size:.7rem; font-weight:700; color:var(--text); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.blueprint-card-grid-badge { font-size:.5rem; padding:1px 6px; border:1px solid; border-radius:var(--radius); text-transform:uppercase; letter-spacing:.04em; font-family:var(--font-b); }
+.blueprint-card-grid-stats { display:flex; gap:6px; justify-content:center; font-size:.5rem; color:var(--text-muted); font-family:var(--font-b); }
+.blueprint-card-grid-stats b { color:var(--text); }
 
 /* Compact card dock overrides */
-.mc-dock-scroll .tcg-card-compact { cursor:grab; user-select:none; }
-.mc-dock-scroll .tcg-card-compact:hover { border-color:var(--accent); }
-.mc-dock-scroll .tcg-card-compact.assigned { opacity:.35; cursor:default; pointer-events:none; }
-.mc-dock-scroll .tcg-card-compact.mc-bp-selected { border-color:var(--accent); box-shadow:0 0 12px var(--glow,rgba(255,255,255,.1)); }
+.mc-dock-scroll .blueprint-card-compact { cursor:grab; user-select:none; }
+.mc-dock-scroll .blueprint-card-compact:hover { border-color:var(--accent); }
+.mc-dock-scroll .blueprint-card-compact.assigned { opacity:.35; cursor:default; pointer-events:none; }
+.mc-dock-scroll .blueprint-card-compact.mc-bp-selected { border-color:var(--accent); box-shadow:0 0 12px var(--glow,rgba(255,255,255,.1)); }
 
 /* Mini card dock overrides */
-.mc-dock-scroll .tcg-card-mini { cursor:grab; user-select:none; }
-.mc-dock-scroll .tcg-card-mini:hover { border-color:var(--accent); }
-.mc-dock-scroll .tcg-card-mini.mc-bp-selected { border-color:var(--accent); box-shadow:0 0 12px var(--glow,rgba(255,255,255,.1)); }
+.mc-dock-scroll .blueprint-card-mini { cursor:grab; user-select:none; }
+.mc-dock-scroll .blueprint-card-mini:hover { border-color:var(--accent); }
+.mc-dock-scroll .blueprint-card-mini.mc-bp-selected { border-color:var(--accent); box-shadow:0 0 12px var(--glow,rgba(255,255,255,.1)); }
 
 /* ═══════════════════════════════════════════════════════════════════
    OUTBOX — Content Calendar + Queue
@@ -5451,7 +5451,7 @@
 
 /* ── Skin Cards ── */
 .skin-card { border-color: #f59e0b !important; }
-.skin-card .tcg-name-bar { background: rgba(245,158,11,0.15); }
+.skin-card .blueprint-card-name-bar { background: rgba(245,158,11,0.15); }
 .bp-skin-btn.bp-purchase { background: #f59e0b; color: #000; font-weight: 600; }
 .bp-skin-btn.bp-activated { background: var(--accent); color: var(--bg); }
 
@@ -5462,7 +5462,7 @@
 .bp-toggle-switch .toggle-knob { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .2s; }
 .bp-toggle-switch.on .toggle-knob { left:20px; }
 .bp-toggle-switch:hover .toggle-track { filter:brightness(1.3); }
-[data-skin] .tcg-card { border-color: var(--skin-card-border, var(--border)); }
+[data-skin] .blueprint-card { border-color: var(--skin-card-border, var(--border)); }
 [data-skin="matrix-reloaded"] .mc-schematic-hud { opacity: 0.8; }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -5911,23 +5911,23 @@
 .agent-prog-badge { font-family:var(--font-b); font-size:.6rem; padding:1px 6px; border-radius:var(--radius); background:var(--accent2,#6366f1); color:#fff; opacity:.85; margin-left:auto; }
 
 /* Card rarity borders — applied via data-rarity attribute */
-.tcg-card[data-rarity="common"],
-.tcg-card-grid[data-rarity="common"],
-.tcg-card-compact[data-rarity="common"]    { border-color:var(--border); }
-.tcg-card[data-rarity="rare"],
-.tcg-card-grid[data-rarity="rare"],
-.tcg-card-compact[data-rarity="rare"]      { border-color:#b6dff9; box-shadow:0 0 8px rgba(182,223,249,.15); }
-.tcg-card[data-rarity="epic"],
-.tcg-card-grid[data-rarity="epic"],
-.tcg-card-compact[data-rarity="epic"]      { border-color:#a855f7; box-shadow:0 0 12px rgba(168,85,247,.15); }
+.blueprint-card[data-rarity="common"],
+.blueprint-card-grid[data-rarity="common"],
+.blueprint-card-compact[data-rarity="common"]    { border-color:var(--border); }
+.blueprint-card[data-rarity="rare"],
+.blueprint-card-grid[data-rarity="rare"],
+.blueprint-card-compact[data-rarity="rare"]      { border-color:#b6dff9; box-shadow:0 0 8px rgba(182,223,249,.15); }
+.blueprint-card[data-rarity="epic"],
+.blueprint-card-grid[data-rarity="epic"],
+.blueprint-card-compact[data-rarity="epic"]      { border-color:#a855f7; box-shadow:0 0 12px rgba(168,85,247,.15); }
 /* Legendary — gold border with subtle glimmer */
 @keyframes legendary-glimmer {
   0%, 100% { box-shadow:0 0 16px rgba(245,158,11,.2); }
   50%      { box-shadow:0 0 22px rgba(245,158,11,.35), 0 0 4px rgba(251,191,36,.15); }
 }
-.tcg-card[data-rarity="legendary"],
-.tcg-card-grid[data-rarity="legendary"],
-.tcg-card-compact[data-rarity="legendary"] {
+.blueprint-card[data-rarity="legendary"],
+.blueprint-card-grid[data-rarity="legendary"],
+.blueprint-card-compact[data-rarity="legendary"] {
   border-color:var(--color-warning);
   box-shadow:0 0 16px rgba(245,158,11,.2);
   animation:legendary-glimmer 4s ease-in-out infinite;
@@ -5961,9 +5961,9 @@
   83%  { color:#a82dff; border-color:#a82dff; text-shadow:0 0 6px #a82dff40; }
   100% { color:#ff2d55; border-color:#ff2d55; text-shadow:0 0 6px #ff2d5540; }
 }
-.tcg-card[data-rarity="mythic"],
-.tcg-card-grid[data-rarity="mythic"],
-.tcg-card-compact[data-rarity="mythic"] {
+.blueprint-card[data-rarity="mythic"],
+.blueprint-card-grid[data-rarity="mythic"],
+.blueprint-card-compact[data-rarity="mythic"] {
   animation: mythic-rgb-border 6s linear infinite;
 }
 /* Mythic badge — applied directly via class (no inline style conflict) */
@@ -5973,28 +5973,28 @@
 }
 
 /* Card tier borders — spaceship cards (data-tier) */
-.tcg-card[data-tier="scout"],
-.tcg-card-grid[data-tier="scout"],
-.tcg-card-compact[data-tier="scout"]             { border-color:#94a3b830; }
-.tcg-card[data-tier="frigate"],
-.tcg-card-grid[data-tier="frigate"],
-.tcg-card-compact[data-tier="frigate"]           { border-color:var(--color-success)40; box-shadow:0 0 8px rgba(34,197,94,.12); }
-.tcg-card[data-tier="cruiser"],
-.tcg-card-grid[data-tier="cruiser"],
-.tcg-card-compact[data-tier="cruiser"]           { border-color:var(--color-info)40; box-shadow:0 0 8px rgba(99,102,241,.12); }
-.tcg-card[data-tier="dreadnought"],
-.tcg-card-grid[data-tier="dreadnought"],
-.tcg-card-compact[data-tier="dreadnought"]       { border-color:#a855f740; box-shadow:0 0 12px rgba(168,85,247,.15); }
-.tcg-card[data-tier="flagship"],
-.tcg-card-grid[data-tier="flagship"],
-.tcg-card-compact[data-tier="flagship"]          { border-color:var(--color-warning)40; box-shadow:0 0 16px rgba(245,158,11,.2); }
+.blueprint-card[data-tier="scout"],
+.blueprint-card-grid[data-tier="scout"],
+.blueprint-card-compact[data-tier="scout"]             { border-color:#94a3b830; }
+.blueprint-card[data-tier="frigate"],
+.blueprint-card-grid[data-tier="frigate"],
+.blueprint-card-compact[data-tier="frigate"]           { border-color:var(--color-success)40; box-shadow:0 0 8px rgba(34,197,94,.12); }
+.blueprint-card[data-tier="cruiser"],
+.blueprint-card-grid[data-tier="cruiser"],
+.blueprint-card-compact[data-tier="cruiser"]           { border-color:var(--color-info)40; box-shadow:0 0 8px rgba(99,102,241,.12); }
+.blueprint-card[data-tier="dreadnought"],
+.blueprint-card-grid[data-tier="dreadnought"],
+.blueprint-card-compact[data-tier="dreadnought"]       { border-color:#a855f740; box-shadow:0 0 12px rgba(168,85,247,.15); }
+.blueprint-card[data-tier="flagship"],
+.blueprint-card-grid[data-tier="flagship"],
+.blueprint-card-compact[data-tier="flagship"]          { border-color:var(--color-warning)40; box-shadow:0 0 16px rgba(245,158,11,.2); }
 
 
 /* ── Runtime tier pill (FREE / PRO) — model_profile.tier indicator ──
    Shown on full + grid cards so users can tell at a glance which agents
    cost tokens before activating. Semantic colors override the active
    theme so the meaning is consistent: green = free, gold = premium. */
-.tcg-tier-pill {
+.blueprint-card-tier-pill {
   display:inline-block;
   font-size:.55rem;
   line-height:1;
@@ -6009,42 +6009,42 @@
   margin-left:4px;
   flex-shrink:0;
 }
-.tcg-tier-pill--free    { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,.08); }
-.tcg-tier-pill--premium { color:#f59e0b; border-color:#f59e0b; background:rgba(245,158,11,.08); }
+.blueprint-card-tier-pill--free    { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,.08); }
+.blueprint-card-tier-pill--premium { color:#f59e0b; border-color:#f59e0b; background:rgba(245,158,11,.08); }
 /* Office (light) theme — dark hues for WCAG AA contrast against #e8e8ec.
    Default green/gold are 1.7:1 against the light background — both fail.
    green-800 and amber-800 reach 5.3:1 and 6.6:1 respectively. */
-[data-theme="office"] .tcg-tier-pill--free    { color:#166534; border-color:#166534; background:rgba(22,101,52,.10); }
-[data-theme="office"] .tcg-tier-pill--premium { color:#92400e; border-color:#92400e; background:rgba(146,64,14,.10); }
+[data-theme="office"] .blueprint-card-tier-pill--free    { color:#166534; border-color:#166534; background:rgba(22,101,52,.10); }
+[data-theme="office"] .blueprint-card-tier-pill--premium { color:#92400e; border-color:#92400e; background:rgba(146,64,14,.10); }
 
 
 /* ── Card enhancements — glass, shimmer, glow, hover lift ── */
 
 
 /* Hover elevation + glow */
-.tcg-card { transition:transform .25s ease, box-shadow .25s ease; min-width:0; perspective:800px; }
-.tcg-card:hover {
+.blueprint-card { transition:transform .25s ease, box-shadow .25s ease; min-width:0; perspective:800px; }
+.blueprint-card:hover {
   transform:translateY(-6px);
   box-shadow:0 12px 40px rgba(0,0,0,.4), 0 0 20px rgba(0,0,0,.2);
 }
-.tcg-card-grid { transition:transform .25s ease, box-shadow .25s ease; }
-.tcg-card-grid:hover {
+.blueprint-card-grid { transition:transform .25s ease, box-shadow .25s ease; }
+.blueprint-card-grid:hover {
   transform:translateY(-6px) scale(1.02);
   box-shadow:0 12px 40px rgba(0,0,0,.4);
 }
 
 /* Rarity glow on hover — amplify the existing glow */
-.tcg-card[data-rarity="rare"]:hover,
-.tcg-card-grid[data-rarity="rare"]:hover      { box-shadow:0 0 20px rgba(182,223,249,.25), 0 12px 40px rgba(0,0,0,.3); }
-.tcg-card[data-rarity="epic"]:hover,
-.tcg-card-grid[data-rarity="epic"]:hover       { box-shadow:0 0 24px rgba(168,85,247,.3), 0 12px 40px rgba(0,0,0,.3); }
-.tcg-card[data-rarity="legendary"]:hover,
-.tcg-card-grid[data-rarity="legendary"]:hover  { box-shadow:0 0 30px rgba(245,158,11,.4), 0 12px 40px rgba(0,0,0,.3); }
+.blueprint-card[data-rarity="rare"]:hover,
+.blueprint-card-grid[data-rarity="rare"]:hover      { box-shadow:0 0 20px rgba(182,223,249,.25), 0 12px 40px rgba(0,0,0,.3); }
+.blueprint-card[data-rarity="epic"]:hover,
+.blueprint-card-grid[data-rarity="epic"]:hover       { box-shadow:0 0 24px rgba(168,85,247,.3), 0 12px 40px rgba(0,0,0,.3); }
+.blueprint-card[data-rarity="legendary"]:hover,
+.blueprint-card-grid[data-rarity="legendary"]:hover  { box-shadow:0 0 30px rgba(245,158,11,.4), 0 12px 40px rgba(0,0,0,.3); }
 
 
 /* Foil overlay — static gold sheen for legendary, animated gradient for mythic */
-.tcg-card[data-rarity="legendary"]::before,
-.tcg-card-grid[data-rarity="legendary"]::before {
+.blueprint-card[data-rarity="legendary"]::before,
+.blueprint-card-grid[data-rarity="legendary"]::before {
   content:'';
   position:absolute;
   inset:0;
@@ -6053,8 +6053,8 @@
   pointer-events:none;
   z-index:9;
 }
-.tcg-card[data-rarity="mythic"]::before,
-.tcg-card-grid[data-rarity="mythic"]::before {
+.blueprint-card[data-rarity="mythic"]::before,
+.blueprint-card-grid[data-rarity="mythic"]::before {
   content:'';
   position:absolute;
   inset:0;
@@ -6078,7 +6078,7 @@
 }
 
 /* Art halo ring — pulsing ring in rarity color */
-.tcg-card .tcg-art::after {
+.blueprint-card .blueprint-card-art::after {
   content:'';
   position:absolute;
   top:50%; left:50%;
@@ -6091,7 +6091,7 @@
   z-index:5;
   transition:opacity .3s;
 }
-.tcg-card:hover .tcg-art::after {
+.blueprint-card:hover .blueprint-card-art::after {
   opacity:.15;
   animation:card-art-pulse 2s ease-in-out infinite;
 }
@@ -6101,33 +6101,33 @@
 }
 
 /* Rarity-specific art halo colors */
-.tcg-card[data-rarity="rare"] .tcg-art::after { border-color:#b6dff9; }
-.tcg-card[data-rarity="epic"] .tcg-art::after { border-color:#a855f7; }
-.tcg-card[data-rarity="legendary"] .tcg-art::after { border-color:var(--color-warning); }
-.tcg-card[data-rarity="mythic"] .tcg-art::after { border-color:#ff2d55; }
+.blueprint-card[data-rarity="rare"] .blueprint-card-art::after { border-color:#b6dff9; }
+.blueprint-card[data-rarity="epic"] .blueprint-card-art::after { border-color:#a855f7; }
+.blueprint-card[data-rarity="legendary"] .blueprint-card-art::after { border-color:var(--color-warning); }
+.blueprint-card[data-rarity="mythic"] .blueprint-card-art::after { border-color:#ff2d55; }
 
-/* 3D tilt on hover (CSS-only subtle version — perspective merged into main .tcg-card rule) */
-.tcg-card:hover .tcg-name-bar { transform:translateZ(10px); }
-.tcg-card:hover .tcg-stats { transform:translateZ(8px); }
+/* 3D tilt on hover (CSS-only subtle version — perspective merged into main .blueprint-card rule) */
+.blueprint-card:hover .blueprint-card-name-bar { transform:translateZ(10px); }
+.blueprint-card:hover .blueprint-card-stats { transform:translateZ(8px); }
 
 /* Compact cards — hover glow */
-.tcg-card-compact { transition:transform .2s, box-shadow .2s, border-color .2s; }
-.tcg-card-compact:hover {
+.blueprint-card-compact { transition:transform .2s, box-shadow .2s, border-color .2s; }
+.blueprint-card-compact:hover {
   transform:translateY(-2px);
   box-shadow:0 6px 20px rgba(0,0,0,.3);
 }
-.tcg-card-compact[data-rarity="rare"]:hover { box-shadow:0 0 12px rgba(182,223,249,.2), 0 6px 20px rgba(0,0,0,.3); }
-.tcg-card-compact[data-rarity="epic"]:hover { box-shadow:0 0 16px rgba(168,85,247,.25), 0 6px 20px rgba(0,0,0,.3); }
-.tcg-card-compact[data-rarity="legendary"]:hover { box-shadow:0 0 20px rgba(245,158,11,.3), 0 6px 20px rgba(0,0,0,.3); }
+.blueprint-card-compact[data-rarity="rare"]:hover { box-shadow:0 0 12px rgba(182,223,249,.2), 0 6px 20px rgba(0,0,0,.3); }
+.blueprint-card-compact[data-rarity="epic"]:hover { box-shadow:0 0 16px rgba(168,85,247,.25), 0 6px 20px rgba(0,0,0,.3); }
+.blueprint-card-compact[data-rarity="legendary"]:hover { box-shadow:0 0 20px rgba(245,158,11,.3), 0 6px 20px rgba(0,0,0,.3); }
 
 /* Reduced motion */
 @media (prefers-reduced-motion:reduce) {
-  .tcg-card[data-rarity="legendary"],
-  .tcg-card-grid[data-rarity="legendary"],
-  .tcg-card-compact[data-rarity="legendary"] { animation:none !important; }
-  .tcg-card[data-rarity="mythic"]::before,
-  .tcg-card-grid[data-rarity="mythic"]::before { animation:none !important; }
-  .tcg-card:hover .tcg-art::after { animation:none !important; }
+  .blueprint-card[data-rarity="legendary"],
+  .blueprint-card-grid[data-rarity="legendary"],
+  .blueprint-card-compact[data-rarity="legendary"] { animation:none !important; }
+  .blueprint-card[data-rarity="mythic"]::before,
+  .blueprint-card-grid[data-rarity="mythic"]::before { animation:none !important; }
+  .blueprint-card:hover .blueprint-card-art::after { animation:none !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -7852,8 +7852,8 @@
   display:flex; flex-direction:column; gap:16px;
 }
 .bp-drawer-hero { display:flex; justify-content:center; }
-.bp-drawer-hero .tcg-card { pointer-events:none; max-width:280px; width:100%; }
-.bp-drawer-hero .tcg-actions { display:none; }
+.bp-drawer-hero .blueprint-card { pointer-events:none; max-width:280px; width:100%; }
+.bp-drawer-hero .blueprint-card-actions { display:none; }
 .bp-drawer-section-title {
   font-size:.68rem; font-family:var(--font-b); text-transform:uppercase;
   letter-spacing:.1em; color:var(--text-muted); margin:0 0 8px 0;
@@ -7908,11 +7908,11 @@
 .bp-drawer-related-scroll {
   display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;
 }
-.bp-drawer-related-scroll .tcg-card {
+.bp-drawer-related-scroll .blueprint-card {
   flex-shrink:0; width:180px; font-size:.75em; cursor:pointer;
   pointer-events:auto;
 }
-.bp-drawer-related-scroll .tcg-card:hover {
+.bp-drawer-related-scroll .blueprint-card:hover {
   border-color:var(--accent); box-shadow:var(--glow);
 }
 .bp-drawer-overlay {
@@ -7922,8 +7922,8 @@
 .bp-drawer-overlay.open { display:block; }
 
 /* Card selected highlight (for drawer + compare) */
-.tcg-card.bp-card-selected,
-.bpl-row.bp-card-selected {
+.blueprint-card.blueprint-selected,
+.bpl-row.blueprint-selected {
   border-color:var(--accent) !important;
   box-shadow:0 0 12px color-mix(in srgb, var(--accent) 30%, transparent) !important;
 }
@@ -7945,7 +7945,7 @@
   border-radius:var(--radius); font-weight:700; font-size:.7rem;
 }
 .bp-compare-bar-actions { display:flex; gap:8px; }
-.tcg-card.bp-compare-selected,
+.blueprint-card.bp-compare-selected,
 .bpl-row.bp-compare-selected {
   border-color:var(--accent2, var(--accent)) !important;
   box-shadow:0 0 0 2px color-mix(in srgb, var(--accent2, var(--accent)) 40%, transparent) !important;
@@ -7972,7 +7972,7 @@
   border-radius:var(--radius); padding:14px; display:flex;
   flex-direction:column; gap:10px; overflow:hidden;
 }
-.bp-compare-col .tcg-card { pointer-events:none; font-size:.8em; }
+.bp-compare-col .blueprint-card { pointer-events:none; font-size:.8em; }
 .bp-compare-stat-rows { display:flex; flex-direction:column; gap:2px; }
 .bp-compare-stat-row {
   display:flex; justify-content:space-between; font-size:.72rem;
@@ -8071,7 +8071,7 @@
 .bp-compare-caps {
   display:flex; flex-wrap:wrap; gap:4px;
 }
-.bp-compare-card .tcg-card { pointer-events:none; font-size:.8em; }
+.bp-compare-card .blueprint-card { pointer-events:none; font-size:.8em; }
 
 /* ── Hangar Item Name ── */
 .bp-hangar-item-name {

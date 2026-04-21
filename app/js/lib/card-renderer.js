@@ -324,7 +324,7 @@ const CardRenderer = (() => {
     const nameEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="name"' : '';
     const roleEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="role"' : '';
 
-    const clickClass = opts.clickClass || 'bp-card-clickable';
+    const clickClass = opts.clickClass || 'blueprint-clickable';
     const statusDot = opts.statusDot || '';
     const draggable = opts.draggable ? ' draggable="true"' : '';
     const statusAttr = bp.status ? ` data-status="${bp.status}"` : '';
@@ -340,30 +340,30 @@ const CardRenderer = (() => {
       : avatarArt(bp.name, bp.category || bp.role, serial);
 
     // ── ONE template ──
-    return `<div class="tcg-card ${clickClass}" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}${draggable}>
-      <div class="tcg-name-bar">
-        <span class="tcg-name"${nameEditable}>${_esc(displayName)}</span>
-        ${subtitle ? `<span class="tcg-subtitle">${_esc(subtitle)}</span>` : ''}
+    return `<div class="blueprint-card ${clickClass}" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}${draggable}>
+      <div class="blueprint-card-name-bar">
+        <span class="blueprint-card-name"${nameEditable}>${_esc(displayName)}</span>
+        ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
         ${_tierPill(bp)}
         ${statusDot}
       </div>
-      <div class="tcg-art">
-        ${roleLabel ? `<div class="tcg-art-role"><span class="tcg-serial-code"${roleEditable}>${_esc(roleLabel)}</span></div>` : ''}
-        <div class="tcg-art-class"><span class="tcg-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
-        <div class="tcg-art-serial" title="Serial: ${serial.code}"><span class="tcg-serial-code">${serial.code}</span></div>
+      <div class="blueprint-card-art">
+        ${roleLabel ? `<div class="blueprint-card-art-role"><span class="blueprint-card-serial-code"${roleEditable}>${_esc(roleLabel)}</span></div>` : ''}
+        <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
+        <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
         ${artContent}
       </div>
-      <div class="tcg-marquee"><div class="tcg-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
-      <div class="tcg-text-box">
-        <p class="tcg-flavor">"${_esc(flavor)}"</p>
-        ${caps.slice(0,3).map(c => `<p class="tcg-cap">${_esc(c)}</p>`).join('')}
+      <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
+      <div class="blueprint-card-text-box">
+        <p class="blueprint-card-flavor">"${_esc(flavor)}"</p>
+        ${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}
       </div>
-      ${opts.overlay ? `<div class="tcg-overlay">${opts.overlay}</div>` : ''}
-      <div class="tcg-stats">
-        ${statLbls.map((l,i) => `<div class="tcg-stat"><span class="tcg-stat-val">${statVals[i]}</span><span class="tcg-stat-lbl">${l}</span></div>`).join('')}
+      ${opts.overlay ? `<div class="blueprint-card-overlay">${opts.overlay}</div>` : ''}
+      <div class="blueprint-card-stats">
+        ${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}
       </div>
-      ${opts.footer ? `<div class="tcg-footer">${opts.footer}</div>` : ''}
-      ${opts.actions ? `<div class="tcg-actions">${opts.actions}</div>` : ''}
+      ${opts.footer ? `<div class="blueprint-card-footer">${opts.footer}</div>` : ''}
+      ${opts.actions ? `<div class="blueprint-card-actions">${opts.actions}</div>` : ''}
     </div>`;
   }
 
@@ -383,12 +383,12 @@ const CardRenderer = (() => {
       const serial = serialHash(data.id || data.name);
       art = avatarArt(data.name, data.category || data.role, serial);
       badgeHTML = rarity === 'Mythic'
-        ? `<span class="tcg-grid-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
-        : `<span class="tcg-grid-badge" style="color:${rarityColor};border-color:${rarityColor}">${rarity.toUpperCase()}</span>`;
+        ? `<span class="blueprint-card-grid-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
+        : `<span class="blueprint-card-grid-badge" style="color:${rarityColor};border-color:${rarityColor}">${rarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}"`;
       if (data.stats) {
         const lbls = ['SPD','ACC','CAP','PWR'], keys = ['spd','acc','cap','pwr'];
-        statsHTML = `<div class="tcg-grid-stats">${lbls.map((l,i) => `<span><b>${data.stats[keys[i]] || '—'}</b> ${l}</span>`).join('')}</div>`;
+        statsHTML = `<div class="blueprint-card-grid-stats">${lbls.map((l,i) => `<span><b>${data.stats[keys[i]] || '—'}</b> ${l}</span>`).join('')}</div>`;
       }
     } else if (type === 'spaceship') {
       const shipRarity = data.rarity || 'Common';
@@ -396,14 +396,14 @@ const CardRenderer = (() => {
       const serial = serialHash(data.id || data.name, 12);
       const artClassId = _isSpecialShip(data) ? _deriveClassId(data) : 'slot-6';
       art = slotDiagramArt(artClassId, serial);
-      badgeHTML = `<span class="tcg-grid-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
+      badgeHTML = `<span class="blueprint-card-grid-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-bp-id="${data.id}"`;
     }
 
-    return `<div class="tcg-card-grid ${clickClass}" ${dataAttrs}${draggable}>
-      <div class="tcg-grid-art">${art}</div>
-      <div class="tcg-grid-info">
-        <span class="tcg-grid-name">${name}</span>
+    return `<div class="blueprint-card-grid ${clickClass}" ${dataAttrs}${draggable}>
+      <div class="blueprint-card-grid-art">${art}</div>
+      <div class="blueprint-card-grid-info">
+        <span class="blueprint-card-grid-name">${name}</span>
         ${badgeHTML}
         ${_tierPill(data)}
       </div>
@@ -433,25 +433,25 @@ const CardRenderer = (() => {
       const serial = serialHash(data.id || data.name);
       art = avatarArt(data.name, data.category || data.role, serial);
       badgeHTML = rarity === 'Mythic'
-        ? `<span class="tcg-compact-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
-        : `<span class="tcg-compact-badge" style="color:${rarityColor};border-color:${rarityColor}">${rarity.toUpperCase()}</span>`;
+        ? `<span class="blueprint-card-compact-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
+        : `<span class="blueprint-card-compact-badge" style="color:${rarityColor};border-color:${rarityColor}">${rarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}" data-status="${data.status || ''}"`;
 
       const config = data.config || {};
       const roleTags = [data.llm_engine || 'claude-4', data.type || 'Specialist'].filter(Boolean);
-      metaHTML = `<div class="tcg-compact-meta">
+      metaHTML = `<div class="blueprint-card-compact-meta">
         ${roleTags.map(t => `<span class="agent-tag">${_esc(t)}</span>`).join('')}
         ${data.status ? `<span class="agent-tag status-tag-${data.status}">${_esc(data.status)}</span>` : ''}
       </div>`;
       if (config.tools && config.tools.length) {
-        metaHTML += `<div class="tcg-compact-tools">${config.tools.slice(0,3).map(t => `<span class="agent-tool-tag">${_esc(t)}</span>`).join('')}${config.tools.length > 3 ? `<span class="agent-tool-tag">+${config.tools.length - 3}</span>` : ''}</div>`;
+        metaHTML += `<div class="blueprint-card-compact-tools">${config.tools.slice(0,3).map(t => `<span class="agent-tool-tag">${_esc(t)}</span>`).join('')}${config.tools.length > 3 ? `<span class="agent-tool-tag">+${config.tools.length - 3}</span>` : ''}</div>`;
       }
 
       // Stats bar
       const statKeys = data.stats ? ['spd','acc','cap','pwr'] : [];
       if (statKeys.length && data.stats) {
         const lbls = ['SPD','ACC','CAP','PWR'];
-        statsHTML = `<div class="tcg-compact-stats">${lbls.map((l,i) => `<span class="tcg-compact-stat"><b>${data.stats[statKeys[i]] || '—'}</b> ${l}</span>`).join('')}</div>`;
+        statsHTML = `<div class="blueprint-card-compact-stats">${lbls.map((l,i) => `<span class="blueprint-card-compact-stat"><b>${data.stats[statKeys[i]] || '—'}</b> ${l}</span>`).join('')}</div>`;
       }
     } else if (type === 'spaceship') {
       const shipRarity = data.rarity || 'Common';
@@ -459,12 +459,12 @@ const CardRenderer = (() => {
       const serial = serialHash(data.id || data.name, 12);
       const artClassId = _isSpecialShip(data) ? _deriveClassId(data) : 'slot-6';
       art = slotDiagramArt(artClassId, serial);
-      badgeHTML = `<span class="tcg-compact-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
+      badgeHTML = `<span class="blueprint-card-compact-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-status="${data.status || ''}"`;
 
       const members = data._members || [];
       const memberCount = members.length || (data.agent_ids || []).length;
-      metaHTML = `<div class="tcg-compact-meta">
+      metaHTML = `<div class="blueprint-card-compact-meta">
         <span class="agent-tag">${memberCount} agent${memberCount !== 1 ? 's' : ''}</span>
         <span class="agent-tag">${shipRarity}</span>
         ${data.status ? `<span class="agent-tag status-tag-${data.status}">${_esc(data.status)}</span>` : ''}
@@ -477,16 +477,16 @@ const CardRenderer = (() => {
         const vals = isAct
           ? [data.stats.crew || '—', data.stats.slots || '—', deployCount.toLocaleString()]
           : [data.stats.crew || '—'];
-        statsHTML = `<div class="tcg-compact-stats">${lbls.map((l,i) => `<span class="tcg-compact-stat"><b>${vals[i]}</b> ${l}</span>`).join('')}</div>`;
+        statsHTML = `<div class="blueprint-card-compact-stats">${lbls.map((l,i) => `<span class="blueprint-card-compact-stat"><b>${vals[i]}</b> ${l}</span>`).join('')}</div>`;
       }
     }
     const clickClass = opts.clickClass || '';
 
-    return `<div class="tcg-card-compact ${clickClass}" ${dataAttrs}${draggable}>
-      <div class="tcg-compact-art">${art}</div>
-      <div class="tcg-compact-body">
-        <div class="tcg-compact-header">
-          <span class="tcg-compact-name">${name}</span>
+    return `<div class="blueprint-card-compact ${clickClass}" ${dataAttrs}${draggable}>
+      <div class="blueprint-card-compact-art">${art}</div>
+      <div class="blueprint-card-compact-body">
+        <div class="blueprint-card-compact-header">
+          <span class="blueprint-card-compact-name">${name}</span>
           ${badgeHTML}
           ${statusDot}
         </div>
@@ -494,7 +494,7 @@ const CardRenderer = (() => {
         ${statsHTML}
         ${overlay}
       </div>
-      ${actions ? `<div class="tcg-compact-actions">${actions}</div>` : ''}
+      ${actions ? `<div class="blueprint-card-compact-actions">${actions}</div>` : ''}
     </div>`;
   }
 
@@ -526,10 +526,10 @@ const CardRenderer = (() => {
       art = slotDiagramArt(artClassId, serial);
     }
 
-    return `<div class="tcg-card-mini${assigned}" ${dataAttrs}${draggable} style="border-color:${badgeColor}">
-      <span class="tcg-mini-name">${name}</span>
-      <div class="tcg-mini-art">${art}</div>
-      <span class="tcg-mini-badge" style="background:${badgeColor}">${badgeLabel}</span>
+    return `<div class="blueprint-card-mini${assigned}" ${dataAttrs}${draggable} style="border-color:${badgeColor}">
+      <span class="blueprint-card-mini-name">${name}</span>
+      <div class="blueprint-card-mini-art">${art}</div>
+      <span class="blueprint-card-mini-badge" style="background:${badgeColor}">${badgeLabel}</span>
     </div>`;
   }
 
@@ -548,7 +548,7 @@ const CardRenderer = (() => {
     const t = String(tier).toLowerCase();
     if (t !== 'free' && t !== 'premium') return '';
     const label = t === 'premium' ? 'PRO' : 'FREE';
-    return '<span class="tcg-tier-pill tcg-tier-pill--' + t + '" title="' + (t === 'premium' ? 'Premium model — costs tokens' : 'Free model — no token cost') + '">' + label + '</span>';
+    return '<span class="blueprint-card-tier-pill blueprint-card-tier-pill--' + t + '" title="' + (t === 'premium' ? 'Premium model — costs tokens' : 'Free model — no token cost') + '">' + label + '</span>';
   }
 
   /* ── Custom name/role persistence ── */

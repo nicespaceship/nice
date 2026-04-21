@@ -330,7 +330,7 @@
 [data-theme="spaceship"] .nice-ai-chip:hover { border-color: var(--border-hi); color: var(--text); }
 
 /* Schematic */
-[data-theme="spaceship"] .schematic-wired .tcg-card-mini { border-radius: var(--radius); }
+[data-theme="spaceship"] .schematic-wired .blueprint-card-mini { border-radius: var(--radius); }
 
 /* HUD */
 [data-theme="spaceship"] .app-hud-panel {
@@ -604,12 +604,12 @@
 }
 
 /* ── Cards — white, minimal ── */
-[data-theme="robotech"] .tcg-card,
+[data-theme="robotech"] .blueprint-card,
 [data-theme="robotech"] .mcp-catalog-card {
   border:1px solid #e0e0de; border-radius:4px; background:#fff;
   box-shadow:0 1px 3px rgba(0,0,0,0.04); transition:all .2s;
 }
-[data-theme="robotech"] .tcg-card:hover,
+[data-theme="robotech"] .blueprint-card:hover,
 [data-theme="robotech"] .mcp-catalog-card:hover {
   box-shadow:0 4px 16px rgba(0,0,0,0.08); transform:translateY(-1px);
 }
@@ -723,7 +723,7 @@
 [data-theme="robotech"] .nice-ai-chip:hover { border-color:#999; color:#1a1a1a; }
 
 /* ── Schematic ── */
-[data-theme="robotech"] .schematic-wired .tcg-card-mini { border-radius:4px; border-color:#d0d0ce; }
+[data-theme="robotech"] .schematic-wired .blueprint-card-mini { border-radius:4px; border-color:#d0d0ce; }
 [data-theme="robotech"] .c-btn { border-radius:4px; }
 
 /* ── HUD panel ── */
@@ -1469,7 +1469,7 @@
   box-shadow: 0 0 8px rgba(24,160,251,0.15);
 }
 /* Schematic cards — circuit board glow */
-[data-theme="navigator"] .schematic-wired .tcg-card-mini {
+[data-theme="navigator"] .schematic-wired .blueprint-card-mini {
   border-color: rgba(24,160,251,0.3);
   border-radius: 2px;
   box-shadow: 0 0 12px rgba(24,160,251,0.08);
@@ -1668,17 +1668,17 @@
 }
 
 /* ── 5. Card Edge-Lit Borders — TRON circuit lines ── */
-[data-theme="navigator"] .tcg-card {
+[data-theme="navigator"] .blueprint-card {
   border:3px solid rgba(24,160,251,0.25); border-radius:3px;
   background:rgba(2,9,15,0.85);
   position:relative; overflow:hidden;
 }
-[data-theme="navigator"] .tcg-card::before {
+[data-theme="navigator"] .blueprint-card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:1px;
   background:linear-gradient(90deg, transparent 10%, rgba(0,229,255,0.6) 50%, transparent 90%);
   pointer-events:none;
 }
-[data-theme="navigator"] .tcg-card::after {
+[data-theme="navigator"] .blueprint-card::after {
   content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
   background:linear-gradient(90deg, transparent 10%, rgba(0,229,255,0.3) 50%, transparent 90%);
   pointer-events:none;
@@ -1688,7 +1688,7 @@
   0%   { top:-100%; }
   100% { top:200%; }
 }
-[data-theme="navigator"] .tcg-card:hover {
+[data-theme="navigator"] .blueprint-card:hover {
   border-color:rgba(0,229,255,0.4);
   box-shadow:0 0 20px rgba(0,229,255,0.1), inset 0 0 30px rgba(0,229,255,0.02);
 }
@@ -1897,13 +1897,13 @@
   color: rgba(0,255,65,0.6); font-family: 'Fira Code', monospace; font-size: var(--text-xs);
 }
 [data-theme="matrix"] .nice-ai-chip:hover { background: rgba(0,255,65,0.1); color: #00ff41; }
-[data-theme="matrix"] .tcg-card {
+[data-theme="matrix"] .blueprint-card {
   box-shadow: 0 0 20px rgba(0,255,65,0.08); border-color: rgba(0,255,65,0.25);
 }
-[data-theme="matrix"] .tcg-card:hover {
+[data-theme="matrix"] .blueprint-card:hover {
   box-shadow: 0 0 30px rgba(0,255,65,0.15); border-color: rgba(0,255,65,0.5);
 }
-[data-theme="matrix"] .tcg-card .tcg-name-bar {
+[data-theme="matrix"] .blueprint-card .blueprint-card-name-bar {
   text-shadow: 0 0 8px rgba(0,255,65,0.5);
 }
 [data-theme="matrix"] .app-hud-panel { background: rgba(0,4,0,0.95); border-color: rgba(0,255,65,0.15); }
@@ -1914,7 +1914,7 @@
 [data-theme="matrix"] .app-hud-panel .db.active { border-color: #00ff41; box-shadow: 0 0 6px rgba(0,255,65,0.3); }
 [data-theme="matrix"] .app-hud-panel .fb { color: #00ff41; border-color: rgba(0,255,65,0.2); border-radius: 0; }
 [data-theme="matrix"] .app-hud-panel .fb.active { background: rgba(0,255,65,0.1); color: #00ff41; }
-[data-theme="matrix"] .schematic-wired .tcg-card-mini {
+[data-theme="matrix"] .schematic-wired .blueprint-card-mini {
   border-color: rgba(0,255,65,0.2); box-shadow: 0 0 10px rgba(0,255,65,0.08);
 }
 [data-theme="matrix"] .c-btn {
@@ -2285,7 +2285,7 @@
 [data-theme="lcars"] .schematic-svg line[stroke="var(--accent,#fff)"] { stroke:#ff9966; }
 
 /* Schematic cards */
-[data-theme="lcars"] .schematic-wired .tcg-card-mini {
+[data-theme="lcars"] .schematic-wired .blueprint-card-mini {
   border-color:#ff9966;
   border-radius:20px;
 }
@@ -2550,7 +2550,7 @@
   box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 /* TCG cards — holographic frame */
-[data-theme="jarvis"] .tcg-card {
+[data-theme="jarvis"] .blueprint-card {
   border:1px solid rgba(0,229,255,0.2);
   border-radius:3px;
   box-shadow:0 2px 12px rgba(0,0,0,0.3), 0 0 1px rgba(0,229,255,0.2);
@@ -2630,18 +2630,18 @@
 [data-theme="jarvis"] .nice-ai-chip:hover { background: rgba(0,229,255,0.12); color: #18ffff; }
 
 /* Schematic cards */
-[data-theme="jarvis"] .schematic-wired .tcg-card-mini {
+[data-theme="jarvis"] .schematic-wired .blueprint-card-mini {
   border-color: rgba(0,229,255,0.2);
   border-radius: 3px;
 }
 /* Filled card slots — reactor blue glow (override rarity colors) */
-[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-card-mini,
-[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty) .tcg-card-mini[data-rarity] {
+[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty) .blueprint-card-mini,
+[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty) .blueprint-card-mini[data-rarity] {
   border-color: rgba(0,229,255,0.5) !important;
   box-shadow: 0 0 10px rgba(0,229,255,0.15), 0 0 20px rgba(0,229,255,0.06);
 }
-[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .tcg-card-mini,
-[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .tcg-card-mini[data-rarity] {
+[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .blueprint-card-mini,
+[data-theme="jarvis"] .schematic-wired .schematic-card-slot:not(.schematic-card-empty):hover .blueprint-card-mini[data-rarity] {
   border-color: rgba(24,255,255,0.7) !important;
   box-shadow: 0 0 20px rgba(0,229,255,0.25), 0 0 40px rgba(0,229,255,0.1);
 }
@@ -3445,7 +3445,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   0%, 100% { box-shadow:0 0 8px rgba(230,74,25,0.15); }
   50%      { box-shadow:0 0 16px rgba(230,74,25,0.3); }
 }
-[data-theme="jarvis"] .tcg-card:hover,
+[data-theme="jarvis"] .blueprint-card:hover,
 [data-theme="jarvis"] .mcp-catalog-card:hover {
   border-color:rgba(0,229,255,0.4);
   box-shadow:0 0 16px rgba(0,229,255,0.15);
@@ -3474,20 +3474,20 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 }
 
 /* ── 13. Card headers — HUD data bar ── */
-[data-theme="jarvis"] .tcg-card .tcg-name-bar {
+[data-theme="jarvis"] .blueprint-card .blueprint-card-name-bar {
   background:rgba(0,229,255,0.04);
   border-bottom:1px solid rgba(0,229,255,0.12);
   position:relative;
 }
-[data-theme="jarvis"] .tcg-card .tcg-name-bar::before {
+[data-theme="jarvis"] .blueprint-card .blueprint-card-name-bar::before {
   content:''; position:absolute; top:0; left:0; right:0; height:1px;
   background:linear-gradient(90deg, transparent, rgba(0,229,255,0.2), transparent);
 }
-[data-theme="jarvis"] .tcg-card .tcg-stats {
+[data-theme="jarvis"] .blueprint-card .blueprint-card-stats {
   background:rgba(0,229,255,0.02);
   border-top:1px solid rgba(0,229,255,0.08);
 }
-[data-theme="jarvis"] .tcg-card .tcg-stats::before {
+[data-theme="jarvis"] .blueprint-card .blueprint-card-stats::before {
   content:'DIAGNOSTICS';
   position:absolute; top:-9px; right:8px;
   font-family:'Exo 2', sans-serif; font-size:6px; letter-spacing:.15em;
@@ -3641,13 +3641,13 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   0%   { left:-100%; }
   100% { left:200%; }
 }
-[data-theme="cyberpunk"] .tcg-card,
+[data-theme="cyberpunk"] .blueprint-card,
 [data-theme="cyberpunk"] .mc-card,
 [data-theme="cyberpunk"] .mcp-catalog-card,
 [data-theme="cyberpunk"] .widget-card {
   position:relative; overflow:hidden;
 }
-[data-theme="cyberpunk"] .tcg-card::after,
+[data-theme="cyberpunk"] .blueprint-card::after,
 [data-theme="cyberpunk"] .mc-card::after,
 [data-theme="cyberpunk"] .mcp-catalog-card::after,
 [data-theme="cyberpunk"] .widget-card::after {
@@ -3655,7 +3655,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   background:linear-gradient(105deg, transparent 30%, rgba(255,45,111,0.06) 45%, rgba(0,255,245,0.08) 55%, transparent 70%);
   pointer-events:none; transition:none;
 }
-[data-theme="cyberpunk"] .tcg-card:hover::after,
+[data-theme="cyberpunk"] .blueprint-card:hover::after,
 [data-theme="cyberpunk"] .mc-card:hover::after,
 [data-theme="cyberpunk"] .mcp-catalog-card:hover::after,
 [data-theme="cyberpunk"] .widget-card:hover::after {
@@ -3683,7 +3683,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 [data-theme="cyberpunk"] textarea::placeholder { color:#4a4a6e; }
 
 /* ── 10. Corner Notches — angular cyberpunk clipping ── */
-[data-theme="cyberpunk"] .tcg-card,
+[data-theme="cyberpunk"] .blueprint-card,
 [data-theme="cyberpunk"] .mc-card,
 [data-theme="cyberpunk"] .mcp-catalog-card,
 [data-theme="cyberpunk"] .widget-card,
@@ -3911,26 +3911,26 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 }
 
 /* ── 17. HUD Data Readout Decorations on Cards ── */
-[data-theme="cyberpunk"] .tcg-card .tcg-stats {
+[data-theme="cyberpunk"] .blueprint-card .blueprint-card-stats {
   position:relative;
   border-top:1px solid rgba(255,45,111,0.2);
 }
-[data-theme="cyberpunk"] .tcg-card .tcg-stats::before {
+[data-theme="cyberpunk"] .blueprint-card .blueprint-card-stats::before {
   content:'// SYS.READOUT';
   position:absolute; top:-10px; right:8px;
   font-family:'Fira Code', monospace; font-size:7px; letter-spacing:.1em;
   color:rgba(0,255,245,0.3); text-transform:uppercase;
 }
-[data-theme="cyberpunk"] .tcg-card .tcg-name-bar {
+[data-theme="cyberpunk"] .blueprint-card .blueprint-card-name-bar {
   border-bottom:1px solid rgba(255,45,111,0.15);
   position:relative;
 }
-[data-theme="cyberpunk"] .tcg-card .tcg-name-bar::after {
+[data-theme="cyberpunk"] .blueprint-card .blueprint-card-name-bar::after {
   content:''; position:absolute; bottom:-1px; left:0; width:40px; height:2px;
   background:linear-gradient(90deg, #ff2d6f, transparent);
 }
 /* Status indicator line on card marquee */
-[data-theme="cyberpunk"] .tcg-card .tcg-marquee {
+[data-theme="cyberpunk"] .blueprint-card .blueprint-card-marquee {
   border-left:2px solid rgba(0,255,245,0.3);
   padding-left:8px;
 }
@@ -3985,7 +3985,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   [data-theme="cyberpunk"] .btn-primary { animation:none; }
   [data-theme="cyberpunk"] .app-brand-text,
   [data-theme="cyberpunk"] .app-hdr-title { animation:none; }
-  [data-theme="cyberpunk"] .tcg-card:hover::after,
+  [data-theme="cyberpunk"] .blueprint-card:hover::after,
   [data-theme="cyberpunk"] .mc-card:hover::after,
   [data-theme="cyberpunk"] .mcp-catalog-card:hover::after,
   [data-theme="cyberpunk"] .widget-card:hover::after { animation:none; }
@@ -4136,81 +4136,81 @@ body {
 
 /* ── TCG BLUEPRINT CARDS ───────────────────────────────────────────── */
 /* Border animations removed — static border colors only */
-.tcg-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; }
-.tcg-card { position:relative; display:flex; flex-direction:column; border:15px solid var(--border); border-radius:25px; background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; margin:50px 0; padding:0; aspect-ratio:5/7; }
-.tcg-card:hover { transform:translateY(-3px); z-index:5; border-color:var(--border-hi); }
+.blueprint-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; }
+.blueprint-card { position:relative; display:flex; flex-direction:column; border:15px solid var(--border); border-radius:25px; background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; margin:50px 0; padding:0; aspect-ratio:5/7; }
+.blueprint-card:hover { transform:translateY(-3px); z-index:5; border-color:var(--border-hi); }
 /* Agent rarity card effects — progressively premium */
-.tcg-card[data-rarity="common"]    { border-color:var(--border); }
-.tcg-card[data-rarity="rare"]      { border-color:#6366f1; }
-.tcg-card[data-rarity="epic"]      { }
-.tcg-card[data-rarity="legendary"] { }
+.blueprint-card[data-rarity="common"]    { border-color:var(--border); }
+.blueprint-card[data-rarity="rare"]      { border-color:#6366f1; }
+.blueprint-card[data-rarity="epic"]      { }
+.blueprint-card[data-rarity="legendary"] { }
 /* Spaceship class card effects */
-.tcg-card[data-class="class-1"] { border-color:#94a3b8; }
-.tcg-card[data-class="class-2"] { border-color:#22c55e; }
-.tcg-card[data-class="class-3"] { }
-.tcg-card[data-class="class-4"] { }
-.tcg-card[data-class="class-5"] { }
+.blueprint-card[data-class="class-1"] { border-color:#94a3b8; }
+.blueprint-card[data-class="class-2"] { border-color:#22c55e; }
+.blueprint-card[data-class="class-3"] { }
+.blueprint-card[data-class="class-4"] { }
+.blueprint-card[data-class="class-5"] { }
 /* Fleet tier card effects */
 /* Station type card effects */
 .ss-card-clickable[data-type="collaboration"] { border-color:#6366f1; }
 .ss-card-clickable[data-type="service"]       { border-color:#22c55e; }
 .ss-card-clickable[data-type="trade"]         { border-color:#f59e0b; }
 /* Name bar */
-.tcg-name-bar { padding:10px 14px; display:flex; align-items:center; justify-content:flex-start; background:var(--surface); border-bottom:1px solid var(--border); gap:6px; border-radius:3px 3px 0 0; }
-.tcg-name  { font-family:var(--font-h); font-size:1.1rem; font-weight:700; letter-spacing:.04em; color:var(--text); line-height:1.2; text-align:left; }
-.tcg-subtitle { margin-left:auto; font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
-.tcg-name[contenteditable="true"] { cursor:text; outline:none; border-bottom:1px dashed var(--accent); min-width:40px; }
-.tcg-name[contenteditable="true"]:focus { border-bottom:1px solid var(--accent); background:rgba(var(--accent-rgb, 59,130,246),.08); }
-.tcg-rarity{ font-size:0.56rem; font-family:var(--font-m); color:var(--accent); letter-spacing:.12em; white-space:nowrap; flex-shrink:0; }
+.blueprint-card-name-bar { padding:10px 14px; display:flex; align-items:center; justify-content:flex-start; background:var(--surface); border-bottom:1px solid var(--border); gap:6px; border-radius:3px 3px 0 0; }
+.blueprint-card-name  { font-family:var(--font-h); font-size:1.1rem; font-weight:700; letter-spacing:.04em; color:var(--text); line-height:1.2; text-align:left; }
+.blueprint-card-subtitle { margin-left:auto; font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
+.blueprint-card-name[contenteditable="true"] { cursor:text; outline:none; border-bottom:1px dashed var(--accent); min-width:40px; }
+.blueprint-card-name[contenteditable="true"]:focus { border-bottom:1px solid var(--accent); background:rgba(var(--accent-rgb, 59,130,246),.08); }
+.blueprint-card-rarity{ font-size:0.56rem; font-family:var(--font-m); color:var(--accent); letter-spacing:.12em; white-space:nowrap; flex-shrink:0; }
 /* Art zone */
-.tcg-art { flex:1 1 40%; min-height:0; background:var(--bg); border-bottom:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
-.tcg-art svg { width:100%; height:100%; display:block; }
+.blueprint-card-art { flex:1 1 40%; min-height:0; background:var(--bg); border-bottom:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
+.blueprint-card-art svg { width:100%; height:100%; display:block; }
 /* Serial overlay inside avatar art area (bottom-left) */
-.tcg-art-serial { position:absolute; bottom:4px; left:4px; z-index:6; pointer-events:none; }
+.blueprint-card-art-serial { position:absolute; bottom:4px; left:4px; z-index:6; pointer-events:none; }
 /* Role/title overlay inside avatar art area (top-left) */
-.tcg-art-role { position:absolute; top:4px; left:4px; z-index:6; pointer-events:none; }
-.tcg-art-role .tcg-serial-code { font-size:.46rem; letter-spacing:.06em; color:var(--accent2, var(--accent)); }
-.tcg-art-role .tcg-serial-code[contenteditable="true"] { pointer-events:auto; cursor:text; }
-.tcg-art-role .tcg-serial-code[contenteditable="true"]:focus { outline:none; border-bottom:1px solid var(--accent); }
+.blueprint-card-art-role { position:absolute; top:4px; left:4px; z-index:6; pointer-events:none; }
+.blueprint-card-art-role .blueprint-card-serial-code { font-size:.46rem; letter-spacing:.06em; color:var(--accent2, var(--accent)); }
+.blueprint-card-art-role .blueprint-card-serial-code[contenteditable="true"] { pointer-events:auto; cursor:text; }
+.blueprint-card-art-role .blueprint-card-serial-code[contenteditable="true"]:focus { outline:none; border-bottom:1px solid var(--accent); }
 /* Class/tier label overlay inside avatar art area (top-right) */
-.tcg-art-class { position:absolute; top:4px; right:12px; z-index:6; pointer-events:none; }
+.blueprint-card-art-class { position:absolute; top:4px; right:12px; z-index:6; pointer-events:none; }
 /* Bottom-right overlay inside avatar art area */
-.tcg-art-bottom-right { position:absolute; bottom:4px; right:12px; z-index:6; pointer-events:none; }
+.blueprint-card-art-bottom-right { position:absolute; bottom:4px; right:12px; z-index:6; pointer-events:none; }
 /* Type line */
-.tcg-type-line { padding:5px 12px; font-size:0.56rem; font-family:var(--font-m); letter-spacing:.1em; color:var(--text-muted); border-bottom:1px solid var(--border); background:var(--surface); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.blueprint-card-type-line { padding:5px 12px; font-size:0.56rem; font-family:var(--font-m); letter-spacing:.1em; color:var(--text-muted); border-bottom:1px solid var(--border); background:var(--surface); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 /* Marquee screen (spaceship cards) */
-.tcg-marquee { overflow:hidden; white-space:nowrap; background:#0a0e14; border-top:1px solid rgba(59,130,246,.15); border-bottom:1px solid rgba(59,130,246,.15); padding:4px 0; position:relative; }
-.tcg-marquee::before, .tcg-marquee::after { content:''; position:absolute; top:0; bottom:0; width:18px; z-index:1; pointer-events:none; }
-.tcg-marquee::before { left:0; background:var(--panel-bg, #0a0e14); }
-.tcg-marquee::after  { right:0; background:var(--panel-bg, #0a0e14); }
-.tcg-marquee-track { display:inline-flex; animation:tcg-scroll 18s linear infinite; }
-.tcg-marquee-track span { font-family:var(--font-m); font-size:.52rem; letter-spacing:.08em; color:#3b82f6; padding:0 24px; }
-@keyframes tcg-scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
+.blueprint-card-marquee { overflow:hidden; white-space:nowrap; background:#0a0e14; border-top:1px solid rgba(59,130,246,.15); border-bottom:1px solid rgba(59,130,246,.15); padding:4px 0; position:relative; }
+.blueprint-card-marquee::before, .blueprint-card-marquee::after { content:''; position:absolute; top:0; bottom:0; width:18px; z-index:1; pointer-events:none; }
+.blueprint-card-marquee::before { left:0; background:var(--panel-bg, #0a0e14); }
+.blueprint-card-marquee::after  { right:0; background:var(--panel-bg, #0a0e14); }
+.blueprint-card-marquee-track { display:inline-flex; animation:blueprint-card-scroll 18s linear infinite; }
+.blueprint-card-marquee-track span { font-family:var(--font-m); font-size:.52rem; letter-spacing:.08em; color:#3b82f6; padding:0 24px; }
+@keyframes blueprint-card-scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
 /* Text box */
-.tcg-text-box { flex:1 1 0px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; overflow-y:auto; overflow-x:hidden; min-height:75px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
-.tcg-text-box::-webkit-scrollbar { width:4px; }
-.tcg-text-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-.tcg-text-box::-webkit-scrollbar-track { background:transparent; }
-.tcg-flavor { font-size:0.65rem; font-style:italic; color:var(--text-muted); border-left:2px solid var(--accent); padding-left:6px; margin-bottom:2px; line-height:1.4; }
-.tcg-cap { font-size:0.6rem; color:var(--text-muted); display:flex; align-items:flex-start; gap:5px; line-height:1.4; }
-.tcg-cap::before { content:"◆"; color:var(--accent); font-size:.4rem; flex-shrink:0; margin-top:3px; }
+.blueprint-card-text-box { flex:1 1 0px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; overflow-y:auto; overflow-x:hidden; min-height:75px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.blueprint-card-text-box::-webkit-scrollbar { width:4px; }
+.blueprint-card-text-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.blueprint-card-text-box::-webkit-scrollbar-track { background:transparent; }
+.blueprint-card-flavor { font-size:0.65rem; font-style:italic; color:var(--text-muted); border-left:2px solid var(--accent); padding-left:6px; margin-bottom:2px; line-height:1.4; }
+.blueprint-card-cap { font-size:0.6rem; color:var(--text-muted); display:flex; align-items:flex-start; gap:5px; line-height:1.4; }
+.blueprint-card-cap::before { content:"◆"; color:var(--accent); font-size:.4rem; flex-shrink:0; margin-top:3px; }
 /* Stats bar */
-.tcg-stats { padding:6px 10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(0,1fr)); border-top:1px solid var(--border); background:var(--surface); flex-shrink:0; margin-top:auto; }
-.tcg-stat { text-align:center; }
-.tcg-stat-val { font-family:var(--font-h); font-size:.7rem; color:var(--accent); display:block; line-height:1.3; font-weight:700; }
-.tcg-stat-lbl { font-family:var(--font-m); font-size:.4rem; color:var(--text-muted); letter-spacing:.08em; }
+.blueprint-card-stats { padding:6px 10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(0,1fr)); border-top:1px solid var(--border); background:var(--surface); flex-shrink:0; margin-top:auto; }
+.blueprint-card-stat { text-align:center; }
+.blueprint-card-stat-val { font-family:var(--font-h); font-size:.7rem; color:var(--accent); display:block; line-height:1.3; font-weight:700; }
+.blueprint-card-stat-lbl { font-family:var(--font-m); font-size:.4rem; color:var(--text-muted); letter-spacing:.08em; }
 /* Footer */
-.tcg-footer { padding:5px 12px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border); font-family:var(--font-m); font-size:.44rem; color:var(--text-muted); background:var(--surface); flex-shrink:0; }
-.tcg-serial-code { font-family:var(--font-m); font-size:.42rem; letter-spacing:.12em; color:var(--text-muted); background:rgba(0,0,0,.55); padding:1px 5px; border-radius:2px; backdrop-filter:blur(4px); }
+.blueprint-card-footer { padding:5px 12px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border); font-family:var(--font-m); font-size:.44rem; color:var(--text-muted); background:var(--surface); flex-shrink:0; }
+.blueprint-card-serial-code { font-family:var(--font-m); font-size:.42rem; letter-spacing:.12em; color:var(--text-muted); background:rgba(0,0,0,.55); padding:1px 5px; border-radius:2px; backdrop-filter:blur(4px); }
 /* Actions (below card, outside border) */
-.tcg-actions { padding:8px 4px; display:flex; gap:6px; border-top:none; background:transparent; margin:0 -15px -15px; border-radius:0 0 10px 10px; }
-.tcg-actions .c-btn { font-size:0.62rem; padding:5px 10px; flex:1; justify-content:center; }
+.blueprint-card-actions { padding:8px 4px; display:flex; gap:6px; border-top:none; background:transparent; margin:0 -15px -15px; border-radius:0 0 10px 10px; }
+.blueprint-card-actions .c-btn { font-size:0.62rem; padding:5px 10px; flex:1; justify-content:center; }
 .bp-logo-btn { display:inline-flex; align-items:center; justify-content:center; background:transparent; border-width:1px; }
 .bp-cert-btn { flex:0 0 auto !important; aspect-ratio:1; min-width:0; display:inline-flex; align-items:center; justify-content:center; }
 /* Tier badge + logo */
-.tcg-tier-group { display:inline-flex; align-items:center; gap:4px; }
-.tcg-tier-logo { display:inline-flex; align-items:center; line-height:1; }
-.tcg-tier-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 6px; border:1px solid; border-radius:2px; letter-spacing:.12em; vertical-align:middle; }
+.blueprint-card-tier-group { display:inline-flex; align-items:center; gap:4px; }
+.blueprint-card-tier-logo { display:inline-flex; align-items:center; line-height:1; }
+.blueprint-card-tier-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 6px; border:1px solid; border-radius:2px; letter-spacing:.12em; vertical-align:middle; }
 .tier-lite  { color:#22c55e; border-color:rgba(34,197,94,.38); }
 .tier-pro   { color:#6366f1; border-color:rgba(99,102,241,.38); }
 .tier-elite { color:#f59e0b; border-color:rgba(245,158,11,.38); }
@@ -4245,60 +4245,60 @@ body {
 .bp-sub-tab.active { border-color:var(--accent); color:var(--accent); background:rgba(99,102,241,.08); }
 .bp-sub-tab .bp-tab-count { font-size:var(--text-xs); }
 /* Overlay section (instance data: member lists, health bars, perf stats) */
-.tcg-overlay { padding:4px 14px; font-size:.7rem; color:var(--text-muted); }
+.blueprint-card-overlay { padding:4px 14px; font-size:.7rem; color:var(--text-muted); }
 /* Assigned state (dock cards already slotted) */
-.tcg-card.assigned { opacity:.45; pointer-events:none; }
+.blueprint-card.assigned { opacity:.45; pointer-events:none; }
 /* Pixel theme adjustments */
 
 /* ═══════════════════════════════════════════════════════════════
    TCG Card — Compact (horizontal, for operational views)
 ═══════════════════════════════════════════════════════════════ */
-.tcg-card-compact { display:flex; align-items:stretch; border:2px solid var(--border); border-radius:var(--card-radius, 0px); background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; min-height:110px; }
-.tcg-card-compact:hover { transform:translateY(-2px); z-index:5; border-color:var(--border-hi); }
+.blueprint-card-compact { display:flex; align-items:stretch; border:2px solid var(--border); border-radius:var(--card-radius, 0px); background:var(--panel-bg); transition:transform .2s ease, border-color .2s; cursor:pointer; overflow:hidden; min-height:110px; }
+.blueprint-card-compact:hover { transform:translateY(-2px); z-index:5; border-color:var(--border-hi); }
 /* Rarity/class/tier borders — compact */
-.tcg-card-compact[data-rarity="rare"]      { border-color:#6366f1; }
-.tcg-card-compact[data-rarity="epic"]      { }
-.tcg-card-compact[data-rarity="legendary"] { }
-.tcg-card-compact[data-class="class-1"]    { border-color:#94a3b8; }
-.tcg-card-compact[data-class="class-2"]    { border-color:#22c55e; }
-.tcg-card-compact[data-class="class-3"]    { }
-.tcg-card-compact[data-class="class-4"]    { }
-.tcg-card-compact[data-class="class-5"]    { }
+.blueprint-card-compact[data-rarity="rare"]      { border-color:#6366f1; }
+.blueprint-card-compact[data-rarity="epic"]      { }
+.blueprint-card-compact[data-rarity="legendary"] { }
+.blueprint-card-compact[data-class="class-1"]    { border-color:#94a3b8; }
+.blueprint-card-compact[data-class="class-2"]    { border-color:#22c55e; }
+.blueprint-card-compact[data-class="class-3"]    { }
+.blueprint-card-compact[data-class="class-4"]    { }
+.blueprint-card-compact[data-class="class-5"]    { }
 /* Art thumbnail */
-.tcg-compact-art { flex:0 0 90px; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; }
-.tcg-compact-art svg { width:100%; height:100%; display:block; }
+.blueprint-card-compact-art { flex:0 0 90px; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.blueprint-card-compact-art svg { width:100%; height:100%; display:block; }
 /* Body */
-.tcg-compact-body { flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:4px; min-width:0; justify-content:center; }
-.tcg-compact-header { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.tcg-compact-name { font-family:var(--font-h); font-size:.78rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
-.tcg-compact-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 5px; border:1px solid; border-radius:2px; letter-spacing:.1em; white-space:nowrap; }
+.blueprint-card-compact-body { flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:4px; min-width:0; justify-content:center; }
+.blueprint-card-compact-header { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.blueprint-card-compact-name { font-family:var(--font-h); font-size:.78rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+.blueprint-card-compact-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 5px; border:1px solid; border-radius:2px; letter-spacing:.1em; white-space:nowrap; }
 /* Meta tags row */
-.tcg-compact-meta { display:flex; flex-wrap:wrap; gap:4px; }
-.tcg-compact-meta .agent-tag { font-size:.6rem; }
+.blueprint-card-compact-meta { display:flex; flex-wrap:wrap; gap:4px; }
+.blueprint-card-compact-meta .agent-tag { font-size:.6rem; }
 /* Tools row */
-.tcg-compact-tools { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
+.blueprint-card-compact-tools { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
 /* Stats bar */
-.tcg-compact-stats { display:flex; gap:10px; margin-top:4px; }
-.tcg-compact-stat { font-family:var(--font-m); font-size:.52rem; color:var(--text-muted); letter-spacing:.05em; }
-.tcg-compact-stat b { color:var(--accent); font-weight:600; }
+.blueprint-card-compact-stats { display:flex; gap:10px; margin-top:4px; }
+.blueprint-card-compact-stat { font-family:var(--font-m); font-size:.52rem; color:var(--text-muted); letter-spacing:.05em; }
+.blueprint-card-compact-stat b { color:var(--accent); font-weight:600; }
 /* Actions */
-.tcg-compact-actions { flex:0 0 auto; display:flex; flex-direction:column; gap:4px; padding:10px 8px; border-left:1px solid var(--border); align-items:center; justify-content:center; }
+.blueprint-card-compact-actions { flex:0 0 auto; display:flex; flex-direction:column; gap:4px; padding:10px 8px; border-left:1px solid var(--border); align-items:center; justify-content:center; }
 /* Pixel theme */
 
 /* ═══════════════════════════════════════════════════════════════
    TCG Card — Mini (small vertical, for dock / inventory)
 ═══════════════════════════════════════════════════════════════ */
-.tcg-card-mini { display:flex; flex-direction:column; align-items:center; justify-content:center; width:90px; aspect-ratio:5/7; border:4px solid var(--border); border-radius:10px; background:var(--panel-bg); cursor:pointer; overflow:hidden; transition:transform .2s, border-color .2s, box-shadow .2s; padding:6px; gap:4px; text-align:center; }
-.tcg-card-mini:hover { transform:translateY(-2px); z-index:5; }
-.tcg-card-mini.assigned { opacity:.45; pointer-events:none; }
+.blueprint-card-mini { display:flex; flex-direction:column; align-items:center; justify-content:center; width:90px; aspect-ratio:5/7; border:4px solid var(--border); border-radius:10px; background:var(--panel-bg); cursor:pointer; overflow:hidden; transition:transform .2s, border-color .2s, box-shadow .2s; padding:6px; gap:4px; text-align:center; }
+.blueprint-card-mini:hover { transform:translateY(-2px); z-index:5; }
+.blueprint-card-mini.assigned { opacity:.45; pointer-events:none; }
 /* Rarity borders — mini */
-.tcg-card-mini[data-rarity="Rare"]      { border-color:#6366f1; }
-.tcg-card-mini[data-rarity="Epic"]      { }
-.tcg-card-mini[data-rarity="Legendary"] { }
-.tcg-mini-name { font-family:var(--font-h); font-size:.52rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px; line-height:1.2; }
-.tcg-mini-art { width:44px; height:44px; border-radius:0; overflow:hidden; background:var(--bg); display:flex; align-items:center; justify-content:center; }
-.tcg-mini-art svg { width:100%; height:100%; }
-.tcg-mini-badge { font-family:var(--font-m); font-size:.38rem; padding:1px 4px; border-radius:2px; color:#fff; letter-spacing:.08em; line-height:1.2; }
+.blueprint-card-mini[data-rarity="Rare"]      { border-color:#6366f1; }
+.blueprint-card-mini[data-rarity="Epic"]      { }
+.blueprint-card-mini[data-rarity="Legendary"] { }
+.blueprint-card-mini-name { font-family:var(--font-h); font-size:.52rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px; line-height:1.2; }
+.blueprint-card-mini-art { width:44px; height:44px; border-radius:0; overflow:hidden; background:var(--bg); display:flex; align-items:center; justify-content:center; }
+.blueprint-card-mini-art svg { width:100%; height:100%; }
+.blueprint-card-mini-badge { font-family:var(--font-m); font-size:.38rem; padding:1px 4px; border-radius:2px; color:#fff; letter-spacing:.08em; line-height:1.2; }
 /* Pixel theme */
 
 #hamburger {
@@ -5198,8 +5198,8 @@ select.contact-input { appearance:none;cursor:pointer; }
 
 /* Blueprint Grid */
 .bp-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-top:10px; }
-.bp-card { background:var(--surface);border:var(--border-width) solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:6px;transition:border-color .2s; }
-.bp-card:hover { border-color:var(--accent); }
+.blueprint-tile { background:var(--surface);border:var(--border-width) solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:6px;transition:border-color .2s; }
+.blueprint-tile:hover { border-color:var(--accent); }
 .bp-ico { font-size:1.25rem;display:block; }
 .bp-name { font-family:var(--font-d);font-size:.7rem;color:var(--text); }
 .bp-desc { font-family:var(--font-b);font-size:.68rem;color:var(--text-muted);line-height:1.5; }
@@ -5922,13 +5922,13 @@ input:checked + .toggle-slider::before { transform:translateX(18px); background:
 /* ─────────────────────────────────────────────────────────────────
    TCG CARD — TRADING CARD ASPECT RATIO (5:7 ≈ 2.5 × 3.5 in)
 ───────────────────────────────────────────────────────────────── */
-/* Uniform card height set on .tcg-card (380px) — no aspect-ratio needed */
+/* Uniform card height set on .blueprint-card (380px) — no aspect-ratio needed */
 /* Featured grids on index: tighter responsive columns */
-.tcg-grid-featured { display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); }
+.blueprint-grid-featured { display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); }
 @media (max-width: 640px) {
-  .tcg-grid-featured { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .tcg-grid           { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .tcg-card           { min-width: 0; }
+  .blueprint-grid-featured { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .blueprint-grid           { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .blueprint-card           { min-width: 0; }
 }
 
 /* ─────────────────────────────────────────────────────────────────

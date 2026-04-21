@@ -688,7 +688,7 @@ const FleetDash = (() => {
     const pg = _id('bp-proj-grid'), ag = _id('bp-agent-grid');
     if (pg) {
       pg.innerHTML = PROJ_BP.map(b =>
-        `<div class="bp-card">
+        `<div class="blueprint-tile">
           <span class="bp-ico">${b.icon}</span>
           <div class="bp-name">${b.name}</div>
           <div class="bp-desc">${b.desc}</div>
@@ -703,7 +703,7 @@ const FleetDash = (() => {
     }
     if (ag) {
       ag.innerHTML = AGENT_BP.map((b, i) =>
-        `<div class="bp-card">
+        `<div class="blueprint-tile">
           <span class="bp-ico">${b.icon}</span>
           <div class="bp-name">${b.name}</div>
           <div class="bp-desc">${b.desc}</div>
@@ -1313,22 +1313,22 @@ const BP = (() => {
       const statLbls = ['CREW','SLOTS','TIER','COST'];
       const statVals = statKeys.map(k => data.stats?.[k] || '&#8212;');
       const serial = _serialHash(bp.id || data.name, 12);
-      return `<div class="tcg-card bp-card-clickable" data-id="${bp.id}" data-type="spaceship" data-tags="${(data.tags||[]).join(',')}" data-category="${_esc(data.category||'')}" data-rarity="${data.rarity||'common'}">
-        <div class="tcg-name-bar"><span class="tcg-name">${_esc(data.name)}</span></div>
-        <div class="tcg-art">
-          <div class="tcg-art-serial" title="Serial: ${serial.code}"><span class="tcg-serial-code">${serial.code}</span></div>
-          <div class="tcg-art-class"><span class="tcg-serial-code" style="color:${shipColor};border:1px solid ${shipColor}">${tierBadge}</span></div>
-          <div class="tcg-art-bottom-right"><span class="tcg-serial-code" style="color:${shipColor}">${classLabel}</span></div>
+      return `<div class="blueprint-card blueprint-clickable" data-id="${bp.id}" data-type="spaceship" data-tags="${(data.tags||[]).join(',')}" data-category="${_esc(data.category||'')}" data-rarity="${data.rarity||'common'}">
+        <div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(data.name)}</span></div>
+        <div class="blueprint-card-art">
+          <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
+          <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:${shipColor};border:1px solid ${shipColor}">${tierBadge}</span></div>
+          <div class="blueprint-card-art-bottom-right"><span class="blueprint-card-serial-code" style="color:${shipColor}">${classLabel}</span></div>
           ${_slotDiagramArt(data.class_id, serial)}
         </div>
-        <div class="tcg-type-line">SPACESHIP BLUEPRINT &bull; ${tierBadge} &bull; NICE SPACESHIP&trade; v3.5</div>
-        <div class="tcg-text-box">
-          <p class="tcg-flavor">"${_esc(data.flavor || data.desc)}"</p>
-          ${caps.slice(0,3).map(c => `<p class="tcg-cap">${_esc(c)}</p>`).join('')}
+        <div class="blueprint-card-type-line">SPACESHIP BLUEPRINT &bull; ${tierBadge} &bull; NICE SPACESHIP&trade; v3.5</div>
+        <div class="blueprint-card-text-box">
+          <p class="blueprint-card-flavor">"${_esc(data.flavor || data.desc)}"</p>
+          ${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}
         </div>
-        <div class="tcg-stats">${statLbls.map((l,i) => `<div class="tcg-stat"><span class="tcg-stat-val">${statVals[i]}</span><span class="tcg-stat-lbl">${l}</span></div>`).join('')}</div>
-        <div class="tcg-footer"><span>${data.card_num || bp.id.toUpperCase()}</span><span>2026 &bull; NICE SPACESHIP &#9670;</span></div>
-        <div class="tcg-actions">
+        <div class="blueprint-card-stats">${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}</div>
+        <div class="blueprint-card-footer"><span>${data.card_num || bp.id.toUpperCase()}</span><span>2026 &bull; NICE SPACESHIP &#9670;</span></div>
+        <div class="blueprint-card-actions">
           <button class="c-btn" data-action="savebp" data-id="${bp.id}">Save</button>
           <button class="c-btn bp-build-btn" data-action="build" data-id="${bp.id}">Configure</button>
         </div>
@@ -1346,20 +1346,20 @@ const BP = (() => {
     const statVals = statKeys.map(k => data.stats?.[k] || '&#8212;');
     const serial = _serialHash(bp.id || data.name);
     const typeLine = `${(data.agentType || 'AUTOMATION AGENT').toUpperCase()} &bull; NICE SPACESHIP&trade; v3.5`;
-    return `<div class="tcg-card bp-card-clickable" data-id="${bp.id}" data-type="agent" data-tags="${(data.tags||[]).join(',')}" data-category="${_esc(catTag)}" data-rarity="${rarity}">
-      <div class="tcg-name-bar"><span class="tcg-name">${_esc(data.name)}</span></div>
-      <div class="tcg-art">
-        <div class="tcg-art-serial" title="Serial: ${serial.code}"><span class="tcg-serial-code">${serial.code}</span></div>
-        <div class="tcg-art-class"><span class="tcg-serial-code" style="color:${rarityColor};border:1px solid ${rarityColor}">${rarityLabel}</span></div>
+    return `<div class="blueprint-card blueprint-clickable" data-id="${bp.id}" data-type="agent" data-tags="${(data.tags||[]).join(',')}" data-category="${_esc(catTag)}" data-rarity="${rarity}">
+      <div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(data.name)}</span></div>
+      <div class="blueprint-card-art">
+        <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
+        <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:${rarityColor};border:1px solid ${rarityColor}">${rarityLabel}</span></div>
         ${_avatarArt(data.name, catTag, serial)}
       </div>
-      <div class="tcg-type-line">${typeLine}</div>
-      <div class="tcg-text-box">
-        <p class="tcg-flavor">"${_esc(data.flavor || data.desc)}"</p>
-        ${caps.slice(0,3).map(c => `<p class="tcg-cap">${_esc(c)}</p>`).join('')}
+      <div class="blueprint-card-type-line">${typeLine}</div>
+      <div class="blueprint-card-text-box">
+        <p class="blueprint-card-flavor">"${_esc(data.flavor || data.desc)}"</p>
+        ${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}
       </div>
-      <div class="tcg-stats">${statLbls.map((l,i) => `<div class="tcg-stat"><span class="tcg-stat-val">${statVals[i]}</span><span class="tcg-stat-lbl">${l}</span></div>`).join('')}</div>
-      <div class="tcg-actions">
+      <div class="blueprint-card-stats">${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}</div>
+      <div class="blueprint-card-actions">
         <button class="c-btn bp-logo-btn" data-fav="${bp.id}" aria-label="${isFav?'Unfavorite':'Favorite'}" style="border-color:${rarityColor};color:${rarityColor}">${_NS_LOGO_BTN}</button>
         <button class="c-btn" data-action="savebp" data-id="${bp.id}">Save</button>
         <button class="c-btn bp-build-btn" data-action="build" data-id="${bp.id}">Build</button>
@@ -1386,7 +1386,7 @@ const BP = (() => {
     if (!container) return;
     container.addEventListener('click', e => {
       // Card click (not on action button) → preview
-      const card = e.target.closest('.bp-card-clickable');
+      const card = e.target.closest('.blueprint-clickable');
       const btn  = e.target.closest('[data-action]') || e.target.closest('[data-fav]');
       if (btn) {
         e.stopPropagation();
@@ -1427,16 +1427,16 @@ const BP = (() => {
     const q = (document.getElementById('bp-search')?.value||'').toLowerCase();
     const grid = document.getElementById('bp-lib-grid');
     if (!grid) return;
-    grid.querySelectorAll('.tcg-card').forEach(c => {
+    grid.querySelectorAll('.blueprint-card').forEach(c => {
       const tags = (c.dataset.tags||'').toLowerCase();
       const cat  = (c.dataset.category||'').toLowerCase();
-      const name = c.querySelector('.tcg-name')?.textContent.toLowerCase()||'';
-      const desc = c.querySelector('.tcg-text-box')?.textContent.toLowerCase()||'';
+      const name = c.querySelector('.blueprint-card-name')?.textContent.toLowerCase()||'';
+      const desc = c.querySelector('.blueprint-card-text-box')?.textContent.toLowerCase()||'';
       const catMatch = _activeTag==='all' || cat === _activeTag.toLowerCase() || tags.includes(_activeTag.toLowerCase());
       const txtMatch = !q || name.includes(q) || desc.includes(q) || tags.includes(q);
       c.style.display = (catMatch && txtMatch) ? '' : 'none';
     });
-    const visible = [...grid.querySelectorAll('.tcg-card')].filter(c=>c.style.display!=='none').length;
+    const visible = [...grid.querySelectorAll('.blueprint-card')].filter(c=>c.style.display!=='none').length;
     const noRes = document.getElementById('bp-no-results');
     if (noRes) noRes.style.display = visible ? 'none' : 'block';
   }
