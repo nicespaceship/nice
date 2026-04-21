@@ -122,9 +122,32 @@ const BlueprintsView = (() => {
       ? Blueprints.getConnectedCount(bp.id) : 0;
   }
 
+  // Elements portaled to <body> to escape their container's stacking
+  // context. `main.app-main` (z:1) and `#app-fixed-tabs` (z:20) create
+  // local stacking contexts that clip the sheets' z:10000 below the
+  // prompt panel's z:200 on <body>. We move them at the end of render()
+  // and wipe any stale copies on re-render + destroy.
+  const _PORTAL_IDS = ['bp-tab-sheet', 'bp-tab-sheet-backdrop', 'bp-filter-sheet', 'bp-filter-sheet-backdrop'];
+  function _clearPortals() {
+    _PORTAL_IDS.forEach(id => {
+      const n = document.getElementById(id);
+      if (n && n.parentElement === document.body) n.remove();
+    });
+  }
+  function _mountPortals() {
+    _PORTAL_IDS.forEach(id => {
+      const n = document.getElementById(id);
+      if (n && n.parentElement !== document.body) document.body.appendChild(n);
+    });
+  }
+
   function render(el, opts) {
     const embedded = opts && opts.embedded;
     const user = State.get('user');
+
+    // Remove stale portaled sheets from any previous render before the
+    // innerHTML assignments below recreate them inside their containers.
+    _clearPortals();
 
     // Parse URL state BEFORE the first innerHTML assignment so the template
     // renders with the correct initial `_sourceFilter` / `_subTab` / etc.
@@ -313,6 +336,11 @@ const BlueprintsView = (() => {
       </div>
 
     `;
+
+    // Move sheets to <body> now that both container innerHTMLs have
+    // written them in. Escaping the parent stacking contexts lets the
+    // sheet z:10000 actually win over the prompt panel z:200.
+    _mountPortals();
 
     // Highlight the correct tab + sub-tab buttons
     document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
@@ -3257,6 +3285,7 @@ const BlueprintsView = (() => {
   function destroy() {
     if (typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
     if (typeof TronView !== 'undefined' && TronView.destroy) TronView.destroy();
+    _clearPortals();
   }
 
   return { title, render, renderEmbedded, destroy, _getSpaceshipSeed, SEED, SPACESHIP_SEED,
