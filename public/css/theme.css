@@ -4168,11 +4168,11 @@ body {
 .ss-card-clickable[data-type="trade"]         { border-color:#f59e0b; }
 /* Name bar */
 .blueprint-card-name-bar { padding:10px 14px; display:flex; align-items:center; justify-content:flex-start; background:var(--surface); border-bottom:1px solid var(--border); gap:6px; border-radius:3px 3px 0 0; }
-.blueprint-card-name  { font-family:var(--font-h); font-size:1.1rem; font-weight:700; letter-spacing:.04em; color:var(--text); line-height:1.2; text-align:left; }
-.blueprint-card-subtitle { margin-left:auto; font-family:var(--font-m); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); text-transform:uppercase; }
+.blueprint-card-name  { font-family:var(--font-h); font-size:var(--card-text-name); font-weight:var(--fw-bold); letter-spacing:.04em; color:var(--text); line-height:var(--lh-snug); text-align:left; }
+.blueprint-card-subtitle { margin-left:auto; font-family:var(--font-m); font-size:var(--card-text-meta); letter-spacing:var(--tracking-caps); color:var(--text-muted); text-transform:uppercase; }
 .blueprint-card-name[contenteditable="true"] { cursor:text; outline:none; border-bottom:1px dashed var(--accent); min-width:40px; }
 .blueprint-card-name[contenteditable="true"]:focus { border-bottom:1px solid var(--accent); background:rgba(var(--accent-rgb, 59,130,246),.08); }
-.blueprint-card-rarity{ font-size:0.56rem; font-family:var(--font-m); color:var(--accent); letter-spacing:.12em; white-space:nowrap; flex-shrink:0; }
+.blueprint-card-rarity{ font-size:var(--card-text-meta); font-family:var(--font-m); color:var(--accent); letter-spacing:var(--tracking-caps); white-space:nowrap; flex-shrink:0; }
 /* Art zone */
 .blueprint-card-art { flex:1 1 40%; min-height:0; background:var(--bg); border-bottom:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
 .blueprint-card-art svg { width:100%; height:100%; display:block; }
@@ -4180,7 +4180,7 @@ body {
 .blueprint-card-art-serial { position:absolute; bottom:4px; left:4px; z-index:6; pointer-events:none; }
 /* Role/title overlay inside avatar art area (top-left) */
 .blueprint-card-art-role { position:absolute; top:4px; left:4px; z-index:6; pointer-events:none; }
-.blueprint-card-art-role .blueprint-card-serial-code { font-size:.46rem; letter-spacing:.06em; color:var(--accent2, var(--accent)); }
+.blueprint-card-art-role .blueprint-card-serial-code { font-size:var(--card-text-micro); letter-spacing:var(--tracking-caps); color:var(--accent2, var(--accent)); }
 .blueprint-card-art-role .blueprint-card-serial-code[contenteditable="true"] { pointer-events:auto; cursor:text; }
 .blueprint-card-art-role .blueprint-card-serial-code[contenteditable="true"]:focus { outline:none; border-bottom:1px solid var(--accent); }
 /* Class/tier label overlay inside avatar art area (top-right) */
@@ -4188,40 +4188,40 @@ body {
 /* Bottom-right overlay inside avatar art area */
 .blueprint-card-art-bottom-right { position:absolute; bottom:4px; right:12px; z-index:6; pointer-events:none; }
 /* Type line */
-.blueprint-card-type-line { padding:5px 12px; font-size:0.56rem; font-family:var(--font-m); letter-spacing:.1em; color:var(--text-muted); border-bottom:1px solid var(--border); background:var(--surface); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.blueprint-card-type-line { padding:5px 12px; font-size:var(--card-text-meta); font-family:var(--font-m); letter-spacing:var(--tracking-caps); color:var(--text-muted); border-bottom:1px solid var(--border); background:var(--surface); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 /* Marquee screen (spaceship cards) */
 .blueprint-card-marquee { overflow:hidden; white-space:nowrap; background:#0a0e14; border-top:1px solid rgba(59,130,246,.15); border-bottom:1px solid rgba(59,130,246,.15); padding:4px 0; position:relative; }
 .blueprint-card-marquee::before, .blueprint-card-marquee::after { content:''; position:absolute; top:0; bottom:0; width:18px; z-index:1; pointer-events:none; }
 .blueprint-card-marquee::before { left:0; background:var(--panel-bg, #0a0e14); }
 .blueprint-card-marquee::after  { right:0; background:var(--panel-bg, #0a0e14); }
 .blueprint-card-marquee-track { display:inline-flex; animation:blueprint-card-scroll 18s linear infinite; }
-.blueprint-card-marquee-track span { font-family:var(--font-m); font-size:.52rem; letter-spacing:.08em; color:#3b82f6; padding:0 24px; }
+.blueprint-card-marquee-track span { font-family:var(--font-m); font-size:var(--card-text-micro); letter-spacing:var(--tracking-caps); color:#3b82f6; padding:0 24px; }
 @keyframes blueprint-card-scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
 /* Text box */
 .blueprint-card-text-box { flex:1 1 0px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; overflow-y:auto; overflow-x:hidden; min-height:75px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
 .blueprint-card-text-box::-webkit-scrollbar { width:4px; }
 .blueprint-card-text-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 .blueprint-card-text-box::-webkit-scrollbar-track { background:transparent; }
-.blueprint-card-flavor { font-size:0.65rem; font-style:italic; color:var(--text-muted); border-left:2px solid var(--accent); padding-left:6px; margin-bottom:2px; line-height:1.4; }
-.blueprint-card-cap { font-size:0.6rem; color:var(--text-muted); display:flex; align-items:flex-start; gap:5px; line-height:1.4; }
-.blueprint-card-cap::before { content:"◆"; color:var(--accent); font-size:.4rem; flex-shrink:0; margin-top:3px; }
+.blueprint-card-flavor { font-size:var(--card-text-body); font-style:italic; color:var(--text-muted); border-left:2px solid var(--accent); padding-left:6px; margin-bottom:2px; line-height:1.4; }
+.blueprint-card-cap { font-size:var(--card-text-body); color:var(--text-muted); display:flex; align-items:flex-start; gap:5px; line-height:1.4; }
+.blueprint-card-cap::before { content:"◆"; color:var(--accent); font-size:var(--card-text-micro); flex-shrink:0; margin-top:3px; }
 /* Stats bar */
 .blueprint-card-stats { padding:6px 10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(0,1fr)); border-top:1px solid var(--border); background:var(--surface); flex-shrink:0; margin-top:auto; }
 .blueprint-card-stat { text-align:center; }
-.blueprint-card-stat-val { font-family:var(--font-h); font-size:.7rem; color:var(--accent); display:block; line-height:1.3; font-weight:700; }
-.blueprint-card-stat-lbl { font-family:var(--font-m); font-size:.4rem; color:var(--text-muted); letter-spacing:.08em; }
+.blueprint-card-stat-val { font-family:var(--font-h); font-size:var(--card-text-stat); color:var(--accent); display:block; line-height:var(--lh-snug); font-weight:var(--fw-bold); }
+.blueprint-card-stat-lbl { font-family:var(--font-m); font-size:var(--card-text-micro); color:var(--text-muted); letter-spacing:var(--tracking-caps); }
 /* Footer */
-.blueprint-card-footer { padding:5px 12px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border); font-family:var(--font-m); font-size:.44rem; color:var(--text-muted); background:var(--surface); flex-shrink:0; }
-.blueprint-card-serial-code { font-family:var(--font-m); font-size:.42rem; letter-spacing:.12em; color:var(--text-muted); background:rgba(0,0,0,.55); padding:1px 5px; border-radius:2px; backdrop-filter:blur(4px); }
+.blueprint-card-footer { padding:5px 12px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border); font-family:var(--font-m); font-size:var(--card-text-micro); color:var(--text-muted); background:var(--surface); flex-shrink:0; }
+.blueprint-card-serial-code { font-family:var(--font-m); font-size:var(--card-text-micro); letter-spacing:var(--tracking-caps); color:var(--text-muted); background:rgba(0,0,0,.55); padding:1px 5px; border-radius:2px; backdrop-filter:blur(4px); }
 /* Actions (below card, outside border) */
 .blueprint-card-actions { padding:8px 4px; display:flex; gap:6px; border-top:none; background:transparent; margin:0 -15px -15px; border-radius:0 0 10px 10px; }
-.blueprint-card-actions .c-btn { font-size:0.62rem; padding:5px 10px; flex:1; justify-content:center; }
+.blueprint-card-actions .c-btn { font-size:var(--card-text-meta); padding:5px 10px; flex:1; justify-content:center; }
 .bp-logo-btn { display:inline-flex; align-items:center; justify-content:center; background:transparent; border-width:1px; }
 .bp-cert-btn { flex:0 0 auto !important; aspect-ratio:1; min-width:0; display:inline-flex; align-items:center; justify-content:center; }
 /* Tier badge + logo */
 .blueprint-card-tier-group { display:inline-flex; align-items:center; gap:4px; }
 .blueprint-card-tier-logo { display:inline-flex; align-items:center; line-height:1; }
-.blueprint-card-tier-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 6px; border:1px solid; border-radius:2px; letter-spacing:.12em; vertical-align:middle; }
+.blueprint-card-tier-badge { font-family:var(--font-m); font-size:var(--card-text-micro); padding:1px 6px; border:1px solid; border-radius:2px; letter-spacing:var(--tracking-caps); vertical-align:middle; }
 .tier-lite  { color:#22c55e; border-color:rgba(34,197,94,.38); }
 .tier-pro   { color:#6366f1; border-color:rgba(99,102,241,.38); }
 .tier-elite { color:#f59e0b; border-color:rgba(245,158,11,.38); }
@@ -4256,7 +4256,7 @@ body {
 .bp-sub-tab.active { border-color:var(--accent); color:var(--accent); background:rgba(99,102,241,.08); }
 .bp-sub-tab .bp-tab-count { font-size:var(--text-xs); }
 /* Overlay section (instance data: member lists, health bars, perf stats) */
-.blueprint-card-overlay { padding:4px 14px; font-size:.7rem; color:var(--text-muted); }
+.blueprint-card-overlay { padding:4px 14px; font-size:var(--card-text-body); color:var(--text-muted); }
 /* Assigned state (dock cards already slotted) */
 .blueprint-card.assigned { opacity:.45; pointer-events:none; }
 /* Pixel theme adjustments */
