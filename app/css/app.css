@@ -787,13 +787,22 @@
   font-size: 12px;
   line-height: 2;
   letter-spacing: 0.5px;
+  /* Override card tokens to absolute px so root font-size:12px doesn't shrink
+     rem-based values below the 8px floor inside cards. */
+  --card-text-name: 17.6px;
+  --card-text-name-sm: 14px;
+  --card-text-stat: 14px;
+  --card-text-body: 12px;
+  --card-text-meta: 10px;
+  --card-text-micro: 8px;
 }
 [data-theme="16bit"] h1 { font-size: 18px; line-height: 1.8; }
 [data-theme="16bit"] h2 { font-size: 14px; line-height: 1.7; }
 [data-theme="16bit"] h3 { font-size: 12px; line-height: 1.6; }
-[data-theme="16bit"] p, [data-theme="16bit"] li,
-[data-theme="16bit"] span, [data-theme="16bit"] label,
-[data-theme="16bit"] td, [data-theme="16bit"] th { font-size: 10px; line-height: 2; }
+[data-theme="16bit"] :is(p, li, span, label, td, th):not(:is(.blueprint-card, .blueprint-card-grid, .blueprint-card-mini, .blueprint-card-compact, .agent-card, .spaceship-card, .blueprint-tile) *) {
+  font-size: 10px;
+  line-height: 2;
+}
 [data-theme="16bit"] .topbar-tab { font-size: var(--text-sm); padding: 8px 14px; }
 [data-theme="16bit"] .bridge-hero-name { font-size: 14px; }
 [data-theme="16bit"] .side-header .app-brand-text { font-size: 8px; }
