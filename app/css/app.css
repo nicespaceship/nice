@@ -2359,6 +2359,7 @@
 @media(prefers-reduced-motion:reduce) { .skeleton-line::after, .skeleton-avatar::after { animation:none; } }
 
 .text-muted { color:var(--text-muted); }
+.text-muted a { color:var(--accent); text-decoration:underline; }
 .text-sm { font-size:.78rem; }
 
 /* Detail Layout */
