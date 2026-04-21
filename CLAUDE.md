@@ -207,9 +207,29 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 .eyebrow        { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; }
 ```
 
+### Card exemption (visual artifacts, not prose)
+`.blueprint-card`, `.blueprint-tile`, `.agent-card`, `.spaceship-card` and their compact/mini/grid variants are **visual artifacts** (TCG-style collectibles), not prose. They use a card-scoped mini-scale declared at `:root` alongside the prose scale. The prose `--text-xs` (11px) floor **does not apply**.
+
+**Card tokens (6):**
+- `--card-text-name` 1.1rem (~17.6px) — primary card title
+- `--card-text-name-sm` 0.875rem (14px) — secondary card title (tile, agent, ship, compact)
+- `--card-text-stat` 0.875rem (14px) — stat value
+- `--card-text-body` 0.75rem (12px) — flavor, description, capability chip
+- `--card-text-meta` 0.625rem (10px) — subtitle, type line, rarity, role, category
+- `--card-text-micro` 0.5rem (8px) — marquee, stat label, footer serial, mini badge — **FLOOR**
+
+**Rules:**
+- Use card tokens **only inside card selectors** (`.blueprint-card*`, `.blueprint-tile*`, `.agent-card*`, `.spaceship-card*`). Never use them for prose, sidebars, modals, forms.
+- Never introduce raw card font-sizes — use the token. In review, if you see a sub-`--text-xs` literal *outside* a card selector, flag it.
+- Floor is **0.5rem (8px)**. Do not add values below it. If a card element doesn't fit at micro, shrink the element or the container — don't shrink the type.
+- Themes may change `font-family`, `color`, `border`, `background`, `glow/shadow` on cards. Themes must **not** change `font-size`, `font-weight`, `letter-spacing`, or `text-transform`.
+- `text-transform: capitalize` is banned on cards same as prose — fix source strings.
+
 ### Rollout status
-- **Phase 1 (current):** tokens defined in both CSS roots, documented here. Zero visual change. Existing hardcoded `font-size` values still work — new code MUST use tokens.
-- **Phase 2+:** progressive migration of existing surfaces. Sidebar/header/Bridge/Home/prompt-panel/cards first; settings/modals/wizards second; marketing site last. Per-surface PRs.
+- **Phase 1:** tokens defined in both CSS roots, documented here. Zero visual change. ✅ shipped (#195)
+- **Phase 2a–2e:** sidebar, Bridge tabs, Home, prompt panel, Security/Settings/Profile migrated to prose tokens. ✅ shipped (#196–#200)
+- **Phase 3a–3e:** card tokens + rename (tcg → blueprint-card, fleet-card → spaceship-card) + base/variants/secondary cards + exemption doc. ✅ shipped (#201–#206 + this PR)
+- **Next:** marketing site (`public/css/theme.css` marketing sections + `www/`); long-tail app surfaces (missions, wallet body, agent-builder, modals, mobile rules); brand wordmark + badge passes.
 
 ## NICE™ SPA Architecture
 
