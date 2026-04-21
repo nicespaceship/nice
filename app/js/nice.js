@@ -1625,12 +1625,6 @@ const NICE = (() => {
       State.set('user', user);
       _updateAuthUI(user);
       if (user) { _migrateLocalSpaceships(user); _loadTokenBalance(user); _loadAdminFlag(user); }
-      // Dev mode: auto-sign in anonymously for a real JWT (edge functions need it)
-      if (!user && _isDevMode) {
-        SB.auth.signInAnonymously().catch(() => {
-          // Anonymous auth not enabled — user can sign in via auth modal manually
-        });
-      }
     }).catch(() => {
       State.set('user', null);
       _updateAuthUI(null);

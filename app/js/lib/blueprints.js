@@ -50,9 +50,8 @@ const Blueprints = (() => {
     _loadActivationState();
 
     // Only fetch activated blueprints on init (lazy catalog).
-    // Connected counts are derived from mock seeds — the live
-    // blueprint_activation_counts view was never created, and the per-user
-    // activation sync path is unused.
+    // Connected counts come from blueprints.activation_count on each row;
+    // mock seeds fill in for dev when the DB isn't reachable.
     try {
       if (typeof SB !== 'undefined' && SB.isReady() && SB.isOnline()) {
         await Promise.all([
@@ -804,10 +803,6 @@ const Blueprints = (() => {
     try { localStorage.setItem(_KEYS.shipState, JSON.stringify(_shipState)); } catch {}
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-     Cloud sync — blueprint_activations table
-  ═══════════════════════════════════════════════════════════════ */
-
   function _getUserId() {
     if (typeof State === 'undefined') return null;
     const u = State.get('user');
@@ -816,39 +811,6 @@ const Blueprints = (() => {
 
   function _canSync() {
     return typeof SB !== 'undefined' && SB.isReady() && SB.isOnline() && _getUserId();
-  }
-
-  async function _syncActivation(blueprintId, blueprintType) {
-    if (!_canSync()) return;
-    try {
-      await SB.db('blueprint_activations').create({
-        user_id: _getUserId(),
-        blueprint_id: blueprintId,
-        blueprint_type: blueprintType
-      });
-      // Increment local count
-      _connectedCounts[blueprintId] = (_connectedCounts[blueprintId] || 0) + 1;
-    } catch (e) {
-      if (!String(e).includes('duplicate')) console.warn('[Blueprints] Activation sync failed:', e.message);
-    }
-  }
-
-  async function _syncDeactivation(blueprintId, blueprintType) {
-    if (!_canSync()) return;
-    const c = SB.client;
-    if (!c || typeof c.from !== 'function') return;
-    try {
-      const userId = _getUserId();
-      await c.from('blueprint_activations')
-        .delete()
-        .eq('user_id', userId)
-        .eq('blueprint_id', blueprintId)
-        .eq('blueprint_type', blueprintType);
-      // Decrement local count
-      if (_connectedCounts[blueprintId] > 0) _connectedCounts[blueprintId]--;
-    } catch (e) {
-      console.warn('[Blueprints] Deactivation sync failed:', e.message);
-    }
   }
 
   /** Generate deterministic mock connected counts from seed data for dev/testing */
@@ -1003,7 +965,6 @@ const Blueprints = (() => {
 
     _activatedAgentIds.push(bpId);
     _persistAgents();
-    _syncActivation(bpId, 'agent');
     _fireAgentState();
     return true;
   }
@@ -1014,7 +975,6 @@ const Blueprints = (() => {
     if (!match) return;
     _activatedAgentIds = _activatedAgentIds.filter(id => id !== match);
     _persistAgents();
-    _syncDeactivation(bpId, 'agent');
 
     // Cascade: remove from local agents state
     const agentId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
@@ -1218,7 +1178,6 @@ const Blueprints = (() => {
       }
     }
 
-    _syncActivation(bpId, 'spaceship');
     _fireShipState();
     return true;
   }
@@ -1232,7 +1191,6 @@ const Blueprints = (() => {
     if (!match) return;
     _activatedShipIds = _activatedShipIds.filter(id => id !== match);
     _persistShips();
-    _syncDeactivation(match, 'spaceship');
 
     // Resolve _shipState entry — keys may be raw id (DB-loaded ships) or bp-prefixed (catalog wizard)
     const stateKeyVariants = [match, bpId, 'bp-' + match, 'bp-' + bpId];
@@ -2121,8 +2079,8 @@ const Blueprints = (() => {
 
   /**
    * Install a community blueprint into the caller's own user_agents /
-   * user_spaceships. Unlike catalog activation — which is a pure
-   * reference recorded in blueprint_activations — this creates a fresh
+   * user_spaceships. Unlike catalog activation — which just flips the
+   * blueprint id into the user's activated list — this creates a fresh
    * row the downloader fully owns: they can edit, re-publish, delete.
    *
    * The new row's blueprint_id is set to the source community blueprint's
@@ -2388,9 +2346,5 @@ const Blueprints = (() => {
       localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(guestShips));
       _persistShips();
     } catch {}
-
-    // Sync all activations
-    for (const id of _activatedAgentIds) _syncActivation(id, 'agent');
-    for (const id of _activatedShipIds) _syncActivation(id, 'spaceship');
   }
 })();
