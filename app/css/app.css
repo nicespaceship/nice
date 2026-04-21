@@ -7303,15 +7303,15 @@
 /* Balance card */
 .wallet-balance-card { background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius, 10px); padding:1.5rem; }
 .wallet-balance-main { text-align:center; margin-bottom:1.25rem; }
-.wallet-balance-label { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:.7rem; color:var(--text-muted); margin-bottom:6px; }
-.wallet-balance-num { font-family:var(--font-b, Inter, sans-serif); font-size:2.2rem; font-weight:700; color:var(--accent); }
+.wallet-balance-label { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-xs); color:var(--text-muted); margin-bottom:6px; }
+.wallet-balance-num { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-2xl); font-weight:var(--fw-bold); color:var(--accent); }
 .wallet-balance-breakdown { display:flex; justify-content:center; gap:32px; flex-wrap:wrap; }
 .wallet-breakdown-item { text-align:center; }
-.wallet-breakdown-label { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:.65rem; color:var(--text-muted); margin-bottom:2px; }
-.wallet-breakdown-val { font-family:var(--font-b, Inter, sans-serif); font-size:1rem; font-weight:600; }
+.wallet-breakdown-label { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-xs); color:var(--text-muted); margin-bottom:2px; }
+.wallet-breakdown-val { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-md); font-weight:var(--fw-medium); }
 
 /* Section titles */
-.wallet-section-title { font-family:var(--font-b, Inter, sans-serif); font-size:.95rem; font-weight:600; margin:0 0 .75rem 0; }
+.wallet-section-title { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-base); font-weight:var(--fw-medium); margin:0 0 .75rem 0; }
 
 /* Token packages */
 .wallet-packages { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
@@ -7323,14 +7323,14 @@
 .wallet-package:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
 .wallet-package--featured { border-color:var(--accent); box-shadow:0 0 16px rgba(99,102,241,.1); }
 .wallet-package-badge {
-  position:absolute; top:-10px; left:50%; transform:translateX(-50%); font-size:.6rem; font-family:var(--font-b, Inter, sans-serif);
-  font-weight:600; letter-spacing:.04em; padding:3px 12px; border-radius:9999px;
+  position:absolute; top:-10px; left:50%; transform:translateX(-50%); font-size:var(--text-xs); font-family:var(--font-b, Inter, sans-serif);
+  font-weight:var(--fw-medium); letter-spacing:var(--tracking-caps); text-transform:uppercase; padding:3px 12px; border-radius:9999px;
   background:var(--accent); color:var(--bg); white-space:nowrap;
 }
-.wallet-package-name { font-family:var(--font-b, Inter, sans-serif); font-size:.9rem; font-weight:600; }
-.wallet-package-tokens { font-family:var(--font-b, Inter, sans-serif); font-size:1.5rem; font-weight:700; color:var(--accent); }
-.wallet-package-tokens-label { font-family:var(--font-b, Inter, sans-serif); font-size:.65rem; color:var(--text-muted); margin-bottom:4px; }
-.wallet-package-price { font-family:var(--font-b, Inter, sans-serif); font-size:1.1rem; font-weight:600; margin-bottom:8px; }
+.wallet-package-name { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-base); font-weight:var(--fw-medium); }
+.wallet-package-tokens { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-xl); font-weight:var(--fw-bold); color:var(--accent); }
+.wallet-package-tokens-label { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-xs); color:var(--text-muted); margin-bottom:4px; }
+.wallet-package-price { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-md); font-weight:var(--fw-medium); margin-bottom:8px; }
 .wallet-buy-btn { width:100%; text-align:center; }
 
 /* Info cards */
@@ -7338,24 +7338,24 @@
 .wallet-info-card { background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius, 10px); padding:1rem; text-align:center; transition:border-color .2s; }
 .wallet-info-card:hover { border-color:var(--border-hi, #71717a); }
 .wallet-info-icon { font-size:1.4rem; display:block; margin-bottom:6px; }
-.wallet-info-title { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:.8rem; font-weight:600; margin-bottom:4px; }
-.wallet-info-desc { font-family:var(--font-b, Inter, sans-serif); font-size:.72rem; color:var(--text-muted); line-height:1.4; }
+.wallet-info-title { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-sm); font-weight:var(--fw-medium); margin-bottom:4px; }
+.wallet-info-desc { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-xs); color:var(--text-muted); line-height:var(--lh-snug); }
 
 /* Transaction history */
 .wallet-tx-list { display:flex; flex-direction:column; gap:1px; }
 .wallet-tx-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
 .wallet-tx-icon { font-size:1rem; flex-shrink:0; }
 .wallet-tx-info { flex:1; min-width:0; }
-.wallet-tx-label { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:.78rem; }
-.wallet-tx-date { font-family:var(--font-b, Inter, sans-serif); font-size:.65rem; color:var(--text-muted); }
-.wallet-tx-amount { font-family:var(--font-b, Inter, sans-serif); font-size:.82rem; font-weight:600; flex-shrink:0; }
+.wallet-tx-label { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-sm); }
+.wallet-tx-date { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-xs); color:var(--text-muted); }
+.wallet-tx-amount { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-sm); font-weight:var(--fw-medium); flex-shrink:0; }
 .wallet-tx-amount.tx-credit { color:var(--color-success); }
 .wallet-tx-amount.tx-debit { color:var(--text-muted); }
 
 /* Sections */
 .wallet-section { margin-bottom: 24px; }
 .wallet-section-title {
-  font-family:var(--font-b, Inter, sans-serif); font-size: .85rem; font-weight:600;
+  font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-sm); font-weight:var(--fw-medium);
   color: var(--text-muted, #888);
   margin: 0 0 12px;
 }
@@ -7372,11 +7372,11 @@
   border-radius: var(--radius, 10px);
   color: var(--text, #eee);
   font-family: var(--font-b, Inter, sans-serif);
-  font-size: 0.9rem; font-weight: 600;
+  font-size:var(--text-base); font-weight:var(--fw-medium);
   cursor: pointer; transition: all 0.2s;
 }
 .wallet-topup-btn span {
-  font-size: 0.72rem; font-weight: 400;
+  font-size:var(--text-xs); font-weight:var(--fw-regular);
   color: var(--text-muted, #888);
 }
 .wallet-topup-btn:hover {
@@ -7407,27 +7407,27 @@
 }
 .wallet-tier-icon { font-size: 1.6rem; margin-bottom: 6px; }
 .wallet-tier-name {
-  font-size: 0.85rem; font-weight: 700;
+  font-size:var(--text-sm); font-weight:var(--fw-bold);
   margin-bottom: 4px;
 }
 .wallet-tier-price {
-  font-size: 0.75rem; color: var(--text-muted, #888);
+  font-size:var(--text-xs); color: var(--text-muted, #888);
   margin-bottom: 8px;
 }
 .wallet-tier-details {
   display: flex; flex-direction: column; gap: 2px;
-  font-size: 0.68rem; color: var(--text-muted, #888);
+  font-size:var(--text-xs); color: var(--text-muted, #888);
   margin-bottom: 10px;
 }
 .wallet-tier-badge {
   display: inline-block;
-  font-size: 0.65rem; font-weight: 600;
+  font-size:var(--text-xs); font-weight:var(--fw-medium);
   padding: 3px 8px; border-radius:var(--radius);
   background: var(--accent, #6366f1);
   color: #fff;
 }
 .wallet-tier-btn {
-  font-size: 0.72rem; padding: 4px 12px;
+  font-size:var(--text-xs); padding: 4px 12px;
   border-radius: var(--radius, 6px);
   background: transparent; cursor: pointer;
   transition: background 0.2s, color 0.2s;
@@ -7440,11 +7440,11 @@
 /* Transaction table */
 .wallet-txn-table {
   width: 100%; border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size:var(--text-sm);
 }
 .wallet-txn-table th {
-  text-align: left; font-size: 0.68rem;
-  text-transform: uppercase; letter-spacing: 0.04em;
+  text-align: left; font-size:var(--text-xs);
+  text-transform: uppercase; letter-spacing:var(--tracking-caps);
   color: var(--text-muted, #888);
   padding: 6px 8px;
   border-bottom: 1px solid var(--border, #333);
@@ -7458,7 +7458,7 @@
 }
 .wallet-txn-type {
   display: inline-block;
-  font-size: 0.65rem; font-weight: 600;
+  font-size:var(--text-xs); font-weight:var(--fw-medium);
   padding: 2px 6px; border-radius:var(--radius);
 }
 .wallet-txn-credit { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
@@ -7468,14 +7468,14 @@
 @media (max-width: 768px) {
   .wallet-wrap { gap:16px; }
   .wallet-balance-card { padding:1rem; }
-  .wallet-balance-num { font-size:1.8rem; }
+  .wallet-balance-num { font-size:var(--text-xl); }
   .wallet-balance-breakdown { gap:16px; }
   .wallet-cards { grid-template-columns: 1fr; }
   .wallet-packages { grid-template-columns: 1fr; }
   .wallet-topup-grid { grid-template-columns: repeat(2, 1fr); }
   .wallet-tiers { grid-template-columns: 1fr 1fr; }
   .wallet-info-grid { grid-template-columns: 1fr 1fr; }
-  .wallet-txn-table { font-size:.72rem; }
+  .wallet-txn-table { font-size:var(--text-xs); }
   .wallet-txn-table th, .wallet-txn-table td { padding:6px 4px; }
 }
 @media (max-width: 480px) {
@@ -7493,10 +7493,10 @@
 
 .vault-stacks-section { margin-bottom: 24px; }
 .vault-stacks-intro {
-  font-size: .8rem;
+  font-size:var(--text-sm);
   color: var(--text-muted);
   margin: 0 0 12px 0;
-  line-height: 1.5;
+  line-height:var(--lh-base);
 }
 
 .vault-stack-grid {
@@ -7665,10 +7665,10 @@
 .wallet-addon-card { border-style: dashed; }
 
 .wallet-plan-icon { font-size: 1.6rem; line-height: 1; }
-.wallet-plan-name { font-family: var(--font-b, Inter, sans-serif); font-size: 1rem; font-weight: 600; }
-.wallet-plan-price { font-family: var(--font-b, Inter, sans-serif); font-size: 1.4rem; font-weight: 700; color: var(--accent); }
-.wallet-plan-slots { font-family: var(--font-b, Inter, sans-serif); font-size: .75rem; color: var(--text-muted); }
-.wallet-plan-desc { font-family: var(--font-b, Inter, sans-serif); font-size: .78rem; color: var(--text-muted); line-height: 1.5; margin: 4px 0 8px 0; flex: 1; }
+.wallet-plan-name { font-family: var(--font-b, Inter, sans-serif); font-size:var(--text-md); font-weight:var(--fw-medium); }
+.wallet-plan-price { font-family: var(--font-b, Inter, sans-serif); font-size:var(--text-xl); font-weight:var(--fw-bold); color: var(--accent); }
+.wallet-plan-slots { font-family: var(--font-b, Inter, sans-serif); font-size:var(--text-xs); color: var(--text-muted); }
+.wallet-plan-desc { font-family: var(--font-b, Inter, sans-serif); font-size:var(--text-sm); color: var(--text-muted); line-height:var(--lh-base); margin: 4px 0 8px 0; flex: 1; }
 .wallet-plan-card button { width: 100%; }
 
 /* ── Dual/triple pool balance cards ────────────────────────── */
