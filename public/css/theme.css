@@ -2843,7 +2843,13 @@
      so theme switches (which change mini-chat height → reactor target)
      don't interpolate through a stale position for 200ms. */
   transition:opacity 200ms ease;
+  /* Default hidden; Home / Schematic / Spaceship-detail opt in via
+     CoreReactor.setVisible(true) which sets .reactor-visible on <html>.
+     `html.nice-call-mode[data-theme="jarvis"]` override below still wins
+     during a call so the reactor stays bright on top of the call overlay. */
+  display:none;
 }
+html.reactor-visible .jv-pp-reactor { display:block; }
 /* Brighten when responding (state machine writes data-jv-state on <html>) */
 [data-jv-state="streaming"] .jv-pp-reactor { opacity:0.75; }
 [data-jv-state="speaking"] .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }

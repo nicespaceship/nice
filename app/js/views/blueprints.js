@@ -137,7 +137,7 @@ const BlueprintsView = (() => {
       const _sourceParam = _hashParams.get('source');
       const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log', 'documentation', 'tron'];
       if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-      else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
+      else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'active' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
       else if (_hash === '#/log') _activeTab = 'missions';
@@ -156,27 +156,50 @@ const BlueprintsView = (() => {
       const outboxBadge = draftCount > 0
         ? ` <span class="bp-tab-count bp-tab-count--alert">${draftCount}</span>`
         : '';
+      // Full tab row is desktop; mobile shows a single picker pill instead
+      // (see .bp-tab-picker in CSS). Both trigger the same _switchTab()
+      // logic so the underlying tab state stays unified.
+      const tabDefs = [
+        { id: 'schematic', label: 'Schematic' },
+        { id: 'blueprints', label: 'Blueprints' },
+        { id: 'missions', label: 'Missions' },
+        { id: 'outbox', label: 'Outbox' + outboxBadge },
+        { id: 'operations', label: 'Operations' },
+        { id: 'log', label: 'Log' },
+        { id: 'documentation', label: 'Documentation' },
+        { id: 'tron', label: 'TRON', cls: 'bp-tab-tron' },
+      ];
+      const activeLabel = (tabDefs.find(t => t.id === _activeTab) || tabDefs[1]).label.replace(/<[^>]*>/g, '').trim();
       fixedTabs.innerHTML = `
         <div class="bp-type-tabs" id="bp-type-tabs">
-          <button class="bp-type-tab" data-tab="schematic">Schematic</button>
-          <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
-          <button class="bp-type-tab" data-tab="missions">Missions</button>
-          <button class="bp-type-tab" data-tab="outbox">Outbox${outboxBadge}</button>
-          <button class="bp-type-tab" data-tab="operations">Operations</button>
-          <button class="bp-type-tab" data-tab="log">Log</button>
-          <button class="bp-type-tab" data-tab="documentation">Documentation</button>
+          ${tabDefs.slice(0, 7).map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
           <span style="flex:1"></span>
-          <button class="bp-type-tab bp-tab-tron" data-tab="tron">TRON</button>
+          ${tabDefs.slice(7).map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+        </div>
+        <button class="bp-tab-picker" id="bp-tab-picker" aria-haspopup="dialog" aria-expanded="false">
+          <span class="bp-tab-picker-label">${activeLabel}</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+        </button>
+        <div class="bp-sheet-backdrop" id="bp-tab-sheet-backdrop" hidden></div>
+        <div class="bp-sheet" id="bp-tab-sheet" role="dialog" aria-label="Choose view" aria-modal="true" hidden>
+          <div class="bp-sheet-handle"></div>
+          <div class="bp-sheet-header"><h3 class="bp-sheet-title">Views</h3><button class="bp-sheet-close" id="bp-tab-sheet-close" aria-label="Close">&times;</button></div>
+          <div class="bp-sheet-body">
+            ${tabDefs.map(t => `<button class="bp-sheet-option${t.id === _activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+          </div>
         </div>`;
     }
 
     el.innerHTML = `
       <div class="bp-wrap">
 
-        <!-- Blueprints sub-tabs (Spaceships / Agents) -->
+        <!-- Blueprints sub-tabs (Spaceships / Agents are catalogs; Active
+             is the user's deployed ships + agents; Workshop is custom
+             builds + imports) -->
         <div class="bp-sub-tabs" id="bp-sub-tabs">
           <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
+          <button class="bp-sub-tab" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
           <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
         </div>
 
@@ -188,41 +211,20 @@ const BlueprintsView = (() => {
 
 
 
+        <!-- Search row: always contains search + view-toggle; on mobile
+             also renders a Filters button (see .bp-filter-toggle). The
+             filter controls themselves live in .bp-filter-controls which
+             is an inline flex row on desktop and a bottom sheet on mobile. -->
         <div class="bp-search-row">
           <div class="search-box">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
             <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" />
           </div>
-          <select id="bp-sort" class="filter-select" aria-label="Sort blueprints">
-            <option value="name">A — Z</option>
-            <option value="name-desc">Z — A</option>
-            <option value="popular">Most Popular</option>
-            <option value="rating">Highest Rated</option>
-            <option value="rarity-desc">Rarity: High → Low</option>
-            <option value="rarity-asc">Rarity: Low → High</option>
-          </select>
-          <select id="bp-category" class="filter-select" aria-label="Filter by category">
-            <option value="">All Categories</option>
-            ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
-          </select>
-          <select id="bp-tier" class="filter-select" aria-label="Filter by tier">
-            <option value="">All Tiers</option>
-            <option value="free">Free</option>
-            <option value="premium">Premium</option>
-          </select>
-          <div class="bp-source-filter" id="bp-source-filter" role="group" aria-label="Filter by source">
-            <button class="bp-source-btn${_sourceFilter==='all'?' active':''}"       data-source="all"       aria-pressed="${_sourceFilter==='all'}">All</button>
-            <button class="bp-source-btn${_sourceFilter==='official'?' active':''}"  data-source="official"  aria-pressed="${_sourceFilter==='official'}">Official</button>
-            <button class="bp-source-btn${_sourceFilter==='community'?' active':''}" data-source="community" aria-pressed="${_sourceFilter==='community'}">Community</button>
-          </div>
-          <div class="bp-rarity-filters" id="bp-rarity-filters" role="group" aria-label="Filter by rarity">
-            <button class="bp-rarity-btn active" data-rarity="all" aria-pressed="true">All</button>
-            <button class="bp-rarity-btn" data-rarity="Common" aria-pressed="false">Common</button>
-            <button class="bp-rarity-btn" data-rarity="Rare" aria-pressed="false">Rare</button>
-            <button class="bp-rarity-btn" data-rarity="Epic" aria-pressed="false">Epic</button>
-            <button class="bp-rarity-btn" data-rarity="Legendary" aria-pressed="false">Legendary</button>
-            <button class="bp-rarity-btn" data-rarity="Mythic" aria-pressed="false">Mythic</button>
-          </div>
+          <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
+            <span>Filters</span>
+            <span class="bp-filter-count" id="bp-filter-count" hidden></span>
+          </button>
           <div class="bp-view-toggle" id="bp-view-toggle">
             <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
@@ -233,6 +235,66 @@ const BlueprintsView = (() => {
             <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
             </button>
+          </div>
+        </div>
+
+        <div class="bp-sheet-backdrop" id="bp-filter-sheet-backdrop" hidden></div>
+        <div class="bp-filter-controls" id="bp-filter-sheet" role="group" aria-label="Blueprint filters">
+          <div class="bp-sheet-handle"></div>
+          <div class="bp-sheet-header">
+            <h3 class="bp-sheet-title">Filters</h3>
+            <button class="bp-sheet-close" id="bp-filter-sheet-close" aria-label="Close filters">&times;</button>
+          </div>
+          <div class="bp-sheet-body">
+            <label class="bp-filter-field">
+              <span class="bp-filter-label">Sort</span>
+              <select id="bp-sort" class="filter-select" aria-label="Sort blueprints">
+                <option value="name">A — Z</option>
+                <option value="name-desc">Z — A</option>
+                <option value="popular">Most Popular</option>
+                <option value="rating">Highest Rated</option>
+                <option value="rarity-desc">Rarity: High → Low</option>
+                <option value="rarity-asc">Rarity: Low → High</option>
+              </select>
+            </label>
+            <label class="bp-filter-field">
+              <span class="bp-filter-label">Category</span>
+              <select id="bp-category" class="filter-select" aria-label="Filter by category">
+                <option value="">All Categories</option>
+                ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
+              </select>
+            </label>
+            <label class="bp-filter-field">
+              <span class="bp-filter-label">Tier</span>
+              <select id="bp-tier" class="filter-select" aria-label="Filter by tier">
+                <option value="">All Tiers</option>
+                <option value="free">Free</option>
+                <option value="premium">Premium</option>
+              </select>
+            </label>
+            <div class="bp-filter-field">
+              <span class="bp-filter-label">Source</span>
+              <div class="bp-source-filter" id="bp-source-filter" role="group" aria-label="Filter by source">
+                <button class="bp-source-btn${_sourceFilter==='all'?' active':''}"       data-source="all"       aria-pressed="${_sourceFilter==='all'}">All</button>
+                <button class="bp-source-btn${_sourceFilter==='official'?' active':''}"  data-source="official"  aria-pressed="${_sourceFilter==='official'}">Official</button>
+                <button class="bp-source-btn${_sourceFilter==='community'?' active':''}" data-source="community" aria-pressed="${_sourceFilter==='community'}">Community</button>
+              </div>
+            </div>
+            <div class="bp-filter-field">
+              <span class="bp-filter-label">Rarity</span>
+              <div class="bp-rarity-filters" id="bp-rarity-filters" role="group" aria-label="Filter by rarity">
+                <button class="bp-rarity-btn active" data-rarity="all" aria-pressed="true">All</button>
+                <button class="bp-rarity-btn" data-rarity="Common" aria-pressed="false">Common</button>
+                <button class="bp-rarity-btn" data-rarity="Rare" aria-pressed="false">Rare</button>
+                <button class="bp-rarity-btn" data-rarity="Epic" aria-pressed="false">Epic</button>
+                <button class="bp-rarity-btn" data-rarity="Legendary" aria-pressed="false">Legendary</button>
+                <button class="bp-rarity-btn" data-rarity="Mythic" aria-pressed="false">Mythic</button>
+              </div>
+            </div>
+          </div>
+          <div class="bp-sheet-footer">
+            <button class="btn btn-sm bp-filter-clear" id="bp-filter-clear">Clear all</button>
+            <button class="btn btn-sm btn-primary bp-filter-apply" id="bp-filter-apply">Done</button>
           </div>
         </div>
 
@@ -262,6 +324,7 @@ const BlueprintsView = (() => {
     _toggleSchematicView();
 
     _bindEvents();
+    _updateFilterCount();
     if (_activeTab === 'blueprints') _applyFilters(); // async — renders activated section + paginated grid
     _handleDeepLink();
   }
@@ -763,94 +826,25 @@ const BlueprintsView = (() => {
       <span class="bp-prog-next">${p.nextRank.name} — ${xpFmt} XP to unlock ${p.nextMaxRarity} (${p.nextSlots} slots)</span>`;
   }
 
-  function _renderActivatedSection() {
-    _renderProgressionBar();
-    const wrap = document.getElementById('bp-activated-wrap');
-    if (!wrap) return;
-    if (typeof Blueprints === 'undefined') { wrap.innerHTML = ''; return; }
-
-    let type, label, activated;
-    if (_subTab === 'agent') {
-      type = 'agent'; label = 'AGENTS';
-      activated = Blueprints.getActivatedAgents ? Blueprints.getActivatedAgents() : [];
-      // Include custom agents from State (same merge pattern as Schematic)
-      const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
-      customAgents.forEach(ca => { if (ca && !activated.find(a => a.id === ca.id)) activated.push(ca); });
-    } else if (_subTab === 'spaceship') {
-      type = 'spaceship'; label = 'SPACESHIPS';
-      activated = Blueprints.getActivatedShips ? Blueprints.getActivatedShips() : [];
-      // Include custom ships from State (same merge pattern as Schematic)
-      const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
-      customShips.forEach(cs => { if (cs && !activated.find(s => s.id === cs.id)) activated.push(cs); });
-    } else {
-      wrap.innerHTML = ''; return;
-    }
-
-    if (!activated.length) {
-      const emptyMsg = `No ${label.toLowerCase()} deployed yet. Browse below.`;
-      wrap.innerHTML = `<div class="bp-activated-section"><p class="bp-activated-empty">${emptyMsg}</p></div><div class="bp-section-divider"></div>`;
-      return;
-    }
-
-    // Merge instance data with blueprint — blueprint fields (rarity, name, etc.) take priority
-    let items = activated.map(a => {
-      const getter = type === 'agent' ? Blueprints.getAgent : Blueprints.getSpaceship;
-      const fullBp = getter ? getter(a.id || a.blueprint_id) : null;
-      return Object.assign({}, a, fullBp || {}, { type, _forceActive: true, id: a.id || (fullBp && fullBp.id) });
-    });
-
-    // Apply same filters as the main grid
-    const q = (document.getElementById('bp-search')?.value || '').toLowerCase();
-    if (q) {
-      items = items.filter(b => {
-        const name = (b.name || '').toLowerCase();
-        const desc = (b.description || b.desc || '').toLowerCase();
-        const tags = (b.tags || []).join(' ').toLowerCase();
-        return name.includes(q) || desc.includes(q) || tags.includes(q);
-      });
-    }
-    const rarityBtn = document.querySelector('.bp-rarity-btn.active');
-    const rarity = rarityBtn?.dataset.rarity || 'all';
-    if (rarity !== 'all') {
-      items = items.filter(b => (b.rarity || 'Common') === rarity);
-    }
-
-    // Hide section if all activated items are filtered out
-    if (!items.length) {
-      wrap.innerHTML = '';
-      return;
-    }
-
-    let cardsHTML;
-    if (_viewMode === 'list') {
-      let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
-      if (type === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
-      const header = `<div class="bpl-row bpl-header">
-        <span class="bpl-rarity"></span><span class="bpl-name">Name</span><span class="bpl-cat">Category</span>
-        <span class="bpl-desc">Description</span><span class="bpl-stat1">${sh1}</span><span class="bpl-stat2">${sh2}</span>
-        <span class="bpl-stat3">${sh3}</span><span class="bpl-rating">Rating</span><span class="bpl-dl">Connected</span>
-        <span></span><span class="bpl-action"></span></div>`;
-      cardsHTML = header + items.map(bp => _listRowHTML(bp, type)).join('');
-    } else {
-      cardsHTML = items.map(bp => _tcgCardHTML(bp, type)).join('');
-    }
-
-    const totalCount = activated.length;
-    const countLabel = items.length < totalCount ? `${items.length}/${totalCount}` : `${totalCount}`;
-    wrap.innerHTML = `<div class="bp-activated-section">
-      <h3 class="bp-activated-title">YOUR ${label} <span class="bp-activated-count">${countLabel}</span></h3>
-      <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
-    </div><div class="bp-section-divider"></div>`;
-
-    // Bind events for the activated section cards
-    const section = wrap.querySelector('.bp-activated-grid');
-    if (section) _bindCardEvents(section);
-  }
-
   function _workshopCount() {
     if (typeof Blueprints === 'undefined' || !Blueprints.listMyBlueprints) return 0;
     const my = Blueprints.listMyBlueprints();
     return my.spaceships.length + my.agents.length;
+  }
+
+  /** Activated (deployed) ships + agents across both types. Includes custom
+   *  entries from State so the Active tab mirrors what Schematic sees. */
+  function _activeCount() {
+    if (typeof Blueprints === 'undefined') return 0;
+    const ships = Blueprints.getActivatedShips ? Blueprints.getActivatedShips() : [];
+    const agents = Blueprints.getActivatedAgents ? Blueprints.getActivatedAgents() : [];
+    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+    const seenShips = new Set(ships.map(s => s.id));
+    const seenAgents = new Set(agents.map(a => a.id));
+    customShips.forEach(s => { if (s && !seenShips.has(s.id)) { ships.push(s); seenShips.add(s.id); } });
+    customAgents.forEach(a => { if (a && !seenAgents.has(a.id)) { agents.push(a); seenAgents.add(a.id); } });
+    return ships.length + agents.length;
   }
 
   /* ── Workshop — custom builds + imports for both ships and agents ── */
@@ -896,8 +890,98 @@ const BlueprintsView = (() => {
     if (!ships.length && !agents.length) {
       const totalRaw = my.spaceships.length + my.agents.length;
       const empty = totalRaw === 0
-        ? `<p class="bp-activated-empty">Workshop is empty. Use <strong>+ Create</strong> or <strong>Import Blueprint</strong> to add your own builds.</p>`
+        ? `<p class="bp-activated-empty">Workshop is empty. Create a new blueprint from scratch or import one from a markdown export.</p>`
         : `<p class="bp-activated-empty">No workshop blueprints match the current filter.</p>`;
+      wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
+      return;
+    }
+
+    const renderSection = (label, items, type) => {
+      if (!items.length) return '';
+      let cardsHTML;
+      if (_viewMode === 'list') {
+        let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
+        if (type === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
+        const header = `<div class="bpl-row bpl-header">
+          <span class="bpl-rarity"></span><span class="bpl-name">Name</span><span class="bpl-cat">Category</span>
+          <span class="bpl-desc">Description</span><span class="bpl-stat1">${sh1}</span><span class="bpl-stat2">${sh2}</span>
+          <span class="bpl-stat3">${sh3}</span><span class="bpl-rating">Rating</span><span class="bpl-dl">Connected</span>
+          <span></span><span class="bpl-action"></span></div>`;
+        cardsHTML = header + items.map(bp => _listRowHTML(bp, type)).join('');
+      } else {
+        cardsHTML = items.map(bp => _tcgCardHTML(bp, type)).join('');
+      }
+      return `<div class="bp-activated-section">
+        <h3 class="bp-activated-title">${label} <span class="bp-activated-count">${items.length}</span></h3>
+        <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
+      </div>`;
+    };
+
+    wrap.innerHTML = renderSection('SPACESHIPS', ships, 'spaceship') + renderSection('AGENTS', agents, 'agent');
+    wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
+  }
+
+  /* ── Active — the user's deployed ships + agents, the content that
+        previously sat as a "YOUR SPACESHIPS/AGENTS" section on top of
+        each catalog tab. Same filter/view semantics as Workshop. ── */
+  function _renderActive() {
+    _renderProgressionBar();
+    const wrap = document.getElementById('bp-activated-wrap');
+    const grid = document.getElementById('bp-grid');
+    const loadMore = document.getElementById('bp-load-more');
+    const resultBar = document.getElementById('bp-result-bar');
+    if (!wrap) return;
+
+    if (grid) grid.innerHTML = '';
+    if (loadMore) loadMore.innerHTML = '';
+    if (resultBar) resultBar.textContent = '';
+
+    if (typeof Blueprints === 'undefined') { wrap.innerHTML = ''; return; }
+
+    // Gather activated ships + agents; merge in custom entries from State so
+    // the list matches what Schematic shows (same merge pattern both use).
+    let ships = Blueprints.getActivatedShips ? Blueprints.getActivatedShips() : [];
+    let agents = Blueprints.getActivatedAgents ? Blueprints.getActivatedAgents() : [];
+    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+    customShips.forEach(s => { if (s && !ships.find(x => x.id === s.id)) ships.push(s); });
+    customAgents.forEach(a => { if (a && !agents.find(x => x.id === a.id)) agents.push(a); });
+
+    // Hydrate each instance with its catalog blueprint so card rendering
+    // has rarity/name/description fields the instance row may lack.
+    const hydrate = (items, type) => items.map(item => {
+      const getter = type === 'agent' ? Blueprints.getAgent : Blueprints.getSpaceship;
+      const fullBp = getter ? getter(item.id || item.blueprint_id) : null;
+      return Object.assign({}, item, fullBp || {}, { type, _forceActive: true, id: item.id || (fullBp && fullBp.id) });
+    });
+    ships = hydrate(ships, 'spaceship');
+    agents = hydrate(agents, 'agent');
+
+    const totalRaw = ships.length + agents.length;
+
+    // Apply search + rarity filters — sort/category/tier/source don't
+    // apply to a user's small deployed set, but search and rarity are
+    // still useful for narrowing large fleets.
+    const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
+    const rarityBtn = document.querySelector('.bp-rarity-btn.active');
+    const rarity = rarityBtn?.dataset.rarity || 'all';
+    const filterFn = (b) => {
+      if (q) {
+        const name = (b.name || '').toLowerCase();
+        const desc = (b.description || b.desc || '').toLowerCase();
+        const tags = (b.tags || []).join(' ').toLowerCase();
+        if (!name.includes(q) && !desc.includes(q) && !tags.includes(q)) return false;
+      }
+      if (rarity !== 'all' && (b.rarity || 'Common') !== rarity) return false;
+      return true;
+    };
+    ships = ships.filter(filterFn);
+    agents = agents.filter(filterFn);
+
+    if (!ships.length && !agents.length) {
+      const empty = totalRaw === 0
+        ? `<p class="bp-activated-empty">Nothing deployed yet. Browse the <strong>Spaceships</strong> or <strong>Agents</strong> tab to deploy your first blueprint.</p>`
+        : `<p class="bp-activated-empty">No active blueprints match the current filter.</p>`;
       wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
       return;
     }
@@ -943,6 +1027,14 @@ const BlueprintsView = (() => {
       return;
     }
 
+    // Active sub-tab — the user's deployed ships + agents. Previously
+    // this content rode on top of each catalog tab as a "YOUR X" section;
+    // it now has its own tab so browsing the catalog stays clean.
+    if (_subTab === 'active') {
+      _renderActive();
+      return;
+    }
+
     // Reset pagination when not appending
     if (!append) {
       _currentPage = 1;
@@ -955,8 +1047,11 @@ const BlueprintsView = (() => {
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
 
-    // Activated section is always client-side (small dataset)
-    _renderActivatedSection();
+    // Catalog tabs no longer render the activated section — it lives in
+    // the dedicated Active sub-tab now. Clear any leftover markup.
+    const activatedWrap = document.getElementById('bp-activated-wrap');
+    if (activatedWrap) activatedWrap.innerHTML = '';
+    _renderProgressionBar();
 
     // Show loading state
     _isLoading = true;
@@ -1071,7 +1166,6 @@ const BlueprintsView = (() => {
     if (_colSort.key && _viewMode === 'list') _sortByColumn(list);
 
     _updateResultBar(q, rarity);
-    _renderActivatedSection();
     _currentResults = list;
     _totalResults = list.length;
     _renderGrid(list);
@@ -1209,6 +1303,11 @@ const BlueprintsView = (() => {
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
+    // Reactor is the Schematic tab's centerpiece; hidden on Blueprints /
+    // Missions / Log / etc. Router default-hides on every route change,
+    // so this toggle only has to handle in-view tab switches.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(isSchematic);
+
     // Sub-tabs (Spaceships/Agents) — only show when Blueprints tab active
     if (subTabs) subTabs.style.display = isBlueprintsTab ? '' : 'none';
 
@@ -1219,8 +1318,10 @@ const BlueprintsView = (() => {
     if (activatedWrap) activatedWrap.style.display = catalogDisplay;
     if (grid) grid.style.display = catalogDisplay;
     if (loadMore) loadMore.style.display = catalogDisplay;
-    const toolbarActions = document.getElementById('bp-toolbar-actions');
-    if (toolbarActions) toolbarActions.style.display = catalogDisplay;
+    // "+ Create" / "Import Blueprint" only belong where user-authored
+    // content lives — the Workshop sub-tab. Spaceships and Agents are
+    // catalogs of pre-built blueprints, so the buttons don't apply there.
+    _updateToolbarVisibility();
 
     // Schematic
     if (schematicEl) {
@@ -1826,6 +1927,28 @@ const BlueprintsView = (() => {
     parentEl.appendChild(overlay);
   }
 
+  /** Toolbar actions (Create + Import) only show on the Workshop sub-tab. */
+  function _updateToolbarVisibility() {
+    const toolbarActions = document.getElementById('bp-toolbar-actions');
+    if (!toolbarActions) return;
+    const show = _activeTab === 'blueprints' && _subTab === 'workshop';
+    toolbarActions.style.display = show ? '' : 'none';
+  }
+
+  /** Count non-default filters and reflect in the mobile Filters-button badge. */
+  function _updateFilterCount() {
+    const badge = document.getElementById('bp-filter-count');
+    if (!badge) return;
+    let n = 0;
+    if (document.getElementById('bp-category')?.value) n++;
+    if (document.getElementById('bp-tier')?.value) n++;
+    if (_sourceFilter && _sourceFilter !== 'all') n++;
+    const activeRarity = document.querySelector('.bp-rarity-btn.active')?.dataset.rarity;
+    if (activeRarity && activeRarity !== 'all') n++;
+    if (n > 0) { badge.textContent = String(n); badge.hidden = false; }
+    else { badge.textContent = ''; badge.hidden = true; }
+  }
+
   function _bindEvents() {
     // Scroll-end detection for tab fade hint
     const tabBar = document.getElementById('bp-type-tabs');
@@ -1838,19 +1961,41 @@ const BlueprintsView = (() => {
       _checkScroll();
     }
 
-    // Main tabs
-    document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
-      const tab = e.target.closest('.bp-type-tab');
-      if (!tab) return;
-      document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      _activeTab = tab.dataset.tab;
+    // Main tabs (shared logic — called by both the desktop tab bar and
+    // the mobile sheet picker so the tab state stays in one place).
+    const _switchTab = (tabId) => {
+      if (!tabId || tabId === _activeTab) return;
+      document.querySelectorAll('.bp-type-tab, .bp-sheet-option').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+      _activeTab = tabId;
       _colSort = { key: null, dir: 'asc' };
+      const tabLabel = document.querySelector(`.bp-type-tab[data-tab="${tabId}"]`)?.textContent?.trim();
+      const pickerLabel = document.querySelector('#bp-tab-picker .bp-tab-picker-label');
+      if (pickerLabel && tabLabel) pickerLabel.textContent = tabLabel;
       _toggleSchematicView();
       if (_activeTab !== 'blueprints') return;
       _updateRarityFilters();
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
       _applyFilters();
+    };
+    document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
+      const tab = e.target.closest('.bp-type-tab');
+      if (tab) _switchTab(tab.dataset.tab);
+    });
+
+    // Mobile tab picker — opens the bottom sheet with the same tab list.
+    const tabPicker = document.getElementById('bp-tab-picker');
+    const tabSheet = document.getElementById('bp-tab-sheet');
+    const tabBackdrop = document.getElementById('bp-tab-sheet-backdrop');
+    const _openTabSheet = () => { if (tabSheet && tabBackdrop) { tabSheet.hidden = false; tabBackdrop.hidden = false; requestAnimationFrame(() => { tabSheet.classList.add('open'); tabBackdrop.classList.add('open'); tabPicker?.setAttribute('aria-expanded', 'true'); }); } };
+    const _closeTabSheet = () => { if (tabSheet && tabBackdrop) { tabSheet.classList.remove('open'); tabBackdrop.classList.remove('open'); tabPicker?.setAttribute('aria-expanded', 'false'); setTimeout(() => { tabSheet.hidden = true; tabBackdrop.hidden = true; }, 200); } };
+    tabPicker?.addEventListener('click', _openTabSheet);
+    tabBackdrop?.addEventListener('click', _closeTabSheet);
+    document.getElementById('bp-tab-sheet-close')?.addEventListener('click', _closeTabSheet);
+    tabSheet?.addEventListener('click', (e) => {
+      const opt = e.target.closest('.bp-sheet-option');
+      if (!opt) return;
+      _switchTab(opt.dataset.tab);
+      _closeTabSheet();
     });
 
     // Sub-tabs (Spaceships / Agents within Blueprints)
@@ -1862,6 +2007,7 @@ const BlueprintsView = (() => {
       _subTab = tab.dataset.sub;
       _colSort = { key: null, dir: 'asc' };
       _updateRarityFilters();
+      _updateToolbarVisibility();
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
       _applyFilters();
     });
@@ -1870,9 +2016,38 @@ const BlueprintsView = (() => {
       clearTimeout(_searchTimer);
       _searchTimer = setTimeout(() => _applyFilters(), 300);
     });
-    document.getElementById('bp-sort')?.addEventListener('change', () => _applyFilters());
-    document.getElementById('bp-category')?.addEventListener('change', () => _applyFilters());
-    document.getElementById('bp-tier')?.addEventListener('change', () => _applyFilters());
+    document.getElementById('bp-sort')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
+    document.getElementById('bp-category')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
+    document.getElementById('bp-tier')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
+
+    // Mobile filters sheet — same controls, rendered as a bottom drawer
+    // on narrow viewports. Desktop CSS overrides display so the sheet is
+    // just an inline flex row.
+    const filterToggle = document.getElementById('bp-filter-toggle');
+    const filterSheet = document.getElementById('bp-filter-sheet');
+    const filterBackdrop = document.getElementById('bp-filter-sheet-backdrop');
+    const _openFilterSheet = () => { if (filterSheet && filterBackdrop) { filterBackdrop.hidden = false; requestAnimationFrame(() => { filterSheet.classList.add('open'); filterBackdrop.classList.add('open'); filterToggle?.setAttribute('aria-expanded', 'true'); }); } };
+    const _closeFilterSheet = () => { if (filterSheet && filterBackdrop) { filterSheet.classList.remove('open'); filterBackdrop.classList.remove('open'); filterToggle?.setAttribute('aria-expanded', 'false'); setTimeout(() => { filterBackdrop.hidden = true; }, 200); } };
+    filterToggle?.addEventListener('click', _openFilterSheet);
+    filterBackdrop?.addEventListener('click', _closeFilterSheet);
+    document.getElementById('bp-filter-sheet-close')?.addEventListener('click', _closeFilterSheet);
+    document.getElementById('bp-filter-apply')?.addEventListener('click', _closeFilterSheet);
+    document.getElementById('bp-filter-clear')?.addEventListener('click', () => {
+      const sort = document.getElementById('bp-sort'); if (sort) sort.value = 'name';
+      const cat = document.getElementById('bp-category'); if (cat) cat.value = '';
+      const tier = document.getElementById('bp-tier'); if (tier) tier.value = '';
+      _sourceFilter = 'all';
+      document.querySelectorAll('.bp-source-btn').forEach(b => { const on = b.dataset.source === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      document.querySelectorAll('.bp-rarity-btn').forEach(b => { const on = b.dataset.rarity === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      _applyFilters();
+      _updateFilterCount();
+    });
+    // Close on ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (filterSheet?.classList.contains('open')) _closeFilterSheet();
+      if (document.getElementById('bp-tab-sheet')?.classList.contains('open')) _closeTabSheet();
+    });
 
     // View toggle buttons
     document.getElementById('bp-view-toggle')?.addEventListener('click', (e) => {
@@ -1893,6 +2068,7 @@ const BlueprintsView = (() => {
       btn.classList.add('active');
       btn.setAttribute('aria-pressed', 'true');
       _applyFilters();
+      _updateFilterCount();
     });
 
     document.getElementById('bp-source-filter')?.addEventListener('click', (e) => {
@@ -1904,6 +2080,7 @@ const BlueprintsView = (() => {
         b.classList.toggle('active', on);
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
+      _updateFilterCount();
       // Reflect in the URL so the filter is shareable / survives reloads
       const base = (location.hash || '').split('?')[0] || '#/bridge';
       const params = new URLSearchParams((location.hash || '').split('?')[1] || '');

@@ -2314,17 +2314,35 @@ const NICE = (() => {
     }
   }
 
+  function _updateGuestBannerHeight() {
+    const banner = document.getElementById('guest-banner');
+    if (!banner) return;
+    document.documentElement.style.setProperty('--guest-banner-height', banner.offsetHeight + 'px');
+  }
+
   function _showGuestBanner() {
     if (document.getElementById('guest-banner')) return;
     const banner = document.createElement('div');
     banner.id = 'guest-banner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--bg-alt);color:var(--text);padding:6px 16px;text-align:center;font-size:0.78rem;font-family:var(--font-b);display:flex;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid var(--border);';
-    banner.innerHTML = 'Browse freely &mdash; <a href="#/profile" style="color:var(--accent);font-weight:600;text-decoration:underline;">Sign in</a> to deploy agents and run missions.';
+    banner.className = 'guest-banner';
+    banner.innerHTML = 'Browse freely &mdash; <a href="#/profile" class="guest-banner-link">Sign in</a> to deploy agents and run missions.';
     document.body.prepend(banner);
-    const sidebar = document.getElementById('app-sidebar');
-    if (sidebar) sidebar.style.top = '30px';
-    const mobileBar = document.getElementById('app-mobile-bar');
-    if (mobileBar) mobileBar.style.top = '30px';
+    _updateGuestBannerHeight();
+    if (window.ResizeObserver) {
+      banner._resizeObserver = new ResizeObserver(_updateGuestBannerHeight);
+      banner._resizeObserver.observe(banner);
+    } else {
+      window.addEventListener('resize', _updateGuestBannerHeight);
+    }
+  }
+
+  function _hideGuestBanner() {
+    const banner = document.getElementById('guest-banner');
+    if (!banner) return;
+    if (banner._resizeObserver) banner._resizeObserver.disconnect();
+    else window.removeEventListener('resize', _updateGuestBannerHeight);
+    banner.remove();
+    document.documentElement.style.removeProperty('--guest-banner-height');
   }
 
   /** Check if a write operation is allowed (blocks in guest mode) */
@@ -2461,12 +2479,7 @@ const NICE = (() => {
     State.on('user', (user) => {
       if (user) {
         State.set('guestMode', false);
-        const banner = document.getElementById('guest-banner');
-        if (banner) banner.remove();
-        const sidebar = document.getElementById('app-sidebar');
-        if (sidebar) sidebar.style.top = '';
-        const mobileBar = document.getElementById('app-mobile-bar');
-        if (mobileBar) mobileBar.style.top = '';
+        _hideGuestBanner();
       }
     });
   }

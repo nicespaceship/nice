@@ -1242,7 +1242,7 @@
    SIDEBAR (Desktop always visible, mobile drawer)
 ───────────────────────────────────────────────────────────────── */
 .app-sidebar {
-  position:fixed; top:0; left:0; bottom:0; width:56px;
+  position:fixed; top:var(--guest-banner-height, 0px); left:0; bottom:0; width:56px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
   border-right:var(--border-width) solid var(--border);
   color:var(--nav-text, var(--text));
@@ -1553,10 +1553,11 @@
    MAIN CONTENT
 ───────────────────────────────────────────────────────────────── */
 .app-main {
-  margin-top:0; margin-left:56px;
+  margin-top:var(--guest-banner-height, 0px); margin-left:56px;
   position:relative; z-index:1;
   transition:margin-left .3s ease;
-  height:100vh; overflow:hidden; overflow-x:hidden;
+  height:calc(100vh - var(--guest-banner-height, 0px));
+  overflow:hidden; overflow-x:hidden;
   display:flex; flex-direction:column;
 }
 .app-sidebar.open ~ .app-main { margin-left:280px; }
@@ -1582,7 +1583,7 @@
    here we override only the anchor + dimensions for the mobile layout. */
 @media (max-width:768px) {
   .app-hud-panel {
-    top:48px; left:0; width:auto; right:0;
+    top:calc(48px + var(--guest-banner-height, 0px)); left:0; width:auto; right:0;
     border-radius:0;
     background:var(--nav-bg, var(--bg2, #18181b));
     backdrop-filter:blur(18px);
@@ -1615,7 +1616,7 @@
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
 .app-mobile-bar {
   display:none;
-  position:fixed; top:0; left:0; right:0; height:48px;
+  position:fixed; top:var(--guest-banner-height, 0px); left:0; right:0; height:48px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
   border-bottom:var(--border-width) solid var(--border);
   align-items:center; justify-content:space-between; padding:0 12px; z-index:301;
@@ -1659,13 +1660,13 @@
 
 @media (max-width:768px) {
   .app-mobile-bar { display:flex; }
-  .app-sidebar { width:280px; transform:translateX(-100%); transition:transform .3s ease; top:0; z-index:302; }
+  .app-sidebar { width:280px; transform:translateX(-100%); transition:transform .3s ease; top:var(--guest-banner-height, 0px); z-index:302; }
   .app-sidebar.open { width:280px; transform:translateX(0); }
   .app-mobile-bar { transition:transform .3s ease; }
   .app-sidebar.open ~ .app-mobile-bar { transform:translateX(280px); }
   .app-sidebar.open ~ .app-mobile-bar #mobile-sidebar-toggle { visibility:hidden; }
   .app-sidebar.open ~ .app-main { margin-left:0; transform:translateX(280px); transition:transform .3s ease; }
-  .app-main { margin-left:0; margin-top:48px; }
+  .app-main { margin-left:0; margin-top:calc(48px + var(--guest-banner-height, 0px)); }
   .app-sidebar.open ~ .nice-ai { left:50%; width:calc(100% - 48px); }
   .app-sidebar:not(.open) .side-link span,
   .app-sidebar:not(.open) .app-brand-text,
@@ -9394,9 +9395,25 @@ body.preview-active .nice-ai {
   .sch-slot-label { font-size:.58rem; }
 }
 
-/* ── Guest banner: responsive ── */
+/* ── Guest banner ──
+   Plain block text (not flex) so the "Sign in" link wraps as a unit and
+   reflows naturally on narrow viewports. Height is measured in JS and
+   exposed as --guest-banner-height on <html>; the sidebar, mobile bar,
+   and app-main all offset from it, with a 0px fallback when absent. */
+.guest-banner {
+  position:fixed; top:0; left:0; right:0; z-index:9999;
+  background:var(--bg-alt); color:var(--text);
+  padding:6px 16px; text-align:center;
+  font-size:.78rem; font-family:var(--font-b);
+  line-height:1.5;
+  border-bottom:1px solid var(--border);
+}
+.guest-banner-link {
+  color:var(--accent); font-weight:600; text-decoration:underline;
+  white-space:nowrap;
+}
 @media (max-width:640px) {
-  #guest-banner { font-size:.7rem; padding:5px 10px; }
+  .guest-banner { font-size:.7rem; padding:5px 10px; }
 }
 
 /* ── Wallet cards: stack on mobile ── */
@@ -9409,5 +9426,181 @@ body.preview-active .nice-ai {
 @media (max-width:480px) {
   .achievement-unlock-card { padding:1.5rem 1.5rem; min-width:auto; max-width:calc(100vw - 32px); }
   .rankup-card { padding:1.5rem 2rem; min-width:auto; max-width:calc(100vw - 32px); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Bridge mobile declutter — top-tabs picker + filters bottom-sheet.
+   The same markup renders as a flat inline toolbar on desktop and a
+   bottom-sheet drawer on mobile. Desktop hides the picker/sheet
+   scaffolding and lets filter controls flow inline; mobile hides the
+   scroll-prone horizontal elements and exposes them via the drawer.
+───────────────────────────────────────────────────────────────── */
+.bp-tab-picker { display:none; }
+.bp-filter-toggle { display:none; }
+.bp-filter-count {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:16px; height:16px; padding:0 5px; margin-left:4px;
+  background:var(--accent); color:var(--bg, #0b0b0b);
+  border-radius:9999px; font-size:.55rem; font-weight:700; letter-spacing:0;
+}
+.bp-filter-count[hidden] { display:none; }
+
+/* Desktop: flatten the sheet wrapper to an inline filter row. Sheet
+   chrome (handle/header/footer/labels) is hidden; sheet-body uses
+   display:contents so the field elements flow as direct children. */
+.bp-filter-controls {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.bp-filter-controls > .bp-sheet-handle,
+.bp-filter-controls > .bp-sheet-header,
+.bp-filter-controls > .bp-sheet-footer { display:none; }
+.bp-filter-controls > .bp-sheet-body { display:contents; }
+.bp-filter-controls .bp-filter-field { display:flex; align-items:center; gap:8px; }
+.bp-filter-controls .bp-filter-label { display:none; }
+.bp-sheet, .bp-sheet-backdrop { display:none; }
+
+/* Mobile declutter: hide the horizontal tab scroll, replace with a
+   picker pill that opens a bottom-sheet. Blueprint filters collapse
+   into a "Filters" button that opens a second bottom-sheet. */
+@media (max-width:640px) {
+  #bp-type-tabs { display:none; }
+  .bp-tab-picker {
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:8px 14px; width:100%;
+    background:var(--bg-alt); color:var(--text);
+    border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius, 10px);
+    font-family:var(--font-b); font-size:.82rem; font-weight:600;
+    cursor:pointer; margin-bottom:8px;
+  }
+  .bp-tab-picker:hover { border-color:var(--border-hi, var(--accent)); }
+
+  .bp-filter-toggle {
+    display:inline-flex; align-items:center; justify-content:center; gap:4px;
+    padding:6px 10px;
+    background:var(--bg-alt); color:var(--text-muted);
+    border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius, 10px);
+    font-family:var(--font-b); font-size:.72rem;
+    cursor:pointer; white-space:nowrap; flex-shrink:0;
+  }
+  .bp-filter-toggle:hover { color:var(--text); border-color:var(--border-hi); }
+  .bp-filter-toggle[aria-expanded="true"] { color:var(--accent); border-color:var(--accent); }
+
+  /* Search on its own row; filter toggle + view toggle share row 2 */
+  .bp-search-row { flex-wrap:wrap; gap:6px; }
+  .bp-search-row .search-box { flex:1 1 100%; }
+  .bp-search-row .search-box .search-input { width:100% !important; }
+  .bp-view-toggle { margin-left:auto; }
+
+  /* Bottom-sheet scaffolding — shared by .bp-sheet and .bp-filter-controls */
+  .bp-sheet,
+  .bp-filter-controls.bp-filter-controls {
+    position:fixed; bottom:0; left:0; right:0;
+    max-height:min(80vh, 560px);
+    display:flex; flex-direction:column; gap:0; margin:0; padding:0;
+    background:var(--bg-alt); color:var(--text);
+    border-top:var(--border-width, 1px) solid var(--border);
+    border-radius:var(--radius, 10px) var(--radius, 10px) 0 0;
+    z-index:10000; overflow:hidden;
+    transform:translateY(100%);
+    transition:transform .2s ease;
+    box-shadow:0 -4px 20px rgba(0,0,0,.3);
+  }
+  .bp-sheet.open,
+  .bp-filter-controls.open { transform:translateY(0); }
+  .bp-sheet[hidden] { display:none; }
+
+  .bp-sheet > .bp-sheet-handle,
+  .bp-filter-controls > .bp-sheet-handle {
+    display:block; width:36px; height:4px; margin:8px auto;
+    background:var(--border-hi, var(--text-muted)); border-radius:4px;
+    flex-shrink:0;
+  }
+  .bp-sheet > .bp-sheet-header,
+  .bp-filter-controls > .bp-sheet-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px 12px;
+    border-bottom:var(--border-width, 1px) solid var(--border);
+    flex-shrink:0;
+  }
+  .bp-sheet-title {
+    font-family:var(--font-b); font-size:1rem; font-weight:600;
+    margin:0; color:var(--text);
+  }
+  .bp-sheet-close {
+    width:28px; height:28px; padding:0;
+    background:transparent; border:none;
+    color:var(--text-muted); font-size:1.4rem; line-height:1; cursor:pointer;
+  }
+  .bp-sheet-close:hover { color:var(--text); }
+
+  .bp-sheet > .bp-sheet-body,
+  .bp-filter-controls > .bp-sheet-body {
+    display:flex; flex-direction:column; gap:14px;
+    padding:16px;
+    overflow-y:auto;
+    flex:1 1 auto;
+  }
+
+  /* Tab sheet option list */
+  .bp-sheet-option {
+    display:flex; align-items:center; padding:12px 14px; width:100%;
+    background:transparent;
+    border:var(--border-width, 1px) solid transparent;
+    color:var(--text); font-family:var(--font-b); font-size:.9rem;
+    border-radius:var(--radius, 10px); cursor:pointer; text-align:left;
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .bp-sheet-option:hover { background:var(--panel-bg, rgba(255,255,255,.04)); }
+  .bp-sheet-option.active {
+    color:var(--accent); border-color:var(--accent);
+    background:rgba(var(--accent-rgb, 100,100,100), 0.08);
+  }
+
+  /* Filter sheet fields — stacked with top labels */
+  .bp-filter-controls .bp-filter-field {
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .bp-filter-controls .bp-filter-label {
+    display:block;
+    font-family:var(--font-b); font-size:.68rem;
+    letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-muted);
+  }
+  .bp-filter-controls .filter-select {
+    width:100%; padding:10px 12px; font-size:.85rem;
+  }
+  .bp-filter-controls .bp-source-filter,
+  .bp-filter-controls .bp-rarity-filters {
+    display:flex; flex-wrap:wrap; gap:4px;
+  }
+  .bp-filter-controls .bp-source-btn,
+  .bp-filter-controls .bp-rarity-btn {
+    flex:1 1 auto; padding:8px 10px; font-size:.7rem;
+  }
+
+  .bp-filter-controls > .bp-sheet-footer {
+    display:flex; gap:8px;
+    padding:12px 16px;
+    border-top:var(--border-width, 1px) solid var(--border);
+    flex-shrink:0;
+  }
+  .bp-filter-clear { flex:1 1 0; }
+  .bp-filter-apply { flex:2 1 0; }
+
+  /* Backdrop behind any open sheet */
+  .bp-sheet-backdrop {
+    display:block; position:fixed; inset:0;
+    background:rgba(0,0,0,.5);
+    z-index:9999;
+    opacity:0; pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .bp-sheet-backdrop.open { opacity:1; pointer-events:auto; }
+  .bp-sheet-backdrop[hidden] { display:none; }
+
+  /* Compact toolbar actions — "+ Create" + Import on a tight row */
+  .bp-toolbar-actions { gap:6px; }
+  .bp-toolbar-actions .btn { padding:6px 10px; font-size:.7rem; flex:1 1 0; text-align:center; }
 }
 

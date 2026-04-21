@@ -127,6 +127,11 @@ const Router = (() => {
     _el.classList.remove('view-no-scroll');
     document.getElementById('app-fixed-tabs')?.replaceChildren();
 
+    // Reactor is opt-in per view. Default-hide before each render; views
+    // that want it (Home / Schematic / SpaceshipDetail) call
+    // CoreReactor.setVisible(true) in their render hook.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(false);
+
     if (reducedMotion || !hasContent) {
       // Instant swap (first render or reduced motion)
       _el.innerHTML = '';

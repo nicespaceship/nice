@@ -925,6 +925,9 @@ const SpaceshipDetailView = (() => {
   }
 
   function render(el, params) {
+    // Spaceship detail is the schematic for a specific ship — opt in to
+    // the core reactor as its centerpiece.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(true);
     const user = State.get('user');
     el.innerHTML = `<div class="loading-state"><p>Loading spaceship...</p></div>`;
     _loadSpaceship(el, params.id);
