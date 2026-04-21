@@ -33,7 +33,7 @@
 
   /* Card-scoped typography — visual artifacts, not prose.
      Use these tokens ONLY inside blueprint-card / blueprint-tile /
-     agent-card / fleet-card selectors. Floor is 8px.
+     agent-card / spaceship-card selectors. Floor is 8px.
      See CLAUDE.md → Typography System → Card exemption. */
   --card-text-name:    1.1rem;    /* primary card title */
   --card-text-name-sm: 0.875rem;  /* secondary card title */
@@ -435,7 +435,7 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(165,180,252,0.06);
 }
 [data-theme="spaceship"] .integ-card:hover,
-[data-theme="spaceship"] .fleet-card:hover,
+[data-theme="spaceship"] .spaceship-card:hover,
 [data-theme="spaceship"] .security-card:hover,
 [data-theme="spaceship"] .settings-section:hover {
   border-color: var(--border-hi);
@@ -5049,17 +5049,17 @@ footer {
 .fleet-stat .stat-val { font-family:var(--font-d);font-size:1.4rem;display:block;margin-bottom:4px; }
 .fleet-stat .stat-label { font-family:var(--font-m);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted); }
 .fleet-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px; }
-.fleet-card { padding:24px;position:relative; }
-.fleet-card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
-.fleet-card-name { font-family:var(--font-d);font-size:0.95rem;background:none;border:none;color:var(--text);padding:0;outline:none;cursor:text;max-width:200px; }
-.fleet-card-name:focus { border-bottom:1px solid var(--accent); }
-.fleet-card-chassis { font-family:var(--font-m);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius); }
-.fleet-card-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px; }
-.fleet-card-stat { text-align:center;padding:10px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); }
-.fleet-card-stat span:first-child { font-family:var(--font-d);font-size:1.1rem;display:block;color:var(--accent); }
-.fleet-card-stat span:last-child { font-family:var(--font-m);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:4px; }
-.fleet-card-actions { display:flex;gap:8px; }
-.fleet-card-actions .btn { flex:1;justify-content:center;font-size:9px;padding:8px 12px; }
+.spaceship-card { padding:24px;position:relative; }
+.spaceship-card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
+.spaceship-card-name { font-family:var(--font-d);font-size:0.95rem;background:none;border:none;color:var(--text);padding:0;outline:none;cursor:text;max-width:200px; }
+.spaceship-card-name:focus { border-bottom:1px solid var(--accent); }
+.spaceship-card-chassis { font-family:var(--font-m);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius); }
+.spaceship-card-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px; }
+.spaceship-card-stat { text-align:center;padding:10px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius); }
+.spaceship-card-stat span:first-child { font-family:var(--font-d);font-size:1.1rem;display:block;color:var(--accent); }
+.spaceship-card-stat span:last-child { font-family:var(--font-m);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:4px; }
+.spaceship-card-actions { display:flex;gap:8px; }
+.spaceship-card-actions .btn { flex:1;justify-content:center;font-size:9px;padding:8px 12px; }
 .fleet-empty { text-align:center;padding:60px 20px; }
 .fleet-empty p { color:var(--text-muted);font-size:0.9rem;margin-bottom:20px; }
 
@@ -6057,7 +6057,7 @@ input:checked + .toggle-slider::before { transform:translateX(18px); background:
 
 /* ── Fleet ───────────────────────────────────────────────────── */
 @media (max-width:640px) { .fleet-grid { grid-template-columns:1fr; } }
-@media (max-width:480px) { .fleet-card-stats { grid-template-columns:1fr 1fr; } }
+@media (max-width:480px) { .spaceship-card-stats { grid-template-columns:1fr 1fr; } }
 
 /* ── Blueprint library ───────────────────────────────────────── */
 @media (max-width:640px) { .bp-lib-grid { grid-template-columns:1fr; } }
