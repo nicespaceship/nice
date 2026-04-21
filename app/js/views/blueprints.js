@@ -137,7 +137,7 @@ const BlueprintsView = (() => {
       const _sourceParam = _hashParams.get('source');
       const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log', 'documentation', 'tron'];
       if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-      else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
+      else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'active' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
       else if (_hash === '#/log') _activeTab = 'missions';
@@ -193,10 +193,13 @@ const BlueprintsView = (() => {
     el.innerHTML = `
       <div class="bp-wrap">
 
-        <!-- Blueprints sub-tabs (Spaceships / Agents) -->
+        <!-- Blueprints sub-tabs (Spaceships / Agents are catalogs; Active
+             is the user's deployed ships + agents; Workshop is custom
+             builds + imports) -->
         <div class="bp-sub-tabs" id="bp-sub-tabs">
           <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
           <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
+          <button class="bp-sub-tab" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
           <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
         </div>
 
@@ -823,94 +826,25 @@ const BlueprintsView = (() => {
       <span class="bp-prog-next">${p.nextRank.name} — ${xpFmt} XP to unlock ${p.nextMaxRarity} (${p.nextSlots} slots)</span>`;
   }
 
-  function _renderActivatedSection() {
-    _renderProgressionBar();
-    const wrap = document.getElementById('bp-activated-wrap');
-    if (!wrap) return;
-    if (typeof Blueprints === 'undefined') { wrap.innerHTML = ''; return; }
-
-    let type, label, activated;
-    if (_subTab === 'agent') {
-      type = 'agent'; label = 'AGENTS';
-      activated = Blueprints.getActivatedAgents ? Blueprints.getActivatedAgents() : [];
-      // Include custom agents from State (same merge pattern as Schematic)
-      const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
-      customAgents.forEach(ca => { if (ca && !activated.find(a => a.id === ca.id)) activated.push(ca); });
-    } else if (_subTab === 'spaceship') {
-      type = 'spaceship'; label = 'SPACESHIPS';
-      activated = Blueprints.getActivatedShips ? Blueprints.getActivatedShips() : [];
-      // Include custom ships from State (same merge pattern as Schematic)
-      const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
-      customShips.forEach(cs => { if (cs && !activated.find(s => s.id === cs.id)) activated.push(cs); });
-    } else {
-      wrap.innerHTML = ''; return;
-    }
-
-    if (!activated.length) {
-      const emptyMsg = `No ${label.toLowerCase()} deployed yet. Browse below.`;
-      wrap.innerHTML = `<div class="bp-activated-section"><p class="bp-activated-empty">${emptyMsg}</p></div><div class="bp-section-divider"></div>`;
-      return;
-    }
-
-    // Merge instance data with blueprint — blueprint fields (rarity, name, etc.) take priority
-    let items = activated.map(a => {
-      const getter = type === 'agent' ? Blueprints.getAgent : Blueprints.getSpaceship;
-      const fullBp = getter ? getter(a.id || a.blueprint_id) : null;
-      return Object.assign({}, a, fullBp || {}, { type, _forceActive: true, id: a.id || (fullBp && fullBp.id) });
-    });
-
-    // Apply same filters as the main grid
-    const q = (document.getElementById('bp-search')?.value || '').toLowerCase();
-    if (q) {
-      items = items.filter(b => {
-        const name = (b.name || '').toLowerCase();
-        const desc = (b.description || b.desc || '').toLowerCase();
-        const tags = (b.tags || []).join(' ').toLowerCase();
-        return name.includes(q) || desc.includes(q) || tags.includes(q);
-      });
-    }
-    const rarityBtn = document.querySelector('.bp-rarity-btn.active');
-    const rarity = rarityBtn?.dataset.rarity || 'all';
-    if (rarity !== 'all') {
-      items = items.filter(b => (b.rarity || 'Common') === rarity);
-    }
-
-    // Hide section if all activated items are filtered out
-    if (!items.length) {
-      wrap.innerHTML = '';
-      return;
-    }
-
-    let cardsHTML;
-    if (_viewMode === 'list') {
-      let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
-      if (type === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
-      const header = `<div class="bpl-row bpl-header">
-        <span class="bpl-rarity"></span><span class="bpl-name">Name</span><span class="bpl-cat">Category</span>
-        <span class="bpl-desc">Description</span><span class="bpl-stat1">${sh1}</span><span class="bpl-stat2">${sh2}</span>
-        <span class="bpl-stat3">${sh3}</span><span class="bpl-rating">Rating</span><span class="bpl-dl">Connected</span>
-        <span></span><span class="bpl-action"></span></div>`;
-      cardsHTML = header + items.map(bp => _listRowHTML(bp, type)).join('');
-    } else {
-      cardsHTML = items.map(bp => _tcgCardHTML(bp, type)).join('');
-    }
-
-    const totalCount = activated.length;
-    const countLabel = items.length < totalCount ? `${items.length}/${totalCount}` : `${totalCount}`;
-    wrap.innerHTML = `<div class="bp-activated-section">
-      <h3 class="bp-activated-title">YOUR ${label} <span class="bp-activated-count">${countLabel}</span></h3>
-      <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
-    </div><div class="bp-section-divider"></div>`;
-
-    // Bind events for the activated section cards
-    const section = wrap.querySelector('.bp-activated-grid');
-    if (section) _bindCardEvents(section);
-  }
-
   function _workshopCount() {
     if (typeof Blueprints === 'undefined' || !Blueprints.listMyBlueprints) return 0;
     const my = Blueprints.listMyBlueprints();
     return my.spaceships.length + my.agents.length;
+  }
+
+  /** Activated (deployed) ships + agents across both types. Includes custom
+   *  entries from State so the Active tab mirrors what Schematic sees. */
+  function _activeCount() {
+    if (typeof Blueprints === 'undefined') return 0;
+    const ships = Blueprints.getActivatedShips ? Blueprints.getActivatedShips() : [];
+    const agents = Blueprints.getActivatedAgents ? Blueprints.getActivatedAgents() : [];
+    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+    const seenShips = new Set(ships.map(s => s.id));
+    const seenAgents = new Set(agents.map(a => a.id));
+    customShips.forEach(s => { if (s && !seenShips.has(s.id)) { ships.push(s); seenShips.add(s.id); } });
+    customAgents.forEach(a => { if (a && !seenAgents.has(a.id)) { agents.push(a); seenAgents.add(a.id); } });
+    return ships.length + agents.length;
   }
 
   /* ── Workshop — custom builds + imports for both ships and agents ── */
@@ -987,6 +921,96 @@ const BlueprintsView = (() => {
     wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
   }
 
+  /* ── Active — the user's deployed ships + agents, the content that
+        previously sat as a "YOUR SPACESHIPS/AGENTS" section on top of
+        each catalog tab. Same filter/view semantics as Workshop. ── */
+  function _renderActive() {
+    _renderProgressionBar();
+    const wrap = document.getElementById('bp-activated-wrap');
+    const grid = document.getElementById('bp-grid');
+    const loadMore = document.getElementById('bp-load-more');
+    const resultBar = document.getElementById('bp-result-bar');
+    if (!wrap) return;
+
+    if (grid) grid.innerHTML = '';
+    if (loadMore) loadMore.innerHTML = '';
+    if (resultBar) resultBar.textContent = '';
+
+    if (typeof Blueprints === 'undefined') { wrap.innerHTML = ''; return; }
+
+    // Gather activated ships + agents; merge in custom entries from State so
+    // the list matches what Schematic shows (same merge pattern both use).
+    let ships = Blueprints.getActivatedShips ? Blueprints.getActivatedShips() : [];
+    let agents = Blueprints.getActivatedAgents ? Blueprints.getActivatedAgents() : [];
+    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const customAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+    customShips.forEach(s => { if (s && !ships.find(x => x.id === s.id)) ships.push(s); });
+    customAgents.forEach(a => { if (a && !agents.find(x => x.id === a.id)) agents.push(a); });
+
+    // Hydrate each instance with its catalog blueprint so card rendering
+    // has rarity/name/description fields the instance row may lack.
+    const hydrate = (items, type) => items.map(item => {
+      const getter = type === 'agent' ? Blueprints.getAgent : Blueprints.getSpaceship;
+      const fullBp = getter ? getter(item.id || item.blueprint_id) : null;
+      return Object.assign({}, item, fullBp || {}, { type, _forceActive: true, id: item.id || (fullBp && fullBp.id) });
+    });
+    ships = hydrate(ships, 'spaceship');
+    agents = hydrate(agents, 'agent');
+
+    const totalRaw = ships.length + agents.length;
+
+    // Apply search + rarity filters — sort/category/tier/source don't
+    // apply to a user's small deployed set, but search and rarity are
+    // still useful for narrowing large fleets.
+    const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
+    const rarityBtn = document.querySelector('.bp-rarity-btn.active');
+    const rarity = rarityBtn?.dataset.rarity || 'all';
+    const filterFn = (b) => {
+      if (q) {
+        const name = (b.name || '').toLowerCase();
+        const desc = (b.description || b.desc || '').toLowerCase();
+        const tags = (b.tags || []).join(' ').toLowerCase();
+        if (!name.includes(q) && !desc.includes(q) && !tags.includes(q)) return false;
+      }
+      if (rarity !== 'all' && (b.rarity || 'Common') !== rarity) return false;
+      return true;
+    };
+    ships = ships.filter(filterFn);
+    agents = agents.filter(filterFn);
+
+    if (!ships.length && !agents.length) {
+      const empty = totalRaw === 0
+        ? `<p class="bp-activated-empty">Nothing deployed yet. Browse the <strong>Spaceships</strong> or <strong>Agents</strong> tab to deploy your first blueprint.</p>`
+        : `<p class="bp-activated-empty">No active blueprints match the current filter.</p>`;
+      wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
+      return;
+    }
+
+    const renderSection = (label, items, type) => {
+      if (!items.length) return '';
+      let cardsHTML;
+      if (_viewMode === 'list') {
+        let sh1 = 'Spd', sh2 = 'Acc', sh3 = 'Pwr';
+        if (type === 'spaceship') { sh1 = 'Slots'; sh2 = 'Deploys'; sh3 = ''; }
+        const header = `<div class="bpl-row bpl-header">
+          <span class="bpl-rarity"></span><span class="bpl-name">Name</span><span class="bpl-cat">Category</span>
+          <span class="bpl-desc">Description</span><span class="bpl-stat1">${sh1}</span><span class="bpl-stat2">${sh2}</span>
+          <span class="bpl-stat3">${sh3}</span><span class="bpl-rating">Rating</span><span class="bpl-dl">Connected</span>
+          <span></span><span class="bpl-action"></span></div>`;
+        cardsHTML = header + items.map(bp => _listRowHTML(bp, type)).join('');
+      } else {
+        cardsHTML = items.map(bp => _tcgCardHTML(bp, type)).join('');
+      }
+      return `<div class="bp-activated-section">
+        <h3 class="bp-activated-title">${label} <span class="bp-activated-count">${items.length}</span></h3>
+        <div class="bp-activated-grid tcg-grid bp-view-${_viewMode}">${cardsHTML}</div>
+      </div>`;
+    };
+
+    wrap.innerHTML = renderSection('SPACESHIPS', ships, 'spaceship') + renderSection('AGENTS', agents, 'agent');
+    wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
+  }
+
   async function _applyFilters(append) {
     // Bump the epoch — any concurrent _applyFilters call will see a newer
     // seq and abort its render. We intentionally do NOT short-circuit on
@@ -1003,6 +1027,14 @@ const BlueprintsView = (() => {
       return;
     }
 
+    // Active sub-tab — the user's deployed ships + agents. Previously
+    // this content rode on top of each catalog tab as a "YOUR X" section;
+    // it now has its own tab so browsing the catalog stays clean.
+    if (_subTab === 'active') {
+      _renderActive();
+      return;
+    }
+
     // Reset pagination when not appending
     if (!append) {
       _currentPage = 1;
@@ -1015,8 +1047,11 @@ const BlueprintsView = (() => {
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
 
-    // Activated section is always client-side (small dataset)
-    _renderActivatedSection();
+    // Catalog tabs no longer render the activated section — it lives in
+    // the dedicated Active sub-tab now. Clear any leftover markup.
+    const activatedWrap = document.getElementById('bp-activated-wrap');
+    if (activatedWrap) activatedWrap.innerHTML = '';
+    _renderProgressionBar();
 
     // Show loading state
     _isLoading = true;
@@ -1131,7 +1166,6 @@ const BlueprintsView = (() => {
     if (_colSort.key && _viewMode === 'list') _sortByColumn(list);
 
     _updateResultBar(q, rarity);
-    _renderActivatedSection();
     _currentResults = list;
     _totalResults = list.length;
     _renderGrid(list);
