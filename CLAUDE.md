@@ -233,7 +233,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `UpgradeModal` | `upgrade-modal.js` | Subscription upgrade prompts |
 | `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
 | `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
-| `CoreReactor` | `core-reactor.js` | Centerpiece reactor mount + state machine + audio-analyser pipeline; every theme registers its own core markup against it |
+| `CoreReactor` | `core-reactor.js` | Centerpiece reactor mount + state machine + audio-analyser pipeline; every theme registers its own core markup against it. Visibility gated via `setVisible(bool)` (toggles `html.reactor-visible`); Router default-hides on every route change, views opt in on render (Home / Schematic / SpaceshipDetail) |
 | `CoreVoice` | `core-voice.js` | Theme-pluggable TTS router — resolves per-theme voice config and calls `nice-tts`, drives `CoreReactor` during playback |
 | `DefaultCore` | `default-core.js` | Fallback reactor SVG (concentric pulsing rings) for themes without a custom core markup |
 | `JarvisHUD` | `jarvis-hud.js` | SSOT for JARVIS arc reactor + HUD ring markup, shared by the prompt panel and Schematic center column |
@@ -242,7 +242,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
-| `BlueprintsView` | `blueprints.js` | `#/bridge` | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log / Documentation / TRON; Blueprints sub-tabs: Spaceships / Agents — community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community) |
+| `BlueprintsView` | `blueprints.js` | `#/bridge` | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log / Documentation / TRON; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
 | `DocsView` | `docs.js` | `#/bridge?tab=documentation` (legacy `#/docs` redirects) | Documentation |
 | `TronView` | `tron.js` | `#/tron` | Tron |
 | `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
@@ -395,6 +395,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
 | Attachment gating | `MODEL_CATALOG.vision` / `pdf` / `audio` / `video` | Per-model capability flags consumed by prompt-panel soft-fallback and model-change guard |
 | Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
+| Guest-banner height | `--guest-banner-height` CSS var on `<html>` | `nice.js` measures the banner on mount via `ResizeObserver` and writes the var; sidebar / mobile-bar / hud-panel / app-main consume via `var(--guest-banner-height, 0px)`. No magic pixel numbers |
 
 ## Tool Preferences
 - **CLI first.** Always prefer CLI tools over browser/GUI for GitHub (`gh`), Supabase (`npx supabase`), npm, and git operations. CLI is faster, scriptable, and doesn't depend on browser rendering.
