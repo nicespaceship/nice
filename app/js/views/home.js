@@ -100,8 +100,9 @@ const HomeView = (() => {
         if (logs.length) {
           recentActivity = logs.map(l => {
             const ago = _timeAgo(l.timestamp || l.ts);
-            const action = _esc(l.action || l.type || 'activity');
-            return '<div class="home-activity-item"><span class="home-activity-action">' + action.replace(/_/g, ' ') + '</span><span class="home-activity-time">' + ago + '</span></div>';
+            const raw = (l.action || l.type || 'activity').replace(/_/g, ' ');
+            const action = _esc(raw.charAt(0).toUpperCase() + raw.slice(1));
+            return '<div class="home-activity-item"><span class="home-activity-action">' + action + '</span><span class="home-activity-time">' + ago + '</span></div>';
           }).join('');
         }
       }
