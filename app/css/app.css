@@ -3010,7 +3010,8 @@
 .bp-activated-count { color:var(--accent); margin-left:6px; }
 .bp-activated-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:16px; }
 .bp-section-divider { border-top:1px solid var(--border); margin:20px 0; }
-.bp-activated-empty { font-size:.82rem; color:var(--text-muted); padding:16px 0; }
+.bp-activated-empty { font-size:.82rem; color:var(--text-muted); padding:16px; }
+.schematic-empty { padding:16px; color:var(--text-muted); font-size:.9rem; }
 
 .bp-categories { display:flex; gap:6px; flex-wrap:wrap; }
 .bp-cat-btn {
