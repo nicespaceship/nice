@@ -2553,8 +2553,8 @@
 }
 .agent-avatar-lg { width:52px; height:52px; font-size:.95rem; }
 .agent-card-info { flex:1; min-width:0; }
-.agent-card-name { font-family:var(--font-b); font-size:.88rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.agent-card-role { font-family:var(--font-b); font-size:.56rem; letter-spacing:.12em; color:var(--text-muted); text-transform:uppercase; }
+.agent-card-name { font-family:var(--font-b); font-size:var(--card-text-name-sm); font-weight:var(--fw-bold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.agent-card-role { font-family:var(--font-b); font-size:var(--card-text-meta); letter-spacing:var(--tracking-caps); color:var(--text-muted); text-transform:uppercase; }
 .agent-card-meta { display:flex; gap:6px; flex-wrap:wrap; }
 .agent-tag {
   font-family:var(--font-b); font-size:.52rem; letter-spacing:.08em;
@@ -2989,8 +2989,8 @@
 }
 .spaceship-card-hdr { display:flex; align-items:center; justify-content:space-between; }
 .spaceship-card-info { flex:1; }
-.spaceship-card-name { font-family:var(--font-b); font-size:.92rem; font-weight:700; }
-.spaceship-card-count { font-family:var(--font-b); font-size:.56rem; letter-spacing:.1em; color:var(--text-muted); margin-top:2px; }
+.spaceship-card-name { font-family:var(--font-b); font-size:var(--card-text-name-sm); font-weight:var(--fw-bold); }
+.spaceship-card-count { font-family:var(--font-b); font-size:var(--card-text-meta); letter-spacing:var(--tracking-caps); color:var(--text-muted); margin-top:2px; }
 .fleet-status-group { display:flex; align-items:center; gap:6px; }
 .fleet-members { display:flex; flex-direction:column; gap:4px; padding:8px 0; border-top:1px solid var(--border); }
 .fleet-member { display:flex; align-items:center; gap:8px; padding:4px 0; }
@@ -3185,9 +3185,9 @@
   padding:2px 8px; border:1px solid; text-transform:uppercase;
 }
 .blueprint-tile-body { padding:10px 14px; flex:1; display:flex; flex-direction:column; gap:4px; }
-.blueprint-tile-name { font-family:var(--font-b); font-size:.88rem; font-weight:700; margin:0; }
-.blueprint-tile-cat { font-family:var(--font-b); font-size:.5rem; letter-spacing:.12em; color:var(--text-muted); text-transform:uppercase; }
-.blueprint-tile-desc { font-family:var(--font-b); font-size:.74rem; color:var(--text-muted); line-height:1.5; margin:4px 0 0 0; }
+.blueprint-tile-name { font-family:var(--font-b); font-size:var(--card-text-name-sm); font-weight:var(--fw-bold); margin:0; }
+.blueprint-tile-cat { font-family:var(--font-b); font-size:var(--card-text-micro); letter-spacing:var(--tracking-caps); color:var(--text-muted); text-transform:uppercase; }
+.blueprint-tile-desc { font-family:var(--font-b); font-size:var(--card-text-body); color:var(--text-muted); line-height:var(--lh-base); margin:4px 0 0 0; }
 .blueprint-tile-footer {
   display:flex; align-items:center; justify-content:space-between;
   padding:10px 14px; border-top:1px solid var(--border); gap:8px;
