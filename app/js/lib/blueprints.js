@@ -49,12 +49,14 @@ const Blueprints = (() => {
     _loadSeeds();
     _loadActivationState();
 
-    // Only fetch activated blueprints + counts on init (lazy catalog)
+    // Only fetch activated blueprints on init (lazy catalog).
+    // Connected counts are derived from mock seeds — the live
+    // blueprint_activation_counts view was never created, and the per-user
+    // activation sync path is unused.
     try {
       if (typeof SB !== 'undefined' && SB.isReady() && SB.isOnline()) {
         await Promise.all([
           _loadActivatedFromDB(),
-          _loadConnectedCounts(),
           _loadUserCreations(),
         ]);
       }
@@ -846,24 +848,6 @@ const Blueprints = (() => {
       if (_connectedCounts[blueprintId] > 0) _connectedCounts[blueprintId]--;
     } catch (e) {
       console.warn('[Blueprints] Deactivation sync failed:', e.message);
-    }
-  }
-
-  async function _loadConnectedCounts() {
-    if (typeof SB === 'undefined' || !SB.isReady() || !SB.isOnline()) return;
-    const c = SB.client;
-    if (!c || typeof c.from !== 'function') return; // Client not ready yet
-    try {
-      const { data, error } = await c
-        .from('blueprint_activation_counts')
-        .select('blueprint_id, connected_count');
-      if (error) throw error;
-      if (data && data.length > 0) {
-        _connectedCounts = {};
-        data.forEach(row => { _connectedCounts[row.blueprint_id] = row.connected_count; });
-      }
-    } catch (e) {
-      // Silently fall back to mock counts — Supabase tables may not exist yet
     }
   }
 
