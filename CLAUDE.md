@@ -31,11 +31,12 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 - Region: `us-west-1`
 - Blueprints partitioned via the `scope` column: `catalog` (seed library: 687 agents + 237 spaceships), `community` (user-published), `system` (internal/reviewer agents). Counts drift — verify with `SELECT scope, COUNT(*) FROM blueprints GROUP BY scope;`
 
-### Edge Functions (11)
+### Edge Functions (15)
 | Function | Purpose |
 |----------|---------|
 | `nice-ai` | Multi-provider LLM proxy (Gemini, Anthropic, OpenAI, xAI, Groq/Llama) |
 | `nice-media` | Image/video generation proxy (Imagen 3, Veo 2, DALL-E 3, Flux) |
+| `nice-tts` | ElevenLabs-backed text-to-speech; resolves per-theme voice config |
 | `gmail-mcp` | Gmail MCP server (search, read, labels) — OAuth + service account dual auth |
 | `calendar-mcp` | Google Calendar MCP server (events, calendars) |
 | `drive-mcp` | Google Drive MCP server (search, read, metadata) |
@@ -43,7 +44,10 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 | `mcp-gateway` | MCP tool router — auth, token refresh, tool invocation |
 | `google-oauth` | OAuth 2.0 flow (authorize, callback, disconnect) for any Google account |
 | `stripe-webhook` | Credits the matching pool on Stripe purchase (NICE Pro / Claude / Premium subscriptions + Boost/Max top-ups) |
+| `stripe-portal` | Issues a Stripe billing-portal session URL scoped to one of the three subscriptions via `prefer: pro\|claude\|premium` |
 | `blueprint-search` | Full-text blueprint catalog search |
+| `community-submit` | Community blueprint submission — runs the full gate stack server-side before inserting the `marketplace_listings` row |
+| `community-review` | 5-agent auto-reviewer that processes the submission queue; service-role-only, HS256, unaffected by ES256 sweep |
 | `browser-proxy` | Fetches web pages for agent browser tools; returns clean text |
 
 ### Edge Function JWT Verification
@@ -172,7 +176,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 52 modules
+### Lib Modules (`app/js/lib/`) — 58 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -191,6 +195,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `ToolRegistry` | `tool-registry.js` | Central registry for agent tools |
 | `AgentExecutor` | `agent-executor.js` | ReAct loop: LLM → tool calls → observations |
 | `AgentMemory` | `agent-memory.js` | Agent memory and context management |
+| `AttachmentUtils` | `attachment-utils.js` | SSOT for prompt-panel attachment classification + size caps + fallback rules (unit-testable without the full panel) |
 | `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management |
 | `MissionRouter` | `mission-router.js` | Routes prompts to optimal agent on spaceship |
 | `MissionScheduler` | `mission-scheduler.js` | Scheduled/recurring mission execution |
@@ -204,6 +209,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `CardRenderer` | `card-renderer.js` | Unified TCG card template renderer |
 | `CrewDesigner` | `crew-designer.js` | Describe → Design → Deploy crew builder |
 | `CrewGenerator` | `crew-generator.js` | AI crew generation from business description |
+| `CommunityPublish` | `community-publish.js` | Community publish/unpublish modal + submission state wiring shared by agent + spaceship detail views |
 | `QualityGate` | `quality-gate.js` | Blueprint quality validation |
 | `BrowserTools` | `browser-tools.js` | Agent web browsing via browser-proxy edge function |
 | `MediaTools` | `media-tools.js` | Image/video generation tools for agents |
@@ -227,8 +233,12 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `UpgradeModal` | `upgrade-modal.js` | Subscription upgrade prompts |
 | `OfflineQueue` | `offline-queue.js` | Queue actions when offline |
 | `RateLimiter` | `rate-limiter.js` | Client-side rate limiting |
+| `CoreReactor` | `core-reactor.js` | Centerpiece reactor mount + state machine + audio-analyser pipeline; every theme registers its own core markup against it |
+| `CoreVoice` | `core-voice.js` | Theme-pluggable TTS router — resolves per-theme voice config and calls `nice-tts`, drives `CoreReactor` during playback |
+| `DefaultCore` | `default-core.js` | Fallback reactor SVG (concentric pulsing rings) for themes without a custom core markup |
+| `JarvisHUD` | `jarvis-hud.js` | SSOT for JARVIS arc reactor + HUD ring markup, shared by the prompt panel and Schematic center column |
 
-### View Modules (`app/js/views/`) — 27 views
+### View Modules (`app/js/views/`) — 28 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
@@ -257,6 +267,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `WorkflowDetailView` | `workflows.js` | `#/workflows/:id` | Workflow Detail |
 | `ThemeCreatorView` | `theme-creator.js` | `#/theme-editor` | Theme Editor |
 | `EngineeringView` | `engineering.js` | `#/engineering` | Engineering |
+| `ModerationView` | `moderation.js` | `#/moderation` | Moderation — admin-only queue for `pending_review` community submissions; gated server-side via `admin_*` RPCs and client-side by `State.user.is_admin` |
 | `PromptPanel` | `prompt-panel.js` | (global overlay) | Prompt Panel — multimodal attachments (images/PDFs/audio/video/text) via `+` button or drag-and-drop, up to 4 files/message, soft-fallback to Gemini Flash if current model lacks the needed capability |
 
 ### Security Page Tabs
@@ -326,32 +337,21 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 npm test          # Run all tests
 npm run test:watch  # Watch mode
 ```
-Test files: `app/js/__tests__/*.test.js`
-- `state.test.js` — State pub/sub store (9 tests)
-- `gamification.test.js` — XP, ranks, ship classes, achievements (21 tests)
-- `audit-log.test.js` — CRUD, filtering, FIFO limit (11 tests)
-- `data-io.test.js` — Export/import mechanics (5 tests)
-- `command-palette.test.js` — Fuzzy scoring, module API (10 tests)
-- `router.test.js` — Route matching, param extraction (8 tests)
-- `ship-log.test.js` — Conversation persistence, LLM calls
-- `mission-runner.test.js` — Mission lifecycle management
-- `llm-config.test.js` — Model selection, model_profile precedence
-- `blueprints.test.js` — Blueprint CRUD operations
-- `blueprint-markdown.test.js` — Markdown rendering
-- `blueprint-utils-humanize.test.js` — Model name humanizer (11 tests)
-- `card-renderer-tier-pill.test.js` — FREE/PRO tier pill rendering (11 tests)
-- `tool-registry.test.js` — Tool resolver, aliases, primitives (20 tests)
-- `keyboard.test.js` — Shortcut binding and chord system
-- `notify.test.js` — Toast notification system
-- `prompt-builder.test.js` — System prompt construction, output_schema, eval_criteria
-- `supabase.test.js` — Supabase client wrapper
-- `home-view.test.js` — Home view rendering
-- `missions-view.test.js` — Missions view rendering
-- `virtual-fs.test.js` — Virtual filesystem operations
+Test files: `app/js/__tests__/*.test.js` — 36 files, ~670 tests. Counts drift with each feature — verify with `npm test`.
 
-### E2E Tests (Playwright) — 14 tests
+Coverage areas:
+- **Core infra**: `state`, `router`, `supabase`, `keyboard`, `notify`, `command-palette`, `audit-log`, `data-io`
+- **Blueprints + community**: `blueprints`, `blueprints-download`, `blueprints-marketplace`, `blueprints-moderation`, `blueprints-publish`, `blueprints-ship-hoist`, `community-publish`, `blueprint-markdown`, `blueprint-utils-humanize`, `card-renderer-tier-pill`
+- **Agents + missions**: `agent-executor`, `mission-runner`, `mission-router`, `ship-log`, `tool-registry`, `virtual-fs`, `prompt-builder`
+- **Models + billing**: `llm-config`, `stacks`, `stripe-config`, `subscription`, `token-config`
+- **Views**: `home-view`, `missions-view`
+- **Gamification + onboarding**: `gamification`, `onboarding`
+- **Prompt panel**: `attachment-utils`
+- **Other**: `content-queue`
+
+### E2E Tests (Playwright) — `e2e/smoke.spec.js`, 22 tests
 ```bash
-npm run test:e2e  # Run all E2E tests
+npm run test:e2e
 ```
 - Smoke: app loads, sidebar nav, view rendering, command palette, theme switching, responsive
 - Routes: hash navigation between views
@@ -434,7 +434,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **Platform**: Cloudflare Pages (auto-deploy from `main` branch)
 - **Domains**: `nicespaceship.ai` (app), `nicespaceship.com` (community site, deployed from `www/`)
 - **Repo**: `github.com/nicespaceship/nice`
-- **Supabase**: 11 edge functions deployed via `npx supabase functions deploy` (source is proprietary, not in repo)
+- **Supabase**: 15 edge functions deployed via `npx supabase functions deploy` (source is proprietary, not in repo)
 - **Stripe**: 9 live products — NICE Pro + Claude Add-on + Premium Add-on + 6 top-up packs (Standard/Claude/Premium × Boost/Max), all wired via `StripeConfig` SSOT
 - **PWA**: Service Worker with offline fallback, periodic sync (12h), push notifications. Version is CI-auto-stamped on every push to main.
 - **Build**: `node scripts/build.js` produces a minified bundle (size drifts with each feature)
