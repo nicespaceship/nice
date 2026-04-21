@@ -55,8 +55,7 @@ The Supabase project signs JWTs with **ES256** (asymmetric). Functions called di
 
 The function still validates the user internally via `supabase.auth.getUser()` — GoTrue handles ES256 natively.
 
-**Applied to:** `nice-ai` (PR #173, 2026-04-20).
-**Not-yet-audited follow-up** (flip the same flag when reports of 401s surface): the other 8 edge functions above plus `nice-tts`. Check the response body, not just the status code — the gateway only surfaces the `UNSUPPORTED_TOKEN_ALGORITHM` code in the body.
+**Applied to:** `nice-ai`, `nice-media`, `nice-tts`, `mcp-gateway`, `blueprint-search`, `community-submit`, `stripe-portal`, `browser-proxy` (2026-04-20 sweep). `nice-media` and `nice-tts` were also patched to require strict internal `auth.getUser()` so `verify_jwt=false` doesn't open them to anonymous provider-credit abuse. `blueprint-search` is public by design (anon key + RLS). `browser-proxy` was rebuilt in the same sweep after being found undeployed. Not applicable: `stripe-webhook` (HMAC-signed, not JWT), `google-oauth` (own flow), `community-review` (service-role only, HS256 unaffected), `gmail-mcp`/`calendar-mcp`/`drive-mcp`/`social-mcp` (invoked via `mcp-gateway`, not directly from client). Check the response body, not just the status code — the gateway only surfaces the `UNSUPPORTED_TOKEN_ALGORITHM` code in the body.
 
 ### Database Tables
 | Table | Purpose |

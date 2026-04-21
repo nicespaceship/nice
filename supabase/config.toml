@@ -365,11 +365,32 @@ deno_version = 2
 # secret_key = "env(SECRET_VALUE)"
 
 # Per-function settings. `verify_jwt = false` disables the platform-level
-# JWT validation for nice-ai so it doesn't reject asymmetric ES256 tokens
-# from the new Supabase signing keys. The function still validates the
-# user internally via `supabase.auth.getUser()` against GoTrue, which
-# handles ES256 correctly.
+# JWT validation so ES256 tokens from the new Supabase signing keys don't
+# get rejected at the gateway. Each listed function validates the user
+# internally via `supabase.auth.getUser()` against GoTrue (which handles
+# ES256 natively), or is intentionally public (blueprint-search uses RLS).
 [functions.nice-ai]
+verify_jwt = false
+
+[functions.nice-media]
+verify_jwt = false
+
+[functions.nice-tts]
+verify_jwt = false
+
+[functions.mcp-gateway]
+verify_jwt = false
+
+[functions.blueprint-search]
+verify_jwt = false
+
+[functions.community-submit]
+verify_jwt = false
+
+[functions.stripe-portal]
+verify_jwt = false
+
+[functions.browser-proxy]
 verify_jwt = false
 
 [analytics]
