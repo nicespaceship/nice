@@ -553,9 +553,7 @@
 }
 [data-theme="gundam"] .bp-type-tab {
   font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
+  font-weight: var(--fw-bold);
   color: #1a1a2a;
   background: #e8e8e8;
   border: none;
@@ -576,9 +574,7 @@
 [data-theme="gundam"] .bridge-hero-tab,
 [data-theme="gundam"] .bp-sub-tab {
   font-family: 'Rajdhani', sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
+  font-weight: var(--fw-medium);
   border: 1px solid #3a3f55;
   clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
 }
@@ -785,7 +781,7 @@
 [data-theme="16bit"] p, [data-theme="16bit"] li,
 [data-theme="16bit"] span, [data-theme="16bit"] label,
 [data-theme="16bit"] td, [data-theme="16bit"] th { font-size: 10px; line-height: 2; }
-[data-theme="16bit"] .topbar-tab { font-size: 9px; padding: 8px 14px; }
+[data-theme="16bit"] .topbar-tab { font-size: var(--text-sm); padding: 8px 14px; }
 [data-theme="16bit"] .bp-card-name { font-size: 11px; }
 [data-theme="16bit"] .bridge-hero-name { font-size: 14px; }
 [data-theme="16bit"] .side-header .app-brand-text { font-size: 8px; }
@@ -1812,7 +1808,7 @@
 }
 .sch-ship-select:focus { border-color:var(--accent); outline:none; }
 .sch-switch-btn { font-size:.65rem; padding:4px 10px; white-space:nowrap; }
-.bridge-hero-tab { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:4px 10px; font-family:var(--font-b); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); cursor:pointer; transition:all .15s; }
+.bridge-hero-tab { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:4px 10px; font-family:var(--font-b); font-size:var(--text-sm); color:var(--text-muted); cursor:pointer; transition:all .15s; }
 .bridge-hero-tab:hover { color:var(--text); border-color:var(--text-muted); }
 .bridge-hero-tab.active { color:var(--accent); border-color:var(--accent); background:rgba(255,255,255,.03); }
 .bridge-hero-content { padding:12px; min-height:200px; display:flex; align-items:center; justify-content:center; }
@@ -5796,7 +5792,7 @@
     font-size: .62rem;
     gap: 4px;
   }
-  .bp-sub-tab { padding: 4px 10px; font-size: .68rem; }
+  .bp-sub-tab { padding: 4px 10px; font-size: var(--text-xs); }
   .app-view-content { padding: 4px; }
 }
 
@@ -9410,7 +9406,7 @@ body.preview-active .nice-ai {
 /* ── Blueprint type tabs: scrollable on mobile ── */
 @media (max-width:640px) {
   .bp-type-tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; flex-wrap:nowrap; gap:0; }
-  .bp-type-tab { white-space:nowrap; flex-shrink:0; font-size:.78rem; padding:8px 14px; }
+  .bp-type-tab { white-space:nowrap; flex-shrink:0; font-size:var(--text-sm); padding:8px 14px; }
   .bp-sub-tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 }
 
