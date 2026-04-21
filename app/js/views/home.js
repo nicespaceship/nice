@@ -32,6 +32,10 @@ const HomeView = (() => {
       </div>
     `;
 
+    // Home is a chat surface — reactor is the centerpiece behind the
+    // greeting and prompt panel.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(true);
+
     // Lock scroll on greeting view (no conversation)
     el.classList.toggle('view-no-scroll', !hasMessages);
 

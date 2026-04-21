@@ -1209,6 +1209,11 @@ const BlueprintsView = (() => {
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
+    // Reactor is the Schematic tab's centerpiece; hidden on Blueprints /
+    // Missions / Log / etc. Router default-hides on every route change,
+    // so this toggle only has to handle in-view tab switches.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(isSchematic);
+
     // Sub-tabs (Spaceships/Agents) — only show when Blueprints tab active
     if (subTabs) subTabs.style.display = isBlueprintsTab ? '' : 'none';
 

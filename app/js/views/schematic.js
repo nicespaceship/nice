@@ -27,6 +27,8 @@ const SchematicView = (() => {
   })();
 
   function render(el) {
+    // Schematic converges the crew ring on the core reactor — opt in.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(true);
     const shipId = _getShipId();
     let activatedShips = (typeof Blueprints !== 'undefined') ? Blueprints.getActivatedShips() : [];
     // Include custom ships from State (created by Crew Designer)

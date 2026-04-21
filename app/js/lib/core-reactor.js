@@ -178,5 +178,15 @@ const CoreReactor = (() => {
     paint();
   }
 
-  return { init, mount, paint, setState, setVol, attachAnalyser, detachAnalyser };
+  /**
+   * Toggle reactor visibility globally. Default is hidden (see CSS base
+   * rule on `.jv-pp-reactor`); views that want the reactor as their
+   * centerpiece (Home / Schematic / SpaceshipDetail) opt in on render.
+   * Router default-hides on every route change so there's no leakage.
+   */
+  function setVisible(visible) {
+    document.documentElement.classList.toggle('reactor-visible', !!visible);
+  }
+
+  return { init, mount, paint, setState, setVol, attachAnalyser, detachAnalyser, setVisible };
 })();
