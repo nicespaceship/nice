@@ -200,7 +200,7 @@ const AgentsView = (() => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const bpId = btn.dataset.id;
-        const name = btn.closest('.tcg-card')?.querySelector('.tcg-name-bar span')?.textContent || 'this agent';
+        const name = btn.closest('.blueprint-card')?.querySelector('.blueprint-card-name-bar span')?.textContent || 'this agent';
         const doDeactivate = () => {
           Blueprints.deactivateAgent(bpId);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Agent Removed', message: 'Blueprint removed from your roster.', type: 'info' });
@@ -227,7 +227,7 @@ const AgentsView = (() => {
       const actions = `<button class="c-btn bp-nice-btn" data-id="${bp.id}" data-name="${_esc(bp.name)}" data-type="agent" aria-label="Message ${_esc(bp.name)}" title="Message ${_esc(bp.name)}">Message</button>
           <button class="c-btn bp-deploy-btn bp-activated" data-id="${bpId || bp.id}">Remove</button>`;
 
-      return CardRenderer.render('agent', 'full', bp, { actions, clickClass: 'agent-card bp-card-clickable' });
+      return CardRenderer.render('agent', 'full', bp, { actions, clickClass: 'agent-card blueprint-clickable' });
     }
 
     // Fallback (no CardRenderer)

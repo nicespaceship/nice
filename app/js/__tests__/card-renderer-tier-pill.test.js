@@ -25,36 +25,36 @@ describe('CardRenderer tier pill', () => {
     it('renders FREE pill for free tier blueprints', () => {
       const bp = { ...baseAgent, config: { ...baseAgent.config, model_profile: { tier: 'free' } } };
       const html = CardRenderer.render('agent', 'full', bp, {});
-      expect(html).toContain('tcg-tier-pill');
-      expect(html).toContain('tcg-tier-pill--free');
+      expect(html).toContain('blueprint-card-tier-pill');
+      expect(html).toContain('blueprint-card-tier-pill--free');
       expect(html).toContain('>FREE<');
     });
 
     it('renders PRO pill for premium tier blueprints', () => {
       const bp = { ...baseAgent, rarity: 'Legendary', config: { ...baseAgent.config, model_profile: { tier: 'premium' } } };
       const html = CardRenderer.render('agent', 'full', bp, {});
-      expect(html).toContain('tcg-tier-pill--premium');
+      expect(html).toContain('blueprint-card-tier-pill--premium');
       expect(html).toContain('>PRO<');
     });
 
     it('renders no pill when model_profile is missing', () => {
       const html = CardRenderer.render('agent', 'full', baseAgent, {});
-      expect(html).not.toContain('tcg-tier-pill');
+      expect(html).not.toContain('blueprint-card-tier-pill');
     });
 
     it('renders no pill when tier is unknown', () => {
       const bp = { ...baseAgent, config: { ...baseAgent.config, model_profile: { tier: 'gold' } } };
       const html = CardRenderer.render('agent', 'full', bp, {});
-      expect(html).not.toContain('tcg-tier-pill');
+      expect(html).not.toContain('blueprint-card-tier-pill');
     });
 
     it('places the pill inside the name bar', () => {
       const bp = { ...baseAgent, config: { ...baseAgent.config, model_profile: { tier: 'free' } } };
       const html = CardRenderer.render('agent', 'full', bp, {});
       // Pill should appear between the name bar opening and its closing div
-      const nameBarStart = html.indexOf('tcg-name-bar');
-      const pillIdx = html.indexOf('tcg-tier-pill');
-      const artStart = html.indexOf('tcg-art');
+      const nameBarStart = html.indexOf('blueprint-card-name-bar');
+      const pillIdx = html.indexOf('blueprint-card-tier-pill');
+      const artStart = html.indexOf('blueprint-card-art');
       expect(nameBarStart).toBeGreaterThan(-1);
       expect(pillIdx).toBeGreaterThan(nameBarStart);
       expect(pillIdx).toBeLessThan(artStart);
@@ -72,13 +72,13 @@ describe('CardRenderer tier pill', () => {
     it('renders the pill on grid view too', () => {
       const bp = { ...baseAgent, config: { ...baseAgent.config, model_profile: { tier: 'premium' } } };
       const html = CardRenderer.render('agent', 'grid', bp, {});
-      expect(html).toContain('tcg-tier-pill--premium');
+      expect(html).toContain('blueprint-card-tier-pill--premium');
       expect(html).toContain('>PRO<');
     });
 
     it('renders no pill on grid when model_profile is missing', () => {
       const html = CardRenderer.render('agent', 'grid', baseAgent, {});
-      expect(html).not.toContain('tcg-tier-pill');
+      expect(html).not.toContain('blueprint-card-tier-pill');
     });
   });
 
@@ -88,8 +88,8 @@ describe('CardRenderer tier pill', () => {
       const bp2 = { ...baseAgent, config: { ...baseAgent.config, model_profile: { tier: 'Premium' } } };
       const h1 = CardRenderer.render('agent', 'full', bp1, {});
       const h2 = CardRenderer.render('agent', 'full', bp2, {});
-      expect(h1).toContain('tcg-tier-pill--free');
-      expect(h2).toContain('tcg-tier-pill--premium');
+      expect(h1).toContain('blueprint-card-tier-pill--free');
+      expect(h2).toContain('blueprint-card-tier-pill--premium');
     });
 
     it('does not crash on null/undefined config', () => {
@@ -100,7 +100,7 @@ describe('CardRenderer tier pill', () => {
     it('does not crash when model_profile has no tier field', () => {
       const bp = { ...baseAgent, config: { ...baseAgent.config, model_profile: { preferred: 'gemini-2.5-flash' } } };
       const html = CardRenderer.render('agent', 'full', bp, {});
-      expect(html).not.toContain('tcg-tier-pill');
+      expect(html).not.toContain('blueprint-card-tier-pill');
     });
   });
 });

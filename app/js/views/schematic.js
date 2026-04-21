@@ -387,7 +387,7 @@ const SchematicView = (() => {
 
     cards.forEach((card, i) => {
       // Use the inner mini card (or empty slot) for precise center, fall back to wrapper
-      const inner = card.querySelector('.tcg-card-mini') || card.querySelector('.schematic-empty-slot') || card;
+      const inner = card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
       const cardRect = inner.getBoundingClientRect();
       const isLeft = card.classList.contains('schematic-card-left');
       const cardCx = cardRect.left - cRect.left + cardRect.width / 2;

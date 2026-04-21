@@ -359,7 +359,7 @@ const Theme = (() => {
     // only when the key begins/ends with a word character — keys that start
     // or end with punctuation (e.g. "Browse below.") skip the boundary on
     // that side because \b requires a word-char-adjacent position.
-    document.querySelectorAll('.bridge-hero-meta, h2, h3, p, .wizard-title, .bp-card-type, .btn-primary, .btn-sm, .builder-sub, .builder-legend, .builder-hint, legend, label, .notify-toast-title, .notify-toast-msg, .sch-mini-chat-idle').forEach(el => {
+    document.querySelectorAll('.bridge-hero-meta, h2, h3, p, .wizard-title, .blueprint-tile-type, .btn-primary, .btn-sm, .builder-sub, .builder-legend, .builder-hint, legend, label, .notify-toast-title, .notify-toast-msg, .sch-mini-chat-idle').forEach(el => {
       for (const k of keys) {
         const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const pre  = /^\w/.test(k) ? '\\b' : '';

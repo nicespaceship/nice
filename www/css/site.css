@@ -657,24 +657,24 @@ p { margin-bottom: 0.75rem; font-size: 0.92rem; line-height: 1.65; color: var(--
 .catalog-filter:hover { border-color: var(--border-hi); color: var(--text); }
 .catalog-filter.active { border-color: var(--accent2); color: var(--accent2); background: rgba(165,180,252,0.06); }
 .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.bp-card {
+.blueprint-tile {
   border: 1px solid var(--border); padding: 18px; border-radius: var(--radius);
   background: var(--panel-bg); transition: all 0.2s; cursor: pointer;
   text-decoration: none; display: block; color: var(--text);
 }
-.bp-card:hover { border-color: var(--accent2); box-shadow: var(--glow-hi); text-decoration: none; }
-.bp-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
-.bp-card h3 { font-size: 0.92rem; margin: 0; }
-.bp-card-category { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
-.bp-card-desc { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.bp-card-footer { display: flex; justify-content: space-between; align-items: center; }
-.bp-card-rarity { font-size: 0.62rem; font-weight: 600; padding: 2px 8px; border-radius: var(--radius); border: 1px solid; }
-.bp-card-rarity.common { border-color: var(--border); color: var(--text-muted); }
-.bp-card-rarity.rare { border-color: rgba(96,165,250,0.3); color: #60a5fa; background: rgba(96,165,250,0.06); }
-.bp-card-rarity.epic { border-color: rgba(167,139,250,0.3); color: #a78bfa; background: rgba(167,139,250,0.06); }
-.bp-card-rarity.legendary { border-color: rgba(251,191,36,0.3); color: #fbbf24; background: rgba(251,191,36,0.06); }
-.bp-card-rarity.mythic { border-color: rgba(248,113,113,0.3); color: #f87171; background: rgba(248,113,113,0.06); }
-.bp-card-type { font-size: 0.72rem; color: var(--text-dim); }
+.blueprint-tile:hover { border-color: var(--accent2); box-shadow: var(--glow-hi); text-decoration: none; }
+.blueprint-tile-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+.blueprint-tile h3 { font-size: 0.92rem; margin: 0; }
+.blueprint-tile-category { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.blueprint-tile-desc { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.blueprint-tile-footer { display: flex; justify-content: space-between; align-items: center; }
+.blueprint-tile-rarity { font-size: 0.62rem; font-weight: 600; padding: 2px 8px; border-radius: var(--radius); border: 1px solid; }
+.blueprint-tile-rarity.common { border-color: var(--border); color: var(--text-muted); }
+.blueprint-tile-rarity.rare { border-color: rgba(96,165,250,0.3); color: #60a5fa; background: rgba(96,165,250,0.06); }
+.blueprint-tile-rarity.epic { border-color: rgba(167,139,250,0.3); color: #a78bfa; background: rgba(167,139,250,0.06); }
+.blueprint-tile-rarity.legendary { border-color: rgba(251,191,36,0.3); color: #fbbf24; background: rgba(251,191,36,0.06); }
+.blueprint-tile-rarity.mythic { border-color: rgba(248,113,113,0.3); color: #f87171; background: rgba(248,113,113,0.06); }
+.blueprint-tile-type { font-size: 0.72rem; color: var(--text-dim); }
 .catalog-empty { text-align: center; padding: 60px 24px; color: var(--text-muted); }
 
 /* ═══════════════════════════════════════════════════════════════════
