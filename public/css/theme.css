@@ -3509,7 +3509,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 /* ── 16. Security tabs ── */
 [data-theme="jarvis"] .security-tab {
   border-radius:3px; font-family:'Exo 2', sans-serif;
-  font-weight:600; text-transform:uppercase; letter-spacing:.08em;
+  font-weight:var(--fw-medium);
 }
 [data-theme="jarvis"] .security-tab.security-tab--active {
   background:rgba(0,229,255,0.15); color:#e0f7fa;
