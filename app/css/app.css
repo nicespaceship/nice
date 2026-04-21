@@ -1553,10 +1553,11 @@
    MAIN CONTENT
 ───────────────────────────────────────────────────────────────── */
 .app-main {
-  margin-top:0; margin-left:56px;
+  margin-top:var(--guest-banner-height, 0px); margin-left:56px;
   position:relative; z-index:1;
   transition:margin-left .3s ease;
-  height:100vh; overflow:hidden; overflow-x:hidden;
+  height:calc(100vh - var(--guest-banner-height, 0px));
+  overflow:hidden; overflow-x:hidden;
   display:flex; flex-direction:column;
 }
 .app-sidebar.open ~ .app-main { margin-left:280px; }
