@@ -956,7 +956,7 @@ const BlueprintsView = (() => {
     if (!ships.length && !agents.length) {
       const totalRaw = my.spaceships.length + my.agents.length;
       const empty = totalRaw === 0
-        ? `<p class="bp-activated-empty">Workshop is empty. Use <strong>+ Create</strong> or <strong>Import Blueprint</strong> to add your own builds.</p>`
+        ? `<p class="bp-activated-empty">Workshop is empty. Create a new blueprint from scratch or import one from a markdown export.</p>`
         : `<p class="bp-activated-empty">No workshop blueprints match the current filter.</p>`;
       wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
       return;
@@ -1284,8 +1284,10 @@ const BlueprintsView = (() => {
     if (activatedWrap) activatedWrap.style.display = catalogDisplay;
     if (grid) grid.style.display = catalogDisplay;
     if (loadMore) loadMore.style.display = catalogDisplay;
-    const toolbarActions = document.getElementById('bp-toolbar-actions');
-    if (toolbarActions) toolbarActions.style.display = catalogDisplay;
+    // "+ Create" / "Import Blueprint" only belong where user-authored
+    // content lives — the Workshop sub-tab. Spaceships and Agents are
+    // catalogs of pre-built blueprints, so the buttons don't apply there.
+    _updateToolbarVisibility();
 
     // Schematic
     if (schematicEl) {
@@ -1891,6 +1893,14 @@ const BlueprintsView = (() => {
     parentEl.appendChild(overlay);
   }
 
+  /** Toolbar actions (Create + Import) only show on the Workshop sub-tab. */
+  function _updateToolbarVisibility() {
+    const toolbarActions = document.getElementById('bp-toolbar-actions');
+    if (!toolbarActions) return;
+    const show = _activeTab === 'blueprints' && _subTab === 'workshop';
+    toolbarActions.style.display = show ? '' : 'none';
+  }
+
   /** Count non-default filters and reflect in the mobile Filters-button badge. */
   function _updateFilterCount() {
     const badge = document.getElementById('bp-filter-count');
@@ -1963,6 +1973,7 @@ const BlueprintsView = (() => {
       _subTab = tab.dataset.sub;
       _colSort = { key: null, dir: 'asc' };
       _updateRarityFilters();
+      _updateToolbarVisibility();
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
       _applyFilters();
     });
