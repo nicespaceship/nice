@@ -30,9 +30,15 @@ const BrowserTools = (() => {
     const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
     if (!supabaseUrl) throw new Error('Supabase URL not configured');
 
+    const { data: { session } } = await SB.client.auth.getSession();
+    if (!session?.access_token) throw new Error('Sign in to use browser tools');
+
     const res = await fetch(`${supabaseUrl}/functions/v1/browser-proxy`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({ url, selector: opts.selector || undefined })
     });
 

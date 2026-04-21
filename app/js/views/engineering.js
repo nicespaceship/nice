@@ -228,18 +228,9 @@ const EngineeringView = (() => {
       ];
 
       if (typeof SB !== 'undefined' && SB.client) {
-        const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
-        const res = await fetch(`${supabaseUrl}/functions/v1/llm-proxy`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: _getIDEModel(), messages: history, temperature: 0.3, max_tokens: 4096 })
-        });
-        if (!res.ok) throw new Error('LLM call failed');
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        _aiMessages.push({ role: 'assistant', text: data.content || '', ts: Date.now() });
-        _autoApplyCodeBlocks(data.content || '');
+        const content = await _callNiceAi(history);
+        _aiMessages.push({ role: 'assistant', text: content, ts: Date.now() });
+        _autoApplyCodeBlocks(content);
       } else {
         _aiMessages.push({ role: 'assistant', text: 'Sign in to use AI-powered project generation.', ts: Date.now() });
       }
@@ -754,26 +745,9 @@ const EngineeringView = (() => {
 
       // Call LLM via edge function
       if (typeof SB !== 'undefined' && SB.client) {
-        const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
-        const res = await fetch(`${supabaseUrl}/functions/v1/llm-proxy`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: _getIDEModel(),
-            messages: history,
-            temperature: 0.3,
-            max_tokens: 4096
-          })
-        });
-
-        if (!res.ok) throw new Error('LLM call failed: ' + res.status);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        _aiMessages.push({ role: 'assistant', text: data.content || 'No response', ts: Date.now() });
-
-        // Auto-apply if response contains code blocks with filenames
-        _autoApplyCodeBlocks(data.content || '');
+        const content = await _callNiceAi(history);
+        _aiMessages.push({ role: 'assistant', text: content || 'No response', ts: Date.now() });
+        _autoApplyCodeBlocks(content);
       } else {
         _aiMessages.push({ role: 'assistant', text: 'LLM not available — sign in to use AI coding.', ts: Date.now() });
       }
@@ -818,6 +792,44 @@ CURRENT PROJECT CODE:
 ${fileContents || 'No files yet.'}
 
 The user\'s code runs in a live browser preview that auto-refreshes. Generate production-quality code.`;
+  }
+
+  async function _callNiceAi(history) {
+    const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
+    if (!supabaseUrl) throw new Error('Supabase URL not configured');
+    const { data: { session } } = await SB.client.auth.getSession();
+    if (!session?.access_token) throw new Error('Not signed in');
+
+    let system = '';
+    const messages = [];
+    for (const m of history) {
+      if (m.role === 'system') system += (system ? '\n' : '') + m.content;
+      else messages.push({ role: m.role, content: m.content });
+    }
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        model: _getIDEModel(),
+        system,
+        messages,
+        temperature: 0.3,
+        max_tokens: 4096,
+      }),
+    });
+
+    if (!res.ok) throw new Error('LLM call failed: ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const c = data.content;
+    if (typeof c === 'string') return c;
+    if (Array.isArray(c)) return c.map(p => p.text || '').join('');
+    return '';
   }
 
   function _getIDEModel() {

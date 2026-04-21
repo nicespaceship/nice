@@ -133,10 +133,15 @@ const ToolRegistry = (() => {
       }
       const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
       if (!supabaseUrl) throw new Error('Supabase URL not configured');
+      const { data: { session } } = await SB.client.auth.getSession();
+      if (!session?.access_token) throw new Error('Sign in to search the web');
       const searchUrl = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(input.query);
       const res = await fetch(supabaseUrl + '/functions/v1/browser-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + session.access_token,
+        },
         body: JSON.stringify({ url: searchUrl }),
       });
       if (!res.ok) throw new Error('Search failed (' + res.status + ')');
@@ -397,9 +402,14 @@ const ToolRegistry = (() => {
       }
       const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
       if (!supabaseUrl) throw new Error('Supabase URL not configured');
+      const { data: { session } } = await SB.client.auth.getSession();
+      if (!session?.access_token) throw new Error('Sign in to fetch URLs');
       const res = await fetch(supabaseUrl + '/functions/v1/browser-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + session.access_token,
+        },
         body: JSON.stringify({ url: input.url, selector: input.selector || undefined }),
       });
       if (!res.ok) throw new Error('fetch-url ' + res.status + ': ' + (await res.text()));
