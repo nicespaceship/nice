@@ -252,30 +252,30 @@ const SpaceshipsView = (() => {
         return CardRenderer.render('spaceship', 'full', shipData, {
           actions,
           footer,
-          clickClass: 'fleet-card blueprint-clickable'
+          clickClass: 'spaceship-card blueprint-clickable'
         });
       }
 
       // Fallback
       const shipClass = typeof Gamification !== 'undefined' ? Gamification.renderShipClassBadge(members.length) : '';
       return `
-        <div class="fleet-card" data-id="${f.id}">
-          <div class="fleet-card-hdr">
-            <div class="fleet-card-info">
-              <div class="fleet-card-name">${_esc(f.name)} ${shipClass}</div>
-              <div class="fleet-card-count">${members.length} agent${members.length !== 1 ? 's' : ''}</div>
+        <div class="spaceship-card" data-id="${f.id}">
+          <div class="spaceship-card-hdr">
+            <div class="spaceship-card-info">
+              <div class="spaceship-card-name">${_esc(f.name)} ${shipClass}</div>
+              <div class="spaceship-card-count">${members.length} agent${members.length !== 1 ? 's' : ''}</div>
             </div>
             <div class="fleet-status-group">${statusDot}<span class="agent-tag status-tag-${f.status}">${_esc(f.status)}</span></div>
           </div>
           <div class="fleet-members">${memberList}</div>
           ${healthBars}
-          <div class="fleet-card-actions">${actions}</div>
+          <div class="spaceship-card-actions">${actions}</div>
         </div>
       `;
     }).join('');
 
     // Card click → mission prompt
-    list.querySelectorAll('.fleet-card').forEach(card => {
+    list.querySelectorAll('.spaceship-card').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.target.closest('.c-btn')) return;
         _promptShipMission(card.dataset.id);

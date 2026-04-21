@@ -96,7 +96,7 @@
   /* ─── Card-scoped typography (visual artifacts, not prose) ──────
      Cards are TCG-style collectibles; the 11px prose floor does not
      apply. Use these tokens ONLY inside blueprint-card / blueprint-tile
-     / agent-card / fleet-card selectors. Floor is 8px.
+     / agent-card / spaceship-card selectors. Floor is 8px.
      See CLAUDE.md → Typography System → Card exemption.
   */
   --card-text-name:    1.1rem;    /* ~17.6px — primary card title */
@@ -2534,7 +2534,7 @@
 .fleet-grid.ships-view-compact .blueprint-card-compact-actions { flex:0 0 auto; display:flex; gap:6px; align-items:center; }
 .fleet-grid.ships-view-mini    { grid-template-columns:repeat(auto-fill, minmax(80px, 1fr)); gap:8px; }
 /* When old card classes are combined with .blueprint-card, the TCG card styles must win */
-.blueprint-card.agent-card, .blueprint-card.fleet-card, .blueprint-card.ms-card {
+.blueprint-card.agent-card, .blueprint-card.spaceship-card, .blueprint-card.ms-card {
   border:15px solid var(--border); border-radius:25px; padding:0; background:var(--panel-bg);
 }
 .agent-card {
@@ -2981,23 +2981,23 @@
 .fleet-wrap { max-width:var(--width-full); margin:0 auto; }
 .fleet-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
 .fleet-grid .blueprint-card { margin:0; }
-.fleet-card {
+.spaceship-card {
   display:flex; flex-direction:column; gap:10px;
   padding:16px; border:var(--border-width) solid var(--border);
   background:var(--panel-bg); border-radius:var(--radius);
   transition:border-color .2s, box-shadow .2s, transform .15s;
 }
-.fleet-card-hdr { display:flex; align-items:center; justify-content:space-between; }
-.fleet-card-info { flex:1; }
-.fleet-card-name { font-family:var(--font-b); font-size:.92rem; font-weight:700; }
-.fleet-card-count { font-family:var(--font-b); font-size:.56rem; letter-spacing:.1em; color:var(--text-muted); margin-top:2px; }
+.spaceship-card-hdr { display:flex; align-items:center; justify-content:space-between; }
+.spaceship-card-info { flex:1; }
+.spaceship-card-name { font-family:var(--font-b); font-size:.92rem; font-weight:700; }
+.spaceship-card-count { font-family:var(--font-b); font-size:.56rem; letter-spacing:.1em; color:var(--text-muted); margin-top:2px; }
 .fleet-status-group { display:flex; align-items:center; gap:6px; }
 .fleet-members { display:flex; flex-direction:column; gap:4px; padding:8px 0; border-top:1px solid var(--border); }
 .fleet-member { display:flex; align-items:center; gap:8px; padding:4px 0; }
 .fleet-member-dot { width:6px; height:6px; }
 .fleet-member-name { font-family:var(--font-b); font-size:.78rem; color:var(--text); }
 .fleet-member-role { font-family:var(--font-b); font-size:.52rem; color:var(--text-dim); }
-.fleet-card-actions { display:flex; gap:6px; padding-top:6px; border-top:1px solid var(--border); }
+.spaceship-card-actions { display:flex; gap:6px; padding-top:6px; border-top:1px solid var(--border); }
 
 /* Fleet Detail */
 .fleet-detail-actions { display:flex; gap:10px; }
@@ -5707,7 +5707,7 @@
 /* Touch feedback for interactive elements */
 @media (hover:none) and (pointer:coarse) {
   .side-link, .tab, .btn, .cmd-result, .mb-card,
-  .widget-card, .agents-card, .fleet-card {
+  .widget-card, .agents-card, .spaceship-card {
     -webkit-tap-highlight-color: rgba(255,255,255,.08);
   }
   .side-link:active, .tab:active, .btn:active,
