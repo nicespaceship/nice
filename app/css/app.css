@@ -67,6 +67,31 @@
   --color-warning: #f59e0b;
   --color-info:    #6366f1;
   --color-epic:    #a855f7;
+
+  /* ─── Typography scale (SSOT) ──────────────────────────────────
+     See CLAUDE.md → Typography System for full rules.
+     Minor-third ratio (1.2×). Use tokens, never raw font-size.
+  */
+  --text-xs:   0.6875rem;  /* 11px — overline, caption, meta */
+  --text-sm:   0.8125rem;  /* 13px — secondary, UI chrome */
+  --text-base: 0.9375rem;  /* 15px — body default */
+  --text-md:   1.0625rem;  /* 17px — lead, emphasized body */
+  --text-lg:   1.25rem;    /* 20px — section title */
+  --text-xl:   1.5rem;     /* 24px — page title */
+  --text-2xl:  2rem;       /* 32px — hero */
+  --text-3xl:  clamp(2.25rem, 4vw, 3rem); /* marketing display */
+
+  --lh-tight:  1.15;       /* display, hero */
+  --lh-snug:   1.35;       /* titles, buttons */
+  --lh-base:   1.55;       /* body, paragraphs */
+
+  --tracking-display: -0.01em; /* hero, display */
+  --tracking-normal:  0;
+  --tracking-caps:    0.08em;  /* ALL CAPS overline only */
+
+  --fw-regular: 400;
+  --fw-medium:  600;
+  --fw-bold:    700;
 }
 
 /* ─────────────────────────────────────────────────────────────────
