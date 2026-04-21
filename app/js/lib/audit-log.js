@@ -34,17 +34,20 @@ const AuditLog = (() => {
     }
 
     // Persist to Supabase audit_log table (non-blocking, best-effort).
-    // Note: audit_log entries older than 90 days should be pruned server-side.
+    // Only when signed in — the table's RLS policy is auth.uid() = user_id,
+    // so anonymous writes 401 and are useless anyway (can't read them back).
     try {
       if (typeof SB !== 'undefined' && SB.isReady()) {
         const user = typeof State !== 'undefined' ? State.get('user') : null;
-        SB.db('audit_log').create({
-          user_id:     user ? user.id : null,
-          type:        action,
-          description: (details && details.description) || '',
-          metadata:    details || {},
-          created_at:  entry.timestamp,
-        }).catch(() => { /* don't block on DB failures */ });
+        if (user && user.id) {
+          SB.db('audit_log').create({
+            user_id:     user.id,
+            type:        action,
+            description: (details && details.description) || '',
+            metadata:    details || {},
+            created_at:  entry.timestamp,
+          }).catch(() => { /* don't block on DB failures */ });
+        }
       }
     } catch { /* non-critical — localStorage is primary */ }
   }
