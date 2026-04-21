@@ -3913,11 +3913,11 @@
   font-size:2.5rem; line-height:1; color:var(--accent); margin-bottom:12px;
 }
 .nice-ai-drop-overlay-label {
-  font-family:var(--font-h); font-size:1.1rem; color:var(--text);
-  letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px;
+  font-family:var(--font-h); font-size:var(--text-md); font-weight:var(--fw-bold);
+  color:var(--text); margin-bottom:6px;
 }
 .nice-ai-drop-overlay-hint {
-  font-family:var(--font-b); font-size:.78rem; color:var(--text-muted);
+  font-family:var(--font-b); font-size:var(--text-sm); color:var(--text-muted);
 }
 
 /* Attachment chip row — sits above the textarea when files are staged.
@@ -3948,8 +3948,8 @@
   flex:0 0 auto;
 }
 .nice-ai-attach-file-name {
-  font-family:var(--font-b); font-size:.72rem;
-  color:var(--text); line-height:1.2;
+  font-family:var(--font-b); font-size:var(--text-xs);
+  color:var(--text); line-height:var(--lh-snug);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   min-width:0; flex:1;
 }
@@ -3958,7 +3958,7 @@
   width:18px; height:18px; border-radius:50%;
   background:rgba(0,0,0,.7); color:#fff;
   border:none; cursor:pointer;
-  font-family:var(--font-b); font-size:.7rem; line-height:1;
+  font-family:var(--font-b); font-size:var(--text-xs); line-height:1;
   display:flex; align-items:center; justify-content:center;
   padding:0;
 }
@@ -3978,7 +3978,7 @@
   width:auto; height:auto; max-width:240px;
   display:flex; align-items:center; gap:8px;
   padding:8px 12px; background:var(--bg-alt);
-  font-family:var(--font-b); font-size:.78rem; color:var(--text);
+  font-family:var(--font-b); font-size:var(--text-sm); color:var(--text);
 }
 .monitor-user-thumb-icon {
   font-size:1.1rem; line-height:1; flex:0 0 auto;
@@ -4005,8 +4005,8 @@
      scrollHeight-driven autogrow already accounts for padding. */
   padding:8px 14px; border:none;
   background:transparent; color:var(--text);
-  font-family:var(--font-b); font-size:.84rem;
-  line-height:1.5; overflow-y:auto;
+  font-family:var(--font-b); font-size:var(--text-base);
+  line-height:var(--lh-base); overflow-y:auto;
 }
 .nice-ai-input:focus { outline:none; }
 .nice-ai-input::placeholder { color:var(--text-muted); }
@@ -4057,7 +4057,7 @@
 .nice-ai-model-select,
 .nice-ai-mode-select {
   padding:4px 20px 4px 8px;
-  font-size:.68rem; letter-spacing:.03em;
+  font-size:var(--text-xs);
   appearance:none; -webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 6px center;
@@ -4104,9 +4104,9 @@
 .nice-ai-chip {
   background:transparent; border:1px solid var(--border);
   color:var(--text-muted); border-radius:var(--radius);
-  padding:4px 12px; font-family:var(--font-b); font-size:.64rem;
+  padding:4px 12px; font-family:var(--font-b); font-size:var(--text-xs);
   cursor:pointer; transition:border-color .15s, color .15s, background .15s;
-  white-space:nowrap; letter-spacing:.02em;
+  white-space:nowrap;
 }
 .nice-ai-chip:hover {
   border-color:var(--accent); color:var(--accent);
@@ -4125,8 +4125,8 @@
   width:100%; padding:8px 0; margin-bottom:4px;
   background:none; border:1px solid var(--border);
   border-radius:var(--btn-radius, 0px); color:var(--accent);
-  font-family:var(--font-b); font-size:.75rem; font-weight:600;
-  letter-spacing:.03em; cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
+  cursor:pointer;
   transition:all .2s ease;
 }
 .nice-ai-resume:hover {
@@ -4144,15 +4144,15 @@
 }
 .nice-ai-mention-popup.visible { display:block; }
 .nice-ai-mention-item {
-  padding:8px 12px; cursor:pointer; font-size:.76rem; font-family:var(--font-b);
+  padding:8px 12px; cursor:pointer; font-size:var(--text-sm); font-family:var(--font-b);
   color:var(--text); display:flex; align-items:center; gap:8px;
   transition:background .1s;
 }
 .nice-ai-mention-item:hover, .nice-ai-mention-item.active {
   background:color-mix(in srgb, var(--accent) 12%, transparent);
 }
-.nice-ai-mention-item .mention-name { font-weight:600; color:var(--accent); }
-.nice-ai-mention-item .mention-role { color:var(--text-muted); font-size:.66rem; font-family:var(--font-b); }
+.nice-ai-mention-item .mention-name { font-weight:var(--fw-medium); color:var(--accent); }
+.nice-ai-mention-item .mention-role { color:var(--text-muted); font-size:var(--text-xs); font-family:var(--font-b); }
 
 @media (max-width:768px) {
   /* username and badge always visible in sidebar drawer */
@@ -4179,8 +4179,8 @@
 @keyframes notifyOut { to { opacity:0; transform:translateX(20px); } }
 .notify-toast-bar { width:4px; flex-shrink:0; }
 .notify-toast-body { flex:1; padding:10px 12px; }
-.notify-toast-title { font-family:var(--font-b); font-size:.78rem; font-weight:600; display:block; color:var(--text); }
-.notify-toast-msg { font-family:var(--font-b); font-size:.68rem; color:var(--text-muted); display:block; margin-top:2px; }
+.notify-toast-title { font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium); display:block; color:var(--text); }
+.notify-toast-msg { font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted); display:block; margin-top:2px; }
 .notify-toast-close {
   background:none; border:none; color:var(--text-dim); cursor:pointer;
   padding:8px 10px; font-size:1rem; align-self:flex-start;

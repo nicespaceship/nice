@@ -324,7 +324,7 @@
 [data-theme="spaceship"] .nice-ai-chip {
   border: 1px solid var(--border);
   background: transparent; color: var(--text-muted);
-  font-family: var(--font-b); text-transform: uppercase; font-size: .5rem;
+  font-family: var(--font-b); font-size: var(--text-xs);
   transition: all .15s;
 }
 [data-theme="spaceship"] .nice-ai-chip:hover { border-color: var(--border-hi); color: var(--text); }
@@ -718,7 +718,7 @@
 [data-theme="robotech"] .nice-ai-input { color:#1a1a1a; }
 [data-theme="robotech"] .nice-ai-input::placeholder { color:#bbb; }
 [data-theme="robotech"] .nice-ai-chip {
-  border-radius:4px; border:1px solid #d0d0ce; background:transparent; color:#888; font-size:.6rem;
+  border-radius:4px; border:1px solid #d0d0ce; background:transparent; color:#888; font-size:var(--text-xs);
 }
 [data-theme="robotech"] .nice-ai-chip:hover { border-color:#999; color:#1a1a1a; }
 
@@ -1456,13 +1456,13 @@
   border-color: #18a0fb;
   box-shadow: 0 0 20px rgba(24,160,251,0.15), inset 0 0 15px rgba(24,160,251,0.03);
 }
-[data-theme="navigator"] .nice-ai-input { color: #c0d8f0; font-family: var(--font-h); font-size: .7rem; }
+[data-theme="navigator"] .nice-ai-input { color: #c0d8f0; font-family: var(--font-h); font-size: var(--text-base); }
 [data-theme="navigator"] .nice-ai-input::placeholder { color: rgba(24,160,251,0.25); }
 [data-theme="navigator"] .nice-ai-chip {
   border-radius: 2px; border: 1px solid rgba(24,160,251,0.15);
   background: transparent; color: rgba(24,160,251,0.5);
-  font-family: var(--font-h); font-size: .5rem;
-  font-weight: 600; text-transform: uppercase; letter-spacing: .1em;
+  font-family: var(--font-h); font-size: var(--text-xs);
+  font-weight: var(--fw-medium);
 }
 [data-theme="navigator"] .nice-ai-chip:hover {
   background: rgba(24,160,251,0.1); color: #18a0fb; border-color: rgba(24,160,251,0.4);
@@ -1894,7 +1894,7 @@
 [data-theme="matrix"] .nice-ai-input::placeholder { color: rgba(0,255,65,0.3); }
 [data-theme="matrix"] .nice-ai-chip {
   border-radius: 0; border: 1px solid rgba(0,255,65,0.2); background: transparent;
-  color: rgba(0,255,65,0.6); font-family: 'Fira Code', monospace; font-size: 11px;
+  color: rgba(0,255,65,0.6); font-family: 'Fira Code', monospace; font-size: var(--text-xs);
 }
 [data-theme="matrix"] .nice-ai-chip:hover { background: rgba(0,255,65,0.1); color: #00ff41; }
 [data-theme="matrix"] .tcg-card {
@@ -2333,7 +2333,7 @@
 [data-theme="lcars"] .nice-ai-input::placeholder { color:#666688; }
 [data-theme="lcars"] .nice-ai-chip {
   border-radius:24px; background:#666688; color:#000; border:none;
-  font-weight:700; text-transform:uppercase;
+  font-weight:var(--fw-bold); font-size:var(--text-xs);
 }
 [data-theme="lcars"] .nice-ai-chip:hover { background:#ff9966; }
 
