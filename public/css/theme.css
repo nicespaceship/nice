@@ -4281,17 +4281,17 @@ body {
 /* Body */
 .blueprint-card-compact-body { flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:4px; min-width:0; justify-content:center; }
 .blueprint-card-compact-header { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.blueprint-card-compact-name { font-family:var(--font-h); font-size:.78rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
-.blueprint-card-compact-badge { font-family:var(--font-m); font-size:.44rem; padding:1px 5px; border:1px solid; border-radius:2px; letter-spacing:.1em; white-space:nowrap; }
+.blueprint-card-compact-name { font-family:var(--font-h); font-size:var(--card-text-name-sm); font-weight:var(--fw-bold); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+.blueprint-card-compact-badge { font-family:var(--font-m); font-size:var(--card-text-micro); padding:1px 5px; border:1px solid; border-radius:2px; letter-spacing:var(--tracking-caps); white-space:nowrap; }
 /* Meta tags row */
 .blueprint-card-compact-meta { display:flex; flex-wrap:wrap; gap:4px; }
-.blueprint-card-compact-meta .agent-tag { font-size:.6rem; }
+.blueprint-card-compact-meta .agent-tag { font-size:var(--card-text-body); }
 /* Tools row */
 .blueprint-card-compact-tools { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
 /* Stats bar */
 .blueprint-card-compact-stats { display:flex; gap:10px; margin-top:4px; }
-.blueprint-card-compact-stat { font-family:var(--font-m); font-size:.52rem; color:var(--text-muted); letter-spacing:.05em; }
-.blueprint-card-compact-stat b { color:var(--accent); font-weight:600; }
+.blueprint-card-compact-stat { font-family:var(--font-m); font-size:var(--card-text-micro); color:var(--text-muted); letter-spacing:var(--tracking-caps); }
+.blueprint-card-compact-stat b { color:var(--accent); font-weight:var(--fw-medium); }
 /* Actions */
 .blueprint-card-compact-actions { flex:0 0 auto; display:flex; flex-direction:column; gap:4px; padding:10px 8px; border-left:1px solid var(--border); align-items:center; justify-content:center; }
 /* Pixel theme */
@@ -4306,10 +4306,10 @@ body {
 .blueprint-card-mini[data-rarity="Rare"]      { border-color:#6366f1; }
 .blueprint-card-mini[data-rarity="Epic"]      { }
 .blueprint-card-mini[data-rarity="Legendary"] { }
-.blueprint-card-mini-name { font-family:var(--font-h); font-size:.52rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px; line-height:1.2; }
+.blueprint-card-mini-name { font-family:var(--font-h); font-size:var(--card-text-meta); font-weight:var(--fw-medium); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px; line-height:var(--lh-snug); }
 .blueprint-card-mini-art { width:44px; height:44px; border-radius:0; overflow:hidden; background:var(--bg); display:flex; align-items:center; justify-content:center; }
 .blueprint-card-mini-art svg { width:100%; height:100%; }
-.blueprint-card-mini-badge { font-family:var(--font-m); font-size:.38rem; padding:1px 4px; border-radius:2px; color:#fff; letter-spacing:.08em; line-height:1.2; }
+.blueprint-card-mini-badge { font-family:var(--font-m); font-size:var(--card-text-micro); padding:1px 4px; border-radius:2px; color:#fff; letter-spacing:var(--tracking-caps); line-height:var(--lh-snug); }
 /* Pixel theme */
 
 #hamburger {
