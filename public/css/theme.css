@@ -5,6 +5,34 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────────────
+   MODULE: TYPOGRAPHY TOKENS (shared across all themes)
+   SSOT — see CLAUDE.md → Typography System for full rules.
+   Minor-third ratio (1.2×). Use tokens, never raw font-size.
+───────────────────────────────────────────────────────────────── */
+:root {
+  --text-xs:   0.6875rem;  /* 11px — overline, caption, meta */
+  --text-sm:   0.8125rem;  /* 13px — secondary, UI chrome */
+  --text-base: 0.9375rem;  /* 15px — body default */
+  --text-md:   1.0625rem;  /* 17px — lead, emphasized body */
+  --text-lg:   1.25rem;    /* 20px — section title */
+  --text-xl:   1.5rem;     /* 24px — page title */
+  --text-2xl:  2rem;       /* 32px — hero */
+  --text-3xl:  clamp(2.25rem, 4vw, 3rem); /* marketing display */
+
+  --lh-tight:  1.15;
+  --lh-snug:   1.35;
+  --lh-base:   1.55;
+
+  --tracking-display: -0.01em;
+  --tracking-normal:  0;
+  --tracking-caps:    0.08em;
+
+  --fw-regular: 400;
+  --fw-medium:  600;
+  --fw-bold:    700;
+}
+
+/* ─────────────────────────────────────────────────────────────────
    MODULE: THEME TOKENS
 ───────────────────────────────────────────────────────────────── */
 

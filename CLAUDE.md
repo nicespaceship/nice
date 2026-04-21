@@ -164,6 +164,53 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - Persisted in `localStorage` key `ns-theme`
 - Theme Creator view (`#/theme-editor`) for custom skins
 
+## Typography System (SSOT: `:root` in `app/css/app.css` + `public/css/theme.css`)
+
+**Rule of thumb:** if you're about to write `font-size:`, `text-transform:`, `letter-spacing:`, or `font-weight:` with a raw value, stop — use a token. New raw values are bugs, not features.
+
+### Type scale (minor third, 1.2×)
+| Token | Size | Use for |
+|-------|------|---------|
+| `--text-xs` | 0.6875rem / 11px | Overline, caption, meta, stat chip |
+| `--text-sm` | 0.8125rem / 13px | Secondary UI chrome, sidebar labels, buttons |
+| `--text-base` | 0.9375rem / 15px | Body default, form inputs, list items |
+| `--text-md` | 1.0625rem / 17px | Lead paragraph, emphasized body |
+| `--text-lg` | 1.25rem / 20px | Section title, card title |
+| `--text-xl` | 1.5rem / 24px | Page title |
+| `--text-2xl` | 2rem / 32px | Hero, in-app |
+| `--text-3xl` | `clamp(2.25rem, 4vw, 3rem)` | Marketing display only |
+
+### Role tokens
+- **Weights:** `--fw-regular` (400), `--fw-medium` (600), `--fw-bold` (700). Drop 500 and 800.
+- **Line heights:** `--lh-tight` (1.15, display), `--lh-snug` (1.35, titles/buttons), `--lh-base` (1.55, body).
+- **Tracking:** `--tracking-display` (-0.01em, hero), `--tracking-normal` (0), `--tracking-caps` (0.08em, overline only).
+- **Font families (theme-driven):** `--font-h` (display/titles), `--font-b` (body/UI), `--font-m` (monospace, code/telemetry only). `--font-brand` is the brand wordmark.
+
+### Case rules (follow modern SaaS — Linear/Stripe/Vercel/Notion)
+- **Sentence case** — default for buttons, labels, body, empty states, nav items, form labels, links. "Create spaceship", not "Create Spaceship" or "CREATE SPACESHIP".
+- **ALL CAPS (`text-transform: uppercase` + `--tracking-caps`)** — reserved for the **overline** role only: eyebrow labels, stat chips, badges. Requires `--text-xs` and `--fw-bold` or `--fw-medium`. Never use on anything ≥ `--text-base`.
+- **Title Case** — page titles, product/feature names, proper nouns only ("NICE SPACESHIP", "Bridge", "Captain's Log", "Gemini 2.5 Flash"). Do NOT title-case arbitrary headings.
+- **Banned:** `text-transform: capitalize`. Produces "An Agent Of The Fleet" which no style guide blesses. Fix the source string instead.
+
+### Font families per theme
+- **Maximum 2 families per theme** — one display (`--font-h`), one body (`--font-b`). Mono only where genuinely mono (code, terminal, telemetry). Cap at 3 total.
+- Per-theme differentiation comes from the **display** font, not from stacking extra weights or sizes. Body should stay readable in every theme.
+
+### How to apply a token
+```css
+/* Correct */
+.bp-card-title { font-size: var(--text-lg); font-weight: var(--fw-bold); line-height: var(--lh-snug); }
+.eyebrow        { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-caps); font-weight: var(--fw-bold); }
+
+/* Wrong — raw values */
+.bp-card-title { font-size: 1.2rem; font-weight: 700; }
+.eyebrow        { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; }
+```
+
+### Rollout status
+- **Phase 1 (current):** tokens defined in both CSS roots, documented here. Zero visual change. Existing hardcoded `font-size` values still work — new code MUST use tokens.
+- **Phase 2+:** progressive migration of existing surfaces. Sidebar/header/Bridge/Home/prompt-panel/cards first; settings/modals/wizards second; marketing site last. Per-surface PRs.
+
 ## NICE™ SPA Architecture
 
 ### Module Pattern
