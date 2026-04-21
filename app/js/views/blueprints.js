@@ -156,17 +156,37 @@ const BlueprintsView = (() => {
       const outboxBadge = draftCount > 0
         ? ` <span class="bp-tab-count bp-tab-count--alert">${draftCount}</span>`
         : '';
+      // Full tab row is desktop; mobile shows a single picker pill instead
+      // (see .bp-tab-picker in CSS). Both trigger the same _switchTab()
+      // logic so the underlying tab state stays unified.
+      const tabDefs = [
+        { id: 'schematic', label: 'Schematic' },
+        { id: 'blueprints', label: 'Blueprints' },
+        { id: 'missions', label: 'Missions' },
+        { id: 'outbox', label: 'Outbox' + outboxBadge },
+        { id: 'operations', label: 'Operations' },
+        { id: 'log', label: 'Log' },
+        { id: 'documentation', label: 'Documentation' },
+        { id: 'tron', label: 'TRON', cls: 'bp-tab-tron' },
+      ];
+      const activeLabel = (tabDefs.find(t => t.id === _activeTab) || tabDefs[1]).label.replace(/<[^>]*>/g, '').trim();
       fixedTabs.innerHTML = `
         <div class="bp-type-tabs" id="bp-type-tabs">
-          <button class="bp-type-tab" data-tab="schematic">Schematic</button>
-          <button class="bp-type-tab active" data-tab="blueprints">Blueprints</button>
-          <button class="bp-type-tab" data-tab="missions">Missions</button>
-          <button class="bp-type-tab" data-tab="outbox">Outbox${outboxBadge}</button>
-          <button class="bp-type-tab" data-tab="operations">Operations</button>
-          <button class="bp-type-tab" data-tab="log">Log</button>
-          <button class="bp-type-tab" data-tab="documentation">Documentation</button>
+          ${tabDefs.slice(0, 7).map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
           <span style="flex:1"></span>
-          <button class="bp-type-tab bp-tab-tron" data-tab="tron">TRON</button>
+          ${tabDefs.slice(7).map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+        </div>
+        <button class="bp-tab-picker" id="bp-tab-picker" aria-haspopup="dialog" aria-expanded="false">
+          <span class="bp-tab-picker-label">${activeLabel}</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+        </button>
+        <div class="bp-sheet-backdrop" id="bp-tab-sheet-backdrop" hidden></div>
+        <div class="bp-sheet" id="bp-tab-sheet" role="dialog" aria-label="Choose view" aria-modal="true" hidden>
+          <div class="bp-sheet-handle"></div>
+          <div class="bp-sheet-header"><h3 class="bp-sheet-title">Views</h3><button class="bp-sheet-close" id="bp-tab-sheet-close" aria-label="Close">&times;</button></div>
+          <div class="bp-sheet-body">
+            ${tabDefs.map(t => `<button class="bp-sheet-option${t.id === _activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+          </div>
         </div>`;
     }
 
@@ -188,41 +208,20 @@ const BlueprintsView = (() => {
 
 
 
+        <!-- Search row: always contains search + view-toggle; on mobile
+             also renders a Filters button (see .bp-filter-toggle). The
+             filter controls themselves live in .bp-filter-controls which
+             is an inline flex row on desktop and a bottom sheet on mobile. -->
         <div class="bp-search-row">
           <div class="search-box">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
             <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" />
           </div>
-          <select id="bp-sort" class="filter-select" aria-label="Sort blueprints">
-            <option value="name">A — Z</option>
-            <option value="name-desc">Z — A</option>
-            <option value="popular">Most Popular</option>
-            <option value="rating">Highest Rated</option>
-            <option value="rarity-desc">Rarity: High → Low</option>
-            <option value="rarity-asc">Rarity: Low → High</option>
-          </select>
-          <select id="bp-category" class="filter-select" aria-label="Filter by category">
-            <option value="">All Categories</option>
-            ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
-          </select>
-          <select id="bp-tier" class="filter-select" aria-label="Filter by tier">
-            <option value="">All Tiers</option>
-            <option value="free">Free</option>
-            <option value="premium">Premium</option>
-          </select>
-          <div class="bp-source-filter" id="bp-source-filter" role="group" aria-label="Filter by source">
-            <button class="bp-source-btn${_sourceFilter==='all'?' active':''}"       data-source="all"       aria-pressed="${_sourceFilter==='all'}">All</button>
-            <button class="bp-source-btn${_sourceFilter==='official'?' active':''}"  data-source="official"  aria-pressed="${_sourceFilter==='official'}">Official</button>
-            <button class="bp-source-btn${_sourceFilter==='community'?' active':''}" data-source="community" aria-pressed="${_sourceFilter==='community'}">Community</button>
-          </div>
-          <div class="bp-rarity-filters" id="bp-rarity-filters" role="group" aria-label="Filter by rarity">
-            <button class="bp-rarity-btn active" data-rarity="all" aria-pressed="true">All</button>
-            <button class="bp-rarity-btn" data-rarity="Common" aria-pressed="false">Common</button>
-            <button class="bp-rarity-btn" data-rarity="Rare" aria-pressed="false">Rare</button>
-            <button class="bp-rarity-btn" data-rarity="Epic" aria-pressed="false">Epic</button>
-            <button class="bp-rarity-btn" data-rarity="Legendary" aria-pressed="false">Legendary</button>
-            <button class="bp-rarity-btn" data-rarity="Mythic" aria-pressed="false">Mythic</button>
-          </div>
+          <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
+            <span>Filters</span>
+            <span class="bp-filter-count" id="bp-filter-count" hidden></span>
+          </button>
           <div class="bp-view-toggle" id="bp-view-toggle">
             <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
@@ -233,6 +232,66 @@ const BlueprintsView = (() => {
             <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
             </button>
+          </div>
+        </div>
+
+        <div class="bp-sheet-backdrop" id="bp-filter-sheet-backdrop" hidden></div>
+        <div class="bp-filter-controls" id="bp-filter-sheet" role="group" aria-label="Blueprint filters">
+          <div class="bp-sheet-handle"></div>
+          <div class="bp-sheet-header">
+            <h3 class="bp-sheet-title">Filters</h3>
+            <button class="bp-sheet-close" id="bp-filter-sheet-close" aria-label="Close filters">&times;</button>
+          </div>
+          <div class="bp-sheet-body">
+            <label class="bp-filter-field">
+              <span class="bp-filter-label">Sort</span>
+              <select id="bp-sort" class="filter-select" aria-label="Sort blueprints">
+                <option value="name">A — Z</option>
+                <option value="name-desc">Z — A</option>
+                <option value="popular">Most Popular</option>
+                <option value="rating">Highest Rated</option>
+                <option value="rarity-desc">Rarity: High → Low</option>
+                <option value="rarity-asc">Rarity: Low → High</option>
+              </select>
+            </label>
+            <label class="bp-filter-field">
+              <span class="bp-filter-label">Category</span>
+              <select id="bp-category" class="filter-select" aria-label="Filter by category">
+                <option value="">All Categories</option>
+                ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
+              </select>
+            </label>
+            <label class="bp-filter-field">
+              <span class="bp-filter-label">Tier</span>
+              <select id="bp-tier" class="filter-select" aria-label="Filter by tier">
+                <option value="">All Tiers</option>
+                <option value="free">Free</option>
+                <option value="premium">Premium</option>
+              </select>
+            </label>
+            <div class="bp-filter-field">
+              <span class="bp-filter-label">Source</span>
+              <div class="bp-source-filter" id="bp-source-filter" role="group" aria-label="Filter by source">
+                <button class="bp-source-btn${_sourceFilter==='all'?' active':''}"       data-source="all"       aria-pressed="${_sourceFilter==='all'}">All</button>
+                <button class="bp-source-btn${_sourceFilter==='official'?' active':''}"  data-source="official"  aria-pressed="${_sourceFilter==='official'}">Official</button>
+                <button class="bp-source-btn${_sourceFilter==='community'?' active':''}" data-source="community" aria-pressed="${_sourceFilter==='community'}">Community</button>
+              </div>
+            </div>
+            <div class="bp-filter-field">
+              <span class="bp-filter-label">Rarity</span>
+              <div class="bp-rarity-filters" id="bp-rarity-filters" role="group" aria-label="Filter by rarity">
+                <button class="bp-rarity-btn active" data-rarity="all" aria-pressed="true">All</button>
+                <button class="bp-rarity-btn" data-rarity="Common" aria-pressed="false">Common</button>
+                <button class="bp-rarity-btn" data-rarity="Rare" aria-pressed="false">Rare</button>
+                <button class="bp-rarity-btn" data-rarity="Epic" aria-pressed="false">Epic</button>
+                <button class="bp-rarity-btn" data-rarity="Legendary" aria-pressed="false">Legendary</button>
+                <button class="bp-rarity-btn" data-rarity="Mythic" aria-pressed="false">Mythic</button>
+              </div>
+            </div>
+          </div>
+          <div class="bp-sheet-footer">
+            <button class="btn btn-sm bp-filter-clear" id="bp-filter-clear">Clear all</button>
+            <button class="btn btn-sm btn-primary bp-filter-apply" id="bp-filter-apply">Done</button>
           </div>
         </div>
 
@@ -262,6 +321,7 @@ const BlueprintsView = (() => {
     _toggleSchematicView();
 
     _bindEvents();
+    _updateFilterCount();
     if (_activeTab === 'blueprints') _applyFilters(); // async — renders activated section + paginated grid
     _handleDeepLink();
   }
@@ -1831,6 +1891,20 @@ const BlueprintsView = (() => {
     parentEl.appendChild(overlay);
   }
 
+  /** Count non-default filters and reflect in the mobile Filters-button badge. */
+  function _updateFilterCount() {
+    const badge = document.getElementById('bp-filter-count');
+    if (!badge) return;
+    let n = 0;
+    if (document.getElementById('bp-category')?.value) n++;
+    if (document.getElementById('bp-tier')?.value) n++;
+    if (_sourceFilter && _sourceFilter !== 'all') n++;
+    const activeRarity = document.querySelector('.bp-rarity-btn.active')?.dataset.rarity;
+    if (activeRarity && activeRarity !== 'all') n++;
+    if (n > 0) { badge.textContent = String(n); badge.hidden = false; }
+    else { badge.textContent = ''; badge.hidden = true; }
+  }
+
   function _bindEvents() {
     // Scroll-end detection for tab fade hint
     const tabBar = document.getElementById('bp-type-tabs');
@@ -1843,19 +1917,41 @@ const BlueprintsView = (() => {
       _checkScroll();
     }
 
-    // Main tabs
-    document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
-      const tab = e.target.closest('.bp-type-tab');
-      if (!tab) return;
-      document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      _activeTab = tab.dataset.tab;
+    // Main tabs (shared logic — called by both the desktop tab bar and
+    // the mobile sheet picker so the tab state stays in one place).
+    const _switchTab = (tabId) => {
+      if (!tabId || tabId === _activeTab) return;
+      document.querySelectorAll('.bp-type-tab, .bp-sheet-option').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+      _activeTab = tabId;
       _colSort = { key: null, dir: 'asc' };
+      const tabLabel = document.querySelector(`.bp-type-tab[data-tab="${tabId}"]`)?.textContent?.trim();
+      const pickerLabel = document.querySelector('#bp-tab-picker .bp-tab-picker-label');
+      if (pickerLabel && tabLabel) pickerLabel.textContent = tabLabel;
       _toggleSchematicView();
       if (_activeTab !== 'blueprints') return;
       _updateRarityFilters();
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
       _applyFilters();
+    };
+    document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
+      const tab = e.target.closest('.bp-type-tab');
+      if (tab) _switchTab(tab.dataset.tab);
+    });
+
+    // Mobile tab picker — opens the bottom sheet with the same tab list.
+    const tabPicker = document.getElementById('bp-tab-picker');
+    const tabSheet = document.getElementById('bp-tab-sheet');
+    const tabBackdrop = document.getElementById('bp-tab-sheet-backdrop');
+    const _openTabSheet = () => { if (tabSheet && tabBackdrop) { tabSheet.hidden = false; tabBackdrop.hidden = false; requestAnimationFrame(() => { tabSheet.classList.add('open'); tabBackdrop.classList.add('open'); tabPicker?.setAttribute('aria-expanded', 'true'); }); } };
+    const _closeTabSheet = () => { if (tabSheet && tabBackdrop) { tabSheet.classList.remove('open'); tabBackdrop.classList.remove('open'); tabPicker?.setAttribute('aria-expanded', 'false'); setTimeout(() => { tabSheet.hidden = true; tabBackdrop.hidden = true; }, 200); } };
+    tabPicker?.addEventListener('click', _openTabSheet);
+    tabBackdrop?.addEventListener('click', _closeTabSheet);
+    document.getElementById('bp-tab-sheet-close')?.addEventListener('click', _closeTabSheet);
+    tabSheet?.addEventListener('click', (e) => {
+      const opt = e.target.closest('.bp-sheet-option');
+      if (!opt) return;
+      _switchTab(opt.dataset.tab);
+      _closeTabSheet();
     });
 
     // Sub-tabs (Spaceships / Agents within Blueprints)
@@ -1875,9 +1971,38 @@ const BlueprintsView = (() => {
       clearTimeout(_searchTimer);
       _searchTimer = setTimeout(() => _applyFilters(), 300);
     });
-    document.getElementById('bp-sort')?.addEventListener('change', () => _applyFilters());
-    document.getElementById('bp-category')?.addEventListener('change', () => _applyFilters());
-    document.getElementById('bp-tier')?.addEventListener('change', () => _applyFilters());
+    document.getElementById('bp-sort')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
+    document.getElementById('bp-category')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
+    document.getElementById('bp-tier')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
+
+    // Mobile filters sheet — same controls, rendered as a bottom drawer
+    // on narrow viewports. Desktop CSS overrides display so the sheet is
+    // just an inline flex row.
+    const filterToggle = document.getElementById('bp-filter-toggle');
+    const filterSheet = document.getElementById('bp-filter-sheet');
+    const filterBackdrop = document.getElementById('bp-filter-sheet-backdrop');
+    const _openFilterSheet = () => { if (filterSheet && filterBackdrop) { filterBackdrop.hidden = false; requestAnimationFrame(() => { filterSheet.classList.add('open'); filterBackdrop.classList.add('open'); filterToggle?.setAttribute('aria-expanded', 'true'); }); } };
+    const _closeFilterSheet = () => { if (filterSheet && filterBackdrop) { filterSheet.classList.remove('open'); filterBackdrop.classList.remove('open'); filterToggle?.setAttribute('aria-expanded', 'false'); setTimeout(() => { filterBackdrop.hidden = true; }, 200); } };
+    filterToggle?.addEventListener('click', _openFilterSheet);
+    filterBackdrop?.addEventListener('click', _closeFilterSheet);
+    document.getElementById('bp-filter-sheet-close')?.addEventListener('click', _closeFilterSheet);
+    document.getElementById('bp-filter-apply')?.addEventListener('click', _closeFilterSheet);
+    document.getElementById('bp-filter-clear')?.addEventListener('click', () => {
+      const sort = document.getElementById('bp-sort'); if (sort) sort.value = 'name';
+      const cat = document.getElementById('bp-category'); if (cat) cat.value = '';
+      const tier = document.getElementById('bp-tier'); if (tier) tier.value = '';
+      _sourceFilter = 'all';
+      document.querySelectorAll('.bp-source-btn').forEach(b => { const on = b.dataset.source === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      document.querySelectorAll('.bp-rarity-btn').forEach(b => { const on = b.dataset.rarity === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      _applyFilters();
+      _updateFilterCount();
+    });
+    // Close on ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (filterSheet?.classList.contains('open')) _closeFilterSheet();
+      if (document.getElementById('bp-tab-sheet')?.classList.contains('open')) _closeTabSheet();
+    });
 
     // View toggle buttons
     document.getElementById('bp-view-toggle')?.addEventListener('click', (e) => {
@@ -1898,6 +2023,7 @@ const BlueprintsView = (() => {
       btn.classList.add('active');
       btn.setAttribute('aria-pressed', 'true');
       _applyFilters();
+      _updateFilterCount();
     });
 
     document.getElementById('bp-source-filter')?.addEventListener('click', (e) => {
@@ -1909,6 +2035,7 @@ const BlueprintsView = (() => {
         b.classList.toggle('active', on);
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
+      _updateFilterCount();
       // Reflect in the URL so the filter is shareable / survives reloads
       const base = (location.hash || '').split('?')[0] || '#/bridge';
       const params = new URLSearchParams((location.hash || '').split('?')[1] || '');
