@@ -1242,7 +1242,7 @@
    SIDEBAR (Desktop always visible, mobile drawer)
 ───────────────────────────────────────────────────────────────── */
 .app-sidebar {
-  position:fixed; top:0; left:0; bottom:0; width:56px;
+  position:fixed; top:var(--guest-banner-height, 0px); left:0; bottom:0; width:56px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
   border-right:var(--border-width) solid var(--border);
   color:var(--nav-text, var(--text));
@@ -1582,7 +1582,7 @@
    here we override only the anchor + dimensions for the mobile layout. */
 @media (max-width:768px) {
   .app-hud-panel {
-    top:48px; left:0; width:auto; right:0;
+    top:calc(48px + var(--guest-banner-height, 0px)); left:0; width:auto; right:0;
     border-radius:0;
     background:var(--nav-bg, var(--bg2, #18181b));
     backdrop-filter:blur(18px);
@@ -1615,7 +1615,7 @@
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
 .app-mobile-bar {
   display:none;
-  position:fixed; top:0; left:0; right:0; height:48px;
+  position:fixed; top:var(--guest-banner-height, 0px); left:0; right:0; height:48px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
   border-bottom:var(--border-width) solid var(--border);
   align-items:center; justify-content:space-between; padding:0 12px; z-index:301;
@@ -1659,13 +1659,13 @@
 
 @media (max-width:768px) {
   .app-mobile-bar { display:flex; }
-  .app-sidebar { width:280px; transform:translateX(-100%); transition:transform .3s ease; top:0; z-index:302; }
+  .app-sidebar { width:280px; transform:translateX(-100%); transition:transform .3s ease; top:var(--guest-banner-height, 0px); z-index:302; }
   .app-sidebar.open { width:280px; transform:translateX(0); }
   .app-mobile-bar { transition:transform .3s ease; }
   .app-sidebar.open ~ .app-mobile-bar { transform:translateX(280px); }
   .app-sidebar.open ~ .app-mobile-bar #mobile-sidebar-toggle { visibility:hidden; }
   .app-sidebar.open ~ .app-main { margin-left:0; transform:translateX(280px); transition:transform .3s ease; }
-  .app-main { margin-left:0; margin-top:48px; }
+  .app-main { margin-left:0; margin-top:calc(48px + var(--guest-banner-height, 0px)); }
   .app-sidebar.open ~ .nice-ai { left:50%; width:calc(100% - 48px); }
   .app-sidebar:not(.open) .side-link span,
   .app-sidebar:not(.open) .app-brand-text,
@@ -9394,9 +9394,25 @@ body.preview-active .nice-ai {
   .sch-slot-label { font-size:.58rem; }
 }
 
-/* ── Guest banner: responsive ── */
+/* ── Guest banner ──
+   Plain block text (not flex) so the "Sign in" link wraps as a unit and
+   reflows naturally on narrow viewports. Height is measured in JS and
+   exposed as --guest-banner-height on <html>; the sidebar, mobile bar,
+   and app-main all offset from it, with a 0px fallback when absent. */
+.guest-banner {
+  position:fixed; top:0; left:0; right:0; z-index:9999;
+  background:var(--bg-alt); color:var(--text);
+  padding:6px 16px; text-align:center;
+  font-size:.78rem; font-family:var(--font-b);
+  line-height:1.5;
+  border-bottom:1px solid var(--border);
+}
+.guest-banner-link {
+  color:var(--accent); font-weight:600; text-decoration:underline;
+  white-space:nowrap;
+}
 @media (max-width:640px) {
-  #guest-banner { font-size:.7rem; padding:5px 10px; }
+  .guest-banner { font-size:.7rem; padding:5px 10px; }
 }
 
 /* ── Wallet cards: stack on mobile ── */
