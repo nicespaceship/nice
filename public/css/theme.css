@@ -30,6 +30,17 @@
   --fw-regular: 400;
   --fw-medium:  600;
   --fw-bold:    700;
+
+  /* Card-scoped typography — visual artifacts, not prose.
+     Use these tokens ONLY inside blueprint-card / blueprint-tile /
+     agent-card / fleet-card selectors. Floor is 8px.
+     See CLAUDE.md → Typography System → Card exemption. */
+  --card-text-name:    1.1rem;    /* primary card title */
+  --card-text-name-sm: 0.875rem;  /* secondary card title */
+  --card-text-stat:    0.875rem;  /* stat value */
+  --card-text-body:    0.75rem;   /* flavor, description, chip */
+  --card-text-meta:    0.625rem;  /* subtitle, type line, rarity, role */
+  --card-text-micro:   0.5rem;    /* marquee, stat label, serial, mini badge (FLOOR) */
 }
 
 /* ─────────────────────────────────────────────────────────────────
