@@ -134,10 +134,8 @@
   margin: 2px 6px;
   padding: 8px 12px;
   font-family: var(--font-b);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  font-size: .58rem;
+  font-weight: var(--fw-regular);
+  font-size: var(--text-sm);
   color: var(--text-muted);
   transition: all .15s;
 }
@@ -579,7 +577,7 @@
 }
 [data-theme="robotech"] .side-link {
   border-radius:4px; margin:1px 8px; padding:8px 12px;
-  font-weight:500; font-size:.7rem; color:#888; transition:all .15s;
+  font-weight:var(--fw-regular); font-size:var(--text-sm); color:#888; transition:all .15s;
 }
 [data-theme="robotech"] .side-link:hover { color:#1a1a1a; background:rgba(0,0,0,0.03); }
 [data-theme="robotech"] .side-link.active {
@@ -771,7 +769,7 @@
   background:#fff; border:1px solid #d0d0ce; border-radius:4px;
   box-shadow:0 4px 16px rgba(0,0,0,0.08);
 }
-[data-theme="robotech"] .side-popover-item { color:#888; font-size:.7rem; }
+[data-theme="robotech"] .side-popover-item { color:#888; font-size:var(--text-sm); }
 [data-theme="robotech"] .side-popover-item:hover { background:rgba(0,0,0,0.03); color:#1a1a1a; }
 
 /* ── Sidebar folder ── */
@@ -1217,10 +1215,8 @@
   border: 1px solid transparent;
   margin: 2px 8px;
   font-family: var(--font-h);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .15em;
-  font-size: .55rem;
+  font-weight: var(--fw-medium);
+  font-size: var(--text-sm);
   color: rgba(24,160,251,0.6);
   transition: all .2s;
   position: relative;
@@ -1530,7 +1526,7 @@
 }
 [data-theme="navigator"] .side-popover-item {
   color: rgba(24,160,251,0.6); font-family: var(--font-h);
-  font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: .55rem;
+  font-weight: var(--fw-regular); font-size: var(--text-sm);
 }
 [data-theme="navigator"] .side-popover-item:hover {
   background: rgba(24,160,251,0.1); color: #18a0fb;
@@ -1806,7 +1802,7 @@
 }
 [data-theme="matrix"] .side-link {
   color: rgba(0,255,65,0.6); border-radius: 0; border: 1px solid transparent;
-  font-family: 'Fira Code', monospace; font-size: 12px; letter-spacing: 0.5px;
+  font-family: 'Fira Code', monospace; font-size: var(--text-sm);
 }
 [data-theme="matrix"] .side-link:hover {
   background: rgba(0,255,65,0.06); color: #00ff41; border-color: rgba(0,255,65,0.15);
@@ -2047,10 +2043,8 @@
   padding:7px 16px 7px 12px;
   background:#ff9966;
   color:#000;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-  font-size:.68rem;
+  font-weight:var(--fw-bold);
+  font-size:var(--text-sm);
   border:none;
   transition:background .15s;
   position:relative;
@@ -2414,10 +2408,8 @@
   border-left: 2px solid rgba(0,229,255,0.15);
   margin: 2px 8px;
   font-family: 'Exo 2', sans-serif;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  font-size: .65rem;
+  font-weight: var(--fw-regular);
+  font-size: var(--text-sm);
   color: rgba(0,229,255,0.7);
   transition: all .2s;
 }
@@ -3310,7 +3302,7 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 }
 [data-theme="jarvis"] .side-popover-item {
   color: rgba(0,229,255,0.7); font-family: 'Exo 2', sans-serif;
-  font-weight: 500; text-transform: uppercase; letter-spacing: .08em; font-size: .7rem;
+  font-weight: var(--fw-regular); font-size: var(--text-sm);
 }
 [data-theme="jarvis"] .side-popover-item:hover { background: rgba(0,229,255,0.08); color: #18ffff; }
 
