@@ -233,6 +233,12 @@ const Theme = (() => {
     // `copy.placeholders` off the active theme entry; no-op for themes
     // without a personality bundle.
     _applyThemeLabels(name);
+    // Noun SSOT — refresh static `data-term` elements (sidebar labels,
+    // etc.) so the active theme's vocabulary wins. Dynamic views pick up
+    // the change on the Router.refresh() below. Anything outside the view
+    // tree (guest banner, etc.) listens for `nice:theme-change`.
+    if (typeof Terminology !== 'undefined' && Terminology.applyDOM) Terminology.applyDOM();
+    document.dispatchEvent(new CustomEvent('nice:theme-change', { detail: { theme: name } }));
     // Repaint the centerpiece reactor with the new theme's markup. Themes
     // without a registered `reactor` clear it (CoreReactor handles both).
     if (typeof CoreReactor !== 'undefined' && CoreReactor.paint) CoreReactor.paint();
@@ -431,6 +437,8 @@ const Theme = (() => {
     renderDock();
     set(saved);
     _updateDarkLightIcon();
+    // Populate any `data-term` elements that rendered before set() ran.
+    if (typeof Terminology !== 'undefined' && Terminology.applyDOM) Terminology.applyDOM();
   }
 
   function current() { return localStorage.getItem(_K_THEME) || 'nice'; }
@@ -2316,6 +2324,12 @@ const NICE = (() => {
     } else {
       State.set('guestMode', false);
     }
+
+    // Repaint the banner's theme-aware copy when the active theme swaps.
+    // Dispatched by Theme.set; no-op if the banner isn't mounted.
+    document.addEventListener('nice:theme-change', () => {
+      if (document.getElementById('guest-banner')) _showGuestBanner();
+    });
   }
 
   function _updateGuestBannerHeight() {
@@ -2324,12 +2338,23 @@ const NICE = (() => {
     document.documentElement.style.setProperty('--guest-banner-height', banner.offsetHeight + 'px');
   }
 
+  function _guestBannerHTML() {
+    const missionsLower = Terminology.label('mission', { plural: true, lowercase: true });
+    return `Browse freely &mdash; <a href="#/profile" class="guest-banner-link">Sign in</a> to deploy agents and run ${missionsLower}.`;
+  }
+
   function _showGuestBanner() {
-    if (document.getElementById('guest-banner')) return;
+    const existing = document.getElementById('guest-banner');
+    if (existing) {
+      // Theme may have just changed — refresh the copy so the noun (mission
+      // vs. assignment) tracks the active theme.
+      existing.innerHTML = _guestBannerHTML();
+      return;
+    }
     const banner = document.createElement('div');
     banner.id = 'guest-banner';
     banner.className = 'guest-banner';
-    banner.innerHTML = 'Browse freely &mdash; <a href="#/profile" class="guest-banner-link">Sign in</a> to deploy agents and run missions.';
+    banner.innerHTML = _guestBannerHTML();
     document.body.prepend(banner);
     _updateGuestBannerHeight();
     if (window.ResizeObserver) {

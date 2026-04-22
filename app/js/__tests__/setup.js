@@ -111,6 +111,7 @@ globalThis.State = (() => {
 
 // Load real IIFE modules into global scope (order matters for dependencies)
 loadScriptGlobal('lib/utils.js');
+loadScriptGlobal('lib/terminology.js');   // noun SSOT; command-palette + views read this
 loadScriptGlobal('lib/audit-log.js');
 loadScriptGlobal('lib/onboarding.js');  // Depends on AuditLog + State (both already available)
 loadScriptGlobal('lib/content-queue.js'); // Depends on Utils + State

@@ -8,12 +8,17 @@ const Keyboard = (() => {
   let _timer = null;
   const CHORD_TIMEOUT = 500;
 
+  // Chord handlers are static; the `label` for theme-aware entries (e.g.
+  // Missions → Assignments under Office) is a factory so the help overlay
+  // picks up the active theme's vocabulary each time it's opened. Non-
+  // themed labels stay as plain strings.
+  const _goMissions = () => `Go ${Terminology.label('mission', { plural: true })}`;
   const SHORTCUTS = [
     // Navigation chords: G + letter
     { chord: ['g', 'h'], label: 'Go Bridge', action: () => Router.navigate('#/') },
     { chord: ['g', 'a'], label: 'Go Agents',       action: () => Router.navigate('#/bridge/agents') },
     { chord: ['g', 's'], label: 'Go Shipyard',     action: () => Router.navigate('#/bridge/spaceships') },
-    { chord: ['g', 'm'], label: 'Go Missions',     action: () => Router.navigate('#/missions') },
+    { chord: ['g', 'm'], label: _goMissions,       action: () => Router.navigate('#/missions') },
     { chord: ['g', 'b'], label: 'Go Blueprints',   action: () => Router.navigate('#/bridge') },
     { chord: ['g', 'n'], label: 'Go Analytics',    action: () => Router.navigate('#/analytics') },
     { chord: ['g', 'c'], label: 'Go Comms',        action: () => Router.navigate('#/comms') },
@@ -21,7 +26,7 @@ const Keyboard = (() => {
     { chord: ['g', 'p'], label: 'Go Profile',      action: () => Router.navigate('#/profile') },
     { chord: ['g', 't'], label: 'Go Settings',     action: () => Router.navigate('#/settings') },
     { chord: ['g', 'w'], label: 'Go Workflows',    action: () => Router.navigate('#/workflows') },
-    { chord: ['g', 'r'], label: 'Go Missions', action: () => Router.navigate('#/missions') },
+    { chord: ['g', 'r'], label: _goMissions,       action: () => Router.navigate('#/missions') },
     { chord: ['g', 'l'], label: 'Go Captain\'s Log', action: () => Router.navigate('#/log') },
     // Creation chords: N + letter
     { chord: ['n', 'a'], label: 'New Agent',        action: () => Router.navigate('#/bridge/agents/new') },
@@ -125,11 +130,27 @@ const Keyboard = (() => {
 
   function _shortcutRow(s) {
     const keys = s.chord.map(k => '<kbd>' + k.toUpperCase() + '</kbd>').join(' then ');
-    return '<div class="kb-row">' + keys + '<span>' + s.label + '</span></div>';
+    const label = typeof s.label === 'function' ? s.label() : s.label;
+    return '<div class="kb-row">' + keys + '<span>' + label + '</span></div>';
   }
 
   function showHelp() {
-    document.getElementById('shortcut-help')?.classList.add('open');
+    const el = document.getElementById('shortcut-help');
+    if (!el) return;
+    // Repopulate the body so any theme-aware labels (e.g. Missions →
+    // Assignments under Office) pick up the current theme's vocabulary.
+    const grid = el.querySelector('.kb-shortcut-grid');
+    if (grid) {
+      const navRows = SHORTCUTS.filter(s => s.chord[0] === 'g').map(s => _shortcutRow(s)).join('');
+      const actionRows = SHORTCUTS.filter(s => s.chord[0] === 'n').map(s => _shortcutRow(s)).join('');
+      const globalRows = '<div class="kb-row"><kbd>Cmd</kbd>+<kbd>K</kbd><span>Command Palette</span></div>' +
+        SHORTCUTS.filter(s => s.chord[0] === '?').map(s => _shortcutRow(s)).join('');
+      grid.innerHTML = `
+        <div class="kb-section-title">Navigation</div>${navRows}
+        <div class="kb-section-title">Actions</div>${actionRows}
+        <div class="kb-section-title">Global</div>${globalRows}`;
+    }
+    el.classList.add('open');
   }
 
   return { init, showHelp, SHORTCUTS };

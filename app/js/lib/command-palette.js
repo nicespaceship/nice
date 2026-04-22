@@ -9,28 +9,35 @@ const CommandPalette = (() => {
   let _selectedIdx = 0;
   let _el = null;
 
-  const _BASE_ROUTES = [
-    { label: 'Bridge', skinKey: 'titles.home', path: '/',             keywords: 'home dashboard bridge',     icon: '#icon-home' },
-    { label: 'Agents',       skinKey: 'nav.agents', path: '/blueprints/agents',       keywords: 'agents list manage',          icon: '#icon-agent' },
-    { label: 'New Agent',    skinKey: 'newAgent', path: '/blueprints/agents/new',   keywords: 'create new agent builder',           icon: '#icon-plus' },
-    { label: 'Shipyard',     skinKey: 'nav.spaceships', path: '/blueprints/spaceships',   keywords: 'spaceships shipyard fleet ships',    icon: '#icon-spaceship' },
-    { label: 'Missions',     skinKey: 'nav.missions', path: '/missions',     keywords: 'missions tasks queue jobs',          icon: '#icon-task' },
-    { label: 'Blueprint Catalog', skinKey: 'nav.blueprints', path: '/blueprints', keywords: 'blueprints catalog agents orchestrator templates', icon: '#icon-blueprint' },
-    { label: 'Operations',   skinKey: 'nav.analytics', path: '/analytics',    keywords: 'operations analytics charts stats performance', icon: '#icon-analytics' },
-    { label: 'Cost Tracker', skinKey: 'nav.cost', path: '/cost',         keywords: 'cost budget spending money',         icon: '#icon-dollar' },
-    { label: 'Vault',        skinKey: 'nav.vault', path: '/vault',        keywords: 'vault secrets keys api tokens',      icon: '#icon-key' },
-    { label: 'Security',     path: '/security',     keywords: 'security agent permissions threat audit compliance access policies', icon: '#icon-lock' },
-    { label: "Log", skinKey: 'nav.log', path: '/log',          keywords: 'log audit captain history events missions operations',  icon: '#icon-monitor' },
-    { label: 'Dock', skinKey: 'nav.dock', path: '/dock',        keywords: 'dock fleet ships schematic agents progression', icon: '#icon-spaceship' },
-    { label: 'Profile',      skinKey: 'nav.profile', path: '/profile',      keywords: 'profile account user avatar',        icon: '#icon-profile' },
-    { label: 'Settings',     skinKey: 'nav.settings', path: '/settings',     keywords: 'settings preferences config',        icon: '#icon-settings' },
-    { label: 'Theme Editor', skinKey: 'nav.theme-creator', path: '/theme-editor', keywords: 'theme editor creator custom colors builder', icon: '#icon-settings' },
-    { label: 'Workflows',     skinKey: 'nav.workflows', path: '/workflows',      keywords: 'workflows pipelines automation nodes', icon: '#icon-build' },
-  ];
+  // Built as a function so theme-aware labels (Terminology) resolve on every
+  // palette open rather than being frozen at module load.
+  function _baseRoutes() {
+    const missionPlural = Terminology.label('mission', { plural: true });
+    const missionPluralLower = Terminology.label('mission', { plural: true, lowercase: true });
+    return [
+      { label: 'Bridge', skinKey: 'titles.home', path: '/',             keywords: 'home dashboard bridge',     icon: '#icon-home' },
+      { label: 'Agents',       skinKey: 'nav.agents', path: '/blueprints/agents',       keywords: 'agents list manage',          icon: '#icon-agent' },
+      { label: 'New Agent',    skinKey: 'newAgent', path: '/blueprints/agents/new',   keywords: 'create new agent builder',           icon: '#icon-plus' },
+      { label: 'Shipyard',     skinKey: 'nav.spaceships', path: '/blueprints/spaceships',   keywords: 'spaceships shipyard fleet ships',    icon: '#icon-spaceship' },
+      { label: missionPlural, skinKey: 'nav.missions', path: '/missions', keywords: `missions tasks assignments queue jobs ${missionPluralLower}`, icon: '#icon-task' },
+      { label: 'Blueprint Catalog', skinKey: 'nav.blueprints', path: '/blueprints', keywords: 'blueprints catalog agents orchestrator templates', icon: '#icon-blueprint' },
+      { label: 'Operations',   skinKey: 'nav.analytics', path: '/analytics',    keywords: 'operations analytics charts stats performance', icon: '#icon-analytics' },
+      { label: 'Cost Tracker', skinKey: 'nav.cost', path: '/cost',         keywords: 'cost budget spending money',         icon: '#icon-dollar' },
+      { label: 'Vault',        skinKey: 'nav.vault', path: '/vault',        keywords: 'vault secrets keys api tokens',      icon: '#icon-key' },
+      { label: 'Security',     path: '/security',     keywords: 'security agent permissions threat audit compliance access policies', icon: '#icon-lock' },
+      { label: "Log", skinKey: 'nav.log', path: '/log',          keywords: `log audit captain history events ${missionPluralLower} operations`,  icon: '#icon-monitor' },
+      { label: 'Dock', skinKey: 'nav.dock', path: '/dock',        keywords: 'dock fleet ships schematic agents progression', icon: '#icon-spaceship' },
+      { label: 'Profile',      skinKey: 'nav.profile', path: '/profile',      keywords: 'profile account user avatar',        icon: '#icon-profile' },
+      { label: 'Settings',     skinKey: 'nav.settings', path: '/settings',     keywords: 'settings preferences config',        icon: '#icon-settings' },
+      { label: 'Theme Editor', skinKey: 'nav.theme-creator', path: '/theme-editor', keywords: 'theme editor creator custom colors builder', icon: '#icon-settings' },
+      { label: 'Workflows',     skinKey: 'nav.workflows', path: '/workflows',      keywords: 'workflows pipelines automation nodes', icon: '#icon-build' },
+    ];
+  }
 
   function _getRoutes() {
-    if (typeof Skin === 'undefined' || !Skin.isActive()) return _BASE_ROUTES;
-    return _BASE_ROUTES.map(r => r.skinKey ? { ...r, label: Skin.text(r.skinKey, r.label) } : r);
+    const base = _baseRoutes();
+    if (typeof Skin === 'undefined' || !Skin.isActive()) return base;
+    return base.map(r => r.skinKey ? { ...r, label: Skin.text(r.skinKey, r.label) } : r);
   }
 
   const ACTIONS = [
@@ -139,7 +146,7 @@ const CommandPalette = (() => {
         const score = _fuzzyScore(q, m.title || '');
         if (score > 0) items.push({
           label: m.title || 'Untitled', path: '/missions',
-          icon: '#icon-task', score: score - 1, type: 'data', meta: m.status || 'Mission'
+          icon: '#icon-task', score: score - 1, type: 'data', meta: m.status || Terminology.label('mission')
         });
       });
       (State.get('spaceships') || []).forEach(s => {
