@@ -15,18 +15,18 @@ const Theme = (() => {
   const _K_FONT  = 'ns-font';
 
   // CSS var keys to clear when switching themes
-  const VAR_KEYS = ['--bg','--bg2','--bg-alt','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--panel-border','--nav-bg','--nav-bg-dk','--nav-text','--nav-text-muted','--nav-text-dim','--nav-border','--nav-surface','--nav-surface2','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
+  const VAR_KEYS =['--bg','--bg2','--bg-alt','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--panel-border','--nav-bg','--nav-bg-dk','--nav-text','--nav-text-muted','--nav-text-dim','--nav-border','--nav-surface','--nav-surface2','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
-    { id:'spaceship', name:'NICE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
+    { id:'nice', name:'NICE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
       data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
       // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
       voice:{ provider:'elevenlabs', voice:'nice', speed:0.9, label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
-    { id:'robotech', name:'HAL-9000', builtin:true, accent:'#999', preview:['#f2f2f0','#999','#ef4444'],
+    { id:'hal-9000', name:'HAL-9000', builtin:true, accent:'#999', preview:['#f2f2f0','#999','#ef4444'],
       data:{ colors:{ '--bg':'#f2f2f0','--bg2':'#eaeae8','--bg-alt':'#ffffff','--surface':'#fff','--surface2':'#f8f8f6','--border':'#d0d0ce','--border-hi':'#999','--accent':'#666','--accent2':'#999','--text':'#1a1a1a','--text-muted':'#888','--text-dim':'#aaaaaa','--glow':'none','--panel-bg':'#fff','--panel-border':'#d0d0ce' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
       // Personality direction (TODO): clinical, third-person, evenly-
       // measured. "I'm sorry, Dave. I'm afraid I can't do that." energy.
@@ -37,7 +37,7 @@ const Theme = (() => {
         // Slower than Majel, eerier consistency. Resolves to
         // ELEVENLABS_HAL_VOICE_ID server-side.
         settings:{ stability:0.9, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
-    { id:'navigator', name:'The Grid', builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
+    { id:'grid', name:'The Grid', builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(24,120,220,0.05)','--surface2':'rgba(24,120,220,0.09)','--border':'rgba(24,160,251,0.25)','--border-hi':'rgba(24,160,251,0.6)','--accent':'#18a0fb','--accent2':'#0a6bc4','--text':'#c0d8f0','--text-muted':'rgba(24,160,251,0.55)','--glow':'0 0 16px rgba(24,160,251,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'grid', speed:0.9, label:'End of Line',
@@ -119,7 +119,7 @@ const Theme = (() => {
         // Cyberpunk 2077 AI taxi-dispatch — calm British butler-AI vibe.
         // Resolves to ELEVENLABS_DELAMAIN_VOICE_ID server-side.
         settings:{ stability:0.75, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
-    { id:'gundam', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
+    { id:'rx-78-2', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'operator', speed:0.9, label:'Operator',
@@ -189,9 +189,9 @@ const Theme = (() => {
       // Activate theme-specific assets
       MatrixRain.toggle(name === 'matrix');
       if (typeof StarField16 !== 'undefined') StarField16.toggle(name === '16bit');
-      if (typeof GundamField !== 'undefined') GundamField.toggle(name === 'gundam');
-      // Tron elements are CSS-driven via [data-theme="navigator"] — reset inline hide
-      if (name === 'navigator') {
+      if (typeof GundamField !== 'undefined') GundamField.toggle(name === 'rx-78-2');
+      // Tron elements are CSS-driven via [data-theme="grid"] — reset inline hide
+      if (name === 'grid') {
         if (tronGrid) tronGrid.style.removeProperty('display');
         if (tronCity) tronCity.style.removeProperty('display');
         if (tronCycles) tronCycles.style.removeProperty('display');
@@ -253,7 +253,7 @@ const Theme = (() => {
     } catch { /* pre-init — rank will render on next update */ }
 
     // If leaving The Grid, destroy TRON game and reset to default tab
-    if (name !== 'navigator' && typeof TronView !== 'undefined' && TronView.destroy) {
+    if (name !== 'grid' && typeof TronView !== 'undefined' && TronView.destroy) {
       TronView.destroy();
       const tronTab = document.querySelector('.bp-type-tab[data-tab="tron"]');
       if (tronTab && tronTab.classList.contains('active')) {
@@ -376,7 +376,7 @@ const Theme = (() => {
   }
 
   function toggleDarkLight() {
-    const current = localStorage.getItem(_K_THEME) || 'spaceship';
+    const current = localStorage.getItem(_K_THEME) || 'nice';
     if (current === 'office') set('office-dark');
     else if (current === 'office-dark') set('office');
     // No-op for all other themes — toggle is hidden
@@ -385,7 +385,7 @@ const Theme = (() => {
   function _updateDarkLightIcon() {
     const btn = document.getElementById('btn-darklight');
     if (!btn) return;
-    const current = localStorage.getItem(_K_THEME) || 'spaceship';
+    const current = localStorage.getItem(_K_THEME) || 'nice';
     const isOffice = current === 'office' || current === 'office-dark';
     btn.style.display = isOffice ? '' : 'none';
     if (isOffice) {
@@ -415,7 +415,7 @@ const Theme = (() => {
     }).join('');
 
     // Highlight current
-    const current = localStorage.getItem(_K_THEME) || 'spaceship';
+    const current = localStorage.getItem(_K_THEME) || 'nice';
     document.querySelectorAll('.db').forEach(b => b.classList.remove('active'));
     document.querySelector(`.db[data-theme-id="${current}"]`)?.classList.add('active');
   }
@@ -425,13 +425,13 @@ const Theme = (() => {
   function getTheme(id) { return THEMES.find(t => t.id === id) || null; }
 
   function init() {
-    const saved = localStorage.getItem(_K_THEME) || 'spaceship';
+    const saved = localStorage.getItem(_K_THEME) || 'nice';
     renderDock();
     set(saved);
     _updateDarkLightIcon();
   }
 
-  function current() { return localStorage.getItem(_K_THEME) || 'spaceship'; }
+  function current() { return localStorage.getItem(_K_THEME) || 'nice'; }
 
   /**
    * Apply the active theme's personality label map to a string. Used by
@@ -488,7 +488,7 @@ const Font = (() => {
       root.style.removeProperty('--font-b');
       root.style.removeProperty('--font-d');
       // Re-apply theme fonts
-      const themeId = localStorage.getItem(_K_THEME) || 'spaceship';
+      const themeId = localStorage.getItem(_K_THEME) || 'nice';
       const theme = Theme.THEMES.find(t => t.id === themeId);
       if (theme?.data?.fonts) {
         Object.entries(theme.data.fonts).forEach(([k, v]) => root.style.setProperty(k, v));
@@ -1544,8 +1544,10 @@ const NICE = (() => {
         // Keep the mobile HUD trigger in the exclusion list — otherwise
         // its toggle-open immediately trips this outside-click handler
         // (mobileBtn isn't inside `panel`) and closes the panel.
-        const clickedTrigger = e.target === btn ||
-          (mobileBtn && (e.target === mobileBtn || mobileBtn.contains(e.target)));
+        // Use `contains()` for both triggers so inner SVG/USE targets
+        // (the logo inside the button) still register as the trigger.
+        const clickedTrigger = btn.contains(e.target) ||
+          (mobileBtn && mobileBtn.contains(e.target));
         if (!panel.contains(e.target) && !clickedTrigger) {
           panel.classList.remove('open');
           btn.classList.remove('active');

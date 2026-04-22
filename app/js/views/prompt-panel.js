@@ -312,10 +312,13 @@ const PromptPanel = (() => {
   }
 
   /* ── Theme name → Theme.set() key mapping ── */
-  // Maps user-friendly names (lowercase) to the key Theme.set() expects
+  // Maps user-friendly names (lowercase) to the key Theme.set() expects.
   const _THEME_MAP = {
-    'spaceship': 'spaceship', 'robotech': 'robotech', 'navigator': 'navigator',
-    'solar': 'solar', 'matrix': 'matrix', 'retro': 'retro', 'lcars': 'lcars',
+    'nice': 'nice',
+    'hal-9000': 'hal-9000', 'hal 9000': 'hal-9000', 'hal9000': 'hal-9000', 'hal': 'hal-9000',
+    'grid': 'grid', 'the grid': 'grid', 'tron': 'grid',
+    'rx-78-2': 'rx-78-2', 'rx78': 'rx-78-2', 'rx 78 2': 'rx-78-2',
+    'solar': 'solar', 'matrix': 'matrix', 'the matrix': 'matrix', 'retro': 'retro', 'lcars': 'lcars',
     'pixel': 'pixel', '16-bit pixel': 'pixel', '16-bit': 'pixel',
     'cyberpunk neon': 'cyberpunk', 'cyberpunk': 'cyberpunk', 'neon': 'cyberpunk',
     'ocean depths': 'ocean', 'ocean': 'ocean',
@@ -846,7 +849,7 @@ const PromptPanel = (() => {
     if (lower.startsWith('/theme')) {
       const arg = lower.replace('/theme', '').trim();
       if (!arg) {
-        const current = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : (localStorage.getItem(Utils.KEYS.theme) || 'spaceship');
+        const current = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : (localStorage.getItem(Utils.KEYS.theme) || 'nice');
         return { text: `Current theme: ${current}. Available: ${_THEME_NAMES.join(', ')}.`, handled: true };
       }
       const key = _resolveTheme(arg);
@@ -1237,7 +1240,7 @@ Available routes:
 
 THEME SWITCHING: When user asks to change theme, respond with:
 [THEME: themename]
-Available: spaceship, robotech, navigator, solar, matrix, retro, lcars, pixel, cyberpunk, ocean, sunset, holo, synthwave, arctic, volcanic, jarvis, forest, ultraviolet
+Available: nice, hal-9000, grid, rx-78-2, solar, matrix, retro, lcars, pixel, cyberpunk, ocean, sunset, holo, synthwave, arctic, volcanic, jarvis, forest, ultraviolet
 
 NEVER DO THIS:
 - Never list multiple spaceships — pick ONE and commit to it
@@ -1308,7 +1311,7 @@ ${activeContent ? 'ACTIVE FILE CONTENT:\n```\n' + activeContent.slice(0, 4000) +
 The user's code runs in a browser preview. Generate production-quality code.`;
     }
 
-    const theme = localStorage.getItem(Utils.KEYS.theme) || 'spaceship';
+    const theme = localStorage.getItem(Utils.KEYS.theme) || 'nice';
     const isJarvis = theme === 'jarvis';
     const callsign = localStorage.getItem(Utils.KEYS.callsign) || (isJarvis ? 'Sir' : 'Commander');
 

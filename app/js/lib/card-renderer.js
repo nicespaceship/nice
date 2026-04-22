@@ -344,7 +344,6 @@ const CardRenderer = (() => {
       <div class="blueprint-card-name-bar">
         <span class="blueprint-card-name"${nameEditable}>${_esc(displayName)}</span>
         ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
-        ${_tierPill(bp)}
         ${statusDot}
       </div>
       <div class="blueprint-card-art">
@@ -405,7 +404,6 @@ const CardRenderer = (() => {
       <div class="blueprint-card-grid-info">
         <span class="blueprint-card-grid-name">${name}</span>
         ${badgeHTML}
-        ${_tierPill(data)}
       </div>
       ${statsHTML}
     </div>`;
@@ -536,19 +534,6 @@ const CardRenderer = (() => {
   /* ── Helper: get agent rarity (delegates to BlueprintUtils SSOT) ── */
   function _getAgentRarity(data) {
     return BlueprintUtils.getRarity(data);
-  }
-
-  /* ── Helper: render the runtime tier pill (FREE / PRO) ──
-     Reads blueprint.config.model_profile.tier so users can tell at a
-     glance which agents will cost tokens before they activate them.
-     Returns empty string when the blueprint has no model_profile. ── */
-  function _tierPill(bp) {
-    const tier = bp && bp.config && bp.config.model_profile && bp.config.model_profile.tier;
-    if (!tier) return '';
-    const t = String(tier).toLowerCase();
-    if (t !== 'free' && t !== 'premium') return '';
-    const label = t === 'premium' ? 'PRO' : 'FREE';
-    return '<span class="blueprint-card-tier-pill blueprint-card-tier-pill--' + t + '" title="' + (t === 'premium' ? 'Premium model — costs tokens' : 'Free model — no token cost') + '">' + label + '</span>';
   }
 
   /* ── Custom name/role persistence ── */

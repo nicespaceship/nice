@@ -127,7 +127,14 @@ const BlueprintsView = (() => {
   // local stacking contexts that clip the sheets' z:10000 below the
   // prompt panel's z:200 on <body>. We move them at the end of render()
   // and wipe any stale copies on re-render + destroy.
+  //
+  // Desktop (>640px) keeps these elements INLINE in the bp-wrap — the CSS
+  // flattens .bp-filter-controls into a regular toolbar row, and the
+  // mobile bottom-sheet overlay styling is media-gated to ≤640px. Portaling
+  // to <body> on desktop would rip the filters out of document flow and
+  // leave them stranded at the bottom of <body>, making them invisible.
   const _PORTAL_IDS = ['bp-tab-sheet', 'bp-tab-sheet-backdrop', 'bp-filter-sheet', 'bp-filter-sheet-backdrop'];
+  const _portalMedia = window.matchMedia('(max-width:640px)');
   function _clearPortals() {
     _PORTAL_IDS.forEach(id => {
       const n = document.getElementById(id);
@@ -135,6 +142,9 @@ const BlueprintsView = (() => {
     });
   }
   function _mountPortals() {
+    // Only portal on mobile. On desktop the sheets must stay inline so
+    // the filter toolbar renders between the search row and the grid.
+    if (!_portalMedia.matches) return;
     _PORTAL_IDS.forEach(id => {
       const n = document.getElementById(id);
       if (n && n.parentElement !== document.body) document.body.appendChild(n);
@@ -158,7 +168,14 @@ const BlueprintsView = (() => {
       const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
       const _tabParam = _hashParams.get('tab');
       const _sourceParam = _hashParams.get('source');
-      const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log', 'documentation', 'tron'];
+      // TRON is a Grid-theme easter-egg — drop it from the valid tab list
+      // under every other theme so stale `?tab=tron` links coerce to the
+      // default schematic view instead of loading a tab that isn't in the
+      // current theme's nav.
+      const _themeId = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : 'nice';
+      const _tronAvailable = _themeId === 'grid';
+      const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log', 'documentation'];
+      if (_tronAvailable) validTabs.push('tron');
       if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
       else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'active' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
@@ -168,6 +185,10 @@ const BlueprintsView = (() => {
       if (_sourceParam === 'official' || _sourceParam === 'community' || _sourceParam === 'all') {
         _sourceFilter = _sourceParam;
       }
+      // Kick off the TRON tab if the user left Grid while on it — the tab
+      // won't re-render below, so in-memory _activeTab would otherwise
+      // point at a view no longer in the nav.
+      if (!_tronAvailable && _activeTab === 'tron') _activeTab = 'schematic';
     }
 
     // Render tabs into fixed container (outside scroll area)
@@ -182,6 +203,10 @@ const BlueprintsView = (() => {
       // Full tab row is desktop; mobile shows a single picker pill instead
       // (see .bp-tab-picker in CSS). Both trigger the same _switchTab()
       // logic so the underlying tab state stays unified.
+      // TRON is only surfaced on the Grid theme — skip the nav entry under
+      // every other theme so the tab list doesn't expose a view that
+      // doesn't fit the current visual language.
+      const _themeForTabs = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : 'nice';
       const tabDefs = [
         { id: 'schematic', label: 'Schematic' },
         { id: 'blueprints', label: 'Blueprints' },
@@ -190,7 +215,7 @@ const BlueprintsView = (() => {
         { id: 'operations', label: 'Operations' },
         { id: 'log', label: 'Log' },
         { id: 'documentation', label: 'Documentation' },
-        { id: 'tron', label: 'TRON', cls: 'bp-tab-tron' },
+        ...(_themeForTabs === 'grid' ? [{ id: 'tron', label: 'TRON', cls: 'bp-tab-tron' }] : []),
       ];
       const activeLabel = (tabDefs.find(t => t.id === _activeTab) || tabDefs[1]).label.replace(/<[^>]*>/g, '').trim();
       fixedTabs.innerHTML = `
@@ -1346,6 +1371,11 @@ const BlueprintsView = (() => {
     if (activatedWrap) activatedWrap.style.display = catalogDisplay;
     if (grid) grid.style.display = catalogDisplay;
     if (loadMore) loadMore.style.display = catalogDisplay;
+    // Filter toolbar (Sort / Categories / Tiers / Source / Rarity) is
+    // part of the Blueprints catalog UI — hide on every other tab so it
+    // doesn't leak over the Missions / Outbox / Log / etc. page content.
+    const filterSheet = document.getElementById('bp-filter-sheet');
+    if (filterSheet) filterSheet.style.display = catalogDisplay;
     // "+ Create" / "Import Blueprint" only belong where user-authored
     // content lives — the Workshop sub-tab. Spaceships and Agents are
     // catalogs of pre-built blueprints, so the buttons don't apply there.

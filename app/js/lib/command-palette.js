@@ -42,7 +42,7 @@ const CommandPalette = (() => {
   ];
 
   function _cycleTheme() {
-    const themes = ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel'];
+    const themes = ['nice','hal-9000','grid','solar','matrix','retro','lcars','pixel'];
     const current = document.documentElement.getAttribute('data-theme');
     const idx = themes.indexOf(current);
     Theme.set(themes[(idx + 1) % themes.length]);
