@@ -551,145 +551,150 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   HAL-9000 — 2001: A Space Odyssey
-   Sterile white Discovery interior. Chrome accents. HAL red eye.
-   Clean, clinical, minimal. The only color is HAL's red.
+   HAL-9000 — 2001: A Space Odyssey faceplate.
+   Matte black monolith, chrome bezel, red camera eye.
+   The eye is the only color; everything else is black, chrome, and white.
 ═══════════════════════════════════════════════════════════════════════ */
 
 @keyframes hal-eye-pulse {
-  0%, 100% { filter:brightness(1) drop-shadow(0 0 8px rgba(239,68,68,0.3)); }
-  50%      { filter:brightness(1.1) drop-shadow(0 0 16px rgba(239,68,68,0.5)); }
+  0%, 100% { transform:scale(1);    filter:brightness(1)    drop-shadow(0 0 8px  rgba(239,68,68,0.45)); }
+  50%      { transform:scale(1.04); filter:brightness(1.12) drop-shadow(0 0 18px rgba(239,68,68,0.7)); }
 }
 
 [data-theme="hal-9000"] {
-  --bg:#f2f2f0; --bg2:#eaeae8; --surface:#fff; --surface2:#f8f8f6;
-  --border:#d0d0ce; --border-hi:#999;
-  --accent:#666; --accent2:#999;
-  --text:#1a1a1a; --text-muted:#888;
-  --glow:none; --panel-bg:#fff; --nav-bg:#f2f2f0;
+  --bg:#000; --bg2:#0a0a0a; --surface:#121212; --surface2:#1a1a1a;
+  --border:#2a2a2a; --border-hi:#8a8a90;
+  --accent:#ef4444; --accent2:#b0b0b6;
+  --text:#f5f5f5; --text-muted:#8a8a90;
+  --glow:0 0 12px rgba(239,68,68,0.25); --panel-bg:#121212; --nav-bg:#000;
   --font-h:'Inter', sans-serif; --font-b:'Inter', sans-serif;
   --radius:4px;
 }
+[data-theme="hal-9000"] body { background:#000; }
 
-/* ── No background effects — pure sterile white ── */
+/* ── No background effects — pure black void ── */
 [data-theme="hal-9000"] .bg-grid { opacity:0; }
 
-/* ── Sidebar — white panel, chrome border ── */
+/* ── Sidebar — matte black slab with chrome hairline ── */
 [data-theme="hal-9000"] .app-sidebar {
-  background:#f2f2f0; border-right:1px solid #d0d0ce;
+  background:#000; border-right:1px solid #2a2a2a;
 }
 [data-theme="hal-9000"] .side-header {
-  background:transparent; border-bottom:1px solid #d0d0ce;
+  background:transparent; border-bottom:1px solid #2a2a2a;
 }
 [data-theme="hal-9000"] .side-header .app-brand-text {
-  color:#1a1a1a; letter-spacing:.2em; text-transform:uppercase;
+  color:#f5f5f5; letter-spacing:.2em; text-transform:uppercase;
 }
 [data-theme="hal-9000"] .side-link {
   border-radius:4px; margin:1px 8px; padding:8px 12px;
-  font-weight:var(--fw-regular); font-size:var(--text-sm); color:#888; transition:all .15s;
+  font-weight:var(--fw-regular); font-size:var(--text-sm); color:#8a8a90; transition:all .15s;
 }
-[data-theme="hal-9000"] .side-link:hover { color:#1a1a1a; background:rgba(0,0,0,0.03); }
+[data-theme="hal-9000"] .side-link:hover { color:#f5f5f5; background:rgba(255,255,255,0.04); }
 [data-theme="hal-9000"] .side-link.active {
-  color:#1a1a1a; background:rgba(0,0,0,0.05); border-left:2px solid #1a1a1a;
+  color:#f5f5f5; background:rgba(239,68,68,0.08); border-left:2px solid #ef4444;
 }
-[data-theme="hal-9000"] .side-link svg { opacity:0.3; }
-[data-theme="hal-9000"] .side-link.active svg { opacity:0.7; }
-[data-theme="hal-9000"] .side-footer { background:transparent; border-top:1px solid #d0d0ce; }
-[data-theme="hal-9000"] .hdr-user-badge { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
+[data-theme="hal-9000"] .side-link svg { opacity:0.35; }
+[data-theme="hal-9000"] .side-link.active svg { opacity:0.9; color:#ef4444; }
+[data-theme="hal-9000"] .side-footer { background:transparent; border-top:1px solid #2a2a2a; }
+[data-theme="hal-9000"] .hdr-user-badge { background:#1a1a1a; color:#f5f5f5; border-color:#2a2a2a; }
 
-/* ── Topbar — clean line ── */
+/* ── Topbar — chrome hairline on black ── */
 [data-theme="hal-9000"] .app-topbar {
-  background:#f2f2f0; border-bottom:none; position:relative;
+  background:#000; border-bottom:none; position:relative;
 }
 [data-theme="hal-9000"] .app-topbar::after {
   content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
-  background:#d0d0ce;
+  background:linear-gradient(90deg, transparent, #8a8a90 20%, #8a8a90 80%, transparent);
+  opacity:0.35;
 }
 
-/* ── Panels — pure white, thin borders ── */
+/* ── Panels — slab face with chrome hairline ── */
 [data-theme="hal-9000"] .widget-card,
 [data-theme="hal-9000"] .tc-section,
 [data-theme="hal-9000"] .detail-section {
-  border:1px solid #e0e0de; border-radius:4px; background:#fff;
-  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  border:1px solid #2a2a2a; border-radius:4px; background:#121212;
+  box-shadow:0 1px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
-/* ── Cards — white, minimal ── */
+/* ── Cards — matte panels, red hover accent ── */
 [data-theme="hal-9000"] .blueprint-card,
 [data-theme="hal-9000"] .mcp-catalog-card {
-  border:1px solid #e0e0de; border-radius:4px; background:#fff;
-  box-shadow:0 1px 3px rgba(0,0,0,0.04); transition:all .2s;
+  border:1px solid #2a2a2a; border-radius:4px; background:#121212;
+  box-shadow:0 1px 3px rgba(0,0,0,0.5); transition:all .2s;
 }
 [data-theme="hal-9000"] .blueprint-card:hover,
 [data-theme="hal-9000"] .mcp-catalog-card:hover {
-  box-shadow:0 4px 16px rgba(0,0,0,0.08); transform:translateY(-1px);
+  border-color:#4a4a4a; box-shadow:0 4px 16px rgba(0,0,0,0.6), 0 0 0 1px rgba(239,68,68,0.15);
+  transform:translateY(-1px);
 }
 
-/* ── Buttons — clean, gray ── */
+/* ── Buttons — chrome rim, red primary ── */
 [data-theme="hal-9000"] .btn {
-  border:1px solid #d0d0ce; border-radius:4px; background:#fff; color:#1a1a1a;
-  font-weight:500; transition:all .15s;
+  border:1px solid #2a2a2a; border-radius:4px; background:#121212; color:#f5f5f5;
+  font-weight:var(--fw-medium); transition:all .15s;
 }
 [data-theme="hal-9000"] .btn:hover {
-  background:#1a1a1a; color:#fff; border-color:#1a1a1a;
+  background:#1a1a1a; color:#f5f5f5; border-color:#8a8a90;
 }
 [data-theme="hal-9000"] .btn-primary {
-  background:#1a1a1a; border:none; color:#fff;
+  background:linear-gradient(180deg, #f87171, #dc2626); border:1px solid #991b1b; color:#fff;
+  text-shadow:0 1px 0 rgba(0,0,0,0.3);
 }
 [data-theme="hal-9000"] .btn-primary:hover {
-  background:#333;
+  background:linear-gradient(180deg, #fca5a5, #ef4444); box-shadow:0 0 12px rgba(239,68,68,0.4);
 }
 
-/* ── Tabs — clean segments ── */
+/* ── Tabs — segmented, active pill lit ── */
 [data-theme="hal-9000"] .bp-type-tabs {
-  background:#eaeae8; border:1px solid #d0d0ce; border-radius:6px; padding:2px;
+  background:#0a0a0a; border:1px solid #2a2a2a; border-radius:6px; padding:2px;
 }
 [data-theme="hal-9000"] .bp-type-tab,
 [data-theme="hal-9000"] .bridge-hero-tab,
 [data-theme="hal-9000"] .log-view-tab {
-  border-radius:4px; border:none; background:transparent; color:#888;
+  border-radius:4px; border:none; background:transparent; color:#8a8a90;
   font-weight:var(--fw-regular); font-size:var(--text-sm); transition:all .15s;
 }
 [data-theme="hal-9000"] .bp-type-tab.active,
 [data-theme="hal-9000"] .bridge-hero-tab.active,
 [data-theme="hal-9000"] .log-view-tab.active {
-  color:#1a1a1a; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  color:#f5f5f5; background:#1a1a1a; box-shadow:inset 0 0 0 1px #2a2a2a, 0 1px 0 rgba(255,255,255,0.04);
 }
 [data-theme="hal-9000"] .bp-type-tab:hover,
 [data-theme="hal-9000"] .bridge-hero-tab:hover,
-[data-theme="hal-9000"] .log-view-tab:hover { color:#1a1a1a; }
+[data-theme="hal-9000"] .log-view-tab:hover { color:#f5f5f5; }
 
 /* ── Sub-tabs & filters ── */
 [data-theme="hal-9000"] .bp-sub-tab {
-  border-radius:4px; border:1px solid #d0d0ce; background:transparent; color:#888;
+  border-radius:4px; border:1px solid #2a2a2a; background:transparent; color:#8a8a90;
 }
-[data-theme="hal-9000"] .bp-sub-tab.active { color:#1a1a1a; border-color:#999; background:rgba(0,0,0,0.03); }
+[data-theme="hal-9000"] .bp-sub-tab.active { color:#f5f5f5; border-color:#8a8a90; background:rgba(255,255,255,0.03); }
 [data-theme="hal-9000"] .bp-rarity-btn {
-  border-radius:4px; border:1px solid #e0e0de; background:transparent; color:#aaa; font-size:.6rem;
+  border-radius:4px; border:1px solid #2a2a2a; background:transparent; color:#555;
 }
-[data-theme="hal-9000"] .bp-rarity-btn.active { color:#1a1a1a; border-color:#999; background:rgba(0,0,0,0.03); }
-[data-theme="hal-9000"] .bp-view-btn { border-radius:4px; border:1px solid #e0e0de; background:transparent; }
-[data-theme="hal-9000"] .bp-view-btn.active { border-color:#999; background:rgba(0,0,0,0.03); }
-[data-theme="hal-9000"] .bp-view-btn svg { stroke:#aaa; }
-[data-theme="hal-9000"] .bp-view-btn.active svg { stroke:#1a1a1a; }
+[data-theme="hal-9000"] .bp-rarity-btn.active { color:#f5f5f5; border-color:#8a8a90; background:rgba(255,255,255,0.03); }
+[data-theme="hal-9000"] .bp-view-btn { border-radius:4px; border:1px solid #2a2a2a; background:transparent; }
+[data-theme="hal-9000"] .bp-view-btn.active { border-color:#8a8a90; background:rgba(255,255,255,0.03); }
+[data-theme="hal-9000"] .bp-view-btn svg { stroke:#555; }
+[data-theme="hal-9000"] .bp-view-btn.active svg { stroke:#f5f5f5; }
 
 /* ── Mission Cards ── */
 [data-theme="hal-9000"] .mc-card {
-  border:1px solid #e0e0de; border-radius:4px; background:#fff;
-  box-shadow:0 1px 3px rgba(0,0,0,0.04);
-  border-left:2px solid #d0d0ce;
+  border:1px solid #2a2a2a; border-radius:4px; background:#121212;
+  box-shadow:0 1px 3px rgba(0,0,0,0.5);
+  border-left:2px solid #2a2a2a;
 }
-[data-theme="hal-9000"] .mc-card-running { border-left-color:#1a1a1a; }
-[data-theme="hal-9000"] .mc-card-completed { border-left-color:#888; }
+[data-theme="hal-9000"] .mc-card-running { border-left-color:#ef4444; box-shadow:0 1px 3px rgba(0,0,0,0.5), -1px 0 8px rgba(239,68,68,0.25); }
+[data-theme="hal-9000"] .mc-card-completed { border-left-color:#8a8a90; }
 [data-theme="hal-9000"] .mc-card-failed { border-left-color:#ef4444; }
 
 /* ── Pipeline nodes ── */
 [data-theme="hal-9000"] .mc-pipe-node {
-  border-radius:4px; border:1px solid #d0d0ce; background:transparent; color:#888;
+  border-radius:4px; border:1px solid #2a2a2a; background:transparent; color:#8a8a90;
 }
 [data-theme="hal-9000"] .mc-pipe-node:hover,
 [data-theme="hal-9000"] .mc-pipe-active {
-  background:#1a1a1a; color:#fff; border-color:#1a1a1a;
+  background:#ef4444; color:#fff; border-color:#991b1b;
+  box-shadow:0 0 12px rgba(239,68,68,0.4);
 }
 
 /* ── Inputs ── */
@@ -699,200 +704,295 @@
 [data-theme="hal-9000"] input[type="password"],
 [data-theme="hal-9000"] textarea:not(.nice-ai-input),
 [data-theme="hal-9000"] .search-input {
-  border-radius:4px; border:1px solid #d0d0ce; background:#fff; color:#1a1a1a; font-size:.75rem;
+  border-radius:4px; border:1px solid #2a2a2a; background:#0a0a0a; color:#f5f5f5;
 }
 [data-theme="hal-9000"] input[type="text"]:focus,
 [data-theme="hal-9000"] input[type="number"]:focus,
 [data-theme="hal-9000"] input[type="email"]:focus,
 [data-theme="hal-9000"] input[type="password"]:focus,
 [data-theme="hal-9000"] textarea:focus,
-[data-theme="hal-9000"] .search-input:focus { border-color:#999; outline: none; }
+[data-theme="hal-9000"] .search-input:focus { border-color:#ef4444; outline:none; box-shadow:0 0 0 1px rgba(239,68,68,0.3); }
 [data-theme="hal-9000"] input::placeholder,
-[data-theme="hal-9000"] textarea::placeholder { color:#bbb; }
+[data-theme="hal-9000"] textarea::placeholder { color:#555; }
 [data-theme="hal-9000"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
-  border-radius:4px; border:1px solid #d0d0ce; color:#1a1a1a;
-  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border-radius:4px; border:1px solid #2a2a2a; color:#f5f5f5;
+  background:#0a0a0a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance:none; -webkit-appearance:none;
 }
 [data-theme="hal-9000"] .filter-select {
-  border-radius:4px; border:1px solid #d0d0ce; color:#1a1a1a;
-  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border-radius:4px; border:1px solid #2a2a2a; color:#f5f5f5;
+  background:#0a0a0a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance:none; -webkit-appearance:none;
 }
-[data-theme="hal-9000"] .search-box { background:#fff; border-color:#d0d0ce; border-radius:4px; }
+[data-theme="hal-9000"] .search-box { background:#0a0a0a; border-color:#2a2a2a; border-radius:4px; }
 
 /* ── Prompt Panel ── */
 [data-theme="hal-9000"] .nice-ai-input-area {
-  border:1px solid #d0d0ce; border-radius:8px; background:#fff;
+  border:1px solid #2a2a2a; border-radius:8px; background:#0a0a0a;
 }
-[data-theme="hal-9000"] .nice-ai-input-area:focus-within { border-color:#999; }
-[data-theme="hal-9000"] .nice-ai-input { color:#1a1a1a; }
-[data-theme="hal-9000"] .nice-ai-input::placeholder { color:#bbb; }
+[data-theme="hal-9000"] .nice-ai-input-area:focus-within { border-color:#ef4444; box-shadow:0 0 0 1px rgba(239,68,68,0.25); }
+[data-theme="hal-9000"] .nice-ai-input { color:#f5f5f5; }
+[data-theme="hal-9000"] .nice-ai-input::placeholder { color:#555; }
 [data-theme="hal-9000"] .nice-ai-chip {
-  border-radius:4px; border:1px solid #d0d0ce; background:transparent; color:#888; font-size:var(--text-xs);
+  border-radius:4px; border:1px solid #2a2a2a; background:transparent; color:#8a8a90; font-size:var(--text-xs);
 }
-[data-theme="hal-9000"] .nice-ai-chip:hover { border-color:#999; color:#1a1a1a; }
+[data-theme="hal-9000"] .nice-ai-chip:hover { border-color:#ef4444; color:#f5f5f5; }
+[data-theme="hal-9000"] .nice-ai::before {
+  background:linear-gradient(to bottom, transparent, #000 65%);
+}
 
 /* ── Schematic ── */
-[data-theme="hal-9000"] .schematic-wired .blueprint-card-mini { border-radius:4px; border-color:#d0d0ce; }
+[data-theme="hal-9000"] .schematic-wired .blueprint-card-mini { border-radius:4px; border-color:#2a2a2a; }
 [data-theme="hal-9000"] .c-btn { border-radius:4px; }
 
 /* ── HUD panel ── */
 [data-theme="hal-9000"] .app-hud-panel {
-  background:#fff; border:1px solid #d0d0ce; border-radius:4px;
-  box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  background:#121212; border:1px solid #2a2a2a; border-radius:4px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
 }
-[data-theme="hal-9000"] .app-hud-panel .dock-lbl { color:#888; }
-[data-theme="hal-9000"] .app-hud-panel .dock-lbl-val { color:#1a1a1a; }
-[data-theme="hal-9000"] .app-hud-panel .db { border:1px solid #d0d0ce; }
-[data-theme="hal-9000"] .app-hud-panel .db.active { border-color:#1a1a1a; }
-[data-theme="hal-9000"] .app-hud-panel .fb { border-radius:4px; border-color:#d0d0ce; color:#888; }
-[data-theme="hal-9000"] .app-hud-panel .fb.active { background:rgba(0,0,0,0.04); color:#1a1a1a; }
+[data-theme="hal-9000"] .app-hud-panel .dock-lbl { color:#8a8a90; }
+[data-theme="hal-9000"] .app-hud-panel .dock-lbl-val { color:#f5f5f5; }
+[data-theme="hal-9000"] .app-hud-panel .db { border:1px solid #2a2a2a; }
+[data-theme="hal-9000"] .app-hud-panel .db.active { border-color:#ef4444; background:rgba(239,68,68,0.08); }
+[data-theme="hal-9000"] .app-hud-panel .fb { border-radius:4px; border-color:#2a2a2a; color:#8a8a90; }
+[data-theme="hal-9000"] .app-hud-panel .fb.active { background:rgba(239,68,68,0.12); color:#f5f5f5; border-color:#ef4444; }
 
 /* ── Scrollbar — minimal ── */
 [data-theme="hal-9000"] ::-webkit-scrollbar { width:4px; }
-[data-theme="hal-9000"] ::-webkit-scrollbar-track { background:#f2f2f0; }
-[data-theme="hal-9000"] ::-webkit-scrollbar-thumb { background:#ccc; border-radius:4px; }
-[data-theme="hal-9000"] ::-webkit-scrollbar-thumb:hover { background:#999; }
+[data-theme="hal-9000"] ::-webkit-scrollbar-track { background:#000; }
+[data-theme="hal-9000"] ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:4px; }
+[data-theme="hal-9000"] ::-webkit-scrollbar-thumb:hover { background:#8a8a90; }
 
 /* ── Security tabs ── */
 [data-theme="hal-9000"] .security-tabs {
-  border:1px solid #d0d0ce; border-radius:6px; background:#eaeae8; padding:2px;
+  border:1px solid #2a2a2a; border-radius:6px; background:#0a0a0a; padding:2px;
 }
-[data-theme="hal-9000"] .security-tab { border-radius:4px; border:none; }
+[data-theme="hal-9000"] .security-tab { border-radius:4px; border:none; color:#8a8a90; }
 [data-theme="hal-9000"] .security-tab.security-tab--active {
-  color:#1a1a1a; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  color:#f5f5f5; background:#1a1a1a; box-shadow:inset 0 0 0 1px #2a2a2a;
 }
 
 /* ── Progress bars ── */
 [data-theme="hal-9000"] progress,
 [data-theme="hal-9000"] .progress-bar {
-  background:#eaeae8; border:none; border-radius:4px; height:4px; overflow:hidden;
+  background:#0a0a0a; border:1px solid #2a2a2a; border-radius:4px; height:4px; overflow:hidden;
 }
 [data-theme="hal-9000"] progress::-webkit-progress-value,
-[data-theme="hal-9000"] .progress-fill { background:#999; border-radius:4px; }
-[data-theme="hal-9000"] progress::-webkit-progress-bar { background:#eaeae8; border-radius:4px; }
+[data-theme="hal-9000"] .progress-fill { background:linear-gradient(90deg, #dc2626, #ef4444); border-radius:4px; }
+[data-theme="hal-9000"] progress::-webkit-progress-bar { background:#0a0a0a; border-radius:4px; }
 
 /* ── Popover ── */
 [data-theme="hal-9000"] .side-popover {
-  background:#fff; border:1px solid #d0d0ce; border-radius:4px;
-  box-shadow:0 4px 16px rgba(0,0,0,0.08);
+  background:#121212; border:1px solid #2a2a2a; border-radius:4px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.6);
 }
-[data-theme="hal-9000"] .side-popover-item { color:#888; font-size:var(--text-sm); }
-[data-theme="hal-9000"] .side-popover-item:hover { background:rgba(0,0,0,0.03); color:#1a1a1a; }
+[data-theme="hal-9000"] .side-popover-item { color:#8a8a90; font-size:var(--text-sm); }
+[data-theme="hal-9000"] .side-popover-item:hover { background:rgba(255,255,255,0.04); color:#f5f5f5; }
 
 /* ── Sidebar folder ── */
-[data-theme="hal-9000"] .side-folder-toggle { color:#888; border-color:#d0d0ce; }
-[data-theme="hal-9000"] .side-folder-body { border-left-color:#d0d0ce; }
-[data-theme="hal-9000"] .side-mission-item { color:#888; }
-[data-theme="hal-9000"] .side-mission-item:hover { background:rgba(0,0,0,0.03); color:#1a1a1a; }
+[data-theme="hal-9000"] .side-folder-toggle { color:#8a8a90; border-color:#2a2a2a; }
+[data-theme="hal-9000"] .side-folder-body { border-left-color:#2a2a2a; }
+[data-theme="hal-9000"] .side-mission-item { color:#8a8a90; }
+[data-theme="hal-9000"] .side-mission-item:hover { background:rgba(255,255,255,0.04); color:#f5f5f5; }
 
 /* ── Bridge hero header ── */
-[data-theme="hal-9000"] .bridge-hero { background:#fff; border-color:#d0d0ce; }
-[data-theme="hal-9000"] .bridge-hero-header { background:#fff; border-bottom-color:#e0e0de; }
+[data-theme="hal-9000"] .bridge-hero { background:#121212; border-color:#2a2a2a; }
+[data-theme="hal-9000"] .bridge-hero-header { background:#121212; border-bottom-color:#2a2a2a; }
 
 /* ── Wizard overrides ── */
-[data-theme="hal-9000"] .wizard-container { background:#fff; border-color:#d0d0ce; }
-[data-theme="hal-9000"] .wizard-close { color:#888; }
-[data-theme="hal-9000"] .wizard-close:hover { color:#1a1a1a; }
-[data-theme="hal-9000"] .ship-wizard-slot { background:#f8f8f6; border-color:#e0e0de; }
-[data-theme="hal-9000"] .ship-wizard-slot-label { color:#1a1a1a; }
-[data-theme="hal-9000"] .ship-wizard-slot-select select { background:#fff; color:#1a1a1a; border-color:#d0d0ce; }
-[data-theme="hal-9000"] .ship-wizard-mode-card { background:#fff; border-color:#d0d0ce; color:#1a1a1a; }
-[data-theme="hal-9000"] .ship-wizard-mode-card:hover { border-color:#999; }
-[data-theme="hal-9000"] .ship-wizard-mode-card.selected { border-color:#1a1a1a; background:rgba(0,0,0,0.02); }
-[data-theme="hal-9000"] .ship-wizard-mode-label { color:#1a1a1a; }
-[data-theme="hal-9000"] .ship-wizard-mode-hint { color:#888; }
-[data-theme="hal-9000"] .modal-box { background:#fff; border-color:#d0d0ce; }
+[data-theme="hal-9000"] .wizard-container { background:#121212; border-color:#2a2a2a; }
+[data-theme="hal-9000"] .wizard-close { color:#8a8a90; }
+[data-theme="hal-9000"] .wizard-close:hover { color:#f5f5f5; }
+[data-theme="hal-9000"] .ship-wizard-slot { background:#0a0a0a; border-color:#2a2a2a; }
+[data-theme="hal-9000"] .ship-wizard-slot-label { color:#f5f5f5; }
+[data-theme="hal-9000"] .ship-wizard-slot-select select { background:#0a0a0a; color:#f5f5f5; border-color:#2a2a2a; }
+[data-theme="hal-9000"] .ship-wizard-mode-card { background:#121212; border-color:#2a2a2a; color:#f5f5f5; }
+[data-theme="hal-9000"] .ship-wizard-mode-card:hover { border-color:#8a8a90; }
+[data-theme="hal-9000"] .ship-wizard-mode-card.selected { border-color:#ef4444; background:rgba(239,68,68,0.06); }
+[data-theme="hal-9000"] .ship-wizard-mode-label { color:#f5f5f5; }
+[data-theme="hal-9000"] .ship-wizard-mode-hint { color:#8a8a90; }
+[data-theme="hal-9000"] .modal-box { background:#121212; border-color:#2a2a2a; }
+
+/* Mobile bar HAL 9000 chrome nameplate — same pill treatment as the
+   reactor's inner nameplate so the theme name badge in the top-right
+   of the mobile bar reads as part of the faceplate. */
+[data-theme="hal-9000"] .mobile-bar-theme {
+  font-family:'Inter', sans-serif; font-weight:var(--fw-bold);
+  font-size:var(--text-xs); letter-spacing:.12em;
+  padding:0; background:transparent; color:transparent; text-indent:-9999px;
+  position:relative; display:inline-flex; align-items:stretch;
+  height:18px; border:1px solid #8a8a90; border-radius:2px; overflow:hidden;
+  box-shadow:inset 0 0 0 1px #000;
+}
+[data-theme="hal-9000"] .mobile-bar-theme::before,
+[data-theme="hal-9000"] .mobile-bar-theme::after {
+  display:flex; align-items:center; justify-content:center;
+  padding:0 6px; text-indent:0; letter-spacing:.14em;
+  font-size:10px; font-weight:700; font-family:'Inter', sans-serif;
+}
+[data-theme="hal-9000"] .mobile-bar-theme::before {
+  content:'HAL'; background:#4a90c2; color:#fff;
+  border-right:1px solid #000;
+}
+[data-theme="hal-9000"] .mobile-bar-theme::after {
+  content:'9000'; background:#1a1a1a; color:#f5f5f5;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
-   HAL-9000 EYE — The only red element. Schematic center core.
+   HAL-9000 EYE — The camera lens. CoreReactor centerpiece on every view
+   CoreReactor opts into (Home / Bridge / Spaceship-detail), not just
+   the Schematic. Markup comes from HalCore.html() → `.hal-core`.
 ═══════════════════════════════════════════════════════════════════════ */
-[data-theme="hal-9000"] .sch-radar-canvas { opacity:0; }
 
-[data-theme="hal-9000"] .sch-core-hit-overlay {
-  width:90px; height:90px;
+/* Hidden by default; visible only under HAL theme */
+.hal-core { display:none; }
+
+/* Outer container — portrait stack: monolith + speaker grille.
+   Clamped to wrapper height so the frame fits inside `.jv-pp-reactor`
+   (square, `min(620px, 85vmin)`) on desktop + mobile. */
+[data-theme="hal-9000"] .hal-core {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  position:absolute;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  height:95%; aspect-ratio:1 / 2.6;
+  max-width:100%;
+  pointer-events:none;
+}
+
+/* Matte-black monolith face — the main frame that holds the nameplate
+   and the camera eye. Chrome outer rim with a subtle top-light gradient
+   for depth. Inner border line separates the rim from the face. */
+[data-theme="hal-9000"] .hal-monolith {
+  flex:1 1 auto; width:100%;
+  position:relative;
+  background:#000;
+  border:5px solid;
+  border-image:linear-gradient(180deg, #e0e0e6 0%, #b0b0b6 40%, #8a8a90 100%) 1;
+  box-shadow:
+    inset 0 0 0 1px #3a3a3a,
+    inset 0 2px 10px rgba(0,0,0,0.7);
+  display:flex; flex-direction:column; align-items:center;
+  padding:5% 8% 18% 8%;
+  box-sizing:border-box;
+}
+
+/* HAL 9000 nameplate — blue/black pill mounted near the top. Fills
+   90% of the monolith's inner width; halves split proportionally
+   to their text (HAL is 3 chars, 9000 is 4). */
+[data-theme="hal-9000"] .hal-nameplate {
+  display:flex; align-items:stretch;
+  width:97%; height:clamp(28px, 6%, 44px);
+  margin-bottom:auto;
+  border:1px solid #c0c0c6;
+  border-radius:0;
+  box-shadow:inset 0 0 0 1px #000, 0 1px 0 rgba(0,0,0,0.4);
+  overflow:hidden;
+  font-family:'Inter', sans-serif;
+  font-weight:700;
+  letter-spacing:.06em;
+  font-size:clamp(13px, 2.8vmin, 20px);
+  line-height:1;
+}
+[data-theme="hal-9000"] .hal-nameplate-hal {
+  flex:3 1 0;
+  background:#4a90c2;
+  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  border-right:1px solid #000;
+  text-shadow:0 1px 0 rgba(0,0,0,0.25);
+}
+[data-theme="hal-9000"] .hal-nameplate-9000 {
+  flex:4 1 0;
+  background:#1a1a1a;
+  color:#f5f5f5;
+  display:flex; align-items:center; justify-content:center;
+  letter-spacing:.04em;
+}
+
+/* Eye — anchored in the lower-middle of the monolith face, sized to
+   roughly 40% of the frame width (matches the reference photograph
+   where HAL's lens fills about the same fraction of the faceplate). */
+[data-theme="hal-9000"] .hal-core-bezel {
+  position:relative;
+  width:90%; aspect-ratio:1 / 1; border-radius:50%;
+  margin-top:auto; margin-bottom:10%;
+  /* Deep black recess — the lens floats in this well, creating a
+     visible ring of black between the red glass and the chrome housing */
+  background:
+    radial-gradient(circle, #000 55%, #0a0a0a 100%);
+  box-shadow:
+    /* Thin chrome bezel — bright rim, soft shadow, dark edge */
+    0 0 0 2px #c0c0c6,
+    0 0 0 5px #8a8a90,
+    0 0 0 7px #3a3a3a;
+}
+/* Lens is inset from the bezel so the black well reads as a ring */
+[data-theme="hal-9000"] .hal-core-lens {
+  position:absolute; inset:14%; border-radius:50%;
   background:
     radial-gradient(circle at 44% 40%,
-      #ffaa00 0%, #ef4444 16%, #dc2626 30%,
-      #991b1b 50%, #450a0a 72%, #0a0202 100%
+      #ffaa00 0%, #ef4444 14%, #dc2626 28%,
+      #991b1b 48%, #450a0a 72%, #0a0202 100%
     );
-  border:3px solid #111;
-  border-radius:50%;
   box-shadow:
-    /* Dark inner ring */
-    0 0 0 2px #222,
-    /* Chrome bezel */
-    0 0 0 5px #888,
-    0 0 0 9px #b0b0b6,
-    0 0 0 12px #d0d0d6,
-    0 0 0 14px #b8b8be,
-    0 0 0 16px #8a8a90,
-    /* Outer dark edge */
-    0 0 0 17px #444,
-    0 0 0 18px #1a1a1a,
-    /* Red glow */
-    0 0 25px 8px rgba(239,68,68,0.08),
-    /* Inner depth */
-    inset 0 0 20px rgba(0,0,0,0.6),
-    inset 0 2px 4px rgba(0,0,0,0.4);
-  animation:hal-eye-pulse 3s ease-in-out infinite;
-  /* Track the shared reactor anchor (same CSS vars the global
-     CoreReactor reads) so the HAL eye stays over the reactor even when
-     `.schematic-center` stretches on decluttered mobile. */
-  position:fixed;
-  top:var(--reactor-y, 50%); left:var(--reactor-x, 50%);
-  transform:translate(-50%,-50%);
+    /* Soft falloff from the lens edge into the black well */
+    0 0 12px 2px rgba(239,68,68,0.35),
+    inset 0 0 30px rgba(0,0,0,0.55),
+    inset 0 3px 8px rgba(0,0,0,0.4);
+  animation:hal-eye-pulse 6s ease-in-out infinite;
 }
-/* Lens flare / reflection — slow rotation for animation feel */
-@keyframes hal-reflect-rotate {
-  0%   { transform:rotate(-10deg); opacity:0.18; }
-  50%  { transform:rotate(5deg); opacity:0.12; }
-  100% { transform:rotate(-10deg); opacity:0.18; }
-}
-[data-theme="hal-9000"] .sch-core-hit-overlay::after {
-  content:''; position:absolute;
-  top:8%; left:12%; width:55%; height:28%;
-  background:linear-gradient(180deg, rgba(255,255,255,1), transparent);
-  border-radius:50%; pointer-events:none;
-  opacity:0.18;
+[data-theme="hal-9000"] .hal-core-flare {
+  position:absolute;
+  top:8%; left:14%; width:55%; height:28%;
+  background:linear-gradient(180deg, rgba(255,255,255,0.9), transparent);
+  border-radius:50%; opacity:0.18;
   animation:hal-reflect-rotate 6s ease-in-out infinite;
-}
-/* Hover — keep red, brighten */
-[data-theme="hal-9000"] .sch-core-hit-overlay:hover {
-  background:
-    radial-gradient(circle at 44% 40%,
-      #ffbb00 0%, #ef4444 14%, #dc2626 28%,
-      #991b1b 48%, #450a0a 70%, #0a0202 100%
-    ) !important;
-  box-shadow:
-    0 0 0 2px #222,
-    0 0 0 5px #929298,
-    0 0 0 9px #b8b8be,
-    0 0 0 12px #d8d8de,
-    0 0 0 14px #c0c0c6,
-    0 0 0 16px #929298,
-    0 0 0 17px #444,
-    0 0 0 18px #1a1a1a,
-    0 0 35px 8px rgba(239,68,68,0.15),
-    inset 0 0 20px rgba(0,0,0,0.4),
-    inset 0 2px 4px rgba(0,0,0,0.2);
+  transform-origin:center center;
 }
 
-/* ── Small HAL eye — bottom-right indicator ── */
-[data-theme="hal-9000"] .app-main::after {
-  content:''; position:fixed; bottom:30px; right:30px;
-  width:14px; height:14px; border-radius:50%;
-  background:radial-gradient(circle at 40% 40%, #fca5a5, #ef4444 50%, #991b1b);
-  box-shadow:0 0 6px rgba(239,68,68,0.3);
-  pointer-events:none; z-index:1;
-  animation:hal-eye-pulse 3s ease-in-out infinite;
+/* Speaker grille — fine dotted mesh, sits below the monolith with a
+   small gap. Matches the lower rectangular pad in the HAL faceplate. */
+[data-theme="hal-9000"] .hal-speaker {
+  flex:0 0 12%; width:100%;
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.11) 0.8px, transparent 1.2px) 0 0 / 5px 5px,
+    #080808;
+  border:3px solid;
+  border-image:linear-gradient(180deg, #8a8a90 0%, #6a6a70 100%) 1;
+  box-shadow:inset 0 0 0 1px #000, inset 0 2px 6px rgba(0,0,0,0.7);
 }
+
+@keyframes hal-reflect-rotate {
+  0%   { transform:rotate(-10deg); opacity:0.2; }
+  50%  { transform:rotate(5deg); opacity:0.12; }
+  100% { transform:rotate(-10deg); opacity:0.2; }
+}
+
+/* Schematic click target is now visually redundant with the reactor.
+   Keep the element (prompt-panel click handler depends on it) but strip
+   its visual so only the reactor eye renders. */
+[data-theme="hal-9000"] .sch-radar-canvas { opacity:0; }
+[data-theme="hal-9000"] .sch-core-hit-overlay {
+  background:transparent; border:none; box-shadow:none; animation:none;
+}
+[data-theme="hal-9000"] .sch-core-hit-overlay::after,
+[data-theme="hal-9000"] .sch-core-hit-overlay::before { content:none; }
+
+/* Wires + convergence dots off — HAL reads as one red camera eye, not
+   a distributed computer. Cards still anchor around the reactor; only
+   the SVG trace layer is hidden. */
+[data-theme="hal-9000"] .schematic-svg { display:none; }
+
+/* Reactor wrapper brightness — HAL eye reads best at ~0.9 idle so the
+   red lens punches through the black bg. Default `.jv-pp-reactor` uses
+   0.5 which mutes the glow. */
+[data-theme="hal-9000"] .jv-pp-reactor { opacity:0.92; }
+[data-theme="hal-9000"][data-jv-state="streaming"] .jv-pp-reactor { opacity:1; }
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion:reduce) {
-  [data-theme="hal-9000"] .sch-core-hit-overlay { animation:none; }
-  [data-theme="hal-9000"] .app-main::after { animation:none; }
+  [data-theme="hal-9000"] .hal-core-lens { animation:none; }
+  [data-theme="hal-9000"] .hal-core-flare { animation:none; }
 }
 
 /* Navigator — cyan HUD */
@@ -4007,8 +4107,12 @@ body {
   background-size: 40px 40px;
   color: var(--text);
   font-family: var(--font-b);
-  overflow-x: hidden;
-  min-height: 100vh;
+  /* `overflow:hidden` blocks page-level scrolling so the guest-banner
+     margin-top on `.app-main` can't create a 33px overflow that would
+     scroll the whole page. Each view scrolls internally via
+     `.app-view-content`. */
+  overflow: hidden;
+  height: 100vh;
   transition: background-color 0.4s, color 0.4s;
 }
 

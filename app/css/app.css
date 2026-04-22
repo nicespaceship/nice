@@ -1853,13 +1853,30 @@
    the active ship has 6 or 12 slots. Columns use `justify-content:center`,
    so smaller ships just get more vertical breathing room around their cards.
    Mobile (≤600px) overrides this below with its own stacked layout. */
-.schematic-wired { position:relative; display:flex; align-items:stretch; width:100%; gap:0; overflow:visible; min-height:720px; }
+.schematic-wired { position:relative; display:flex; align-items:center; width:100%; gap:0; overflow:visible; min-height:0; height:100%; flex:1 1 0; }
 .schematic-wired > .sch-radar-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
-.schematic-col { display:flex; flex-direction:column; gap:6px; justify-content:center; flex:0 0 100px; z-index:2; position:relative; }
+.schematic-col { display:flex; flex-direction:column; gap:0; justify-content:center; flex:0 0 100px; z-index:2; position:relative; height:100%; }
+/* Each card (except the first) pulls up 40px — cards in the same DOM
+   column overlap by that much vertically, but since every other card
+   is horizontally translated 110px (the staircase), the overlap lands
+   on a different sub-column so nothing covers anything visually.
+   Effect: the 3 cards in each visual sub-column cluster closer together. */
+.schematic-col .schematic-card-slot + .schematic-card-slot { margin-top:-40px; }
+/* Schematic is a fit-to-viewport layout — no vertical scroll, cards
+   breathe on tall screens and compress on short ones. Only the
+   Schematic view needs this; Blueprints / Missions / etc. keep their
+   normal scroll. The selector keys off the active tab button (Bridge
+   retains the schematic DOM with `display:none` across tab switches,
+   so `:has(.schematic-wired)` would over-match). */
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .app-view-content { overflow-y:hidden; padding-bottom:24px; }
 .schematic-col-right { align-items:flex-start; }
 .schematic-col-left { align-items:flex-end; }
-.schematic-col .schematic-card-slot:nth-child(even) { transform:translateX(110px); }
-.schematic-col-right .schematic-card-slot:nth-child(even) { transform:translateX(-110px); }
+/* Staircase offsets split symmetrically — odd cards down 27px, even
+   cards up 28px — so the visual ensemble centers in the flex column
+   instead of drifting up (which happens when only evens are translated). */
+.schematic-col .schematic-card-slot:nth-child(odd) { transform:translateY(27px); }
+.schematic-col .schematic-card-slot:nth-child(even) { transform:translate(110px, -28px); }
+.schematic-col-right .schematic-card-slot:nth-child(even) { transform:translate(-110px, -28px); }
 .schematic-center { flex:1; min-width:40px; position:relative; z-index:3; }
 /* Wires paint beneath the global CoreReactor (body-mounted, z-index:0)
    so the reactor sits in front of the traces. `.schematic-wired` doesn't
@@ -2009,9 +2026,12 @@
 .schematic-card-slot:hover .schematic-slot-label { opacity:1; }
 @media (max-width:600px) {
   /* Mobile stacks the columns, so the desktop reactor-centering floor no
-     longer applies — let the container size to its content. */
-  .schematic-wired { flex-direction:column; gap:4px; align-items:center; min-height:auto; }
-  .schematic-col { flex-direction:row; flex-wrap:wrap; flex:none; justify-content:center; gap:4px; }
+     longer applies — let the container size to its content. Also undo
+     the desktop fit-to-viewport rules so the stacked layout can grow
+     and scroll naturally. */
+  .schematic-wired { flex-direction:column; gap:4px; align-items:center; min-height:auto; height:auto; flex:none; }
+  .schematic-col { flex-direction:row; flex-wrap:wrap; flex:none; justify-content:center; gap:4px; height:auto; }
+  .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .app-view-content { overflow-y:auto; padding-bottom:140px; }
   .schematic-col-left, .schematic-col-right { align-items:center; }
   .schematic-col .schematic-card-slot:nth-child(even) { transform:none; }
   .schematic-center { min-height:100px; }
