@@ -74,9 +74,6 @@ const SchematicView = (() => {
       `<option value="${_esc(s.id)}" ${s.id === activeShip.id ? 'selected' : ''}>${_esc(s.name || 'Unnamed Ship')}</option>`
     ).join('');
     const shipSelectHTML = `<select class="sch-ship-select" id="sch-ship-select">${shipOptions}</select>`;
-    const switchBtnHTML = activatedShips.length > 1
-      ? `<button class="btn btn-sm sch-switch-btn" id="sch-switch-btn">Switch Spaceship</button>`
-      : '';
 
     const headerHTML = `
       <div class="bridge-hero-header">
@@ -85,7 +82,6 @@ const SchematicView = (() => {
           <span class="bridge-hero-meta">${shipClass.name} (${filledCount}/${totalSlots}) <span style="color:${statusColor}">${status}</span></span>
         </div>
         <div class="bridge-hero-controls">
-          ${switchBtnHTML}
           ${shipSelectHTML}
           <div class="bridge-hero-tabs">${tabsHTML}${declutterHTML}</div>
         </div>
@@ -178,19 +174,6 @@ const SchematicView = (() => {
       shipSelect.addEventListener('change', () => {
         localStorage.setItem(Utils.KEYS.mcShip, shipSelect.value);
         window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: shipSelect.value }));
-        render(el);
-      });
-    }
-
-    // Switch spaceship button (cycles to next)
-    const switchBtn = el.querySelector('#sch-switch-btn');
-    if (switchBtn) {
-      switchBtn.addEventListener('click', () => {
-        const currentIdx = activatedShips.findIndex(s => s.id === (activeShip?.id));
-        const nextIdx = (currentIdx + 1) % activatedShips.length;
-        const nextId = activatedShips[nextIdx].id;
-        localStorage.setItem(Utils.KEYS.mcShip, nextId);
-        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: nextId }));
         render(el);
       });
     }

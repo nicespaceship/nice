@@ -15,7 +15,7 @@ const Theme = (() => {
   const _K_FONT  = 'ns-font';
 
   // CSS var keys to clear when switching themes
-  const VAR_KEYS = ['--bg','--bg2','--bg-alt','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--panel-border','--nav-bg','--nav-bg-dk','--nav-text','--nav-text-muted','--nav-text-dim','--nav-border','--nav-surface','--nav-surface2','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
+  const VAR_KEYS =['--bg','--bg2','--bg-alt','--surface','--surface2','--border','--border-hi','--accent','--accent2','--text','--fg','--text-muted','--text-dim','--glow','--glow-hi','--panel-bg','--panel-border','--nav-bg','--nav-bg-dk','--nav-text','--nav-text-muted','--nav-text-dim','--nav-border','--nav-surface','--nav-surface2','--font-h','--font-d','--font-b','--font-m','--radius','--scan','--border-width','--hero-grad','--bg-pattern'];
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
@@ -1544,8 +1544,10 @@ const NICE = (() => {
         // Keep the mobile HUD trigger in the exclusion list — otherwise
         // its toggle-open immediately trips this outside-click handler
         // (mobileBtn isn't inside `panel`) and closes the panel.
-        const clickedTrigger = e.target === btn ||
-          (mobileBtn && (e.target === mobileBtn || mobileBtn.contains(e.target)));
+        // Use `contains()` for both triggers so inner SVG/USE targets
+        // (the logo inside the button) still register as the trigger.
+        const clickedTrigger = btn.contains(e.target) ||
+          (mobileBtn && mobileBtn.contains(e.target));
         if (!panel.contains(e.target) && !clickedTrigger) {
           panel.classList.remove('open');
           btn.classList.remove('active');

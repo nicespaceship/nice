@@ -51,20 +51,17 @@ const MissionsView = (() => {
               <input type="text" id="task-search" class="search-input" placeholder="Search missions..." />
             </div>
           </div>
-          <div style="display:flex;gap:8px">
-            <a href="#/workflows" class="btn btn-sm" style="text-decoration:none">
+          <div class="mc-toolbar-actions">
+            <a href="#/workflows" class="btn btn-sm" style="text-decoration:none" aria-label="Workflows" title="Workflows">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
-              Workflows
+              <span class="mc-toolbar-label">Workflows</span>
             </a>
-            <button class="btn btn-primary btn-sm" id="btn-new-task">
+            <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New Mission" title="New Mission">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-              New Mission
+              <span class="mc-toolbar-label">New Mission</span>
             </button>
           </div>
         </div>
-
-        <!-- Gauge Strip -->
-        <div class="mc-gauge-strip" id="mc-gauge-strip"></div>
 
         <!-- Pipeline -->
         <div class="mc-pipeline" id="mc-pipeline"></div>
@@ -119,48 +116,9 @@ const MissionsView = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     GAUGE STRIP (SVG ring gauges)
-  ═══════════════════════════════════════════════════════════════════ */
-  function _renderGauges(missions) {
-    const strip = document.getElementById('mc-gauge-strip');
-    if (!strip) return;
-    const total = missions.length || 1;
-    const counts = { queued: 0, running: 0, completed: 0, failed: 0 };
-    missions.forEach(m => { if (counts[m.status] !== undefined) counts[m.status]++; });
-
-    const R = 28, C = Math.PI * 2 * R;
-    function gauge(status, count) {
-      const meta = STATUS_META[status];
-      const pct = count / total;
-      const offset = C - (C * pct);
-      const isRunning = status === 'running' && count > 0;
-      return `
-        <div class="mc-gauge ${isRunning ? 'mc-gauge-live' : ''}" data-status="${status}">
-          <svg viewBox="0 0 70 70" class="mc-gauge-svg">
-            <circle cx="35" cy="35" r="${R}" fill="none" stroke="var(--border)" stroke-width="4"/>
-            <circle cx="35" cy="35" r="${R}" fill="none" stroke="${meta.color}" stroke-width="4"
-              stroke-dasharray="${C}" stroke-dashoffset="${offset}" stroke-linecap="round"
-              transform="rotate(-90 35 35)" style="transition:stroke-dashoffset .6s ease"/>
-          </svg>
-          <div class="mc-gauge-inner">
-            <span class="mc-gauge-num" style="color:${meta.color}">${count}</span>
-          </div>
-          <span class="mc-gauge-label">${meta.label}</span>
-        </div>`;
-    }
-
-    const liveHTML = counts.running > 0
-      ? '<div class="mc-live-badge"><span class="mc-live-dot"></span> LIVE</div>'
-      : '';
-
-    strip.innerHTML = `
-      <div class="mc-gauges">${STATUSES.map(s => gauge(s, counts[s])).join('')}</div>
-      ${liveHTML}
-    `;
-  }
-
-  /* ═══════════════════════════════════════════════════════════════════
-     PIPELINE VISUALIZER
+     PIPELINE VISUALIZER — clickable status filter
+     (Replaces the old ring-gauge strip; pipeline shows the same counts
+     but is also the mission filter control, so a single row suffices.)
   ═══════════════════════════════════════════════════════════════════ */
   function _renderPipeline(missions) {
     const pipe = document.getElementById('mc-pipeline');
@@ -443,7 +401,6 @@ const MissionsView = (() => {
      DATA LOADING / EVENTS
   ═══════════════════════════════════════════════════════════════════ */
   function _onMissionsChanged(missions) {
-    _renderGauges(missions);
     _renderPipeline(missions);
     _renderSchedules();
     _applyFilters();

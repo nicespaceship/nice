@@ -144,12 +144,16 @@ describe('MissionsView', () => {
     expect(search).toBeTruthy();
   });
 
-  it('renders gauge strip', () => {
+  it('does not render the gauge strip (pipeline is now the single status row)', () => {
+    // The SVG ring-gauge strip was removed — the clickable pipeline below
+    // already surfaces the same Queued/Running/Completed/Failed counts and
+    // acts as the status filter, so a second purely-decorative row was
+    // redundant.
     const el = document.getElementById('test-el');
     State.set('user', { id: 'u1', email: 'p@test.com' });
     MissionsView.render(el);
     const gauges = el.querySelector('#mc-gauge-strip');
-    expect(gauges).toBeTruthy();
+    expect(gauges).toBeNull();
   });
 
   it('loads seed missions when DB is unavailable', async () => {
