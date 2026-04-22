@@ -569,7 +569,7 @@ const ThemeCreatorView = (() => {
       if (Array.isArray(saved) && saved.length) return saved;
     } catch {}
     // Default 11
-    return ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel','cyberpunk','ocean','sunset'];
+    return ['nice','hal-9000','grid','solar','matrix','retro','lcars','pixel','cyberpunk','ocean','sunset'];
   }
 
   function _saveDockSelection(ids) {

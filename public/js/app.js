@@ -16,8 +16,8 @@ const _sbApp = (typeof supabase !== 'undefined')
    MODULE: Theme Engine
 ───────────────────────────────────────────────────────────────── */
 const Theme = (() => {
-  const THEMES = ['spaceship','robotech','navigator','solar','matrix','retro','lcars','pixel'];
-  const BTN    = { spaceship:'d-sp', robotech:'d-iv', navigator:'d-nv', solar:'d-sl', matrix:'d-mx', retro:'d-rt', lcars:'d-lc', pixel:'d-px' };
+  const THEMES = ['nice','hal-9000','grid','solar','matrix','retro','lcars','pixel'];
+  const BTN    = { nice:'d-sp', 'hal-9000':'d-iv', grid:'d-nv', solar:'d-sl', matrix:'d-mx', retro:'d-rt', lcars:'d-lc', pixel:'d-px' };
 
   function set(name) {
     if (!THEMES.includes(name)) return;
@@ -30,7 +30,7 @@ const Theme = (() => {
 
   function init() {
     const saved = localStorage.getItem('ns-theme');
-    set(THEMES.includes(saved) ? saved : 'spaceship');
+    set(THEMES.includes(saved) ? saved : 'nice');
   }
 
   return { set, init };

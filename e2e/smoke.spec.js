@@ -93,10 +93,10 @@ test.describe('Smoke Tests', () => {
 
   test('theme switching works', async ({ page }) => {
     await waitForApp(page);
-    await page.evaluate(() => { Theme.set('navigator'); });
-    expect(await page.getAttribute('html', 'data-theme')).toBe('navigator');
-    await page.evaluate(() => { Theme.set('spaceship'); });
-    expect(await page.getAttribute('html', 'data-theme')).toBe('spaceship');
+    await page.evaluate(() => { Theme.set('grid'); });
+    expect(await page.getAttribute('html', 'data-theme')).toBe('grid');
+    await page.evaluate(() => { Theme.set('nice'); });
+    expect(await page.getAttribute('html', 'data-theme')).toBe('nice');
   });
 
   test('responsive layout at mobile width', async ({ page }) => {

@@ -217,8 +217,8 @@ const DocsView = (() => {
         <dd>Your main hub — browse blueprints, view your fleet, manage missions, and check analytics.</dd>
         <dt>Prompt Panel</dt>
         <dd>The chat input at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
-        <dt>Optics</dt>
-        <dd>The top bar shows your rank, theme switcher, and notification alerts.</dd>
+        <dt>Theme</dt>
+        <dd>The top-bar Theme button opens the switcher for your visual skin, rank badge, and notification alerts.</dd>
       </dl>
     `,
 
