@@ -178,7 +178,11 @@ describe('buildAppContextBlock', () => {
 
 describe('compileTier2Structured — golden outputs', () => {
   const PROVIDERS = /** @type {const} */ (['anthropic', 'openai', 'gemini']);
-  const THEMES = ['nice', 'hal-9000', '16bit'];
+  const THEMES = [
+    'nice', 'hal-9000', '16bit',
+    'cyberpunk', 'grid', 'jarvis', 'lcars', 'matrix',
+    'office', 'office-dark', 'rx-78-2',
+  ];
 
   for (const provider of PROVIDERS) {
     for (const themeId of THEMES) {
@@ -202,7 +206,11 @@ describe('compileTier2Structured — golden outputs', () => {
 // ─── Tier 1 legacy golden outputs ──────────────────────────────────────────
 
 describe('compileTier1Legacy — golden outputs', () => {
-  const THEMES = ['nice', 'hal-9000', '16bit'];
+  const THEMES = [
+    'nice', 'hal-9000', '16bit',
+    'cyberpunk', 'grid', 'jarvis', 'lcars', 'matrix',
+    'office', 'office-dark', 'rx-78-2',
+  ];
 
   for (const themeId of THEMES) {
     it(`tier1 × ${themeId}`, () => {
