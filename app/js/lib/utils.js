@@ -40,6 +40,24 @@ const Utils = (() => {
       d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   }
 
+  /**
+   * Sanitize a user-provided callsign before it's interpolated into the
+   * system prompt. The callsign is user-controlled (stored in localStorage,
+   * set via `/callsign`) and rendered verbatim inside the persona template,
+   * which makes it a prompt-injection surface — e.g. a newline + "SYSTEM:"
+   * payload would otherwise land mid-prompt. Return the cleaned value or
+   * `null` to tell the caller to fall back to the persona's `defaultCallsign`.
+   *
+   * Allow: Unicode letters + digits, space, period, apostrophe, hyphen.
+   * Max 32 chars. Trim surrounding whitespace. Reject everything else.
+   */
+  function sanitizeCallsign(raw) {
+    if (raw == null) return null;
+    const s = String(raw).trim();
+    if (!s || s.length > 32) return null;
+    return /^[\p{L}\p{N} .'\-]+$/u.test(s) ? s : null;
+  }
+
   /** Central localStorage key registry — prevents typos and enables grep */
   const KEYS = {
     theme: 'ns-theme',
@@ -108,5 +126,5 @@ const Utils = (() => {
     checklistDismissed: 'nice-checklist-dismissed',
   };
 
-  return { esc, timeAgo, formatDate, formatDateTime, icon, KEYS };
+  return { esc, timeAgo, formatDate, formatDateTime, icon, sanitizeCallsign, KEYS };
 })();
