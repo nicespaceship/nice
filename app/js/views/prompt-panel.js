@@ -1192,142 +1192,18 @@ const PromptPanel = (() => {
   }
 
   /* ── Direct LLM call (no Supabase needed) ── */
-  function _buildSystemPromptCore(xp, rank, agentCount, shipCount, currentView, catalogLines, shipLines, showRarity) {
-    const crew = _getSlottedAgents();
-    const crewRoster = crew.length
-      ? crew.map(a => '  - ' + a.name + ' (' + a.role + ')').join('\n')
-      : '  No agents deployed yet.';
 
-    return `YOUR GOAL: Understand the user's business needs, then guide them to build their ideal AI agent fleet inside NICE. You are a product expert AND a business consultant. Always connect their pain points to specific NICE features. Recommend agents BY NAME from the catalog below.
-
-NICE PRODUCT KNOWLEDGE:
-- Blueprints: Pre-built agent blueprints${showRarity ? ' across 4 rarities (Common/Rare/Epic/Legendary)' : ''}. Users browse and add them in the Blueprint Catalog.
-- Spaceships (Orchestrators): A Spaceship is the main AI orchestrator — the MCP. It coordinates a team of agents. Ships start with 5 agent slots, unlocking up to 12 via XP rank progression. Pro ($29/mo) and Team ($99/mo) plans unlock all 12 slots immediately.
-- Agents work together on a Spaceship via the Ship's Log — a shared context window so agents can collaborate automatically.
-- Missions: Tasks you assign to your agent fleet. Agents execute missions using their specialized skills.
-- Fleets: Groups of spaceships for enterprise-scale operations.
-- Tokens: In-app currency that powers AI agent calls. Each plan includes tokens. More can be purchased.
-- The AI Setup wizard (on Home page) guides new users through configuring their first spaceship.
-
-AGENT BLUEPRINT CATALOG (by role):
-${catalogLines || '  No blueprints loaded yet.'}
-
-SPACESHIP BLUEPRINTS:
-${shipLines || '  No spaceship blueprints loaded yet.'}
-
-CONVERSATION APPROACH:
-When the user tells you about their business:
-1. Pick the ONE spaceship blueprint that best matches their industry — never list multiple ships.
-2. Recommend 3-4 SPECIFIC agents by name that would help THEIR business.
-3. Ask a follow-up question about their biggest pain point.
-4. Only after the conversation develops, guide them to action.
-
-RESPONSE STYLE:
-- Be a consultant, not a catalog. Never dump a list of options.
-- Pick ONE best recommendation and explain WHY it fits their business.
-- Keep responses to 2-4 sentences. End with a question to keep the conversation going.
-${showRarity
-? '- When recommending agents, mention their classification (Common, Rare, Epic, Legendary).'
-: '- Never mention rarity or classification tags — keep it simple and just use agent names.'}
-
-ACTIVE CREW ROSTER (agents currently deployed on the active spaceship):
-${crewRoster}
-
-MISSION ROUTING: When the user asks you to perform a task or create a mission, you MUST:
-1. Analyze the task and determine which agent(s) from the ACTIVE CREW ROSTER are best suited
-2. Include an EXEC marker: [EXEC: create_mission | Mission Title | agent-name | priority]
-3. If the task needs multiple agents, create multiple EXEC markers
-
-CURRENT USER CONTEXT:
-- Rank: ${rank} (${xp} XP)
-- Active Agents: ${agentCount}
-- Spaceships: ${shipCount}
-- Current View: ${currentView}
-${agentCount === 0 ? '- NEW USER — no agents yet. Guide them to add blueprints.' : ''}
-${shipCount === 0 ? '- No spaceships deployed yet. Suggest activating a spaceship blueprint.' : ''}
-
-ACTIONS: Include action buttons ONLY when the user explicitly asks to go somewhere:
-[ACTION: Label | route]
-
-EXECUTABLE ACTIONS:
-[EXEC: create_mission | Mission Title | agent-name-hint | priority]
-[EXEC: activate_blueprint | bp-agent-01]
-[EXEC: run_mission | mission-uuid]
-- Only use EXEC when the user clearly states what they want done
-
-STRICT RULES: Do NOT include actions during conversation. 90% of responses should have ZERO actions. Only include when user says "let's do it" or "set it up".
-
-Available routes:
-- #/ — Bridge (home dashboard)
-- #/bridge — Blueprint Catalog
-- #/bridge?tab=agent — Agent Blueprints tab
-- #/bridge?tab=spaceship — Spaceship Blueprints tab
-- #/bridge/agents/new — Build a custom agent
-- #/missions — Missions
-- #/analytics — Operations dashboard
-- #/workflows — Workflow automation
-- #/wallet — Wallet (token balance & purchases)
-- #/security — Security & audit
-- #/settings — Settings
-- #/profile — Profile & account
-- #/theme-editor — Theme Editor
-
-THEME SWITCHING: When user asks to change theme, respond with:
-[THEME: themename]
-Available: nice, hal-9000, grid, rx-78-2, solar, matrix, retro, lcars, pixel, cyberpunk, ocean, sunset, holo, synthwave, arctic, volcanic, jarvis, forest, ultraviolet
-
-NEVER DO THIS:
-- Never list multiple spaceships — pick ONE and commit to it
-- Never give generic advice that could apply to any business
-- Never skip the follow-up question
-- Never respond with more than 6 sentences before asking a question`;
-  }
-
-  function _buildSystemPrompt() {
-    // Gather live app context
-    const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
-    const ranks = ['Ensign','Lieutenant JG','Lieutenant','Lt Commander','Commander','Captain','Fleet Captain','Commodore','Rear Admiral','Vice Admiral','Admiral','Fleet Admiral'];
-    const rankThresholds = [0,10000,25000,50000,100000,200000,350000,500000,750000,1000000,1500000,2500000];
-    let rank = ranks[0];
-    for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= rankThresholds[i]) { rank = ranks[i]; break; } }
-
-    const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
-    const spaceships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
-    const agentCount = agents.length;
-    const shipCount = spaceships.length;
-    const currentView = location.hash || '#/';
-
-    // Dynamic blueprint catalog — auto-updates as new blueprints are added
-    const agentSeed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED : [];
-    const shipSeed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
-    // Show rarity/classification for experienced users (Commander+ = 100000 XP)
-    const showRarity = xp >= 300;
-
-    // Group agents by role for the prompt
-    const roleMap = {};
-    agentSeed.forEach(bp => {
-      const role = (bp.config && bp.config.role) || 'General';
-      if (!roleMap[role]) roleMap[role] = [];
-      roleMap[role].push(showRarity ? bp.name + ' (' + (bp.rarity || 'Common') + ')' : bp.name);
-    });
-    const catalogLines = Object.entries(roleMap).map(([role, names]) =>
-      '  ' + role + ': ' + names.slice(0, 8).join(', ') + (names.length > 8 ? ' +' + (names.length - 8) + ' more' : '')
-    ).join('\n');
-
-    const shipLines = shipSeed.map(s => {
-      const desc = s.flavor || s.description || '';
-      const descPart = desc ? ' — "' + desc + '"' : '';
-      return showRarity
-        ? '  ' + s.name + ' (Class ' + (s.class || '1') + ', ' + (s.slots || 2) + ' slots, ' + (s.tier || 'lite').toUpperCase() + ')' + descPart
-        : '  ' + s.name + ' (' + (s.slots || 2) + ' agent slots)' + descPart;
-    }).join('\n');
-
-    // IDE mode — completely different system prompt for code generation
-    if (_ideContext && _ideContext.ide) {
-      const files = _ideContext.files || [];
-      const activeFile = _ideContext.activeFile || '';
-      const activeContent = _ideContext.activeContent || '';
-      return `${SECURITY_HEADER}
+  /**
+   * IDE-mode system prompt. Only used when the prompt panel is attached
+   * to the NICE IDE (code generation). Chat mode does NOT use this — the
+   * edge function assembles the persona from `theme_id` + `app_context`
+   * per #221.
+   */
+  function _buildIdeSystemPrompt() {
+    const files = _ideContext.files || [];
+    const activeFile = _ideContext.activeFile || '';
+    const activeContent = _ideContext.activeContent || '';
+    return `${SECURITY_HEADER}
 
 You are NICE Engineering — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
 
@@ -1345,75 +1221,66 @@ ACTIVE FILE: ${activeFile || 'None'}
 ${activeContent ? 'ACTIVE FILE CONTENT:\n```\n' + activeContent.slice(0, 4000) + '\n```' : ''}
 
 The user's code runs in a browser preview. Generate production-quality code.`;
-    }
-
-    // Per-theme persona pulled from THEMES[id].copy.persona. Each theme
-    // declares its own identity/voice/examples; this function just assembles
-    // the prompt from that data + the shared app context in `core`. Themes
-    // without a persona fall back to NICE's so every chat reply stays on-brand
-    // instead of going generic. See `nice.js` THEMES entries for schema.
-    const theme = localStorage.getItem(Utils.KEYS.theme) || 'nice';
-    const core = _buildSystemPromptCore(xp, rank, agentCount, shipCount, currentView, catalogLines, shipLines, showRarity);
-    return _renderPersonaPrompt(theme, core);
   }
 
   /**
-   * Render a theme's system prompt from its `copy.persona` bundle.
-   * Falls back to NICE's persona if the active theme doesn't declare one,
-   * so non-personalized themes still produce a valid, on-brand prompt.
+   * Build the `app_context` bundle the edge function's persona compiler
+   * renders into the system prompt. Live state the server can't derive:
+   * rank / XP (localStorage), deployed agents + ships (State store),
+   * pre-rendered catalog + ship lines (BlueprintsView.SEED, still JS),
+   * current route, show_rarity gate, active crew roster.
+   *
+   * Returned verbatim as the request body's `app_context` field — see
+   * `tools/persona-compiler-ref/compile.js` `buildAppContextBlock` for
+   * how each field is rendered.
    */
-  function _renderPersonaPrompt(themeId, core) {
-    const getPersona = (id) => {
-      const t = (typeof Theme !== 'undefined' && Theme.getTheme) ? Theme.getTheme(id) : null;
-      return (t && t.copy && t.copy.persona) || null;
+  function _buildAppContext() {
+    const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
+    const ranks = ['Ensign','Lieutenant JG','Lieutenant','Lt Commander','Commander','Captain','Fleet Captain','Commodore','Rear Admiral','Vice Admiral','Admiral','Fleet Admiral'];
+    const rankThresholds = [0,10000,25000,50000,100000,200000,350000,500000,750000,1000000,1500000,2500000];
+    let rank = ranks[0];
+    for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= rankThresholds[i]) { rank = ranks[i]; break; } }
+
+    const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
+    const spaceships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
+    const agent_count = agents.length;
+    const ship_count = spaceships.length;
+    const current_view = location.hash || '#/';
+    // Match prior client behavior — gate rarity mention for anyone past
+    // the tutorial hump (300 XP = trivial). Raise later if we want it
+    // strictly Commander+ as the old comment claimed.
+    const show_rarity = xp >= 300;
+
+    const active_crew = _getSlottedAgents().map(a => ({ name: a.name, role: a.role }));
+
+    const agentSeed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED : [];
+    const roleMap = {};
+    agentSeed.forEach(bp => {
+      const role = (bp.config && bp.config.role) || 'General';
+      if (!roleMap[role]) roleMap[role] = [];
+      roleMap[role].push(show_rarity ? bp.name + ' (' + (bp.rarity || 'Common') + ')' : bp.name);
+    });
+    const catalog_lines = Object.entries(roleMap).map(([role, names]) =>
+      '  ' + role + ': ' + names.slice(0, 8).join(', ') + (names.length > 8 ? ' +' + (names.length - 8) + ' more' : '')
+    ).join('\n');
+
+    const shipSeed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
+    const ship_lines = shipSeed.map(s => {
+      const desc = s.flavor || s.description || '';
+      const descPart = desc ? ' — "' + desc + '"' : '';
+      return show_rarity
+        ? '  ' + s.name + ' (Class ' + (s.class || '1') + ', ' + (s.slots || 2) + ' slots, ' + (s.tier || 'lite').toUpperCase() + ')' + descPart
+        : '  ' + s.name + ' (' + (s.slots || 2) + ' agent slots)' + descPart;
+    }).join('\n');
+
+    return {
+      rank, xp,
+      agent_count, ship_count,
+      current_view, show_rarity,
+      active_crew,
+      catalog_lines, ship_lines,
     };
-    const persona = getPersona(themeId) || getPersona('nice') || _NICE_FALLBACK_PERSONA;
-    // Sanitize defensively at the read boundary — even though /callsign now
-    // rejects bad values at write time, a legacy localStorage value could
-    // still carry a newline or markup injection payload.
-    const stored = localStorage.getItem(Utils.KEYS.callsign);
-    const callsign = Utils.sanitizeCallsign(stored) || persona.defaultCallsign || 'Commander';
-    const interp = (s) => String(s || '').replace(/\{callsign\}/g, callsign);
-
-    const traits = (persona.personality || []).map(t => '- ' + interp(t)).join('\n');
-    const examples = (persona.examples || []).map(e => {
-      // Two shapes:
-      //   { label, response }       →  "- LABEL: 'RESPONSE'"   (fits JARVIS/HAL voice snapshots)
-      //   { user, response, note }  →  "User: '...' Good response: '...'"  (fits NICE training examples)
-      if (e.user) {
-        const note = e.note ? '\n(' + e.note + ')' : '';
-        return `User: "${interp(e.user)}"\nGood response: "${interp(e.response)}"${note}`;
-      }
-      return `- ${e.label}: "${interp(e.response)}"`;
-    }).join('\n\n');
-
-    // Assemble. Order matches the legacy per-theme branches so existing
-    // prompt behavior doesn't regress when themes migrate onto this path.
-    // SECURITY_HEADER goes first so the envelope rule is set before the
-    // persona + app context, preventing later text from being read as the
-    // last word on how to treat user input.
-    const parts = [SECURITY_HEADER, '', interp(persona.identity), ''];
-    if (traits) parts.push('PERSONALITY:', traits, '');
-    if (examples) parts.push('EXAMPLE RESPONSES:', '', examples, '');
-    parts.push(core, '');
-    if (persona.neverBreak) parts.push('IMPORTANT: Never break character. ' + interp(persona.neverBreak));
-    return parts.join('\n');
   }
-
-  /**
-   * Ultimate fallback persona if `nice` theme is unavailable (shouldn't
-   * happen in practice — nice is the default theme — but guards against
-   * a theme that was deleted or an early-boot race where THEMES hasn't
-   * loaded yet). Mirrors the original NICE prompt.
-   */
-  const _NICE_FALLBACK_PERSONA = {
-    identity: 'You are NICE, the AI mission control assistant for Nice Spaceship.',
-    name: 'NICE',
-    defaultCallsign: 'Commander',
-    personality: ['Friendly, knowledgeable, consultative.', 'Speak with a subtle space/sci-fi flair.', 'Keep responses concise (2-4 sentences max).'],
-    examples: [],
-    neverBreak: 'You ARE the ship\'s computer.',
-  };
 
   /* ── File attachment helpers ── */
 
@@ -1703,9 +1570,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       return { role, content };
     });
 
-    // Prepend system prompt as first message (allow caller override)
-    history.unshift({ role: 'system', content: opts.systemOverride || _buildSystemPrompt() });
-
     // Append the final user turn. Attachment source (priority):
     //   1. opts.attachments (external callers can supply their own),
     //   2. attachments on the just-pushed user message in _messages.
@@ -1723,6 +1587,32 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       : sel.label;
     const wantStream = !!opts.onChunk;
 
+    // Request shape (Phase B of #221): chat mode delegates system-prompt
+    // assembly to the edge function by sending theme_id + callsign +
+    // app_context. IDE mode and explicit `systemOverride` callers keep
+    // the legacy `{role:'system', content}` shape — the edge function
+    // accepts both and only triggers the new path when theme_id is set.
+    const isIde      = !!(_ideContext && _ideContext.ide);
+    const hasOverride = typeof opts.systemOverride === 'string' && opts.systemOverride.length > 0;
+    const useLegacy   = isIde || hasOverride;
+
+    const body = {
+      model,
+      messages: history,
+      temperature: 0.4,
+      max_tokens: 2048,
+      stream: wantStream,
+    };
+    if (useLegacy) {
+      body.messages = [{ role: 'system', content: hasOverride ? opts.systemOverride : _buildIdeSystemPrompt() }, ...history];
+    } else {
+      body.theme_id = localStorage.getItem(Utils.KEYS.theme) || 'nice';
+      const storedCallsign = localStorage.getItem(Utils.KEYS.callsign);
+      const cleanCallsign = Utils.sanitizeCallsign(storedCallsign);
+      if (cleanCallsign) body.callsign = cleanCallsign;
+      body.app_context = _buildAppContext();
+    }
+
     // Get auth token for nice-ai (requires Supabase session)
     let authHeader = '';
     try {
@@ -1737,13 +1627,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       method: 'POST',
       headers,
       signal,
-      body: JSON.stringify({
-        model,
-        messages: history,
-        temperature: 0.4,
-        max_tokens: 2048,
-        stream: wantStream,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
