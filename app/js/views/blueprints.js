@@ -41,7 +41,7 @@ const BlueprintsView = (() => {
     const bp = _findShipBp(id) || _findShipBp(id.replace(/^bp-/, ''));
     if (!bp) return;
     const chips = _capChips(bp.caps || bp.metadata?.caps || []);
-    if (!chips.length) chips.push('Run a mission', 'Check status', 'Generate report');
+    if (!chips.length) chips.push(`Run ${Terminology.article('mission', { lowercase: true })} ${Terminology.label('mission', { lowercase: true })}`, 'Check status', 'Generate report');
     PromptPanel.show();
     PromptPanel.prefill('');
     PromptPanel.setSuggestions(chips);
@@ -210,7 +210,7 @@ const BlueprintsView = (() => {
       const tabDefs = [
         { id: 'schematic', label: 'Schematic' },
         { id: 'blueprints', label: 'Blueprints' },
-        { id: 'missions', label: 'Missions' },
+        { id: 'missions', label: Terminology.label('mission', { plural: true }) },
         { id: 'outbox', label: 'Outbox' + outboxBadge },
         { id: 'operations', label: 'Operations' },
         { id: 'log', label: 'Log' },
@@ -1566,7 +1566,7 @@ const BlueprintsView = (() => {
             <div class="outbox-empty">
               <p class="outbox-empty-icon">📬</p>
               <p class="outbox-empty-title">No drafts yet</p>
-              <p class="outbox-empty-sub">Run a mission to generate content. Agent output will appear here for review.</p>
+              <p class="outbox-empty-sub">Run ${Terminology.article('mission', { lowercase: true })} ${Terminology.label('mission', { lowercase: true })} to generate content. Agent output will appear here for review.</p>
             </div>
           ` : filtered.map(item => _renderOutboxListCard(item)).join('')}
         </div>

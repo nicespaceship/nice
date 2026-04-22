@@ -5,7 +5,13 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const MissionsView = (() => {
-  const title = 'Missions';
+  // Noun helpers — theme-aware. `Terminology` is SSOT; `{plural}` /
+  // `{lowercase}` select the rendered form. Called inside render() so
+  // Router.refresh() picks up the new theme's vocabulary.
+  const _N   = () => Terminology.label('mission');
+  const _Np  = () => Terminology.label('mission', { plural: true });
+  const _Nl  = () => Terminology.label('mission', { lowercase: true });
+  const _Nlp = () => Terminology.label('mission', { plural: true, lowercase: true });
 
   const STATUSES   = ['queued','running','completed','failed'];
   const PRIORITIES = ['low','medium','high','critical'];
@@ -48,7 +54,7 @@ const MissionsView = (() => {
           <div class="view-topbar-l">
             <div class="search-box">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-              <input type="text" id="task-search" class="search-input" placeholder="Search missions..." />
+              <input type="text" id="task-search" class="search-input" placeholder="Search ${_Nlp()}..." />
             </div>
           </div>
           <div class="mc-toolbar-actions">
@@ -56,9 +62,9 @@ const MissionsView = (() => {
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
               <span class="mc-toolbar-label">Workflows</span>
             </a>
-            <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New Mission" title="New Mission">
+            <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New ${_N()}" title="New ${_N()}">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-              <span class="mc-toolbar-label">New Mission</span>
+              <span class="mc-toolbar-label">New ${_N()}</span>
             </button>
           </div>
         </div>
@@ -80,7 +86,7 @@ const MissionsView = (() => {
       <div class="modal-overlay" id="modal-new-task">
         <div class="modal-box">
           <div class="modal-hdr">
-            <h3 class="modal-title">Create Mission</h3>
+            <h3 class="modal-title">Create ${_N()}</h3>
             <button class="modal-close" id="close-task-modal" aria-label="Close">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
             </button>
@@ -88,7 +94,7 @@ const MissionsView = (() => {
           <div class="modal-body">
             <form id="task-form" class="auth-form">
               <div class="auth-field">
-                <label for="t-title">Mission Title</label>
+                <label for="t-title">${_N()} Title</label>
                 <input type="text" id="t-title" required placeholder="e.g. Analyze Q4 sales data" />
               </div>
               <div class="auth-field">
@@ -102,7 +108,7 @@ const MissionsView = (() => {
                 </select>
               </div>
               <div class="auth-error" id="task-error"></div>
-              <button type="submit" class="auth-submit" id="task-submit-btn">Create Mission</button>
+              <button type="submit" class="auth-submit" id="task-submit-btn">Create ${_N()}</button>
             </form>
           </div>
         </div>
@@ -164,11 +170,11 @@ const MissionsView = (() => {
       feed.innerHTML = `
         <div class="app-empty">
           <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
-          <h2>No Missions Yet</h2>
-          <p>Create a mission and assign it to an agent.</p>
+          <h2>No ${_Np()} Yet</h2>
+          <p>Create ${Terminology.article('mission', { lowercase: true })} ${_Nl()} and assign it to an agent.</p>
           <div class="app-empty-acts">
             <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-new-task').classList.add('open')">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg> Create Mission
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg> Create ${_N()}
             </button>
           </div>
         </div>`;
@@ -417,7 +423,7 @@ const MissionsView = (() => {
     wrap.innerHTML = `
       <div class="mc-sched-section">
         <div class="mc-sched-hdr">
-          <h3 class="mc-sched-title">Scheduled Missions</h3>
+          <h3 class="mc-sched-title">Scheduled ${_Np()}</h3>
           <span class="mc-sched-count">${schedules.length}</span>
         </div>
         <div class="mc-sched-list">
@@ -532,7 +538,7 @@ const MissionsView = (() => {
     const agentVal = document.getElementById('t-agent').value || null;
     const priority = document.getElementById('t-priority').value;
 
-    if (!mTitle) { errEl.textContent = 'Mission title is required.'; btn.disabled = false; btn.textContent = 'Create Mission'; return; }
+    if (!mTitle) { errEl.textContent = `${_N()} title is required.`; btn.disabled = false; btn.textContent = `Create ${_N()}`; return; }
 
     const isUUID = agentVal && /^[0-9a-f]{8}-/i.test(agentVal);
     const agentId = isUUID ? agentVal : null;
@@ -552,12 +558,17 @@ const MissionsView = (() => {
       document.getElementById('modal-new-task')?.classList.remove('open');
       document.getElementById('task-form')?.reset();
       if (agentVal && created?.id && typeof MissionRunner !== 'undefined') MissionRunner.run(created.id);
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Created', message: mTitle, type: 'system' });
-    } catch (err) { errEl.textContent = err.message || 'Failed to create mission.'; }
-    finally { btn.disabled = false; btn.textContent = 'Create Mission'; }
+      if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Created`, message: mTitle, type: 'system' });
+    } catch (err) { errEl.textContent = err.message || `Failed to create ${_Nl()}.`; }
+    finally { btn.disabled = false; btn.textContent = `Create ${_N()}`; }
   }
 
   function _subscribeRealtime() {
+    // Theme.set() → Router.refresh() re-runs render() without first calling
+    // destroy(), so an existing subscription must be torn down before a new
+    // channel is created. Otherwise Supabase throws "cannot add
+    // postgres_changes callbacks after subscribe()" on the duplicate.
+    if (_channel) { try { SB.realtime.unsubscribe(_channel); } catch {} _channel = null; }
     _channel = SB.realtime.subscribe('tasks', (payload) => {
       if (!payload || !payload.new) { _loadMissions(); return; }
       // Incremental update: merge the changed row into State instead of full reload
@@ -569,10 +580,10 @@ const MissionsView = (() => {
         const old = missions[idx];
         if (old.status !== updated.status) {
           if (updated.status === 'review' && typeof Notify !== 'undefined') {
-            Notify.send({ title: 'Mission Ready', message: updated.title, type: 'success' });
+            Notify.send({ title: `${_N()} Ready`, message: updated.title, type: 'success' });
           }
           if (updated.status === 'failed' && typeof Notify !== 'undefined') {
-            Notify.send({ title: 'Mission Failed', message: updated.title, type: 'error' });
+            Notify.send({ title: `${_N()} Failed`, message: updated.title, type: 'error' });
           }
         }
         missions[idx] = { ...missions[idx], ...updated };
@@ -594,18 +605,20 @@ const MissionsView = (() => {
     _prevStatuses = {};
   }
 
-  return { title, render, destroy };
+  return { get title() { return _Np(); }, render, destroy };
 })();
 
 /* ── Mission Detail View ── */
 const MissionDetailView = (() => {
-  const title = 'Mission Detail';
+  const _N   = () => Terminology.label('mission');
+  const _Np  = () => Terminology.label('mission', { plural: true });
+  const _Nl  = () => Terminology.label('mission', { lowercase: true });
   const _esc = Utils.esc;
   let _detailChannel = null;
 
   function render(el, params) {
     const user = State.get('user');
-    el.innerHTML = `<div class="loading-state"><p>Loading mission...</p></div>`;
+    el.innerHTML = `<div class="loading-state"><p>Loading ${_Nl()}...</p></div>`;
     _loadMission(el, params.id);
   }
 
@@ -617,7 +630,7 @@ const MissionDetailView = (() => {
       } catch(e) {
         mission = (State.get('missions') || []).find(m => m.id === id);
       }
-      if (!mission) throw new Error('Mission not found');
+      if (!mission) throw new Error(`${_N()} not found`);
 
       // Resolve agent
       // Look up agent from user_agents, then blueprints, then use stored name
@@ -657,17 +670,17 @@ const MissionDetailView = (() => {
           <div class="detail-back">
             <a href="#/missions" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
-              Back to Missions
+              Back to ${_Np()}
             </a>
             ${mission.status === 'queued' && (mission.agent_id || mission.agent_name) ? `
-              <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run Mission</button>
+              <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run ${_N()}</button>
             ` : ''}
             ${mission.status === 'review' ? `
               <button class="btn btn-sm btn-primary" id="md-approve" data-id="${id}" style="background:#22c55e;border-color:#22c55e">✓ Approve</button>
               <button class="btn btn-sm" id="md-reject" data-id="${id}" style="color:#f87171">✕ Reject</button>
             ` : ''}
             ${mission.status === 'failed' && (mission.agent_id || mission.agent_name) ? `
-              <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry Mission</button>
+              <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry ${_N()}</button>
             ` : ''}
             ${mission.status === 'completed' ? `
               <button class="btn btn-sm" id="md-share-report" data-id="${id}">Share Report</button>
@@ -783,9 +796,9 @@ const MissionDetailView = (() => {
     } catch (err) {
       el.innerHTML = `
         <div class="app-empty">
-          <h2>Mission Not Found</h2>
+          <h2>${_N()} Not Found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/missions" class="btn btn-sm">Back to Missions</a></div>
+          <div class="app-empty-acts"><a href="#/missions" class="btn btn-sm">Back to ${_Np()}</a></div>
         </div>
       `;
     }
@@ -815,7 +828,7 @@ const MissionDetailView = (() => {
       const url = window.location.origin + '/app/' + shareHash;
       navigator.clipboard.writeText(url).then(() => {
         if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Report Link Copied', message: 'Shareable mission report URL copied to clipboard.', type: 'system' });
+          Notify.send({ title: 'Report Link Copied', message: `Shareable ${_Nl()} report URL copied to clipboard.`, type: 'system' });
         }
       }).catch(() => {});
     });
@@ -852,7 +865,7 @@ const MissionDetailView = (() => {
         AgentMemory.learn(agentKey, mission.result, 'approved');
         AgentMemory.addSuccess(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200) });
       }
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Approved', message: 'Content approved and mission completed!', type: 'success' });
+      if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Approved`, message: `Content approved and ${_Nl()} completed!`, type: 'success' });
       _loadMission(el, id);
     });
 
@@ -870,7 +883,7 @@ const MissionDetailView = (() => {
         AgentMemory.learn(agentKey, mission.result, 'rejected');
         AgentMemory.addFailure(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200), reason: 'Rejected by user' });
       }
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Rejected', message: 'Content rejected. You can retry the mission.', type: 'system' });
+      if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Rejected`, message: `Content rejected. You can retry the ${_Nl()}.`, type: 'system' });
       _loadMission(el, id);
     });
 
@@ -1037,12 +1050,13 @@ const MissionDetailView = (() => {
     if (_detailChannel) { SB.realtime.unsubscribe(_detailChannel); _detailChannel = null; }
   }
 
-  return { title, render, destroy };
+  return { get title() { return `${_N()} Detail`; }, render, destroy };
 })();
 
 /* ── Shared Mission Report View ── */
 const SharedReportView = (() => {
-  const title = 'Mission Report';
+  const _N  = () => Terminology.label('mission');
+  const _Nl = () => Terminology.label('mission', { lowercase: true });
   const _esc = Utils.esc;
 
   function render(el, params) {
@@ -1053,7 +1067,7 @@ const SharedReportView = (() => {
       _loadSharedBlueprint(el, id);
       return;
     }
-    el.innerHTML = '<div class="loading-state"><p>Loading mission report...</p></div>';
+    el.innerHTML = `<div class="loading-state"><p>Loading ${_Nl()} report...</p></div>`;
     _loadReport(el, id);
   }
 
@@ -1117,7 +1131,7 @@ const SharedReportView = (() => {
     }
 
     if (!mission) {
-      el.innerHTML = '<div class="app-empty"><h2>Report Not Found</h2><p>This mission report could not be found.</p><div class="app-empty-acts"><a href="#/" class="btn btn-sm">Home</a></div></div>';
+      el.innerHTML = `<div class="app-empty"><h2>Report Not Found</h2><p>This ${_Nl()} report could not be found.</p><div class="app-empty-acts"><a href="#/" class="btn btn-sm">Home</a></div></div>`;
       return;
     }
 
@@ -1166,5 +1180,5 @@ const SharedReportView = (() => {
     `;
   }
 
-  return { title, render };
+  return { get title() { return `${_N()} Report`; }, render };
 })();

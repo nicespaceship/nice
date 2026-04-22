@@ -153,7 +153,7 @@ const HomeView = (() => {
             </a>
             <a href="#/bridge?tab=missions" class="home-action">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-task"/></svg>
-              Missions
+              ${Terminology.label('mission', { plural: true })}
             </a>
             <a href="#/bridge" class="home-action">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-monitor"/></svg>
@@ -164,7 +164,7 @@ const HomeView = (() => {
               Security
             </a>
           </div>
-          <p class="home-hint">Type a message below to run a mission</p>
+          <p class="home-hint">Type a message below to run ${Terminology.article('mission', { lowercase: true })} ${Terminology.label('mission', { lowercase: true })}</p>
         </div>
       `;
     }
@@ -174,7 +174,7 @@ const HomeView = (() => {
     return `
       <div class="chat-home-empty">
         <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
-        ${isGuest ? '<p class="home-guest-hint">Sign in to deploy agents and run missions</p>' : ''}
+        ${isGuest ? `<p class="home-guest-hint">Sign in to deploy agents and run ${Terminology.label('mission', { plural: true, lowercase: true })}</p>` : ''}
       </div>
     `;
   }
@@ -201,7 +201,7 @@ const HomeView = (() => {
       },
       {
         id: 'mission',
-        label: 'Run your first mission',
+        label: `Run your first ${Terminology.label('mission', { lowercase: true })}`,
         desc: 'Send a task to any agent',
         done: completedCount > 0,
         action: null, // prompt panel

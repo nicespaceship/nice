@@ -424,7 +424,7 @@ const PromptPanel = (() => {
           // Try Supabase if authenticated with a real user
           if (user.id && !user.id.startsWith('dev-') && typeof SB !== 'undefined' && SB.db) {
             const created = await SB.db('tasks').create({
-              user_id: user.id, title: title || 'Untitled Mission',
+              user_id: user.id, title: title || `Untitled ${Terminology.label('mission')}`,
               agent_id: agentId, status: 'queued',
               priority: priority || 'medium', progress: 0,
             });
@@ -434,12 +434,12 @@ const PromptPanel = (() => {
             if (agentId && created && created.id && typeof MissionRunner !== 'undefined') {
               MissionRunner.run(created.id);
             }
-            return { ok: true, msg: `Mission "${title}" created and assigned to ${agentName || 'queue'}.`, data: created };
+            return { ok: true, msg: `${Terminology.label('mission')} "${title}" created and assigned to ${agentName || 'queue'}.`, data: created };
           }
           // Local-only fallback for dev/unauthenticated users
           const localMission = {
             id: 'mission-' + Date.now(),
-            title: title || 'Untitled Mission',
+            title: title || `Untitled ${Terminology.label('mission')}`,
             agent_id: agentId, agent_name: agentName,
             status: 'queued', priority: priority || 'medium',
             progress: 0, created_at: new Date().toISOString(),
@@ -447,9 +447,9 @@ const PromptPanel = (() => {
           const missions = State.get('missions') || [];
           missions.push(localMission);
           State.set('missions', [...missions]);
-          return { ok: true, msg: `Mission "${title}" created and assigned to ${agentName || 'queue'}.` };
+          return { ok: true, msg: `${Terminology.label('mission')} "${title}" created and assigned to ${agentName || 'queue'}.` };
         } catch (e) {
-          return { ok: false, msg: e.message || 'Failed to create mission' };
+          return { ok: false, msg: e.message || `Failed to create ${Terminology.label('mission', { lowercase: true })}` };
         }
       }
       case 'activate_blueprint': {
