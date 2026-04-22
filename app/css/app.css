@@ -2785,6 +2785,85 @@
 .builder-tool-chip.selected { border-color:var(--accent); color:var(--accent); background:rgba(var(--accent-rgb, 100,100,100),0.08); }
 
 /* ─────────────────────────────────────────────────────────────────
+   MISSION COMPOSER — prompt-driven mission authoring
+───────────────────────────────────────────────────────────────── */
+.mc-composer { max-width:720px; margin:0 auto; padding:24px 16px 48px; }
+.mc-composer-back { margin-bottom:16px; }
+.mc-composer-hero { margin-bottom:24px; }
+.mc-composer-title {
+  font-size:var(--text-2xl); font-weight:var(--fw-bold);
+  line-height:var(--lh-tight); letter-spacing:var(--tracking-display);
+  margin:0 0 8px; color:var(--text);
+}
+.mc-composer-sub {
+  font-size:var(--text-md); line-height:var(--lh-base);
+  color:var(--text-muted); margin:0;
+}
+.mc-composer-body { }
+.mc-composer-form { display:flex; flex-direction:column; gap:12px; }
+.mc-composer-label {
+  font-size:var(--text-sm); font-weight:var(--fw-medium);
+  color:var(--text-muted);
+}
+.mc-composer-intent {
+  width:100%; min-height:140px; padding:14px 16px;
+  font-size:var(--text-base); line-height:var(--lh-base);
+  font-family:var(--font-b); color:var(--text);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); resize:vertical;
+}
+.mc-composer-intent:focus { outline:none; border-color:var(--border-hi); }
+.mc-composer-intent:disabled { opacity:.5; cursor:wait; }
+.mc-composer-error {
+  padding:10px 14px; border:1px solid var(--color-danger, #ef4444);
+  border-radius:var(--radius); font-size:var(--text-sm);
+  color:var(--color-danger, #ef4444);
+  background:rgba(239, 68, 68, .08);
+}
+.mc-composer-actions {
+  display:flex; gap:8px; justify-content:flex-end; margin-top:8px;
+}
+.mc-composer-saving {
+  padding:24px; text-align:center; color:var(--text-muted);
+  font-size:var(--text-md);
+}
+.mc-plan-card {
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px; background:var(--panel-bg);
+  display:flex; flex-direction:column; gap:10px;
+}
+.mc-plan-row {
+  display:grid; grid-template-columns:110px 1fr; gap:12px;
+  align-items:baseline;
+}
+.mc-plan-row-steps { align-items:start; }
+.mc-plan-key {
+  font-size:var(--text-xs); font-weight:var(--fw-bold);
+  text-transform:uppercase; letter-spacing:var(--tracking-caps);
+  color:var(--text-muted);
+}
+.mc-plan-val { font-size:var(--text-base); color:var(--text); line-height:var(--lh-base); }
+.mc-plan-steps {
+  list-style:none; margin:0; padding:0;
+  display:flex; flex-direction:column; gap:8px;
+}
+.mc-plan-step {
+  display:flex; align-items:flex-start; gap:10px;
+  font-size:var(--text-base); line-height:var(--lh-base); color:var(--text);
+}
+.mc-plan-step-num {
+  flex:none; width:22px; height:22px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:var(--text-xs); font-weight:var(--fw-bold);
+  background:var(--accent); color:var(--bg);
+}
+
+@media (max-width: 640px) {
+  .mc-composer { padding:16px 12px 40px; }
+  .mc-plan-row { grid-template-columns:1fr; gap:4px; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
    TASKS VIEW
 ───────────────────────────────────────────────────────────────── */
 .tasks-wrap { max-width:var(--width-large); margin:0 auto; }
