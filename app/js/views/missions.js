@@ -499,7 +499,13 @@ const MissionsView = (() => {
   }
 
   function _bindEvents() {
-    document.getElementById('btn-new-task')?.addEventListener('click', _openNewMission);
+    // "New Mission" now routes to the prompt-driven Mission Composer.
+    // The legacy modal form (below) still mounts for any direct call into
+    // _openNewMission, but the toolbar entry point leads with the Composer.
+    document.getElementById('btn-new-task')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      location.hash = '#/missions/new';
+    });
     document.getElementById('close-task-modal')?.addEventListener('click', () => {
       document.getElementById('modal-new-task')?.classList.remove('open');
     });

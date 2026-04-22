@@ -1823,6 +1823,9 @@ const NICE = (() => {
     Router.on('/spaceships/:id', SpaceshipDetailView);
     Router.on('/log', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
     Router.on('/missions', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
+    // `/missions/new` must register BEFORE `/missions/:id` — Router iterates
+    // in order and the :id pattern would otherwise swallow the literal.
+    if (typeof MissionComposerView !== 'undefined') Router.on('/missions/new', MissionComposerView);
     if (typeof MissionDetailView !== 'undefined') Router.on('/missions/:id', MissionDetailView);
     Router.on('/analytics', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
     Router.on('/cost', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
