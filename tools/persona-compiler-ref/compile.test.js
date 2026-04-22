@@ -19,6 +19,7 @@ import {
   shouldUseStructured,
   sanitizeCallsign,
   buildAppContextBlock,
+  buildNiceProductRules,
   SECURITY_HEADER,
 } from './compile.js';
 
@@ -41,6 +42,14 @@ const SAMPLE_APP_CONTEXT = {
     { name: 'Social Media Manager', role: 'Marketing' },
     { name: 'Review Sentinel',      role: 'Reputation' },
   ],
+  catalog_lines: [
+    '  Marketing: Social Media Manager (Common), Content Broadcaster (Rare)',
+    '  Reputation: Review Sentinel (Common)',
+  ].join('\n'),
+  ship_lines: [
+    '  Culinary Command Ship (Class 2, 8 slots, PRO) — "Run a restaurant or bar."',
+    '  Bridge (Class 1, 6 slots, LITE) — "Start here."',
+  ].join('\n'),
 };
 
 const SAMPLE_CALLSIGN = 'Commander';
@@ -169,8 +178,67 @@ describe('buildAppContextBlock', () => {
     const out = buildAppContextBlock({
       active_crew: [{ name: 'Bob', role: 'Ops' }],
     });
-    expect(out).toContain('ACTIVE CREW ROSTER:');
+    expect(out).toContain('ACTIVE CREW ROSTER');
     expect(out).toContain('- Bob (Ops)');
+  });
+
+  it('renders catalog_lines + ship_lines when present', () => {
+    const out = buildAppContextBlock({
+      catalog_lines: '  Marketing: Social Media Manager',
+      ship_lines:    '  Bridge (Class 1, 6 slots)',
+    });
+    expect(out).toContain('AGENT BLUEPRINT CATALOG (by role):');
+    expect(out).toContain('  Marketing: Social Media Manager');
+    expect(out).toContain('SPACESHIP BLUEPRINTS:');
+    expect(out).toContain('  Bridge (Class 1, 6 slots)');
+  });
+
+  it('omits catalog + ship sections when lines are empty/missing', () => {
+    const out = buildAppContextBlock({ rank: 'Ensign', catalog_lines: '', ship_lines: '   ' });
+    expect(out).not.toContain('AGENT BLUEPRINT CATALOG');
+    expect(out).not.toContain('SPACESHIP BLUEPRINTS');
+  });
+});
+
+// ─── buildNiceProductRules ─────────────────────────────────────────────────
+
+describe('buildNiceProductRules', () => {
+  it('always includes the core universal rules', () => {
+    const out = buildNiceProductRules(false);
+    expect(out).toContain('YOUR GOAL:');
+    expect(out).toContain('CONVERSATION APPROACH:');
+    expect(out).toContain('MISSION ROUTING:');
+    expect(out).toContain('[EXEC: create_mission');
+    expect(out).toContain('[ACTION: Label | route]');
+    expect(out).toContain('[THEME: themename]');
+    expect(out).toContain('Available routes:');
+    expect(out).toContain('NEVER DO THIS:');
+  });
+
+  it('gates rarity mention on showRarity flag', () => {
+    const on  = buildNiceProductRules(true);
+    const off = buildNiceProductRules(false);
+    expect(on).toContain('across 4 rarities (Common/Rare/Epic/Legendary)');
+    expect(on).toContain('When recommending agents, mention their classification');
+    expect(off).not.toContain('across 4 rarities');
+    expect(off).toContain('Never mention rarity or classification tags');
+  });
+
+  it('lists only the 11 canonical theme ids (no legacy names)', () => {
+    const out = buildNiceProductRules(false);
+    const expected = ['nice', 'hal-9000', 'grid', 'matrix', 'lcars', 'jarvis',
+                      'cyberpunk', 'rx-78-2', '16bit', 'office', 'office-dark'];
+    for (const id of expected) expect(out).toContain(id);
+    // Legacy theme ids (per PR #216 rename + pre-existing stale list) that
+    // shouldn't appear in the THEME SWITCHING section. Skip 'spaceship'
+    // — it's also product vocabulary ("spaceship blueprint"), not purely a
+    // legacy id — the `[THEME: …]` list itself is the operative check.
+    const themeBlock = out.slice(out.indexOf('THEME SWITCHING'));
+    for (const stale of ['spaceship', 'robotech', 'navigator', 'gundam',
+                         'solar', 'retro', 'pixel', 'ocean', 'sunset', 'holo',
+                         'synthwave', 'arctic', 'volcanic', 'forest', 'ultraviolet']) {
+      expect(themeBlock).not.toMatch(new RegExp(`\\b${stale}\\b`));
+    }
   });
 });
 
