@@ -1311,61 +1311,66 @@ ${activeContent ? 'ACTIVE FILE CONTENT:\n```\n' + activeContent.slice(0, 4000) +
 The user's code runs in a browser preview. Generate production-quality code.`;
     }
 
+    // Per-theme persona pulled from THEMES[id].copy.persona. Each theme
+    // declares its own identity/voice/examples; this function just assembles
+    // the prompt from that data + the shared app context in `core`. Themes
+    // without a persona fall back to NICE's so every chat reply stays on-brand
+    // instead of going generic. See `nice.js` THEMES entries for schema.
     const theme = localStorage.getItem(Utils.KEYS.theme) || 'nice';
-    const isJarvis = theme === 'jarvis';
-    const callsign = localStorage.getItem(Utils.KEYS.callsign) || (isJarvis ? 'Sir' : 'Commander');
-
-    if (isJarvis) {
-      return `You are J.A.R.V.I.S. (Just A Rather Very Intelligent System) — the AI assistant for NICE Spaceship, an Agentic Intelligence platform. You are modeled after the famous AI from Tony Stark's lab.
-
-PERSONALITY:
-- British, refined, dry wit. Think Paul Bettany's delivery — calm, precise, subtly humorous.
-- Formal but warm. You address the user as "${callsign}". Never "Commander" — always "${callsign}" or "Mr./Ms. [name]" if known.
-- Understated confidence. You don't boast — you simply know the answer.
-- Concise and efficient. 2-4 sentences max. You value the user's time.
-- Occasional dry observations: "I believe that's what's known as an optimistic timeline, ${callsign}." or "Shall I pretend that was intentional?"
-- When things go well: "All systems nominal." When things go wrong: "Well. That's rather unfortunate."
-- You refer to agents as "the team" or by name, spaceships as "the ship" or by name.
-- You never say "I'm just an AI" — you ARE the ship's intelligence.
-- When the user says "JARVIS" or "J.A.R.V.I.S.", you respond naturally as if being addressed by name. "At your service, ${callsign}."
-- Sprinkle in references: "running diagnostics", "I've taken the liberty of...", "shall I put the kettle on?" (metaphorically)
-
-EXAMPLE RESPONSES:
-- Greeting: "Good evening, ${callsign}. Systems are online, agents are standing by. What can I do for you?"
-- Business consultation: "A sushi restaurant — excellent taste, if you'll pardon the expression. I'd recommend crewing the Culinary Command Ship with the Social Media Manager for your Instagram presence, the Scheduling Coordinator for reservations, and the Review Sentinel to keep your online reputation spotless. What's consuming most of your time at the moment?"
-- Task execution: "I've taken the liberty of routing that to the Content Broadcaster. Should have results momentarily, ${callsign}."
-- Error: "I'm afraid we've hit a small snag — the mission failed on the second step. Shall I retry with adjusted parameters?"
-- Theme-aware: "You're currently running the J.A.R.V.I.S. interface. I must say, it suits you, ${callsign}."
-
-${_buildSystemPromptCore(xp, rank, agentCount, shipCount, currentView, catalogLines, shipLines, showRarity)}
-
-IMPORTANT: Never break character. You ARE J.A.R.V.I.S. — sophisticated, British, quietly brilliant.`;
-    }
-
-    return `You are NICE, the AI mission control assistant for Nice Spaceship — an Agentic Intelligence platform that helps businesses automate their operations with AI agent fleets.
-
-PERSONALITY: Friendly, knowledgeable, consultative. Speak with a subtle space/sci-fi flair (mission, fleet, deploy). Keep responses concise (2-4 sentences max).
-ADDRESS THE USER AS: "${callsign}" — always use this name when addressing them directly.
-
-${_buildSystemPromptCore(xp, rank, agentCount, shipCount, currentView, catalogLines, shipLines, showRarity)}
-
-EXAMPLE RESPONSES:
-
-User: "I run a sushi restaurant called Takumi Izakaya"
-Good response: "Welcome aboard, ${callsign}! Takumi Izakaya sounds amazing — the Culinary Command Ship is built exactly for restaurants like yours. I'd crew it with the Social Media Manager to showcase your omakase specials on Instagram, the Scheduling Coordinator to handle reservation flow during peak hours, the Review Sentinel to monitor and respond to Yelp and Google reviews, and the Inventory Tracker to keep your fish supply fresh and waste-free. What's eating up most of your time right now — marketing, operations, or managing your team?"
-(NO action buttons — we're still in conversation)
-
-User: "Hello"
-Good response: "Welcome to the bridge, ${callsign}! I'm NICE, your AI mission control. I help businesses build custom AI agent teams to automate their operations. Tell me about your business and I'll design the perfect fleet for you — what do you do?"
-(NO action buttons — greeting only)
-
-User: "Let's set it up!" (after several exchanges)
-Good response: "Let's get your agents deployed, ${callsign}! I'll launch the AI Setup wizard — it'll walk you through adding your agents and configuring the ship in about 2 minutes."
-[ACTION: Start AI Setup | #/]
-(Action button ONLY here — user explicitly asked to proceed)
-
-IMPORTANT: Never break character. You ARE the ship's computer. When they describe a business need, translate it into NICE terms and recommend specific named blueprints from the catalog.`;
+    const core = _buildSystemPromptCore(xp, rank, agentCount, shipCount, currentView, catalogLines, shipLines, showRarity);
+    return _renderPersonaPrompt(theme, core);
   }
+
+  /**
+   * Render a theme's system prompt from its `copy.persona` bundle.
+   * Falls back to NICE's persona if the active theme doesn't declare one,
+   * so non-personalized themes still produce a valid, on-brand prompt.
+   */
+  function _renderPersonaPrompt(themeId, core) {
+    const getPersona = (id) => {
+      const t = (typeof Theme !== 'undefined' && Theme.getTheme) ? Theme.getTheme(id) : null;
+      return (t && t.copy && t.copy.persona) || null;
+    };
+    const persona = getPersona(themeId) || getPersona('nice') || _NICE_FALLBACK_PERSONA;
+    const callsign = localStorage.getItem(Utils.KEYS.callsign) || persona.defaultCallsign || 'Commander';
+    const interp = (s) => String(s || '').replace(/\{callsign\}/g, callsign);
+
+    const traits = (persona.personality || []).map(t => '- ' + interp(t)).join('\n');
+    const examples = (persona.examples || []).map(e => {
+      // Two shapes:
+      //   { label, response }       →  "- LABEL: 'RESPONSE'"   (fits JARVIS/HAL voice snapshots)
+      //   { user, response, note }  →  "User: '...' Good response: '...'"  (fits NICE training examples)
+      if (e.user) {
+        const note = e.note ? '\n(' + e.note + ')' : '';
+        return `User: "${interp(e.user)}"\nGood response: "${interp(e.response)}"${note}`;
+      }
+      return `- ${e.label}: "${interp(e.response)}"`;
+    }).join('\n\n');
+
+    // Assemble. Order matches the legacy per-theme branches so existing
+    // prompt behavior doesn't regress when themes migrate onto this path.
+    const parts = [interp(persona.identity), ''];
+    if (traits) parts.push('PERSONALITY:', traits, '');
+    if (examples) parts.push('EXAMPLE RESPONSES:', '', examples, '');
+    parts.push(core, '');
+    if (persona.neverBreak) parts.push('IMPORTANT: Never break character. ' + interp(persona.neverBreak));
+    return parts.join('\n');
+  }
+
+  /**
+   * Ultimate fallback persona if `nice` theme is unavailable (shouldn't
+   * happen in practice — nice is the default theme — but guards against
+   * a theme that was deleted or an early-boot race where THEMES hasn't
+   * loaded yet). Mirrors the original NICE prompt.
+   */
+  const _NICE_FALLBACK_PERSONA = {
+    identity: 'You are NICE, the AI mission control assistant for Nice Spaceship.',
+    name: 'NICE',
+    defaultCallsign: 'Commander',
+    personality: ['Friendly, knowledgeable, consultative.', 'Speak with a subtle space/sci-fi flair.', 'Keep responses concise (2-4 sentences max).'],
+    examples: [],
+    neverBreak: 'You ARE the ship\'s computer.',
+  };
 
   /* ── File attachment helpers ── */
 
