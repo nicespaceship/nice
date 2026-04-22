@@ -408,7 +408,7 @@ Test files: `app/js/__tests__/*.test.js` — 36 files, ~670 tests. Counts drift 
 
 Coverage areas:
 - **Core infra**: `state`, `router`, `supabase`, `keyboard`, `notify`, `command-palette`, `audit-log`, `data-io`
-- **Blueprints + community**: `blueprints`, `blueprints-download`, `blueprints-marketplace`, `blueprints-moderation`, `blueprints-publish`, `blueprints-ship-hoist`, `community-publish`, `blueprint-markdown`, `blueprint-utils-humanize`, `card-renderer-tier-pill`
+- **Blueprints + community**: `blueprints`, `blueprints-download`, `blueprints-marketplace`, `blueprints-moderation`, `blueprints-publish`, `blueprints-ship-hoist`, `community-publish`, `blueprint-markdown`, `blueprint-utils-humanize`
 - **Agents + missions**: `agent-executor`, `mission-runner`, `mission-router`, `ship-log`, `tool-registry`, `virtual-fs`, `prompt-builder`
 - **Models + billing**: `llm-config`, `stacks`, `stripe-config`, `subscription`, `token-config`
 - **Views**: `home-view`, `missions-view`
