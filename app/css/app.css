@@ -2317,6 +2317,31 @@
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm);
   cursor:pointer; border-radius:var(--radius); transition:color .2s, border-color .2s;
 }
+
+/* Voice sample section (Profile) — feeds WorkflowEngine persona_dispatch */
+.voice-sample-sub {
+  font-size:var(--text-sm); color:var(--text-muted);
+  line-height:var(--lh-base); margin:0;
+}
+.voice-sample-input {
+  width:100%; min-height:140px; padding:12px 14px;
+  font-family:var(--font-b); font-size:var(--text-sm);
+  line-height:var(--lh-base); color:var(--text);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); resize:vertical;
+}
+.voice-sample-input:focus { outline:none; border-color:var(--border-hi); }
+.voice-sample-actions {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap;
+}
+.voice-sample-status {
+  font-size:var(--text-sm); color:var(--text-muted);
+  flex:1 1 auto; min-width:0;
+}
+.voice-sample-status-ok  { color:#22c55e; }
+.voice-sample-status-err { color:#f87171; }
+.voice-sample-save { color:var(--text); }
 .profile-action-btn:hover { color:var(--color-error); border-color:var(--color-error); }
 
 /* ─────────────────────────────────────────────────────────────────
