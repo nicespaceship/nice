@@ -746,6 +746,8 @@ const MissionDetailView = (() => {
             </div>
           </div>
 
+          ${_renderDagPanel(mission, id)}
+
           ${mission.result ? `
             <div class="detail-section">
               <h3 class="detail-section-title">Result</h3>
@@ -893,6 +895,46 @@ const MissionDetailView = (() => {
       _loadMission(el, id);
     });
 
+    // DAG gate inline Approve/Reject — proxies to the top-level buttons
+    // so all approval side-effects (XP, AgentMemory, realtime re-render)
+    // stay in one place. If the top bar isn't rendered (shouldn't happen
+    // at status='review' but guarded anyway), fall back to a direct DB
+    // write matching the md-approve/md-reject contract.
+    el.querySelectorAll('.dag-gate-approve').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const top = document.getElementById('md-approve');
+        if (top) { top.click(); return; }
+      });
+    });
+    el.querySelectorAll('.dag-gate-reject').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const top = document.getElementById('md-reject');
+        if (top) { top.click(); return; }
+      });
+    });
+
+    // "Show full output" toggle on each DAG node card.
+    el.querySelectorAll('.dag-node-output-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.dag-node');
+        const body = card?.querySelector('.dag-node-output-body');
+        if (!body) return;
+        const expanded = body.getAttribute('data-expanded') === 'true';
+        const nodeId = card.getAttribute('data-node-id');
+        const raw = (mission.node_results || {})[nodeId];
+        const full = raw == null ? '' : (typeof raw === 'string' ? raw : JSON.stringify(raw, null, 2));
+        if (expanded) {
+          body.textContent = full.length > 280 ? full.slice(0, 280) + '…' : full;
+          body.setAttribute('data-expanded', 'false');
+          btn.textContent = 'Show full output';
+        } else {
+          body.textContent = full;
+          body.setAttribute('data-expanded', 'true');
+          btn.textContent = 'Hide';
+        }
+      });
+    });
+
     // Content actions (approve/edit/reject/copy)
     el.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -953,6 +995,126 @@ const MissionDetailView = (() => {
     const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6',
                      Analytics:'#f59e0b', Engineering:'#06b6d4', Sales:'#22c55e', Support:'#a855f7', Legal:'#64748b', Communications:'#3b82f6' };
     return colors[role] || 'var(--accent)';
+  }
+
+  /* ── Sprint 4 — DAG inspector ───────────────────────────────────────
+     Read-only rendering of a mission's workflow plan alongside the
+     per-node outputs captured in tasks.node_results. Appears only for
+     multi-node DAGs (plan_snapshot.nodes.length > 1 or shape='dag').
+     Status is derived — plan_snapshot is the frozen blueprint;
+     node_results is the actual execution record; the mission's top-level
+     status pins the gate semantics (status='review' ⇒ gate is firing).
+  ─────────────────────────────────────────────────────────────────── */
+
+  function _isDagPlan(plan) {
+    if (!plan || typeof plan !== 'object') return false;
+    if (plan.shape === 'dag') return true;
+    const nodes = Array.isArray(plan.nodes) ? plan.nodes : [];
+    if (nodes.length > 1) return true;
+    return nodes.some(n => n && (n.type === 'approval_gate' || n.type === 'persona_dispatch'));
+  }
+
+  function _nodeStatus(node, nodeResults, missionStatus) {
+    if (!node) return 'pending';
+    const key = node.id;
+    const hasResult = nodeResults && Object.prototype.hasOwnProperty.call(nodeResults, key);
+    if (!hasResult) return 'pending';
+    const value = nodeResults[key];
+    const str = typeof value === 'string' ? value : (value == null ? '' : JSON.stringify(value));
+    if (str.startsWith('Error:')) return 'failed';
+    if (node.type === 'approval_gate' && missionStatus === 'review') return 'gated';
+    return 'completed';
+  }
+
+  function _statusPill(status) {
+    const labels = {
+      pending:   { label: 'Pending',   cls: 'dag-status-pending' },
+      running:   { label: 'Running',   cls: 'dag-status-running' },
+      completed: { label: 'Completed', cls: 'dag-status-completed' },
+      failed:    { label: 'Failed',    cls: 'dag-status-failed' },
+      gated:     { label: 'Awaiting review', cls: 'dag-status-gated' },
+    };
+    const { label, cls } = labels[status] || labels.pending;
+    return `<span class="dag-status-pill ${cls}">${label}</span>`;
+  }
+
+  function _nodeTypeBadge(type) {
+    if (!type || type === 'agent') return '';
+    const pretty = String(type).replace(/_/g, ' ');
+    return `<span class="dag-node-type-badge" data-node-type="${_esc(type)}">${_esc(pretty)}</span>`;
+  }
+
+  function _renderDagPanel(mission, missionId) {
+    const plan = mission.plan_snapshot;
+    if (!_isDagPlan(plan)) return '';
+
+    const nodes = Array.isArray(plan.nodes) ? plan.nodes : [];
+    const nodeResults = mission.node_results || {};
+    const missionStatus = mission.status;
+
+    const cards = nodes.map((node, i) =>
+      _renderDagNodeCard(node, i, nodeResults, missionStatus, missionId, mission)
+    ).join('');
+
+    return `
+      <div class="detail-section">
+        <h3 class="detail-section-title">Workflow</h3>
+        <div class="mission-dag-list" data-mission-id="${_esc(missionId)}">
+          ${cards}
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderDagNodeCard(node, index, nodeResults, missionStatus, missionId, mission) {
+    const label = node.label || node.config?.prompt || node.config?.label || node.id || `Step ${index + 1}`;
+    const status = _nodeStatus(node, nodeResults, missionStatus);
+    const rawOutput = nodeResults?.[node.id];
+    const hasOutput = rawOutput != null && rawOutput !== '';
+    const outputStr = hasOutput ? (typeof rawOutput === 'string' ? rawOutput : JSON.stringify(rawOutput, null, 2)) : '';
+    const outputTrimmed = outputStr.length > 280 ? outputStr.slice(0, 280) + '…' : outputStr;
+    const outputIsLong = outputStr.length > 280;
+
+    // Gate inline actions — only when this specific node is currently
+    // pausing the mission. Match on node type AND mission status so
+    // stale gates from completed/rejected missions don't re-surface.
+    const gateIsLive = node.type === 'approval_gate'
+      && missionStatus === 'review'
+      && (!mission.approval_status || mission.approval_status === 'draft');
+
+    const gateActions = gateIsLive
+      ? `<div class="dag-gate-actions">
+           <button class="btn btn-sm btn-primary dag-gate-approve" data-id="${_esc(missionId)}" style="background:#22c55e;border-color:#22c55e">✓ ${_esc(node.config?.approveLabel || 'Approve')}</button>
+           <button class="btn btn-sm dag-gate-reject" data-id="${_esc(missionId)}" style="color:#f87171">✕ ${_esc(node.config?.rejectLabel || 'Reject')}</button>
+         </div>`
+      : '';
+
+    return `
+      <div class="dag-node" data-node-id="${_esc(node.id)}" data-node-status="${status}" data-node-type="${_esc(node.type || 'agent')}">
+        <div class="dag-node-head">
+          <span class="dag-node-index">${index + 1}</span>
+          <div class="dag-node-heading">
+            <div class="dag-node-title">${_esc(label)}</div>
+            <div class="dag-node-meta">
+              ${_nodeTypeBadge(node.type)}
+              ${_statusPill(status)}
+            </div>
+          </div>
+        </div>
+        ${hasOutput ? `
+          <div class="dag-node-output">
+            <pre class="dag-node-output-body" data-expanded="false">${_esc(outputTrimmed)}</pre>
+            ${outputIsLong ? `
+              <button type="button" class="dag-node-output-toggle" data-full-output>Show full output</button>
+            ` : ''}
+          </div>
+        ` : ''}
+        ${node.type === 'approval_gate' && node.config?.reason ? `
+          <div class="dag-node-gate-reason">${_esc(node.config.reason)}</div>
+        ` : ''}
+        ${gateActions}
+      </div>
+    `;
   }
 
   function _inferRole(name) {
@@ -1056,7 +1218,15 @@ const MissionDetailView = (() => {
     if (_detailChannel) { SB.realtime.unsubscribe(_detailChannel); _detailChannel = null; }
   }
 
-  return { get title() { return `${_N()} Detail`; }, render, destroy };
+  return {
+    get title() { return `${_N()} Detail`; },
+    render,
+    destroy,
+    // Exposed for unit tests only — DAG inspector pure functions.
+    _isDagPlan,
+    _nodeStatus,
+    _renderDagPanel,
+  };
 })();
 
 /* ── Shared Mission Report View ── */
