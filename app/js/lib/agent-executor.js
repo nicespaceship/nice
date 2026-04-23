@@ -55,12 +55,21 @@ const AgentExecutor = (() => {
       return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
     }
 
-    // Build tool descriptions for system prompt
-    const toolDescriptions = availableTools.map(t =>
-      t.name + ' (id: ' + t.id + '): ' + t.description +
-      (t.schema && t.schema.properties ? '\n  Input: ' + JSON.stringify(t.schema.properties) : '')
-    ).join('\n\n');
+    // Build provider-agnostic tools schema for nice-ai. LLM sees the bare
+    // tool name (the same one ToolRegistry auto-aliases), not the mcp:prefix.
+    const toolsSchema = availableTools.map(t => ({
+      name: t.name,
+      description: t.description || '',
+      parameters: _normalizeSchema(t.schema),
+    }));
 
+    // Legacy ReAct suffix still included for providers that haven't wired
+    // native tool-use yet. On modern Claude / Gemini / OpenAI it's dead code
+    // on the happy path — the API pins stop_reason='tool_use' and the model
+    // can't skip the call. Slated for removal once native tool-use is proven.
+    const toolDescriptions = availableTools.map(t =>
+      t.name + ': ' + (t.description || '')
+    ).join('\n');
     const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
 
     // Inject agent memory context into conversation if available
@@ -71,86 +80,118 @@ const AgentExecutor = (() => {
 
     const steps = [];
     let conversationMessages = [];
-    if (memoryContext) {
-      conversationMessages.push({ role: 'user', content: memoryContext + '\n\n---\n\n' + prompt });
-    } else {
-      conversationMessages.push({ role: 'user', content: prompt });
-    }
+    const initialText = memoryContext ? memoryContext + '\n\n---\n\n' + prompt : prompt;
+    conversationMessages.push({ role: 'user', content: initialText });
     let totalTokens = 0;
+    let stepIdx = 0;
 
-    for (let i = 0; i < maxSteps; i++) {
-      // Call LLM with ReAct instructions
+    while (stepIdx < maxSteps) {
       let llmResponse;
       try {
-        llmResponse = await _callLLM(agentBlueprint, systemPrompt, conversationMessages, spaceshipId);
+        llmResponse = await _callLLM(agentBlueprint, systemPrompt, conversationMessages, spaceshipId, toolsSchema);
       } catch (err) {
         console.warn('[AgentExecutor] LLM call failed, falling back to single-shot:', err.message);
         return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
       }
 
       totalTokens += llmResponse.tokensUsed || 0;
-      // Normalize content: Gemini returns [{type:"text",text:"..."}], Anthropic returns string
-      let text = llmResponse.content || '';
-      if (Array.isArray(text)) text = text.map(c => c.text || c).join('');
-      if (typeof text !== 'string') text = String(text);
 
-      // Parse the response for ReAct structure
-      const parsed = _parseReActResponse(text);
+      // Canonical content is an array of {type:"text"|"tool_use"} blocks.
+      // Fall back to string shape for providers that return plain text.
+      const contentParts = _normalizeContentParts(llmResponse.content);
+      const toolUseBlocks = contentParts.filter(p => p.type === 'tool_use');
+      const textBlocks = contentParts.filter(p => p.type === 'text');
+      const combinedText = textBlocks.map(p => p.text || '').join('\n').trim();
 
-      if (parsed.finalAnswer) {
-        // Agent has reached a final answer
-        const step = {
-          index:       i + 1,
-          thought:     parsed.thought || '',
-          action:      null,
-          actionInput: null,
-          observation: null,
-          finalAnswer: parsed.finalAnswer,
-        };
-        steps.push(step);
-        if (onStep) onStep(step);
-
-        return {
-          steps,
-          finalAnswer: parsed.finalAnswer,
-          metadata: {
-            totalTokens,
-            duration: Date.now() - startMs,
-            stepsUsed: i + 1,
-            maxSteps,
-            toolsAvailable: toolIds,
-          },
-        };
-      }
-
-      if (parsed.action) {
-        // Check approval mode — side-effect tools require user confirmation
-        if (opts.approvalMode === 'review' && _isSideEffectTool(parsed.action)) {
-          const pendingAction = {
-            tool: parsed.action,
-            input: parsed.actionInput,
-            thought: parsed.thought,
-            stepIndex: i + 1,
-          };
-          // Signal the caller that approval is needed
-          if (typeof opts.onApprovalNeeded === 'function') {
-            const approved = await opts.onApprovalNeeded(pendingAction);
-            if (!approved) {
-              const step = {
-                index: i + 1, thought: parsed.thought, action: parsed.action,
-                actionInput: parsed.actionInput, observation: 'Action blocked — user declined approval.',
-                finalAnswer: null,
-              };
-              steps.push(step);
-              if (onStep) onStep(step);
-              conversationMessages.push({ role: 'assistant', content: text });
-              conversationMessages.push({ role: 'user', content: 'Observation: Action was declined by the user. Try a different approach or provide a Final Answer.' });
-              continue;
-            }
+      // ── Native tool-use path ─────────────────────────────────────────
+      if (toolUseBlocks.length > 0 && llmResponse.stopReason === 'tool_use') {
+        // Approval gate: side-effect tools in review mode require per-call OK
+        const declined = new Set();
+        if (opts.approvalMode === 'review' && typeof opts.onApprovalNeeded === 'function') {
+          for (const block of toolUseBlocks) {
+            if (!_isSideEffectTool(block.name)) continue;
+            const approved = await opts.onApprovalNeeded({
+              tool: block.name,
+              input: block.input,
+              thought: combinedText,
+              stepIndex: stepIdx + 1,
+            });
+            if (!approved) declined.add(block.id);
           }
         }
 
-        // Execute the tool
+        const toolResultParts = [];
+        for (const block of toolUseBlocks) {
+          let observation;
+          let isError = false;
+          if (declined.has(block.id)) {
+            observation = 'Action blocked — user declined approval.';
+            isError = true;
+          } else {
+            try {
+              const result = await ToolRegistry.execute(block.name, block.input || {});
+              observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+            } catch (err) {
+              observation = 'Error: ' + (err.message || 'Tool execution failed');
+              isError = true;
+            }
+          }
+
+          toolResultParts.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            name: block.name,   // Gemini needs the function name on the echo
+            content: observation,
+            ...(isError ? { is_error: true } : {}),
+          });
+
+          stepIdx++;
+          const step = {
+            index: stepIdx,
+            thought: combinedText,
+            action: block.name,
+            actionInput: block.input || {},
+            observation,
+            finalAnswer: null,
+          };
+          steps.push(step);
+          if (onStep) onStep(step);
+
+          if (stepIdx >= maxSteps) break;
+        }
+
+        // Echo assistant turn + tool_result turn for the next iteration
+        conversationMessages.push({ role: 'assistant', content: contentParts });
+        conversationMessages.push({ role: 'user', content: toolResultParts });
+        continue;
+      }
+
+      // ── No native tool_use — plain text response ─────────────────────
+      // Model either gave a final answer or (on providers without native
+      // tool-use) responded in legacy ReAct text format. Parse once, act.
+      const parsed = _parseReActResponse(combinedText || '');
+
+      if (parsed.action && !parsed.finalAnswer) {
+        if (opts.approvalMode === 'review' && _isSideEffectTool(parsed.action) && typeof opts.onApprovalNeeded === 'function') {
+          const approved = await opts.onApprovalNeeded({
+            tool: parsed.action, input: parsed.actionInput,
+            thought: parsed.thought, stepIndex: stepIdx + 1,
+          });
+          if (!approved) {
+            stepIdx++;
+            const step = {
+              index: stepIdx, thought: parsed.thought, action: parsed.action,
+              actionInput: parsed.actionInput, observation: 'Action blocked — user declined approval.',
+              finalAnswer: null,
+            };
+            steps.push(step);
+            if (onStep) onStep(step);
+            conversationMessages.push({ role: 'assistant', content: combinedText });
+            conversationMessages.push({ role: 'user', content: 'Observation: Action was declined by the user. Try a different approach or provide a Final Answer.' });
+            continue;
+          }
+        }
+
         let observation;
         try {
           const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {});
@@ -158,49 +199,47 @@ const AgentExecutor = (() => {
         } catch (err) {
           observation = 'Error: ' + (err.message || 'Tool execution failed');
         }
-
+        stepIdx++;
         const step = {
-          index:       i + 1,
-          thought:     parsed.thought || '',
-          action:      parsed.action,
+          index: stepIdx,
+          thought: parsed.thought || '',
+          action: parsed.action,
           actionInput: parsed.actionInput,
-          observation: observation,
+          observation,
           finalAnswer: null,
         };
         steps.push(step);
         if (onStep) onStep(step);
-
-        // Add the exchange to conversation for next iteration
-        conversationMessages.push({ role: 'assistant', content: text });
-        conversationMessages.push({
-          role: 'user',
-          content: 'Observation: ' + observation,
-        });
-      } else {
-        // Could not parse action or final answer — treat response as final answer
-        const step = {
-          index:       i + 1,
-          thought:     parsed.thought || text,
-          action:      null,
-          actionInput: null,
-          observation: null,
-          finalAnswer: text,
-        };
-        steps.push(step);
-        if (onStep) onStep(step);
-
-        return {
-          steps,
-          finalAnswer: text,
-          metadata: {
-            totalTokens,
-            duration: Date.now() - startMs,
-            stepsUsed: i + 1,
-            maxSteps,
-            toolsAvailable: toolIds,
-          },
-        };
+        conversationMessages.push({ role: 'assistant', content: combinedText });
+        conversationMessages.push({ role: 'user', content: 'Observation: ' + observation });
+        continue;
       }
+
+      // Final answer
+      const finalAnswer = parsed.finalAnswer || combinedText || '';
+      stepIdx++;
+      const step = {
+        index: stepIdx,
+        thought: parsed.thought || '',
+        action: null,
+        actionInput: null,
+        observation: null,
+        finalAnswer,
+      };
+      steps.push(step);
+      if (onStep) onStep(step);
+
+      return {
+        steps,
+        finalAnswer,
+        metadata: {
+          totalTokens,
+          duration: Date.now() - startMs,
+          stepsUsed: stepIdx,
+          maxSteps,
+          toolsAvailable: toolIds,
+        },
+      };
     }
 
     // Max steps reached — return last observation or a notice
@@ -221,6 +260,38 @@ const AgentExecutor = (() => {
         maxStepsReached: true,
       },
     };
+  }
+
+  /* ── Normalize LLM response content to canonical parts array ──
+     nice-ai returns either a string (legacy) or an array of
+     {type:"text",text} / {type:"tool_use",id,name,input} blocks. */
+  function _normalizeContentParts(content) {
+    if (!content) return [];
+    if (typeof content === 'string') {
+      return content.trim() ? [{ type: 'text', text: content }] : [];
+    }
+    if (!Array.isArray(content)) return [];
+    const out = [];
+    for (const p of content) {
+      if (!p) continue;
+      if (typeof p === 'string') {
+        if (p.trim()) out.push({ type: 'text', text: p });
+      } else if (p.type === 'text' && typeof p.text === 'string') {
+        out.push({ type: 'text', text: p.text });
+      } else if (p.type === 'tool_use' && p.id && p.name) {
+        out.push({ type: 'tool_use', id: p.id, name: p.name, input: p.input || {} });
+      }
+    }
+    return out;
+  }
+
+  /* ── Coerce tool.schema to a JSONSchema object for the tools param ── */
+  function _normalizeSchema(schema) {
+    if (!schema || typeof schema !== 'object') {
+      return { type: 'object', properties: {} };
+    }
+    if (schema.type === 'object') return schema;
+    return { type: 'object', properties: { input: schema } };
   }
 
   /* ── Build system prompt with ReAct instructions and tool list ── */
@@ -336,8 +407,13 @@ const AgentExecutor = (() => {
     return null;
   }
 
-  /* ── Call LLM via ShipLog's edge function ── */
-  async function _callLLM(blueprint, systemPrompt, messages, spaceshipId) {
+  /* ── Call LLM via nice-ai edge function ──
+     Passes `tools` when the executor has a tools schema so nice-ai can
+     translate to each provider's native tool-use API (Anthropic tool_use,
+     Gemini function_declarations, OpenAI tools). Returns the raw content
+     (string or canonical parts array) + stop_reason for the executor to
+     decide whether to loop. */
+  async function _callLLM(blueprint, systemPrompt, messages, spaceshipId, toolsSchema) {
     if (typeof SB === 'undefined' || !SB.functions) {
       throw new Error('SB.functions not available');
     }
@@ -348,14 +424,16 @@ const AgentExecutor = (() => {
     }
 
     const apiMessages = [{ role: 'system', content: systemPrompt }, ...messages];
-    const { data, error } = await SB.functions.invoke('nice-ai', {
-      body: {
-        model:       llmConfig.model || 'gemini-2.5-flash',
-        messages:    apiMessages,
-        temperature: llmConfig.temperature || 0.3,
-        max_tokens:  llmConfig.max_tokens || 2048,
-      },
-    });
+    const requestBody = {
+      model:       llmConfig.model || 'gemini-2.5-flash',
+      messages:    apiMessages,
+      temperature: llmConfig.temperature || 0.3,
+      max_tokens:  llmConfig.max_tokens || 2048,
+    };
+    if (Array.isArray(toolsSchema) && toolsSchema.length > 0) {
+      requestBody.tools = toolsSchema;
+    }
+    const { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
 
     if (error) {
       let body = null;
@@ -369,19 +447,16 @@ const AgentExecutor = (() => {
     }
     if (!data || data.error) throw new Error(data?.error || 'Empty response');
 
-    // Normalize content: Gemini returns [{type:"text",text:"..."}]
-    let content = data.content || '';
-    if (Array.isArray(content)) content = content.map(c => c.text || c).join('');
-    if (typeof content !== 'string') content = String(content);
-
+    const rawContent = data.content ?? '';
     const tokensUsed = data.usage
-      ? (data.usage.input_tokens + data.usage.output_tokens)
-      : Math.floor(content.length / 4);
+      ? ((data.usage.input_tokens || 0) + (data.usage.output_tokens || 0))
+      : Math.floor(JSON.stringify(rawContent).length / 4);
 
     return {
-      content,
+      content:    rawContent,
+      stopReason: data.stop_reason || 'end_turn',
       model:      data.model || llmConfig.model,
-      tokensUsed: tokensUsed,
+      tokensUsed,
     };
   }
 
