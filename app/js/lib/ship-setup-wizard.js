@@ -463,7 +463,10 @@ const ShipSetupWizard = (() => {
     // different ids for the same ship. Use the catalog id directly so every
     // storage layer shares one canonical id.
     if (statusEl) statusEl.textContent = 'Assigning agents to stations...';
-    const shipStateId = _blueprint.id;
+    // `let`, not const — the DB persist block below swaps this to the
+    // user_spaceships UUID on success so downstream saveShipState /
+    // State.spaceships writes share one canonical id with the DB row.
+    let shipStateId = _blueprint.id;
     const agentIds = Object.values(_data.slotAssignments).filter(Boolean);
     if (typeof Blueprints !== 'undefined') {
       Blueprints.saveShipState(shipStateId, {
@@ -613,11 +616,13 @@ const ShipSetupWizard = (() => {
           // Swap shipStateId to the DB UUID so every downstream layer
           // (_shipState, _activatedShipIds, State.spaceships) shares one
           // canonical id that matches what _loadUserCreations will resurrect
-          // on the next sign-in.
+          // on the next sign-in. handoffShipId atomically evicts the stale
+          // catalog-id entries from all three layers.
           if (typeof Blueprints !== 'undefined') {
-            const prevState = Blueprints.getShipState && Blueprints.getShipState(shipStateId);
-            if (prevState) Blueprints.saveShipState(created.id, prevState);
             Blueprints.activateShip(created.id, { force: true });
+            if (typeof Blueprints.handoffShipId === 'function') {
+              Blueprints.handoffShipId(shipStateId, created.id);
+            }
           }
           shipStateId = created.id;
         }

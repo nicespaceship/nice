@@ -104,7 +104,12 @@ const AgentExecutor = (() => {
       const combinedText = textBlocks.map(p => p.text || '').join('\n').trim();
 
       // ── Native tool-use path ─────────────────────────────────────────
-      if (toolUseBlocks.length > 0 && llmResponse.stopReason === 'tool_use') {
+      // Trust the content shape over `stop_reason`: if the provider emitted
+      // structured tool_use blocks, execute them even if the edge function
+      // mislabels the stop reason. nice-ai v58 sets stop_reason='tool_use'
+      // for all three provider families, but relying on the block presence
+      // is the robust invariant.
+      if (toolUseBlocks.length > 0) {
         // Approval gate: side-effect tools in review mode require per-call OK
         const declined = new Set();
         if (opts.approvalMode === 'review' && typeof opts.onApprovalNeeded === 'function') {
@@ -160,8 +165,18 @@ const AgentExecutor = (() => {
           if (stepIdx >= maxSteps) break;
         }
 
-        // Echo assistant turn + tool_result turn for the next iteration
+        // Echo assistant turn + tool_result turn for the next iteration.
+        // If EVERY tool call in this turn was declined, append an explicit
+        // nudge so the model knows to change approach instead of re-emitting
+        // the same rejected tool calls and burning through maxSteps.
         conversationMessages.push({ role: 'assistant', content: contentParts });
+        const allDeclined = toolUseBlocks.length > 0 && toolUseBlocks.every(b => declined.has(b.id));
+        if (allDeclined) {
+          toolResultParts.push({
+            type: 'text',
+            text: 'The user declined every tool call above. Do not retry the same tools — try a different approach or stop and produce a Final Answer explaining what could not be done.',
+          });
+        }
         conversationMessages.push({ role: 'user', content: toolResultParts });
         continue;
       }

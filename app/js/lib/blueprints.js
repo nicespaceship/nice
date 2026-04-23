@@ -1572,6 +1572,43 @@ const Blueprints = (() => {
   }
 
   /** Remove an agent from all ships except `exceptShipId`, then persist */
+  /** Atomically reassign a ship from `oldId` to `newId` across every
+   *  local layer. Used by ShipSetupWizard when a successful
+   *  user_spaceships insert returns a DB UUID that should supersede the
+   *  catalog id the wizard was already using. Without this, the old id
+   *  stays in `_activatedShipIds`, `_shipState`, and `State.spaceships`
+   *  — a ghost ship that re-hydrates on every page load.
+   *
+   *  Does NOT touch agents, the DB, or anything downstream of state. The
+   *  caller has already persisted whatever it needed to under `newId`. */
+  function handoffShipId(oldId, newId) {
+    if (!oldId || !newId || oldId === newId) return false;
+    let changed = false;
+
+    // _activatedShipIds — evict oldId (newId is the caller's responsibility)
+    const before = _activatedShipIds.length;
+    _activatedShipIds = _activatedShipIds.filter(id => id !== oldId);
+    if (_activatedShipIds.length !== before) { _persistShips(); changed = true; }
+
+    // _shipState — move entry if oldId present and newId empty
+    if (_shipState[oldId]) {
+      if (!_shipState[newId]) _shipState[newId] = _shipState[oldId];
+      delete _shipState[oldId];
+      _persistShipState();
+      changed = true;
+    }
+
+    // State.spaceships — drop any stale entry under oldId
+    if (typeof State !== 'undefined') {
+      const ships = State.get('spaceships') || [];
+      const filtered = ships.filter(s => s && s.id !== oldId);
+      if (filtered.length !== ships.length) { State.set('spaceships', filtered); changed = true; }
+    }
+
+    if (changed) _fireShipState();
+    return changed;
+  }
+
   function reassignAgentToShip(agentId, targetShipId) {
     let changed = false;
     for (const shipId of Object.keys(_shipState)) {
@@ -2265,7 +2302,7 @@ const Blueprints = (() => {
     getActivatedShipIds, getActivatedShips,
 
     // Ship state persistence
-    getShipState, saveShipState, reassignAgentToShip,
+    getShipState, saveShipState, reassignAgentToShip, handoffShipId,
 
     // Agent UUID mapping (local ID ↔ Supabase UUID)
     setAgentUuid, getAgentUuid,

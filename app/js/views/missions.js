@@ -679,11 +679,18 @@ const MissionDetailView = (() => {
         else duration = Math.round(diffMs / 3600000) + 'h ' + Math.round((diffMs % 3600000) / 60000) + 'm';
       }
 
-      // Load ship log entries for this mission
+      // Load ship log entries for this mission. Route through
+      // ShipLog.getEntries so the 'mission-<uuid>' synthetic id is
+      // translated to the ship_log.mission_id column (PR #246). Direct
+      // SB.db().list() on the raw synthetic id filters on spaceship_id
+      // which is UUID — an empty result for ship-less runs.
       let logEntries = [];
       try {
-        const shipId = 'mission-' + id;
-        logEntries = await SB.db('ship_log').list({ spaceshipId: shipId, orderBy: 'created_at', limit: 20 });
+        if (typeof ShipLog !== 'undefined' && typeof ShipLog.getEntries === 'function') {
+          logEntries = await ShipLog.getEntries('mission-' + id, 20);
+        } else {
+          logEntries = await SB.db('ship_log').list({ mission_id: id, orderBy: 'created_at', limit: 20 });
+        }
       } catch { /* ignore */ }
 
       el.innerHTML = `
