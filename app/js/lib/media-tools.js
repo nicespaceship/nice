@@ -91,6 +91,38 @@ const MediaTools = (() => {
       },
     });
 
+    /* ── Edit Image (Nano Banana) ── */
+    ToolRegistry.register({
+      id: 'edit-image',
+      name: 'Edit Image',
+      description: 'Edit or transform an existing image using Google Gemini 2.5 Flash Image (Nano Banana). Pass the URL of an image (e.g. from a previous generate-image call) and an edit instruction. Returns the edited image URL.',
+      schema: {
+        type: 'object',
+        properties: {
+          image_url: { type: 'string', description: 'Public URL of the source image (http(s) or data URL). Typically the stored_url from a prior generate-image result.' },
+          instruction: { type: 'string', description: 'What to change — e.g. "make the sky sunset orange", "remove the background", "add a subtle watercolor style".' },
+        },
+        required: ['image_url', 'instruction'],
+      },
+      execute: async (input) => {
+        try {
+          const result = await _callMediaAPI({
+            prompt: input.instruction,
+            input_image: input.image_url,
+            provider: 'nano-banana',
+          });
+
+          if (result.error) return `Error editing image: ${result.error}`;
+
+          _storeGeneratedImage(result);
+
+          return `Image edited successfully!\n\n![Edited Image](${result.stored_url || result.url})\n\nInstruction: ${input.instruction}\nProvider: ${result.provider} (${result.model})`;
+        } catch (err) {
+          return `Error: ${err.message || 'Image edit failed'}`;
+        }
+      },
+    });
+
     /* ── Generate Video ── */
     ToolRegistry.register({
       id: 'generate-video',
@@ -124,7 +156,7 @@ const MediaTools = (() => {
       },
     });
 
-    console.log('[MediaTools] Registered generate-image, generate-social-post, and generate-video tools');
+    console.log('[MediaTools] Registered generate-image, generate-social-post, edit-image, and generate-video tools');
   }
 
   /* ── API Call ── */
@@ -143,6 +175,7 @@ const MediaTools = (() => {
         provider: opts.provider,
         aspect_ratio: opts.aspect_ratio,
         duration: opts.duration,
+        input_image: opts.input_image,
         store: true,
       },
     });
