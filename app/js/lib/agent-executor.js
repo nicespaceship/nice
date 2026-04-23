@@ -294,7 +294,13 @@ const AgentExecutor = (() => {
     return { type: 'object', properties: { input: schema } };
   }
 
-  /* ── Build system prompt with ReAct instructions and tool list ── */
+  /* ── Build system prompt ──
+     Native tool-use (Anthropic tool_use blocks / Gemini functionCall /
+     OpenAI tool_calls) is the happy path: the provider API forces the
+     call and we never see it as text. The ReAct text protocol below is
+     a narrow fallback for providers that don't support native tool-use
+     — verified on live 2026-04-23 that Claude 4.6 + Gemini 2.5 Flash
+     ignore it when tools are available via the native API. */
   function _buildSystemPrompt(blueprint, toolDescriptions) {
     var identity = typeof PromptBuilder !== 'undefined'
       ? PromptBuilder.build(blueprint)
@@ -304,15 +310,11 @@ const AgentExecutor = (() => {
 
     return identity + '\n\n' +
       'You have access to the following tools:\n\n' + toolDescriptions + '\n\n' +
-      'To use a tool, respond with EXACTLY this format:\n' +
-      'Thought: [your reasoning about what to do next]\n' +
-      'Action: [tool id]\n' +
-      'Action Input: [JSON object matching the tool schema]\n\n' +
-      'After receiving an Observation, continue reasoning.\n' +
-      'When you have enough information to answer, respond with:\n' +
-      'Thought: [final reasoning]\n' +
-      'Final Answer: [your complete answer to the user]\n\n' +
-      'Always start with a Thought. Use tools when needed. Be concise.';
+      'Call tools via the provider\u2019s native tool-use API. If your API ' +
+      'does not support tool-use, fall back to emitting:\n' +
+      '  Action: [tool name]\n' +
+      '  Action Input: [JSON input]\n' +
+      'followed by a Final Answer once you have enough information.';
   }
 
   /* ── Parse a ReAct-formatted response ── */
