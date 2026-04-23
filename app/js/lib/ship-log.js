@@ -9,12 +9,30 @@ const ShipLog = (() => {
   let _channel = null;
   let _listeners = [];
 
+  /* ── Route synthetic scope ids to the right ship_log column ──
+     MissionRunner passes `'mission-<uuid>'` as a scope id when a mission
+     has no spaceship. ship_log.spaceship_id is UUID, so those inserts fail
+     the type check and the entry drops into the local fallback only — the
+     DB reader then shows an empty Execution Log even for successful runs.
+     Detect the pattern and route to ship_log.mission_id (added in migration
+     20260423190000). Legitimate UUIDs still route to spaceship_id; anything
+     else (test ids like "ship-1", legacy non-UUID keys) falls straight to
+     the local fallback because SB.db().create will reject it at the DB. */
+  const _MISSION_ID_RE = /^mission-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+  function _resolveScope(scopeId) {
+    if (!scopeId || typeof scopeId !== 'string') return { spaceship_id: null, mission_id: null };
+    const m = _MISSION_ID_RE.exec(scopeId);
+    if (m) return { spaceship_id: null, mission_id: m[1] };
+    return { spaceship_id: scopeId, mission_id: null };
+  }
+
   /* ── Write an entry to the log ── */
   async function append(spaceshipId, { agentId, role, content, metadata }) {
     if (!spaceshipId || !content) return null;
 
+    const scope = _resolveScope(spaceshipId);
     const entry = {
-      spaceship_id: spaceshipId,
+      ...scope,
       agent_id:     agentId || null,
       role:         role || 'system',
       content:      content,
@@ -30,7 +48,8 @@ const ShipLog = (() => {
       }
     }
 
-    // Local fallback (session storage)
+    // Local fallback (session storage). Key off the raw scope id so reads
+    // by the same synthetic id hit the same bucket whether DB is on or off.
     entry.id = crypto.randomUUID ? crypto.randomUUID() : 'local-' + Date.now();
     entry.created_at = new Date().toISOString();
     const key = 'nice-ship-log-' + spaceshipId;
@@ -49,12 +68,11 @@ const ShipLog = (() => {
 
     if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
-        return await SB.db('ship_log').list({
-          spaceship_id: spaceshipId,
-          orderBy: 'created_at',
-          asc: true,
-          limit: limit,
-        });
+        const scope = _resolveScope(spaceshipId);
+        const filters = { orderBy: 'created_at', asc: true, limit };
+        if (scope.mission_id)   filters.mission_id   = scope.mission_id;
+        if (scope.spaceship_id) filters.spaceship_id = scope.spaceship_id;
+        return await SB.db('ship_log').list(filters);
       } catch (err) {
         console.warn('[ShipLog] DB read failed, using local fallback:', err.message);
       }
