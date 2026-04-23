@@ -784,7 +784,7 @@ const MissionDetailView = (() => {
                 <button class="btn outbox-edit-btn" data-action="edit" data-mid="${_esc(mission.id)}">✎ Edit</button>
                 ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-reject-btn" data-action="reject" data-mid="${_esc(mission.id)}">✕ Reject</button>` : ''}
                 <button class="btn outbox-copy-btn" data-action="copy" data-mid="${_esc(mission.id)}">\u{1F4CB} Copy</button>
-                ${_isInboxMission(mission, agent) ? `<a class="btn" href="https://mail.google.com/mail/u/0/#drafts" target="_blank" rel="noopener noreferrer" style="margin-left:auto">\u2709\uFE0F Open Gmail Drafts</a>` : ''}
+                ${_isInboxMission(mission, agent) ? `<a class="btn" href="${_gmailDraftsUrl()}" target="_blank" rel="noopener noreferrer" style="margin-left:auto">\u2709\uFE0F Open Gmail Drafts</a>` : ''}
               </div>
             </div>
           ` : ''}
@@ -1052,6 +1052,19 @@ const MissionDetailView = (() => {
       if (!drafted.length && !skipped.length && !scanned) return null;
       return { scanned, drafted, skipped };
     } catch { return null; }
+  }
+
+  /* Gmail drafts URL targets the user's signed-in account when we can
+     identify it. `authuser=<email>` wins over `/u/<index>` because the
+     index depends on which order Chrome loaded the user's Google
+     accounts — unstable across sessions. Falls back to `/u/0` for
+     guest / unknown-email flows. */
+  function _gmailDraftsUrl() {
+    const email = (typeof State !== 'undefined' ? (State.get('user')?.email || '') : '') + '';
+    if (email && /@/.test(email)) {
+      return 'https://mail.google.com/mail/?authuser=' + encodeURIComponent(email) + '#drafts';
+    }
+    return 'https://mail.google.com/mail/u/0/#drafts';
   }
 
   function _renderInboxCaptainSummary(mission, agent) {
