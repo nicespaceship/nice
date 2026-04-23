@@ -1607,6 +1607,19 @@ const NICE = (() => {
         // models the moment they land on any view.
         if (typeof Subscription !== 'undefined' && Subscription.init) Subscription.init().catch(() => {});
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
+        // Hydrate mcp_connections from DB at boot, not lazily on the
+        // Integrations view. Previously State.mcp_connections was only
+        // populated when the user visited #/security?tab=integrations,
+        // so the Mission Composer's Gmail gate wrongly said "Needs:
+        // connect Gmail" until the user went through that view once
+        // per session. The list is cheap (one row per connected
+        // integration) and downstream code throughout the app reads
+        // from State.
+        if (typeof SB !== 'undefined' && SB.isReady() && typeof SB.db === 'function') {
+          SB.db('mcp_connections').list({ userId: user.id }).then(rows => {
+            if (Array.isArray(rows)) State.set('mcp_connections', rows);
+          }).catch(() => {});
+        }
         // Sync cross-device data
         if (typeof ModelIntel !== 'undefined' && ModelIntel.syncFromServer) ModelIntel.syncFromServer().catch(() => {});
         if (typeof MissionScheduler !== 'undefined' && MissionScheduler.syncFromServer) MissionScheduler.syncFromServer().catch(() => {});

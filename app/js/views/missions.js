@@ -629,6 +629,21 @@ const MissionDetailView = (() => {
   }
 
   async function _loadMission(el, id) {
+    // Clean up any prior realtime channel FIRST. Router calls destroy()
+    // on cross-view navigation but NOT on within-view re-navigation
+    // (going from one mission detail to another) — the route pattern
+    // matches the same view function. Without this guard, each mission
+    // visit leaks a subscription to the 'tasks-changes' channel, and
+    // Supabase's realtime client throws on the second attempt:
+    //   "cannot add postgres_changes callbacks for realtime:tasks-changes
+    //    after subscribe()"
+    // which breaks the fetch that follows. User-visible symptom:
+    // "Mission Not Found" on legitimate missions from the second visit
+    // onward in a session. Unsubscribe before doing anything else.
+    if (_detailChannel) {
+      try { SB.realtime.unsubscribe(_detailChannel); } catch { /* ignore */ }
+      _detailChannel = null;
+    }
     try {
       let mission;
       try {
