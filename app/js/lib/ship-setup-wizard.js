@@ -576,6 +576,59 @@ const ShipSetupWizard = (() => {
     }
     await _wait(300);
 
+    // Persist to user_spaceships for cross-device durability.
+    // Before this write the wizard only touched localStorage + State; a user
+    // who deployed on desktop then opened the app on mobile saw an empty
+    // fleet because _loadUserCreations found no row. Insert with the same
+    // shape deployFromCatalog uses so the loader reconciles cleanly.
+    const user = (typeof State !== 'undefined') ? State.get('user') : null;
+    if (user && typeof SB !== 'undefined' && typeof SB.isReady === 'function' && SB.isReady()) {
+      if (statusEl) statusEl.textContent = 'Saving to your fleet...';
+      try {
+        const dbShipRow = {
+          user_id:      user.id,
+          name:         _data.shipName || _blueprint.name,
+          blueprint_id: _blueprint.id,
+          rarity:       _blueprint.rarity || 'Common',
+          category:     _blueprint.category || '',
+          status:       'deployed',
+          slots: {
+            crew:             _blueprint.crew || (_blueprint.metadata && _blueprint.metadata.crew) || [],
+            slot_assignments: _data.slotAssignments,
+            class_id:         _data.classId,
+            caps:             _blueprint.caps || (_blueprint.metadata && _blueprint.metadata.caps) || [],
+            description:      _blueprint.description || '',
+            flavor:           _blueprint.flavor || '',
+            tags:             _blueprint.tags || [],
+            stats:            _blueprint.stats || {},
+          },
+          config: {
+            slot_assignments: _data.slotAssignments,
+            agent_ids:        resolvedAgentIds,
+            class_id:         _data.classId,
+          },
+        };
+        const created = await SB.db('user_spaceships').create(dbShipRow);
+        if (created && created.id && created.id !== shipStateId) {
+          // Swap shipStateId to the DB UUID so every downstream layer
+          // (_shipState, _activatedShipIds, State.spaceships) shares one
+          // canonical id that matches what _loadUserCreations will resurrect
+          // on the next sign-in.
+          if (typeof Blueprints !== 'undefined') {
+            const prevState = Blueprints.getShipState && Blueprints.getShipState(shipStateId);
+            if (prevState) Blueprints.saveShipState(created.id, prevState);
+            Blueprints.activateShip(created.id, { force: true });
+          }
+          shipStateId = created.id;
+        }
+      } catch (e) {
+        // Fall through with the local-only id. Wizard still completes on
+        // this device; cross-device sync just won't work until the next
+        // successful write (e.g. slot edit through SpaceshipDetailView).
+        console.warn('[ShipSetupWizard] user_spaceships persist failed, local-only deployment:', e && e.message);
+      }
+    }
+
     // Re-save with resolved agent IDs
     if (resolvedAgentIds.length && typeof Blueprints !== 'undefined') {
       Blueprints.saveShipState(shipStateId, {
