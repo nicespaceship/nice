@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('AgentExecutor', () => {
   describe('core API', () => {
@@ -125,6 +125,73 @@ describe('AgentExecutor', () => {
       expect(AgentExecutor._isSideEffectTool(42)).toBe(false);
       expect(AgentExecutor.classifyTool('')).toBe('read');
     });
+  });
+});
+
+describe('AgentExecutor — _logToShipLog', () => {
+  // Persistence is observability — DB write failures must never break a
+  // mission run. The helper has to be no-op safe (missing ShipLog,
+  // missing scope, async rejections) AND consistently shape the rows
+  // when conditions are right, so the Execution Log can replay traces.
+  const calls = [];
+  let _origShipLog;
+
+  beforeEach(() => {
+    calls.length = 0;
+    _origShipLog = globalThis.ShipLog;
+    globalThis.ShipLog = {
+      append: (spaceshipId, payload) => {
+        calls.push({ spaceshipId, ...payload });
+        return Promise.resolve({ id: 'sl-' + calls.length });
+      },
+    };
+  });
+
+  afterEach(() => {
+    globalThis.ShipLog = _origShipLog;
+  });
+
+  it('writes a row when ShipLog.append exists', () => {
+    AgentExecutor._logToShipLog('mission-abc', 'agent-1', 'agent', 'hello', { event: 'x' });
+    expect(calls.length).toBe(1);
+    expect(calls[0].spaceshipId).toBe('mission-abc');
+    expect(calls[0].agentId).toBe('agent-1');
+    expect(calls[0].role).toBe('agent');
+    expect(calls[0].content).toBe('hello');
+    expect(calls[0].metadata.event).toBe('x');
+  });
+
+  it('no-ops when spaceshipId is missing', () => {
+    AgentExecutor._logToShipLog(null, 'a', 'agent', 'hi', {});
+    AgentExecutor._logToShipLog('', 'a', 'agent', 'hi', {});
+    expect(calls.length).toBe(0);
+  });
+
+  it('no-ops when ShipLog.append is missing', () => {
+    globalThis.ShipLog = { execute: async () => ({}) };
+    expect(() => AgentExecutor._logToShipLog('mission-abc', null, 'system', 'x', {})).not.toThrow();
+  });
+
+  it('caps very large content to keep row size bounded', () => {
+    const big = 'x'.repeat(20000);
+    AgentExecutor._logToShipLog('mission-abc', null, 'system', big, {});
+    expect(calls[0].content.length).toBeLessThan(20000);
+    expect(calls[0].content.endsWith('… [truncated]')).toBe(true);
+  });
+
+  it('JSON-stringifies non-string content', () => {
+    AgentExecutor._logToShipLog('mission-abc', null, 'system', { foo: 1 }, {});
+    expect(calls[0].content).toBe('{"foo":1}');
+  });
+
+  it('swallows promise rejections from ShipLog.append', async () => {
+    globalThis.ShipLog = {
+      append: () => Promise.reject(new Error('db down')),
+    };
+    // Should not throw synchronously and the rejection must be caught.
+    expect(() => AgentExecutor._logToShipLog('mission-abc', null, 'system', 'x', {})).not.toThrow();
+    // Microtask drain — if .catch wasn't attached, vitest would see an unhandled rejection.
+    await Promise.resolve();
   });
 });
 
