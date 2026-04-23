@@ -3108,6 +3108,105 @@
 .btn-xs { padding:3px 10px; font-size:var(--text-xs); }
 .mission-result-content { background:var(--surface, var(--bg-alt)); border:1px solid var(--border); border-radius:var(--radius); padding:14px; max-height:600px; overflow:auto; }
 .mission-result-content pre { font-family:var(--font-b); font-size:var(--text-xs); color:var(--text); white-space:pre-wrap; word-break:break-word; margin:0; line-height:var(--lh-base); }
+
+/* ─────────────────────────────────────────────────────────────────
+   MISSION DAG INSPECTOR (Sprint 4)
+───────────────────────────────────────────────────────────────── */
+.mission-dag-list { display:flex; flex-direction:column; gap:0; }
+.dag-node {
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--panel-bg);
+  padding:12px 14px;
+  display:flex; flex-direction:column; gap:8px;
+}
+.dag-node + .dag-node { margin-top:28px; }
+/* Connector arrow between cards (not after the last one) */
+.dag-node:not(:last-child)::after {
+  content:'';
+  position:absolute;
+  left:22px; bottom:-24px;
+  width:2px; height:20px;
+  background:var(--border);
+}
+.dag-node:not(:last-child)::before {
+  content:'▼';
+  position:absolute;
+  left:14px; bottom:-22px;
+  font-size:12px; color:var(--text-muted);
+  line-height:1;
+}
+.dag-node-head { display:flex; gap:12px; align-items:flex-start; }
+.dag-node-index {
+  flex:none; width:28px; height:28px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--accent); color:var(--bg);
+  font-size:var(--text-xs); font-weight:var(--fw-bold);
+}
+.dag-node-heading { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+.dag-node-title {
+  font-size:var(--text-base); font-weight:var(--fw-medium);
+  color:var(--text); line-height:var(--lh-snug);
+}
+.dag-node-meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+.dag-node-type-badge {
+  display:inline-block; padding:2px 8px;
+  font-size:var(--text-xs); text-transform:uppercase; letter-spacing:var(--tracking-caps);
+  font-weight:var(--fw-bold);
+  border:1px solid var(--border); border-radius:999px; color:var(--text-muted);
+}
+.dag-node-type-badge[data-node-type="approval_gate"] { color:var(--accent); border-color:var(--accent); }
+.dag-node-type-badge[data-node-type="persona_dispatch"] { color:var(--accent2, var(--accent)); border-color:var(--accent2, var(--accent)); }
+
+.dag-status-pill {
+  display:inline-block; padding:2px 8px;
+  font-size:var(--text-xs); font-weight:var(--fw-medium);
+  border-radius:999px; border:1px solid transparent;
+  text-transform:uppercase; letter-spacing:var(--tracking-caps);
+}
+.dag-status-pending   { color:var(--text-muted); border-color:var(--border); background:var(--surface); }
+.dag-status-running   { color:var(--accent); border-color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, transparent); }
+.dag-status-completed { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,0.08); }
+.dag-status-failed    { color:#f87171; border-color:#f87171; background:rgba(239,68,68,0.08); }
+.dag-status-gated     { color:#eab308; border-color:#eab308; background:rgba(234,179,8,0.08); }
+
+.dag-node[data-node-status="running"]   { border-color:var(--accent); }
+.dag-node[data-node-status="failed"]    { border-color:#f87171; }
+.dag-node[data-node-status="gated"]     { border-color:#eab308; }
+
+.dag-node-output {
+  background:var(--surface, var(--bg-alt));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:10px 12px;
+}
+.dag-node-output-body {
+  font-family:var(--font-m); font-size:var(--text-xs);
+  color:var(--text); line-height:var(--lh-base);
+  white-space:pre-wrap; word-break:break-word; margin:0;
+}
+.dag-node-output-toggle {
+  margin-top:6px; font-size:var(--text-xs);
+  background:transparent; border:none; color:var(--accent);
+  cursor:pointer; padding:2px 0;
+}
+.dag-node-output-toggle:hover { text-decoration:underline; }
+
+.dag-node-gate-reason {
+  font-size:var(--text-sm); color:var(--text-muted);
+  font-style:italic; padding-left:40px;
+}
+.dag-gate-actions {
+  display:flex; gap:8px; padding-top:4px; padding-left:40px;
+}
+
+@media (max-width: 640px) {
+  .dag-node-gate-reason, .dag-gate-actions { padding-left:0; }
+  .dag-node:not(:last-child)::before { left:10px; }
+  .dag-node:not(:last-child)::after  { left:18px; }
+}
 /* Markdown result styling */
 .mission-md h2 { font-size:var(--text-md); font-weight:var(--fw-bold); color:var(--text); margin:16px 0 8px; border-bottom:1px solid var(--border); padding-bottom:4px; }
 .mission-md h3 { font-size:var(--text-base); font-weight:var(--fw-medium); color:var(--text); margin:12px 0 6px; }
