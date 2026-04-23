@@ -93,19 +93,114 @@ describe('WorkflowEngine — approval_gate', () => {
   });
 });
 
-describe('WorkflowEngine — persona_dispatch stub', () => {
-  it('executes as an agent node', async () => {
+describe('WorkflowEngine — persona_dispatch', () => {
+  beforeEach(() => {
+    // Fresh ShipLog stub that echoes the prompt back so we can assert
+    // voice injection.
+    globalThis.ShipLog = {
+      execute: async (shipId, agent, prompt) => ({ content: prompt }),
+    };
+    try { localStorage.removeItem('nice-voice-sample'); } catch {}
+  });
+
+  it('runs as a plain agent when no voice sample is set', async () => {
     const workflow = {
-      id: 'wf-p',
-      nodes: [
-        { id: 'n', type: 'persona_dispatch', config: { blueprintId: 'bp-agent-drafter', prompt: 'speak in voice', personaHint: 'user_voice' } },
-      ],
+      id: 'wf-p-empty',
+      nodes: [{ id: 'n', type: 'persona_dispatch', config: { blueprintId: 'bp-x', prompt: 'draft replies', personaHint: 'user_voice' } }],
       connections: [],
     };
     const res = await WorkflowEngine.execute(workflow, { skipSave: true });
     expect(res.status).toBe('completed');
-    // _executeAgent runs and returns a stubbed ShipLog result.
-    expect(String(res.nodeResults.get('n'))).toMatch(/ran:/);
+    expect(String(res.nodeResults.get('n'))).not.toMatch(/VOICE REFERENCE/);
+    expect(String(res.nodeResults.get('n'))).toMatch(/draft replies/);
+  });
+
+  it('prepends VOICE REFERENCE when user_voice and sample is set', async () => {
+    localStorage.setItem('nice-voice-sample', 'short and direct. lowercase sometimes. no corporate filler.');
+    const workflow = {
+      id: 'wf-p-voice',
+      nodes: [{ id: 'n', type: 'persona_dispatch', config: { prompt: 'draft replies', personaHint: 'user_voice' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    const out = String(res.nodeResults.get('n'));
+    expect(out).toMatch(/VOICE REFERENCE/);
+    expect(out).toMatch(/short and direct/);
+    expect(out).toMatch(/draft replies/);
+  });
+
+  it('_resolvePersonaContext handles theme_persona hint without crashing', () => {
+    const out = WorkflowEngine._resolvePersonaContext('theme_persona', {});
+    expect(out).toMatch(/theme_id=/);
+  });
+
+  it('_resolvePersonaContext treats long inline hints as PERSONA BRIEF', () => {
+    const hint = 'Write like the CEO — blunt, fewer than 30 words, no exclamation marks, and always close with a single concrete next step.';
+    const out = WorkflowEngine._resolvePersonaContext(hint, {});
+    expect(out).toMatch(/PERSONA BRIEF:/);
+    expect(out).toMatch(/Write like the CEO/);
+  });
+
+  it('_resolvePersonaContext returns empty when no hint is provided', () => {
+    expect(WorkflowEngine._resolvePersonaContext('', {})).toBe('');
+    expect(WorkflowEngine._resolvePersonaContext(null, {})).toBe('');
+  });
+
+  it('does not mutate the node config when injecting voice context', async () => {
+    localStorage.setItem('nice-voice-sample', 'quick and direct');
+    const node = { id: 'n', type: 'persona_dispatch', config: { prompt: 'draft', personaHint: 'user_voice' } };
+    await WorkflowEngine._executePersonaDispatch(node, '');
+    expect(node.config.prompt).toBe('draft');
+    expect(node.config.personaHint).toBe('user_voice');
+  });
+});
+
+describe('WorkflowEngine — notify', () => {
+  beforeEach(() => {
+    globalThis.Notify = { send: (opts) => { globalThis.__lastNotify = opts; } };
+    globalThis.__lastNotify = null;
+    globalThis.State.set('user', { id: 'u-1' });
+    globalThis.__createdNotifications = [];
+    globalThis.SB = {
+      isReady: () => true,
+      db: (table) => ({
+        create: async (row) => {
+          if (table === 'notifications') globalThis.__createdNotifications.push(row);
+          return Object.assign({ id: 'n-1' }, row);
+        },
+      }),
+    };
+  });
+
+  it('emits a Notify toast with the configured title + message', async () => {
+    const node = { id: 'n', type: 'notify', config: { title: 'Done', message: 'All good', kind: 'success' } };
+    const out = await WorkflowEngine._executeNotify(node, '');
+    expect(globalThis.__lastNotify.title).toBe('Done');
+    expect(globalThis.__lastNotify.message).toBe('All good');
+    expect(globalThis.__lastNotify.type).toBe('success');
+    expect(out).toMatch(/Notified/);
+  });
+
+  it('falls back to upstream input when message is omitted', async () => {
+    const node = { id: 'n', type: 'notify', config: { title: 'Handoff' } };
+    await WorkflowEngine._executeNotify(node, 'Triage complete — 12 threads.');
+    expect(globalThis.__lastNotify.message).toBe('Triage complete — 12 threads.');
+  });
+
+  it('persists to the notifications table when a user is signed in', async () => {
+    const node = { id: 'n', type: 'notify', config: { title: 'Ping' } };
+    await WorkflowEngine._executeNotify(node, 'hello');
+    expect(globalThis.__createdNotifications.length).toBe(1);
+    expect(globalThis.__createdNotifications[0].user_id).toBe('u-1');
+    expect(globalThis.__createdNotifications[0].title).toBe('Ping');
+  });
+
+  it('truncates very long messages', async () => {
+    const big = 'x'.repeat(500);
+    const node = { id: 'n', type: 'notify', config: { title: 'Big' } };
+    await WorkflowEngine._executeNotify(node, big);
+    expect(globalThis.__lastNotify.message.length).toBeLessThanOrEqual(241);
+    expect(globalThis.__lastNotify.message.endsWith('…')).toBe(true);
   });
 });
 

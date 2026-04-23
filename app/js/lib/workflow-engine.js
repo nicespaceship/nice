@@ -133,14 +133,16 @@ const WorkflowEngine = (() => {
         return await _executeAgent(node, input);
 
       case 'persona_dispatch':
-        // S3 stub: behaves like an agent node. The persona override
-        // contract (personaHint → system prompt rewrite) lands in S5
-        // alongside the other advanced node types. For now we just run
-        // the referenced agent so the Inbox Captain DAG completes.
-        return await _executeAgent(node, input);
+        // S5: resolves personaHint → prepends voice context to the
+        // agent prompt. Drafter uses this to write replies in the
+        // user's voice rather than a generic assistant tone.
+        return await _executePersonaDispatch(node, input);
 
       case 'approval_gate':
         return _executeApprovalGate(node, input);
+
+      case 'notify':
+        return await _executeNotify(node, input);
 
       case 'condition':
         return _executeCondition(node, input);
@@ -203,6 +205,114 @@ const WorkflowEngine = (() => {
     }
 
     return 'ShipLog not available';
+  }
+
+  /**
+   * Persona dispatch — a specialization of the agent node that prepends
+   * a voice / persona context block to the prompt before invoking the
+   * agent. personaHint values we honor today:
+   *   'user_voice'   → pulls the user's writing sample from the
+   *                    `voiceSample` localStorage key (set via Profile).
+   *   'theme_persona'→ stub for Persona Engine integration; emits a
+   *                    hint referencing the active theme's persona.
+   * Unknown hints fall through to a plain agent run. Missing voice
+   * sample also falls through — we don't want to block the DAG because
+   * the user hasn't filled out their profile yet.
+   */
+  async function _executePersonaDispatch(node, input) {
+    const hint = node?.config?.personaHint;
+    const voiceContext = _resolvePersonaContext(hint, node);
+    if (!voiceContext) return await _executeAgent(node, input);
+
+    // Clone the node so we don't mutate the workflow graph.
+    const mergedPrompt = [voiceContext, node.config?.prompt || node.label || ''].filter(Boolean).join('\n\n');
+    const injected = Object.assign({}, node, {
+      config: Object.assign({}, node.config, { prompt: mergedPrompt }),
+    });
+    return await _executeAgent(injected, input);
+  }
+
+  function _resolvePersonaContext(hint, node) {
+    if (!hint) return '';
+    if (hint === 'user_voice') {
+      // localStorage key is the SSOT on Utils.KEYS.voiceSample. Read
+      // defensively — the engine is agnostic to whether the user has
+      // configured anything yet.
+      let sample = '';
+      try {
+        const key = (typeof Utils !== 'undefined' && Utils.KEYS?.voiceSample) || 'nice-voice-sample';
+        sample = (typeof localStorage !== 'undefined') ? (localStorage.getItem(key) || '') : '';
+      } catch { /* localStorage may be unavailable in tests */ }
+      if (!sample || !sample.trim()) return '';
+      return [
+        'VOICE REFERENCE — write in the following voice. Match tone, phrasing, and length patterns. Do NOT copy the content; apply the style:',
+        '---',
+        sample.trim(),
+        '---',
+      ].join('\n');
+    }
+    if (hint === 'theme_persona') {
+      // Stub: full compiler integration lives in the nice-ai edge fn.
+      // For now we surface an intent line so the agent at least knows
+      // a persona is expected. Callers wiring this via the Composer
+      // should set personaHint explicitly on the node config.
+      const themeId = (typeof State !== 'undefined' && State.get?.('theme')) || 'nice';
+      return `Stay in the active NICE theme persona (theme_id=${themeId}). Match the voice already established in this run's conversation.`;
+    }
+    if (typeof hint === 'string' && hint.length > 40) {
+      // Inline persona hints — treat the hint itself as the voice brief.
+      // Caps the length to avoid a runaway prompt suffix.
+      return `PERSONA BRIEF: ${hint.slice(0, 2000)}`;
+    }
+    return '';
+  }
+
+  /**
+   * Notify node — fires a Notify toast and persists a row to the
+   * notifications table so the badge updates and the entry is visible
+   * in the inbox. Useful at the end of a DAG ("Mission complete, 12
+   * drafts queued") or inline as a status signal between steps.
+   *
+   * Config:
+   *   - title     (default: 'Mission update')
+   *   - message   (default: upstream input)
+   *   - kind      (default: 'system'; maps to Notify.send `type`)
+   *
+   * Returns a short confirmation string so the node has an output the
+   * inspector can render.
+   */
+  async function _executeNotify(node, input) {
+    const cfg = node?.config || {};
+    const title = cfg.title || 'Mission update';
+    const kind = cfg.kind || 'system';
+    let message = cfg.message;
+    if (!message) {
+      const inputStr = typeof input === 'string' ? input : (input == null ? '' : JSON.stringify(input));
+      message = inputStr.length > 240 ? inputStr.slice(0, 240) + '…' : inputStr;
+    }
+
+    // Toast (fire-and-forget — missing Notify module shouldn't fail the
+    // node, just the user-visible side effect).
+    if (typeof Notify !== 'undefined' && typeof Notify.send === 'function') {
+      try { Notify.send({ title, message, type: kind }); } catch { /* ignore */ }
+    }
+
+    // Persist to notifications table for badge + inbox.
+    if (typeof SB !== 'undefined' && typeof SB.db === 'function') {
+      try {
+        const user = typeof State !== 'undefined' ? State.get?.('user') : null;
+        if (user?.id) {
+          await SB.db('notifications').create({
+            user_id: user.id,
+            type: kind === 'error' ? 'error' : 'mission',
+            title,
+            message,
+          });
+        }
+      } catch { /* non-critical */ }
+    }
+
+    return `Notified: ${title}`;
   }
 
   /**
@@ -415,6 +525,9 @@ const WorkflowEngine = (() => {
     // Exposed for tests.
     _executeApprovalGate,
     _isGatePause,
+    _resolvePersonaContext,
+    _executePersonaDispatch,
+    _executeNotify,
   };
 })();
 
