@@ -260,16 +260,19 @@ const MissionRunner = (() => {
         ModelIntel.log(blueprintId, modelUsed, { success: true, speedMs: _simSpeed(modelUsed), costTokens: _simCost(modelUsed) });
       }
       const metadata = Object.assign({}, mission.metadata || {}, result.metadata || {}, { completed_at: now, model_used: modelUsed });
+      const outcome = _deriveOutcome(mission, result.content);
       // Transition to review (user must approve before it's "completed")
-      await SB.db('tasks').update(missionId, {
+      const update = {
         status: 'review',
         progress: 100,
         result: result.content,
         approval_status: 'draft',
         metadata,
         updated_at: now,
-      });
-      _updateLocalMission(missionId, { status: 'review', progress: 100, result: result.content, approval_status: 'draft', metadata });
+      };
+      if (outcome) update.outcome = outcome;
+      await SB.db('tasks').update(missionId, update);
+      _updateLocalMission(missionId, { status: 'review', progress: 100, result: result.content, approval_status: 'draft', metadata, ...(outcome ? { outcome } : {}) });
 
       // Post-execution quality scoring using blueprint eval_criteria
       let qualityReview = null;
@@ -432,7 +435,8 @@ const MissionRunner = (() => {
 
     // Fully completed DAG with no gate — drop into review alongside
     // ordinary simple-shape missions so the user still signs off.
-    await SB.db('tasks').update(missionId, {
+    const dagOutcome = _deriveOutcome(mission, result.finalOutput || '');
+    const dagUpdate = {
       status: 'review',
       progress: 100,
       result: result.finalOutput || '',
@@ -440,12 +444,15 @@ const MissionRunner = (() => {
       node_results: nodeResults,
       metadata: Object.assign({}, mission.metadata || {}, { dag_status: 'completed', completed_at: now }),
       updated_at: now,
-    }).catch(() => {});
+    };
+    if (dagOutcome) dagUpdate.outcome = dagOutcome;
+    await SB.db('tasks').update(missionId, dagUpdate).catch(() => {});
     _updateLocalMission(missionId, {
       status: 'review',
       progress: 100,
       result: result.finalOutput || '',
       approval_status: 'draft',
+      ...(dagOutcome ? { outcome: dagOutcome } : {}),
     });
     _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
     return result;
@@ -470,6 +477,58 @@ const MissionRunner = (() => {
     if (typeof Notify !== 'undefined') {
       Notify.send({ title, message: body, type: type === 'error' ? 'error' : 'success' });
     }
+  }
+
+  /* ── Derive a structured outcome from the mission's final output ──
+     Every mission should log what it actually produced ("2 drafts landed"),
+     not just "completed: true". The mission's plan_snapshot.outcome_spec
+     declares what kind of outcome is expected; this helper parses the
+     resultText against that spec and returns the structured outcome row
+     we persist into `tasks.outcome`. Returns null when nothing usable —
+     e.g. non-DAG missions without an outcome_spec, or result text that
+     doesn't match the expected shape. That's fine; outcome is an
+     additive column and the UI handles null gracefully. */
+  function _deriveOutcome(mission, resultText) {
+    if (!mission || !resultText) return null;
+    const snap = mission.plan_snapshot;
+    const kind = snap && snap.outcome_spec && snap.outcome_spec.kind;
+    if (!kind) return null;
+
+    // Parse resultText as JSON (tolerant of markdown fences the agent
+    // sometimes wraps the output in)
+    let raw = String(resultText).trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    let parsed;
+    try { parsed = JSON.parse(match[0]); } catch { return null; }
+
+    if (kind === 'drafts_reviewed') {
+      const drafted = Array.isArray(parsed.drafted) ? parsed.drafted : [];
+      const skipped = Array.isArray(parsed.skipped) ? parsed.skipped : [];
+      const scanned = typeof parsed.threads_scanned === 'number'
+        ? parsed.threads_scanned
+        : drafted.length + skipped.length;
+      if (!drafted.length && !skipped.length && !scanned) return null;
+      return {
+        kind,
+        count: drafted.length,
+        scanned,
+        items: drafted.map(d => ({
+          type: 'gmail_draft',
+          id: d.draft_id || d.thread_id || null,
+          thread_id: d.thread_id || null,
+          subject: d.subject || null,
+          from: d.from || null,
+        })),
+        summary: drafted.length === 0
+          ? `Scanned ${scanned} threads — no drafts needed.`
+          : `Drafted ${drafted.length} repl${drafted.length === 1 ? 'y' : 'ies'} from ${scanned} threads.`,
+      };
+    }
+
+    // Unknown kind — stash the parsed JSON in items so no signal is lost
+    return { kind, items: [parsed], summary: null };
   }
 
   /* ── Estimated performance metrics (cost/speed approximation per model) ── */
