@@ -233,6 +233,7 @@ const MissionRunner = (() => {
           tools: agentBp.config.tools,
           spaceshipId,
           approvalMode: _approvalMode,
+          maxSteps: agentBp.config.maxSteps,
           onStep: (step) => {
             // Update progress based on steps
             const stepProgress = Math.min(10 + (step.index / (agentBp.config.maxSteps || 5)) * 70, 80);

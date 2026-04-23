@@ -211,6 +211,7 @@ const WorkflowEngine = (() => {
         const execResult = await AgentExecutor.execute(agent, finalPrompt, {
           tools: agent?.config?.tools || [],
           spaceshipId: _resolveSpaceshipId(workflow),
+          maxSteps: agent?.config?.maxSteps,
         });
         return execResult?.finalAnswer || 'No response';
       } catch (err) {

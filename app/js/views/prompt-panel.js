@@ -1958,6 +1958,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           AgentExecutor.execute(agentBp, text, {
             tools: agentBp.config.tools,
             spaceshipId,
+            maxSteps: agentBp.config.maxSteps,
             onStep,
           }).then(result => {
             _removeMonitorThinking();
