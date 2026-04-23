@@ -35,9 +35,16 @@ const McpBridge = (() => {
         const def = toolDefs[toolName] || {};
 
         if (typeof ToolRegistry !== 'undefined') {
+          // Display name is always the bare toolName so the auto-alias
+          // in ToolRegistry indexes it. Agents reference tools by the
+          // bare name (e.g. config.tools=['gmail_create_draft']) and
+          // LLMs invoke them by that same short form — normalizing
+          // "Gmail — gmail_create_draft" produced a key that never
+          // matched 'gmail_create_draft', so the ReAct loop couldn't
+          // find the tool and the LLM fell back to role-playing.
           ToolRegistry.register({
             id: toolId,
-            name: def.description ? toolName : `${conn.name} — ${toolName}`,
+            name: toolName,
             description: def.description || `MCP tool "${toolName}" from ${conn.name}. Invoked via MCP gateway.`,
             schema: def.inputSchema || {
               type: 'object',
@@ -47,6 +54,13 @@ const McpBridge = (() => {
             },
             execute: _createExecutor(conn.id, toolName),
           });
+
+          // Belt-and-suspenders: register an explicit alias so the
+          // short name always resolves, even if the auto-alias is
+          // already claimed by another tool that registered first.
+          if (typeof ToolRegistry.registerAlias === 'function') {
+            ToolRegistry.registerAlias(toolName, toolId);
+          }
 
           _registeredToolIds.push(toolId);
         }
