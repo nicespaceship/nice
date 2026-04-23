@@ -766,6 +766,7 @@ const MissionDetailView = (() => {
           ${mission.result ? `
             <div class="detail-section">
               <h3 class="detail-section-title">Result</h3>
+              ${_renderInboxCaptainSummary(mission, agent)}
               <div class="mission-result-content mission-md" id="mission-result-body">
                 ${_renderMarkdown(mission.edited_content || mission.result)}
               </div>
@@ -775,7 +776,8 @@ const MissionDetailView = (() => {
                 ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-approve-btn" data-action="approve" data-mid="${_esc(mission.id)}">✓ Approve</button>` : ''}
                 <button class="btn outbox-edit-btn" data-action="edit" data-mid="${_esc(mission.id)}">✎ Edit</button>
                 ${!mission.approval_status || mission.approval_status === 'draft' ? `<button class="btn outbox-reject-btn" data-action="reject" data-mid="${_esc(mission.id)}">✕ Reject</button>` : ''}
-                <button class="btn outbox-copy-btn" data-action="copy" data-mid="${_esc(mission.id)}">📋 Copy</button>
+                <button class="btn outbox-copy-btn" data-action="copy" data-mid="${_esc(mission.id)}">\u{1F4CB} Copy</button>
+                ${_isInboxMission(mission, agent) ? `<a class="btn" href="https://mail.google.com/mail/u/0/#drafts" target="_blank" rel="noopener noreferrer" style="margin-left:auto">\u2709\uFE0F Open Gmail Drafts</a>` : ''}
               </div>
             </div>
           ` : ''}
@@ -1010,6 +1012,52 @@ const MissionDetailView = (() => {
     const colors = { Research:'#6366f1', Code:'#06b6d4', Data:'#f59e0b', Content:'#ec4899', Ops:'#22c55e', Custom:'#8b5cf6',
                      Analytics:'#f59e0b', Engineering:'#06b6d4', Sales:'#22c55e', Support:'#a855f7', Legal:'#64748b', Communications:'#3b82f6' };
     return colors[role] || 'var(--accent)';
+  }
+
+  /* ── Inbox Captain helpers ──
+     When the mission ran the Inbox Captain (or any agent whose result
+     looks like the Captain's JSON schema), surface a quick stats row
+     and a one-click link to the Gmail drafts folder. The demo payoff of
+     "drafted by 9:02" is the drafts showing up in Gmail — this closes
+     the loop from mission summary to the drafts themselves. */
+  function _isInboxMission(mission, agent) {
+    if (!mission) return false;
+    if (mission.agent_id === 'bp-agent-inbox-captain') return true;
+    if (agent && agent.id === 'bp-agent-inbox-captain') return true;
+    if (mission.agent_name === 'Inbox Captain') return true;
+    if (agent && agent.name === 'Inbox Captain') return true;
+    return false;
+  }
+
+  function _parseInboxCaptainResult(resultText) {
+    if (!resultText || typeof resultText !== 'string') return null;
+    let raw = resultText.trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    try {
+      const obj = JSON.parse(match[0]);
+      const drafted = Array.isArray(obj.drafted) ? obj.drafted : [];
+      const skipped = Array.isArray(obj.skipped) ? obj.skipped : [];
+      const scanned = typeof obj.threads_scanned === 'number'
+        ? obj.threads_scanned
+        : drafted.length + skipped.length;
+      if (!drafted.length && !skipped.length && !scanned) return null;
+      return { scanned, drafted, skipped };
+    } catch { return null; }
+  }
+
+  function _renderInboxCaptainSummary(mission, agent) {
+    if (!_isInboxMission(mission, agent)) return '';
+    const parsed = _parseInboxCaptainResult(mission.result);
+    if (!parsed) return '';
+    return `
+      <div class="inbox-triage-stats" style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border,#333);margin-bottom:12px;font-size:.82rem">
+        <div><strong style="font-size:1.1rem">${parsed.scanned}</strong> <span style="color:var(--text-muted)">scanned</span></div>
+        <div><strong style="font-size:1.1rem;color:#22c55e">${parsed.drafted.length}</strong> <span style="color:var(--text-muted)">drafted</span></div>
+        <div><strong style="font-size:1.1rem;color:var(--text-muted)">${parsed.skipped.length}</strong> <span style="color:var(--text-muted)">skipped</span></div>
+      </div>
+    `;
   }
 
   /* ── Sprint 4 — DAG inspector ───────────────────────────────────────
