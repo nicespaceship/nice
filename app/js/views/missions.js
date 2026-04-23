@@ -1069,13 +1069,27 @@ const MissionDetailView = (() => {
 
   function _renderInboxCaptainSummary(mission, agent) {
     if (!_isInboxMission(mission, agent)) return '';
-    const parsed = _parseInboxCaptainResult(mission.result);
-    if (!parsed) return '';
+    // Prefer the structured outcome column — it's authoritative, populated
+    // at completion by MissionRunner._deriveOutcome. Fall back to parsing
+    // mission.result for missions that ran before the outcome write-path
+    // landed.
+    let scanned, drafted, skipped;
+    if (mission.outcome && mission.outcome.kind === 'drafts_reviewed') {
+      scanned = mission.outcome.scanned ?? 0;
+      drafted = Array.isArray(mission.outcome.items) ? mission.outcome.items : [];
+      skipped = []; // not stored in outcome today; the count below is drafted-only
+    } else {
+      const parsed = _parseInboxCaptainResult(mission.result);
+      if (!parsed) return '';
+      scanned = parsed.scanned;
+      drafted = parsed.drafted;
+      skipped = parsed.skipped;
+    }
     return `
       <div class="inbox-triage-stats" style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid var(--border,#333);margin-bottom:12px;font-size:.82rem">
-        <div><strong style="font-size:1.1rem">${parsed.scanned}</strong> <span style="color:var(--text-muted)">scanned</span></div>
-        <div><strong style="font-size:1.1rem;color:#22c55e">${parsed.drafted.length}</strong> <span style="color:var(--text-muted)">drafted</span></div>
-        <div><strong style="font-size:1.1rem;color:var(--text-muted)">${parsed.skipped.length}</strong> <span style="color:var(--text-muted)">skipped</span></div>
+        <div><strong style="font-size:1.1rem">${scanned}</strong> <span style="color:var(--text-muted)">scanned</span></div>
+        <div><strong style="font-size:1.1rem;color:#22c55e">${drafted.length}</strong> <span style="color:var(--text-muted)">drafted</span></div>
+        <div><strong style="font-size:1.1rem;color:var(--text-muted)">${skipped.length}</strong> <span style="color:var(--text-muted)">skipped</span></div>
       </div>
     `;
   }
