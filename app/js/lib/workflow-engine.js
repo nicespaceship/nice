@@ -1,33 +1,45 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Workflow Execution Engine
-   DAG executor for workflow pipelines with topological ordering,
-   branching, looping, and execution logging.
+   DAG executor for Mission workflows with topological ordering,
+   branching, looping, pause/resume at approval gates, and persona-aware
+   agent dispatch.
+
+   Returned `status` values:
+     'completed' — all nodes ran, no errors
+     'failed'    — at least one node threw
+     'paused'    — an approval_gate suspended the run. The caller is
+                   responsible for persisting the `nodeResults` so far
+                   and re-invoking execute() with the remaining nodes
+                   after the user approves/rejects.
 ═══════════════════════════════════════════════════════════════════ */
 
 const WorkflowEngine = (() => {
 
+  // Sentinel returned by approval_gate nodes. Caller-visible so tests
+  // can assert the pause contract directly.
+  const GATE_PAUSE = Object.freeze({ __nice_workflow_pause: true });
+
   /**
    * Execute a workflow DAG.
    * @param {Object} workflow - { id, name, nodes, connections }
-   * @param {Object} opts - { onNodeStart(node), onNodeComplete(node, result), onError(node, err) }
-   * @returns {Promise<{ nodeResults: Map, finalOutput: string, duration: number, status: string }>}
+   * @param {Object} opts - { onNodeStart(node), onNodeComplete(node, result), onError(node, err), onGatePause(node, payload), skipSave }
+   * @returns {Promise<{ nodeResults: Map, finalOutput: string, duration: number, status: string, pausedAt?: string }>}
    */
   async function execute(workflow, opts) {
     opts = opts || {};
     const startTime = Date.now();
     const nodeResults = new Map();
     let status = 'completed';
+    let pausedAt = null;
 
     const order = _topoSort(workflow.nodes, workflow.connections);
 
-    // Track pruned nodes from branch decisions
+    // Track pruned nodes from branch decisions + gate pauses.
     workflow._prunedNodes = new Set();
 
     for (const nodeId of order) {
       const node = workflow.nodes.find(n => n.id === nodeId);
       if (!node) continue;
-
-      // Skip nodes pruned by branch decisions
       if (workflow._prunedNodes.has(nodeId)) continue;
 
       if (typeof opts.onNodeStart === 'function') {
@@ -45,6 +57,26 @@ const WorkflowEngine = (() => {
 
       try {
         const result = await _executeNode(node, input, nodeResults, workflow);
+
+        // Gate pause: stop iteration, mark downstream pruned, return
+        // status='paused'. The caller persists state and resumes later.
+        if (_isGatePause(result)) {
+          pausedAt = nodeId;
+          status = 'paused';
+          nodeResults.set(nodeId, result.summary || 'Awaiting approval.');
+          // Prune everything downstream so a later resume can pick up.
+          const descendants = _collectDescendants([nodeId], workflow.connections, null);
+          descendants.forEach(id => { if (id !== nodeId) workflow._prunedNodes.add(id); });
+
+          if (typeof opts.onGatePause === 'function') {
+            try { opts.onGatePause(node, result); } catch (e) { /* ignore */ }
+          }
+          if (typeof opts.onNodeComplete === 'function') {
+            try { opts.onNodeComplete(node, nodeResults.get(nodeId)); } catch (e) { /* ignore */ }
+          }
+          break;
+        }
+
         nodeResults.set(nodeId, result);
 
         if (typeof opts.onNodeComplete === 'function') {
@@ -61,19 +93,35 @@ const WorkflowEngine = (() => {
       }
     }
 
-    // Collect final output from output nodes
-    const outputNodes = workflow.nodes.filter(n => n.type === 'output');
-    const finalOutput = outputNodes
-      .map(n => nodeResults.get(n.id) || '')
-      .filter(Boolean)
-      .join('\n---\n');
+    // Collect final output — when paused, the gate node's summary is
+    // the final output so the UI has something to show in review.
+    let finalOutput;
+    if (status === 'paused' && pausedAt) {
+      finalOutput = nodeResults.get(pausedAt) || '';
+    } else {
+      const outputNodes = workflow.nodes.filter(n => n.type === 'output');
+      if (outputNodes.length) {
+        finalOutput = outputNodes
+          .map(n => nodeResults.get(n.id) || '')
+          .filter(Boolean)
+          .join('\n---\n');
+      } else {
+        // No explicit output node — fall back to the last-executed node.
+        // This is what simple DAGs (Inbox Captain etc.) will produce.
+        const executed = order.filter(id => nodeResults.has(id));
+        finalOutput = executed.length ? (nodeResults.get(executed[executed.length - 1]) || '') : '';
+      }
+    }
 
     const duration = Date.now() - startTime;
 
-    // Save run to DB
-    _saveRun(workflow, status, startTime, duration, nodeResults);
+    if (!opts.skipSave) _saveRun(workflow, status, startTime, duration, nodeResults);
 
-    return { nodeResults, finalOutput, duration, status };
+    return { nodeResults, finalOutput, duration, status, pausedAt };
+  }
+
+  function _isGatePause(result) {
+    return !!(result && typeof result === 'object' && result.__nice_workflow_pause === true);
   }
 
   /**
@@ -83,6 +131,16 @@ const WorkflowEngine = (() => {
     switch (node.type) {
       case 'agent':
         return await _executeAgent(node, input);
+
+      case 'persona_dispatch':
+        // S3 stub: behaves like an agent node. The persona override
+        // contract (personaHint → system prompt rewrite) lands in S5
+        // alongside the other advanced node types. For now we just run
+        // the referenced agent so the Inbox Captain DAG completes.
+        return await _executeAgent(node, input);
+
+      case 'approval_gate':
+        return _executeApprovalGate(node, input);
 
       case 'condition':
         return _executeCondition(node, input);
@@ -108,15 +166,35 @@ const WorkflowEngine = (() => {
   }
 
   async function _executeAgent(node, input) {
-    const agentId = node.config.agentId;
-    const prompt = node.config.prompt || input || node.label;
+    const agentId = node.config?.agentId;
+    const blueprintId = node.config?.blueprintId;
+    const prompt = node.config?.prompt || input || node.label;
 
     let agent = null;
-    if (agentId && typeof State !== 'undefined') {
-      agent = (State.get('agents') || []).find(a => a.id === agentId);
+    const stateAgents = typeof State !== 'undefined' ? (State.get('agents') || []) : [];
+
+    if (agentId) {
+      agent = stateAgents.find(a => a.id === agentId);
+    }
+    if (!agent && blueprintId) {
+      agent = stateAgents.find(a => a.blueprint_id === blueprintId);
     }
 
-    // Try AgentExecutor first if tools configured, then ShipLog
+    // Fall back to a blueprint-derived ephemeral agent if the user
+    // hasn't activated this crew yet. Keeps demos working before a
+    // full install lands; real runs should pre-install via the Composer.
+    if (!agent && blueprintId && typeof Blueprints !== 'undefined') {
+      const bp = Blueprints.getAgent?.(blueprintId);
+      if (bp) {
+        agent = {
+          id: bp.id,
+          name: bp.name,
+          blueprint_id: bp.id,
+          config: bp.config || {},
+        };
+      }
+    }
+
     if (typeof ShipLog !== 'undefined') {
       const spaceships = typeof State !== 'undefined' ? (State.get('spaceships') || []) : [];
       const shipId = spaceships.length ? spaceships[0].id : 'workflow-exec';
@@ -125,6 +203,24 @@ const WorkflowEngine = (() => {
     }
 
     return 'ShipLog not available';
+  }
+
+  /**
+   * Produce the gate pause sentinel. The parent runner (MissionRunner
+   * for mission DAGs) is responsible for persisting the partial
+   * nodeResults and flipping task.status to 'review'.
+   */
+  function _executeApprovalGate(node, input) {
+    const cfg = node.config || {};
+    return {
+      __nice_workflow_pause: true,
+      reason: cfg.reason || 'Awaiting captain approval.',
+      approveLabel: cfg.approveLabel || 'Approve',
+      rejectLabel: cfg.rejectLabel || 'Reject',
+      // Summary shown in the review UI. Upstream node output flows in
+      // as `input` — typically a JSON payload from the Drafter agent.
+      summary: (typeof input === 'string' && input.trim()) ? input : cfg.reason || '',
+    };
   }
 
   function _executeCondition(node, input) {
@@ -163,26 +259,21 @@ const WorkflowEngine = (() => {
       try { items = JSON.parse(input); } catch { items = [input]; }
       if (!Array.isArray(items)) items = [items];
     } else {
-      // lines
       items = input.split('\n').filter(Boolean);
     }
 
     items = items.slice(0, maxIterations);
 
-    // Find immediate downstream nodes connected from this loop node
     const downstreamIds = workflow.connections
       .filter(c => c.from === node.id)
       .map(c => c.to);
 
-    // Mark downstream nodes as handled by the loop — prevents double-execution
-    // in the main topo-sort loop
     if (!workflow._prunedNodes) workflow._prunedNodes = new Set();
     downstreamIds.forEach(id => workflow._prunedNodes.add(id));
 
     const results = [];
     for (const item of items) {
       const itemStr = typeof item === 'string' ? item : JSON.stringify(item);
-      // Execute downstream nodes for each item
       for (const downId of downstreamIds) {
         const downNode = workflow.nodes.find(n => n.id === downId);
         if (downNode) {
@@ -214,9 +305,6 @@ const WorkflowEngine = (() => {
       } catch { /* skip invalid expressions */ }
     }
 
-    // Prune unchosen branches: find all downstream connections from this
-    // branch node and mark unchosen paths so the main loop skips them.
-    // We collect all node IDs reachable only via non-chosen paths.
     const downstreamIds = workflow.connections
       .filter(c => c.from === node.id)
       .map(c => c.to);
@@ -224,7 +312,6 @@ const WorkflowEngine = (() => {
     if (chosenTarget && downstreamIds.length > 1) {
       const prunedRoots = downstreamIds.filter(id => id !== chosenTarget);
       const prunedSet = _collectDescendants(prunedRoots, workflow.connections, chosenTarget);
-      // Store pruned node IDs on the workflow object for the main loop to skip
       if (!workflow._prunedNodes) workflow._prunedNodes = new Set();
       prunedSet.forEach(id => workflow._prunedNodes.add(id));
     }
@@ -236,7 +323,6 @@ const WorkflowEngine = (() => {
   function _collectDescendants(rootIds, connections, protectedId) {
     const pruned = new Set();
     const queue = [...rootIds];
-    // Build adjacency for downstream lookup
     const adj = {};
     connections.forEach(c => {
       if (!adj[c.from]) adj[c.from] = [];
@@ -294,15 +380,17 @@ const WorkflowEngine = (() => {
   }
 
   /**
-   * Save workflow run to Supabase.
+   * Save workflow run to Supabase. Skipped when status='paused' because
+   * the parent MissionRunner writes the run state to `tasks` instead —
+   * workflow_runs is legacy and will be retired in S6.
    */
   async function _saveRun(workflow, status, startTime, duration, nodeResults) {
     if (typeof SB === 'undefined' || !SB.isReady()) return;
+    if (status === 'paused') return;
 
     const user = typeof State !== 'undefined' ? State.get('user') : null;
     if (!user) return;
 
-    // Convert Map to serializable object
     const resultsObj = {};
     nodeResults.forEach((val, key) => { resultsObj[key] = val; });
 
@@ -321,5 +409,13 @@ const WorkflowEngine = (() => {
     }
   }
 
-  return { execute };
+  return {
+    execute,
+    GATE_PAUSE,
+    // Exposed for tests.
+    _executeApprovalGate,
+    _isGatePause,
+  };
 })();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = WorkflowEngine;
