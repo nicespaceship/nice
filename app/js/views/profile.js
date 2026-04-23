@@ -147,6 +147,30 @@ const ProfileView = (() => {
         </div>
 
         <div class="profile-section">
+          <h3 class="profile-section-title">Voice Sample</h3>
+          <p class="voice-sample-sub">
+            Paste 2&ndash;3 paragraphs of your own writing — a recent email,
+            a post, a Slack message you're proud of. The Inbox Captain's
+            Drafter reads this and mirrors your tone, phrasing, and length
+            patterns when it writes replies in your voice.
+          </p>
+          <textarea
+            id="profile-voice-sample"
+            class="voice-sample-input"
+            rows="6"
+            maxlength="4000"
+            placeholder="e.g. Quick one — Thursday works on my end. I'll bring the updated deck. Ping Sarah if you want her on it."
+          >${_esc(_readVoiceSample())}</textarea>
+          <div class="voice-sample-actions">
+            <span class="voice-sample-status" id="profile-voice-status" aria-live="polite"></span>
+            <button type="button" class="profile-action-btn voice-sample-save" id="btn-voice-save" style="width:auto">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-check"/></svg>
+              Save voice sample
+            </button>
+          </div>
+        </div>
+
+        <div class="profile-section">
           <h3 class="profile-section-title">Referral Program</h3>
           <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">Invite a friend — you both earn 500 XP when they sign up.</p>
           <div class="profile-row">
@@ -190,6 +214,34 @@ const ProfileView = (() => {
       avatarWrap.addEventListener('click', () => avatarInput.click());
       avatarInput.addEventListener('change', (e) => _handleAvatarUpload(e, user));
     }
+
+    // Voice sample save — persists to localStorage via Utils.KEYS.
+    // Drafter reads this on its next run via WorkflowEngine's
+    // persona_dispatch path. Status line gives the user confirmation
+    // the write succeeded; clears itself after 4s.
+    document.getElementById('btn-voice-save')?.addEventListener('click', () => {
+      const ta = document.getElementById('profile-voice-sample');
+      const statusEl = document.getElementById('profile-voice-status');
+      if (!ta || !statusEl) return;
+      const value = ta.value || '';
+      const ok = _saveVoiceSample(value);
+      if (!ok) {
+        statusEl.textContent = 'Could not save — storage unavailable.';
+        statusEl.className = 'voice-sample-status voice-sample-status-err';
+        return;
+      }
+      const clean = value.trim();
+      statusEl.textContent = clean
+        ? `Saved (${clean.length} char${clean.length === 1 ? '' : 's'}). Drafter will use this on the next run.`
+        : 'Cleared. Drafter will run without a voice reference.';
+      statusEl.className = 'voice-sample-status voice-sample-status-ok';
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Voice sample saved', message: 'Your Drafter now knows how to write in your voice.', type: 'success' });
+      }
+      setTimeout(() => {
+        if (statusEl && statusEl.textContent.startsWith('Saved')) statusEl.textContent = '';
+      }, 4000);
+    });
 
     // Copy referral link button
     document.getElementById('btn-copy-referral')?.addEventListener('click', () => {
@@ -317,6 +369,26 @@ const ProfileView = (() => {
 
   const _esc = Utils.esc;
 
+  /* ── Voice sample (localStorage SSOT via Utils.KEYS.voiceSample) ──
+     Read by WorkflowEngine._executePersonaDispatch when a node has
+     personaHint='user_voice'. Lives in localStorage rather than the
+     profiles table for now so agents run offline-first and don't need a
+     migration round-trip. A Supabase-backed mirror comes with the
+     Settings sync work when multi-device is a priority. */
+  function _readVoiceSample() {
+    try { return localStorage.getItem(Utils.KEYS.voiceSample) || ''; }
+    catch { return ''; }
+  }
+
+  function _saveVoiceSample(value) {
+    try {
+      const clean = (value || '').trim();
+      if (clean) localStorage.setItem(Utils.KEYS.voiceSample, clean);
+      else localStorage.removeItem(Utils.KEYS.voiceSample);
+      return true;
+    } catch { return false; }
+  }
+
   /* ── Avatar upload ── */
   async function _handleAvatarUpload(e, user) {
     const file = e.target.files?.[0];
@@ -410,5 +482,9 @@ const ProfileView = (() => {
     else setTimeout(_initAvatar, 100);
   }
 
-  return { title, render, _switchTab, _handleSignIn, _handleSignUp, _signOut };
+  return {
+    title, render, _switchTab, _handleSignIn, _handleSignUp, _signOut,
+    // Voice sample — exposed for unit testing + Composer debug read-back.
+    _readVoiceSample, _saveVoiceSample,
+  };
 })();
