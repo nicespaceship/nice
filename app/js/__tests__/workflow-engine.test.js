@@ -228,6 +228,90 @@ describe('WorkflowEngine — agent blueprintId resolution', () => {
   });
 });
 
+describe('WorkflowEngine — tool dispatch via AgentExecutor', () => {
+  // When an agent has config.tools (or any MCP connection is active),
+  // the engine must route through AgentExecutor — otherwise ShipLog
+  // single-shot calls the LLM, which sees tool names in the system
+  // prompt and role-plays the interaction instead of invoking them.
+  let _execSpy;
+
+  beforeEach(() => {
+    _execSpy = { calls: [] };
+    globalThis.AgentExecutor = {
+      execute: async (agent, prompt, opts) => {
+        _execSpy.calls.push({ agent, prompt, opts });
+        return { finalAnswer: `executor:${agent?.name || 'anon'}`, steps: [], metadata: {} };
+      },
+    };
+  });
+
+  it('routes through AgentExecutor when agent.config.tools is non-empty', async () => {
+    globalThis.State.set('agents', [{ id: 'u1', name: 'Inbox Captain', blueprint_id: 'bp-agent-inbox-captain', config: { tools: ['gmail_create_draft'] } }]);
+    const workflow = {
+      id: 'wf-tools',
+      nodes: [{ id: 'n', type: 'agent', config: { blueprintId: 'bp-agent-inbox-captain', prompt: 'triage + draft' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(_execSpy.calls.length).toBe(1);
+    expect(_execSpy.calls[0].opts.tools).toEqual(['gmail_create_draft']);
+    expect(String(res.nodeResults.get('n'))).toBe('executor:Inbox Captain');
+  });
+
+  it('routes through AgentExecutor when any MCP connection is active, even with no explicit tool list', async () => {
+    globalThis.State.set('agents', [{ id: 'u1', name: 'Bare', blueprint_id: 'bp-x', config: {} }]);
+    globalThis.State.set('mcp_connections', [{ id: 'mc1', name: 'Gmail', status: 'connected' }]);
+    const workflow = {
+      id: 'wf-mcp',
+      nodes: [{ id: 'n', type: 'agent', config: { blueprintId: 'bp-x', prompt: 'go' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(_execSpy.calls.length).toBe(1);
+    expect(String(res.nodeResults.get('n'))).toBe('executor:Bare');
+  });
+
+  it('falls back to ShipLog when the agent has no tools and no MCP connection', async () => {
+    globalThis.State.set('agents', [{ id: 'u1', name: 'NoTools', blueprint_id: 'bp-y', config: {} }]);
+    globalThis.State.set('mcp_connections', []);
+    const workflow = {
+      id: 'wf-notools',
+      nodes: [{ id: 'n', type: 'agent', config: { blueprintId: 'bp-y', prompt: 'just chat' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(_execSpy.calls.length).toBe(0);
+    expect(String(res.nodeResults.get('n'))).toMatch(/^ran:NoTools/);
+  });
+
+  it('_agentHasTools true for explicit tool list', () => {
+    expect(WorkflowEngine._agentHasTools({ config: { tools: ['gmail_create_draft'] } })).toBe(true);
+  });
+  it('_agentHasTools true when any mcp_connections row is connected', () => {
+    globalThis.State.set('mcp_connections', [{ status: 'connected' }]);
+    expect(WorkflowEngine._agentHasTools({ config: {} })).toBe(true);
+  });
+  it('_agentHasTools false with no tools and no connected MCPs', () => {
+    globalThis.State.set('mcp_connections', [{ status: 'disconnected' }]);
+    expect(WorkflowEngine._agentHasTools({ config: {} })).toBe(false);
+    expect(WorkflowEngine._agentHasTools(null)).toBe(false);
+  });
+
+  it('surfaces an Error: result when AgentExecutor throws', async () => {
+    globalThis.AgentExecutor.execute = async () => { throw new Error('boom'); };
+    globalThis.State.set('agents', [{ id: 'u1', name: 'F', blueprint_id: 'bp-f', config: { tools: ['x'] } }]);
+    const workflow = {
+      id: 'wf-throw',
+      nodes: [{ id: 'n', type: 'agent', config: { blueprintId: 'bp-f', prompt: 'p' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(String(res.nodeResults.get('n'))).toMatch(/^Error:/);
+  });
+});
+
 describe('WorkflowEngine — baseline regressions', () => {
   it('completes a linear agent → agent workflow', async () => {
     const workflow = {

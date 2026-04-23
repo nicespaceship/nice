@@ -171,6 +171,7 @@ const WorkflowEngine = (() => {
     const agentId = node.config?.agentId;
     const blueprintId = node.config?.blueprintId;
     const prompt = node.config?.prompt || input || node.label;
+    const finalPrompt = input ? `${prompt}\n\nContext:\n${input}` : prompt;
 
     let agent = null;
     const stateAgents = typeof State !== 'undefined' ? (State.get('agents') || []) : [];
@@ -197,14 +198,49 @@ const WorkflowEngine = (() => {
       }
     }
 
+    // If the agent has tools configured (either explicit tool ids or
+    // an MCP connection the user owns), route through AgentExecutor so
+    // the ReAct loop actually invokes the tools. Without this branch,
+    // ShipLog.execute is a one-shot LLM call — the model sees the tool
+    // names in the system prompt and role-plays the interaction as
+    // inline text instead of actually calling anything.
+    //
+    // Mirrors the simple-mission dispatch in MissionRunner.run.
+    if (_agentHasTools(agent) && typeof AgentExecutor !== 'undefined') {
+      try {
+        const execResult = await AgentExecutor.execute(agent, finalPrompt, {
+          tools: agent?.config?.tools || [],
+          spaceshipId: _resolveSpaceshipId(),
+        });
+        return execResult?.finalAnswer || 'No response';
+      } catch (err) {
+        return 'Error: ' + (err?.message || 'Agent execution failed');
+      }
+    }
+
     if (typeof ShipLog !== 'undefined') {
-      const spaceships = typeof State !== 'undefined' ? (State.get('spaceships') || []) : [];
-      const shipId = spaceships.length ? spaceships[0].id : 'workflow-exec';
-      const result = await ShipLog.execute(shipId, agent, input ? `${prompt}\n\nContext:\n${input}` : prompt);
+      const shipId = _resolveSpaceshipId();
+      const result = await ShipLog.execute(shipId, agent, finalPrompt);
       return result ? result.content : 'No response';
     }
 
     return 'ShipLog not available';
+  }
+
+  function _agentHasTools(agent) {
+    const explicit = Array.isArray(agent?.config?.tools) && agent.config.tools.length > 0;
+    if (explicit) return true;
+    // Any active MCP connection means tools will be available via
+    // ToolRegistry after McpBridge.loadTools — AgentExecutor calls
+    // that internally at the top of .execute().
+    if (typeof State === 'undefined') return false;
+    const conns = State.get('mcp_connections') || [];
+    return conns.some(c => c && c.status === 'connected');
+  }
+
+  function _resolveSpaceshipId() {
+    const spaceships = typeof State !== 'undefined' ? (State.get('spaceships') || []) : [];
+    return spaceships.length ? spaceships[0].id : 'workflow-exec';
   }
 
   /**
@@ -528,6 +564,8 @@ const WorkflowEngine = (() => {
     _resolvePersonaContext,
     _executePersonaDispatch,
     _executeNotify,
+    _executeAgent,
+    _agentHasTools,
   };
 })();
 
