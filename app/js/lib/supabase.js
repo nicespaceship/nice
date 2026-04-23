@@ -192,13 +192,28 @@ const SB = (() => {
     };
   }
 
-  /* ── Realtime ── */
+  /* ── Realtime ──
+     Supabase realtime v2 caches channels by topic string. Two views both
+     calling `.channel('tasks-changes')` get the SAME channel object — the
+     second `.on('postgres_changes', ...)` then throws:
+       "cannot add `postgres_changes` callbacks for realtime:tasks-changes
+        after `subscribe()`"
+     which surfaces to the user as "Mission Not Found" because the surrounding
+     try-block catches it and shows the empty state.
+
+     Fix: give every subscribe() a unique topic via a monotonically
+     incrementing counter. `removeChannel` fully evicts the topic from the
+     cache, so there is no leak even across many view re-mounts. The
+     `postgres_changes` filter still targets the real `table`, so callbacks
+     fire correctly regardless of topic name. */
+  let _rtSeq = 0;
   const realtime = {
     subscribe(table, callback) {
       const c = client();
       if (!c) return null;
+      const topic = `${table}-changes-${++_rtSeq}`;
       return c
-        .channel(`${table}-changes`)
+        .channel(topic)
         .on('postgres_changes', { event: '*', schema: 'public', table }, payload => {
           callback(payload);
         })

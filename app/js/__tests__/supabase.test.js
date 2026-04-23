@@ -209,11 +209,24 @@ describe('SB.functions', () => {
 });
 
 describe('SB.realtime', () => {
-  it('subscribe creates a channel for the table', () => {
+  it('subscribe creates a channel for the table with a unique topic', () => {
     const cb = vi.fn();
     SB.realtime.subscribe('tasks', cb);
-    expect(_mockClient.channel).toHaveBeenCalledWith('tasks-changes');
+    // Topic is `${table}-changes-${seq}` so two subscriptions to the same
+    // table don't collide in Supabase's topic-keyed channel cache. Seq
+    // starts from 1 per module load but may have advanced due to earlier
+    // tests in the file — just assert the prefix.
+    const topic = _mockClient.channel.mock.calls[_mockClient.channel.mock.calls.length - 1][0];
+    expect(topic).toMatch(/^tasks-changes-\d+$/);
     expect(_mockChannel.on).toHaveBeenCalled();
     expect(_mockChannel.subscribe).toHaveBeenCalled();
+  });
+
+  it('subscribe issues a unique topic per call so repeat subscriptions don\u2019t collide', () => {
+    SB.realtime.subscribe('tasks', () => {});
+    SB.realtime.subscribe('tasks', () => {});
+    const topics = _mockClient.channel.mock.calls.map(c => c[0]).filter(t => t.startsWith('tasks-changes'));
+    const distinct = new Set(topics);
+    expect(distinct.size).toBe(topics.length);
   });
 });
