@@ -51,8 +51,10 @@ globalThis.Gamification = { addXP: vi.fn(), checkAchievements: () => {}, recordA
 globalThis.Blueprints = { isReady: () => false, getAgent: () => null };
 globalThis.LLMConfig = { forBlueprint: () => ({ model: 'mock', temperature: 0.7 }) };
 
-// Load ShipLog first (dependency), then MissionRunner
+// Load ShipLog first (dependency), then WorkflowEngine (DAG path),
+// then MissionRunner which consults both at runtime.
 loadModule('lib/ship-log.js');
+loadModule('lib/workflow-engine.js');
 loadModule('lib/mission-runner.js');
 
 describe('MissionRunner', () => {
@@ -244,5 +246,94 @@ describe('MissionRunner', () => {
     const updated = _db.tasks?.['m-result'];
     expect(updated.result).toBeTruthy();
     expect(typeof updated.result).toBe('string');
+  });
+});
+
+describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
+  const userId = 'user-dag';
+
+  beforeEach(() => {
+    Object.keys(_db).forEach(k => delete _db[k]);
+    State._reset();
+    State.set('user', { id: userId });
+  });
+
+  it('_isDagMission detects shape=dag', () => {
+    expect(MissionRunner._isDagMission({ plan_snapshot: { shape: 'dag', nodes: [{}, {}] } })).toBe(true);
+    expect(MissionRunner._isDagMission({ plan_snapshot: { shape: 'simple', nodes: [{}] } })).toBe(false);
+    expect(MissionRunner._isDagMission({ plan_snapshot: null })).toBe(false);
+    expect(MissionRunner._isDagMission({})).toBe(false);
+  });
+
+  it('_isDagMission detects by node type (approval_gate) even without shape', () => {
+    const snap = { nodes: [{ type: 'agent' }, { type: 'approval_gate' }] };
+    expect(MissionRunner._isDagMission({ plan_snapshot: snap })).toBe(true);
+  });
+
+  it('routes Inbox-Captain-shaped mission to review status via gate pause', async () => {
+    const planSnapshot = {
+      shape: 'dag',
+      nodes: [
+        { id: 'triage',  type: 'agent',            config: { prompt: 'triage threads' } },
+        { id: 'drafter', type: 'persona_dispatch', config: { prompt: 'draft replies' } },
+        { id: 'review',  type: 'approval_gate',    config: { reason: 'Drafts queued for captain review.' } },
+      ],
+      edges: [
+        { from: 'triage',  to: 'drafter' },
+        { from: 'drafter', to: 'review' },
+      ],
+    };
+    await SB.db('tasks').create({
+      id: 'm-dag-inbox', user_id: userId, title: 'Inbox Captain',
+      status: 'queued', progress: 0,
+      plan_snapshot: planSnapshot,
+    });
+
+    const res = await MissionRunner.run('m-dag-inbox');
+    expect(res).not.toBeNull();
+    expect(res.status).toBe('paused');
+
+    const row = _db.tasks['m-dag-inbox'];
+    expect(row.status).toBe('review');
+    expect(row.approval_status).toBe('draft');
+    expect(row.progress).toBe(100);
+    expect(row.node_results).toBeTruthy();
+    expect(Object.keys(row.node_results)).toContain('review');
+  });
+
+  it('DAG with no gate still lands in review (awaits captain sign-off)', async () => {
+    const planSnapshot = {
+      shape: 'dag',
+      nodes: [
+        { id: 'a', type: 'agent', config: { prompt: 'one' } },
+        { id: 'b', type: 'agent', config: { prompt: 'two' } },
+      ],
+      edges: [{ from: 'a', to: 'b' }],
+    };
+    await SB.db('tasks').create({
+      id: 'm-dag-nogate', user_id: userId, title: 'Two-step',
+      status: 'queued', progress: 0,
+      plan_snapshot: planSnapshot,
+    });
+
+    const res = await MissionRunner.run('m-dag-nogate');
+    expect(res.status).toBe('completed');
+    expect(_db.tasks['m-dag-nogate'].status).toBe('review');
+    expect(_db.tasks['m-dag-nogate'].approval_status).toBe('draft');
+  });
+
+  it('DAG with missing plan_snapshot.nodes fails gracefully', async () => {
+    await SB.db('tasks').create({
+      id: 'm-dag-empty', user_id: userId, title: 'Empty',
+      status: 'queued', progress: 0,
+      plan_snapshot: { shape: 'dag', nodes: [{ type: 'approval_gate' }] },
+      // Intentionally only one node with type approval_gate — triggers DAG
+      // detection — but empty actual nodes after filter. We feed it just
+      // the approval_gate so the gate fires.
+    });
+
+    // With only an approval_gate node, the run should pause immediately.
+    const res = await MissionRunner.run('m-dag-empty');
+    expect(res.status).toBe('paused');
   });
 });

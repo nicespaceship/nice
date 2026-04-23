@@ -5,18 +5,19 @@
    persist to the `missions` table (Sprint 1 schema). On save we enqueue
    a `tasks` run so the mission executes immediately.
 
-   MVP scope — Sprint 2:
-   - Shape is always 'simple' (single agent node). Scheduled / DAG come
-     in later sprints when node types + cron enforcement land.
-   - captain_id is left null — captain picking is a Sprint 3 concern.
-   - `plan` has a single `agent` node with the LLM-phrased prompt.
+   Sprint 2 shipped the single-agent ('simple') shape.
+   Sprint 3 adds one seeded DAG template — Inbox Captain — via an
+   "Install from template" chip surfaced when the intent mentions inbox
+   / email / gmail / reply. The chip skips the LLM compose step and
+   drops in the frozen template plan from
+   blueprints.metadata.workflow (seeded via migration 20260423000002).
 
    State machine (see _state variable):
-     input   → user typing intent
-     building → LLM composing plan
-     preview → plan shown, awaiting user confirmation
-     saving  → writing to missions + tasks
-     error   → something went wrong, show message + retry
+     input     → user typing intent (Inbox Captain chip surfaces here)
+     building  → LLM composing plan (simple shape)
+     preview   → plan shown, awaiting user confirmation
+     saving    → writing to missions + tasks
+     error     → something went wrong, show message + retry
 
    This view owns the `/missions/new` route. Register BEFORE the
    `/missions/:id` route or `new` will be swallowed as an id.
@@ -70,12 +71,14 @@ const MissionComposerView = (() => {
       const errorBanner = _error
         ? `<div class="mc-composer-error">${_esc(_error)}</div>`
         : '';
+      const chipHTML = _inboxCaptainChipHTML();
       return `
         <form id="mc-composer-form" class="mc-composer-form">
           <label for="mc-intent" class="mc-composer-label">What should this ${_Nl()} do?</label>
           <textarea id="mc-intent" class="mc-composer-intent"
             placeholder="e.g. Draft an email reply in my voice for every unread thread from a customer."
             rows="5" ${disabled} required>${_esc(_intent)}</textarea>
+          ${chipHTML}
           ${errorBanner}
           <div class="mc-composer-actions">
             <button type="submit" class="btn btn-primary" ${disabled}>${btnLabel}</button>
@@ -85,9 +88,13 @@ const MissionComposerView = (() => {
     }
 
     if (_state === 'preview' && _plan) {
-      const steps = (_plan.plan?.nodes || []).map((n, i) =>
-        `<li class="mc-plan-step"><span class="mc-plan-step-num">${i + 1}</span><span class="mc-plan-step-label">${_esc(n.prompt || n.type)}</span></li>`
-      ).join('');
+      const steps = (_plan.plan?.nodes || []).map((n, i) => {
+        const label = n.label || n.config?.prompt || n.prompt || n.type;
+        const badge = n.type && n.type !== 'agent'
+          ? `<span class="mc-plan-step-badge" data-node-type="${_esc(n.type)}">${_esc(n.type.replace(/_/g, ' '))}</span>`
+          : '';
+        return `<li class="mc-plan-step"><span class="mc-plan-step-num">${i + 1}</span><span class="mc-plan-step-label">${_esc(label)}</span>${badge}</li>`;
+      }).join('');
       return `
         <div class="mc-plan-card">
           <div class="mc-plan-row">
@@ -118,7 +125,50 @@ const MissionComposerView = (() => {
       return `<div class="mc-composer-saving">Activating ${_Nl()}…</div>`;
     }
 
+    if (_state === 'template-gate') {
+      return _templateGateHTML();
+    }
+
     return '';
+  }
+
+  function _templateGateHTML() {
+    const gates = _checkInboxCaptainGates();
+    const steps = [];
+    if (!gates.gmailConnected) {
+      steps.push(`
+        <li class="mc-gate-step">
+          <span class="mc-gate-step-icon" aria-hidden="true">✉</span>
+          <div class="mc-gate-step-body">
+            <div class="mc-gate-step-title">Connect Gmail</div>
+            <div class="mc-gate-step-sub">The captain needs Gmail access to read threads and draft replies.</div>
+          </div>
+          <a class="btn btn-sm" href="#/security?tab=integrations">Connect</a>
+        </li>
+      `);
+    }
+    if (!gates.shipInstalled) {
+      steps.push(`
+        <li class="mc-gate-step">
+          <span class="mc-gate-step-icon" aria-hidden="true">✪</span>
+          <div class="mc-gate-step-body">
+            <div class="mc-gate-step-title">Install Inbox Captain</div>
+            <div class="mc-gate-step-sub">Add the captain + Triage & Drafter crew to your fleet. One click from the catalog.</div>
+          </div>
+          <a class="btn btn-sm" href="#/bridge/spaceships/${INBOX_CAPTAIN_ID}">Install</a>
+        </li>
+      `);
+    }
+    return `
+      <div class="mc-template-gate">
+        <div class="mc-template-gate-title">A couple of steps before this ${_Nl()} can fly</div>
+        <ol class="mc-gate-steps">${steps.join('')}</ol>
+        <div class="mc-composer-actions">
+          <button type="button" class="btn btn-sm" id="mc-gate-back">← Back</button>
+          <button type="button" class="btn btn-primary" id="mc-gate-retry">I'm ready — recheck</button>
+        </div>
+      </div>
+    `;
   }
 
   function _bindBodyEvents() {
@@ -140,6 +190,36 @@ const MissionComposerView = (() => {
           _state = 'input';
         }
         _paint();
+      });
+
+      // Intent textarea live-updates the chip detection. Cheap re-paint.
+      const intentEl = document.getElementById('mc-intent');
+      intentEl?.addEventListener('input', (e) => {
+        const next = e.target.value || '';
+        const detectionChanged = detectInboxCaptainIntent(next) !== detectInboxCaptainIntent(_intent);
+        _intent = next;
+        // Editing the intent clears any prior template-load error — that
+        // error was tied to the previous chip click, not the current draft.
+        if (_error) { _error = null; _paint(); return; }
+        if (detectionChanged) _paint();
+      });
+
+      // Inbox Captain chip → skip LLM, drop in the seeded DAG template.
+      document.getElementById('mc-inbox-captain-chip')?.addEventListener('click', () => {
+        const currentIntent = (document.getElementById('mc-intent')?.value || '').trim();
+        if (currentIntent) _intent = currentIntent;
+        _installInboxCaptainTemplate();
+      });
+      return;
+    }
+
+    if (_state === 'template-gate') {
+      document.getElementById('mc-gate-back')?.addEventListener('click', () => {
+        _state = 'input';
+        _paint();
+      });
+      document.getElementById('mc-gate-retry')?.addEventListener('click', () => {
+        _installInboxCaptainTemplate();
       });
       return;
     }
@@ -168,6 +248,137 @@ const MissionComposerView = (() => {
         }
       });
     }
+  }
+
+  /* ─── Inbox Captain template (seeded DAG) ─── */
+  // The chip is the first template to ship. When `detectInboxCaptainIntent`
+  // matches, the Composer offers a one-click install that swaps the LLM
+  // compose pass for the pre-built DAG from
+  // blueprints.metadata.workflow on fleet-inbox-captain.
+  const INBOX_CAPTAIN_ID = 'fleet-inbox-captain';
+  // Matches the canonical hello-world utterances. Deliberately loose —
+  // false positives are cheap (the user can ignore the chip); false
+  // negatives mean the user types a correct intent and sees no chip,
+  // which is the worse outcome for demoability.
+  const _INBOX_PATTERN = /\b(inbox|gmail|email|e-?mail|reply|replies|draft|drafts|unread|thread|messages?)\b/i;
+
+  function detectInboxCaptainIntent(text) {
+    if (typeof text !== 'string') return false;
+    return _INBOX_PATTERN.test(text);
+  }
+
+  // Gate checks read State directly. If State isn't populated yet (first
+  // paint during bootstrap) both gates come back false, which is the
+  // right default — show the "what you need" explainer.
+  function _checkInboxCaptainGates() {
+    const mcps = (typeof State !== 'undefined' ? State.get('mcp_connections') : null) || [];
+    const gmailConnected = mcps.some(c => c && c.catalog_id === 'google-gmail' && c.status === 'connected');
+
+    const ships = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const shipInstalled = ships.find(s => s && s.blueprint_id === INBOX_CAPTAIN_ID) || null;
+
+    return { gmailConnected, shipInstalled };
+  }
+
+  function _inboxCaptainBlueprint() {
+    if (typeof Blueprints === 'undefined' || typeof Blueprints.getSpaceship !== 'function') return null;
+    return Blueprints.getSpaceship(INBOX_CAPTAIN_ID) || null;
+  }
+
+  function _inboxCaptainChipHTML() {
+    if (!detectInboxCaptainIntent(_intent)) return '';
+    const bp = _inboxCaptainBlueprint();
+    // Even without the blueprint loaded, surface the chip — clicking
+    // shows a readable error instead of silently swallowing the intent.
+    const name = bp?.name || 'Inbox Captain';
+    const flavor = bp?.flavor || bp?.metadata?.flavor || 'Your inbox at 9 AM. Drafted by 9:02.';
+    const gates = _checkInboxCaptainGates();
+    const ready = gates.gmailConnected && gates.shipInstalled;
+    const statusLine = ready
+      ? 'Ready to install — Gmail connected, captain on deck.'
+      : _gateStatusLine(gates);
+
+    return `
+      <div class="mc-template-chip" role="note">
+        <button type="button" class="mc-template-chip-btn" id="mc-inbox-captain-chip" title="Install this template">
+          <span class="mc-template-chip-title">Install from template: ${_esc(name)}</span>
+          <span class="mc-template-chip-sub">${_esc(flavor)}</span>
+          <span class="mc-template-chip-status">${_esc(statusLine)}</span>
+        </button>
+      </div>
+    `;
+  }
+
+  function _gateStatusLine(gates) {
+    const missing = [];
+    if (!gates.gmailConnected) missing.push('connect Gmail');
+    if (!gates.shipInstalled) missing.push('install Inbox Captain');
+    return 'Needs: ' + missing.join(' · ');
+  }
+
+  // Triggered by the chip click. Validates both gates before handing
+  // off to the normal preview flow. If a gate is missing, we render a
+  // guidance state with deep-links to the right surfaces; clicking the
+  // chip again after connecting/installing re-checks.
+  function _installInboxCaptainTemplate() {
+    const bp = _inboxCaptainBlueprint();
+    if (!bp) {
+      _error = 'Inbox Captain blueprint not loaded. Try again in a moment.';
+      _paint();
+      return;
+    }
+    const gates = _checkInboxCaptainGates();
+    if (!gates.gmailConnected || !gates.shipInstalled) {
+      _state = 'template-gate';
+      _error = null;
+      _paint();
+      return;
+    }
+
+    const plan = buildInboxCaptainPlan(bp, gates.shipInstalled, _intent);
+    if (!plan) {
+      _error = 'Inbox Captain template is missing its workflow definition.';
+      _paint();
+      return;
+    }
+    _plan = plan;
+    _state = 'preview';
+    _error = null;
+    _paint();
+  }
+
+  /**
+   * Build the Mission plan from an Inbox Captain blueprint row. Copies
+   * the frozen `metadata.workflow` DAG, wires captain_id to the user's
+   * deployed spaceship row, and sets tools_required from the blueprint.
+   *
+   * Exposed for unit tests so we can assert the wire shape without
+   * needing the full State stack.
+   */
+  function buildInboxCaptainPlan(blueprint, userShip, intent) {
+    const workflow = blueprint?.metadata?.workflow;
+    if (!workflow || !Array.isArray(workflow.nodes) || !workflow.nodes.length) return null;
+
+    const title = 'Inbox Captain — draft replies for review';
+    const description = (intent && intent.trim())
+      ? intent.trim().slice(0, 500)
+      : 'Triage recent Gmail threads and draft replies in my voice. Gate before send.';
+
+    return {
+      title,
+      description,
+      shape: 'dag',
+      captain_id: userShip?.id || null,
+      plan: {
+        shape: 'dag',
+        nodes: workflow.nodes.map(n => Object.assign({}, n)),
+        edges: Array.isArray(workflow.edges) ? workflow.edges.map(e => Object.assign({}, e)) : [],
+      },
+      schedule: null,
+      outcome_spec: { kind: 'drafts_reviewed' },
+      tools_required: (blueprint.config?.tools_required || blueprint.metadata?.tools_required || ['google-gmail']),
+      template_id: blueprint.id,
+    };
   }
 
   /* ─── LLM plan composition ─── */
@@ -297,6 +508,10 @@ const MissionComposerView = (() => {
     // Enqueue an immediate run. `mission_id` threads the template through
     // so the run knows which plan it came from. `plan_snapshot` freezes
     // the plan so edits to the template don't mutate this run mid-flight.
+    // Embed `shape` inside plan_snapshot too so MissionRunner._isDagMission
+    // can route via WorkflowEngine without re-reading the `missions` row.
+    const snapshot = Object.assign({ shape: plan.shape || 'simple' }, plan.plan || {});
+
     const taskRow = await SB.db('tasks').create({
       user_id: user.id,
       title: plan.title,
@@ -304,7 +519,7 @@ const MissionComposerView = (() => {
       priority: 'medium',
       progress: 0,
       mission_id: missionRow.id,
-      plan_snapshot: plan.plan,
+      plan_snapshot: snapshot,
     });
 
     // Mirror into State so Missions tab sees the new row without a refetch.
@@ -324,6 +539,9 @@ const MissionComposerView = (() => {
     _systemPrompt,
     parsePlanResponse,
     normalizePlan,
+    detectInboxCaptainIntent,
+    buildInboxCaptainPlan,
+    INBOX_CAPTAIN_ID,
   };
 })();
 

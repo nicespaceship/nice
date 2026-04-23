@@ -22,6 +22,14 @@ const MissionRunner = (() => {
     }
     if (!mission) return null;
 
+    // 1b. DAG-shape missions (Inbox Captain and future multi-node
+    // templates) dispatch through WorkflowEngine. `plan_snapshot` is
+    // frozen at enqueue time (mission-composer.js activateMission), so
+    // replays stay deterministic even if the template changes later.
+    if (_isDagMission(mission)) {
+      return await _runDag(mission, user);
+    }
+
     // 2. Find the assigned agent
     let agent = null;
     let agentId = mission.agent_id;
@@ -321,6 +329,128 @@ const MissionRunner = (() => {
     }
   }
 
+  /* ── DAG detection + dispatch ── */
+  function _isDagMission(mission) {
+    const snap = mission?.plan_snapshot;
+    if (!snap || typeof snap !== 'object') return false;
+    if (snap.shape === 'dag') return true;
+    const nodes = Array.isArray(snap.nodes) ? snap.nodes : [];
+    if (nodes.length <= 1) return false;
+    // Any gate or persona_dispatch node means DAG regardless of shape hint.
+    return nodes.some(n => n && (n.type === 'approval_gate' || n.type === 'persona_dispatch'));
+  }
+
+  async function _runDag(mission, user) {
+    const missionId = mission.id;
+    const snap = mission.plan_snapshot || {};
+    const nodes = Array.isArray(snap.nodes) ? snap.nodes : [];
+    const edges = Array.isArray(snap.edges) ? snap.edges : [];
+
+    if (!nodes.length) {
+      const msg = 'Plan snapshot missing nodes.';
+      await SB.db('tasks').update(missionId, { status: 'failed', result: 'Error: ' + msg, updated_at: new Date().toISOString() }).catch(() => {});
+      _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + msg });
+      _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + msg);
+      return null;
+    }
+
+    try {
+      await SB.db('tasks').update(missionId, { status: 'running', progress: 10, updated_at: new Date().toISOString() });
+      _updateLocalMission(missionId, { status: 'running', progress: 10 });
+    } catch (err) {
+      console.warn('[MissionRunner] DAG status update failed:', err.message);
+    }
+
+    // WorkflowEngine expects `connections` — our schema uses `edges`.
+    const workflow = { id: missionId, name: mission.title, nodes, connections: edges };
+    const nodeResults = {};
+
+    let result;
+    try {
+      result = await WorkflowEngine.execute(workflow, {
+        skipSave: true,
+        onNodeComplete: (node, output) => {
+          nodeResults[node.id] = output;
+          // Rough progress: share the 10→80 band across non-gate nodes.
+          const nonGate = nodes.filter(n => n.type !== 'approval_gate').length || 1;
+          const done = Object.keys(nodeResults).filter(id => {
+            const n = nodes.find(x => x.id === id);
+            return n && n.type !== 'approval_gate';
+          }).length;
+          const pct = Math.min(10 + Math.round((done / nonGate) * 70), 80);
+          _updateLocalMission(missionId, { progress: pct });
+          SB.db('tasks').update(missionId, { progress: pct }).catch(() => {});
+        },
+      });
+    } catch (err) {
+      console.error('[MissionRunner] DAG execution failed:', err.message);
+      const now = new Date().toISOString();
+      await SB.db('tasks').update(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure'), updated_at: now }).catch(() => {});
+      _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure') });
+      _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + (err.message || 'Unknown error'));
+      return null;
+    }
+
+    const now = new Date().toISOString();
+    if (result.status === 'paused') {
+      // Gate fired: pause at status='review' so the existing Missions
+      // review UI takes over. Approval semantics (approve → resume
+      // remaining nodes, reject → terminate) land alongside the S5
+      // node-type pass when we have more than one gate per plan to
+      // worry about. For S3 the gate is the final node, so approve =
+      // complete and reject = cancel.
+      await SB.db('tasks').update(missionId, {
+        status: 'review',
+        progress: 100,
+        result: result.finalOutput || 'Awaiting captain approval.',
+        approval_status: 'draft',
+        node_results: nodeResults,
+        metadata: Object.assign({}, mission.metadata || {}, { dag_status: 'paused', paused_at: result.pausedAt, completed_at: now }),
+        updated_at: now,
+      }).catch(() => {});
+      _updateLocalMission(missionId, {
+        status: 'review',
+        progress: 100,
+        result: result.finalOutput || 'Awaiting captain approval.',
+        approval_status: 'draft',
+      });
+      _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
+      return result;
+    }
+
+    if (result.status === 'failed') {
+      await SB.db('tasks').update(missionId, {
+        status: 'failed',
+        result: result.finalOutput || 'Error: DAG node failed.',
+        node_results: nodeResults,
+        updated_at: now,
+      }).catch(() => {});
+      _updateLocalMission(missionId, { status: 'failed', result: result.finalOutput || 'Error: DAG node failed.' });
+      _notify(user.id, 'error', 'Mission Failed', mission.title + ': one or more steps failed');
+      return result;
+    }
+
+    // Fully completed DAG with no gate — drop into review alongside
+    // ordinary simple-shape missions so the user still signs off.
+    await SB.db('tasks').update(missionId, {
+      status: 'review',
+      progress: 100,
+      result: result.finalOutput || '',
+      approval_status: 'draft',
+      node_results: nodeResults,
+      metadata: Object.assign({}, mission.metadata || {}, { dag_status: 'completed', completed_at: now }),
+      updated_at: now,
+    }).catch(() => {});
+    _updateLocalMission(missionId, {
+      status: 'review',
+      progress: 100,
+      result: result.finalOutput || '',
+      approval_status: 'draft',
+    });
+    _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
+    return result;
+  }
+
   /* ── Update local State for immediate UI refresh ── */
   function _updateLocalMission(missionId, updates) {
     const missions = State.get('missions') || [];
@@ -427,5 +557,5 @@ const MissionRunner = (() => {
     } catch { return { xp: 0, missions: 0, approved: 0, rejected: 0 }; }
   }
 
-  return { run, awardAgentXP, getAgentStats };
+  return { run, awardAgentXP, getAgentStats, _isDagMission };
 })();
