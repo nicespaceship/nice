@@ -453,10 +453,17 @@ const IntegrationsView = (() => {
 
     const user = State.get('user');
     if (user) {
+      // catalog_id is the SSOT key for matching DB rows against the
+      // front-end catalog. Without it the card grid can't tell which
+      // rows are already connected, and MissionComposer's per-template
+      // gates (e.g. Inbox Captain needs google-gmail) look for a match
+      // that never comes. Persist it on every create going forward;
+      // legacy rows are backfilled in migration 20260423000007.
       SB.db('mcp_connections').create({
         user_id: user.id, spaceship_id: 'account', name: catalog.name,
         server_url: conn.server_url, transport: catalog.transport,
         auth_type: catalog.auth, available_tools: catalog.tools, status: 'connected',
+        catalog_id: catalogId,
       }).catch(() => {});
     }
     render(el);
