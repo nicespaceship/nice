@@ -155,7 +155,17 @@ const McpBridge = (() => {
       });
 
       if (error) {
-        throw new Error(typeof error === 'string' ? error : error.message || 'MCP tool invocation failed');
+        let bodyDetail = '';
+        const ctx = error.context;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) bodyDetail = body.error;
+            else if (body?.detail) bodyDetail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail);
+          } catch {}
+        }
+        const base = typeof error === 'string' ? error : error.message || 'MCP tool invocation failed';
+        throw new Error(bodyDetail ? `${base}: ${bodyDetail}` : base);
       }
 
       if (data?.error) {
