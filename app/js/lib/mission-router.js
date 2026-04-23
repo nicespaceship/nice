@@ -225,6 +225,7 @@ const MissionRouter = (() => {
       return AgentExecutor.execute(agentBp, prompt, {
         tools: agentBp.config.tools,
         spaceshipId: spaceshipId,
+        maxSteps: agentBp.config.maxSteps,
         onStep: opts.onStep,
       });
     }

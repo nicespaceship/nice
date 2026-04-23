@@ -353,6 +353,42 @@ describe('WorkflowEngine — mission scope routing', () => {
     expect(calls[0].spaceshipId).toBe('mission-' + UUID);
   });
 
+  it('passes blueprint config.maxSteps through to AgentExecutor opts', async () => {
+    const calls = [];
+    globalThis.AgentExecutor = {
+      execute: async (agent, prompt, opts) => {
+        calls.push({ maxSteps: opts?.maxSteps });
+        return { finalAnswer: 'done', steps: [], metadata: {} };
+      },
+    };
+    globalThis.State.set('agents', [{ id: 'u1', name: 'Cap', blueprint_id: 'bp-cap', config: { tools: ['t'], maxSteps: 30 } }]);
+    const workflow = {
+      id: UUID,
+      nodes: [{ id: 'n', type: 'agent', config: { blueprintId: 'bp-cap', prompt: 'go' } }],
+      connections: [],
+    };
+    await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(calls[0].maxSteps).toBe(30);
+  });
+
+  it('omits maxSteps from opts when blueprint does not configure it', async () => {
+    const calls = [];
+    globalThis.AgentExecutor = {
+      execute: async (agent, prompt, opts) => {
+        calls.push({ maxSteps: opts?.maxSteps });
+        return { finalAnswer: 'done', steps: [], metadata: {} };
+      },
+    };
+    globalThis.State.set('agents', [{ id: 'u1', name: 'NoCap', blueprint_id: 'bp-x', config: { tools: ['t'] } }]);
+    const workflow = {
+      id: UUID,
+      nodes: [{ id: 'n', type: 'agent', config: { blueprintId: 'bp-x', prompt: 'go' } }],
+      connections: [],
+    };
+    await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(calls[0].maxSteps).toBeUndefined();
+  });
+
   it('persona_dispatch threads workflow scope through to AgentExecutor', async () => {
     const calls = [];
     globalThis.AgentExecutor = {
