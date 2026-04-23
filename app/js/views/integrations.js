@@ -9,58 +9,21 @@ const IntegrationsView = (() => {
   const _esc = Utils.esc;
 
   /* ── MCP Server Catalog ───────────────────────────────────────── */
+  /* Umbrella catalog entries map to per-service mcp_connections rows
+     (e.g. the 'google' card matches google-gmail / google-calendar /
+     google-drive rows written by the google-oauth callback). */
   const MCP_CATALOG = [
-    /* Productivity & Workspace */
-    { id:'google',       name:'Google Workspace',  desc:'Gmail, Drive, Calendar — read & write',icon:'mail',     tools:['gmail_search','gmail_read','gmail_send','gmail_draft','drive_search','drive_read','calendar_list','calendar_create','calendar_update'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
-    { id:'slack',        name:'Slack',             desc:'Channels, DMs, threads',             icon:'chat',      tools:['channels','messages','threads'],              transport:'streamable-http', auth:'oauth',   cat:'workspace' },
-    { id:'notion',       name:'Notion',            desc:'Pages, databases, blocks',           icon:'file',      tools:['pages','databases','search'],                 transport:'streamable-http', auth:'oauth',   cat:'workspace' },
-    { id:'confluence',   name:'Confluence',        desc:'Wiki, documentation, spaces',        icon:'file',      tools:['pages','spaces','search','comments'],         transport:'streamable-http', auth:'oauth',   cat:'workspace' },
-    { id:'ms-teams',     name:'Microsoft Teams',   desc:'Chat, channels, meetings',           icon:'chat',      tools:['messages','channels','teams','meetings'],     transport:'streamable-http', auth:'oauth',   cat:'workspace' },
-    { id:'sharepoint',   name:'SharePoint',        desc:'Sites, documents, lists',            icon:'file',      tools:['sites','documents','lists','search'],         transport:'streamable-http', auth:'oauth',   cat:'workspace' },
-    { id:'onedrive',     name:'OneDrive',          desc:'Files, folders, sharing',            icon:'file',      tools:['files','folders','sharing','search'],          transport:'streamable-http', auth:'oauth',   cat:'workspace' },
-    { id:'box',          name:'Box',               desc:'Secure cloud content management',    icon:'file',      tools:['files','folders','metadata','search'],         transport:'streamable-http', auth:'oauth',   cat:'workspace' },
-    /* Code & DevOps */
-    { id:'github',       name:'GitHub',            desc:'Repos, PRs, Issues, Actions',        icon:'code',      tools:['repos','pull_requests','issues','actions'],   transport:'streamable-http', auth:'oauth',   cat:'dev' },
-    { id:'gitlab',       name:'GitLab',            desc:'Repos, merge requests, CI/CD',       icon:'code',      tools:['repos','merge_requests','pipelines','issues'],transport:'streamable-http', auth:'oauth',   cat:'dev' },
-    { id:'bitbucket',    name:'Bitbucket',         desc:'Repos, PRs, Pipelines',              icon:'code',      tools:['repos','pull_requests','pipelines'],          transport:'streamable-http', auth:'oauth',   cat:'dev' },
-    { id:'azure-devops', name:'Azure DevOps',      desc:'Boards, repos, pipelines',           icon:'code',      tools:['work_items','repos','pipelines','boards'],    transport:'streamable-http', auth:'oauth',   cat:'dev' },
-    { id:'vercel',       name:'Vercel',            desc:'Deployments, domains, logs',          icon:'cloud',     tools:['deployments','projects','domains','logs'],    transport:'streamable-http', auth:'api_key', cat:'dev' },
-    { id:'sentry',       name:'Sentry',            desc:'Errors, performance, releases',      icon:'alert',     tools:['issues','events','releases','performance'],   transport:'streamable-http', auth:'api_key', cat:'dev' },
-    /* Data & Databases */
-    { id:'supabase',     name:'Supabase',          desc:'Database, auth, storage, edge',      icon:'database',  tools:['sql','auth','storage','edge_functions'],      transport:'streamable-http', auth:'api_key', cat:'data' },
-    { id:'stripe',       name:'Stripe',            desc:'Payments, invoices, customers',      icon:'wallet',    tools:['payments','invoices','customers','products'], transport:'streamable-http', auth:'api_key', cat:'data' },
-    { id:'snowflake',    name:'Snowflake',         desc:'Data warehouse queries, stages',     icon:'database',  tools:['sql','stages','tasks','streams'],             transport:'streamable-http', auth:'api_key', cat:'data' },
-    { id:'bigquery',     name:'BigQuery',          desc:'Serverless analytics, datasets',     icon:'database',  tools:['sql','datasets','tables','jobs'],             transport:'streamable-http', auth:'oauth',   cat:'data' },
-    { id:'pinecone',     name:'Pinecone',          desc:'Vector search, embeddings, RAG',     icon:'database',  tools:['upsert','query','delete','describe'],         transport:'streamable-http', auth:'api_key', cat:'data' },
-    { id:'weaviate',     name:'Weaviate',          desc:'Vector DB, semantic search',         icon:'database',  tools:['objects','search','schema','batch'],           transport:'streamable-http', auth:'api_key', cat:'data' },
-    { id:'elasticsearch',name:'Elasticsearch',     desc:'Full-text search, analytics',        icon:'database',  tools:['search','index','aggregate','mappings'],       transport:'streamable-http', auth:'api_key', cat:'data' },
-    /* Design */
-    { id:'figma',        name:'Figma',             desc:'Designs, components, variables',     icon:'palette',   tools:['files','components','comments','variables'],  transport:'streamable-http', auth:'oauth',   cat:'design' },
-    /* Project Management */
-    { id:'linear',       name:'Linear',            desc:'Issues, projects, cycles, teams',    icon:'target',    tools:['issues','projects','cycles','teams'],         transport:'streamable-http', auth:'oauth',   cat:'pm' },
-    { id:'jira',         name:'Jira',              desc:'Issues, sprints, boards, projects',  icon:'clipboard', tools:['issues','sprints','boards','projects'],       transport:'streamable-http', auth:'oauth',   cat:'pm' },
-    { id:'asana',        name:'Asana',             desc:'Tasks, projects, portfolios',        icon:'clipboard', tools:['tasks','projects','sections','portfolios'],   transport:'streamable-http', auth:'oauth',   cat:'pm' },
-    /* CRM & Support */
-    { id:'salesforce',   name:'Salesforce',        desc:'CRM, leads, accounts, reports',      icon:'target',    tools:['leads','accounts','opportunities','reports'], transport:'streamable-http', auth:'oauth',   cat:'crm' },
-    { id:'hubspot',      name:'HubSpot',           desc:'CRM, contacts, deals, marketing',    icon:'target',    tools:['contacts','deals','companies','marketing'],   transport:'streamable-http', auth:'oauth',   cat:'crm' },
-    { id:'zendesk',      name:'Zendesk',           desc:'Tickets, users, knowledge base',     icon:'clipboard', tools:['tickets','users','articles','search'],        transport:'streamable-http', auth:'oauth',   cat:'crm' },
-    { id:'intercom',     name:'Intercom',          desc:'Conversations, contacts, articles',  icon:'chat',      tools:['conversations','contacts','articles','tags'], transport:'streamable-http', auth:'api_key', cat:'crm' },
-    /* Monitoring & Observability */
-    { id:'datadog',      name:'Datadog',           desc:'Metrics, logs, traces, dashboards',  icon:'chart',     tools:['metrics','logs','monitors','dashboards'],     transport:'streamable-http', auth:'api_key', cat:'ops' },
-    { id:'pagerduty',    name:'PagerDuty',         desc:'Incidents, escalations, on-call',    icon:'alert',     tools:['incidents','services','schedules','alerts'],  transport:'streamable-http', auth:'api_key', cat:'ops' },
-    /* Communication */
-    { id:'discord',      name:'Discord',           desc:'Guilds, channels, messages, bots',   icon:'chat',      tools:['messages','channels','guilds','members'],     transport:'streamable-http', auth:'api_key', cat:'comms' },
-    { id:'telegram',     name:'Telegram',          desc:'Messages, groups, bot commands',     icon:'chat',      tools:['messages','groups','bot_commands','files'],   transport:'streamable-http', auth:'api_key', cat:'comms' },
-    /* Social Media */
-    { id:'buffer',       name:'Buffer',            desc:'Schedule, publish, analyze posts',   icon:'share',     tools:['create_post','schedule','analytics','profiles'], transport:'streamable-http', auth:'oauth',   cat:'social' },
-    { id:'x-twitter',    name:'X (Twitter)',        desc:'Tweets, threads, analytics',         icon:'share',     tools:['tweet','thread','analytics','timeline'],       transport:'streamable-http', auth:'oauth',   cat:'social' },
-    { id:'linkedin',     name:'LinkedIn',           desc:'Posts, articles, company pages',     icon:'share',     tools:['post','article','analytics','company'],        transport:'streamable-http', auth:'oauth',   cat:'social' },
-    { id:'instagram',    name:'Instagram',          desc:'Posts, reels, stories, insights',    icon:'share',     tools:['post','reel','story','insights'],              transport:'streamable-http', auth:'oauth',   cat:'social' },
-    { id:'facebook',     name:'Facebook',           desc:'Pages, posts, ads, insights',        icon:'share',     tools:['post','page','ads','insights'],                transport:'streamable-http', auth:'oauth',   cat:'social' },
-    /* Automation */
-    { id:'zapier',       name:'Zapier',            desc:'Triggers, actions, 5000+ apps',      icon:'zap',       tools:['triggers','actions','zaps','search'],         transport:'streamable-http', auth:'api_key', cat:'auto' },
-    { id:'make',         name:'Make',              desc:'Scenarios, modules, data stores',    icon:'zap',       tools:['scenarios','modules','connections','hooks'],   transport:'streamable-http', auth:'api_key', cat:'auto' },
+    { id:'google',    name:'Google Workspace', desc:'Gmail, Drive, Calendar — read & write',                    icon:'mail', tools:['gmail_search','gmail_read','gmail_send','gmail_draft','drive_search','drive_read','calendar_list','calendar_create','calendar_update'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
+    { id:'microsoft', name:'Microsoft 365',    desc:'Outlook, OneDrive, Word, Excel, PowerPoint, Teams',        icon:'mail', tools:['outlook_search','outlook_draft','onedrive_files','word','excel','powerpoint','teams'],                                                 transport:'streamable-http', auth:'oauth', cat:'workspace', comingSoon:true },
   ];
+
+  /* Exact match on catalog_id, then umbrella-prefix fallback so
+     per-service rows resolve to the umbrella card. */
+  function _matchConnection(catalogId, mcps) {
+    const exact = mcps.find(c => c.catalog_id === catalogId);
+    if (exact) return exact;
+    return mcps.find(c => c.catalog_id && c.catalog_id.startsWith(catalogId + '-'));
+  }
 
   /* ── Demo seed data ───────────────────────────────────────────── */
   function _seedMcpConnections() {
@@ -266,9 +229,20 @@ const IntegrationsView = (() => {
   }
 
   /* ── Card Renderers ──────────────────────────────────────────── */
+  function _renderActionButton(mcp, conn, size) {
+    const sizeCls = size === 'xs' ? 'btn-xs' : 'btn-sm';
+    if (mcp.comingSoon) {
+      return `<button class="btn ${sizeCls}" disabled>Coming soon</button>`;
+    }
+    if (conn) {
+      return `<button class="btn ${sizeCls} mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`;
+    }
+    return `<button class="btn ${sizeCls} btn-primary mcp-connect-btn" data-catalog-id="${mcp.id}">Connect</button>`;
+  }
+
   function _renderMcpCards(catalog, mcps, viewMode) {
     return catalog.map(mcp => {
-      const conn = mcps.find(c => c.catalog_id === mcp.id);
+      const conn = _matchConnection(mcp.id, mcps);
       const connected = !!conn;
       if (viewMode === 'list') {
         return `<div class="intg-list-row ${connected ? 'intg-list-row--connected' : ''}" data-cat="${mcp.cat}">
@@ -277,10 +251,7 @@ const IntegrationsView = (() => {
           <span class="intg-list-desc">${mcp.desc}</span>
           <span class="intg-list-cat mono">${mcp.cat}</span>
           <span class="intg-list-transport mono">${mcp.transport}</span>
-          ${connected
-            ? `<button class="btn btn-xs mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`
-            : `<button class="btn btn-xs btn-primary mcp-connect-btn" data-catalog-id="${mcp.id}">Connect</button>`
-          }
+          ${_renderActionButton(mcp, conn, 'xs')}
         </div>`;
       }
       // When the MCP is connected we have real tool IDs from the
@@ -304,10 +275,7 @@ const IntegrationsView = (() => {
         <div class="mcp-catalog-tools">${toolPills}</div>
         <div class="mcp-catalog-footer">
           <span class="mcp-catalog-transport mono">${mcp.transport}</span>
-          ${connected
-            ? `<button class="btn btn-sm mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`
-            : `<button class="btn btn-sm btn-primary mcp-connect-btn" data-catalog-id="${mcp.id}">Connect</button>`
-          }
+          ${_renderActionButton(mcp, conn, 'sm')}
         </div>
       </div>`;
     }).join('');
@@ -434,8 +402,12 @@ const IntegrationsView = (() => {
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
+    if (catalog.comingSoon) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Coming soon', message: `${catalog.name} integration is not available yet.`, type: 'system' });
+      return;
+    }
     const conns = State.get('mcp_connections') || [];
-    if (conns.find(c => c.catalog_id === catalogId || c.name === catalog.name)) return;
+    if (_matchConnection(catalogId, conns) || conns.find(c => c.name === catalog.name)) return;
 
     // OAuth-based connections: redirect to OAuth flow
     if (catalog.auth === 'oauth' && catalogId === 'google') {
