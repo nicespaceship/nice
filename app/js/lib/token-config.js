@@ -31,7 +31,7 @@ const TokenConfig = (() => {
     standard: {
       id: 'standard',
       label: 'Standard',
-      description: 'Pro plan models — GPT-5 mini, Llama 4 Scout, Grok 4.1 Fast.',
+      description: 'Pro plan models — GPT-5 mini, Llama 4 Scout, Grok 4.1 Fast, GLM-5.',
       monthlyAllowance: 1000,       // Pro plan grants this every billing cycle
       requiresAddon: null,          // no add-on needed; included in Pro
     },
@@ -67,6 +67,7 @@ const TokenConfig = (() => {
     'gpt-5-mini':         { pool: 'standard', weight: 1,  tier: 'standard' },
     'llama-4-scout':      { pool: 'standard', weight: 1,  tier: 'standard' },
     'grok-4-1-fast':      { pool: 'standard', weight: 2,  tier: 'standard' },
+    'glm-5':              { pool: 'standard', weight: 2,  tier: 'standard' },
 
     // ── Claude pool (Claude add-on)
     'claude-4-6-sonnet':  { pool: 'claude',   weight: 3,  tier: 'claude'   },
