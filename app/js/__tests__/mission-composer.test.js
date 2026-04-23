@@ -135,3 +135,71 @@ describe('MissionComposerView — system prompt', () => {
     expect(sp).toMatch(/agent/);
   });
 });
+
+describe('MissionComposerView — Inbox Captain template', () => {
+  it('detectInboxCaptainIntent matches canonical email/inbox phrasing', () => {
+    const matches = [
+      'Draft a reply for every unread email from a customer.',
+      'Go through my Gmail inbox and respond to anything internal.',
+      'Reply to threads from vendors.',
+      'Draft responses for unread messages.',
+    ];
+    matches.forEach(s => expect(MissionComposerView.detectInboxCaptainIntent(s)).toBe(true));
+  });
+
+  it('detectInboxCaptainIntent ignores unrelated intents', () => {
+    const misses = [
+      'Summarize our Q4 sales data.',
+      'Write a blog post about agent orchestration.',
+      'Research competitors in the logistics space.',
+      '',
+      null,
+      42,
+    ];
+    misses.forEach(s => expect(MissionComposerView.detectInboxCaptainIntent(s)).toBe(false));
+  });
+
+  it('buildInboxCaptainPlan returns a DAG plan with the seeded nodes', () => {
+    const fakeBlueprint = {
+      id: 'fleet-inbox-captain',
+      name: 'Inbox Captain',
+      metadata: {
+        workflow: {
+          shape: 'dag',
+          nodes: [
+            { id: 'triage',  type: 'agent',            config: { blueprintId: 'bp-agent-inbox-triage',  prompt: 'triage' } },
+            { id: 'drafter', type: 'persona_dispatch', config: { blueprintId: 'bp-agent-inbox-drafter', prompt: 'draft' } },
+            { id: 'review',  type: 'approval_gate',    config: { reason: 'Review drafts' } },
+          ],
+          edges: [
+            { from: 'triage',  to: 'drafter' },
+            { from: 'drafter', to: 'review' },
+          ],
+        },
+      },
+      config: { tools_required: ['google-gmail'] },
+    };
+    const userShip = { id: 'ship-uuid-1', blueprint_id: 'fleet-inbox-captain' };
+
+    const plan = MissionComposerView.buildInboxCaptainPlan(fakeBlueprint, userShip, 'Draft inbox replies');
+    expect(plan.shape).toBe('dag');
+    expect(plan.captain_id).toBe('ship-uuid-1');
+    expect(plan.plan.nodes).toHaveLength(3);
+    expect(plan.plan.nodes[0].id).toBe('triage');
+    expect(plan.plan.nodes[2].type).toBe('approval_gate');
+    expect(plan.plan.edges).toHaveLength(2);
+    expect(plan.tools_required).toContain('google-gmail');
+    expect(plan.template_id).toBe('fleet-inbox-captain');
+    // Title shouldn't swallow the full intent.
+    expect(plan.title).toMatch(/Inbox Captain/);
+  });
+
+  it('buildInboxCaptainPlan returns null when the blueprint is missing its workflow', () => {
+    expect(MissionComposerView.buildInboxCaptainPlan({}, null, 'x')).toBeNull();
+    expect(MissionComposerView.buildInboxCaptainPlan({ metadata: { workflow: { nodes: [] } } }, null, 'x')).toBeNull();
+  });
+
+  it('INBOX_CAPTAIN_ID points at the seeded blueprint', () => {
+    expect(MissionComposerView.INBOX_CAPTAIN_ID).toBe('fleet-inbox-captain');
+  });
+});

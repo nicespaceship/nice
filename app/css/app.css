@@ -2863,6 +2863,57 @@
   .mc-plan-row { grid-template-columns:1fr; gap:4px; }
 }
 
+/* Template chip — surfaces matching seeded DAGs (Inbox Captain, etc.) */
+.mc-template-chip { margin-top:4px; }
+.mc-template-chip-btn {
+  width:100%; display:flex; flex-direction:column; gap:4px;
+  padding:12px 14px; text-align:left; cursor:pointer;
+  border:1px solid var(--border); border-radius:var(--radius);
+  background:color-mix(in srgb, var(--accent) 5%, var(--panel-bg));
+  color:var(--text); font-family:var(--font-b);
+  transition:border-color .15s, background .15s;
+}
+.mc-template-chip-btn:hover { border-color:var(--accent); }
+.mc-template-chip-title { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--text); }
+.mc-template-chip-sub { font-size:var(--text-sm); color:var(--text-muted); line-height:var(--lh-snug); }
+.mc-template-chip-status {
+  font-size:var(--text-xs); text-transform:uppercase; letter-spacing:var(--tracking-caps);
+  color:var(--accent); font-weight:var(--fw-medium);
+}
+
+.mc-template-gate {
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px 20px; background:var(--panel-bg);
+  display:flex; flex-direction:column; gap:14px;
+}
+.mc-template-gate-title {
+  font-size:var(--text-md); font-weight:var(--fw-bold); color:var(--text);
+}
+.mc-gate-steps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.mc-gate-step {
+  display:grid; grid-template-columns:28px 1fr auto; gap:12px;
+  align-items:center; padding:10px 12px;
+  border:1px solid var(--border); border-radius:var(--radius);
+  background:var(--surface);
+}
+.mc-gate-step-icon {
+  width:28px; height:28px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--accent); color:var(--bg);
+  font-size:var(--text-sm); font-weight:var(--fw-bold);
+}
+.mc-gate-step-title { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--text); }
+.mc-gate-step-sub { font-size:var(--text-sm); color:var(--text-muted); line-height:var(--lh-snug); }
+
+.mc-plan-step-badge {
+  display:inline-block; margin-left:8px; padding:2px 8px;
+  font-size:var(--text-xs); text-transform:uppercase; letter-spacing:var(--tracking-caps);
+  font-weight:var(--fw-bold);
+  border:1px solid var(--border); border-radius:999px; color:var(--text-muted);
+}
+.mc-plan-step-badge[data-node-type="approval_gate"] { color:var(--accent); border-color:var(--accent); }
+.mc-plan-step-badge[data-node-type="persona_dispatch"] { color:var(--accent2, var(--accent)); border-color:var(--accent2, var(--accent)); }
+
 /* ─────────────────────────────────────────────────────────────────
    TASKS VIEW
 ───────────────────────────────────────────────────────────────── */
