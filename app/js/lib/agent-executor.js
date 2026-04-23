@@ -25,6 +25,13 @@ const AgentExecutor = (() => {
     const spaceshipId = opts.spaceshipId || 'default-ship';
     const onStep     = opts.onStep || null;
     const startMs    = Date.now();
+    const agentId    = (agentBlueprint && agentBlueprint.id) || null;
+
+    // Log the user prompt at the start of the run so the Execution Log
+    // has the seed entry. Without this, an empty inbox-captain mission
+    // produces zero ship_log rows and the detail view shows "no log yet"
+    // even though the agent did complete a multi-turn tool-use session.
+    _logToShipLog(spaceshipId, agentId, 'user', prompt, { event: 'mission_start' });
 
     // Load MCP tools into ToolRegistry (account-level, all agents get them)
     let mcpToolIds = [];
@@ -162,6 +169,26 @@ const AgentExecutor = (() => {
           steps.push(step);
           if (onStep) onStep(step);
 
+          // Persist the tool-use turn so the Execution Log can replay
+          // the trace later. Two entries per step: the assistant's
+          // intent (thought + which tool with what input), and the
+          // observation (tool output, error or success). is_error
+          // distinguishes provider failures from declined approvals.
+          _logToShipLog(spaceshipId, agentId, 'agent', combinedText || `(tool call: ${block.name})`, {
+            event: 'tool_use',
+            tool_name: block.name,
+            tool_use_id: block.id,
+            input: block.input || {},
+            step: stepIdx,
+          });
+          _logToShipLog(spaceshipId, agentId, 'system', observation, {
+            event: 'tool_result',
+            tool_name: block.name,
+            tool_use_id: block.id,
+            is_error: !!isError,
+            step: stepIdx,
+          });
+
           if (stepIdx >= maxSteps) break;
         }
 
@@ -201,6 +228,12 @@ const AgentExecutor = (() => {
             };
             steps.push(step);
             if (onStep) onStep(step);
+            _logToShipLog(spaceshipId, agentId, 'agent', parsed.thought || `(tool call: ${parsed.action})`, {
+              event: 'tool_use', tool_name: parsed.action, input: parsed.actionInput || {}, step: stepIdx,
+            });
+            _logToShipLog(spaceshipId, agentId, 'system', 'Action blocked — user declined approval.', {
+              event: 'tool_result', tool_name: parsed.action, is_error: true, step: stepIdx,
+            });
             conversationMessages.push({ role: 'assistant', content: combinedText });
             conversationMessages.push({ role: 'user', content: 'Observation: Action was declined by the user. Try a different approach or provide a Final Answer.' });
             continue;
@@ -208,11 +241,13 @@ const AgentExecutor = (() => {
         }
 
         let observation;
+        let toolFailed = false;
         try {
           const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {});
           observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
         } catch (err) {
           observation = 'Error: ' + (err.message || 'Tool execution failed');
+          toolFailed = true;
         }
         stepIdx++;
         const step = {
@@ -225,6 +260,12 @@ const AgentExecutor = (() => {
         };
         steps.push(step);
         if (onStep) onStep(step);
+        _logToShipLog(spaceshipId, agentId, 'agent', parsed.thought || `(tool call: ${parsed.action})`, {
+          event: 'tool_use', tool_name: parsed.action, input: parsed.actionInput || {}, step: stepIdx,
+        });
+        _logToShipLog(spaceshipId, agentId, 'system', observation, {
+          event: 'tool_result', tool_name: parsed.action, is_error: toolFailed, step: stepIdx,
+        });
         conversationMessages.push({ role: 'assistant', content: combinedText });
         conversationMessages.push({ role: 'user', content: 'Observation: ' + observation });
         continue;
@@ -243,6 +284,12 @@ const AgentExecutor = (() => {
       };
       steps.push(step);
       if (onStep) onStep(step);
+      _logToShipLog(spaceshipId, agentId, 'agent', finalAnswer, {
+        event: 'final_answer',
+        duration_ms: Date.now() - startMs,
+        steps_used: stepIdx,
+        total_tokens: totalTokens,
+      });
 
       return {
         steps,
@@ -262,6 +309,12 @@ const AgentExecutor = (() => {
     const finalAnswer = lastStep
       ? (lastStep.observation || lastStep.thought || 'Reached maximum steps without a final answer.')
       : 'No steps executed.';
+    _logToShipLog(spaceshipId, agentId, 'agent', finalAnswer, {
+      event: 'max_steps_reached',
+      duration_ms: Date.now() - startMs,
+      steps_used: maxSteps,
+      total_tokens: totalTokens,
+    });
 
     return {
       steps,
@@ -674,5 +727,30 @@ const AgentExecutor = (() => {
     return { send, history: getHistory, reset, getTokensUsed };
   }
 
-  return { execute, converse, classifyTool, _isSideEffectTool };
+  /* ── Persist a single step boundary to ship_log (fire-and-forget) ──
+     Caps content length so a 50-thread gmail_search dump or pathological
+     tool result doesn't blow the row. ShipLog handles routing of the
+     synthetic 'mission-<uuid>' scope id to the mission_id column —
+     see ship-log.js _resolveScope. We swallow any error: persistence is
+     observability, never the critical path of a mission run. */
+  const _SHIP_LOG_CONTENT_CAP = 8000;
+  function _logToShipLog(spaceshipId, agentId, role, content, metadata) {
+    if (typeof ShipLog === 'undefined' || typeof ShipLog.append !== 'function') return;
+    if (!spaceshipId) return;
+    let safe;
+    if (typeof content === 'string') {
+      safe = content.length > _SHIP_LOG_CONTENT_CAP
+        ? content.slice(0, _SHIP_LOG_CONTENT_CAP) + '… [truncated]'
+        : content;
+    } else {
+      try { safe = JSON.stringify(content); } catch { safe = String(content); }
+      if (safe.length > _SHIP_LOG_CONTENT_CAP) safe = safe.slice(0, _SHIP_LOG_CONTENT_CAP) + '… [truncated]';
+    }
+    try {
+      const p = ShipLog.append(spaceshipId, { agentId, role, content: safe, metadata: metadata || {} });
+      if (p && typeof p.then === 'function') p.catch(() => { /* non-critical */ });
+    } catch { /* non-critical */ }
+  }
+
+  return { execute, converse, classifyTool, _isSideEffectTool, _logToShipLog };
 })();

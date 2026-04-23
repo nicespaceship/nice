@@ -312,6 +312,67 @@ describe('WorkflowEngine — tool dispatch via AgentExecutor', () => {
   });
 });
 
+describe('WorkflowEngine — mission scope routing', () => {
+  // PR #246 added ship_log.mission_id; this guards the AgentExecutor
+  // hand-off so log entries from a DAG mission run actually land under
+  // the mission instead of a random spaceship's log.
+  const UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+  it('_resolveSpaceshipId mints mission-<uuid> when workflow.id is a UUID', () => {
+    expect(WorkflowEngine._resolveSpaceshipId({ id: UUID })).toBe('mission-' + UUID);
+  });
+
+  it('_resolveSpaceshipId rejects non-UUID workflow ids and falls back to first ship', () => {
+    globalThis.State.set('spaceships', [{ id: 'ship-1' }]);
+    expect(WorkflowEngine._resolveSpaceshipId({ id: 'wf-editor' })).toBe('ship-1');
+    expect(WorkflowEngine._resolveSpaceshipId(null)).toBe('ship-1');
+  });
+
+  it('_resolveSpaceshipId falls through to workflow-exec sentinel when no ships exist', () => {
+    globalThis.State.set('spaceships', []);
+    expect(WorkflowEngine._resolveSpaceshipId({ id: 'wf-editor' })).toBe('workflow-exec');
+  });
+
+  it('passes mission-<uuid> as opts.spaceshipId when an agent node runs in a UUID-id workflow', async () => {
+    const calls = [];
+    globalThis.AgentExecutor = {
+      execute: async (agent, prompt, opts) => {
+        calls.push({ spaceshipId: opts?.spaceshipId });
+        return { finalAnswer: 'done', steps: [], metadata: {} };
+      },
+    };
+    globalThis.State.set('agents', [{ id: 'u1', name: 'C', blueprint_id: 'bp-x', config: { tools: ['gmail_create_draft'] } }]);
+    const workflow = {
+      id: UUID,
+      nodes: [{ id: 'n', type: 'agent', config: { blueprintId: 'bp-x', prompt: 'go' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(calls.length).toBe(1);
+    expect(calls[0].spaceshipId).toBe('mission-' + UUID);
+  });
+
+  it('persona_dispatch threads workflow scope through to AgentExecutor', async () => {
+    const calls = [];
+    globalThis.AgentExecutor = {
+      execute: async (agent, prompt, opts) => {
+        calls.push({ spaceshipId: opts?.spaceshipId });
+        return { finalAnswer: 'done', steps: [], metadata: {} };
+      },
+    };
+    globalThis.State.set('agents', [{ id: 'u1', name: 'D', blueprint_id: 'bp-d', config: { tools: ['x'] } }]);
+    const workflow = {
+      id: UUID,
+      nodes: [{ id: 'n', type: 'persona_dispatch', config: { blueprintId: 'bp-d', prompt: 'reply', personaHint: 'theme_persona' } }],
+      connections: [],
+    };
+    await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(calls.length).toBe(1);
+    expect(calls[0].spaceshipId).toBe('mission-' + UUID);
+  });
+});
+
 describe('WorkflowEngine — baseline regressions', () => {
   it('completes a linear agent → agent workflow', async () => {
     const workflow = {

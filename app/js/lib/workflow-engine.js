@@ -130,13 +130,13 @@ const WorkflowEngine = (() => {
   async function _executeNode(node, input, nodeResults, workflow) {
     switch (node.type) {
       case 'agent':
-        return await _executeAgent(node, input);
+        return await _executeAgent(node, input, workflow);
 
       case 'persona_dispatch':
         // S5: resolves personaHint → prepends voice context to the
         // agent prompt. Drafter uses this to write replies in the
         // user's voice rather than a generic assistant tone.
-        return await _executePersonaDispatch(node, input);
+        return await _executePersonaDispatch(node, input, workflow);
 
       case 'approval_gate':
         return _executeApprovalGate(node, input);
@@ -167,7 +167,7 @@ const WorkflowEngine = (() => {
     }
   }
 
-  async function _executeAgent(node, input) {
+  async function _executeAgent(node, input, workflow) {
     const agentId = node.config?.agentId;
     const blueprintId = node.config?.blueprintId;
     const prompt = node.config?.prompt || input || node.label;
@@ -210,7 +210,7 @@ const WorkflowEngine = (() => {
       try {
         const execResult = await AgentExecutor.execute(agent, finalPrompt, {
           tools: agent?.config?.tools || [],
-          spaceshipId: _resolveSpaceshipId(),
+          spaceshipId: _resolveSpaceshipId(workflow),
         });
         return execResult?.finalAnswer || 'No response';
       } catch (err) {
@@ -219,7 +219,7 @@ const WorkflowEngine = (() => {
     }
 
     if (typeof ShipLog !== 'undefined') {
-      const shipId = _resolveSpaceshipId();
+      const shipId = _resolveSpaceshipId(workflow);
       const result = await ShipLog.execute(shipId, agent, finalPrompt);
       return result ? result.content : 'No response';
     }
@@ -238,7 +238,19 @@ const WorkflowEngine = (() => {
     return conns.some(c => c && c.status === 'connected');
   }
 
-  function _resolveSpaceshipId() {
+  // Mission DAG runs pass the mission UUID as workflow.id (see
+  // MissionRunner._runDag). Mint a synthetic 'mission-<uuid>' scope so
+  // ShipLog routes log entries to ship_log.mission_id (column added in
+  // migration 20260423190000). Without this, every Inbox-Captain-style
+  // run would leak into a random spaceship's log or drop into the local
+  // sessionStorage fallback — and the Execution Log would render empty.
+  // Falls back to first active ship for editor-driven workflow runs that
+  // don't carry a UUID id.
+  const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function _resolveSpaceshipId(workflow) {
+    if (workflow && typeof workflow.id === 'string' && _UUID_RE.test(workflow.id)) {
+      return 'mission-' + workflow.id;
+    }
     const spaceships = typeof State !== 'undefined' ? (State.get('spaceships') || []) : [];
     return spaceships.length ? spaceships[0].id : 'workflow-exec';
   }
@@ -255,17 +267,17 @@ const WorkflowEngine = (() => {
    * sample also falls through — we don't want to block the DAG because
    * the user hasn't filled out their profile yet.
    */
-  async function _executePersonaDispatch(node, input) {
+  async function _executePersonaDispatch(node, input, workflow) {
     const hint = node?.config?.personaHint;
     const voiceContext = _resolvePersonaContext(hint, node);
-    if (!voiceContext) return await _executeAgent(node, input);
+    if (!voiceContext) return await _executeAgent(node, input, workflow);
 
     // Clone the node so we don't mutate the workflow graph.
     const mergedPrompt = [voiceContext, node.config?.prompt || node.label || ''].filter(Boolean).join('\n\n');
     const injected = Object.assign({}, node, {
       config: Object.assign({}, node.config, { prompt: mergedPrompt }),
     });
-    return await _executeAgent(injected, input);
+    return await _executeAgent(injected, input, workflow);
   }
 
   function _resolvePersonaContext(hint, node) {
@@ -566,6 +578,7 @@ const WorkflowEngine = (() => {
     _executeNotify,
     _executeAgent,
     _agentHasTools,
+    _resolveSpaceshipId,
   };
 })();
 
