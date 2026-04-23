@@ -59,8 +59,8 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('llama-4-scout')).toBe(1);
   });
 
-  it('Mistral Large 3, Command R+, DeepSeek R1, Kimi K2.5, and GLM-5 are not in the catalog (removed for cost/provider-unreachable)', () => {
-    for (const id of ['mistral-large-3', 'command-r-plus', 'deepseek-r1', 'kimi-k2-5', 'glm-5']) {
+  it('Mistral Large 3, Command R+, DeepSeek R1, and Kimi K2.5 are not in the catalog (removed for cost/provider-unreachable)', () => {
+    for (const id of ['mistral-large-3', 'command-r-plus', 'deepseek-r1', 'kimi-k2-5']) {
       expect(TokenConfig.poolFor(id)).toBeNull();
       expect(TokenConfig.isFreeModel(id)).toBe(true);
     }
@@ -69,6 +69,11 @@ describe('TokenConfig — model → pool mapping', () => {
   it('Grok 4.1 Fast consumes 2 standard tokens (heavier weight, 2M context)', () => {
     expect(TokenConfig.poolFor('grok-4-1-fast')).toBe('standard');
     expect(TokenConfig.weightFor('grok-4-1-fast')).toBe(2);
+  });
+
+  it('GLM-5 consumes 2 standard tokens (744B MoE at value-tier pricing)', () => {
+    expect(TokenConfig.poolFor('glm-5')).toBe('standard');
+    expect(TokenConfig.weightFor('glm-5')).toBe(2);
   });
 
   it('Claude 4.6 Sonnet consumes 3 claude tokens', () => {

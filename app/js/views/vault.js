@@ -28,6 +28,9 @@ const VaultView = (() => {
     // Grok 4.1 Fast: xAI supports vision, but not smoke-tested through nice-ai's
     // OpenAI-compat translator yet. Flip to true once verified.
     { id: 'grok-4-1-fast',    name: 'Grok 4.1 Fast',    provider: 'xAI',       speed: 'fast',    quality: 'excellent', desc: 'Industry-leading 2M token context window. Real-time research.', icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    // GLM-5: 744B MoE flagship from Zhipu AI, OpenAI-compatible. Vision lives
+    // in GLM-4.6V; base glm-5 is text-only so keep vision=false.
+    { id: 'glm-5',            name: 'GLM-5',            provider: 'Zhipu',     speed: 'medium',  quality: 'excellent', desc: '744B parameter MoE, 200K context. Frontier reasoning at value-tier pricing.', icon: 'circle', vision: false, pdf: false, audio: false, video: false },
 
     // ── Claude pool (Claude add-on)
     { id: 'claude-4-6-sonnet', name: 'Claude 4.6 Sonnet', provider: 'Anthropic', speed: 'fast',  quality: 'excellent', desc: 'Best balance of speed, cost, and intelligence. Production default.', icon: 'circle', vision: true, pdf: true, audio: false, video: false },
