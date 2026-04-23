@@ -128,6 +128,33 @@ describe('ShipLog', () => {
       const entry = await ShipLog.append('ship-1', { content: 'sys msg' });
       expect(entry.role).toBe('system');
     });
+
+    it('routes mission-<uuid> scope to mission_id column, null spaceship_id', async () => {
+      // Parses the synthetic id MissionRunner fabricates for ship-less
+      // missions. Before this routing, spaceship_id='mission-<uuid>' was
+      // an invalid UUID and inserts silently failed.
+      SB.isReady = () => true;
+      const missionUuid = '78199ef5-e3ab-4f5b-bec5-fe4825db879c';
+      const entry = await ShipLog.append('mission-' + missionUuid, {
+        content: 'ship-less mission step',
+        role: 'agent',
+      });
+      expect(entry).not.toBeNull();
+      expect(entry.mission_id).toBe(missionUuid);
+      expect(entry.spaceship_id).toBeNull();
+      SB.isReady = () => false;
+    });
+
+    it('keeps non-mission scope ids on spaceship_id (regression guard)', async () => {
+      SB.isReady = () => true;
+      const entry = await ShipLog.append('ship-real-uuid-abc', {
+        content: 'ship-backed step',
+        role: 'agent',
+      });
+      expect(entry.spaceship_id).toBe('ship-real-uuid-abc');
+      expect(entry.mission_id ?? null).toBeNull();
+      SB.isReady = () => false;
+    });
   });
 
   describe('getEntries', () => {
