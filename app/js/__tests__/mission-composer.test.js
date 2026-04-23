@@ -203,3 +203,47 @@ describe('MissionComposerView — Inbox Captain template', () => {
     expect(MissionComposerView.INBOX_CAPTAIN_ID).toBe('fleet-inbox-captain');
   });
 });
+
+describe('MissionComposerView — voice signal line on the chip', () => {
+  beforeEach(() => {
+    try { localStorage.removeItem('nice-voice-sample'); } catch {}
+    // The test runner also loads Utils via setup.js; if it hasn't, stub
+    // the KEYS entry the composer reads.
+    if (typeof globalThis.Utils === 'undefined') {
+      globalThis.Utils = { esc: String, KEYS: { voiceSample: 'nice-voice-sample' } };
+    } else if (!globalThis.Utils.KEYS) {
+      globalThis.Utils.KEYS = { voiceSample: 'nice-voice-sample' };
+    } else if (!globalThis.Utils.KEYS.voiceSample) {
+      globalThis.Utils.KEYS.voiceSample = 'nice-voice-sample';
+    }
+  });
+
+  it('_readVoiceSampleLength returns 0 when the key is empty', () => {
+    expect(MissionComposerView._readVoiceSampleLength()).toBe(0);
+  });
+
+  it('_readVoiceSampleLength returns the trimmed length', () => {
+    localStorage.setItem('nice-voice-sample', '   hello world   ');
+    expect(MissionComposerView._readVoiceSampleLength()).toBe(11);
+  });
+
+  it('_voiceSignalLine renders the off-state when length is 0', () => {
+    const html = MissionComposerView._voiceSignalLine(0);
+    expect(html).toMatch(/mc-template-chip-voice-off/);
+    expect(html).toMatch(/No voice sample/);
+    expect(html).toMatch(/href="#\/profile"/);
+  });
+
+  it('_voiceSignalLine renders the on-state with char count when length > 0', () => {
+    const html = MissionComposerView._voiceSignalLine(342);
+    expect(html).toMatch(/mc-template-chip-voice-on/);
+    expect(html).toMatch(/Voice sample ready \(342 chars\)/);
+    expect(html).toMatch(/Drafter writes in your voice/);
+  });
+
+  it('_voiceSignalLine pluralizes the char label at length 1', () => {
+    const html = MissionComposerView._voiceSignalLine(1);
+    expect(html).toMatch(/\(1 char\)/);
+    expect(html).not.toMatch(/\(1 chars\)/);
+  });
+});
