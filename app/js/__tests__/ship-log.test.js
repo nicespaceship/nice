@@ -155,6 +155,38 @@ describe('ShipLog', () => {
       expect(entry.mission_id ?? null).toBeNull();
       SB.isReady = () => false;
     });
+
+    it('coerces non-UUID agent_id to null and stashes blueprint id on metadata', async () => {
+      // ship_log.agent_id is a UUID column. Catalog blueprints carry
+      // string ids like 'bp-agent-inbox-captain' — passing those through
+      // made every insert fail at the DB with 400 ("invalid input syntax
+      // for type uuid"). Trace context still wants the blueprint id, so
+      // it lands on metadata.agent_blueprint_id.
+      SB.isReady = () => true;
+      const entry = await ShipLog.append('ship-1', {
+        agentId: 'bp-agent-inbox-captain',
+        role: 'agent',
+        content: 'thinking',
+        metadata: { event: 'tool_use', tool_name: 'gmail_search_messages' },
+      });
+      expect(entry.agent_id).toBeNull();
+      expect(entry.metadata.agent_blueprint_id).toBe('bp-agent-inbox-captain');
+      expect(entry.metadata.event).toBe('tool_use');
+      SB.isReady = () => false;
+    });
+
+    it('passes through real UUID agent_id unchanged', async () => {
+      SB.isReady = () => true;
+      const realUuid = '11111111-2222-4333-8444-555555555555';
+      const entry = await ShipLog.append('ship-1', {
+        agentId: realUuid,
+        role: 'agent',
+        content: 'reply',
+      });
+      expect(entry.agent_id).toBe(realUuid);
+      expect(entry.metadata.agent_blueprint_id).toBeUndefined();
+      SB.isReady = () => false;
+    });
   });
 
   describe('getEntries', () => {

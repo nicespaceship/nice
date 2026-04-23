@@ -26,17 +26,30 @@ const ShipLog = (() => {
     return { spaceship_id: scopeId, mission_id: null };
   }
 
+  // ship_log.agent_id is a UUID column. Catalog blueprint ids
+  // ('bp-agent-inbox-captain' etc.) are not UUIDs — passing them
+  // through made every insert fail at the DB with 400 / "invalid
+  // input syntax for type uuid". Coerce non-UUID ids to null and
+  // stash the original on metadata.agent_blueprint_id so the trace
+  // still tells you which blueprint produced the row.
+  const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   /* ── Write an entry to the log ── */
   async function append(spaceshipId, { agentId, role, content, metadata }) {
     if (!spaceshipId || !content) return null;
 
     const scope = _resolveScope(spaceshipId);
+    const isUuid = typeof agentId === 'string' && _UUID_RE.test(agentId);
+    const safeAgentId = isUuid ? agentId : null;
+    const enrichedMetadata = (!isUuid && agentId)
+      ? Object.assign({}, metadata || {}, { agent_blueprint_id: agentId })
+      : (metadata || {});
     const entry = {
       ...scope,
-      agent_id:     agentId || null,
+      agent_id:     safeAgentId,
       role:         role || 'system',
       content:      content,
-      metadata:     metadata || {},
+      metadata:     enrichedMetadata,
     };
 
     // Persist to Supabase if available
