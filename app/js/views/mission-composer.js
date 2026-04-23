@@ -141,28 +141,18 @@ const MissionComposerView = (() => {
           <span class="mc-gate-step-icon" aria-hidden="true">✉</span>
           <div class="mc-gate-step-body">
             <div class="mc-gate-step-title">Connect Gmail</div>
-            <div class="mc-gate-step-sub">The captain needs Gmail access to read threads and draft replies.</div>
+            <div class="mc-gate-step-sub">Inbox Captain needs Gmail access to read threads and draft replies.</div>
           </div>
           <a class="btn btn-sm" href="#/security?tab=integrations">Connect</a>
         </li>
       `);
     }
-    if (!gates.shipInstalled) {
-      steps.push(`
-        <li class="mc-gate-step">
-          <span class="mc-gate-step-icon" aria-hidden="true">✪</span>
-          <div class="mc-gate-step-body">
-            <div class="mc-gate-step-title">Install Inbox Captain</div>
-            <div class="mc-gate-step-sub">Add the captain + Triage & Drafter crew to your fleet. One click from the catalog.</div>
-          </div>
-          <a class="btn btn-sm" href="#/bridge/spaceships/${INBOX_CAPTAIN_ID}">Install</a>
-        </li>
-      `);
-    }
+    const errBanner = _error ? `<div class="mc-composer-error">${_esc(_error)}</div>` : '';
     return `
       <div class="mc-template-gate">
-        <div class="mc-template-gate-title">A couple of steps before this ${_Nl()} can fly</div>
+        <div class="mc-template-gate-title">One step before this ${_Nl()} can fly</div>
         <ol class="mc-gate-steps">${steps.join('')}</ol>
+        ${errBanner}
         <div class="mc-composer-actions">
           <button type="button" class="btn btn-sm" id="mc-gate-back">← Back</button>
           <button type="button" class="btn btn-primary" id="mc-gate-retry">I'm ready — recheck</button>
@@ -250,12 +240,20 @@ const MissionComposerView = (() => {
     }
   }
 
-  /* ─── Inbox Captain template (seeded DAG) ─── */
-  // The chip is the first template to ship. When `detectInboxCaptainIntent`
-  // matches, the Composer offers a one-click install that swaps the LLM
-  // compose pass for the pre-built DAG from
-  // blueprints.metadata.workflow on fleet-inbox-captain.
-  const INBOX_CAPTAIN_ID = 'fleet-inbox-captain';
+  /* ─── Inbox Captain template (seeded single agent) ─── */
+  // Inbox Captain was originally a Spaceship + 2-agent crew + DAG.
+  // Refactored 2026-04-23 to a single agent (bp-agent-inbox-captain)
+  // that triages + drafts in one ReAct loop — a Spaceship was too
+  // heavy for a narrow inbox helper. See migration
+  // 20260423000005_inbox_captain_agent_refactor.sql.
+  //
+  // The composer still produces a DAG-shape plan because it uses ONE
+  // persona_dispatch node (so WorkflowEngine injects the user's voice
+  // reference from localStorage at runtime). MissionRunner's existing
+  // status='review' flow covers "approve before send" without a
+  // dedicated approval_gate node — drafts already live in Gmail's
+  // Drafts folder until the user approves the mission.
+  const INBOX_CAPTAIN_ID = 'bp-agent-inbox-captain';
   // Matches the canonical hello-world utterances. Deliberately loose —
   // false positives are cheap (the user can ignore the chip); false
   // negatives mean the user types a correct intent and sees no chip,
@@ -268,22 +266,22 @@ const MissionComposerView = (() => {
   }
 
   // Gate checks read State directly. If State isn't populated yet (first
-  // paint during bootstrap) both gates come back false, which is the
-  // right default — show the "what you need" explainer.
+  // paint during bootstrap) Gmail gate comes back false, which is the
+  // right default — show the Connect Gmail explainer.
   //
-  // voiceSampleLength is NOT a hard gate — the Drafter runs fine without
-  // voice context; the chip just surfaces it so the user can opt in to
-  // the "in my voice" behavior before activating. Separate softness
-  // from the required gates (Gmail + ship install) so the explainer
-  // stays focused on blockers.
+  // voiceSampleLength is NOT a hard gate — Inbox Captain runs fine
+  // without a voice sample; the chip just surfaces it so the user
+  // can opt in to the "in my voice" behavior before activating.
+  //
+  // Post-refactor there's ONE hard gate: Gmail connection. No ship
+  // install step because Inbox Captain is an agent and
+  // WorkflowEngine._executeAgent resolves the blueprint directly
+  // via Blueprints.getAgent() — no user_agents row required.
   function _checkInboxCaptainGates() {
     const mcps = (typeof State !== 'undefined' ? State.get('mcp_connections') : null) || [];
     const gmailConnected = mcps.some(c => c && c.catalog_id === 'google-gmail' && c.status === 'connected');
 
-    const ships = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
-    const shipInstalled = ships.find(s => s && s.blueprint_id === INBOX_CAPTAIN_ID) || null;
-
-    return { gmailConnected, shipInstalled, voiceSampleLength: _readVoiceSampleLength() };
+    return { gmailConnected, voiceSampleLength: _readVoiceSampleLength() };
   }
 
   function _readVoiceSampleLength() {
@@ -295,8 +293,8 @@ const MissionComposerView = (() => {
   }
 
   function _inboxCaptainBlueprint() {
-    if (typeof Blueprints === 'undefined' || typeof Blueprints.getSpaceship !== 'function') return null;
-    return Blueprints.getSpaceship(INBOX_CAPTAIN_ID) || null;
+    if (typeof Blueprints === 'undefined' || typeof Blueprints.getAgent !== 'function') return null;
+    return Blueprints.getAgent(INBOX_CAPTAIN_ID) || null;
   }
 
   function _inboxCaptainChipHTML() {
@@ -307,16 +305,15 @@ const MissionComposerView = (() => {
     const name = bp?.name || 'Inbox Captain';
     const flavor = bp?.flavor || bp?.metadata?.flavor || 'Your inbox at 9 AM. Drafted by 9:02.';
     const gates = _checkInboxCaptainGates();
-    const ready = gates.gmailConnected && gates.shipInstalled;
-    const statusLine = ready
-      ? 'Ready to install — Gmail connected, captain on deck.'
+    const statusLine = gates.gmailConnected
+      ? 'Ready — Gmail connected.'
       : _gateStatusLine(gates);
     const voiceLine = _voiceSignalLine(gates.voiceSampleLength);
 
     return `
       <div class="mc-template-chip" role="note">
-        <button type="button" class="mc-template-chip-btn" id="mc-inbox-captain-chip" title="Install this template">
-          <span class="mc-template-chip-title">Install from template: ${_esc(name)}</span>
+        <button type="button" class="mc-template-chip-btn" id="mc-inbox-captain-chip" title="Use this template">
+          <span class="mc-template-chip-title">Use template: ${_esc(name)}</span>
           <span class="mc-template-chip-sub">${_esc(flavor)}</span>
           <span class="mc-template-chip-status">${_esc(statusLine)}</span>
         </button>
@@ -339,14 +336,13 @@ const MissionComposerView = (() => {
   function _gateStatusLine(gates) {
     const missing = [];
     if (!gates.gmailConnected) missing.push('connect Gmail');
-    if (!gates.shipInstalled) missing.push('install Inbox Captain');
     return 'Needs: ' + missing.join(' · ');
   }
 
-  // Triggered by the chip click. Validates both gates before handing
-  // off to the normal preview flow. If a gate is missing, we render a
-  // guidance state with deep-links to the right surfaces; clicking the
-  // chip again after connecting/installing re-checks.
+  // Triggered by the chip click. Validates the Gmail gate before
+  // handing off to the normal preview flow. If Gmail isn't connected
+  // we show the one-step explainer; clicking the chip again after
+  // connecting Gmail re-checks.
   function _installInboxCaptainTemplate() {
     const bp = _inboxCaptainBlueprint();
     if (!bp) {
@@ -355,16 +351,16 @@ const MissionComposerView = (() => {
       return;
     }
     const gates = _checkInboxCaptainGates();
-    if (!gates.gmailConnected || !gates.shipInstalled) {
+    if (!gates.gmailConnected) {
       _state = 'template-gate';
       _error = null;
       _paint();
       return;
     }
 
-    const plan = buildInboxCaptainPlan(bp, gates.shipInstalled, _intent);
+    const plan = buildInboxCaptainPlan(bp, _intent);
     if (!plan) {
-      _error = 'Inbox Captain template is missing its workflow definition.';
+      _error = 'Inbox Captain template could not be built.';
       _paint();
       return;
     }
@@ -375,35 +371,53 @@ const MissionComposerView = (() => {
   }
 
   /**
-   * Build the Mission plan from an Inbox Captain blueprint row. Copies
-   * the frozen `metadata.workflow` DAG, wires captain_id to the user's
-   * deployed spaceship row, and sets tools_required from the blueprint.
+   * Build a Mission plan that runs the Inbox Captain agent with the
+   * user's voice reference injected. Single-node DAG — one
+   * persona_dispatch node — so WorkflowEngine handles the voice
+   * injection + agent execution. MissionRunner's existing
+   * status='review' flow covers the "approve before send" contract
+   * without needing a separate approval_gate node (drafts live in
+   * Gmail's Drafts folder regardless until the user approves).
    *
    * Exposed for unit tests so we can assert the wire shape without
    * needing the full State stack.
    */
-  function buildInboxCaptainPlan(blueprint, userShip, intent) {
-    const workflow = blueprint?.metadata?.workflow;
-    if (!workflow || !Array.isArray(workflow.nodes) || !workflow.nodes.length) return null;
+  function buildInboxCaptainPlan(blueprint, intent) {
+    if (!blueprint || !blueprint.id) return null;
 
     const title = 'Inbox Captain — draft replies for review';
     const description = (intent && intent.trim())
       ? intent.trim().slice(0, 500)
-      : 'Triage recent Gmail threads and draft replies in my voice. Gate before send.';
+      : 'Triage recent Gmail threads and draft replies in my voice. Review before send.';
+
+    const toolsRequired = blueprint.metadata?.tools_required
+      || blueprint.config?.tools_required
+      || ['google-gmail'];
 
     return {
       title,
       description,
       shape: 'dag',
-      captain_id: userShip?.id || null,
+      captain_id: null,  // no spaceship — agent runs standalone
       plan: {
         shape: 'dag',
-        nodes: workflow.nodes.map(n => Object.assign({}, n)),
-        edges: Array.isArray(workflow.edges) ? workflow.edges.map(e => Object.assign({}, e)) : [],
+        nodes: [
+          {
+            id: 'captain',
+            type: 'persona_dispatch',
+            label: 'Triage inbox and draft replies',
+            config: {
+              blueprintId: blueprint.id,
+              prompt: 'Triage the last 24 hours of unread Gmail threads and draft replies for the ones that need one. Land every reply as a Gmail draft. Output the JSON summary defined in your system prompt.',
+              personaHint: 'user_voice',
+            },
+          },
+        ],
+        edges: [],
       },
       schedule: null,
       outcome_spec: { kind: 'drafts_reviewed' },
-      tools_required: (blueprint.config?.tools_required || blueprint.metadata?.tools_required || ['google-gmail']),
+      tools_required: toolsRequired,
       template_id: blueprint.id,
     };
   }
