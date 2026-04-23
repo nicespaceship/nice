@@ -29,7 +29,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
 - Region: `us-west-1`
-- Blueprints partitioned via the `scope` column: `catalog` (seed library: 687 agents + 237 spaceships), `community` (user-published), `system` (internal/reviewer agents). Counts drift — verify with `SELECT scope, COUNT(*) FROM blueprints GROUP BY scope;`
+- Blueprints partitioned via the `scope` column: `catalog` (seed library: 688 agents + 237 spaceships as of 2026-04-23), `community` (user-published: 8 agents), `system` (internal/reviewer: 5 agents + 1 spaceship). Counts drift — verify with `SELECT scope, type, COUNT(*) FROM blueprints GROUP BY scope, type;`
 
 ### Edge Functions (15)
 | Function | Purpose |
