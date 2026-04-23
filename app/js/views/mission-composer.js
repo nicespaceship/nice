@@ -33,6 +33,10 @@ const MissionComposerView = (() => {
   let _plan = null;
   let _error = null;
   let _el = null;
+  // Gate-step install flag — flips true while deployFromCatalog runs so
+  // the button shows "Installing…" and disables double-clicks. Separate
+  // from _state so the surrounding template-gate UI stays rendered.
+  let _installingShip = false;
 
   function render(el) {
     _el = el;
@@ -148,21 +152,25 @@ const MissionComposerView = (() => {
       `);
     }
     if (!gates.shipInstalled) {
+      const busy = _installingShip ? 'disabled' : '';
+      const label = _installingShip ? 'Installing…' : 'Install';
       steps.push(`
         <li class="mc-gate-step">
           <span class="mc-gate-step-icon" aria-hidden="true">✪</span>
           <div class="mc-gate-step-body">
             <div class="mc-gate-step-title">Install Inbox Captain</div>
-            <div class="mc-gate-step-sub">Add the captain + Triage & Drafter crew to your fleet. One click from the catalog.</div>
+            <div class="mc-gate-step-sub">Add the captain + Triage & Drafter crew to your fleet. One click, no navigation.</div>
           </div>
-          <a class="btn btn-sm" href="#/bridge/spaceships/${INBOX_CAPTAIN_ID}">Install</a>
+          <button type="button" class="btn btn-sm" id="mc-gate-install-ship" ${busy}>${_esc(label)}</button>
         </li>
       `);
     }
+    const errBanner = _error ? `<div class="mc-composer-error">${_esc(_error)}</div>` : '';
     return `
       <div class="mc-template-gate">
         <div class="mc-template-gate-title">A couple of steps before this ${_Nl()} can fly</div>
         <ol class="mc-gate-steps">${steps.join('')}</ol>
+        ${errBanner}
         <div class="mc-composer-actions">
           <button type="button" class="btn btn-sm" id="mc-gate-back">← Back</button>
           <button type="button" class="btn btn-primary" id="mc-gate-retry">I'm ready — recheck</button>
@@ -220,6 +228,14 @@ const MissionComposerView = (() => {
       });
       document.getElementById('mc-gate-retry')?.addEventListener('click', () => {
         _installInboxCaptainTemplate();
+      });
+      // Inline ship install — deploy catalog blueprint directly instead
+      // of routing to a detail page. Routing to #/bridge/spaceships/:id
+      // breaks because that route expects a user_spaceships UUID, not a
+      // catalog blueprint id; deploying inline also improves the flow
+      // (one click, no page switch, retry happens automatically).
+      document.getElementById('mc-gate-install-ship')?.addEventListener('click', () => {
+        _deployInboxCaptainShip();
       });
       return;
     }
@@ -371,6 +387,43 @@ const MissionComposerView = (() => {
     _plan = plan;
     _state = 'preview';
     _error = null;
+    _paint();
+  }
+
+  // Deploy the Inbox Captain spaceship + crew via CrewGenerator. Called
+  // from the template-gate's Install button. Keeps the user on the
+  // Composer the whole time — after a successful deploy, the gate
+  // re-checks and either shows the Connect-Gmail step next (if Gmail
+  // still isn't connected) or proceeds to the preview.
+  async function _deployInboxCaptainShip() {
+    if (_installingShip) return;
+    if (typeof CrewGenerator === 'undefined' || typeof CrewGenerator.deployFromCatalog !== 'function') {
+      _error = 'Catalog deploy unavailable. Reload and try again.';
+      _paint();
+      return;
+    }
+    _installingShip = true;
+    _error = null;
+    _paint();
+
+    try {
+      const result = await CrewGenerator.deployFromCatalog(INBOX_CAPTAIN_ID);
+      if (!result || result.error) {
+        throw new Error(result?.error || 'Install failed.');
+      }
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Inbox Captain installed', message: 'Captain and crew are on deck.', type: 'success' });
+      }
+    } catch (err) {
+      _error = err.message || 'Could not install Inbox Captain.';
+    } finally {
+      _installingShip = false;
+    }
+
+    // Re-paint the gate; if gates now pass, the retry button clicked
+    // next lands us in preview. We don't auto-advance because the user
+    // may still need to connect Gmail — let them see the updated
+    // checklist so the flow stays transparent.
     _paint();
   }
 
