@@ -270,6 +270,12 @@ const MissionComposerView = (() => {
   // Gate checks read State directly. If State isn't populated yet (first
   // paint during bootstrap) both gates come back false, which is the
   // right default — show the "what you need" explainer.
+  //
+  // voiceSampleLength is NOT a hard gate — the Drafter runs fine without
+  // voice context; the chip just surfaces it so the user can opt in to
+  // the "in my voice" behavior before activating. Separate softness
+  // from the required gates (Gmail + ship install) so the explainer
+  // stays focused on blockers.
   function _checkInboxCaptainGates() {
     const mcps = (typeof State !== 'undefined' ? State.get('mcp_connections') : null) || [];
     const gmailConnected = mcps.some(c => c && c.catalog_id === 'google-gmail' && c.status === 'connected');
@@ -277,7 +283,15 @@ const MissionComposerView = (() => {
     const ships = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
     const shipInstalled = ships.find(s => s && s.blueprint_id === INBOX_CAPTAIN_ID) || null;
 
-    return { gmailConnected, shipInstalled };
+    return { gmailConnected, shipInstalled, voiceSampleLength: _readVoiceSampleLength() };
+  }
+
+  function _readVoiceSampleLength() {
+    try {
+      const key = (typeof Utils !== 'undefined' && Utils.KEYS?.voiceSample) || 'nice-voice-sample';
+      const sample = (typeof localStorage !== 'undefined') ? (localStorage.getItem(key) || '') : '';
+      return sample.trim().length;
+    } catch { return 0; }
   }
 
   function _inboxCaptainBlueprint() {
@@ -297,6 +311,7 @@ const MissionComposerView = (() => {
     const statusLine = ready
       ? 'Ready to install — Gmail connected, captain on deck.'
       : _gateStatusLine(gates);
+    const voiceLine = _voiceSignalLine(gates.voiceSampleLength);
 
     return `
       <div class="mc-template-chip" role="note">
@@ -305,8 +320,20 @@ const MissionComposerView = (() => {
           <span class="mc-template-chip-sub">${_esc(flavor)}</span>
           <span class="mc-template-chip-status">${_esc(statusLine)}</span>
         </button>
+        ${voiceLine}
       </div>
     `;
+  }
+
+  // Voice signal — not a gate, just a hint. When the user has a sample
+  // set, Drafter writes in their voice; when they don't, the Drafter
+  // falls back to a generic tone. Rendered as a sibling of the chip
+  // button (not nested) so the "set one" link is valid HTML.
+  function _voiceSignalLine(length) {
+    if (length > 0) {
+      return `<div class="mc-template-chip-voice mc-template-chip-voice-on">✓ Voice sample ready (${length} char${length === 1 ? '' : 's'}) — Drafter writes in your voice</div>`;
+    }
+    return `<div class="mc-template-chip-voice mc-template-chip-voice-off">No voice sample — Drafter will use a generic tone · <a href="#/profile">set one</a></div>`;
   }
 
   function _gateStatusLine(gates) {
@@ -542,6 +569,8 @@ const MissionComposerView = (() => {
     detectInboxCaptainIntent,
     buildInboxCaptainPlan,
     INBOX_CAPTAIN_ID,
+    _voiceSignalLine,
+    _readVoiceSampleLength,
   };
 })();
 
