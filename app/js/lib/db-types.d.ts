@@ -40,17 +40,23 @@ declare namespace DB {
     updated_at?: string | null;
   }
 
-  /** Table: tasks */
-  interface Tasks {
+  /** Table: mission_runs */
+  interface MissionRuns {
     id?: string;
-    user_id?: string | null;
+    user_id: string;
+    spaceship_id: string;
+    mission_id?: string | null;
     title: string;
     agent_id?: string | null;
     agent_name?: string | null;
-    status?: string | null;
+    status?: 'queued' | 'running' | 'review' | 'completed' | 'failed' | 'cancelled' | null;
+    approval_status?: 'draft' | 'approved' | 'rejected' | null;
     priority?: string | null;
     progress?: number | null;
     result?: string | null;
+    plan_snapshot?: Record<string, unknown> | null;
+    node_results?: Record<string, unknown> | null;
+    outcome?: Record<string, unknown> | null;
     created_at?: string | null;
     completed_at?: string | null;
   }
@@ -149,18 +155,6 @@ declare namespace DB {
     updated_at?: string | null;
   }
 
-  /** Table: user_workflows */
-  interface UserWorkflows {
-    id: string;
-    user_id?: string | null;
-    name?: string;
-    nodes?: string | null;
-    connections?: string | null;
-    trigger?: string | null;
-    created_at?: string | null;
-    updated_at?: string | null;
-  }
-
   /** Table: referrals */
   interface Referrals {
     id?: string;
@@ -201,18 +195,6 @@ declare namespace DB {
     shared_by?: string | null;
     shared_with_email: string;
     permissions?: string | null;
-    created_at?: string | null;
-  }
-
-  /** Table: workflow_runs */
-  interface WorkflowRuns {
-    id?: string;
-    user_id?: string | null;
-    workflow_id: string;
-    status?: string | null;
-    started_at?: string | null;
-    completed_at?: string | null;
-    result?: Record<string, unknown> | null;
     created_at?: string | null;
   }
 

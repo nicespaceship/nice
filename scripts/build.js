@@ -43,7 +43,6 @@ const SCRIPTS = [
   'app/js/views/wallet.js',
   'app/js/views/audit-log.js',
   'app/js/views/theme-creator.js',
-  'app/js/views/workflows.js',
   'app/js/lib/preview-panel.js',
   'app/js/views/prompt-panel.js',
   'app/js/views/log-view.js',

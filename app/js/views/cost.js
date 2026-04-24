@@ -161,7 +161,7 @@ const CostView = (() => {
     try {
       const [a, t, logs] = await Promise.all([
         agents.length ? agents : SB.db('user_agents').list({ userId: user.id }).catch(() => []),
-        tasks.length ? tasks : SB.db('tasks').list({ userId: user.id }).catch(() => []),
+        tasks.length ? tasks : SB.db('mission_runs').list({ userId: user.id }).catch(() => []),
         SB.db('fuel_usage').list({ userId: user.id, orderBy: 'created_at' }).catch(() => []),
       ]);
       agents = Array.isArray(a) ? a : agents;

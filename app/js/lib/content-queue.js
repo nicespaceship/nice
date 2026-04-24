@@ -45,7 +45,7 @@ const ContentQueue = (() => {
         const user = typeof State !== 'undefined' ? State.get('user') : null;
         if (user?.id) {
           const { data } = await SB.client
-            .from('tasks')
+            .from('mission_runs')
             .select('id, title, agent_name, result, content_type, approval_status, edited_content, reviewed_at, created_at, metadata, status')
             .eq('user_id', user.id)
             .not('approval_status', 'is', null);
@@ -96,13 +96,18 @@ const ContentQueue = (() => {
       metadata: opts.metadata || {},
     };
 
-    // Save to Supabase
+    // Save to Supabase — mission_runs requires spaceship_id under the new
+    // ontology. Resolve from user's first active ship; skip the DB write
+    // when no ship exists (localStorage fallback still persists the draft).
     if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
         const user = typeof State !== 'undefined' ? State.get('user') : null;
-        if (user?.id) {
-          const { data } = await SB.db('tasks').create({
+        const spaceships = typeof State !== 'undefined' ? (State.get('spaceships') || []) : [];
+        const spaceshipId = spaceships[0]?.id;
+        if (user?.id && spaceshipId) {
+          const { data } = await SB.db('mission_runs').create({
             user_id: user.id,
+            spaceship_id: spaceshipId,
             title: draft.title,
             agent_name: draft.agent_name,
             result: draft.result,
@@ -140,7 +145,7 @@ const ContentQueue = (() => {
     // Update Supabase
     if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
-        await SB.db('tasks').update(id, { edited_content: newContent });
+        await SB.db('mission_runs').update(id, { edited_content: newContent });
       } catch {}
     }
 
@@ -320,7 +325,7 @@ const ContentQueue = (() => {
     // Update Supabase
     if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
-        await SB.db('tasks').update(id, { approval_status: status, reviewed_at: now });
+        await SB.db('mission_runs').update(id, { approval_status: status, reviewed_at: now });
       } catch {}
     }
 

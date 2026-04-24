@@ -61,7 +61,6 @@ describe('MissionComposerView — normalizePlan', () => {
     expect(p.plan.nodes[0].prompt).toMatch(/draft replies/i);
     expect(p.plan.nodes[0].id).toBe('root');
     expect(p.plan.edges).toEqual([]);
-    expect(p.captain_id).toBeNull();
     expect(p.tools_required).toEqual([]);
   });
 
@@ -173,7 +172,6 @@ describe('MissionComposerView — Inbox Captain template', () => {
 
     const plan = MissionComposerView.buildInboxCaptainPlan(fakeBlueprint, 'Draft inbox replies');
     expect(plan.shape).toBe('dag');
-    expect(plan.captain_id).toBeNull();
     expect(plan.plan.nodes).toHaveLength(1);
     expect(plan.plan.nodes[0].type).toBe('persona_dispatch');
     expect(plan.plan.nodes[0].config.blueprintId).toBe('bp-agent-inbox-captain');

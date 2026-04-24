@@ -423,8 +423,14 @@ const PromptPanel = (() => {
         try {
           // Try Supabase if authenticated with a real user
           if (user.id && !user.id.startsWith('dev-') && typeof SB !== 'undefined' && SB.db) {
-            const created = await SB.db('tasks').create({
-              user_id: user.id, title: title || `Untitled ${Terminology.label('mission')}`,
+            const spaceships = State.get('spaceships') || [];
+            const spaceshipId = spaceships[0]?.id;
+            if (!spaceshipId) {
+              return { ok: false, msg: `Activate a Spaceship first — Missions always run on a Ship.` };
+            }
+            const created = await SB.db('mission_runs').create({
+              user_id: user.id, spaceship_id: spaceshipId,
+              title: title || `Untitled ${Terminology.label('mission')}`,
               agent_id: agentId, status: 'queued',
               priority: priority || 'medium', progress: 0,
             });
@@ -541,11 +547,21 @@ const PromptPanel = (() => {
       }
     }
 
-    // Create mission in Supabase
+    // Create mission in Supabase — every Run needs a Spaceship.
+    const spaceships = State.get('spaceships') || [];
+    const spaceshipId = spaceships[0]?.id;
+    if (!spaceshipId) {
+      _messages[_messages.length - 1].text += `\n\n**Activate a Spaceship first.** Missions always run on a Ship.`;
+      _saveMessages();
+      _renderMonitor();
+      _setSending(false);
+      if (sendBtn) sendBtn.disabled = false;
+      return;
+    }
     let mission = null;
     try {
-      mission = await SB.db('tasks').create({
-        user_id: user.id, title, agent_id: agentId,
+      mission = await SB.db('mission_runs').create({
+        user_id: user.id, spaceship_id: spaceshipId, title, agent_id: agentId,
         status: 'queued', priority: 'medium', progress: 0,
         metadata: {},
       });
@@ -781,8 +797,6 @@ const PromptPanel = (() => {
     // Operations
     { keywords: ['operations', 'analytics', 'performance', 'stats', 'metrics', 'report'], route: '#/analytics', label: 'Operations' },
     { keywords: ['cost', 'spending', 'budget', 'token cost', 'token tracker'], route: '#/cost', label: 'Cost Tracker' },
-    // Workflows
-    { keywords: ['workflow', 'automation', 'automate'], route: '#/workflows', label: 'Workflows' },
     // MCP Connectors (blueprints with mcp config)
     { keywords: ['connector', 'mcp', 'connect', 'api key', 'tool', 'service'], route: '#/bridge', label: 'Blueprints' },
     // Comms
@@ -1032,7 +1046,6 @@ const PromptPanel = (() => {
 
     if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower)) return { type: 'action', action: 'create-mission' };
     if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower)) return { type: 'navigate', route: '#/bridge/agents/new', label: 'Agent Builder' };
-    if (/^(create|new|add|build|make)\s+(a\s+)?workflow/i.test(lower)) return { type: 'navigate', route: '#/workflows', label: 'Workflows' };
     if (/^(create|new|add|build|make)\s+(a\s+)?(spaceship|ship)/i.test(lower)) return { type: 'navigate', route: '#/bridge/spaceships', label: 'Shipyard' };
     if (/^(setup|guided setup|wizard)/i.test(lower)) return { type: 'action', action: 'setup-wizard' };
     if (/^(export|download)\s+(data|backup)/i.test(lower)) return { type: 'action', action: 'export-data' };
@@ -1168,7 +1181,6 @@ const PromptPanel = (() => {
     '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
     '#/bridge/spaceships': ['Guided setup', 'Deploy a ship', 'How many ships?', 'Browse blueprints'],
     '#/bridge': ['Search blueprints for', 'Find agent named', 'Deploy a ship', 'What\'s popular?'],
-    '#/workflows':  ['Create a new workflow', 'How many workflows?', 'Open missions'],
     '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
     '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
     '#/vault':      ['Open blueprints', 'Show security', 'Export data'],

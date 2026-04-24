@@ -98,7 +98,7 @@ describe('SB module API', () => {
 
 describe('SB.db() CRUD helpers', () => {
   it('db() returns object with list, get, create, update, remove', () => {
-    const table = SB.db('tasks');
+    const table = SB.db('mission_runs');
     expect(table.list).toBeTypeOf('function');
     expect(table.get).toBeTypeOf('function');
     expect(table.create).toBeTypeOf('function');
@@ -127,8 +127,8 @@ describe('SB.db() CRUD helpers', () => {
 
     _mockFrom.mockReturnValue(mockQuery);
 
-    const result = await SB.db('tasks').list({ status: 'active', orderBy: 'created_at', asc: true, limit: 10 });
-    expect(_mockFrom).toHaveBeenCalledWith('tasks');
+    const result = await SB.db('mission_runs').list({ status: 'active', orderBy: 'created_at', asc: true, limit: 10 });
+    expect(_mockFrom).toHaveBeenCalledWith('mission_runs');
     expect(mockQuery.select).toHaveBeenCalledWith('*');
     expect(mockQuery.eq).toHaveBeenCalledWith('status', 'active');
     expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: true });
@@ -141,7 +141,7 @@ describe('SB.db() CRUD helpers', () => {
     mockQuery.then = (resolve) => resolve({ data: [], error: null });
     _mockFrom.mockReturnValue(mockQuery);
 
-    await SB.db('tasks').list({ userId: 'abc-123' });
+    await SB.db('mission_runs').list({ userId: 'abc-123' });
     expect(mockQuery.eq).toHaveBeenCalledWith('user_id', 'abc-123');
   });
 });
@@ -211,21 +211,21 @@ describe('SB.functions', () => {
 describe('SB.realtime', () => {
   it('subscribe creates a channel for the table with a unique topic', () => {
     const cb = vi.fn();
-    SB.realtime.subscribe('tasks', cb);
+    SB.realtime.subscribe('mission_runs', cb);
     // Topic is `${table}-changes-${seq}` so two subscriptions to the same
     // table don't collide in Supabase's topic-keyed channel cache. Seq
     // starts from 1 per module load but may have advanced due to earlier
     // tests in the file — just assert the prefix.
     const topic = _mockClient.channel.mock.calls[_mockClient.channel.mock.calls.length - 1][0];
-    expect(topic).toMatch(/^tasks-changes-\d+$/);
+    expect(topic).toMatch(/^mission_runs-changes-\d+$/);
     expect(_mockChannel.on).toHaveBeenCalled();
     expect(_mockChannel.subscribe).toHaveBeenCalled();
   });
 
   it('subscribe issues a unique topic per call so repeat subscriptions don\u2019t collide', () => {
-    SB.realtime.subscribe('tasks', () => {});
-    SB.realtime.subscribe('tasks', () => {});
-    const topics = _mockClient.channel.mock.calls.map(c => c[0]).filter(t => t.startsWith('tasks-changes'));
+    SB.realtime.subscribe('mission_runs', () => {});
+    SB.realtime.subscribe('mission_runs', () => {});
+    const topics = _mockClient.channel.mock.calls.map(c => c[0]).filter(t => t.startsWith('mission_runs-changes'));
     const distinct = new Set(topics);
     expect(distinct.size).toBe(topics.length);
   });

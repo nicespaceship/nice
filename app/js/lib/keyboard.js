@@ -25,7 +25,6 @@ const Keyboard = (() => {
     { chord: ['g', 'v'], label: 'Go Vault',        action: () => Router.navigate('#/vault') },
     { chord: ['g', 'p'], label: 'Go Profile',      action: () => Router.navigate('#/profile') },
     { chord: ['g', 't'], label: 'Go Settings',     action: () => Router.navigate('#/settings') },
-    { chord: ['g', 'w'], label: 'Go Workflows',    action: () => Router.navigate('#/workflows') },
     { chord: ['g', 'r'], label: _goMissions,       action: () => Router.navigate('#/missions') },
     { chord: ['g', 'l'], label: 'Go Captain\'s Log', action: () => Router.navigate('#/log') },
     // Creation chords: N + letter

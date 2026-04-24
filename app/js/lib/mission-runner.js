@@ -15,7 +15,7 @@ const MissionRunner = (() => {
     // 1. Load the mission
     let mission;
     try {
-      mission = await SB.db('tasks').get(missionId);
+      mission = await SB.db('mission_runs').get(missionId);
     } catch (err) {
       console.error('[MissionRunner] Failed to load mission:', err.message);
       return null;
@@ -147,7 +147,7 @@ const MissionRunner = (() => {
       if (!ShipBehaviors.checkBudget(spaceshipId, estimatedTokens)) {
         const behaviors = ShipBehaviors.getBehaviors(spaceshipId);
         const failMsg = 'Daily token budget exceeded (' + behaviors.budgetUsedToday + '/' + behaviors.dailyBudget + '). Mission deferred until budget resets.';
-        await SB.db('tasks').update(missionId, { status: 'failed', result: failMsg, updated_at: new Date().toISOString() }).catch(() => {});
+        await SB.db('mission_runs').update(missionId, { status: 'failed', result: failMsg, updated_at: new Date().toISOString() }).catch(() => {});
         _updateLocalMission(missionId, { status: 'failed', result: failMsg });
         _notify(user.id, 'warning', 'Budget Exceeded', failMsg);
         return null;
@@ -156,7 +156,7 @@ const MissionRunner = (() => {
 
     // 4. Transition to running
     try {
-      await SB.db('tasks').update(missionId, { status: 'running', progress: 10, updated_at: new Date().toISOString() });
+      await SB.db('mission_runs').update(missionId, { status: 'running', progress: 10, updated_at: new Date().toISOString() });
       _updateLocalMission(missionId, { status: 'running', progress: 10 });
     } catch (err) {
       console.warn('[MissionRunner] Status update failed:', err.message);
@@ -177,7 +177,7 @@ const MissionRunner = (() => {
             '**Duration:** ' + (videoResult.duration || 5) + 's\n' +
             '**Aspect Ratio:** ' + (videoResult.size || '9:16');
           _updateLocalMission(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' });
-          SB.db('tasks').update(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' }).catch(() => {});
+          SB.db('mission_runs').update(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' }).catch(() => {});
           if (typeof Gamification !== 'undefined') Gamification.addXP('complete_mission');
           return;
         }
@@ -207,7 +207,7 @@ const MissionRunner = (() => {
         if (m && m.status === 'running' && m.progress < 80) {
           const next = Math.min(m.progress + 15, 80);
           _updateLocalMission(missionId, { progress: next });
-          SB.db('tasks').update(missionId, { progress: next }).catch(() => {});
+          SB.db('mission_runs').update(missionId, { progress: next }).catch(() => {});
         }
       }, 2000);
 
@@ -238,7 +238,7 @@ const MissionRunner = (() => {
             // Update progress based on steps
             const stepProgress = Math.min(10 + (step.index / (agentBp.config.maxSteps || 5)) * 70, 80);
             _updateLocalMission(missionId, { progress: Math.round(stepProgress) });
-            SB.db('tasks').update(missionId, { progress: Math.round(stepProgress) }).catch(() => {});
+            SB.db('mission_runs').update(missionId, { progress: Math.round(stepProgress) }).catch(() => {});
           },
         });
         result = {
@@ -272,7 +272,7 @@ const MissionRunner = (() => {
         updated_at: now,
       };
       if (outcome) update.outcome = outcome;
-      await SB.db('tasks').update(missionId, update);
+      await SB.db('mission_runs').update(missionId, update);
       _updateLocalMission(missionId, { status: 'review', progress: 100, result: result.content, approval_status: 'draft', metadata, ...(outcome ? { outcome } : {}) });
 
       // Post-execution quality scoring using blueprint eval_criteria
@@ -320,7 +320,7 @@ const MissionRunner = (() => {
 
       // Transition to failed
       const now = new Date().toISOString();
-      await SB.db('tasks').update(missionId, {
+      await SB.db('mission_runs').update(missionId, {
         status: 'failed',
         result: 'Error: ' + (err.message || 'Unknown failure'),
         updated_at: now,
@@ -352,14 +352,14 @@ const MissionRunner = (() => {
 
     if (!nodes.length) {
       const msg = 'Plan snapshot missing nodes.';
-      await SB.db('tasks').update(missionId, { status: 'failed', result: 'Error: ' + msg, updated_at: new Date().toISOString() }).catch(() => {});
+      await SB.db('mission_runs').update(missionId, { status: 'failed', result: 'Error: ' + msg, updated_at: new Date().toISOString() }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + msg });
       _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + msg);
       return null;
     }
 
     try {
-      await SB.db('tasks').update(missionId, { status: 'running', progress: 10, updated_at: new Date().toISOString() });
+      await SB.db('mission_runs').update(missionId, { status: 'running', progress: 10, updated_at: new Date().toISOString() });
       _updateLocalMission(missionId, { status: 'running', progress: 10 });
     } catch (err) {
       console.warn('[MissionRunner] DAG status update failed:', err.message);
@@ -383,13 +383,13 @@ const MissionRunner = (() => {
           }).length;
           const pct = Math.min(10 + Math.round((done / nonGate) * 70), 80);
           _updateLocalMission(missionId, { progress: pct });
-          SB.db('tasks').update(missionId, { progress: pct }).catch(() => {});
+          SB.db('mission_runs').update(missionId, { progress: pct }).catch(() => {});
         },
       });
     } catch (err) {
       console.error('[MissionRunner] DAG execution failed:', err.message);
       const now = new Date().toISOString();
-      await SB.db('tasks').update(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure'), updated_at: now }).catch(() => {});
+      await SB.db('mission_runs').update(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure'), updated_at: now }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure') });
       _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + (err.message || 'Unknown error'));
       return null;
@@ -403,7 +403,7 @@ const MissionRunner = (() => {
       // node-type pass when we have more than one gate per plan to
       // worry about. For S3 the gate is the final node, so approve =
       // complete and reject = cancel.
-      await SB.db('tasks').update(missionId, {
+      await SB.db('mission_runs').update(missionId, {
         status: 'review',
         progress: 100,
         result: result.finalOutput || 'Awaiting captain approval.',
@@ -423,7 +423,7 @@ const MissionRunner = (() => {
     }
 
     if (result.status === 'failed') {
-      await SB.db('tasks').update(missionId, {
+      await SB.db('mission_runs').update(missionId, {
         status: 'failed',
         result: result.finalOutput || 'Error: DAG node failed.',
         node_results: nodeResults,
@@ -447,7 +447,7 @@ const MissionRunner = (() => {
       updated_at: now,
     };
     if (dagOutcome) dagUpdate.outcome = dagOutcome;
-    await SB.db('tasks').update(missionId, dagUpdate).catch(() => {});
+    await SB.db('mission_runs').update(missionId, dagUpdate).catch(() => {});
     _updateLocalMission(missionId, {
       status: 'review',
       progress: 100,

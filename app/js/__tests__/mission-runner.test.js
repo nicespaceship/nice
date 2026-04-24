@@ -82,7 +82,7 @@ describe('MissionRunner', () => {
 
   it('should transition mission from queued to review via LLM', async () => {
     // Create a mission in the mock DB
-    const mission = await SB.db('tasks').create({
+    const mission = await SB.db('mission_runs').create({
       id: 'm1', user_id: userId, title: 'Test mission',
       agent_id: null, status: 'queued', progress: 0,
     });
@@ -90,7 +90,7 @@ describe('MissionRunner', () => {
     const result = await MissionRunner.run('m1');
 
     // Should go to review (Draft & Approve flow)
-    const updated = _db.tasks?.m1;
+    const updated = _db.mission_runs?.m1;
     expect(updated.status).toBe('review');
     expect(updated.progress).toBe(100);
     expect(updated.result).toBeTruthy();
@@ -99,7 +99,7 @@ describe('MissionRunner', () => {
   });
 
   it('should not award XP until approval (Draft & Approve flow)', async () => {
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm2', user_id: userId, title: 'XP test',
       agent_id: null, status: 'queued', progress: 0,
     });
@@ -111,7 +111,7 @@ describe('MissionRunner', () => {
   });
 
   it('should create a notification on completion', async () => {
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm3', user_id: userId, title: 'Notify test',
       agent_id: null, status: 'queued', progress: 0,
     });
@@ -128,20 +128,20 @@ describe('MissionRunner', () => {
     const agent = { id: 'a1', name: 'TestBot', role: 'Research', config: { role: 'Research' } };
     State.set('agents', [agent]);
 
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm4', user_id: userId, title: 'Agent mission',
       agent_id: 'a1', status: 'queued', progress: 0,
     });
 
     const result = await MissionRunner.run('m4');
     expect(result).not.toBeNull();
-    expect(_db.tasks.m4.status).toBe('review');
+    expect(_db.mission_runs.m4.status).toBe('review');
   });
 
   it('should update local State missions during execution', async () => {
     State.set('missions', [{ id: 'm5', status: 'queued', progress: 0 }]);
 
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm5', user_id: userId, title: 'State test',
       agent_id: null, status: 'queued', progress: 0,
     });
@@ -160,14 +160,14 @@ describe('MissionRunner', () => {
     globalThis.ShipLog.execute = async () => null;
 
     State.set('missions', [{ id: 'm-fail', status: 'queued', progress: 0 }]);
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-fail', user_id: userId, title: 'Failing mission',
       agent_id: null, status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m-fail');
 
-    const updated = _db.tasks?.['m-fail'];
+    const updated = _db.mission_runs?.['m-fail'];
     expect(updated.status).toBe('failed');
     expect(updated.result).toContain('Error');
 
@@ -178,7 +178,7 @@ describe('MissionRunner', () => {
     const origExecute = ShipLog.execute;
     globalThis.ShipLog.execute = async () => null;
 
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-err-notify', user_id: userId, title: 'Error notify test',
       agent_id: null, status: 'queued', progress: 0,
     });
@@ -194,7 +194,7 @@ describe('MissionRunner', () => {
   });
 
   it('should use temporary spaceship ID when no ships exist', async () => {
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-no-ship', user_id: userId, title: 'No ship mission',
       agent_id: null, status: 'queued', progress: 0,
     });
@@ -202,7 +202,7 @@ describe('MissionRunner', () => {
     const result = await MissionRunner.run('m-no-ship');
     expect(result).not.toBeNull();
     // The mission should still go to review with a fallback spaceship ID
-    expect(_db.tasks['m-no-ship'].status).toBe('review');
+    expect(_db.mission_runs['m-no-ship'].status).toBe('review');
   });
 
   it('should fall back to DB lookup when agent not in State', async () => {
@@ -212,38 +212,38 @@ describe('MissionRunner', () => {
       id: 'a-db', name: 'DBBot', role: 'Research', config: { role: 'Research' },
     });
 
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-db-agent', user_id: userId, title: 'DB agent mission',
       agent_id: 'a-db', status: 'queued', progress: 0,
     });
 
     const result = await MissionRunner.run('m-db-agent');
     expect(result).not.toBeNull();
-    expect(_db.tasks['m-db-agent'].status).toBe('review');
+    expect(_db.mission_runs['m-db-agent'].status).toBe('review');
   });
 
   it('should include completed_at in metadata on success', async () => {
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-meta', user_id: userId, title: 'Metadata test',
       agent_id: null, status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m-meta');
 
-    const updated = _db.tasks?.['m-meta'];
+    const updated = _db.mission_runs?.['m-meta'];
     expect(updated.metadata.completed_at).toBeTruthy();
     expect(new Date(updated.metadata.completed_at).getTime()).toBeGreaterThan(0);
   });
 
   it('should set result content on completed mission in DB', async () => {
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-result', user_id: userId, title: 'Result test',
       agent_id: null, status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m-result');
 
-    const updated = _db.tasks?.['m-result'];
+    const updated = _db.mission_runs?.['m-result'];
     expect(updated.result).toBeTruthy();
     expect(typeof updated.result).toBe('string');
   });
@@ -283,7 +283,7 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
         { from: 'drafter', to: 'review' },
       ],
     };
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-dag-inbox', user_id: userId, title: 'Inbox Captain',
       status: 'queued', progress: 0,
       plan_snapshot: planSnapshot,
@@ -293,7 +293,7 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     expect(res).not.toBeNull();
     expect(res.status).toBe('paused');
 
-    const row = _db.tasks['m-dag-inbox'];
+    const row = _db.mission_runs['m-dag-inbox'];
     expect(row.status).toBe('review');
     expect(row.approval_status).toBe('draft');
     expect(row.progress).toBe(100);
@@ -310,7 +310,7 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       ],
       edges: [{ from: 'a', to: 'b' }],
     };
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-dag-nogate', user_id: userId, title: 'Two-step',
       status: 'queued', progress: 0,
       plan_snapshot: planSnapshot,
@@ -318,12 +318,12 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
 
     const res = await MissionRunner.run('m-dag-nogate');
     expect(res.status).toBe('completed');
-    expect(_db.tasks['m-dag-nogate'].status).toBe('review');
-    expect(_db.tasks['m-dag-nogate'].approval_status).toBe('draft');
+    expect(_db.mission_runs['m-dag-nogate'].status).toBe('review');
+    expect(_db.mission_runs['m-dag-nogate'].approval_status).toBe('draft');
   });
 
   it('DAG with missing plan_snapshot.nodes fails gracefully', async () => {
-    await SB.db('tasks').create({
+    await SB.db('mission_runs').create({
       id: 'm-dag-empty', user_id: userId, title: 'Empty',
       status: 'queued', progress: 0,
       plan_snapshot: { shape: 'dag', nodes: [{ type: 'approval_gate' }] },

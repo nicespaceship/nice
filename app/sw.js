@@ -53,7 +53,6 @@ const PRECACHE_ASSETS = [
   '/app/js/views/settings.js',
   '/app/js/views/audit-log.js',
   '/app/js/views/theme-creator.js',
-  '/app/js/views/workflows.js',
   '/app/js/views/prompt-panel.js',
   '/app/js/views/alerts.js',
   '/app/js/views/wallet.js',

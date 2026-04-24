@@ -539,34 +539,12 @@ const WorkflowEngine = (() => {
   }
 
   /**
-   * Save workflow run to Supabase. Skipped when status='paused' because
-   * the parent MissionRunner writes the run state to `tasks` instead —
-   * workflow_runs is legacy and will be retired in S6.
+   * workflow_runs was retired in the mission ontology migration. Run
+   * state now lives entirely on mission_runs (plan_snapshot + node_results
+   * columns). MissionRunner owns the write path; this is a no-op kept
+   * only for signature compatibility with the existing call site.
    */
-  async function _saveRun(workflow, status, startTime, duration, nodeResults) {
-    if (typeof SB === 'undefined' || !SB.isReady()) return;
-    if (status === 'paused') return;
-
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return;
-
-    const resultsObj = {};
-    nodeResults.forEach((val, key) => { resultsObj[key] = val; });
-
-    try {
-      await SB.db('workflow_runs').create({
-        user_id: user.id,
-        workflow_id: workflow.id,
-        status: status,
-        started_at: new Date(startTime).toISOString(),
-        completed_at: new Date().toISOString(),
-        node_results: JSON.stringify(resultsObj),
-        duration_ms: duration,
-      });
-    } catch (err) {
-      console.warn('[WorkflowEngine] Failed to save run:', err.message);
-    }
-  }
+  async function _saveRun() { /* no-op — see mission_runs.node_results */ }
 
   return {
     execute,
