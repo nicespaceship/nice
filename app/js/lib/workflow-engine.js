@@ -357,8 +357,9 @@ const WorkflowEngine = (() => {
 
   /**
    * Triage node — picks the best agent from `candidates` for the prompt
-   * and runs it. Replaces MissionRouter.route(). Routing decision is
-   * logged to ship_log so the UI / Missions view can surface it.
+   * and runs it. Routing decision is logged to ship_log so the UI /
+   * Missions view can surface it. (Pattern formerly lived in the
+   * deleted MissionRouter.route().)
    *
    * Config:
    *   - candidates: string[]  // agent or blueprint ids; defaults to all
@@ -410,8 +411,7 @@ const WorkflowEngine = (() => {
   /**
    * Pipeline node — executes an ordered sequence of agents. Each step's
    * output flows into the next via the `{input}` placeholder in
-   * promptTemplate (or as a plain context block when omitted). Replaces
-   * MissionRouter.pipeline().
+   * promptTemplate (or as a plain context block when omitted).
    *
    * Config:
    *   - steps: Array<{ agentId, promptTemplate? }>
@@ -464,7 +464,6 @@ const WorkflowEngine = (() => {
   /**
    * Parallel node — fans out the same prompt to N agents, then either
    * concatenates their outputs or hands them to a synthesis agent.
-   * Replaces MissionRouter.parallel().
    *
    * Config:
    *   - agents:           string[]
@@ -523,8 +522,7 @@ const WorkflowEngine = (() => {
 
   /**
    * Quality-loop node — worker drafts, reviewer scores, retry with
-   * feedback until threshold or maxIterations. Replaces
-   * MissionRouter.loop().
+   * feedback until threshold or maxIterations.
    *
    * Config:
    *   - worker:        string  // agent id
