@@ -22,7 +22,7 @@ const WorkflowEngine = (() => {
   /**
    * Execute a workflow DAG.
    * @param {Object} workflow - { id, name, nodes, connections }
-   * @param {Object} opts - { onNodeStart(node), onNodeComplete(node, result), onError(node, err), onGatePause(node, payload), skipSave }
+   * @param {Object} opts - { onNodeStart(node), onNodeComplete(node, result), onError(node, err), onGatePause(node, payload), isCancelled(), skipSave }
    * @returns {Promise<{ nodeResults: Map, finalOutput: string, duration: number, status: string, pausedAt?: string }>}
    */
   async function execute(workflow, opts) {
@@ -41,6 +41,20 @@ const WorkflowEngine = (() => {
       const node = workflow.nodes.find(n => n.id === nodeId);
       if (!node) continue;
       if (workflow._prunedNodes.has(nodeId)) continue;
+
+      // Cooperative cancel check between nodes. MissionRunner passes
+      // isCancelled() that re-reads the DB status; a click on the UI
+      // Cancel button flips it to 'cancelled' and the next iteration
+      // here stops the loop. In-flight node work still completes —
+      // AgentExecutor has no abort hook yet — but no further nodes run.
+      if (typeof opts.isCancelled === 'function') {
+        let cancelled = false;
+        try { cancelled = await opts.isCancelled(); } catch (e) { /* ignore */ }
+        if (cancelled) {
+          status = 'cancelled';
+          break;
+        }
+      }
 
       if (typeof opts.onNodeStart === 'function') {
         try { opts.onNodeStart(node); } catch (e) { /* ignore */ }
