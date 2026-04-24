@@ -393,6 +393,9 @@ verify_jwt = false
 [functions.browser-proxy]
 verify_jwt = false
 
+[functions.microsoft-oauth]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

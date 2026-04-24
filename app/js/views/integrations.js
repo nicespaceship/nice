@@ -14,7 +14,7 @@ const IntegrationsView = (() => {
      google-drive rows written by the google-oauth callback). */
   const MCP_CATALOG = [
     { id:'google',    name:'Google Workspace', desc:'Gmail, Drive, Calendar — read & write',                    icon:'mail', tools:['gmail_search','gmail_read','gmail_send','gmail_draft','drive_search','drive_read','calendar_list','calendar_create','calendar_update'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
-    { id:'microsoft', name:'Microsoft 365',    desc:'Outlook, OneDrive, Word, Excel, PowerPoint, Teams',        icon:'mail', tools:['outlook_search','outlook_draft','onedrive_files','word','excel','powerpoint','teams'],                                                 transport:'streamable-http', auth:'oauth', cat:'workspace', comingSoon:true },
+    { id:'microsoft', name:'Microsoft 365',    desc:'Outlook, Calendar, Contacts, OneDrive — read & write',     icon:'mail', tools:['outlook_search_messages','outlook_send_message','outlook_create_draft','calendar_ms_list_events','calendar_ms_create_event','contacts_ms_search','onedrive_search_files','onedrive_read_file','onedrive_upload_file'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -108,6 +108,15 @@ const IntegrationsView = (() => {
         Notify.send({ title: 'Google Connected', message: 'Your Google account is now linked. Agents can access Gmail, Calendar, and Drive.', type: 'system' });
       }
       // Clean URL — remove the query param
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('microsoft_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Microsoft 365 Connected', message: 'Your Microsoft account is now linked. Agents can access Outlook, Calendar, Contacts, and OneDrive.', type: 'system' });
+      }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
     }
@@ -399,6 +408,11 @@ const IntegrationsView = (() => {
     ? `${SB.client.supabaseUrl}/functions/v1/google-oauth`
     : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/google-oauth';
 
+  /** Microsoft OAuth base URL for the edge function */
+  const MICROSOFT_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/microsoft-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/microsoft-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
@@ -412,6 +426,9 @@ const IntegrationsView = (() => {
     // OAuth-based connections: redirect to OAuth flow
     if (catalog.auth === 'oauth' && catalogId === 'google') {
       return _initiateGoogleOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'microsoft') {
+      return _initiateMicrosoftOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -456,6 +473,22 @@ const IntegrationsView = (() => {
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
     // Redirect to Google OAuth
+    window.location.href = authUrl;
+  }
+
+  /** Initiate Microsoft OAuth flow — redirects to Microsoft consent screen */
+  function _initiateMicrosoftOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Microsoft 365.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${MICROSOFT_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
     window.location.href = authUrl;
   }
 
