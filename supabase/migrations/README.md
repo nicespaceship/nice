@@ -8,11 +8,6 @@ That means `supabase db push` against the `nice` project
 (`zacllshbgmnwsmliteqx`) should see every file as already applied and no-op
 cleanly.
 
-The one exception is `20260411000001_scheduled_missions.sql` — genuinely
-pending. Its table (`scheduled_missions`) doesn't exist in prod yet because
-the MissionScheduler feature hasn't shipped. Safe to apply when the feature
-is ready.
-
 ## History repair
 
 Prior to 2026-04-23 the repo used round-number timestamps (e.g.
