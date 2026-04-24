@@ -22,6 +22,10 @@ const MissionRunner = (() => {
     }
     if (!mission) return null;
 
+    // Respect a cancelled row — Run All / Retry / scheduled fires could
+    // all land here for a mission the user already cancelled.
+    if (mission.status === 'cancelled') return null;
+
     // 1b. DAG-shape missions (Inbox Captain and future multi-node
     // templates) dispatch through WorkflowEngine. `plan_snapshot` is
     // frozen at enqueue time (mission-composer.js activateMission), so
@@ -334,6 +338,31 @@ const MissionRunner = (() => {
   }
 
   /* ── DAG detection + dispatch ── */
+  // Soft cancel helper: re-reads mission_runs.status between
+  // WorkflowEngine nodes. A 'cancelled' result short-circuits the DAG
+  // loop. Failures (e.g. DB offline) return false so a flaky read never
+  // silently kills a running mission — better to keep going than to
+  // abort spuriously. State fallback catches the tests-and-dev-mode
+  // case where SB isn't wired.
+  async function _isCancelled(missionId) {
+    try {
+      const row = await SB.db('mission_runs').get(missionId);
+      if (row && row.status === 'cancelled') return true;
+    } catch { /* ignore */ }
+    const missions = State.get('missions') || [];
+    const local = missions.find(m => m.id === missionId);
+    return !!(local && local.status === 'cancelled');
+  }
+
+  function _progressFromNodeResults(nodes, nodeResults) {
+    const nonGate = nodes.filter(n => n.type !== 'approval_gate').length || 1;
+    const done = Object.keys(nodeResults).filter(id => {
+      const n = nodes.find(x => x.id === id);
+      return n && n.type !== 'approval_gate';
+    }).length;
+    return 10 + Math.round((done / nonGate) * 70);
+  }
+
   function _isDagMission(mission) {
     const snap = mission?.plan_snapshot;
     if (!snap || typeof snap !== 'object') return false;
@@ -373,6 +402,7 @@ const MissionRunner = (() => {
     try {
       result = await WorkflowEngine.execute(workflow, {
         skipSave: true,
+        isCancelled: () => _isCancelled(missionId),
         onNodeComplete: (node, output) => {
           nodeResults[node.id] = output;
           // Rough progress: share the 10→80 band across non-gate nodes.
@@ -396,6 +426,22 @@ const MissionRunner = (() => {
     }
 
     const now = new Date().toISOString();
+    if (result.status === 'cancelled') {
+      // The UI already flipped status to 'cancelled' when the user clicked
+      // Cancel. WorkflowEngine broke out of its loop on the next
+      // isCancelled() check. Persist whatever nodes finished and stop —
+      // don't overwrite the cancelled status or notify (the toast fired
+      // at click time).
+      await SB.db('mission_runs').update(missionId, {
+        progress: Math.min(100, _progressFromNodeResults(nodes, nodeResults)),
+        result: result.finalOutput || 'Cancelled.',
+        node_results: nodeResults,
+        metadata: Object.assign({}, mission.metadata || {}, { dag_status: 'cancelled', completed_at: now }),
+        updated_at: now,
+      }).catch(() => {});
+      return result;
+    }
+
     if (result.status === 'paused') {
       // Gate fired: pause at status='review' so the existing Missions
       // review UI takes over. Approval semantics (approve → resume

@@ -124,6 +124,18 @@ describe('MissionRunner', () => {
     expect(notifications[0].type).toBe('mission');
   });
 
+  it('should refuse to run a mission that was cancelled pre-start', async () => {
+    // Scheduler fires + user hits Cancel before execution begins.
+    await SB.db('mission_runs').create({
+      id: 'm-cancel-queued', user_id: userId, title: 'Cancelled before start',
+      agent_id: null, status: 'cancelled', progress: 0,
+    });
+    const result = await MissionRunner.run('m-cancel-queued');
+    expect(result).toBeNull();
+    // Status stays cancelled — runner didn't transition it to running.
+    expect(_db.mission_runs['m-cancel-queued'].status).toBe('cancelled');
+  });
+
   it('should look up assigned agent from State', async () => {
     const agent = { id: 'a1', name: 'TestBot', role: 'Research', config: { role: 'Research' } };
     State.set('agents', [agent]);

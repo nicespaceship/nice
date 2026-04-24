@@ -13,7 +13,7 @@ const MissionsView = (() => {
   const _Nl  = () => Terminology.label('mission', { lowercase: true });
   const _Nlp = () => Terminology.label('mission', { plural: true, lowercase: true });
 
-  const STATUSES   = ['queued','running','completed','failed'];
+  const STATUSES   = ['queued','running','completed','failed','cancelled'];
   const PRIORITIES = ['low','medium','high','critical'];
   const STATUS_META = {
     queued:    { label: 'Queued',    color: '#f59e0b', icon: 'clock' },
@@ -21,6 +21,7 @@ const MissionsView = (() => {
     review:    { label: 'Review',    color: '#a855f7', icon: 'target' },
     completed: { label: 'Completed', color: '#22c55e', icon: 'check' },
     failed:    { label: 'Failed',    color: '#ef4444', icon: 'x' },
+    cancelled: { label: 'Cancelled', color: '#94a3b8', icon: 'x' },
   };
   const _statusIcon = (name) =>
     `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${name}"/></svg>`;
@@ -195,7 +196,7 @@ const MissionsView = (() => {
     // Card clicks
     feed.querySelectorAll('.mc-card').forEach(card => {
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.mc-card-check') || e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn') || e.target.closest('.mc-card-delete')) return;
+        if (e.target.closest('.mc-card-check') || e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn') || e.target.closest('.mc-card-cancel') || e.target.closest('.mc-card-delete')) return;
         Router.navigate('#/missions/' + card.dataset.id);
       });
     });
@@ -210,6 +211,16 @@ const MissionsView = (() => {
       btn.disabled = true; btn.textContent = '...';
       if (retryBtn) { try { await SB.db('mission_runs').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {} }
       await MissionRunner.run(missionId);
+      _loadMissions();
+    });
+
+    // Per-row Cancel (queued/running only; soft — running loops re-check status)
+    feed.addEventListener('click', async (e) => {
+      const cancelBtn = e.target.closest('.mc-card-cancel');
+      if (!cancelBtn) return;
+      const missionId = cancelBtn.dataset.id;
+      cancelBtn.disabled = true;
+      await _cancelMission(missionId);
       _loadMissions();
     });
 
@@ -262,8 +273,14 @@ const MissionsView = (() => {
     let actionsHTML = '';
     if (m.status === 'queued' && (m.agent_id || m.agent_name)) {
       actionsHTML = `<button class="btn btn-primary btn-xs task-run-btn" data-id="${m.id}">⚡ Run</button>`;
-    } else if ((m.status === 'failed' || m.status === 'completed') && (m.agent_id || m.agent_name)) {
+    } else if ((m.status === 'failed' || m.status === 'completed' || m.status === 'cancelled') && (m.agent_id || m.agent_name)) {
       actionsHTML = `<button class="btn btn-xs task-retry-btn" data-id="${m.id}">↻ Retry</button>`;
+    }
+    // Cancel shows only for in-flight states. Soft cancel: flips status to
+    // 'cancelled' in the DB; running WorkflowEngine loops re-check status
+    // between nodes and bail out. Queued runs stop before they start.
+    if (m.status === 'queued' || m.status === 'running') {
+      actionsHTML += `<button class="btn btn-xs mc-card-cancel" data-id="${m.id}" aria-label="Cancel ${_Nl()}" title="Cancel ${_Nl()}">✕</button>`;
     }
     // Delete is available for every status. Destructive, confirm-gated.
     actionsHTML += `<button class="btn btn-xs mc-card-delete" data-id="${m.id}" aria-label="Delete ${_Nl()}" title="Delete ${_Nl()}">🗑</button>`;
@@ -405,6 +422,35 @@ const MissionsView = (() => {
     }
     if (typeof SB !== 'undefined') {
       try { await SB.db('mission_runs').remove(missionId); } catch (err) { console.error('[Missions] Delete failed', err); }
+    }
+  }
+
+  // Soft cancel: flip status in the DB + State. The runner's node loop
+  // re-reads status between WorkflowEngine nodes (see MissionRunner._isCancelled)
+  // and bails on 'cancelled'. Queued runs never start — Run/RunAll skip them.
+  async function _cancelMission(missionId) {
+    const missions = State.get('missions') || [];
+    const mission = missions.find(m => m.id === missionId);
+    const now = new Date().toISOString();
+
+    // Update State optimistically so the UI reflects the cancel immediately.
+    const next = missions.map(m =>
+      m.id === missionId ? Object.assign({}, m, { status: 'cancelled', updated_at: now }) : m,
+    );
+    State.set('missions', next);
+
+    if (typeof AuditLog !== 'undefined' && mission) {
+      AuditLog.log('mission', { description: `Mission "${mission.title}" cancelled`, missionId, previousStatus: mission.status });
+    }
+    if (typeof SB !== 'undefined') {
+      try {
+        await SB.db('mission_runs').update(missionId, { status: 'cancelled', updated_at: now });
+      } catch (err) {
+        console.error('[Missions] Cancel failed', err);
+      }
+    }
+    if (typeof Notify !== 'undefined' && mission) {
+      Notify.send({ title: `${_N()} Cancelled`, message: mission.title, type: 'system' });
     }
   }
 
