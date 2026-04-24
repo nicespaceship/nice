@@ -528,15 +528,21 @@ const AgentsView = (() => {
     if (!user) { if (errEl) errEl.textContent = 'Sign in required.'; return; }
 
     try {
+      // user_agents only has top-level columns: id, user_id, name, blueprint_id,
+      // config, status, created_at, updated_at, rarity. Everything else (role,
+      // type, llm_engine, imported_via, description, tools, memory, …) lives
+      // inside config JSONB.
       await SB.db('user_agents').create({
         user_id: user.id,
         name: decoded.name,
-        role: decoded.role,
-        type: decoded.type,
         status: 'idle',
-        llm_engine: decoded.llm_engine,
-        config: decoded.config,
-        imported_via: 'soul_key',
+        config: {
+          ...(decoded.config || {}),
+          role: decoded.role,
+          type: decoded.type,
+          llm_engine: decoded.llm_engine,
+          imported_via: 'soul_key',
+        },
       });
       document.getElementById('modal-import-soul')?.classList.remove('open');
       if (typeof Gamification !== 'undefined') {

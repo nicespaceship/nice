@@ -793,14 +793,21 @@ const BlueprintsView = (() => {
     const user = State.get('user');
     if (user && typeof SB !== 'undefined') {
       try {
+        // user_agents has only id/user_id/name/blueprint_id/config/status/
+        // created_at/updated_at/rarity at top level. role/type/llm_engine go
+        // into config JSONB — PostgREST rejects unknown top-level columns.
         const created = await SB.db('user_agents').create({
-          user_id:    user.id,
-          name:       bp.name,
-          role:       bp.config.role,
-          type:       bp.config.type,
-          status:     'idle',
-          llm_engine: bp.config.llm_engine,
-          config:     { tools: bp.config.tools, temperature: 0.7, memory: true },
+          user_id: user.id,
+          name:    bp.name,
+          status:  'idle',
+          config: {
+            role:       bp.config.role,
+            type:       bp.config.type,
+            llm_engine: bp.config.llm_engine,
+            tools:      bp.config.tools,
+            temperature: 0.7,
+            memory:     true,
+          },
         });
         // Store the Supabase UUID so missions can reference this agent
         if (created && created.id && typeof Blueprints !== 'undefined') {
