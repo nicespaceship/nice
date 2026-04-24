@@ -78,6 +78,17 @@ describe('AgentExecutor', () => {
       'drive_create_file',
       'drive_update_file',
       'drive_upload_file',
+      // Outlook (Microsoft Graph)
+      'outlook_send_message',
+      'outlook_create_draft',
+      'outlook_reply_message',
+      // Calendar (Microsoft)
+      'calendar_ms_create_event',
+      'calendar_ms_update_event',
+      'calendar_ms_delete_event',
+      // OneDrive
+      'onedrive_upload_file',
+      'onedrive_update_file',
       // Social
       'social_create_post',
       'social_publish_post',
@@ -100,6 +111,21 @@ describe('AgentExecutor', () => {
       'drive_search_files',
       'drive_get_file',
       'drive_read_file',
+      // Outlook (Microsoft Graph) read
+      'outlook_search_messages',
+      'outlook_read_message',
+      'outlook_list_folders',
+      // Calendar (Microsoft) read
+      'calendar_ms_list_events',
+      'calendar_ms_get_event',
+      'calendar_ms_list_calendars',
+      // Contacts (Microsoft) read — 'search' is a noun here, not a side-effect verb
+      'contacts_ms_search',
+      'contacts_ms_read',
+      // OneDrive read
+      'onedrive_search_files',
+      'onedrive_get_file',
+      'onedrive_read_file',
       'web_search',
       'calculator',
     ];
