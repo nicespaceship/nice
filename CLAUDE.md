@@ -126,9 +126,9 @@ Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap.
 | `workflow_runs` dropped | ✅ Table + WorkflowEngine writer removed |
 | `user_workflows` dropped | ✅ Table + Workflows view removed |
 | Legacy Workflows view removed | ✅ Route → `#/bridge`, script + sidebar link + chord gone |
-| WorkflowEngine absorbs MissionRouter patterns | 📋 Plan drafted — see [docs/mission-router-fold-in.md](docs/mission-router-fold-in.md) |
+| WorkflowEngine absorbs MissionRouter patterns | ✅ Shipped [#273](https://github.com/nicespaceship/nice/pull/273) [#276](https://github.com/nicespaceship/nice/pull/276) — triage / pipeline / parallel / quality_loop node types; ship chat is now an ephemeral Mission Run; MissionRouter deleted |
 | `missions.schedule` via pg_cron | Pending (localStorage `MissionScheduler` stubbed until) |
-| MissionRunner has no ephemeral-blueprint path | Pending — bundled with the fold-in (PR D) |
+| MissionRunner has no ephemeral-blueprint path | ✅ Shipped [#275](https://github.com/nicespaceship/nice/pull/275) — fail-fast on unresolved agent; `_inferRoleFromName` + `_defaultToolsForRole` deleted |
 | Cancel button for running Runs | ✅ Shipped [#271](https://github.com/nicespaceship/nice/pull/271) |
 
 ## XP Progression System (SSOT: `app/js/lib/gamification.js`)
@@ -291,7 +291,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 58 modules
+### Lib Modules (`app/js/lib/`) — 57 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -312,7 +312,6 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `AgentMemory` | `agent-memory.js` | Agent memory and context management |
 | `AttachmentUtils` | `attachment-utils.js` | SSOT for prompt-panel attachment classification + size caps + fallback rules (unit-testable without the full panel) |
 | `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management |
-| `MissionRouter` | `mission-router.js` | Routes prompts to optimal agent on spaceship |
 | `MissionScheduler` | `mission-scheduler.js` | Scheduled/recurring mission execution |
 | `ShipLog` | `ship-log.js` | Agent conversation persistence to Supabase |
 | `ShipBehaviors` | `ship-behaviors.js` | Spaceship behavior definitions |
@@ -456,7 +455,7 @@ Test files: `app/js/__tests__/*.test.js` — 36 files, ~670 tests. Counts drift 
 Coverage areas:
 - **Core infra**: `state`, `router`, `supabase`, `keyboard`, `notify`, `command-palette`, `audit-log`, `data-io`
 - **Blueprints + community**: `blueprints`, `blueprints-download`, `blueprints-marketplace`, `blueprints-moderation`, `blueprints-publish`, `blueprints-ship-hoist`, `community-publish`, `blueprint-markdown`, `blueprint-utils-humanize`
-- **Agents + missions**: `agent-executor`, `mission-runner`, `mission-router`, `ship-log`, `tool-registry`, `virtual-fs`, `prompt-builder`
+- **Agents + missions**: `agent-executor`, `mission-runner`, `ship-log`, `tool-registry`, `virtual-fs`, `prompt-builder`, `workflow-engine` (triage / pipeline / parallel / quality_loop replace the deleted MissionRouter)
 - **Models + billing**: `llm-config`, `stacks`, `stripe-config`, `subscription`, `token-config`
 - **Views**: `home-view`, `missions-view`
 - **Gamification + onboarding**: `gamification`, `onboarding`
