@@ -463,6 +463,452 @@ describe('WorkflowEngine — mission scope routing', () => {
   });
 });
 
+describe('WorkflowEngine — triage', () => {
+  // Triage is the WorkflowEngine replacement for MissionRouter.route.
+  // It picks one agent from candidates via either an intent shortcut
+  // or an LLM routing call, then runs that agent with the prompt.
+  let _shipLogAppends;
+
+  beforeEach(() => {
+    _shipLogAppends = [];
+    globalThis.ShipLog = {
+      execute: async (shipId, agent, prompt) => ({ content: `ran:${agent?.name || 'noop'}:${(prompt || '').slice(0, 40)}` }),
+      append: async (shipId, entry) => { _shipLogAppends.push(Object.assign({ shipId }, entry)); },
+    };
+    globalThis.State.set('agents', [
+      { id: 'researcher', name: 'Researcher', config: { role: 'Research analyst' } },
+      { id: 'coder',      name: 'Coder',      config: { role: 'Code writer' } },
+      { id: 'analyst',    name: 'Analyst',    config: { role: 'Data crunching' } },
+    ]);
+  });
+
+  it('with a single candidate, skips routing and runs that agent', async () => {
+    const node = { id: 'n', type: 'triage', config: { candidates: ['researcher'], prompt: 'find papers' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Researcher:find papers/);
+    // Routing entry logged with reasoning="Only candidate"
+    expect(_shipLogAppends.find(e => e.metadata?.type === 'routing')?.metadata?.reasoning).toBe('Only candidate');
+  });
+
+  it('intent=research matches the agent whose role contains "research"', async () => {
+    const node = { id: 'n', type: 'triage', config: {
+      candidates: ['researcher', 'coder', 'analyst'], intent: 'research', prompt: 'survey the literature',
+    } };
+    // No SB so routing LLM would default to first; intent shortcut should
+    // pick Researcher before falling through.
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Researcher/);
+    const routingEntry = _shipLogAppends.find(e => e.metadata?.type === 'routing');
+    expect(routingEntry?.metadata?.chosen_agent_id).toBe('researcher');
+    expect(routingEntry?.content).toMatch(/Matched research intent/);
+  });
+
+  it('intent=analyze matches "data" role (analyst)', async () => {
+    const node = { id: 'n', type: 'triage', config: {
+      candidates: ['researcher', 'coder', 'analyst'], intent: 'analyze', prompt: 'crunch numbers',
+    } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Analyst/);
+  });
+
+  it('routes via LLM when no intent hint and multiple candidates', async () => {
+    const llmCalls = [];
+    globalThis.SB = {
+      isReady: () => true,
+      functions: {
+        invoke: async (name, opts) => {
+          llmCalls.push({ name, body: opts?.body });
+          return { data: { content: '{"agent_id":"coder","reasoning":"task is code-flavored"}' }, error: null };
+        },
+      },
+    };
+    const node = { id: 'n', type: 'triage', config: { candidates: ['researcher', 'coder', 'analyst'], prompt: 'write a parser' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Coder/);
+    expect(llmCalls.length).toBe(1);
+    expect(llmCalls[0].name).toBe('nice-ai');
+    const routingEntry = _shipLogAppends.find(e => e.metadata?.type === 'routing');
+    expect(routingEntry?.metadata?.reasoning).toBe('task is code-flavored');
+  });
+
+  it('falls back to first candidate when routing LLM errors', async () => {
+    globalThis.SB = {
+      isReady: () => true,
+      functions: { invoke: async () => ({ data: null, error: { message: 'boom' } }) },
+    };
+    const node = { id: 'n', type: 'triage', config: { candidates: ['researcher', 'coder'], prompt: 'do thing' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Researcher/);
+  });
+
+  it('falls back to first candidate when routing LLM picks an unknown agent_id', async () => {
+    globalThis.SB = {
+      isReady: () => true,
+      functions: { invoke: async () => ({ data: { content: '{"agent_id":"nonexistent","reasoning":"???"}' }, error: null }) },
+    };
+    const node = { id: 'n', type: 'triage', config: { candidates: ['researcher', 'coder'], prompt: 'do thing' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Researcher/);
+  });
+
+  it('omitted candidates defaults to all activated agents', async () => {
+    globalThis.SB = {
+      isReady: () => true,
+      functions: { invoke: async () => ({ data: { content: '{"agent_id":"analyst","reasoning":"data"}' }, error: null }) },
+    };
+    const node = { id: 'n', type: 'triage', config: { prompt: 'numbers' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Analyst/);
+  });
+
+  it('errors cleanly when there are no candidates and no activated agents', async () => {
+    globalThis.State.set('agents', []);
+    const node = { id: 'n', type: 'triage', config: { prompt: 'nobody home' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/No candidate agents/);
+  });
+
+  it('triage runs through full execute() pipeline when used as a DAG node', async () => {
+    const node = { id: 't', type: 'triage', config: { candidates: ['researcher'], prompt: 'survey' } };
+    const wf = { id: 'wf-tri', nodes: [node], connections: [] };
+    const res = await WorkflowEngine.execute(wf, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(String(res.nodeResults.get('t'))).toMatch(/ran:Researcher/);
+  });
+});
+
+describe('WorkflowEngine — pipeline', () => {
+  beforeEach(() => {
+    globalThis.ShipLog = {
+      execute: async (shipId, agent, prompt) => ({ content: `${agent?.name}: ${(prompt || '').slice(0, 60)}` }),
+      append: async () => {},
+    };
+    globalThis.State.set('agents', [
+      { id: 'a1', name: 'Drafter',  config: {} },
+      { id: 'a2', name: 'Reviewer', config: {} },
+      { id: 'a3', name: 'Polisher', config: {} },
+    ]);
+  });
+
+  it('passes each step output as input to the next', async () => {
+    const seen = [];
+    globalThis.ShipLog.execute = async (s, agent, prompt) => {
+      seen.push({ agent: agent?.name, prompt });
+      return { content: `${agent?.name}-out` };
+    };
+    const node = { id: 'p', type: 'pipeline', config: {
+      steps: [
+        { agentId: 'a1' },
+        { agentId: 'a2' },
+        { agentId: 'a3' },
+      ],
+    } };
+    const out = await WorkflowEngine._executePipeline(node, 'seed', {});
+    expect(out).toBe('Polisher-out');
+    expect(seen[0].agent).toBe('Drafter');
+    expect(seen[0].prompt).toBe('seed');
+    // Reviewer's prompt embeds Drafter's output
+    expect(seen[1].agent).toBe('Reviewer');
+    expect(seen[1].prompt).toMatch(/Drafter-out/);
+    // Polisher's prompt embeds Reviewer's output
+    expect(seen[2].agent).toBe('Polisher');
+    expect(seen[2].prompt).toMatch(/Reviewer-out/);
+  });
+
+  it('respects {input} placeholder in promptTemplate', async () => {
+    const seen = [];
+    globalThis.ShipLog.execute = async (s, agent, prompt) => {
+      seen.push({ agent: agent?.name, prompt });
+      return { content: 'ok-' + agent?.name };
+    };
+    const node = { id: 'p', type: 'pipeline', config: {
+      steps: [
+        { agentId: 'a1', promptTemplate: 'kickoff' },
+        { agentId: 'a2', promptTemplate: 'received: {input}' },
+      ],
+    } };
+    await WorkflowEngine._executePipeline(node, 'INITIAL', {});
+    expect(seen[0].prompt).toBe('kickoff');
+    expect(seen[1].prompt).toBe('received: ok-Drafter');
+  });
+
+  it('keeps going when one step references a missing agent', async () => {
+    const node = { id: 'p', type: 'pipeline', config: {
+      steps: [
+        { agentId: 'a1' },
+        { agentId: 'ghost' }, // not resolvable
+        { agentId: 'a3' },
+      ],
+    } };
+    const out = await WorkflowEngine._executePipeline(node, 'start', {});
+    // Final step still runs and produces output (the prior step's
+    // 'Error: Agent not found' becomes its input, but it doesn't crash).
+    expect(out).toMatch(/Polisher:/);
+  });
+
+  it('empty steps returns input unchanged', async () => {
+    const out = await WorkflowEngine._executePipeline({ id: 'p', type: 'pipeline', config: { steps: [] } }, 'untouched', {});
+    expect(out).toBe('untouched');
+  });
+});
+
+describe('WorkflowEngine — parallel', () => {
+  beforeEach(() => {
+    globalThis.ShipLog = {
+      execute: async (shipId, agent, prompt) => ({ content: `[${agent?.name}] ${(prompt || '').slice(0, 30)}` }),
+      append: async () => {},
+    };
+    globalThis.State.set('agents', [
+      { id: 'a1', name: 'Alice', config: {} },
+      { id: 'a2', name: 'Bob',   config: {} },
+      { id: 'a3', name: 'Cara',  config: {} },
+    ]);
+  });
+
+  it('fans out to N agents and concatenates by default', async () => {
+    const node = { id: 'p', type: 'parallel', config: { agents: ['a1', 'a2', 'a3'], prompt: 'GO' } };
+    const out = await WorkflowEngine._executeParallel(node, '', {});
+    expect(out).toMatch(/## Alice/);
+    expect(out).toMatch(/## Bob/);
+    expect(out).toMatch(/## Cara/);
+    expect(out).toMatch(/---/);
+  });
+
+  it('summarize merge dispatches the concatenated result to a synthesis agent', async () => {
+    const seen = [];
+    globalThis.ShipLog.execute = async (s, agent, prompt) => {
+      seen.push({ agent: agent?.name, prompt });
+      return { content: 'synthesized' };
+    };
+    const node = { id: 'p', type: 'parallel', config: {
+      agents: ['a1', 'a2'],
+      merge: 'summarize',
+      synthesisAgent: 'a3',
+      prompt: 'investigate X',
+    } };
+    const out = await WorkflowEngine._executeParallel(node, '', {});
+    expect(out).toBe('synthesized');
+    // Last call is the synthesis call to Cara with the concatenated output
+    const synth = seen[seen.length - 1];
+    expect(synth.agent).toBe('Cara');
+    expect(synth.prompt).toMatch(/## Alice/);
+    expect(synth.prompt).toMatch(/## Bob/);
+  });
+
+  it('summarize without synthesisAgent silently falls back to concat', async () => {
+    const node = { id: 'p', type: 'parallel', config: { agents: ['a1', 'a2'], merge: 'summarize', prompt: 'go' } };
+    const out = await WorkflowEngine._executeParallel(node, '', {});
+    expect(out).toMatch(/## Alice[\s\S]*## Bob/);
+  });
+
+  it('one agent failure does not abort the others', async () => {
+    globalThis.ShipLog.execute = async (s, agent) => {
+      if (agent.name === 'Bob') throw new Error('Bob crashed');
+      return { content: 'ok-' + agent.name };
+    };
+    const node = { id: 'p', type: 'parallel', config: { agents: ['a1', 'a2', 'a3'], prompt: 'go' } };
+    const out = await WorkflowEngine._executeParallel(node, '', {});
+    expect(out).toMatch(/ok-Alice/);
+    expect(out).toMatch(/Error:/); // Bob's section
+    expect(out).toMatch(/ok-Cara/);
+  });
+
+  it('empty agents list returns input unchanged', async () => {
+    const out = await WorkflowEngine._executeParallel({ id: 'p', type: 'parallel', config: { agents: [] } }, 'pass-through', {});
+    expect(out).toBe('pass-through');
+  });
+});
+
+describe('WorkflowEngine — quality_loop', () => {
+  // Worker drafts, reviewer scores, retry until threshold or maxIterations.
+  let _scoresQueue;
+  beforeEach(() => {
+    _scoresQueue = [];
+    globalThis.ShipLog = {
+      execute: async (shipId, agent, prompt) => {
+        // Reviewer is identifiable by name 'Reviewer' — pop a score off
+        // the queue so tests can simulate quality progression.
+        if (agent?.name === 'Reviewer') {
+          const next = _scoresQueue.shift();
+          const score = (next && typeof next.score === 'number') ? next.score : 0.5;
+          const fb = (next && next.feedback) || 'be better';
+          return { content: `{"score":${score},"feedback":"${fb}"}` };
+        }
+        return { content: `draft-${prompt.slice(0, 20)}` };
+      },
+      append: async () => {},
+    };
+    globalThis.State.set('agents', [
+      { id: 'worker',   name: 'Worker',   config: {} },
+      { id: 'reviewer', name: 'Reviewer', config: {} },
+    ]);
+  });
+
+  it('stops after the first iteration when score >= threshold', async () => {
+    _scoresQueue = [{ score: 0.9, feedback: 'great' }];
+    const node = { id: 'q', type: 'quality_loop', config: {
+      worker: 'worker', reviewer: 'reviewer', threshold: 0.8, maxIterations: 3, prompt: 'do',
+    } };
+    const out = await WorkflowEngine._executeQualityLoop(node, '', {});
+    expect(out).toMatch(/^draft-/);
+    expect(_scoresQueue.length).toBe(0); // exactly one review consumed
+  });
+
+  it('retries with feedback until threshold is met', async () => {
+    _scoresQueue = [{ score: 0.4, feedback: 'too short' }, { score: 0.9, feedback: 'good now' }];
+    const node = { id: 'q', type: 'quality_loop', config: {
+      worker: 'worker', reviewer: 'reviewer', threshold: 0.8, maxIterations: 3, prompt: 'do',
+    } };
+    const out = await WorkflowEngine._executeQualityLoop(node, '', {});
+    expect(out).toMatch(/^draft-/);
+    expect(_scoresQueue.length).toBe(0); // both reviews consumed
+  });
+
+  it('stops after maxIterations even when never reaching threshold', async () => {
+    _scoresQueue = [
+      { score: 0.1, feedback: 'bad' },
+      { score: 0.2, feedback: 'still bad' },
+      { score: 0.3, feedback: 'somehow worse' },
+    ];
+    const node = { id: 'q', type: 'quality_loop', config: {
+      worker: 'worker', reviewer: 'reviewer', threshold: 0.95, maxIterations: 3, prompt: 'do',
+    } };
+    const out = await WorkflowEngine._executeQualityLoop(node, '', {});
+    expect(out).toMatch(/^draft-/);
+    expect(_scoresQueue.length).toBe(0); // all three reviews consumed
+  });
+
+  it('errors clearly when worker agent missing', async () => {
+    // Override the default Blueprints stub so 'ghost' is truly unresolvable.
+    globalThis.Blueprints = { getAgent: () => null };
+    const node = { id: 'q', type: 'quality_loop', config: { worker: 'ghost', reviewer: 'reviewer' } };
+    const out = await WorkflowEngine._executeQualityLoop(node, '', {});
+    expect(out).toMatch(/Worker agent not found/);
+  });
+
+  it('errors clearly when reviewer agent missing', async () => {
+    globalThis.Blueprints = { getAgent: () => null };
+    const node = { id: 'q', type: 'quality_loop', config: { worker: 'worker', reviewer: 'ghost' } };
+    const out = await WorkflowEngine._executeQualityLoop(node, '', {});
+    expect(out).toMatch(/Reviewer agent not found/);
+  });
+});
+
+describe('WorkflowEngine — composition (triage + parallel + agent)', () => {
+  // Validates the doc claim that the old "hierarchical" pattern composes
+  // out of triage + parallel + agent without needing its own node type.
+  beforeEach(() => {
+    globalThis.ShipLog = {
+      execute: async (shipId, agent, prompt) => ({ content: `${agent?.name || 'noop'}: ${(prompt || '').slice(0, 30)}` }),
+      append: async () => {},
+    };
+    globalThis.State.set('agents', [
+      { id: 'captain',   name: 'Captain',   config: { role: 'leadership' } },
+      { id: 'worker-a',  name: 'WorkerA',   config: {} },
+      { id: 'worker-b',  name: 'WorkerB',   config: {} },
+      { id: 'synth',     name: 'Synth',     config: {} },
+    ]);
+  });
+
+  it('captain triage → parallel crew → synthesis chain runs end to end', async () => {
+    const wf = {
+      id: 'wf-comp',
+      nodes: [
+        { id: 'plan', type: 'triage', config: { candidates: ['captain'], prompt: 'plan the work' } },
+        { id: 'crew', type: 'parallel', config: { agents: ['worker-a', 'worker-b'] } },
+        { id: 'syn',  type: 'agent', config: { agentId: 'synth', prompt: 'synthesize' } },
+      ],
+      connections: [
+        { from: 'plan', to: 'crew' },
+        { from: 'crew', to: 'syn' },
+      ],
+    };
+    const res = await WorkflowEngine.execute(wf, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(String(res.nodeResults.get('plan'))).toMatch(/Captain:/);
+    expect(String(res.nodeResults.get('crew'))).toMatch(/## WorkerA[\s\S]*## WorkerB/);
+    expect(String(res.nodeResults.get('syn'))).toMatch(/Synth:/);
+    // Synth received the parallel concatenation as its context
+    expect(String(res.nodeResults.get('syn'))).toMatch(/synthesize/);
+  });
+
+  it('pipeline + quality_loop in same DAG', async () => {
+    const reviewQueue = [{ score: 0.9, feedback: 'good' }];
+    globalThis.ShipLog.execute = async (s, agent, prompt) => {
+      if (agent?.name === 'Reviewer') {
+        const next = reviewQueue.shift();
+        return { content: `{"score":${next?.score ?? 0.5},"feedback":"${next?.feedback || ''}"}` };
+      }
+      return { content: `${agent?.name}: ${(prompt || '').slice(0, 20)}` };
+    };
+    globalThis.State.set('agents', [
+      { id: 'a1',       name: 'First',    config: {} },
+      { id: 'a2',       name: 'Second',   config: {} },
+      { id: 'worker',   name: 'Worker',   config: {} },
+      { id: 'reviewer', name: 'Reviewer', config: {} },
+    ]);
+    const wf = {
+      id: 'wf-mix',
+      nodes: [
+        { id: 'pipe', type: 'pipeline', config: { steps: [{ agentId: 'a1' }, { agentId: 'a2' }] } },
+        { id: 'qloop', type: 'quality_loop', config: { worker: 'worker', reviewer: 'reviewer', threshold: 0.8, maxIterations: 2 } },
+      ],
+      connections: [{ from: 'pipe', to: 'qloop' }],
+    };
+    const res = await WorkflowEngine.execute(wf, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(String(res.nodeResults.get('pipe'))).toMatch(/Second:/);
+    expect(String(res.nodeResults.get('qloop'))).toMatch(/^Worker:/);
+  });
+});
+
+describe('WorkflowEngine — JSON parsing helpers', () => {
+  it('_parseJSON parses clean JSON', () => {
+    const r = WorkflowEngine._parseJSON('{"agent_id":"x","reasoning":"y"}', 'agent_id');
+    expect(r.agent_id).toBe('x');
+  });
+  it('_parseJSON extracts JSON from mixed text', () => {
+    const r = WorkflowEngine._parseJSON('here you go: {"agent_id":"x","reasoning":"y"} done', 'agent_id');
+    expect(r.agent_id).toBe('x');
+  });
+  it('_parseJSON returns null on garbage', () => {
+    expect(WorkflowEngine._parseJSON('not json at all', 'agent_id')).toBeNull();
+    expect(WorkflowEngine._parseJSON('', 'agent_id')).toBeNull();
+  });
+  it('_parseReviewJSON falls back to regex when JSON invalid', () => {
+    const r = WorkflowEngine._parseReviewJSON('preamble "score": 0.7, "feedback": "ok" trailing');
+    expect(r.score).toBeCloseTo(0.7);
+    expect(r.feedback).toBe('ok');
+  });
+  it('_parseReviewJSON returns score=0 on garbage', () => {
+    expect(WorkflowEngine._parseReviewJSON('').score).toBe(0);
+  });
+});
+
+describe('WorkflowEngine — _resolveAgent', () => {
+  it('matches a State.agents row by id', () => {
+    globalThis.State.set('agents', [{ id: 'live-1', name: 'LiveAgent', config: {} }]);
+    expect(WorkflowEngine._resolveAgent('live-1').name).toBe('LiveAgent');
+  });
+  it('matches a State.agents row by blueprint_id', () => {
+    globalThis.State.set('agents', [{ id: 'u1', name: 'Live', blueprint_id: 'bp-x', config: {} }]);
+    expect(WorkflowEngine._resolveAgent('bp-x').name).toBe('Live');
+  });
+  it('falls back to Blueprints.getAgent', () => {
+    globalThis.State.set('agents', []);
+    globalThis.Blueprints = { getAgent: (id) => id === 'bp-y' ? { id, name: 'BPYagent', config: {} } : null };
+    const a = WorkflowEngine._resolveAgent('bp-y');
+    expect(a.name).toBe('BPYagent');
+    expect(a.blueprint_id).toBe('bp-y');
+  });
+  it('returns null for missing id', () => {
+    globalThis.State.set('agents', []);
+    globalThis.Blueprints = { getAgent: () => null };
+    expect(WorkflowEngine._resolveAgent('nope')).toBeNull();
+    expect(WorkflowEngine._resolveAgent(null)).toBeNull();
+  });
+});
+
 describe('WorkflowEngine — baseline regressions', () => {
   it('completes a linear agent → agent workflow', async () => {
     const workflow = {
