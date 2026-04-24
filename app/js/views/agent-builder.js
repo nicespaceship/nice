@@ -15,6 +15,44 @@ const AgentBuilderView = (() => {
     'PDF Parse','Web Scrape','Shell','Memory Store'
   ];
 
+  /**
+   * Enumerate connected MCP tools from State, grouped by connection so
+   * each provider (Google Workspace, Microsoft 365, custom MCPs) gets
+   * its own section with real tool IDs as checkbox values. Selected MCP
+   * tools save into the same `config.tools` array as the abstract
+   * labels above — AgentExecutor resolves bare tool names via
+   * ToolRegistry.registerAlias wired by McpBridge.
+   */
+  function _renderMcpToolGroups(selectedTools) {
+    const conns = (typeof State !== 'undefined' ? State.get('mcp_connections') : null) || [];
+    const connected = conns.filter(c => c.status === 'connected' && Array.isArray(c.available_tools) && c.available_tools.length);
+    if (!connected.length) {
+      return `
+        <p class="builder-hint" style="margin-top:12px">
+          <strong>MCP tools:</strong> none connected yet.
+          <a href="#/security?tab=integrations">Connect an integration</a> to give this agent access to Gmail, Outlook, Calendar, Drive, OneDrive, etc.
+        </p>
+      `;
+    }
+    return connected.map(conn => {
+      const chips = conn.available_tools.map(tool => `
+        <label class="builder-tool-chip ${selectedTools.includes(tool) ? 'selected' : ''}" title="${_esc(tool)}">
+          <input type="checkbox" value="${_esc(tool)}" ${selectedTools.includes(tool) ? 'checked' : ''} />
+          <span class="mono" style="font-size:.85em">${_esc(tool)}</span>
+        </label>
+      `).join('');
+      return `
+        <div class="builder-mcp-group" style="margin-top:14px">
+          <p class="builder-hint" style="margin-bottom:6px">
+            <strong>${_esc(conn.name || conn.catalog_id || 'MCP')}</strong>
+            <span style="opacity:.6">— ${conn.available_tools.length} tool${conn.available_tools.length === 1 ? '' : 's'}</span>
+          </p>
+          <div class="builder-tools-grid">${chips}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
   const ROLES  = ['Research','Code','Data','Content','Ops','Custom'];
   const TYPES  = ['Specialist','General','Hybrid'];
 
@@ -227,6 +265,7 @@ const AgentBuilderView = (() => {
                 </label>
               `).join('')}
             </div>
+            ${_renderMcpToolGroups(selectedTools)}
           </fieldset>
 
           <!-- ADVANCED -->
