@@ -76,7 +76,6 @@ const Utils = (() => {
     ideProjects: 'nice-ide-projects',
     ideLastProject: 'nice-ide-last-project',
     ideLayout: 'nice-ide-layout',
-    missionSchedules: 'nice-mission-schedules',
     agentMemories: 'nice-agent-memories',
     quickNotes: 'nice-quick-notes',
     bpCustomLabels: 'nice-bp-custom-labels',

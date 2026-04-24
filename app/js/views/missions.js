@@ -69,9 +69,6 @@ const MissionsView = (() => {
         <!-- Pipeline -->
         <div class="mc-pipeline" id="mc-pipeline"></div>
 
-        <!-- Scheduled Missions -->
-        <div class="mc-schedules" id="mc-schedules"></div>
-
         <!-- Mission Feed -->
         <div class="mc-feed" id="mc-feed">${_skeletonRows(6)}</div>
 
@@ -459,57 +456,7 @@ const MissionsView = (() => {
   ═══════════════════════════════════════════════════════════════════ */
   function _onMissionsChanged(missions) {
     _renderPipeline(missions);
-    _renderSchedules();
     _applyFilters();
-  }
-
-  function _renderSchedules() {
-    const wrap = document.getElementById('mc-schedules');
-    if (!wrap) return;
-    if (typeof MissionScheduler === 'undefined') { wrap.innerHTML = ''; return; }
-
-    const schedules = MissionScheduler.list();
-    if (!schedules.length) { wrap.innerHTML = ''; return; }
-
-    wrap.innerHTML = `
-      <div class="mc-sched-section">
-        <div class="mc-sched-hdr">
-          <h3 class="mc-sched-title">Scheduled ${_Np()}</h3>
-          <span class="mc-sched-count">${schedules.length}</span>
-        </div>
-        <div class="mc-sched-list">
-          ${schedules.map(s => {
-            const desc = MissionScheduler.describe(s.cron);
-            const lastRun = s.lastRun ? _timeAgo(s.lastRun) : 'never';
-            return `
-              <div class="mc-sched-row ${s.enabled ? '' : 'mc-sched-disabled'}">
-                <div class="mc-sched-info">
-                  <span class="mc-sched-name">${_esc(s.template.title)}</span>
-                  <span class="mc-sched-desc">${_esc(desc)} · Last run: ${lastRun}</span>
-                </div>
-                <div class="mc-sched-actions">
-                  <button class="btn btn-xs mc-sched-toggle" data-id="${_esc(s.id)}" data-enabled="${s.enabled}">${s.enabled ? 'Pause' : 'Resume'}</button>
-                  <button class="btn btn-xs mc-sched-delete" data-id="${_esc(s.id)}">Remove</button>
-                </div>
-              </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-
-    wrap.querySelectorAll('.mc-sched-toggle').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        const isEnabled = btn.dataset.enabled === 'true';
-        MissionScheduler.setEnabled(id, !isEnabled);
-        _renderSchedules();
-      });
-    });
-    wrap.querySelectorAll('.mc-sched-delete').forEach(btn => {
-      btn.addEventListener('click', () => {
-        MissionScheduler.unschedule(btn.dataset.id);
-        _renderSchedules();
-      });
-    });
   }
 
   async function _loadMissions() {

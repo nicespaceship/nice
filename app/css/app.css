@@ -3076,35 +3076,6 @@
 .ws-file-name { font-weight:var(--fw-medium); }
 .ws-file-size { font-size:var(--text-xs); color:var(--text-muted); }
 
-/* Scheduled missions dashboard */
-.mc-sched-section { margin:12px 0; }
-.mc-sched-hdr {
-  display:flex; align-items:center; gap:8px; margin-bottom:8px;
-}
-.mc-sched-title {
-  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
-  color:var(--text); margin:0;
-}
-.mc-sched-count {
-  font-family:var(--font-b); font-size:var(--text-xs); background:var(--accent);
-  color:var(--bg); padding:1px 7px; border-radius:9px; font-weight:var(--fw-medium);
-}
-.mc-sched-list { display:flex; flex-direction:column; gap:4px; }
-.mc-sched-row {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:8px 12px; border-radius:var(--radius);
-  background:var(--panel-bg, var(--bg-alt)); border:1px solid var(--border);
-}
-.mc-sched-disabled { opacity:.5; }
-.mc-sched-info { display:flex; flex-direction:column; gap:2px; }
-.mc-sched-name {
-  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium); color:var(--text);
-}
-.mc-sched-desc {
-  font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted);
-}
-.mc-sched-actions { display:flex; gap:6px; }
-
 /* Agent memory viewer */
 .mem-group { margin-bottom:12px; }
 .mem-group-label {

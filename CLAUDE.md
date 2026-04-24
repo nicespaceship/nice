@@ -106,8 +106,9 @@ Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap.
 - Key cols: `mission_id` (FK, NOT NULL), `spaceship_id` (FK, mirror for filtering), `plan_snapshot` (frozen at run time), `node_results`
 
 **Schedule** — Cron trigger that creates Runs server-side.
-- Stored as `missions.schedule` JSONB; fired by pg_cron on Supabase
-- No client-side scheduling — localStorage `MissionScheduler` is removed
+- Stored as `missions.schedule` JSONB: `{ cron, tz, enabled }` — standard 5-field cron expression + IANA timezone
+- Fired by the `tick_mission_schedules` pg_cron job (runs every minute); dedup floor stored in `missions.last_scheduled_run_at`
+- No client-side scheduling — localStorage `MissionScheduler` is deleted
 
 ### Invariants
 - Every Run has a Mission (`mission_id` NOT NULL). Ad-hoc prompts from the prompt panel auto-create a minimal 1-node Mission + Run under the hood.
@@ -127,7 +128,7 @@ Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap.
 | `user_workflows` dropped | ✅ Table + Workflows view removed |
 | Legacy Workflows view removed | ✅ Route → `#/bridge`, script + sidebar link + chord gone |
 | WorkflowEngine absorbs MissionRouter patterns | ✅ Shipped [#273](https://github.com/nicespaceship/nice/pull/273) [#276](https://github.com/nicespaceship/nice/pull/276) — triage / pipeline / parallel / quality_loop node types; ship chat is now an ephemeral Mission Run; MissionRouter deleted |
-| `missions.schedule` via pg_cron | Pending (localStorage `MissionScheduler` stubbed until) |
+| `missions.schedule` via pg_cron | ✅ `tick_mission_schedules` job fires every minute; client `MissionScheduler` module + `nice-mission-schedules` localStorage key deleted |
 | MissionRunner has no ephemeral-blueprint path | ✅ Shipped [#275](https://github.com/nicespaceship/nice/pull/275) — fail-fast on unresolved agent; `_inferRoleFromName` + `_defaultToolsForRole` deleted |
 | Cancel button for running Runs | ✅ Shipped [#271](https://github.com/nicespaceship/nice/pull/271) |
 
@@ -291,7 +292,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 57 modules
+### Lib Modules (`app/js/lib/`) — 56 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -312,7 +313,6 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `AgentMemory` | `agent-memory.js` | Agent memory and context management |
 | `AttachmentUtils` | `attachment-utils.js` | SSOT for prompt-panel attachment classification + size caps + fallback rules (unit-testable without the full panel) |
 | `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management |
-| `MissionScheduler` | `mission-scheduler.js` | Scheduled/recurring mission execution |
 | `ShipLog` | `ship-log.js` | Agent conversation persistence to Supabase |
 | `ShipBehaviors` | `ship-behaviors.js` | Spaceship behavior definitions |
 | `ShipTemplates` | `ship-templates.js` | Pre-built spaceship templates |

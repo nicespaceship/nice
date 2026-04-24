@@ -1622,7 +1622,6 @@ const NICE = (() => {
         }
         // Sync cross-device data
         if (typeof ModelIntel !== 'undefined' && ModelIntel.syncFromServer) ModelIntel.syncFromServer().catch(() => {});
-        if (typeof MissionScheduler !== 'undefined' && MissionScheduler.syncFromServer) MissionScheduler.syncFromServer().catch(() => {});
         // First-run check: show setup wizard for new users with no spaceships
         _checkFirstRun(user);
       }
