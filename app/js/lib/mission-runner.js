@@ -100,16 +100,31 @@ const MissionRunner = (() => {
           flavor: '',
         };
       }
-    } else if (mission.agent_name) {
-      // Last resort: create a minimal agent config from name alone
-      const inferredRole = _inferRoleFromName(mission.agent_name);
-      agentBp = {
-        id: 'ephemeral-' + Date.now(),
-        name: mission.agent_name,
-        config: { role: inferredRole, tools: _defaultToolsForRole(inferredRole), llm_engine: 'gemini-2.5-flash', temperature: 0.4 },
-        description: '',
-        flavor: '',
-      };
+    }
+
+    // Fail fast — every Mission Run is on a Ship with a known crew
+    // (mission_runs.spaceship_id is NOT NULL post-ontology migration).
+    // The three resolution paths above (agent_id → State → Supabase, and
+    // agent_name fallback within those) cover every legitimate case. If
+    // we still have nothing, the template references an agent that no
+    // longer exists — surface that to the user instead of silently
+    // running an "ephemeral" agent built from name keywords (which used
+    // to mask renamed/deleted blueprints and produce surprising results).
+    if (!agentBp) {
+      const detail =
+        'agent_id=' + (agentId || 'none') +
+        ', agent_name=' + (mission.agent_name || 'none');
+      const msg =
+        'Could not resolve an agent for this mission (' + detail + '). ' +
+        'Reassign the mission to an agent on the ship\'s crew, or rebuild ' +
+        'the mission template in Mission Composer.';
+      const now = new Date().toISOString();
+      await SB.db('mission_runs').update(missionId, {
+        status: 'failed', result: 'Error: ' + msg, updated_at: now,
+      }).catch(() => {});
+      _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + msg });
+      _notify(user.id, 'error', 'Mission Failed', mission.title + ' — ' + msg);
+      return null;
     }
 
     // 2b. Resolve model — support NICE Auto
@@ -596,35 +611,6 @@ const MissionRunner = (() => {
     const tiers = { 'claude-4-opus': 0.15, 'gpt-4o': 0.12, 'gemini-2': 0.08, 'grok-3': 0.10, 'claude-4-sonnet': 0.06, 'gpt-4o-mini': 0.02, 'gemini-2-flash': 0.01, 'grok-3-mini': 0.03 };
     const base = tiers[modelId] || 0.05;
     return +(base + Math.random() * 0.05).toFixed(4);
-  }
-
-  /* ── Default tools per role for ephemeral agents ── */
-  function _defaultToolsForRole(role) {
-    const toolSets = {
-      Research:    ['web-search', 'web-scrape'],
-      Engineering: ['code-generate', 'code-review'],
-      Content:     ['text-generate', 'text-summarize'],
-      Marketing:   ['text-generate', 'social_create_post'],
-      Analytics:   ['data-query', 'chart-generate'],
-      Support:     ['text-generate', 'text-summarize'],
-      Sales:       ['text-generate', 'web-search'],
-      Ops:         ['text-generate', 'data-query'],
-    };
-    return toolSets[role] || [];
-  }
-
-  /* ── Infer agent role from name ── */
-  function _inferRoleFromName(name) {
-    const n = (name || '').toLowerCase();
-    if (n.includes('research') || n.includes('scout') || n.includes('watcher')) return 'Research';
-    if (n.includes('code') || n.includes('engineer') || n.includes('tech')) return 'Engineering';
-    if (n.includes('content') || n.includes('writer') || n.includes('chef') || n.includes('copy')) return 'Content';
-    if (n.includes('market') || n.includes('campaign') || n.includes('social')) return 'Marketing';
-    if (n.includes('data') || n.includes('analyst') || n.includes('cost') || n.includes('controller')) return 'Analytics';
-    if (n.includes('support') || n.includes('customer')) return 'Support';
-    if (n.includes('sales') || n.includes('biz')) return 'Sales';
-    if (n.includes('captain') || n.includes('ops') || n.includes('manager') || n.includes('floor')) return 'Ops';
-    return 'General';
   }
 
   /* ── Per-agent XP tracking ── */

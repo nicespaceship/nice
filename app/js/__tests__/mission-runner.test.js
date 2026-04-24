@@ -81,15 +81,16 @@ describe('MissionRunner', () => {
   });
 
   it('should transition mission from queued to review via LLM', async () => {
-    // Create a mission in the mock DB
+    // Every Run must have a resolvable agent — the ephemeral fallback
+    // (build from name keywords) was removed; provide a real agent.
+    State.set('agents', [{ id: 'a-default', name: 'TestBot', config: {} }]);
     const mission = await SB.db('mission_runs').create({
       id: 'm1', user_id: userId, title: 'Test mission',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a-default', status: 'queued', progress: 0,
     });
 
     const result = await MissionRunner.run('m1');
 
-    // Should go to review (Draft & Approve flow)
     const updated = _db.mission_runs?.m1;
     expect(updated.status).toBe('review');
     expect(updated.progress).toBe(100);
@@ -99,9 +100,10 @@ describe('MissionRunner', () => {
   });
 
   it('should not award XP until approval (Draft & Approve flow)', async () => {
+    State.set('agents', [{ id: 'a2', name: 'XPBot', config: {} }]);
     await SB.db('mission_runs').create({
       id: 'm2', user_id: userId, title: 'XP test',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a2', status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m2');
@@ -111,9 +113,10 @@ describe('MissionRunner', () => {
   });
 
   it('should create a notification on completion', async () => {
+    State.set('agents', [{ id: 'a3', name: 'NotifyBot', config: {} }]);
     await SB.db('mission_runs').create({
       id: 'm3', user_id: userId, title: 'Notify test',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a3', status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m3');
@@ -126,6 +129,8 @@ describe('MissionRunner', () => {
 
   it('should refuse to run a mission that was cancelled pre-start', async () => {
     // Scheduler fires + user hits Cancel before execution begins.
+    // Status='cancelled' short-circuits before agent resolution runs,
+    // so no agent setup is needed.
     await SB.db('mission_runs').create({
       id: 'm-cancel-queued', user_id: userId, title: 'Cancelled before start',
       agent_id: null, status: 'cancelled', progress: 0,
@@ -151,11 +156,12 @@ describe('MissionRunner', () => {
   });
 
   it('should update local State missions during execution', async () => {
+    State.set('agents', [{ id: 'a5', name: 'StateBot', config: {} }]);
     State.set('missions', [{ id: 'm5', status: 'queued', progress: 0 }]);
 
     await SB.db('mission_runs').create({
       id: 'm5', user_id: userId, title: 'State test',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a5', status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m5');
@@ -171,10 +177,11 @@ describe('MissionRunner', () => {
     const origExecute = ShipLog.execute;
     globalThis.ShipLog.execute = async () => null;
 
+    State.set('agents', [{ id: 'a-fail', name: 'FailBot', config: {} }]);
     State.set('missions', [{ id: 'm-fail', status: 'queued', progress: 0 }]);
     await SB.db('mission_runs').create({
       id: 'm-fail', user_id: userId, title: 'Failing mission',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a-fail', status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m-fail');
@@ -190,9 +197,10 @@ describe('MissionRunner', () => {
     const origExecute = ShipLog.execute;
     globalThis.ShipLog.execute = async () => null;
 
+    State.set('agents', [{ id: 'a-en', name: 'ErrNotifyBot', config: {} }]);
     await SB.db('mission_runs').create({
       id: 'm-err-notify', user_id: userId, title: 'Error notify test',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a-en', status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m-err-notify');
@@ -206,9 +214,10 @@ describe('MissionRunner', () => {
   });
 
   it('should use temporary spaceship ID when no ships exist', async () => {
+    State.set('agents', [{ id: 'a-ns', name: 'NoShipBot', config: {} }]);
     await SB.db('mission_runs').create({
       id: 'm-no-ship', user_id: userId, title: 'No ship mission',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a-ns', status: 'queued', progress: 0,
     });
 
     const result = await MissionRunner.run('m-no-ship');
@@ -235,9 +244,10 @@ describe('MissionRunner', () => {
   });
 
   it('should include completed_at in metadata on success', async () => {
+    State.set('agents', [{ id: 'a-meta', name: 'MetaBot', config: {} }]);
     await SB.db('mission_runs').create({
       id: 'm-meta', user_id: userId, title: 'Metadata test',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a-meta', status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m-meta');
@@ -248,9 +258,10 @@ describe('MissionRunner', () => {
   });
 
   it('should set result content on completed mission in DB', async () => {
+    State.set('agents', [{ id: 'a-r', name: 'ResultBot', config: {} }]);
     await SB.db('mission_runs').create({
       id: 'm-result', user_id: userId, title: 'Result test',
-      agent_id: null, status: 'queued', progress: 0,
+      agent_id: 'a-r', status: 'queued', progress: 0,
     });
 
     await MissionRunner.run('m-result');
@@ -258,6 +269,39 @@ describe('MissionRunner', () => {
     const updated = _db.mission_runs?.['m-result'];
     expect(updated.result).toBeTruthy();
     expect(typeof updated.result).toBe('string');
+  });
+
+  // PR D: the ephemeral fallback (build agent from name keywords) was
+  // removed. Missions referencing an agent that can't be resolved must
+  // fail fast with a clear error instead of silently running a synthetic
+  // agent that doesn't match what the user expected.
+  it('fails fast with a clear error when no agent can be resolved', async () => {
+    State.set('agents', []);
+    await SB.db('mission_runs').create({
+      id: 'm-no-agent', user_id: userId, title: 'Orphan mission',
+      agent_id: 'ghost-id', status: 'queued', progress: 0,
+    });
+    const result = await MissionRunner.run('m-no-agent');
+    expect(result).toBeNull();
+    const updated = _db.mission_runs?.['m-no-agent'];
+    expect(updated.status).toBe('failed');
+    expect(updated.result).toMatch(/Could not resolve an agent/);
+    expect(updated.result).toMatch(/agent_id=ghost-id/);
+    const notifications = Object.values(_db.notifications || {});
+    expect(notifications.find(n => n.type === 'error')).toBeTruthy();
+  });
+
+  it('fail-fast also catches missions with neither agent_id nor agent_name', async () => {
+    State.set('agents', []);
+    await SB.db('mission_runs').create({
+      id: 'm-naked', user_id: userId, title: 'Nameless mission',
+      agent_id: null, status: 'queued', progress: 0,
+    });
+    const result = await MissionRunner.run('m-naked');
+    expect(result).toBeNull();
+    expect(_db.mission_runs['m-naked'].status).toBe('failed');
+    expect(_db.mission_runs['m-naked'].result).toMatch(/agent_id=none/);
+    expect(_db.mission_runs['m-naked'].result).toMatch(/agent_name=none/);
   });
 });
 
