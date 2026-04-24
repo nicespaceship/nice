@@ -48,7 +48,6 @@ const PromptPanel = (() => {
   let _mentionItems = [];
   let _mentionIdx = -1;
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
-  let _activeMode = 'auto'; // orchestration mode: auto, pipeline, parallel, hierarchical, loop
 
   /* ── File attachments (staged until send) ──
      Entries live on _pendingAttachments. Shape varies by `kind`:
@@ -608,6 +607,157 @@ const PromptPanel = (() => {
         role: 'assistant',
         text: 'Mission queued. Assign an agent or visit Bridge to run it.\n[ACTION: Bridge | #/missions]',
         agent: 'NICE', ts: Date.now(),
+      });
+    }
+
+    _saveMessages();
+    _renderMonitor();
+    _setSending(false);
+    if (sendBtn) sendBtn.disabled = false;
+  }
+
+  /**
+   * Ship-level chat: build an ephemeral Mission Run with a single triage
+   * node and dispatch through MissionRunner. Replaces the legacy
+   * MissionRouter dispatch — every ship chat now flows through the
+   * canonical Mission lifecycle (status / cancel / audit / analytics).
+   * Routing meta is logged to ship_log by WorkflowEngine._executeTriage
+   * and surfaced in the chat after the run completes.
+   *
+   * `bpId` here is the ship's blueprint id (set in #nice-ai-bp-select);
+   * we resolve it to the user's matching `user_spaceships` row so the
+   * mission_runs.spaceship_id FK is satisfied.
+   */
+  async function _runShipChat(text, bpId, sendBtn) {
+    const user = State.get('user');
+    const ships = State.get('spaceships') || [];
+
+    // Resolve ship by direct id or blueprint match — fall back to first
+    // active ship so a chat from any context still creates a valid Run.
+    const ship =
+      ships.find(s => s.id === bpId)
+      || ships.find(s => s.blueprint_id === bpId)
+      || ships.find(s => ('bp-' + (s.blueprint_id || '')) === bpId)
+      || ships[0];
+
+    if (!ship) {
+      _removeMonitorThinking();
+      _messages.push({
+        role: 'assistant',
+        text: '**Activate a Spaceship first.** Chat runs always belong to a Ship.\n[ACTION: Bridge | #/bridge]',
+        agent: 'NICE', ts: Date.now(),
+      });
+      _saveMessages();
+      _renderMonitor();
+      _setSending(false);
+      if (sendBtn) sendBtn.disabled = false;
+      return;
+    }
+
+    // Build triage candidates from the ship's slot assignments. These ids
+    // are agent blueprint ids; WorkflowEngine._resolveAgent handles the
+    // user_agents.id ↔ blueprint_id ↔ catalog fallback chain.
+    const slotAssignments = ship.slot_assignments || {};
+    const candidates = Object.values(slotAssignments).filter(Boolean);
+
+    // Build the single-node plan. Empty crew falls through to triage's
+    // own default-to-all-activated-agents behavior.
+    const planNode = {
+      id: 'root',
+      type: 'triage',
+      config: { candidates, prompt: text },
+    };
+
+    let run = null;
+    try {
+      run = await SB.db('mission_runs').create({
+        user_id: user.id,
+        spaceship_id: ship.id,
+        mission_id: null,
+        title: text.length > 60 ? text.slice(0, 57) + '…' : text,
+        status: 'queued',
+        priority: 'medium',
+        progress: 0,
+        plan_snapshot: { shape: 'dag', nodes: [planNode], edges: [] },
+        metadata: { source: 'prompt_panel', input: text },
+      });
+      const missions = State.get('missions') || [];
+      missions.push(run);
+      State.set('missions', [...missions]);
+    } catch (err) {
+      _removeMonitorThinking();
+      _messages.push({
+        role: 'assistant',
+        text: '⚠️ **Could not start chat run**\n\n' + (err.message || 'Database write failed.'),
+        agent: null, error: true, ts: Date.now(),
+      });
+      _saveMessages();
+      _renderMonitor();
+      _setSending(false);
+      if (sendBtn) sendBtn.disabled = false;
+      return;
+    }
+
+    let result = null;
+    try {
+      result = await MissionRunner.run(run.id);
+    } catch (err) {
+      _removeMonitorThinking();
+      _messages.push({
+        role: 'assistant',
+        text: '⚠️ **Run failed**\n\n' + (err.message || 'Unknown error.'),
+        agent: null, error: true, ts: Date.now(),
+      });
+      _saveMessages();
+      _renderMonitor();
+      _setSending(false);
+      if (sendBtn) sendBtn.disabled = false;
+      return;
+    }
+
+    _removeMonitorThinking();
+
+    // Pull the final row to read the persisted result + status (the in-
+    // memory result object from WorkflowEngine doesn't carry the auto-
+    // completed status flip from _runDag).
+    let finalRow = null;
+    try { finalRow = await SB.db('mission_runs').get(run.id); } catch { /* ignore */ }
+    const status = finalRow?.status || result?.status || 'completed';
+    const content = finalRow?.result || result?.finalOutput || 'No response.';
+
+    // Surface the routing decision (logged to ship_log by triage).
+    let routingMeta = null;
+    try {
+      const logs = await SB.db('ship_log').list({ mission_id: run.id, limit: 20 });
+      const routing = (logs || []).find(l => l?.metadata?.type === 'routing');
+      if (routing?.metadata) routingMeta = routing.metadata;
+    } catch { /* non-critical */ }
+
+    if (routingMeta?.chosen_agent_name) {
+      _messages.push({
+        role: 'system',
+        text: 'Routing to ' + routingMeta.chosen_agent_name + ': ' + (routingMeta.reasoning || ''),
+        agent: null, ts: Date.now(),
+      });
+    }
+
+    if (status === 'cancelled') {
+      _messages.push({
+        role: 'assistant',
+        text: '_Cancelled._' + (content && content !== 'No response.' ? '\n\n' + content : ''),
+        agent: routingMeta?.chosen_agent_name || 'NICE', ts: Date.now(),
+      });
+    } else if (status === 'failed') {
+      _messages.push({
+        role: 'assistant',
+        text: '⚠️ **Run failed**\n\n' + content,
+        agent: null, error: true, ts: Date.now(),
+      });
+    } else {
+      _messages.push({
+        role: 'assistant',
+        text: content,
+        agent: routingMeta?.chosen_agent_name || 'NICE', ts: Date.now(),
       });
     }
 
@@ -1995,76 +2145,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           });
         }
       }
-    } else if (typeof MissionRouter !== 'undefined' && bpId && !agentBp) {
-      // Spaceship selected, no specific agent → route via MissionRouter
-      const spaceshipId = bpId;
-
-      const onRouting = (routing) => {
-        _removeMonitorThinking();
-        _messages.push({
-          role: 'system', text: 'Routing to ' + routing.agentName + ': ' + routing.reasoning,
-          agent: null, ts: Date.now(),
-        });
-        _renderMonitor();
-        _addMonitorThinking('Executing with ' + routing.agentName + '…');
-      };
-
-      let _streamText = '';
-      let _streamEl = null;
-      const onChunk = (chunk) => {
-        if (!_streamEl) {
-          _removeMonitorThinking();
-          _streamEl = document.createElement('div');
-          _streamEl.className = 'monitor-card';
-          _streamEl.id = 'monitor-stream';
-          _streamEl.innerHTML = '<div class="monitor-card-agent">NICE</div><div class="monitor-card-text" id="monitor-stream-text"></div>';
-          _monitorContent?.appendChild(_streamEl);
-        }
-        _streamText += chunk;
-        const span = document.getElementById('monitor-stream-text');
-        if (span) span.innerHTML = _md(_parseActions(_streamText).clean);
-        const monitorEl = document.getElementById('nice-monitor');
-        if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
-      };
-
-      // Dispatch based on orchestration mode
-      const mode = _activeMode || 'auto';
-      let routerPromise;
-      const routerOpts = { onRouting, onChunk };
-
-      if (mode === 'pipeline' && MissionRouter.pipeline) {
-        routerPromise = MissionRouter.pipeline(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
-      } else if (mode === 'parallel' && MissionRouter.parallel) {
-        routerPromise = MissionRouter.parallel(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
-      } else if (mode === 'hierarchical' && MissionRouter.hierarchical) {
-        routerPromise = MissionRouter.hierarchical(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
-      } else if (mode === 'loop' && MissionRouter.loop) {
-        routerPromise = MissionRouter.loop(spaceshipId, text, routerOpts).then(r => ({ routing: null, result: r }));
-      } else {
-        routerPromise = MissionRouter.route(spaceshipId, text, routerOpts);
-      }
-
-      routerPromise.then(({ routing, result }) => {
-        _removeMonitorThinking();
-        document.getElementById('monitor-stream')?.remove();
-        const agentName = routing ? routing.agentName : 'NICE';
-        const content = result.finalAnswer || result.content || 'No response.';
-        const modeLabel = mode !== 'auto' ? ` [${mode}]` : '';
-        _messages.push({ role: 'assistant', text: content, agent: agentName + modeLabel, ts: Date.now() });
-        _saveMessages();
-        _renderMonitor();
-        _setSending(false);
-        if (sendBtn) sendBtn.disabled = false;
-      }).catch((err) => {
-        _removeMonitorThinking();
-        document.getElementById('monitor-stream')?.remove();
-        const errorText = '⚠️ **Routing failed**\n\n' + (err.message || 'Could not reach AI service.') + '\n\nCheck your connection and try again.';
-        _messages.push({ role: 'assistant', text: errorText, agent: null, error: true, ts: Date.now() });
-        _saveMessages();
-        _renderMonitor();
-        _setSending(false);
-        if (sendBtn) sendBtn.disabled = false;
-      });
+    } else if (typeof MissionRunner !== 'undefined' && bpId && !agentBp) {
+      // Spaceship selected, no specific agent: create an ephemeral Mission
+      // Run with a single triage node and let MissionRunner / WorkflowEngine
+      // do the routing. Replaces the legacy MissionRouter dispatch — every
+      // ship-level chat now lands in the canonical Mission lifecycle so
+      // status, cancel, audit, and analytics all work the same as templated
+      // missions. See docs/mission-router-fold-in.md (PR B).
+      _runShipChat(text, bpId, sendBtn);
 
     } else if (typeof ShipLog !== 'undefined' && (agentBp || bpId)) {
       const spaceshipId = bpId || 'default-ship';
@@ -2359,13 +2447,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
-              <select class="nice-ai-mode-select" id="nice-ai-mode" title="Orchestration mode">
-                <option value="auto" selected>Auto</option>
-                <option value="pipeline">Pipeline</option>
-                <option value="parallel">Parallel</option>
-                <option value="hierarchical">Hierarchical</option>
-                <option value="loop">Quality Loop</option>
-              </select>
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model">
                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
               </select>
@@ -2435,10 +2516,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   /* ── Bind events ── */
   function _bindEvents() {
     // Close button
-
-    // Orchestration mode selector
-    const modeSelect = _panel.querySelector('#nice-ai-mode');
-    if (modeSelect) modeSelect.addEventListener('change', () => { _activeMode = modeSelect.value; });
 
     // Send button (NS logo)
     _panel.querySelector('#nice-ai-send')?.addEventListener('click', () => _send());

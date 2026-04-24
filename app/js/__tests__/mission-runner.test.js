@@ -348,4 +348,58 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     const res = await MissionRunner.run('m-dag-empty');
     expect(res.status).toBe('paused');
   });
+
+  // PR B: prompt_panel-sourced runs are ephemeral chat. The user already
+  // saw the answer in the chat monitor, so we land in 'completed' instead
+  // of 'review' and skip both the approval_status flag and the
+  // Ready-for-Review notification. Templated missions still go to review.
+  it('chat-sourced run (metadata.source=prompt_panel) auto-completes instead of going to review', async () => {
+    const planSnapshot = {
+      shape: 'dag',
+      nodes: [
+        { id: 'root', type: 'agent', config: { prompt: 'reply' } },
+      ],
+      edges: [],
+    };
+    await SB.db('mission_runs').create({
+      id: 'm-chat-1', user_id: userId, title: 'hello',
+      status: 'queued', progress: 0,
+      plan_snapshot: planSnapshot,
+      metadata: { source: 'prompt_panel', input: 'hello' },
+    });
+
+    const notifies = [];
+    const origSend = globalThis.Notify.send;
+    globalThis.Notify.send = (n) => { notifies.push(n); };
+
+    const res = await MissionRunner.run('m-chat-1');
+    globalThis.Notify.send = origSend;
+
+    expect(res.status).toBe('completed');
+    const row = _db.mission_runs['m-chat-1'];
+    expect(row.status).toBe('completed');
+    expect(row.progress).toBe(100);
+    expect(row.completed_at).toBeTruthy();
+    expect(row.approval_status).toBeUndefined();
+    // No "Ready for Review" notification for chat runs
+    expect(notifies.find(n => /review/i.test(n.title || ''))).toBeUndefined();
+  });
+
+  it('templated run (no source flag) still lands in review (regression guard)', async () => {
+    const planSnapshot = {
+      shape: 'dag',
+      nodes: [{ id: 'a', type: 'agent', config: { prompt: 'do' } }, { id: 'b', type: 'agent', config: { prompt: 'do' } }],
+      edges: [{ from: 'a', to: 'b' }],
+    };
+    await SB.db('mission_runs').create({
+      id: 'm-tpl-1', user_id: userId, title: 'templated',
+      status: 'queued', progress: 0,
+      plan_snapshot: planSnapshot,
+      metadata: {},
+    });
+    await MissionRunner.run('m-tpl-1');
+    const row = _db.mission_runs['m-tpl-1'];
+    expect(row.status).toBe('review');
+    expect(row.approval_status).toBe('draft');
+  });
 });
