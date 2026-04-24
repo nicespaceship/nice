@@ -152,6 +152,18 @@ const WorkflowEngine = (() => {
         // user's voice rather than a generic assistant tone.
         return await _executePersonaDispatch(node, input, workflow);
 
+      case 'triage':
+        return await _executeTriage(node, input, workflow);
+
+      case 'pipeline':
+        return await _executePipeline(node, input, workflow);
+
+      case 'parallel':
+        return await _executeParallel(node, input, workflow);
+
+      case 'quality_loop':
+        return await _executeQualityLoop(node, input, workflow);
+
       case 'approval_gate':
         return _executeApprovalGate(node, input);
 
@@ -187,58 +199,71 @@ const WorkflowEngine = (() => {
     const prompt = node.config?.prompt || input || node.label;
     const finalPrompt = input ? `${prompt}\n\nContext:\n${input}` : prompt;
 
-    let agent = null;
-    const stateAgents = typeof State !== 'undefined' ? (State.get('agents') || []) : [];
+    const agent = _resolveAgent(agentId || blueprintId);
 
-    if (agentId) {
-      agent = stateAgents.find(a => a.id === agentId);
-    }
-    if (!agent && blueprintId) {
-      agent = stateAgents.find(a => a.blueprint_id === blueprintId);
-    }
-
-    // Fall back to a blueprint-derived ephemeral agent if the user
-    // hasn't activated this crew yet. Keeps demos working before a
-    // full install lands; real runs should pre-install via the Composer.
-    if (!agent && blueprintId && typeof Blueprints !== 'undefined') {
-      const bp = Blueprints.getAgent?.(blueprintId);
-      if (bp) {
-        agent = {
-          id: bp.id,
-          name: bp.name,
-          blueprint_id: bp.id,
-          config: bp.config || {},
-        };
+    // Legacy contract: an agent node with no resolvable agent still
+    // falls through to ShipLog (which one-shot calls the LLM with no
+    // persona). Removed-agent nodes in saved workflows shouldn't fail
+    // hard. The new sub-dispatch nodes (triage/pipeline/parallel/
+    // quality_loop) treat missing agents as real config errors via
+    // _runAgent's guard.
+    if (!agent) {
+      if (typeof ShipLog !== 'undefined') {
+        const r = await ShipLog.execute(_resolveSpaceshipId(workflow), null, finalPrompt);
+        return r ? r.content : 'No response';
       }
+      return 'ShipLog not available';
     }
 
-    // If the agent has tools configured (either explicit tool ids or
-    // an MCP connection the user owns), route through AgentExecutor so
-    // the ReAct loop actually invokes the tools. Without this branch,
-    // ShipLog.execute is a one-shot LLM call — the model sees the tool
-    // names in the system prompt and role-plays the interaction as
-    // inline text instead of actually calling anything.
-    //
-    // Mirrors the simple-mission dispatch in MissionRunner.run.
+    return _runAgent(agent, finalPrompt, workflow);
+  }
+
+  /**
+   * Resolve an id (either a `user_agents.id` or a `blueprints.id`) to
+   * an executable agent object. Tries State.agents first (live activated
+   * agents carry user-specific tool/persona config), then falls back to
+   * the blueprint catalog (ephemeral agent for unactivated crew). Same
+   * resolution chain used by triage / pipeline / parallel / quality_loop.
+   */
+  function _resolveAgent(id) {
+    if (!id) return null;
+    const stateAgents = typeof State !== 'undefined' ? (State.get('agents') || []) : [];
+    let agent = stateAgents.find(a => a.id === id);
+    if (agent) return agent;
+    agent = stateAgents.find(a => a.blueprint_id === id);
+    if (agent) return agent;
+    if (typeof Blueprints !== 'undefined') {
+      const bp = Blueprints.getAgent?.(id);
+      if (bp) return { id: bp.id, name: bp.name, blueprint_id: bp.id, config: bp.config || {} };
+    }
+    return null;
+  }
+
+  /**
+   * Run a single agent with a prompt. The primitive shared by the agent
+   * node and the higher-order node types (triage, pipeline, parallel,
+   * quality_loop). Routes through AgentExecutor when the agent has tools
+   * (explicit list or any active MCP connection); otherwise falls back to
+   * a one-shot ShipLog.execute call.
+   */
+  async function _runAgent(agent, prompt, workflow) {
+    if (!agent) return 'Error: Agent not found';
     if (_agentHasTools(agent) && typeof AgentExecutor !== 'undefined') {
       try {
-        const execResult = await AgentExecutor.execute(agent, finalPrompt, {
+        const r = await AgentExecutor.execute(agent, prompt, {
           tools: agent?.config?.tools || [],
           spaceshipId: _resolveSpaceshipId(workflow),
           maxSteps: agent?.config?.maxSteps,
         });
-        return execResult?.finalAnswer || 'No response';
+        return r?.finalAnswer || 'No response';
       } catch (err) {
         return 'Error: ' + (err?.message || 'Agent execution failed');
       }
     }
-
     if (typeof ShipLog !== 'undefined') {
-      const shipId = _resolveSpaceshipId(workflow);
-      const result = await ShipLog.execute(shipId, agent, finalPrompt);
-      return result ? result.content : 'No response';
+      const r = await ShipLog.execute(_resolveSpaceshipId(workflow), agent, prompt);
+      return r ? r.content : 'No response';
     }
-
     return 'ShipLog not available';
   }
 
@@ -328,6 +353,331 @@ const WorkflowEngine = (() => {
       return `PERSONA BRIEF: ${hint.slice(0, 2000)}`;
     }
     return '';
+  }
+
+  /**
+   * Triage node — picks the best agent from `candidates` for the prompt
+   * and runs it. Replaces MissionRouter.route(). Routing decision is
+   * logged to ship_log so the UI / Missions view can surface it.
+   *
+   * Config:
+   *   - candidates: string[]  // agent or blueprint ids; defaults to all
+   *                              activated agents in State if omitted
+   *   - intent?:    'research' | 'code' | 'analyze' | 'build'  (hint)
+   *   - prompt?:    string    // fallback when no upstream input
+   *   - routingModel?: string // override for the router LLM call
+   */
+  async function _executeTriage(node, input, workflow) {
+    const cfg = node?.config || {};
+    let candidates = Array.isArray(cfg.candidates) ? cfg.candidates.slice() : [];
+
+    if (candidates.length === 0) {
+      const stateAgents = typeof State !== 'undefined' ? (State.get('agents') || []) : [];
+      candidates = stateAgents.map(a => a.id).filter(Boolean);
+    }
+    if (candidates.length === 0) return 'Error: No candidate agents for triage';
+
+    const prompt = cfg.prompt || input || node.label || '';
+
+    if (candidates.length === 1) {
+      const solo = _resolveAgent(candidates[0]);
+      await _logRouting(workflow, solo, 'Only candidate');
+      return _runAgent(solo, prompt, workflow);
+    }
+
+    // Intent shortcut — direct category match before paying for the LLM
+    if (cfg.intent) {
+      const intentMap = { research: 'research', code: 'code', analyze: 'data', build: 'ops' };
+      const target = intentMap[cfg.intent];
+      if (target) {
+        const matches = candidates.map(_resolveAgent).filter(a => {
+          const role = String((a?.config?.role) || a?.role || a?.category || '').toLowerCase();
+          return a && role.includes(target);
+        });
+        if (matches.length) {
+          await _logRouting(workflow, matches[0], 'Matched ' + cfg.intent + ' intent');
+          return _runAgent(matches[0], prompt, workflow);
+        }
+      }
+    }
+
+    const decision = await _callRoutingLLM(candidates, prompt, cfg.routingModel);
+    const chosen = _resolveAgent(decision.agentId) || _resolveAgent(candidates[0]);
+    await _logRouting(workflow, chosen, decision.reasoning);
+    return _runAgent(chosen, prompt, workflow);
+  }
+
+  /**
+   * Pipeline node — executes an ordered sequence of agents. Each step's
+   * output flows into the next via the `{input}` placeholder in
+   * promptTemplate (or as a plain context block when omitted). Replaces
+   * MissionRouter.pipeline().
+   *
+   * Config:
+   *   - steps: Array<{ agentId, promptTemplate? }>
+   */
+  async function _executePipeline(node, input, workflow) {
+    const cfg = node?.config || {};
+    const steps = Array.isArray(cfg.steps) ? cfg.steps : [];
+    if (steps.length === 0) return input || '';
+
+    let current = input || cfg.initialInput || '';
+
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i] || {};
+      const agent = _resolveAgent(step.agentId);
+      if (!agent) {
+        current = 'Error: Agent not found: ' + step.agentId;
+        continue;
+      }
+
+      let prompt;
+      if (step.promptTemplate) {
+        prompt = step.promptTemplate.replace(/\{input\}/g, current);
+      } else if (i === 0) {
+        prompt = current;
+      } else {
+        prompt = `Step ${i + 1} in a ${steps.length}-step pipeline. Previous step produced:\n\n${current}\n\nReview, refine, and build on this — don't restart.`;
+      }
+
+      try {
+        current = await _runAgent(agent, prompt, workflow);
+      } catch (err) {
+        current = 'Error: ' + (err?.message || err);
+      }
+
+      if (typeof ShipLog !== 'undefined') {
+        try {
+          await ShipLog.append(_resolveSpaceshipId(workflow), {
+            agentId: agent.id,
+            role: 'assistant',
+            content: '[Pipeline ' + (i + 1) + '/' + steps.length + '] ' + String(current).slice(0, 1000),
+            metadata: { type: 'pipeline_step', step: i + 1, total: steps.length, agent_id: agent.id, agent_name: agent.name },
+          });
+        } catch { /* non-critical */ }
+      }
+    }
+
+    return current;
+  }
+
+  /**
+   * Parallel node — fans out the same prompt to N agents, then either
+   * concatenates their outputs or hands them to a synthesis agent.
+   * Replaces MissionRouter.parallel().
+   *
+   * Config:
+   *   - agents:           string[]
+   *   - merge:            'concat' | 'summarize'  (default 'concat')
+   *   - synthesisAgent?:  string  // required when merge='summarize'
+   *   - prompt?:          string
+   */
+  async function _executeParallel(node, input, workflow) {
+    const cfg = node?.config || {};
+    const agentIds = Array.isArray(cfg.agents) ? cfg.agents : [];
+    if (agentIds.length === 0) return input || '';
+
+    const merge = cfg.merge === 'summarize' ? 'summarize' : 'concat';
+    const prompt = cfg.prompt || input || node.label || '';
+
+    const results = await Promise.all(agentIds.map(async (id) => {
+      const agent = _resolveAgent(id);
+      if (!agent) return { name: id, output: 'Error: Agent not found' };
+      try {
+        const out = await _runAgent(agent, prompt, workflow);
+        return { name: agent.name, output: out };
+      } catch (err) {
+        return { name: agent.name || id, output: 'Error: ' + (err?.message || err) };
+      }
+    }));
+
+    const concatenated = results
+      .map(r => '## ' + r.name + '\n\n' + r.output)
+      .join('\n\n---\n\n');
+
+    if (typeof ShipLog !== 'undefined') {
+      try {
+        await ShipLog.append(_resolveSpaceshipId(workflow), {
+          agentId: null,
+          role: 'system',
+          content: '[Parallel] ' + results.length + ' agents completed',
+          metadata: { type: 'parallel', agent_ids: agentIds, merge },
+        });
+      } catch { /* non-critical */ }
+    }
+
+    if (merge === 'summarize' && cfg.synthesisAgent) {
+      const synth = _resolveAgent(cfg.synthesisAgent);
+      if (synth) {
+        const synthPrompt =
+          'You have results from ' + results.length + ' agents working in parallel.\n\n' +
+          'Original task:\n' + prompt + '\n\n' +
+          concatenated + '\n\n' +
+          'Produce a single, unified, polished output that combines the best of each.';
+        return _runAgent(synth, synthPrompt, workflow);
+      }
+    }
+
+    return concatenated;
+  }
+
+  /**
+   * Quality-loop node — worker drafts, reviewer scores, retry with
+   * feedback until threshold or maxIterations. Replaces
+   * MissionRouter.loop().
+   *
+   * Config:
+   *   - worker:        string  // agent id
+   *   - reviewer:      string  // agent id
+   *   - threshold:     number  // 0.0–1.0 (default 0.8)
+   *   - maxIterations: number  // default 3
+   *   - prompt?:       string
+   */
+  async function _executeQualityLoop(node, input, workflow) {
+    const cfg = node?.config || {};
+    const worker = _resolveAgent(cfg.worker);
+    const reviewer = _resolveAgent(cfg.reviewer);
+    if (!worker) return 'Error: Worker agent not found';
+    if (!reviewer) return 'Error: Reviewer agent not found';
+
+    const threshold = typeof cfg.threshold === 'number' ? cfg.threshold : 0.8;
+    const maxIterations = Math.max(1, cfg.maxIterations || 3);
+    const originalPrompt = cfg.prompt || input || node.label || '';
+
+    let workerPrompt = originalPrompt;
+    let lastOutput = '';
+    let lastScore = 0;
+
+    for (let i = 1; i <= maxIterations; i++) {
+      try {
+        lastOutput = await _runAgent(worker, workerPrompt, workflow);
+      } catch (err) {
+        lastOutput = 'Error: ' + (err?.message || err);
+      }
+
+      const reviewPrompt =
+        'You are a quality reviewer. Rate this output on a 0.0–1.0 scale.\n\n' +
+        'Original task:\n' + originalPrompt + '\n\n' +
+        'Output to review:\n' + String(lastOutput).slice(0, 3000) + '\n\n' +
+        'Respond ONLY with JSON: {"score":<0.0-1.0>,"feedback":"specific improvements"}';
+
+      let reviewText = '';
+      try {
+        reviewText = await _runAgent(reviewer, reviewPrompt, workflow);
+      } catch (err) {
+        // Reviewer crashed — accept current output rather than retry forever.
+        lastScore = threshold;
+        break;
+      }
+
+      const review = _parseReviewJSON(reviewText);
+      lastScore = typeof review.score === 'number' ? review.score : 0;
+
+      if (typeof ShipLog !== 'undefined') {
+        try {
+          await ShipLog.append(_resolveSpaceshipId(workflow), {
+            agentId: worker.id,
+            role: 'system',
+            content: '[Quality Loop ' + i + '/' + maxIterations + '] score=' + lastScore.toFixed(2) +
+              (review.feedback ? ' — ' + String(review.feedback).slice(0, 200) : ''),
+            metadata: { type: 'quality_loop', iteration: i, score: lastScore, threshold, worker_id: worker.id, reviewer_id: reviewer.id },
+          });
+        } catch { /* non-critical */ }
+      }
+
+      if (lastScore >= threshold) break;
+
+      if (i < maxIterations) {
+        workerPrompt =
+          'Your previous attempt scored ' + lastScore.toFixed(2) + ' (target: ' + threshold + ').\n' +
+          'Reviewer feedback: ' + (review.feedback || 'No specific feedback.') + '\n\n' +
+          'Original task:\n' + originalPrompt + '\n\n' +
+          'Your previous output:\n' + String(lastOutput).slice(0, 2000) + '\n\n' +
+          'Please improve based on the feedback.';
+      }
+    }
+
+    return lastOutput;
+  }
+
+  /* ── Routing helpers (used by triage) ── */
+
+  async function _callRoutingLLM(candidateIds, prompt, model) {
+    if (typeof SB === 'undefined' || !SB.functions) {
+      return { agentId: candidateIds[0], reasoning: 'Routing unavailable — defaulting to first candidate' };
+    }
+
+    const lines = candidateIds.map(id => {
+      const a = _resolveAgent(id);
+      const role = (a?.config?.role) || a?.category || 'General';
+      const desc = a?.description || '';
+      return '- ' + (a?.name || id) + ' (ID: ' + id + ') — ' + role + (desc ? '. ' + desc : '');
+    }).join('\n');
+
+    const sys =
+      'You are a routing agent. Pick the single best agent for the task.\n\n' +
+      '## Candidates\n' + lines + '\n\n' +
+      'Respond ONLY with JSON: {"agent_id":"<id>","reasoning":"one sentence"}';
+
+    try {
+      const { data, error } = await SB.functions.invoke('nice-ai', {
+        body: {
+          model: model || 'gemini-2.5-flash',
+          messages: [{ role: 'system', content: sys }, { role: 'user', content: prompt }],
+          temperature: 0.2,
+          max_tokens: 256,
+        },
+      });
+      if (error) throw new Error(error?.message || String(error));
+      const parsed = _parseJSON(data?.content || '', 'agent_id');
+      if (parsed && parsed.agent_id) {
+        const matched = candidateIds.indexOf(parsed.agent_id) !== -1 ? parsed.agent_id : candidateIds[0];
+        return { agentId: matched, reasoning: parsed.reasoning || 'Selected by router' };
+      }
+    } catch { /* fall through */ }
+
+    return { agentId: candidateIds[0], reasoning: 'Routing failed — defaulting to first candidate' };
+  }
+
+  function _parseJSON(text, requiredKey) {
+    if (!text) return null;
+    try {
+      const parsed = JSON.parse(String(text).trim());
+      if (!requiredKey || parsed[requiredKey] != null) return parsed;
+    } catch { /* fall through */ }
+    if (requiredKey) {
+      const re = new RegExp('\\{[\\s\\S]*?"' + requiredKey + '"[\\s\\S]*?\\}');
+      const m = String(text).match(re);
+      if (m) {
+        try { return JSON.parse(m[0]); } catch { /* fall through */ }
+      }
+    }
+    return null;
+  }
+
+  function _parseReviewJSON(text) {
+    const parsed = _parseJSON(text, 'score');
+    if (parsed && typeof parsed.score === 'number') {
+      return { score: parsed.score, feedback: parsed.feedback || '' };
+    }
+    const scoreMatch = String(text || '').match(/"score"\s*:\s*([\d.]+)/);
+    const fbMatch = String(text || '').match(/"feedback"\s*:\s*"([^"]+)"/);
+    return {
+      score: scoreMatch ? parseFloat(scoreMatch[1]) : 0,
+      feedback: fbMatch ? fbMatch[1] : '',
+    };
+  }
+
+  async function _logRouting(workflow, agent, reasoning) {
+    if (typeof ShipLog === 'undefined' || !agent) return;
+    try {
+      await ShipLog.append(_resolveSpaceshipId(workflow), {
+        agentId: null,
+        role: 'system',
+        content: 'Routing to ' + agent.name + ': ' + reasoning,
+        metadata: { type: 'routing', chosen_agent_id: agent.id, chosen_agent_name: agent.name, reasoning },
+      });
+    } catch { /* non-critical */ }
   }
 
   /**
@@ -572,6 +922,14 @@ const WorkflowEngine = (() => {
     _executeAgent,
     _agentHasTools,
     _resolveSpaceshipId,
+    _executeTriage,
+    _executePipeline,
+    _executeParallel,
+    _executeQualityLoop,
+    _resolveAgent,
+    _runAgent,
+    _parseJSON,
+    _parseReviewJSON,
   };
 })();
 

@@ -480,28 +480,35 @@ const MissionRunner = (() => {
       return result;
     }
 
-    // Fully completed DAG with no gate — drop into review alongside
-    // ordinary simple-shape missions so the user still signs off.
+    // Fully completed DAG with no gate. Two terminal states:
+    //   - 'completed' for chat-sourced ephemeral runs (user already
+    //     saw the answer in the chat monitor — review approval would be
+    //     redundant and noisy in the Missions view).
+    //   - 'review' for everything else, so the user still signs off on
+    //     templated mission output before it's marked complete.
+    const isChatRun = mission.metadata?.source === 'prompt_panel';
+    const finalStatus = isChatRun ? 'completed' : 'review';
     const dagOutcome = _deriveOutcome(mission, result.finalOutput || '');
     const dagUpdate = {
-      status: 'review',
+      status: finalStatus,
       progress: 100,
       result: result.finalOutput || '',
-      approval_status: 'draft',
       node_results: nodeResults,
       metadata: Object.assign({}, mission.metadata || {}, { dag_status: 'completed', completed_at: now }),
       updated_at: now,
     };
+    if (!isChatRun) dagUpdate.approval_status = 'draft';
+    if (isChatRun) dagUpdate.completed_at = now;
     if (dagOutcome) dagUpdate.outcome = dagOutcome;
     await SB.db('mission_runs').update(missionId, dagUpdate).catch(() => {});
-    _updateLocalMission(missionId, {
-      status: 'review',
+    _updateLocalMission(missionId, Object.assign({
+      status: finalStatus,
       progress: 100,
       result: result.finalOutput || '',
-      approval_status: 'draft',
-      ...(dagOutcome ? { outcome: dagOutcome } : {}),
-    });
-    _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
+    }, isChatRun ? {} : { approval_status: 'draft' }, dagOutcome ? { outcome: dagOutcome } : {}));
+    if (!isChatRun) {
+      _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
+    }
     return result;
   }
 
