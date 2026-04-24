@@ -199,7 +199,7 @@ const MissionsView = (() => {
     // Card clicks
     feed.querySelectorAll('.mc-card').forEach(card => {
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.mc-card-check') || e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn')) return;
+        if (e.target.closest('.mc-card-check') || e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn') || e.target.closest('.mc-card-delete')) return;
         Router.navigate('#/missions/' + card.dataset.id);
       });
     });
@@ -215,6 +215,18 @@ const MissionsView = (() => {
       if (retryBtn) { try { await SB.db('tasks').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {} }
       await MissionRunner.run(missionId);
       _loadMissions();
+    });
+
+    // Per-row Delete (confirm-gated, cascades ship_log via FK)
+    feed.addEventListener('click', async (e) => {
+      const delBtn = e.target.closest('.mc-card-delete');
+      if (!delBtn) return;
+      const missionId = delBtn.dataset.id;
+      if (!confirm(`Delete this ${_Nl()}? This also removes all associated ship-log entries and cannot be undone.`)) return;
+      delBtn.disabled = true;
+      _selected.delete(missionId);
+      _renderBatchBar();
+      await _deleteMission(missionId);
     });
 
     // Run All button
@@ -254,9 +266,11 @@ const MissionsView = (() => {
     let actionsHTML = '';
     if (m.status === 'queued' && (m.agent_id || m.agent_name)) {
       actionsHTML = `<button class="btn btn-primary btn-xs task-run-btn" data-id="${m.id}">⚡ Run</button>`;
-    } else if (m.status === 'failed' && (m.agent_id || m.agent_name)) {
+    } else if ((m.status === 'failed' || m.status === 'completed') && (m.agent_id || m.agent_name)) {
       actionsHTML = `<button class="btn btn-xs task-retry-btn" data-id="${m.id}">↻ Retry</button>`;
     }
+    // Delete is available for every status. Destructive, confirm-gated.
+    actionsHTML += `<button class="btn btn-xs mc-card-delete" data-id="${m.id}" aria-label="Delete ${_Nl()}" title="Delete ${_Nl()}">🗑</button>`;
 
     return `
       <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}">
@@ -365,19 +379,18 @@ const MissionsView = (() => {
     if (_selected.size === 0) { bar.style.display = 'none'; return; }
     bar.style.display = 'flex';
     bar.innerHTML = `
-      <span class="mc-batch-count">${_selected.size} selected</span>
-      <button class="btn btn-xs mc-batch-act" data-action="completed">✓ Complete</button>
-      <button class="btn btn-xs mc-batch-act" data-action="failed">✕ Fail</button>
-      <button class="btn btn-xs mc-batch-act" data-action="queued">↩ Re-queue</button>
-      <button class="btn btn-xs mc-batch-clear">Clear</button>
+      <span class="mc-batch-count">${_selected.size} selected
+        <button class="mc-batch-clear" aria-label="Clear selection" title="Clear selection">×</button>
+      </span>
+      <button class="btn btn-xs mc-batch-delete">🗑 Delete</button>
     `;
-    bar.querySelectorAll('.mc-batch-act').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const action = btn.dataset.action;
-        _selected.forEach(id => _updateMissionStatus(id, action));
-        _selected.clear();
-        _renderBatchBar();
-      });
+    bar.querySelector('.mc-batch-delete')?.addEventListener('click', async () => {
+      const n = _selected.size;
+      if (!confirm(`Delete ${n} ${_Nl()}${n === 1 ? '' : 's'}? This also removes all associated ship-log entries and cannot be undone.`)) return;
+      const ids = Array.from(_selected);
+      _selected.clear();
+      _renderBatchBar();
+      await Promise.all(ids.map(id => _deleteMission(id)));
     });
     bar.querySelector('.mc-batch-clear')?.addEventListener('click', () => {
       _selected.clear();
@@ -386,21 +399,17 @@ const MissionsView = (() => {
     });
   }
 
-  function _updateMissionStatus(missionId, newStatus) {
+  async function _deleteMission(missionId) {
     const missions = State.get('missions') || [];
     const mission = missions.find(m => m.id === missionId);
-    if (!mission || mission.status === newStatus) return;
-    const oldStatus = mission.status;
-    mission.status = newStatus;
-    if (newStatus === 'completed') {
-      mission.completed_at = new Date().toISOString();
-      if (typeof Gamification !== 'undefined') Gamification.addMissionXP(mission);
+    const next = missions.filter(m => m.id !== missionId);
+    State.set('missions', next);
+    if (typeof AuditLog !== 'undefined' && mission) {
+      AuditLog.log('mission', { description: `Mission "${mission.title}" deleted`, missionId, status: mission.status });
     }
-    State.set('missions', missions);
-    if (typeof AuditLog !== 'undefined') {
-      AuditLog.log('mission', { description: `Mission "${mission.title}" ${oldStatus} → ${newStatus}`, missionId, oldStatus, newStatus });
+    if (typeof SB !== 'undefined') {
+      try { await SB.db('tasks').remove(missionId); } catch (err) { console.error('[Missions] Delete failed', err); }
     }
-    if (typeof SB !== 'undefined') SB.db('tasks').update(missionId, { status: newStatus }).catch(() => {});
   }
 
   /* ═══════════════════════════════════════════════════════════════════

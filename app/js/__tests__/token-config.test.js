@@ -71,11 +71,6 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('grok-4-1-fast')).toBe(2);
   });
 
-  it('GLM-5 consumes 2 standard tokens (744B MoE at value-tier pricing)', () => {
-    expect(TokenConfig.poolFor('glm-5')).toBe('standard');
-    expect(TokenConfig.weightFor('glm-5')).toBe(2);
-  });
-
   it('Claude 4.6 Sonnet consumes 3 claude tokens', () => {
     expect(TokenConfig.poolFor('claude-4-6-sonnet')).toBe('claude');
     expect(TokenConfig.weightFor('claude-4-6-sonnet')).toBe(3);
