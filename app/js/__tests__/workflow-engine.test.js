@@ -464,8 +464,7 @@ describe('WorkflowEngine — mission scope routing', () => {
 });
 
 describe('WorkflowEngine — triage', () => {
-  // Triage is the WorkflowEngine replacement for MissionRouter.route.
-  // It picks one agent from candidates via either an intent shortcut
+  // Triage picks one agent from candidates via either an intent shortcut
   // or an LLM routing call, then runs that agent with the prompt.
   let _shipLogAppends;
 

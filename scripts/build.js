@@ -70,7 +70,6 @@ const SCRIPTS = [
   'app/js/lib/agent-executor.js',
   'app/js/lib/ship-log.js',
   'app/js/lib/ship-behaviors.js',
-  'app/js/lib/mission-router.js',
   'app/js/lib/mission-runner.js',
   'app/js/lib/mission-scheduler.js',
   'app/js/lib/workflow-engine.js',
