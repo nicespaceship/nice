@@ -618,11 +618,11 @@ const PromptPanel = (() => {
 
   /**
    * Ship-level chat: build an ephemeral Mission Run with a single triage
-   * node and dispatch through MissionRunner. Replaces the legacy
-   * MissionRouter dispatch — every ship chat now flows through the
-   * canonical Mission lifecycle (status / cancel / audit / analytics).
-   * Routing meta is logged to ship_log by WorkflowEngine._executeTriage
-   * and surfaced in the chat after the run completes.
+   * node and dispatch through MissionRunner. Every ship chat flows
+   * through the canonical Mission lifecycle (status / cancel / audit /
+   * analytics). Routing meta is logged to ship_log by
+   * WorkflowEngine._executeTriage and surfaced in the chat after the run
+   * completes.
    *
    * `bpId` here is the ship's blueprint id (set in #nice-ai-bp-select);
    * we resolve it to the user's matching `user_spaceships` row so the
@@ -2148,10 +2148,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     } else if (typeof MissionRunner !== 'undefined' && bpId && !agentBp) {
       // Spaceship selected, no specific agent: create an ephemeral Mission
       // Run with a single triage node and let MissionRunner / WorkflowEngine
-      // do the routing. Replaces the legacy MissionRouter dispatch — every
-      // ship-level chat now lands in the canonical Mission lifecycle so
-      // status, cancel, audit, and analytics all work the same as templated
-      // missions. See docs/mission-router-fold-in.md (PR B).
+      // do the routing. Every ship-level chat lands in the canonical
+      // Mission lifecycle so status, cancel, audit, and analytics all work
+      // the same as templated missions.
       _runShipChat(text, bpId, sendBtn);
 
     } else if (typeof ShipLog !== 'undefined' && (agentBp || bpId)) {
