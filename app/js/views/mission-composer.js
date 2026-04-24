@@ -33,6 +33,7 @@ const MissionComposerView = (() => {
   let _plan = null;
   let _error = null;
   let _el = null;
+  let _mcpUnsub = null;
 
   function render(el) {
     _el = el;
@@ -40,6 +41,13 @@ const MissionComposerView = (() => {
     _intent = '';
     _plan = null;
     _error = null;
+    // Re-paint when mcp_connections hydrates post-boot. Without this the
+    // gate reads stale State if the view renders before the DB list call
+    // resolves, and the only way to refresh was the Recheck button.
+    if (_mcpUnsub) { try { _mcpUnsub(); } catch {} }
+    if (typeof State !== 'undefined' && typeof State.on === 'function') {
+      _mcpUnsub = State.on('mcp_connections', () => { if (_el) _paint(); });
+    }
     _paint();
   }
 
@@ -279,7 +287,13 @@ const MissionComposerView = (() => {
   // via Blueprints.getAgent() — no user_agents row required.
   function _checkInboxCaptainGates() {
     const mcps = (typeof State !== 'undefined' ? State.get('mcp_connections') : null) || [];
-    const gmailConnected = mcps.some(c => c && c.catalog_id === 'google-gmail' && c.status === 'connected');
+    // Exact match on the per-service row, plus umbrella-prefix fallback
+    // so an umbrella 'google' row (future) or any other google-* service
+    // row satisfies the Gmail gate. Keeps parity with IntegrationsView's
+    // _matchConnection helper.
+    const gmailConnected = mcps.some(c => c && c.status === 'connected'
+      && (c.catalog_id === 'google-gmail' || c.catalog_id === 'google'
+          || (c.catalog_id && c.catalog_id.startsWith('google-'))));
 
     return { gmailConnected, voiceSampleLength: _readVoiceSampleLength() };
   }
