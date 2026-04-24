@@ -1843,7 +1843,9 @@ const NICE = (() => {
     Router.on('/analytics', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
     Router.on('/cost', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations'; } });
     Router.on('/board', { title: 'Bridge', render: () => { location.hash = '#/'; } });
-    if (typeof WorkflowsView !== 'undefined') Router.on('/workflows', WorkflowsView);
+    // Workflows are no longer a first-class primitive — DAGs live inside
+    // missions.plan. Redirect any bookmarked /workflows URL to the Bridge.
+    Router.on('/workflows', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
 
     // Ecosystem routes (kept)
     Router.on('/connectors', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
@@ -1857,7 +1859,7 @@ const NICE = (() => {
     Router.on('/wallet', WalletView);
     Router.on('/theme-editor', ThemeCreatorView);
     Router.on('/theme-creator', ThemeCreatorView);
-    Router.on('/workflows/:id', WorkflowDetailView);
+    Router.on('/workflows/:id', { title: 'Bridge', render: () => { location.hash = '#/bridge'; } });
     if (typeof ShipLogView !== 'undefined') Router.on('/ship-log', ShipLogView);
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
     // Legacy #/docs route → redirect into Bridge's Documentation tab

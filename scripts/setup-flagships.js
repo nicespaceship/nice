@@ -121,9 +121,13 @@
     const userId = user?.id || null;
     const created = [];
 
+    const spaceships = State.get('spaceships') || [];
+    const spaceshipId = spaceships[0]?.id || null;
+
     for (const m of missions) {
       const row = {
         user_id: userId,
+        spaceship_id: spaceshipId,
         title: m.title,
         agent_id: m.agentId,
         agent_name: m.agentName,
@@ -133,14 +137,16 @@
         result: null,
       };
 
-      // Try Supabase if authenticated
+      // Try Supabase if authenticated + a ship exists
       let saved = null;
-      if (userId && typeof SB !== 'undefined' && SB.isReady()) {
+      if (userId && spaceshipId && typeof SB !== 'undefined' && SB.isReady()) {
         try {
-          saved = await SB.db('tasks').create(row);
+          saved = await SB.db('mission_runs').create(row);
         } catch (e) {
           log(`  ⚠ DB create failed for "${m.title}": ${e.message}`);
         }
+      } else if (!spaceshipId) {
+        log(`  ⚠ Skipping DB insert for "${m.title}" — no active spaceship.`);
       }
 
       // Fallback to local-only mission

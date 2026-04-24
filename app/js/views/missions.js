@@ -58,10 +58,6 @@ const MissionsView = (() => {
             </div>
           </div>
           <div class="mc-toolbar-actions">
-            <a href="#/workflows" class="btn btn-sm" style="text-decoration:none" aria-label="Workflows" title="Workflows">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
-              <span class="mc-toolbar-label">Workflows</span>
-            </a>
             <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New ${_N()}" title="New ${_N()}">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
               <span class="mc-toolbar-label">New ${_N()}</span>
@@ -212,7 +208,7 @@ const MissionsView = (() => {
       if (!btn || typeof MissionRunner === 'undefined') return;
       const missionId = btn.dataset.id;
       btn.disabled = true; btn.textContent = '...';
-      if (retryBtn) { try { await SB.db('tasks').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {} }
+      if (retryBtn) { try { await SB.db('mission_runs').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {} }
       await MissionRunner.run(missionId);
       _loadMissions();
     });
@@ -408,7 +404,7 @@ const MissionsView = (() => {
       AuditLog.log('mission', { description: `Mission "${mission.title}" deleted`, missionId, status: mission.status });
     }
     if (typeof SB !== 'undefined') {
-      try { await SB.db('tasks').remove(missionId); } catch (err) { console.error('[Missions] Delete failed', err); }
+      try { await SB.db('mission_runs').remove(missionId); } catch (err) { console.error('[Missions] Delete failed', err); }
     }
   }
 
@@ -475,7 +471,7 @@ const MissionsView = (() => {
     const user = State.get('user');
     let dbError = false;
     if (user) {
-      try { missions = await SB.db('tasks').list({ userId: user.id, orderBy: 'created_at' }); }
+      try { missions = await SB.db('mission_runs').list({ userId: user.id, orderBy: 'created_at' }); }
       catch (err) { dbError = true; console.warn('Supabase tasks unavailable:', err.message); }
     }
     if (!user || (dbError && !missions.length)) missions = _seedMissions();
@@ -562,9 +558,16 @@ const MissionsView = (() => {
 
     try {
       const isReal = user?.id && /^[0-9a-f]{8}-/i.test(user.id);
+      const spaceships = State.get('spaceships') || [];
+      const spaceshipId = spaceships[0]?.id;
+      if (isReal && !spaceshipId) {
+        errEl.textContent = 'Activate a Spaceship first — Missions always run on a Ship.';
+        btn.disabled = false; btn.textContent = `Create ${_N()}`;
+        return;
+      }
       let created = null;
       if (isReal) {
-        created = await SB.db('tasks').create({ user_id: user.id, agent_id: agentId, agent_name: agentName, title: mTitle, status: 'queued', priority, progress: 0, result: null });
+        created = await SB.db('mission_runs').create({ user_id: user.id, spaceship_id: spaceshipId, agent_id: agentId, agent_name: agentName, title: mTitle, status: 'queued', priority, progress: 0, result: null });
       }
       const local = created || { id: 'mission-' + Date.now(), title: mTitle, agent_id: agentId, agent_name: agentName, status: 'queued', priority, progress: 0, created_at: new Date().toISOString() };
       const missions = State.get('missions') || [];
@@ -584,7 +587,7 @@ const MissionsView = (() => {
     // channel is created. Otherwise Supabase throws "cannot add
     // postgres_changes callbacks after subscribe()" on the duplicate.
     if (_channel) { try { SB.realtime.unsubscribe(_channel); } catch {} _channel = null; }
-    _channel = SB.realtime.subscribe('tasks', (payload) => {
+    _channel = SB.realtime.subscribe('mission_runs', (payload) => {
       if (!payload || !payload.new) { _loadMissions(); return; }
       // Incremental update: merge the changed row into State instead of full reload
       const updated = payload.new;
@@ -656,7 +659,7 @@ const MissionDetailView = (() => {
     try {
       let mission;
       try {
-        mission = await SB.db('tasks').get(id);
+        mission = await SB.db('mission_runs').get(id);
       } catch(e) {
         mission = (State.get('missions') || []).find(m => m.id === id);
       }
@@ -831,7 +834,7 @@ const MissionDetailView = (() => {
 
       _bindDetailEvents(el, id, mission);
 
-      _detailChannel = SB.realtime.subscribe('tasks', (payload) => {
+      _detailChannel = SB.realtime.subscribe('mission_runs', (payload) => {
         if (payload.new?.id === id || payload.old?.id === id) _loadMission(el, id);
       });
     } catch (err) {
@@ -858,7 +861,7 @@ const MissionDetailView = (() => {
     document.getElementById('md-retry')?.addEventListener('click', async () => {
       const btn = document.getElementById('md-retry');
       if (btn) { btn.disabled = true; btn.textContent = 'Retrying...'; }
-      try { await SB.db('tasks').update(id, { status: 'queued', progress: 0, result: null }); } catch {}
+      try { await SB.db('mission_runs').update(id, { status: 'queued', progress: 0, result: null }); } catch {}
       if (typeof MissionRunner !== 'undefined') await MissionRunner.run(id);
       _loadMission(el, id);
     });
@@ -879,7 +882,7 @@ const MissionDetailView = (() => {
       const now = new Date().toISOString();
       try {
         if (typeof SB !== 'undefined' && SB.client) {
-          await SB.client.from('tasks').update({ status: 'completed', approval_status: 'approved', reviewed_at: now }).eq('id', id);
+          await SB.client.from('mission_runs').update({ status: 'completed', approval_status: 'approved', reviewed_at: now }).eq('id', id);
         }
       } catch {}
       // Award user XP on approval
@@ -915,7 +918,7 @@ const MissionDetailView = (() => {
       const now = new Date().toISOString();
       try {
         if (typeof SB !== 'undefined' && SB.client) {
-          await SB.client.from('tasks').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', id);
+          await SB.client.from('mission_runs').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', id);
         }
       } catch {}
       // Feedback loop — agent learns from rejection
@@ -1011,7 +1014,7 @@ const MissionDetailView = (() => {
             if (newContent != null) {
               if (typeof ContentQueue !== 'undefined') await ContentQueue.edit(mid, newContent);
               else if (typeof SB !== 'undefined' && SB.client) {
-                await SB.client.from('tasks').update({ edited_content: newContent }).eq('id', mid);
+                await SB.client.from('mission_runs').update({ edited_content: newContent }).eq('id', mid);
               }
               mission.edited_content = newContent;
               if (typeof Notify !== 'undefined') Notify.send({ title: 'Saved', message: 'Content updated', type: 'success' });
@@ -1407,7 +1410,7 @@ const SharedReportView = (() => {
   async function _loadReport(el, id) {
     let mission;
     try {
-      mission = await SB.db('tasks').get(id);
+      mission = await SB.db('mission_runs').get(id);
     } catch(e) {
       mission = (State.get('missions') || []).find(m => m.id === id);
     }

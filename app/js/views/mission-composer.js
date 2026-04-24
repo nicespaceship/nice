@@ -412,7 +412,6 @@ const MissionComposerView = (() => {
       title,
       description,
       shape: 'dag',
-      captain_id: null,  // no spaceship — agent runs standalone
       plan: {
         shape: 'dag',
         nodes: [
@@ -529,7 +528,6 @@ const MissionComposerView = (() => {
       title,
       description,
       shape: 'simple',
-      captain_id: null,
       plan: {
         nodes: [{ id: 'root', type: 'agent', prompt: String(rootNode.prompt).trim() }],
         edges: [],
@@ -545,13 +543,23 @@ const MissionComposerView = (() => {
     const user = State.get('user');
     if (!user?.id) throw new Error('Sign in to activate a mission.');
 
+    // Every Mission runs on a Spaceship — no solo-agent execution.
+    // Resolve from the plan if the caller picked one, else default to the
+    // user's first active ship. No ship = hard stop (force a Build-a-Ship
+    // flow rather than silently fail at the DB constraint).
+    const spaceships = State.get('spaceships') || [];
+    const spaceshipId = plan.spaceship_id || spaceships[0]?.id;
+    if (!spaceshipId) {
+      throw new Error('Activate a Spaceship before creating a Mission. Missions always run on a Ship.');
+    }
+
     // Write the template.
     const missionRow = await SB.db('missions').create({
       user_id: user.id,
       title: plan.title,
       description: plan.description || null,
       shape: plan.shape,
-      captain_id: plan.captain_id || null,
+      spaceship_id: spaceshipId,
       plan: plan.plan,
       schedule: plan.schedule || null,
       outcome_spec: plan.outcome_spec || null,
@@ -567,8 +575,9 @@ const MissionComposerView = (() => {
     // can route via WorkflowEngine without re-reading the `missions` row.
     const snapshot = Object.assign({ shape: plan.shape || 'simple' }, plan.plan || {});
 
-    const taskRow = await SB.db('tasks').create({
+    const taskRow = await SB.db('mission_runs').create({
       user_id: user.id,
+      spaceship_id: spaceshipId,
       title: plan.title,
       status: 'queued',
       priority: 'medium',

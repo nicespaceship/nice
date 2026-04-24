@@ -606,7 +606,7 @@ const AgentDetailView = (() => {
 
       // Load missions for this agent
       let missions = [];
-      try { missions = await SB.db('tasks').list({ agentId: agent.id, orderBy: 'created_at', limit: 10 }); } catch(e) {}
+      try { missions = await SB.db('mission_runs').list({ agentId: agent.id, orderBy: 'created_at', limit: 10 }); } catch(e) {}
 
       el.innerHTML = `
         <div class="detail-wrap">

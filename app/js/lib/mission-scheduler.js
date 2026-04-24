@@ -177,6 +177,14 @@ const MissionScheduler = (() => {
     const schedules = _load();
     let changed = false;
 
+    // Every Run needs a Spaceship. Resolve once per check pass — if the
+    // user has no ship, no schedule can fire. The localStorage scheduler
+    // is going away soon (server-side pg_cron on missions.schedule per
+    // the ontology migration); until then, fail quietly when no ship.
+    const spaceships = (typeof State !== 'undefined') ? (State.get('spaceships') || []) : [];
+    const spaceshipId = spaceships[0]?.id;
+    if (!spaceshipId) return;
+
     for (const entry of schedules) {
       if (!entry.enabled) continue;
       if (!_shouldFire(entry, now)) continue;
@@ -185,10 +193,11 @@ const MissionScheduler = (() => {
       entry.lastRun = now.toISOString();
       changed = true;
 
-      // Create a new task in Supabase and State
+      // Create a new run in Supabase and State
       try {
         const task = {
           user_id: user.id,
+          spaceship_id: spaceshipId,
           title: entry.template.title,
           status: 'queued',
           priority: entry.template.priority || 'medium',
@@ -206,7 +215,7 @@ const MissionScheduler = (() => {
 
         let created = null;
         if (typeof SB !== 'undefined') {
-          created = await SB.db('tasks').create(task);
+          created = await SB.db('mission_runs').create(task);
         }
 
         const missionId = created?.id || ('local-' + Date.now());
@@ -282,84 +291,13 @@ const MissionScheduler = (() => {
     return 'Unknown schedule';
   }
 
-  /* ── Sync schedules to Supabase for server-side persistence ── */
-  async function syncToServer() {
-    if (typeof SB === 'undefined' || !SB.isReady()) return;
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return;
-    const schedules = _load();
-    if (!schedules.length) return;
-
-    try {
-      // Upsert each schedule to a server table
-      for (const entry of schedules) {
-        await SB.db('tasks').create({
-          user_id: user.id,
-          title: entry.template.title,
-          status: 'scheduled',
-          priority: entry.template.priority || 'medium',
-          agent_id: entry.template.agent_id || null,
-          agent_name: entry.template.agent_name || null,
-          metadata: {
-            schedule_id: entry.id,
-            cron: entry.cron,
-            enabled: entry.enabled,
-            scheduled: true,
-            server_cron: true,
-          },
-        }).catch(() => {}); // skip duplicates
-      }
-    } catch (err) {
-      console.warn('[MissionScheduler] Server sync failed:', err.message);
-    }
-  }
-
-  /* ── Load server-side schedules and merge with local ── */
-  async function syncFromServer() {
-    if (typeof SB === 'undefined' || !SB.isReady()) return;
-    const user = typeof State !== 'undefined' ? State.get('user') : null;
-    if (!user) return;
-
-    try {
-      const { data } = await SB.client
-        .from('tasks')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'scheduled')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (!data || !data.length) return;
-
-      const local = _load();
-      const localIds = new Set(local.map(s => s.id));
-
-      for (const row of data) {
-        const schedId = row.metadata?.schedule_id;
-        if (schedId && !localIds.has(schedId)) {
-          // Import server schedule that doesn't exist locally
-          local.push({
-            id: schedId,
-            cron: row.metadata?.cron || 'daily 09:00',
-            cronParsed: _parseCron(row.metadata?.cron || 'daily 09:00'),
-            template: {
-              title: row.title,
-              agent_id: row.agent_id,
-              agent_name: row.agent_name,
-              priority: row.priority || 'medium',
-              metadata: row.metadata || {},
-            },
-            enabled: row.metadata?.enabled !== false,
-            lastRun: null,
-            createdAt: row.created_at,
-          });
-        }
-      }
-      _save(local);
-    } catch (err) {
-      console.warn('[MissionScheduler] Server sync load failed:', err.message);
-    }
-  }
+  // Legacy sync-to/from-mission_runs via status='scheduled' removed —
+  // the new CHECK constraint on mission_runs.status doesn't allow
+  // 'scheduled', and the real server-side scheduler is pg_cron on
+  // missions.schedule (follow-up PR). No-op stubs keep existing callers
+  // from ReferenceError'ing during the transition.
+  const syncToServer = async () => {};
+  const syncFromServer = async () => {};
 
   return { schedule, unschedule, list, setEnabled, check, start, stop, describe, syncToServer, syncFromServer };
 })();
