@@ -627,17 +627,17 @@ const AgentBuilderView = (() => {
     const modelProfile = {};
     if (maxTokens && maxTokens > 0) modelProfile.max_output_tokens = maxTokens;
 
+    // user_agents has no top-level columns for role, type, llm_engine,
+    // description, flavor, caps, tags, persona, model_profile,
+    // output_schema, example_io, or eval_criteria — they all live inside
+    // the config JSONB. Matches setup-wizard / crew-designer inserts.
+    // Loader surfaces them back to top-level on State.agents items.
     const row = {
       name,
-      role,
-      type,
       status: existingAgent?.status || 'idle',
-      // user_agents has no top-level columns for llm_engine, description,
-      // flavor, caps, tags, persona, model_profile, output_schema,
-      // example_io, or eval_criteria — they live inside the config JSONB
-      // (matches setup-wizard / crew-designer inserts). Loader surfaces
-      // them back to top-level on State.agents items.
       config: {
+        role,
+        type,
         tools, memory, temperature: temp,
         llm_engine: model,
         description,

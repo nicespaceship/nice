@@ -521,10 +521,8 @@ Needs help with: ${needLabels.join(', ')}`;
           const { data: created } = await SB.db('user_agents').create({
             user_id: userId,
             name: a.name,
-            role: a.role,
-            type: 'Specialist',
             status: 'active',
-            config: { role: a.role, tools: a.tools || ['summarize'], description: a.description, model: a.model, temperature: a.temperature, source: 'setup_wizard' },
+            config: { role: a.role, type: 'Specialist', tools: a.tools || ['summarize'], description: a.description, model: a.model, temperature: a.temperature, source: 'setup_wizard' },
           });
           if (created?.id) agentId = created.id;
         } catch (err) {
