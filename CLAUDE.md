@@ -126,10 +126,10 @@ Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap.
 | `workflow_runs` dropped | ✅ Table + WorkflowEngine writer removed |
 | `user_workflows` dropped | ✅ Table + Workflows view removed |
 | Legacy Workflows view removed | ✅ Route → `#/bridge`, script + sidebar link + chord gone |
-| WorkflowEngine absorbs MissionRouter patterns | Pending |
+| WorkflowEngine absorbs MissionRouter patterns | 📋 Plan drafted — see [docs/mission-router-fold-in.md](docs/mission-router-fold-in.md) |
 | `missions.schedule` via pg_cron | Pending (localStorage `MissionScheduler` stubbed until) |
-| MissionRunner has no ephemeral-blueprint path | Pending |
-| Cancel button for running Runs | Pending (trivial now — status CHECK already includes `cancelled`) |
+| MissionRunner has no ephemeral-blueprint path | Pending — bundled with the fold-in (PR D) |
+| Cancel button for running Runs | ✅ Shipped [#271](https://github.com/nicespaceship/nice/pull/271) |
 
 ## XP Progression System (SSOT: `app/js/lib/gamification.js`)
 | Class | Slots | Max Rarity | Rank | XP | Note |
