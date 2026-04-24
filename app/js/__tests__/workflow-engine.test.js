@@ -93,6 +93,60 @@ describe('WorkflowEngine — approval_gate', () => {
   });
 });
 
+describe('WorkflowEngine — cooperative cancel', () => {
+  it('breaks out of the node loop when isCancelled returns true', async () => {
+    const workflow = {
+      id: 'wf-cancel',
+      nodes: [
+        { id: 'a', type: 'agent', config: { prompt: 'first' } },
+        { id: 'b', type: 'agent', config: { prompt: 'second' } },
+        { id: 'c', type: 'agent', config: { prompt: 'third' } },
+      ],
+      connections: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }],
+    };
+
+    let calls = 0;
+    const completed = [];
+    const res = await WorkflowEngine.execute(workflow, {
+      skipSave: true,
+      // Cancel-after-first: pass through on call 1, trip on call 2.
+      isCancelled: () => { calls += 1; return calls > 1; },
+      onNodeComplete: (node) => completed.push(node.id),
+    });
+
+    expect(res.status).toBe('cancelled');
+    expect(completed).toContain('a');
+    expect(completed).not.toContain('b');
+    expect(completed).not.toContain('c');
+  });
+
+  it('runs to completion when isCancelled stays false', async () => {
+    const workflow = {
+      id: 'wf-no-cancel',
+      nodes: [{ id: 'only', type: 'agent', config: { prompt: 'solo' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, {
+      skipSave: true,
+      isCancelled: () => false,
+    });
+    expect(res.status).toBe('completed');
+  });
+
+  it('treats isCancelled errors as "keep going" (flaky read must not abort)', async () => {
+    const workflow = {
+      id: 'wf-cancel-error',
+      nodes: [{ id: 'only', type: 'agent', config: { prompt: 'solo' } }],
+      connections: [],
+    };
+    const res = await WorkflowEngine.execute(workflow, {
+      skipSave: true,
+      isCancelled: () => { throw new Error('DB offline'); },
+    });
+    expect(res.status).toBe('completed');
+  });
+});
+
 describe('WorkflowEngine — persona_dispatch', () => {
   beforeEach(() => {
     // Fresh ShipLog stub that echoes the prompt back so we can assert
