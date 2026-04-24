@@ -283,19 +283,6 @@ declare namespace DB {
     updated_at?: string | null;
   }
 
-  /** Table: api_connections */
-  interface ApiConnections {
-    id?: string;
-    user_id: string;
-    service: string;
-    api_key_ref?: string | null;
-    spaceship_ids?: string[] | null;
-    status?: string;
-    config?: Record<string, unknown> | null;
-    created_at?: string | null;
-    updated_at?: string | null;
-  }
-
   /** Table: token_balances */
   interface TokenBalances {
     user_id: string;
