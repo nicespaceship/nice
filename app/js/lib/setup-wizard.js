@@ -518,7 +518,15 @@ Needs help with: ${needLabels.join(', ')}`;
       let agentId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       if (userId && hasSB) {
         try {
-          const { data: created } = await SB.db('user_agents').create({
+          // SB.db(table).create returns the inserted row DIRECTLY — not a
+          // {data, error} envelope (that's the raw supabase-js client).
+          // The previous `{ data: created }` destructure pulled .data
+          // from a row that had no such property, so created was always
+          // undefined and slot_assignments persisted the placeholder
+          // `agent-<ts>-<rand>` id forever. Real fix in PR #282 wired
+          // the schema correctly, but slot_assignments still pointed at
+          // dead client-side ids until this destructure bug was lifted.
+          const created = await SB.db('user_agents').create({
             user_id: userId,
             name: a.name,
             status: 'active',
@@ -557,11 +565,17 @@ Needs help with: ${needLabels.join(', ')}`;
     let shipId = `ship-${Date.now()}`;
     if (userId && hasSB) {
       try {
-        const { data: created } = await SB.db('user_spaceships').create({
+        // Same destructure-bug story as the agent create above. Plus:
+        // slot_assignments goes inside `config` here, not `slots`. The
+        // canonical shape (verified against the existing Smoke Test Ship
+        // and used by every reader since #288) is config.slot_assignments
+        // — writing into the `slots` jsonb column hides the data from
+        // _getSlottedAgents and the WorkflowEngine triage candidates.
+        const created = await SB.db('user_spaceships').create({
           user_id: userId,
           name: shipData.name,
           status: 'deployed',
-          slots: {
+          config: {
             slot_assignments: slotAssignments,
             agent_ids: createdAgentIds,
             flow_pattern: proposal.spaceship?.flow_pattern || 'sequential',
@@ -572,6 +586,7 @@ Needs help with: ${needLabels.join(', ')}`;
             suggested_test_mission: proposal.suggested_test_mission || '',
             caps: shipData.caps,
             stats: shipData.stats,
+            source: 'setup_wizard',
           },
         });
         if (created?.id) shipId = created.id;
