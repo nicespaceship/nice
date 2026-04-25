@@ -213,7 +213,62 @@ const PromptPanel = (() => {
   function _getSlottedAgents() {
     try {
       const shipId = localStorage.getItem(Utils.KEYS.mcShip) || 'default-ship';
-      // Try nice-ship-state first (deploy wizard format)
+
+      // Resolve a single agent id to a roster entry. Lookup priority:
+      //   1. State.agents — user_agents rows (custom agents the user created;
+      //      these are the only place a UUID-shaped id resolves)
+      //   2. Blueprints.getAgent — catalog blueprints (bp-agent-* ids)
+      //   3. BlueprintsView.SEED — last-resort if Blueprints isn't loaded yet
+      const stateAgents = (typeof State !== 'undefined' && State.get('agents')) || [];
+      const agentIndex = new Map(stateAgents.map(a => [a?.id, a]).filter(([id]) => id));
+      const resolveAgent = (agentId, slotIdx) => {
+        if (!agentId) return null;
+        const fromState = agentIndex.get(agentId);
+        if (fromState) {
+          return {
+            id: fromState.id,
+            name: fromState.name || agentId,
+            role: (fromState.role) || (fromState.config && fromState.config.role) || 'Custom',
+            slot: slotIdx,
+          };
+        }
+        const bp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(agentId)
+          : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED)
+            ? BlueprintsView.SEED.find(b => b.id === agentId) : null;
+        if (bp) {
+          return { id: bp.id, name: bp.name, role: (bp.config && bp.config.role) || 'Custom', slot: slotIdx };
+        }
+        return null;
+      };
+
+      // Source 1: DB-loaded ships in State.spaceships. user_spaceships rows
+      // store slot_assignments inside config jsonb (or occasionally as a
+      // top-level mirror). Without this branch, custom ships' rosters were
+      // invisible to the orchestrator and NICE Commander recommended
+      // generic catalog agents while the real Outlook Assistant sat
+      // unused in slot 0 (2026-04-24 smoke session).
+      const stateShips = (typeof State !== 'undefined' && State.get('spaceships')) || [];
+      const activeShip = stateShips.find(s =>
+        s?.id === shipId
+        || s?.id === ('bp-' + shipId)
+        || s?.blueprint_id === shipId
+      );
+      if (activeShip) {
+        const slotMap =
+          activeShip.slot_assignments
+          || (activeShip.config && (activeShip.config.slot_assignments || activeShip.config.slots))
+          || {};
+        const agents = [];
+        for (const [slotIdx, agentId] of Object.entries(slotMap)) {
+          const entry = resolveAgent(agentId, slotIdx);
+          if (entry) agents.push(entry);
+        }
+        if (agents.length) return agents;
+      }
+
+      // Source 2: nice-ship-state localStorage (deploy-wizard format for
+      // catalog ships). Kept as a fallback for users who haven't hydrated
+      // State.spaceships yet (anonymous catalog flow, offline page load).
       const stateRaw = localStorage.getItem(Utils.KEYS.shipState);
       if (stateRaw) {
         const allState = JSON.parse(stateRaw);
@@ -221,24 +276,21 @@ const PromptPanel = (() => {
         const slotMap = shipState.slot_assignments || shipState.slotMap || {};
         const agents = [];
         for (const [slotIdx, agentId] of Object.entries(slotMap)) {
-          if (!agentId) continue;
-          const bp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(agentId)
-            : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === agentId) : null;
-          if (bp) agents.push({ id: bp.id, name: bp.name, role: bp.config?.role || 'Custom', slot: slotIdx });
+          const entry = resolveAgent(agentId, slotIdx);
+          if (entry) agents.push(entry);
         }
         if (agents.length) return agents;
       }
-      // Fallback: nice-mc-slots (legacy format)
+
+      // Source 3: nice-mc-slots localStorage (legacy format).
       const raw = localStorage.getItem(Utils.KEYS.mcSlots);
       if (!raw) return [];
       const all = JSON.parse(raw);
       const slotMap = all[shipId] || {};
       const agents = [];
       for (const [slotIdx, bpId] of Object.entries(slotMap)) {
-        if (!bpId) continue;
-        const bp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(bpId)
-          : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === bpId) : null;
-        if (bp) agents.push({ id: bp.id, name: bp.name, role: bp.config?.role || 'Custom', slot: slotIdx });
+        const entry = resolveAgent(bpId, slotIdx);
+        if (entry) agents.push(entry);
       }
       return agents;
     } catch { return []; }
@@ -3228,5 +3280,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     }
   }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _md: typeof _md !== 'undefined' ? _md : null };
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext };
 })();
