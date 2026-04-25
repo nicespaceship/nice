@@ -83,8 +83,12 @@ const Blueprints = (() => {
 
     // Sweep any agents whose parent ship was already removed — heals users
     // who already have orphans from prior deactivateShip calls that missed
-    // them. Idempotent and no-op for clean state.
-    try { await cleanupOrphans(); }
+    // them. `scope: 'local'` is mandatory here: State.spaceships hydrates
+    // async from Supabase, so an init-time full sweep runs with an
+    // incomplete view of slot assignments and has wiped real user_agents
+    // rows in the past (2026-04-24 smoke session). Local-only cleanup is
+    // safe because the caches rebuild from the DB on the next read.
+    try { await cleanupOrphans({ scope: 'local' }); }
     catch (e) { console.warn('[Blueprints] init cleanupOrphans failed:', e.message); }
 
     _ready = true;
@@ -1310,7 +1314,20 @@ const Blueprints = (() => {
    *
    * @returns {Promise<string[]>} IDs of orphans that were removed
    */
-  async function cleanupOrphans() {
+  async function cleanupOrphans(opts) {
+    // `opts.scope`:
+    //   - 'full' (default): local caches PLUS Supabase user_agents deletes
+    //   - 'local': local caches only, never touches Supabase. Mandatory for
+    //     init-time sweeps where State.spaceships hasn't hydrated and the
+    //     assignedAgents set would be incomplete.
+    // `opts.graceMs`: skip Supabase delete for orphans whose State.agents
+    //   record shows a created_at within this many ms of now. Guards
+    //   against races where an agent was just created by another flow
+    //   (agent-builder → ship slot wiring) that hasn't finished yet.
+    opts = opts || {};
+    const scope = opts.scope === 'local' ? 'local' : 'full';
+    const graceMs = typeof opts.graceMs === 'number' ? opts.graceMs : 5 * 60 * 1000;
+
     // Build set of agent IDs that are currently assigned to a live ship.
     const assignedAgents = new Set();
     const collect = (src) => {
@@ -1352,6 +1369,15 @@ const Blueprints = (() => {
 
     const orphanSet = new Set(orphanIds);
 
+    // Snapshot agent metadata BEFORE local cleanup strips State.agents
+    // (step 2 below). The Supabase delete gate reads created_at off this
+    // index — without the snapshot, the grace-window check would always
+    // miss and hard-delete young orphans.
+    const agentIndex = new Map();
+    if (typeof State !== 'undefined') {
+      (State.get('agents') || []).forEach(a => { if (a?.id) agentIndex.set(a.id, a); });
+    }
+
     // 1. _activatedAgentIds
     const beforeCount = _activatedAgentIds.length;
     _activatedAgentIds = _activatedAgentIds.filter(id => !orphanSet.has(id));
@@ -1382,13 +1408,24 @@ const Blueprints = (() => {
       try { localStorage.setItem(_KEYS.uuidMap, JSON.stringify(_uuidMap)); } catch {}
     }
 
-    // 5. Supabase user_agents — delete only proper UUIDs, only when signed in.
-    if (_canSync()) {
+    // 5. Supabase user_agents — delete only proper UUIDs, only when
+    //    signed in, only in 'full' scope (never on init where
+    //    State.spaceships may not have hydrated yet), and only for rows
+    //    older than the grace window (protects agents created seconds
+    //    ago by a concurrent flow that hasn't yet wired them to a slot).
+    if (scope === 'full' && _canSync()) {
+      const now = Date.now();
       for (const agentId of orphanIds) {
-        if (_isUuid(agentId)) {
-          try { await SB.db('user_agents').remove(agentId); }
-          catch (e) { console.warn('[Blueprints] cleanupOrphans remove failed:', e.message); }
+        if (!_isUuid(agentId)) continue;
+        const agent = agentIndex.get(agentId);
+        if (agent?.created_at) {
+          const age = now - new Date(agent.created_at).getTime();
+          if (Number.isFinite(age) && age >= 0 && age < graceMs) {
+            continue; // young — defer delete to next sweep
+          }
         }
+        try { await SB.db('user_agents').remove(agentId); }
+        catch (e) { console.warn('[Blueprints] cleanupOrphans remove failed:', e.message); }
       }
     }
 

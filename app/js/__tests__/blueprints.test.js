@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Blueprints depends on BlueprintsView for seeds — stub it
 globalThis.BlueprintsView = {
@@ -371,6 +371,102 @@ describe('Blueprints', () => {
 
       expect(first).toEqual(['orphan-x']);
       expect(second).toEqual([]);
+    });
+  });
+
+  // ── Supabase delete gating ──────────────────────────────────────────
+  // Regression guards for the 2026-04-24 smoke incident where
+  // cleanupOrphans ran on init before State.spaceships had hydrated
+  // and hard-deleted real user_agents rows from Supabase. Two layers
+  // of protection: scope='local' never touches the DB, and scope='full'
+  // skips rows whose created_at is inside a grace window.
+  describe('cleanupOrphans — Supabase delete gating', () => {
+    let removeCalls;
+    let _origSB;
+
+    beforeEach(async () => {
+      removeCalls = [];
+      _origSB = globalThis.SB;
+      // Stand up a signed-in Supabase mock so _canSync() returns true
+      // and the orphan-delete branch can actually attempt a remove.
+      globalThis.SB = {
+        isReady: () => true,
+        isOnline: () => true,
+        auth: () => ({ user: () => ({ id: 'user-1' }) }),
+        db: (table) => ({
+          remove: async (id) => { removeCalls.push({ table, id }); return { id }; },
+          list: async () => [],
+          create: async () => ({}),
+          update: async () => ({}),
+        }),
+      };
+      // _canSync() also checks State.user — install a signed-in user
+      globalThis.State.set('user', { id: 'user-1' });
+      // Reset module state so the new SB is picked up
+      await Blueprints.init();
+    });
+
+    afterEach(() => {
+      globalThis.SB = _origSB;
+    });
+
+    it('scope: "local" NEVER calls SB.db.remove, even for UUID orphans', async () => {
+      const orphanUuid = '11111111-2222-4333-8444-555555555555';
+      Blueprints.activateAgent(orphanUuid);
+      globalThis.State.set('agents', [{ id: orphanUuid, name: 'Lonely' }]);
+
+      const removed = await Blueprints.cleanupOrphans({ scope: 'local' });
+
+      expect(removed).toEqual([orphanUuid]); // still cleans local caches
+      expect(removeCalls).toEqual([]);       // but skips the DB entirely
+      expect(Blueprints.isAgentActivated(orphanUuid)).toBe(false);
+    });
+
+    it('scope: "full" (default) removes UUID orphans from Supabase', async () => {
+      const orphanUuid = '22222222-3333-4444-8555-666666666666';
+      Blueprints.activateAgent(orphanUuid);
+      globalThis.State.set('agents', [{ id: orphanUuid, name: 'Stale' }]);
+
+      await Blueprints.cleanupOrphans();
+
+      expect(removeCalls.length).toBe(1);
+      expect(removeCalls[0]).toEqual({ table: 'user_agents', id: orphanUuid });
+    });
+
+    it('skips Supabase delete for orphans younger than the grace window', async () => {
+      const orphanUuid = '33333333-4444-4666-8777-888888888888';
+      const freshCreatedAt = new Date(Date.now() - 30 * 1000).toISOString(); // 30s old
+      Blueprints.activateAgent(orphanUuid);
+      globalThis.State.set('agents', [{ id: orphanUuid, name: 'Fresh', created_at: freshCreatedAt }]);
+
+      await Blueprints.cleanupOrphans();
+
+      expect(removeCalls).toEqual([]);
+      // Local caches still cleared — the DB delete just defers to the next sweep
+      expect(Blueprints.isAgentActivated(orphanUuid)).toBe(false);
+    });
+
+    it('still deletes rows older than the grace window', async () => {
+      const orphanUuid = '44444444-5555-4888-9aaa-bbbbbbbbbbbb';
+      const oldCreatedAt = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10 min old
+      Blueprints.activateAgent(orphanUuid);
+      globalThis.State.set('agents', [{ id: orphanUuid, name: 'Ancient', created_at: oldCreatedAt }]);
+
+      await Blueprints.cleanupOrphans();
+
+      expect(removeCalls.length).toBe(1);
+      expect(removeCalls[0].id).toBe(orphanUuid);
+    });
+
+    it('graceMs: 0 opts out of the grace window entirely', async () => {
+      const orphanUuid = '55555555-6666-4999-abbb-cccccccccccc';
+      const freshCreatedAt = new Date().toISOString();
+      Blueprints.activateAgent(orphanUuid);
+      globalThis.State.set('agents', [{ id: orphanUuid, name: 'Fresh', created_at: freshCreatedAt }]);
+
+      await Blueprints.cleanupOrphans({ graceMs: 0 });
+
+      expect(removeCalls.length).toBe(1);
     });
   });
 });
