@@ -112,9 +112,10 @@ describe('ShipLog', () => {
       expect(stored[0].content).toBe('entry-10'); // first 10 trimmed
     });
 
-    it('should use DB when SB is ready', async () => {
+    it('should use DB when SB is ready (real UUID scope)', async () => {
       SB.isReady = () => true;
-      const entry = await ShipLog.append('ship-2', {
+      const uuid = '22222222-3333-4444-8555-666666666666';
+      const entry = await ShipLog.append(uuid, {
         content: 'DB entry',
         role: 'user',
       });
@@ -145,14 +146,40 @@ describe('ShipLog', () => {
       SB.isReady = () => false;
     });
 
-    it('keeps non-mission scope ids on spaceship_id (regression guard)', async () => {
+    it('keeps real UUID scope ids on spaceship_id (regression guard)', async () => {
       SB.isReady = () => true;
-      const entry = await ShipLog.append('ship-real-uuid-abc', {
+      const realShipUuid = 'e4a47d6e-f741-4ec8-9a66-42017368330d';
+      const entry = await ShipLog.append(realShipUuid, {
         content: 'ship-backed step',
         role: 'agent',
       });
-      expect(entry.spaceship_id).toBe('ship-real-uuid-abc');
+      expect(entry.spaceship_id).toBe(realShipUuid);
       expect(entry.mission_id ?? null).toBeNull();
+      // Real UUID ⇒ persisted to DB
+      expect(_db.ship_log).toBeTruthy();
+      expect(Object.values(_db.ship_log)[0].content).toBe('ship-backed step');
+      SB.isReady = () => false;
+    });
+
+    it('skips DB write for non-UUID scopes (default-ship, test ids, legacy keys)', async () => {
+      // The 'default-ship' sentinel used to slip into the spaceship_id
+      // UUID column and 400 every single ship_log write during an agent
+      // run. Non-UUID scopes now bypass the DB entirely and land in
+      // sessionStorage only; the raw scope id still keys the bucket so
+      // callers that read back with the same id see their entries.
+      SB.isReady = () => true;
+      const entry = await ShipLog.append('default-ship', {
+        content: 'trace with no real ship',
+        role: 'user',
+      });
+      expect(entry).not.toBeNull();
+      // DB was NOT touched
+      expect(_db.ship_log ?? {}).toEqual({});
+      // Local fallback still carries the raw scope id so reads work
+      expect(entry.spaceship_id).toBe('default-ship');
+      const stored = JSON.parse(sessionStorage.getItem('nice-ship-log-default-ship'));
+      expect(stored.length).toBe(1);
+      expect(stored[0].content).toBe('trace with no real ship');
       SB.isReady = () => false;
     });
 

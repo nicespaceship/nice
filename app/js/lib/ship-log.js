@@ -19,20 +19,27 @@ const ShipLog = (() => {
      else (test ids like "ship-1", legacy non-UUID keys) falls straight to
      the local fallback because SB.db().create will reject it at the DB. */
   const _MISSION_ID_RE = /^mission-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
-  function _resolveScope(scopeId) {
-    if (!scopeId || typeof scopeId !== 'string') return { spaceship_id: null, mission_id: null };
-    const m = _MISSION_ID_RE.exec(scopeId);
-    if (m) return { spaceship_id: null, mission_id: m[1] };
-    return { spaceship_id: scopeId, mission_id: null };
-  }
-
-  // ship_log.agent_id is a UUID column. Catalog blueprint ids
-  // ('bp-agent-inbox-captain' etc.) are not UUIDs — passing them
-  // through made every insert fail at the DB with 400 / "invalid
-  // input syntax for type uuid". Coerce non-UUID ids to null and
-  // stash the original on metadata.agent_blueprint_id so the trace
-  // still tells you which blueprint produced the row.
+  // ship_log.agent_id AND spaceship_id are both UUID columns. Catalog
+  // blueprint ids ('bp-agent-inbox-captain' etc.) and stale sentinels
+  // ('default-ship') are not UUIDs — passing them made every insert fail
+  // with 400 / "invalid input syntax for type uuid". Coerce anything that
+  // doesn't match the UUID shape to null so we bail to the local fallback
+  // instead of spamming console errors.
   const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  function _resolveScope(scopeId) {
+    if (!scopeId || typeof scopeId !== 'string') {
+      return { spaceship_id: null, mission_id: null, persistable: false };
+    }
+    const m = _MISSION_ID_RE.exec(scopeId);
+    if (m) return { spaceship_id: null, mission_id: m[1], persistable: true };
+    if (_UUID_RE.test(scopeId)) return { spaceship_id: scopeId, mission_id: null, persistable: true };
+    // Non-UUID, non-mission scope (test ids like 'ship-1', legacy keys,
+    // stale sentinels like 'default-ship') — keep the raw id on the
+    // entry for local-fallback readers, but flag as non-persistable so
+    // we skip the DB write that would 400 on the UUID column.
+    return { spaceship_id: scopeId, mission_id: null, persistable: false };
+  }
 
   /* ── Write an entry to the log ── */
   async function append(spaceshipId, { agentId, role, content, metadata }) {
@@ -45,15 +52,21 @@ const ShipLog = (() => {
       ? Object.assign({}, metadata || {}, { agent_blueprint_id: agentId })
       : (metadata || {});
     const entry = {
-      ...scope,
+      spaceship_id: scope.spaceship_id,
+      mission_id:   scope.mission_id,
       agent_id:     safeAgentId,
       role:         role || 'system',
       content:      content,
       metadata:     enrichedMetadata,
     };
 
-    // Persist to Supabase if available
-    if (typeof SB !== 'undefined' && SB.isReady()) {
+    // Persist to Supabase only when the scope resolved to real UUID
+    // columns. Non-UUID scopes ('default-ship' sentinels, test ids,
+    // legacy keys) are kept as session-local traces only — the DB
+    // attempt would 400 with "invalid input syntax for type uuid" and
+    // spam the console. The raw scopeId still keys into sessionStorage
+    // so read paths keep working.
+    if (scope.persistable && typeof SB !== 'undefined' && SB.isReady()) {
       try {
         return await SB.db('ship_log').create(entry);
       } catch (err) {

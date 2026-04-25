@@ -1994,7 +1994,17 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const _agentHasTools = agentBp && agentBp.config && agentBp.config.tools && agentBp.config.tools.length > 0;
 
     if (_agentHasTools && typeof AgentExecutor !== 'undefined') {
-      const spaceshipId = bpId || 'default-ship';
+      // Resolve the real ship UUID for ship_log scoping. `bpId` is the
+      // ship *blueprint* id from the header dropdown — not the
+      // user_spaceships row UUID that ship_log.spaceship_id needs.
+      // Prefer the active ship (kept current by Schematic) which is
+      // guaranteed to be a valid user_spaceships UUID when present. If
+      // neither resolves, pass null so _logToShipLog no-ops cleanly
+      // instead of writing 'default-ship' and breaking the UUID column.
+      const _activeShipId = (typeof localStorage !== 'undefined' && typeof Utils !== 'undefined')
+        ? localStorage.getItem(Utils.KEYS.mcShip) : null;
+      const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const spaceshipId = (_activeShipId && _UUID_RE.test(_activeShipId)) ? _activeShipId : (bpId || null);
       const agentLabel = mentioned ? mentioned.name : (agentBp ? agentBp.name : null);
 
       let _stepEl = null;
