@@ -24,7 +24,7 @@ const Theme = (() => {
       reactor:{ html:() => DefaultCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
       // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
-      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, label:'NICE',
+      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_v3', label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
     { id:'hal-9000', name:'HAL-9000', builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
@@ -39,28 +39,28 @@ const Theme = (() => {
       // on every view CoreReactor opts into (Home / Bridge / Spaceship-
       // detail), not just the Schematic's `.sch-core-hit-overlay`.
       reactor:{ html:() => HalCore.html() },
-      voice:{ provider:'elevenlabs', voice:'hal', speed:1.0, label:'HAL 9000',
+      voice:{ provider:'elevenlabs', voice:'hal', speed:1.0, model:'eleven_v3', label:'HAL 9000',
         // Slower than Majel, eerier consistency. Resolves to
         // ELEVENLABS_HAL_VOICE_ID server-side.
         settings:{ stability:0.9, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'grid', name:'The Grid', builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(24,120,220,0.05)','--surface2':'rgba(24,120,220,0.09)','--border':'rgba(24,160,251,0.25)','--border-hi':'rgba(24,160,251,0.6)','--accent':'#18a0fb','--accent2':'#0a6bc4','--text':'#c0d8f0','--text-muted':'rgba(24,160,251,0.55)','--glow':'0 0 16px rgba(24,160,251,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'grid', speed:1.0, label:'End of Line',
+      voice:{ provider:'elevenlabs', voice:'grid', speed:1.0, model:'eleven_v3', label:'End of Line',
         // ElevenLabs Voice Design — Grid system PA (CLU/End of Line vibe).
         // Resolves to ELEVENLABS_GRID_VOICE_ID server-side.
         settings:{ stability:0.8, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'matrix', name:'The Matrix', builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
       data:{ colors:{ '--bg':'#000800','--bg2':'#000c00','--surface':'rgba(0,255,65,0.04)','--surface2':'rgba(0,255,65,0.08)','--border':'rgba(0,255,65,0.2)','--border-hi':'rgba(0,255,65,0.5)','--accent':'#00ff41','--accent2':'#00aa2a','--text':'#00ff41','--text-muted':'rgba(0,255,65,0.5)','--glow':'0 0 12px rgba(0,255,65,0.3)','--panel-bg':'rgba(0,6,0,0.97)' }, fonts:{ '--font-h':"'Fira Code', monospace", '--font-b':"'Fira Code', monospace" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'morpheus', speed:1.0, label:'Morpheus',
+      voice:{ provider:'elevenlabs', voice:'morpheus', speed:1.0, model:'eleven_v3', label:'Morpheus',
         // Fishburne-style mentor baritone. Resolves to
         // ELEVENLABS_MORPHEUS_VOICE_ID server-side.
         settings:{ stability:0.75, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'lcars', name:'LCARS', builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'computer', speed:1.0, label:'Computer',
+      voice:{ provider:'elevenlabs', voice:'computer', speed:1.0, model:'eleven_v3', label:'Computer',
         // Majel Barrett Roddenberry library voice — defaults locked, so tuning
         // is sent per-request via voice_settings (forwarded by CoreVoice).
         settings:{ stability:0.75, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
@@ -110,25 +110,25 @@ const Theme = (() => {
       // to the `nice-tts` edge function. `label` is shown on the mute toggle.
       // `settings` (optional) tunes the voice per-request — needed for library
       // voices whose saved defaults are locked.
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, label:'J.A.R.V.I.S.' } },
+      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, model:'eleven_v3', label:'J.A.R.V.I.S.' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'delamain', speed:1.0, label:'Delamain',
+      voice:{ provider:'elevenlabs', voice:'delamain', speed:1.0, model:'eleven_v3', label:'Delamain',
         // Cyberpunk 2077 AI taxi-dispatch — calm British butler-AI vibe.
         // Resolves to ELEVENLABS_DELAMAIN_VOICE_ID server-side.
         settings:{ stability:0.75, similarity_boost:0.9, style:0, use_speaker_boost:true } } },
     { id:'rx-78-2', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'operator', speed:1.0, label:'Operator',
+      voice:{ provider:'elevenlabs', voice:'operator', speed:1.0, model:'eleven_v3', label:'Operator',
         // Anime-style female mobile suit operator with Japanese-English accent.
         // Resolves to ELEVENLABS_OPERATOR_VOICE_ID server-side.
         settings:{ stability:0.7, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, label:'Announcer',
+      voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, model:'eleven_v3', label:'Announcer',
         // Classic 1990s arcade-cabinet announcer — Mortal Kombat / Street
         // Fighter / NBA Jam vibe. Resolves to ELEVENLABS_ANNOUNCER_VOICE_ID
         // server-side. Low stability lets the dramatic spikes through.
