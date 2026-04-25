@@ -655,12 +655,30 @@ const AgentBuilderView = (() => {
 
     try {
       if (user && typeof SB !== 'undefined' && SB.isReady()) {
-        // Authenticated: save to Supabase
+        // Authenticated: save to Supabase. Capture the returned row so
+        // we can push it into State.agents and activate it client-side
+        // — without this the new agent didn't appear in the Bridge view
+        // until the next full page refetch hydrated State, making the
+        // UI feel like the submit silently failed.
+        let saved;
         if (existingAgent) {
-          await SB.db('user_agents').update(existingAgent.id, row);
+          saved = await SB.db('user_agents').update(existingAgent.id, row);
         } else {
           row.user_id = user.id;
-          await SB.db('user_agents').create(row);
+          saved = await SB.db('user_agents').create(row);
+        }
+        // Surface saved row back to State.agents (loader normalises
+        // config.* back to top-level role/type/etc on read; the row
+        // we just persisted carries the same shape).
+        const finalRow = saved || row;
+        const agents = State.get('agents') || [];
+        const si = existingAgent
+          ? agents.findIndex(a => a.id === existingAgent.id)
+          : -1;
+        if (si >= 0) agents[si] = finalRow; else agents.push(finalRow);
+        State.set('agents', [...agents]);
+        if (!existingAgent && finalRow.id && typeof Blueprints !== 'undefined') {
+          Blueprints.activateAgent(finalRow.id);
         }
       } else {
         // Guest mode: save to localStorage
@@ -684,7 +702,23 @@ const AgentBuilderView = (() => {
       }
       Router.navigate('#/bridge/agents');
     } catch (err) {
-      errEl.textContent = err.message || 'Failed to save agent.';
+      // Three-channel error surface so silent failures are impossible:
+      //   1. inline form error (existing)
+      //   2. console.error so devs see the stack in DevTools
+      //   3. Notify toast that survives Router.navigate and is visible
+      //      regardless of scroll position. Without (3), users who
+      //      hit a stale-SW or schema-mismatch error saw nothing happen
+      //      after clicking Create — exact symptom Benjamin reported.
+      const msg = err?.message || 'Failed to save agent.';
+      errEl.textContent = msg;
+      console.error('[AgentBuilder] submit failed:', err);
+      if (typeof Notify !== 'undefined' && Notify.send) {
+        Notify.send({
+          type: 'error',
+          title: existingAgent ? 'Save failed' : 'Create failed',
+          message: msg,
+        });
+      }
       btn.disabled = false;
       btn.textContent = existingAgent ? 'Save Changes' : 'Create Agent';
     }
