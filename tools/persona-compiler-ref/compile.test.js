@@ -14,9 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   compilePersonaPrompt,
-  compileTier1Legacy,
   compileTier2Structured,
-  shouldUseStructured,
   sanitizeCallsign,
   buildAppContextBlock,
   buildNiceProductRules,
@@ -123,39 +121,6 @@ describe('sanitizeCallsign', () => {
   });
 });
 
-// ─── shouldUseStructured ────────────────────────────────────────────────────
-
-describe('shouldUseStructured', () => {
-  it('returns false when flag is off', () => {
-    const p = getPersona('nice');
-    expect(shouldUseStructured(p)).toBe(false);
-  });
-
-  it('returns true when flag on + voice + hard_rules present', () => {
-    const p = { ...getPersona('nice'), use_structured: true };
-    expect(shouldUseStructured(p)).toBe(true);
-  });
-
-  it('returns false when flag on but voice missing', () => {
-    const p = { ...getPersona('nice'), use_structured: true, voice: null };
-    expect(shouldUseStructured(p)).toBe(false);
-  });
-
-  it('returns false when flag on but hard_rules empty', () => {
-    const p = { ...getPersona('nice'), use_structured: true, hard_rules: [] };
-    expect(shouldUseStructured(p)).toBe(false);
-  });
-
-  it('returns false when voice is malformed (missing enum)', () => {
-    const p = { ...getPersona('nice'), use_structured: true, voice: { register: 'x' } };
-    expect(shouldUseStructured(p)).toBe(false);
-  });
-
-  it('returns false on null persona', () => {
-    expect(shouldUseStructured(null)).toBe(false);
-  });
-});
-
 // ─── buildAppContextBlock ──────────────────────────────────────────────────
 
 describe('buildAppContextBlock', () => {
@@ -255,7 +220,7 @@ describe('compileTier2Structured — golden outputs', () => {
   for (const provider of PROVIDERS) {
     for (const themeId of THEMES) {
       it(`${provider} × ${themeId}`, () => {
-        const persona = { ...getPersona(themeId), use_structured: true };
+        const persona = getPersona(themeId);
         const result = compileTier2Structured(
           persona,
           provider,
@@ -271,61 +236,35 @@ describe('compileTier2Structured — golden outputs', () => {
   }
 });
 
-// ─── Tier 1 legacy golden outputs ──────────────────────────────────────────
-
-describe('compileTier1Legacy — golden outputs', () => {
-  const THEMES = [
-    'nice', 'hal-9000', '16bit',
-    'cyberpunk', 'grid', 'jarvis', 'lcars', 'matrix',
-    'office', 'office-dark', 'rx-78-2',
-  ];
-
-  for (const themeId of THEMES) {
-    it(`tier1 × ${themeId}`, () => {
-      const persona = getPersona(themeId);
-      const result = compileTier1Legacy(
-        persona,
-        'openai',
-        SAMPLE_APP_CONTEXT,
-        SAMPLE_CALLSIGN,
-      );
-      expect(result.meta.path).toBe('tier1-legacy');
-      expect(result.meta.size).toBe(result.system.length);
-      matchGoldenFile(result.system, `tier1/${themeId}.txt`);
-    });
-  }
-});
-
 // ─── Orchestrator behavioural tests ────────────────────────────────────────
 
 describe('compilePersonaPrompt — dispatch + fallbacks', () => {
-  it('routes to Tier 2 when use_structured=true', () => {
-    const persona = { ...getPersona('nice'), use_structured: true };
+  it('always compiles structured (Tier 1 legacy removed)', () => {
+    const persona = getPersona('nice');
     const result = compilePersonaPrompt(persona, 'openai', null, 'Dave');
     expect(result.meta.path).toBe('tier2-structured');
   });
 
-  it('routes to Tier 1 when use_structured=false', () => {
-    const persona = getPersona('nice');
-    const result = compilePersonaPrompt(persona, 'openai', null, 'Dave');
-    expect(result.meta.path).toBe('tier1-legacy');
-  });
-
-  it('falls back to Tier 1 when flag set but shape invalid', () => {
-    const persona = { ...getPersona('nice'), use_structured: true, hard_rules: [] };
-    const result = compilePersonaPrompt(persona, 'openai', null, 'Dave');
-    expect(result.meta.path).toBe('tier1-legacy');
+  it('handles a sparse persona row without throwing', () => {
+    // Edge function never calls with a totally empty row in production —
+    // every active theme has a populated persona — but the orchestrator must
+    // not blow up on a bad fetch. Voice falls back to a default object inside
+    // compileTier2Structured; identity / examples / rules render empty.
+    const result = compilePersonaPrompt({}, 'openai', null, 'Dave');
+    expect(result.meta.path).toBe('tier2-structured');
+    expect(result.system).toContain('# Identity');
+    expect(result.system).toContain(SECURITY_HEADER);
   });
 
   it('unknown provider falls back to OpenAI template', () => {
-    const persona = { ...getPersona('nice'), use_structured: true };
+    const persona = getPersona('nice');
     const result = compilePersonaPrompt(persona, 'bogus-provider', null, 'Dave');
     expect(result.system).toContain('# Identity');   // OpenAI marker
     expect(result.system).not.toContain('<persona>'); // not Anthropic
   });
 
   it('xai + groq use the OpenAI template', () => {
-    const persona = { ...getPersona('nice'), use_structured: true };
+    const persona = getPersona('nice');
     const xai = compilePersonaPrompt(persona, 'xai', null, 'Dave');
     const groq = compilePersonaPrompt(persona, 'groq', null, 'Dave');
     const openai = compilePersonaPrompt(persona, 'openai', null, 'Dave');
@@ -334,7 +273,7 @@ describe('compilePersonaPrompt — dispatch + fallbacks', () => {
   });
 
   it('resolves callsign from sanitizer first, persona default second, "Commander" last', () => {
-    const persona = { ...getPersona('hal-9000'), use_structured: true };
+    const persona = getPersona('hal-9000');
     // 1. Good callsign: used as-is.
     const a = compilePersonaPrompt(persona, 'openai', null, 'Dave');
     expect(a.system).toContain('Dave');
@@ -345,13 +284,13 @@ describe('compilePersonaPrompt — dispatch + fallbacks', () => {
     expect(b.system).not.toContain('SYSTEM:');
 
     // 3. No persona default: ultimate fallback to "Commander".
-    const naked = { use_structured: true, voice: persona.voice, hard_rules: persona.hard_rules };
+    const naked = { voice: persona.voice, hard_rules: persona.hard_rules };
     const c = compilePersonaPrompt(naked, 'openai', null, null);
     expect(c.system).toContain('Commander');
   });
 
   it('interpolates {callsign} in identity / hard_rules / soft_rules', () => {
-    const persona = { ...getPersona('hal-9000'), use_structured: true };
+    const persona = getPersona('hal-9000');
     const result = compilePersonaPrompt(persona, 'openai', null, 'Bowman');
     expect(result.system).not.toContain('{callsign}');
     expect(result.system).toContain('Bowman');
@@ -363,7 +302,6 @@ describe('compilePersonaPrompt — dispatch + fallbacks', () => {
     // output preserves the original regex text verbatim.
     const persona = {
       ...getPersona('nice'),
-      use_structured: true,
       forbidden_patterns: [{ pattern: '(?i)\\b{callsign}\\b', action: 'refuse' }],
     };
     const result = compilePersonaPrompt(persona, 'openai', null, 'Dave');
@@ -373,7 +311,6 @@ describe('compilePersonaPrompt — dispatch + fallbacks', () => {
   it('sorts soft_rules by priority descending', () => {
     const persona = {
       ...getPersona('nice'),
-      use_structured: true,
       soft_rules: [
         { rule: 'LOW',  priority: 3 },
         { rule: 'HIGH', priority: 10 },
@@ -390,14 +327,14 @@ describe('compilePersonaPrompt — dispatch + fallbacks', () => {
 
   it('SECURITY_HEADER always appears verbatim', () => {
     for (const provider of ['anthropic', 'openai', 'gemini', 'xai', 'groq']) {
-      const persona = { ...getPersona('nice'), use_structured: true };
+      const persona = getPersona('nice');
       const result = compilePersonaPrompt(persona, provider, null, 'Dave');
       expect(result.system).toContain(SECURITY_HEADER);
     }
   });
 
   it('meta.rules_applied counts hard + soft rules', () => {
-    const persona = { ...getPersona('hal-9000'), use_structured: true };
+    const persona = getPersona('hal-9000');
     const result = compilePersonaPrompt(persona, 'openai', null, 'Dave');
     expect(result.meta.rules_applied).toBe(
       persona.hard_rules.length + persona.soft_rules.length,
