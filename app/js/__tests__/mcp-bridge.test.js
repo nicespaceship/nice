@@ -104,4 +104,56 @@ describe('McpBridge.loadTools — short-name resolution for agents', () => {
     McpBridge.loadTools();
     expect(ToolRegistry.resolve('gmail_create_draft')).toBeNull();
   });
+
+  // OAuth callbacks (microsoft-oauth, google-oauth) write the
+  // mcp_connections row with available_tools but NO tool_definitions.
+  // Without auto-discovery the agent would register every tool with the
+  // generic {input:{...}} fallback schema; the LLM would dutifully fill
+  // it with garbage. loadTools must kick off discoverTools async on the
+  // first call so the next agent run gets real schemas.
+  describe('auto-discovery on missing tool_definitions', () => {
+    beforeEach(() => {
+      SB.functions.invoke = vi.fn(() => Promise.resolve({
+        data: {
+          tools: [
+            { name: 'gmail_create_draft', description: 'Create a draft', inputSchema: { type: 'object', properties: { to: { type: 'string' } } } },
+          ],
+        },
+        error: null,
+      }));
+    });
+
+    it('calls discoverTools when a connected row has tools but no tool_definitions', async () => {
+      State.set('mcp_connections', [
+        { id: 'conn-needs-disc', name: 'Gmail', catalog_id: 'google-gmail', status: 'connected', available_tools: ['gmail_create_draft'], tool_definitions: {} },
+      ]);
+      McpBridge.loadTools();
+      // Discovery is fire-and-forget — let the microtask queue drain.
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(SB.functions.invoke).toHaveBeenCalledWith('mcp-gateway', expect.objectContaining({
+        body: expect.objectContaining({ action: 'discover', connectionId: 'conn-needs-disc' }),
+      }));
+    });
+
+    it('does NOT call discoverTools when tool_definitions already present', () => {
+      State.set('mcp_connections', [
+        { id: 'conn-has-defs', name: 'Gmail', catalog_id: 'google-gmail', status: 'connected', available_tools: ['gmail_create_draft'], tool_definitions: { gmail_create_draft: { description: 'x', inputSchema: {} } } },
+      ]);
+      McpBridge.loadTools();
+      expect(SB.functions.invoke).not.toHaveBeenCalled();
+    });
+
+    it('does NOT re-fire discovery on subsequent loadTools calls within the session', async () => {
+      State.set('mcp_connections', [
+        { id: 'conn-once', name: 'Gmail', catalog_id: 'google-gmail', status: 'connected', available_tools: ['gmail_create_draft'], tool_definitions: {} },
+      ]);
+      McpBridge.loadTools();
+      await Promise.resolve();
+      McpBridge.loadTools();
+      await Promise.resolve();
+      McpBridge.loadTools();
+      expect(SB.functions.invoke).toHaveBeenCalledTimes(1);
+    });
+  });
 });

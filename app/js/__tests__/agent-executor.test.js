@@ -43,6 +43,262 @@ describe('AgentExecutor', () => {
     });
   });
 
+  // ── Native tool-use end-to-end (the Microsoft 365 / Outlook regression
+  // that motivated the converse() rewrite). These tests exercise the
+  // full LLM → tool_use → tool_result → final answer loop with a mocked
+  // SB.functions.invoke and verify both the network shape (tools array
+  // present) and the side effects (tool execution, ship_log persistence,
+  // history accumulation). ───────────────────────────────────────────
+  describe('converse — native tool-use', () => {
+    let _origSB;
+    let _origShipLog;
+    let _capturedRequests;
+    let _scriptedResponses;
+    let _toolCalls;
+    let _logCalls;
+    const TOOL_ID = 'mcp:test:outlook_search_messages';
+
+    beforeEach(() => {
+      _capturedRequests = [];
+      _scriptedResponses = [];
+      _toolCalls = [];
+      _logCalls = [];
+
+      _origSB = globalThis.SB;
+      globalThis.SB = {
+        functions: {
+          invoke: async (_name, opts) => {
+            _capturedRequests.push(opts?.body || null);
+            const next = _scriptedResponses.shift();
+            if (!next) throw new Error('No scripted response left');
+            return { data: next, error: null };
+          },
+        },
+      };
+
+      _origShipLog = globalThis.ShipLog;
+      globalThis.ShipLog = {
+        append: (spaceshipId, payload) => {
+          _logCalls.push({ spaceshipId, ...payload });
+          return Promise.resolve({ id: 'sl-' + _logCalls.length });
+        },
+      };
+
+      // Register a mock MCP-style tool. ToolRegistry.deregister is a
+      // no-op when the id isn't present, so it's safe to register fresh
+      // each test even if a prior run left it behind.
+      ToolRegistry.deregister(TOOL_ID);
+      ToolRegistry.register({
+        id: TOOL_ID,
+        name: 'outlook_search_messages',
+        description: 'Search the user inbox',
+        schema: { type: 'object', properties: { query: { type: 'string' } } },
+        execute: async (input) => {
+          _toolCalls.push(input);
+          return [{ subject: 'Hello', from: 'a@b.com' }];
+        },
+      });
+    });
+
+    afterEach(() => {
+      globalThis.SB = _origSB;
+      globalThis.ShipLog = _origShipLog;
+      ToolRegistry.deregister(TOOL_ID);
+    });
+
+    it('passes the tools schema to nice-ai when the agent has tools', async () => {
+      _scriptedResponses.push({
+        content: 'Final Answer: Inbox is empty.',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 10, output_tokens: 5 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-1', name: 'Outlook', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-1' },
+      );
+      await controller.send('check inbox');
+
+      expect(_capturedRequests.length).toBe(1);
+      const req = _capturedRequests[0];
+      expect(Array.isArray(req.tools)).toBe(true);
+      expect(req.tools.length).toBeGreaterThan(0);
+      expect(req.tools[0].name).toBe('outlook_search_messages');
+      expect(req.tools[0].parameters).toEqual({ type: 'object', properties: { query: { type: 'string' } } });
+    });
+
+    it('executes a native tool_use block and loops with tool_result', async () => {
+      // Turn 1 from LLM: native Anthropic-style tool_use block
+      _scriptedResponses.push({
+        content: [
+          { type: 'text', text: 'Searching your inbox.' },
+          { type: 'tool_use', id: 'tu-1', name: 'outlook_search_messages', input: { query: 'unread' } },
+        ],
+        stop_reason: 'tool_use',
+        usage: { input_tokens: 50, output_tokens: 20 },
+      });
+      // Turn 2: final answer after the tool_result is fed back
+      _scriptedResponses.push({
+        content: 'Final Answer: Found 1 message from a@b.com titled "Hello".',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 80, output_tokens: 30 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-2', name: 'Outlook', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-2' },
+      );
+      const result = await controller.send('search inbox for unread');
+
+      // Tool actually executed with the LLM's input
+      expect(_toolCalls.length).toBe(1);
+      expect(_toolCalls[0]).toEqual({ query: 'unread' });
+
+      // Two LLM calls: initial + after tool_result
+      expect(_capturedRequests.length).toBe(2);
+      const second = _capturedRequests[1];
+      // Second call's last user message should be the tool_result echo
+      const lastUser = second.messages[second.messages.length - 1];
+      expect(lastUser.role).toBe('user');
+      expect(Array.isArray(lastUser.content)).toBe(true);
+      expect(lastUser.content[0].type).toBe('tool_result');
+      expect(lastUser.content[0].tool_use_id).toBe('tu-1');
+
+      // Final answer reached, `done: true`
+      expect(result.done).toBe(true);
+      expect(result.text).toContain('Found 1 message');
+
+      // History records only the user message + final assistant text
+      // (intermediate tool_use/tool_result stay inside the per-turn loop)
+      const history = controller.history();
+      expect(history.length).toBe(2);
+      expect(history[0].role).toBe('user');
+      expect(history[1].role).toBe('assistant');
+      expect(history[1].content).toContain('Found 1 message');
+    });
+
+    it('persists tool_use and tool_result rows to ship_log', async () => {
+      _scriptedResponses.push({
+        content: [
+          { type: 'text', text: 'Looking it up.' },
+          { type: 'tool_use', id: 'tu-2', name: 'outlook_search_messages', input: {} },
+        ],
+        stop_reason: 'tool_use',
+      });
+      _scriptedResponses.push({
+        content: 'Final Answer: All clear.',
+        stop_reason: 'end_turn',
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-3', name: 'Outlook', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-3' },
+      );
+      await controller.send('check it');
+
+      const events = _logCalls.map(c => c.metadata?.event);
+      expect(events).toContain('mission_start');
+      expect(events).toContain('tool_use');
+      expect(events).toContain('tool_result');
+      expect(events).toContain('final_answer');
+
+      // tool_use row carries the tool name + input
+      const toolUseRow = _logCalls.find(c => c.metadata?.event === 'tool_use');
+      expect(toolUseRow.metadata.tool_name).toBe('outlook_search_messages');
+      expect(toolUseRow.metadata.tool_use_id).toBe('tu-2');
+    });
+
+    it('preserves history across turns and reuses it on the next send', async () => {
+      _scriptedResponses.push({ content: 'Final Answer: Hi there.', stop_reason: 'end_turn' });
+      _scriptedResponses.push({ content: 'Final Answer: Yes I do.', stop_reason: 'end_turn' });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-4', name: 'Chatty', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-4' },
+      );
+      await controller.send('hello');
+      await controller.send('do you remember me?');
+
+      // Second turn must include the first turn's user + assistant
+      // pairs in the messages payload.
+      const secondReq = _capturedRequests[1];
+      const roles = secondReq.messages.map(m => m.role);
+      expect(roles[0]).toBe('system');
+      // [system, user(hello), assistant(Hi there), user(do you remember me)]
+      expect(roles.slice(1)).toEqual(['user', 'assistant', 'user']);
+
+      // History reflects two complete turns
+      const history = controller.history();
+      expect(history.length).toBe(4);
+    });
+
+    it('gates side-effect tools through onApprovalNeeded in review mode', async () => {
+      // Register a write tool — the SIDE_EFFECT_PATTERNS list catches "send".
+      ToolRegistry.deregister('mcp:test:outlook_send_message');
+      const sendCalls = [];
+      ToolRegistry.register({
+        id: 'mcp:test:outlook_send_message',
+        name: 'outlook_send_message',
+        description: 'Send mail',
+        schema: { type: 'object', properties: {} },
+        execute: async () => { sendCalls.push(1); return { ok: true }; },
+      });
+
+      _scriptedResponses.push({
+        content: [
+          { type: 'text', text: 'Sending the email.' },
+          { type: 'tool_use', id: 'tu-3', name: 'outlook_send_message', input: { to: 'x' } },
+        ],
+        stop_reason: 'tool_use',
+      });
+      _scriptedResponses.push({
+        content: 'Final Answer: Cancelled — user declined.',
+        stop_reason: 'end_turn',
+      });
+
+      const approvalSeen = [];
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-5', name: 'Mailer', config: { role: 'Assistant', tools: ['outlook_send_message'] } },
+        {
+          tools: ['outlook_send_message'],
+          spaceshipId: 'ship-5',
+          approvalMode: 'review',
+          onApprovalNeeded: (action) => {
+            approvalSeen.push(action.tool);
+            return Promise.resolve(false); // deny
+          },
+        },
+      );
+      await controller.send('email Bob');
+
+      expect(approvalSeen).toEqual(['outlook_send_message']);
+      expect(sendCalls.length).toBe(0); // tool was NOT actually called
+
+      ToolRegistry.deregister('mcp:test:outlook_send_message');
+    });
+
+    it('returns an error turn (does not throw) when the LLM call fails', async () => {
+      const _SBsave = globalThis.SB;
+      globalThis.SB = {
+        functions: {
+          invoke: async () => ({ data: null, error: { message: 'boom' } }),
+        },
+      };
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-6', name: 'Broken', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-6' },
+      );
+      const result = await controller.send('hi');
+
+      expect(result.error).toBe(true);
+      expect(result.done).toBe(false);
+      expect(result.text).toMatch(/boom/);
+
+      globalThis.SB = _SBsave;
+    });
+  });
+
   describe('_parseReActResponse (via structured JSON)', () => {
     // We test the parsing indirectly through the module's behavior
     // The structured JSON parser should handle these formats

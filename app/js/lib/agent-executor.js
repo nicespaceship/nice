@@ -33,7 +33,97 @@ const AgentExecutor = (() => {
     // even though the agent did complete a multi-turn tool-use session.
     _logToShipLog(spaceshipId, agentId, 'user', prompt, { event: 'mission_start' });
 
-    // Load MCP tools into ToolRegistry (account-level, all agents get them)
+    const ctx = _buildExecContext(agentBlueprint, toolIds);
+
+    // If no tools available, fall back to single-shot
+    if (!ctx.availableTools.length) {
+      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
+    }
+
+    // Inject agent memory context into conversation if available
+    const initialText = ctx.memoryContext
+      ? ctx.memoryContext + '\n\n---\n\n' + prompt
+      : prompt;
+
+    const conversationMessages = [{ role: 'user', content: initialText }];
+    const steps = [];
+    const tokensRef = { value: 0 };
+
+    const loop = await _runReactLoop({
+      agentBlueprint,
+      systemPrompt: ctx.systemPrompt,
+      toolsSchema: ctx.toolsSchema,
+      conversationMessages,
+      spaceshipId,
+      agentId,
+      maxSteps,
+      steps,
+      tokensRef,
+      opts,
+      onStep,
+      startMs,
+    });
+
+    if (loop.error) {
+      // LLM call failed mid-loop — fall back to single-shot like the
+      // original execute() did, so callers always get a finalAnswer.
+      console.warn('[AgentExecutor] LLM call failed, falling back to single-shot:', loop.error);
+      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
+    }
+
+    if (loop.finalAnswer != null) {
+      _logToShipLog(spaceshipId, agentId, 'agent', loop.finalAnswer, {
+        event: 'final_answer',
+        duration_ms: Date.now() - startMs,
+        steps_used: loop.stepsUsed,
+        total_tokens: tokensRef.value,
+      });
+
+      return {
+        steps,
+        finalAnswer: loop.finalAnswer,
+        metadata: {
+          totalTokens: tokensRef.value,
+          duration: Date.now() - startMs,
+          stepsUsed: loop.stepsUsed,
+          maxSteps,
+          toolsAvailable: toolIds,
+        },
+      };
+    }
+
+    // Max steps reached — return last observation or a notice
+    const lastStep = steps[steps.length - 1];
+    const finalAnswer = lastStep
+      ? (lastStep.observation || lastStep.thought || 'Reached maximum steps without a final answer.')
+      : 'No steps executed.';
+    _logToShipLog(spaceshipId, agentId, 'agent', finalAnswer, {
+      event: 'max_steps_reached',
+      duration_ms: Date.now() - startMs,
+      steps_used: maxSteps,
+      total_tokens: tokensRef.value,
+    });
+
+    return {
+      steps,
+      finalAnswer,
+      metadata: {
+        totalTokens: tokensRef.value,
+        duration: Date.now() - startMs,
+        stepsUsed: maxSteps,
+        maxSteps,
+        toolsAvailable: toolIds,
+        maxStepsReached: true,
+      },
+    };
+  }
+
+  /* ── Build the per-run context shared by execute() and converse() ──
+     Resolves MCP tools into ToolRegistry, computes the tool schema for
+     native tool-use, builds the system prompt, and snapshots the agent
+     memory context. Pure function over current State + ToolRegistry — no
+     side effects beyond the McpBridge.loadTools registration. */
+  function _buildExecContext(agentBlueprint, toolIds) {
     let mcpToolIds = [];
     if (typeof McpBridge !== 'undefined') {
       mcpToolIds = McpBridge.loadTools();
@@ -42,7 +132,7 @@ const AgentExecutor = (() => {
     // Resolve available tools (explicit + MCP).
     // Blueprint tools may use display names ("Web Search") — ToolRegistry.resolve
     // handles id, alias, and normalized-name lookup so the executor binds real tools.
-    const allToolIds = [...toolIds, ...mcpToolIds];
+    const allToolIds = [...(toolIds || []), ...mcpToolIds];
     const availableTools = [];
     const seen = new Set();
     if (typeof ToolRegistry !== 'undefined') {
@@ -57,51 +147,58 @@ const AgentExecutor = (() => {
       });
     }
 
-    // If no tools available, fall back to single-shot
-    if (!availableTools.length) {
-      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
-    }
-
-    // Build provider-agnostic tools schema for nice-ai. LLM sees the bare
-    // tool name (the same one ToolRegistry auto-aliases), not the mcp:prefix.
+    // Provider-agnostic tools schema for nice-ai. LLM sees the bare tool
+    // name (the same one ToolRegistry auto-aliases), not the mcp:prefix.
     const toolsSchema = availableTools.map(t => ({
       name: t.name,
       description: t.description || '',
       parameters: _normalizeSchema(t.schema),
     }));
 
-    // Legacy ReAct suffix still included for providers that haven't wired
-    // native tool-use yet. On modern Claude / Gemini / OpenAI it's dead code
-    // on the happy path — the API pins stop_reason='tool_use' and the model
-    // can't skip the call. Slated for removal once native tool-use is proven.
+    // Legacy ReAct text fallback for providers that haven't wired native
+    // tool-use yet. On modern Claude / Gemini / OpenAI the API pins
+    // stop_reason='tool_use' and the model can't skip the call.
     const toolDescriptions = availableTools.map(t =>
       t.name + ': ' + (t.description || '')
     ).join('\n');
     const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
 
-    // Inject agent memory context into conversation if available
     let memoryContext = '';
     if (typeof AgentMemory !== 'undefined' && agentBlueprint && agentBlueprint.id) {
       memoryContext = AgentMemory.buildPromptContext(agentBlueprint.id);
     }
 
-    const steps = [];
-    let conversationMessages = [];
-    const initialText = memoryContext ? memoryContext + '\n\n---\n\n' + prompt : prompt;
-    conversationMessages.push({ role: 'user', content: initialText });
-    let totalTokens = 0;
+    return { availableTools, toolsSchema, systemPrompt, memoryContext };
+  }
+
+  /* ── Shared ReAct loop body ──
+     Iterates LLM call → tool execution → tool_result, mutating
+     `conversationMessages` and `steps` in place. Both execute() and
+     converse().send() use this — keeps the native tool-use protocol in
+     one place instead of two divergent copies.
+
+     Returns { finalAnswer, stepsUsed, error, maxStepsReached }.
+     `finalAnswer === null` + `maxStepsReached` lets the caller decide
+     how to render the timeout (single-shot fallback vs. last observation). */
+  async function _runReactLoop(params) {
+    const {
+      agentBlueprint, systemPrompt, toolsSchema, conversationMessages,
+      spaceshipId, agentId, maxSteps, steps, tokensRef, opts, onStep,
+    } = params;
+
     let stepIdx = 0;
 
     while (stepIdx < maxSteps) {
       let llmResponse;
       try {
-        llmResponse = await _callLLM(agentBlueprint, systemPrompt, conversationMessages, spaceshipId, toolsSchema);
+        llmResponse = await _callLLM(
+          agentBlueprint, systemPrompt, conversationMessages, spaceshipId, toolsSchema
+        );
       } catch (err) {
-        console.warn('[AgentExecutor] LLM call failed, falling back to single-shot:', err.message);
-        return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
+        return { finalAnswer: null, stepsUsed: stepIdx, error: err.message || String(err) };
       }
 
-      totalTokens += llmResponse.tokensUsed || 0;
+      tokensRef.value += llmResponse.tokensUsed || 0;
 
       // Canonical content is an array of {type:"text"|"tool_use"} blocks.
       // Fall back to string shape for providers that return plain text.
@@ -113,13 +210,13 @@ const AgentExecutor = (() => {
       // ── Native tool-use path ─────────────────────────────────────────
       // Trust the content shape over `stop_reason`: if the provider emitted
       // structured tool_use blocks, execute them even if the edge function
-      // mislabels the stop reason. nice-ai v58 sets stop_reason='tool_use'
-      // for all three provider families, but relying on the block presence
-      // is the robust invariant.
+      // mislabels the stop reason. nice-ai sets stop_reason='tool_use' for
+      // all three provider families, but relying on block presence is the
+      // robust invariant.
       if (toolUseBlocks.length > 0) {
         // Approval gate: side-effect tools in review mode require per-call OK
         const declined = new Set();
-        if (opts.approvalMode === 'review' && typeof opts.onApprovalNeeded === 'function') {
+        if (opts && opts.approvalMode === 'review' && typeof opts.onApprovalNeeded === 'function') {
           for (const block of toolUseBlocks) {
             if (!_isSideEffectTool(block.name)) continue;
             const approved = await opts.onApprovalNeeded({
@@ -172,8 +269,7 @@ const AgentExecutor = (() => {
           // Persist the tool-use turn so the Execution Log can replay
           // the trace later. Two entries per step: the assistant's
           // intent (thought + which tool with what input), and the
-          // observation (tool output, error or success). is_error
-          // distinguishes provider failures from declined approvals.
+          // observation (tool output, error or success).
           _logToShipLog(spaceshipId, agentId, 'agent', combinedText || `(tool call: ${block.name})`, {
             event: 'tool_use',
             tool_name: block.name,
@@ -214,7 +310,7 @@ const AgentExecutor = (() => {
       const parsed = _parseReActResponse(combinedText || '');
 
       if (parsed.action && !parsed.finalAnswer) {
-        if (opts.approvalMode === 'review' && _isSideEffectTool(parsed.action) && typeof opts.onApprovalNeeded === 'function') {
+        if (opts && opts.approvalMode === 'review' && _isSideEffectTool(parsed.action) && typeof opts.onApprovalNeeded === 'function') {
           const approved = await opts.onApprovalNeeded({
             tool: parsed.action, input: parsed.actionInput,
             thought: parsed.thought, stepIndex: stepIdx + 1,
@@ -271,7 +367,7 @@ const AgentExecutor = (() => {
         continue;
       }
 
-      // Final answer
+      // Final answer — record the step and return.
       const finalAnswer = parsed.finalAnswer || combinedText || '';
       stepIdx++;
       const step = {
@@ -284,50 +380,11 @@ const AgentExecutor = (() => {
       };
       steps.push(step);
       if (onStep) onStep(step);
-      _logToShipLog(spaceshipId, agentId, 'agent', finalAnswer, {
-        event: 'final_answer',
-        duration_ms: Date.now() - startMs,
-        steps_used: stepIdx,
-        total_tokens: totalTokens,
-      });
 
-      return {
-        steps,
-        finalAnswer,
-        metadata: {
-          totalTokens,
-          duration: Date.now() - startMs,
-          stepsUsed: stepIdx,
-          maxSteps,
-          toolsAvailable: toolIds,
-        },
-      };
+      return { finalAnswer, stepsUsed: stepIdx };
     }
 
-    // Max steps reached — return last observation or a notice
-    const lastStep = steps[steps.length - 1];
-    const finalAnswer = lastStep
-      ? (lastStep.observation || lastStep.thought || 'Reached maximum steps without a final answer.')
-      : 'No steps executed.';
-    _logToShipLog(spaceshipId, agentId, 'agent', finalAnswer, {
-      event: 'max_steps_reached',
-      duration_ms: Date.now() - startMs,
-      steps_used: maxSteps,
-      total_tokens: totalTokens,
-    });
-
-    return {
-      steps,
-      finalAnswer,
-      metadata: {
-        totalTokens,
-        duration: Date.now() - startMs,
-        stepsUsed: maxSteps,
-        maxSteps,
-        toolsAvailable: toolIds,
-        maxStepsReached: true,
-      },
-    };
+    return { finalAnswer: null, stepsUsed: maxSteps, maxStepsReached: true };
   }
 
   /* ── Normalize LLM response content to canonical parts array ──
@@ -591,9 +648,16 @@ const AgentExecutor = (() => {
   }
 
   /**
-   * Multi-turn conversation mode. Maintains message history across turns.
-   * The agent can signal "need more info" by returning a question, or
-   * provide a "Final Answer" to end the conversation.
+   * Multi-turn conversation mode. Maintains message history across turns
+   * AND uses native tool-use (Anthropic tool_use / Gemini functionCall /
+   * OpenAI tool_calls) within each turn — same protocol as execute(),
+   * just looped over multiple sends with persistent history.
+   *
+   * Each send() runs the full ReAct loop for that turn: LLM → tool_use
+   * → tool_result → ... → final answer. The user message and the
+   * assistant's final text get appended to `history`; intermediate
+   * tool_use / tool_result pairs do NOT (the next turn doesn't need
+   * them — the assistant's summary is the canonical record).
    *
    * @param {Object} agentBlueprint - Blueprint with id, name, config, flavor
    * @param {Object} opts
@@ -602,6 +666,8 @@ const AgentExecutor = (() => {
    *   - spaceshipId: string
    *   - onStep: function(step) callback per step
    *   - onTurn: function(turnResult) callback per turn
+   *   - approvalMode: 'review' | 'autonomous' (gates side-effect tools)
+   *   - onApprovalNeeded: ({tool, input, thought, stepIndex}) => Promise<bool>
    * @returns {Object} Conversation controller with send(), history(), reset()
    */
   function converse(agentBlueprint, opts) {
@@ -609,113 +675,102 @@ const AgentExecutor = (() => {
     const history = [];
     const toolIds = opts.tools || [];
     const spaceshipId = opts.spaceshipId || 'default-ship';
+    const agentId = (agentBlueprint && agentBlueprint.id) || null;
+    const onStep = opts.onStep || null;
     let totalTokens = 0;
 
-    // Build memory context once at conversation start
-    let memoryContext = '';
-    if (typeof AgentMemory !== 'undefined' && agentBlueprint && agentBlueprint.id) {
-      memoryContext = AgentMemory.buildPromptContext(agentBlueprint.id);
-    }
-
-    // Load tool descriptions once
-    let mcpToolIds = [];
-    if (typeof McpBridge !== 'undefined') mcpToolIds = McpBridge.loadTools();
-    const allToolIds = [...toolIds, ...mcpToolIds];
-    const availableTools = [];
-    const seen = new Set();
-    if (typeof ToolRegistry !== 'undefined') {
-      allToolIds.forEach(nameOrId => {
-        const tool = (typeof ToolRegistry.resolve === 'function')
-          ? ToolRegistry.resolve(nameOrId)
-          : ToolRegistry.get(nameOrId);
-        if (tool && !seen.has(tool.id)) {
-          seen.add(tool.id);
-          availableTools.push(tool);
-        }
-      });
-    }
-    const toolDescriptions = availableTools.map(t =>
-      t.name + ' (id: ' + t.id + '): ' + t.description +
-      (t.schema && t.schema.properties ? '\n  Input: ' + JSON.stringify(t.schema.properties) : '')
-    ).join('\n\n');
-
-    const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
+    const ctx = _buildExecContext(agentBlueprint, toolIds);
 
     /**
      * Send a user message and get the agent's response.
-     * Returns the agent's text (final answer or clarifying question).
+     * Returns the agent's text (final answer or — if max steps reached —
+     * the last observation as a best-effort fallback).
      */
     async function send(userMessage) {
-      history.push({ role: 'user', content: userMessage });
       const startMs = Date.now();
+      const isFirstTurn = history.length === 0;
 
-      // Build messages: system + memory + full history
-      const messages = [];
-      if (memoryContext && history.length === 1) {
-        // Inject memory only on first turn
-        messages.push({ role: 'user', content: memoryContext + '\n\n---\n\n' + userMessage });
-      } else {
-        messages.push(...history);
-      }
+      // Log the user prompt at turn start so the Execution Log captures
+      // multi-turn conversations the same way it captures one-shot
+      // mission runs.
+      _logToShipLog(spaceshipId, agentId, 'user', userMessage, {
+        event: isFirstTurn ? 'mission_start' : 'turn_start',
+      });
 
-      // Run ReAct loop for this turn
+      // Inject memory context only on the very first turn — subsequent
+      // turns rely on the accumulated `history` for continuity.
+      const userText = (isFirstTurn && ctx.memoryContext)
+        ? ctx.memoryContext + '\n\n---\n\n' + userMessage
+        : userMessage;
+      history.push({ role: 'user', content: userText });
+
       const maxSteps = opts.maxSteps || 5;
-      let conversationMessages = [...messages];
+      const conversationMessages = [...history];
       const steps = [];
+      const tokensRef = { value: 0 };
 
-      for (let i = 0; i < maxSteps; i++) {
-        let llmResponse;
-        try {
-          llmResponse = await _callLLM(agentBlueprint, systemPrompt, conversationMessages, spaceshipId);
-        } catch (err) {
-          const errorMsg = 'Error: ' + (err.message || 'LLM call failed');
-          history.push({ role: 'assistant', content: errorMsg });
-          return { text: errorMsg, steps, done: false, error: true };
-        }
-        totalTokens += llmResponse.tokensUsed || 0;
-        let text = llmResponse.content || '';
-        if (Array.isArray(text)) text = text.map(c => c.text || c).join('');
-        if (typeof text !== 'string') text = String(text);
+      const loop = await _runReactLoop({
+        agentBlueprint,
+        systemPrompt: ctx.systemPrompt,
+        toolsSchema: ctx.toolsSchema,
+        conversationMessages,
+        spaceshipId,
+        agentId,
+        maxSteps,
+        steps,
+        tokensRef,
+        opts,
+        onStep,
+        startMs,
+      });
 
-        const parsed = _parseReActResponse(text);
+      totalTokens += tokensRef.value;
 
-        if (parsed.finalAnswer) {
-          steps.push({ index: i + 1, thought: parsed.thought, finalAnswer: parsed.finalAnswer });
-          if (opts.onStep) opts.onStep(steps[steps.length - 1]);
-          history.push({ role: 'assistant', content: parsed.finalAnswer });
-          const turnResult = { text: parsed.finalAnswer, steps, done: true, totalTokens, duration: Date.now() - startMs };
-          if (opts.onTurn) opts.onTurn(turnResult);
-          return turnResult;
-        }
-
-        if (parsed.action) {
-          let observation;
-          try {
-            const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {});
-            observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-          } catch (err) {
-            observation = 'Error: ' + (err.message || 'Tool execution failed');
-          }
-          steps.push({ index: i + 1, thought: parsed.thought, action: parsed.action, actionInput: parsed.actionInput, observation });
-          if (opts.onStep) opts.onStep(steps[steps.length - 1]);
-          conversationMessages.push({ role: 'assistant', content: text });
-          conversationMessages.push({ role: 'user', content: 'Observation: ' + observation });
-        } else {
-          // No action, no final answer — treat as a clarifying question
-          steps.push({ index: i + 1, thought: parsed.thought || text, finalAnswer: text });
-          if (opts.onStep) opts.onStep(steps[steps.length - 1]);
-          history.push({ role: 'assistant', content: text });
-          const turnResult = { text, steps, done: false, totalTokens, duration: Date.now() - startMs };
-          if (opts.onTurn) opts.onTurn(turnResult);
-          return turnResult;
-        }
+      if (loop.error) {
+        const errorMsg = 'Error: ' + loop.error;
+        history.push({ role: 'assistant', content: errorMsg });
+        _logToShipLog(spaceshipId, agentId, 'agent', errorMsg, {
+          event: 'turn_error',
+          duration_ms: Date.now() - startMs,
+          steps_used: loop.stepsUsed,
+          total_tokens: tokensRef.value,
+        });
+        const turnResult = { text: errorMsg, steps, done: false, error: true, totalTokens, duration: Date.now() - startMs };
+        if (opts.onTurn) opts.onTurn(turnResult);
+        return turnResult;
       }
 
-      // Max steps reached
+      if (loop.finalAnswer != null) {
+        history.push({ role: 'assistant', content: loop.finalAnswer });
+        _logToShipLog(spaceshipId, agentId, 'agent', loop.finalAnswer, {
+          event: 'final_answer',
+          duration_ms: Date.now() - startMs,
+          steps_used: loop.stepsUsed,
+          total_tokens: tokensRef.value,
+        });
+        const turnResult = { text: loop.finalAnswer, steps, done: true, totalTokens, duration: Date.now() - startMs };
+        if (opts.onTurn) opts.onTurn(turnResult);
+        return turnResult;
+      }
+
+      // Max steps reached — return last observation/thought as a best-effort
+      // continuation; conversation stays open (`done: false`) so the user
+      // can prompt for a finish.
       const lastStep = steps[steps.length - 1];
-      const fallback = lastStep ? (lastStep.observation || lastStep.thought || 'Reached maximum steps.') : 'No response.';
+      const fallback = lastStep
+        ? (lastStep.observation || lastStep.thought || 'Reached maximum steps without a final answer.')
+        : 'No steps executed.';
       history.push({ role: 'assistant', content: fallback });
-      const turnResult = { text: fallback, steps, done: false, totalTokens, duration: Date.now() - startMs, maxStepsReached: true };
+      _logToShipLog(spaceshipId, agentId, 'agent', fallback, {
+        event: 'max_steps_reached',
+        duration_ms: Date.now() - startMs,
+        steps_used: maxSteps,
+        total_tokens: tokensRef.value,
+      });
+      const turnResult = {
+        text: fallback, steps, done: false, totalTokens,
+        duration: Date.now() - startMs, maxStepsReached: true,
+      };
       if (opts.onTurn) opts.onTurn(turnResult);
       return turnResult;
     }
