@@ -22,7 +22,11 @@ const AgentExecutor = (() => {
     opts = opts || {};
     const maxSteps   = opts.maxSteps || 5;
     const toolIds    = opts.tools || [];
-    const spaceshipId = opts.spaceshipId || 'default-ship';
+    // Don't fabricate a sentinel like 'default-ship' — ship_log.spaceship_id
+    // is a UUID column and any non-UUID string produces 400s on every step
+    // write. Callers that don't have a real ship should pass nothing;
+    // _logToShipLog no-ops cleanly on null.
+    const spaceshipId = opts.spaceshipId || null;
     const onStep     = opts.onStep || null;
     const startMs    = Date.now();
     const agentId    = (agentBlueprint && agentBlueprint.id) || null;
@@ -674,7 +678,9 @@ const AgentExecutor = (() => {
     opts = opts || {};
     const history = [];
     const toolIds = opts.tools || [];
-    const spaceshipId = opts.spaceshipId || 'default-ship';
+    // See execute(): null is the correct "no ship" signal — the sentinel
+    // 'default-ship' is not a valid UUID and explodes every ship_log write.
+    const spaceshipId = opts.spaceshipId || null;
     const agentId = (agentBlueprint && agentBlueprint.id) || null;
     const onStep = opts.onStep || null;
     let totalTokens = 0;
