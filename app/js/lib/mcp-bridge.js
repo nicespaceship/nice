@@ -18,6 +18,11 @@ const McpBridge = (() => {
    *
    * @returns {string[]} Array of registered MCP tool IDs
    */
+  // Track which connections we've already kicked an async discovery for
+  // in this session so we don't spam mcp-gateway with /tools/list each
+  // time loadTools() runs (it runs at the top of every agent execution).
+  const _discoveryFired = new Set();
+
   function loadTools() {
     // Clean up any previously registered MCP tools
     unloadTools();
@@ -29,6 +34,23 @@ const McpBridge = (() => {
       const tools = conn.available_tools || [];
       const toolDefs = conn.tool_definitions || {}; // Rich schemas from discovery
       const prefix = conn.catalog_id || conn.id;
+
+      // Auto-discover rich schemas when the connection row was written
+      // by an OAuth callback (which only knows the tool *names*) but has
+      // no `tool_definitions`. Without real schemas every tool registers
+      // with the {input:{...}} fallback and the LLM fills it with garbage.
+      // Fire-and-forget — the next loadTools() call (next agent run) will
+      // pick up the cached schemas via State.
+      const hasDefs = toolDefs && Object.keys(toolDefs).length > 0;
+      if (tools.length > 0 && !hasDefs && !_discoveryFired.has(conn.id)) {
+        _discoveryFired.add(conn.id);
+        if (typeof discoverTools === 'function') {
+          discoverTools(conn.id).catch(err => {
+            console.warn('[McpBridge] auto-discovery failed for', conn.id, err.message);
+            _discoveryFired.delete(conn.id); // allow a retry on the next run
+          });
+        }
+      }
 
       for (const toolName of tools) {
         const toolId = `mcp:${prefix}:${toolName}`;
