@@ -907,6 +907,35 @@ const BlueprintsView = (() => {
     return ships.length + agents.length;
   }
 
+  /**
+   * Update the Active and Workshop sub-tab badge counts in place. Both
+   * counts derive from State (.agents / .spaceships) which hydrates async
+   * after the first render — without this re-paint, the badges stay
+   * frozen at 0 even after rows arrive.
+   */
+  function _refreshSubTabCounts() {
+    const tabs = document.getElementById('bp-sub-tabs');
+    if (!tabs) return;
+    const setCount = (sub, n) => {
+      const span = tabs.querySelector(`[data-sub="${sub}"] .bp-tab-count`);
+      if (span) span.textContent = String(n);
+    };
+    setCount('active', _activeCount());
+    setCount('workshop', _workshopCount());
+  }
+
+  // Re-paint sub-tab counts whenever the underlying State slices change.
+  // Subscribe once at module load — handlers are no-ops until the view
+  // renders (querySelector returns null and setCount short-circuits).
+  let _countsSubscribed = false;
+  function _subscribeCountUpdates() {
+    if (_countsSubscribed || typeof State === 'undefined') return;
+    _countsSubscribed = true;
+    State.on('agents', _refreshSubTabCounts);
+    State.on('spaceships', _refreshSubTabCounts);
+  }
+  _subscribeCountUpdates();
+
   /* ── Workshop — custom builds + imports for both ships and agents ── */
   function _renderWorkshop() {
     _renderProgressionBar();
