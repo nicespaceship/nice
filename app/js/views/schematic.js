@@ -329,17 +329,37 @@ const SchematicView = (() => {
     // keeps the coordinate space identical to wired-local coordinates.
     svgEl.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
 
-    // Reactor convergence point = wired center by default. Radar sonar
-    // rings, the click overlay, and the global CoreReactor (via the CSS
-    // var override below) all land on this same point so everything reads
-    // concentric. When decluttered on mobile the wired collapses to ~144
-    // tall (no cards, no wires) while the prompt panel is fixed at the
-    // bottom and the mini-chat sits at the top — the meaningful centre is
-    // the middle of that empty stretch, not the middle of the tiny wired.
-    const rcx = w / 2;
-    let rcy = h / 2;
+    // Reactor convergence point = the centroid of the actual rendered
+    // crew cards, in wired-local coords. Anchoring to the cards (not the
+    // wired's geometric center) keeps the reactor visually balanced for
+    // every ship class. The 12-slot class lands on wired-center either
+    // way because its 3-up/3-down staircase (+27/-28 nth-child translate)
+    // sums to ~zero bias; smaller classes (6/10 slots → 3/5 cards per
+    // column) leave one extra "+27" un-paired and drift the cards down,
+    // which used to read as the reactor "floating high" above the cluster.
+    let rcx, rcy;
+    {
+      let sumX = 0, sumY = 0;
+      cards.forEach(card => {
+        const inner = card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
+        const r = inner.getBoundingClientRect();
+        sumX += (r.left - cRect.left) + r.width / 2;
+        sumY += (r.top - cRect.top) + r.height / 2;
+      });
+      rcx = sumX / cards.length;
+      rcy = sumY / cards.length;
+    }
+    // The horizontal centroid lands ~halfway between the left and right
+    // columns by construction, so it tracks `w / 2` closely. Snap to the
+    // exact midline anyway — sub-pixel column asymmetry shouldn't bias
+    // the reactor sideways.
+    rcx = w / 2;
+
     const decluttered = container.classList.contains('schematic-declutter');
     if (decluttered && window.innerWidth <= 600) {
+      // On decluttered mobile the cards are hidden — fall back to the
+      // visible stretch between the mini-chat and the prompt panel,
+      // which is the only space the reactor + mini-chat cohabit.
       const miniChat = container.querySelector('.sch-mini-chat');
       const miniChatRect = miniChat ? miniChat.getBoundingClientRect() : null;
       const topBound = miniChatRect ? miniChatRect.bottom : cRect.top;
@@ -368,6 +388,16 @@ const SchematicView = (() => {
 
     const isStacked = getComputedStyle(container).flexDirection === 'column';
 
+    // Pull each wire's endpoint back from the reactor center so wires
+    // visibly "plug into" the reactor's outer edge instead of crossing
+    // its visible body. Even with correct z-stacking, themes with
+    // partially-transparent reactors (JARVIS spokes, default rings)
+    // would otherwise let wires show through the gaps and read as
+    // "in front of" the core. Tunable per theme via the CSS var.
+    const clearanceRaw = getComputedStyle(document.documentElement)
+      .getPropertyValue('--schematic-wire-clearance').trim();
+    const clearance = parseFloat(clearanceRaw) || 140;
+
     cards.forEach((card, i) => {
       // Use the inner mini card (or empty slot) for precise center, fall back to wrapper
       const inner = card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
@@ -383,22 +413,34 @@ const SchematicView = (() => {
       const sw = filled ? '.8' : '.4';
       let d;
 
+      // Endpoint sits exactly `clearance` from the reactor center along
+      // the card→reactor ray, regardless of how close the card is. If a
+      // card is already inside the clearance zone, the endpoint snaps
+      // to the card center (zero-length wire) — better than a wire that
+      // overshoots through the reactor.
+      const dx = rcx - cardCx;
+      const dy = rcy - cardCy;
+      const distToReactor = Math.hypot(dx, dy) || 1;
+      const t = Math.max(0, (distToReactor - clearance) / distToReactor);
+      const endX = cardCx + dx * t;
+      const endY = cardCy + dy * t;
+
       if (isStacked) {
-        const cpOff = Math.abs(rcy - cardCy) * 0.55;
+        const cpOff = Math.abs(endY - cardCy) * 0.55;
         const cp1y = isLeft ? cardCy + cpOff : cardCy - cpOff;
-        const cp2y = isLeft ? rcy - cpOff * 0.3 : rcy + cpOff * 0.3;
+        const cp2y = isLeft ? endY - cpOff * 0.3 : endY + cpOff * 0.3;
         d = 'M' + cardCx + ',' + cardCy +
           ' C' + cardCx + ',' + cp1y +
-          ' ' + rcx + ',' + cp2y +
-          ' ' + rcx + ',' + rcy;
+          ' ' + endX + ',' + cp2y +
+          ' ' + endX + ',' + endY;
       } else {
-        const cpOff = Math.abs(rcx - cardCx) * 0.55;
+        const cpOff = Math.abs(endX - cardCx) * 0.55;
         const cp1x = isLeft ? cardCx + cpOff : cardCx - cpOff;
-        const cp2x = isLeft ? rcx - cpOff * 0.3 : rcx + cpOff * 0.3;
+        const cp2x = isLeft ? endX - cpOff * 0.3 : endX + cpOff * 0.3;
         d = 'M' + cardCx + ',' + cardCy +
           ' C' + cp1x + ',' + cardCy +
-          ' ' + cp2x + ',' + rcy +
-          ' ' + rcx + ',' + rcy;
+          ' ' + cp2x + ',' + endY +
+          ' ' + endX + ',' + endY;
       }
 
       paths += '<path id="' + pathId + '" d="' + d + '" fill="none" ' +

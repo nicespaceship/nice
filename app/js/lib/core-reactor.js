@@ -5,11 +5,22 @@
    provides its markup via THEMES[id].reactor.html(); CoreReactor owns
    the mount, the state machine, and the audio analyser pipeline.
 
-   The element is appended directly to <body> so position:fixed resolves
-   against the viewport — never against an ancestor's transform/filter
-   containing block. CSS contract lives in public/css/theme.css under
-   the existing `.jv-pp-reactor` rules; the class is kept on the element
-   for backward compatibility while the rename to `.core-reactor` lands.
+   Mounted inside `.app-main` so it shares the view's stacking context.
+   `.app-main` has `position:relative; z-index:1`, which traps everything
+   inside it — including the Schematic's wire SVG (`z-index:-1`) — at
+   that context's baseline. With the reactor in the same context, wires
+   (z:-1) sit beneath the reactor (z:0) and crew cards (z:2/3) stay
+   above it. Falls back to <body> if `.app-main` isn't in the DOM yet.
+
+   `position:fixed` still resolves against the viewport on desktop
+   because `.app-main` carries no transform/filter there. On mobile when
+   the sidebar opens, `.app-main { transform:translateX(280px) }` does
+   become the containing block — but in that state we want the reactor
+   to slide with the content anyway, so it lands in the right place.
+
+   CSS contract lives in public/css/theme.css under the existing
+   `.jv-pp-reactor` rules; the class is kept for backward compatibility
+   while the rename to `.core-reactor` lands.
 ═══════════════════════════════════════════════════════════════════ */
 const CoreReactor = (() => {
   const ID = 'jv-pp-reactor';
@@ -35,7 +46,8 @@ const CoreReactor = (() => {
     el.className = 'core-reactor jv-pp-reactor';
     el.setAttribute('aria-hidden', 'true');
     el.dataset.state = 'idle';
-    document.body.appendChild(el);
+    const host = document.querySelector('.app-main') || document.body;
+    host.appendChild(el);
     return el;
   }
 

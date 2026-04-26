@@ -1869,6 +1869,18 @@
    retains the schematic DOM with `display:none` across tab switches,
    so `:has(.schematic-wired)` would over-match). */
 .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .app-view-content { overflow-y:hidden; padding-bottom:24px; }
+/* Stretch the schematic ancestor chain to fill the available view-content
+   height so the reactor anchor (wired-center) lands at the visual center
+   of the page on every ship class. Without this, smaller ships (6/7/8/…
+   slots) collapse the columns vertically and the reactor reads as
+   "floated to the top" — the wired's geometric center is well above the
+   midpoint between the schematic header and the prompt panel. The
+   12-slot class fills naturally because its column height saturates
+   `min-height:200px` plus card-overlap math. */
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bp-wrap { height:100%; min-height:0; }
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) #bp-schematic-content { flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-wrap { flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-content { flex:1 1 0; min-height:0; }
 .schematic-col-right { align-items:flex-start; }
 .schematic-col-left { align-items:flex-end; }
 /* Staircase offsets split symmetrically — odd cards down 27px, even
@@ -1878,10 +1890,24 @@
 .schematic-col .schematic-card-slot:nth-child(even) { transform:translate(110px, -28px); }
 .schematic-col-right .schematic-card-slot:nth-child(even) { transform:translate(-110px, -28px); }
 .schematic-center { flex:1; min-width:40px; position:relative; z-index:3; }
-/* Wires paint beneath the global CoreReactor (body-mounted, z-index:0)
-   so the reactor sits in front of the traces. `.schematic-wired` doesn't
-   create a stacking context (no z-index), so z:-1 here stacks directly
-   against the reactor — not against the wired's own background. */
+/* Wires paint beneath the CoreReactor so the core stays in front of the
+   traces (the reactor is the focal element of the view). The reactor is
+   mounted inside `.app-main` so it shares this stacking context — wires
+   z:-1, reactor z:0, crew cards/cols z:2/3, all in `.app-main` (z:1 in
+   body). If the reactor were on `<body>` instead, `.app-main`'s z:1
+   stacking context would trap these wires above it.
+
+   Z-order alone isn't enough — every theme's reactor has partially-
+   transparent regions (JARVIS spokes, default-core rings) that would
+   otherwise let wires show through the gaps and read as "in front of"
+   the core. `_wireSchematic` reads `--schematic-wire-clearance` and
+   pulls each wire's endpoint back from the reactor center by that
+   distance, so wires terminate at the reactor's outer edge regardless
+   of theme. Tune per-theme below where the visible reactor body
+   diverges from the default radius. */
+:root { --schematic-wire-clearance: 140px; }
+[data-theme="jarvis"] { --schematic-wire-clearance: 150px; }
+[data-theme="hal-9000"] { --schematic-wire-clearance: 115px; }
 .schematic-svg { position:absolute; inset:0; z-index:-1; }
 .schematic-svg path, .schematic-svg line, .schematic-svg circle { pointer-events:none; }
 /* HTML overlay for reactor core click (sits above SVG + slots) */
