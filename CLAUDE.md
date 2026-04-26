@@ -110,13 +110,27 @@ Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap.
 - Fired by the `tick_mission_schedules` pg_cron job (runs every minute); dedup floor stored in `missions.last_scheduled_run_at`
 - No client-side scheduling — localStorage `MissionScheduler` is deleted
 
-### Invariants
-- Every Run has a Mission (`mission_id` NOT NULL). Ad-hoc prompts from the prompt panel auto-create a minimal 1-node Mission + Run under the hood.
-- Every Mission has a Spaceship (`spaceship_id` NOT NULL). The onboarding flow must ensure a Ship exists before any prompt.
+### Invariants (about Runs and Missions that exist)
+- Every Run has a Mission (`mission_id` NOT NULL).
+- Every Mission has a Spaceship (`spaceship_id` NOT NULL). The onboarding flow must ensure a Ship exists before any prompt that creates a Run.
 - Every Mission has a Workflow (`plan` NOT NULL, minimum 1 node).
 - `AgentExecutor` is the sole ReAct loop; invoked by `WorkflowEngine` for `agent` nodes.
 - `MissionRouter` is deleted. Its delegation patterns (pipeline, parallel, quality-loop, triage, hierarchy) are WorkflowEngine node types.
-- Ship-level chat = auto-created Mission Run. No parallel "casual" execution path.
+
+### Chat surface tiers — which chats create Runs
+NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is full mission-grade. This is the current shape, not drift — the simpler patterns are correct for ephemeral surfaces and the ontology accommodates the split.
+
+| Surface | Code path | Creates Run? | Lifecycle |
+|---|---|---|---|
+| **Mission-grade chat** (ship-level) | [prompt-panel.js:725](app/js/views/prompt-panel.js:725) → `MissionRunner.run` | ✅ | Full Run state machine, audit, cancel, analytics |
+| **Agent-with-tools chat** | [prompt-panel.js:2119](app/js/views/prompt-panel.js:2119) → `AgentExecutor.converse` | ❌ | Request-response, `ship_log` persistence only |
+| **Top-level NICE chat** | [prompt-panel.js:1909](app/js/views/prompt-panel.js:1909) → `_callDirectLLM` | ❌ | Request-response, no persistence beyond message history |
+
+**Rationale for the split:** casual chat surfaces are latency-sensitive and ephemeral. Forcing a `mission_runs` INSERT before each LLM call adds round-trip latency and bloats the table with throwaway rows. Audit, cancel, and analytics features that depend on Runs apply only to mission-grade chat today, and that's currently fine — there's no user demand for cancel/audit/analytics on casual chat.
+
+**Future direction (when audit/analytics demand surfaces):** consolidate by adding server-side bookkeeping in `nice-ai` — get-or-create a singleton Mission per `(user_id, spaceship_id, agent_id)` and INSERT a `mission_runs` row per reply. Keeps the client surface unchanged, centralises the bookkeeping in one place that already authenticates the user and writes to Supabase. Not implemented today.
+
+**Don't add a fifth chat surface without revising this table.** If a new path needs Run-level features, route it through `MissionRunner`. If it doesn't, document it here as a casual surface with rationale.
 
 ### Migration status (as of 2026-04-24)
 | Target | Status |
