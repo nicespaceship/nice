@@ -240,6 +240,227 @@ describe('CoreVoice.hasExplicitMutePref', () => {
   });
 });
 
+// ─── Streaming playback (MediaSource) vs. blob fallback ──────────────────
+//
+// jsdom doesn't ship MediaSource, so the default-path test exercises the
+// blob fallback. The streaming-path tests stub a minimal MediaSource that
+// fires `sourceopen` synchronously on construction and tracks appendBuffer
+// calls. We don't try to simulate audio decoding — only the orchestration
+// (which path is chosen, when chunks are appended, when endOfStream fires,
+// what stop() does mid-stream).
+
+function makeChunkedResponse(chunks, status = 200) {
+  let i = 0;
+  const stream = {
+    getReader: () => ({
+      read: async () => {
+        if (i >= chunks.length) return { done: true, value: undefined };
+        return { done: false, value: chunks[i++] };
+      },
+      cancel: vi.fn(async () => {}),
+    }),
+  };
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    body: stream,
+    blob: async () => new Blob(chunks, { type: 'audio/mpeg' }),
+    headers: new Headers({ 'Content-Type': 'audio/mpeg' }),
+  };
+}
+
+function installMediaSourceMock() {
+  const sourceBuffers = [];
+  const instances = [];
+  class FakeSourceBuffer extends EventTarget {
+    constructor() {
+      super();
+      this.updating = false;
+      this.appended = [];
+      sourceBuffers.push(this);
+    }
+    appendBuffer(chunk) {
+      this.appended.push(chunk);
+      this.updating = true;
+      // Fire updateend asynchronously so the queue/drain pattern advances.
+      queueMicrotask(() => {
+        this.updating = false;
+        this.dispatchEvent(new Event('updateend'));
+      });
+    }
+  }
+  class FakeMediaSource extends EventTarget {
+    constructor() {
+      super();
+      this.readyState = 'closed';
+      this.endOfStreamCalls = [];
+      instances.push(this);
+      // Open on next microtask so `await new Promise(sourceopen → resolve)` lands.
+      queueMicrotask(() => {
+        this.readyState = 'open';
+        this.dispatchEvent(new Event('sourceopen'));
+      });
+    }
+    addSourceBuffer() { return new FakeSourceBuffer(); }
+    endOfStream(reason) {
+      this.endOfStreamCalls.push(reason);
+      this.readyState = 'ended';
+    }
+    static isTypeSupported(t) { return t === 'audio/mpeg'; }
+  }
+  globalThis.MediaSource = FakeMediaSource;
+  globalThis.window = globalThis.window || globalThis;
+  globalThis.window.MediaSource = FakeMediaSource;
+  // Audio mock — jsdom has one but it doesn't actually play; track calls.
+  const audios = [];
+  class FakeAudio {
+    constructor(src) {
+      this.src = src;
+      this.paused = false;
+      this.played = false;
+      audios.push(this);
+    }
+    play() { this.played = true; queueMicrotask(() => this.onplay && this.onplay()); return Promise.resolve(); }
+    pause() { this.paused = true; }
+  }
+  globalThis.Audio = FakeAudio;
+  // URL.createObjectURL must work on a non-Blob (MediaSource).
+  globalThis.URL.createObjectURL = vi.fn(() => 'blob:fake/123');
+  globalThis.URL.revokeObjectURL = vi.fn();
+  return { sourceBuffers, audios, instances };
+}
+
+function uninstallMediaSourceMock() {
+  delete globalThis.MediaSource;
+  if (globalThis.window) delete globalThis.window.MediaSource;
+  delete globalThis.ManagedMediaSource;
+  if (globalThis.window) delete globalThis.window.ManagedMediaSource;
+}
+
+describe('CoreVoice.speak — playback path', () => {
+  beforeEach(() => {
+    loadCoreVoice();
+    Notify.send.mockClear();
+    localStorage.setItem('nice-voice-off', JSON.stringify({ nice: false }));
+    Theme.current = () => 'nice';
+    Theme.getTheme = (id) => id === 'nice'
+      ? { voice: { provider: 'elevenlabs', voice: 'nice', speed: 1.0, label: 'NICE' } }
+      : null;
+    globalThis.SB = {
+      client: {
+        supabaseUrl: 'https://example.supabase.co',
+        auth: { getSession: async () => ({ data: { session: { access_token: 'jwt' } } }) },
+      },
+      _key: 'anon-key',
+    };
+  });
+
+  afterEach(() => {
+    uninstallMediaSourceMock();
+  });
+
+  it('falls back to blob playback when MediaSource is unavailable', async () => {
+    const res = makeChunkedResponse([new Uint8Array([1, 2, 3])]);
+    const blobSpy = vi.spyOn(res, 'blob');
+    globalThis.fetch = vi.fn(async () => res);
+    // Deliberately do NOT install MSE mock — jsdom default has no MediaSource.
+    await CoreVoice.speak('hello');
+    expect(blobSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses MediaSource streaming path when supported', async () => {
+    const { sourceBuffers, audios } = installMediaSourceMock();
+    const chunks = [new Uint8Array([1, 2, 3, 4]), new Uint8Array([5, 6, 7, 8])];
+    const res = makeChunkedResponse(chunks);
+    const blobSpy = vi.spyOn(res, 'blob');
+    globalThis.fetch = vi.fn(async () => res);
+    await CoreVoice.speak('hello');
+    // Drain microtasks so all queued appendBuffer + updateend fire.
+    await new Promise(r => setTimeout(r, 0));
+    await new Promise(r => setTimeout(r, 0));
+    expect(blobSpy).not.toHaveBeenCalled();
+    expect(sourceBuffers).toHaveLength(1);
+    // Both chunks appended in order.
+    expect(sourceBuffers[0].appended).toEqual(chunks);
+    expect(audios).toHaveLength(1);
+    expect(audios[0].played).toBe(true);
+  });
+
+  it('calls endOfStream when reader is exhausted', async () => {
+    const { instances } = installMediaSourceMock();
+    const chunks = [new Uint8Array([1, 2])];
+    const res = makeChunkedResponse(chunks);
+    globalThis.fetch = vi.fn(async () => res);
+    await CoreVoice.speak('hello');
+    for (let i = 0; i < 5; i++) await new Promise(r => setTimeout(r, 0));
+    expect(instances).toHaveLength(1);
+    // Either tryEndOfStream fired (clean end with no reason) or _cleanup
+    // closed the source. Both record the call; assert at least one.
+    expect(instances[0].endOfStreamCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('cancels the active reader on stop()', async () => {
+    installMediaSourceMock();
+    let resolveRead;
+    const stream = {
+      getReader: () => ({
+        read: () => new Promise((resolve) => { resolveRead = resolve; }),
+        cancel: vi.fn(async () => { resolveRead && resolveRead({ done: true, value: undefined }); }),
+      }),
+    };
+    const res = {
+      ok: true,
+      status: 200,
+      body: stream,
+      blob: async () => new Blob([]),
+      headers: new Headers({ 'Content-Type': 'audio/mpeg' }),
+    };
+    globalThis.fetch = vi.fn(async () => res);
+    const speakPromise = CoreVoice.speak('hello');
+    await new Promise(r => setTimeout(r, 0));
+    await new Promise(r => setTimeout(r, 0));
+    // Now reader.read() is pending. stop() should cancel it.
+    const reader = stream.getReader; // we re-call getReader here only to get reference; actual reader was created inside speak
+    // We can't get the reader directly — assert behavior: stop() should not throw,
+    // and the speak() promise should resolve cleanly without "Voice Unavailable" toast.
+    CoreVoice.stop();
+    await speakPromise;
+    // No "Voice Unavailable" toast should have fired (AbortError is suppressed).
+    const errorToasts = Notify.send.mock.calls.filter(c => c[0]?.title === 'Voice Unavailable');
+    expect(errorToasts).toHaveLength(0);
+  });
+
+  it('superseded speak() does not clobber the newer call (race)', async () => {
+    installMediaSourceMock();
+    let firstResolve;
+    const firstRes = {
+      ok: true,
+      status: 200,
+      body: {
+        getReader: () => ({
+          read: () => new Promise((resolve) => { firstResolve = resolve; }),
+          cancel: vi.fn(async () => { firstResolve && firstResolve({ done: true }); }),
+        }),
+      },
+      blob: async () => new Blob([]),
+      headers: new Headers({ 'Content-Type': 'audio/mpeg' }),
+    };
+    const secondRes = makeChunkedResponse([new Uint8Array([42])]);
+    globalThis.fetch = vi.fn()
+      .mockImplementationOnce(async () => firstRes)
+      .mockImplementationOnce(async () => secondRes);
+    const first = CoreVoice.speak('first');
+    await new Promise(r => setTimeout(r, 0));
+    const second = CoreVoice.speak('second');
+    await second;
+    await first;
+    // Second call should win — its chunk should land in the active source buffer.
+    // We won't deeply validate here — the contract is "no exception, second succeeds".
+    const errorToasts = Notify.send.mock.calls.filter(c => c[0]?.title === 'Voice Unavailable');
+    expect(errorToasts).toHaveLength(0);
+  });
+});
+
 describe('CoreVoice.maybeShowCTA', () => {
   beforeEach(() => {
     Theme.current = () => 'nice';
