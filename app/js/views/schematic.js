@@ -368,6 +368,16 @@ const SchematicView = (() => {
 
     const isStacked = getComputedStyle(container).flexDirection === 'column';
 
+    // Pull each wire's endpoint back from the reactor center so wires
+    // visibly "plug into" the reactor's outer edge instead of crossing
+    // its visible body. Even with correct z-stacking, themes with
+    // partially-transparent reactors (JARVIS spokes, default rings)
+    // would otherwise let wires show through the gaps and read as
+    // "in front of" the core. Tunable per theme via the CSS var.
+    const clearanceRaw = getComputedStyle(document.documentElement)
+      .getPropertyValue('--schematic-wire-clearance').trim();
+    const clearance = parseFloat(clearanceRaw) || 140;
+
     cards.forEach((card, i) => {
       // Use the inner mini card (or empty slot) for precise center, fall back to wrapper
       const inner = card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
@@ -383,22 +393,34 @@ const SchematicView = (() => {
       const sw = filled ? '.8' : '.4';
       let d;
 
+      // Endpoint sits exactly `clearance` from the reactor center along
+      // the card→reactor ray, regardless of how close the card is. If a
+      // card is already inside the clearance zone, the endpoint snaps
+      // to the card center (zero-length wire) — better than a wire that
+      // overshoots through the reactor.
+      const dx = rcx - cardCx;
+      const dy = rcy - cardCy;
+      const distToReactor = Math.hypot(dx, dy) || 1;
+      const t = Math.max(0, (distToReactor - clearance) / distToReactor);
+      const endX = cardCx + dx * t;
+      const endY = cardCy + dy * t;
+
       if (isStacked) {
-        const cpOff = Math.abs(rcy - cardCy) * 0.55;
+        const cpOff = Math.abs(endY - cardCy) * 0.55;
         const cp1y = isLeft ? cardCy + cpOff : cardCy - cpOff;
-        const cp2y = isLeft ? rcy - cpOff * 0.3 : rcy + cpOff * 0.3;
+        const cp2y = isLeft ? endY - cpOff * 0.3 : endY + cpOff * 0.3;
         d = 'M' + cardCx + ',' + cardCy +
           ' C' + cardCx + ',' + cp1y +
-          ' ' + rcx + ',' + cp2y +
-          ' ' + rcx + ',' + rcy;
+          ' ' + endX + ',' + cp2y +
+          ' ' + endX + ',' + endY;
       } else {
-        const cpOff = Math.abs(rcx - cardCx) * 0.55;
+        const cpOff = Math.abs(endX - cardCx) * 0.55;
         const cp1x = isLeft ? cardCx + cpOff : cardCx - cpOff;
-        const cp2x = isLeft ? rcx - cpOff * 0.3 : rcx + cpOff * 0.3;
+        const cp2x = isLeft ? endX - cpOff * 0.3 : endX + cpOff * 0.3;
         d = 'M' + cardCx + ',' + cardCy +
           ' C' + cp1x + ',' + cardCy +
-          ' ' + cp2x + ',' + rcy +
-          ' ' + rcx + ',' + rcy;
+          ' ' + cp2x + ',' + endY +
+          ' ' + endX + ',' + endY;
       }
 
       paths += '<path id="' + pathId + '" d="' + d + '" fill="none" ' +
