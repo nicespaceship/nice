@@ -148,13 +148,24 @@ jobs:
         run: cp app/index.html index.html
 
       - name: Deploy nicespaceship.ai (app)
-        run: npx wrangler pages deploy . --project-name nicespaceship-ai --branch main --commit-dirty=true
+        # Pass the commit subject explicitly. Wrangler's default reads the
+        # full commit body and forwards it to Cloudflare's deployments API,
+        # which rejected #300 with "Invalid commit message, it must be a
+        # valid UTF-8 string. [code: 8000111]" despite the body being valid
+        # UTF-8 — likely a bug in their parser around bodies with multiple
+        # em-dashes. Subject lines stay short + ASCII and surface as the
+        # deploy's label in the Cloudflare dashboard.
+        run: |
+          MSG=$(git log -1 --format=%s)
+          npx wrangler pages deploy . --project-name nicespaceship-ai --branch main --commit-dirty=true --commit-message="$MSG"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy nicespaceship.com (website)
-        run: npx wrangler pages deploy www/ --project-name nicespaceship-com --branch main
+        run: |
+          MSG=$(git log -1 --format=%s)
+          npx wrangler pages deploy www/ --project-name nicespaceship-com --branch main --commit-message="$MSG"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
