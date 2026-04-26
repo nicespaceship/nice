@@ -154,5 +154,3 @@ vite.config.ts.timestamp-*
 app/js/nice.bundle.js
 app/js/nice.bundle.min.js
 test-results/
-.vercel
-.vercel/

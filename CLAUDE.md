@@ -29,7 +29,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
 - Region: `us-west-1`
-- Blueprints partitioned via the `scope` column: `catalog` (seed library: 688 agents + 237 spaceships as of 2026-04-23), `community` (user-published: 8 agents), `system` (internal/reviewer: 5 agents + 1 spaceship). Counts drift — verify with `SELECT scope, type, COUNT(*) FROM blueprints GROUP BY scope, type;`
+- Blueprints partitioned via the `scope` column: `catalog` (seed library: 687 agents + 237 spaceships as of 2026-04-26), `community` (user-published: 8 agents), `system` (internal/reviewer: 5 agents + 1 spaceship). Counts drift — verify with `SELECT scope, type, COUNT(*) FROM blueprints GROUP BY scope, type;`
 
 ### Edge Functions (15)
 | Function | Purpose |
@@ -249,7 +249,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - **Tracking:** `--tracking-display` (-0.01em, hero), `--tracking-normal` (0), `--tracking-caps` (0.08em, overline only).
 - **Font families (theme-driven):** `--font-h` (display/titles), `--font-b` (body/UI), `--font-m` (monospace, code/telemetry only). `--font-brand` is the brand wordmark.
 
-### Case rules (follow modern SaaS — Linear/Stripe/Vercel/Notion)
+### Case rules (follow modern SaaS — Linear/Stripe/Notion/Figma)
 - **Sentence case** — default for buttons, labels, body, empty states, nav items, form labels, links. "Create spaceship", not "Create Spaceship" or "CREATE SPACESHIP".
 - **ALL CAPS (`text-transform: uppercase` + `--tracking-caps`)** — reserved for the **overline** role only: eyebrow labels, stat chips, badges. Requires `--text-xs` and `--fw-bold` or `--fw-medium`. Never use on anything ≥ `--text-base`.
 - **Title Case** — page titles, product/feature names, proper nouns only ("NICE SPACESHIP", "Bridge", "Captain's Log", "Gemini 2.5 Flash"). Do NOT title-case arbitrary headings.
