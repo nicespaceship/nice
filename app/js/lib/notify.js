@@ -31,7 +31,7 @@ const Notify = (() => {
    * @param {string} opts.message
    * @param {string} opts.type - one of: agent_error, task_complete, task_failed, fleet_deployed, budget_alert, system
    */
-  function send({ title, message, type = 'system', undo }) {
+  function send({ title, message, type = 'system', undo, actionLabel }) {
     // Check settings
     const settings = JSON.parse(localStorage.getItem(Utils.KEYS.settings) || '{}');
     if (settings.notifications === false) return;
@@ -54,7 +54,7 @@ const Notify = (() => {
 
     // In-app notification (configurable duration)
     const duration = (settings.toastDuration || 5) * 1000;
-    _showToast(title, message, type, duration, undo);
+    _showToast(title, message, type, duration, undo, actionLabel);
 
     // Store to Supabase
     const user = State.get('user');
@@ -72,7 +72,7 @@ const Notify = (() => {
     _updateBadge();
   }
 
-  function _showToast(title, message, type, duration = 5000, undoCallback) {
+  function _showToast(title, message, type, duration = 5000, undoCallback, actionLabel) {
     const colors = {
       agent_error: '#ef4444', task_complete: '#22c55e', task_failed: '#ef4444',
       fleet_deployed: '#6366f1', budget_alert: '#f59e0b', system: 'var(--accent)',
@@ -96,7 +96,7 @@ const Notify = (() => {
         <strong class="notify-toast-title">${_esc(title)}</strong>
         <span class="notify-toast-msg">${_esc(message)}</span>
       </div>
-      ${undoCallback ? '<button class="toast-undo">Undo</button>' : ''}
+      ${undoCallback ? `<button class="toast-undo">${_esc(actionLabel || 'Undo')}</button>` : ''}
       <button class="notify-toast-close" aria-label="Close">&times;</button>
     `;
 

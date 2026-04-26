@@ -2998,12 +2998,25 @@ The user's code runs in a browser preview. Generate production-quality code.`;
      CoreVoice owns the fetch + playback + analyser-attach. This wrapper
      preserves the post-TTS reactor state restoration that's specific to
      the prompt panel (idle vs streaming while the LLM is still producing
-     text). */
+     text).
+
+     If voice can't play because the user is in the default-muted state
+     (no explicit preference yet), this is the first eligible reply for
+     them — surface the discovery CTA. CoreVoice.maybeShowCTA is a no-op
+     once any explicit preference is recorded, so this fires at most once
+     per theme. The CTA's accept callback replays this same text via the
+     same wrapper so the post-TTS reactor restoration still applies. */
   function _ttsSpeak(text) {
-    if (!text || !CoreVoice.canSpeak()) return;
-    CoreVoice.speak(text, {
-      onEnd: () => { CoreReactor.setState(_sending ? 'streaming' : 'idle'); },
-    });
+    if (!text) return;
+    if (CoreVoice.canSpeak()) {
+      CoreVoice.speak(text, {
+        onEnd: () => { CoreReactor.setState(_sending ? 'streaming' : 'idle'); },
+      });
+      return;
+    }
+    if (CoreVoice.isMuted() && !CoreVoice.hasExplicitMutePref()) {
+      CoreVoice.maybeShowCTA(text, () => _ttsSpeak(text));
+    }
   }
 
   function _ttsStop() {

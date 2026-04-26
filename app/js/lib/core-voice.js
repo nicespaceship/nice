@@ -25,9 +25,13 @@
    New users start MUTED — `isMuted()` defaults to true when no entry
    exists for the active theme. TTS is the most expensive thing NICE
    ships per character; default-on would burn ElevenLabs credits before
-   users even know voice exists. Users discover the speaker toggle in
-   the prompt panel and opt in. Existing users with explicit `false`
-   entries are unaffected.
+   users even know voice exists. Users either discover the speaker
+   toggle in the prompt panel themselves OR see the first-reply CTA
+   ("Want NICE to talk to you?") fired by `maybeShowCTA` on the first
+   eligible reply. The CTA fires at most once per theme — opening it
+   writes the explicit-mute pref so the gate flips regardless of which
+   button the user takes. Existing users with explicit `false` entries
+   are unaffected by both paths.
 
    Coupling: on play, drives the centerpiece via CoreReactor.setState
    ('speaking') + attachAnalyser. The post-end state (idle vs streaming
@@ -199,5 +203,59 @@ const CoreVoice = (() => {
     _abort = null;
   }
 
-  return { getConfig, isMuted, toggleMute, canSpeak, isSpeaking, speak, stop };
+  /* ── First-reply discovery CTA ──
+     Voice is default-muted for new users (#294 cost defense). Without a
+     prompt, users never discover the speaker toggle exists. This shows a
+     one-time toast on the first eligible reply: "Want NICE to talk to
+     you?" with a Talk-to-me action that flips to unmute and replays the
+     reply via the supplied speakFn.
+
+     Trigger gate: voice config exists (theme is voice-capable) AND no
+     explicit mute preference yet for this theme. Fires once per theme —
+     opening the CTA writes the explicit-mute pref so the gate flips,
+     regardless of which button the user takes (or doesn't take). The
+     speaker toggle in prompt-panel always remains as the manual escape
+     hatch. */
+  function hasExplicitMutePref() {
+    if (!getConfig()) return false;
+    const id = _activeThemeId();
+    try {
+      const state = JSON.parse(localStorage.getItem(_muteKey()) || '{}');
+      return Object.prototype.hasOwnProperty.call(state, id);
+    } catch { return false; }
+  }
+
+  function _writeMute(value) {
+    const id = _activeThemeId();
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem(_muteKey()) || '{}'); } catch {}
+    state[id] = value;
+    try { localStorage.setItem(_muteKey(), JSON.stringify(state)); } catch {}
+  }
+
+  function maybeShowCTA(text, speakFn) {
+    if (!getConfig()) return false;
+    if (hasExplicitMutePref()) return false;
+    if (typeof Notify === 'undefined' || typeof Notify.send !== 'function') return false;
+    const tv = getConfig();
+    // Lock in the gate immediately — whether or not the user clicks, we
+    // don't want to nag them again. Action callback below flips back to
+    // unmute if they accept.
+    _writeMute(true);
+    Notify.send({
+      title: 'Want NICE to talk to you?',
+      message: `Hear replies aloud in the ${tv.label || 'current'} voice. You can mute anytime via the speaker toggle.`,
+      type: 'system',
+      actionLabel: 'Talk to me',
+      undo: () => {
+        _writeMute(false);
+        if (typeof speakFn === 'function') {
+          try { speakFn(); } catch (e) { console.error('[NICE] CTA speak callback error:', e); }
+        }
+      },
+    });
+    return true;
+  }
+
+  return { getConfig, isMuted, toggleMute, canSpeak, isSpeaking, speak, stop, hasExplicitMutePref, maybeShowCTA };
 })();

@@ -200,3 +200,116 @@ describe('CoreVoice.speak — 402 voice quota response', () => {
     expect(CoreVoice.canSpeak()).toBe(true);
   });
 });
+
+// ─── First-reply discovery CTA ────────────────────────────────────────────
+
+describe('CoreVoice.hasExplicitMutePref', () => {
+  beforeEach(() => {
+    Theme.current = () => 'nice';
+    Theme.getTheme = (id) => id === 'nice'
+      ? { voice: { provider: 'elevenlabs', voice: 'nice', speed: 1.0, label: 'NICE' } }
+      : null;
+  });
+
+  it('false when no entry exists', () => {
+    expect(CoreVoice.hasExplicitMutePref()).toBe(false);
+  });
+
+  it('true when explicit true', () => {
+    localStorage.setItem('nice-voice-off', JSON.stringify({ nice: true }));
+    expect(CoreVoice.hasExplicitMutePref()).toBe(true);
+  });
+
+  it('true when explicit false (existing opt-in)', () => {
+    localStorage.setItem('nice-voice-off', JSON.stringify({ nice: false }));
+    expect(CoreVoice.hasExplicitMutePref()).toBe(true);
+  });
+
+  it('false when no voice config (theme without voice)', () => {
+    Theme.getTheme = () => ({}); // no voice field
+    localStorage.setItem('nice-voice-off', JSON.stringify({ nice: true }));
+    expect(CoreVoice.hasExplicitMutePref()).toBe(false);
+  });
+
+  it('per-theme — explicit on nice does not affect hal-9000', () => {
+    Theme.getTheme = (id) => ({ voice: { provider: 'elevenlabs', voice: id, speed: 1.0, label: id } });
+    localStorage.setItem('nice-voice-off', JSON.stringify({ nice: true }));
+    expect(CoreVoice.hasExplicitMutePref()).toBe(true);
+    Theme.current = () => 'hal-9000';
+    expect(CoreVoice.hasExplicitMutePref()).toBe(false);
+  });
+});
+
+describe('CoreVoice.maybeShowCTA', () => {
+  beforeEach(() => {
+    Theme.current = () => 'nice';
+    Theme.getTheme = (id) => id === 'nice'
+      ? { voice: { provider: 'elevenlabs', voice: 'nice', speed: 1.0, label: 'NICE' } }
+      : null;
+  });
+
+  it('fires Notify when no explicit pref, returns true', () => {
+    const speakFn = vi.fn();
+    const result = CoreVoice.maybeShowCTA('hello world', speakFn);
+    expect(result).toBe(true);
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    const call = Notify.send.mock.calls[0][0];
+    expect(call.title).toBe('Want NICE to talk to you?');
+    expect(call.actionLabel).toBe('Talk to me');
+    expect(typeof call.undo).toBe('function');
+  });
+
+  it('locks the gate immediately so it never fires twice for the same theme', () => {
+    CoreVoice.maybeShowCTA('first', vi.fn());
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    // Without clicking the action, hasExplicitMutePref is now true (defaulted to muted)
+    expect(CoreVoice.hasExplicitMutePref()).toBe(true);
+    expect(CoreVoice.isMuted()).toBe(true);
+
+    Notify.send.mockClear();
+    const second = CoreVoice.maybeShowCTA('second', vi.fn());
+    expect(second).toBe(false);
+    expect(Notify.send).not.toHaveBeenCalled();
+  });
+
+  it('returns false when explicit pref already exists', () => {
+    localStorage.setItem('nice-voice-off', JSON.stringify({ nice: false }));
+    const result = CoreVoice.maybeShowCTA('hello', vi.fn());
+    expect(result).toBe(false);
+    expect(Notify.send).not.toHaveBeenCalled();
+  });
+
+  it('returns false when no voice config', () => {
+    Theme.getTheme = () => ({});
+    const result = CoreVoice.maybeShowCTA('hello', vi.fn());
+    expect(result).toBe(false);
+    expect(Notify.send).not.toHaveBeenCalled();
+  });
+
+  it('returns false when Notify is not available', () => {
+    const savedNotify = globalThis.Notify;
+    globalThis.Notify = undefined;
+    const result = CoreVoice.maybeShowCTA('hello', vi.fn());
+    expect(result).toBe(false);
+    globalThis.Notify = savedNotify;
+  });
+
+  it('action callback flips to unmute and invokes the speak replay', () => {
+    const speakFn = vi.fn();
+    CoreVoice.maybeShowCTA('hello', speakFn);
+    expect(CoreVoice.isMuted()).toBe(true); // pre-action: defaulted to muted
+
+    const action = Notify.send.mock.calls[0][0].undo;
+    action();
+
+    expect(CoreVoice.isMuted()).toBe(false); // flipped to explicit unmute
+    expect(speakFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('action callback survives a missing speakFn', () => {
+    CoreVoice.maybeShowCTA('hello', null);
+    const action = Notify.send.mock.calls[0][0].undo;
+    expect(() => action()).not.toThrow();
+    expect(CoreVoice.isMuted()).toBe(false);
+  });
+});
