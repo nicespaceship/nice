@@ -19,6 +19,13 @@
    Mute state is persisted per-theme in localStorage so toggling
    J.A.R.V.I.S. off doesn't also mute future themed voices.
 
+   New users start MUTED — `isMuted()` defaults to true when no entry
+   exists for the active theme. TTS is the most expensive thing NICE
+   ships per character; default-on would burn ElevenLabs credits before
+   users even know voice exists. Users discover the speaker toggle in
+   the prompt panel and opt in. Existing users with explicit `false`
+   entries are unaffected.
+
    Coupling: on play, drives the centerpiece via CoreReactor.setState
    ('speaking') + attachAnalyser. The post-end state (idle vs streaming
    while the LLM keeps producing text) is the caller's responsibility —
@@ -29,6 +36,11 @@ const CoreVoice = (() => {
   let _blobUrl = null;
   let _abort = null;
   let _endHook = null;
+  // Set true after the edge function returns 402 (voice quota exhausted).
+  // Skips further TTS calls until the next page load — avoids hammering the
+  // pool-check endpoint with requests we know will fail. Quota refills with
+  // billing cycle / top-up; reload picks up the new balance.
+  let _quotaExhausted = false;
 
   function getConfig() {
     if (typeof Theme === 'undefined' || !Theme.getTheme) return null;
@@ -54,8 +66,12 @@ const CoreVoice = (() => {
     const id = _activeThemeId();
     try {
       const state = JSON.parse(localStorage.getItem(_muteKey()) || '{}');
-      return state[id] === true;
-    } catch { return false; }
+      // Tri-state: explicit `true` = muted, explicit `false` = unmuted,
+      // undefined = default-muted for new users (cost defense). Existing
+      // users with an explicit `false` entry from before this change keep
+      // their preference.
+      return state[id] !== false;
+    } catch { return true; }
   }
 
   function toggleMute() {
@@ -63,12 +79,16 @@ const CoreVoice = (() => {
     if (!getConfig()) return;
     let state = {};
     try { state = JSON.parse(localStorage.getItem(_muteKey()) || '{}'); } catch {}
-    state[id] = !state[id];
+    // Compute next state from isMuted() rather than `!state[id]` so the
+    // tri-state default-muted logic round-trips: undefined → toggle ON,
+    // explicit true → toggle OFF, explicit false → toggle ON.
+    const nextMuted = !isMuted();
+    state[id] = nextMuted;
     localStorage.setItem(_muteKey(), JSON.stringify(state));
-    if (state[id]) stop();
+    if (nextMuted) stop();
   }
 
-  function canSpeak() { return !!getConfig() && !isMuted(); }
+  function canSpeak() { return !!getConfig() && !isMuted() && !_quotaExhausted; }
 
   function isSpeaking() { return !!_audio && !_audio.paused; }
 
@@ -110,6 +130,22 @@ const CoreVoice = (() => {
         body: JSON.stringify({ text, provider: tv.provider, voice: tv.voice, speed: tv.speed, model: tv.model, voice_settings: tv.settings }),
       });
 
+      // 402 = voice quota exhausted. nice-tts returns
+      // { error, code:'voice_quota_exhausted', pool, cost, remaining }.
+      // Silently mute the rest of the session (one toast, no retries) and
+      // bail. Reload after quota top-up clears the flag.
+      if (res.status === 402) {
+        _quotaExhausted = true;
+        if (typeof Notify !== 'undefined' && Notify.send) {
+          Notify.send({
+            title: 'Voice Quota Reached',
+            message: 'You’ve used your monthly voice allowance. Top up tokens or wait for the next cycle.',
+            type: 'system',
+          });
+        }
+        _cleanup();
+        return;
+      }
       if (!res.ok) throw new Error('TTS ' + res.status);
 
       const blob = await res.blob();
