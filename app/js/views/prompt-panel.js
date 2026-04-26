@@ -3015,7 +3015,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       return;
     }
     if (CoreVoice.isMuted() && !CoreVoice.hasExplicitMutePref()) {
-      CoreVoice.maybeShowCTA(text, () => _ttsSpeak(text));
+      // The CTA action callback writes the explicit unmute pref before
+      // invoking this fn, so we re-sync the toolbar speaker icon here —
+      // CoreVoice doesn't broadcast mute changes, and the icon would
+      // otherwise stay in the muted state until the user clicked it.
+      CoreVoice.maybeShowCTA(text, () => {
+        _syncVoiceToggle();
+        _ttsSpeak(text);
+      });
     }
   }
 
