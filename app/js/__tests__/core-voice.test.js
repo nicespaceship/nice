@@ -610,3 +610,69 @@ describe('CoreVoice.maybeShowCTA — Free path', () => {
     expect(Notify.send.mock.calls[0][0].title).toBe('Voice is a NICE Pro feature');
   });
 });
+
+// Voiced intro greeting played once per (tab-session, theme) when the user
+// activates a theme that declares `voice.intro`. Wired into Theme.set so
+// the trigger is always a user-gesture path — autoplay restrictions only
+// bite on initial page load (handled by the onStart-gated session flag).
+describe('CoreVoice.maybePlayThemeIntro', () => {
+  beforeEach(() => {
+    loadCoreVoice();
+    Notify.send.mockClear();
+    sessionStorage.clear();
+    localStorage.setItem('nice-voice-off', JSON.stringify({ jarvis: false }));
+    Theme.current = () => 'jarvis';
+    Theme.getTheme = (id) => id === 'jarvis'
+      ? { voice: { provider: 'elevenlabs', voice: 'jarvis', speed: 1.0, label: 'J.A.R.V.I.S.', intro: 'All systems online, sir.' } }
+      : null;
+    globalThis.SB = {
+      client: {
+        supabaseUrl: 'https://example.supabase.co',
+        auth: { getSession: async () => ({ data: { session: { access_token: 'jwt' } } }) },
+      },
+      _key: 'anon-key',
+    };
+    globalThis.fetch = vi.fn(async () => new Response('', { status: 200, headers: { 'Content-Type': 'audio/mpeg' } }));
+  });
+
+  it('returns false when muted', () => {
+    localStorage.setItem('nice-voice-off', JSON.stringify({ jarvis: true }));
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('returns false when theme has no voice.intro', () => {
+    Theme.getTheme = () => ({ voice: { provider: 'elevenlabs', voice: 'jarvis', speed: 1.0 } });
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('returns false when theme has no voice config at all', () => {
+    Theme.getTheme = () => ({});
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
+  });
+
+  it('calls speak() with the intro text on first invocation', async () => {
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.text).toBe('All systems online, sir.');
+  });
+
+  it('returns false on second call if session flag is set (post-onStart contract)', () => {
+    sessionStorage.setItem('nice-voice-intro-played', JSON.stringify({ jarvis: true }));
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('per-theme — JARVIS played does not block another themed intro', () => {
+    sessionStorage.setItem('nice-voice-intro-played', JSON.stringify({ jarvis: true }));
+    Theme.current = () => 'cyberpunk';
+    Theme.getTheme = (id) => id === 'cyberpunk'
+      ? { voice: { provider: 'elevenlabs', voice: 'delamain', speed: 1.0, label: 'Delamain', intro: 'Welcome aboard.' } }
+      : null;
+    localStorage.setItem('nice-voice-off', JSON.stringify({ jarvis: false, cyberpunk: false }));
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+  });
+});

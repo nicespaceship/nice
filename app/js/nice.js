@@ -114,7 +114,14 @@ const Theme = (() => {
       // to the `nice-tts` edge function. `label` is shown on the mute toggle.
       // `settings` (optional) tunes the voice per-request — needed for library
       // voices whose saved defaults are locked.
-      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, model:'eleven_turbo_v2_5', label:'J.A.R.V.I.S.' } },
+      // `intro` is the one-line greeting played once per session when the
+      // user activates this theme (CoreVoice.maybePlayThemeIntro). Cost
+      // is ~1 standard token per JARVIS session for Pro users, $0 for
+      // free (gated by tier-aware mute). Only JARVIS has one for now —
+      // experiment to see whether voiced UI moments land before adding
+      // intros to other themes.
+      voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, model:'eleven_turbo_v2_5', label:'J.A.R.V.I.S.',
+        intro:'All systems online, sir. Standing by.' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
@@ -255,6 +262,11 @@ const Theme = (() => {
     // after the user swaps. Speech for the new theme will start fresh on the
     // next reply.
     if (typeof CoreVoice !== 'undefined' && CoreVoice.stop) CoreVoice.stop();
+    // Play the new theme's voiced intro greeting (if any), once per tab-
+    // session per theme. No-op when muted, no intro defined, or already
+    // greeted this session. JARVIS is the only theme with one today —
+    // experiment to see whether voiced UI moments land before generalising.
+    if (typeof CoreVoice !== 'undefined' && CoreVoice.maybePlayThemeIntro) CoreVoice.maybePlayThemeIntro();
     _updateDarkLightIcon();
     // Refresh the sidebar rank badge so theme-scoped rank overlays (e.g.
     // JARVIS → Mark I…Iron Man) land immediately instead of on next login.
