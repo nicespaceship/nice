@@ -13,11 +13,9 @@
    `model` is optional and ElevenLabs-only — when set on a theme, the
    edge function uses that model_id instead of the default
    `eleven_turbo_v2_5`. Allowlisted: turbo_v2_5, multilingual_v2, v3.
-   All themes currently set turbo explicitly — v3 is on hold pending
-   the streaming-endpoint rollout (its first-byte latency is too long
-   for non-streaming playback). Edge function allowlists the value,
-   so an unknown string falls back to turbo silently. The free-tier
-   gate further forces turbo regardless of what the client sends.
+   v3 is now usable thanks to the streaming endpoint (PR landing here);
+   per-theme opt-in is a one-line `model:` change in nice.js. The
+   free-tier gate forces turbo regardless of what the client sends.
 
    Mute state is persisted per-theme in localStorage so toggling
    J.A.R.V.I.S. off doesn't also mute future themed voices.
@@ -37,12 +35,21 @@
    ('speaking') + attachAnalyser. The post-end state (idle vs streaming
    while the LLM keeps producing text) is the caller's responsibility —
    pass `opts.onEnd` to `speak()` and apply your own state there.
+
+   Playback path: nice-tts hits the ElevenLabs streaming endpoint and
+   returns chunked audio/mpeg. CoreVoice plays it progressively via
+   MediaSource where supported (Chrome/Firefox/Edge — big v3 latency
+   win) and falls back to the buffered-blob path on Safari where MSE
+   for audio/mpeg has historically been unreliable. Both paths share
+   the same lifecycle hooks (CoreReactor wiring, onStart/onEnd, abort).
 ═══════════════════════════════════════════════════════════════════ */
 const CoreVoice = (() => {
   let _audio = null;
   let _blobUrl = null;
   let _abort = null;
   let _endHook = null;
+  let _mediaSource = null;
+  let _reader = null;
   // Set true after the edge function returns 402 (voice quota exhausted).
   // Skips further TTS calls until the next page load — avoids hammering the
   // pool-check endpoint with requests we know will fail. Quota refills with
@@ -99,6 +106,47 @@ const CoreVoice = (() => {
 
   function isSpeaking() { return !!_audio && !_audio.paused; }
 
+  // Detect the best available progressive-playback path for audio/mpeg.
+  // Returns 'managed' (Safari iOS 17.1+), 'standard' (Chrome/Firefox/Edge),
+  // or null (fall back to buffered blob playback).
+  function _pickStreamPath() {
+    if (typeof window === 'undefined') return null;
+    try {
+      if ('ManagedMediaSource' in window
+          && typeof window.ManagedMediaSource.isTypeSupported === 'function'
+          && window.ManagedMediaSource.isTypeSupported('audio/mpeg')) {
+        return 'managed';
+      }
+      if ('MediaSource' in window
+          && typeof window.MediaSource.isTypeSupported === 'function'
+          && window.MediaSource.isTypeSupported('audio/mpeg')) {
+        return 'standard';
+      }
+    } catch {}
+    return null;
+  }
+
+  function _wireAudioLifecycle(audio, abortCtrl, opts) {
+    audio.onplay = () => {
+      if (typeof CoreReactor !== 'undefined') {
+        CoreReactor.setState('speaking');
+        CoreReactor.attachAnalyser(audio);
+      }
+      if (opts && opts.onStart) { try { opts.onStart(); } catch {} }
+    };
+    const finish = () => {
+      // Guard against finish firing for a superseded call after a newer
+      // speak() has taken over _audio / _abort.
+      if (_abort && _abort !== abortCtrl) return;
+      if (typeof CoreReactor !== 'undefined') CoreReactor.detachAnalyser();
+      _cleanup();
+      const hook = _endHook; _endHook = null;
+      if (hook) { try { hook(); } catch {} }
+    };
+    audio.onended = finish;
+    audio.onerror = finish;
+  }
+
   /**
    * Fetch a TTS clip from the `nice-tts` edge function and play it.
    * Cancels any in-flight clip first. `opts.onStart` fires on audio
@@ -125,7 +173,7 @@ const CoreVoice = (() => {
 
     try {
       const session = (await c.auth.getSession())?.data?.session;
-      if (_abort !== abortCtrl) return; // superseded during getSession()
+      if (_abort !== abortCtrl) return;
       const res = await fetch(supabaseUrl + '/functions/v1/nice-tts', {
         method: 'POST',
         signal,
@@ -154,53 +202,155 @@ const CoreVoice = (() => {
         return;
       }
       if (!res.ok) throw new Error('TTS ' + res.status);
+      if (_abort !== abortCtrl) return;
 
-      const blob = await res.blob();
-      if (_abort !== abortCtrl) return; // superseded after fetch resolved
-      _blobUrl = URL.createObjectURL(blob);
-      _audio = new Audio(_blobUrl);
-      _audio.onplay = () => {
-        if (typeof CoreReactor !== 'undefined') {
-          CoreReactor.setState('speaking');
-          CoreReactor.attachAnalyser(_audio);
-        }
-        if (opts && opts.onStart) { try { opts.onStart(); } catch {} }
-      };
-      const finish = () => {
-        if (typeof CoreReactor !== 'undefined') CoreReactor.detachAnalyser();
-        _cleanup();
-        const hook = _endHook; _endHook = null;
-        if (hook) { try { hook(); } catch {} }
-      };
-      _audio.onended = finish;
-      _audio.onerror = finish;
-      // play() returns a Promise that rejects if playback is interrupted
-      // mid-flight — happens every time a streaming message triggers a
-      // new speak() and stop() revokes the prior blob URL. The onerror
-      // handler already covers cleanup; suppressing the rejection keeps
-      // it from surfacing as an "Async Error" toast. Autoplay blocks land
-      // here too — silent-fail is the right UX for best-effort voice.
-      _audio.play().catch(() => { /* suppressed — see above */ });
+      const path = _pickStreamPath();
+      if (path && res.body && typeof res.body.getReader === 'function') {
+        await _playStreaming(res, abortCtrl, opts, path);
+      } else {
+        await _playBlob(res, abortCtrl, opts);
+      }
     } catch (err) {
       _cleanup();
-      if (err.name === 'AbortError') return;
+      if (err && err.name === 'AbortError') return;
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Voice Unavailable', message: 'Could not reach voice service.', type: 'system' });
       }
     }
   }
 
+  // Progressive playback via MediaSource. Audio starts playing as soon as
+  // the browser has decoded the first frame, which is much faster than
+  // buffering the full clip — especially for v3 (1s+ TTFB savings).
+  async function _playStreaming(res, abortCtrl, opts, path) {
+    const Mse = path === 'managed' ? window.ManagedMediaSource : window.MediaSource;
+    const mse = new Mse();
+    _mediaSource = mse;
+    _blobUrl = URL.createObjectURL(mse);
+    _audio = new Audio(_blobUrl);
+    // ManagedMediaSource (Safari) requires disableRemotePlayback = true
+    // to opt out of AirPlay-style remote handoff that doesn't support MSE.
+    if (path === 'managed') {
+      try { _audio.disableRemotePlayback = true; } catch {}
+    }
+    _wireAudioLifecycle(_audio, abortCtrl, opts);
+
+    // Wait for the MediaSource to open before adding the source buffer.
+    await new Promise((resolve, reject) => {
+      const onOpen = () => { mse.removeEventListener('error', onError); resolve(); };
+      const onError = (e) => { mse.removeEventListener('sourceopen', onOpen); reject(e); };
+      mse.addEventListener('sourceopen', onOpen, { once: true });
+      mse.addEventListener('error', onError, { once: true });
+    });
+    if (_abort !== abortCtrl) return;
+
+    // isTypeSupported gated this; if addSourceBuffer still throws the
+    // browser is in a bad state — surface to the outer catch which fires
+    // "Voice Unavailable" instead of trying to re-stream into a blob.
+    const sb = mse.addSourceBuffer('audio/mpeg');
+
+    // Append chunks serially. SourceBuffer.appendBuffer is async — the
+    // next append must wait for the prior 'updateend' or it throws
+    // InvalidStateError. Queue + drain pattern handles bursty reads.
+    const queue = [];
+    let appending = false;
+    let readerDone = false;
+
+    const tryEndOfStream = () => {
+      if (_abort !== abortCtrl) return;
+      if (!readerDone || appending || queue.length > 0) return;
+      if (mse.readyState !== 'open') return;
+      try { mse.endOfStream(); } catch {}
+    };
+
+    const pump = () => {
+      if (appending || queue.length === 0) return;
+      if (_abort !== abortCtrl) return;
+      if (sb.updating) return;
+      appending = true;
+      const chunk = queue.shift();
+      try {
+        sb.appendBuffer(chunk);
+      } catch (e) {
+        appending = false;
+        console.warn('[NICE] CoreVoice MSE appendBuffer error:', e);
+      }
+    };
+
+    sb.addEventListener('updateend', () => {
+      appending = false;
+      if (queue.length > 0) pump();
+      else tryEndOfStream();
+    });
+
+    // play() is fine to call before any data arrives — Audio waits for
+    // canplay automatically. Suppress autoplay-block + interrupt rejections
+    // (covered by onerror handler).
+    _audio.play().catch(() => { /* see blob path comment */ });
+
+    const reader = res.body.getReader();
+    _reader = reader;
+    try {
+      while (true) {
+        const r = await reader.read();
+        if (_abort !== abortCtrl) return;
+        if (r.done) {
+          readerDone = true;
+          tryEndOfStream();
+          break;
+        }
+        queue.push(r.value);
+        pump();
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      // Body stream errored mid-play. Mark the source as decode-failed
+      // so the audio element fires onerror and the lifecycle finishes.
+      try { if (mse.readyState === 'open') mse.endOfStream('decode'); } catch {}
+    } finally {
+      _reader = null;
+    }
+  }
+
+  // Fallback playback: buffer the whole response into a blob, then play.
+  // Used on browsers without MediaSource for audio/mpeg (Safari < 17.1
+  // and any environment without MSE). Same UX as before this PR.
+  async function _playBlob(res, abortCtrl, opts) {
+    const blob = await res.blob();
+    if (_abort !== abortCtrl) return;
+    _blobUrl = URL.createObjectURL(blob);
+    _audio = new Audio(_blobUrl);
+    _wireAudioLifecycle(_audio, abortCtrl, opts);
+    // play() returns a Promise that rejects if playback is interrupted
+    // mid-flight — happens every time a streaming message triggers a
+    // new speak() and stop() revokes the prior blob URL. The onerror
+    // handler already covers cleanup; suppressing the rejection keeps
+    // it from surfacing as an "Async Error" toast. Autoplay blocks land
+    // here too — silent-fail is the right UX for best-effort voice.
+    _audio.play().catch(() => { /* suppressed — see above */ });
+  }
+
   function stop() {
     if (_abort) { _abort.abort(); _abort = null; }
+    if (_reader) { try { _reader.cancel(); } catch {} _reader = null; }
     if (_audio) { _audio.pause(); _audio.src = ''; }
     if (typeof CoreReactor !== 'undefined') CoreReactor.detachAnalyser();
     _cleanup();
   }
 
   function _cleanup() {
+    if (_mediaSource) {
+      // Closing an open MediaSource frees its decoder + buffers immediately;
+      // leaving it open until GC keeps the audio pipeline pinned.
+      try {
+        if (_mediaSource.readyState === 'open') _mediaSource.endOfStream();
+      } catch {}
+      _mediaSource = null;
+    }
     if (_blobUrl) { URL.revokeObjectURL(_blobUrl); _blobUrl = null; }
     _audio = null;
     _abort = null;
+    _reader = null;
   }
 
   /* ── First-reply discovery CTA ──
