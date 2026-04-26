@@ -49,8 +49,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "nice",
@@ -90,8 +89,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "hal-9000",
@@ -140,8 +138,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "cyberpunk",
@@ -193,8 +190,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "grid",
@@ -246,8 +242,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "jarvis",
@@ -305,8 +300,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "lcars",
@@ -358,8 +352,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "matrix",
@@ -413,8 +406,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "office",
@@ -465,8 +457,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "office-dark",
@@ -519,8 +510,7 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   },
   {
     "theme_id": "rx-78-2",
@@ -572,7 +562,6 @@
       { "pattern": "(?i)\\b(i'?m|i am) just an? ai\\b", "action": "refuse" },
       { "pattern": "(?i)\\b(i'?m|i am) (just )?(a |an )?(large )?language model\\b", "action": "refuse" },
       { "pattern": "(?i)\\bas a language model\\b", "action": "refuse" }
-    ],
-    "use_structured": false
+    ]
   }
 ]

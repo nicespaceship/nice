@@ -2,8 +2,8 @@
  * Persona Engine Tier 2 — reference compiler.
  *
  * WHAT: A self-contained implementation of the persona prompt compiler
- * described in issue #222, ready to port into the proprietary `nice-ai`
- * edge function (issue #221).
+ * described in issue #222, mirrored verbatim by the proprietary `nice-ai`
+ * edge function source.
  *
  * WHY THIS LIVES IN THE REPO:
  * - Benjamin implements the production compiler inside `nice-ai` (Deno TS).
@@ -17,16 +17,20 @@
  *   then ported. Spec → code drift becomes a PR review concern instead of
  *   a silent production bug.
  *
+ * TIER 1 LEGACY REMOVAL (2026-04-25):
+ * - Tier 1 legacy compile path and `shouldUseStructured` shape-check
+ *   removed in this PR. All 11 active personas migrated to structured
+ *   compilation 2026-04-24; the soak window passed clean. The
+ *   `personas.use_structured` column is dropped in the same change.
+ * - Rollback path: revert this PR + re-add the column. The Tier 1
+ *   compile is preserved in git history (PR for the removal).
+ *
  * WHAT IT EXPORTS:
  * - `compilePersonaPrompt(persona, provider, appContext, callsign)` —
- *   the orchestrator. Dispatches Tier 2 vs Tier 1 legacy based on
- *   `persona.use_structured` + a minimal shape check.
- * - `compileTier2Structured(...)` — the new per-provider compiler.
+ *   the orchestrator. Always compiles structured; never branches.
+ * - `compileTier2Structured(...)` — the per-provider compiler.
  *   Templates: Anthropic XML, OpenAI markdown, Gemini examples-first.
  *   xAI + Groq share the OpenAI template.
- * - `compileTier1Legacy(...)` — the existing prompt-panel `_renderPersonaPrompt`
- *   logic, ported. Used when `use_structured=false`.
- * - `shouldUseStructured(persona)` — shape-check helper.
  * - `sanitizeCallsign(raw)` — mirror of `Utils.sanitizeCallsign` in app code.
  *   The edge function MUST re-sanitize callsign at its boundary (defense in
  *   depth; the client already does it, but the edge function cannot trust
@@ -248,31 +252,6 @@ export function buildAppContextBlock(ctx) {
   return lines.join('\n');
 }
 
-// ─── Shape check ──────────────────────────────────────────────────────────
-
-/**
- * Decide whether to compile via the Tier 2 structured path or fall back
- * to Tier 1 legacy. Returns true only when `use_structured=true` AND the
- * minimum required typed fields are present and well-formed. A row that
- * has the flag set but empty typed fields falls back defensively — a
- * half-migrated persona should never produce a malformed prompt.
- *
- * @param {object} persona  the DB row
- * @returns {boolean}
- */
-export function shouldUseStructured(persona) {
-  if (!persona || persona.use_structured !== true) return false;
-  const v = persona.voice;
-  const hasVoice = Boolean(
-    v && typeof v === 'object'
-    && typeof v.register === 'string'
-    && typeof v.cadence === 'string'
-    && typeof v.sentence_length === 'string',
-  );
-  const hasHard = Array.isArray(persona.hard_rules) && persona.hard_rules.length > 0;
-  return hasVoice && hasHard;
-}
-
 // ─── Orchestrator ─────────────────────────────────────────────────────────
 
 /**
@@ -282,12 +261,13 @@ export function shouldUseStructured(persona) {
  */
 
 /**
- * Top-level entry point. Sanitize the callsign, pick the compile path,
- * delegate. Returns a CompiledPrompt the edge function can paste into the
+ * Top-level entry point. Sanitize the callsign, dispatch to the structured
+ * compiler. Returns a CompiledPrompt the edge function can paste into the
  * `messages[0]` system slot for the provider call.
  *
- * Never throws on bad input — falls back to nice persona / OpenAI template
- * / defaultCallsign = "Commander".
+ * Never throws on bad input — falls back to OpenAI template / defaultCallsign
+ * = "Commander". A persona row missing typed fields produces a sparse but
+ * well-formed prompt rather than a runtime error.
  *
  * @param {object}          persona
  * @param {Provider|string} provider
@@ -302,10 +282,7 @@ export function compilePersonaPrompt(persona, provider, appContext, callsign) {
     ?? persona?.data?.defaultCallsign
     ?? 'Commander';
 
-  if (shouldUseStructured(persona)) {
-    return compileTier2Structured(persona, resolvedProvider, appContext, resolvedCallsign);
-  }
-  return compileTier1Legacy(persona, resolvedProvider, appContext, resolvedCallsign);
+  return compileTier2Structured(persona ?? {}, resolvedProvider, appContext, resolvedCallsign);
 }
 
 /**
@@ -334,54 +311,6 @@ function _formatExamples(examples, callsign) {
     }
     return `- ${e.label}: "${_interpolate(e.response, callsign)}"`;
   }).join('\n\n');
-}
-
-// ─── Tier 1 legacy compile ────────────────────────────────────────────────
-
-/**
- * Ports `_renderPersonaPrompt` from `app/js/views/prompt-panel.js`. Produces
- * the same string the client used to send pre-#221, so the edge function's
- * legacy path is a direct replacement. Provider-agnostic (the legacy
- * client didn't branch on provider either).
- *
- * @param {object}          persona      DB row (uses `persona.data`)
- * @param {Provider}        provider     unused by Tier 1, kept for symmetry
- * @param {AppContext|null} appContext
- * @param {string}          callsign     already sanitized
- * @returns {CompiledPrompt}
- */
-export function compileTier1Legacy(persona, provider, appContext, callsign) {
-  const data = persona?.data ?? {};
-  const interp = (s) => _interpolate(s, callsign);
-
-  const traits = (data.personality || []).map(t => '- ' + interp(t)).join('\n');
-  const examples = _formatExamples(data.examples, callsign);
-  const showRarity = Boolean(appContext && appContext.show_rarity);
-
-  const parts = [SECURITY_HEADER, '', interp(data.identity), ''];
-  if (traits)   parts.push('PERSONALITY:', traits, '');
-  if (examples) parts.push('EXAMPLE RESPONSES:', '', examples, '');
-
-  // Universal NICE product rules (static across all themes). Placed after
-  // persona + examples so the model reads who it is first, then the shared
-  // product contract it operates under.
-  parts.push(buildNiceProductRules(showRarity), '');
-
-  const ctxBlock = buildAppContextBlock(appContext);
-  if (ctxBlock) { parts.push(ctxBlock); parts.push(''); }
-
-  if (data.neverBreak) parts.push('IMPORTANT: Never break character. ' + interp(data.neverBreak));
-
-  const system = parts.join('\n');
-  return {
-    system,
-    meta: {
-      provider,
-      path: 'tier1-legacy',
-      size: system.length,
-      rules_applied: (data.personality?.length ?? 0) + (data.neverBreak ? 1 : 0),
-    },
-  };
 }
 
 // ─── Tier 2 structured compile ────────────────────────────────────────────
