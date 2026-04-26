@@ -329,17 +329,37 @@ const SchematicView = (() => {
     // keeps the coordinate space identical to wired-local coordinates.
     svgEl.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
 
-    // Reactor convergence point = wired center by default. Radar sonar
-    // rings, the click overlay, and the global CoreReactor (via the CSS
-    // var override below) all land on this same point so everything reads
-    // concentric. When decluttered on mobile the wired collapses to ~144
-    // tall (no cards, no wires) while the prompt panel is fixed at the
-    // bottom and the mini-chat sits at the top — the meaningful centre is
-    // the middle of that empty stretch, not the middle of the tiny wired.
-    const rcx = w / 2;
-    let rcy = h / 2;
+    // Reactor convergence point = the centroid of the actual rendered
+    // crew cards, in wired-local coords. Anchoring to the cards (not the
+    // wired's geometric center) keeps the reactor visually balanced for
+    // every ship class. The 12-slot class lands on wired-center either
+    // way because its 3-up/3-down staircase (+27/-28 nth-child translate)
+    // sums to ~zero bias; smaller classes (6/10 slots → 3/5 cards per
+    // column) leave one extra "+27" un-paired and drift the cards down,
+    // which used to read as the reactor "floating high" above the cluster.
+    let rcx, rcy;
+    {
+      let sumX = 0, sumY = 0;
+      cards.forEach(card => {
+        const inner = card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
+        const r = inner.getBoundingClientRect();
+        sumX += (r.left - cRect.left) + r.width / 2;
+        sumY += (r.top - cRect.top) + r.height / 2;
+      });
+      rcx = sumX / cards.length;
+      rcy = sumY / cards.length;
+    }
+    // The horizontal centroid lands ~halfway between the left and right
+    // columns by construction, so it tracks `w / 2` closely. Snap to the
+    // exact midline anyway — sub-pixel column asymmetry shouldn't bias
+    // the reactor sideways.
+    rcx = w / 2;
+
     const decluttered = container.classList.contains('schematic-declutter');
     if (decluttered && window.innerWidth <= 600) {
+      // On decluttered mobile the cards are hidden — fall back to the
+      // visible stretch between the mini-chat and the prompt panel,
+      // which is the only space the reactor + mini-chat cohabit.
       const miniChat = container.querySelector('.sch-mini-chat');
       const miniChatRect = miniChat ? miniChat.getBoundingClientRect() : null;
       const topBound = miniChatRect ? miniChatRect.bottom : cRect.top;

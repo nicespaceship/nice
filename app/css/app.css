@@ -1869,6 +1869,18 @@
    retains the schematic DOM with `display:none` across tab switches,
    so `:has(.schematic-wired)` would over-match). */
 .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .app-view-content { overflow-y:hidden; padding-bottom:24px; }
+/* Stretch the schematic ancestor chain to fill the available view-content
+   height so the reactor anchor (wired-center) lands at the visual center
+   of the page on every ship class. Without this, smaller ships (6/7/8/…
+   slots) collapse the columns vertically and the reactor reads as
+   "floated to the top" — the wired's geometric center is well above the
+   midpoint between the schematic header and the prompt panel. The
+   12-slot class fills naturally because its column height saturates
+   `min-height:200px` plus card-overlap math. */
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bp-wrap { height:100%; min-height:0; }
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) #bp-schematic-content { flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-wrap { flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-content { flex:1 1 0; min-height:0; }
 .schematic-col-right { align-items:flex-start; }
 .schematic-col-left { align-items:flex-end; }
 /* Staircase offsets split symmetrically — odd cards down 27px, even
