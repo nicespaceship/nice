@@ -390,24 +390,51 @@ const CoreVoice = (() => {
     const tv = getConfig();
     // Lock in the gate immediately — whether or not the user clicks, we
     // don't want to nag them again. Action callback below flips back to
-    // unmute if they accept.
+    // unmute if they accept (Pro path only).
     _writeMute(true);
-    Notify.send({
-      title: 'Want NICE to talk to you?',
-      message: `Hear replies aloud in the ${tv.label || 'current'} voice. You can mute anytime via the speaker toggle.`,
-      type: 'system',
-      actionLabel: 'Talk to me',
-      // Persistent: this is a one-shot discovery CTA. A 5s auto-dismiss
-      // means most users miss it entirely (caught during the #296 smoke
-      // test). Toast stays until manual close or action click.
-      persistent: true,
-      undo: () => {
-        _writeMute(false);
-        if (typeof speakFn === 'function') {
-          try { speakFn(); } catch (e) { console.error('[NICE] CTA speak callback error:', e); }
-        }
-      },
-    });
+
+    const isPro = (typeof Subscription !== 'undefined' && typeof Subscription.isPro === 'function')
+      ? Subscription.isPro()
+      : false;
+
+    if (isPro) {
+      // Pro path — flip to unmute and replay via the supplied speakFn.
+      Notify.send({
+        title: 'Want NICE to talk to you?',
+        message: `Hear replies aloud in the ${tv.label || 'current'} voice. You can mute anytime via the speaker toggle.`,
+        type: 'system',
+        actionLabel: 'Talk to me',
+        // Persistent: this is a one-shot discovery CTA. A 5s auto-dismiss
+        // means most users miss it entirely (caught during the #296 smoke
+        // test). Toast stays until manual close or action click.
+        persistent: true,
+        undo: () => {
+          _writeMute(false);
+          if (typeof speakFn === 'function') {
+            try { speakFn(); } catch (e) { console.error('[NICE] CTA speak callback error:', e); }
+          }
+        },
+      });
+    } else {
+      // Free path — voice has no allowance on free tier. Unmuting would
+      // 402 on the very next reply ("Voice Quota Reached") and leave the
+      // user stuck with a feature they can't use. Branch the CTA to an
+      // upgrade prompt instead. Mute stays locked; if they upgrade and
+      // want voice, the speaker toggle in the prompt panel is still the
+      // discoverable manual escape hatch.
+      Notify.send({
+        title: 'Voice is a NICE Pro feature',
+        message: `Upgrade to hear replies in the ${tv.label || 'current'} voice.`,
+        type: 'system',
+        actionLabel: 'Upgrade',
+        persistent: true,
+        undo: () => {
+          if (typeof UpgradeModal !== 'undefined' && typeof UpgradeModal.open === 'function') {
+            try { UpgradeModal.open(); } catch (e) { console.error('[NICE] CTA upgrade callback error:', e); }
+          }
+        },
+      });
+    }
     return true;
   }
 

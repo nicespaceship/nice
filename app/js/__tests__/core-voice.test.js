@@ -461,12 +461,19 @@ describe('CoreVoice.speak — playback path', () => {
   });
 });
 
-describe('CoreVoice.maybeShowCTA', () => {
+describe('CoreVoice.maybeShowCTA — Pro path', () => {
   beforeEach(() => {
     Theme.current = () => 'nice';
     Theme.getTheme = (id) => id === 'nice'
       ? { voice: { provider: 'elevenlabs', voice: 'nice', speed: 1.0, label: 'NICE' } }
       : null;
+    // Pro tier — original CTA path
+    globalThis.Subscription = { isPro: () => true };
+  });
+
+  afterEach(() => {
+    delete globalThis.Subscription;
+    delete globalThis.UpgradeModal;
   });
 
   it('fires Notify when no explicit pref, returns true', () => {
@@ -537,5 +544,69 @@ describe('CoreVoice.maybeShowCTA', () => {
     const action = Notify.send.mock.calls[0][0].undo;
     expect(() => action()).not.toThrow();
     expect(CoreVoice.isMuted()).toBe(false);
+  });
+});
+
+// Free-tier users have zero standard tokens — the original "Talk to me"
+// CTA would unmute them and immediately 402 on the next reply with a
+// "Voice Quota Reached" toast. Branch the CTA to upsell copy instead so
+// they're invited into the upgrade flow rather than into a broken loop.
+describe('CoreVoice.maybeShowCTA — Free path', () => {
+  beforeEach(() => {
+    Theme.current = () => 'nice';
+    Theme.getTheme = (id) => id === 'nice'
+      ? { voice: { provider: 'elevenlabs', voice: 'nice', speed: 1.0, label: 'NICE' } }
+      : null;
+    globalThis.Subscription = { isPro: () => false };
+    globalThis.UpgradeModal = { open: vi.fn() };
+  });
+
+  afterEach(() => {
+    delete globalThis.Subscription;
+    delete globalThis.UpgradeModal;
+  });
+
+  it('shows upgrade copy instead of Talk-to-me', () => {
+    const result = CoreVoice.maybeShowCTA('hello', vi.fn());
+    expect(result).toBe(true);
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    const call = Notify.send.mock.calls[0][0];
+    expect(call.title).toBe('Voice is a NICE Pro feature');
+    expect(call.actionLabel).toBe('Upgrade');
+    expect(call.persistent).toBe(true);
+  });
+
+  it('action opens UpgradeModal and does NOT unmute', () => {
+    const speakFn = vi.fn();
+    CoreVoice.maybeShowCTA('hello', speakFn);
+    const action = Notify.send.mock.calls[0][0].undo;
+    action();
+    expect(UpgradeModal.open).toHaveBeenCalledTimes(1);
+    expect(speakFn).not.toHaveBeenCalled();
+    // Critical: mute must stay locked. Unmuting on free tier would 402
+    // on the very next reply.
+    expect(CoreVoice.isMuted()).toBe(true);
+  });
+
+  it('still locks the gate so the upsell never fires twice', () => {
+    CoreVoice.maybeShowCTA('first', vi.fn());
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    Notify.send.mockClear();
+    const second = CoreVoice.maybeShowCTA('second', vi.fn());
+    expect(second).toBe(false);
+    expect(Notify.send).not.toHaveBeenCalled();
+  });
+
+  it('action survives a missing UpgradeModal global', () => {
+    delete globalThis.UpgradeModal;
+    CoreVoice.maybeShowCTA('hello', vi.fn());
+    const action = Notify.send.mock.calls[0][0].undo;
+    expect(() => action()).not.toThrow();
+  });
+
+  it('treats missing Subscription global as free tier', () => {
+    delete globalThis.Subscription;
+    CoreVoice.maybeShowCTA('hello', vi.fn());
+    expect(Notify.send.mock.calls[0][0].title).toBe('Voice is a NICE Pro feature');
   });
 });
