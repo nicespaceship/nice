@@ -23,6 +23,6 @@ Run all tests and ship if they pass. Deploy is automatic via Cloudflare Pages on
    - If on `main`, verify the Cloudflare Pages deployment via `gh api repos/nicespaceship/nice/deployments --jq '.[0] | {state, environment, created_at}'` or the Cloudflare dashboard
 
 ## Notes
-- Deploy target is **Cloudflare Pages** (auto-deploy from `main` branch). Vercel is no longer used.
+- Deploy target is **Cloudflare Pages** (auto-deploy from `main` branch).
 - Repo is `nicespaceship/nice`.
 - Never force-push, skip hooks, or deploy with failing tests.
