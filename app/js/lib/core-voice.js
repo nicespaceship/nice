@@ -438,5 +438,43 @@ const CoreVoice = (() => {
     return true;
   }
 
-  return { getConfig, isMuted, toggleMute, canSpeak, isSpeaking, speak, stop, hasExplicitMutePref, maybeShowCTA };
+  /* ── Theme intro greeting ──
+     Voiced one-liner played once per (tab-session, theme) when the user
+     activates a theme that declares a `voice.intro` string. Trigger fires
+     from Theme.set after CoreVoice.stop() — that's a user-gesture path
+     so audio autoplay works. Initial-page-load Theme.set may fail on
+     autoplay block (no gesture yet); the silent-fail in speak() handles
+     that and the session-greeted flag is only written after onStart fires.
+
+     Per-tab persistence (sessionStorage, not localStorage) keeps the
+     greeting feeling like a recurring "welcome" pattern rather than a
+     one-time discovery. Closing the tab + reopening replays it.
+
+     Only JARVIS ships an intro today (experiment). Adding `voice.intro`
+     to any other theme entry in nice.js opts that theme in. */
+  function _introSessionKey() { return 'nice-voice-intro-played'; }
+
+  function maybePlayThemeIntro() {
+    if (!getConfig() || isMuted() || _quotaExhausted) return false;
+    const tv = getConfig();
+    if (!tv.intro || typeof tv.intro !== 'string') return false;
+    const id = _activeThemeId();
+    let played = {};
+    try { played = JSON.parse(sessionStorage.getItem(_introSessionKey()) || '{}'); } catch {}
+    if (played[id]) return false;
+    speak(tv.intro, {
+      // Mark greeted only after onStart fires — autoplay-blocked attempts
+      // (initial page load, no user gesture yet) leave the flag unset so
+      // the next gesture-driven theme switch retries.
+      onStart: () => {
+        try {
+          played[id] = true;
+          sessionStorage.setItem(_introSessionKey(), JSON.stringify(played));
+        } catch {}
+      },
+    });
+    return true;
+  }
+
+  return { getConfig, isMuted, toggleMute, canSpeak, isSpeaking, speak, stop, hasExplicitMutePref, maybeShowCTA, maybePlayThemeIntro };
 })();
