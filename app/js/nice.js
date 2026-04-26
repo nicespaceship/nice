@@ -118,7 +118,7 @@ const Theme = (() => {
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'delamain', speed:1.0, model:'eleven_turbo_v2_5', label:'Delamain',
+      voice:{ provider:'elevenlabs', voice:'delamain', speed:1.0, model:'eleven_v3', label:'Delamain',
         // Cyberpunk 2077 AI taxi-dispatch — calm British butler-AI vibe.
         // Resolves to ELEVENLABS_DELAMAIN_VOICE_ID server-side. Slightly
         // tighter than Morpheus for corporate-AI consistency.
@@ -134,7 +134,7 @@ const Theme = (() => {
     { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, model:'eleven_turbo_v2_5', label:'Announcer',
+      voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, model:'eleven_v3', label:'Announcer',
         // Classic 1990s arcade-cabinet announcer — Mortal Kombat / Street
         // Fighter / NBA Jam vibe. Resolves to ELEVENLABS_ANNOUNCER_VOICE_ID
         // server-side. Low stability + high style for full arcade drama —
@@ -143,7 +143,7 @@ const Theme = (() => {
     { id:'office', name:'The Office', builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
       data:{ colors:{ '--bg':'#e8e8ec','--bg2':'#dcdce0','--bg-alt':'#f0f0f2','--surface':'rgba(0,0,0,0.02)','--surface2':'#f5f5f7','--border':'#d4d4d8','--border-hi':'#0F52BA','--accent':'#0F52BA','--accent2':'#3b7dd8','--text':'#18181b','--text-muted':'#52525b','--text-dim':'#a1a1aa','--glow':'0 0 0 1px rgba(15,82,186,0.08)','--glow-hi':'0 0 12px rgba(15,82,186,0.12)','--panel-bg':'#ffffff','--panel-border':'#d4d4d8','--nav-bg':'#7285A5','--nav-bg-dk':'#0E4C92','--nav-text':'#ffffff','--nav-text-muted':'rgba(255,255,255,0.85)','--nav-text-dim':'rgba(255,255,255,0.6)','--nav-border':'rgba(255,255,255,0.15)','--nav-surface':'rgba(255,255,255,0.1)','--nav-surface2':'rgba(255,255,255,0.15)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_turbo_v2_5', label:'Dwight',
+      voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_v3', label:'Dwight',
         // Dwight K. Schrute — declarative, emphatic, ASSISTANT TO the regional
         // manager. Resolves to ELEVENLABS_DWIGHT_VOICE_ID server-side. Low
         // stability + style 0.2 amplify the stressed-emphasis delivery.
@@ -151,7 +151,7 @@ const Theme = (() => {
     { id:'office-dark', name:'The Office', builtin:false, accent:'#a5b4fc', preview:['#09090b','#a5b4fc','#e0e7ff'],
       data:{ colors:{ '--bg':'#09090b','--bg2':'#18181b','--bg-alt':'#18181b','--surface':'rgba(255,255,255,0.03)','--surface2':'#27272a','--border':'#3f3f46','--border-hi':'#71717a','--accent':'#e0e7ff','--accent2':'#a5b4fc','--text':'#fafafa','--text-muted':'#a1a1aa','--text-dim':'#3f3f46','--glow':'0 0 0 1px rgba(224,231,255,0.06)','--glow-hi':'0 0 12px rgba(224,231,255,0.08)','--panel-bg':'rgba(24,24,27,0.75)','--panel-border':'#3f3f46','--nav-bg':'#111114' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
-      voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_turbo_v2_5', label:'Dwight',
+      voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_v3', label:'Dwight',
         // Drill-sergeant Dwight — slightly tighter than regular Office for the
         // controlled-authoritarian read, less style for cold edge over warmth.
         settings:{ stability:0.65, similarity_boost:0.9, style:0.15, use_speaker_boost:true } } },
