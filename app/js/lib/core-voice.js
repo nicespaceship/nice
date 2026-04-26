@@ -3,12 +3,18 @@
    Single source of truth for theme-pluggable text-to-speech. Each theme
    declares its voice on its `THEMES` entry:
 
-     { id:'jarvis', voice: { provider, voice, speed, label } }
+     { id:'jarvis', voice: { provider, voice, speed, model?, label } }
 
    `provider` and `voice` are forwarded to the `nice-tts` edge function
    which resolves them to a backend voice ID (ElevenLabs etc.). Themes
    without a registered voice are silent — `getConfig()` returns null
    and `canSpeak()` is false.
+
+   `model` is optional and ElevenLabs-only — when set on a theme, the
+   edge function uses that model_id (e.g. `eleven_v3`) instead of the
+   default `eleven_turbo_v2_5`. Use it for theatrical personas where
+   expressiveness > latency. Edge function allowlists the value, so an
+   unknown string falls back to turbo silently.
 
    Mute state is persisted per-theme in localStorage so toggling
    J.A.R.V.I.S. off doesn't also mute future themed voices.
@@ -101,7 +107,7 @@ const CoreVoice = (() => {
           'apikey': SB._key,
           ...(session ? { 'Authorization': 'Bearer ' + session.access_token } : {}),
         },
-        body: JSON.stringify({ text, provider: tv.provider, voice: tv.voice, speed: tv.speed, voice_settings: tv.settings }),
+        body: JSON.stringify({ text, provider: tv.provider, voice: tv.voice, speed: tv.speed, model: tv.model, voice_settings: tv.settings }),
       });
 
       if (!res.ok) throw new Error('TTS ' + res.status);
