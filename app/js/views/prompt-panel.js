@@ -81,7 +81,12 @@ const PromptPanel = (() => {
   /* ── Conversation Flow Engine ── */
   let _activeFlow = null; // { steps, currentStep, answers, onComplete, onCancel }
 
-  /* ── Multi-turn Agent Conversation (via AgentExecutor.converse) ── */
+  /* ── Multi-turn Agent Conversation (via AgentExecutor.converse) ──
+     Casual chat surface — does NOT create a `mission_runs` row. The
+     `ship_log` writes inside AgentExecutor are the only persistence. See
+     CLAUDE.md "Chat surface tiers" for the rationale and the future-
+     direction note for when audit/cancel/analytics on agent-with-tools
+     chat becomes worth the consolidation. */
   let _activeConversation = null; // { controller, agentBp, agentLabel }
 
   /* ── Generic NICE responses (no blueprint selected) ── */
@@ -1902,6 +1907,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
    * Stream a response from the LLM via edge function.
    * All LLM calls go through the server-side proxy — no API keys in the browser.
    * Returns null if no edge function is available (falls back to mock).
+   *
+   * Casual chat surface — does NOT create a `mission_runs` row (no Run
+   * lifecycle, no audit, no cancel). See CLAUDE.md "Chat surface tiers"
+   * for why this is intentional and the future-direction note for when
+   * audit/analytics demand makes consolidation worthwhile.
+   *
    * @param {string} userText
    * @param {object} opts  { onChunk: (text) => void }
    * @returns {Promise<{text: string, model: string}|null>}
