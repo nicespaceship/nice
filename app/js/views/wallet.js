@@ -323,13 +323,20 @@ const WalletView = (() => {
             // The ledger writer uses these types:
             //   'topup'            — one-time pool credit (Stripe payment link)
             //   'subscription_grant'  — monthly subscription grant
-            //   'debit'            — per-model use by nice-ai
+            //   'debit'            — per-model use by nice-ai OR voice clip by nice-tts
+            // Voice debits are tagged with `metadata.source = 'nice-tts'`
+            // so they can be surfaced separately from LLM debits — needed
+            // for multiplier verification (compare TTS rows to ElevenLabs
+            // dashboard credits and recalibrate MODEL_MULTIPLIERS).
             const isCredit = tx.type !== 'debit';
-            const icon = tx.type === 'topup' ? 'credit-card'
+            const isTts = tx.type === 'debit' && tx.metadata?.source === 'nice-tts';
+            const icon = isTts ? 'mic'
+              : tx.type === 'topup' ? 'credit-card'
               : tx.type === 'subscription_grant' ? 'gift'
               : 'bot';
             const poolName = _poolLabel(tx.pool);
-            const label = tx.type === 'topup' ? `Top-up (${poolName})`
+            const label = isTts ? `Voice (${tx.model || 'tts'})`
+              : tx.type === 'topup' ? `Top-up (${poolName})`
               : tx.type === 'subscription_grant' ? `${poolName} allowance`
               : tx.model ? `${tx.model}` : 'Agent usage';
             const date = new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
