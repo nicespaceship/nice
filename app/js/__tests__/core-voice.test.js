@@ -259,6 +259,11 @@ describe('CoreVoice.maybeShowCTA', () => {
     expect(typeof call.undo).toBe('function');
   });
 
+  it('marks the CTA as persistent so the 5s auto-dismiss does not close it', () => {
+    CoreVoice.maybeShowCTA('hello', vi.fn());
+    expect(Notify.send.mock.calls[0][0].persistent).toBe(true);
+  });
+
   it('locks the gate immediately so it never fires twice for the same theme', () => {
     CoreVoice.maybeShowCTA('first', vi.fn());
     expect(Notify.send).toHaveBeenCalledTimes(1);

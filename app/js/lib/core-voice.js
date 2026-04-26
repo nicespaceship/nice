@@ -247,6 +247,10 @@ const CoreVoice = (() => {
       message: `Hear replies aloud in the ${tv.label || 'current'} voice. You can mute anytime via the speaker toggle.`,
       type: 'system',
       actionLabel: 'Talk to me',
+      // Persistent: this is a one-shot discovery CTA. A 5s auto-dismiss
+      // means most users miss it entirely (caught during the #296 smoke
+      // test). Toast stays until manual close or action click.
+      persistent: true,
       undo: () => {
         _writeMute(false);
         if (typeof speakFn === 'function') {

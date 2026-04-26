@@ -31,7 +31,7 @@ const Notify = (() => {
    * @param {string} opts.message
    * @param {string} opts.type - one of: agent_error, task_complete, task_failed, fleet_deployed, budget_alert, system
    */
-  function send({ title, message, type = 'system', undo, actionLabel }) {
+  function send({ title, message, type = 'system', undo, actionLabel, persistent }) {
     // Check settings
     const settings = JSON.parse(localStorage.getItem(Utils.KEYS.settings) || '{}');
     if (settings.notifications === false) return;
@@ -52,9 +52,12 @@ const Notify = (() => {
       } catch(e) { /* mobile may not support constructor */ }
     }
 
-    // In-app notification (configurable duration)
+    // In-app notification. `persistent: true` skips the auto-dismiss timer
+    // — for one-shot critical messages (e.g. discovery CTAs) where a 5s
+    // toast that the user might miss isn't acceptable. Only manual close
+    // (X button or action click) dismisses it.
     const duration = (settings.toastDuration || 5) * 1000;
-    _showToast(title, message, type, duration, undo, actionLabel);
+    _showToast(title, message, type, duration, undo, actionLabel, persistent);
 
     // Store to Supabase
     const user = State.get('user');
@@ -72,7 +75,7 @@ const Notify = (() => {
     _updateBadge();
   }
 
-  function _showToast(title, message, type, duration = 5000, undoCallback, actionLabel) {
+  function _showToast(title, message, type, duration = 5000, undoCallback, actionLabel, persistent) {
     const colors = {
       agent_error: '#ef4444', task_complete: '#22c55e', task_failed: '#ef4444',
       fleet_deployed: '#6366f1', budget_alert: '#f59e0b', system: 'var(--accent)',
@@ -111,17 +114,21 @@ const Notify = (() => {
 
     container.appendChild(toast);
 
-    // Auto dismiss after configured duration
-    const timer = setTimeout(() => _dismiss(toast), duration);
+    // Auto dismiss after configured duration unless persistent. Persistent
+    // toasts only go away on manual close (X) or action click — used for
+    // one-shot critical messages where missing the toast would defeat the
+    // point (discovery CTAs, must-acknowledge prompts).
+    const timer = persistent ? null : setTimeout(() => _dismiss(toast), duration);
+    const cancelTimer = () => { if (timer) clearTimeout(timer); };
 
     toast.querySelector('.notify-toast-close')?.addEventListener('click', () => {
-      clearTimeout(timer);
+      cancelTimer();
       _dismiss(toast);
     });
 
     if (undoCallback) {
       toast.querySelector('.toast-undo')?.addEventListener('click', () => {
-        clearTimeout(timer);
+        cancelTimer();
         try { undoCallback(); } catch(e) { console.error('[NICE] Undo callback error:', e); }
         _dismiss(toast);
       });
