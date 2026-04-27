@@ -335,35 +335,74 @@ const ShipSetupWizard = (() => {
     _renderSlotDropdowns(container);
   }
 
-  /* ── Fallback: match agents to slots by role/category ── */
+  /* ── Fallback: match agents to slots by role/category ──
+     If the blueprint declares crew_roles / crew_overrides, route through
+     CrewMatcher (rarity-aware role matching + pinned overrides).
+     Otherwise fall back to the legacy slot.label substring matcher,
+     but pick the highest-rarity unused agent instead of the first
+     alphabetical one — fixes the "every ship gets the same 6 A-named
+     agents" bug for the 237 catalog ships that have no crew spec. */
   function _fallbackAssign() {
     const sc = _getShipClass();
     const agents = _getAgentCatalog();
     const shipRarity = _blueprint.rarity || 'Common';
-    const used = new Set();
+    const cfg = _blueprint.config || {};
+    const roles = Array.isArray(cfg.crew_roles) ? cfg.crew_roles : [];
+    const overrides = (cfg.crew_overrides && typeof cfg.crew_overrides === 'object') ? cfg.crew_overrides : {};
+    const hasSpec = roles.length > 0 || Object.keys(overrides).length > 0;
+
+    if (hasSpec && typeof CrewMatcher !== 'undefined') {
+      const next = CrewMatcher.assignCrew(
+        { roles, overrides },
+        {
+          agents,
+          slotCount: sc.slots.length,
+          shipMaxRarity: shipRarity,
+          canSlot: _canSlot,
+          preassigned: _data.slotAssignments,
+        }
+      );
+      for (let i = 0; i < sc.slots.length; i++) {
+        if (_data.slotAssignments[i]) continue;
+        if (next[i]) _data.slotAssignments[i] = next[i];
+      }
+      return;
+    }
+
+    // Legacy path — improved: pick highest-rarity match, not first alphabetical
+    const used = new Set(Object.values(_data.slotAssignments).filter(Boolean));
+    const rarityRank = { Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
+    const rank = (a) => rarityRank[_agentRarity(a)] || 0;
 
     for (let i = 0; i < sc.slots.length; i++) {
-      // Skip slots that already have assignments (e.g. from blueprint crew)
       if (_data.slotAssignments[i]) continue;
 
       const slot = sc.slots[i];
       const label = (slot.label || '').toLowerCase();
-      const match = agents.find(a => {
-        if (used.has(a.id)) return false;
-        if (!_canSlot(shipRarity, _agentRarity(a))) return false;
+      let bestMatch = null, bestMatchRank = -1, bestMatchName = '';
+      let bestAny = null, bestAnyRank = -1, bestAnyName = '';
+
+      for (const a of agents) {
+        if (used.has(a.id)) continue;
+        if (!_canSlot(shipRarity, _agentRarity(a))) continue;
+        const r = rank(a);
+        const name = a.name || '';
+        // Track best label-match candidate
         const cat = (a.category || a.config?.role || '').toLowerCase();
-        const name = (a.name || '').toLowerCase();
-        return cat.includes(label) || name.includes(label) || label.includes(cat);
-      });
-      if (match) {
-        _data.slotAssignments[i] = match.id;
-        used.add(match.id);
-      } else {
-        const any = agents.find(a => !used.has(a.id) && _canSlot(shipRarity, _agentRarity(a)));
-        if (any) {
-          _data.slotAssignments[i] = any.id;
-          used.add(any.id);
+        const isMatch = label && (cat.includes(label) || name.toLowerCase().includes(label) || (cat && label.includes(cat)));
+        if (isMatch && (r > bestMatchRank || (r === bestMatchRank && name < bestMatchName))) {
+          bestMatch = a; bestMatchRank = r; bestMatchName = name;
         }
+        // Track best any-fits candidate (used only if no match found)
+        if (r > bestAnyRank || (r === bestAnyRank && name < bestAnyName)) {
+          bestAny = a; bestAnyRank = r; bestAnyName = name;
+        }
+      }
+
+      const pick = bestMatch || bestAny;
+      if (pick) {
+        _data.slotAssignments[i] = pick.id;
+        used.add(pick.id);
       }
     }
   }
