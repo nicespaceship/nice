@@ -125,6 +125,7 @@ loadScriptGlobal('lib/tool-registry.js');
 loadScriptGlobal('lib/virtual-fs.js');
 loadScriptGlobal('lib/browser-tools.js');
 loadScriptGlobal('lib/blueprint-utils.js');
+loadScriptGlobal('lib/crew-matcher.js');
 loadScriptGlobal('lib/card-renderer.js');
 loadScriptGlobal('lib/agent-memory.js');
 loadScriptGlobal('lib/ship-behaviors.js');
