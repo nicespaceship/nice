@@ -1681,8 +1681,9 @@
   color:var(--accent);
   white-space:nowrap;
   max-width:180px; overflow:hidden; text-overflow:ellipsis;
-  pointer-events:none;
+  text-decoration:none;
 }
+.mobile-bar-theme:hover { opacity:.8; }
 @media (max-width:768px) {
   .mobile-bar-theme { display:inline-block; }
 }
