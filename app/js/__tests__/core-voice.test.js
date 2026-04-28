@@ -612,9 +612,11 @@ describe('CoreVoice.maybeShowCTA — Free path', () => {
 });
 
 // Voiced intro greeting played once per (tab-session, theme) when the user
-// activates a theme that declares `voice.intro`. Wired into Theme.set so
-// the trigger is always a user-gesture path — autoplay restrictions only
-// bite on initial page load (handled by the onStart-gated session flag).
+// activates a theme that declares `voice.intro`. Two paths:
+// (1) user-gesture present (theme switch click) → play immediately
+// (2) no gesture (page load / reload) → defer to first pointerdown/keydown/
+//     touchstart on window with a 30s timeout. Autoplay policy blocks the
+//     immediate path on fresh page loads, hence the deferred branch.
 describe('CoreVoice.maybePlayThemeIntro', () => {
   beforeEach(() => {
     loadCoreVoice();
@@ -633,6 +635,12 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
       _key: 'anon-key',
     };
     globalThis.fetch = vi.fn(async () => new Response('', { status: 200, headers: { 'Content-Type': 'audio/mpeg' } }));
+    // Default: simulate user has interacted with the page so existing tests
+    // exercise the immediate-play path. The deferred-gesture test overrides.
+    Object.defineProperty(navigator, 'userActivation', {
+      value: { hasBeenActive: true, isActive: true },
+      configurable: true,
+    });
   });
 
   it('returns false when muted', () => {
@@ -674,5 +682,36 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
       : null;
     localStorage.setItem('nice-voice-off', JSON.stringify({ jarvis: false, cyberpunk: false }));
     expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+  });
+
+  it('defers play to first user gesture on fresh page load (no userActivation)', async () => {
+    Object.defineProperty(navigator, 'userActivation', {
+      value: { hasBeenActive: false, isActive: false },
+      configurable: true,
+    });
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    await new Promise(r => setTimeout(r, 0));
+    // No fetch yet — autoplay would have been blocked.
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    // First user gesture on the page kicks the deferred play.
+    window.dispatchEvent(new Event('pointerdown'));
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(globalThis.fetch.mock.calls[0][1].body);
+    expect(body.text).toBe('All systems online, sir.');
+  });
+
+  it('deferred intro is dropped when session flag was written before gesture', async () => {
+    Object.defineProperty(navigator, 'userActivation', {
+      value: { hasBeenActive: false, isActive: false },
+      configurable: true,
+    });
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    // Simulate another path writing the played flag (e.g., a sibling tab
+    // or a pre-emptive write — not realistic today, but defensive).
+    sessionStorage.setItem('nice-voice-intro-played', JSON.stringify({ jarvis: true }));
+    window.dispatchEvent(new Event('pointerdown'));
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

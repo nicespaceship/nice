@@ -440,11 +440,15 @@ const CoreVoice = (() => {
 
   /* ── Theme intro greeting ──
      Voiced one-liner played once per (tab-session, theme) when the user
-     activates a theme that declares a `voice.intro` string. Trigger fires
-     from Theme.set after CoreVoice.stop() — that's a user-gesture path
-     so audio autoplay works. Initial-page-load Theme.set may fail on
-     autoplay block (no gesture yet); the silent-fail in speak() handles
-     that and the session-greeted flag is only written after onStart fires.
+     activates a theme that declares a `voice.intro` string.
+
+     Two trigger paths:
+     1. Theme switch via click (`navigator.userActivation.hasBeenActive`
+        is true) — play immediately. Autoplay is allowed.
+     2. Page load / reload (no gesture yet) — defer to first user gesture
+        on the page (pointerdown / keydown / touchstart). Autoplay would
+        otherwise be blocked silently. 30s timeout drops the intro if no
+        interaction happens — avoids a delayed greeting an hour later.
 
      Per-tab persistence: silent on theme switch-away/back within one
      page load, replays on reload or new tab. sessionStorage normally
@@ -456,6 +460,38 @@ const CoreVoice = (() => {
   function _introSessionKey() { return 'nice-voice-intro-played'; }
   try { sessionStorage.removeItem(_introSessionKey()); } catch {}
 
+  let _pendingIntroCleanup = null;
+
+  function _markIntroPlayed(id) {
+    try {
+      const cur = JSON.parse(sessionStorage.getItem(_introSessionKey()) || '{}');
+      cur[id] = true;
+      sessionStorage.setItem(_introSessionKey(), JSON.stringify(cur));
+    } catch {}
+  }
+
+  function _scheduleIntroOnGesture(intro, id) {
+    if (_pendingIntroCleanup) return;
+    const events = ['pointerdown', 'keydown', 'touchstart'];
+    const opts = { once: true, capture: true };
+    const playOnce = () => {
+      if (_pendingIntroCleanup) _pendingIntroCleanup();
+      let played = {};
+      try { played = JSON.parse(sessionStorage.getItem(_introSessionKey()) || '{}'); } catch {}
+      if (played[id]) return;
+      speak(intro, { onStart: () => _markIntroPlayed(id) });
+    };
+    events.forEach((e) => window.addEventListener(e, playOnce, opts));
+    const timeoutId = setTimeout(() => {
+      if (_pendingIntroCleanup) _pendingIntroCleanup();
+    }, 30000);
+    _pendingIntroCleanup = () => {
+      events.forEach((e) => window.removeEventListener(e, playOnce, opts));
+      clearTimeout(timeoutId);
+      _pendingIntroCleanup = null;
+    };
+  }
+
   function maybePlayThemeIntro() {
     if (!getConfig() || isMuted() || _quotaExhausted) return false;
     const tv = getConfig();
@@ -464,17 +500,16 @@ const CoreVoice = (() => {
     let played = {};
     try { played = JSON.parse(sessionStorage.getItem(_introSessionKey()) || '{}'); } catch {}
     if (played[id]) return false;
-    speak(tv.intro, {
-      // Mark greeted only after onStart fires — autoplay-blocked attempts
-      // (initial page load, no user gesture yet) leave the flag unset so
-      // the next gesture-driven theme switch retries.
-      onStart: () => {
-        try {
-          played[id] = true;
-          sessionStorage.setItem(_introSessionKey(), JSON.stringify(played));
-        } catch {}
-      },
-    });
+
+    const hasGesture = !!(typeof navigator !== 'undefined'
+                       && navigator.userActivation
+                       && navigator.userActivation.hasBeenActive);
+
+    if (hasGesture) {
+      speak(tv.intro, { onStart: () => _markIntroPlayed(id) });
+    } else {
+      _scheduleIntroOnGesture(tv.intro, id);
+    }
     return true;
   }
 
