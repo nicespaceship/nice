@@ -679,60 +679,16 @@ const Gamification = (() => {
     return { stardate, verb };
   }
 
-  /* ─── Confetti Burst ─── */
-
-  function _spawnConfetti(container) {
-    const colors = ['var(--accent)', 'var(--accent2)', '#ffd700', '#ff6b6b', '#4ecdc4', '#a78bfa'];
-    const frag = document.createDocumentFragment();
-    for (let i = 0; i < 40; i++) {
-      const p = document.createElement('span');
-      p.className = 'confetti-particle';
-      p.style.cssText = `
-        --x: ${(Math.random() - 0.5) * 600}px;
-        --y: ${-200 - Math.random() * 400}px;
-        --r: ${Math.random() * 720 - 360}deg;
-        --d: ${0.6 + Math.random() * 0.8}s;
-        background: ${colors[i % colors.length]};
-        left: 50%; top: 50%;
-      `;
-      frag.appendChild(p);
-    }
-    container.appendChild(frag);
-  }
-
-  /* ─── Achievement Unlock Overlay ─── */
+  /* ─── Achievement / Rank-Up Notifications ───
+     Both used to spawn full-screen dim-backdrop overlays that blocked
+     interaction for 4-5s. Felt like the app froze. Now they fire only
+     the toast — same info, no modal interruption. */
 
   function _showAchievementUnlock(ach) {
     if (typeof Notify !== 'undefined') {
       Notify.send({ title: 'Achievement Unlocked!', message: `${ach.icon} ${ach.name}`, type: 'system' });
     }
-
-    // Count unlocked for progress
-    const unlocked = getUnlockedAchievements();
-    const total = ACHIEVEMENTS.length;
-    const pct = Math.round((unlocked.length / total) * 100);
-
-    const overlay = document.createElement('div');
-    overlay.className = 'achievement-unlock';
-    overlay.innerHTML = `
-      <div class="achievement-unlock-card">
-        <div class="achievement-unlock-icon">${ach.icon}</div>
-        <h3>Achievement Unlocked!</h3>
-        <p class="ach-title">${ach.name}</p>
-        <p class="ach-desc">${ach.desc}</p>
-        <div class="ach-progress">
-          <div class="ach-progress-bar" style="width:${pct}%"></div>
-          <span class="ach-progress-label">${unlocked.length}/${total} achievements</span>
-        </div>
-      </div>
-    `;
-    _spawnConfetti(overlay.querySelector('.achievement-unlock-card'));
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', () => overlay.remove());
-    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 4000);
   }
-
-  /* ─── Rank-Up Ceremony Overlay ─── */
 
   function _showRankUpOverlay(newRank) {
     if (typeof Notify !== 'undefined') {
@@ -742,43 +698,6 @@ const Gamification = (() => {
         type: 'system',
       });
     }
-
-    // Build unlock description
-    const unlocks = [];
-    if (newRank.slots) unlocks.push(`${newRank.slots} crew slots`);
-    if (newRank.maxRarity) unlocks.push(`${newRank.maxRarity} blueprints`);
-    const unlockText = unlocks.length ? `Unlocked: ${unlocks.join(' · ')}` : '';
-
-    // Next rank progress
-    const currentXP = getXP();
-    const rankIdx = RANKS.findIndex(r => r.name === newRank.name);
-    const nextRank = RANKS[rankIdx + 1];
-    let progressHTML = '';
-    if (nextRank) {
-      const pct = Math.min(100, Math.round(((currentXP - newRank.xp) / (nextRank.xp - newRank.xp)) * 100));
-      progressHTML = `
-        <div class="rankup-progress">
-          <div class="rankup-progress-bar" style="width:${pct}%"></div>
-          <span class="rankup-progress-label">Next: ${nextRank.badge} ${nextRank.name}</span>
-        </div>`;
-    }
-
-    const overlay = document.createElement('div');
-    overlay.className = 'rankup-overlay';
-    overlay.innerHTML = `
-      <div class="rankup-card">
-        <div class="rankup-badge">${newRank.badge}</div>
-        <h2>Rank Up!</h2>
-        <h3>${newRank.name}</h3>
-        ${unlockText ? `<p class="rankup-unlocks">${unlockText}</p>` : ''}
-        <p class="rankup-congrats">Congratulations, you've been promoted!</p>
-        ${progressHTML}
-      </div>
-    `;
-    _spawnConfetti(overlay.querySelector('.rankup-card'));
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', () => overlay.remove());
-    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 5000);
   }
 
   /* ─── Agent Progression ─── */
