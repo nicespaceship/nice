@@ -58,7 +58,8 @@ const Theme = (() => {
         // Fishburne-style mentor baritone. Resolves to
         // ELEVENLABS_MORPHEUS_VOICE_ID server-side. Style 0.1 unlocks the
         // prophetic emphasis without tipping into theatrical.
-        settings:{ stability:0.75, similarity_boost:0.9, style:0.1, use_speaker_boost:true } } },
+        settings:{ stability:0.75, similarity_boost:0.9, style:0.1, use_speaker_boost:true },
+        intro:'Welcome, Neo.' } },
     { id:'lcars', name:'LCARS', builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' },
       reactor:{ html:() => DefaultCore.html() },
@@ -114,12 +115,12 @@ const Theme = (() => {
       // to the `nice-tts` edge function. `label` is shown on the mute toggle.
       // `settings` (optional) tunes the voice per-request — needed for library
       // voices whose saved defaults are locked.
-      // `intro` is the one-line greeting played once per session when the
-      // user activates this theme (CoreVoice.maybePlayThemeIntro). Cost
-      // is ~1 standard token per JARVIS session for Pro users, $0 for
-      // free (gated by tier-aware mute). Only JARVIS has one for now —
-      // experiment to see whether voiced UI moments land before adding
-      // intros to other themes.
+      // `intro` is the one-line greeting played on arrival at this theme
+      // (CoreVoice.maybePlayThemeIntro). Plays when the theme just changed
+      // from something else to this one; silent while dwelling. Cost is
+      // ~1 standard token per arrival for Pro users, $0 for free (gated
+      // by tier-aware mute). Pattern proven on JARVIS — themes with a
+      // distinctive voiced persona opt in by adding `intro` here.
       voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, model:'eleven_turbo_v2_5', label:'J.A.R.V.I.S.',
         intro:'All systems online, sir. Standing by.' } },
     { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
@@ -129,7 +130,8 @@ const Theme = (() => {
         // Cyberpunk 2077 AI taxi-dispatch — calm British butler-AI vibe.
         // Resolves to ELEVENLABS_DELAMAIN_VOICE_ID server-side. Slightly
         // tighter than Morpheus for corporate-AI consistency.
-        settings:{ stability:0.8, similarity_boost:0.9, style:0.05, use_speaker_boost:true } } },
+        settings:{ stability:0.8, similarity_boost:0.9, style:0.05, use_speaker_boost:true },
+        intro:'Welcome to Night City.' } },
     { id:'rx-78-2', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
@@ -146,7 +148,8 @@ const Theme = (() => {
         // Fighter / NBA Jam vibe. Resolves to ELEVENLABS_ANNOUNCER_VOICE_ID
         // server-side. Low stability + high style for full arcade drama —
         // this is the persona where character IS the value.
-        settings:{ stability:0.55, similarity_boost:0.85, style:0.3, use_speaker_boost:true } } },
+        settings:{ stability:0.55, similarity_boost:0.85, style:0.3, use_speaker_boost:true },
+        intro:'Player One — ready!' } },
     { id:'office', name:'The Office', builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
       data:{ colors:{ '--bg':'#e8e8ec','--bg2':'#dcdce0','--bg-alt':'#f0f0f2','--surface':'rgba(0,0,0,0.02)','--surface2':'#f5f5f7','--border':'#d4d4d8','--border-hi':'#0F52BA','--accent':'#0F52BA','--accent2':'#3b7dd8','--text':'#18181b','--text-muted':'#52525b','--text-dim':'#a1a1aa','--glow':'0 0 0 1px rgba(15,82,186,0.08)','--glow-hi':'0 0 12px rgba(15,82,186,0.12)','--panel-bg':'#ffffff','--panel-border':'#d4d4d8','--nav-bg':'#7285A5','--nav-bg-dk':'#0E4C92','--nav-text':'#ffffff','--nav-text-muted':'rgba(255,255,255,0.85)','--nav-text-dim':'rgba(255,255,255,0.6)','--nav-border':'rgba(255,255,255,0.15)','--nav-surface':'rgba(255,255,255,0.1)','--nav-surface2':'rgba(255,255,255,0.15)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
@@ -154,14 +157,16 @@ const Theme = (() => {
         // Dwight K. Schrute — declarative, emphatic, ASSISTANT TO the regional
         // manager. Resolves to ELEVENLABS_DWIGHT_VOICE_ID server-side. Low
         // stability + style 0.2 amplify the stressed-emphasis delivery.
-        settings:{ stability:0.55, similarity_boost:0.9, style:0.2, use_speaker_boost:true } } },
+        settings:{ stability:0.55, similarity_boost:0.9, style:0.2, use_speaker_boost:true },
+        intro:'Identify yourself.' } },
     { id:'office-dark', name:'The Office', builtin:false, accent:'#a5b4fc', preview:['#09090b','#a5b4fc','#e0e7ff'],
       data:{ colors:{ '--bg':'#09090b','--bg2':'#18181b','--bg-alt':'#18181b','--surface':'rgba(255,255,255,0.03)','--surface2':'#27272a','--border':'#3f3f46','--border-hi':'#71717a','--accent':'#e0e7ff','--accent2':'#a5b4fc','--text':'#fafafa','--text-muted':'#a1a1aa','--text-dim':'#3f3f46','--glow':'0 0 0 1px rgba(224,231,255,0.06)','--glow-hi':'0 0 12px rgba(224,231,255,0.08)','--panel-bg':'rgba(24,24,27,0.75)','--panel-border':'#3f3f46','--nav-bg':'#111114' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_v3', label:'Dwight',
         // Drill-sergeant Dwight — slightly tighter than regular Office for the
         // controlled-authoritarian read, less style for cold edge over warmth.
-        settings:{ stability:0.65, similarity_boost:0.9, style:0.15, use_speaker_boost:true } } },
+        settings:{ stability:0.65, similarity_boost:0.9, style:0.15, use_speaker_boost:true },
+        intro:'Identify yourself.' } },
   ];
 
   BUILTIN = THEMES.filter(t => t.builtin).map(t => t.id);
@@ -214,6 +219,11 @@ const Theme = (() => {
     } else {
       // Non-built-in: look up in THEMES by id (custom themes)
       if (!t) return;
+      // Set data-theme so theme-aware modules (CoreVoice, CoreReactor,
+      // command-palette, prompt-panel's theme MutationObserver) can identify
+      // the active theme. Non-builtin themes still apply via inline custom
+      // properties below — no CSS rule keys on [data-theme="office-dark"].
+      document.documentElement.setAttribute('data-theme', name);
       const td = t.data;
       if (td.colors) Object.entries(td.colors).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
       if (td.fonts) {

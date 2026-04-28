@@ -3126,10 +3126,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (typeof State !== 'undefined' && State.on) {
       State.on('enabled_models', () => _populateModelDropdown());
     }
-    // Theme voice: stop playback on theme change, sync mute button + reactor
+    // Theme voice: stop playback on theme change, sync mute button + reactor.
+    // Skip the stop for themes that ship a `voice.intro` — Theme.set fires
+    // their arrival greeting via CoreVoice.maybePlayThemeIntro right after
+    // setAttribute, and the observer's microtask would otherwise abort the
+    // intro's TTS fetch before it lands.
     _themeObserver = new MutationObserver(() => {
       const theme = document.documentElement.getAttribute('data-theme');
-      if (theme !== 'jarvis') _ttsStop();
+      const t = (typeof Theme !== 'undefined' && Theme.getTheme) ? Theme.getTheme(theme) : null;
+      const hasIntro = !!(t && t.voice && t.voice.intro);
+      if (!hasIntro) _ttsStop();
       _syncVoiceToggle();
     });
     _themeObserver.observe(document.documentElement, {
