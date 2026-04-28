@@ -19,6 +19,7 @@ import {
   parseJudgeResponse,
   judgePersona,
   compactPersonaForJudge,
+  resolveCallsign,
   truncateExcerpt,
   DEFAULT_PASS_THRESHOLD,
   REPLY_PROMPT_CAP,
@@ -138,6 +139,51 @@ describe('compactPersonaForJudge', () => {
     };
     const c = compactPersonaForJudge(persona);
     expect(c.forbidden_patterns).toEqual(['as an AI', "I'm just a", 'plain string pattern']);
+  });
+});
+
+// ─── Callsign interpolation ─────────────────────────────────────────────
+
+describe('resolveCallsign', () => {
+  it('returns the explicit callsign when provided', () => {
+    expect(resolveCallsign(findPersona('jarvis'), 'Tony')).toBe('Tony');
+  });
+  it('falls back to persona.data.defaultCallsign', () => {
+    expect(resolveCallsign(findPersona('jarvis'))).toBe('Sir');
+    expect(resolveCallsign(findPersona('hal-9000'))).toBe('Dave');
+    expect(resolveCallsign(findPersona('office-dark'))).toBe('Captain');
+  });
+  it('hard-falls-back to "Commander" when no persona default', () => {
+    expect(resolveCallsign({})).toBe('Commander');
+    expect(resolveCallsign(null)).toBe('Commander');
+  });
+  it('treats empty string as no callsign (falls through)', () => {
+    expect(resolveCallsign(findPersona('jarvis'), '')).toBe('Sir');
+  });
+});
+
+describe('buildJudgePrompt — callsign interpolation', () => {
+  it('interpolates {callsign} in hard_rules using persona default', () => {
+    const persona = findPersona('jarvis');
+    const prompt = buildJudgePrompt(persona, 'Right away, Sir.');
+    // Persona has 'Always address the user as {callsign}.' → must render with "Sir".
+    expect(prompt).toContain('Always address the user as Sir.');
+    // No raw placeholder should leak into hard_rules block.
+    const hardRulesStart = prompt.indexOf('### Hard rules');
+    const lexiconStart = prompt.indexOf('### Lexicon');
+    const hardRulesBlock = prompt.slice(hardRulesStart, lexiconStart);
+    expect(hardRulesBlock).not.toContain('{callsign}');
+  });
+  it('respects explicit callsign arg over persona default', () => {
+    const persona = findPersona('jarvis');
+    const prompt = buildJudgePrompt(persona, 'Right away, Mr Stark.', 'Mr Stark');
+    expect(prompt).toContain('Always address the user as Mr Stark.');
+    expect(prompt).not.toContain('Always address the user as Sir.');
+  });
+  it('uses "Commander" when persona has no defaultCallsign', () => {
+    const persona = { theme_id: 'foo', hard_rules: ['Address the user as {callsign}.'] };
+    const prompt = buildJudgePrompt(persona, 'hi');
+    expect(prompt).toContain('Address the user as Commander.');
   });
 });
 
@@ -312,6 +358,18 @@ describe('judgePersona — orchestrator', () => {
     expect(receivedSystem).toBe(JUDGE_SYSTEM_PROMPT);
     expect(receivedUser).toContain('PERSONA UNDER TEST');
     expect(receivedUser).toContain('REPLY TO EVALUATE');
+  });
+
+  it('threads opts.callsign through to the judge prompt', async () => {
+    const persona = findPersona('jarvis');
+    let receivedUser = null;
+    const callJudge = async (sys, user) => {
+      receivedUser = user;
+      return '{"score":80,"hard_rule_violations":[],"voice_drift":null,"forbidden_pattern_hits":[]}';
+    };
+    await judgePersona(persona, 'Right away, Mr Stark.', callJudge, { callsign: 'Mr Stark' });
+    expect(receivedUser).toContain('Always address the user as Mr Stark.');
+    expect(receivedUser).not.toContain('{callsign}');
   });
 
   it('respects opts.threshold', async () => {

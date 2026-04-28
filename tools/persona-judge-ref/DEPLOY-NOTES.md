@@ -14,9 +14,11 @@ Two files inside the `nice-ai` function directory:
 
 1. **`persona-judge.js`** — direct copy of `tools/persona-judge-ref/judge.js`
    (no fork; same pattern as `persona-compiler.js`).
-2. **`index.ts`** — three additions:
+2. **`index.ts`** — four additions:
    - Import block from `./persona-judge.js`
-   - Lift `personaRow` to outer scope as `personaRowForJudge`
+   - Lift `personaRow` AND `resolvedCallsign` to outer scope (`personaRowForJudge`,
+     `callsignForJudge`) — the judge needs both to evaluate against the rendered
+     hard_rules the model actually saw, not raw `{callsign}` placeholders.
    - Wrap successful response with `wrapResponseForJudging` before return
    - Add `wrapResponseForJudging` + `triggerJudge` helpers near `debitPool`
 
@@ -139,14 +141,19 @@ file and apply:
    } from "./persona-judge.js";
    ```
 
-2. **Lift `personaRow`** (in `Deno.serve` handler, just before the
-   `if (typeof theme_id === "string"…)` block):
+2. **Lift `personaRow` and `resolvedCallsign`** (in `Deno.serve` handler, just
+   before the `if (typeof theme_id === "string"…)` block):
    ```ts
    let personaRowForJudge: Record<string, unknown> | null = null;
+   let callsignForJudge: string | null = null;
    ```
-   And inside that block, after the fallback assignment:
+   And inside that block, after the fallback assignment and right after the
+   `compilePersonaPrompt(persona, provider, appContext, callsign)` call (the
+   sanitized callsign is the same one the compiler interpolates into the
+   system prompt — capture it so the judge sees the same rendered text):
    ```ts
    personaRowForJudge = personaRow;
+   callsignForJudge = sanitizeCallsign(callsign) ?? personaRow?.data?.defaultCallsign ?? null;
    ```
 
 3. **Wrap response before return** (replace the existing `return response;` after
@@ -159,14 +166,21 @@ file and apply:
        provider,
        model,
        personaRowForJudge,
+       callsignForJudge,
      );
    }
    return response;
    ```
 
 4. **Add helpers** (after `debitPool`):
-   - `wrapResponseForJudging` — handles non-streaming JSON and SSE
-   - `triggerJudge` — builds prompt, calls Flash, INSERTs
+   - `wrapResponseForJudging(response, theme_id, provider, model, personaRow, callsign)`
+     — handles non-streaming JSON and SSE; the new `callsign` arg is threaded
+     through to `triggerJudge`.
+   - `triggerJudge(theme_id, provider, model, personaRow, callsign, replyText)` —
+     builds prompt, calls Flash, INSERTs. Pass `callsign` via `judgePersona(
+     persona, replyText, callJudge, { callsign })` so the judge sees the rendered
+     hard_rules the model saw — without this, the judge reads literal
+     `{callsign}` and flags any reply that uses the actual name.
 
 The full body of (4) is staged at `/tmp/nice-ai-tier3-staging/index.ts` after
 running the prep commands above. Verify the diff with:
