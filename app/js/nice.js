@@ -818,14 +818,12 @@ const NICE = (() => {
     if (mobileToggle) {
       mobileToggle.addEventListener('click', () => {
         sidebar.classList.toggle('open');
-        overlay.classList.toggle('open');
       });
     }
 
     if (overlay) {
       overlay.addEventListener('click', () => {
         sidebar.classList.remove('open');
-        overlay.classList.remove('open');
       });
     }
 
@@ -833,7 +831,6 @@ const NICE = (() => {
     document.querySelectorAll('.side-link, .side-user-card, .side-popover-item, .mobile-bar-btn[href]').forEach(link => {
       link.addEventListener('click', () => {
         sidebar.classList.remove('open');
-        overlay.classList.remove('open');
       });
     });
 
@@ -845,7 +842,6 @@ const NICE = (() => {
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         sidebar.classList.remove('open');
-        overlay.classList.remove('open');
       });
     }
 
@@ -1344,11 +1340,9 @@ const NICE = (() => {
       if (deltaX > SWIPE_THRESHOLD && _touchStartX <= EDGE_ZONE && !sidebar.classList.contains('open')) {
         // Swipe right from edge → open
         sidebar.classList.add('open');
-        overlay.classList.add('open');
       } else if (deltaX < -SWIPE_THRESHOLD && sidebar.classList.contains('open')) {
         // Swipe left → close
         sidebar.classList.remove('open');
-        overlay.classList.remove('open');
       }
     }, { passive: true });
   }
