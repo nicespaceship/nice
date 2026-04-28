@@ -446,13 +446,15 @@ const CoreVoice = (() => {
      autoplay block (no gesture yet); the silent-fail in speak() handles
      that and the session-greeted flag is only written after onStart fires.
 
-     Per-tab persistence (sessionStorage, not localStorage) keeps the
-     greeting feeling like a recurring "welcome" pattern rather than a
-     one-time discovery. Closing the tab + reopening replays it.
+     Per-tab persistence: silent on theme switch-away/back within one
+     page load, replays on reload or new tab. sessionStorage normally
+     persists across reloads (only clears on tab close), so we clear
+     the flag at module init — module re-runs on every page load.
 
      Only JARVIS ships an intro today (experiment). Adding `voice.intro`
      to any other theme entry in nice.js opts that theme in. */
   function _introSessionKey() { return 'nice-voice-intro-played'; }
+  try { sessionStorage.removeItem(_introSessionKey()); } catch {}
 
   function maybePlayThemeIntro() {
     if (!getConfig() || isMuted() || _quotaExhausted) return false;
