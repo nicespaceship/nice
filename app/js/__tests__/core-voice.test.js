@@ -612,7 +612,8 @@ describe('CoreVoice.maybeShowCTA — Free path', () => {
 });
 
 // Voiced intro greeting played once per (tab-session, theme) when the user
-// activates a theme that declares `voice.intro`. Two paths:
+// arrives at a theme that declares `voice.intro`. "Arrival" = previous
+// theme was different (or null on first load). Two execution paths:
 // (1) user-gesture present (theme switch click) → play immediately
 // (2) no gesture (page load / reload) → defer to first pointerdown/keydown/
 //     touchstart on window with a 30s timeout. Autoplay policy blocks the
@@ -622,11 +623,14 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
     loadCoreVoice();
     Notify.send.mockClear();
     sessionStorage.clear();
-    localStorage.setItem('nice-voice-off', JSON.stringify({ jarvis: false }));
+    localStorage.setItem('nice-voice-off', JSON.stringify({ jarvis: false, cyberpunk: false, 'hal-9000': false }));
     Theme.current = () => 'jarvis';
-    Theme.getTheme = (id) => id === 'jarvis'
-      ? { voice: { provider: 'elevenlabs', voice: 'jarvis', speed: 1.0, label: 'J.A.R.V.I.S.', intro: 'All systems online, sir.' } }
-      : null;
+    Theme.getTheme = (id) => {
+      if (id === 'jarvis') return { voice: { provider: 'elevenlabs', voice: 'jarvis', speed: 1.0, label: 'J.A.R.V.I.S.', intro: 'All systems online, sir.' } };
+      if (id === 'cyberpunk') return { voice: { provider: 'elevenlabs', voice: 'delamain', speed: 1.0, label: 'Delamain', intro: 'Welcome to Night City.' } };
+      if (id === 'hal-9000') return { voice: { provider: 'elevenlabs', voice: 'hal', speed: 1.0, label: 'HAL' } }; // no intro
+      return null;
+    };
     globalThis.SB = {
       client: {
         supabaseUrl: 'https://example.supabase.co',
@@ -650,7 +654,7 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
   });
 
   it('returns false when theme has no voice.intro', () => {
-    Theme.getTheme = () => ({ voice: { provider: 'elevenlabs', voice: 'jarvis', speed: 1.0 } });
+    Theme.current = () => 'hal-9000';
     expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
@@ -660,7 +664,7 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
     expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
   });
 
-  it('calls speak() with the intro text on first invocation', async () => {
+  it('plays on first invocation (arrival from null prev theme)', async () => {
     expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
     await new Promise(r => setTimeout(r, 0));
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -668,20 +672,41 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
     expect(body.text).toBe('All systems online, sir.');
   });
 
-  it('returns false on second call if session flag is set (post-onStart contract)', () => {
-    sessionStorage.setItem('nice-voice-intro-played', JSON.stringify({ jarvis: true }));
-    expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+  it('returns false on redundant Theme.set with same theme (dwelling, not arrival)', async () => {
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true); // first arrival
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(false); // dwelling — silent
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1); // no second fetch
   });
 
-  it('per-theme — JARVIS played does not block another themed intro', () => {
-    sessionStorage.setItem('nice-voice-intro-played', JSON.stringify({ jarvis: true }));
-    Theme.current = () => 'cyberpunk';
-    Theme.getTheme = (id) => id === 'cyberpunk'
-      ? { voice: { provider: 'elevenlabs', voice: 'delamain', speed: 1.0, label: 'Delamain', intro: 'Welcome aboard.' } }
-      : null;
-    localStorage.setItem('nice-voice-off', JSON.stringify({ jarvis: false, cyberpunk: false }));
+  it('replays on switch-back from a different theme (the "arrival" case)', async () => {
+    // Arrive at jarvis
     expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    // User switches to HAL (no intro on HAL)
+    Theme.current = () => 'hal-9000';
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(false);
+    // User switches back to JARVIS — should replay the intro
+    Theme.current = () => 'jarvis';
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('switching to another themed intro plays that theme (not the previous)', async () => {
+    // Arrive at jarvis
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    await new Promise(r => setTimeout(r, 0));
+    expect(JSON.parse(globalThis.fetch.mock.calls[0][1].body).text).toBe('All systems online, sir.');
+    // Switch to cyberpunk
+    Theme.current = () => 'cyberpunk';
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(globalThis.fetch.mock.calls[1][1].body).text).toBe('Welcome to Night City.');
   });
 
   it('defers play to first user gesture on fresh page load (no userActivation)', async () => {
@@ -701,15 +726,14 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
     expect(body.text).toBe('All systems online, sir.');
   });
 
-  it('deferred intro is dropped when session flag was written before gesture', async () => {
+  it('deferred intro is dropped when user switched themes before gesture', async () => {
     Object.defineProperty(navigator, 'userActivation', {
       value: { hasBeenActive: false, isActive: false },
       configurable: true,
     });
     expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
-    // Simulate another path writing the played flag (e.g., a sibling tab
-    // or a pre-emptive write — not realistic today, but defensive).
-    sessionStorage.setItem('nice-voice-intro-played', JSON.stringify({ jarvis: true }));
+    // User switched away before clicking — don't surface the stale intro.
+    Theme.current = () => 'hal-9000';
     window.dispatchEvent(new Event('pointerdown'));
     await new Promise(r => setTimeout(r, 0));
     expect(globalThis.fetch).not.toHaveBeenCalled();

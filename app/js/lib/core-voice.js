@@ -439,8 +439,11 @@ const CoreVoice = (() => {
   }
 
   /* ── Theme intro greeting ──
-     Voiced one-liner played once per (tab-session, theme) when the user
-     activates a theme that declares a `voice.intro` string.
+     Voiced one-liner played when the user *arrives* at a theme that
+     declares a `voice.intro` string. "Arrival" = theme just changed
+     from something else to this one (or from nothing on first load).
+     Stays silent while the user dwells on the theme — no replay on
+     redundant Theme.set calls.
 
      Two trigger paths:
      1. Theme switch via click (`navigator.userActivation.hasBeenActive`
@@ -450,25 +453,14 @@ const CoreVoice = (() => {
         otherwise be blocked silently. 30s timeout drops the intro if no
         interaction happens — avoids a delayed greeting an hour later.
 
-     Per-tab persistence: silent on theme switch-away/back within one
-     page load, replays on reload or new tab. sessionStorage normally
-     persists across reloads (only clears on tab close), so we clear
-     the flag at module init — module re-runs on every page load.
+     Persistence is in-memory only (`_lastThemeSet`). Reload re-runs the
+     module → state resets → next arrival plays. Rapid theme-bounce is
+     naturally rate-limited by physical click effort.
 
      Only JARVIS ships an intro today (experiment). Adding `voice.intro`
      to any other theme entry in nice.js opts that theme in. */
-  function _introSessionKey() { return 'nice-voice-intro-played'; }
-  try { sessionStorage.removeItem(_introSessionKey()); } catch {}
-
   let _pendingIntroCleanup = null;
-
-  function _markIntroPlayed(id) {
-    try {
-      const cur = JSON.parse(sessionStorage.getItem(_introSessionKey()) || '{}');
-      cur[id] = true;
-      sessionStorage.setItem(_introSessionKey(), JSON.stringify(cur));
-    } catch {}
-  }
+  let _lastThemeSet = null;
 
   function _scheduleIntroOnGesture(intro, id) {
     if (_pendingIntroCleanup) return;
@@ -476,10 +468,10 @@ const CoreVoice = (() => {
     const opts = { once: true, capture: true };
     const playOnce = () => {
       if (_pendingIntroCleanup) _pendingIntroCleanup();
-      let played = {};
-      try { played = JSON.parse(sessionStorage.getItem(_introSessionKey()) || '{}'); } catch {}
-      if (played[id]) return;
-      speak(intro, { onStart: () => _markIntroPlayed(id) });
+      // User may have switched away during the gesture-wait window —
+      // don't surface yesterday's intro on today's theme.
+      if (id !== _activeThemeId()) return;
+      speak(intro);
     };
     events.forEach((e) => window.addEventListener(e, playOnce, opts));
     const timeoutId = setTimeout(() => {
@@ -494,19 +486,19 @@ const CoreVoice = (() => {
 
   function maybePlayThemeIntro() {
     if (!getConfig() || isMuted() || _quotaExhausted) return false;
+    const id = _activeThemeId();
+    const prev = _lastThemeSet;
+    _lastThemeSet = id;
     const tv = getConfig();
     if (!tv.intro || typeof tv.intro !== 'string') return false;
-    const id = _activeThemeId();
-    let played = {};
-    try { played = JSON.parse(sessionStorage.getItem(_introSessionKey()) || '{}'); } catch {}
-    if (played[id]) return false;
+    if (id === prev) return false; // dwelling on this theme — not an arrival
 
     const hasGesture = !!(typeof navigator !== 'undefined'
                        && navigator.userActivation
                        && navigator.userActivation.hasBeenActive);
 
     if (hasGesture) {
-      speak(tv.intro, { onStart: () => _markIntroPlayed(id) });
+      speak(tv.intro);
     } else {
       _scheduleIntroOnGesture(tv.intro, id);
     }
