@@ -34,7 +34,7 @@ const ShipSetupWizard = (() => {
     _onComplete = opts?.onComplete || null;
     _data.shipName = opts?.shipName || blueprint.name || '';
     _data.classId = blueprint.class_id || '';
-    _data.agentMode = '';
+    _data.agentMode = 'auto';
     _data.slotAssignments = {};
     _data.aiRec = null;
 
