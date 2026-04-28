@@ -6208,6 +6208,7 @@
   .cmd-result { min-height:48px; padding:12px 16px; }
 }
 
+
 /* Landscape-specific adjustments */
 @media (max-height:500px) and (orientation:landscape) {
   .side-header { padding:8px 12px; }
@@ -10146,3 +10147,24 @@ body.preview-active .nice-ai {
   .bp-toolbar-actions .btn { padding:6px 10px; font-size:var(--text-xs); flex:1 1 0; text-align:center; }
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   iOS Safari auto-zoom prevention
+   Safari zooms when a focused input's computed font-size is below 16px
+   and never zooms back. Floor every text-entry control at 16px on
+   mobile. Checkbox/radio/range/color/file have no text and are exempt.
+   Pinch-zoom remains available.
+
+   Placed LAST in the file deliberately: many component rules
+   (`.cd-textarea`, `.cd-agent-edit textarea`, etc.) set sub-16px
+   font-sizes that would win on equal specificity. The compound
+   `:not()` chain on the input selector and the `:not([data-allow-zoom])`
+   guard on textarea/select also raise specificity above class-level
+   rules that would otherwise win.
+───────────────────────────────────────────────────────────────── */
+@media (max-width:768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  textarea:not([data-allow-zoom]),
+  select:not([data-allow-zoom]) {
+    font-size:16px;
+  }
+}
