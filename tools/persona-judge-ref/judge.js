@@ -54,6 +54,44 @@ export const REPLY_PROMPT_CAP = 3000;
 /** Cap on reply_excerpt persisted to the DB. PII surface area. */
 export const REPLY_EXCERPT_CAP = 200;
 
+// ─── Callsign interpolation ─────────────────────────────────────────────
+
+/**
+ * Resolve the callsign passed into the judge prompt. Mirrors the compiler's
+ * resolution order so the judge evaluates against the same name the model
+ * was instructed to use.
+ *
+ * Order:
+ * 1. Explicit `callsign` arg (caller knows the user's resolved callsign)
+ * 2. `persona.data.defaultCallsign` (Tier 1 blob field, e.g. "Sir" for JARVIS)
+ * 3. Hard fallback: 'Commander' (matches the `nice` persona default)
+ *
+ * @param {object} persona
+ * @param {string|null|undefined} callsign
+ * @returns {string}
+ */
+export function resolveCallsign(persona, callsign) {
+  if (typeof callsign === 'string' && callsign.length > 0) return callsign;
+  const fromPersona = persona && persona.data && persona.data.defaultCallsign;
+  if (typeof fromPersona === 'string' && fromPersona.length > 0) return fromPersona;
+  return 'Commander';
+}
+
+/**
+ * Replace every `{callsign}` placeholder in `str` with the resolved name.
+ * Mirrors `_interpolate` in `tools/persona-compiler-ref/compile.js` so the
+ * judge sees the same rendered text the model saw at compile time. Without
+ * this, the judge reads literal `{callsign}` in hard_rules and flags any
+ * reply that uses the actual name (e.g. "Sir") as a hard_rule violation.
+ *
+ * @param {string} str
+ * @param {string} callsign
+ * @returns {string}
+ */
+function _interpolateCallsign(str, callsign) {
+  return String(str ?? '').replace(/\{callsign\}/g, callsign);
+}
+
 // ─── Persona compaction ──────────────────────────────────────────────────
 
 /**
@@ -100,10 +138,17 @@ export function compactPersonaForJudge(persona) {
  *
  * @param {object} persona  full persona row
  * @param {string} replyText  the assistant's full reply being judged
+ * @param {string} [callsign]  resolved user callsign (e.g. "Sir" for JARVIS).
+ *                             Falls back to `persona.data.defaultCallsign`,
+ *                             then to "Commander". Used to pre-interpolate
+ *                             `{callsign}` placeholders in hard_rules so the
+ *                             judge evaluates against the rendered rule the
+ *                             model actually saw, not the raw template.
  * @returns {string}  the prompt body
  */
-export function buildJudgePrompt(persona, replyText) {
+export function buildJudgePrompt(persona, replyText, callsign) {
   const compact = compactPersonaForJudge(persona);
+  const cs = resolveCallsign(persona, callsign);
   const reply = String(replyText == null ? '' : replyText);
   const capped = reply.length > REPLY_PROMPT_CAP
     ? reply.slice(0, REPLY_PROMPT_CAP) + '\n…[truncated]'
@@ -113,8 +158,13 @@ export function buildJudgePrompt(persona, replyText) {
     ? Object.entries(compact.voice).map(([k, v]) => `${k}: ${v}`).join(', ')
     : '(unspecified)';
 
+  // Interpolate `{callsign}` in hard_rules. Other judge-visible fields
+  // (voice / lexicon.banned / forbidden_patterns) don't carry the placeholder
+  // in any seeded persona today — verified against the fixture set. Forbidden
+  // patterns are deliberately left unrendered (they're regex; `{callsign}`
+  // there would be meaningless metacharacters), matching the compiler.
   const hardRulesBlock = compact.hard_rules.length
-    ? compact.hard_rules.map((r, i) => `${i + 1}. ${r}`).join('\n')
+    ? compact.hard_rules.map((r, i) => `${i + 1}. ${_interpolateCallsign(r, cs)}`).join('\n')
     : '(none)';
 
   const bannedBlock = compact.banned.length
@@ -171,7 +221,6 @@ export const JUDGE_SYSTEM_PROMPT =
 You return JSON ONLY — no prose, no markdown fences, no commentary.
 You evaluate the REPLY against the PERSONA spec only. You do not judge factual correctness, helpfulness, or task quality.
 You quote violated hard_rules verbatim from the input. You do not paraphrase rules.
-If a hard_rule contains a placeholder like {callsign}, treat the rule as broken when the reply contradicts the rule's intent (e.g. addresses the user with a different name than the rule prescribes).
 voice_drift is a short string (<= 100 chars) or null. Do not pad it.
 forbidden_pattern_hits lists patterns from the input that appear in the reply, regardless of whether the pattern is regex syntax — match against the reply textually.`;
 
@@ -311,12 +360,16 @@ export function truncateExcerpt(reply) {
  * @param {(sys:string,user:string)=>Promise<string>} callJudge
  * @param {object} [opts]
  * @param {number} [opts.threshold]  pass threshold (default 70)
+ * @param {string} [opts.callsign]   resolved user callsign — pre-interpolated
+ *                                   into hard_rules before sending to the judge.
+ *                                   Falls back to `persona.data.defaultCallsign`,
+ *                                   then "Commander".
  * @returns {Promise<Judgment & { judge_latency_ms: number, reply_excerpt: string }>}
  */
 export async function judgePersona(persona, replyText, callJudge, opts) {
   const o = opts || {};
   const threshold = o.threshold != null ? o.threshold : DEFAULT_PASS_THRESHOLD;
-  const userPrompt = buildJudgePrompt(persona, replyText);
+  const userPrompt = buildJudgePrompt(persona, replyText, o.callsign);
 
   const t0 = Date.now();
   let rawText;
