@@ -10014,6 +10014,7 @@ body.preview-active .nice-ai {
      blueprints.js render) was for the old TRON-tab-on-the-right
      pattern — kill it so the tab cluster reads as a single chip. */
   #app-fixed-tabs { display:flex; justify-content:center; }
+  #bp-type-tabs { border:none; }
   #bp-type-tabs > span { display:none; }
   .sch-fixed-ship-select {
     display:inline-flex; align-items:center;
