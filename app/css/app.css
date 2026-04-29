@@ -10003,11 +10003,12 @@ body.preview-active .nice-ai {
    schematic-local title can be retired. The mobile breakpoint hides
    this and uses a pill-button + bottom sheet instead. */
 @media (min-width:641px) {
-  /* Center the top tab row as a group. The trailing flex:1 spacer
-     (from blueprints.js render) was for the old TRON-tab-on-the-right
-     pattern — kill it so justify-content can pack the tabs around the
-     viewport center instead of stretching them edge-to-edge. */
-  #bp-type-tabs { justify-content:center; }
+  /* Center the top tab row as a group. `.bp-type-tabs` is inline-flex
+     (theme.css), so it's content-sized — we have to center its
+     block-level parent instead. The trailing flex:1 spacer (from
+     blueprints.js render) was for the old TRON-tab-on-the-right
+     pattern — kill it so the tab cluster reads as a single chip. */
+  #app-fixed-tabs { display:flex; justify-content:center; }
   #bp-type-tabs > span { display:none; }
   .sch-fixed-ship-select {
     display:inline-flex; align-items:center;
