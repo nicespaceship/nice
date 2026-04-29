@@ -45,14 +45,9 @@ const HomeView = (() => {
   }
 
   function _renderEmptyGreeting() {
-    const isGuest = !State.get('user');
-    const hint = isGuest
-      ? `Sign in to deploy agents and run ${Terminology.label('mission', { plural: true, lowercase: true })}.`
-      : 'Ask NICE anything.';
     return `
       <div class="chat-home-empty">
         <div class="chat-home-greeting">${_greeting()}, ${_esc(_userName())}</div>
-        <p class="chat-home-hint">${_esc(hint)}</p>
       </div>
     `;
   }

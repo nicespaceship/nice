@@ -4670,12 +4670,6 @@
   color:var(--text); text-align:center; position:relative; z-index:2;
 }
 
-.chat-home-hint {
-  font-size:var(--text-sm); color:var(--text-muted);
-  margin:8px 0 0; text-align:center;
-  position:relative; z-index:2; font-family:var(--font-b);
-}
-
 /* Conversation state */
 .chat-home-conv {
   flex:1; display:flex; flex-direction:column;
