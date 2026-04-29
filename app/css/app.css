@@ -2184,13 +2184,22 @@
     padding:10px 12px 10px 10px;
     border:1px solid var(--border);
     border-radius:var(--radius);
-    background:color-mix(in srgb, var(--panel-bg, var(--bg-alt, #181818)) 70%, transparent);
+    /* Layered background: opaque page bg behind a panel-bg overlay. The
+       default --panel-bg is rgba(16,16,16,0.97) — 3% transparent enough
+       for the fixed reactor to bleed through. The opaque base kills the
+       bleed even if a theme's --panel-bg is fully transparent. */
+    background-color:var(--bg, #000);
+    background-image:linear-gradient(var(--panel-bg, var(--bg-alt, #181818)), var(--panel-bg, var(--bg-alt, #181818)));
     cursor:pointer;
-    transition:background .15s, border-color .15s;
+    transition:background-color .15s, border-color .15s;
     min-height:56px;
+    /* z-index:1 paints rows above the global reactor (.jv-pp-reactor at
+       z:0). Without it, document order puts the late-mounted reactor on
+       top and it shows through the row's text. */
+    z-index:1;
   }
   .schematic-stack-row:active {
-    background:color-mix(in srgb, var(--accent) 10%, var(--panel-bg, transparent));
+    background:color-mix(in srgb, var(--accent) 10%, var(--panel-bg, var(--bg-alt, #181818)));
     border-color:color-mix(in srgb, var(--accent) 40%, var(--border));
   }
   .schematic-stack-row-empty {
