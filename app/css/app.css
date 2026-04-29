@@ -2140,8 +2140,8 @@
     max-height:64px;
     margin:0;
     padding:7px 34px 7px 10px;
-    font-size:.72rem;
-    line-height:1.35;
+    font-size:var(--text-xs);
+    line-height:var(--lh-base);
     background:var(--panel-bg, rgba(24,24,27,0.82));
     border:1px solid var(--border);
     border-radius:var(--radius, 10px);
@@ -2270,6 +2270,11 @@
     border:1px solid var(--border);
     border-radius:50%;
     color:var(--text-muted);
+    /* Without an explicit font-family the button falls back to the UA
+       default (Arial on macOS), so the `⋯` glyph renders in a different
+       face than the rest of the row. Inter (--font-b) ships a midline
+       ellipsis so it stays visually consistent. */
+    font-family:var(--font-b);
     font-size:var(--text-md);
     font-weight:var(--fw-bold);
     cursor:pointer;
@@ -9959,15 +9964,16 @@ body.preview-active .nice-ai {
     font-weight:var(--fw-medium); opacity:.75;
   }
 
-  /* Schematic hero tabs (Schematic / Agents / eye declutter): match the
-     Blueprints sub-tab compactness so the chunky --text-sm padding doesn't
-     push the already-crowded hero controls row onto extra lines.
-     Selector uses [data-theme] to match the (0,0,2,0) specificity of the
-     per-theme font-size rules in public/css/theme.css — those rules
-     otherwise override any plain `.bridge-hero-tab` mobile override. */
+  /* Schematic hero tabs (Schematic / Agents / eye declutter). Use
+     --text-sm (13px) per the typography system's "buttons / secondary
+     UI chrome" tier so they don't read as overline-tier (--text-xs,
+     11px) next to the iOS-floored 16px ship dropdown. Selector uses
+     [data-theme] to match the (0,0,2,0) specificity of the per-theme
+     font-size rules in public/css/theme.css — those rules otherwise
+     override any plain `.bridge-hero-tab` mobile override. */
   [data-theme] .bridge-hero-tab {
     padding:4px 8px;
-    font-size:var(--text-xs);
+    font-size:var(--text-sm);
   }
 }
 /* Narrow + mid mobile: "Spaceships 237" overflows the 4-col flex grid
