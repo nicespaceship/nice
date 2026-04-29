@@ -9997,6 +9997,36 @@ body.preview-active .nice-ai {
   .security-tab { flex:1 1 0; justify-content:center; min-width:0; }
 }
 
+/* ── Schematic ship picker (desktop) ──
+   Native <select> appended to #bp-type-tabs after the bridge tabs.
+   Wide enough to show the full ship name without truncation so the
+   schematic-local title can be retired. The mobile breakpoint hides
+   this and uses a pill-button + bottom sheet instead. */
+@media (min-width:641px) {
+  .sch-fixed-ship-select {
+    display:inline-flex; align-items:center;
+    margin-left:12px;
+    padding:6px 30px 6px 12px;
+    background-color:var(--bg-alt);
+    color:var(--text);
+    border:var(--border-width, 1px) solid var(--border);
+    border-radius:var(--radius);
+    font-family:var(--font-b);
+    font-size:var(--text-sm);
+    font-weight:var(--fw-medium);
+    cursor:pointer;
+    min-width:240px;
+    max-width:320px;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23888' stroke-width='1.5'><path d='M3 4.5l3 3 3-3'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+  }
+  .sch-fixed-ship-select:hover { border-color:var(--border-hi, var(--accent)); }
+  .sch-fixed-ship-select:focus { outline:none; border-color:var(--accent); }
+}
+
 /* ── Slot grids: tighter on 375px ── */
 @media (max-width:400px) {
   .slot-grid-3 { max-width:280px; gap:6px; }
@@ -10102,6 +10132,10 @@ body.preview-active .nice-ai {
     min-width:0;
   }
   .sch-ship-picker svg { flex-shrink:0; }
+
+  /* The desktop ship picker (native <select>) is hidden on mobile —
+     this breakpoint renders the pill-button variant above instead. */
+  .sch-fixed-ship-select { display:none; }
 
   .bp-filter-toggle {
     display:inline-flex; align-items:center; justify-content:center; gap:4px;
