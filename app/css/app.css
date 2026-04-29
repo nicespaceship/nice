@@ -10102,6 +10102,10 @@ body.preview-active .nice-ai {
    into a "Filters" button that opens a second bottom-sheet. */
 @media (max-width:640px) {
   #bp-type-tabs { display:none; }
+  /* When the schematic ship picker is mounted alongside the Bridge tab
+     pill, lay them out as a flex row so they share width. */
+  #app-fixed-tabs:has(.sch-ship-picker) { display:flex; gap:8px; align-items:stretch; margin-bottom:8px; }
+  #app-fixed-tabs:has(.sch-ship-picker) .bp-tab-picker { flex:1 1 0; min-width:0; width:auto; margin-bottom:0; }
   .bp-tab-picker {
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
     padding:8px 14px; width:100%;
@@ -10111,6 +10115,26 @@ body.preview-active .nice-ai {
     cursor:pointer; margin-bottom:8px;
   }
   .bp-tab-picker:hover { border-color:var(--border-hi, var(--accent)); }
+  /* Schematic ship picker pill — sibling of .bp-tab-picker inside
+     #app-fixed-tabs. Same visual treatment so the two read as a
+     single nav band. Truncates the ship name with ellipsis when the
+     row is tight (long ship names + Bridge pill). */
+  .sch-ship-picker {
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    flex:1 1 0; min-width:0;
+    padding:8px 14px;
+    background:var(--bg-alt); color:var(--text);
+    border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius, 10px);
+    font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
+    cursor:pointer;
+    overflow:hidden;
+  }
+  .sch-ship-picker:hover { border-color:var(--border-hi, var(--accent)); }
+  .sch-ship-picker-label {
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    min-width:0;
+  }
+  .sch-ship-picker svg { flex-shrink:0; }
 
   .bp-filter-toggle {
     display:inline-flex; align-items:center; justify-content:center; gap:4px;
@@ -10228,6 +10252,36 @@ body.preview-active .nice-ai {
   }
   .bp-filter-clear { flex:1 1 0; }
   .bp-filter-apply { flex:2 1 0; }
+
+  /* Schematic swap sheet — search input + agent list + remove button. */
+  .sch-swap-input {
+    width:100%; padding:10px 12px;
+    background:var(--bg); color:var(--text);
+    border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius, 10px);
+    font-family:var(--font-b); font-size:16px;
+  }
+  .sch-swap-input:focus { border-color:var(--accent); outline:none; }
+  .sch-swap-list {
+    display:flex; flex-direction:column; gap:4px;
+    max-height:50vh; overflow-y:auto;
+  }
+  .sch-swap-item {
+    display:block; width:100%; padding:10px 12px; text-align:left;
+    background:transparent; color:var(--text);
+    border:var(--border-width, 1px) solid transparent; border-radius:var(--radius, 10px);
+    font-family:var(--font-b); font-size:var(--text-base);
+    cursor:pointer;
+  }
+  .sch-swap-item:hover { background:var(--panel-bg, rgba(255,255,255,.04)); }
+  .sch-swap-empty {
+    padding:12px; text-align:center;
+    color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-sm);
+  }
+  .sch-swap-remove {
+    margin-top:4px;
+    color:var(--color-error, #ef4444);
+    border-color:var(--color-error, #ef4444);
+  }
 
   /* Backdrop behind any open sheet */
   .bp-sheet-backdrop {
