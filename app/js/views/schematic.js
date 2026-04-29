@@ -8,7 +8,6 @@
 const SchematicView = (() => {
   const _esc = Utils.esc;
 
-  let _heroView = 'schematic';
   let _resizeTimer = null;
   let _wiredRO = null;
   // Module ref to the view container so resize-driven re-renders (e.g.
@@ -20,18 +19,17 @@ const SchematicView = (() => {
     try { return window.matchMedia('(max-width:600px)').matches; }
     catch (e) { return false; }
   }
-  // Mobile-only: when true, hide the crew cards + wires so the reactor
-  // core + mini-chat own the viewport (better for ship-level prompts on
-  // narrow screens). Persisted across visits. Defaults to ON on mobile
-  // (fresh session, no stored preference) so first-time mobile users
-  // land on the focused ship view; desktop keeps the full crew layout.
+  // Declutter — hides crew cards + wires so the reactor + mini-chat own
+  // the viewport. The UI control (eye toggle) is currently CSS-hidden on
+  // every breakpoint and the mobile header doesn't render the button at
+  // all, so the feature is dormant — kept here so a future surface can
+  // re-enable it without rewiring. Defaults to off; localStorage value
+  // wins if a previous session set it.
   const _KEY_DECLUTTER = 'nice-sch-declutter';
   let _declutter = (function(){
     try {
       const stored = localStorage.getItem(_KEY_DECLUTTER);
-      if (stored === '1') return true;
-      if (stored === '0') return false;
-      return window.matchMedia('(max-width:600px)').matches;
+      return stored === '1';
     } catch (e) { return false; }
   })();
 
@@ -66,59 +64,16 @@ const SchematicView = (() => {
 
     const mobile = _isMobile();
     _lastMobile = mobile;
-    // On mobile we always render the ladder — the Schematic/Agents tab
-    // toggle and the declutter eye are gone (replaced by a bottom-sheet
-    // swap UI on each row). Force schematic view in case stale state
-    // from a previous desktop session set it to 'slots'.
-    if (mobile) _heroView = 'schematic';
 
-    const tabs = [
-      { id: 'schematic', label: 'Schematic' },
-      { id: 'slots', label: 'Agents' },
-    ];
-    const tabsHTML = tabs.map(t =>
-      `<button class="bridge-hero-tab ${_heroView === t.id ? 'active' : ''}" data-view="${t.id}">${t.label}</button>`
-    ).join('');
-    // Declutter toggle — desktop-only now (mobile dropped the eye icon
-    // along with the tabs since the ladder + fixed reactor make
-    // declutter mode redundant).
-    const eyeIcon = _declutter
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.6 19.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.6 19.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-    const declutterLabel = _declutter ? 'Show cards' : 'Hide cards';
-    const declutterHTML = `<button class="bridge-hero-tab sch-declutter-toggle${_declutter ? ' active' : ''}" id="sch-declutter" type="button" aria-pressed="${_declutter}" aria-label="${declutterLabel}" title="${declutterLabel}">${eyeIcon}</button>`;
+    // No schematic-local header on either breakpoint. Ship picker lives
+    // in #app-fixed-tabs alongside the bridge tab pill (mobile) or the
+    // bridge tabs row (desktop) — see _mountFixedShipPicker. Ship name
+    // is shown by the picker label, so a separate title row is dead UI.
+    const headerHTML = '';
 
-    // Ship selector dropdown — desktop only, in the schematic header.
-    // Mobile gets a sheet-based ship picker mounted into #app-fixed-tabs
-    // next to the Bridge tab pill (see _mountFixedShipPicker).
-    const shipOptions = activatedShips.map(s =>
-      `<option value="${_esc(s.id)}" ${s.id === activeShip.id ? 'selected' : ''}>${_esc(s.name || 'Unnamed Ship')}</option>`
-    ).join('');
-    const shipSelectHTML = `<select class="sch-ship-select" id="sch-ship-select">${shipOptions}</select>`;
-
-    // Mobile renders no schematic-local header — the ship picker lives
-    // in #app-fixed-tabs (alongside the Bridge tab pill) instead.
-    const headerHTML = mobile ? '' : `
-      <div class="bridge-hero-header">
-        <div class="bridge-hero-info">
-          <span class="bridge-hero-name">${_esc(activeShip.name || 'Unnamed Ship')}</span>
-          <span class="bridge-hero-meta">${shipClass.name} (${filledCount}/${totalSlots}) <span style="color:${statusColor}">${status}</span></span>
-        </div>
-        <div class="bridge-hero-controls">
-          ${shipSelectHTML}
-          <div class="bridge-hero-tabs">${tabsHTML}${declutterHTML}</div>
-        </div>
-      </div>
-    `;
-
-    let viewHTML = '';
-    if (_heroView === 'schematic') {
-      viewHTML = mobile
-        ? _renderHeroSchematicMobile(shipClass, slotMap)
-        : _renderHeroSchematic(shipClass, slotMap);
-    } else {
-      viewHTML = _renderHeroSlots(shipClass, slotMap, activeShip);
-    }
+    const viewHTML = mobile
+      ? _renderHeroSchematicMobile(shipClass, slotMap)
+      : _renderHeroSchematic(shipClass, slotMap);
 
     el.innerHTML = `<div class="bridge-hero-wrap">${headerHTML}<div class="bridge-hero-content">${viewHTML}</div></div>`;
 
@@ -126,8 +81,12 @@ const SchematicView = (() => {
     window.removeEventListener('resize', _onResize);
     window.addEventListener('resize', _onResize);
 
-    if (_heroView === 'schematic') {
+    {
       requestAnimationFrame(() => {
+        // Ship picker mounts on both breakpoints — mobile gets a pill +
+        // bottom sheet next to the Bridge tab pill; desktop gets a wide
+        // native <select> appended to the bridge tabs row.
+        _mountFixedShipPicker(activatedShips, activeShip, el);
         if (mobile) {
           // Stack layout pins the reactor at a fixed viewport position via
           // CSS (see `.schematic-stack` rules in app.css) so it's always
@@ -136,13 +95,8 @@ const SchematicView = (() => {
           const docEl = document.documentElement;
           docEl.style.removeProperty('--reactor-x');
           docEl.style.removeProperty('--reactor-y');
-          // Mount the ship picker pill into #app-fixed-tabs next to the
-          // Bridge tab pill so they share the same row. Also mount the
-          // swap sheet at body level for the row-action sheet UX.
-          _mountFixedShipPicker(activatedShips, activeShip, el);
           _mountSwapSheet(el, activeShip);
         } else {
-          _unmountFixedShipPicker();
           _unmountSwapSheet();
           // Double-rAF the initial wire: first frame paints the new markup
           // (so fresh mini-chat / cards have measurable box rects), second
@@ -173,34 +127,11 @@ const SchematicView = (() => {
       });
     }
 
-    // Tab click handlers — skip the declutter toggle (no data-view; it has
-    // its own handler below that flips the mobile-hide state in place).
-    el.querySelectorAll('.bridge-hero-tab[data-view]').forEach(tab => {
-      tab.addEventListener('click', () => {
-        _heroView = tab.dataset.view;
-        render(el);
-      });
-    });
-
-    // Declutter toggle — mobile-only. Hides crew cards + wires so the
-    // reactor core + mini-chat own the viewport. Toggles a class on
-    // `.schematic-wired`; CSS handles the actual hiding so no re-render
-    // or DOM churn is needed.
-    const declutterBtn = el.querySelector('#sch-declutter');
-    if (declutterBtn) {
-      declutterBtn.addEventListener('click', () => {
-        _declutter = !_declutter;
-        try { localStorage.setItem(_KEY_DECLUTTER, _declutter ? '1' : '0'); } catch (e) {}
-        render(el);
-      });
-    }
-
-    // Slot click (desktop card / Agents-tab slot row) → open the agent's
-    // blueprint drawer — the same right-side panel Blueprints uses to
-    // show card + stats. Prompts are addressed to the spaceship; the
-    // orchestrator delegates internally, so direct @AgentName addressing
-    // is gone.
-    el.querySelectorAll('.bridge-slot-filled, .schematic-card-slot[data-bp-id]').forEach(slot => {
+    // Desktop card click → open the agent's blueprint drawer — the same
+    // right-side panel Blueprints uses to show card + stats. Prompts go
+    // to the spaceship; the orchestrator delegates internally, so direct
+    // @AgentName addressing is gone.
+    el.querySelectorAll('.schematic-card-slot[data-bp-id]').forEach(slot => {
       slot.style.cursor = 'pointer';
       slot.addEventListener('click', () => {
         const bpId = slot.dataset.bpId;
@@ -229,72 +160,6 @@ const SchematicView = (() => {
       });
     });
 
-    // Ship selector dropdown
-    const shipSelect = el.querySelector('#sch-ship-select');
-    if (shipSelect) {
-      shipSelect.addEventListener('change', () => {
-        localStorage.setItem(Utils.KEYS.mcShip, shipSelect.value);
-        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: shipSelect.value }));
-        render(el);
-      });
-    }
-
-    // Searchable agent dropdowns
-    const allAgents = _getAvailableAgents(_getSlotMap());
-    el.querySelectorAll('.sch-search-drop').forEach(drop => {
-      const input = drop.querySelector('.sch-search-input');
-      const list = drop.querySelector('.sch-search-list');
-      const slotId = drop.dataset.slotId;
-
-      function showResults(query) {
-        const q = (query || '').toLowerCase();
-        const filtered = q ? allAgents.filter(a => a.name.toLowerCase().includes(q)) : allAgents.slice(0, 20);
-        if (!filtered.length) {
-          list.innerHTML = '<div class="sch-search-empty">No agents found</div>';
-        } else {
-          list.innerHTML = filtered.map(a =>
-            `<div class="sch-search-item" data-id="${_esc(a.id)}">${_esc(a.name)}</div>`
-          ).join('');
-        }
-        list.style.display = 'block';
-      }
-
-      input.addEventListener('focus', () => showResults(input.value));
-      input.addEventListener('input', () => showResults(input.value));
-      input.addEventListener('click', e => e.stopPropagation());
-
-      list.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const item = e.target.closest('.sch-search-item');
-        if (!item) return;
-        _assignToSlot(shipId, slotId, item.dataset.id);
-        render(el);
-      });
-
-      // Close on outside click
-      document.addEventListener('click', (e) => {
-        if (!drop.contains(e.target)) list.style.display = 'none';
-      }, { once: false });
-    });
-
-    // Slot remove buttons
-    el.querySelectorAll('.sch-slot-remove').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const slotId = btn.dataset.slotId;
-        _assignToSlot(shipId, slotId, null);
-        render(el);
-      });
-    });
-
-    // Default/recommended agent buttons
-    el.querySelectorAll('.sch-slot-default').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        _assignToSlot(shipId, btn.dataset.slotId, btn.dataset.bpId);
-        render(el);
-      });
-    });
   }
 
   function _assignToSlot(shipId, slotId, bpId) {
@@ -383,59 +248,83 @@ const SchematicView = (() => {
     if (!tabs) return;
     _unmountFixedShipPicker();
     const shipName = activeShip?.name || 'Unnamed Ship';
-    const optionsHTML = activatedShips.map(s =>
-      '<button class="bp-sheet-option' + (s.id === activeShip.id ? ' active' : '') +
-      '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || 'Unnamed Ship') + '</button>'
-    ).join('');
-    const html =
-      '<button class="sch-ship-picker" id="sch-ship-picker" aria-haspopup="dialog" aria-expanded="false">' +
-        '<span class="sch-ship-picker-label">' + _esc(shipName) + '</span>' +
-        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
-      '</button>' +
-      '<div class="bp-sheet-backdrop sch-ship-sheet-backdrop" id="sch-ship-sheet-backdrop" hidden></div>' +
-      '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ship" aria-modal="true" hidden>' +
-        '<div class="bp-sheet-handle"></div>' +
-        '<div class="bp-sheet-header"><h3 class="bp-sheet-title">Ships</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
-        '<div class="bp-sheet-body">' + optionsHTML + '</div>' +
-      '</div>';
-    tabs.insertAdjacentHTML('beforeend', html);
 
-    const picker = tabs.querySelector('#sch-ship-picker');
-    const sheet = tabs.querySelector('#sch-ship-sheet');
-    const backdrop = tabs.querySelector('#sch-ship-sheet-backdrop');
-    const close = tabs.querySelector('#sch-ship-sheet-close');
-    const open = () => {
-      sheet.hidden = false;
-      backdrop.hidden = false;
-      requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); });
-      picker.setAttribute('aria-expanded', 'true');
-    };
-    const hide = () => {
-      sheet.classList.remove('open');
-      backdrop.classList.remove('open');
-      picker.setAttribute('aria-expanded', 'false');
-      setTimeout(() => { sheet.hidden = true; backdrop.hidden = true; }, 200);
-    };
-    picker.addEventListener('click', open);
-    backdrop.addEventListener('click', hide);
-    close.addEventListener('click', hide);
-    sheet.querySelectorAll('.bp-sheet-option').forEach(opt => {
-      opt.addEventListener('click', () => {
-        const id = opt.dataset.shipId;
-        if (id) {
-          localStorage.setItem(Utils.KEYS.mcShip, id);
-          window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: id }));
-        }
-        hide();
-        if (viewEl) render(viewEl);
+    if (_isMobile()) {
+      // Pill button + bottom sheet — sits next to .bp-tab-picker so the
+      // user gets two pills sharing one row.
+      const optionsHTML = activatedShips.map(s =>
+        '<button class="bp-sheet-option' + (s.id === activeShip.id ? ' active' : '') +
+        '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || 'Unnamed Ship') + '</button>'
+      ).join('');
+      const html =
+        '<button class="sch-ship-picker" id="sch-ship-picker" aria-haspopup="dialog" aria-expanded="false">' +
+          '<span class="sch-ship-picker-label">' + _esc(shipName) + '</span>' +
+          '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
+        '</button>' +
+        '<div class="bp-sheet-backdrop sch-ship-sheet-backdrop" id="sch-ship-sheet-backdrop" hidden></div>' +
+        '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ship" aria-modal="true" hidden>' +
+          '<div class="bp-sheet-handle"></div>' +
+          '<div class="bp-sheet-header"><h3 class="bp-sheet-title">Ships</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
+          '<div class="bp-sheet-body">' + optionsHTML + '</div>' +
+        '</div>';
+      tabs.insertAdjacentHTML('beforeend', html);
+
+      const picker = tabs.querySelector('#sch-ship-picker');
+      const sheet = tabs.querySelector('#sch-ship-sheet');
+      const backdrop = tabs.querySelector('#sch-ship-sheet-backdrop');
+      const close = tabs.querySelector('#sch-ship-sheet-close');
+      const open = () => {
+        sheet.hidden = false;
+        backdrop.hidden = false;
+        requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); });
+        picker.setAttribute('aria-expanded', 'true');
+      };
+      const hide = () => {
+        sheet.classList.remove('open');
+        backdrop.classList.remove('open');
+        picker.setAttribute('aria-expanded', 'false');
+        setTimeout(() => { sheet.hidden = true; backdrop.hidden = true; }, 200);
+      };
+      picker.addEventListener('click', open);
+      backdrop.addEventListener('click', hide);
+      close.addEventListener('click', hide);
+      sheet.querySelectorAll('.bp-sheet-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          const id = opt.dataset.shipId;
+          if (id) {
+            localStorage.setItem(Utils.KEYS.mcShip, id);
+            window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: id }));
+          }
+          hide();
+          if (viewEl) render(viewEl);
+        });
       });
+      return;
+    }
+
+    // Desktop: native <select> appended to the bridge tabs row, sized
+    // wide enough to show the full ship name without truncation. Lets
+    // us drop the schematic-local title since the picker label is the
+    // title.
+    const typeTabs = tabs.querySelector('#bp-type-tabs');
+    if (!typeTabs) return;
+    const optionsHTML = activatedShips.map(s =>
+      '<option value="' + _esc(s.id) + '"' + (s.id === activeShip.id ? ' selected' : '') + '>' + _esc(s.name || 'Unnamed Ship') + '</option>'
+    ).join('');
+    const html = '<select class="sch-fixed-ship-select" id="sch-fixed-ship-select" aria-label="Active ship">' + optionsHTML + '</select>';
+    typeTabs.insertAdjacentHTML('beforeend', html);
+    const select = typeTabs.querySelector('#sch-fixed-ship-select');
+    select.addEventListener('change', () => {
+      localStorage.setItem(Utils.KEYS.mcShip, select.value);
+      window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: select.value }));
+      if (viewEl) render(viewEl);
     });
   }
 
   function _unmountFixedShipPicker() {
     const tabs = document.getElementById('app-fixed-tabs');
     if (!tabs) return;
-    tabs.querySelectorAll('.sch-ship-picker, .sch-ship-sheet, .sch-ship-sheet-backdrop').forEach(n => n.remove());
+    tabs.querySelectorAll('.sch-ship-picker, .sch-ship-sheet, .sch-ship-sheet-backdrop, .sch-fixed-ship-select').forEach(n => n.remove());
   }
 
   function _mountSwapSheet(viewEl, activeShip) {
@@ -749,68 +638,6 @@ const SchematicView = (() => {
     svgEl.innerHTML = paths + dots;
   }
 
-  function _renderHeroSlots(shipClass, slotMap, activeShip) {
-    // Get all available agent blueprints for swap dropdowns
-    const allAgents = _getAvailableAgents(slotMap);
-
-    const slotsHTML = shipClass.slots.map(slot => {
-      const bpId = slotMap[String(slot.id)] || null;
-      const bp = _resolveBp(bpId);
-      const RC = BlueprintUtils.RARITY_COLORS;
-
-      const placeholder = bp ? 'Swap Agent...' : 'Assign Agent...';
-      const searchDropdown = `<div class="sch-search-drop" data-slot-id="${slot.id}">
-        <input type="text" class="sch-search-input" placeholder="${placeholder}" autocomplete="off" />
-        <div class="sch-search-list"></div>
-      </div>`;
-
-      // Get recommended/default agent for this slot from ship crew data
-      const defaultAgent = _getDefaultAgent(activeShip, slot.id);
-      const defaultBtn = (!bp && defaultAgent)
-        ? `<button class="btn btn-sm sch-slot-default" data-slot-id="${slot.id}" data-bp-id="${_esc(defaultAgent.id)}" title="Assign ${_esc(defaultAgent.name)}">⚡ ${_esc(defaultAgent.name)}</button>`
-        : '';
-
-      if (bp) {
-        const bpRarity = _getBpRarity(bp);
-        const bpRarityColor = RC[bpRarity] || '#94a3b8';
-        const maxRarity = slot.maxRarity || 'Legendary';
-        const rarityOrder = { Common: 1, Rare: 2, Epic: 3, Legendary: 4, Mythic: 5 };
-        const isMismatch = (rarityOrder[bpRarity] || 1) > (rarityOrder[maxRarity] || 4);
-        const mismatchClass = isMismatch ? ' slot-rarity-mismatch' : '';
-        const mismatchTitle = isMismatch ? ` title="Agent rarity (${bpRarity}) exceeds slot max (${maxRarity})"` : '';
-        return `
-          <div class="bridge-slot bridge-slot-filled${mismatchClass}" data-slot-id="${slot.id}" data-bp-id="${bp.id}"${mismatchTitle}>
-            <div class="bridge-slot-top">
-              <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
-              <span class="bridge-slot-rarity" style="color:${bpRarityColor}">[${bpRarity.charAt(0)}]</span>
-            </div>
-            <span class="bridge-slot-name">${_esc(bp.name)}</span>
-            <div class="bridge-slot-swap">
-              ${searchDropdown}
-              <button class="btn btn-sm sch-slot-remove" data-slot-id="${slot.id}" title="Remove agent">✕</button>
-            </div>
-          </div>`;
-      }
-      return `
-        <div class="bridge-slot bridge-slot-empty" data-slot-id="${slot.id}">
-          <span class="bridge-slot-label">${_esc(slot.label).toUpperCase()}</span>
-          ${defaultBtn}
-          <div class="bridge-slot-swap">
-            ${searchDropdown}
-          </div>
-        </div>`;
-    }).join('');
-
-    const cardHTML = typeof CardRenderer !== 'undefined'
-      ? CardRenderer.render('spaceship', 'full', activeShip)
-      : '';
-
-    return `<div class="bridge-crew-split">
-      <div class="bridge-crew-list">${slotsHTML}</div>
-      <div class="bridge-crew-card">${cardHTML}</div>
-    </div>`;
-  }
-
   function _getAvailableAgents(slotMap) {
     const agents = [];
     // From Blueprints
@@ -824,25 +651,6 @@ const SchematicView = (() => {
     // Sort alphabetically
     agents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     return agents;
-  }
-
-  function _getDefaultAgent(activeShip, slotIdx) {
-    if (!activeShip) return null;
-    const shipId = activeShip.id;
-    const rawId = shipId ? shipId.replace(/^bp-/, '') : '';
-    const ship = (typeof Blueprints !== 'undefined')
-      ? (Blueprints.getSpaceship(rawId) || Blueprints.getSpaceship(shipId))
-      : null;
-    if (!ship || !ship.crew || !ship.crew[slotIdx]) return null;
-    const crew = ship.crew[slotIdx];
-    const name = crew.label || crew.name || null;
-    if (!name) return null;
-    // Try to find a matching blueprint by name
-    const allAgents = _getAvailableAgents({});
-    const match = allAgents.find(a => a.name.toLowerCase() === name.toLowerCase());
-    if (match) return match;
-    // Return the __new__ placeholder
-    return { id: '__new__' + name, name };
   }
 
   /* ── Helpers ── */
