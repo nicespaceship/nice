@@ -19,20 +19,6 @@ const SchematicView = (() => {
     try { return window.matchMedia('(max-width:600px)').matches; }
     catch (e) { return false; }
   }
-  // Declutter — hides crew cards + wires so the reactor + mini-chat own
-  // the viewport. The UI control (eye toggle) is currently CSS-hidden on
-  // every breakpoint and the mobile header doesn't render the button at
-  // all, so the feature is dormant — kept here so a future surface can
-  // re-enable it without rewiring. Defaults to off; localStorage value
-  // wins if a previous session set it.
-  const _KEY_DECLUTTER = 'nice-sch-declutter';
-  let _declutter = (function(){
-    try {
-      const stored = localStorage.getItem(_KEY_DECLUTTER);
-      return stored === '1';
-    } catch (e) { return false; }
-  })();
-
   function render(el) {
     _el = el;
     // Schematic converges the crew ring on the core reactor — opt in.
@@ -220,7 +206,7 @@ const SchematicView = (() => {
     // percentage width inside it renders as a one-character-per-line
     // sliver. Anchoring to the wired container gives it the full crew
     // arena width on every breakpoint.
-    return '<div class="schematic-wired' + (_declutter ? ' schematic-declutter' : '') + '">' +
+    return '<div class="schematic-wired">' +
       '<canvas class="sch-radar-canvas" aria-hidden="true"></canvas>' +
       svg +
       '<div class="sch-mini-chat" aria-live="polite">' +
@@ -468,7 +454,7 @@ const SchematicView = (() => {
       '</li>';
     }).join('');
 
-    return '<div class="schematic-stack' + (_declutter ? ' schematic-stack-declutter' : '') + '">' +
+    return '<div class="schematic-stack">' +
       '<div class="sch-mini-chat" aria-live="polite">' +
         '<div class="sch-mini-chat-content"><span class="sch-mini-chat-idle">Standing by.</span></div>' +
         '<button class="sch-mini-expand" type="button" aria-label="Open full chat" title="Open full chat">' +
@@ -525,26 +511,6 @@ const SchematicView = (() => {
     // exact midline anyway — sub-pixel column asymmetry shouldn't bias
     // the reactor sideways.
     rcx = w / 2;
-
-    const decluttered = container.classList.contains('schematic-declutter');
-    if (decluttered && window.innerWidth <= 600) {
-      // On decluttered mobile the cards are hidden — fall back to the
-      // visible stretch between the mini-chat and the prompt panel,
-      // which is the only space the reactor + mini-chat cohabit.
-      const miniChat = container.querySelector('.sch-mini-chat');
-      const miniChatRect = miniChat ? miniChat.getBoundingClientRect() : null;
-      const topBound = miniChatRect ? miniChatRect.bottom : cRect.top;
-      // Prompt panel is `position:fixed`, so offsetParent is always null —
-      // check the computed display + rect height instead of offsetParent.
-      const promptEl = document.getElementById('nice-ai');
-      const promptVisible = promptEl &&
-        getComputedStyle(promptEl).display !== 'none';
-      const promptRect = promptVisible ? promptEl.getBoundingClientRect() : null;
-      const bottomBound = promptRect && promptRect.height > 0
-        ? promptRect.top : window.innerHeight;
-      const visibleCenterY = (topBound + bottomBound) / 2;
-      rcy = visibleCenterY - cRect.top;
-    }
 
     // Retarget the global `.jv-pp-reactor` to the convergence point while
     // the Schematic is mounted. Other views don't set these vars, so they

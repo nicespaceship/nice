@@ -224,8 +224,7 @@
   box-shadow: 0 0 16px rgba(224,231,255,0.15);
 }
 
-/* Tabs — spaceship inherits base segmented-button style */
-[data-theme="nice"] .bridge-hero-tab,
+/* Log view tabs */
 [data-theme="nice"] .log-view-tab {
   border: 1px solid var(--border);
   background: transparent;
@@ -235,13 +234,11 @@
   font-size: var(--text-sm);
   transition: all .15s;
 }
-[data-theme="nice"] .bridge-hero-tab.active,
 [data-theme="nice"] .log-view-tab.active {
   color: var(--accent);
   border-color: var(--accent);
   background: rgba(224,231,255,0.06);
 }
-[data-theme="nice"] .bridge-hero-tab:hover,
 [data-theme="nice"] .log-view-tab:hover {
   color: var(--text);
   border-color: var(--border-hi);
@@ -649,18 +646,15 @@
   background:#0a0a0a; border:1px solid #2a2a2a; border-radius:6px; padding:2px;
 }
 [data-theme="hal-9000"] .bp-type-tab,
-[data-theme="hal-9000"] .bridge-hero-tab,
 [data-theme="hal-9000"] .log-view-tab {
   border-radius:4px; border:none; background:transparent; color:#8a8a90;
   font-weight:var(--fw-regular); font-size:var(--text-sm); transition:all .15s;
 }
 [data-theme="hal-9000"] .bp-type-tab.active,
-[data-theme="hal-9000"] .bridge-hero-tab.active,
 [data-theme="hal-9000"] .log-view-tab.active {
   color:#f5f5f5; background:#1a1a1a; box-shadow:inset 0 0 0 1px #2a2a2a, 0 1px 0 rgba(255,255,255,0.04);
 }
 [data-theme="hal-9000"] .bp-type-tab:hover,
-[data-theme="hal-9000"] .bridge-hero-tab:hover,
 [data-theme="hal-9000"] .log-view-tab:hover { color:#f5f5f5; }
 
 /* ── Sub-tabs & filters ── */
@@ -796,9 +790,6 @@
 [data-theme="hal-9000"] .side-mission-item:hover { background:rgba(255,255,255,0.04); color:#f5f5f5; }
 
 /* ── Bridge hero header ── */
-[data-theme="hal-9000"] .bridge-hero { background:#121212; border-color:#2a2a2a; }
-[data-theme="hal-9000"] .bridge-hero-header { background:#121212; border-bottom-color:#2a2a2a; }
-
 /* ── Wizard overrides ── */
 [data-theme="hal-9000"] .wizard-container { background:#121212; border-color:#2a2a2a; }
 [data-theme="hal-9000"] .wizard-close { color:#8a8a90; }
@@ -1428,7 +1419,6 @@
 
 /* Tab bars — Tron segments */
 [data-theme="grid"] .bp-type-tab,
-[data-theme="grid"] .bridge-hero-tab,
 [data-theme="grid"] .log-view-tab {
   border-radius: 2px;
   border: 1px solid rgba(24,160,251,0.15);
@@ -1439,7 +1429,6 @@
   font-size: var(--text-sm);
 }
 [data-theme="grid"] .bp-type-tab.active,
-[data-theme="grid"] .bridge-hero-tab.active,
 [data-theme="grid"] .log-view-tab.active {
   background: rgba(24,160,251,0.12);
   color: #18a0fb;
@@ -1449,7 +1438,6 @@
   border-bottom: none;
 }
 [data-theme="grid"] .bp-type-tab:hover,
-[data-theme="grid"] .bridge-hero-tab:hover,
 [data-theme="grid"] .log-view-tab:hover {
   border-color: rgba(24,160,251,0.4);
   color: #18a0fb;
@@ -1952,14 +1940,12 @@
   background: rgba(0,255,65,0.25); box-shadow: 0 0 15px rgba(0,255,65,0.3);
 }
 [data-theme="matrix"] .bp-type-tab,
-[data-theme="matrix"] .bridge-hero-tab,
 [data-theme="matrix"] .log-view-tab {
   border-radius: 0; border: 1px solid rgba(0,255,65,0.15);
   background: transparent; color: rgba(0,255,65,0.5);
   font-family: 'Fira Code', monospace; font-size: var(--text-sm);
 }
 [data-theme="matrix"] .bp-type-tab.active,
-[data-theme="matrix"] .bridge-hero-tab.active,
 [data-theme="matrix"] .log-view-tab.active {
   background: rgba(0,255,65,0.12); color: #00ff41; border-color: #00ff41;
   text-shadow: 0 0 6px rgba(0,255,65,0.4);
@@ -2290,7 +2276,6 @@
 
 /* Tab bars — LCARS colored segments */
 [data-theme="lcars"] .bp-type-tab,
-[data-theme="lcars"] .bridge-hero-tab,
 [data-theme="lcars"] .log-view-tab {
   border-radius:24px;
   background:#666688;
@@ -2301,14 +2286,12 @@
   margin:2px;
 }
 [data-theme="lcars"] .bp-type-tab.active,
-[data-theme="lcars"] .bridge-hero-tab.active,
 [data-theme="lcars"] .log-view-tab.active {
   background:#ff9966;
   color:#000;
   border-bottom:none;
 }
 [data-theme="lcars"] .bp-type-tab:hover,
-[data-theme="lcars"] .bridge-hero-tab:hover,
 [data-theme="lcars"] .log-view-tab:hover {
   background:#ffcc99;
   color:#000;
@@ -2607,7 +2590,6 @@
 
 /* Tab bars — holographic segments */
 [data-theme="jarvis"] .bp-type-tab,
-[data-theme="jarvis"] .bridge-hero-tab,
 [data-theme="jarvis"] .log-view-tab {
   border-radius:3px;
   border:1px solid rgba(0,229,255,0.15);
@@ -2617,7 +2599,6 @@
   font-weight:var(--fw-medium);
 }
 [data-theme="jarvis"] .bp-type-tab.active,
-[data-theme="jarvis"] .bridge-hero-tab.active,
 [data-theme="jarvis"] .log-view-tab.active {
   background:rgba(0,229,255,0.12);
   color:#e0f7fa;
@@ -2625,7 +2606,6 @@
   box-shadow:0 0 10px rgba(0,229,255,0.15);
 }
 [data-theme="jarvis"] .bp-type-tab:hover,
-[data-theme="jarvis"] .bridge-hero-tab:hover,
 [data-theme="jarvis"] .log-view-tab:hover {
   background:rgba(0,229,255,0.08);
   border-color:rgba(0,229,255,0.3);
@@ -2776,7 +2756,6 @@
   box-shadow: 0 0 16px rgba(230,74,25,0.35), 0 0 30px rgba(230,74,25,0.15);
 }
 [data-theme="jarvis"] .bp-type-tab.active,
-[data-theme="jarvis"] .bridge-hero-tab.active,
 [data-theme="jarvis"] .log-view-tab.active {
   border-color: rgba(230,74,25,0.5);
   box-shadow: 0 0 10px rgba(230,74,25,0.2);
@@ -3851,7 +3830,6 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 
 /* Tabs — angular neon segments */
 [data-theme="cyberpunk"] .bp-type-tab,
-[data-theme="cyberpunk"] .bridge-hero-tab,
 [data-theme="cyberpunk"] .log-view-tab {
   border-radius:2px; border:1px solid #2a2a4a; background:transparent;
   color:#7a7a9e; font-family:'Orbitron',sans-serif; font-weight:var(--fw-medium);
@@ -3859,13 +3837,11 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   clip-path:polygon(0 4px, 4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px));
 }
 [data-theme="cyberpunk"] .bp-type-tab.active,
-[data-theme="cyberpunk"] .bridge-hero-tab.active,
 [data-theme="cyberpunk"] .log-view-tab.active {
   background:rgba(255,45,111,0.12); color:#ff2d6f; border-color:#ff2d6f;
   text-shadow:0 0 8px rgba(255,45,111,0.4);
 }
 [data-theme="cyberpunk"] .bp-type-tab:hover,
-[data-theme="cyberpunk"] .bridge-hero-tab:hover,
 [data-theme="cyberpunk"] .log-view-tab:hover { border-color:rgba(255,45,111,0.4); color:#ff2d6f; }
 
 /* Sub-tabs & filters */
