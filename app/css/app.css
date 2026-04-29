@@ -4385,6 +4385,17 @@
 }
 /* All interactive children need pointer-events restored */
 .nice-ai-input-area { pointer-events:auto; }
+/* Kill the focus-within accent halo across every theme. Per-theme
+   rules in theme.css change border-color + add a box-shadow on focus
+   ("a border appears when typing"); user wanted that off. Selector
+   `html[data-theme]` is (0,2,2), beating the (0,2,1) of the
+   `[data-theme="..."] .nice-ai-input-area:focus-within` theme rules
+   without `!important`. The always-on border each theme paints stays
+   untouched. */
+html[data-theme] .nice-ai-input-area:focus-within {
+  border-color:var(--border);
+  box-shadow:none;
+}
 .nice-ai-chips { pointer-events:auto; }
 .nice-ai-close {
   position:absolute; top:-2px; right:0; z-index:5;
@@ -10014,6 +10025,7 @@ body.preview-active .nice-ai {
      blueprints.js render) was for the old TRON-tab-on-the-right
      pattern — kill it so the tab cluster reads as a single chip. */
   #app-fixed-tabs { display:flex; justify-content:center; }
+  #bp-type-tabs { border:none; }
   #bp-type-tabs > span { display:none; }
   .sch-fixed-ship-select {
     display:inline-flex; align-items:center;
