@@ -596,7 +596,6 @@
 /* ── Other tabs — angular mecha style ── */
 [data-theme="rx-78-2"] .topbar-tab,
 [data-theme="rx-78-2"] .bridge-tab,
-[data-theme="rx-78-2"] .bridge-hero-tab,
 [data-theme="rx-78-2"] .bp-sub-tab {
   font-family: 'Rajdhani', sans-serif;
   font-weight: var(--fw-medium);
@@ -605,7 +604,6 @@
 }
 [data-theme="rx-78-2"] .topbar-tab.active,
 [data-theme="rx-78-2"] .bridge-tab.active,
-[data-theme="rx-78-2"] .bridge-hero-tab.active,
 [data-theme="rx-78-2"] .bp-sub-tab.active {
   border-color: #2b4e8c;
   background: rgba(43,78,140,0.15);
@@ -656,39 +654,6 @@
 [data-theme="rx-78-2"] .nice-ai-chip:hover {
   background: #e8c840;
   color: #1a1a2a;
-}
-
-/* ── Schematic header panel — Gundam red ── */
-[data-theme="rx-78-2"] .bridge-hero-header {
-  background: #c0392b;
-  padding: 12px 16px;
-  margin: -16px -16px 16px -16px;
-  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-}
-[data-theme="rx-78-2"] .bridge-hero-name {
-  color: #fff;
-  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
-}
-[data-theme="rx-78-2"] .bridge-hero-meta {
-  color: rgba(255,255,255,0.85);
-}
-[data-theme="rx-78-2"] .bridge-hero-controls .btn,
-[data-theme="rx-78-2"] .bridge-hero-controls button,
-[data-theme="rx-78-2"] .bridge-hero-controls select {
-  background: #d4a017;
-  border-color: #e8c840;
-  color: #1a1a2a;
-  font-weight: 700;
-}
-[data-theme="rx-78-2"] .bridge-hero-controls .btn:hover,
-[data-theme="rx-78-2"] .bridge-hero-controls button:hover {
-  background: #e8c840;
-}
-[data-theme="rx-78-2"] .bridge-hero-tab.active {
-  background: #e8c840 !important;
-  border-color: #fff !important;
-  color: #1a1a2a !important;
-  box-shadow: 0 2px 0 #fff !important;
 }
 
 /* ── HUD crosshair overlay ── */
@@ -816,9 +781,7 @@
   line-height: 2;
 }
 [data-theme="16bit"] .topbar-tab { font-size: var(--text-sm); padding: 8px 14px; }
-[data-theme="16bit"] .bridge-hero-name { font-size: 14px; }
 [data-theme="16bit"] .side-header .app-brand-text { font-size: 8px; }
-[data-theme="16bit"] .bridge-hero-meta { font-size: 9px; }
 [data-theme="16bit"] .nav-link, [data-theme="16bit"] .side-link { font-size: var(--text-sm); }
 [data-theme="16bit"] .badge { font-size: 8px; }
 [data-theme="16bit"] .dock-lbl { font-size: 7px; }
@@ -989,7 +952,6 @@
 /* ── Top tabs — RPG menu tabs ── */
 [data-theme="16bit"] .topbar-tab,
 [data-theme="16bit"] .bridge-tab,
-[data-theme="16bit"] .bridge-hero-tab,
 [data-theme="16bit"] .bp-sub-tab {
   font-family: 'Press Start 2P', cursive;
   border: 2px solid #2e4068;
@@ -1001,7 +963,6 @@
 }
 [data-theme="16bit"] .topbar-tab.active,
 [data-theme="16bit"] .bridge-tab.active,
-[data-theme="16bit"] .bridge-hero-tab.active,
 [data-theme="16bit"] .bp-sub-tab.active {
   border-color: #e2b714;
   background: linear-gradient(180deg, #2e4068, #1f2b47);
@@ -1822,34 +1783,8 @@
 .bridge-xp-fill { height:100%; background:var(--accent); transition:width .3s; }
 @media (max-width:640px) { .bridge-stats { flex-wrap:wrap; gap:8px; } }
 
-/* Ship Hero (3-view carousel) */
-.bridge-hero { margin-bottom:16px; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
-.bridge-hero-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:40px; color:var(--text-muted); text-align:center; }
-.bridge-hero-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); background:var(--panel-bg,var(--surface)); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
-.bridge-hero-info { display:flex; flex-direction:column; gap:3px; }
-.bridge-hero-name { font-size:.95rem; font-weight:700; color:var(--text); font-family:var(--font-b); letter-spacing:.05em; }
-.bridge-hero-meta { font-family:var(--font-b); font-size:.58rem; letter-spacing:.08em; color:var(--text-muted); display:flex; align-items:center; gap:8px; }
-.bridge-hero-controls { display:flex; align-items:center; gap:8px; }
-.bridge-hero-tabs { display:flex; gap:4px; }
-.sch-ship-select {
-  background:var(--bg); color:var(--text); border:1px solid var(--border);
-  border-radius:var(--radius); padding:4px 24px 4px 8px; font-size:.72rem;
-  font-family:var(--font-b); cursor:pointer;
-  /* Cap ship-name width so the dropdown doesn't blow out the controls row
-     — long catalog names (e.g. "3D Printing Service Bureau") otherwise
-     push the tabs off the edge on narrower desktops and on Cyberpunk
-     where the Orbitron tab font already runs wide. Overflow ellipses
-     via text-overflow on the <select>'s visible label. */
-  max-width:180px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;
-  appearance:none; -webkit-appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;
-  background-position:right 6px center;
-}
-.sch-ship-select:focus { border-color:var(--accent); outline:none; }
-.bridge-hero-tab { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:4px 8px; font-family:var(--font-b); font-size:var(--text-sm); color:var(--text-muted); cursor:pointer; transition:all .15s; }
-.bridge-hero-tab:hover { color:var(--text); border-color:var(--text-muted); }
-.bridge-hero-tab.active { color:var(--accent); border-color:var(--accent); background:rgba(255,255,255,.03); }
+/* Schematic content wrappers — header is empty (everything moved to
+   #app-fixed-tabs) so only the wrap + content shells remain. */
 .bridge-hero-content { padding:12px; min-height:200px; display:flex; align-items:center; justify-content:center; }
 /* Schematic Wired Layout
    `min-height` is sized to accommodate the 12-slot class (6 cards per column
@@ -2061,18 +1996,11 @@
      desktop `.schematic-wired` is never instantiated at this breakpoint,
      so its mobile overrides have been removed. Allow the page to scroll
      naturally so the ladder + reactor mount can grow past the viewport. */
-  /* Zero the top padding so the sticky `.bridge-hero-header` pins flush to
-     the scroll viewport — the global ≤380px rule's 4px top padding would
-     otherwise leak rows above the header during scroll. */
+  /* Zero the top padding so the schematic ladder pins flush to the
+     scroll viewport — the global ≤380px rule's 4px top padding would
+     otherwise leak content above the first row during scroll. */
   .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .app-view-content { overflow-y:auto; padding-top:0; padding-bottom:140px; }
 }
-/* Declutter toggle — mobile-only; hidden on desktop. */
-.sch-declutter-toggle { display:none; }
-.sch-declutter-toggle svg { display:block; }
-@media (max-width:600px) {
-  .sch-declutter-toggle { display:inline-flex; align-items:center; justify-content:center; }
-}
-
 @media (prefers-reduced-motion:reduce) {
   .schematic-wired .schematic-card-slot .blueprint-card-mini,
   .schematic-wired .schematic-card-slot::after,
@@ -2108,22 +2036,6 @@
     justify-content:flex-start;
     flex-direction:column;
     padding:0 12px 12px;
-  }
-  /* Sticky header — ship dropdown + tab toggle + declutter eye stay
-     reachable when scrolled deep into a 10+ slot ladder. Z-index sits
-     above the rows but below the prompt panel and fixed reactor (both
-     position:fixed = higher in the painting order anyway). Negative
-     left/right margins re-add the side padding so the sticky bar spans
-     edge-to-edge inside the scroller. */
-  .bridge-hero-wrap:has(.schematic-stack) .bridge-hero-header {
-    position:sticky;
-    top:0;
-    z-index:5;
-    margin:0 -12px 8px;
-    padding:10px 12px;
-    background:var(--panel-bg, var(--bg));
-    backdrop-filter:blur(12px);
-    -webkit-backdrop-filter:blur(12px);
   }
   .schematic-stack {
     display:flex;
@@ -2356,14 +2268,6 @@
     cursor:pointer;
     z-index:1;
   }
-  /* Declutter — hide rows, spine, and the connector pseudo so only the
-     mini-chat + reactor remain. */
-  .schematic-stack.schematic-stack-declutter .schematic-stack-rows {
-    display:none;
-  }
-  .schematic-stack.schematic-stack-declutter .schematic-stack-reactor::before {
-    display:none;
-  }
 }
 
 
@@ -2384,15 +2288,7 @@
 .bridge-priority-low { color:var(--text-muted); }
 .bridge-feed-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:40px 0; text-align:center; color:var(--text-muted); }
 
-/* Bridge responsive — drop the ship title on mobile since the ship
-   dropdown already shows the name. The controls row (dropdown + tabs)
-   takes the full hero width; the dropdown stretches to absorb leftover
-   space so the tabs sit flush right. */
 @media (max-width:768px) {
-  .bridge-hero-header { align-items:center; gap:10px; padding:10px 12px; }
-  .bridge-hero-info { display:none; }
-  .bridge-hero-controls { flex:1 1 100%; width:100%; flex-wrap:nowrap; }
-  .bridge-hero-controls .sch-ship-select { flex:1 1 auto; max-width:none; min-width:0; }
   .bridge-hero-content { min-height:150px; }
 }
 
@@ -9947,17 +9843,6 @@ body.preview-active .nice-ai {
     font-weight:var(--fw-medium); opacity:.75;
   }
 
-  /* Schematic hero tabs (Schematic / Agents / eye declutter). Use
-     --text-sm (13px) per the typography system's "buttons / secondary
-     UI chrome" tier so they don't read as overline-tier (--text-xs,
-     11px) next to the iOS-floored 16px ship dropdown. Selector uses
-     [data-theme] to match the (0,0,2,0) specificity of the per-theme
-     font-size rules in public/css/theme.css — those rules otherwise
-     override any plain `.bridge-hero-tab` mobile override. */
-  [data-theme] .bridge-hero-tab {
-    padding:4px 8px;
-    font-size:var(--text-sm);
-  }
 }
 /* Narrow + mid mobile: "Spaceships 237" overflows the 4-col flex grid
    even at text-xs (clips by ~3px on 480px iPhone Pro Max). Drop the
