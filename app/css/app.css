@@ -9861,7 +9861,12 @@ body.preview-active .nice-ai {
   .nice-ai-input-area { border-radius:8px; }
   .nice-ai-toolbar { flex-wrap:wrap; gap:4px; }
   .nice-ai-toolbar-right { gap:4px; }
-  .nice-ai-mode-select, .nice-ai-model-select { font-size:var(--text-xs); padding:3px 16px 3px 6px; max-width:100px; }
+  /* Model select opts out of the iOS 16px floor (data-allow-zoom on the
+     element) so the toolbar stays visually compact. Width is content-
+     sized instead of clamped at 100px so long names ("Claude 4.7 Opus")
+     don't truncate. iOS will zoom slightly on tap; minor cost vs the
+     previous 16px-everywhere look. */
+  .nice-ai-mode-select, .nice-ai-model-select { font-size:var(--text-xs); padding:3px 16px 3px 6px; max-width:none; }
 }
 
 /* ── Modals: full-width on small screens ── */
