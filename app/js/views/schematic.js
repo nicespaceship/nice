@@ -195,26 +195,25 @@ const SchematicView = (() => {
       });
     }
 
-    // Slot click → prefill prompt with @AgentName
+    // Slot click (desktop card / Agents-tab slot row) → open the agent's
+    // blueprint drawer — the same right-side panel Blueprints uses to
+    // show card + stats. Prompts are addressed to the spaceship; the
+    // orchestrator delegates internally, so direct @AgentName addressing
+    // is gone.
     el.querySelectorAll('.bridge-slot-filled, .schematic-card-slot[data-bp-id]').forEach(slot => {
       slot.style.cursor = 'pointer';
       slot.addEventListener('click', () => {
         const bpId = slot.dataset.bpId;
         if (!bpId) return;
-        const bp = _resolveBp(bpId);
-        const name = bp?.name || bpId.replace(/^bp-/, '').replace(/-/g, ' ');
-        if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
-          PromptPanel.show();
-          PromptPanel.prefill('@' + name + ' ');
+        if (typeof BlueprintsView !== 'undefined' && BlueprintsView.openDrawer) {
+          BlueprintsView.openDrawer(bpId);
         }
       });
     });
 
     // Mobile ladder rows. Tap the action button OR an empty row → open
-    // the swap bottom sheet (in-place agent assignment, no route
-    // change). Tap a filled row body → prefill the prompt with
-    // @AgentName and mark the agent active (status node turns green
-    // for 5s, then yellow until 60s).
+    // the swap bottom sheet (in-place agent assignment, no route change).
+    // Tap a filled row body → open the agent's blueprint drawer.
     el.querySelectorAll('.schematic-stack-row').forEach(row => {
       row.addEventListener('click', (e) => {
         const action = e.target.closest('.schematic-row-action');
@@ -224,13 +223,9 @@ const SchematicView = (() => {
           _openSwapSheet(slotId, bpId, el);
           return;
         }
-        const bp = _resolveBp(bpId);
-        const name = bp?.name || bpId.replace(/^bp-/, '').replace(/-/g, ' ');
-        if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
-          PromptPanel.show();
-          PromptPanel.prefill('@' + name + ' ');
+        if (typeof BlueprintsView !== 'undefined' && BlueprintsView.openDrawer) {
+          BlueprintsView.openDrawer(bpId);
         }
-        _markAgentActive(bpId);
       });
     });
 
@@ -545,35 +540,14 @@ const SchematicView = (() => {
     setTimeout(() => { sheet.hidden = true; backdrop.hidden = true; }, 200);
   }
 
-  // Agent activity tracking — drives the status node color on each row.
-  // Module-scoped so it survives view re-renders. Updated when the user
-  // prefills the prompt with @AgentName (heuristic for "I'm interacting
-  // with this agent now"). Decay timers re-paint the affected rows.
-  const _agentActivity = new Map();
-
-  function _markAgentActive(bpId) {
-    if (!bpId) return;
-    _agentActivity.set(bpId, Date.now());
-    _refreshStatusNodes();
-    setTimeout(_refreshStatusNodes, 5100);   // active → recent boundary
-    setTimeout(_refreshStatusNodes, 60100);  // recent → idle boundary
-  }
-
+  // Agent status helper — drives the status node color on each row.
+  // The visual structure supports four states (empty/idle/recent/active);
+  // for now we only emit empty/idle because there's no signal source
+  // wired up. When the spaceship orchestrator publishes per-agent
+  // activity (mission delegation, streaming reply, etc.), update this
+  // function to return 'recent' or 'active' from that signal.
   function _agentStatus(bpId) {
-    if (!bpId) return 'empty';
-    const ts = _agentActivity.get(bpId);
-    if (!ts) return 'idle';
-    const age = Date.now() - ts;
-    if (age < 5000) return 'active';
-    if (age < 60000) return 'recent';
-    return 'idle';
-  }
-
-  function _refreshStatusNodes() {
-    if (!_el) return;
-    _el.querySelectorAll('.schematic-stack-row').forEach(row => {
-      row.dataset.status = _agentStatus(row.dataset.bpId || null);
-    });
+    return bpId ? 'idle' : 'empty';
   }
 
   function _renderHeroSchematicMobile(shipClass, slotMap) {
