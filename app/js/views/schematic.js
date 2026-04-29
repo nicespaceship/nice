@@ -11,6 +11,15 @@ const SchematicView = (() => {
   let _heroView = 'schematic';
   let _resizeTimer = null;
   let _wiredRO = null;
+  // Module ref to the view container so resize-driven re-renders (e.g.
+  // crossing the mobile breakpoint) can rebuild the right markup without
+  // a full Router refresh.
+  let _el = null;
+  let _lastMobile = null;
+  function _isMobile() {
+    try { return window.matchMedia('(max-width:600px)').matches; }
+    catch (e) { return false; }
+  }
   // Mobile-only: when true, hide the crew cards + wires so the reactor
   // core + mini-chat own the viewport (better for ship-level prompts on
   // narrow screens). Persisted across visits. Defaults to ON on mobile
@@ -27,6 +36,7 @@ const SchematicView = (() => {
   })();
 
   function render(el) {
+    _el = el;
     // Schematic converges the crew ring on the core reactor — opt in.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(true);
     const shipId = _getShipId();
@@ -88,9 +98,14 @@ const SchematicView = (() => {
       </div>
     `;
 
+    const mobile = _isMobile();
+    _lastMobile = mobile;
+
     let viewHTML = '';
     if (_heroView === 'schematic') {
-      viewHTML = _renderHeroSchematic(shipClass, slotMap);
+      viewHTML = mobile
+        ? _renderHeroSchematicMobile(shipClass, slotMap)
+        : _renderHeroSchematic(shipClass, slotMap);
     } else {
       viewHTML = _renderHeroSlots(shipClass, slotMap, activeShip);
     }
@@ -103,13 +118,23 @@ const SchematicView = (() => {
 
     if (_heroView === 'schematic') {
       requestAnimationFrame(() => {
-        // Double-rAF the initial wire: first frame paints the new markup
-        // (so fresh mini-chat / cards have measurable box rects), second
-        // frame runs the measurement once layout has settled. Prevents a
-        // brief flash on theme swaps where the first measurement ran
-        // against mid-transition mini-chat metrics.
-        requestAnimationFrame(() => _wireSchematic());
-        _observeWired();
+        if (mobile) {
+          // Stack layout pins the reactor at a fixed viewport position via
+          // CSS (see `.schematic-stack` rules in app.css) so it's always
+          // tappable regardless of scroll. Clear any inline anchor a
+          // previous desktop render left behind so the CSS value wins.
+          const docEl = document.documentElement;
+          docEl.style.removeProperty('--reactor-x');
+          docEl.style.removeProperty('--reactor-y');
+        } else {
+          // Double-rAF the initial wire: first frame paints the new markup
+          // (so fresh mini-chat / cards have measurable box rects), second
+          // frame runs the measurement once layout has settled. Prevents a
+          // brief flash on theme swaps where the first measurement ran
+          // against mid-transition mini-chat metrics.
+          requestAnimationFrame(() => _wireSchematic());
+          _observeWired();
+        }
         const cvs = el.querySelector('.sch-radar-canvas');
         if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
           DockView._initRadar(cvs);
@@ -159,6 +184,36 @@ const SchematicView = (() => {
       slot.addEventListener('click', () => {
         const bpId = slot.dataset.bpId;
         if (!bpId) return;
+        const bp = _resolveBp(bpId);
+        const name = bp?.name || bpId.replace(/^bp-/, '').replace(/-/g, ' ');
+        if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
+          PromptPanel.show();
+          PromptPanel.prefill('@' + name + ' ');
+        }
+      });
+    });
+
+    // Mobile ladder rows. Tap the action button OR an empty row → switch
+    // to the Agents tab (canonical slot management UX). Tap a filled row
+    // body → prefill the prompt with @AgentName (mirrors desktop card
+    // behaviour). Routing to the Agents tab keeps the swap UX consistent
+    // with desktop without duplicating the dropdown inside each row.
+    el.querySelectorAll('.schematic-stack-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        const action = e.target.closest('.schematic-row-action');
+        const slotId = row.dataset.slotId;
+        const bpId = row.dataset.bpId;
+        if (action || !bpId) {
+          _heroView = 'slots';
+          render(el);
+          requestAnimationFrame(() => {
+            const input = el.querySelector(
+              '.bridge-slot[data-slot-id="' + slotId + '"] .sch-search-input'
+            );
+            if (input) input.focus();
+          });
+          return;
+        }
         const bp = _resolveBp(bpId);
         const name = bp?.name || bpId.replace(/^bp-/, '').replace(/-/g, ' ');
         if (typeof PromptPanel !== 'undefined' && PromptPanel.prefill) {
@@ -308,6 +363,48 @@ const SchematicView = (() => {
         '<div class="sch-core-hit-overlay" title="Tap to speak a mission"></div>' +
       '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
+    '</div>';
+  }
+
+  function _renderHeroSchematicMobile(shipClass, slotMap) {
+    const slots = shipClass.slots || [];
+    const RC = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.RARITY_COLORS) || {};
+
+    const rowsHTML = slots.map((slot, i) => {
+      const bpId = slotMap[String(slot.id)] || null;
+      const bp = bpId ? _resolveBp(bpId) : null;
+      const filled = !!bp;
+      const name = filled ? (bp.name || 'Agent') : 'Empty slot';
+      const rarity = filled ? _getBpRarity(bp) : (slot.maxRarity || 'Common');
+      const rarityColor = RC[rarity] || 'var(--text-muted)';
+      const initial = filled ? (bp.name || '?').charAt(0).toUpperCase() : '+';
+      const slotLabel = (slot.label || ('Slot ' + (i + 1))).toUpperCase();
+      const dataBp = filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '';
+      const cls = 'schematic-stack-row' + (filled ? ' schematic-stack-row-filled' : ' schematic-stack-row-empty');
+      return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + _esc(slot.id) + '"' + dataBp + ' style="--row-tint:' + rarityColor + '">' +
+        '<span class="schematic-row-node" aria-hidden="true"></span>' +
+        '<span class="schematic-row-avatar">' + _esc(initial) + '</span>' +
+        '<div class="schematic-row-info">' +
+          '<div class="schematic-row-name">' + _esc(name) + '</div>' +
+          '<div class="schematic-row-role">' + _esc(slotLabel) + ' · ' + _esc(rarity) + '</div>' +
+        '</div>' +
+        '<button class="schematic-row-action" type="button" aria-label="' + (filled ? 'Manage' : 'Assign agent') + '" data-slot-id="' + _esc(slot.id) + '">' +
+          (filled ? '⋯' : '+') +
+        '</button>' +
+      '</li>';
+    }).join('');
+
+    return '<div class="schematic-stack' + (_declutter ? ' schematic-stack-declutter' : '') + '">' +
+      '<div class="sch-mini-chat" aria-live="polite">' +
+        '<div class="sch-mini-chat-content"><span class="sch-mini-chat-idle">Standing by.</span></div>' +
+        '<button class="sch-mini-expand" type="button" aria-label="Open full chat" title="Open full chat">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<ol class="schematic-stack-rows">' + rowsHTML + '</ol>' +
+      '<div class="schematic-stack-reactor">' +
+        '<div class="sch-core-hit-overlay" title="Tap to speak a mission"></div>' +
+      '</div>' +
     '</div>';
   }
 
@@ -664,7 +761,16 @@ const SchematicView = (() => {
     if (_resizeTimer) return;
     _resizeTimer = requestAnimationFrame(() => {
       _resizeTimer = null;
-      _wireSchematic();
+      const mobile = _isMobile();
+      // Crossing the mobile breakpoint swaps the entire markup tree —
+      // do a full re-render rather than trying to mutate in place.
+      if (_lastMobile !== null && _lastMobile !== mobile && _el) {
+        render(_el);
+        return;
+      }
+      _lastMobile = mobile;
+      // Mobile pins the reactor via CSS — no per-resize work needed.
+      if (!mobile) _wireSchematic();
     });
   }
 

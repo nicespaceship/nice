@@ -2057,21 +2057,14 @@
 .schematic-slot-label { font-family:var(--font-b); font-size:.42rem; letter-spacing:.1em; color:var(--accent2, var(--text-muted)); text-transform:uppercase; text-align:center; margin-top:4px; opacity:.7; transition:opacity .2s; }
 .schematic-card-slot:hover .schematic-slot-label { opacity:1; }
 @media (max-width:600px) {
-  /* Mobile stacks the columns, so the desktop reactor-centering floor no
-     longer applies — let the container size to its content. Also undo
-     the desktop fit-to-viewport rules so the stacked layout can grow
-     and scroll naturally. */
-  .schematic-wired { flex-direction:column; gap:4px; align-items:center; min-height:auto; height:auto; flex:none; }
-  .schematic-col { flex-direction:row; flex-wrap:wrap; flex:none; justify-content:center; gap:4px; height:auto; }
-  .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .app-view-content { overflow-y:auto; padding-bottom:140px; }
-  .schematic-col-left, .schematic-col-right { align-items:center; }
-  .schematic-col .schematic-card-slot:nth-child(even) { transform:none; }
-  .schematic-center { min-height:100px; }
-  /* Declutter mode — crew cards + wires hidden so the reactor core and
-     mini-chat own the viewport. Radar sonar rings stay visible as the
-     backdrop. */
-  .schematic-wired.schematic-declutter .schematic-col,
-  .schematic-wired.schematic-declutter .schematic-svg { display:none; }
+  /* Mobile renders a different markup tree (`.schematic-stack`) — the
+     desktop `.schematic-wired` is never instantiated at this breakpoint,
+     so its mobile overrides have been removed. Allow the page to scroll
+     naturally so the ladder + reactor mount can grow past the viewport. */
+  /* Zero the top padding so the sticky `.bridge-hero-header` pins flush to
+     the scroll viewport — the global ≤380px rule's 4px top padding would
+     otherwise leak rows above the header during scroll. */
+  .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .app-view-content { overflow-y:auto; padding-top:0; padding-bottom:140px; }
 }
 /* Declutter toggle — mobile-only; hidden on desktop. */
 .sch-declutter-toggle { display:none; }
@@ -2085,6 +2078,254 @@
   .schematic-wired .schematic-card-slot::after,
   .schematic-wired .blueprint-card-mini-art::before,
   .schematic-wired .blueprint-card-mini-art::after { animation:none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SCHEMATIC — MOBILE LADDER LAYOUT
+   Renders only at <=600px (desktop uses `.schematic-wired`). Crew
+   slots stack as full-width rows tied to a vertical spine; reactor
+   sits pinned at the bottom of the viewport via fixed positioning.
+   No JS measurement — pure CSS anchors the global core-reactor and
+   the hit overlay so the centerpiece stays tappable on every scroll
+   position.
+───────────────────────────────────────────────────────────────── */
+.schematic-stack { display:none; }
+@media (max-width:600px) {
+  /* Desktop forces the schematic ancestor chain to flex:1/min-height:0 so
+     it fits inside the viewport with its own inner scroller. On mobile we
+     want the page itself to scroll (single-scroller rule), so undo the
+     height clamping at every level above the stack. */
+  .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bp-wrap,
+  .app-main:has(.bp-type-tab.active[data-tab="schematic"]) #bp-schematic-content,
+  .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-wrap,
+  .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-content {
+    height:auto;
+    flex:none;
+    min-height:0;
+  }
+  .bridge-hero-content:has(.schematic-stack) {
+    align-items:stretch;
+    justify-content:flex-start;
+    flex-direction:column;
+    padding:0 12px 12px;
+  }
+  /* Sticky header — ship dropdown + tab toggle + declutter eye stay
+     reachable when scrolled deep into a 10+ slot ladder. Z-index sits
+     above the rows but below the prompt panel and fixed reactor (both
+     position:fixed = higher in the painting order anyway). Negative
+     left/right margins re-add the side padding so the sticky bar spans
+     edge-to-edge inside the scroller. */
+  .bridge-hero-wrap:has(.schematic-stack) .bridge-hero-header {
+    position:sticky;
+    top:0;
+    z-index:5;
+    margin:0 -12px 8px;
+    padding:10px 12px;
+    background:var(--panel-bg, var(--bg));
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+  }
+  .schematic-stack {
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    width:100%;
+  }
+  /* Mini-chat in normal flow (the `.schematic-wired` rule in theme.css
+     uses absolute positioning — different parent, doesn't apply here). */
+  .schematic-stack > .sch-mini-chat {
+    position:relative;
+    top:auto; left:auto; transform:none;
+    width:100%;
+    max-height:64px;
+    margin:0;
+    padding:7px 34px 7px 10px;
+    font-size:.72rem;
+    line-height:1.35;
+    background:var(--panel-bg, rgba(24,24,27,0.82));
+    border:1px solid var(--border);
+    border-radius:var(--radius, 10px);
+    color:var(--text);
+    font-family:var(--font-b);
+    overflow-y:auto;
+    box-shadow:var(--glow-hi, 0 0 14px rgba(0,0,0,0.12));
+  }
+  .schematic-stack > .sch-mini-chat .sch-mini-expand {
+    width:22px; height:22px; top:4px; right:4px;
+  }
+  .schematic-stack-rows {
+    list-style:none;
+    margin:0;
+    padding:8px 0;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  /* Spine — vertical line through the row nodes. Fades at the ends so
+     it reads as a continuous wire that plugs into the reactor below. */
+  .schematic-stack-rows::before {
+    content:'';
+    position:absolute;
+    left:30px;
+    top:14px;
+    bottom:-4px;
+    width:1px;
+    background:linear-gradient(to bottom, transparent, var(--accent,#fff) 14%, var(--accent,#fff) 92%);
+    opacity:.35;
+    pointer-events:none;
+  }
+  .schematic-stack-row {
+    position:relative;
+    display:grid;
+    grid-template-columns:24px 36px 1fr 32px;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px 10px 10px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:color-mix(in srgb, var(--panel-bg, var(--bg-alt, #181818)) 70%, transparent);
+    cursor:pointer;
+    transition:background .15s, border-color .15s;
+    min-height:56px;
+  }
+  .schematic-stack-row:active {
+    background:color-mix(in srgb, var(--accent) 10%, var(--panel-bg, transparent));
+    border-color:color-mix(in srgb, var(--accent) 40%, var(--border));
+  }
+  .schematic-stack-row-empty {
+    border-style:dashed;
+    border-color:color-mix(in srgb, var(--border) 60%, transparent);
+  }
+  .schematic-stack-row-empty .schematic-row-name { color:var(--text-muted); }
+  .schematic-row-node {
+    grid-column:1;
+    justify-self:center;
+    width:14px; height:14px;
+    border-radius:50%;
+    border:2px solid var(--row-tint, var(--accent));
+    background:var(--bg);
+    z-index:2;
+  }
+  .schematic-stack-row-filled .schematic-row-node {
+    background:var(--row-tint, var(--accent));
+    box-shadow:0 0 8px var(--row-tint, var(--accent));
+  }
+  .schematic-row-avatar {
+    grid-column:2;
+    width:36px; height:36px;
+    border-radius:50%;
+    border:2px solid var(--row-tint, var(--accent));
+    background:color-mix(in srgb, var(--row-tint, var(--accent)) 18%, var(--bg));
+    color:var(--text);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-h);
+    font-size:var(--text-base);
+    font-weight:var(--fw-bold);
+    flex-shrink:0;
+  }
+  .schematic-stack-row-empty .schematic-row-avatar {
+    background:transparent;
+    border-color:var(--text-muted);
+    border-style:dashed;
+    color:var(--text-muted);
+  }
+  .schematic-row-info {
+    grid-column:3;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .schematic-row-name {
+    font-family:var(--font-b);
+    font-size:var(--text-base);
+    font-weight:var(--fw-medium);
+    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    line-height:var(--lh-snug);
+  }
+  .schematic-row-role {
+    font-family:var(--font-b);
+    font-size:var(--text-xs);
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:var(--tracking-caps);
+  }
+  .schematic-row-action {
+    grid-column:4;
+    width:32px; height:32px;
+    background:transparent;
+    border:1px solid var(--border);
+    border-radius:50%;
+    color:var(--text-muted);
+    font-size:var(--text-md);
+    font-weight:var(--fw-bold);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:0;
+    line-height:1;
+    transition:color .15s, border-color .15s, background .15s;
+  }
+  .schematic-row-action:active {
+    color:var(--accent);
+    border-color:var(--accent);
+    background:color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  /* Reactor sits at a fixed viewport position above the prompt panel so
+     it's always tappable regardless of scroll. The in-flow `.schematic-
+     stack-reactor` is a 220px spacer at the end of the stack so the
+     last row + reactor are both on-screen when scrolled to the bottom;
+     the hit overlay itself is `position:fixed` and tracks the global
+     core-reactor centerpiece exactly. Stack uses CSS-only anchoring —
+     no JS measurement, no scroll listener. */
+  html:has(.schematic-stack) {
+    --reactor-x:50%;
+    --reactor-y:calc(100vh - 240px);
+  }
+  html:has(.schematic-stack) .jv-pp-reactor {
+    width:220px;
+    height:220px;
+  }
+  .schematic-stack-reactor {
+    position:relative;
+    width:100%;
+    height:220px;
+    margin-top:4px;
+  }
+  /* Spine connector — short fade from the bottom of the row spine into
+     the reactor area, hinting that the wire continues. */
+  .schematic-stack-reactor::before {
+    content:'';
+    position:absolute;
+    left:30px;
+    top:-4px;
+    height:24px;
+    width:1px;
+    background:linear-gradient(to bottom, var(--accent,#fff), transparent);
+    opacity:.35;
+    pointer-events:none;
+  }
+  .schematic-stack-reactor .sch-core-hit-overlay {
+    position:fixed;
+    left:50%;
+    bottom:130px;
+    transform:translateX(-50%);
+    width:220px; height:220px;
+    border-radius:50%;
+    cursor:pointer;
+    z-index:1;
+  }
+  /* Declutter — hide rows, spine, and the connector pseudo so only the
+     mini-chat + reactor remain. */
+  .schematic-stack.schematic-stack-declutter .schematic-stack-rows {
+    display:none;
+  }
+  .schematic-stack.schematic-stack-declutter .schematic-stack-reactor::before {
+    display:none;
+  }
 }
 
 /* Crew Split (crew list + blueprint card side by side) */
@@ -9726,6 +9967,52 @@ body.preview-active .nice-ai {
    and on the Bridge's flat desktop tabs. */
 @media (max-width:480px) {
   .bp-sub-tab .bp-tab-count { display:none; }
+}
+
+/* ── Sticky sub-navs on mobile ──
+   Bridge sub-tabs (`.bp-sub-tabs`) and the Security tab nav
+   (`.security-tabs`) sit at the top of long scrollable lists. When the
+   user scrolls deep into a 600+ card catalog or a 3000px Security
+   page, those tabs would scroll out of view — sticky pins them to the
+   scroll viewport so navigation stays one tap away. The scroller's
+   default padding-top (8px on mobile, 4px on ≤380px) is zeroed when a
+   sticky nav is present so rows don't peek above the bar during
+   scroll. Z-index 5 sits above content, below the fixed prompt panel
+   and reactor (both position:fixed = higher in painting order). */
+@media (max-width:640px) {
+  .app-view-content:has(.bp-sub-tabs),
+  .app-view-content:has(.security-tabs) { padding-top:0; }
+  .bp-sub-tabs {
+    position:sticky;
+    top:0;
+    z-index:5;
+    margin:0 -8px 8px;
+    padding:8px;
+    background:var(--panel-bg, var(--bg));
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+  }
+  .security-tabs {
+    position:sticky;
+    /* Security isn't a Bridge view, so there's no `#app-fixed-tabs` in the
+       flow above the scroller — the scroller starts at viewport y=0,
+       overlapped by the position:fixed mobile-bar (48px) + guest banner.
+       Pin sticky below both so it doesn't sit behind them. Bridge views
+       don't need this offset (their scroller already starts after the
+       in-flow tab pill, well clear of the mobile-bar). */
+    top:calc(48px + var(--guest-banner-height, 0px));
+    z-index:5;
+    /* Default `display:inline-flex` shrinks to content — content beneath
+       peeks past the bar's left/right edges during scroll. Stretch
+       full-width so the bg covers edge-to-edge. */
+    display:flex;
+    width:100%;
+    box-sizing:border-box;
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+  }
+  .security-tab { flex:1 1 0; justify-content:center; min-width:0; }
 }
 
 /* ── Slot grids: tighter on 375px ── */
