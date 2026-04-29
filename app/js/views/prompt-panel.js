@@ -2519,7 +2519,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
-              <select class="nice-ai-model-select" id="nice-ai-model" title="Select model">
+              <select class="nice-ai-model-select" id="nice-ai-model" title="Select model" data-allow-zoom>
                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
               </select>
               <button class="nice-ai-tts-mute" id="nice-ai-tts-mute" aria-label="JARVIS voice" title="JARVIS voice" style="display:none">
