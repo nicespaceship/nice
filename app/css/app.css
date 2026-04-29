@@ -2182,7 +2182,7 @@
     align-items:center;
     gap:10px;
     padding:10px 12px 10px 10px;
-    border:1px solid var(--border);
+    border:1px solid var(--row-tint, var(--border));
     border-radius:var(--radius);
     /* Layered background: opaque page bg behind a panel-bg overlay. The
        default --panel-bg is rgba(16,16,16,0.97) — 3% transparent enough
@@ -2200,25 +2200,49 @@
   }
   .schematic-stack-row:active {
     background:color-mix(in srgb, var(--accent) 10%, var(--panel-bg, var(--bg-alt, #181818)));
-    border-color:color-mix(in srgb, var(--accent) 40%, var(--border));
   }
   .schematic-stack-row-empty {
     border-style:dashed;
+    /* Empty rows have no rarity — show a muted dashed border instead of
+       the slot's max-rarity color so they read as "drop a card here". */
     border-color:color-mix(in srgb, var(--border) 60%, transparent);
   }
   .schematic-stack-row-empty .schematic-row-name { color:var(--text-muted); }
+  /* Status indicator on the spine — driven by data-status:
+     empty  → hollow muted dot (slot has no agent)
+     idle   → solid muted dot (agent assigned, no recent activity)
+     recent → solid amber dot with glow (agent had activity in the last min)
+     active → solid green dot, pulsing (agent is being chatted with right now)
+     The agent's rarity is shown via the row's border color and the
+     avatar's border, so the status node is free to encode activity. */
   .schematic-row-node {
     grid-column:1;
     justify-self:center;
-    width:14px; height:14px;
+    width:12px; height:12px;
     border-radius:50%;
-    border:2px solid var(--row-tint, var(--accent));
+    border:2px solid var(--text-muted);
     background:var(--bg);
     z-index:2;
+    transition:background .2s, border-color .2s, box-shadow .2s;
   }
-  .schematic-stack-row-filled .schematic-row-node {
-    background:var(--row-tint, var(--accent));
-    box-shadow:0 0 8px var(--row-tint, var(--accent));
+  .schematic-stack-row[data-status="idle"] .schematic-row-node {
+    background:var(--text-muted);
+    border-color:var(--text-muted);
+  }
+  .schematic-stack-row[data-status="recent"] .schematic-row-node {
+    background:var(--color-warning, #eab308);
+    border-color:var(--color-warning, #eab308);
+    box-shadow:0 0 6px var(--color-warning, #eab308);
+  }
+  .schematic-stack-row[data-status="active"] .schematic-row-node {
+    background:var(--color-success, #22c55e);
+    border-color:var(--color-success, #22c55e);
+    box-shadow:0 0 10px var(--color-success, #22c55e);
+    animation:sch-status-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes sch-status-pulse {
+    0%, 100% { transform:scale(1); }
+    50% { transform:scale(1.25); }
   }
   .schematic-row-avatar {
     grid-column:2;

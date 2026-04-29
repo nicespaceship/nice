@@ -213,7 +213,8 @@ const SchematicView = (() => {
     // Mobile ladder rows. Tap the action button OR an empty row → open
     // the swap bottom sheet (in-place agent assignment, no route
     // change). Tap a filled row body → prefill the prompt with
-    // @AgentName (mirrors the desktop card behaviour).
+    // @AgentName and mark the agent active (status node turns green
+    // for 5s, then yellow until 60s).
     el.querySelectorAll('.schematic-stack-row').forEach(row => {
       row.addEventListener('click', (e) => {
         const action = e.target.closest('.schematic-row-action');
@@ -229,6 +230,7 @@ const SchematicView = (() => {
           PromptPanel.show();
           PromptPanel.prefill('@' + name + ' ');
         }
+        _markAgentActive(bpId);
       });
     });
 
@@ -543,6 +545,37 @@ const SchematicView = (() => {
     setTimeout(() => { sheet.hidden = true; backdrop.hidden = true; }, 200);
   }
 
+  // Agent activity tracking — drives the status node color on each row.
+  // Module-scoped so it survives view re-renders. Updated when the user
+  // prefills the prompt with @AgentName (heuristic for "I'm interacting
+  // with this agent now"). Decay timers re-paint the affected rows.
+  const _agentActivity = new Map();
+
+  function _markAgentActive(bpId) {
+    if (!bpId) return;
+    _agentActivity.set(bpId, Date.now());
+    _refreshStatusNodes();
+    setTimeout(_refreshStatusNodes, 5100);   // active → recent boundary
+    setTimeout(_refreshStatusNodes, 60100);  // recent → idle boundary
+  }
+
+  function _agentStatus(bpId) {
+    if (!bpId) return 'empty';
+    const ts = _agentActivity.get(bpId);
+    if (!ts) return 'idle';
+    const age = Date.now() - ts;
+    if (age < 5000) return 'active';
+    if (age < 60000) return 'recent';
+    return 'idle';
+  }
+
+  function _refreshStatusNodes() {
+    if (!_el) return;
+    _el.querySelectorAll('.schematic-stack-row').forEach(row => {
+      row.dataset.status = _agentStatus(row.dataset.bpId || null);
+    });
+  }
+
   function _renderHeroSchematicMobile(shipClass, slotMap) {
     const slots = shipClass.slots || [];
     const RC = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.RARITY_COLORS) || {};
@@ -557,8 +590,9 @@ const SchematicView = (() => {
       const initial = filled ? (bp.name || '?').charAt(0).toUpperCase() : '+';
       const slotLabel = (slot.label || ('Slot ' + (i + 1))).toUpperCase();
       const dataBp = filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '';
+      const status = _agentStatus(filled ? bp.id : null);
       const cls = 'schematic-stack-row' + (filled ? ' schematic-stack-row-filled' : ' schematic-stack-row-empty');
-      return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + _esc(slot.id) + '"' + dataBp + ' style="--row-tint:' + rarityColor + '">' +
+      return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + _esc(slot.id) + '" data-status="' + status + '"' + dataBp + ' style="--row-tint:' + rarityColor + '">' +
         '<span class="schematic-row-node" aria-hidden="true"></span>' +
         '<span class="schematic-row-avatar">' + _esc(initial) + '</span>' +
         '<div class="schematic-row-info">' +
