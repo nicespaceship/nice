@@ -64,6 +64,14 @@ const SchematicView = (() => {
     const status = filledCount >= totalSlots ? 'DEPLOYED' : 'DOCKED';
     const statusColor = status === 'DEPLOYED' ? '#22c55e' : '#f59e0b';
 
+    const mobile = _isMobile();
+    _lastMobile = mobile;
+    // On mobile we always render the ladder — the Schematic/Agents tab
+    // toggle and the declutter eye are gone (replaced by a bottom-sheet
+    // swap UI on each row). Force schematic view in case stale state
+    // from a previous desktop session set it to 'slots'.
+    if (mobile) _heroView = 'schematic';
+
     const tabs = [
       { id: 'schematic', label: 'Schematic' },
       { id: 'slots', label: 'Agents' },
@@ -71,21 +79,26 @@ const SchematicView = (() => {
     const tabsHTML = tabs.map(t =>
       `<button class="bridge-hero-tab ${_heroView === t.id ? 'active' : ''}" data-view="${t.id}">${t.label}</button>`
     ).join('');
-    // Declutter toggle — mobile-only (hidden on desktop via CSS). Shows as an
-    // eye icon that swaps between open/closed based on `_declutter` state.
+    // Declutter toggle — desktop-only now (mobile dropped the eye icon
+    // along with the tabs since the ladder + fixed reactor make
+    // declutter mode redundant).
     const eyeIcon = _declutter
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.6 19.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.6 19.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     const declutterLabel = _declutter ? 'Show cards' : 'Hide cards';
     const declutterHTML = `<button class="bridge-hero-tab sch-declutter-toggle${_declutter ? ' active' : ''}" id="sch-declutter" type="button" aria-pressed="${_declutter}" aria-label="${declutterLabel}" title="${declutterLabel}">${eyeIcon}</button>`;
 
-    // Ship selector dropdown
+    // Ship selector dropdown — desktop only, in the schematic header.
+    // Mobile gets a sheet-based ship picker mounted into #app-fixed-tabs
+    // next to the Bridge tab pill (see _mountFixedShipPicker).
     const shipOptions = activatedShips.map(s =>
       `<option value="${_esc(s.id)}" ${s.id === activeShip.id ? 'selected' : ''}>${_esc(s.name || 'Unnamed Ship')}</option>`
     ).join('');
     const shipSelectHTML = `<select class="sch-ship-select" id="sch-ship-select">${shipOptions}</select>`;
 
-    const headerHTML = `
+    // Mobile renders no schematic-local header — the ship picker lives
+    // in #app-fixed-tabs (alongside the Bridge tab pill) instead.
+    const headerHTML = mobile ? '' : `
       <div class="bridge-hero-header">
         <div class="bridge-hero-info">
           <span class="bridge-hero-name">${_esc(activeShip.name || 'Unnamed Ship')}</span>
@@ -97,9 +110,6 @@ const SchematicView = (() => {
         </div>
       </div>
     `;
-
-    const mobile = _isMobile();
-    _lastMobile = mobile;
 
     let viewHTML = '';
     if (_heroView === 'schematic') {
@@ -126,7 +136,14 @@ const SchematicView = (() => {
           const docEl = document.documentElement;
           docEl.style.removeProperty('--reactor-x');
           docEl.style.removeProperty('--reactor-y');
+          // Mount the ship picker pill into #app-fixed-tabs next to the
+          // Bridge tab pill so they share the same row. Also mount the
+          // swap sheet at body level for the row-action sheet UX.
+          _mountFixedShipPicker(activatedShips, activeShip, el);
+          _mountSwapSheet(el, activeShip);
         } else {
+          _unmountFixedShipPicker();
+          _unmountSwapSheet();
           // Double-rAF the initial wire: first frame paints the new markup
           // (so fresh mini-chat / cards have measurable box rects), second
           // frame runs the measurement once layout has settled. Prevents a
@@ -193,25 +210,17 @@ const SchematicView = (() => {
       });
     });
 
-    // Mobile ladder rows. Tap the action button OR an empty row → switch
-    // to the Agents tab (canonical slot management UX). Tap a filled row
-    // body → prefill the prompt with @AgentName (mirrors desktop card
-    // behaviour). Routing to the Agents tab keeps the swap UX consistent
-    // with desktop without duplicating the dropdown inside each row.
+    // Mobile ladder rows. Tap the action button OR an empty row → open
+    // the swap bottom sheet (in-place agent assignment, no route
+    // change). Tap a filled row body → prefill the prompt with
+    // @AgentName (mirrors the desktop card behaviour).
     el.querySelectorAll('.schematic-stack-row').forEach(row => {
       row.addEventListener('click', (e) => {
         const action = e.target.closest('.schematic-row-action');
         const slotId = row.dataset.slotId;
         const bpId = row.dataset.bpId;
         if (action || !bpId) {
-          _heroView = 'slots';
-          render(el);
-          requestAnimationFrame(() => {
-            const input = el.querySelector(
-              '.bridge-slot[data-slot-id="' + slotId + '"] .sch-search-input'
-            );
-            if (input) input.focus();
-          });
+          _openSwapSheet(slotId, bpId, el);
           return;
         }
         const bp = _resolveBp(bpId);
@@ -364,6 +373,174 @@ const SchematicView = (() => {
       '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';
+  }
+
+  /* ── Mobile bottom-sheet UX ── */
+  // Module state for the swap sheet — set when a row is tapped, read by
+  // the option-click handler to know which slot to assign into.
+  let _swapSlotId = null;
+  let _swapEl = null;
+
+  function _mountFixedShipPicker(activatedShips, activeShip, viewEl) {
+    const tabs = document.getElementById('app-fixed-tabs');
+    if (!tabs) return;
+    _unmountFixedShipPicker();
+    const shipName = activeShip?.name || 'Unnamed Ship';
+    const optionsHTML = activatedShips.map(s =>
+      '<button class="bp-sheet-option' + (s.id === activeShip.id ? ' active' : '') +
+      '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || 'Unnamed Ship') + '</button>'
+    ).join('');
+    const html =
+      '<button class="sch-ship-picker" id="sch-ship-picker" aria-haspopup="dialog" aria-expanded="false">' +
+        '<span class="sch-ship-picker-label">' + _esc(shipName) + '</span>' +
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
+      '</button>' +
+      '<div class="bp-sheet-backdrop sch-ship-sheet-backdrop" id="sch-ship-sheet-backdrop" hidden></div>' +
+      '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ship" aria-modal="true" hidden>' +
+        '<div class="bp-sheet-handle"></div>' +
+        '<div class="bp-sheet-header"><h3 class="bp-sheet-title">Ships</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
+        '<div class="bp-sheet-body">' + optionsHTML + '</div>' +
+      '</div>';
+    tabs.insertAdjacentHTML('beforeend', html);
+
+    const picker = tabs.querySelector('#sch-ship-picker');
+    const sheet = tabs.querySelector('#sch-ship-sheet');
+    const backdrop = tabs.querySelector('#sch-ship-sheet-backdrop');
+    const close = tabs.querySelector('#sch-ship-sheet-close');
+    const open = () => {
+      sheet.hidden = false;
+      backdrop.hidden = false;
+      requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); });
+      picker.setAttribute('aria-expanded', 'true');
+    };
+    const hide = () => {
+      sheet.classList.remove('open');
+      backdrop.classList.remove('open');
+      picker.setAttribute('aria-expanded', 'false');
+      setTimeout(() => { sheet.hidden = true; backdrop.hidden = true; }, 200);
+    };
+    picker.addEventListener('click', open);
+    backdrop.addEventListener('click', hide);
+    close.addEventListener('click', hide);
+    sheet.querySelectorAll('.bp-sheet-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const id = opt.dataset.shipId;
+        if (id) {
+          localStorage.setItem(Utils.KEYS.mcShip, id);
+          window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: id }));
+        }
+        hide();
+        if (viewEl) render(viewEl);
+      });
+    });
+  }
+
+  function _unmountFixedShipPicker() {
+    const tabs = document.getElementById('app-fixed-tabs');
+    if (!tabs) return;
+    tabs.querySelectorAll('.sch-ship-picker, .sch-ship-sheet, .sch-ship-sheet-backdrop').forEach(n => n.remove());
+  }
+
+  function _mountSwapSheet(viewEl, activeShip) {
+    _swapEl = viewEl;
+    if (document.getElementById('sch-swap-sheet')) return;
+    const html =
+      '<div class="bp-sheet-backdrop sch-swap-sheet-backdrop" id="sch-swap-sheet-backdrop" hidden></div>' +
+      '<div class="bp-sheet sch-swap-sheet" id="sch-swap-sheet" role="dialog" aria-label="Manage agent" aria-modal="true" hidden>' +
+        '<div class="bp-sheet-handle"></div>' +
+        '<div class="bp-sheet-header">' +
+          '<h3 class="bp-sheet-title" id="sch-swap-sheet-title">Manage agent</h3>' +
+          '<button class="bp-sheet-close" id="sch-swap-sheet-close" aria-label="Close">&times;</button>' +
+        '</div>' +
+        '<div class="bp-sheet-body">' +
+          '<input type="text" class="sch-swap-input" id="sch-swap-input" placeholder="Search agents..." autocomplete="off" />' +
+          '<div class="sch-swap-list" id="sch-swap-list"></div>' +
+          '<button class="btn sch-swap-remove" id="sch-swap-remove" hidden>Remove agent</button>' +
+        '</div>' +
+      '</div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    const sheet = document.getElementById('sch-swap-sheet');
+    const backdrop = document.getElementById('sch-swap-sheet-backdrop');
+    const close = document.getElementById('sch-swap-sheet-close');
+    const input = document.getElementById('sch-swap-input');
+    const list = document.getElementById('sch-swap-list');
+    const remove = document.getElementById('sch-swap-remove');
+
+    const renderList = () => {
+      const all = _getAvailableAgents(_getSlotMap());
+      const q = (input.value || '').toLowerCase();
+      const filtered = q ? all.filter(a => a.name.toLowerCase().includes(q)) : all.slice(0, 40);
+      if (!filtered.length) {
+        list.innerHTML = '<div class="sch-swap-empty">No agents found</div>';
+      } else {
+        list.innerHTML = filtered.map(a =>
+          '<button class="sch-swap-item" data-id="' + _esc(a.id) + '">' + _esc(a.name) + '</button>'
+        ).join('');
+      }
+    };
+
+    input.addEventListener('input', renderList);
+    list.addEventListener('click', (e) => {
+      const item = e.target.closest('.sch-swap-item');
+      if (!item) return;
+      const shipId = _getShipId();
+      _assignToSlot(shipId, _swapSlotId, item.dataset.id);
+      _closeSwapSheet();
+      if (_swapEl) render(_swapEl);
+    });
+    remove.addEventListener('click', () => {
+      const shipId = _getShipId();
+      _assignToSlot(shipId, _swapSlotId, null);
+      _closeSwapSheet();
+      if (_swapEl) render(_swapEl);
+    });
+    backdrop.addEventListener('click', _closeSwapSheet);
+    close.addEventListener('click', _closeSwapSheet);
+
+    sheet._renderList = renderList;
+  }
+
+  function _unmountSwapSheet() {
+    document.querySelectorAll('#sch-swap-sheet, #sch-swap-sheet-backdrop').forEach(n => n.remove());
+    _swapSlotId = null;
+    _swapEl = null;
+  }
+
+  function _openSwapSheet(slotId, bpId, viewEl) {
+    _swapSlotId = slotId;
+    _swapEl = viewEl;
+    const sheet = document.getElementById('sch-swap-sheet');
+    const backdrop = document.getElementById('sch-swap-sheet-backdrop');
+    const title = document.getElementById('sch-swap-sheet-title');
+    const input = document.getElementById('sch-swap-input');
+    const remove = document.getElementById('sch-swap-remove');
+    if (!sheet || !backdrop) return;
+
+    if (bpId) {
+      const bp = _resolveBp(bpId);
+      title.textContent = 'Swap ' + (bp?.name || 'agent');
+      remove.hidden = false;
+    } else {
+      title.textContent = 'Assign agent';
+      remove.hidden = true;
+    }
+    input.value = '';
+    if (sheet._renderList) sheet._renderList();
+    sheet.hidden = false;
+    backdrop.hidden = false;
+    requestAnimationFrame(() => { sheet.classList.add('open'); backdrop.classList.add('open'); });
+    // Defer focus so iOS doesn't auto-zoom past the sheet's own animation.
+    setTimeout(() => { try { input.focus(); } catch (e) {} }, 240);
+  }
+
+  function _closeSwapSheet() {
+    const sheet = document.getElementById('sch-swap-sheet');
+    const backdrop = document.getElementById('sch-swap-sheet-backdrop');
+    if (!sheet || !backdrop) return;
+    sheet.classList.remove('open');
+    backdrop.classList.remove('open');
+    setTimeout(() => { sheet.hidden = true; backdrop.hidden = true; }, 200);
   }
 
   function _renderHeroSchematicMobile(shipClass, slotMap) {
@@ -796,6 +973,10 @@ const SchematicView = (() => {
     if (_resizeTimer) { cancelAnimationFrame(_resizeTimer); _resizeTimer = null; }
     window.removeEventListener('resize', _onResize);
     if (_wiredRO) { _wiredRO.disconnect(); _wiredRO = null; }
+    // Mobile-only mounts — picker pill in #app-fixed-tabs and swap sheet
+    // at body level. Both need explicit unmount when leaving the view.
+    _unmountFixedShipPicker();
+    _unmountSwapSheet();
     // Clean up radar canvas
     if (typeof DockView !== 'undefined' && DockView._stopRadar) {
       DockView._stopRadar();
