@@ -1263,7 +1263,13 @@
   display:none; position:fixed; inset:0; z-index:299;
   background:rgba(0,0,0,.5);
 }
-.app-sidebar.open ~ .app-sidebar-overlay { display:block; }
+/* Backdrop scrim is only meaningful in the mobile drawer pattern. On
+   desktop the sidebar lives at the side at all times (56px collapsed,
+   280px open) — a fullscreen scrim there sits ABOVE the sidebar (z=299
+   > z=200) and steals every nav click for the overlay's close handler. */
+@media (max-width:768px) {
+  .app-sidebar.open ~ .app-sidebar-overlay { display:block; }
+}
 
 /* Sidebar header — logo + actions */
 .side-header {
