@@ -33,8 +33,14 @@ const SchematicView = (() => {
 
     if (!activeShip) {
       el.innerHTML = `
-        <div class="schematic-empty">
-          <p>No spaceships deployed.</p>
+        <div class="schematic-empty app-empty">
+          <svg class="app-empty-icon" fill="currentColor" stroke="none"><use href="#icon-spaceship"/></svg>
+          <h2>No spaceships deployed</h2>
+          <p>Activate a ship from the catalog or build one from scratch to put a crew on the schematic.</p>
+          <div class="app-empty-acts">
+            <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
+            <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
+          </div>
         </div>
       `;
       return;
