@@ -4835,6 +4835,24 @@ html[data-theme] .nice-ai-input:focus-visible {
   line-height:var(--lh-tight); letter-spacing:var(--tracking-display);
   color:var(--text); text-align:center; position:relative; z-index:2;
 }
+/* Persona-flavored suggestion chips below the greeting. Each theme
+   supplies 3 prompts via THEMES[id].chips; clicking one prefills the
+   global PromptPanel. */
+.chat-home-chips {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+  margin-top:20px; max-width:560px; position:relative; z-index:2;
+}
+.chat-home-chip {
+  font-family:var(--font-b); font-size:var(--text-sm);
+  color:var(--text-muted);
+  background:var(--surface, transparent); border:1px solid var(--border);
+  border-radius:999px; padding:8px 14px; cursor:pointer;
+  transition:color .15s, border-color .15s, background-color .15s;
+}
+.chat-home-chip:hover {
+  color:var(--text); border-color:var(--border-hi, var(--accent));
+  background:color-mix(in srgb, var(--text) 6%, transparent);
+}
 
 /* Conversation state */
 .chat-home-conv {
