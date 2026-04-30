@@ -1626,7 +1626,6 @@
   display:none;
   position:fixed; top:var(--guest-banner-height, 0px); left:0; right:0; height:48px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
-  border-bottom:var(--border-width) solid var(--border);
   align-items:center; justify-content:space-between; padding:0 12px; z-index:301;
 }
 .mobile-bar-btn {
