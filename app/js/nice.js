@@ -19,7 +19,7 @@ const Theme = (() => {
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
-    { id:'nice', name:'CORE', builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
+    { id:'nice', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
       data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
@@ -27,7 +27,7 @@ const Theme = (() => {
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'CORE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
-    { id:'hal-9000', name:'HAL-9000', builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
+    { id:'hal-9000', name:'HAL-9000', persona:{ name:'HAL', callsign:'Dave' }, builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#0a0a0a','--bg-alt':'#121212','--surface':'#121212','--surface2':'#1a1a1a','--border':'#2a2a2a','--border-hi':'#8a8a90','--accent':'#ef4444','--accent2':'#b0b0b6','--text':'#f5f5f5','--text-muted':'#8a8a90','--text-dim':'#555555','--glow':'0 0 12px rgba(239,68,68,0.25)','--panel-bg':'#121212','--panel-border':'#2a2a2a' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
       copy:{
         placeholders:{
@@ -43,7 +43,7 @@ const Theme = (() => {
         // Slower than Majel, eerier consistency. Resolves to
         // ELEVENLABS_HAL_VOICE_ID server-side.
         settings:{ stability:0.9, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
-    { id:'grid', name:'The Grid', builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
+    { id:'grid', name:'The Grid', persona:{ name:'End of Line', callsign:'User' }, builtin:true, accent:'#18a0fb', preview:['#02090f','#18a0fb','#0a6bc4'],
       data:{ colors:{ '--bg':'#02090f','--bg2':'#041220','--surface':'rgba(24,120,220,0.05)','--surface2':'rgba(24,120,220,0.09)','--border':'rgba(24,160,251,0.25)','--border-hi':'rgba(24,160,251,0.6)','--accent':'#18a0fb','--accent2':'#0a6bc4','--text':'#c0d8f0','--text-muted':'rgba(24,160,251,0.55)','--glow':'0 0 16px rgba(24,160,251,0.22)','--panel-bg':'rgba(2,9,15,0.95)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'grid', speed:1.0, model:'eleven_turbo_v2_5', label:'End of Line',
@@ -51,7 +51,7 @@ const Theme = (() => {
         // Resolves to ELEVENLABS_GRID_VOICE_ID server-side. Stability tight
         // for PA-uniformity; faint style for synthetic edge.
         settings:{ stability:0.85, similarity_boost:0.85, style:0.1, use_speaker_boost:true } } },
-    { id:'matrix', name:'The Matrix', builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
+    { id:'matrix', name:'The Matrix', persona:{ name:'Morpheus', callsign:'Neo' }, builtin:true, accent:'#00ff41', preview:['#000800','#00ff41','#00aa2a'],
       data:{ colors:{ '--bg':'#000800','--bg2':'#000c00','--surface':'rgba(0,255,65,0.04)','--surface2':'rgba(0,255,65,0.08)','--border':'rgba(0,255,65,0.2)','--border-hi':'rgba(0,255,65,0.5)','--accent':'#00ff41','--accent2':'#00aa2a','--text':'#00ff41','--text-muted':'rgba(0,255,65,0.5)','--glow':'0 0 12px rgba(0,255,65,0.3)','--panel-bg':'rgba(0,6,0,0.97)' }, fonts:{ '--font-h':"'Fira Code', monospace", '--font-b':"'Fira Code', monospace" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'morpheus', speed:1.0, model:'eleven_turbo_v2_5', label:'Morpheus',
@@ -60,7 +60,7 @@ const Theme = (() => {
         // prophetic emphasis without tipping into theatrical.
         settings:{ stability:0.75, similarity_boost:0.9, style:0.1, use_speaker_boost:true },
         intro:'Welcome, Neo.' } },
-    { id:'lcars', name:'LCARS', builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
+    { id:'lcars', name:'LCARS', persona:{ name:'Computer', callsign:'Captain' }, builtin:true, accent:'#ff9966', preview:['#000000','#ff9966','#cc99ff'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#000000','--surface':'rgba(255,153,102,0.06)','--surface2':'rgba(204,153,255,0.06)','--border':'#cc7744','--border-hi':'#ff9966','--accent':'#ff9966','--accent2':'#cc99ff','--text':'#ff9966','--text-muted':'#cc99ff','--glow':'none','--panel-bg':'#000000' }, fonts:{ '--font-h':"'Antonio', sans-serif", '--font-b':"'Antonio', sans-serif" }, radius:'24px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'computer', speed:1.0, model:'eleven_turbo_v2_5', label:'Computer',
@@ -69,7 +69,7 @@ const Theme = (() => {
         // High stability for the iconic monotone evenness — Computer should
         // sound like a computer.
         settings:{ stability:0.85, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
-    { id:'jarvis', name:'J.A.R.V.I.S.', builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
+    { id:'jarvis', name:'J.A.R.V.I.S.', persona:{ name:'JARVIS', callsign:'Sir' }, builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
       data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' },
       // Personality bundle. `ranks` overlays Gamification._skinnedRanks();
       // `labels` and `placeholders` feed Theme.rewrite + the in-DOM swap.
@@ -123,7 +123,7 @@ const Theme = (() => {
       // distinctive voiced persona opt in by adding `intro` here.
       voice:{ provider:'elevenlabs', voice:'jarvis', speed:1.0, model:'eleven_turbo_v2_5', label:'J.A.R.V.I.S.',
         intro:'All systems online, sir. Standing by.' } },
-    { id:'cyberpunk', name:'Cyberpunk', builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
+    { id:'cyberpunk', name:'Cyberpunk', persona:{ name:'Delamain', callsign:'V' }, builtin:true, accent:'#ff2d6f', preview:['#0a0a0f','#ff2d6f','#00fff5'],
       data:{ colors:{ '--bg':'#0a0a0f','--bg2':'#12121a','--surface':'#1a1a2e','--surface2':'#222240','--border':'#2a2a4a','--border-hi':'#ff2d6f','--accent':'#ff2d6f','--accent2':'#00fff5','--text':'#e0e0ff','--text-muted':'#7a7a9e','--glow':'0 0 15px rgba(255,45,111,0.3)','--glow-hi':'0 0 25px rgba(0,255,245,0.4)','--panel-bg':'rgba(10,10,15,0.97)' }, fonts:{ '--font-h':"'Orbitron', sans-serif", '--font-b':"'Fira Code', monospace" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'delamain', speed:1.0, model:'eleven_v3', label:'Delamain',
@@ -132,7 +132,7 @@ const Theme = (() => {
         // tighter than Morpheus for corporate-AI consistency.
         settings:{ stability:0.8, similarity_boost:0.9, style:0.05, use_speaker_boost:true },
         intro:'Welcome to Night City.' } },
-    { id:'rx-78-2', name:'RX-78-2', builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
+    { id:'rx-78-2', name:'RX-78-2', persona:{ name:'Operator', callsign:'Pilot' }, builtin:true, accent:'#2b4e8c', preview:['#12131a','#2b4e8c','#c0392b'],
       data:{ colors:{ '--bg':'#12131a','--bg2':'#191b24','--surface':'#1e2030','--surface2':'#252838','--border':'#3a3f55','--border-hi':'#2b4e8c','--accent':'#2b4e8c','--accent2':'#c0392b','--text':'#e0e0e8','--text-muted':'#7a7e94','--glow':'0 0 12px rgba(43,78,140,0.25)','--glow-hi':'0 0 20px rgba(192,57,43,0.3)','--panel-bg':'rgba(18,19,26,0.97)' }, fonts:{ '--font-h':"'Rajdhani', sans-serif", '--font-b':"'Rajdhani', sans-serif" }, radius:'2px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'operator', speed:1.0, model:'eleven_turbo_v2_5', label:'Operator',
@@ -140,7 +140,7 @@ const Theme = (() => {
         // Resolves to ELEVENLABS_OPERATOR_VOICE_ID server-side. Style 0.15
         // lets the anime cadence + accent shifts come through.
         settings:{ stability:0.7, similarity_boost:0.85, style:0.15, use_speaker_boost:true } } },
-    { id:'16bit', name:'16-BIT', builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
+    { id:'16bit', name:'16-BIT', persona:{ name:'Announcer', callsign:'Player One' }, builtin:true, accent:'#e2b714', preview:['#1a1a2e','#e2b714','#2980b9'],
       data:{ colors:{ '--bg':'#1a1a2e','--bg2':'#16213e','--surface':'#1f2b47','--surface2':'#253352','--border':'#2e4068','--border-hi':'#e2b714','--accent':'#e2b714','--accent2':'#2980b9','--text':'#e8e0d0','--text-muted':'#8a8070','--glow':'0 0 0 1px #e2b714','--glow-hi':'0 0 0 2px #2980b9','--panel-bg':'rgba(22,33,62,0.97)' }, fonts:{ '--font-h':"'Press Start 2P', cursive", '--font-b':"'Press Start 2P', cursive" }, radius:'0px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'announcer', speed:1.0, model:'eleven_v3', label:'Announcer',
@@ -150,7 +150,7 @@ const Theme = (() => {
         // this is the persona where character IS the value.
         settings:{ stability:0.55, similarity_boost:0.85, style:0.3, use_speaker_boost:true },
         intro:'Player One — ready!' } },
-    { id:'office', name:'The Office', builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
+    { id:'office', name:'The Office', persona:{ name:'Dwight', callsign:'Captain' }, builtin:true, accent:'#0F52BA', preview:['#f0f0f2','#0F52BA','#3b7dd8'],
       data:{ colors:{ '--bg':'#e8e8ec','--bg2':'#dcdce0','--bg-alt':'#f0f0f2','--surface':'rgba(0,0,0,0.02)','--surface2':'#f5f5f7','--border':'#d4d4d8','--border-hi':'#0F52BA','--accent':'#0F52BA','--accent2':'#3b7dd8','--text':'#18181b','--text-muted':'#52525b','--text-dim':'#a1a1aa','--glow':'0 0 0 1px rgba(15,82,186,0.08)','--glow-hi':'0 0 12px rgba(15,82,186,0.12)','--panel-bg':'#ffffff','--panel-border':'#d4d4d8','--nav-bg':'#7285A5','--nav-bg-dk':'#0E4C92','--nav-text':'#ffffff','--nav-text-muted':'rgba(255,255,255,0.85)','--nav-text-dim':'rgba(255,255,255,0.6)','--nav-border':'rgba(255,255,255,0.15)','--nav-surface':'rgba(255,255,255,0.1)','--nav-surface2':'rgba(255,255,255,0.15)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_v3', label:'Dwight',
@@ -159,7 +159,7 @@ const Theme = (() => {
         // stability + style 0.2 amplify the stressed-emphasis delivery.
         settings:{ stability:0.55, similarity_boost:0.9, style:0.2, use_speaker_boost:true },
         intro:'Identify yourself.' } },
-    { id:'office-dark', name:'The Office', builtin:false, accent:'#a5b4fc', preview:['#09090b','#a5b4fc','#e0e7ff'],
+    { id:'office-dark', name:'The Office', persona:{ name:'Dwight', callsign:'Captain' }, builtin:false, accent:'#a5b4fc', preview:['#09090b','#a5b4fc','#e0e7ff'],
       data:{ colors:{ '--bg':'#09090b','--bg2':'#18181b','--bg-alt':'#18181b','--surface':'rgba(255,255,255,0.03)','--surface2':'#27272a','--border':'#3f3f46','--border-hi':'#71717a','--accent':'#e0e7ff','--accent2':'#a5b4fc','--text':'#fafafa','--text-muted':'#a1a1aa','--text-dim':'#3f3f46','--glow':'0 0 0 1px rgba(224,231,255,0.06)','--glow-hi':'0 0 12px rgba(224,231,255,0.08)','--panel-bg':'rgba(24,24,27,0.75)','--panel-border':'#3f3f46','--nav-bg':'#111114' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'dwight', speed:1.0, model:'eleven_v3', label:'Dwight',

@@ -16,11 +16,18 @@ const HomeView = (() => {
     return 'Good evening';
   }
 
+  function _activePersona() {
+    if (typeof Theme === 'undefined') return null;
+    const id = (typeof Theme.current === 'function') ? Theme.current() : null;
+    const t = id && typeof Theme.getTheme === 'function' ? Theme.getTheme(id) : null;
+    return t?.persona || null;
+  }
+
   function _userName() {
     const user = State.get('user');
     if (user?.user_metadata?.display_name) return user.user_metadata.display_name;
     if (user?.email) return user.email.split('@')[0];
-    return 'Commander';
+    return _activePersona()?.callsign || 'Commander';
   }
 
   function render(el) {
