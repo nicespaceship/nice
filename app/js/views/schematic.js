@@ -196,8 +196,10 @@ const SchematicView = (() => {
       const label = c.slot.label || '';
       const rarity = c.slot.maxRarity || 'Common';
       if (bp && CR) {
-        return '<div class="schematic-card-slot schematic-card-' + side + '" data-slot-idx="' + c.index + '" data-bp-id="' + bp.id + '">' +
+        const status = _agentStatus(bp.id);
+        return '<div class="schematic-card-slot schematic-card-' + side + '" data-slot-idx="' + c.index + '" data-bp-id="' + bp.id + '" data-status="' + status + '">' +
           CR.render('agent', 'mini', bp) +
+          '<span class="schematic-card-node" aria-hidden="true"></span>' +
           (label ? '<div class="schematic-slot-label">' + _esc(label) + '</div>' : '') +
         '</div>';
       }
@@ -449,8 +451,9 @@ const SchematicView = (() => {
   function _onActivityChange(agentId, state) {
     if (!_el) return;
     const status = agentId ? state : 'empty';
-    _el.querySelectorAll('.schematic-stack-row[data-bp-id="' + CSS.escape(agentId) + '"]')
-      .forEach((row) => { row.setAttribute('data-status', status); });
+    const sel = '[data-bp-id="' + CSS.escape(agentId) + '"]';
+    _el.querySelectorAll('.schematic-stack-row' + sel + ', .schematic-card-slot' + sel)
+      .forEach((node) => { node.setAttribute('data-status', status); });
   }
 
   function _renderHeroSchematicMobile(shipClass, slotMap) {

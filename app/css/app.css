@@ -1991,6 +1991,39 @@
 .schematic-card-rarity { font-family:var(--font-b); font-size:.32rem; letter-spacing:.1em; font-weight:600; }
 .schematic-slot-label { font-family:var(--font-b); font-size:.42rem; letter-spacing:.1em; color:var(--accent2, var(--text-muted)); text-transform:uppercase; text-align:center; margin-top:4px; opacity:.7; transition:opacity .2s; }
 .schematic-card-slot:hover .schematic-slot-label { opacity:1; }
+/* Desktop card status pip — same state machine as the mobile row node:
+   idle   → solid muted dot
+   recent → solid amber + glow
+   active → solid green + glow + pulse
+   Sits inside the rotating notch frame (z-index above ::after at 4) but
+   anchored to the card body so adjacent cards don't clip it. Filled cards
+   only — the empty variant has no data-bp-id. */
+.schematic-wired .schematic-card-slot[data-bp-id] .schematic-card-node {
+  position:absolute;
+  top:-3px; right:-3px;
+  width:10px; height:10px;
+  border-radius:50%;
+  border:1.5px solid var(--text-muted);
+  background:var(--bg);
+  z-index:5;
+  pointer-events:none;
+  transition:background .2s, border-color .2s, box-shadow .2s;
+}
+.schematic-wired .schematic-card-slot[data-status="idle"] .schematic-card-node {
+  background:var(--text-muted);
+  border-color:var(--text-muted);
+}
+.schematic-wired .schematic-card-slot[data-status="recent"] .schematic-card-node {
+  background:var(--color-warning, #eab308);
+  border-color:var(--color-warning, #eab308);
+  box-shadow:0 0 6px var(--color-warning, #eab308);
+}
+.schematic-wired .schematic-card-slot[data-status="active"] .schematic-card-node {
+  background:var(--color-success, #22c55e);
+  border-color:var(--color-success, #22c55e);
+  box-shadow:0 0 10px var(--color-success, #22c55e);
+  animation:sch-status-pulse 1.4s ease-in-out infinite;
+}
 @media (max-width:600px) {
   /* Mobile renders a different markup tree (`.schematic-stack`) — the
      desktop `.schematic-wired` is never instantiated at this breakpoint,
