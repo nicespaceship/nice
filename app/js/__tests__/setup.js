@@ -131,6 +131,7 @@ loadScriptGlobal('lib/agent-memory.js');
 loadScriptGlobal('lib/ship-behaviors.js');
 loadScriptGlobal('lib/mcp-bridge.js');
 loadScriptGlobal('lib/model-intel.js');
+loadScriptGlobal('lib/agent-activity.js');
 loadScriptGlobal('lib/agent-executor.js');
 
 // Reset helper

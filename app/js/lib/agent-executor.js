@@ -796,6 +796,11 @@ const AgentExecutor = (() => {
      observability, never the critical path of a mission run. */
   const _SHIP_LOG_CONTENT_CAP = 8000;
   function _logToShipLog(spaceshipId, agentId, role, content, metadata) {
+    // Activity signal fires regardless of ShipLog persistence — surfaces
+    // like the schematic status node need it for ephemeral runs that
+    // never bind to a real spaceship UUID (top-level chat, no-ship execute).
+    _emitActivity(agentId, metadata);
+
     if (typeof ShipLog === 'undefined' || typeof ShipLog.append !== 'function') return;
     if (!spaceshipId) return;
     let safe;
@@ -811,6 +816,15 @@ const AgentExecutor = (() => {
       const p = ShipLog.append(spaceshipId, { agentId, role, content: safe, metadata: metadata || {} });
       if (p && typeof p.then === 'function') p.catch(() => { /* non-critical */ });
     } catch { /* non-critical */ }
+  }
+
+  const _ACTIVE_EVENTS = new Set(['mission_start', 'turn_start']);
+  const _IDLE_EVENTS = new Set(['final_answer', 'turn_error', 'max_steps_reached']);
+  function _emitActivity(agentId, metadata) {
+    if (!agentId || typeof AgentActivity === 'undefined') return;
+    const ev = (metadata || {}).event;
+    if (_ACTIVE_EVENTS.has(ev)) AgentActivity.markActive(agentId);
+    else if (_IDLE_EVENTS.has(ev)) AgentActivity.markIdle(agentId);
   }
 
   return { execute, converse, classifyTool, _isSideEffectTool, _logToShipLog };
