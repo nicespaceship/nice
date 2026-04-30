@@ -1626,7 +1626,6 @@
   display:none;
   position:fixed; top:var(--guest-banner-height, 0px); left:0; right:0; height:48px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
-  border-bottom:var(--border-width) solid var(--border);
   align-items:center; justify-content:space-between; padding:0 12px; z-index:301;
 }
 .mobile-bar-btn {
@@ -4307,15 +4306,21 @@
 .app-sidebar.open ~ .nice-ai { left:calc(50% + 140px); width:calc(100% - 328px); }
 /* All interactive children need pointer-events restored */
 .nice-ai-input-area { pointer-events:auto; }
-/* Kill the focus-within accent halo across every theme. Per-theme
-   rules in theme.css change border-color + add a box-shadow on focus
-   ("a border appears when typing"); user wanted that off. Selector
-   `html[data-theme]` is (0,2,2), beating the (0,2,1) of the
-   `[data-theme="..."] .nice-ai-input-area:focus-within` theme rules
-   without `!important`. The always-on border each theme paints stays
-   untouched. */
+/* Drop the focus-within glow halo across every theme. The always-on
+   border itself is the focus indicator — its `border-color` shifts to
+   the per-theme accent on focus (LCARS pattern, cleanest of the eleven).
+   Specificity (0,3,1) beats the (0,3,0) per-theme focus rules without
+   `!important`. */
 html[data-theme] .nice-ai-input-area:focus-within {
-  border-color:var(--border);
+  box-shadow:none;
+}
+/* Same problem one layer in — the textarea inherits a focus outline + halo
+   from per-theme `textarea:focus-visible` rules and from the global
+   `*:focus-visible`. Kill both so the prompt input never paints anything
+   on focus. Specificity (0,3,1) beats the theme rule (0,2,1). */
+html[data-theme] .nice-ai-input:focus,
+html[data-theme] .nice-ai-input:focus-visible {
+  outline:none;
   box-shadow:none;
 }
 .nice-ai-chips { pointer-events:auto; }

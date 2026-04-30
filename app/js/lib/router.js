@@ -135,6 +135,7 @@ const Router = (() => {
     if (reducedMotion || !hasContent) {
       // Instant swap (first render or reduced motion)
       _el.innerHTML = '';
+      _el.scrollTop = 0;
       try {
         if (match.view.render) match.view.render(_el, match.params);
       } catch (err) {
@@ -146,6 +147,7 @@ const Router = (() => {
       _el.classList.add('view-exit');
       setTimeout(() => {
         _el.innerHTML = '';
+        _el.scrollTop = 0;
         _el.classList.remove('view-exit');
         try {
           if (match.view.render) match.view.render(_el, match.params);
