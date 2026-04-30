@@ -810,18 +810,32 @@ const NICE = (() => {
 
   /* ── Sidebar toggle ── */
   function _initSidebar() {
-    const toggle  = document.getElementById('sidebar-toggle');
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    if (toggle) {
-      toggle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
+    const brandBtn = document.getElementById('nice-brand-btn');
+    if (brandBtn) {
+      brandBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!sidebar.classList.contains('open')) {
+          sidebar.classList.add('open');
+        } else if (window.location.hash !== '#/' && window.location.hash !== '') {
+          window.location.hash = '#/';
+        }
       });
     }
+
+    const collapseBtn = document.getElementById('side-collapse-btn');
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sidebar.classList.remove('open');
+      });
+    }
+
     const mobileToggle = document.getElementById('mobile-sidebar-toggle');
-
-
     if (mobileToggle) {
       mobileToggle.addEventListener('click', () => {
         sidebar.classList.toggle('open');
@@ -833,6 +847,13 @@ const NICE = (() => {
         sidebar.classList.remove('open');
       });
     }
+
+    document.addEventListener('click', (e) => {
+      if (!sidebar.classList.contains('open')) return;
+      if (sidebar.contains(e.target)) return;
+      if (e.target.closest('#mobile-sidebar-toggle, .preview-panel, .nice-monitor, .hud-alert-dropdown, .app-topbar-actions, .app-hud-panel')) return;
+      sidebar.classList.remove('open');
+    });
 
     // Close sidebar on nav
     document.querySelectorAll('.side-link, .side-user-card, .side-popover-item, .mobile-bar-btn[href]').forEach(link => {
@@ -911,58 +932,8 @@ const NICE = (() => {
       }
     }
 
-    // ── Chats + Missions folders (collapsible) ──
+    // ── Chats folder (collapsible) ──
     _initChatsFolder();
-    _initMissionsFolder();
-  }
-
-  function _initMissionsFolder() {
-    const toggle = document.getElementById('side-missions-toggle');
-    const folder = document.getElementById('side-missions-folder');
-    if (toggle && folder) {
-      // Restore open state
-      if (localStorage.getItem(Utils.KEYS.missionsFolder) !== '0') folder.classList.add('open');
-      toggle.addEventListener('click', () => {
-        const isOpen = folder.classList.toggle('open');
-        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        localStorage.setItem(Utils.KEYS.missionsFolder, isOpen ? '1' : '0');
-      });
-      // Set initial aria state
-      if (folder.classList.contains('open')) toggle.setAttribute('aria-expanded', 'true');
-    }
-
-    // Populate missions list from State
-    _renderMissionsFolderList();
-    State.on('missions', _renderMissionsFolderList);
-  }
-
-  function _renderMissionsFolderList() {
-    const list = document.getElementById('side-missions-list');
-    if (!list) return;
-    const missions = State.get('missions') || [];
-    const STATUS_COLORS = { queued:'#f59e0b', running:'#6366f1', completed:'#22c55e', failed:'#ef4444' };
-
-    // Show running first, then queued, limit to 10
-    const sorted = [...missions]
-      .sort((a, b) => {
-        const order = { running:0, queued:1, failed:2, completed:3 };
-        return (order[a.status] ?? 4) - (order[b.status] ?? 4);
-      })
-      .slice(0, 10);
-
-    if (!sorted.length) {
-      list.innerHTML = '<div class="side-folder-item" style="opacity:.4;cursor:default">No missions</div>';
-      return;
-    }
-
-    list.innerHTML = sorted.map(m => {
-      const color = STATUS_COLORS[m.status] || '#888';
-      const title = (m.title || 'Untitled').slice(0, 30);
-      return `<a href="#/missions/${m.id}" class="side-folder-item" title="${m.title}">
-        <span class="side-folder-dot" style="background:${color}"></span>
-        ${title}
-      </a>`;
-    }).join('');
   }
 
   /* ── Chats folder (collapsible, conversation history) ── */
@@ -1193,6 +1164,16 @@ const NICE = (() => {
       newBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         _newConversation();
+      });
+    }
+
+    const chatsToggle = document.getElementById('side-chats-toggle');
+    if (chatsToggle) {
+      chatsToggle.addEventListener('click', (e) => {
+        if (e.target.closest('#side-chat-new')) return;
+        if (window.location.hash !== '#/' && window.location.hash !== '') {
+          window.location.hash = '#/';
+        }
       });
     }
 
@@ -1538,13 +1519,6 @@ const NICE = (() => {
       const mobileBtn = document.getElementById('btn-hud-mobile');
       const _isMobile = () => window.matchMedia('(max-width:768px)').matches;
       const toggleHUD = () => {
-        const sidebar = document.getElementById('app-sidebar');
-        // Desktop: HUD panel lives in the sidebar so we need the drawer
-        // open for it to be visible. Mobile: CSS repositions the panel
-        // as a dropdown under the top bar, so leave the sidebar closed.
-        if (sidebar && !sidebar.classList.contains('open') && !_isMobile()) {
-          sidebar.classList.add('open');
-        }
         panel.classList.toggle('open');
         btn.classList.toggle('active');
         if (mobileBtn) mobileBtn.classList.toggle('active');
@@ -2483,14 +2457,6 @@ const NICE = (() => {
       PromptPanel.syncRoute();
       window.addEventListener('hashchange', () => {
         PromptPanel.syncRoute();
-      });
-      // Brand logo click → start a new chat (Claude/ChatGPT pattern).
-      // _newConversation is idempotent: if the active chat is already empty,
-      // it just focuses it instead of piling up duplicate "New Chat" rows.
-      const brandBtn = document.getElementById('nice-brand-btn');
-      if (brandBtn) brandBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        _newConversation();
       });
     }
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.init();
