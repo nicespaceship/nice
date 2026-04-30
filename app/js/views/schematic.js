@@ -15,6 +15,7 @@ const SchematicView = (() => {
   // a full Router refresh.
   let _el = null;
   let _lastMobile = null;
+  let _unsubActivity = null;
   function _isMobile() {
     try { return window.matchMedia('(max-width:600px)').matches; }
     catch (e) { return false; }
@@ -127,6 +128,14 @@ const SchematicView = (() => {
         }
       });
     });
+
+    // Subscribe to live activity signals so the status node reflects
+    // mission-runner / agent-executor work in real time. Replace any
+    // prior subscription from a previous render of this view.
+    if (_unsubActivity) { try { _unsubActivity(); } catch (_) {} _unsubActivity = null; }
+    if (typeof AgentActivity !== 'undefined') {
+      _unsubActivity = AgentActivity.subscribe(_onActivityChange);
+    }
 
     // Mobile ladder rows. Tap the action button OR an empty row → open
     // the swap bottom sheet (in-place agent assignment, no route change).
@@ -416,13 +425,26 @@ const SchematicView = (() => {
   }
 
   // Agent status helper — drives the status node color on each row.
-  // The visual structure supports four states (empty/idle/recent/active);
-  // for now we only emit empty/idle because there's no signal source
-  // wired up. When the spaceship orchestrator publishes per-agent
-  // activity (mission delegation, streaming reply, etc.), update this
-  // function to return 'recent' or 'active' from that signal.
+  // 'empty'  slot has no agent assigned
+  // 'idle'   agent assigned, no recent activity
+  // 'recent' finished within AgentActivity.RECENT_WINDOW_MS (default 60s)
+  // 'active' currently executing (between mission_start and final_answer)
   function _agentStatus(bpId) {
-    return bpId ? 'idle' : 'empty';
+    if (!bpId) return 'empty';
+    if (typeof AgentActivity === 'undefined') return 'idle';
+    return AgentActivity.getState(bpId);
+  }
+
+  // Live updates: when an agent's state changes, mutate the matching row's
+  // data-status attribute in place. Avoids a full re-render and the layout
+  // jitter that would come with one. Falls through silently if the row
+  // isn't in the current viewport (e.g. desktop view, which doesn't
+  // currently surface a status node).
+  function _onActivityChange(agentId, state) {
+    if (!_el) return;
+    const status = agentId ? state : 'empty';
+    _el.querySelectorAll('.schematic-stack-row[data-bp-id="' + CSS.escape(agentId) + '"]')
+      .forEach((row) => { row.setAttribute('data-status', status); });
   }
 
   function _renderHeroSchematicMobile(shipClass, slotMap) {
@@ -755,6 +777,7 @@ const SchematicView = (() => {
     if (_resizeTimer) { cancelAnimationFrame(_resizeTimer); _resizeTimer = null; }
     window.removeEventListener('resize', _onResize);
     if (_wiredRO) { _wiredRO.disconnect(); _wiredRO = null; }
+    if (_unsubActivity) { try { _unsubActivity(); } catch (_) {} _unsubActivity = null; }
     // Mobile-only mounts — picker pill in #app-fixed-tabs and swap sheet
     // at body level. Both need explicit unmount when leaving the view.
     _unmountFixedShipPicker();
