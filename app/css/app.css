@@ -2834,8 +2834,8 @@
 .fleet-grid.ships-view-compact .blueprint-card-compact-stats { flex:0 0 auto; display:flex; gap:10px; align-items:center; }
 .fleet-grid.ships-view-compact .blueprint-card-compact-actions { flex:0 0 auto; display:flex; gap:6px; align-items:center; }
 .fleet-grid.ships-view-mini    { grid-template-columns:repeat(auto-fill, minmax(80px, 1fr)); gap:8px; }
-/* When old card classes are combined with .blueprint-card, the TCG card styles must win */
-.blueprint-card.agent-card, .blueprint-card.spaceship-card, .blueprint-card.ms-card {
+/* When old card classes are combined with .blueprint-card, the card styles must win */
+.blueprint-card.agent-card, .blueprint-card.spaceship-card {
   border:15px solid var(--border); border-radius:25px; padding:0; background:var(--panel-bg);
 }
 .agent-card {
@@ -3491,17 +3491,6 @@
 
 /* Fleet Detail */
 .fleet-detail-actions { display:flex; gap:10px; }
-.fleet-member-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; }
-.fleet-member-card {
-  display:flex; align-items:center; gap:10px; padding:12px;
-  border:var(--border-width) solid var(--border); background:var(--surface);
-  border-radius:var(--radius); text-decoration:none; color:var(--text);
-  transition:border-color .2s;
-}
-.fleet-member-card:hover { border-color:var(--border-hi); }
-.fleet-member-card-info { flex:1; min-width:0; }
-.fleet-member-card-name { font-family:var(--font-b); font-size:.78rem; display:block; }
-.fleet-member-card-role { font-family:var(--font-b); font-size:.52rem; color:var(--text-dim); display:block; }
 
 /* Fleet agent picker (modal) */
 .fleet-agent-picker { display:flex; flex-wrap:wrap; gap:8px; }
@@ -4708,7 +4697,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .search-input { width:100%; }
   .agents-grid { grid-template-columns:1fr; }
   .fleet-grid { grid-template-columns:1fr; }
-  .fleet-member-grid { grid-template-columns:1fr; }
   .detail-grid { grid-template-columns:1fr; }
   .builder-row { grid-template-columns:1fr; }
   .task-row-main { flex-wrap:wrap; }
@@ -4818,32 +4806,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .pro-gate-desc { font-size:.82rem; color:var(--text-muted, #888); margin-bottom:1rem; max-width:400px; margin-left:auto; margin-right:auto; }
 .pro-upgrade-btn { background:#6366f1; border:none; }
 
-/* ── Fleets ── */
-.ms-wrap { padding:1rem 0; }
-.ms-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; gap:1rem; }
-.ms-title { font-size:1.2rem; font-weight:700; }
-.ms-sub { font-size:.62rem; color:var(--text-muted, #888); margin-top:.25rem; }
-.ms-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; }
-.ms-grid .blueprint-card { margin:0; }
-.ms-card { padding:1.25rem; border-radius:var(--radius, 8px); border:1px solid var(--border, #222); background:var(--panel-bg, #111); display:flex; flex-direction:column; gap:.75rem; transition:border-color .2s; }
-.ms-card:hover { border-color:var(--accent, #fff); }
-.ms-card-hdr { display:flex; justify-content:space-between; align-items:flex-start; gap:.5rem; }
-.ms-card-info { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
-.ms-card-name { font-weight:600; font-size:1rem; }
-.ms-card-desc { font-size:.78rem; color:var(--text-muted, #888); line-height:1.4; }
-.ms-card-stats { display:flex; flex-wrap:wrap; gap:.75rem; }
-.ms-stat { font-size:.75rem; color:var(--text-muted, #888); }
-.ms-card-actions { display:flex; gap:.5rem; }
-.ms-bridge-desc { font-size:.85rem; color:var(--text-muted, #888); margin-bottom:1rem; line-height:1.5; }
-
-/* ── Crew ── */
-.ms-crew-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:.75rem; }
-.ms-crew-card { display:flex; align-items:center; gap:.75rem; padding:.75rem; border-radius:var(--radius, 8px); border:1px solid var(--border, #222); background:var(--bg-alt, #0a0a0a); }
-.ms-crew-avatar { width:36px; height:36px; border-radius:50%; background:var(--accent, #fff); color:var(--bg, #000); display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; flex-shrink:0; }
-.ms-crew-info { display:flex; flex-direction:column; gap:.1rem; }
-.ms-crew-name { font-size:.82rem; font-weight:600; }
-.ms-crew-role { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; }
-
 /* ═══════════════════════════════════════════════════════════════
    Chat Home (Claude-style default page)
 ═══════════════════════════════════════════════════════════════ */
@@ -4919,14 +4881,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 @media (max-width:600px) {
   .chat-home-greeting { font-size:var(--text-lg); }
 }
-
-/* ── Bridge Stats ── */
-.ms-bridge-stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:.75rem; }
-.ms-bstat { text-align:center; padding:.75rem .5rem; border-radius:var(--radius, 8px); border:1px solid var(--border, #222); background:var(--bg-alt, #0a0a0a); }
-.ms-bstat-val { display:block; font-size:1.5rem; font-weight:700; font-family:var(--font-m, monospace); color:var(--accent, #fff); }
-.ms-bstat-label { font-size:.68rem; color:var(--text-muted, #888); text-transform:uppercase; letter-spacing:.03em; }
-.ms-captain-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
-
 
 /* ═══════════════════════════════════════════════════════════════════
    PHASE 1: Error Boundaries + Accessibility
