@@ -338,8 +338,6 @@
 
 .hud-row { display:flex; align-items:center; gap:6px; }
 .hud-row-sep { height:1px; background:var(--border); margin:2px 0; opacity:.5; }
-.hud-notif-row { justify-content:space-between; padding:2px 0; }
-.hud-notif-row .bell-dropdown { position:absolute; top:auto; left:0; right:0; margin-top:4px; }
 .dock-lbl { font-family:var(--font-b); font-size:.55rem; letter-spacing:.14em; color:var(--text-muted); margin-right:2px; padding-right:6px; }
 .dock-lbl-sep { color:var(--border-hi); margin:0 2px; }
 .dock-lbl-val { color:var(--accent); letter-spacing:.08em; }
@@ -1319,7 +1317,6 @@
 }
 .side-header .app-brand-text { font-size:var(--text-lg); color:var(--nav-text, var(--text)); }
 .side-header-actions { display:flex; align-items:center; gap:6px; }
-.app-sidebar.open .side-toggle-btn { order:1; }
 .side-header .app-hdr-menu { display:none; }
 
 /* Chats folder — always open, no chevron needed */
@@ -1653,18 +1650,6 @@
 .app-sidebar:not(.open) .side-footer { padding:8px; border-top:none; }
 .app-sidebar:not(.open) .side-footer-row { justify-content:center; }
 .app-sidebar:not(.open) .side-user-card { padding:0; justify-content:center; align-items:center; }
-
-/* ── Sidebar toggle chevron ── */
-.side-toggle-btn {
-  display:flex; align-items:center; justify-content:center;
-  width:28px; height:28px; border-radius:var(--radius, 6px);
-  background:none; border:1px solid transparent;
-  color:var(--text-muted); cursor:pointer;
-  transition:color .2s, background .2s, border-color .2s;
-}
-.side-toggle-btn:hover { color:var(--accent); background:var(--bg-alt); border-color:var(--border); }
-.side-toggle-btn svg { transition:transform .3s ease; }
-.app-sidebar.open .side-toggle-btn svg { transform:rotate(180deg); }
 
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
 .app-mobile-bar {
