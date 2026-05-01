@@ -252,7 +252,7 @@ const AgentsView = (() => {
         <div class="agent-card-meta">
           <span class="agent-tag">${_esc(a.llm_engine || 'claude-4')}</span>
           <span class="agent-tag">${_esc(a.type || 'Specialist')}</span>
-          <span class="agent-tag status-tag-${a.status}">${_esc(a.status)}</span>
+          <span class="agent-tag status-tag-${a.status}">${_esc(Utils.titleCase(a.status))}</span>
           ${busyBadge}
         </div>
         ${config.tools && config.tools.length ? `<div class="agent-card-tools">${config.tools.slice(0,3).map(t => `<span class="agent-tool-tag">${_esc(t)}</span>`).join('')}${config.tools.length > 3 ? `<span class="agent-tool-tag">+${config.tools.length - 3}</span>` : ''}</div>` : ''}
@@ -639,7 +639,7 @@ const AgentDetailView = (() => {
               <h2 class="detail-name">${_esc(agent.name)}</h2>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
-                <span class="detail-status">${_esc(agent.status)}</span>
+                <span class="detail-status">${_esc(Utils.titleCase(agent.status))}</span>
                 <span class="agent-tag">${_esc(agent.role || 'Agent')}</span>
                 <span class="agent-tag">${agent.llm_engine === 'nice-auto' ? 'NICE Auto' : _esc(agent.llm_engine || 'claude-4')}</span>
               </div>

@@ -5,9 +5,12 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const MediaTools = (() => {
+  let _initialized = false;
 
   function init() {
+    if (_initialized) return;
     if (typeof ToolRegistry === 'undefined') return;
+    _initialized = true;
 
     /* ── Generate Image ── */
     ToolRegistry.register({
@@ -155,8 +158,6 @@ const MediaTools = (() => {
         }
       },
     });
-
-    console.log('[MediaTools] Registered generate-image, generate-social-post, edit-image, and generate-video tools');
   }
 
   /* ── API Call ── */

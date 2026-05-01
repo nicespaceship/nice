@@ -465,7 +465,7 @@ const MissionsView = (() => {
     let dbError = false;
     if (user) {
       try { missions = await SB.db('mission_runs').list({ userId: user.id, orderBy: 'created_at' }); }
-      catch (err) { dbError = true; console.warn('Supabase tasks unavailable:', err.message); }
+      catch (err) { dbError = true; console.warn('Supabase mission_runs unavailable:', err.message); }
     }
     if (!user || (dbError && !missions.length)) missions = _seedMissions();
     // Snapshot statuses for transition detection
@@ -638,9 +638,9 @@ const MissionDetailView = (() => {
     // on cross-view navigation but NOT on within-view re-navigation
     // (going from one mission detail to another) — the route pattern
     // matches the same view function. Without this guard, each mission
-    // visit leaks a subscription to the 'tasks-changes' channel, and
+    // visit leaks a subscription to the 'mission_runs' channel, and
     // Supabase's realtime client throws on the second attempt:
-    //   "cannot add postgres_changes callbacks for realtime:tasks-changes
+    //   "cannot add postgres_changes callbacks for realtime:mission_runs
     //    after subscribe()"
     // which breaks the fetch that follows. User-visible symptom:
     // "Mission Not Found" on legitimate missions from the second visit
@@ -726,8 +726,8 @@ const MissionDetailView = (() => {
               <h2 class="detail-name">${_esc(mission.title)}</h2>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
-                <span class="detail-status">${_esc(mission.status)}</span>
-                <span class="task-priority-tag priority-${mission.priority}">${_esc(mission.priority)}</span>
+                <span class="detail-status">${_esc(Utils.titleCase(mission.status))}</span>
+                <span class="task-priority-tag priority-${mission.priority}">${_esc(Utils.titleCase(mission.priority))}</span>
                 ${duration ? `<span class="agent-tag">Duration: ${duration}</span>` : ''}
               </div>
             </div>
@@ -1101,7 +1101,7 @@ const MissionDetailView = (() => {
 
   /* ── Sprint 4 — DAG inspector ───────────────────────────────────────
      Read-only rendering of a mission's workflow plan alongside the
-     per-node outputs captured in tasks.node_results. Appears only for
+     per-node outputs captured in mission_runs.node_results. Appears only for
      multi-node DAGs (plan_snapshot.nodes.length > 1 or shape='dag').
      Status is derived — plan_snapshot is the frozen blueprint;
      node_results is the actual execution record; the mission's top-level
@@ -1432,8 +1432,8 @@ const SharedReportView = (() => {
           <div class="detail-header-info">
             <h2 class="detail-name">${_esc(mission.title)}</h2>
             <div class="detail-meta-row">
-              <span class="task-status-badge badge-${mission.status}">${_esc(mission.status)}</span>
-              <span class="task-priority-tag priority-${mission.priority}">${_esc(mission.priority)}</span>
+              <span class="task-status-badge badge-${mission.status}">${_esc(Utils.titleCase(mission.status))}</span>
+              <span class="task-priority-tag priority-${mission.priority}">${_esc(Utils.titleCase(mission.priority))}</span>
             </div>
           </div>
         </div>

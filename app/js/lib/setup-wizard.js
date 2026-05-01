@@ -261,7 +261,7 @@ const SetupWizard = (() => {
           <div class="wizard-rec-section">
             <h4>Integrations</h4>
             <div class="wizard-integrations">
-              ${proposal.integrations_needed.map(i => `<span class="wizard-integration-badge">${_esc(i)}</span>`).join('')}
+              ${proposal.integrations_needed.map(i => `<span class="wizard-integration-badge">${_esc(Utils.titleCase(i))}</span>`).join('')}
             </div>
           </div>
         ` : ''}

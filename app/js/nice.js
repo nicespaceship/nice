@@ -878,7 +878,8 @@ const NICE = (() => {
       const itemsId = btn.id + '-items';
       const items = document.getElementById(itemsId);
       if (!items) return;
-      const stored = localStorage.getItem('nice-nav-' + btn.id);
+      const navKey = Utils.KEYS.navCollapsed(btn.id);
+      const stored = localStorage.getItem(navKey);
       if (stored === '0') {
         items.classList.add('collapsed');
         btn.setAttribute('aria-expanded', 'false');
@@ -886,7 +887,7 @@ const NICE = (() => {
       btn.addEventListener('click', () => {
         const isCollapsed = items.classList.toggle('collapsed');
         btn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-        localStorage.setItem('nice-nav-' + btn.id, isCollapsed ? '0' : '1');
+        localStorage.setItem(navKey, isCollapsed ? '0' : '1');
       });
     });
 
@@ -1443,20 +1444,21 @@ const NICE = (() => {
 
   function _updateBellBadge(notifs) {
     const unread = notifs.filter(n => !n.read).length;
+    const empty = unread === 0;
     const badge = document.getElementById('bell-badge');
     if (badge) {
       badge.textContent = unread || '';
-      badge.style.display = unread > 0 ? '' : 'none';
+      badge.classList.toggle('hidden', empty);
     }
     const hudBadge = document.getElementById('hud-alert-badge');
     if (hudBadge) {
       hudBadge.textContent = unread || '';
-      hudBadge.style.display = unread > 0 ? '' : 'none';
+      hudBadge.classList.toggle('hidden', empty);
     }
     const tabBadge = document.getElementById('tab-alert-badge');
     if (tabBadge) {
       tabBadge.textContent = unread || '';
-      tabBadge.style.display = unread > 0 ? '' : 'none';
+      tabBadge.classList.toggle('hidden', empty);
     }
   }
 
@@ -1739,7 +1741,7 @@ const NICE = (() => {
   async function _checkFirstRun(user) {
     if (!user) return;
     // Check both the new simple flag and legacy per-user flag
-    if (localStorage.getItem(Utils.KEYS.onboarded) || localStorage.getItem('nice-onboarded-' + user.id)) return;
+    if (localStorage.getItem(Utils.KEYS.onboarded) || localStorage.getItem(Utils.KEYS.onboardedLegacy(user.id))) return;
     // Wait a moment for the app to settle
     await new Promise(r => setTimeout(r, 1500));
     // Check if user has any spaceships — skip wizard if they do
@@ -1765,8 +1767,8 @@ const NICE = (() => {
   /* ── Migrate localStorage spaceship slots to Supabase user_spaceships ── */
   async function _migrateLocalSpaceships(user) {
     if (!user || !SB.isReady() || !SB.isOnline()) return;
-    const migrated = localStorage.getItem('nice-mc-migrated-' + user.id);
-    if (migrated) return;
+    const migratedKey = Utils.KEYS.mcMigrated(user.id);
+    if (localStorage.getItem(migratedKey)) return;
 
     const localShip = localStorage.getItem(Utils.KEYS.mcShip);
     const localSlots = (() => { try { return JSON.parse(localStorage.getItem(Utils.KEYS.mcSlots) || '{}'); } catch { return {}; } })();
@@ -1776,7 +1778,7 @@ const NICE = (() => {
       const existing = await SB.db('user_spaceships').list({ userId: user.id });
       if (existing && existing.length) {
         // User already has DB records — skip migration
-        localStorage.setItem('nice-mc-migrated-' + user.id, '1');
+        localStorage.setItem(migratedKey, '1');
         return;
       }
 
@@ -1799,19 +1801,19 @@ const NICE = (() => {
         status: 'standby',
       });
 
-      localStorage.setItem('nice-mc-migrated-' + user.id, '1');
+      localStorage.setItem(migratedKey, '1');
     } catch (err) {
       // Set flag even on failure to prevent retry loops
-      localStorage.setItem('nice-mc-migrated-' + user.id, '1');
+      localStorage.setItem(migratedKey, '1');
       console.warn('[NICE] Spaceship migration failed:', err.message);
     }
   }
 
   function _updateAuthUI(user) {
     const badge = document.getElementById('bell-badge');
-    if (badge) badge.style.display = user ? '' : 'none';
+    if (badge) badge.classList.toggle('hidden', !user);
     const hudBadge = document.getElementById('hud-alert-badge');
-    if (hudBadge && !user) hudBadge.style.display = 'none';
+    if (hudBadge && !user) hudBadge.classList.add('hidden');
   }
 
   /* ── Register routes ── */
@@ -2558,10 +2560,10 @@ const NICE = (() => {
     if (!el) return;
     if (count > 0) {
       el.textContent = count;
-      el.style.display = '';
       el.className = 'side-badge' + (extraClass ? ' ' + extraClass : '');
+      el.classList.remove('hidden');
     } else {
-      el.style.display = 'none';
+      el.classList.add('hidden');
     }
   }
 

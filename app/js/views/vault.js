@@ -87,7 +87,7 @@ const VaultView = (() => {
       Stacks.applyStack(def);
     }
     const activeStackId = typeof Stacks !== 'undefined' ? Stacks.activeStack() : null;
-    const advancedOpen = localStorage.getItem('nice-vault-advanced') === '1';
+    const advancedOpen = localStorage.getItem(Utils.KEYS.vaultAdvanced) === '1';
 
     el.innerHTML = `
       <div class="vault-wrap">
@@ -360,11 +360,11 @@ const VaultView = (() => {
         if (isHidden) {
           body.removeAttribute('hidden');
           advBtn.textContent = 'Hide';
-          localStorage.setItem('nice-vault-advanced', '1');
+          localStorage.setItem(Utils.KEYS.vaultAdvanced, '1');
         } else {
           body.setAttribute('hidden', '');
           advBtn.textContent = 'Show';
-          localStorage.removeItem('nice-vault-advanced');
+          localStorage.removeItem(Utils.KEYS.vaultAdvanced);
         }
       });
     }

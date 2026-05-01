@@ -173,8 +173,8 @@ const BrowserTools = (() => {
     /* ── browser-search ── */
     ToolRegistry.register({
       id: 'browser-search',
-      name: 'Web Search',
-      description: 'Search the web using DuckDuckGo. Returns search results with titles and URLs. Use this to find pages before navigating to them.',
+      name: 'Browser Search',
+      description: 'Search the web using DuckDuckGo from inside the browser session, with the same cache as browser-navigate. Use this to find pages before navigating to them.',
       schema: {
         type: 'object',
         properties: {

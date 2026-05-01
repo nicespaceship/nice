@@ -27,6 +27,16 @@ const Utils = (() => {
     return `<svg class="icon ${cls || 'icon-sm'}" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${name}"/></svg>`;
   }
 
+  /** Sentence-case a status / id-like string. "active" → "Active", "google-drive" → "Google Drive".
+      Use this instead of `text-transform: capitalize` (banned per CLAUDE.md typography rules) so
+      that hyphens and underscores in source ids become real word breaks in the display label. */
+  function titleCase(s) {
+    if (s == null) return '';
+    return String(s).split(/[\s_-]+/).filter(Boolean)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+
   /** Format a date for display — consistent across all views */
   function formatDate(ts) {
     if (!ts) return '';
@@ -124,7 +134,16 @@ const Utils = (() => {
     voiceOff: 'nice-voice-off',
     voiceSample: 'nice-voice-sample',
     checklistDismissed: 'nice-checklist-dismissed',
+    vaultAdvanced: 'nice-vault-advanced',
+
+    /* ── Per-resource key factories ──
+       Some keys carry an id suffix (per nav button, per user). Expose them
+       as functions so callers don't reach for raw `'nice-foo-' + id` strings
+       and bypass this SSOT. */
+    navCollapsed:    (btnId) => 'nice-nav-' + btnId,
+    mcMigrated:      (userId) => 'nice-mc-migrated-' + userId,
+    onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
-  return { esc, timeAgo, formatDate, formatDateTime, icon, sanitizeCallsign, KEYS };
+  return { esc, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, KEYS };
 })();
