@@ -5,6 +5,7 @@
 
 /* ── Utility classes ── */
 .view-no-scroll { overflow:hidden !important; }
+.hidden { display:none !important; }
 
 /* TRON tab — only visible on The Grid theme */
 .bp-tab-tron { display:none !important; }

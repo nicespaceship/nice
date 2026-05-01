@@ -1444,20 +1444,21 @@ const NICE = (() => {
 
   function _updateBellBadge(notifs) {
     const unread = notifs.filter(n => !n.read).length;
+    const empty = unread === 0;
     const badge = document.getElementById('bell-badge');
     if (badge) {
       badge.textContent = unread || '';
-      badge.style.display = unread > 0 ? '' : 'none';
+      badge.classList.toggle('hidden', empty);
     }
     const hudBadge = document.getElementById('hud-alert-badge');
     if (hudBadge) {
       hudBadge.textContent = unread || '';
-      hudBadge.style.display = unread > 0 ? '' : 'none';
+      hudBadge.classList.toggle('hidden', empty);
     }
     const tabBadge = document.getElementById('tab-alert-badge');
     if (tabBadge) {
       tabBadge.textContent = unread || '';
-      tabBadge.style.display = unread > 0 ? '' : 'none';
+      tabBadge.classList.toggle('hidden', empty);
     }
   }
 
@@ -1810,9 +1811,9 @@ const NICE = (() => {
 
   function _updateAuthUI(user) {
     const badge = document.getElementById('bell-badge');
-    if (badge) badge.style.display = user ? '' : 'none';
+    if (badge) badge.classList.toggle('hidden', !user);
     const hudBadge = document.getElementById('hud-alert-badge');
-    if (hudBadge && !user) hudBadge.style.display = 'none';
+    if (hudBadge && !user) hudBadge.classList.add('hidden');
   }
 
   /* ── Register routes ── */
@@ -2559,10 +2560,10 @@ const NICE = (() => {
     if (!el) return;
     if (count > 0) {
       el.textContent = count;
-      el.style.display = '';
       el.className = 'side-badge' + (extraClass ? ' ' + extraClass : '');
+      el.classList.remove('hidden');
     } else {
-      el.style.display = 'none';
+      el.classList.add('hidden');
     }
   }
 
