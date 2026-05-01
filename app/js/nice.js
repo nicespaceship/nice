@@ -89,7 +89,7 @@ const Theme = (() => {
           'No agents found': 'No protocols match, sir',
           'No results found': 'No results, sir',
           'No results': 'Nothing to report, sir',
-          'No chats yet': 'No active sessions, sir',
+          'Deploy a ship to start one.': 'Awaiting ship deployment, sir.',
           'No eligible blueprints': 'Nothing eligible, sir',
           'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
           'No Blueprints Found': 'Nothing in the archive, sir',
@@ -1182,6 +1182,10 @@ const NICE = (() => {
     setInterval(_saveActiveConversation, 30000);
     window.addEventListener('beforeunload', _saveActiveConversation);
 
+    // Re-render on theme change so the empty-state copy picks up the
+    // active persona's rewrite (Theme.rewrite is consulted at render).
+    document.addEventListener('nice:theme-change', _renderChatsList);
+
     _renderChatsList();
   }
 
@@ -1219,7 +1223,9 @@ const NICE = (() => {
       .slice(0, 100);
 
     if (!sorted.length) {
-      list.innerHTML = '<div class="side-folder-item" style="opacity:.4;cursor:default">No chats yet</div>';
+      const base = 'Deploy a ship to start one.';
+      const msg = (typeof Theme !== 'undefined' && Theme.rewrite) ? Theme.rewrite(base) : base;
+      list.innerHTML = `<div class="side-folder-item" style="opacity:.4;cursor:default">${Utils.esc(msg)}</div>`;
       return;
     }
 
