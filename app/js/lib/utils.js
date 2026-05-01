@@ -134,6 +134,15 @@ const Utils = (() => {
     voiceOff: 'nice-voice-off',
     voiceSample: 'nice-voice-sample',
     checklistDismissed: 'nice-checklist-dismissed',
+    vaultAdvanced: 'nice-vault-advanced',
+
+    /* ── Per-resource key factories ──
+       Some keys carry an id suffix (per nav button, per user). Expose them
+       as functions so callers don't reach for raw `'nice-foo-' + id` strings
+       and bypass this SSOT. */
+    navCollapsed:    (btnId) => 'nice-nav-' + btnId,
+    mcMigrated:      (userId) => 'nice-mc-migrated-' + userId,
+    onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
   return { esc, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, KEYS };
