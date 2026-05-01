@@ -6972,21 +6972,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 .integrations-section-desc { font-family:var(--font-b); font-size:.62rem; letter-spacing:.08em; color:var(--text-muted); margin:4px 0 0; }
 
 /* ═══════════════════════════════════════════════════════════════
-   MCP Config View
+   MCP Catalog (Integrations view)
 ═══════════════════════════════════════════════════════════════ */
-.mcp-config-wrap { display:flex; flex-direction:column; gap:20px; }
-.mcp-config-header {}
-.mcp-config-title { font-family:var(--font-b); font-size:1rem; font-weight:700; margin:0; }
-.mcp-config-sub { font-family:var(--font-b); font-size:.62rem; letter-spacing:.08em; color:var(--text-muted); margin:4px 0 0; }
-
-.mcp-config-stats { display:flex; gap:20px; flex-wrap:wrap; }
-.mcp-stat { display:flex; align-items:center; gap:6px; }
-.mcp-stat-num { font-family:var(--font-b); font-size:1rem; font-weight:700; }
-.mcp-stat-label { font-family:var(--font-b); font-size:.48rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
-
-.mcp-config-section {}
-.mcp-config-section-title { font-family:var(--font-b); font-size:.9rem; font-weight:700; margin:0 0 12px; }
-
 .mcp-catalog-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; }
 .mcp-catalog-card {
   background:var(--panel-bg); border:var(--border-width) solid var(--border); border-radius:var(--radius);
@@ -7036,21 +7023,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .mcp-catalog-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:auto; }
 .mcp-catalog-transport { font-size:.5rem; color:var(--text-muted); letter-spacing:.06em; }
-
-.mcp-conn-row {
-  display:flex; align-items:center; gap:12px; padding:10px 14px;
-  border:var(--border-width) solid var(--border); border-radius:var(--radius);
-  background:var(--panel-bg); font-size:.82rem; transition:border-color .2s;
-}
-.mcp-conn-row:hover { border-color:var(--accent); }
-.mcp-conn-icon { flex-shrink:0; }
-.mcp-conn-info { flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; }
-.mcp-conn-name { font-family:var(--font-b); font-size:.82rem; font-weight:600; }
-.mcp-conn-url { font-size:.55rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; }
-.mcp-conn-tools {}
-.mcp-tool-count { font-family:var(--font-b); font-size:.6rem; color:var(--text-muted); }
-.mcp-conn-meta { display:flex; align-items:center; gap:4px; font-size:.7rem; }
-.mcp-connections-list { display:flex; flex-direction:column; gap:4px; }
 
 @media (max-width:600px) {
   .mcp-catalog-grid { grid-template-columns:1fr; }
