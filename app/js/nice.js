@@ -873,25 +873,6 @@ const NICE = (() => {
       });
     }
 
-    // Collapsible nav groups
-    document.querySelectorAll('.side-group-toggle').forEach(btn => {
-      const itemsId = btn.id + '-items';
-      const items = document.getElementById(itemsId);
-      if (!items) return;
-      const navKey = Utils.KEYS.navCollapsed(btn.id);
-      const stored = localStorage.getItem(navKey);
-      if (stored === '0') {
-        items.classList.add('collapsed');
-        btn.setAttribute('aria-expanded', 'false');
-      }
-      btn.addEventListener('click', () => {
-        const isCollapsed = items.classList.toggle('collapsed');
-        btn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-        localStorage.setItem(navKey, isCollapsed ? '0' : '1');
-      });
-    });
-
-
     // Side footer popover (Settings / Export / Log Out)
     const moreBtn = document.getElementById('side-more-btn');
     const popover = document.getElementById('side-popover');
