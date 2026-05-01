@@ -358,8 +358,7 @@ const WorkflowEngine = (() => {
   /**
    * Triage node — picks the best agent from `candidates` for the prompt
    * and runs it. Routing decision is logged to ship_log so the UI /
-   * Missions view can surface it. (Pattern formerly lived in the
-   * deleted MissionRouter.route().)
+   * Missions view can surface it.
    *
    * Config:
    *   - candidates: string[]  // agent or blueprint ids; defaults to all
