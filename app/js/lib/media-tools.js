@@ -158,8 +158,6 @@ const MediaTools = (() => {
         }
       },
     });
-
-    console.log('[MediaTools] Registered generate-image, generate-social-post, edit-image, and generate-video tools');
   }
 
   /* ── API Call ── */
