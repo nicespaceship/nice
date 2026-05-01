@@ -9987,13 +9987,12 @@ body.preview-active .nice-ai {
   }
   .security-tabs {
     position:sticky;
-    /* Security isn't a Bridge view, so there's no `#app-fixed-tabs` in the
-       flow above the scroller — the scroller starts at viewport y=0,
-       overlapped by the position:fixed mobile-bar (48px) + guest banner.
-       Pin sticky below both so it doesn't sit behind them. Bridge views
-       don't need this offset (their scroller already starts after the
-       in-flow tab pill, well clear of the mobile-bar). */
-    top:calc(48px + var(--guest-banner-height, 0px));
+    /* `.app-view-content` is the sticky container and already starts below
+       the fixed mobile-bar + guest banner — sticky `top` is measured from
+       the scrollport's edge, so `top:0` pins to that edge, not the
+       viewport's edge. Adding the mobile-bar/banner offset here would
+       double-count them and push the bar 76px DOWN into the content. */
+    top:0;
     z-index:5;
     /* Default `display:inline-flex` shrinks to content — content beneath
        peeks past the bar's left/right edges during scroll. Stretch
