@@ -2733,7 +2733,7 @@
 .ship-profile-desc:focus { color:var(--text); border-bottom:1px solid var(--accent); }
 
 .detail-meta-row { display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap; }
-.detail-status { font-family:var(--font-b); font-size:.68rem; letter-spacing:.1em; text-transform:capitalize; color:var(--text-muted); }
+.detail-status { font-family:var(--font-b); font-size:.68rem; letter-spacing:.1em; color:var(--text-muted); }
 .detail-section { border:var(--border-width) solid var(--border); background:var(--panel-bg); border-radius:var(--radius); padding:18px; }
 .detail-section-title { font-family:var(--font-b); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-muted); margin:0 0 12px 0; }
 
@@ -2859,7 +2859,6 @@
 .agent-tag {
   font-family:var(--font-b); font-size:.52rem; letter-spacing:.08em;
   padding:2px 8px; border:1px solid var(--border); color:var(--text-muted);
-  text-transform:capitalize;
 }
 .status-tag-active { border-color:var(--color-success); color:var(--color-success); }
 .status-tag-idle { border-color:var(--color-warning); color:var(--color-warning); }
@@ -6983,7 +6982,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .api-conn-name { font-family:var(--font-b); font-size:.82rem; font-weight:600; }
 .api-conn-key { font-size:.6rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; }
 .api-conn-meta { display:flex; align-items:center; gap:4px; font-size:.7rem; }
-.api-conn-status { text-transform:capitalize; }
 .api-conn-used { font-family:var(--font-b); font-size:.55rem; color:var(--text-muted); white-space:nowrap; }
 .api-connections-list { display:flex; flex-direction:column; gap:4px; }
 
@@ -7097,7 +7095,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .mcp-conn-tools {}
 .mcp-tool-count { font-family:var(--font-b); font-size:.6rem; color:var(--text-muted); }
 .mcp-conn-meta { display:flex; align-items:center; gap:4px; font-size:.7rem; }
-.mcp-conn-status { text-transform:capitalize; }
 .mcp-connections-list { display:flex; flex-direction:column; gap:4px; }
 
 @media (max-width:600px) {
@@ -7603,7 +7600,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-size: 0.75rem; font-weight: 600;
   padding: 3px 10px; border-radius: 12px;
   background: rgba(34,197,94,0.12); color: var(--accent2, #22c55e);
-  text-transform: capitalize;
 }
 .wizard-shake {
   animation: wizard-shake 0.3s ease-in-out;
@@ -9835,7 +9831,7 @@ body.preview-active .nice-ai {
 .cd-integrations { display:flex; flex-direction:column; gap:8px; }
 .cd-integration-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius, 8px); border:1px solid var(--border, #333); background:var(--bg-alt, #18181b); font-family:var(--font-b, Inter, sans-serif); font-size:.82rem; }
 .cd-integration-icon { font-size:1.1rem; }
-.cd-integration-name { flex:1; color:var(--text, #fff); text-transform:capitalize; }
+.cd-integration-name { flex:1; color:var(--text, #fff); }
 .cd-integration-status { font-size:.72rem; font-weight:600; }
 .cd-integration-status.connected { color:#34d399; }
 .cd-integration-status.disconnected { color:#fbbf24; }

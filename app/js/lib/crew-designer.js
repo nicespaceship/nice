@@ -385,7 +385,7 @@ Rules:
               const connected = _isIntegrationConnected(int);
               return `<div class="cd-integration-row">
                 <span class="cd-integration-icon">${TOOL_LABELS[int]?.charAt(0) || '🔌'}</span>
-                <span class="cd-integration-name">${_esc(int)}</span>
+                <span class="cd-integration-name">${_esc(Utils.titleCase(int))}</span>
                 <span class="cd-integration-status ${connected ? 'connected' : 'disconnected'}">${connected ? '✓ Connected' : '⚠ Not connected'}</span>
               </div>`;
             }).join('')}

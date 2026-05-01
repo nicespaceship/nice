@@ -726,8 +726,8 @@ const MissionDetailView = (() => {
               <h2 class="detail-name">${_esc(mission.title)}</h2>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
-                <span class="detail-status">${_esc(mission.status)}</span>
-                <span class="task-priority-tag priority-${mission.priority}">${_esc(mission.priority)}</span>
+                <span class="detail-status">${_esc(Utils.titleCase(mission.status))}</span>
+                <span class="task-priority-tag priority-${mission.priority}">${_esc(Utils.titleCase(mission.priority))}</span>
                 ${duration ? `<span class="agent-tag">Duration: ${duration}</span>` : ''}
               </div>
             </div>
@@ -1432,8 +1432,8 @@ const SharedReportView = (() => {
           <div class="detail-header-info">
             <h2 class="detail-name">${_esc(mission.title)}</h2>
             <div class="detail-meta-row">
-              <span class="task-status-badge badge-${mission.status}">${_esc(mission.status)}</span>
-              <span class="task-priority-tag priority-${mission.priority}">${_esc(mission.priority)}</span>
+              <span class="task-status-badge badge-${mission.status}">${_esc(Utils.titleCase(mission.status))}</span>
+              <span class="task-priority-tag priority-${mission.priority}">${_esc(Utils.titleCase(mission.priority))}</span>
             </div>
           </div>
         </div>

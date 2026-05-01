@@ -265,7 +265,7 @@ const SpaceshipsView = (() => {
               <div class="spaceship-card-name">${_esc(f.name)} ${shipClass}</div>
               <div class="spaceship-card-count">${members.length} agent${members.length !== 1 ? 's' : ''}</div>
             </div>
-            <div class="fleet-status-group">${statusDot}<span class="agent-tag status-tag-${f.status}">${_esc(f.status)}</span></div>
+            <div class="fleet-status-group">${statusDot}<span class="agent-tag status-tag-${f.status}">${_esc(Utils.titleCase(f.status))}</span></div>
           </div>
           <div class="fleet-members">${memberList}</div>
           ${healthBars}
@@ -1086,7 +1086,7 @@ const SpaceshipDetailView = (() => {
               <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add a ship description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
-                <span class="detail-status">${_esc(fleet.status)}</span>
+                <span class="detail-status">${_esc(Utils.titleCase(fleet.status))}</span>
                 <span class="agent-tag">${members.length} agent${members.length !== 1 ? 's' : ''}</span>
                 <span class="agent-tag">${spaceshipClass.slots.length} slots</span>
               </div>
