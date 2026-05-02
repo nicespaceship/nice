@@ -369,9 +369,9 @@
 .fb:hover { border-color:var(--border-hi); color:var(--text); }
 .fb.active { border-color:var(--accent); color:var(--accent); }
 .fb-auto  { font-family:var(--font-m); font-size:10px; }
-.fb-clean { font-family:'Inter', sans-serif; font-size:11px; font-weight:600; }
-.fb-space { font-family:'Orbitron', sans-serif; font-size:7px; font-weight:700; }
-.fb-tac   { font-family:'Rajdhani', sans-serif; font-size:12px; font-weight:700; }
+.fb-clean { font-family:'Inter', sans-serif; font-size:11px; font-weight:var(--fw-medium); }
+.fb-space { font-family:'Orbitron', sans-serif; font-size:7px; font-weight:var(--fw-bold); }
+.fb-tac   { font-family:'Rajdhani', sans-serif; font-size:12px; font-weight:var(--fw-bold); }
 .fb-code  { font-family:'Fira Code', monospace; font-size:9px; }
 .fb-serif { font-family:'Playfair Display', serif; font-size:11px; font-style:italic; }
 .fb-mono  { font-family:'Share Tech Mono', monospace; font-size:10px; }
