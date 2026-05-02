@@ -2317,7 +2317,7 @@
 .dock-ship-active { border-color:var(--accent); background:rgba(255,255,255,.03); }
 .dock-ship-info { display:flex; flex-direction:column; gap:2px; }
 .dock-ship-name { font-size:.82rem; font-weight:var(--fw-medium); color:var(--text); }
-.dock-ship-class { font-family:var(--font-b); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); }
+.dock-ship-class { font-family:var(--font-b); font-size:.55rem; letter-spacing:var(--tracking-normal); color:var(--text-muted); }
 .dock-ship-status { font-family:var(--font-b); font-size:.55rem; letter-spacing:var(--tracking-caps); font-weight:var(--fw-medium); }
 .dock-schematic-section { margin-bottom:24px; }
 .dock-prog-section { margin-bottom:20px; }
