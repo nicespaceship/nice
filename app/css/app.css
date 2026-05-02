@@ -109,6 +109,17 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   HEADING DEFAULTS — global token-based rule
+   Component-scoped rules (.app-empty h2, .auth-modal h2, etc.)
+   override on specificity. Themes with compressed scales (16bit,
+   pixel font) override these to one tier up for visual hierarchy.
+───────────────────────────────────────────────────────────────── */
+h1 { font-size: var(--text-xl);   font-weight: var(--fw-bold);   line-height: var(--lh-tight); margin: 0; }
+h2 { font-size: var(--text-lg);   font-weight: var(--fw-bold);   line-height: var(--lh-snug);  margin: 0; }
+h3 { font-size: var(--text-md);   font-weight: var(--fw-bold);   line-height: var(--lh-snug);  margin: 0; }
+h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: var(--lh-snug);  margin: 0; }
+
+/* ─────────────────────────────────────────────────────────────────
    ICONS
 ───────────────────────────────────────────────────────────────── */
 .icon { display:inline-block; vertical-align:middle; }
@@ -396,9 +407,9 @@
 [data-font="pixel"] .app-sidebar .sidebar-section-label { font-size:7px; }
 [data-font="pixel"] .app-sidebar .badge { font-size:7px; }
 [data-font="pixel"] .view-container { font-size:10px; }
-[data-font="pixel"] .view-container h1 { font-size:16px; }
-[data-font="pixel"] .view-container h2 { font-size:13px; }
-[data-font="pixel"] .view-container h3 { font-size:11px; }
+[data-font="pixel"] .view-container h1 { font-size:var(--text-2xl); }
+[data-font="pixel"] .view-container h2 { font-size:var(--text-xl); }
+[data-font="pixel"] .view-container h3 { font-size:var(--text-lg); }
 [data-font="pixel"] .nice-ai-input { font-size:10px; }
 [data-font="pixel"] .nice-ai-chip { font-size:8px; }
 [data-font="pixel"] .nice-ai-disclaimer { font-size:7px; }
@@ -843,9 +854,12 @@
   --card-text-meta: 10px;
   --card-text-micro: 8px;
 }
-[data-theme="16bit"] h1 { font-size: 18px; line-height: 1.8; }
-[data-theme="16bit"] h2 { font-size: 14px; line-height: 1.7; }
-[data-theme="16bit"] h3 { font-size: 12px; line-height: 1.6; }
+/* 16bit headings — one tier up from spec because the compressed body
+   scale (10px) leaves no visual hierarchy at the default h1=--text-xl=14px.
+   Line-height kept raw — bitmap font needs deliberate vertical padding. */
+[data-theme="16bit"] h1 { font-size: var(--text-2xl); line-height: 1.8; }
+[data-theme="16bit"] h2 { font-size: var(--text-xl);  line-height: 1.7; }
+[data-theme="16bit"] h3 { font-size: var(--text-lg);  line-height: 1.6; }
 [data-theme="16bit"] :is(p, li, span, label, td, th):not(:is(.blueprint-card, .blueprint-card-grid, .blueprint-card-mini, .blueprint-card-compact, .agent-card, .spaceship-card, .blueprint-tile) *) {
   font-size: 10px;
   line-height: 2;
