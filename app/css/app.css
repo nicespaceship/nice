@@ -2646,7 +2646,7 @@
 .ship-profile-icon:hover .ship-profile-icon-overlay { opacity:1; }
 
 /* Ship profile name & description */
-.detail-name { font-family:var(--font-b); font-size:1.2rem; font-weight:700; margin:0; outline:none; }
+.detail-name { font-family:var(--font-b); font-size:1.2rem; font-weight:var(--fw-bold); margin:0; outline:none; }
 .detail-name:focus { border-bottom:1px solid var(--accent); }
 .ship-profile-desc {
   font-size:.75rem; color:var(--text-muted); margin-top:4px; outline:none;
@@ -2659,9 +2659,9 @@
 .ship-profile-desc:focus { color:var(--text); border-bottom:1px solid var(--accent); }
 
 .detail-meta-row { display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap; }
-.detail-status { font-family:var(--font-b); font-size:.68rem; letter-spacing:.1em; color:var(--text-muted); }
+.detail-status { font-family:var(--font-b); font-size:.68rem; letter-spacing:var(--tracking-normal); color:var(--text-muted); }
 .detail-section { border:var(--border-width) solid var(--border); background:var(--panel-bg); border-radius:var(--radius); padding:18px; }
-.detail-section-title { font-family:var(--font-b); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-muted); margin:0 0 12px 0; }
+.detail-section-title { font-family:var(--font-b); font-size:.62rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-muted); margin:0 0 12px 0; }
 
 /* ── Ship Dashboard ── */
 .ship-dashboard { }
