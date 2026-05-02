@@ -377,7 +377,20 @@
 .fb-mono  { font-family:'Share Tech Mono', monospace; font-size:10px; }
 .fb-pixel { font-family:'Press Start 2P', monospace; font-size:5px; }
 
-/* ── Pixel theme font-size overrides (Press Start 2P renders ~2× larger) ── */
+/* ── Pixel-font scale rescale + per-selector overrides ──
+   Press Start 2P renders ~2× larger than prose fonts at the same px size.
+   The compressed --text-* scale below lets future rules use tokens and get
+   correctly-sized pixel-art text. The per-selector overrides further down
+   are tuned to specific bitmap-pixel-grid alignment and are kept intentional. */
+[data-font="pixel"] {
+  --text-xs: 7px;
+  --text-sm: 8px;
+  --text-base: 9px;
+  --text-md: 10px;
+  --text-lg: 11px;
+  --text-xl: 13px;
+  --text-2xl: 16px;
+}
 [data-font="pixel"] .app-sidebar { font-size:9px; }
 [data-font="pixel"] .app-sidebar .nav-link { font-size:9px; padding:8px 12px; }
 [data-font="pixel"] .app-sidebar .sidebar-section-label { font-size:7px; }
@@ -798,14 +811,31 @@
   stroke-linejoin: miter;
 }
 
-/* ── Pixel font on ALL text ── */
+/* ── Pixel font on ALL text ──
+   16bit theme uses Press Start 2P bitmap font which renders ~2× larger than
+   prose fonts at the same px size. Root font-size is reduced to 12px and a
+   compressed type scale is declared below so future rules can use --text-*
+   tokens and get correctly-sized pixel-art text. Per-selector font-size
+   overrides further down are tuned to specific bitmap-pixel-grid alignment
+   and are kept intentional. The 0.5px letter-spacing is also pixel-grid
+   tuning — kept raw because no token expresses sub-em pixel spacing. */
 [data-theme="16bit"] {
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
   line-height: 2;
-  letter-spacing: 0.5px;
-  /* Override card tokens to absolute px so root font-size:12px doesn't shrink
-     rem-based values below the 8px floor inside cards. */
+  letter-spacing: 0.5px; /* bitmap pixel grid — see comment above */
+
+  /* Compressed prose scale for the bitmap font */
+  --text-xs: 7px;
+  --text-sm: 8px;
+  --text-base: 10px;
+  --text-md: 11px;
+  --text-lg: 12px;
+  --text-xl: 14px;
+  --text-2xl: 18px;
+
+  /* Card tokens — absolute px so root font-size:12px doesn't shrink rem-based
+     values below the 8px floor inside cards. */
   --card-text-name: 17.6px;
   --card-text-name-sm: 14px;
   --card-text-stat: 14px;
@@ -905,7 +935,7 @@
   font-family: 'Press Start 2P', cursive;
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: var(--tracking-caps);
   padding: 10px 18px;
   border: 3px solid #e2b714;
   background: linear-gradient(180deg, #2e4068 0%, #1f2b47 100%);
@@ -1194,7 +1224,7 @@
   font-family: 'Press Start 2P', cursive;
   font-size: 7px;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: var(--tracking-caps);
 }
 
 /* ── Select dropdowns ── */
