@@ -116,11 +116,6 @@ const Telemetry = (() => {
     document.querySelectorAll('.met').forEach(el => {
       el.textContent = `T+${p2(Math.floor(s/3600))}:${p2(Math.floor(s%3600/60))}:${p2(s%60)}`;
     });
-    // Wall clock for MC panel
-    const now = new Date();
-    document.querySelectorAll('.mc-clock').forEach(el => {
-      el.textContent = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3,'0');
-    });
   }
 
   return { init: () => setInterval(tick, 250) };
