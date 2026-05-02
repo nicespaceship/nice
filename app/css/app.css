@@ -5055,8 +5055,8 @@ html[data-theme] .nice-ai-input:focus-visible {
   padding:12px 8px; border:1px solid var(--border); background:var(--panel-bg);
   border-radius:0;
 }
-.mc-stat-label { font-family:var(--font-b); font-size:.55rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); }
-.mc-stat-value { font-family:var(--font-b); font-size:1rem; font-weight:700; color:var(--text); }
+.mc-stat-label { font-family:var(--font-b); font-size:.55rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-muted); }
+.mc-stat-value { font-family:var(--font-b); font-size:1rem; font-weight:var(--fw-bold); color:var(--text); }
 @media (max-width:640px) { .mc-stats-strip { flex-wrap:wrap; } .mc-stat-card { flex:1 1 calc(50% - 6px); min-width:0; } }
 
 /* Reset button in schematic header */
