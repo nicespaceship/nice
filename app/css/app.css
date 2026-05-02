@@ -405,7 +405,7 @@
 /* ── Office theme — structural overrides only.
    Colors handled by --nav-* CSS variables in theme data. ── */
 [data-theme="office"] h1, [data-theme="office"] h2, [data-theme="office"] h3 {
-  font-weight:var(--fw-medium); letter-spacing: -0.02em;
+  font-weight:var(--fw-medium); letter-spacing: var(--tracking-display);
 }
 [data-theme="office"]::after { display: none !important; }
 [data-theme="office"] .blueprint-card::before { display: none; }
@@ -458,13 +458,13 @@
 /* ── Font — Rajdhani for military tech feel ── */
 [data-theme="rx-78-2"] {
   font-family: 'Rajdhani', sans-serif;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--tracking-normal);
 }
 [data-theme="rx-78-2"] h1, [data-theme="rx-78-2"] h2, [data-theme="rx-78-2"] h3 {
   font-family: 'Rajdhani', sans-serif;
   font-weight:var(--fw-bold);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: var(--tracking-caps);
 }
 
 /* ── Mecha panel cards — armor plate segmentation ── */
@@ -528,7 +528,7 @@
   font-family: 'Rajdhani', sans-serif;
   font-weight:var(--fw-medium);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: var(--tracking-caps);
   border: 1px solid #3a3f55;
   background: linear-gradient(180deg, #252838 0%, #1e2030 100%);
   color: #e0e0e8;
@@ -747,7 +747,7 @@
   font-family: 'Rajdhani', sans-serif;
   font-weight:var(--fw-bold);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: var(--tracking-caps);
 }
 
 /* ── Schematic — mecha wireframe feel ── */
@@ -3856,14 +3856,14 @@
 
 .cert-agent-name { font-family:var(--font-b); font-size:1.3rem; margin:0 0 8px; }
 .cert-meta { display:flex; gap:8px; justify-content:center; align-items:center; margin-bottom:12px; }
-.cert-tag { font-size:.7rem; padding:2px 10px; border:1px solid; border-radius:var(--radius); text-transform:uppercase; letter-spacing:1px; }
-.cert-rarity { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+.cert-tag { font-size:.7rem; padding:2px 10px; border:1px solid; border-radius:var(--radius); text-transform:uppercase; letter-spacing:var(--tracking-caps); }
+.cert-rarity { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:var(--tracking-caps); }
 
 .cert-serial { font-size:1.4rem; letter-spacing:4px; color:var(--accent); margin:12px 0; font-weight:var(--fw-bold); }
 
 .cert-flavor { font-style:italic; color:var(--text-muted); font-size:.85rem; margin:8px 0 16px; }
 
-.cert-footer { display:flex; justify-content:space-between; font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; border-top:1px solid var(--border); padding-top:12px; margin-top:8px; }
+.cert-footer { display:flex; justify-content:space-between; font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:var(--tracking-caps); border-top:1px solid var(--border); padding-top:12px; margin-top:8px; }
 .cert-issuer { opacity:0.7; }
 
 .cert-verified { border-color:rgba(34,197,94,0.3); }
@@ -5825,7 +5825,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-family: var(--font-m, monospace); font-size: 0.72rem;
   background: var(--bg, #080808); color: var(--text, #eee);
   border: 1px solid var(--border, #333); border-radius: var(--radius, 4px);
-  letter-spacing: 0.5px;
+  letter-spacing: var(--tracking-normal);
 }
 .tc-code-input:focus { border-color: var(--accent, #6366f1); outline: none; }
 .tc-code-msg {
@@ -7348,7 +7348,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .wizard-rec-section h4 {
   font-size: 0.75rem; text-transform: uppercase;
   color: var(--text-muted, #888); margin: 0 0 8px;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-caps);
 }
 .wizard-success {
   text-align: center; padding: 30px 0;
@@ -7468,7 +7468,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .ship-wizard-slot-rarity {
   font-size: 0.7rem; font-weight:var(--fw-bold);
-  text-transform: uppercase; letter-spacing: 0.04em;
+  text-transform: uppercase; letter-spacing: var(--tracking-caps);
 }
 .ship-wizard-slot-select { flex: 1; }
 .ship-wizard-slot-select select {
@@ -7555,7 +7555,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .ship-workflows h3 {
   font-size: 0.85rem; text-transform: uppercase;
   color: var(--text-muted, #888); margin: 0 0 12px;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-caps);
 }
 .ship-wf-card {
   display: flex; justify-content: space-between; align-items: center;
