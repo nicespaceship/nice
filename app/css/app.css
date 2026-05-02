@@ -338,9 +338,9 @@
 
 .hud-row { display:flex; align-items:center; gap:6px; }
 .hud-row-sep { height:1px; background:var(--border); margin:2px 0; opacity:.5; }
-.dock-lbl { font-family:var(--font-b); font-size:.55rem; letter-spacing:.14em; color:var(--text-muted); margin-right:2px; padding-right:6px; }
+.dock-lbl { font-family:var(--font-b); font-size:.55rem; letter-spacing:var(--tracking-caps); color:var(--text-muted); margin-right:2px; padding-right:6px; }
 .dock-lbl-sep { color:var(--border-hi); margin:0 2px; }
-.dock-lbl-val { color:var(--accent); letter-spacing:.08em; }
+.dock-lbl-val { color:var(--accent); letter-spacing:var(--tracking-caps); }
 
 /* Theme dots */
 .db {
@@ -2316,15 +2316,15 @@
 .dock-ship-card:hover { border-color:var(--accent); }
 .dock-ship-active { border-color:var(--accent); background:rgba(255,255,255,.03); }
 .dock-ship-info { display:flex; flex-direction:column; gap:2px; }
-.dock-ship-name { font-size:.82rem; font-weight:600; color:var(--text); }
+.dock-ship-name { font-size:.82rem; font-weight:var(--fw-medium); color:var(--text); }
 .dock-ship-class { font-family:var(--font-b); font-size:.55rem; letter-spacing:.08em; color:var(--text-muted); }
-.dock-ship-status { font-family:var(--font-b); font-size:.55rem; letter-spacing:.08em; font-weight:600; }
+.dock-ship-status { font-family:var(--font-b); font-size:.55rem; letter-spacing:var(--tracking-caps); font-weight:var(--fw-medium); }
 .dock-schematic-section { margin-bottom:24px; }
 .dock-prog-section { margin-bottom:20px; }
-.dock-section-title { font-family:var(--font-b); font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px; }
+.dock-section-title { font-family:var(--font-b); font-size:.6rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-muted); margin:0 0 10px; }
 .dock-xp-bar { position:relative; height:8px; background:var(--border); border-radius:4px; overflow:hidden; margin-top:10px; }
 .dock-xp-fill { height:100%; background:var(--accent); transition:width .3s; }
-.dock-xp-label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-b); font-size:.45rem; letter-spacing:.08em; color:var(--text); }
+.dock-xp-label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-b); font-size:.45rem; letter-spacing:var(--tracking-caps); color:var(--text); }
 .dock-achievements { display:flex; flex-wrap:wrap; gap:6px; }
 .dock-achievement { display:flex; align-items:center; justify-content:center; width:32px; height:32px; border:1px solid var(--border); border-radius:var(--radius); font-size:1rem; cursor:default; }
 
