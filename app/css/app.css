@@ -585,8 +585,7 @@
 }
 [data-theme="rx-78-2"] .app-sidebar .side-header,
 [data-theme="rx-78-2"] .app-sidebar .sidebar-section,
-[data-theme="rx-78-2"] .app-sidebar .side-folder,
-[data-theme="rx-78-2"] .app-sidebar .side-nav {
+[data-theme="rx-78-2"] .app-sidebar .side-folder {
   border-color: #d4a017;
 }
 [data-theme="rx-78-2"] .side-link {
@@ -1346,20 +1345,11 @@
   background:var(--nav-bg-dk, transparent);
 }
 .side-header .app-brand-text { font-size:var(--text-lg); color:var(--nav-text, var(--text)); }
-.side-header-actions { display:flex; align-items:center; gap:6px; }
 .side-header .app-hdr-menu { display:none; }
 
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }
 .side-chats-body { flex:1; min-height:0; }
-
-/* Bottom folder (Tasks) — expand upward */
-.side-folder-bottom { flex-shrink:0; }
-.side-folder-bottom .side-folder-body {
-  flex-direction:column-reverse; /* items flow upward */
-}
-.side-folder-bottom .side-folder-chevron { transform:rotate(180deg); }
-.side-folder-bottom.open .side-folder-chevron { transform:rotate(0deg); }
 
 /* Chat new button — inline in folder toggle */
 .side-chat-new {
@@ -1492,10 +1482,6 @@
   font-size:var(--text-sm); border-radius:var(--radius); cursor:pointer;
   transition:background .15s, color .15s;
 }
-.side-folder-chevron {
-  margin-left:auto; width:14px; height:14px; transition:transform .2s;
-}
-.side-folder.open .side-folder-chevron { transform:rotate(180deg); }
 .side-folder-body {
   display:none; flex-direction:column; padding-left:22px;
   max-height:240px; overflow-y:auto;
@@ -1509,21 +1495,9 @@
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .side-folder-item:hover { background:var(--nav-surface, var(--surface)); color:var(--nav-text, var(--text)); }
-.side-folder-item .side-folder-dot {
-  width:6px; height:6px; border-radius:50%; flex-shrink:0;
-}
-.side-folder-add {
-  display:flex; align-items:center; gap:6px; padding:6px 10px 6px 22px;
-  background:none; border:none; color:var(--nav-text-muted, var(--text-muted)); font-family:var(--font-b);
-  font-size:var(--text-xs); letter-spacing:var(--tracking-caps); text-transform:uppercase;
-  cursor:pointer; transition:color .15s; opacity:.7;
-}
-.side-folder-add:hover { color:var(--accent); opacity:1; }
 /* Hide folder content when sidebar collapsed */
 .app-sidebar:not(.open) .side-folder-body,
-.app-sidebar:not(.open) .side-folder-add,
 .app-sidebar:not(.open) .side-folder-toggle span,
-.app-sidebar:not(.open) .side-folder-chevron,
 .app-sidebar:not(.open) .side-chat-new { display:none; }
 .app-sidebar:not(.open) .side-folder-toggle { justify-content:center; padding:10px 0; }
 
@@ -1626,7 +1600,6 @@
 .app-sidebar:not(.open) .side-footer .side-popover,
 .app-sidebar:not(.open) .side-footer #sidebar-presence,
 .app-sidebar:not(.open) .sidebar-favorites,
-.app-sidebar:not(.open) .side-section-label,
 .app-sidebar:not(.open) .sidebar-section-label,
 .app-sidebar:not(.open) .side-divider,
 .app-sidebar:not(.open) #side-chats-folder .side-folder-body { display:none; }
@@ -1647,7 +1620,6 @@
   }
 }
 .app-sidebar:not(.open) .side-header { justify-content:center; padding:8px; }
-.app-sidebar:not(.open) .side-header-actions { flex-direction:column; gap:4px; }
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
 .app-sidebar:not(.open) .side-link svg { margin:0; }
 .app-sidebar:not(.open) .side-footer { padding:8px; border-top:none; }
