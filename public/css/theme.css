@@ -4258,8 +4258,6 @@ body {
 /* Actions (below card, outside border) */
 .blueprint-card-actions { padding:8px 4px; display:flex; gap:6px; border-top:none; background:transparent; margin:0 -15px -15px; border-radius:0 0 10px 10px; }
 .blueprint-card-actions .c-btn { font-size:var(--card-text-meta); padding:5px 10px; flex:1; justify-content:center; }
-.bp-logo-btn { display:inline-flex; align-items:center; justify-content:center; background:transparent; border-width:1px; }
-.bp-cert-btn { flex:0 0 auto !important; aspect-ratio:1; min-width:0; display:inline-flex; align-items:center; justify-content:center; }
 /* Tier badge + logo */
 .blueprint-card-tier-group { display:inline-flex; align-items:center; gap:4px; }
 .blueprint-card-tier-logo { display:inline-flex; align-items:center; line-height:1; }
@@ -5249,16 +5247,8 @@ select.contact-input { appearance:none;cursor:pointer; }
 .llm-pv { font-family:var(--font-m);font-size:.56rem;color:var(--text-muted); }
 .llm-ok { display:flex;align-items:center;gap:6px;color:#22c55e;font-family:var(--font-m);font-size:.7rem;padding:6px 0; }
 
-/* Blueprint Grid */
-.bp-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-top:10px; }
 .blueprint-tile { background:var(--surface);border:var(--border-width) solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:6px;transition:border-color .2s; }
 .blueprint-tile:hover { border-color:var(--accent); }
-.bp-ico { font-size:1.25rem;display:block; }
-.bp-name { font-family:var(--font-d);font-size:.7rem;color:var(--text); }
-.bp-desc { font-family:var(--font-b);font-size:.68rem;color:var(--text-muted);line-height:1.5; }
-.bp-tags { display:flex;flex-wrap:wrap;gap:4px;margin-top:2px; }
-.bp-tag { font-family:var(--font-m);font-size:.5rem;color:var(--text-dim);border:var(--border-width) solid var(--border);border-radius:2px;padding:1px 5px; }
-.bp-deploy { width:100%;margin-top:8px;font-size:.6rem;padding:6px; }
 
 /* Responsive */
 @media (max-width:768px) {
@@ -5267,7 +5257,6 @@ select.contact-input { appearance:none;cursor:pointer; }
   .atm-tb-l { overflow-x:auto;gap:0; }
   .atm-tb-r .btn:not(.btn-solid) { display:none; }
   .llm-grid { grid-template-columns:1fr; }
-  .bp-grid { grid-template-columns:repeat(2,1fr); }
   .agent-grid { grid-template-columns:1fr; }
 }
 
@@ -5314,9 +5303,6 @@ select.contact-input { appearance:none;cursor:pointer; }
    INDUSTRY GRID
 ════════════════════════════════════════════════════════════════ */
 .industry-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:12px; margin-top:36px; }
-/* Blueprint stat pills */
-.bp-stat-pill { display:inline-flex; align-items:center; gap:10px; border:1px solid var(--border); padding:8px 8px 8px 18px; font-family:var(--font-m); font-size:0.78rem; letter-spacing:.06em; color:var(--text-muted); }
-.bp-stat-count { background:var(--accent); color:var(--bg); padding:3px 11px; border-radius:20px; font-family:var(--font-h); font-size:0.75rem; font-weight:700; min-width:28px; text-align:center; line-height:1.5; }
 
 .ic { background:var(--panel-bg); border:var(--border-width) solid var(--border); border-radius:var(--radius); padding:22px 18px; display:flex; flex-direction:column; gap:8px; transition:border-color .2s,box-shadow .2s,transform .18s; color:inherit; text-decoration:none; }
 .ic:hover { border-color:var(--accent); box-shadow:var(--glow); transform:translateY(-2px); }
@@ -5585,34 +5571,6 @@ select.contact-input { appearance:none;cursor:pointer; }
 .wf-step::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--border); flex-shrink:0; }
 .wf-step.wf-active { color:var(--accent); }
 .wf-step.wf-active::before { background:var(--accent); box-shadow:0 0 8px var(--accent); }
-.bp-cta-strip { display:flex; align-items:center; justify-content:space-between; gap:24px; border:1px solid var(--border-hi); background:var(--panel-bg); padding:28px 32px; margin-top:4px; flex-wrap:wrap; }
-.bp-cta-strip p { font-size:0.88rem; color:var(--text-muted); margin:4px 0 0; }
-.bp-cta-label { font-family:var(--font-h); font-size:0.75rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:4px; }
-
-/* ═══════════════════════════════════════════════════════
-   BLUEPRINT LIBRARY PAGE
-═══════════════════════════════════════════════════════ */
-.bp-lib-tabs  { display:flex; gap:0; }
-.bp-lib-tab   { display:flex; align-items:center; gap:7px; padding:12px 20px; border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:0.82rem; color:var(--text-muted); transition:all .15s; }
-.bp-lib-tab + .bp-lib-tab { border-left:none; }
-.bp-lib-tab.active { border-color:var(--accent); color:var(--accent); background:var(--panel-bg); z-index:1; }
-.bp-lib-search { border:none; background:transparent; color:var(--text); font-size:0.85rem; outline:none; width:100%; }
-.bp-lib-grid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
-.bp-lib-card  { border:1px solid var(--border); background:var(--panel-bg); padding:24px; display:flex; flex-direction:column; gap:14px; transition:border-color .2s, box-shadow .2s; }
-.bp-lib-card:hover { border-color:var(--border-hi); box-shadow:var(--glow); }
-.bp-lib-hd    { display:flex; align-items:flex-start; gap:12px; }
-.bp-lib-meta  { flex:1; min-width:0; }
-.bp-lib-name  { font-family:var(--font-h); font-size:0.9rem; letter-spacing:.05em; color:var(--text); font-weight:700; }
-.bp-lib-role  { color:var(--text-muted); margin-top:3px; }
-.bp-lib-desc  { font-size:0.84rem; line-height:1.65; color:var(--text-muted); flex:1; }
-.bp-lib-tags  { display:flex; gap:6px; flex-wrap:wrap; }
-.bp-lib-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:auto; padding-top:4px; }
-.bp-fav-btn   { background:none; border:1px solid var(--border); padding:5px 8px; cursor:pointer; color:var(--text-muted); transition:all .15s; border-radius:var(--radius); margin-left:auto; }
-.bp-fav-btn:hover, .bp-fav-btn.active { color:var(--accent); border-color:var(--accent); }
-.bp-build-btn { background:var(--accent); color:var(--bg); border-color:var(--accent); }
-.bp-build-btn:hover { opacity:.85; }
-.bp-filter-btn        { font-size:0.75rem; padding:5px 12px; }
-.bp-filter-btn.active { border-color:var(--accent); color:var(--accent); }
 
 /* ═══════════════════════════════════════════════════════
    ATM DEMO: EXPANSION STYLES
@@ -5870,12 +5828,7 @@ input:checked + .toggle-slider::before { transform:translateX(18px); background:
 /* ═══════════════════════════════════════════════════════════════
    COMMUNITY BLUEPRINTS EXTENSION
 ═══════════════════════════════════════════════════════════════ */
-.bp-comm-meta { display:flex; align-items:center; gap:12px; font-size:0.75rem; color:var(--text-muted); flex-wrap:wrap; }
 .bp-stars { color:var(--accent); font-size:0.82rem; letter-spacing:-1px; }
-.bp-author-badge { font-size:0.66rem; font-family:var(--font-m); letter-spacing:.08em; background:var(--surface); padding:2px 8px; border:1px solid var(--border); color:var(--text-muted); white-space:nowrap; }
-.bp-votes-btn { display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border:1px solid var(--border); background:transparent; cursor:pointer; font-size:0.75rem; color:var(--text-muted); font-family:var(--font-b); transition:color .15s, border-color .15s; line-height:1; }
-.bp-votes-btn:hover, .bp-votes-btn.voted { color:var(--accent); border-color:var(--accent); }
-.bp-submit-strip { border:1px dashed var(--border-hi); background:var(--panel-bg); padding:36px; text-align:center; margin-top:32px; }
 
 /* ═══════════════════════════════════════════════════════
    ATM MOBILE APP PAGE
@@ -6100,9 +6053,6 @@ input:checked + .toggle-slider::before { transform:translateX(18px); background:
 /* ── Fleet ───────────────────────────────────────────────────── */
 @media (max-width:640px) { .fleet-grid { grid-template-columns:1fr; } }
 @media (max-width:480px) { .spaceship-card-stats { grid-template-columns:1fr 1fr; } }
-
-/* ── Blueprint library ───────────────────────────────────────── */
-@media (max-width:640px) { .bp-lib-grid { grid-template-columns:1fr; } }
 
 /* ── Integrations ───────────────────────────────────────────── */
 @media (max-width:640px) { .int-grid { grid-template-columns:1fr; } }

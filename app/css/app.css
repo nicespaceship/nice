@@ -1183,22 +1183,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   padding: 3px 6px;
 }
 
-/* ── Filter pills — pixel RPG item selection ── */
-[data-theme="16bit"] .bp-rarity-pill,
-[data-theme="16bit"] .bp-filter-pill {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 8px;
-  border: 2px solid #2e4068;
-  background: #16213e;
-  box-shadow: inset 1px 1px 0 rgba(255,255,200,0.08), 2px 2px 0 rgba(0,0,0,0.4);
-}
-[data-theme="16bit"] .bp-rarity-pill.active,
-[data-theme="16bit"] .bp-filter-pill.active {
-  border-color: #e2b714;
-  background: linear-gradient(180deg, #2e4068, #1f2b47);
-  color: #e2b714;
-}
-
 /* ── Wizard — RPG save/menu screen ── */
 [data-theme="16bit"] .wizard-container {
   background: #16213e;
@@ -1265,7 +1249,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 
 /* ── Search bar ── */
-[data-theme="16bit"] .bp-search-wrap input,
 [data-theme="16bit"] .search-input {
   font-family: 'Press Start 2P', cursive;
   font-size: 9px;
@@ -3464,10 +3447,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .bp-activated-title { font-family:var(--font-b); font-size:.75rem; letter-spacing:var(--tracking-caps); color:var(--text-muted); text-transform:uppercase; margin-bottom:12px; }
 .bp-activated-count { color:var(--accent); margin-left:6px; }
 .bp-activated-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:16px; }
-.bp-section-divider { border-top:1px solid var(--border); margin:20px 0; }
 .bp-activated-empty { font-size:.82rem; color:var(--text-muted); padding:16px; }
 
-.bp-categories { display:flex; gap:6px; flex-wrap:wrap; }
 .bp-cat-btn {
   padding:5px 14px; background:none; border:var(--border-width) solid var(--border);
   color:var(--text-muted); font-family:var(--font-b); font-size:.6rem;
@@ -3585,7 +3566,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .bpl-action-btn.bpl-activated { border-color:var(--color-success)60; color:var(--color-success); background:var(--color-success)20; }
 .bpl-action-btn.bpl-activated:hover { border-color:#8b3a3a; color:#cc5555; background:transparent; }
 
-.bp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:26px; }
 .blueprint-card-wrap { min-width:0; }
 .blueprint-tile {
   display:flex; flex-direction:column;
@@ -3599,10 +3579,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   padding:12px 14px 0; gap:8px;
 }
 .blueprint-tile-icon { width:28px; height:28px; color:var(--accent); flex-shrink:0; }
-.bp-rarity {
-  font-family:var(--font-b); font-size:.48rem; letter-spacing:var(--tracking-caps);
-  padding:2px 8px; border:1px solid; text-transform:uppercase;
-}
 .blueprint-tile-body { padding:10px 14px; flex:1; display:flex; flex-direction:column; gap:4px; }
 .blueprint-tile-name { font-family:var(--font-b); font-size:var(--card-text-name-sm); font-weight:var(--fw-bold); margin:0; }
 .blueprint-tile-cat { font-family:var(--font-b); font-size:var(--card-text-micro); letter-spacing:var(--tracking-caps); color:var(--text-muted); text-transform:uppercase; }
@@ -3616,10 +3592,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .bp-star { color:var(--text-dim); }
 .bp-star.filled { color:var(--color-warning); }
 .bp-star.half { color:var(--color-warning); opacity:.6; }
-.bp-downloads { font-family:var(--font-b); font-size:.48rem; letter-spacing:var(--tracking-caps); color:var(--text-dim); }
 .blueprint-tile-actions { display:flex; align-items:center; gap:6px; }
 .bp-nice-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; }
-.bp-cert-btn { flex:0 0 auto !important; aspect-ratio:1; min-width:0; display:inline-flex; align-items:center; justify-content:center; }
 .blueprint-highlight { animation:bp-highlight 2s ease-out; }
 @keyframes bp-highlight { 0%,30% { box-shadow:0 0 0 3px var(--accent), var(--glow-hi); } 100% { box-shadow:none; } }
 
@@ -3946,16 +3920,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 /* ── Blueprint Preview + Ratings ── */
 .blueprint-clickable { cursor:pointer; }
-.bp-preview-rarity { font-size:.78rem; font-weight:var(--fw-medium); margin-bottom:.5rem; }
-.bp-preview-desc { font-size:.82rem; color:var(--text-muted); line-height:1.5; margin-bottom:1rem; }
-.bp-preview-stats { display:flex; align-items:center; gap:1rem; margin-bottom:1rem; }
-.bp-preview-config { display:flex; flex-direction:column; gap:4px; margin-bottom:1rem; }
-.bp-preview-tools { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem; }
-.bp-preview-activated {
-  display:inline-block; padding:4px 12px; border-radius:4px;
-  background:var(--color-success)20; color:var(--color-success); font-size:.78rem;
-  font-family:var(--font-b); margin-bottom:.75rem;
-}
 .c-btn.bp-activated {
   background:var(--color-success)20; color:var(--color-success); border-color:var(--color-success)60;
 }
@@ -3996,12 +3960,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .bp-confirm-cancel:hover { border-color:var(--text-muted); }
 .bp-confirm-submit { background:var(--color-error)20; color:var(--color-error); border-color:var(--color-error)60; font-weight:var(--fw-medium); }
 .bp-confirm-submit:hover { background:var(--color-error)40; }
-.bp-rate-section { display:flex; align-items:center; gap:8px; margin-top:.5rem; }
-.bp-rate-label { font-size:.75rem; color:var(--text-muted); }
-.bp-rate-stars { display:flex; gap:2px; }
-.bp-rate-star { font-size:1.2rem; cursor:pointer; color:var(--border); transition:color .15s; }
-.bp-rate-star.active { color:var(--color-warning); }
-.bp-rate-star:hover { color:var(--color-warning); }
 
 
 
@@ -4641,7 +4599,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .detail-grid { grid-template-columns:1fr; }
   .builder-row { grid-template-columns:1fr; }
   .task-row-main { flex-wrap:wrap; }
-  .bp-grid { grid-template-columns:1fr; }
   .blueprint-card { width:100% !important; }
   /* Bridge toolbar — compact spacing on mobile */
   .bp-type-tabs { margin-bottom:6px !important; }
@@ -4651,13 +4608,10 @@ html[data-theme] .nice-ai-input:focus-visible {
   .bp-search-row select { font-size:var(--text-xs); padding:4px 4px; }
   .bp-rarity-filters { gap:2px; }
   .bp-rarity-filters .bp-rarity-btn { padding:2px 6px; font-size:var(--text-xs); }
-  .bp-view-toggles { margin-bottom:0; }
   .bp-toolbar-actions { gap:4px; margin-bottom:2px; }
   .bp-toolbar-actions .btn { padding:4px 8px; font-size:var(--text-xs); }
-  .bp-progression-bar { flex-wrap:wrap; gap:4px; padding:2px 0; font-size:var(--text-xs); }
   .bp-prog-next { white-space:normal; font-size:var(--text-xs); }
   .bp-prog-track { max-width:100px; }
-  .bp-activated-wrap { margin-bottom:4px; }
   /* Disable hover lift on touch devices */
   .blueprint-card:hover, .blueprint-card-grid:hover, .blueprint-card-compact:hover { transform:none !important; }
   .bp-view-card, .bp-view-compact { grid-template-columns:1fr !important; }
@@ -8140,10 +8094,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .bp-drawer-hero { display:flex; justify-content:center; }
 .bp-drawer-hero .blueprint-card { pointer-events:none; max-width:280px; width:100%; }
 .bp-drawer-hero .blueprint-card-actions { display:none; }
-.bp-drawer-section-title {
-  font-size:.68rem; font-family:var(--font-b); text-transform:uppercase;
-  letter-spacing:var(--tracking-caps); color:var(--text-muted); margin:0 0 8px 0;
-}
 .bp-drawer-stats {
   display:grid; grid-template-columns:1fr 1fr; gap:4px 16px;
 }
@@ -8159,14 +8109,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .bp-formation-wrap {
   display:flex; flex-wrap:wrap; gap:4px;
-}
-.bp-formation-slot {
-  display:inline-block; background:color-mix(in srgb, var(--accent) 15%, transparent);
-  border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  border-radius:var(--radius); padding:2px 8px; font-size:.7rem; white-space:nowrap;
-}
-.bp-formation-slot em {
-  font-style:normal; color:var(--text-muted); font-weight:var(--fw-regular);
 }
 .bp-drawer-caps {
   display:flex; flex-wrap:wrap; gap:6px;
@@ -8225,14 +8167,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   transform:translateY(100%); transition:transform .3s ease;
 }
 .bp-compare-bar.visible { transform:translateY(0); }
-.bp-compare-bar-info {
-  display:flex; align-items:center; gap:12px; font-size:.78rem; color:var(--text);
-}
-.bp-compare-bar-count {
-  background:var(--accent); color:var(--bg); padding:2px 8px;
-  border-radius:var(--radius); font-weight:var(--fw-bold); font-size:.7rem;
-}
-.bp-compare-bar-actions { display:flex; gap:8px; }
 .blueprint-card.bp-compare-selected,
 .bpl-row.bp-compare-selected {
   border-color:var(--accent2, var(--accent)) !important;
@@ -8261,13 +8195,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   flex-direction:column; gap:10px; overflow:hidden;
 }
 .bp-compare-col .blueprint-card { pointer-events:none; font-size:.8em; }
-.bp-compare-stat-rows { display:flex; flex-direction:column; gap:2px; }
-.bp-compare-stat-row {
-  display:flex; justify-content:space-between; font-size:.72rem;
-  padding:4px 0; border-bottom:1px solid color-mix(in srgb, var(--border) 40%, transparent);
-}
-.bp-compare-stat-row .kv-label { color:var(--text-muted); font-family:var(--font-b); }
-.bp-compare-stat-row .kv-val { color:var(--text); font-weight:var(--fw-medium); }
 
 /* ── Hangar Cart ── */
 .bp-hangar-bar {
@@ -8280,15 +8207,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   transform:translateY(100%); transition:transform .3s ease;
 }
 .bp-hangar-bar.visible { transform:translateY(0); }
-.bp-hangar-label {
-  font-size:.72rem; font-family:var(--font-b); text-transform:uppercase;
-  letter-spacing:var(--tracking-caps); color:var(--text-muted); white-space:nowrap;
-}
-.bp-hangar-count {
-  background:var(--accent); color:var(--bg); padding:1px 7px;
-  border-radius:var(--radius); font-weight:var(--fw-bold); font-size:.65rem;
-  margin-left:4px;
-}
 .bp-hangar-items {
   display:flex; gap:8px; overflow-x:auto; flex:1; padding:4px 0;
 }
@@ -8307,7 +8225,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   transition:color .15s;
 }
 .bp-hangar-item-x:hover { color:var(--color-error); }
-.bp-hangar-actions { display:flex; gap:8px; flex-shrink:0; }
 .bp-hangar-add-btn {
   background:none; border:1px solid var(--border); color:var(--text-muted);
   width:22px; height:22px; border-radius:4px; cursor:pointer;
@@ -8555,7 +8472,6 @@ body.preview-active .nice-ai {
 ───────────────────────────────────────────────────────────────── */
 
 /* ── Result count bar ── */
-.bp-progression-bar { display:flex; align-items:center; gap:8px; font-size:.7rem; color:var(--text-muted); padding:6px 0; }
 .bp-prog-rank { font-weight:var(--fw-medium); color:var(--text); white-space:nowrap; }
 .bp-prog-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; min-width:60px; max-width:200px; }
 .bp-prog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .3s; }
