@@ -4610,8 +4610,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .bp-rarity-filters .bp-rarity-btn { padding:2px 6px; font-size:var(--text-xs); }
   .bp-toolbar-actions { gap:4px; margin-bottom:2px; }
   .bp-toolbar-actions .btn { padding:4px 8px; font-size:var(--text-xs); }
-  .bp-prog-next { white-space:normal; font-size:var(--text-xs); }
-  .bp-prog-track { max-width:100px; }
   /* Disable hover lift on touch devices */
   .blueprint-card:hover, .blueprint-card-grid:hover, .blueprint-card-compact:hover { transform:none !important; }
   .bp-view-card, .bp-view-compact { grid-template-columns:1fr !important; }
@@ -8331,11 +8329,6 @@ body.preview-active .nice-ai {
 ───────────────────────────────────────────────────────────────── */
 
 /* ── Result count bar ── */
-.bp-prog-rank { font-weight:var(--fw-medium); color:var(--text); white-space:nowrap; }
-.bp-prog-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; min-width:60px; max-width:200px; }
-.bp-prog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .3s; }
-.bp-prog-next { white-space:nowrap; }
-.bp-prog-max { color:var(--color-warning); font-weight:var(--fw-medium); }
 .bp-result-bar {
   display:flex; align-items:center; gap:8px;
   min-height:0; transition:min-height .2s;

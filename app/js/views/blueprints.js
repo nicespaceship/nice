@@ -873,19 +873,6 @@ const BlueprintsView = (() => {
     ).join('');
   }
 
-  /* ── Activated Items Section (top of each tab) ── */
-  function _renderProgressionBar() {
-    const el = document.getElementById('bp-progression-bar');
-    if (!el || typeof Gamification === 'undefined') return;
-    const p = Gamification.getProgressToNextTier();
-    if (!p.nextRank) { el.innerHTML = `<span class="bp-prog-rank">${p.rank.badge} ${p.rank.name}</span> <span class="bp-prog-max">MAX RANK</span>`; return; }
-    const xpFmt = p.xpNeeded >= 1000 ? Math.round(p.xpNeeded / 1000) + 'K' : p.xpNeeded;
-    el.innerHTML = `
-      <span class="bp-prog-rank">${p.rank.badge} ${p.rank.name}</span>
-      <div class="bp-prog-track"><div class="bp-prog-fill" style="width:${p.progress}%"></div></div>
-      <span class="bp-prog-next">${p.nextRank.name} — ${xpFmt} XP to unlock ${p.nextMaxRarity} (${p.nextSlots} slots)</span>`;
-  }
-
   function _workshopCount() {
     if (typeof Blueprints === 'undefined' || !Blueprints.listMyBlueprints) return 0;
     const my = Blueprints.listMyBlueprints();
@@ -938,7 +925,6 @@ const BlueprintsView = (() => {
 
   /* ── Workshop — custom builds + imports for both ships and agents ── */
   function _renderWorkshop() {
-    _renderProgressionBar();
     const wrap = document.getElementById('bp-activated-wrap');
     const grid = document.getElementById('bp-grid');
     const loadMore = document.getElementById('bp-load-more');
@@ -1014,7 +1000,6 @@ const BlueprintsView = (() => {
         previously sat as a "YOUR SPACESHIPS/AGENTS" section on top of
         each catalog tab. Same filter/view semantics as Workshop. ── */
   function _renderActive() {
-    _renderProgressionBar();
     const wrap = document.getElementById('bp-activated-wrap');
     const grid = document.getElementById('bp-grid');
     const loadMore = document.getElementById('bp-load-more');
@@ -1140,7 +1125,6 @@ const BlueprintsView = (() => {
     // the dedicated Active sub-tab now. Clear any leftover markup.
     const activatedWrap = document.getElementById('bp-activated-wrap');
     if (activatedWrap) activatedWrap.innerHTML = '';
-    _renderProgressionBar();
 
     // Show loading state
     _isLoading = true;
