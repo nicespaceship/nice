@@ -1479,7 +1479,6 @@
 }
 
 /* Gauges */
-[data-theme="grid"] .mc-gauge,
 [data-theme="grid"] .log-gauge {
   border-radius: 2px; border-color: rgba(24,160,251,0.15);
 }
@@ -2308,7 +2307,6 @@
 }
 
 /* Gauge strip */
-[data-theme="lcars"] .mc-gauge,
 [data-theme="lcars"] .log-gauge {
   border-radius:24px;
   border-color:#666688;
@@ -2637,7 +2635,6 @@
 }
 
 /* Gauges */
-[data-theme="jarvis"] .mc-gauge,
 [data-theme="jarvis"] .log-gauge {
   border-radius: 3px; border-color: rgba(0,229,255,0.2);
 }
@@ -4548,28 +4545,6 @@ body {
 /* Typewriter cursor */
 .tw-cursor { color: var(--accent); animation: blink 1s step-end infinite; display: none; }
 [data-theme="matrix"] .tw-cursor { display: inline; }
-
-/* ─────────────────────────────────────────────────────────────────
-   MODULE: MISSION CONTROL HUD PANEL
-───────────────────────────────────────────────────────────────── */
-.mc-panel { padding: 24px; }
-.mc-header {
-  display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 20px;
-  transition: border-color 0.4s;
-}
-.mc-title {
-  font-family: var(--font-m); font-size: 9px; font-weight: 700;
-  letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted);
-}
-.mc-clock {
-  font-family: var(--font-m); font-size: 10px; color: var(--accent);
-  letter-spacing: 0.08em; transition: color 0.4s;
-}
-.mc-grid {
-  display: grid; grid-template-columns: 5fr 7fr; gap: 20px; margin-bottom: 20px;
-}
-@media (max-width: 520px) { .mc-grid { grid-template-columns: 1fr; } }
 
 /* Spinning dial */
 .dial-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
