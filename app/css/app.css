@@ -439,7 +439,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="office"] h1, [data-theme="office"] h2, [data-theme="office"] h3 {
   font-weight:var(--fw-medium); letter-spacing: var(--tracking-display);
 }
-[data-theme="office"]::after { display: none !important; }
 [data-theme="office"] .blueprint-card::before { display: none; }
 [data-theme="office"] .blueprint-card-serial-code { background: transparent; color: var(--nav-bg-dk); backdrop-filter: none; }
 [data-theme="office"] .blueprint-card-art-role .blueprint-card-serial-code { color: var(--nav-bg-dk); }
@@ -3593,7 +3592,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .bpl-sortable { cursor:pointer; user-select:none; }
 .bpl-sortable:hover { color:var(--accent); }
 .bpl-rarity { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.5rem; font-weight:var(--fw-bold); color:#fff; font-family:var(--font-b); flex-shrink:0; }
-.bpl-header .bpl-rarity { background:transparent !important; }
 .bpl-name { font-family:var(--font-b); font-weight:var(--fw-bold); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .bpl-cat { color:var(--text-muted); font-family:var(--font-b); font-size:.65rem; white-space:nowrap; }
 .bpl-desc { color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
