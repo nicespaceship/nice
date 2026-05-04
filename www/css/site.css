@@ -128,9 +128,10 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   max-width: var(--max-w); margin: 0 auto; padding: 0 24px;
   display: flex; align-items: center; height: 52px; gap: 24px;
 }
-.nav-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-brand-icon { display: block; width: 24px; height: 24px; }
 .nav-logo { width: 18px; height: 18px; filter: invert(1); }
-.nav-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-md); color: var(--text); font-weight: var(--fw-medium); letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+.nav-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-sm); color: var(--text); font-weight: 900; letter-spacing: 0.67em; text-transform: uppercase; }
 .nav-links { display: flex; gap: 2px; flex: 1; justify-content: center; }
 .nav-link {
   color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--fw-regular);
@@ -799,7 +800,9 @@ a.docs-card:hover { border-color: var(--accent2); }
 .footer-col h4 { color: var(--text-dim); font-size: var(--text-xs); margin-bottom: 12px; font-weight: var(--fw-medium); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
 .footer-col a { display: block; color: var(--text-muted); font-size: var(--text-sm); padding: 3px 0; text-decoration: none; transition: color 0.15s; }
 .footer-col a:hover { color: var(--accent); }
-.footer-brand { font-family: var(--font-brand, var(--font)); font-size: var(--text-sm); font-weight: var(--fw-medium); color: var(--text); margin-bottom: 8px; letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+.footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.footer-brand-icon { display: block; width: 22px; height: 22px; }
+.footer-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-sm); font-weight: 900; color: var(--text); letter-spacing: 0.67em; text-transform: uppercase; }
 .footer-desc { font-size: var(--text-sm); color: var(--text-dim); line-height: var(--lh-base); max-width: 240px; }
 .footer-socials { display: flex; gap: 16px; margin-top: 16px; }
 .footer-socials a {
@@ -860,5 +863,7 @@ a.docs-card:hover { border-color: var(--accent2); }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 4px; }
   .pricing-grid { grid-template-columns: 1fr; }
+  /* Tighten brand tracking so the wordmark fits on one line next to the menu button. */
+  .nav-brand-text { letter-spacing: 0.3em; }
   .stats-bar { grid-template-columns: repeat(2, 1fr); }
 }
