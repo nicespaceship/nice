@@ -122,7 +122,6 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   position: sticky; top: 0; z-index: 100;
   background: var(--nav-bg);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
 }
 .nav-inner {
   max-width: var(--max-w); margin: 0 auto; padding: 0 24px;
