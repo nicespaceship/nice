@@ -395,6 +395,8 @@ verify_jwt = false
 
 [functions.microsoft-oauth]
 verify_jwt = false
+[functions.hubspot-oauth]
+verify_jwt = false
 
 [analytics]
 enabled = true

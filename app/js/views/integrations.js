@@ -15,6 +15,7 @@ const IntegrationsView = (() => {
   const MCP_CATALOG = [
     { id:'google',    name:'Google Workspace', desc:'Gmail, Drive, Calendar — read & write',                    icon:'mail', tools:['gmail_search','gmail_read','gmail_send','gmail_draft','drive_search','drive_read','calendar_list','calendar_create','calendar_update'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
     { id:'microsoft', name:'Microsoft 365',    desc:'Outlook, Calendar, Contacts, OneDrive — read & write',     icon:'mail', tools:['outlook_search_messages','outlook_send_message','outlook_create_draft','calendar_ms_list_events','calendar_ms_create_event','contacts_ms_search','onedrive_search_files','onedrive_read_file','onedrive_upload_file'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
+    { id:'hubspot',   name:'HubSpot',           desc:'Contacts, deals, companies — read & write',                  icon:'users', tools:['hubspot_search_contacts','hubspot_get_contact','hubspot_create_contact','hubspot_update_contact','hubspot_search_deals','hubspot_get_deal','hubspot_create_deal','hubspot_update_deal','hubspot_search_companies','hubspot_get_company','hubspot_create_task','hubspot_log_note'], transport:'streamable-http', auth:'oauth', cat:'crm' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -116,6 +117,15 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Microsoft 365 Connected', message: 'Your Microsoft account is now linked. Agents can access Outlook, Calendar, Contacts, and OneDrive.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('hubspot_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'HubSpot Connected', message: 'Your HubSpot account is now linked. Agents can read and update contacts, deals, and companies.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -413,6 +423,11 @@ const IntegrationsView = (() => {
     ? `${SB.client.supabaseUrl}/functions/v1/microsoft-oauth`
     : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/microsoft-oauth';
 
+  /** HubSpot OAuth base URL for the edge function */
+  const HUBSPOT_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/hubspot-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/hubspot-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
@@ -429,6 +444,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'microsoft') {
       return _initiateMicrosoftOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'hubspot') {
+      return _initiateHubspotOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -486,6 +504,22 @@ const IntegrationsView = (() => {
 
     const redirectUrl = window.location.origin + '/app/#/security';
     const authUrl = `${MICROSOFT_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    window.location.href = authUrl;
+  }
+
+  /** Initiate HubSpot OAuth flow — redirects to HubSpot consent screen */
+  function _initiateHubspotOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect HubSpot.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${HUBSPOT_OAUTH_URL}/authorize`
       + `?user_id=${encodeURIComponent(user.id)}`
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
