@@ -4,8 +4,8 @@ const Stats = (() => {
   const CACHE_KEY = 'ns-community-stats';
 
   // Static counts (update when new models/MCPs are added)
-  const LLMS = 17;   // 10 text + 4 image + 2 video + 1 voice
-  const MCPS = 12;   // Gmail, Calendar, Drive, HubSpot, Salesforce, Monday, Slack, Buffer, Analytics, Shopify, QuickBooks, Google Workspace
+  const LLMS = 10;   // MODEL_CATALOG: Gemini ×2, GPT-5 ×4 (mini, Pro, Codex, o3), Claude ×2, Llama, Grok
+  const MCPS = 2;    // Live edge functions: Google Workspace (gmail/calendar/drive), Microsoft 365
 
   function _animate(el, target) {
     if (!el) return;
@@ -37,10 +37,10 @@ const Stats = (() => {
     // Try live Supabase fetch
     if (typeof SBLite !== 'undefined') {
       try {
-        const rows = await SBLite.query('blueprints', { select: 'id', limit: 1000 });
+        const rows = await SBLite.query('blueprints', { select: 'id', limit: 2000 });
         if (rows.length > 0) blueprints = rows.length;
-        const tasks = await SBLite.query('tasks', { select: 'id', filters: ['status=eq.completed'], limit: 1000 });
-        if (tasks.length > 0) missions = tasks.length;
+        const runs = await SBLite.query('mission_runs', { select: 'id', filters: ['status=eq.completed'], limit: 2000 });
+        if (runs.length > 0) missions = runs.length;
       } catch {}
     }
 

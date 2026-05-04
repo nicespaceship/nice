@@ -106,5 +106,5 @@ const Nav = (() => {
     `;
   }
 
-  return { render, renderFooter };
+  return { render, renderFooter, niceGlyph, spaceshipGlyph };
 })();
