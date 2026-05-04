@@ -162,6 +162,9 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   position: relative; overflow: hidden;
   min-height: 525px;
 }
+/* Content-light hero — for pages with just h1 + tagline (e.g. pricing).
+   Drops the homepage's 525px min-height to size to its content. */
+.hero.hero-compact { min-height: 0; padding-bottom: 32px; }
 .hero > *:not(canvas):not(.hero-ring):not(.hero-ring-outer) { max-width: var(--max-w); margin-left: auto; margin-right: auto; }
 .hero-ring {
   position: absolute; left: 50%; top: 50%;
