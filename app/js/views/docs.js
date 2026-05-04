@@ -13,18 +13,25 @@ const DocsView = (() => {
   let _activeSection = 'getting-started';
   let _searchQuery = '';
 
-  /* ── Section definitions ── */
+  /* ── Section definitions. `icon` is the suffix of an SVG symbol id
+     defined in app/index.html (icon-rocket, icon-bot, etc.). Rendered
+     as <svg><use href="#icon-${icon}"/></svg> in the sidebar and
+     search results. ── */
   const SECTIONS = [
-    { id: 'getting-started', label: 'Getting Started', icon: '🚀' },
-    { id: 'agents',          label: 'Agents',          icon: '🤖' },
-    { id: 'spaceships',      label: 'Spaceships',      icon: '🚀' },
-    { id: 'missions',        label: 'Missions',        icon: '📋' },
-    { id: 'workflows',       label: 'Workflows',       icon: '🔀' },
-    { id: 'integrations',    label: 'Integrations',    icon: '🔌' },
-    { id: 'models',          label: 'AI Models',       icon: '🧠' },
-    { id: 'tokens',          label: 'Tokens & XP',     icon: '⚡' },
-    { id: 'keyboard',        label: 'Keyboard',        icon: '⌨️' },
+    { id: 'getting-started', label: 'Getting Started', icon: 'rocket' },
+    { id: 'agents',          label: 'Agents',          icon: 'bot' },
+    { id: 'spaceships',      label: 'Spaceships',      icon: 'spaceship' },
+    { id: 'missions',        label: 'Missions',        icon: 'task' },
+    { id: 'workflows',       label: 'Workflows',       icon: 'workflow' },
+    { id: 'integrations',    label: 'Integrations',    icon: 'plug' },
+    { id: 'models',          label: 'AI Models',       icon: 'cpu' },
+    { id: 'tokens',          label: 'Tokens & XP',     icon: 'zap' },
+    { id: 'keyboard',        label: 'Keyboard',        icon: 'terminal' },
   ];
+
+  function _iconSvg(name) {
+    return `<svg class="docs-nav-icon icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
+  }
 
   /* ══════════════════════════════════════════════════════════════════
      RENDER
@@ -49,7 +56,7 @@ const DocsView = (() => {
             ${SECTIONS.map(s => `
               <li>
                 <button class="docs-nav-btn${s.id === _activeSection ? ' active' : ''}" data-section="${s.id}">
-                  <span class="docs-nav-icon">${s.icon}</span>
+                  ${_iconSvg(s.icon)}
                   <span>${s.label}</span>
                 </button>
               </li>
@@ -142,7 +149,7 @@ const DocsView = (() => {
         <p class="docs-muted">${matches.length} section${matches.length !== 1 ? 's' : ''} matched</p>
         ${matches.map(m => `
           <button class="docs-search-hit" data-section="${m.section.id}">
-            <span class="docs-search-hit-title">${m.section.icon} ${m.section.label}</span>
+            <span class="docs-search-hit-title">${_iconSvg(m.section.icon)} ${m.section.label}</span>
             <span class="docs-search-hit-snippet">${_esc(m.snippet)}</span>
           </button>
         `).join('')}
