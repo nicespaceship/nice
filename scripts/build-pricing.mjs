@@ -125,18 +125,18 @@ ${GENERATED_HEADER}
   <main>
     <section class="hero hero-compact">
       <div class="container">
-        <h1>Simple, Transparent Pricing</h1>
+        <p class="pricing-eyebrow">NICE SPACESHIP</p>
+        <h1>Pricing</h1>
         <p class="hero-sub">Free to start. Pay only when you need premium AI models.</p>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
-        <h2 style="text-align:center;margin-bottom:8px">Plans</h2>
-        <p style="text-align:center;color:var(--text-muted);margin-bottom:0">${freeModelNames} is free for everyone. Pro unlocks everything else.</p>
-        <div class="pricing-grid">
+        <div class="pricing-grid pricing-grid-4">
           <div class="pricing-card">
             <h3>Free</h3>
+            <p class="pricing-tagline">Get started with unlimited ${freeModelNames}.</p>
             <div class="pricing-price">$0</div>
             <div class="pricing-period">forever</div>
             <ul class="pricing-features">
@@ -150,6 +150,7 @@ ${GENERATED_HEADER}
           </div>
           <div class="pricing-card featured">
             <h3>Pro</h3>
+            <p class="pricing-tagline">Unlock the Standard pool and the full agent slate.</p>
             <div class="pricing-price">${fmtPrice(proSub.price)}</div>
             <div class="pricing-period">per month</div>
             <ul class="pricing-features">
@@ -161,19 +162,12 @@ ${GENERATED_HEADER}
             </ul>
             <a href="${proSub.paymentLinkUrl}" class="btn-primary" style="width:100%;text-align:center">Choose Pro</a>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-alt">
-      <div class="container">
-        <h2 style="text-align:center;margin-bottom:8px">Frontier Add-ons</h2>
-        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px">Pro subscribers can stack optional add-ons for the frontier models. Each add-on is its own subscription with its own monthly token pool.</p>
-        <div class="pricing-grid">
           <div class="pricing-card">
-            <h3>Claude Add-on</h3>
-            <div class="pricing-price">+${fmtPrice(claudeSub.price)}</div>
-            <div class="pricing-period">per month, on top of Pro</div>
+            <h3>Pro + Claude</h3>
+            <p class="pricing-tagline">Add the Claude flagship for nuanced writing and reasoning.</p>
+            <div class="pricing-price">${fmtPrice(proSub.price + claudeSub.price)}</div>
+            <div class="pricing-period">per month</div>
+            <p class="pricing-features-heading">Everything in Pro and:</p>
             <ul class="pricing-features">
 ${claudeModels.map(modelLi).join('\n')}
               <li>${fmtTokens(claudeAllowance)} Claude tokens / month</li>
@@ -183,9 +177,11 @@ ${claudeModels.map(modelLi).join('\n')}
             <a href="${claudeSub.paymentLinkUrl}" class="btn-secondary" style="width:100%;text-align:center">Add Claude</a>
           </div>
           <div class="pricing-card">
-            <h3>Premium Add-on</h3>
-            <div class="pricing-price">+${fmtPrice(premiumSub.price)}</div>
-            <div class="pricing-period">per month, on top of Pro</div>
+            <h3>Pro + Premium</h3>
+            <p class="pricing-tagline">Frontier OpenAI + Google models for the hardest work.</p>
+            <div class="pricing-price">${fmtPrice(proSub.price + premiumSub.price)}</div>
+            <div class="pricing-period">per month</div>
+            <p class="pricing-features-heading">Everything in Pro and:</p>
             <ul class="pricing-features">
 ${premiumModels.map(modelLi).join('\n')}
               <li>${fmtTokens(premiumAllowance)} Premium tokens / month (weighted)</li>
@@ -193,6 +189,7 @@ ${premiumModels.map(modelLi).join('\n')}
             <a href="${premiumSub.paymentLinkUrl}" class="btn-secondary" style="width:100%;text-align:center">Add Premium</a>
           </div>
         </div>
+        <p class="pricing-footnote">Stack both add-ons for ${fmtPrice(proSub.price + claudeSub.price + premiumSub.price)}/month with all frontier models.</p>
       </div>
     </section>
 
