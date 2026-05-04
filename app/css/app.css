@@ -8457,7 +8457,8 @@ body.preview-active .nice-ai {
 }
 .docs-nav-btn:hover { color:var(--text); background:var(--bg-alt); }
 .docs-nav-btn.active { color:var(--accent); background:var(--bg-alt); }
-.docs-nav-icon { font-size:.9rem; width:20px; text-align:center; }
+.docs-nav-icon { width:16px; height:16px; flex-shrink:0; }
+.docs-search-hit-title .docs-nav-icon { vertical-align:-2px; margin-right:4px; }
 .docs-content {
   flex:1;
   overflow-y:auto;
