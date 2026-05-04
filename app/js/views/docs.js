@@ -23,7 +23,7 @@ const DocsView = (() => {
     { id: 'spaceships',      label: 'Spaceships',      icon: 'rocket' },
     { id: 'missions',        label: 'Missions',        icon: 'task' },
     { id: 'workflows',       label: 'Workflows',       icon: 'workflow' },
-    { id: 'integrations',    label: 'Integrations',    icon: 'plug' },
+    { id: 'integrations',    label: 'Integrations',    icon: 'integrations' },
     { id: 'models',          label: 'AI Models',       icon: 'cpu' },
     { id: 'tokens',          label: 'Tokens & XP',     icon: 'zap' },
     { id: 'keyboard',        label: 'Keyboard',        icon: 'terminal' },
