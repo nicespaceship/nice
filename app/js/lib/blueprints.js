@@ -35,8 +35,13 @@ const Blueprints = (() => {
     ships:  'nice-bp-activated-ships',
     shipState: 'nice-ship-state',
     uuidMap: 'nice-bp-uuid-map',
-    catalogCache: 'nice-bp-catalog-v2',
-    catalogCacheTs: 'nice-bp-catalog-v2-ts',
+    // Bumped to v4 in #377 (2026-05-04 catalog clean-slate reset:
+    // Common purge → Rare/Epic ships purge, two waves in one PR).
+    // The diff-sync path can only add/update rows, not detect deletes,
+    // so any mass delete leaves stale entries in any client cache
+    // forever. Bumping the cache key is the only way to mass-invalidate.
+    catalogCache: 'nice-bp-catalog-v4',
+    catalogCacheTs: 'nice-bp-catalog-v4-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -46,6 +51,13 @@ const Blueprints = (() => {
   ═══════════════════════════════════════════════════════════════ */
 
   async function init() {
+    // Evict superseded catalog cache keys so existing users don't carry
+    // ~1MB of orphaned localStorage forever. Bumped 2026-05-04 (#377).
+    try { localStorage.removeItem('nice-bp-catalog-v2'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v2-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v3'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v3-ts'); } catch {}
+
     _loadSeeds();
     _loadActivationState();
 
@@ -662,6 +674,12 @@ const Blueprints = (() => {
 
     _catalogLoaded = true;
     _seedMockCounts(); // Cover newly loaded blueprints
+    // Notify views that the catalog is now populated. BlueprintsView
+    // renders the sub-tab badges (Spaceships / Agents) at mount time
+    // with whatever count is available; without this event the badges
+    // stay frozen at 0 when the cache evicts (e.g. on the v2→v3→v4
+    // bumps in #377). Set value to a timestamp so subscribers can dedupe.
+    if (typeof State !== 'undefined') State.set('catalog-loaded', Date.now());
   }
 
   /** Fetch only blueprints updated since lastSync and merge them */

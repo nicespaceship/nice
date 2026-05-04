@@ -895,9 +895,10 @@ const BlueprintsView = (() => {
   }
 
   /**
-   * Update the Active and Workshop sub-tab badge counts in place. Both
-   * counts derive from State (.agents / .spaceships) which hydrates async
-   * after the first render — without this re-paint, the badges stay
+   * Update the sub-tab badge counts in place. Catalog counts (Spaceships
+   * / Agents) come from Blueprints (which hydrates async after the cache
+   * load), Active/Workshop counts come from State (.agents / .spaceships)
+   * which also hydrates async — without this re-paint, the badges stay
    * frozen at 0 even after rows arrive.
    */
   function _refreshSubTabCounts() {
@@ -907,6 +908,10 @@ const BlueprintsView = (() => {
       const span = tabs.querySelector(`[data-sub="${sub}"] .bp-tab-count`);
       if (span) span.textContent = String(n);
     };
+    if (typeof Blueprints !== 'undefined') {
+      setCount('spaceship', Blueprints.listSpaceships().length);
+      setCount('agent', Blueprints.listAgents().length);
+    }
     setCount('active', _activeCount());
     setCount('workshop', _workshopCount());
   }
@@ -920,6 +925,8 @@ const BlueprintsView = (() => {
     _countsSubscribed = true;
     State.on('agents', _refreshSubTabCounts);
     State.on('spaceships', _refreshSubTabCounts);
+    // Blueprints fires this once the full catalog finishes loading.
+    State.on('catalog-loaded', _refreshSubTabCounts);
   }
   _subscribeCountUpdates();
 
