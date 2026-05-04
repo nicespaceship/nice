@@ -7,8 +7,9 @@
 .view-no-scroll { overflow:hidden !important; }
 .hidden { display:none !important; }
 
-/* TRON tab — only visible on The Grid theme */
-.bp-tab-tron { display:none !important; }
+/* TRON tab — hidden by default; the [data-theme="grid"] selector below
+   wins on specificity (0,2,0 vs 0,1,0), no !important needed. */
+.bp-tab-tron { display:none; }
 
 /* TRON D-pad */
 .tron-dpad-btn {
@@ -22,7 +23,7 @@
   color:#fff; box-shadow:0 0 12px rgba(24,160,251,0.3);
 }
 [data-theme="grid"] .bp-tab-tron {
-  display:inline-flex !important;
+  display:inline-flex;
   border-color:rgba(24,160,251,0.5);
   box-shadow:0 0 12px rgba(24,160,251,0.25), 0 0 24px rgba(24,160,251,0.1);
   animation:tron-cta-glow 2s ease-in-out infinite;
@@ -4651,7 +4652,8 @@ html[data-theme] .nice-ai-input:focus-visible {
   .bp-toolbar-actions .btn { padding:4px 8px; font-size:var(--text-xs); }
   /* Disable hover lift on touch devices */
   .blueprint-card:hover, .blueprint-card-grid:hover, .blueprint-card-compact:hover { transform:none !important; }
-  .bp-view-card, .bp-view-compact { grid-template-columns:1fr !important; }
+  /* .bp-view-card / .bp-view-compact grid-template-columns set in the
+     later @media block (single source of truth, no !important needed). */
   .bpl-row { grid-template-columns:24px 1fr .6fr auto; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
   .ana-stats { grid-template-columns:repeat(2, 1fr); }
@@ -8399,8 +8401,8 @@ body.preview-active .nice-ai {
   .bp-search-row { gap:6px; }
   .bp-rarity-filters { overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
   .bp-rarity-btn { white-space:nowrap; flex-shrink:0; }
-  .bp-view-card { grid-template-columns:1fr !important; }
-  .bp-view-compact { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)) !important; }
+  .bp-view-card { grid-template-columns:1fr; }
+  .bp-view-compact { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
   .bpl-row { grid-template-columns:24px 1fr .6fr auto; font-size:var(--text-xs); }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
   .bpl-header .bpl-desc, .bpl-header .bpl-stat1, .bpl-header .bpl-stat2, .bpl-header .bpl-stat3, .bpl-header .bpl-dl { display:none; }
