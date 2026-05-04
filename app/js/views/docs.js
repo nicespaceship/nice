@@ -18,7 +18,7 @@ const DocsView = (() => {
      so the helper below can hardcode it — avoiding the brand icons
      (e.g. icon-spaceship) whose custom viewBoxes would distort. ── */
   const SECTIONS = [
-    { id: 'getting-started', label: 'Getting Started', icon: 'home' },
+    { id: 'getting-started', label: 'Getting Started', icon: 'play' },
     { id: 'agents',          label: 'Agents',          icon: 'bot' },
     { id: 'spaceships',      label: 'Spaceships',      icon: 'rocket' },
     { id: 'missions',        label: 'Missions',        icon: 'task' },
