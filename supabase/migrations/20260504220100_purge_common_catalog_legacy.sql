@@ -31,14 +31,14 @@
 --     Benjamin to delete; user_spaceships rows survive (no FK CASCADE),
 --     but the source blueprint is gone.
 --
--- Known follow-up (3 dangling crew refs, not load-bearing):
---   * ship-71 Nebuchadnezzar (Epic) → bp-agent-36 Video Sales Agent
---   * ship-52 Battlestar Galactica (Legendary) → bp-agent-28 Tactical Content Agent
---   * ship-63 Normandy SR-2 (Legendary) → bp-agent-38 Race Marketing Agent
---   These were auto-populate artifacts from pickBestUnused, not
---   themed crew picks. Per the "Enterprise gets MCP-skinned crew"
---   plan, these slots will be reassigned to real MCP-capable agents
---   in a follow-up PR.
+-- (Earlier draft of this migration warned about 3 dangling crew refs
+-- on Nebuchadnezzar / Battlestar Galactica / Normandy SR-2. That
+-- finding was a substring-match false positive — `bp-agent-281` and
+-- `bp-agent-282` contain the literal text `bp-agent-28`, so the ILIKE
+-- audit caught them as if they referenced the deleted Common
+-- `bp-agent-28`. The actual `config.crew_overrides` for the 24 kept
+-- ships reference 46 distinct agent IDs, all of which still exist.
+-- No dangling refs to clean up.)
 
 BEGIN;
 
