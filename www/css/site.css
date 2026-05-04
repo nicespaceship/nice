@@ -656,7 +656,15 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 /* ═══════════════════════════════════════════════════════════════════
    PRICING
 ═══════════════════════════════════════════════════════════════════ */
-.pricing-eyebrow { font-size: var(--text-sm); color: var(--text-dim); margin-bottom: 12px; }
+.pricing-eyebrow {
+  font-family: var(--font-brand, var(--font));
+  font-size: var(--text-sm);
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 0.67em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
 .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 /* 4-card plans row collapses to 2x2 at tablet; mobile rule below handles 1-col. */
 @media (max-width: 1023px) and (min-width: 640px) {
