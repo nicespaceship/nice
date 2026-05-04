@@ -13,34 +13,11 @@ const VaultView = (() => {
   const _esc = Utils.esc;
 
   /* ── Model Catalog ─────────────────────────────────────────────
-     The 15 entries below match TokenConfig.MODELS (which is the
-     SSOT for pool + weight). This catalog adds presentation-only
-     fields like provider, speed, quality, and description copy. */
-  const MODEL_CATALOG = [
-    // ── Free tier (Gemini 2.5 Flash — included for everyone)
-    { id: 'gemini-2-5-flash', name: 'Gemini 2.5 Flash', provider: 'Google',    speed: 'fastest', quality: 'good',      desc: 'High-volume scaling. Best-in-class economics. Always free.', icon: 'circle', vision: true, pdf: true, audio: true, video: true },
-
-    // ── Standard pool (Pro)
-    { id: 'gpt-5-mini',       name: 'GPT-5 mini',       provider: 'OpenAI',    speed: 'fast',    quality: 'good',      desc: 'Low-cost, reliable general intelligence. Default workhorse.', icon: 'circle', vision: true, pdf: false, audio: false, video: false },
-    // Llama 4 Scout via Groq: multimodal in the model card, but Groq's passthrough
-    // of OpenAI-style image_url parts hasn't been verified end-to-end here yet.
-    { id: 'llama-4-scout',    name: 'Llama 4 Scout',    provider: 'Meta',      speed: 'medium',  quality: 'good',      desc: '10M context window for local and air-gapped environments.',  icon: 'circle', vision: false, pdf: false, audio: false, video: false },
-    // Grok 4.1 Fast: xAI supports vision, but not smoke-tested through nice-ai's
-    // OpenAI-compat translator yet. Flip to true once verified.
-    { id: 'grok-4-1-fast',    name: 'Grok 4.1 Fast',    provider: 'xAI',       speed: 'fast',    quality: 'excellent', desc: 'Industry-leading 2M token context window. Real-time research.', icon: 'circle', vision: false, pdf: false, audio: false, video: false },
-
-    // ── Claude pool (Claude add-on)
-    { id: 'claude-4-6-sonnet', name: 'Claude 4.6 Sonnet', provider: 'Anthropic', speed: 'fast',  quality: 'excellent', desc: 'Best balance of speed, cost, and intelligence. Production default.', icon: 'circle', vision: true, pdf: true, audio: false, video: false },
-    { id: 'claude-4-7-opus',   name: 'Claude 4.7 Opus',   provider: 'Anthropic', speed: 'slow',  quality: 'best',      desc: 'Expert writing and nuanced synthesis. Premium flagship.',           icon: 'circle', vision: true, pdf: true, audio: false, video: false },
-
-    // ── Premium pool (Premium add-on)
-    { id: 'gpt-5-4-pro',      name: 'GPT-5.4 Pro',     provider: 'OpenAI',    speed: 'medium',  quality: 'best',      desc: '1M context, 128K output, multimodal. OpenAI\'s flagship.',     icon: 'circle', vision: true, pdf: false, audio: false, video: false },
-    // Codex is tuned for agentic coding; OpenAI lists vision but we don't send
-    // images to it until a product case emerges.
-    { id: 'gpt-5-3-codex',    name: 'GPT-5.3 Codex',   provider: 'OpenAI',    speed: 'fast',    quality: 'excellent', desc: 'Specialized for agentic coding tasks. Code flagship.',          icon: 'circle', vision: false, pdf: false, audio: false, video: false },
-    { id: 'openai-o3',        name: 'OpenAI o3',       provider: 'OpenAI',    speed: 'slow',    quality: 'best',      desc: 'Frontier-level reasoning and STEM solving. Hardest problems.',  icon: 'circle', vision: true, pdf: false, audio: false, video: false },
-    { id: 'gemini-2-5-pro',   name: 'Gemini 2.5 Pro',  provider: 'Google',    speed: 'medium',  quality: 'excellent', desc: 'Native multimodal synthesis. 1M+ token context window.',         icon: 'circle', vision: true, pdf: true, audio: true, video: true },
-  ];
+     SSOT lives in app/js/lib/model-catalog.js so the marketing
+     pricing-page generator can require() it from Node. We hold a
+     local reference here, and re-export as VaultView.MODEL_CATALOG
+     for legacy callers (agent-builder, settings, docs). */
+  const MODEL_CATALOG = ModelCatalog.MODEL_CATALOG;
 
   const POOL_LABELS = { standard: 'STANDARD', claude: 'CLAUDE', premium: 'PREMIUM' };
   const POOL_BADGES = {

@@ -9,7 +9,9 @@
     "test:e2e": "playwright test",
     "serve": "npx serve . -l 3000",
     "build": "node scripts/build.js",
-    "build:docs": "node scripts/build-docs.mjs"
+    "build:docs": "node scripts/build-docs.mjs",
+    "build:pricing": "node scripts/build-pricing.mjs",
+    "build:marketing": "npm run build:docs && npm run build:pricing"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.11.1",

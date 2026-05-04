@@ -12,11 +12,13 @@
    maps cleanly to mission count. See fuelToMessages() below.
 
    POOLS:
-     standard  — included in Pro. Covers GPT-5 Mini, Llama 4 Scout,
+     standard  — included in Pro. Covers GPT-5 mini, Llama 4 Scout,
                  Grok 4.1 Fast.
-     claude    — Claude add-on. Covers Claude Haiku / Sonnet / Opus.
+     claude    — Claude add-on. Covers Claude 4.6 Sonnet and 4.7 Opus.
                  Expensive models have higher weights so Opus can't
                  drain a month's allowance in a dozen messages.
+     premium   — Premium add-on. Covers GPT-5.4 Pro, GPT-5.3 Codex,
+                 OpenAI o3, and Gemini 2.5 Pro.
 
    Adding a new flagship family later is a config change: add a pool,
    add the models with weights, and ship an add-on in subscription.js.
@@ -38,7 +40,7 @@ const TokenConfig = (() => {
     claude: {
       id: 'claude',
       label: 'Claude',
-      description: 'Claude add-on — Sonnet 4.6, Opus 4.6.',
+      description: 'Claude add-on — Sonnet 4.6, Opus 4.7.',
       monthlyAllowance: 500,        // Claude add-on grants this every billing cycle
       requiresAddon: 'claude',
     },
