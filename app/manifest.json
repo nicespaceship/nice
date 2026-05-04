@@ -7,8 +7,8 @@
   "id": "/app/",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#080808",
-  "background_color": "#080808",
+  "theme_color": "#142849",
+  "background_color": "#142849",
   "icons": [
     {
       "src": "./icons/icon-192.png",
