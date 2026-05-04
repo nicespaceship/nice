@@ -35,8 +35,12 @@ const Blueprints = (() => {
     ships:  'nice-bp-activated-ships',
     shipState: 'nice-ship-state',
     uuidMap: 'nice-bp-uuid-map',
-    catalogCache: 'nice-bp-catalog-v2',
-    catalogCacheTs: 'nice-bp-catalog-v2-ts',
+    // Bumped to v3 in #377 (2026-05-04 catalog clean-slate reset).
+    // The diff-sync path can only add/update rows, not detect deletes,
+    // so a 391-row mass delete leaves stale entries in any client cache
+    // forever. Bumping the cache key is the only way to mass-invalidate.
+    catalogCache: 'nice-bp-catalog-v3',
+    catalogCacheTs: 'nice-bp-catalog-v3-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -46,6 +50,11 @@ const Blueprints = (() => {
   ═══════════════════════════════════════════════════════════════ */
 
   async function init() {
+    // Evict superseded catalog cache keys so existing users don't carry
+    // ~1MB of orphaned localStorage forever. Bumped 2026-05-04 (#377).
+    try { localStorage.removeItem('nice-bp-catalog-v2'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v2-ts'); } catch {}
+
     _loadSeeds();
     _loadActivationState();
 
