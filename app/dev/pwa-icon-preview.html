@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NICE PWA Icon — Comparison</title>
+<style>
+  :root {
+    --bg-light: #f6f6f4;
+    --bg-dark:  #1a1a1a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-dark);
+    color: #ddd;
+    padding: 32px 32px 64px;
+  }
+  h1 {
+    font-size: 14px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #888; margin-bottom: 4px;
+  }
+  p.sub {
+    font-size: 12px; color: #777; margin-bottom: 32px; max-width: 640px;
+  }
+  h2 {
+    font-size: 12px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #aaa; margin: 40px 0 16px;
+  }
+
+  .panel {
+    background: var(--bg-light);
+    border-radius: 12px;
+    padding: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    align-items: flex-end;
+  }
+
+  .icon-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon-label {
+    font-size: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color: #555;
+    text-align: center;
+  }
+
+  /* PWA tile: square with rounded corners (iOS auto-rounds at install) */
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22.37%; /* matches iOS continuous corner */
+  }
+  .tile-180 { width: 180px; height: 180px; }
+  .tile-192 { width: 192px; height: 192px; }
+  .tile-512 { width: 256px; height: 256px; } /* shown half-size */
+
+  .tile-current  { background: #080808; color: #fff; }
+  .tile-option-a { background: #080808; color: #fff; }
+  .tile-option-b { background: #ffffff; color: #080808; }
+  .tile-option-c { background: #142849; color: #fff; }
+
+  /* Glyph sizing inside the tile (≈70% width — matches Apple's safe area) */
+  .tile svg.glyph { width: 72%; height: auto; fill: currentColor; }
+  .tile svg.glyph path { fill: currentColor; }
+
+  /* For maskable, leave more padding (≈55% width) */
+  .tile.maskable svg.glyph { width: 56%; height: auto; }
+
+  /* "Current" tile: the existing NICE text design */
+  .tile-current text {
+    font-family: monospace;
+    font-size: 0.43em; /* relative to tile size */
+    font-weight: 700;
+    letter-spacing: 0.09em;
+  }
+
+  .row-title {
+    width: 100%;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #555;
+    margin-bottom: -16px;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    margin-top: 16px;
+  }
+  @media (min-width: 1400px) {
+    .compare-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .compare-grid .panel {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .compare-grid .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .compare-grid .panel-meta {
+    font-size: 11px;
+    color: #777;
+    margin-top: -8px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>NICE PWA Install Icon — Comparison</h1>
+<p class="sub">Three options for the home-screen / install icon. Each tile is shown at apple-touch (180), PWA 192, and PWA 512 (displayed at 256). iOS auto-rounds corners at install time; the rounded preview here approximates the final look.</p>
+
+<!-- ============ Three options side by side ============ -->
+<div class="compare-grid">
+
+  <!-- CURRENT: NICE text on #080808 -->
+  <div class="panel">
+    <div class="panel-title">Current</div>
+    <div class="panel-meta">"NICE" text on <code>#080808</code></div>
+    <div class="icon-cell">
+      <div class="tile tile-180 tile-current">
+        <svg viewBox="0 0 512 512" style="width:100%;height:100%"><rect width="512" height="512" rx="96" fill="#080808"/><text x="256" y="320" text-anchor="middle" font-family="monospace" font-size="200" font-weight="700" fill="#fff" letter-spacing="8">NICE</text><rect x="140" y="340" width="232" height="3" rx="1.5" fill="#fff" opacity="0.3"/></svg>
+      </div>
+      <span class="icon-label">apple-touch 180</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-192 tile-current">
+        <svg viewBox="0 0 512 512" style="width:100%;height:100%"><rect width="512" height="512" rx="96" fill="#080808"/><text x="256" y="320" text-anchor="middle" font-family="monospace" font-size="200" font-weight="700" fill="#fff" letter-spacing="8">NICE</text><rect x="140" y="340" width="232" height="3" rx="1.5" fill="#fff" opacity="0.3"/></svg>
+      </div>
+      <span class="icon-label">PWA 192</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-512 tile-current">
+        <svg viewBox="0 0 512 512" style="width:100%;height:100%"><rect width="512" height="512" rx="96" fill="#080808"/><text x="256" y="320" text-anchor="middle" font-family="monospace" font-size="200" font-weight="700" fill="#fff" letter-spacing="8">NICE</text><rect x="140" y="340" width="232" height="3" rx="1.5" fill="#fff" opacity="0.3"/></svg>
+      </div>
+      <span class="icon-label">PWA 512 (shown @256)</span>
+    </div>
+  </div>
+
+  <!-- OPTION A: glyph on #080808 -->
+  <div class="panel">
+    <div class="panel-title">Option A</div>
+    <div class="panel-meta">New glyph on <code>#080808</code></div>
+    <div class="icon-cell">
+      <div class="tile tile-180 tile-option-a">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z" fill="#fff"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z" fill="#fff"/></svg>
+      </div>
+      <span class="icon-label">apple-touch 180</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-192 tile-option-a">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z" fill="#fff"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z" fill="#fff"/></svg>
+      </div>
+      <span class="icon-label">PWA 192</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-512 tile-option-a">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z" fill="#fff"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z" fill="#fff"/></svg>
+      </div>
+      <span class="icon-label">PWA 512 (shown @256)</span>
+    </div>
+  </div>
+
+  <!-- OPTION B: inverse — dark glyph on light tile #f6f6f4 -->
+  <div class="panel">
+    <div class="panel-title">Option B</div>
+    <div class="panel-meta">Inverse — <code>#080808</code> glyph on <code>#ffffff</code></div>
+    <div class="icon-cell">
+      <div class="tile tile-180 tile-option-b">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+      </div>
+      <span class="icon-label">apple-touch 180</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-192 tile-option-b">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+      </div>
+      <span class="icon-label">PWA 192</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-512 tile-option-b">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+      </div>
+      <span class="icon-label">PWA 512 (shown @256)</span>
+    </div>
+  </div>
+
+  <!-- OPTION C: glyph on navy #142849 -->
+  <div class="panel">
+    <div class="panel-title">Option C</div>
+    <div class="panel-meta">New glyph on navy <code>#142849</code></div>
+    <div class="icon-cell">
+      <div class="tile tile-180 tile-option-c">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+      </div>
+      <span class="icon-label">apple-touch 180</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-192 tile-option-c">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+      </div>
+      <span class="icon-label">PWA 192</span>
+    </div>
+    <div class="icon-cell">
+      <div class="tile tile-512 tile-option-c">
+        <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+      </div>
+      <span class="icon-label">PWA 512 (shown @256)</span>
+    </div>
+  </div>
+
+</div>
+
+<h2>On the home screen — visual context</h2>
+<div class="panel" style="background: linear-gradient(180deg, #4a5b80 0%, #2a3550 100%); border-radius:12px; gap:16px; align-items:center; padding:24px;">
+  <span class="row-title" style="color:#cbd5ec">imagine these next to other app icons</span>
+  <div class="icon-cell">
+    <div class="tile tile-180" style="background:#080808">
+      <svg viewBox="0 0 512 512" style="width:100%;height:100%"><rect width="512" height="512" rx="96" fill="#080808"/><text x="256" y="320" text-anchor="middle" font-family="monospace" font-size="200" font-weight="700" fill="#fff" letter-spacing="8">NICE</text><rect x="140" y="340" width="232" height="3" rx="1.5" fill="#fff" opacity="0.3"/></svg>
+    </div>
+    <span class="icon-label" style="color:#cbd5ec">Current</span>
+  </div>
+  <div class="icon-cell">
+    <div class="tile tile-180 tile-option-a">
+      <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z" fill="#fff"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z" fill="#fff"/></svg>
+    </div>
+    <span class="icon-label" style="color:#cbd5ec">Option A</span>
+  </div>
+  <div class="icon-cell">
+    <div class="tile tile-180 tile-option-b">
+      <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+    </div>
+    <span class="icon-label" style="color:#cbd5ec">Option B</span>
+  </div>
+  <div class="icon-cell">
+    <div class="tile tile-180 tile-option-c">
+      <svg class="glyph" viewBox="0 0 3904 3379.96"><path d="M3904,3379.96l-1953.37-614.82L0,3379.96l1507.93-1383.04L1946.66,16.66l9.29-16.66,442.33,1995.71,1505.7,1384.25ZM2120.63,1879.39L1959.98,90.02l-7.93-53.99-168.82,1843.2c-125.13,53.5-228.34,189.67-239.17,326.83-1.51,19.1,4.52,81.65-4.09,91.91L32.02,3359.96l1678.05-772.27c44.36,24.24,85.06,48.51,134.8,61.44,108.54,28.22,204.01,14.13,303.22-35.04,17.15-8.5,36.89-29.62,55.95-24.35l1667.93,770.23-1511.26-1064.72c20.11-172.37-79.84-348.94-240.08-415.86Z"/><path d="M1781.4,2422.6c-212.47-214.36,91.23-547.83,322.65-356.65,260.72,215.38-90.31,591.06-322.65,356.65Z"/></svg>
+    </div>
+    <span class="icon-label" style="color:#cbd5ec">Option C</span>
+  </div>
+</div>
+
+</body>
+</html>

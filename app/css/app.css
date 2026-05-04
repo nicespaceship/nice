@@ -35,6 +35,11 @@
 
 /* Spacing scale (4px base) */
 :root {
+  /* Brand color — NICE SPACESHIP navy. Mirrored as literal in
+     app/index.html (theme-color), app/manifest.json (theme_color +
+     background_color), and app/icons/icon.svg. Update all four together. */
+  --brand-navy: #142849;
+
   --bg-alt: #18181b;
   --panel-border: #2a2a2a;
   --space-xs: 4px;
@@ -147,7 +152,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   transition:background .15s, color .15s;
 }
 .app-brand:hover { background:var(--bg-alt); color:var(--accent); }
-.app-brand-logo { width:24px; height:24px; display:block; }
+.app-brand-logo { width:40px; height:40px; display:block; }
 .app-brand-logo-default { fill:currentColor; }
 .app-brand-logo-hover {
   display:none;
@@ -196,9 +201,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-hdr-btn-logo {
   display:inline-flex; align-items:center; justify-content:center;
   padding:5px 8px;
+  border:none; background:none;
 }
+.app-hdr-btn-logo:hover { border:none; background:none; }
 .app-hdr-btn-logo .app-hdr-logo {
-  width:18px; height:18px; display:block;
+  width:24px; height:24px; display:block;
   fill:none; stroke:currentColor; stroke-width:1.5;
   stroke-linecap:round; stroke-linejoin:round;
 }
@@ -446,6 +453,15 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="office"] .side-header #sidebar-toggle:hover { color:var(--nav-bg-dk); background:#fff; }
 [data-theme="office"] .side-header #btn-hud:hover *,
 [data-theme="office"] .side-header #sidebar-toggle:hover * { color:var(--nav-bg-dk); }
+[data-theme="office"] .side-header .app-brand,
+[data-theme="office"] .side-header .app-brand-logo-default,
+[data-theme="office"] .side-header .side-collapse-btn { color:#fff; }
+[data-theme="office"] .side-header .app-brand-logo-default { fill:#fff; }
+[data-theme="office"] .side-header .side-collapse-btn svg { stroke:#fff; }
+[data-theme="office"] .app-mobile-bar .mobile-bar-btn,
+[data-theme="office"] .app-mobile-bar #btn-hud-mobile,
+[data-theme="office"] .app-mobile-bar .mobile-bar-btn-nice,
+[data-theme="office"] .app-mobile-bar .mobile-bar-theme { color:#fff; }
 
 /* CTAs — pill shaped, solid filled */
 [data-theme="office"] .btn-primary,
@@ -618,12 +634,22 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="rx-78-2"] .side-header .app-brand-text {
   color: #fff;
 }
+[data-theme="rx-78-2"] .side-header .app-brand,
+[data-theme="rx-78-2"] .side-header .app-brand-logo-default,
+[data-theme="rx-78-2"] .side-header .side-collapse-btn { color: #fff; }
+[data-theme="rx-78-2"] .side-header .app-brand-logo-default { fill: #fff; }
+[data-theme="rx-78-2"] .side-header .side-collapse-btn svg { stroke: #fff; }
+[data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn,
+[data-theme="rx-78-2"] .app-mobile-bar #btn-hud-mobile,
+[data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn-nice,
+[data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-theme { color: #d4a017; }
 [data-theme="rx-78-2"] #btn-hud {
-  background: #d4a017;
-  color: #1a1a2a;
-  border: 2px solid #e8c840;
-  font-weight:var(--fw-bold);
+  background: none;
+  color: #d4a017;
+  border: none;
 }
+[data-theme="rx-78-2"] #app-hud-panel .dock-lbl,
+[data-theme="rx-78-2"] #app-hud-panel .dock-lbl-val { color: #d4a017; }
 [data-theme="rx-78-2"] .side-footer,
 [data-theme="rx-78-2"] .side-footer * {
   color: rgba(255,255,255,0.7);
@@ -1635,6 +1661,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   cursor:pointer; padding:8px; display:flex; align-items:center; text-decoration:none;
 }
 .mobile-bar-btn:hover { color:var(--accent); }
+.mobile-bar-left { display:flex; align-items:center; gap:2px; }
 .mobile-bar-right { display:flex; align-items:center; gap:2px; }
 /* Theme name label — centered in the mobile top bar, same anchoring
    pattern the hidden NICE brand uses. Takes priority over the brand
@@ -1665,9 +1692,21 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .mobile-bar-btn-hud-logo {
   display:inline-flex; align-items:center; justify-content:center;
   padding:5px 8px;
+  border:none;
 }
+.mobile-bar-btn-hud-logo:hover { border:none; }
 .mobile-bar-btn-hud-logo .app-hdr-logo {
-  width:14px; height:14px; fill:currentColor; display:block;
+  width:20px; height:20px; fill:currentColor; display:block;
+}
+.mobile-bar-btn-nice {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:4px;
+  color:var(--accent);
+  text-decoration:none;
+}
+.mobile-bar-btn-nice:hover { color:var(--accent); opacity:.85; }
+.mobile-bar-nice-logo {
+  width:28px; height:28px; fill:currentColor; display:block;
 }
 .app-mobile-bar .app-brand-text {
   font-family:var(--font-brand, var(--font-h)); font-size:var(--text-sm); font-weight:var(--fw-bold);
