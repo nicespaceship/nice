@@ -14,13 +14,13 @@ const DocsView = (() => {
   let _searchQuery = '';
 
   /* ── Section definitions. `icon` is the suffix of an SVG symbol id
-     defined in app/index.html (icon-rocket, icon-bot, etc.). Rendered
-     as <svg><use href="#icon-${icon}"/></svg> in the sidebar and
-     search results. ── */
+     defined in app/index.html. All chosen icons share a 24x24 viewBox
+     so the helper below can hardcode it — avoiding the brand icons
+     (e.g. icon-spaceship) whose custom viewBoxes would distort. ── */
   const SECTIONS = [
-    { id: 'getting-started', label: 'Getting Started', icon: 'rocket' },
+    { id: 'getting-started', label: 'Getting Started', icon: 'home' },
     { id: 'agents',          label: 'Agents',          icon: 'bot' },
-    { id: 'spaceships',      label: 'Spaceships',      icon: 'spaceship' },
+    { id: 'spaceships',      label: 'Spaceships',      icon: 'rocket' },
     { id: 'missions',        label: 'Missions',        icon: 'task' },
     { id: 'workflows',       label: 'Workflows',       icon: 'workflow' },
     { id: 'integrations',    label: 'Integrations',    icon: 'plug' },
@@ -30,7 +30,7 @@ const DocsView = (() => {
   ];
 
   function _iconSvg(name) {
-    return `<svg class="docs-nav-icon icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
+    return `<svg class="docs-nav-icon icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
   }
 
   /* ══════════════════════════════════════════════════════════════════
