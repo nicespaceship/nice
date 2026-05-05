@@ -2088,10 +2088,15 @@
 /* Mode tabs sit in the overlap zone of the elbow's bottom curve
    (.side-header::after, positioned -24px below the header). Bump the
    tabs above the curve so the Spaceship / Chat / Code controls stay
-   clickable and visible. */
+   clickable and visible. Also flush them to the left edge — every
+   other LCARS panel (.side-link, the filler bar) reads as a flush-left
+   bar with a rounded right end, so the centered base styling looked
+   visually orphaned. */
 [data-theme="lcars"] .side-mode-tabs {
   position:relative;
   z-index:6;
+  margin:0 10px 8px 0;
+  border-radius:0 24px 24px 0;
 }
 /* Elbow curve — bottom-right corner */
 [data-theme="lcars"] .side-header::after {
