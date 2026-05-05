@@ -2097,6 +2097,7 @@
   z-index:6;
   margin:0 10px 8px 0;
   border-radius:0 24px 24px 0;
+  background:#ff9966;
 }
 /* Inactive mode-tab labels inherit --nav-text-muted (violet) which reads
    as low-contrast on the dark-orange container. Match the .side-link
