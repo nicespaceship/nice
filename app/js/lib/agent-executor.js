@@ -128,15 +128,25 @@ const AgentExecutor = (() => {
      memory context. Pure function over current State + ToolRegistry — no
      side effects beyond the McpBridge.loadTools registration. */
   function _buildExecContext(agentBlueprint, toolIds) {
+    // Always call McpBridge.loadTools — it registers connected MCP tools
+    // into the ToolRegistry so blueprint-declared names like
+    // 'gmail_search_messages' resolve to the live MCP tool. We don't
+    // automatically merge those IDs into the available list anymore;
+    // narrowly-scoped umbrella agents (HubSpot/Workspace/M365) declare
+    // their tool set explicitly and were leaking other providers' tools
+    // into the LLM schema (Workspace agent picked Microsoft's
+    // `calendar_ms_list_events` on 2026-05-04 because both MCPs were
+    // connected and every tool was offered).
     let mcpToolIds = [];
     if (typeof McpBridge !== 'undefined') {
       mcpToolIds = McpBridge.loadTools();
     }
 
-    // Resolve available tools (explicit + MCP).
-    // Blueprint tools may use display names ("Web Search") — ToolRegistry.resolve
-    // handles id, alias, and normalized-name lookup so the executor binds real tools.
-    const allToolIds = [...(toolIds || []), ...mcpToolIds];
+    // If the blueprint declares an explicit tool list, scope to that.
+    // Otherwise (generic agents with no `tools` config) fall back to
+    // every connected MCP tool — same behavior as before this change.
+    const declared = (toolIds || []).filter(Boolean);
+    const allToolIds = declared.length > 0 ? declared : mcpToolIds;
     const availableTools = [];
     const seen = new Set();
     if (typeof ToolRegistry !== 'undefined') {
@@ -574,7 +584,13 @@ const AgentExecutor = (() => {
       if (body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
         Subscription.handleBillingError(body);
       }
-      throw new Error((body && body.error) || (typeof error === 'string' ? error : error.message) || 'Edge function error');
+      // body.error can be a nested object ({message, code, details}) when an
+      // upstream provider error gets forwarded as-is. `new Error(obj)` would
+      // coerce that to literal '[object Object]' — flatten it first.
+      throw new Error(_coerceErrorMessage(body && body.error)
+        || (typeof error === 'string' ? error : null)
+        || _coerceErrorMessage(error && error.message)
+        || 'Edge function error');
     }
     if (!data || data.error) throw new Error(data?.error || 'Empty response');
 
@@ -639,6 +655,27 @@ const AgentExecutor = (() => {
     if (!toolId || typeof toolId !== 'string') return false;
     const normalized = toolId.toLowerCase();
     return SIDE_EFFECT_PATTERNS.some(p => normalized.includes(p));
+  }
+
+  /* ── Coerce an unknown error value into a useful string ──
+     `body.error` from nice-ai may be a string, an object with `.message`,
+     or a fully nested provider error. Returning '[object Object]' from
+     `new Error(obj)` was visible to users on the M365 Agent on 2026-05-04.
+     Returns null when nothing useful can be extracted, so callers can
+     fall through to their own default. */
+  function _coerceErrorMessage(val) {
+    if (val == null) return null;
+    if (typeof val === 'string') return val.trim() || null;
+    if (typeof val === 'object') {
+      if (typeof val.message === 'string' && val.message.trim()) return val.message.trim();
+      if (typeof val.error === 'string' && val.error.trim()) return val.error.trim();
+      try {
+        const json = JSON.stringify(val);
+        if (json && json !== '{}' && json !== '[]') return json;
+      } catch { /* circular or non-serializable — fall through */ }
+      return null;
+    }
+    return String(val);
   }
 
   /**
