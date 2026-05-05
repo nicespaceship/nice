@@ -206,7 +206,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-hdr-btn-logo:hover { border:none; background:none; }
 .app-hdr-btn-logo .app-hdr-logo {
-  width:24px; height:24px; display:block;
+  width:32px; height:32px; display:block;
   fill:none; stroke:currentColor; stroke-width:1.5;
   stroke-linecap:round; stroke-linejoin:round;
 }
@@ -1724,7 +1724,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .mobile-bar-btn-hud-logo:hover { border:none; }
 .mobile-bar-btn-hud-logo .app-hdr-logo {
-  width:20px; height:20px; fill:currentColor; display:block;
+  width:28px; height:28px; fill:currentColor; display:block;
 }
 .mobile-bar-btn-nice {
   display:inline-flex; align-items:center; justify-content:center;
