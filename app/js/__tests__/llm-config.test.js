@@ -176,6 +176,71 @@ describe('LLMConfig', () => {
     });
   });
 
+  describe('buildFallbackChain', () => {
+    it('returns models below the primary in the chain', () => {
+      const chain = LLMConfig.buildFallbackChain('claude-sonnet-4-6', { 'llama-4-scout': true, 'gemini-2-5-flash': true });
+      const ids = chain.map(m => m.id);
+      expect(ids).toContain('llama-4-scout');
+      expect(ids).toContain('gemini-2-5-flash');
+      expect(ids).not.toContain('claude-sonnet-4-6');
+      expect(ids).not.toContain('claude-opus-4-7'); // above primary
+    });
+
+    it('always includes gemini-2-5-flash even when not in enabledModels', () => {
+      const chain = LLMConfig.buildFallbackChain('claude-sonnet-4-6', {});
+      expect(chain.map(m => m.id)).toContain('gemini-2-5-flash');
+    });
+
+    it('excludes models not enabled by the user (except free Flash)', () => {
+      const chain = LLMConfig.buildFallbackChain('claude-sonnet-4-6', { 'gemini-2-5-flash': true });
+      const ids = chain.map(m => m.id);
+      expect(ids).not.toContain('llama-4-scout');
+      expect(ids).not.toContain('gpt-5-mini');
+      expect(ids).toContain('gemini-2-5-flash');
+    });
+
+    it('marks noTools correctly for Llama and Grok', () => {
+      const chain = LLMConfig.buildFallbackChain('claude-sonnet-4-6', { 'llama-4-scout': true, 'grok': true });
+      const llama = chain.find(m => m.id === 'llama-4-scout');
+      const grok  = chain.find(m => m.id === 'grok');
+      expect(llama?.noTools).toBe(true);
+      expect(grok?.noTools).toBe(true);
+    });
+
+    it('returns empty chain when primary is gemini-2-5-flash (bottom of ladder)', () => {
+      const chain = LLMConfig.buildFallbackChain('gemini-2-5-flash', {});
+      expect(chain).toHaveLength(0);
+    });
+
+    it('returns full chain from unknown primary model', () => {
+      const chain = LLMConfig.buildFallbackChain('unknown-model', { 'llama-4-scout': true });
+      expect(chain.length).toBeGreaterThan(0);
+      expect(chain.map(m => m.id)).toContain('gemini-2-5-flash');
+    });
+  });
+
+  describe('forBlueprint fallbackChain', () => {
+    it('includes fallbackChain in forBlueprint result', () => {
+      const bp = { config: { llm_engine: 'claude-sonnet-4-6' } };
+      const cfg = LLMConfig.forBlueprint(bp);
+      expect(cfg).toHaveProperty('fallbackChain');
+      expect(Array.isArray(cfg.fallbackChain)).toBe(true);
+    });
+
+    it('fallbackChain always ends with gemini-2-5-flash', () => {
+      const bp = { config: { llm_engine: 'claude-sonnet-4-6' } };
+      const cfg = LLMConfig.forBlueprint(bp);
+      const ids = cfg.fallbackChain.map(m => m.id);
+      expect(ids[ids.length - 1]).toBe('gemini-2-5-flash');
+    });
+
+    it('fallbackChain is empty when primary is already gemini-2-5-flash', () => {
+      const bp = { config: { llm_engine: 'gemini-2-5-flash' } };
+      const cfg = LLMConfig.forBlueprint(bp);
+      expect(cfg.fallbackChain).toHaveLength(0);
+    });
+  });
+
   describe('_num (via fromStats)', () => {
     it('should handle string percentages', () => {
       // acc of "94%" → 94 numeric → temperature ≈ 0.06 → clamped to 0.1
