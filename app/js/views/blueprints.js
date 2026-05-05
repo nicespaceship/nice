@@ -927,6 +927,18 @@ const BlueprintsView = (() => {
     State.on('spaceships', _refreshSubTabCounts);
     // Blueprints fires this once the full catalog finishes loading.
     State.on('catalog-loaded', _refreshSubTabCounts);
+    // Re-render the Schematic when ships hydrate from Supabase. On a
+    // hard refresh the BlueprintsView render runs before the async
+    // _loadActivatedFromDB completes, so the Schematic's first paint
+    // hits the empty-state branch and never recovers without this.
+    State.on('spaceships', _rerenderSchematicIfActive);
+  }
+  function _rerenderSchematicIfActive() {
+    if (_activeTab !== 'schematic') return;
+    const schematicEl = document.getElementById('bp-schematic-content');
+    if (schematicEl && typeof SchematicView !== 'undefined') {
+      SchematicView.render(schematicEl);
+    }
   }
   _subscribeCountUpdates();
 

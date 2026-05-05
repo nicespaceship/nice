@@ -50,6 +50,17 @@ const PromptPanel = (() => {
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
   let _routeShip = null;  // ship context from current route (#/bridge/spaceships/:id or schematic active ship)
 
+  // On a hard refresh, BlueprintsView/Router renders before
+  // State.spaceships hydrates from Supabase. _updateRouteContext finds
+  // no ship and falls back to "Ask NICE…", and stays stale because
+  // syncRoute only fires on hash change. Re-resolve when ships arrive.
+  function _onShipsHydrate() {
+    try { _updateRouteContext(); } catch { /* race during init */ }
+  }
+  if (typeof State !== 'undefined' && State.on) {
+    State.on('spaceships', _onShipsHydrate);
+  }
+
   /* ── File attachments (staged until send) ──
      Entries live on _pendingAttachments. Shape varies by `kind`:
        kind="image": { id, kind, dataUrl, mimeType, name, size }
