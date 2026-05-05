@@ -1361,10 +1361,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar.open ~ .app-sidebar-overlay { display:block; }
 }
 
-/* Sidebar header — logo + actions */
+/* Sidebar header — empty strip retained as anchor for per-theme
+   decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk light
+   strip — see public/css/theme.css). Brand logo + close button were
+   removed 2026-05-04; the mode tabs are the new header, and "close"
+   = click outside the sidebar (handled by document-level listener). */
 .side-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 16px 12px; flex-shrink:0;
+  flex-shrink:0; height:12px;
   background:var(--nav-bg-dk, transparent);
 }
 .side-header .app-brand-text { font-size:var(--text-lg); color:var(--nav-text, var(--text)); }
@@ -1656,8 +1659,30 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar:not(.open) .sidebar-favorites,
 .app-sidebar:not(.open) .sidebar-section-label,
 .app-sidebar:not(.open) .side-divider,
-.app-sidebar:not(.open) #side-chats-folder .side-folder-body,
-.app-sidebar:not(.open) .side-mode-tabs { display:none; }
+.app-sidebar:not(.open) #side-chats-folder .side-folder-body { display:none; }
+
+/* Collapsed sidebar: only the active mode tab stays visible; the others
+   hide. The active tab's icon becomes the rail's primary affordance —
+   click it to open the sidebar. Container drops its container chrome
+   (background pill, gap, padding) so the lone icon button reads as a
+   plain rail item, matching the existing .side-link rail aesthetic. */
+.app-sidebar:not(.open) .side-mode-tabs {
+  margin:0; padding:0; background:transparent; gap:0;
+}
+.app-sidebar:not(.open) .side-mode-tab[aria-selected="false"] { display:none; }
+.app-sidebar:not(.open) .side-mode-tab span { display:none; }
+.app-sidebar:not(.open) .side-mode-tab {
+  padding:10px 0; border-radius:0;
+  background:transparent; box-shadow:none;
+}
+.app-sidebar:not(.open) .side-mode-tab .icon { width:22px; height:22px; }
+
+/* When collapsed, the active mode's tab icon is the only sidebar
+   affordance — clicking it opens the sidebar to reveal the full
+   nav. Hide the per-mode sub-nav content so we don't show a stack
+   of redundant icons (e.g. mode-tab chat bubble + Chats folder
+   toggle chat bubble). */
+.app-sidebar:not(.open) .side-mode-section { display:none; }
 
 /* Mobile: the panel drops down from under the mobile top bar as a
    full-width header dropdown. Base rule already sets position:fixed;

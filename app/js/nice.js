@@ -813,29 +813,10 @@ const NICE = (() => {
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    const brandBtn = document.getElementById('nice-brand-btn');
-    if (brandBtn) {
-      brandBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!sidebar.classList.contains('open')) {
-          sidebar.classList.add('open');
-        } else {
-          // Mode-aware home: Spaceship → Schematic, Chat → Home.
-          const target = _homeRouteForCurrentMode();
-          if (window.location.hash !== target) window.location.hash = target;
-        }
-      });
-    }
-
-    const collapseBtn = document.getElementById('side-collapse-btn');
-    if (collapseBtn) {
-      collapseBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        sidebar.classList.remove('open');
-      });
-    }
+    // Brand logo + close button were removed 2026-05-04 — the mode
+    // tabs are now the sidebar header, and clicking outside the
+    // sidebar closes it (handled by the document-level listener
+    // below). Their click handlers are gone with them.
 
     const mobileToggle = document.getElementById('mobile-sidebar-toggle');
     if (mobileToggle) {
@@ -2360,8 +2341,19 @@ const NICE = (() => {
     if (mobileHome) mobileHome.setAttribute('href', _MODE_DEFAULT_ROUTES[mode]);
   }
   function _initModeTabs() {
+    const sidebar = document.getElementById('app-sidebar');
     document.querySelectorAll('.side-mode-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        // Sidebar collapsed: only the active tab is visible (its icon
+        // is the rail affordance). Clicking it opens the sidebar
+        // rather than navigating, so the user can see the full mode
+        // switcher + sub-nav. Stop propagation so the document-level
+        // outside-click handler doesn't immediately close it again.
+        if (sidebar && !sidebar.classList.contains('open')) {
+          e.stopPropagation();
+          sidebar.classList.add('open');
+          return;
+        }
         const mode = btn.dataset.mode;
         const target = _MODE_DEFAULT_ROUTES[mode];
         if (target && location.hash !== target) location.hash = target;
