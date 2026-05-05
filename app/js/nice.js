@@ -899,6 +899,15 @@ const NICE = (() => {
         logoutBtn.addEventListener('click', async () => {
           popover.classList.remove('open');
           if (typeof SB !== 'undefined') await SB.auth.signOut();
+          // Clear per-user chat state so the next visitor on this browser
+          // doesn't see the previous account's prompts. The prompt panel
+          // also gates load/save on auth-session presence, but wiping on
+          // explicit logout closes the door before the gate runs.
+          try {
+            localStorage.removeItem(Utils.KEYS.aiMessages);
+            localStorage.removeItem(Utils.KEYS.conversations);
+            localStorage.removeItem(Utils.KEYS.activeConv);
+          } catch { /* storage blocked */ }
           window.location.reload();
         });
       }
