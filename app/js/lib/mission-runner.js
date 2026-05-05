@@ -315,20 +315,26 @@ const MissionRunner = (() => {
       if (blueprintId && typeof ModelIntel !== 'undefined') {
         ModelIntel.log(blueprintId, modelUsed, { success: true, speedMs: _simSpeed(modelUsed), costTokens: _simCost(modelUsed) });
       }
+      const isChatRun = mission.metadata?.source === 'prompt_panel';
+      const finalStatus = isChatRun ? 'completed' : 'review';
       const metadata = Object.assign({}, mission.metadata || {}, result.metadata || {}, { completed_at: now, model_used: modelUsed });
       const outcome = _deriveOutcome(mission, result.content);
-      // Transition to review (user must approve before it's "completed")
       const update = {
-        status: 'review',
+        status: finalStatus,
         progress: 100,
         result: result.content,
-        approval_status: 'draft',
         metadata,
         updated_at: now,
       };
+      if (!isChatRun) update.approval_status = 'draft';
+      if (isChatRun) update.completed_at = now;
       if (outcome) update.outcome = outcome;
       await SB.db('mission_runs').update(missionId, update);
-      _updateLocalMission(missionId, { status: 'review', progress: 100, result: result.content, approval_status: 'draft', metadata, ...(outcome ? { outcome } : {}) });
+      _updateLocalMission(missionId, {
+        status: finalStatus, progress: 100, result: result.content, metadata,
+        ...(isChatRun ? {} : { approval_status: 'draft' }),
+        ...(outcome ? { outcome } : {}),
+      });
 
       // Post-execution quality scoring using blueprint eval_criteria
       let qualityReview = null;
@@ -359,8 +365,9 @@ const MissionRunner = (() => {
       // XP awarded on approval, not on generation
       // (Gamification.addXP('complete_mission') moved to approve action)
 
-      // Create notification
-      _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
+      if (!isChatRun) {
+        _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
+      }
 
       return result;
 
