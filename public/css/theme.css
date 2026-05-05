@@ -2085,6 +2085,14 @@
 /* Closed-state brand: #ff9966 orange on #cc99ff violet is same-luminance
    pastel mush. Force black for clear contrast against the violet elbow. */
 [data-theme="lcars"] .side-rail-brand { color:#000; }
+/* Mode tabs sit in the overlap zone of the elbow's bottom curve
+   (.side-header::after, positioned -24px below the header). Bump the
+   tabs above the curve so the Spaceship / Chat / Code controls stay
+   clickable and visible. */
+[data-theme="lcars"] .side-mode-tabs {
+  position:relative;
+  z-index:6;
+}
 /* Elbow curve — bottom-right corner */
 [data-theme="lcars"] .side-header::after {
   content:'';
