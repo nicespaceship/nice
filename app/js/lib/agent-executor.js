@@ -589,14 +589,23 @@ const AgentExecutor = (() => {
 
     let { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
 
-    // Auto-fallback on transient overload — swap to gemini-2.5-flash and retry once.
+    // Auto-fallback on transient overload — tier 1: gemini-2.5-flash, tier 2: llama-4-scout
+    // (Groq-hosted, separate infra). Each tier only fires if the previous model differs.
     if ((error || data?.error) && requestBody.model !== 'gemini-2.5-flash' && _isOverloadError(error, data)) {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Model busy', message: requestBody.model + ' is overloaded — retrying with Gemini Flash', type: 'info' });
       }
-      const fallback = await SB.functions.invoke('nice-ai', { body: { ...requestBody, model: 'gemini-2.5-flash' } });
-      data  = fallback.data;
-      error = fallback.error;
+      const f1 = await SB.functions.invoke('nice-ai', { body: { ...requestBody, model: 'gemini-2.5-flash' } });
+      data  = f1.data;
+      error = f1.error;
+    }
+    if ((error || data?.error) && requestBody.model !== 'llama-4-scout' && _isOverloadError(error, data)) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Model busy', message: 'Gemini Flash also busy — retrying with Llama (Groq)', type: 'info' });
+      }
+      const f2 = await SB.functions.invoke('nice-ai', { body: { ...requestBody, model: 'llama-4-scout', tools: undefined } });
+      data  = f2.data;
+      error = f2.error;
     }
 
     if (error) {
