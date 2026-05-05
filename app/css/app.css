@@ -206,7 +206,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-hdr-btn-logo:hover { border:none; background:none; }
 .app-hdr-btn-logo .app-hdr-logo {
-  width:24px; height:24px; display:block;
+  width:32px; height:32px; display:block;
   fill:none; stroke:currentColor; stroke-width:1.5;
   stroke-linecap:round; stroke-linejoin:round;
 }
@@ -1361,14 +1361,63 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar.open ~ .app-sidebar-overlay { display:block; }
 }
 
-/* Sidebar header — logo + actions */
+/* Sidebar header — holds the NICE rail-brand icon, the only thing
+   visible at the top of the sidebar when collapsed. When the sidebar
+   is open, the brand hides and the mode tabs (rendered just below)
+   become the visual header. Per-theme decorations (LCARS overlay,
+   JARVIS reactor pulse, Cyberpunk light strip — see theme.css)
+   anchor on .side-header. */
 .side-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 16px 12px; flex-shrink:0;
+  flex-shrink:0; padding:14px 0 8px;
+  display:flex; align-items:center; justify-content:center;
   background:var(--nav-bg-dk, transparent);
 }
+.side-rail-brand {
+  display:flex; align-items:center; justify-content:center;
+  width:48px; height:48px; padding:0;
+  background:transparent; border:0; border-radius:8px;
+  color:var(--nav-text, var(--text));
+  cursor:pointer; transition:background .15s, color .15s;
+}
+.side-rail-brand svg { width:40px; height:40px; fill:currentColor; display:block; }
+.side-rail-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
+/* When sidebar is open, the mode tabs become the visual header —
+   hide the rail-brand to avoid stacking it on top of the tabs. */
+.app-sidebar.open .side-header { padding:0; height:0; overflow:hidden; }
+.app-sidebar.open .side-rail-brand { display:none; }
 .side-header .app-brand-text { font-size:var(--text-lg); color:var(--nav-text, var(--text)); }
 .side-header .app-hdr-menu { display:none; }
+
+/* Mode tabs — Spaceship vs Standalone Chat. Top of sidebar nav, full
+   width, segmented-control style. Active state is the source of truth
+   for which mode-section renders below. */
+.side-mode-tabs {
+  display:flex; gap:2px; flex-shrink:0;
+  margin:0 12px 8px; padding:2px;
+  background:var(--nav-border, var(--border));
+  border-radius:var(--radius, 8px);
+}
+.side-mode-tab {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  padding:8px 4px;
+  background:transparent; border:0;
+  color:var(--nav-text-muted, var(--text-muted));
+  font-family:inherit; font-size:var(--text-xs); font-weight:var(--fw-medium);
+  border-radius:calc(var(--radius, 8px) - 2px);
+  cursor:pointer; transition:background .15s, color .15s;
+  min-width:0;
+}
+.side-mode-tab span {
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;
+}
+.side-mode-tab:hover { color:var(--nav-text, var(--text)); }
+.side-mode-tab[aria-selected="true"] {
+  background:var(--bg, var(--nav-bg));
+  color:var(--accent, var(--nav-text, var(--text)));
+  box-shadow:0 1px 2px rgba(0,0,0,0.18);
+}
+.side-mode-tab .icon { width:18px; height:18px; }
+.side-mode-section[hidden] { display:none; }
 
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }
@@ -1627,6 +1676,14 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar:not(.open) .side-divider,
 .app-sidebar:not(.open) #side-chats-folder .side-folder-body { display:none; }
 
+/* Collapsed sidebar: only the NICE rail-brand at top is visible.
+   Mode tabs and per-mode sub-nav both hide — they only render when
+   the sidebar is expanded. Always-NICE-on-close is intentional
+   branding: the rail reads as "this is NICE", not "you are in
+   mode X". */
+.app-sidebar:not(.open) .side-mode-tabs,
+.app-sidebar:not(.open) .side-mode-section { display:none; }
+
 /* Mobile: the panel drops down from under the mobile top bar as a
    full-width header dropdown. Base rule already sets position:fixed;
    here we override only the anchor + dimensions for the mobile layout. */
@@ -1696,7 +1753,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .mobile-bar-btn-hud-logo:hover { border:none; }
 .mobile-bar-btn-hud-logo .app-hdr-logo {
-  width:20px; height:20px; fill:currentColor; display:block;
+  width:28px; height:28px; fill:currentColor; display:block;
 }
 .mobile-bar-btn-nice {
   display:inline-flex; align-items:center; justify-content:center;
@@ -2299,6 +2356,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   html:has(.schematic-stack) .jv-pp-reactor {
     width:220px;
     height:220px;
+  }
+  /* When the chat overlay is up on mobile, anchor the reactor near the
+     top so the conversation streams up toward it from the prompt input
+     at the bottom (familiar chat layout). Override the schematic-stack
+     anchor that pins it near the bottom. */
+  html:has(.app-main.monitor-active.monitor-on-schematic) {
+    --reactor-y:180px;
   }
   .schematic-stack-reactor {
     position:relative;
@@ -4030,6 +4094,20 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-main.monitor-active .nice-monitor {
   opacity:1; pointer-events:auto;
+}
+/* When the monitor opens from the Schematic, drop the solid bg so the
+   core reactor (which lives in .app-main, behind .nice-monitor) shows
+   through as the visual backdrop. Crew rows are already invisible
+   (.app-view-content opacity:0) so the reactor reads cleanly. */
+.app-main.monitor-active.monitor-on-schematic .nice-monitor {
+  background:transparent;
+}
+/* Hide the fixed tabs (Schematic / ship picker) while the chat overlay
+   is up — they sit underneath at z:20 and overlap the "Back" button at
+   top-left. The user is chatting, not browsing tabs; "Back" returns to
+   the schematic where the tabs reappear. */
+.app-main.monitor-active.monitor-on-schematic #app-fixed-tabs {
+  display:none;
 }
 .nice-monitor-inner {
   flex:1; width:100%; max-width:760px;

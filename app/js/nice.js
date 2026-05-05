@@ -813,25 +813,15 @@ const NICE = (() => {
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    const brandBtn = document.getElementById('nice-brand-btn');
-    if (brandBtn) {
-      brandBtn.addEventListener('click', (e) => {
+    // Collapsed-rail NICE brand icon — the only affordance visible
+    // when the sidebar is closed. Clicking opens the sidebar; closing
+    // happens via outside-click (document listener below).
+    const railBrand = document.getElementById('side-rail-brand');
+    if (railBrand) {
+      railBrand.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!sidebar.classList.contains('open')) {
-          sidebar.classList.add('open');
-        } else if (window.location.hash !== '#/' && window.location.hash !== '') {
-          window.location.hash = '#/';
-        }
-      });
-    }
-
-    const collapseBtn = document.getElementById('side-collapse-btn');
-    if (collapseBtn) {
-      collapseBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        sidebar.classList.remove('open');
+        sidebar.classList.add('open');
       });
     }
 
@@ -2313,6 +2303,60 @@ const NICE = (() => {
         link.classList.remove('active');
       }
     });
+    _updateActiveModeTab();
+  }
+
+  /* ── Sidebar mode tabs — Spaceship / Chat / Code ──
+     Three architecturally-distinct modes. Spaceship is the agentic
+     orchestrator (Bridge / Schematic / missions). Chat is the
+     standalone LLM picker. Code is the engineering / coding surface.
+     Each mode has its own sub-nav rendered below the tabs. Active
+     mode is derived from the current route, not persisted, so the
+     URL stays the source of truth. */
+  const _MODE_DEFAULT_ROUTES = {
+    spaceship: '#/bridge',
+    chat: '#/',
+    code: '#/engineering',
+  };
+  function _modeFromPath(path) {
+    if (/^\/engineering(\/|$|\?)/.test(path)) return 'code';
+    if (/^\/(bridge|missions)(\/|$|\?)/.test(path)) return 'spaceship';
+    return 'chat';
+  }
+  function _homeRouteForCurrentMode() {
+    const path = location.hash.replace(/^#/, '') || '/';
+    return _MODE_DEFAULT_ROUTES[_modeFromPath(path)];
+  }
+  function _updateActiveModeTab() {
+    const path = location.hash.replace(/^#/, '') || '/';
+    const mode = _modeFromPath(path);
+    document.querySelectorAll('.side-mode-tab').forEach(btn => {
+      const isActive = btn.dataset.mode === mode;
+      btn.setAttribute('aria-selected', String(isActive));
+    });
+    document.querySelectorAll('.side-mode-section').forEach(section => {
+      const isActive = section.dataset.modeSection === mode;
+      if (isActive) section.removeAttribute('hidden');
+      else section.setAttribute('hidden', '');
+    });
+    // Mobile-bar "home" link (which doubles as the theme name label) is
+    // a real <a href="…"> for accessibility — keep it that way and just
+    // re-point the href at the current mode's default route. Clicking
+    // from a Spaceship surface lands on the Schematic; from Chat lands
+    // on Home.
+    const mobileHome = document.getElementById('mobile-bar-theme');
+    if (mobileHome) mobileHome.setAttribute('href', _MODE_DEFAULT_ROUTES[mode]);
+  }
+  function _initModeTabs() {
+    document.querySelectorAll('.side-mode-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        const target = _MODE_DEFAULT_ROUTES[mode];
+        if (target && location.hash !== target) location.hash = target;
+        else _updateActiveModeTab();
+      });
+    });
+    _updateActiveModeTab();
   }
 
   /* ── Step 56: Screen reader announcements ── */
@@ -2413,6 +2457,7 @@ const NICE = (() => {
     _initSidebar();
     _initSidebarDnD();
     _initSidebarKeyboard();
+    _initModeTabs();
     _initScrollToTop();
     _initHUD();
     _initBellDropdown();

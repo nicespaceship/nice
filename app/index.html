@@ -136,34 +136,78 @@
 
 <!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
 <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
-  <!-- Sidebar Header: Logo + User -->
+  <!-- Sidebar Header — empty when sidebar is open (theme decoration
+       anchor only). When collapsed, the NICE brand icon takes over
+       and acts as the click-to-open affordance. Always-NICE-on-close
+       is intentional branding (per Benjamin 2026-05-04) — the rail
+       reads as "this is NICE", not "you are in mode X". -->
   <div class="side-header">
-    <button class="app-brand" id="nice-brand-btn" aria-label="Toggle sidebar" title="Toggle sidebar">
-      <svg class="app-brand-logo app-brand-logo-default" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
-      <svg class="app-brand-logo app-brand-logo-hover" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/></svg>
+    <button type="button" class="side-rail-brand" id="side-rail-brand" aria-label="Open menu" title="Open menu">
+      <svg viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
     </button>
-    <button class="side-collapse-btn" id="side-collapse-btn" aria-label="Close sidebar" title="Close sidebar">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/></svg>
+  </div>
+
+  <!-- Mode tabs: three distinct ways to use NICE. Spaceship (agentic
+       orchestrator), Chat (standalone LLM picker), Code (engineering /
+       coding surface). Each tab is the entry point to its mode AND the
+       label for the per-mode sub-nav rendered below. The Spaceship tab
+       uses the NICE constellation icon (#icon-nice) — the visual ↔
+       schematic pattern is exactly the orchestrator-with-crew layout. -->
+  <div class="side-mode-tabs" role="tablist" aria-label="App mode">
+    <button type="button" class="side-mode-tab" data-mode="spaceship" role="tab" aria-selected="true" aria-controls="side-nav-spaceship">
+      <svg class="icon icon-sm" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
+      <span>Spaceship</span>
+    </button>
+    <button type="button" class="side-mode-tab" data-mode="chat" role="tab" aria-selected="false" aria-controls="side-nav-chat">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
+      <span>Chat</span>
+    </button>
+    <button type="button" class="side-mode-tab" data-mode="code" role="tab" aria-selected="false" aria-controls="side-nav-code">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+      <span>Code</span>
     </button>
   </div>
 
   <nav class="app-side-nav">
-    <a href="#/bridge" class="side-link active" data-view="blueprints">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-monitor"/></svg>
-      <span data-skin-nav="blueprints">Bridge</span>
-    </a>
-    <a href="#/engineering" class="side-link" data-view="engineering">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
-      <span>Code</span>
-    </a>
-    <div class="side-folder open" id="side-chats-folder">
-      <div class="side-folder-toggle" id="side-chats-toggle" role="button" tabindex="0" aria-label="Chats">
-        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
-        <span id="side-chats-label">Chats</span>
-        <button class="side-chat-new" id="side-chat-new" title="New chat" aria-label="New chat">+</button>
+    <!-- Spaceship sub-nav: missions list. Clicking the tab navigates
+         to #/bridge (Schematic) — this section holds the secondary
+         nav (mission templates). -->
+    <div class="side-mode-section" id="side-nav-spaceship" data-mode-section="spaceship" role="tabpanel">
+      <div class="side-folder open" id="side-missions-folder">
+        <div class="side-folder-toggle" role="button" tabindex="0" aria-label="Missions">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"/></svg>
+          <span>Missions</span>
+        </div>
+        <div class="side-folder-body" id="side-missions-list">
+          <!-- Populated dynamically: list of mission templates from State.missions -->
+        </div>
       </div>
-      <div class="side-folder-body side-chats-body" id="side-chats-list">
-        <!-- Populated dynamically by nice.js -->
+    </div>
+    <!-- Chat sub-nav: existing Chats folder (sessions + folders). -->
+    <div class="side-mode-section" id="side-nav-chat" data-mode-section="chat" role="tabpanel" hidden>
+      <div class="side-folder open" id="side-chats-folder">
+        <div class="side-folder-toggle" id="side-chats-toggle" role="button" tabindex="0" aria-label="Chats">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
+          <span id="side-chats-label">Chats</span>
+          <button class="side-chat-new" id="side-chat-new" title="New chat" aria-label="New chat">+</button>
+        </div>
+        <div class="side-folder-body side-chats-body" id="side-chats-list">
+          <!-- Populated dynamically by nice.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Code sub-nav: projects list (forward-looking — Engineering view
+         doesn't yet have a "projects" concept; placeholder for now). -->
+    <div class="side-mode-section" id="side-nav-code" data-mode-section="code" role="tabpanel" hidden>
+      <div class="side-folder open" id="side-projects-folder">
+        <div class="side-folder-toggle" role="button" tabindex="0" aria-label="Projects">
+          <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
+          <span>Projects</span>
+        </div>
+        <div class="side-folder-body" id="side-projects-list">
+          <!-- Populated dynamically: list of code projects -->
+        </div>
       </div>
     </div>
   </nav>
@@ -263,7 +307,7 @@
     <button class="mobile-bar-btn" id="mobile-sidebar-toggle" aria-label="Toggle menu">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-menu"/></svg>
     </button>
-    <a href="#/" class="mobile-bar-btn mobile-bar-btn-nice" id="mobile-bar-nice" aria-label="NICE home" title="Home">
+    <a href="#/bridge?chat=1" class="mobile-bar-btn mobile-bar-btn-nice" id="mobile-bar-nice" aria-label="Schematic chat" title="Schematic chat">
       <svg class="mobile-bar-nice-logo" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
     </a>
   </div>
