@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════
-   EngineeringView — In-App IDE + Error Monitoring
-   Route: #/engineering
+   CodeView — In-App IDE + Error Monitoring
+   Route: #/code
    ═══════════════════════════════════════════════════════════════════ */
-const EngineeringView = (() => {
-  const title = 'Engineering';
+const CodeView = (() => {
+  const title = 'Code';
   const _esc = Utils.esc;
 
   /* ── Private state ── */
@@ -43,21 +43,21 @@ const EngineeringView = (() => {
 
     // Tab bar
     el.innerHTML = `
-      <div class="eng-tabs">
-        <button class="eng-tab${_activeTab === 'code' ? ' active' : ''}" data-eng-tab="code">Code</button>
-        <button class="eng-tab${_activeTab === 'errors' ? ' active' : ''}" data-eng-tab="errors">Errors</button>
-        <button class="eng-tab${_activeTab === 'funnel' ? ' active' : ''}" data-eng-tab="funnel">Funnel</button>
+      <div class="code-tabs">
+        <button class="code-tab${_activeTab === 'code' ? ' active' : ''}" data-code-tab="code">Code</button>
+        <button class="code-tab${_activeTab === 'errors' ? ' active' : ''}" data-code-tab="errors">Errors</button>
+        <button class="code-tab${_activeTab === 'funnel' ? ' active' : ''}" data-code-tab="funnel">Funnel</button>
       </div>
-      <div class="eng-tab-body" id="eng-tab-body"></div>
+      <div class="code-tab-body" id="code-tab-body"></div>
     `;
 
-    el.querySelector('.eng-tabs').addEventListener('click', e => {
-      const tab = e.target.closest('[data-eng-tab]');
-      if (!tab || tab.dataset.engTab === _activeTab) return;
-      _activeTab = tab.dataset.engTab;
+    el.querySelector('.code-tabs').addEventListener('click', e => {
+      const tab = e.target.closest('[data-code-tab]');
+      if (!tab || tab.dataset.codeTab === _activeTab) return;
+      _activeTab = tab.dataset.codeTab;
       const suffix = _activeTab === 'code' ? '' : ('?tab=' + _activeTab);
-      history.replaceState(null, '', '#/engineering' + suffix);
-      el.querySelectorAll('.eng-tab').forEach(t => t.classList.toggle('active', t.dataset.engTab === _activeTab));
+      history.replaceState(null, '', '#/code' + suffix);
+      el.querySelectorAll('.code-tab').forEach(t => t.classList.toggle('active', t.dataset.codeTab === _activeTab));
       // replaceState doesn't fire hashchange, so PromptPanel.syncRoute can't
       // see the sub-tab change. Notify it directly — Code shows the prompt
       // surface, Errors and Funnel hide it.
@@ -72,7 +72,7 @@ const EngineeringView = (() => {
   }
 
   function _renderActiveTab() {
-    const body = document.getElementById('eng-tab-body');
+    const body = document.getElementById('code-tab-body');
     if (!body) return;
     body.innerHTML = '';
     if (_activeTab === 'errors') {
@@ -105,7 +105,7 @@ const EngineeringView = (() => {
 
     el.innerHTML = `
       <div class="ide-new-project">
-        <h2>Engineering</h2>
+        <h2>Code</h2>
         <p style="color:var(--text-muted);font-size:.85rem;margin-top:-12px;">Create or open a project</p>
         ${list.length ? `
           <div style="width:100%;max-width:600px;">
@@ -144,37 +144,13 @@ const EngineeringView = (() => {
             </button>
           </div>
         </div>
-        <div style="width:100%;max-width:600px;margin-top:8px;">
-          <h3 style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;font-family:var(--font-b)">OR DESCRIBE WHAT YOU WANT</h3>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="ide-ai-build-input" placeholder="Build me a portfolio site with a dark theme..." style="flex:1;background:var(--surface, #18181b);color:var(--text);border:1px solid var(--border, #3f3f46);border-radius:10px;padding:12px 16px;font-size:.85rem;font-family:var(--font-b);outline:none;">
-            <button class="btn btn-primary btn-lg" id="ide-ai-build-btn">Build it →</button>
-          </div>
-        </div>
       </div>
     `;
 
     el.addEventListener('click', _onProjectPickerClick);
-    // Enter key in AI build input
-    const buildInput = document.getElementById('ide-ai-build-input');
-    if (buildInput) {
-      buildInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ide-ai-build-btn')?.click(); }
-      });
-      buildInput.focus();
-    }
   }
 
   function _onProjectPickerClick(e) {
-    // "Build it" button or Enter in AI build input
-    if (e.target.closest('#ide-ai-build-btn')) {
-      const input = document.getElementById('ide-ai-build-input');
-      const desc = input?.value.trim();
-      if (!desc) return;
-      _buildFromDescription(desc);
-      return;
-    }
-
     const tpl = e.target.closest('[data-template]');
     if (tpl) {
       const template = tpl.dataset.template;
@@ -208,45 +184,6 @@ const EngineeringView = (() => {
       }
       _renderIDE(_el);
     }
-  }
-
-  async function _buildFromDescription(description) {
-    // Create a blank project and immediately ask AI to build it
-    const name = description.slice(0, 40).replace(/[^\w\s-]/g, '').trim() || 'AI Project';
-    const id = VirtualFS.createProject(name, 'blank');
-    _activeProject = id;
-    localStorage.setItem(Utils.KEYS.ideLastProject, id);
-    _openTabs = [{ path: 'index.html', dirty: false }];
-    _activeFile = 'index.html';
-    _aiMessages = [];
-    _renderIDE(_el);
-    if (typeof Gamification !== 'undefined') Gamification.addXP('create_project', 20);
-
-    // Send the description to AI
-    _aiMessages.push({ role: 'user', text: `Build this: ${description}. Create all necessary files (index.html, style.css, script.js). Make it look modern, dark-themed, and responsive.`, ts: Date.now() });
-    _aiSending = true;
-    _renderAIMessages();
-
-    try {
-      const systemPrompt = _buildIDESystemPrompt();
-      const history = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Build this: ${description}. Create all necessary files (index.html, style.css, script.js). Make it look modern, dark-themed, and responsive.` }
-      ];
-
-      if (typeof SB !== 'undefined' && SB.client) {
-        const content = await _callNiceAi(history);
-        _aiMessages.push({ role: 'assistant', text: content, ts: Date.now() });
-        _autoApplyCodeBlocks(content);
-      } else {
-        _aiMessages.push({ role: 'assistant', text: 'Sign in to use AI-powered project generation.', ts: Date.now() });
-      }
-    } catch (e) {
-      _aiMessages.push({ role: 'assistant', text: 'Error: ' + e.message, ts: Date.now() });
-    }
-
-    _aiSending = false;
-    _renderAIMessages();
   }
 
   /* ══════════════════════════════════════════════════════════════════
@@ -457,7 +394,7 @@ const EngineeringView = (() => {
       _cmLoaded = true;
       _cmLoading = false;
     } catch (e) {
-      console.warn('[Engineering] CodeMirror load failed, using textarea fallback:', e);
+      console.warn('[Code] CodeMirror load failed, using textarea fallback:', e);
       _cmLoading = false;
     }
   }
@@ -661,7 +598,7 @@ const EngineeringView = (() => {
       }
       // Assistant — parse code blocks and add Apply buttons
       const html = _renderAIResponse(m.text, i);
-      return `<div style="margin-bottom:16px;"><div style="font-size:.65rem;color:var(--accent, #a5b4fc);margin-bottom:3px;">NICE Engineering</div><div style="font-size:.8rem;color:var(--text);line-height:1.6;">${html}</div></div>`;
+      return `<div style="margin-bottom:16px;"><div style="font-size:.65rem;color:var(--accent, #a5b4fc);margin-bottom:3px;">NICE Code</div><div style="font-size:.8rem;color:var(--text);line-height:1.6;">${html}</div></div>`;
     }).join('') + (_aiSending ? '<div style="font-size:.75rem;color:var(--text-muted);"><span class="ide-ai-dots">Thinking</span></div>' : '');
     if (wasScrolled) container.scrollTop = container.scrollHeight;
   }
@@ -759,7 +696,7 @@ const EngineeringView = (() => {
         _aiMessages.push({ role: 'assistant', text: 'LLM not available — sign in to use AI coding.', ts: Date.now() });
       }
     } catch (e) {
-      console.error('[Engineering AI]', e);
+      console.error('[Code AI]', e);
       _aiMessages.push({ role: 'assistant', text: 'Error: ' + (e.message || 'Unknown error'), ts: Date.now() });
     }
 
@@ -779,7 +716,7 @@ const EngineeringView = (() => {
       }).join('\n\n');
     }
 
-    return `You are NICE Engineering — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
+    return `You are NICE Code — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
 
 RULES:
 - When asked to build, create, or modify something, respond with code.
@@ -1217,40 +1154,40 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
 
   async function _renderErrorDashboard(el) {
     el.innerHTML = `
-      <div class="eng-errors">
-        <div class="eng-errors-toolbar">
-          <div class="eng-errors-filters">
-            <select id="eng-err-time" class="eng-select">
+      <div class="code-errors">
+        <div class="code-errors-toolbar">
+          <div class="code-errors-filters">
+            <select id="code-err-time" class="code-select">
               <option value="1h"${_errTimeRange === '1h' ? ' selected' : ''}>Last hour</option>
               <option value="24h"${_errTimeRange === '24h' ? ' selected' : ''}>Last 24 hours</option>
               <option value="7d"${_errTimeRange === '7d' ? ' selected' : ''}>Last 7 days</option>
               <option value="30d"${_errTimeRange === '30d' ? ' selected' : ''}>Last 30 days</option>
             </select>
-            <select id="eng-err-filter" class="eng-select">
+            <select id="code-err-filter" class="code-select">
               <option value="all"${_errFilter === 'all' ? ' selected' : ''}>All errors</option>
               <option value="js"${_errFilter === 'js' ? ' selected' : ''}>JS errors</option>
               <option value="render"${_errFilter === 'render' ? ' selected' : ''}>Render errors</option>
               <option value="network"${_errFilter === 'network' ? ' selected' : ''}>Network errors</option>
             </select>
           </div>
-          <button class="btn btn-sm" id="eng-err-refresh" title="Refresh">↻ Refresh</button>
+          <button class="btn btn-sm" id="code-err-refresh" title="Refresh">↻ Refresh</button>
         </div>
-        <div id="eng-err-stats" class="eng-err-stats"></div>
-        <div id="eng-err-chart" class="eng-err-chart"></div>
-        <div id="eng-err-list" class="eng-err-list"></div>
+        <div id="code-err-stats" class="code-err-stats"></div>
+        <div id="code-err-chart" class="code-err-chart"></div>
+        <div id="code-err-list" class="code-err-list"></div>
       </div>
     `;
 
-    document.getElementById('eng-err-time')?.addEventListener('change', e => {
+    document.getElementById('code-err-time')?.addEventListener('change', e => {
       _errTimeRange = e.target.value;
       _fetchAndRenderErrors();
     });
-    document.getElementById('eng-err-filter')?.addEventListener('change', e => {
+    document.getElementById('code-err-filter')?.addEventListener('change', e => {
       _errFilter = e.target.value;
       _renderErrorList();
       _renderErrorStats();
     });
-    document.getElementById('eng-err-refresh')?.addEventListener('click', _fetchAndRenderErrors);
+    document.getElementById('code-err-refresh')?.addEventListener('click', _fetchAndRenderErrors);
 
     await _fetchAndRenderErrors();
   }
@@ -1259,8 +1196,8 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     if (_errLoading) return;
     _errLoading = true;
 
-    const listEl = document.getElementById('eng-err-list');
-    if (listEl) listEl.innerHTML = '<div class="eng-err-loading">Loading errors…</div>';
+    const listEl = document.getElementById('code-err-list');
+    if (listEl) listEl.innerHTML = '<div class="code-err-loading">Loading errors…</div>';
 
     try {
       const c = SB.client();
@@ -1302,7 +1239,7 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
   }
 
   function _renderErrorStats() {
-    const el = document.getElementById('eng-err-stats');
+    const el = document.getElementById('code-err-stats');
     if (!el) return;
     const filtered = _getFilteredErrors();
     const total = filtered.length;
@@ -1324,27 +1261,27 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     const recentCount = filtered.filter(e => new Date(e.created_at).getTime() > hourAgo).length;
 
     el.innerHTML = `
-      <div class="eng-stat-card">
-        <div class="eng-stat-val">${total}</div>
-        <div class="eng-stat-label">Total errors</div>
+      <div class="code-stat-card">
+        <div class="code-stat-val">${total}</div>
+        <div class="code-stat-label">Total errors</div>
       </div>
-      <div class="eng-stat-card">
-        <div class="eng-stat-val">${unique}</div>
-        <div class="eng-stat-label">Unique errors</div>
+      <div class="code-stat-card">
+        <div class="code-stat-val">${unique}</div>
+        <div class="code-stat-label">Unique errors</div>
       </div>
-      <div class="eng-stat-card">
-        <div class="eng-stat-val">${users.size}</div>
-        <div class="eng-stat-label">Affected users</div>
+      <div class="code-stat-card">
+        <div class="code-stat-val">${users.size}</div>
+        <div class="code-stat-label">Affected users</div>
       </div>
-      <div class="eng-stat-card">
-        <div class="eng-stat-val">${recentCount}</div>
-        <div class="eng-stat-label">Last hour</div>
+      <div class="code-stat-card">
+        <div class="code-stat-val">${recentCount}</div>
+        <div class="code-stat-label">Last hour</div>
       </div>
     `;
   }
 
   function _renderErrorChart() {
-    const el = document.getElementById('eng-err-chart');
+    const el = document.getElementById('code-err-chart');
     if (!el) return;
     const filtered = _getFilteredErrors();
 
@@ -1371,23 +1308,23 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     const bars = buckets.map((count, i) => {
       const h = Math.round((count / max) * 100);
       const title = `${count} error${count !== 1 ? 's' : ''}`;
-      return `<div class="eng-chart-bar" style="height:${h}%" title="${_esc(title)}" data-count="${count}"></div>`;
+      return `<div class="code-chart-bar" style="height:${h}%" title="${_esc(title)}" data-count="${count}"></div>`;
     }).join('');
 
     el.innerHTML = `
-      <div class="eng-chart-label">Error frequency</div>
-      <div class="eng-chart-bars">${bars}</div>
+      <div class="code-chart-label">Error frequency</div>
+      <div class="code-chart-bars">${bars}</div>
     `;
   }
 
   function _renderErrorList() {
-    const el = document.getElementById('eng-err-list');
+    const el = document.getElementById('code-err-list');
     if (!el) return;
     const filtered = _getFilteredErrors();
 
     if (!filtered.length) {
       el.innerHTML = `
-        <div class="eng-err-empty">
+        <div class="code-err-empty">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
@@ -1415,27 +1352,27 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     const rows = groups.map(g => {
       const latest = g.errors[0];
       const ago = _timeAgo(g.lastSeen);
-      const sourceTag = latest.source ? `<span class="eng-err-source">${_esc(latest.source.slice(0, 40))}</span>` : '';
+      const sourceTag = latest.source ? `<span class="code-err-source">${_esc(latest.source.slice(0, 40))}</span>` : '';
       return `
-        <details class="eng-err-group">
-          <summary class="eng-err-summary">
-            <span class="eng-err-count">${g.errors.length}</span>
-            <div class="eng-err-info">
-              <div class="eng-err-msg">${_esc(g.message)}</div>
-              <div class="eng-err-meta">${sourceTag}<span>${ago}</span></div>
+        <details class="code-err-group">
+          <summary class="code-err-summary">
+            <span class="code-err-count">${g.errors.length}</span>
+            <div class="code-err-info">
+              <div class="code-err-msg">${_esc(g.message)}</div>
+              <div class="code-err-meta">${sourceTag}<span>${ago}</span></div>
             </div>
           </summary>
-          <div class="eng-err-detail">
+          <div class="code-err-detail">
             ${g.errors.slice(0, 10).map(e => `
-              <div class="eng-err-entry">
-                <div class="eng-err-entry-time">${new Date(e.created_at).toLocaleString()}</div>
-                ${e.source ? `<div class="eng-err-entry-row"><strong>Source:</strong> ${_esc(e.source)}${e.line ? `:${e.line}` : ''}${e.col ? `:${e.col}` : ''}</div>` : ''}
-                ${e.url ? `<div class="eng-err-entry-row"><strong>URL:</strong> ${_esc(e.url)}</div>` : ''}
-                ${e.stack ? `<pre class="eng-err-stack">${_esc(e.stack)}</pre>` : ''}
-                ${e.user_agent ? `<div class="eng-err-entry-row eng-err-ua">${_esc(e.user_agent.slice(0, 80))}</div>` : ''}
+              <div class="code-err-entry">
+                <div class="code-err-entry-time">${new Date(e.created_at).toLocaleString()}</div>
+                ${e.source ? `<div class="code-err-entry-row"><strong>Source:</strong> ${_esc(e.source)}${e.line ? `:${e.line}` : ''}${e.col ? `:${e.col}` : ''}</div>` : ''}
+                ${e.url ? `<div class="code-err-entry-row"><strong>URL:</strong> ${_esc(e.url)}</div>` : ''}
+                ${e.stack ? `<pre class="code-err-stack">${_esc(e.stack)}</pre>` : ''}
+                ${e.user_agent ? `<div class="code-err-entry-row code-err-ua">${_esc(e.user_agent.slice(0, 80))}</div>` : ''}
               </div>
             `).join('')}
-            ${g.errors.length > 10 ? `<div class="eng-err-more">+ ${g.errors.length - 10} more occurrences</div>` : ''}
+            ${g.errors.length > 10 ? `<div class="code-err-more">+ ${g.errors.length - 10} more occurrences</div>` : ''}
           </div>
         </details>
       `;
@@ -1463,33 +1400,33 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
 
   async function _renderFunnelDashboard(el) {
     el.innerHTML = `
-      <div class="eng-funnel">
-        <div class="eng-funnel-toolbar">
-          <div class="eng-funnel-filters">
-            <select id="eng-fun-range" class="eng-select">
+      <div class="code-funnel">
+        <div class="code-funnel-toolbar">
+          <div class="code-funnel-filters">
+            <select id="code-fun-range" class="code-select">
               <option value="24h"${_funnelRange === '24h' ? ' selected' : ''}>Last 24 hours</option>
               <option value="7d"${_funnelRange === '7d'  ? ' selected' : ''}>Last 7 days</option>
               <option value="30d"${_funnelRange === '30d' ? ' selected' : ''}>Last 30 days</option>
               <option value="all"${_funnelRange === 'all' ? ' selected' : ''}>All time</option>
             </select>
           </div>
-          <button class="btn btn-sm" id="eng-fun-refresh" title="Refresh">↻ Refresh</button>
+          <button class="btn btn-sm" id="code-fun-refresh" title="Refresh">↻ Refresh</button>
         </div>
-        <div class="eng-funnel-header">
-          <h2 class="eng-funnel-title">Onboarding Funnel</h2>
-          <p class="eng-funnel-sub">Unique users per milestone, sourced from <code>audit_log</code>.</p>
+        <div class="code-funnel-header">
+          <h2 class="code-funnel-title">Onboarding Funnel</h2>
+          <p class="code-funnel-sub">Unique users per milestone, sourced from <code>audit_log</code>.</p>
         </div>
-        <div id="eng-fun-body" class="eng-funnel-body">
-          <div class="eng-err-loading">Loading funnel…</div>
+        <div id="code-fun-body" class="code-funnel-body">
+          <div class="code-err-loading">Loading funnel…</div>
         </div>
       </div>
     `;
 
-    document.getElementById('eng-fun-range')?.addEventListener('change', e => {
+    document.getElementById('code-fun-range')?.addEventListener('change', e => {
       _funnelRange = e.target.value;
       _fetchAndRenderFunnel();
     });
-    document.getElementById('eng-fun-refresh')?.addEventListener('click', _fetchAndRenderFunnel);
+    document.getElementById('code-fun-refresh')?.addEventListener('click', _fetchAndRenderFunnel);
 
     await _fetchAndRenderFunnel();
   }
@@ -1498,8 +1435,8 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     if (_funnelLoading) return;
     _funnelLoading = true;
 
-    const body = document.getElementById('eng-fun-body');
-    if (body) body.innerHTML = '<div class="eng-err-loading">Loading funnel…</div>';
+    const body = document.getElementById('code-fun-body');
+    if (body) body.innerHTML = '<div class="code-err-loading">Loading funnel…</div>';
 
     let result = null;
     try {
@@ -1507,7 +1444,7 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
         result = await Onboarding.loadFunnel(_funnelRange);
       }
     } catch (err) {
-      console.warn('[Engineering] Funnel load failed:', err && err.message);
+      console.warn('[Code] Funnel load failed:', err && err.message);
     } finally {
       _funnelLoading = false;
     }
@@ -1516,7 +1453,7 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
 
     if (!result || !result.available) {
       body.innerHTML = `
-        <div class="eng-err-empty">
+        <div class="code-err-empty">
           <h3>Funnel data unavailable</h3>
           <p>Sign in and make sure Supabase is reachable to see onboarding data.</p>
         </div>
@@ -1526,7 +1463,7 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
 
     if (!result.total) {
       body.innerHTML = `
-        <div class="eng-err-empty">
+        <div class="code-err-empty">
           <h3>No onboarding events yet</h3>
           <p>Funnel events start flowing once a new user signs up and runs through the wizard in this time range.</p>
         </div>
@@ -1547,18 +1484,18 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
       const isDrop  = i > 0 && dropPct >= 0.3; // highlight steps losing 30%+
 
       return `
-        <div class="eng-fun-row${isDrop ? ' eng-fun-drop' : ''}">
-          <div class="eng-fun-row-label">
-            <span class="eng-fun-step">${i + 1}</span>
-            <span class="eng-fun-name">${_esc(step.label)}</span>
+        <div class="code-fun-row${isDrop ? ' code-fun-drop' : ''}">
+          <div class="code-fun-row-label">
+            <span class="code-fun-step">${i + 1}</span>
+            <span class="code-fun-name">${_esc(step.label)}</span>
           </div>
-          <div class="eng-fun-bar-wrap">
-            <div class="eng-fun-bar" style="width:${pct}%"></div>
-            <span class="eng-fun-count">${step.count.toLocaleString()} user${step.count === 1 ? '' : 's'}</span>
+          <div class="code-fun-bar-wrap">
+            <div class="code-fun-bar" style="width:${pct}%"></div>
+            <span class="code-fun-count">${step.count.toLocaleString()} user${step.count === 1 ? '' : 's'}</span>
           </div>
-          <div class="eng-fun-pcts">
-            <span class="eng-fun-pct" title="Share of step 1 users who reached this step">${_pct(overall)}</span>
-            <span class="eng-fun-step-rate" title="Share of previous step who reached this step">${vsPrevLabel}</span>
+          <div class="code-fun-pcts">
+            <span class="code-fun-pct" title="Share of step 1 users who reached this step">${_pct(overall)}</span>
+            <span class="code-fun-step-rate" title="Share of previous step who reached this step">${vsPrevLabel}</span>
           </div>
         </div>
       `;
@@ -1568,25 +1505,25 @@ The user\'s code runs in a live browser preview that auto-refreshes. Generate pr
     const bottomRate = top > 0 && bottom ? bottom.conversion : 0;
 
     body.innerHTML = `
-      <div class="eng-fun-summary">
-        <div class="eng-stat-card">
-          <div class="eng-stat-val">${top.toLocaleString()}</div>
-          <div class="eng-stat-label">Signups in range</div>
+      <div class="code-fun-summary">
+        <div class="code-stat-card">
+          <div class="code-stat-val">${top.toLocaleString()}</div>
+          <div class="code-stat-label">Signups in range</div>
         </div>
-        <div class="eng-stat-card">
-          <div class="eng-stat-val">${bottom ? bottom.count.toLocaleString() : '0'}</div>
-          <div class="eng-stat-label">Finished first mission</div>
+        <div class="code-stat-card">
+          <div class="code-stat-val">${bottom ? bottom.count.toLocaleString() : '0'}</div>
+          <div class="code-stat-label">Finished first mission</div>
         </div>
-        <div class="eng-stat-card">
-          <div class="eng-stat-val">${_pct(bottomRate)}</div>
-          <div class="eng-stat-label">End-to-end conversion</div>
+        <div class="code-stat-card">
+          <div class="code-stat-val">${_pct(bottomRate)}</div>
+          <div class="code-stat-label">End-to-end conversion</div>
         </div>
       </div>
-      <div class="eng-fun-legend">
-        <span><span class="eng-fun-legend-dot eng-fun-legend-overall"></span>% of signups</span>
-        <span><span class="eng-fun-legend-dot eng-fun-legend-step"></span>% of previous step</span>
+      <div class="code-fun-legend">
+        <span><span class="code-fun-legend-dot code-fun-legend-overall"></span>% of signups</span>
+        <span><span class="code-fun-legend-dot code-fun-legend-step"></span>% of previous step</span>
       </div>
-      <div class="eng-fun-list">${rows}</div>
+      <div class="code-fun-list">${rows}</div>
     `;
   }
 

@@ -1848,7 +1848,9 @@ const NICE = (() => {
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
     // Legacy #/docs route → redirect into Bridge's Documentation tab
     Router.on('/docs', { render: () => { location.hash = '#/bridge?tab=documentation'; }, title: 'Documentation' });
-    if (typeof EngineeringView !== 'undefined') Router.on('/engineering', EngineeringView);
+    if (typeof CodeView !== 'undefined') Router.on('/code', CodeView);
+    // Legacy #/engineering route → redirect to #/code (renamed 2026-05-05).
+    Router.on('/engineering', { title: 'Code', render: () => { location.hash = '#/code'; } });
     // Legacy #/marketplace route → unified Blueprints browse, Community-filtered.
     // Marketplace is no longer a separate surface — community blueprints live
     // alongside the seeded catalog in the Agents sub-tab, discriminated by a
@@ -2309,17 +2311,17 @@ const NICE = (() => {
   /* ── Sidebar mode tabs — Spaceship / Chat / Code ──
      Three architecturally-distinct modes. Spaceship is the agentic
      orchestrator (Bridge / Schematic / missions). Chat is the
-     standalone LLM picker. Code is the engineering / coding surface.
+     standalone LLM picker. Code is the IDE / coding surface.
      Each mode has its own sub-nav rendered below the tabs. Active
      mode is derived from the current route, not persisted, so the
      URL stays the source of truth. */
   const _MODE_DEFAULT_ROUTES = {
     spaceship: '#/bridge',
     chat: '#/',
-    code: '#/engineering',
+    code: '#/code',
   };
   function _modeFromPath(path) {
-    if (/^\/engineering(\/|$|\?)/.test(path)) return 'code';
+    if (/^\/(code|engineering)(\/|$|\?)/.test(path)) return 'code';
     if (/^\/(bridge|missions)(\/|$|\?)/.test(path)) return 'spaceship';
     return 'chat';
   }
