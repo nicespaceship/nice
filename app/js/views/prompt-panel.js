@@ -810,15 +810,19 @@ const PromptPanel = (() => {
     let finalRow = null;
     try { finalRow = await SB.db('mission_runs').get(run.id); } catch { /* ignore */ }
     const status = finalRow?.status || result?.status || 'completed';
-    const content = finalRow?.result || result?.finalOutput || 'No response.';
+    // DAG path: result?.finalOutput. Non-DAG captain path: result?.content.
+    // finalRow.result is the authoritative persisted value; in-memory result is fallback.
+    const content = finalRow?.result || result?.content || result?.finalOutput || 'No response.';
 
-    // Surface the routing decision (logged to ship_log by triage).
+    // Surface the routing decision. Triage logs to ship_log; captain path uses run.agent_name.
     let routingMeta = null;
     try {
       const logs = await SB.db('ship_log').list({ mission_id: run.id, limit: 20 });
       const routing = (logs || []).find(l => l?.metadata?.type === 'routing');
       if (routing?.metadata) routingMeta = routing.metadata;
     } catch { /* non-critical */ }
+
+    const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || 'NICE';
 
     if (routingMeta?.chosen_agent_name) {
       _messages.push({
@@ -832,7 +836,7 @@ const PromptPanel = (() => {
       _messages.push({
         role: 'assistant',
         text: '_Cancelled._' + (content && content !== 'No response.' ? '\n\n' + content : ''),
-        agent: routingMeta?.chosen_agent_name || 'NICE', ts: Date.now(),
+        agent: displayAgent, ts: Date.now(),
       });
     } else if (status === 'failed') {
       _messages.push({
@@ -844,7 +848,7 @@ const PromptPanel = (() => {
       _messages.push({
         role: 'assistant',
         text: content,
-        agent: routingMeta?.chosen_agent_name || 'NICE', ts: Date.now(),
+        agent: displayAgent, ts: Date.now(),
       });
     }
 

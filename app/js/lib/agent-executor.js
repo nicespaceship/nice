@@ -545,11 +545,12 @@ const AgentExecutor = (() => {
       }
       // Format 3: { final_answer, thought }
       if (obj.final_answer) {
+        const fa = obj.final_answer;
         return {
           thought: obj.thought || null,
           action: null,
           actionInput: null,
-          finalAnswer: obj.final_answer,
+          finalAnswer: typeof fa === 'string' ? fa : JSON.stringify(fa, null, 2),
         };
       }
     } catch { /* not valid JSON — fall through to text parsing */ }
