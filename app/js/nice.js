@@ -820,8 +820,10 @@ const NICE = (() => {
         e.stopPropagation();
         if (!sidebar.classList.contains('open')) {
           sidebar.classList.add('open');
-        } else if (window.location.hash !== '#/' && window.location.hash !== '') {
-          window.location.hash = '#/';
+        } else {
+          // Mode-aware home: Spaceship → Schematic, Chat → Home.
+          const target = _homeRouteForCurrentMode();
+          if (window.location.hash !== target) window.location.hash = target;
         }
       });
     }
@@ -2320,12 +2322,17 @@ const NICE = (() => {
      Two architecturally-distinct modes (see project_two_chat_modes.md
      in user memory). Active mode is derived from the current route, not
      persisted, so the URL stays the source of truth. */
+  const _MODE_DEFAULT_ROUTES = { spaceship: '#/bridge', chat: '#/' };
   function _modeFromPath(path) {
     // Spaceship-mode surfaces: Bridge tabs, ship/agent detail pages,
     // engineering/code surface. Everything else (Home, hypothetical
     // future /chat/* routes) is Standalone Chat.
     if (/^\/(bridge|engineering|missions)(\/|$|\?)/.test(path)) return 'spaceship';
     return 'chat';
+  }
+  function _homeRouteForCurrentMode() {
+    const path = location.hash.replace(/^#/, '') || '/';
+    return _MODE_DEFAULT_ROUTES[_modeFromPath(path)];
   }
   function _updateActiveModeTab() {
     const path = location.hash.replace(/^#/, '') || '/';
@@ -2339,13 +2346,19 @@ const NICE = (() => {
       if (isActive) section.removeAttribute('hidden');
       else section.setAttribute('hidden', '');
     });
+    // Mobile-bar "home" link (which doubles as the theme name label) is
+    // a real <a href="…"> for accessibility — keep it that way and just
+    // re-point the href at the current mode's default route. Clicking
+    // from a Spaceship surface lands on the Schematic; from Chat lands
+    // on Home.
+    const mobileHome = document.getElementById('mobile-bar-theme');
+    if (mobileHome) mobileHome.setAttribute('href', _MODE_DEFAULT_ROUTES[mode]);
   }
   function _initModeTabs() {
-    const MODE_DEFAULT_ROUTES = { spaceship: '#/bridge', chat: '#/' };
     document.querySelectorAll('.side-mode-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         const mode = btn.dataset.mode;
-        const target = MODE_DEFAULT_ROUTES[mode];
+        const target = _MODE_DEFAULT_ROUTES[mode];
         if (target && location.hash !== target) location.hash = target;
         else _updateActiveModeTab();
       });
