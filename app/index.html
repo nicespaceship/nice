@@ -179,7 +179,10 @@
           <span>Missions</span>
         </div>
         <div class="side-folder-body" id="side-missions-list">
-          <!-- Populated dynamically: list of mission templates from State.missions -->
+          <!-- Populated dynamically: list of mission templates from State.missions.
+               Static placeholder until then so the sub-nav has visible content
+               and switching modes doesn't make the sidebar visibly shrink. -->
+          <div class="side-folder-item side-folder-empty">No missions yet.</div>
         </div>
       </div>
     </div>
@@ -206,7 +209,10 @@
           <span>Projects</span>
         </div>
         <div class="side-folder-body" id="side-projects-list">
-          <!-- Populated dynamically: list of code projects -->
+          <!-- Populated dynamically once a projects data model exists.
+               Static placeholder for now to keep the sidebar height stable
+               across mode switches. -->
+          <div class="side-folder-item side-folder-empty">No projects yet.</div>
         </div>
       </div>
     </div>
