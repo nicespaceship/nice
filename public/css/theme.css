@@ -2098,6 +2098,12 @@
   margin:0 10px 8px 0;
   border-radius:0 24px 24px 0;
 }
+/* Inactive mode-tab labels inherit --nav-text-muted (violet) which reads
+   as low-contrast on the dark-orange container. Match the .side-link
+   pattern: black text on the colored panel. Active tab has its own
+   black background with orange text and is left alone. */
+[data-theme="lcars"] .side-mode-tab { color:#000; }
+[data-theme="lcars"] .side-mode-tab:hover { color:#000; }
 /* Elbow curve — bottom-right corner */
 [data-theme="lcars"] .side-header::after {
   content:'';
