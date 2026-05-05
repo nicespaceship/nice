@@ -21,7 +21,11 @@ const AgentExecutor = (() => {
   async function execute(agentBlueprint, prompt, opts) {
     opts = opts || {};
     const maxSteps   = opts.maxSteps || 5;
-    const toolIds    = opts.tools || [];
+    // Preserve the undefined-vs-[] distinction so _buildExecContext can tell
+    // "no tools field" (fall back to all MCPs) from "explicitly empty"
+    // (no tools available). Collapsing both to [] re-introduced the
+    // hallucination path on stub agents — see _buildExecContext for detail.
+    const toolIds    = opts.tools;
     // Don't fabricate a sentinel like 'default-ship' — ship_log.spaceship_id
     // is a UUID column and any non-UUID string produces 400s on every step
     // write. Callers that don't have a real ship should pass nothing;
@@ -142,11 +146,15 @@ const AgentExecutor = (() => {
       mcpToolIds = McpBridge.loadTools();
     }
 
-    // If the blueprint declares an explicit tool list, scope to that.
-    // Otherwise (generic agents with no `tools` config) fall back to
-    // every connected MCP tool — same behavior as before this change.
-    const declared = (toolIds || []).filter(Boolean);
-    const allToolIds = declared.length > 0 ? declared : mcpToolIds;
+    // If the blueprint declares an explicit tool list, scope to that —
+    // including an explicit empty array, which means "no tools available."
+    // Only fall back to all-MCPs when toolIds is undefined (generic agent
+    // with no `tools` config field). The previous check used
+    // `declared.length > 0` which silently turned `tools: []` into
+    // "use everything" — Adama on the Battlestar got M365's
+    // `calendar_ms_list_events` that way and answered calendar questions
+    // he should have refused.
+    const allToolIds = Array.isArray(toolIds) ? toolIds.filter(Boolean) : mcpToolIds;
     const availableTools = [];
     const seen = new Set();
     if (typeof ToolRegistry !== 'undefined') {
@@ -714,7 +722,9 @@ const AgentExecutor = (() => {
   function converse(agentBlueprint, opts) {
     opts = opts || {};
     const history = [];
-    const toolIds = opts.tools || [];
+    // See execute() — preserve undefined-vs-[] so _buildExecContext can
+    // tell "generic agent" from "explicitly tool-less".
+    const toolIds = opts.tools;
     // See execute(): null is the correct "no ship" signal — the sentinel
     // 'default-ship' is not a valid UUID and explodes every ship_log write.
     const spaceshipId = opts.spaceshipId || null;
