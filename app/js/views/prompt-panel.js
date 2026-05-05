@@ -766,7 +766,7 @@ const PromptPanel = (() => {
         priority: 'medium',
         progress: 0,
         plan_snapshot: captainAgent ? null : { shape: 'dag', nodes: [{ id: 'root', type: 'triage', config: { candidates, prompt: text } }], edges: [] },
-        metadata: { source: 'prompt_panel', input: text },
+        metadata: { source: 'prompt_panel', input: text, captain_blueprint_id: captainAgent ? (captainAgent.blueprint_id || captainAgent.id || null) : null },
       });
       const missions = State.get('missions') || [];
       missions.push(run);
