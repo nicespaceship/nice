@@ -2318,16 +2318,21 @@ const NICE = (() => {
     _updateActiveModeTab();
   }
 
-  /* ── Sidebar mode tabs — Spaceship vs Standalone Chat ──
-     Two architecturally-distinct modes (see project_two_chat_modes.md
-     in user memory). Active mode is derived from the current route, not
-     persisted, so the URL stays the source of truth. */
-  const _MODE_DEFAULT_ROUTES = { spaceship: '#/bridge', chat: '#/' };
+  /* ── Sidebar mode tabs — Spaceship / Chat / Code ──
+     Three architecturally-distinct modes. Spaceship is the agentic
+     orchestrator (Bridge / Schematic / missions). Chat is the
+     standalone LLM picker. Code is the engineering / coding surface.
+     Each mode has its own sub-nav rendered below the tabs. Active
+     mode is derived from the current route, not persisted, so the
+     URL stays the source of truth. */
+  const _MODE_DEFAULT_ROUTES = {
+    spaceship: '#/bridge',
+    chat: '#/',
+    code: '#/engineering',
+  };
   function _modeFromPath(path) {
-    // Spaceship-mode surfaces: Bridge tabs, ship/agent detail pages,
-    // engineering/code surface. Everything else (Home, hypothetical
-    // future /chat/* routes) is Standalone Chat.
-    if (/^\/(bridge|engineering|missions)(\/|$|\?)/.test(path)) return 'spaceship';
+    if (/^\/engineering(\/|$|\?)/.test(path)) return 'code';
+    if (/^\/(bridge|missions)(\/|$|\?)/.test(path)) return 'spaceship';
     return 'chat';
   }
   function _homeRouteForCurrentMode() {
