@@ -3327,9 +3327,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       }
     }
 
-    // Schematic context — embedded in BlueprintsView at /bridge?tab=schematic.
-    // Active ship is the user's last-selected ship in localStorage[mcShip].
-    const onSchematic = /^\/bridge(?:\?|$)/.test(path) && /[?&]tab=schematic(?:&|$)/.test(path);
+    // Schematic context — embedded in BlueprintsView. Active when on
+    // /bridge with tab=schematic OR no tab param (Schematic is the
+    // default per BlueprintsView). Active ship is the user's last-
+    // selected ship in localStorage[mcShip].
+    const bridgeMatch = path.match(/^\/bridge(?:\?(.*))?$/);
+    const tabParam = bridgeMatch
+      ? new URLSearchParams(bridgeMatch[1] || '').get('tab')
+      : null;
+    const onSchematic = !!bridgeMatch && (!tabParam || tabParam === 'schematic');
     if (onSchematic) {
       const activeShipId = (typeof Utils !== 'undefined' && typeof localStorage !== 'undefined')
         ? localStorage.getItem(Utils.KEYS.mcShip) : null;
