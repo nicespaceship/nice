@@ -486,6 +486,14 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     it('returns false for non-captain roles', () => {
       expect(MissionRunner._isCaptainAgent({ config: { role: 'Sales' } })).toBe(false);
     });
+
+    it('detects captain via agentRole Commander (wizard-created format)', () => {
+      expect(MissionRunner._isCaptainAgent({ config: { agentRole: 'Commander' } })).toBe(true);
+    });
+
+    it('detects captain via agentRole Admiral (wizard-created format)', () => {
+      expect(MissionRunner._isCaptainAgent({ config: { agentRole: 'Admiral' } })).toBe(true);
+    });
   });
 
   describe('_resolveSlotAgent', () => {
@@ -511,6 +519,21 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
 
     it('returns null when ship is null', () => {
       expect(MissionRunner._resolveSlotAgent(null, 'sales', agents)).toBeNull();
+    });
+
+    it('resolves from ship.config.slot_assignments (DB format)', () => {
+      const dbShip = { config: { slot_assignments: { 'slot-0': 'a-sales', 'slot-1': 'a-comms' } } };
+      const result = MissionRunner._resolveSlotAgent(dbShip, 'sales', agents);
+      expect(result.id).toBe('a-sales');
+    });
+
+    it('resolves by agentRole (wizard-created agent format)', () => {
+      const wizardAgents = [
+        { id: 'w-comms', name: 'Starbuck', config: { agentRole: 'communications' } },
+      ];
+      const s = { slot_assignments: { 'slot-0': 'w-comms' } };
+      const result = MissionRunner._resolveSlotAgent(s, 'communications', wizardAgents);
+      expect(result.id).toBe('w-comms');
     });
   });
 
