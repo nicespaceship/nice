@@ -54,6 +54,10 @@ globalThis.Router = { navigate: vi.fn(), path: () => '/', on: () => {}, init: ()
 globalThis.Utils = {
   esc: (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
   timeAgo: () => 'just now',
+  // HomeView gates chat-history reads on this. Tests want the gate to PASS
+  // by default (so the existing assertions about message rendering still
+  // hold); the leak case is covered by an explicit "no auth" test below.
+  hasAuthSession: () => true,
   KEYS: {
     aiMessages: 'nice-ai-messages',
     conversations: 'nice-conversations',
@@ -171,5 +175,30 @@ describe('HomeView', () => {
     HomeView.render(el);
     const newBtn = el.querySelector('#chat-home-new');
     expect(newBtn).toBeTruthy();
+  });
+
+  // Regression: signed-out cockpit on a shared browser was rendering the
+  // previous account's chat history straight from localStorage (observed on
+  // prod 2026-05-05). HomeView now gates the read on Utils.hasAuthSession.
+  describe('signed-out cache leak gate', () => {
+    it('suppresses chat history when Utils.hasAuthSession returns false', () => {
+      const original = Utils.hasAuthSession;
+      Utils.hasAuthSession = () => false;
+      try {
+        mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
+          { role: 'user', text: 'leaked from prior account', ts: Date.now() },
+          { role: 'assistant', text: 'leaked reply', agent: 'NICE', ts: Date.now() },
+        ]));
+        const el = document.getElementById('test-el');
+        HomeView.render(el);
+        // Empty-state greeting renders, the leaked content does not.
+        expect(el.innerHTML).not.toContain('leaked from prior account');
+        expect(el.innerHTML).not.toContain('leaked reply');
+        expect(el.querySelector('#chat-home-new')).toBeNull();
+        expect(el.querySelector('.chat-home-greeting')).toBeTruthy();
+      } finally {
+        Utils.hasAuthSession = original;
+      }
+    });
   });
 });

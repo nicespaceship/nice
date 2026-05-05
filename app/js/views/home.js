@@ -83,10 +83,16 @@ const HomeView = (() => {
 
   function _renderConversation() {
     let messages = [];
-    try {
-      const raw = localStorage.getItem(Utils.KEYS.aiMessages);
-      messages = raw ? JSON.parse(raw) : [];
-    } catch { messages = []; }
+    // Gate on auth session — see Utils.hasAuthSession. Without this, an
+    // anonymous visit on a shared browser would render the previous
+    // account's chat history straight from localStorage (observed
+    // 2026-05-05). PromptPanel has its own gate; this is HomeView's.
+    if (Utils.hasAuthSession()) {
+      try {
+        const raw = localStorage.getItem(Utils.KEYS.aiMessages);
+        messages = raw ? JSON.parse(raw) : [];
+      } catch { messages = []; }
+    }
 
     const _md = typeof PromptPanel !== 'undefined' && PromptPanel._md ? PromptPanel._md : (t) => `<p>${_esc(t)}</p>`;
 
@@ -116,6 +122,7 @@ const HomeView = (() => {
   }
 
   function _hasMessages() {
+    if (!Utils.hasAuthSession()) return false;
     try {
       const raw = localStorage.getItem(Utils.KEYS.aiMessages);
       const msgs = raw ? JSON.parse(raw) : [];

@@ -313,32 +313,13 @@ const PromptPanel = (() => {
     } catch { return []; }
   }
 
-  /* ── Auth-session gate ──
-     Chat history is per-user. Without this guard, the cockpit on a signed-out
-     visit would render the previous account's prompts and replies (observed
-     2026-05-05: anonymous home leaked email senders + HubSpot contact names
-     from the prior session). We synchronously scan localStorage for the
-     Supabase auth-token key, which the JS client writes under
-     `sb-<project-ref>-auth-token` — its presence is a cheap, sync proxy for
-     "has session". On signed-out loads we keep `_messages` in-memory only;
-     anonymous chat still works for the current page lifetime, but nothing
-     persists past reload. */
-  function _hasAuthSession() {
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && /^sb-.+-auth-token$/.test(k)) {
-          const v = localStorage.getItem(k);
-          if (v && v !== 'null' && v !== '""') return true;
-        }
-      }
-    } catch { /* storage blocked — treat as signed out */ }
-    return false;
-  }
-
-  /* ── Load/save messages (localStorage for persistence across refreshes) ── */
+  /* ── Load/save messages (localStorage for persistence across refreshes) ──
+     Both gate on Utils.hasAuthSession — anonymous visits keep chat in
+     memory only, so a shared browser doesn't leak the prior account's
+     history. HomeView's cockpit feed reads the same key and uses the same
+     gate; if you add another reader, gate it too. */
   function _loadMessages() {
-    if (!_hasAuthSession()) { _messages = []; return; }
+    if (!Utils.hasAuthSession()) { _messages = []; return; }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       _messages = raw ? JSON.parse(raw) : [];
@@ -346,7 +327,7 @@ const PromptPanel = (() => {
   }
 
   function _saveMessages() {
-    if (!_hasAuthSession()) return;
+    if (!Utils.hasAuthSession()) return;
     try {
       // Attachments carry base64 payloads or full text-file contents that
       // can exceed the 5MB localStorage quota after a few messages. Strip

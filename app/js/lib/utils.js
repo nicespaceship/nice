@@ -68,6 +68,31 @@ const Utils = (() => {
     return /^[\p{L}\p{N} .'\-]+$/u.test(s) ? s : null;
   }
 
+  /**
+   * Synchronous proxy for "is the user signed in?". The Supabase JS client
+   * writes its session under `sb-<project-ref>-auth-token` in localStorage —
+   * its presence (with a non-empty value) is a cheap, sync check that beats
+   * `await SB.auth.getSession()` for render-path gates.
+   *
+   * Used by any surface that reads per-user state from localStorage (chat
+   * history, conversations, agent memory) so that an anonymous visit on a
+   * shared browser doesn't render the previous account's data. Surfaced here
+   * (instead of a private fn inside one view) because the leak has bitten in
+   * two surfaces already — PromptPanel (#390) and HomeView's cockpit feed.
+   */
+  function hasAuthSession() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && /^sb-.+-auth-token$/.test(k)) {
+          const v = localStorage.getItem(k);
+          if (v && v !== 'null' && v !== '""') return true;
+        }
+      }
+    } catch { /* storage blocked — treat as signed out */ }
+    return false;
+  }
+
   /** Central localStorage key registry — prevents typos and enables grep */
   const KEYS = {
     theme: 'ns-theme',
@@ -144,5 +169,5 @@ const Utils = (() => {
     onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
-  return { esc, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, KEYS };
+  return { esc, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
 })();
