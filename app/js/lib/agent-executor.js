@@ -562,7 +562,10 @@ const AgentExecutor = (() => {
      translate to each provider's native tool-use API (Anthropic tool_use,
      Gemini function_declarations, OpenAI tools). Returns the raw content
      (string or canonical parts array) + stop_reason for the executor to
-     decide whether to loop. */
+     decide whether to loop.
+
+     Auto-fallback: on transient overload errors (503 / 429 / UNAVAILABLE)
+     retries once with gemini-2.5-flash before surfacing the failure. */
   async function _callLLM(blueprint, systemPrompt, messages, spaceshipId, toolsSchema) {
     if (typeof SB === 'undefined' || !SB.functions) {
       throw new Error('SB.functions not available');
@@ -583,7 +586,18 @@ const AgentExecutor = (() => {
     if (Array.isArray(toolsSchema) && toolsSchema.length > 0) {
       requestBody.tools = toolsSchema;
     }
-    const { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
+
+    let { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
+
+    // Auto-fallback on transient overload — swap to gemini-2.5-flash and retry once.
+    if ((error || data?.error) && requestBody.model !== 'gemini-2.5-flash' && _isOverloadError(error, data)) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Model busy', message: requestBody.model + ' is overloaded — retrying with Gemini Flash', type: 'info' });
+      }
+      const fallback = await SB.functions.invoke('nice-ai', { body: { ...requestBody, model: 'gemini-2.5-flash' } });
+      data  = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       let body = null;
@@ -614,6 +628,18 @@ const AgentExecutor = (() => {
       model:      data.model || llmConfig.model,
       tokensUsed,
     };
+  }
+
+  /* Returns true for transient capacity errors that warrant a model swap. */
+  function _isOverloadError(error, data) {
+    const httpStatus = error?.context?.status;
+    if (httpStatus === 503 || httpStatus === 429) return true;
+    const msg = String(
+      _coerceErrorMessage(data?.error) ||
+      _coerceErrorMessage(error?.message) ||
+      ''
+    );
+    return /\b(503|429)\b|overload|unavailable|high.?demand|rate.?limit|capacity/i.test(msg);
   }
 
   /* ── Single-shot fallback (no tools, just call ShipLog directly) ── */
