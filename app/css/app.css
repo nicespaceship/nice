@@ -146,41 +146,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-hdr { display:none; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-.app-brand {
-  display:inline-flex; align-items:center; justify-content:center;
-  background:none; border:none; padding:6px; cursor:pointer;
-  color:var(--accent); border-radius:var(--radius, 8px);
-  transition:background .15s, color .15s;
-}
-.app-brand:hover { background:var(--bg-alt); color:var(--accent); }
-.app-brand-logo { width:40px; height:40px; display:block; }
-.app-brand-logo-default { fill:currentColor; }
-.app-brand-logo-hover {
-  display:none;
-  fill:none; stroke:currentColor; stroke-width:1.8;
-  stroke-linecap:round; stroke-linejoin:round;
-}
-.app-brand:hover .app-brand-logo-default { display:none; }
-.app-brand:hover .app-brand-logo-hover { display:block; }
-/* When sidebar is open, the right-side collapse button is the explicit toggle.
-   Brand button no longer signals "click to open" — it becomes the Core button. */
-.app-sidebar.open .app-brand:hover .app-brand-logo-default { display:block; }
-.app-sidebar.open .app-brand:hover .app-brand-logo-hover { display:none; }
-
-.side-collapse-btn {
-  display:none;
-  background:none; border:none; cursor:pointer;
-  color:var(--text-muted);
-  padding:6px; border-radius:var(--radius, 8px);
-  transition:background .15s, color .15s;
-}
-.side-collapse-btn:hover { background:var(--bg-alt); color:var(--accent); }
-.side-collapse-btn svg {
-  width:20px; height:20px; display:block;
-  fill:none; stroke:currentColor; stroke-width:1.8;
-  stroke-linecap:round; stroke-linejoin:round;
-}
-.app-sidebar.open .side-collapse-btn { display:inline-flex; align-items:center; justify-content:center; }
+/* .app-brand and .side-collapse-btn rules removed in #382 — those
+   buttons no longer exist (mode tabs replaced the sidebar header).
+   .app-brand-text below is still used by the mobile bar's "NICE"
+   label, so it stays. */
 .app-brand-text {
   font-family:var(--font-brand, var(--font-h)); font-size:var(--text-xl); font-weight:var(--fw-bold);
   letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--accent);
@@ -453,11 +422,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="office"] .side-header #sidebar-toggle:hover { color:var(--nav-bg-dk); background:#fff; }
 [data-theme="office"] .side-header #btn-hud:hover *,
 [data-theme="office"] .side-header #sidebar-toggle:hover * { color:var(--nav-bg-dk); }
-[data-theme="office"] .side-header .app-brand,
-[data-theme="office"] .side-header .app-brand-logo-default,
-[data-theme="office"] .side-header .side-collapse-btn { color:#fff; }
-[data-theme="office"] .side-header .app-brand-logo-default { fill:#fff; }
-[data-theme="office"] .side-header .side-collapse-btn svg { stroke:#fff; }
 [data-theme="office"] .app-mobile-bar .mobile-bar-btn,
 [data-theme="office"] .app-mobile-bar #btn-hud-mobile,
 [data-theme="office"] .app-mobile-bar .mobile-bar-btn-nice,
@@ -631,14 +595,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="rx-78-2"] .side-link svg {
   opacity: 0.8;
 }
-[data-theme="rx-78-2"] .side-header .app-brand-text {
-  color: #fff;
-}
-[data-theme="rx-78-2"] .side-header .app-brand,
-[data-theme="rx-78-2"] .side-header .app-brand-logo-default,
-[data-theme="rx-78-2"] .side-header .side-collapse-btn { color: #fff; }
-[data-theme="rx-78-2"] .side-header .app-brand-logo-default { fill: #fff; }
-[data-theme="rx-78-2"] .side-header .side-collapse-btn svg { stroke: #fff; }
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn,
 [data-theme="rx-78-2"] .app-mobile-bar #btn-hud-mobile,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn-nice,
@@ -1381,11 +1337,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .side-rail-brand svg { width:40px; height:40px; fill:currentColor; display:block; }
 .side-rail-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
-/* When sidebar is open, the mode tabs become the visual header —
-   hide the rail-brand to avoid stacking it on top of the tabs. */
-.app-sidebar.open .side-header { padding:0; height:0; overflow:hidden; }
+/* When sidebar is open, hide the rail-brand and slim the header to
+   a thin strip. The strip stays visible (not height:0) so per-theme
+   decorations anchored on .side-header / .side-header::after — LCARS
+   overlay, JARVIS reactor pulse, Cyberpunk light strip — keep
+   showing above the mode tabs. */
+.app-sidebar.open .side-header { padding:6px 0; }
 .app-sidebar.open .side-rail-brand { display:none; }
-.side-header .app-brand-text { font-size:var(--text-lg); color:var(--nav-text, var(--text)); }
 .side-header .app-hdr-menu { display:none; }
 
 /* Mode tabs — Spaceship vs Standalone Chat. Top of sidebar nav, full
