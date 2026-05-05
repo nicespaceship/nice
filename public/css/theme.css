@@ -2103,7 +2103,10 @@
    pattern: black text on the colored panel. Active tab has its own
    black background with orange text and is left alone. */
 [data-theme="lcars"] .side-mode-tab { color:#000; }
-[data-theme="lcars"] .side-mode-tab:hover { color:#000; }
+[data-theme="lcars"] .side-mode-tab:not([aria-selected="true"]):hover { color:#000; }
+/* Active tab keeps its orange on the black pill — also on hover, so the
+   base .side-mode-tab:hover rule in app.css doesn't repaint it. */
+[data-theme="lcars"] .side-mode-tab[aria-selected="true"]:hover { color:#ff9966; }
 /* Elbow curve — bottom-right corner */
 [data-theme="lcars"] .side-header::after {
   content:'';
