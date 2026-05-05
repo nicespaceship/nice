@@ -128,12 +128,6 @@
 [data-theme="nice"] .side-header {
   background: transparent;
 }
-[data-theme="nice"] .side-header .app-brand-text {
-  font-family: var(--font-brand, 'Orbitron', sans-serif);
-  color: var(--accent);
-  letter-spacing: .25em;
-  text-transform: uppercase;
-}
 [data-theme="nice"] .side-link {
   border-radius: var(--radius);
   margin: 2px 6px;
@@ -571,9 +565,6 @@
 }
 [data-theme="hal-9000"] .side-header {
   background:transparent;
-}
-[data-theme="hal-9000"] .side-header .app-brand-text {
-  color:#f5f5f5; letter-spacing:.2em; text-transform:uppercase;
 }
 [data-theme="hal-9000"] .side-link {
   border-radius:4px; margin:1px 8px; padding:8px 12px;
@@ -1292,11 +1283,6 @@
 [data-theme="grid"] .side-header {
   background: transparent;
   position: relative;
-}
-[data-theme="grid"] .side-header .app-brand-text {
-  color: #18a0fb;
-  text-shadow: 0 0 10px rgba(24,160,251,0.5), 0 0 20px rgba(24,160,251,0.2);
-  font-family: var(--font-h);
 }
 [data-theme="grid"] .side-link {
   border-radius: 2px;
@@ -2099,16 +2085,6 @@
   border-radius:0 0 40px 0;
   z-index:1;
 }
-[data-theme="lcars"] .side-header .app-brand-text { color:#000; font-size:1.4rem; }
-[data-theme="lcars"] .side-header .app-brand,
-[data-theme="lcars"] .side-header .app-brand-logo-default,
-[data-theme="lcars"] .side-header .side-collapse-btn { color:#000; }
-[data-theme="lcars"] .side-header .app-brand-logo-default { fill:#000; }
-[data-theme="lcars"] .side-header .side-collapse-btn svg { stroke:#000; }
-[data-theme="lcars"] .side-header-actions button,
-[data-theme="lcars"] .side-header-actions .app-hdr-btn,
-[data-theme="lcars"] .side-header-actions .side-toggle-btn { color:#000; }
-[data-theme="lcars"] .side-header-actions svg { stroke:#000; }
 
 /* Sidebar nav links — pill buttons */
 [data-theme="lcars"] .app-side-nav {
@@ -2463,11 +2439,6 @@
 [data-theme="jarvis"] .side-header {
   background: rgba(14,26,46,0.9);
   position: relative;
-}
-[data-theme="jarvis"] .side-header .app-brand-text {
-  color: #18ffff; font-family: 'Exo 2', sans-serif;
-  text-shadow: 0 0 12px rgba(0,229,255,0.3);
-  letter-spacing: .15em;
 }
 [data-theme="jarvis"] .side-link {
   border-radius: 3px;
