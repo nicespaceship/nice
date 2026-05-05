@@ -1459,7 +1459,7 @@ const PromptPanel = (() => {
     const activeContent = _ideContext.activeContent || '';
     return `${SECURITY_HEADER}
 
-You are NICE Engineering — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
+You are NICE Code — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
 
 RULES:
 - When the user asks you to build, create, or modify something, respond with code.
@@ -3390,12 +3390,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // If explicitly shown on this route (e.g. reactor/card click), keep it visible
     if (_manualShow) return;
     // Default-visible routes: Home (Chat mode), the Schematic tab of the
-    // Bridge (Spaceship mode), and the Code tab of Engineering (Code mode).
+    // Bridge (Spaceship mode), and the Code tab of the Code view (Code mode).
     // The three side-mode landings each expose the prompt surface; other
     // sub-tabs of those views suppress it.
     const onSchematic = path.startsWith('/bridge') &&
       (/tab=schematic/.test(location.hash) || !/tab=/.test(location.hash));
-    const onCodeMode = path.startsWith('/engineering') &&
+    const onCodeMode = path.startsWith('/code') &&
       (/tab=code/.test(location.hash) || !/tab=/.test(location.hash));
     const showByDefault = path === '/' || onSchematic || onCodeMode;
     if (showByDefault) { if (_panel) _panel.style.display = ''; }
