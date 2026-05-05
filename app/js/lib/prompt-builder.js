@@ -15,10 +15,17 @@ const PromptBuilder = (() => {
    * @returns {string} System prompt (identity + capabilities, no ReAct/tool instructions)
    */
   function build(blueprint, opts) {
-    if (!blueprint) return 'You are NICE AI, a general-purpose assistant. Provide helpful, concise responses.';
+    if (!blueprint) return _todayLine() + '\n\nYou are NICE AI, a general-purpose assistant. Provide helpful, concise responses.';
     opts = opts || {};
 
     const parts = [];
+
+    // ── Today's date ──
+    // Models without a tool that returns "now" will otherwise hallucinate
+    // dates from training cutoff (the M365 Agent picked 2025-07-14 as
+    // "this week" on 2026-05-04). Inject as the first line so it stays
+    // anchored even when later sections change behavior.
+    parts.push(_todayLine());
 
     // ── Identity ──
     const name = blueprint.name || 'NICE AI';
@@ -97,11 +104,32 @@ const PromptBuilder = (() => {
       if (memoryContext) parts.push(memoryContext);
     }
 
-    // ── Personality (flavor text — last, so it colors tone) ──
+    // ── Personality (flavor text — colors tone) ──
     var flavor = blueprint.flavor || '';
     if (flavor) parts.push(flavor);
 
+    // ── Authoring-supplied system prompt ──
+    // Blueprints can ship a full instruction block in config.system_prompt
+    // (see HubSpot / Google Workspace / Microsoft 365 catalog seeds). Append
+    // last so it's the most-specific guidance the model sees and overrides
+    // any conflicts with the auto-generated identity above.
+    var customPrompt = (blueprint.config && blueprint.config.system_prompt) || blueprint.system_prompt;
+    if (typeof customPrompt === 'string' && customPrompt.trim()) {
+      parts.push(customPrompt.trim());
+    }
+
     return parts.join('\n\n');
+  }
+
+  /* ── Today's date as a single, model-friendly line ──
+     ISO date + weekday gives the model a parsable anchor regardless of
+     locale. Read live from new Date() so test mocks (vi.setSystemTime)
+     work without further plumbing. */
+  function _todayLine() {
+    var d = new Date();
+    var iso = d.toISOString().slice(0, 10);
+    var weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+    return 'Today is ' + iso + ' (' + weekday + '). Use this as the current date when reasoning about times, schedules, deadlines, or relative dates like "today", "this week", "yesterday".';
   }
 
   /* ── Extract best agent type string ── */

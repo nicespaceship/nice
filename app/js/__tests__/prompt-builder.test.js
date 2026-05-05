@@ -237,4 +237,55 @@ describe('PromptBuilder', () => {
       expect(result).not.toContain('Quality criteria');
     });
   });
+
+  describe('today date injection', () => {
+    it('includes today as the first line in ISO + weekday form', () => {
+      const result = PromptBuilder.build({ name: 'X', config: { role: 'Ops' } });
+      const today = new Date();
+      const iso = today.toISOString().slice(0, 10);
+      const weekday = today.toLocaleDateString('en-US', { weekday: 'long' });
+      expect(result.startsWith('Today is ' + iso + ' (' + weekday + ').')).toBe(true);
+    });
+
+    it('still anchors today even on the null-blueprint default path', () => {
+      const result = PromptBuilder.build(null);
+      expect(result).toMatch(/Today is \d{4}-\d{2}-\d{2}/);
+      expect(result).toContain('NICE AI');
+    });
+  });
+
+  describe('config.system_prompt', () => {
+    it('appends authoring-supplied system_prompt as the final block', () => {
+      const bp = {
+        name: 'M365',
+        config: {
+          role: 'Ops',
+          system_prompt: 'You are the Microsoft 365 Agent. Read-only access.',
+        },
+      };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('You are the Microsoft 365 Agent. Read-only access.');
+      // Auto-identity still emits — system_prompt is more specific, lands later.
+      const autoIdx = result.indexOf('You are M365');
+      const customIdx = result.indexOf('You are the Microsoft 365 Agent');
+      expect(autoIdx).toBeGreaterThanOrEqual(0);
+      expect(customIdx).toBeGreaterThan(autoIdx);
+    });
+
+    it('also reads top-level blueprint.system_prompt as a fallback', () => {
+      const bp = { name: 'X', system_prompt: 'Top-level instruction body.', config: { role: 'X' } };
+      const result = PromptBuilder.build(bp);
+      expect(result).toContain('Top-level instruction body.');
+    });
+
+    it('skips empty / whitespace-only system_prompt', () => {
+      const bp1 = { name: 'X', config: { role: 'X', system_prompt: '   ' } };
+      const bp2 = { name: 'X', config: { role: 'X', system_prompt: '' } };
+      const result1 = PromptBuilder.build(bp1);
+      const result2 = PromptBuilder.build(bp2);
+      // Nothing extra after the standard blocks
+      expect(result1).not.toMatch(/\n\n\s*$/);
+      expect(result2).not.toMatch(/\n\n\s*$/);
+    });
+  });
 });
