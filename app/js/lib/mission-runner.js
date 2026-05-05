@@ -217,8 +217,10 @@ const MissionRunner = (() => {
     const mediaInstruction = hasMediaTools
       ? '\n\nIMPORTANT: You MUST use your tools to create the actual media. Do NOT just describe what to create — actually call the tools. Create the deliverable, don\'t plan it.'
       : '';
+    // Use full input text when available (title is truncated to 60 chars for display)
+    const taskText = mission.metadata?.input || mission.title;
     const missionPrompt = 'Complete the following task thoroughly and provide the deliverable directly.\n\n' +
-      'Task: ' + mission.title + '\n' +
+      'Task: ' + taskText + '\n' +
       (mission.priority ? 'Priority: ' + mission.priority + '\n' : '') +
       mediaInstruction +
       '\nProvide a detailed, actionable response. Do not ask clarifying questions — use your best judgment. Execute, don\'t advise.';
@@ -265,6 +267,15 @@ const MissionRunner = (() => {
         _ship.config?.slot_assignments || _ship.slots?.slot_assignments || _ship.slot_assignments || {}
       ).length;
       if (_isCaptainAgent(agentBp) && _crewSlots && typeof AgentExecutor !== 'undefined') {
+        // Log a routing-style ship_log entry so the chat UI surfaces the captain's name
+        if (typeof ShipLog !== 'undefined') {
+          ShipLog.append(spaceshipId, {
+            agentId: agentBp.id || null,
+            role: 'system',
+            content: 'Captain ' + agentBp.name + ' is coordinating your request.',
+            metadata: { type: 'routing', chosen_agent_id: agentBp.id, chosen_agent_name: agentBp.name, reasoning: 'Captain dispatch' },
+          }).catch(() => {});
+        }
         const execResult = await runWithDispatch(agentBp, missionPrompt, _ship, {
           spaceshipId,
           approvalMode: _approvalMode,
