@@ -1289,18 +1289,30 @@ const Blueprints = (() => {
     _fireShipState();
     if (removedAgentIds.length) _fireAgentState();
 
-    // Persist deletion to Supabase so the ship and its agents don't reappear on reload
+    // Persist deletion to Supabase so the ship and its agents don't reappear on reload.
+    // mission_runs cascades to ship_log; user_spaceships cascades to mission_runs.
+    // Surface failures so silent UI/DB drift doesn't recur (see #ship-cascade-delete).
     if (_canSync()) {
       const shipRowId = (stateShip?.id && _isUuid(stateShip.id)) ? stateShip.id
         : (_isUuid(match) ? match : null);
       if (shipRowId) {
         try { await SB.db('user_spaceships').remove(shipRowId); }
-        catch (e) { console.warn('[Blueprints] user_spaceships delete failed:', e.message); }
+        catch (e) {
+          console.warn('[Blueprints] user_spaceships delete failed:', e.message);
+          if (typeof Notify !== 'undefined') {
+            Notify.send('Ship removal didn’t fully sync — reload to reconcile.', 'warning');
+          }
+        }
       }
       for (const agentId of removedAgentIds) {
         if (_isUuid(agentId)) {
           try { await SB.db('user_agents').remove(agentId); }
-          catch (e) { console.warn('[Blueprints] user_agents delete failed:', e.message); }
+          catch (e) {
+            console.warn('[Blueprints] user_agents delete failed:', e.message);
+            if (typeof Notify !== 'undefined') {
+              Notify.send('Agent removal didn’t fully sync — reload to reconcile.', 'warning');
+            }
+          }
         }
       }
     }
