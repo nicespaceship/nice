@@ -48,6 +48,7 @@ const PromptPanel = (() => {
   let _mentionItems = [];
   let _mentionIdx = -1;
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
+  let _routeShip = null;  // ship context from current route (#/bridge/spaceships/:id or schematic active ship)
 
   /* ── File attachments (staged until send) ──
      Entries live on _pendingAttachments. Shape varies by `kind`:
@@ -981,6 +982,21 @@ const PromptPanel = (() => {
     const query = match[1].trim().toLowerCase();
     const agents = _getSlottedAgents();
     return agents.find(a => a.name.toLowerCase().includes(query)) || null;
+  }
+
+  // Schematic core-tap prefills "@<ShipName> " before opening the panel,
+  // and the user's ship name doesn't appear in _getSlottedAgents (that's
+  // the crew, not the ship itself). Without this resolver, ship mentions
+  // fell all the way through to _callDirectLLM and produced "No response
+  // from AI service". Returns the user_spaceships row when the @mention
+  // matches a ship name, else null. Agent mentions take priority so we
+  // only call this when _parseMention misses.
+  function _parseShipMention(text) {
+    const match = text.match(/@([\w\s]+?)(?:\s|$)/);
+    if (!match) return null;
+    const query = match[1].trim().toLowerCase();
+    const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
+    return ships.find(s => (s?.name || '').toLowerCase().includes(query)) || null;
   }
 
   /* ── Navigation & action intent map ── */
@@ -2054,6 +2070,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       agentBp = _routeAgent;
     }
 
+    // Ship context — covers both explicit @<ShipName> mentions and the
+    // route-scoped ship (Schematic / SpaceshipDetail). Agent always wins
+    // when both could match, so the prompt panel behaves the same way
+    // /agents/:id does today.
+    const mentionedShip = (mentioned || agentBp) ? null : _parseShipMention(text);
+    const routeShip = (mentioned || agentBp) ? null : _routeShip;
+    const targetShip = mentionedShip || routeShip;
+
     const _agentHasTools = agentBp && agentBp.config && agentBp.config.tools && agentBp.config.tools.length > 0;
 
     if (_agentHasTools && typeof AgentExecutor !== 'undefined') {
@@ -2218,13 +2242,22 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           });
         }
       }
-    } else if (typeof MissionRunner !== 'undefined' && bpId && !agentBp) {
-      // Spaceship selected, no specific agent: create an ephemeral Mission
-      // Run with a single triage node and let MissionRunner / WorkflowEngine
-      // do the routing. Every ship-level chat lands in the canonical
-      // Mission lifecycle so status, cancel, audit, and analytics all work
-      // the same as templated missions.
-      _runShipChat(text, bpId, sendBtn);
+    } else if (typeof MissionRunner !== 'undefined' && (bpId || targetShip) && !agentBp) {
+      // Spaceship addressed (dropdown, @mention, or route context), no
+      // specific agent: create an ephemeral Mission Run with a single
+      // triage node and let MissionRunner / WorkflowEngine do the routing.
+      // Every ship-level chat lands in the canonical Mission lifecycle so
+      // status, cancel, audit, and analytics all work the same as
+      // templated missions.
+      const shipId = bpId || targetShip.id;
+      // Strip the @<ShipName> prefix when present so triage sees the
+      // bare prompt. Mention syntax matches _parseMention's regex —
+      // the literal @ followed by word chars and an optional trailing
+      // space.
+      const cleanText = mentionedShip
+        ? text.replace(/@[\w]+(\s+|$)/, '').trim() || text
+        : text;
+      _runShipChat(cleanText, shipId, sendBtn);
 
     } else if (typeof ShipLog !== 'undefined' && (agentBp || bpId)) {
       const spaceshipId = bpId || 'default-ship';
@@ -3253,17 +3286,18 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   /* ── Route-based visibility + context ── */
   // Prompt panel is visible on ALL routes (unified chat).
   // When viewing an agent detail page, auto-scope to that agent.
+  // When viewing a ship detail page or the Schematic with an active
+  // ship, auto-scope to that ship (triage routes to crew internally).
 
   function _updateRouteContext() {
     const path = (location.hash || '#/').replace('#', '') || '/';
     const input = _panel?.querySelector('#nice-ai-input');
     if (!input) return;
 
-    // Detect agent detail route: /agents/:id
-    const agentMatch = path.match(/^\/agents\/([^/]+)$/);
+    // Detect agent detail route: /agents/:id or /bridge/agents/:id
+    const agentMatch = path.match(/^(?:\/bridge)?\/agents\/([^/?]+)$/);
     if (agentMatch && agentMatch[1] !== 'new') {
       const agentId = agentMatch[1];
-      // Try to resolve agent name
       let agent = null;
       if (typeof Blueprints !== 'undefined') agent = Blueprints.getAgent(agentId);
       if (!agent) {
@@ -3272,13 +3306,49 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       }
       if (agent) {
         _routeAgent = agent;
+        _routeShip = null;
         input.placeholder = `Message ${agent.name}…`;
         return;
       }
     }
 
+    // Detect ship detail route: /bridge/spaceships/:id
+    const shipMatch = path.match(/^\/bridge\/spaceships\/([^/?]+)$/);
+    if (shipMatch && shipMatch[1] !== 'new') {
+      const shipId = shipMatch[1];
+      const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
+      const ship = ships.find(s => s.id === shipId)
+        || ships.find(s => s.blueprint_id === shipId);
+      if (ship) {
+        _routeAgent = null;
+        _routeShip = ship;
+        input.placeholder = `Message ${ship.name || 'your spaceship'}…`;
+        return;
+      }
+    }
+
+    // Schematic context — embedded in BlueprintsView at /bridge?tab=schematic.
+    // Active ship is the user's last-selected ship in localStorage[mcShip].
+    const onSchematic = /^\/bridge(?:\?|$)/.test(path) && /[?&]tab=schematic(?:&|$)/.test(path);
+    if (onSchematic) {
+      const activeShipId = (typeof Utils !== 'undefined' && typeof localStorage !== 'undefined')
+        ? localStorage.getItem(Utils.KEYS.mcShip) : null;
+      if (activeShipId) {
+        const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
+        const ship = ships.find(s => s.id === activeShipId)
+          || ships.find(s => s.blueprint_id === activeShipId);
+        if (ship) {
+          _routeAgent = null;
+          _routeShip = ship;
+          input.placeholder = `Message ${ship.name || 'your spaceship'}…`;
+          return;
+        }
+      }
+    }
+
     // Default: talking to NICE
     _routeAgent = null;
+    _routeShip = null;
     input.placeholder = 'Ask NICE…';
   }
 
