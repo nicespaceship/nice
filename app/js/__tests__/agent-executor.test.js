@@ -297,6 +297,127 @@ describe('AgentExecutor', () => {
 
       globalThis.SB = _SBsave;
     });
+
+    it('flattens object-shaped error bodies instead of returning [object Object]', async () => {
+      // Regression for the M365 Agent on 2026-05-04: nice-ai forwarded a
+      // provider error as { error: { message, code, details } } in the
+      // response body. Previous code passed that object straight to
+      // `new Error()`, which produced literal '[object Object]' as the
+      // user-visible reply.
+      const _SBsave = globalThis.SB;
+      globalThis.SB = {
+        functions: {
+          invoke: async () => ({
+            data: null,
+            error: {
+              context: {
+                json: async () => ({ error: { message: 'Provider rate-limited', code: 'rate_limited' } }),
+              },
+            },
+          }),
+        },
+      };
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-tools-7', name: 'Wrapped', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-7' },
+      );
+      const result = await controller.send('hi');
+
+      expect(result.error).toBe(true);
+      expect(result.text).not.toMatch(/\[object Object\]/);
+      expect(result.text).toMatch(/Provider rate-limited/);
+
+      globalThis.SB = _SBsave;
+    });
+
+    it('scopes tools to the blueprint declaration and does not auto-merge other connected MCPs', async () => {
+      // Regression for the Workspace Agent on 2026-05-04: the executor
+      // unioned blueprint.tools with every McpBridge.loadTools entry, so
+      // the Workspace Agent's tools schema also exposed Microsoft 365
+      // tools the user happened to have connected (calendar_ms_list_events).
+      const SCOPE_TOOL_DECLARED = 'mcp:scope:gmail_search_messages';
+      const SCOPE_TOOL_LEAKED   = 'mcp:scope:calendar_ms_list_events';
+
+      ToolRegistry.deregister(SCOPE_TOOL_DECLARED);
+      ToolRegistry.deregister(SCOPE_TOOL_LEAKED);
+      ToolRegistry.register({
+        id: SCOPE_TOOL_DECLARED,
+        name: 'gmail_search_messages',
+        description: 'Gmail search',
+        schema: { type: 'object', properties: { query: { type: 'string' } } },
+        execute: async () => [],
+      });
+      ToolRegistry.register({
+        id: SCOPE_TOOL_LEAKED,
+        name: 'calendar_ms_list_events',
+        description: 'M365 calendar',
+        schema: { type: 'object', properties: {} },
+        execute: async () => [],
+      });
+
+      const _origMcpBridge = globalThis.McpBridge;
+      globalThis.McpBridge = {
+        loadTools: () => [SCOPE_TOOL_DECLARED, SCOPE_TOOL_LEAKED],
+      };
+
+      _scriptedResponses.push({
+        content: 'Final Answer: ok',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-scope-1', name: 'Workspace', config: { role: 'Ops', tools: ['gmail_search_messages'] } },
+        { tools: ['gmail_search_messages'], spaceshipId: 'ship-scope' },
+      );
+      await controller.send('check inbox');
+
+      const req = _capturedRequests[0];
+      const toolNames = (req.tools || []).map(t => t.name);
+      expect(toolNames).toContain('gmail_search_messages');
+      expect(toolNames).not.toContain('calendar_ms_list_events');
+
+      globalThis.McpBridge = _origMcpBridge;
+      ToolRegistry.deregister(SCOPE_TOOL_DECLARED);
+      ToolRegistry.deregister(SCOPE_TOOL_LEAKED);
+    });
+
+    it('falls back to all connected MCP tools when the blueprint declares none', async () => {
+      // Generic agents (no `tools` array on the blueprint) keep the
+      // pre-2026-05-05 behavior of seeing every connected MCP tool.
+      const FALLBACK_TOOL = 'mcp:scope:fallback_tool';
+      ToolRegistry.deregister(FALLBACK_TOOL);
+      ToolRegistry.register({
+        id: FALLBACK_TOOL,
+        name: 'fallback_tool',
+        description: 'Just a tool',
+        schema: { type: 'object', properties: {} },
+        execute: async () => null,
+      });
+
+      const _origMcpBridge = globalThis.McpBridge;
+      globalThis.McpBridge = { loadTools: () => [FALLBACK_TOOL] };
+
+      _scriptedResponses.push({
+        content: 'Final Answer: ok',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-scope-2', name: 'Generic', config: { role: 'Ops' /* no tools */ } },
+        { /* no tools opt either */ spaceshipId: 'ship-scope-2' },
+      );
+      await controller.send('go');
+
+      const req = _capturedRequests[0];
+      const toolNames = (req.tools || []).map(t => t.name);
+      expect(toolNames).toContain('fallback_tool');
+
+      globalThis.McpBridge = _origMcpBridge;
+      ToolRegistry.deregister(FALLBACK_TOOL);
+    });
   });
 
   describe('_parseReActResponse (via structured JSON)', () => {
