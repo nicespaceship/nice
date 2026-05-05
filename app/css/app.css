@@ -1525,6 +1525,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .side-folder-item:hover { background:var(--nav-surface, var(--surface)); color:var(--nav-text, var(--text)); }
+/* Empty-state placeholder inside a folder body. Reads as text, no
+   hover affordance, no pointer. Matches the `_renderChatsList` empty
+   state pattern in nice.js. */
+.side-folder-empty { opacity:0.4; cursor:default; }
+.side-folder-empty:hover { background:transparent; color:var(--nav-text-muted, var(--text-muted)); }
 /* Hide folder content when sidebar collapsed */
 .app-sidebar:not(.open) .side-folder-body,
 .app-sidebar:not(.open) .side-folder-toggle span,
