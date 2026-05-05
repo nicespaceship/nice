@@ -2076,6 +2076,15 @@
   position:relative;
   z-index:5;
 }
+/* Open-state header: app.css collapses padding to 6px 0 in #382 since the
+   brand wordmark moved out of the sidebar. LCARS's elbow needs a visible
+   bar to read as a deliberate design element rather than a cutoff strip. */
+[data-theme="lcars"] .app-sidebar.open .side-header {
+  padding:18px 16px;
+}
+/* Closed-state brand: #ff9966 orange on #cc99ff violet is same-luminance
+   pastel mush. Force black for clear contrast against the violet elbow. */
+[data-theme="lcars"] .side-rail-brand { color:#000; }
 /* Elbow curve — bottom-right corner */
 [data-theme="lcars"] .side-header::after {
   content:'';
