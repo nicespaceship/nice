@@ -3389,11 +3389,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
     // If explicitly shown on this route (e.g. reactor/card click), keep it visible
     if (_manualShow) return;
-    // Default-visible routes: Home, and the Schematic tab of the Bridge —
-    // both centre on the core reactor and expect a prompt surface below it.
+    // Default-visible routes: Home (Chat mode), the Schematic tab of the
+    // Bridge (Spaceship mode), and the Code tab of Engineering (Code mode).
+    // The three side-mode landings each expose the prompt surface; other
+    // sub-tabs of those views suppress it.
     const onSchematic = path.startsWith('/bridge') &&
       (/tab=schematic/.test(location.hash) || !/tab=/.test(location.hash));
-    const showByDefault = path === '/' || onSchematic;
+    const onCodeMode = path.startsWith('/engineering') &&
+      (/tab=code/.test(location.hash) || !/tab=/.test(location.hash));
+    const showByDefault = path === '/' || onSchematic || onCodeMode;
     if (showByDefault) { if (_panel) _panel.style.display = ''; }
     else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
     _maybeAutoExpandSchematicChat();

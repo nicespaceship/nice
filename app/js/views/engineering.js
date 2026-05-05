@@ -58,6 +58,13 @@ const EngineeringView = (() => {
       const suffix = _activeTab === 'code' ? '' : ('?tab=' + _activeTab);
       history.replaceState(null, '', '#/engineering' + suffix);
       el.querySelectorAll('.eng-tab').forEach(t => t.classList.toggle('active', t.dataset.engTab === _activeTab));
+      // replaceState doesn't fire hashchange, so PromptPanel.syncRoute can't
+      // see the sub-tab change. Notify it directly — Code shows the prompt
+      // surface, Errors and Funnel hide it.
+      if (typeof PromptPanel !== 'undefined') {
+        if (_activeTab === 'code') PromptPanel.show();
+        else PromptPanel.hide();
+      }
       _renderActiveTab();
     });
 
