@@ -356,11 +356,19 @@ const PromptPanel = (() => {
       return;
     }
     _appMain.classList.add('monitor-active');
+    // When the overlay opens from the Schematic, mark it so the CSS can
+    // drop the solid bg and let the core reactor show through as the
+    // visual backdrop. The schematic crew rows are already faded out
+    // (.app-main.monitor-active .app-view-content { opacity:0 }).
+    if (_isOnSchematicInView() || _miniExpanded) {
+      _appMain.classList.add('monitor-on-schematic');
+    }
   }
 
   function _hideMonitor() {
     if (!_appMain) return;
     _appMain.classList.remove('monitor-active');
+    _appMain.classList.remove('monitor-on-schematic');
     _miniExpanded = false;
   }
 
