@@ -136,11 +136,18 @@ const MissionRunner = (() => {
       modelUsed = ModelIntel.bestModel(blueprintId, connected) || 'gemini-2.5-flash';
     }
 
-    // 3. Find a spaceship for context (use first active ship, or null)
+    // 3. Find a spaceship for context — prefer the mission's explicit spaceship_id
     let spaceshipId = null;
+    let _ship = null;
     try {
-      const ships = await SB.db('user_spaceships').list({ userId: user.id });
-      if (ships && ships.length) spaceshipId = ships[0].id;
+      if (mission.spaceship_id) {
+        _ship = await SB.db('user_spaceships').get(mission.spaceship_id);
+        if (_ship) spaceshipId = _ship.id;
+      }
+      if (!_ship) {
+        const ships = await SB.db('user_spaceships').list({ userId: user.id });
+        if (ships && ships.length) { _ship = ships[0]; spaceshipId = _ship.id; }
+      }
     } catch { /* proceed without spaceship */ }
 
     // If no spaceship, create a temporary context ID
@@ -247,18 +254,34 @@ const MissionRunner = (() => {
         _approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
       }
 
-      if (_hasTools && typeof AgentExecutor !== 'undefined') {
+      const _stepCallback = (step) => {
+        const stepProgress = Math.min(10 + (step.index / (agentBp.config.maxSteps || 5)) * 70, 80);
+        _updateLocalMission(missionId, { progress: Math.round(stepProgress) });
+        SB.db('mission_runs').update(missionId, { progress: Math.round(stepProgress) }).catch(() => {});
+      };
+
+      // Captain with crew → dispatch orchestration loop
+      const _crewSlots = _ship && Object.keys(_ship.slot_assignments || {}).length;
+      if (_isCaptainAgent(agentBp) && _crewSlots && typeof AgentExecutor !== 'undefined') {
+        const execResult = await runWithDispatch(agentBp, missionPrompt, _ship, {
+          spaceshipId,
+          approvalMode: _approvalMode,
+          maxSteps: agentBp.config.maxSteps,
+          onStep: _stepCallback,
+        });
+        result = {
+          content: execResult.finalAnswer,
+          agent: agentBp.name,
+          agentId: agentBp.id,
+          metadata: Object.assign({}, execResult.metadata, { steps: execResult.steps, dispatch_used: true }),
+        };
+      } else if (_hasTools && typeof AgentExecutor !== 'undefined') {
         const execResult = await AgentExecutor.execute(agentBp, missionPrompt, {
           tools: agentBp.config.tools,
           spaceshipId,
           approvalMode: _approvalMode,
           maxSteps: agentBp.config.maxSteps,
-          onStep: (step) => {
-            // Update progress based on steps
-            const stepProgress = Math.min(10 + (step.index / (agentBp.config.maxSteps || 5)) * 70, 80);
-            _updateLocalMission(missionId, { progress: Math.round(stepProgress) });
-            SB.db('mission_runs').update(missionId, { progress: Math.round(stepProgress) }).catch(() => {});
-          },
+          onStep: _stepCallback,
         });
         result = {
           content: execResult.finalAnswer,
@@ -613,6 +636,178 @@ const MissionRunner = (() => {
     return +(base + Math.random() * 0.05).toFixed(4);
   }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     CAPTAIN DISPATCH PROTOCOL
+     Captain LLM response may contain:
+       [DISPATCH: <role>] <sub-prompt for that crew member>
+     MissionRunner intercepts, runs the slot agent, feeds back:
+       [CREW REPORT: <role>]
+       <crew agent's answer>
+     Captain then synthesizes. Up to MAX_DISPATCH_ROUNDS iterations.
+  ═══════════════════════════════════════════════════════════════════ */
+
+  const MAX_DISPATCH_ROUNDS = 3;
+
+  /* Parse all [DISPATCH: slot] sub-prompt pairs from a captain response. */
+  function _extractDispatches(text) {
+    const results = [];
+    // Each dispatch runs until the next [DISPATCH: or end-of-string.
+    const re = /\[DISPATCH:\s*([^\]]+)\]\s*([\s\S]*?)(?=\[DISPATCH:|$)/gi;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const slot = m[1].trim().toLowerCase();
+      const subPrompt = m[2].trim();
+      if (slot && subPrompt) results.push({ slot, subPrompt });
+    }
+    return results;
+  }
+
+  /* Find the crew agent filling a given slot name/role on a ship.
+     Resolution order: role_type match → name substring → slot key. */
+  function _resolveSlotAgent(ship, slotName, agents) {
+    if (!ship || !slotName || !agents) return null;
+    const name = slotName.toLowerCase();
+    const assignments = ship.slot_assignments || {};
+
+    for (const agentId of Object.values(assignments)) {
+      const agent = agents.find(a => a.id === agentId);
+      if (!agent) continue;
+      const role = (agent.config?.role_type || agent.config?.role || '').toLowerCase();
+      if (role === name) return agent;
+    }
+
+    for (const agentId of Object.values(assignments)) {
+      const agent = agents.find(a => a.id === agentId);
+      if (!agent) continue;
+      if ((agent.name || '').toLowerCase().includes(name)) return agent;
+    }
+
+    const directId = assignments[slotName] || assignments[name];
+    if (directId) return agents.find(a => a.id === directId) || null;
+
+    return null;
+  }
+
+  /* True when an agent blueprint is the captain/orchestrator of its ship. */
+  function _isCaptainAgent(agentBp) {
+    if (!agentBp) return false;
+    const cfg = agentBp.config || {};
+    if (cfg.is_captain) return true;
+    const role = (cfg.role_type || cfg.role || '').toLowerCase();
+    return role === 'captain';
+  }
+
+  /* Build the crew manifest block injected into the captain's context. */
+  function _buildCrewManifest(ship, crewAgents) {
+    if (!crewAgents || !crewAgents.length) return '';
+    const lines = [
+      'Your crew (dispatch using the role name in lowercase):',
+    ];
+    for (const agent of crewAgents) {
+      const role = (agent.config?.role_type || agent.config?.role || 'specialist').toLowerCase();
+      const cap = agent.config?.system_prompt
+        ? agent.config.system_prompt.substring(0, 100).replace(/\n/g, ' ') + '…'
+        : (agent.description || 'Specialist');
+      lines.push('  [' + role + '] ' + agent.name + ' — ' + cap);
+    }
+    return lines.join('\n');
+  }
+
+  /* Prepend dispatch protocol + crew manifest to the captain's system_prompt. */
+  function _injectCaptainContext(captainBp, ship, crewAgents) {
+    const manifest = _buildCrewManifest(ship, crewAgents);
+    if (!manifest) return captainBp;
+
+    const protocol =
+      'DISPATCH PROTOCOL\n' +
+      'When a user request requires specialist knowledge, dispatch to a crew member:\n' +
+      '  [DISPATCH: <role>] <sub-prompt for that crew member>\n' +
+      'You may dispatch to multiple crew members in a single response.\n' +
+      'Wait for crew reports, then synthesize them into one clear final answer.\n' +
+      'Never include [DISPATCH:] tokens in your synthesized final answer.\n\n' +
+      manifest;
+
+    const existing = captainBp.config?.system_prompt || '';
+    return {
+      ...captainBp,
+      config: {
+        ...captainBp.config,
+        system_prompt: protocol + (existing ? '\n\n---\n\n' + existing : ''),
+      },
+    };
+  }
+
+  /* ── Captain dispatch orchestration loop ──
+     Runs the captain, intercepts dispatch tokens, runs crew agents in
+     parallel, injects [CREW REPORT] blocks, then re-runs the captain
+     for synthesis. Repeats up to MAX_DISPATCH_ROUNDS times.
+
+     Returns the same shape as AgentExecutor.execute(). */
+  async function runWithDispatch(captainBp, userPrompt, ship, opts) {
+    opts = opts || {};
+    const agents = State.get('agents') || [];
+    const assignments = ship?.slot_assignments || {};
+
+    const crewAgents = Object.values(assignments)
+      .map(id => agents.find(a => a.id === id))
+      .filter(Boolean)
+      .filter(a => !_isCaptainAgent(a));
+
+    const captainWithCtx = _injectCaptainContext(captainBp, ship, crewAgents);
+
+    let crewContext = '';
+    let lastResult = null;
+
+    for (let round = 0; round < MAX_DISPATCH_ROUNDS; round++) {
+      const prompt = round === 0
+        ? userPrompt
+        : userPrompt +
+          '\n\n---\nCrew reports received:\n' + crewContext +
+          '\n\nSynthesize the crew reports above into a single final answer for the user. ' +
+          'Do not include [DISPATCH:] tokens.';
+
+      const execResult = await AgentExecutor.execute(captainWithCtx, prompt, {
+        tools: captainBp.config?.tools || [],
+        spaceshipId: opts.spaceshipId,
+        approvalMode: opts.approvalMode,
+        maxSteps: opts.maxSteps || captainBp.config?.maxSteps || 5,
+        onStep: opts.onStep,
+      });
+      lastResult = execResult;
+
+      const dispatches = _extractDispatches(execResult.finalAnswer || '');
+      if (!dispatches.length) break;
+
+      const reports = await Promise.all(dispatches.map(async ({ slot, subPrompt }) => {
+        const crewAgent = _resolveSlotAgent(ship, slot, agents);
+        if (!crewAgent) {
+          return '[CREW REPORT: ' + slot + ']\nNo agent assigned to slot "' + slot + '".';
+        }
+
+        let crewBp = crewAgent;
+        if (crewAgent.blueprint_id && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
+          crewBp = Blueprints.getAgent(crewAgent.blueprint_id) || crewAgent;
+        }
+
+        try {
+          const crewResult = await AgentExecutor.execute(crewBp, subPrompt, {
+            tools: crewBp.config?.tools,
+            spaceshipId: opts.spaceshipId,
+            approvalMode: opts.approvalMode,
+            maxSteps: (crewBp.config?.maxSteps || 5),
+          });
+          return '[CREW REPORT: ' + slot + ']\n' + (crewResult.finalAnswer || 'No response.');
+        } catch (err) {
+          return '[CREW REPORT: ' + slot + ']\nError: ' + (err.message || 'Unknown error');
+        }
+      }));
+
+      crewContext += (crewContext ? '\n\n' : '') + reports.join('\n\n');
+    }
+
+    return lastResult;
+  }
+
   /* ── Per-agent XP tracking ── */
   function awardAgentXP(agentId, xp) {
     if (!agentId) return;
@@ -656,5 +851,17 @@ const MissionRunner = (() => {
     } catch { return { xp: 0, missions: 0, approved: 0, rejected: 0 }; }
   }
 
-  return { run, awardAgentXP, getAgentStats, _isDagMission };
+  return {
+    run,
+    runWithDispatch,
+    awardAgentXP,
+    getAgentStats,
+    _isDagMission,
+    // Exported for unit tests
+    _extractDispatches,
+    _resolveSlotAgent,
+    _isCaptainAgent,
+    _buildCrewManifest,
+    _injectCaptainContext,
+  };
 })();

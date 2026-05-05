@@ -429,6 +429,204 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     expect(notifies.find(n => /review/i.test(n.title || ''))).toBeUndefined();
   });
 
+  /* ── Dispatch protocol ── */
+
+  describe('_extractDispatches', () => {
+    it('returns empty array when no dispatch tokens present', () => {
+      expect(MissionRunner._extractDispatches('Just a plain answer.')).toEqual([]);
+    });
+
+    it('parses a single dispatch token', () => {
+      const text = '[DISPATCH: sales] What deals are stalling this quarter?';
+      expect(MissionRunner._extractDispatches(text)).toEqual([
+        { slot: 'sales', subPrompt: 'What deals are stalling this quarter?' },
+      ]);
+    });
+
+    it('parses multiple dispatch tokens', () => {
+      const text =
+        '[DISPATCH: sales] What deals are stalling?\n' +
+        '[DISPATCH: communications] Any unread emails about those deals?';
+      const result = MissionRunner._extractDispatches(text);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ slot: 'sales', subPrompt: 'What deals are stalling?' });
+      expect(result[1]).toEqual({ slot: 'communications', subPrompt: 'Any unread emails about those deals?' });
+    });
+
+    it('is case-insensitive for the DISPATCH keyword and lowercases slot names', () => {
+      const text = '[dispatch: SALES] Check pipeline.';
+      const result = MissionRunner._extractDispatches(text);
+      expect(result).toHaveLength(1);
+      expect(result[0].slot).toBe('sales');
+    });
+
+    it('ignores dispatch tokens with empty sub-prompts', () => {
+      const result = MissionRunner._extractDispatches('[DISPATCH: sales]   ');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('_isCaptainAgent', () => {
+    it('returns false for null', () => {
+      expect(MissionRunner._isCaptainAgent(null)).toBe(false);
+    });
+
+    it('detects captain via role_type', () => {
+      expect(MissionRunner._isCaptainAgent({ config: { role_type: 'captain' } })).toBe(true);
+    });
+
+    it('detects captain via role (case-insensitive)', () => {
+      expect(MissionRunner._isCaptainAgent({ config: { role: 'Captain' } })).toBe(true);
+    });
+
+    it('detects captain via is_captain flag', () => {
+      expect(MissionRunner._isCaptainAgent({ config: { is_captain: true } })).toBe(true);
+    });
+
+    it('returns false for non-captain roles', () => {
+      expect(MissionRunner._isCaptainAgent({ config: { role: 'Sales' } })).toBe(false);
+    });
+  });
+
+  describe('_resolveSlotAgent', () => {
+    const agents = [
+      { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales' } },
+      { id: 'a-comms', name: 'Athena', config: { role_type: 'communications' } },
+    ];
+    const ship = { slot_assignments: { 'slot-0': 'a-sales', 'slot-1': 'a-comms' } };
+
+    it('resolves by role_type', () => {
+      const result = MissionRunner._resolveSlotAgent(ship, 'sales', agents);
+      expect(result.id).toBe('a-sales');
+    });
+
+    it('resolves by name substring', () => {
+      const result = MissionRunner._resolveSlotAgent(ship, 'athena', agents);
+      expect(result.id).toBe('a-comms');
+    });
+
+    it('returns null when slot not found', () => {
+      expect(MissionRunner._resolveSlotAgent(ship, 'finance', agents)).toBeNull();
+    });
+
+    it('returns null when ship is null', () => {
+      expect(MissionRunner._resolveSlotAgent(null, 'sales', agents)).toBeNull();
+    });
+  });
+
+  describe('_buildCrewManifest', () => {
+    it('returns empty string for empty crew', () => {
+      expect(MissionRunner._buildCrewManifest(null, [])).toBe('');
+    });
+
+    it('includes role and agent name', () => {
+      const crew = [{ name: 'Apollo', config: { role_type: 'sales' }, description: 'HubSpot CRM' }];
+      const manifest = MissionRunner._buildCrewManifest(null, crew);
+      expect(manifest).toContain('[sales]');
+      expect(manifest).toContain('Apollo');
+    });
+  });
+
+  describe('runWithDispatch', () => {
+    const captainBp = {
+      id: 'cap-1', name: 'Adama',
+      config: { role_type: 'captain', is_captain: true, tools: [] },
+    };
+    const salesAgent = { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales', tools: ['crm-search'] } };
+    const ship = {
+      id: 'ship-bsg', name: 'Battlestar Galactica',
+      slot_assignments: { 'slot-0': 'cap-1', 'slot-1': 'a-sales' },
+    };
+
+    beforeEach(() => {
+      State.set('agents', [
+        { id: 'cap-1', name: 'Adama', config: { role_type: 'captain', is_captain: true, tools: [] } },
+        { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales', tools: ['crm-search'] } },
+      ]);
+    });
+
+    it('returns captain answer directly when no dispatch tokens', async () => {
+      let callCount = 0;
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          callCount++;
+          return { finalAnswer: 'Here is the summary.', steps: [], metadata: {} };
+        },
+      };
+
+      const result = await MissionRunner.runWithDispatch(captainBp, 'Summarize our pipeline.', ship, {});
+      expect(result.finalAnswer).toBe('Here is the summary.');
+      expect(callCount).toBe(1); // captain only, no crew calls
+      delete globalThis.AgentExecutor;
+    });
+
+    it('dispatches to crew agent and synthesizes', async () => {
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          calls.push({ bpId: bp.id || bp.name, prompt });
+          if (calls.length === 1) {
+            // Captain's first turn — emit a dispatch
+            return { finalAnswer: '[DISPATCH: sales] What deals are stalling?', steps: [], metadata: {} };
+          }
+          if (calls.length === 2) {
+            // Sales agent (crew)
+            return { finalAnswer: 'Deals Alpha and Beta are stalling.', steps: [], metadata: {} };
+          }
+          // Captain synthesis
+          return { finalAnswer: 'Alpha and Beta are stalling — recommend follow-up.', steps: [], metadata: {} };
+        },
+      };
+
+      const result = await MissionRunner.runWithDispatch(captainBp, 'What deals need attention?', ship, {});
+      expect(result.finalAnswer).toBe('Alpha and Beta are stalling — recommend follow-up.');
+      // 1 captain first turn + 1 crew call + 1 captain synthesis = 3
+      expect(calls).toHaveLength(3);
+      // Crew call had the sub-prompt, not the user's original prompt
+      expect(calls[1].prompt).toBe('What deals are stalling?');
+      // Synthesis prompt contains the crew report
+      expect(calls[2].prompt).toContain('[CREW REPORT: sales]');
+      expect(calls[2].prompt).toContain('Deals Alpha and Beta are stalling.');
+      delete globalThis.AgentExecutor;
+    });
+
+    it('caps dispatch rounds at MAX_DISPATCH_ROUNDS', async () => {
+      let callCount = 0;
+      globalThis.AgentExecutor = {
+        execute: async () => {
+          callCount++;
+          // Always return a dispatch token — should stop after MAX_DISPATCH_ROUNDS
+          return { finalAnswer: '[DISPATCH: sales] keep dispatching', steps: [], metadata: {} };
+        },
+      };
+
+      await MissionRunner.runWithDispatch(captainBp, 'Loop forever?', ship, {});
+      // Round 1: captain + crew. Round 2: captain + crew. Round 3: captain + crew. = 6 calls max
+      expect(callCount).toBeLessThanOrEqual(6);
+      delete globalThis.AgentExecutor;
+    });
+
+    it('handles missing slot gracefully', async () => {
+      let crewCalled = false;
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          if (!crewCalled && prompt.includes('?')) {
+            // Captain's first turn
+            return { finalAnswer: '[DISPATCH: finance] Budget?', steps: [], metadata: {} };
+          }
+          crewCalled = true;
+          // Synthesis after crew report (crew was missing)
+          return { finalAnswer: 'No finance agent available.', steps: [], metadata: {} };
+        },
+      };
+
+      const result = await MissionRunner.runWithDispatch(captainBp, 'Check budget?', ship, {});
+      // Should not throw; synthesis should contain the missing-slot message
+      expect(result).toBeTruthy();
+      delete globalThis.AgentExecutor;
+    });
+  });
+
   it('templated run (no source flag) still lands in review (regression guard)', async () => {
     const planSnapshot = {
       shape: 'dag',
