@@ -1361,15 +1361,30 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar.open ~ .app-sidebar-overlay { display:block; }
 }
 
-/* Sidebar header — empty strip retained as anchor for per-theme
-   decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk light
-   strip — see public/css/theme.css). Brand logo + close button were
-   removed 2026-05-04; the mode tabs are the new header, and "close"
-   = click outside the sidebar (handled by document-level listener). */
+/* Sidebar header — holds the NICE rail-brand icon, the only thing
+   visible at the top of the sidebar when collapsed. When the sidebar
+   is open, the brand hides and the mode tabs (rendered just below)
+   become the visual header. Per-theme decorations (LCARS overlay,
+   JARVIS reactor pulse, Cyberpunk light strip — see theme.css)
+   anchor on .side-header. */
 .side-header {
-  flex-shrink:0; height:12px;
+  flex-shrink:0; padding:14px 0 8px;
+  display:flex; align-items:center; justify-content:center;
   background:var(--nav-bg-dk, transparent);
 }
+.side-rail-brand {
+  display:flex; align-items:center; justify-content:center;
+  width:48px; height:48px; padding:0;
+  background:transparent; border:0; border-radius:8px;
+  color:var(--nav-text, var(--text));
+  cursor:pointer; transition:background .15s, color .15s;
+}
+.side-rail-brand svg { width:40px; height:40px; fill:currentColor; display:block; }
+.side-rail-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
+/* When sidebar is open, the mode tabs become the visual header —
+   hide the rail-brand to avoid stacking it on top of the tabs. */
+.app-sidebar.open .side-header { padding:0; height:0; overflow:hidden; }
+.app-sidebar.open .side-rail-brand { display:none; }
 .side-header .app-brand-text { font-size:var(--text-lg); color:var(--nav-text, var(--text)); }
 .side-header .app-hdr-menu { display:none; }
 
@@ -1661,27 +1676,12 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar:not(.open) .side-divider,
 .app-sidebar:not(.open) #side-chats-folder .side-folder-body { display:none; }
 
-/* Collapsed sidebar: only the active mode tab stays visible; the others
-   hide. The active tab's icon becomes the rail's primary affordance —
-   click it to open the sidebar. Container drops its container chrome
-   (background pill, gap, padding) so the lone icon button reads as a
-   plain rail item, matching the existing .side-link rail aesthetic. */
-.app-sidebar:not(.open) .side-mode-tabs {
-  margin:0; padding:0; background:transparent; gap:0;
-}
-.app-sidebar:not(.open) .side-mode-tab[aria-selected="false"] { display:none; }
-.app-sidebar:not(.open) .side-mode-tab span { display:none; }
-.app-sidebar:not(.open) .side-mode-tab {
-  padding:10px 0; border-radius:0;
-  background:transparent; box-shadow:none;
-}
-.app-sidebar:not(.open) .side-mode-tab .icon { width:22px; height:22px; }
-
-/* When collapsed, the active mode's tab icon is the only sidebar
-   affordance — clicking it opens the sidebar to reveal the full
-   nav. Hide the per-mode sub-nav content so we don't show a stack
-   of redundant icons (e.g. mode-tab chat bubble + Chats folder
-   toggle chat bubble). */
+/* Collapsed sidebar: only the NICE rail-brand at top is visible.
+   Mode tabs and per-mode sub-nav both hide — they only render when
+   the sidebar is expanded. Always-NICE-on-close is intentional
+   branding: the rail reads as "this is NICE", not "you are in
+   mode X". */
+.app-sidebar:not(.open) .side-mode-tabs,
 .app-sidebar:not(.open) .side-mode-section { display:none; }
 
 /* Mobile: the panel drops down from under the mobile top bar as a

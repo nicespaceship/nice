@@ -136,12 +136,16 @@
 
 <!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
 <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
-  <!-- Sidebar Header — empty visual strip. Brand logo and close
-       button removed 2026-05-04: the mode tabs ARE the header now,
-       and "close" = click outside the sidebar. The empty .side-header
-       wrapper is retained so per-theme decorations (LCARS overlay,
-       JARVIS reactor pulse, Cyberpunk light strip) keep their anchor. -->
-  <div class="side-header" aria-hidden="true"></div>
+  <!-- Sidebar Header — empty when sidebar is open (theme decoration
+       anchor only). When collapsed, the NICE brand icon takes over
+       and acts as the click-to-open affordance. Always-NICE-on-close
+       is intentional branding (per Benjamin 2026-05-04) — the rail
+       reads as "this is NICE", not "you are in mode X". -->
+  <div class="side-header">
+    <button type="button" class="side-rail-brand" id="side-rail-brand" aria-label="Open menu" title="Open menu">
+      <svg viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
+    </button>
+  </div>
 
   <!-- Mode tabs: three distinct ways to use NICE. Spaceship (agentic
        orchestrator), Chat (standalone LLM picker), Code (engineering /
