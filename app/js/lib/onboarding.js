@@ -32,7 +32,7 @@ const Onboarding = (() => {
     FIRST_MISSION_COMPLETE: 'onboarding.first_mission_complete',
   };
 
-  /* Ordered list of funnel steps, top of funnel first. The Engineering
+  /* Ordered list of funnel steps, top of funnel first. The Code mode's
      Funnel tab uses this order when rendering drop-off percentages. */
   const FUNNEL_STEPS = [
     { event: EVENTS.SIGNUP_COMPLETE,        label: 'Signed up' },
@@ -171,7 +171,7 @@ const Onboarding = (() => {
     _initialized = true;
   }
 
-  /* ── Funnel query (used by Engineering "Funnel" tab) ──────── */
+  /* ── Funnel query (used by the Code mode's "Funnel" tab) ──────── */
 
   /**
    * Load funnel stats over the given time window. Returns an object
