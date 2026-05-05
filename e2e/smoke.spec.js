@@ -58,9 +58,11 @@ test.describe('Smoke Tests', () => {
     await waitForApp(page);
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
-    // At least one nav link exists
-    const links = page.locator('.side-link');
-    expect(await links.count()).toBeGreaterThan(0);
+    // The sidebar exposes mode tabs (Spaceship / Chat / Code) as the
+    // primary nav surface; older `.side-link` items used to live here
+    // but were replaced when the mode tabs became the header (#382).
+    const tabs = page.locator('.side-mode-tab');
+    expect(await tabs.count()).toBeGreaterThan(0);
   });
 
   test('main views render without error', async ({ page }) => {
@@ -147,9 +149,14 @@ test.describe('Accessibility', () => {
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await waitForApp(page);
-    const firstLink = page.locator('.side-link').first();
-    await firstLink.focus();
-    await page.keyboard.press('ArrowDown');
+    // Mode tabs are the primary sidebar nav since #382. The sidebar
+    // is collapsed by default, so the tabs are display:none — open
+    // the sidebar first so the tab is focusable.
+    await page.evaluate(() => document.getElementById('app-sidebar')?.classList.add('open'));
+    await page.waitForTimeout(150);
+    const firstTab = page.locator('.side-mode-tab').first();
+    await firstTab.focus();
+    await page.keyboard.press('Tab');
     const focused = await page.evaluate(() => document.activeElement?.tagName);
     expect(focused).toBeTruthy();
   });
