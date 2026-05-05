@@ -16,6 +16,8 @@ const SchematicView = (() => {
   let _el = null;
   let _lastMobile = null;
   let _unsubActivity = null;
+  let _unsubShips = null;
+  let _rerendering = false;
   function _isMobile() {
     try { return window.matchMedia('(max-width:600px)').matches; }
     catch (e) { return false; }
@@ -32,16 +34,26 @@ const SchematicView = (() => {
     const activeShip = activatedShips.find(s => s.id === shipId) || activatedShips[0];
 
     if (!activeShip) {
-      el.innerHTML = `
-        <div class="schematic-empty app-empty">
-          <h2>No spaceships deployed</h2>
-          <p>Activate a ship from the catalog or build one from scratch to put a crew on the schematic.</p>
-          <div class="app-empty-acts">
-            <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
-            <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
+      // If the user is authenticated, Supabase may not have finished syncing
+      // yet — show a neutral loading state instead of the empty-state CTAs so
+      // users don't see "No spaceships deployed" for a ship they just reset.
+      // Once activated-ships fires again (Blueprints._fireShipState after the
+      // user_spaceships query returns), we re-render with real data.
+      const isAuthed = typeof Utils !== 'undefined' && Utils.hasAuthSession();
+      if (isAuthed) {
+        el.innerHTML = '<div class="schematic-empty app-empty"><p class="text-muted">Loading crew&hellip;</p></div>';
+      } else {
+        el.innerHTML = `
+          <div class="schematic-empty app-empty">
+            <h2>No spaceships deployed</h2>
+            <p>Activate a ship from the catalog or build one from scratch to put a crew on the schematic.</p>
+            <div class="app-empty-acts">
+              <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
+              <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
       return;
     }
 
@@ -133,6 +145,25 @@ const SchematicView = (() => {
         }
       });
     });
+
+    // Re-render when Supabase ships hydrate — fixes the false empty-state flash
+    // and the slot-count race after a hard reset. Blueprints._fireShipState()
+    // fires State.set('activated-ships') both at init (from localStorage) and
+    // again once the user_spaceships query returns, so we get exactly one
+    // re-render when real data arrives without polling.
+    // Re-render when Supabase ships hydrate. Only register once per view mount
+    // (_unsubShips already set means a prior render wired it). Since _el is
+    // module-level and always points to the current container, the same handler
+    // stays correct through resize / theme re-renders.
+    if (!_unsubShips && typeof State !== 'undefined') {
+      _unsubShips = () => { if (_el && !_rerendering) { _rerendering = true; render(_el); _rerendering = false; } };
+      // Defer past State.on's immediate-fire behavior: activated-ships already
+      // has data after init, so a synchronous State.on would recurse into
+      // render() before this call returns. Microtask lets render() finish first.
+      Promise.resolve().then(() => {
+        if (_unsubShips && typeof State !== 'undefined') State.on('activated-ships', _unsubShips);
+      });
+    }
 
     // Subscribe to live activity signals so the status node reflects
     // mission-runner / agent-executor work in real time. Replace any
@@ -848,6 +879,8 @@ const SchematicView = (() => {
     if (_resizeTimer) { cancelAnimationFrame(_resizeTimer); _resizeTimer = null; }
     window.removeEventListener('resize', _onResize);
     if (_wiredRO) { _wiredRO.disconnect(); _wiredRO = null; }
+    if (_unsubShips) { try { if (typeof State !== 'undefined') State.off('activated-ships', _unsubShips); } catch (_) {} _unsubShips = null; }
+    _rerendering = false;
     if (_unsubActivity) { try { _unsubActivity(); } catch (_) {} _unsubActivity = null; }
     // Mobile-only mounts — picker pill in #app-fixed-tabs and swap sheet
     // at body level. Both need explicit unmount when leaving the view.
