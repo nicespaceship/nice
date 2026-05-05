@@ -1370,6 +1370,33 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-header .app-brand-text { font-size:var(--text-lg); color:var(--nav-text, var(--text)); }
 .side-header .app-hdr-menu { display:none; }
 
+/* Mode tabs — Spaceship vs Standalone Chat. Top of sidebar nav, full
+   width, segmented-control style. Active state is the source of truth
+   for which mode-section renders below. */
+.side-mode-tabs {
+  display:flex; gap:2px; flex-shrink:0;
+  margin:0 12px 8px; padding:2px;
+  background:var(--nav-border, var(--border));
+  border-radius:var(--radius, 8px);
+}
+.side-mode-tab {
+  flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+  padding:6px 8px;
+  background:transparent; border:0;
+  color:var(--nav-text-muted, var(--text-muted));
+  font-family:inherit; font-size:var(--text-sm); font-weight:var(--fw-medium);
+  border-radius:calc(var(--radius, 8px) - 2px);
+  cursor:pointer; transition:background .15s, color .15s;
+}
+.side-mode-tab:hover { color:var(--nav-text, var(--text)); }
+.side-mode-tab[aria-selected="true"] {
+  background:var(--bg, var(--nav-bg));
+  color:var(--accent, var(--nav-text, var(--text)));
+  box-shadow:0 1px 2px rgba(0,0,0,0.18);
+}
+.side-mode-tab .icon { width:14px; height:14px; }
+.side-mode-section[hidden] { display:none; }
+
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }
 .side-chats-body { flex:1; min-height:0; }
@@ -1625,7 +1652,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar:not(.open) .sidebar-favorites,
 .app-sidebar:not(.open) .sidebar-section-label,
 .app-sidebar:not(.open) .side-divider,
-.app-sidebar:not(.open) #side-chats-folder .side-folder-body { display:none; }
+.app-sidebar:not(.open) #side-chats-folder .side-folder-body,
+.app-sidebar:not(.open) .side-mode-tabs { display:none; }
 
 /* Mobile: the panel drops down from under the mobile top bar as a
    full-width header dropdown. Base rule already sets position:fixed;

@@ -2313,6 +2313,44 @@ const NICE = (() => {
         link.classList.remove('active');
       }
     });
+    _updateActiveModeTab();
+  }
+
+  /* ── Sidebar mode tabs — Spaceship vs Standalone Chat ──
+     Two architecturally-distinct modes (see project_two_chat_modes.md
+     in user memory). Active mode is derived from the current route, not
+     persisted, so the URL stays the source of truth. */
+  function _modeFromPath(path) {
+    // Spaceship-mode surfaces: Bridge tabs, ship/agent detail pages,
+    // engineering/code surface. Everything else (Home, hypothetical
+    // future /chat/* routes) is Standalone Chat.
+    if (/^\/(bridge|engineering|missions)(\/|$|\?)/.test(path)) return 'spaceship';
+    return 'chat';
+  }
+  function _updateActiveModeTab() {
+    const path = location.hash.replace(/^#/, '') || '/';
+    const mode = _modeFromPath(path);
+    document.querySelectorAll('.side-mode-tab').forEach(btn => {
+      const isActive = btn.dataset.mode === mode;
+      btn.setAttribute('aria-selected', String(isActive));
+    });
+    document.querySelectorAll('.side-mode-section').forEach(section => {
+      const isActive = section.dataset.modeSection === mode;
+      if (isActive) section.removeAttribute('hidden');
+      else section.setAttribute('hidden', '');
+    });
+  }
+  function _initModeTabs() {
+    const MODE_DEFAULT_ROUTES = { spaceship: '#/bridge', chat: '#/' };
+    document.querySelectorAll('.side-mode-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        const target = MODE_DEFAULT_ROUTES[mode];
+        if (target && location.hash !== target) location.hash = target;
+        else _updateActiveModeTab();
+      });
+    });
+    _updateActiveModeTab();
   }
 
   /* ── Step 56: Screen reader announcements ── */
@@ -2413,6 +2451,7 @@ const NICE = (() => {
     _initSidebar();
     _initSidebarDnD();
     _initSidebarKeyboard();
+    _initModeTabs();
     _initScrollToTop();
     _initHUD();
     _initBellDropdown();
