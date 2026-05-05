@@ -102,17 +102,17 @@ const SchematicView = (() => {
         if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
           DockView._initRadar(cvs);
         }
-        // Core click → open prompt panel, prefill @Ship, and start dictation.
-        // Maps the centrepiece to the "activate the AI to listen" gesture:
-        // one tap, user speaks, transcript auto-sends when they stop.
+        // Core click → open prompt panel + start dictation. The Schematic
+        // route auto-scopes the prompt panel to the active ship (see
+        // PromptPanel._updateRouteContext), so we don't need to prefill
+        // @<ShipName> — the user's bare prompt already addresses the
+        // ship and triage routes to the right crew member.
         const coreHit = el.querySelector('.sch-core-hit-overlay');
         if (coreHit) {
           coreHit.addEventListener('click', (e) => {
             e.stopPropagation();
-            const shipName = activeShip?.name || 'Ship';
             if (typeof PromptPanel === 'undefined') return;
             if (PromptPanel.show) PromptPanel.show();
-            if (PromptPanel.prefill) PromptPanel.prefill('@' + shipName + ' ');
             if (PromptPanel.startDictation) PromptPanel.startDictation();
           });
         }
