@@ -7,7 +7,7 @@
 const MissionRunner = (() => {
 
   /* ── Run a mission ── */
-  async function run(missionId) {
+  async function run(missionId, opts) {
     if (!missionId) return null;
     const user = State.get('user');
     if (!user) return null;
@@ -298,6 +298,7 @@ const MissionRunner = (() => {
           approvalMode: _approvalMode,
           maxSteps: agentBp.config.maxSteps,
           onStep: _stepCallback,
+          onDispatchProgress: opts && opts.onDispatchProgress,
         });
         result = {
           content: execResult.finalAnswer,
@@ -795,7 +796,15 @@ const MissionRunner = (() => {
     let crewContext = '';
     let lastResult = null;
 
+    const _progress = opts.onDispatchProgress;
+
     for (let round = 0; round < MAX_DISPATCH_ROUNDS; round++) {
+      const isSynthesis = round > 0;
+      if (_progress) {
+        _progress({ phase: isSynthesis ? 'synthesizing' : 'coordinating',
+                    label: isSynthesis ? 'Synthesizing…' : captainBp.name + ' is coordinating…' });
+      }
+
       const prompt = round === 0
         ? userPrompt
         : userPrompt +
@@ -814,6 +823,15 @@ const MissionRunner = (() => {
 
       const dispatches = _extractDispatches(execResult.finalAnswer || '');
       if (!dispatches.length) break;
+
+      // Signal which crew slots are about to be queried (may be multiple)
+      if (_progress) {
+        const slotNames = dispatches.map(d => {
+          const a = _resolveSlotAgent(ship, d.slot, agents);
+          return a ? a.name : d.slot;
+        });
+        _progress({ phase: 'querying', label: 'Querying ' + slotNames.join(', ') + '…' });
+      }
 
       const reports = await Promise.all(dispatches.map(async ({ slot, subPrompt }) => {
         const crewAgent = _resolveSlotAgent(ship, slot, agents);

@@ -785,9 +785,20 @@ const PromptPanel = (() => {
       return;
     }
 
+    // Update the monitor thinking label as dispatch phases progress
+    const _onDispatchProgress = ({ label }) => {
+      const el = document.getElementById('monitor-thinking');
+      if (el) {
+        const lbl = el.querySelector('.monitor-thinking-label');
+        if (lbl) lbl.textContent = label;
+        const monitorEl = document.getElementById('nice-monitor');
+        if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
+      }
+    };
+
     let result = null;
     try {
-      result = await MissionRunner.run(run.id);
+      result = await MissionRunner.run(run.id, { onDispatchProgress: _onDispatchProgress });
     } catch (err) {
       _removeMonitorThinking();
       _messages.push({
