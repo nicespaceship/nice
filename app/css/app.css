@@ -2169,7 +2169,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     width:100%;
     max-height:64px;
     margin:0;
-    padding:7px 50px 7px 10px;
+    padding:7px 34px 7px 10px;
     font-size:var(--text-xs);
     line-height:var(--lh-base);
     background:var(--panel-bg, rgba(24,24,27,0.82));
@@ -2180,22 +2180,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     overflow-y:auto;
     box-shadow:var(--glow-hi, 0 0 14px rgba(0,0,0,0.12));
   }
-  /* Mobile: enlarge to a proper 40px touch target with accent color so
-     the "hide crew, show full chat" affordance is discoverable.
-     Docked at the right edge of the mini-chat row. */
   .schematic-stack > .sch-mini-chat .sch-mini-expand {
-    width:40px; height:40px; top:50%; right:6px;
-    transform:translateY(-50%);
-    background:color-mix(in srgb, var(--accent) 14%, transparent);
-    border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-    color:var(--accent);
-  }
-  .schematic-stack > .sch-mini-chat .sch-mini-expand svg {
-    width:18px; height:18px;
-  }
-  .schematic-stack > .sch-mini-chat .sch-mini-expand:hover,
-  .schematic-stack > .sch-mini-chat .sch-mini-expand:active {
-    background:color-mix(in srgb, var(--accent) 22%, transparent);
+    width:22px; height:22px; top:4px; right:4px;
   }
   .schematic-stack-rows {
     list-style:none;
