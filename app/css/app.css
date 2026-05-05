@@ -2357,6 +2357,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     width:220px;
     height:220px;
   }
+  /* When the chat overlay is up on mobile, anchor the reactor near the
+     top so the conversation streams up toward it from the prompt input
+     at the bottom (familiar chat layout). Override the schematic-stack
+     anchor that pins it near the bottom. */
+  html:has(.app-main.monitor-active.monitor-on-schematic) {
+    --reactor-y:180px;
+  }
   .schematic-stack-reactor {
     position:relative;
     width:100%;
