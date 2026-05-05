@@ -2069,6 +2069,14 @@ const BlueprintsView = (() => {
       const pickerLabel = document.querySelector('#bp-tab-picker .bp-tab-picker-label');
       if (pickerLabel && tabLabel) pickerLabel.textContent = tabLabel;
       _toggleSchematicView();
+      // Sub-tab switches don't update the URL hash (a Router _render would
+      // tear down the whole view), so PromptPanel.syncRoute can't see the
+      // change. Notify it directly — Schematic shows the prompt surface,
+      // every other Bridge sub-tab hides it.
+      if (typeof PromptPanel !== 'undefined') {
+        if (tabId === 'schematic') PromptPanel.show();
+        else PromptPanel.hide();
+      }
       if (_activeTab !== 'blueprints') return;
       _updateRarityFilters();
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
