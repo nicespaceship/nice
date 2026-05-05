@@ -261,7 +261,9 @@ const MissionRunner = (() => {
       };
 
       // Captain with crew → dispatch orchestration loop
-      const _crewSlots = _ship && Object.keys(_ship.slot_assignments || {}).length;
+      const _crewSlots = _ship && Object.keys(
+        _ship.config?.slot_assignments || _ship.slots?.slot_assignments || _ship.slot_assignments || {}
+      ).length;
       if (_isCaptainAgent(agentBp) && _crewSlots && typeof AgentExecutor !== 'undefined') {
         const execResult = await runWithDispatch(agentBp, missionPrompt, _ship, {
           spaceshipId,
@@ -667,12 +669,12 @@ const MissionRunner = (() => {
   function _resolveSlotAgent(ship, slotName, agents) {
     if (!ship || !slotName || !agents) return null;
     const name = slotName.toLowerCase();
-    const assignments = ship.slot_assignments || {};
+    const assignments = ship.config?.slot_assignments || ship.slots?.slot_assignments || ship.slot_assignments || {};
 
     for (const agentId of Object.values(assignments)) {
       const agent = agents.find(a => a.id === agentId);
       if (!agent) continue;
-      const role = (agent.config?.role_type || agent.config?.role || '').toLowerCase();
+      const role = (agent.config?.role_type || agent.config?.role || agent.config?.agentRole || '').toLowerCase();
       if (role === name) return agent;
     }
 
@@ -693,8 +695,8 @@ const MissionRunner = (() => {
     if (!agentBp) return false;
     const cfg = agentBp.config || {};
     if (cfg.is_captain) return true;
-    const role = (cfg.role_type || cfg.role || '').toLowerCase();
-    return role === 'captain';
+    const role = (cfg.role_type || cfg.role || cfg.agentRole || '').toLowerCase();
+    return role === 'captain' || role === 'commander' || role === 'admiral';
   }
 
   /* Build the crew manifest block injected into the captain's context. */
@@ -746,7 +748,7 @@ const MissionRunner = (() => {
   async function runWithDispatch(captainBp, userPrompt, ship, opts) {
     opts = opts || {};
     const agents = State.get('agents') || [];
-    const assignments = ship?.slot_assignments || {};
+    const assignments = ship?.config?.slot_assignments || ship?.slots?.slot_assignments || ship?.slot_assignments || {};
 
     const crewAgents = Object.values(assignments)
       .map(id => agents.find(a => a.id === id))
