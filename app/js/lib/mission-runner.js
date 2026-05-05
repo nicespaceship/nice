@@ -78,11 +78,16 @@ const MissionRunner = (() => {
       }
     }
 
-    // Build an agent blueprint-like object for ShipLog
+    // Build an agent blueprint-like object for ShipLog.
+    // Resolution priority: catalog lookup (always current) → agent's own config.
+    // captain_blueprint_id in metadata is set by _runShipChat so captain agents
+    // that live only in localStorage (no user_agents row) still get their
+    // up-to-date catalog config (model, tools, system_prompt).
     let agentBp = null;
     if (agent) {
-      if (agent.blueprint_id && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
-        agentBp = Blueprints.getAgent(agent.blueprint_id);
+      const catalogId = agent.blueprint_id || mission.metadata?.captain_blueprint_id;
+      if (catalogId && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
+        agentBp = Blueprints.getAgent(catalogId);
       }
       if (!agentBp) {
         const cfg = agent.config || {};
