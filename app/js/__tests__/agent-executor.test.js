@@ -418,6 +418,50 @@ describe('AgentExecutor', () => {
       globalThis.McpBridge = _origMcpBridge;
       ToolRegistry.deregister(FALLBACK_TOOL);
     });
+
+    it('treats explicit empty tools array as authoritative (no fallback merge)', async () => {
+      // Stub agents (themed crew with no real wiring yet) ship `tools: []`
+      // to mean "I have NO tools — refuse data questions and redirect."
+      // Pre-fix this would silently fall back to every connected MCP tool
+      // and Adama on the Battlestar would call `calendar_ms_list_events`
+      // and answer calendar questions in M365's voice. The empty array
+      // must now be respected as authoritative.
+      const STUB_FALLBACK_TOOL = 'mcp:scope:stub_fallback_tool';
+      ToolRegistry.deregister(STUB_FALLBACK_TOOL);
+      ToolRegistry.register({
+        id: STUB_FALLBACK_TOOL,
+        name: 'stub_fallback_tool',
+        description: 'Should not leak into a tools:[] agent',
+        schema: { type: 'object', properties: {} },
+        execute: async () => null,
+      });
+
+      const _origMcpBridge = globalThis.McpBridge;
+      globalThis.McpBridge = { loadTools: () => [STUB_FALLBACK_TOOL] };
+
+      _scriptedResponses.push({
+        content: 'Final Answer: I cannot answer that.',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-stub-1', name: 'Adama-Stub', config: { role: 'Ops', tools: [] } },
+        { tools: [], spaceshipId: 'ship-stub-1' },
+      );
+      await controller.send('what is on my calendar today');
+
+      // execute() / converse() short-circuit to single-shot when no tools
+      // are available — the captured LLM request should have no tool list
+      // at all, OR an empty one. Crucially, the fallback tool must NOT
+      // have leaked in.
+      const req = _capturedRequests[0];
+      const toolNames = (req.tools || []).map(t => t.name);
+      expect(toolNames).not.toContain('stub_fallback_tool');
+
+      globalThis.McpBridge = _origMcpBridge;
+      ToolRegistry.deregister(STUB_FALLBACK_TOOL);
+    });
   });
 
   describe('_parseReActResponse (via structured JSON)', () => {

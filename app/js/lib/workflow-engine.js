@@ -251,7 +251,11 @@ const WorkflowEngine = (() => {
     if (_agentHasTools(agent) && typeof AgentExecutor !== 'undefined') {
       try {
         const r = await AgentExecutor.execute(agent, prompt, {
-          tools: agent?.config?.tools || [],
+          // Pass through directly so AgentExecutor can tell "no tools
+          // field" (fall back to all MCPs) from "explicitly empty"
+          // (no tools available). The `|| []` collapse erased that
+          // distinction — see agent-executor._buildExecContext.
+          tools: agent?.config?.tools,
           spaceshipId: _resolveSpaceshipId(workflow),
           maxSteps: agent?.config?.maxSteps,
         });
