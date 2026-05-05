@@ -2044,7 +2044,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    Sized to match the old mini-card footprint (80px wide) so the existing
    notch-frame and wire-connector geometry doesn't shift. */
 .sch-slot-card {
-  width:80px; min-height:80px;
+  width:80px; aspect-ratio:5/7;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:3px;
   padding:8px 4px;
