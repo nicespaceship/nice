@@ -3388,6 +3388,25 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const showByDefault = path === '/' || onSchematic;
     if (showByDefault) { if (_panel) _panel.style.display = ''; }
     else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
+    _maybeAutoExpandSchematicChat();
+  }
+
+  // ?chat=1 in the hash means "land on the Schematic with the full
+  // chat overlay already up." Used by the mobile-bar NICE icon
+  // (#/bridge?chat=1) so a single tap takes the user from anywhere
+  // straight into ship chat. Param is consumed (replaceState) so
+  // dismissing the overlay doesn't re-trigger from the same URL,
+  // and so a refresh on the cleaned URL behaves normally.
+  function _maybeAutoExpandSchematicChat() {
+    const hash = location.hash;
+    if (!/[?&]chat=1(?:&|$)/.test(hash)) return;
+    const cleaned = hash
+      .replace(/([?&])chat=1(&|$)/, (_m, pre, post) => post === '&' ? pre : '')
+      .replace(/[?&]$/, '');
+    try { history.replaceState(null, '', cleaned || '#/'); }
+    catch { /* non-critical */ }
+    _miniExpanded = true;
+    _showMonitor();
   }
 
   /* ── IDE Context injection ── */
