@@ -16,6 +16,8 @@ const SchematicView = (() => {
   let _el = null;
   let _lastMobile = null;
   let _unsubActivity = null;
+  let _unsubShips = null;
+  let _rerendering = false;
   function _isMobile() {
     try { return window.matchMedia('(max-width:600px)').matches; }
     catch (e) { return false; }
@@ -32,16 +34,26 @@ const SchematicView = (() => {
     const activeShip = activatedShips.find(s => s.id === shipId) || activatedShips[0];
 
     if (!activeShip) {
-      el.innerHTML = `
-        <div class="schematic-empty app-empty">
-          <h2>No spaceships deployed</h2>
-          <p>Activate a ship from the catalog or build one from scratch to put a crew on the schematic.</p>
-          <div class="app-empty-acts">
-            <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
-            <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
+      // If the user is authenticated, Supabase may not have finished syncing
+      // yet — show a neutral loading state instead of the empty-state CTAs so
+      // users don't see "No spaceships deployed" for a ship they just reset.
+      // Once activated-ships fires again (Blueprints._fireShipState after the
+      // user_spaceships query returns), we re-render with real data.
+      const isAuthed = typeof Utils !== 'undefined' && Utils.hasAuthSession();
+      if (isAuthed) {
+        el.innerHTML = '<div class="schematic-empty app-empty"><p class="text-muted">Loading crew&hellip;</p></div>';
+      } else {
+        el.innerHTML = `
+          <div class="schematic-empty app-empty">
+            <h2>No spaceships deployed</h2>
+            <p>Activate a ship from the catalog or build one from scratch to put a crew on the schematic.</p>
+            <div class="app-empty-acts">
+              <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
+              <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
       return;
     }
 
@@ -134,6 +146,25 @@ const SchematicView = (() => {
       });
     });
 
+    // Re-render when Supabase ships hydrate — fixes the false empty-state flash
+    // and the slot-count race after a hard reset. Blueprints._fireShipState()
+    // fires State.set('activated-ships') both at init (from localStorage) and
+    // again once the user_spaceships query returns, so we get exactly one
+    // re-render when real data arrives without polling.
+    // Re-render when Supabase ships hydrate. Only register once per view mount
+    // (_unsubShips already set means a prior render wired it). Since _el is
+    // module-level and always points to the current container, the same handler
+    // stays correct through resize / theme re-renders.
+    if (!_unsubShips && typeof State !== 'undefined') {
+      _unsubShips = () => { if (_el && !_rerendering) { _rerendering = true; render(_el); _rerendering = false; } };
+      // Defer past State.on's immediate-fire behavior: activated-ships already
+      // has data after init, so a synchronous State.on would recurse into
+      // render() before this call returns. Microtask lets render() finish first.
+      Promise.resolve().then(() => {
+        if (_unsubShips && typeof State !== 'undefined') State.on('activated-ships', _unsubShips);
+      });
+    }
+
     // Subscribe to live activity signals so the status node reflects
     // mission-runner / agent-executor work in real time. Replace any
     // prior subscription from a previous render of this view.
@@ -192,20 +223,14 @@ const SchematicView = (() => {
 
     function _miniCard(c, side) {
       const bp = c.bp;
-      const label = c.slot.label || '';
-      const rarity = c.slot.maxRarity || 'Common';
-      if (bp && CR) {
-        const status = _agentStatus(bp.id);
-        return '<div class="schematic-card-slot schematic-card-' + side + '" data-slot-idx="' + c.index + '" data-bp-id="' + bp.id + '" data-status="' + status + '">' +
-          CR.render('agent', 'mini', bp) +
-          '<span class="schematic-card-node" aria-hidden="true"></span>' +
-          (label ? '<div class="schematic-slot-label">' + _esc(label) + '</div>' : '') +
-        '</div>';
-      }
-      return '<div class="schematic-card-slot schematic-card-empty schematic-card-' + side + '" data-slot-idx="' + c.index + '">' +
-        '<div class="schematic-empty-slot">' +
-          '<div class="schematic-card-rarity" style="color:var(--text-muted)">+</div>' +
-        '</div>' +
+      const status = bp ? _agentStatus(bp.id) : 'idle';
+      const filled = !!bp;
+      const cls = 'schematic-card-slot schematic-card-' + side + (filled ? '' : ' schematic-card-empty');
+      return '<div class="' + cls + '" data-slot-idx="' + c.index + '"' +
+        (filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '') +
+        ' data-status="' + status + '">' +
+        _renderSlotCard(bp, c.slot) +
+        '<span class="schematic-card-node" aria-hidden="true"></span>' +
       '</div>';
     }
 
@@ -463,11 +488,12 @@ const SchematicView = (() => {
       const bpId = slotMap[String(slot.id)] || null;
       const bp = bpId ? _resolveBp(bpId) : null;
       const filled = !!bp;
-      const name = filled ? (bp.name || 'Agent') : 'Empty slot';
+      const name = filled ? (bp.name || 'Agent') : 'Empty';
       const rarity = filled ? _getBpRarity(bp) : (slot.maxRarity || 'Common');
       const rarityColor = RC[rarity] || 'var(--text-muted)';
       const initial = filled ? (bp.name || '?').charAt(0).toUpperCase() : '+';
-      const slotLabel = (slot.label || ('Slot ' + (i + 1))).toUpperCase();
+      const roleLabel = _roleLabel(slot.label || ('Slot ' + (i + 1)));
+      const cap = filled ? _capabilityLabel(bp) : null;
       const dataBp = filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '';
       const status = _agentStatus(filled ? bp.id : null);
       const cls = 'schematic-stack-row' + (filled ? ' schematic-stack-row-filled' : ' schematic-stack-row-empty');
@@ -475,8 +501,9 @@ const SchematicView = (() => {
         '<span class="schematic-row-node" aria-hidden="true"></span>' +
         '<span class="schematic-row-avatar">' + _esc(initial) + '</span>' +
         '<div class="schematic-row-info">' +
+          '<div class="schematic-row-role">' + _esc(roleLabel) + '</div>' +
           '<div class="schematic-row-name">' + _esc(name) + '</div>' +
-          '<div class="schematic-row-role">' + _esc(slotLabel) + ' · ' + _esc(rarity) + '</div>' +
+          (cap ? '<div class="schematic-row-cap">' + _esc(cap) + '</div>' : '') +
         '</div>' +
         '<button class="schematic-row-action" type="button" aria-label="' + (filled ? 'Manage' : 'Assign agent') + '" data-slot-id="' + _esc(slot.id) + '">' +
           (filled ? '⋯' : '+') +
@@ -528,7 +555,7 @@ const SchematicView = (() => {
     {
       let sumX = 0, sumY = 0;
       cards.forEach(card => {
-        const inner = card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
+        const inner = card.querySelector('.sch-slot-card') || card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
         const r = inner.getBoundingClientRect();
         sumX += (r.left - cRect.left) + r.width / 2;
         sumY += (r.top - cRect.top) + r.height / 2;
@@ -567,7 +594,7 @@ const SchematicView = (() => {
 
     cards.forEach((card, i) => {
       // Use the inner mini card (or empty slot) for precise center, fall back to wrapper
-      const inner = card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
+      const inner = card.querySelector('.sch-slot-card') || card.querySelector('.blueprint-card-mini') || card.querySelector('.schematic-empty-slot') || card;
       const cardRect = inner.getBoundingClientRect();
       const isLeft = card.classList.contains('schematic-card-left');
       const cardCx = cardRect.left - cRect.left + cardRect.width / 2;
@@ -632,6 +659,73 @@ const SchematicView = (() => {
     // the CSS vars above) is the single centerpiece. The HTML overlay
     // `.sch-core-hit-overlay` in `.schematic-center` owns the click hit.
     svgEl.innerHTML = paths + dots;
+  }
+
+  // Derive a short capability label from the blueprint's tool list.
+  // Maps MCP tool IDs to human-readable provider names.
+  function _capabilityLabel(bp) {
+    if (!bp) return null;
+    const tools = (bp.config && bp.config.tools) || [];
+    if (!tools.length) return null;
+    const t = tools[0] || '';
+    if (t.includes('hubspot'))                               return 'HubSpot';
+    if (t.includes('gmail') || t.includes('calendar') || t.includes('drive')) return 'Google Workspace';
+    if (t.includes('outlook') || t.includes('microsoft') || t.includes('sharepoint')) return 'Microsoft 365';
+    if (t.includes('slack'))                                 return 'Slack';
+    if (t.includes('linear'))                                return 'Linear';
+    if (t.includes('github'))                                return 'GitHub';
+    if (t.includes('notion'))                                return 'Notion';
+    if (t.includes('stripe'))                                return 'Stripe';
+    if (t.includes('generate-image') || t.includes('generate-video')) return 'Media';
+    if (t.includes('browser') || t.includes('web-search'))  return 'Web';
+    return (bp.config && (bp.config.type || bp.config.role)) || null;
+  }
+
+  // Map a raw slot label to the 15-role vocabulary.
+  // Strips naval/org-chart suffixes and normalises to the SaaS function name.
+  function _roleLabel(raw) {
+    if (!raw) return '';
+    const s = String(raw).trim()
+      .replace(/\s+(officer|specialist|lead|manager|director|chief|head|senior|junior)$/i, '')
+      .trim();
+    const lc = s.toLowerCase();
+    if (lc === 'captain' || lc === 'commander' || lc === 'admiral' || lc === 'co') return 'Captain';
+    if (lc.includes('comm') || lc.includes('message') || lc.includes('contact')) return 'Communications';
+    if (lc.includes('sales') || lc.includes('deal') || lc.includes('revenue') || lc.includes('tactical')) return 'Sales';
+    if (lc.includes('market') || lc.includes('brand') || lc.includes('content') || lc.includes('growth')) return 'Marketing';
+    if (lc.includes('engineer') || lc.includes('dev') || lc.includes('tech') || lc.includes('code')) return 'Engineering';
+    if (lc.includes('ops') || lc.includes('operat') || lc.includes('project')) return 'Operations';
+    if (lc.includes('product') || lc.includes('roadmap')) return 'Product';
+    if (lc.includes('success') || lc.includes('support') || lc.includes('customer')) return 'Customer Success';
+    if (lc.includes('finance') || lc.includes('billing') || lc.includes('account')) return 'Finance';
+    if (lc.includes('analyt') || lc.includes('data') || lc.includes('insight') || lc.includes('intel')) return 'Analytics';
+    if (lc.includes('design') || lc.includes('ux') || lc.includes('creative')) return 'Design';
+    if (lc.includes('legal') || lc.includes('compliance') || lc.includes('contract')) return 'Legal';
+    if (lc.includes('security') || lc.includes('infosec') || lc.includes('audit')) return 'Security';
+    if (lc.includes('people') || lc.includes('hr') || lc.includes('hiri') || lc.includes('recruit')) return 'People';
+    if (lc.includes('research') || lc.includes('intel') || lc.includes('recon')) return 'Research';
+    // Preserve the original label if it doesn't map cleanly
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // Renders the three-layer slot card used on the desktop schematic.
+  // Character / Role / Capability — one panel per slot, replacing the TCG mini-card.
+  function _renderSlotCard(bp, slot) {
+    const role = _roleLabel(slot.label || '');
+    const cap  = _capabilityLabel(bp);
+    const name = bp ? (bp.name || 'Agent') : null;
+    if (bp) {
+      return '<div class="sch-slot-card">' +
+        '<div class="sch-slot-role">' + _esc(role) + '</div>' +
+        '<div class="sch-slot-name">' + _esc(name) + '</div>' +
+        (cap ? '<div class="sch-slot-cap">' + _esc(cap) + '</div>' : '') +
+      '</div>';
+    }
+    return '<div class="sch-slot-card sch-slot-card-empty">' +
+      '<div class="sch-slot-role">' + _esc(role) + '</div>' +
+      '<div class="sch-slot-name sch-slot-name-empty">Empty</div>' +
+      '<div class="sch-slot-cap">Assign agent</div>' +
+    '</div>';
   }
 
   function _getAvailableAgents(slotMap) {
@@ -785,6 +879,8 @@ const SchematicView = (() => {
     if (_resizeTimer) { cancelAnimationFrame(_resizeTimer); _resizeTimer = null; }
     window.removeEventListener('resize', _onResize);
     if (_wiredRO) { _wiredRO.disconnect(); _wiredRO = null; }
+    if (_unsubShips) { try { if (typeof State !== 'undefined') State.off('activated-ships', _unsubShips); } catch (_) {} _unsubShips = null; }
+    _rerendering = false;
     if (_unsubActivity) { try { _unsubActivity(); } catch (_) {} _unsubActivity = null; }
     // Mobile-only mounts — picker pill in #app-fixed-tabs and swap sheet
     // at body level. Both need explicit unmount when leaving the view.
