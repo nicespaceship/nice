@@ -144,37 +144,13 @@ const CodeView = (() => {
             </button>
           </div>
         </div>
-        <div style="width:100%;max-width:600px;margin-top:8px;">
-          <h3 style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;font-family:var(--font-b)">OR DESCRIBE WHAT YOU WANT</h3>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="ide-ai-build-input" placeholder="Build me a portfolio site with a dark theme..." style="flex:1;background:var(--surface, #18181b);color:var(--text);border:1px solid var(--border, #3f3f46);border-radius:10px;padding:12px 16px;font-size:.85rem;font-family:var(--font-b);outline:none;">
-            <button class="btn btn-primary btn-lg" id="ide-ai-build-btn">Build it →</button>
-          </div>
-        </div>
       </div>
     `;
 
     el.addEventListener('click', _onProjectPickerClick);
-    // Enter key in AI build input
-    const buildInput = document.getElementById('ide-ai-build-input');
-    if (buildInput) {
-      buildInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ide-ai-build-btn')?.click(); }
-      });
-      buildInput.focus();
-    }
   }
 
   function _onProjectPickerClick(e) {
-    // "Build it" button or Enter in AI build input
-    if (e.target.closest('#ide-ai-build-btn')) {
-      const input = document.getElementById('ide-ai-build-input');
-      const desc = input?.value.trim();
-      if (!desc) return;
-      _buildFromDescription(desc);
-      return;
-    }
-
     const tpl = e.target.closest('[data-template]');
     if (tpl) {
       const template = tpl.dataset.template;
@@ -208,45 +184,6 @@ const CodeView = (() => {
       }
       _renderIDE(_el);
     }
-  }
-
-  async function _buildFromDescription(description) {
-    // Create a blank project and immediately ask AI to build it
-    const name = description.slice(0, 40).replace(/[^\w\s-]/g, '').trim() || 'AI Project';
-    const id = VirtualFS.createProject(name, 'blank');
-    _activeProject = id;
-    localStorage.setItem(Utils.KEYS.ideLastProject, id);
-    _openTabs = [{ path: 'index.html', dirty: false }];
-    _activeFile = 'index.html';
-    _aiMessages = [];
-    _renderIDE(_el);
-    if (typeof Gamification !== 'undefined') Gamification.addXP('create_project', 20);
-
-    // Send the description to AI
-    _aiMessages.push({ role: 'user', text: `Build this: ${description}. Create all necessary files (index.html, style.css, script.js). Make it look modern, dark-themed, and responsive.`, ts: Date.now() });
-    _aiSending = true;
-    _renderAIMessages();
-
-    try {
-      const systemPrompt = _buildIDESystemPrompt();
-      const history = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Build this: ${description}. Create all necessary files (index.html, style.css, script.js). Make it look modern, dark-themed, and responsive.` }
-      ];
-
-      if (typeof SB !== 'undefined' && SB.client) {
-        const content = await _callNiceAi(history);
-        _aiMessages.push({ role: 'assistant', text: content, ts: Date.now() });
-        _autoApplyCodeBlocks(content);
-      } else {
-        _aiMessages.push({ role: 'assistant', text: 'Sign in to use AI-powered project generation.', ts: Date.now() });
-      }
-    } catch (e) {
-      _aiMessages.push({ role: 'assistant', text: 'Error: ' + e.message, ts: Date.now() });
-    }
-
-    _aiSending = false;
-    _renderAIMessages();
   }
 
   /* ══════════════════════════════════════════════════════════════════
