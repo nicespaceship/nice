@@ -87,7 +87,19 @@ const MissionRunner = (() => {
     if (agent) {
       const catalogId = agent.blueprint_id || mission.metadata?.captain_blueprint_id;
       if (catalogId && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
-        agentBp = Blueprints.getAgent(catalogId);
+        const candidate = Blueprints.getAgent(catalogId);
+        // Blueprints.getAgent falls through to State/localStorage copies when the ID is
+        // a UUID — those are stale activated copies that may have an outdated llm_engine.
+        // Only accept if it's a proper catalog slug (not a UUID), so we always get the
+        // catalog's current model/tools config.
+        const isUUID = candidate && /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(candidate.id);
+        if (candidate && !isUUID) agentBp = candidate;
+      }
+      // Name-based catalog fallback: catches wizard-created agents whose IDs are UUIDs.
+      // getAgent() returns the stale State copy for those — search catalog by name instead.
+      if (!agentBp && agent.name && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
+        const needle = agent.name.toLowerCase();
+        agentBp = Blueprints.listAgents().find(a => a.name.toLowerCase() === needle) || null;
       }
       if (!agentBp) {
         const cfg = agent.config || {};
