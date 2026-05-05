@@ -4,6 +4,34 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const LLMConfig = (() => {
+
+  // Ordered capability ladder — most to least capable.
+  // Used to build per-call fallback chains: if the primary model is overloaded,
+  // we walk down to the next model the user has enabled.
+  // noTools: true — provider tool-use schema not compatible; strip tools on fallback.
+  const CAPABILITY_CHAIN = [
+    { id: 'claude-opus-4-7',   tier: 'premium',  noTools: false },
+    { id: 'gpt-5-4-pro',       tier: 'premium',  noTools: false },
+    { id: 'gemini-2-5-pro',    tier: 'premium',  noTools: false },
+    { id: 'claude-sonnet-4-6', tier: 'standard', noTools: false },
+    { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
+    { id: 'grok',              tier: 'standard', noTools: true  },
+    { id: 'llama-4-scout',     tier: 'standard', noTools: true  },
+    { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
+  ];
+
+  // Returns ordered fallback entries for a given primary model.
+  // Only includes models the user has enabled; gemini-2-5-flash always included last.
+  function buildFallbackChain(primaryModel, enabledModels) {
+    const enabled = enabledModels && typeof enabledModels === 'object'
+      ? Object.keys(enabledModels).filter(k => enabledModels[k])
+      : [];
+    const idx = CAPABILITY_CHAIN.findIndex(m => m.id === primaryModel);
+    return CAPABILITY_CHAIN
+      .slice(idx >= 0 ? idx + 1 : 0)
+      .filter(m => m.id === 'gemini-2-5-flash' || enabled.includes(m.id));
+  }
+
   /**
    * Convert numeric stats (0-100) to LLM request parameters.
    * @param {Object} stats  - { spd, acc, cap, pwr } each 0-100
@@ -70,6 +98,12 @@ const LLMConfig = (() => {
       if (profile.tier) params.tier = profile.tier;
     }
 
+    // Overload fallback chain — ordered list of models to retry if the primary
+    // is unavailable (503/429). Filtered to the user's enabled models so we
+    // never silently charge a pool the user hasn't subscribed to.
+    const enabledModels = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    params.fallbackChain = buildFallbackChain(model, enabledModels);
+
     return params;
   }
 
@@ -91,5 +125,5 @@ const LLMConfig = (() => {
     return isNaN(n) ? 50 : Math.max(0, Math.min(100, n));
   }
 
-  return { fromStats, forBlueprint };
+  return { fromStats, forBlueprint, buildFallbackChain, CAPABILITY_CHAIN };
 })();
