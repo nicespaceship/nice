@@ -740,16 +740,18 @@ const PromptPanel = (() => {
     // Build triage candidates from the ship's slot assignments. These ids
     // are agent blueprint ids; WorkflowEngine._resolveAgent handles the
     // user_agents.id ↔ blueprint_id ↔ catalog fallback chain.
-    const slotAssignments = ship.slot_assignments || {};
+    const slotAssignments = ship.config?.slot_assignments || ship.slots?.slot_assignments || ship.slot_assignments || {};
     const candidates = Object.values(slotAssignments).filter(Boolean);
 
-    // Build the single-node plan. Empty crew falls through to triage's
-    // own default-to-all-activated-agents behavior.
-    const planNode = {
-      id: 'root',
-      type: 'triage',
-      config: { candidates, prompt: text },
-    };
+    // If the ship has a captain agent in its crew, bypass triage entirely
+    // and create a plain (non-DAG) mission assigned to the captain. MissionRunner
+    // detects _isCaptainAgent on the resolved agent and calls runWithDispatch,
+    // which injects the crew manifest and intercepts [DISPATCH:] tokens.
+    const stateAgents = State.get('agents') || [];
+    const captainAgent = candidates
+      .map(id => stateAgents.find(a => a.id === id || a.blueprint_id === id))
+      .filter(Boolean)
+      .find(a => typeof MissionRunner !== 'undefined' && MissionRunner._isCaptainAgent(a));
 
     let run = null;
     try {
@@ -758,10 +760,12 @@ const PromptPanel = (() => {
         spaceship_id: ship.id,
         mission_id: null,
         title: text.length > 60 ? text.slice(0, 57) + '…' : text,
+        agent_id: captainAgent ? (captainAgent.supabase_id || null) : null,
+        agent_name: captainAgent ? captainAgent.name : null,
         status: 'queued',
         priority: 'medium',
         progress: 0,
-        plan_snapshot: { shape: 'dag', nodes: [planNode], edges: [] },
+        plan_snapshot: captainAgent ? null : { shape: 'dag', nodes: [{ id: 'root', type: 'triage', config: { candidates, prompt: text } }], edges: [] },
         metadata: { source: 'prompt_panel', input: text },
       });
       const missions = State.get('missions') || [];
