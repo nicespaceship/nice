@@ -18,6 +18,7 @@ const IntegrationsView = (() => {
     { id:'hubspot',   name:'HubSpot',           desc:'CRM objects, properties, campaigns — read & write',          icon:'brand-hubspot',   tools:['search_crm_objects','get_crm_objects','manage_crm_objects','search_properties','get_properties','search_owners','get_organization_details','get_user_details','get_campaign_contacts_by_type','get_campaign_analytics','get_campaign_asset_metrics'], transport:'streamable-http', auth:'oauth', cat:'crm' },
     { id:'github',    name:'GitHub',            desc:'Repos, issues, pull requests, code, releases, Actions — read-only', icon:'brand-github', tools:['search_code','search_issues','search_pull_requests','search_repositories','search_users','get_commit','get_file_contents','get_label','get_latest_release','get_me','get_release_by_tag','get_tag','get_team_members','get_teams','issue_read','pull_request_read','list_branches','list_commits','list_issue_types','list_issues','list_pull_requests','list_releases','list_tags'], transport:'streamable-http', auth:'oauth', cat:'dev' },
     { id:'slack',     name:'Slack',             desc:'Messages, channels, threads, canvases, users — read-only',         icon:'brand-slack',  tools:['slack_search_public','slack_search_public_and_private','slack_search_channels','slack_search_users','slack_read_channel','slack_read_thread','slack_read_canvas','slack_read_user_profile'], transport:'streamable-http', auth:'oauth', cat:'comms' },
+    { id:'linear',    name:'Linear',            desc:'Issues, projects, comments, teams, cycles — read-only',            icon:'brand-linear', tools:['list_issues','get_issue','list_projects','get_project','list_teams','get_team','list_users','get_user','list_comments','list_cycles','list_labels','list_my_issues','search_documentation'], transport:'streamable-http', auth:'oauth', cat:'pm' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -146,6 +147,15 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Slack Connected', message: 'Your Slack workspace is now linked. Agents can read messages, channels, threads, canvases, and users.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('linear_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Linear Connected', message: 'Your Linear workspace is now linked. Agents can read issues, projects, comments, teams, and cycles.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -458,6 +468,11 @@ const IntegrationsView = (() => {
     ? `${SB.client.supabaseUrl}/functions/v1/slack-oauth`
     : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/slack-oauth';
 
+  /** Linear OAuth base URL for the edge function */
+  const LINEAR_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/linear-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/linear-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
@@ -483,6 +498,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'slack') {
       return _initiateSlackOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'linear') {
+      return _initiateLinearOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -588,6 +606,22 @@ const IntegrationsView = (() => {
 
     const redirectUrl = window.location.origin + '/app/#/security';
     const authUrl = `${SLACK_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    window.location.href = authUrl;
+  }
+
+  /** Initiate Linear OAuth flow — redirects to Linear consent screen */
+  function _initiateLinearOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Linear.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${LINEAR_OAUTH_URL}/authorize`
       + `?user_id=${encodeURIComponent(user.id)}`
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
