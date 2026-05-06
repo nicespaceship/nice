@@ -21,6 +21,7 @@ const IntegrationsView = (() => {
     { id:'linear',    name:'Linear',            desc:'Issues, projects, comments, teams, cycles, docs — read-only',      icon:'brand-linear', tools:['list_issues','get_issue','list_projects','get_project','list_teams','get_team','list_users','get_user','list_comments','list_cycles','list_milestones','get_milestone','list_documents','get_document','list_issue_labels','list_project_labels','list_issue_statuses','get_issue_status','get_attachment','extract_images','search_documentation'], transport:'streamable-http', auth:'oauth', cat:'pm' },
     { id:'notion',    name:'Notion',            desc:'Pages, databases, comments, teams, users — read-only',             icon:'brand-notion', tools:['notion-search','notion-fetch','notion-get-comments','notion-get-teams','notion-get-users'], transport:'streamable-http', auth:'oauth', cat:'docs' },
     { id:'stripe',    name:'Stripe',            desc:'Customers, payments, subscriptions, invoices, products — read-only', icon:'brand-stripe', tools:['list_customers','list_payment_intents','list_subscriptions','list_invoices','list_products','list_prices','list_coupons','list_disputes','retrieve_balance','get_stripe_account_info','fetch_stripe_resources','search_stripe_resources','search_stripe_documentation','stripe_api_details','stripe_api_search','stripe_integration_recommender'], transport:'streamable-http', auth:'oauth', cat:'payments' },
+    { id:'atlassian', name:'Atlassian',         desc:'Jira issues, Confluence pages, Compass components — read-only',     icon:'brand-atlassian', tools:['searchJiraIssuesUsingJql','getJiraIssue','getVisibleJiraProjects','getTransitionsForJiraIssue','getIssueLinkTypes','getJiraIssueRemoteIssueLinks','getJiraIssueTypeMetaWithFields','getJiraProjectIssueTypesMetadata','lookupJiraAccountId','searchConfluenceUsingCql','getConfluencePage','getConfluenceSpaces','getPagesInConfluenceSpace','getConfluencePageDescendants','getConfluencePageFooterComments','getConfluencePageInlineComments','getConfluenceCommentChildren','searchAtlassian','fetchAtlassian','getTeamworkGraphContext','getTeamworkGraphObject','getCompassComponent','getCompassComponents','getCompassComponentActivityEvents','getCompassComponentLabels','getCompassComponentTypes','getCompassCustomFieldDefinitions','getCompassComponentsOwnedByMyTeams','atlassianUserInfo','getAccessibleAtlassianResources'], transport:'streamable-http', auth:'oauth', cat:'pm' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -176,6 +177,15 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Stripe Connected', message: 'Your Stripe account is now linked. Agents can read customers, charges, subscriptions, invoices, and products.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('atlassian_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Atlassian Connected', message: 'Your Atlassian site is now linked. Agents can search Jira issues, read Confluence pages, and pull Compass components.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -503,6 +513,11 @@ const IntegrationsView = (() => {
     ? `${SB.client.supabaseUrl}/functions/v1/stripe-oauth`
     : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/stripe-oauth';
 
+  /** Atlassian OAuth base URL for the edge function */
+  const ATLASSIAN_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/atlassian-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/atlassian-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
@@ -537,6 +552,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'stripe') {
       return _initiateStripeOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'atlassian') {
+      return _initiateAtlassianOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -690,6 +708,22 @@ const IntegrationsView = (() => {
 
     const redirectUrl = window.location.origin + '/app/#/security';
     const authUrl = `${STRIPE_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    window.location.href = authUrl;
+  }
+
+  /** Initiate Atlassian OAuth flow — redirects to Atlassian consent screen */
+  function _initiateAtlassianOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Atlassian.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${ATLASSIAN_OAUTH_URL}/authorize`
       + `?user_id=${encodeURIComponent(user.id)}`
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
