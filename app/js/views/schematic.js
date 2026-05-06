@@ -711,14 +711,17 @@ const SchematicView = (() => {
   // Renders the three-layer slot card used on the desktop schematic.
   // Character / Role / Capability — one panel per slot, replacing the TCG mini-card.
   function _renderSlotCard(bp, slot) {
-    const role = _roleLabel(slot.label || '');
-    const cap  = _capabilityLabel(bp);
-    const name = bp ? (bp.name || 'Agent') : null;
+    const role  = _roleLabel(slot.label || '');
+    const cap   = _capabilityLabel(bp);
+    const name  = bp ? (bp.name || 'Agent') : null;
+    const isStub = bp && !cap; // agent assigned but no live MCP tools
     if (bp) {
-      return '<div class="sch-slot-card">' +
+      return '<div class="sch-slot-card' + (isStub ? ' sch-slot-card-stub' : '') + '">' +
         '<div class="sch-slot-role">' + _esc(role) + '</div>' +
         '<div class="sch-slot-name">' + _esc(name) + '</div>' +
-        (cap ? '<div class="sch-slot-cap">' + _esc(cap) + '</div>' : '') +
+        (cap
+          ? '<div class="sch-slot-cap">' + _esc(cap) + '</div>'
+          : '<div class="sch-slot-cap sch-slot-cap-stub">No live tools</div>') +
       '</div>';
     }
     return '<div class="sch-slot-card sch-slot-card-empty">' +

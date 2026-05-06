@@ -2109,6 +2109,15 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   white-space:nowrap;
   opacity:.8;
 }
+/* Stub agents: assigned but no live MCP tools — dimmed border + muted cap label */
+.sch-slot-card-stub {
+  border-color:var(--border, rgba(255,255,255,.12));
+  opacity:.8;
+}
+.sch-slot-cap-stub {
+  font-style:italic;
+  opacity:.45;
+}
 /* Float animation stagger — mirrors the old blueprint-card-mini delays */
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(2) .sch-slot-card { animation-delay:-1s; }
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(3) .sch-slot-card { animation-delay:-2s; }
