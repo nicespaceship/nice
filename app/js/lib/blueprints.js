@@ -84,6 +84,14 @@ const Blueprints = (() => {
     // Purge stale IDs that no longer exist in catalog
     _purgeStaleIds();
 
+    // Heal pre-resolver activations whose persistent rows still hold the
+    // legacy hardcoded fakes. Fire-and-forget — DB writes don't block init,
+    // and the runtime resolver in getActivatedAgents already serves a
+    // correct view while writes settle.
+    refreshActivatedAgentsFromCatalog().catch(err => {
+      console.warn('[Blueprints] init refreshActivatedAgentsFromCatalog failed:', err.message);
+    });
+
     // Heal legacy state drift: ships deployed via the old ShipSetupWizard
     // (pre-SSOT rewrite) used the 'bp-' + catalog_id convention for
     // _shipState keys and State.spaceships entry ids, while _activatedShipIds
@@ -1114,6 +1122,91 @@ const Blueprints = (() => {
       flavor: catalog.flavor || agent.flavor,
       config: mergedCfg,
     };
+  }
+
+  /**
+   * Pure helper: returns a refreshed copy of `agent` if any catalog-driven
+   * config field would change vs the stored value, else null. Lets callers
+   * skip writes when nothing actually moved. Used by the persistent-store
+   * migration below.
+   */
+  function _diffAgainstCatalog(agent) {
+    if (!agent) return null;
+    const live = resolveLiveAgent(agent);
+    if (live === agent) return null;
+    const aCfg = agent.config || {};
+    const lCfg = live.config || {};
+    const cfgChanged = _CATALOG_DRIVEN_CONFIG.some(
+      k => JSON.stringify(aCfg[k]) !== JSON.stringify(lCfg[k])
+    );
+    const descChanged = live.description !== agent.description;
+    const flavorChanged = live.flavor !== agent.flavor;
+    return (cfgChanged || descChanged || flavorChanged) ? live : null;
+  }
+
+  /**
+   * One-time migration that walks every persistent agent store and rewrites
+   * stale catalog-driven config fields from the live catalog. Idempotent —
+   * a second call is a no-op when nothing has drifted.
+   *
+   * Without this, the runtime resolver wired into getActivatedAgents serves
+   * a correct merged view, but persistent rows (Supabase user_agents,
+   * customAgents localStorage, State.agents) keep their stale snapshots and
+   * get re-loaded as-is on the next session. This call heals the snapshots
+   * so the merge becomes a no-op going forward.
+   *
+   * Catalog load is lazy, so this can run with an incomplete _agents list.
+   * That's safe — entries it can't match stay untouched until the next
+   * call (after _loadCatalogFromDB completes).
+   *
+   * Returns { refreshed, dbUpdated } counts. DB writes are fire-and-forget
+   * (concurrent, errors logged) so init() doesn't block on them.
+   */
+  async function refreshActivatedAgentsFromCatalog() {
+    const refreshedIds = new Set();
+    let dbUpdated = 0;
+    const dbWrites = [];
+
+    // 1. customAgents localStorage — the offline / guest store
+    try {
+      const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+      let dirty = false;
+      for (let i = 0; i < stored.length; i++) {
+        const next = _diffAgainstCatalog(stored[i]);
+        if (next) { stored[i] = next; dirty = true; refreshedIds.add(next.id); }
+      }
+      if (dirty) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
+    } catch {}
+
+    // 2. State.agents — drives every view. Refire after to repaint.
+    if (typeof State !== 'undefined') {
+      const agents = State.get('agents') || [];
+      const next = [...agents];
+      let dirty = false;
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
+      for (let i = 0; i < next.length; i++) {
+        const refreshedAgent = _diffAgainstCatalog(next[i]);
+        if (!refreshedAgent) continue;
+        next[i] = refreshedAgent;
+        dirty = true;
+        refreshedIds.add(refreshedAgent.id);
+        // Queue a Supabase row update for every UUID-keyed agent. Local-only
+        // ids (e.g. 'agent-<ts>-<rand>') don't have a row to update.
+        if (_canSync() && uuidRe.test(refreshedAgent.id)) {
+          dbWrites.push(
+            SB.db('user_agents').update(refreshedAgent.id, { config: refreshedAgent.config })
+              .then(() => { dbUpdated++; })
+              .catch(e => console.warn('[Blueprints] refresh DB update failed:', refreshedAgent.id, e.message))
+          );
+        }
+      }
+      if (dirty) State.set('agents', next);
+    }
+
+    if (dbWrites.length) await Promise.allSettled(dbWrites);
+    const refreshed = refreshedIds.size;
+    if (refreshed) _fireAgentState();
+    return { refreshed, dbUpdated };
   }
 
   /** Returns fully constructed agent objects from activated blueprint IDs */
@@ -2445,7 +2538,7 @@ const Blueprints = (() => {
     // Agent activation
     activateAgent, deactivateAgent, isAgentActivated,
     getActivatedAgentIds, getActivatedAgents,
-    resolveLiveAgent,
+    resolveLiveAgent, refreshActivatedAgentsFromCatalog,
 
     // Ship activation
     activateShip, deactivateShip, isShipActivated, cleanupOrphans,
