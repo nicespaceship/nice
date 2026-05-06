@@ -648,6 +648,46 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       expect(result).toBeTruthy();
       delete globalThis.AgentExecutor;
     });
+
+    it('dispatches to catalog agents found only in activated-agents state', async () => {
+      // Catalog agents (e.g. bp-agent-google-workspace) live in State.activated-agents,
+      // NOT State.agents. Crew lookup must merge both lists.
+      const catalogAgent = { id: 'bp-agent-workspace', name: 'Workspace Agent', config: { role_type: 'communications', tools: ['calendar_list'] } };
+      State.set('agents', []); // empty user_agents
+      State.set('activated-agents', [catalogAgent]);
+
+      const shipWithCatalogCrew = {
+        id: 'ship-ent', name: 'Enterprise',
+        slot_assignments: { 'slot-0': 'cap-1', 'slot-1': 'bp-agent-workspace' },
+      };
+
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          calls.push({ bpId: bp.id || bp.name, prompt });
+          if (calls.length === 1) {
+            return { finalAnswer: '[DISPATCH: communications] What is on my calendar?', steps: [], metadata: {} };
+          }
+          if (calls.length === 2) {
+            return { finalAnswer: 'You have a standup at 10am.', steps: [], metadata: {} };
+          }
+          return { finalAnswer: 'Your standup is at 10am.', steps: [], metadata: {} };
+        },
+      };
+
+      const result = await MissionRunner.runWithDispatch(captainBp, 'What is on my calendar?', shipWithCatalogCrew, {});
+      expect(result.finalAnswer).toBe('Your standup is at 10am.');
+      // Crew (catalog agent) must have been called — 3 calls total
+      expect(calls).toHaveLength(3);
+      delete globalThis.AgentExecutor;
+
+      // Restore
+      State.set('agents', [
+        { id: 'cap-1', name: 'Adama', config: { role_type: 'captain', is_captain: true, tools: [] } },
+        { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales', tools: ['crm-search'] } },
+      ]);
+      State.set('activated-agents', []);
+    });
   });
 
   it('templated run (no source flag) still lands in review (regression guard)', async () => {

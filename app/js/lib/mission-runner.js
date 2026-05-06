@@ -783,7 +783,15 @@ const MissionRunner = (() => {
      Returns the same shape as AgentExecutor.execute(). */
   async function runWithDispatch(captainBp, userPrompt, ship, opts) {
     opts = opts || {};
-    const agents = State.get('agents') || [];
+    // Merge user-created agents (State.agents) with activated catalog agents
+    // (State.activated-agents). Slot assignments may point to catalog IDs like
+    // 'bp-agent-google-workspace' which only exist in the activated-agents list.
+    const userAgents = State.get('agents') || [];
+    const catalogAgents = State.get('activated-agents') || [];
+    const agentMap = new Map();
+    userAgents.forEach(a => agentMap.set(a.id, a));
+    catalogAgents.forEach(a => { if (!agentMap.has(a.id)) agentMap.set(a.id, a); });
+    const agents = [...agentMap.values()];
     const assignments = ship?.config?.slot_assignments || ship?.slots?.slot_assignments || ship?.slot_assignments || {};
 
     const crewAgents = Object.values(assignments)
