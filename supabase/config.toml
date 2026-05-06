@@ -407,6 +407,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.stripe-oauth]
 verify_jwt = false
+[functions.atlassian-oauth]
+verify_jwt = false
 
 [analytics]
 enabled = true
