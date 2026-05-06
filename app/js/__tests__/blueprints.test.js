@@ -469,4 +469,302 @@ describe('Blueprints', () => {
       expect(removeCalls.length).toBe(1);
     });
   });
+
+  describe('resolveLiveAgent — catalog-driven capability merge', () => {
+    beforeEach(() => { globalThis.SB = undefined; });
+
+    it('returns the agent unchanged when no blueprint_id matches catalog', () => {
+      const agent = { id: 'unknown-uuid', name: 'Stray', config: { role: 'X', tools: ['a'] } };
+      const live = Blueprints.resolveLiveAgent(agent);
+      expect(live).toEqual(agent);
+    });
+
+    it('returns null/undefined unchanged', () => {
+      expect(Blueprints.resolveLiveAgent(null)).toBe(null);
+      expect(Blueprints.resolveLiveAgent(undefined)).toBe(undefined);
+    });
+
+    it('refreshes catalog-driven config fields on a slug-keyed activation', () => {
+      // sa1 catalog config is { role: 'Research' } — pretend the catalog
+      // grew a system_prompt and tools list after the user activated.
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'You are a research umbrella.';
+      catalog.config.tools = ['web-search', 'browser'];
+      catalog.config.llm_engine = 'gemini-2.5-pro';
+      catalog.config.is_captain = false;
+
+      const stored = {
+        id: 'sa1', name: 'Web Researcher',
+        config: { role: 'Research', tools: [], system_prompt: 'old', temperature: 0.5 },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('You are a research umbrella.');
+      expect(live.config.tools).toEqual(['web-search', 'browser']);
+      expect(live.config.llm_engine).toBe('gemini-2.5-pro');
+      expect(live.config.is_captain).toBe(false);
+      // User-tunable fields preserved
+      expect(live.config.temperature).toBe(0.5);
+      expect(live.config.role).toBe('Research');
+    });
+
+    it('preserves stored agent identity (id, name)', () => {
+      const stored = { id: 'sa2', name: 'My Custom Reviewer', config: { role: 'Code' } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.id).toBe('sa2');
+      expect(live.name).toBe('My Custom Reviewer');
+    });
+
+    it('resolves catalog by agent.blueprint_id when id is a UUID', () => {
+      const catalog = Blueprints.getAgent('sa3');
+      catalog.config.system_prompt = 'You are an analyst.';
+      catalog.config.tools = ['bigquery'];
+
+      const stored = {
+        id: '11111111-2222-4333-8444-555555555555',
+        name: 'Wizard-created agent',
+        blueprint_id: 'sa3',
+        config: { role: 'Data', tools: [] },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('You are an analyst.');
+      expect(live.config.tools).toEqual(['bigquery']);
+    });
+
+    it('resolves catalog by config.blueprint_id (legacy storage location)', () => {
+      const catalog = Blueprints.getAgent('sa3');
+      catalog.config.system_prompt = 'You are an analyst.';
+
+      const stored = {
+        id: 'uuid-2',
+        config: { role: 'Data', blueprint_id: 'sa3' },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('You are an analyst.');
+      // blueprint_id must survive on the merged config so downstream callers
+      // can re-resolve later without losing the catalog link.
+      expect(live.config.blueprint_id).toBe('sa3');
+    });
+
+    it('resolves bp-prefixed and bare ids interchangeably', () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Umbrella prompt.';
+
+      const withPrefix = { id: 'uuid-3', blueprint_id: 'bp-sa1', config: {} };
+      const withoutPrefix = { id: 'uuid-4', blueprint_id: 'sa1', config: {} };
+      expect(Blueprints.resolveLiveAgent(withPrefix).config.system_prompt).toBe('Umbrella prompt.');
+      expect(Blueprints.resolveLiveAgent(withoutPrefix).config.system_prompt).toBe('Umbrella prompt.');
+    });
+
+    it('does not clobber stored config fields outside the catalog allowlist', () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog-driven.';
+
+      const stored = {
+        id: 'sa1', name: 'X',
+        config: {
+          role: 'Research',
+          tools: [],
+          temperature: 0.9,
+          memory: true,
+          custom_user_field: 'keep me',
+        },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.temperature).toBe(0.9);
+      expect(live.config.memory).toBe(true);
+      expect(live.config.custom_user_field).toBe('keep me');
+    });
+
+    it('resolves synthetic crew ids ("<shipId>-crew-<n>") to the ship blueprint node', () => {
+      const ship = Blueprints.getSpaceship('ship-01');
+      ship.metadata = {
+        crew: [
+          { label: 'Captain', config: { agentRole: 'Captain', is_captain: true, system_prompt: 'You command.', tools: [] } },
+          { label: 'Comms', config: { agentRole: 'Communications', system_prompt: 'You handle comms.', tools: ['gmail-search', 'gmail-send'] } },
+        ],
+      };
+
+      const captainStored = { id: 'uuid-cap', blueprint_id: 'ship-01-crew-0', config: { role: 'Captain', tools: [] } };
+      const captainLive = Blueprints.resolveLiveAgent(captainStored);
+      expect(captainLive.config.system_prompt).toBe('You command.');
+      expect(captainLive.config.is_captain).toBe(true);
+
+      const commsStored = { id: 'uuid-comms', blueprint_id: 'ship-01-crew-1', config: { role: 'Communications', tools: [] } };
+      const commsLive = Blueprints.resolveLiveAgent(commsStored);
+      expect(commsLive.config.system_prompt).toBe('You handle comms.');
+      expect(commsLive.config.tools).toEqual(['gmail-search', 'gmail-send']);
+    });
+
+    it('handles synthetic crew ids with bp- prefix on the ship id', () => {
+      const ship = Blueprints.getSpaceship('ship-01');
+      ship.metadata = { crew: [{ label: 'Captain', config: { system_prompt: 'Hello.', tools: [] } }] };
+
+      const stored = { id: 'uuid-x', blueprint_id: 'bp-ship-01-crew-0', config: { tools: [] } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('Hello.');
+    });
+
+    it('returns the agent unchanged when synthetic crew id points past the crew array', () => {
+      const ship = Blueprints.getSpaceship('ship-01');
+      ship.metadata = { crew: [{ label: 'Captain', config: { tools: [] } }] };
+
+      const stored = { id: 'uuid-x', blueprint_id: 'ship-01-crew-9', config: { tools: ['a'] } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live).toEqual(stored);
+    });
+
+    it('returns the agent unchanged when synthetic crew id refers to an unknown ship', () => {
+      const stored = { id: 'uuid-x', blueprint_id: 'ship-nope-crew-0', config: { tools: ['a'] } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live).toEqual(stored);
+    });
+  });
+
+  describe('refreshActivatedAgentsFromCatalog — heal stale persistent rows', () => {
+    let updateCalls;
+    let _origSB;
+
+    beforeEach(async () => {
+      updateCalls = [];
+      _origSB = globalThis.SB;
+      globalThis.SB = {
+        isReady: () => true,
+        isOnline: () => true,
+        auth: () => ({ user: () => ({ id: 'user-1' }) }),
+        db: (table) => ({
+          update: async (id, payload) => { updateCalls.push({ table, id, payload }); return { id }; },
+          list: async () => [],
+          create: async () => ({}),
+          remove: async () => ({}),
+        }),
+      };
+      globalThis.State.set('user', { id: 'user-1' });
+      try { globalThis.localStorage.removeItem(globalThis.Utils.KEYS.customAgents); } catch {}
+      await Blueprints.init();
+      // Earlier resolver tests mutate seed configs (sa1/sa3) by reference.
+      // Reset to a known shape so the diff is deterministic per-test.
+      const sa1 = Blueprints.getAgent('sa1');
+      if (sa1) sa1.config = { role: 'Research' };
+    });
+
+    afterEach(() => { globalThis.SB = _origSB; });
+
+    it('rewrites a stale State.agents entry whose system_prompt drifted from catalog', async () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog v2.';
+
+      const uuid = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+      globalThis.State.set('agents', [{
+        id: uuid, name: 'Old copy', blueprint_id: 'sa1',
+        config: { role: 'Research', system_prompt: 'Catalog v1 stale.', temperature: 0.7 },
+      }]);
+
+      const result = await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      expect(result.refreshed).toBe(1);
+      const agents = globalThis.State.get('agents');
+      expect(agents[0].config.system_prompt).toBe('Catalog v2.');
+      // User-tunable field preserved
+      expect(agents[0].config.temperature).toBe(0.7);
+    });
+
+    it('writes back to user_agents Supabase rows for UUID-keyed agents', async () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog v2.';
+      catalog.config.tools = ['web-search'];
+
+      const uuid = 'bbbbbbbb-cccc-4ddd-8eee-ffffffffffff';
+      globalThis.State.set('agents', [{
+        id: uuid, name: 'Old copy', blueprint_id: 'sa1',
+        config: { role: 'Research', system_prompt: 'stale', tools: [] },
+      }]);
+
+      const result = await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      expect(result.dbUpdated).toBe(1);
+      expect(updateCalls).toHaveLength(1);
+      expect(updateCalls[0].table).toBe('user_agents');
+      expect(updateCalls[0].id).toBe(uuid);
+      expect(updateCalls[0].payload.config.system_prompt).toBe('Catalog v2.');
+      expect(updateCalls[0].payload.config.tools).toEqual(['web-search']);
+    });
+
+    it('skips Supabase write for non-UUID local-only ids', async () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog v2.';
+
+      globalThis.State.set('agents', [{
+        id: 'agent-1234567890-abc', name: 'Local', blueprint_id: 'sa1',
+        config: { system_prompt: 'stale' },
+      }]);
+
+      const result = await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      expect(result.refreshed).toBe(1);
+      expect(result.dbUpdated).toBe(0);
+      expect(updateCalls).toHaveLength(0);
+    });
+
+    it('is a no-op when stored agents already match the catalog', async () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog v2.';
+
+      globalThis.State.set('agents', [{
+        id: 'sa1', name: 'Web Researcher', blueprint_id: 'sa1',
+        config: { role: 'Research', system_prompt: 'Catalog v2.' },
+      }]);
+
+      const result = await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      expect(result.refreshed).toBe(0);
+      expect(updateCalls).toHaveLength(0);
+    });
+
+    it('is idempotent — second call after a refresh writes nothing', async () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog v2.';
+
+      const uuid = 'cccccccc-dddd-4eee-8fff-aaaaaaaaaaaa';
+      globalThis.State.set('agents', [{
+        id: uuid, name: 'X', blueprint_id: 'sa1',
+        config: { system_prompt: 'stale' },
+      }]);
+
+      const first = await Blueprints.refreshActivatedAgentsFromCatalog();
+      const second = await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      expect(first.refreshed).toBe(1);
+      expect(second.refreshed).toBe(0);
+      expect(updateCalls).toHaveLength(1); // only the first call wrote
+    });
+
+    it('also refreshes customAgents localStorage entries', async () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog v2.';
+
+      const stored = [{
+        id: 'agent-local-1', name: 'X', blueprint_id: 'sa1',
+        config: { role: 'Research', system_prompt: 'stale' },
+      }];
+      globalThis.localStorage.setItem(globalThis.Utils.KEYS.customAgents, JSON.stringify(stored));
+
+      await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      const after = JSON.parse(globalThis.localStorage.getItem(globalThis.Utils.KEYS.customAgents));
+      expect(after[0].config.system_prompt).toBe('Catalog v2.');
+    });
+
+    it('leaves agents with no catalog match untouched', async () => {
+      const orig = {
+        id: 'no-match-uuid', name: 'Custom', blueprint_id: 'nonexistent-bp',
+        config: { system_prompt: 'mine', tools: ['a'] },
+      };
+      globalThis.State.set('agents', [orig]);
+
+      const result = await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      expect(result.refreshed).toBe(0);
+      expect(globalThis.State.get('agents')[0]).toEqual(orig);
+    });
+  });
 });

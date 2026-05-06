@@ -84,6 +84,14 @@ const Blueprints = (() => {
     // Purge stale IDs that no longer exist in catalog
     _purgeStaleIds();
 
+    // Heal pre-resolver activations whose persistent rows still hold the
+    // legacy hardcoded fakes. Fire-and-forget — DB writes don't block init,
+    // and the runtime resolver in getActivatedAgents already serves a
+    // correct view while writes settle.
+    refreshActivatedAgentsFromCatalog().catch(err => {
+      console.warn('[Blueprints] init refreshActivatedAgentsFromCatalog failed:', err.message);
+    });
+
     // Heal legacy state drift: ships deployed via the old ShipSetupWizard
     // (pre-SSOT rewrite) used the 'bp-' + catalog_id convention for
     // _shipState keys and State.spaceships entry ids, while _activatedShipIds
@@ -274,11 +282,14 @@ const Blueprints = (() => {
 
           const node = nodes.find(n => n.label === agentName);
           const newId = `agent-${shipBpId}-${slotIdx}`;
+          const crewBpId = `${shipBpId}-crew-${slotIdx}`;
+          const baseCfg = node?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] };
           const newAgent = {
             id: newId, name: agentName,
             category: node?.config?.agentRole || 'Ops',
             rarity: node?.rarity || 'Common',
-            config: node?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] },
+            blueprint_id: crewBpId,
+            config: { ...baseCfg, blueprint_id: crewBpId },
             stats: { spd: 7, acc: 8, cap: 6, pwr: 7 },
             tags: [], activated: true,
           };
@@ -299,11 +310,14 @@ const Blueprints = (() => {
           if (!inSeed && !inCustom && nodes.length) {
             const node = nodes[parseInt(slotIdx, 10)];
             if (node) {
+              const crewBpId = `${shipBpId}-crew-${slotIdx}`;
+              const baseCfg = node.config || { role: node.label, type: 'Agent', llm_engine: 'claude-4', tools: [] };
               const newAgent = {
                 id: agentId, name: node.label,
                 category: node.config?.agentRole || 'Ops',
                 rarity: node.rarity || 'Common',
-                config: node.config || { role: node.label, type: 'Agent', llm_engine: 'claude-4', tools: [] },
+                blueprint_id: crewBpId,
+                config: { ...baseCfg, blueprint_id: crewBpId },
                 stats: { spd: 7, acc: 8, cap: 6, pwr: 7 },
                 tags: [], activated: true,
               };
@@ -1038,6 +1052,163 @@ const Blueprints = (() => {
     return [..._activatedAgentIds];
   }
 
+  /**
+   * Capability fields the catalog owns. Edits to these on a catalog blueprint
+   * propagate to every activated copy via resolveLiveAgent. The remaining
+   * config fields (role, temperature, memory) stay user-tunable.
+   */
+  const _CATALOG_DRIVEN_CONFIG = [
+    'system_prompt', 'tools', 'llm_engine', 'is_captain',
+    'role_type', 'agentRole', 'type',
+  ];
+
+  /**
+   * Merge a stored agent with its catalog blueprint, preferring catalog
+   * for capability fields and stored values for user-tunable fields.
+   *
+   * Without this, every activation snapshots the catalog at deploy time
+   * and a later edit to (e.g.) a stub agent's system_prompt never reaches
+   * the activated copy. Resolver runs at read time on every getActivatedAgents
+   * call so callers always see the live catalog config.
+   *
+   * Resolves the catalog blueprint by, in order:
+   *   1. agent.blueprint_id (preferred — set by activation paths that know the catalog ID)
+   *   2. agent.config.blueprint_id (legacy)
+   *   3. agent.id (for slug-keyed activations like 'bp-agent-google-workspace')
+   *
+   * Returns the agent unchanged if no catalog match is found, so unknown
+   * IDs and offline-only custom builds keep working.
+   */
+  function resolveLiveAgent(agent) {
+    if (!agent) return agent;
+    const candidates = [];
+    if (agent.blueprint_id) candidates.push(agent.blueprint_id);
+    if (agent.config && agent.config.blueprint_id) candidates.push(agent.config.blueprint_id);
+    if (agent.id) candidates.push(agent.id);
+
+    let catalog = null;
+    for (const cid of candidates) {
+      if (!cid) continue;
+      catalog = _agents.find(a => a.id === cid)
+            || _agents.find(a => a.id === 'bp-' + cid)
+            || (typeof cid === 'string' && cid.startsWith('bp-')
+                ? _agents.find(a => a.id === cid.slice(3)) : null);
+      if (catalog) break;
+      // Synthetic crew id ("<shipId>-crew-<n>") points at a node inside a ship
+      // blueprint, not a top-level agent. Resolve by indexing into the ship's
+      // crew array so edits to crew_overrides reach the activated copy.
+      const crewMatch = typeof cid === 'string' ? cid.match(/^(.+)-crew-(\d+)$/) : null;
+      if (crewMatch) {
+        const shipId = crewMatch[1];
+        const slotIdx = parseInt(crewMatch[2], 10);
+        const ship = _spaceships.find(s => s.id === shipId)
+                  || _spaceships.find(s => s.id === 'bp-' + shipId)
+                  || (shipId.startsWith('bp-') ? _spaceships.find(s => s.id === shipId.slice(3)) : null);
+        const crew = (ship && (ship.metadata?.crew || ship.crew || ship.nodes)) || [];
+        if (crew[slotIdx]) { catalog = crew[slotIdx]; break; }
+      }
+    }
+    if (!catalog || catalog === agent) return agent;
+
+    const aCfg = agent.config || {};
+    const cCfg = catalog.config || {};
+    const mergedCfg = { ...aCfg };
+    for (const k of _CATALOG_DRIVEN_CONFIG) {
+      if (cCfg[k] !== undefined) mergedCfg[k] = cCfg[k];
+    }
+    return {
+      ...agent,
+      description: catalog.description || agent.description,
+      flavor: catalog.flavor || agent.flavor,
+      config: mergedCfg,
+    };
+  }
+
+  /**
+   * Pure helper: returns a refreshed copy of `agent` if any catalog-driven
+   * config field would change vs the stored value, else null. Lets callers
+   * skip writes when nothing actually moved. Used by the persistent-store
+   * migration below.
+   */
+  function _diffAgainstCatalog(agent) {
+    if (!agent) return null;
+    const live = resolveLiveAgent(agent);
+    if (live === agent) return null;
+    const aCfg = agent.config || {};
+    const lCfg = live.config || {};
+    const cfgChanged = _CATALOG_DRIVEN_CONFIG.some(
+      k => JSON.stringify(aCfg[k]) !== JSON.stringify(lCfg[k])
+    );
+    const descChanged = live.description !== agent.description;
+    const flavorChanged = live.flavor !== agent.flavor;
+    return (cfgChanged || descChanged || flavorChanged) ? live : null;
+  }
+
+  /**
+   * One-time migration that walks every persistent agent store and rewrites
+   * stale catalog-driven config fields from the live catalog. Idempotent —
+   * a second call is a no-op when nothing has drifted.
+   *
+   * Without this, the runtime resolver wired into getActivatedAgents serves
+   * a correct merged view, but persistent rows (Supabase user_agents,
+   * customAgents localStorage, State.agents) keep their stale snapshots and
+   * get re-loaded as-is on the next session. This call heals the snapshots
+   * so the merge becomes a no-op going forward.
+   *
+   * Catalog load is lazy, so this can run with an incomplete _agents list.
+   * That's safe — entries it can't match stay untouched until the next
+   * call (after _loadCatalogFromDB completes).
+   *
+   * Returns { refreshed, dbUpdated } counts. DB writes are fire-and-forget
+   * (concurrent, errors logged) so init() doesn't block on them.
+   */
+  async function refreshActivatedAgentsFromCatalog() {
+    const refreshedIds = new Set();
+    let dbUpdated = 0;
+    const dbWrites = [];
+
+    // 1. customAgents localStorage — the offline / guest store
+    try {
+      const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+      let dirty = false;
+      for (let i = 0; i < stored.length; i++) {
+        const next = _diffAgainstCatalog(stored[i]);
+        if (next) { stored[i] = next; dirty = true; refreshedIds.add(next.id); }
+      }
+      if (dirty) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
+    } catch {}
+
+    // 2. State.agents — drives every view. Refire after to repaint.
+    if (typeof State !== 'undefined') {
+      const agents = State.get('agents') || [];
+      const next = [...agents];
+      let dirty = false;
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
+      for (let i = 0; i < next.length; i++) {
+        const refreshedAgent = _diffAgainstCatalog(next[i]);
+        if (!refreshedAgent) continue;
+        next[i] = refreshedAgent;
+        dirty = true;
+        refreshedIds.add(refreshedAgent.id);
+        // Queue a Supabase row update for every UUID-keyed agent. Local-only
+        // ids (e.g. 'agent-<ts>-<rand>') don't have a row to update.
+        if (_canSync() && uuidRe.test(refreshedAgent.id)) {
+          dbWrites.push(
+            SB.db('user_agents').update(refreshedAgent.id, { config: refreshedAgent.config })
+              .then(() => { dbUpdated++; })
+              .catch(e => console.warn('[Blueprints] refresh DB update failed:', refreshedAgent.id, e.message))
+          );
+        }
+      }
+      if (dirty) State.set('agents', next);
+    }
+
+    if (dbWrites.length) await Promise.allSettled(dbWrites);
+    const refreshed = refreshedIds.size;
+    if (refreshed) _fireAgentState();
+    return { refreshed, dbUpdated };
+  }
+
   /** Returns fully constructed agent objects from activated blueprint IDs */
   function getActivatedAgents() {
     const result = [];
@@ -1051,6 +1222,10 @@ const Blueprints = (() => {
         try { bp = (JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]')).find(a => a.id === bpId); } catch {}
       }
       if (!bp) return;
+      // Live-merge with catalog: capability fields (system_prompt, tools, llm_engine,
+      // role_type, agentRole, is_captain, type) refresh from catalog every read so
+      // catalog edits reach activated copies without re-deploy.
+      bp = resolveLiveAgent(bp);
       const lookupId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
       const custom = typeof CardRenderer !== 'undefined' && CardRenderer.getCustomLabels
         ? CardRenderer.getCustomLabels(lookupId) : {};
@@ -2363,6 +2538,7 @@ const Blueprints = (() => {
     // Agent activation
     activateAgent, deactivateAgent, isAgentActivated,
     getActivatedAgentIds, getActivatedAgents,
+    resolveLiveAgent, refreshActivatedAgentsFromCatalog,
 
     // Ship activation
     activateShip, deactivateShip, isShipActivated, cleanupOrphans,

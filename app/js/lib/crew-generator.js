@@ -190,11 +190,17 @@ Rules:
     var stateAgents = State.get('agents') || [];
     var agentCrewData = [];
 
-    // Create all agents from catalog crew
+    // Create all agents from catalog crew. Persist the full catalog node
+    // config (system_prompt, tools, llm_engine, role_type, etc.) so the
+    // activated copy starts in lockstep with the catalog, plus a synthetic
+    // blueprint_id of the form "<shipBlueprintId>-crew-<i>" so the live
+    // resolver can rehydrate edits to the ship's crew_overrides on read.
     for (var i = 0; i < catalogCrew.length; i++) {
       var c = catalogCrew[i];
       var agentName = c.label || c.name || 'Agent ' + (i + 1);
-      var agentRole = c.config?.agentRole || 'Ops';
+      var nodeCfg = c.config || {};
+      var agentRole = nodeCfg.agentRole || 'Ops';
+      var crewBpId = blueprintId + '-crew-' + i;
 
       try {
         var row = {
@@ -202,13 +208,11 @@ Rules:
           name: agentName,
           rarity: c.rarity || bp.rarity || 'Common',
           status: 'idle',
-          config: {
-            role: agentRole,
-            type: 'Specialist',
-            tools: ['Web Search', 'Email', 'Calendar', 'Database', 'API Call'],
-            memory: false,
-            temperature: 0.7,
-          },
+          config: Object.assign(
+            { type: 'Specialist', memory: false, temperature: 0.7 },
+            nodeCfg,
+            { role: agentRole, blueprint_id: crewBpId }
+          ),
         };
         var created = await SB.db('user_agents').create(row);
         if (!created || !created.id) continue;
@@ -221,6 +225,7 @@ Rules:
           id: created.id, name: agentName, type: 'agent',
           category: agentRole, rarity: c.rarity || bp.rarity || 'Common',
           status: 'idle', config: row.config,
+          blueprint_id: crewBpId,
           metadata: { agentType: 'Specialist' },
           created_at: created.created_at || new Date().toISOString(),
         });
