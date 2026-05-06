@@ -689,6 +689,41 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       State.set('activated-agents', []);
     });
 
+    it('includes unslotted wired agents in the captain manifest so captain knows to dispatch', async () => {
+      // Ship has only a stub crew in slot_assignments. An activated wired agent is NOT slotted
+      // but should appear in the captain's system_prompt manifest so the captain has the signal
+      // to issue [DISPATCH: communications].
+      const stub = { id: 'stub-nav', name: 'Starbuck', config: { role_type: 'pilot', tools: [] } };
+      const wired = { id: 'bp-agent-ws2', name: 'Workspace Agent', config: { role_type: 'specialist', tools: ['gmail_search'] } };
+      State.set('agents', [stub]);
+      State.set('activated-agents', [wired]);
+
+      const shipStubsOnly = {
+        id: 'ship-ghost', name: 'Ghost',
+        slot_assignments: { 'slot-0': 'cap-1', 'slot-1': 'stub-nav' },
+      };
+
+      let capturedSystemPrompt = '';
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          if (!capturedSystemPrompt) capturedSystemPrompt = bp.config?.system_prompt || '';
+          return { finalAnswer: 'No dispatch needed.', steps: [], metadata: {} };
+        },
+      };
+
+      await MissionRunner.runWithDispatch(captainBp, 'Check my inbox.', shipStubsOnly, {});
+      // Manifest must mention the wired agent and its role so the captain knows it can dispatch
+      expect(capturedSystemPrompt).toContain('Workspace Agent');
+      delete globalThis.AgentExecutor;
+
+      // Restore
+      State.set('agents', [
+        { id: 'cap-1', name: 'Adama', config: { role_type: 'captain', is_captain: true, tools: [] } },
+        { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales', tools: ['crm-search'] } },
+      ]);
+      State.set('activated-agents', []);
+    });
+
     it('falls back to capability-matched agent when dispatch slot has no matching slotted agent', async () => {
       // Ship has only stub crew in slot_assignments (no wired agents slotted).
       // An activated umbrella agent with matching tools should be found via capability fallback.

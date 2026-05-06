@@ -828,10 +828,22 @@ const MissionRunner = (() => {
     const agents = [...agentMap.values()];
     const assignments = ship?.config?.slot_assignments || ship?.slots?.slot_assignments || ship?.slot_assignments || {};
 
+    const slottedIds = new Set(Object.values(assignments));
     const crewAgents = Object.values(assignments)
       .map(id => agents.find(a => a.id === id))
       .filter(Boolean)
       .filter(a => !_isCaptainAgent(a));
+
+    // Augment with any activated wired agents that aren't explicitly slotted.
+    // When a ship's crew_overrides only has character stubs (tools: []), the
+    // captain's manifest would otherwise list no wired agents and would never
+    // know to issue [DISPATCH: communications] etc.
+    for (const role of Object.keys(_ROLE_TOOL_HINTS)) {
+      const capable = _resolveByCapability(role, agents);
+      if (capable && !slottedIds.has(capable.id) && !crewAgents.find(a => a.id === capable.id)) {
+        crewAgents.push(capable);
+      }
+    }
 
     const captainWithCtx = _injectCaptainContext(captainBp, ship, crewAgents);
 
