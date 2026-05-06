@@ -473,50 +473,20 @@ const IntegrationsView = (() => {
 
   /* ── MCP Actions ──────────────────────────────────────────────── */
 
-  /** Google OAuth base URL for the edge function */
-  const GOOGLE_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/google-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/google-oauth';
-
-  /** Microsoft OAuth base URL for the edge function */
-  const MICROSOFT_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/microsoft-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/microsoft-oauth';
-
-  /** HubSpot OAuth base URL for the edge function */
-  const HUBSPOT_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/hubspot-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/hubspot-oauth';
-
-  /** GitHub OAuth base URL for the edge function */
-  const GITHUB_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/github-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/github-oauth';
-
-  /** Slack OAuth base URL for the edge function */
-  const SLACK_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/slack-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/slack-oauth';
-
-  /** Linear OAuth base URL for the edge function */
-  const LINEAR_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/linear-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/linear-oauth';
-
-  /** Notion OAuth base URL for the edge function */
-  const NOTION_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/notion-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/notion-oauth';
-
-  /** Stripe OAuth base URL for the edge function */
-  const STRIPE_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/stripe-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/stripe-oauth';
-
-  /** Atlassian OAuth base URL for the edge function */
-  const ATLASSIAN_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
-    ? `${SB.client.supabaseUrl}/functions/v1/atlassian-oauth`
-    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/atlassian-oauth';
+  /** OAuth functions are served from the NICE custom domain.
+   *  Keeps the URL the user sees during the redirect on api.nicespaceship.ai
+   *  rather than the bare Supabase project host. The Supabase function URL
+   *  still works as a fallback. */
+  const NICE_API_BASE = 'https://api.nicespaceship.ai';
+  const GOOGLE_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/google-oauth`;
+  const MICROSOFT_OAUTH_URL = `${NICE_API_BASE}/functions/v1/microsoft-oauth`;
+  const HUBSPOT_OAUTH_URL   = `${NICE_API_BASE}/functions/v1/hubspot-oauth`;
+  const GITHUB_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/github-oauth`;
+  const SLACK_OAUTH_URL     = `${NICE_API_BASE}/functions/v1/slack-oauth`;
+  const LINEAR_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/linear-oauth`;
+  const NOTION_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/notion-oauth`;
+  const STRIPE_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/stripe-oauth`;
+  const ATLASSIAN_OAUTH_URL = `${NICE_API_BASE}/functions/v1/atlassian-oauth`;
 
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
