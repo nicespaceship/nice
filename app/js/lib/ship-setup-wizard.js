@@ -550,12 +550,18 @@ const ShipSetupWizard = (() => {
               }
             }
           } else {
+            // Resolve crew slot index so the synthetic blueprint_id can point
+            // back at the right node inside _blueprint.metadata.crew on read.
+            const crewSlotIdx = Object.entries(_data.slotAssignments).find(([, v]) => v === aid)?.[0];
+            const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${crewSlotIdx}` : null;
+            const baseCfg = crewMember?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] };
             const newAgent = {
               id: `agent-${Date.now()}-${i}`,
               name: agentName,
               category: crewMember?.config?.agentRole || 'Ops',
               rarity: crewMember?.rarity || 'Common',
-              config: crewMember?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] },
+              blueprint_id: crewBpId,
+              config: crewBpId ? { ...baseCfg, blueprint_id: crewBpId } : baseCfg,
               stats: { spd: '3.0s', acc: '92%', cap: '5K', pwr: '75' },
               tags: [], activated: true,
               flavor: `Auto-created for ${_data.shipName || _blueprint.name}.`,
@@ -591,12 +597,15 @@ const ShipSetupWizard = (() => {
         const slot = sc.slots[i];
         const crewMember = crew[i];
         const agentName = crewMember?.label || `${slot.label} Agent`;
+        const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${i}` : null;
+        const baseCfg = crewMember?.config || { role: slot.label, type: 'Agent', llm_engine: 'claude-4', tools: [] };
         const newAgent = {
           id: `agent-${Date.now()}-auto-${i}`,
           name: agentName,
           category: crewMember?.config?.agentRole || slot.label,
           rarity: crewMember?.rarity || 'Common',
-          config: crewMember?.config || { role: slot.label, type: 'Agent', llm_engine: 'claude-4', tools: [] },
+          blueprint_id: crewBpId,
+          config: crewBpId ? { ...baseCfg, blueprint_id: crewBpId } : baseCfg,
           stats: { spd: '3.0s', acc: '90%', cap: '3K', pwr: '70' },
           tags: [], activated: true,
           flavor: `Auto-created for ${slot.label} station.`,

@@ -574,5 +574,49 @@ describe('Blueprints', () => {
       expect(live.config.memory).toBe(true);
       expect(live.config.custom_user_field).toBe('keep me');
     });
+
+    it('resolves synthetic crew ids ("<shipId>-crew-<n>") to the ship blueprint node', () => {
+      const ship = Blueprints.getSpaceship('ship-01');
+      ship.metadata = {
+        crew: [
+          { label: 'Captain', config: { agentRole: 'Captain', is_captain: true, system_prompt: 'You command.', tools: [] } },
+          { label: 'Comms', config: { agentRole: 'Communications', system_prompt: 'You handle comms.', tools: ['gmail-search', 'gmail-send'] } },
+        ],
+      };
+
+      const captainStored = { id: 'uuid-cap', blueprint_id: 'ship-01-crew-0', config: { role: 'Captain', tools: [] } };
+      const captainLive = Blueprints.resolveLiveAgent(captainStored);
+      expect(captainLive.config.system_prompt).toBe('You command.');
+      expect(captainLive.config.is_captain).toBe(true);
+
+      const commsStored = { id: 'uuid-comms', blueprint_id: 'ship-01-crew-1', config: { role: 'Communications', tools: [] } };
+      const commsLive = Blueprints.resolveLiveAgent(commsStored);
+      expect(commsLive.config.system_prompt).toBe('You handle comms.');
+      expect(commsLive.config.tools).toEqual(['gmail-search', 'gmail-send']);
+    });
+
+    it('handles synthetic crew ids with bp- prefix on the ship id', () => {
+      const ship = Blueprints.getSpaceship('ship-01');
+      ship.metadata = { crew: [{ label: 'Captain', config: { system_prompt: 'Hello.', tools: [] } }] };
+
+      const stored = { id: 'uuid-x', blueprint_id: 'bp-ship-01-crew-0', config: { tools: [] } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('Hello.');
+    });
+
+    it('returns the agent unchanged when synthetic crew id points past the crew array', () => {
+      const ship = Blueprints.getSpaceship('ship-01');
+      ship.metadata = { crew: [{ label: 'Captain', config: { tools: [] } }] };
+
+      const stored = { id: 'uuid-x', blueprint_id: 'ship-01-crew-9', config: { tools: ['a'] } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live).toEqual(stored);
+    });
+
+    it('returns the agent unchanged when synthetic crew id refers to an unknown ship', () => {
+      const stored = { id: 'uuid-x', blueprint_id: 'ship-nope-crew-0', config: { tools: ['a'] } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live).toEqual(stored);
+    });
   });
 });

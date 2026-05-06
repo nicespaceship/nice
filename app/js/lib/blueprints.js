@@ -274,11 +274,14 @@ const Blueprints = (() => {
 
           const node = nodes.find(n => n.label === agentName);
           const newId = `agent-${shipBpId}-${slotIdx}`;
+          const crewBpId = `${shipBpId}-crew-${slotIdx}`;
+          const baseCfg = node?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] };
           const newAgent = {
             id: newId, name: agentName,
             category: node?.config?.agentRole || 'Ops',
             rarity: node?.rarity || 'Common',
-            config: node?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] },
+            blueprint_id: crewBpId,
+            config: { ...baseCfg, blueprint_id: crewBpId },
             stats: { spd: 7, acc: 8, cap: 6, pwr: 7 },
             tags: [], activated: true,
           };
@@ -299,11 +302,14 @@ const Blueprints = (() => {
           if (!inSeed && !inCustom && nodes.length) {
             const node = nodes[parseInt(slotIdx, 10)];
             if (node) {
+              const crewBpId = `${shipBpId}-crew-${slotIdx}`;
+              const baseCfg = node.config || { role: node.label, type: 'Agent', llm_engine: 'claude-4', tools: [] };
               const newAgent = {
                 id: agentId, name: node.label,
                 category: node.config?.agentRole || 'Ops',
                 rarity: node.rarity || 'Common',
-                config: node.config || { role: node.label, type: 'Agent', llm_engine: 'claude-4', tools: [] },
+                blueprint_id: crewBpId,
+                config: { ...baseCfg, blueprint_id: crewBpId },
                 stats: { spd: 7, acc: 8, cap: 6, pwr: 7 },
                 tags: [], activated: true,
               };
@@ -1080,6 +1086,19 @@ const Blueprints = (() => {
             || (typeof cid === 'string' && cid.startsWith('bp-')
                 ? _agents.find(a => a.id === cid.slice(3)) : null);
       if (catalog) break;
+      // Synthetic crew id ("<shipId>-crew-<n>") points at a node inside a ship
+      // blueprint, not a top-level agent. Resolve by indexing into the ship's
+      // crew array so edits to crew_overrides reach the activated copy.
+      const crewMatch = typeof cid === 'string' ? cid.match(/^(.+)-crew-(\d+)$/) : null;
+      if (crewMatch) {
+        const shipId = crewMatch[1];
+        const slotIdx = parseInt(crewMatch[2], 10);
+        const ship = _spaceships.find(s => s.id === shipId)
+                  || _spaceships.find(s => s.id === 'bp-' + shipId)
+                  || (shipId.startsWith('bp-') ? _spaceships.find(s => s.id === shipId.slice(3)) : null);
+        const crew = (ship && (ship.metadata?.crew || ship.crew || ship.nodes)) || [];
+        if (crew[slotIdx]) { catalog = crew[slotIdx]; break; }
+      }
     }
     if (!catalog || catalog === agent) return agent;
 
