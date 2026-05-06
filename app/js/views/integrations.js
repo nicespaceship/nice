@@ -20,6 +20,7 @@ const IntegrationsView = (() => {
     { id:'slack',     name:'Slack',             desc:'Messages, channels, threads, canvases, users — read-only',         icon:'brand-slack',  tools:['slack_search_public','slack_search_public_and_private','slack_search_channels','slack_search_users','slack_read_channel','slack_read_thread','slack_read_canvas','slack_read_user_profile'], transport:'streamable-http', auth:'oauth', cat:'comms' },
     { id:'linear',    name:'Linear',            desc:'Issues, projects, comments, teams, cycles, docs — read-only',      icon:'brand-linear', tools:['list_issues','get_issue','list_projects','get_project','list_teams','get_team','list_users','get_user','list_comments','list_cycles','list_milestones','get_milestone','list_documents','get_document','list_issue_labels','list_project_labels','list_issue_statuses','get_issue_status','get_attachment','extract_images','search_documentation'], transport:'streamable-http', auth:'oauth', cat:'pm' },
     { id:'notion',    name:'Notion',            desc:'Pages, databases, comments, teams, users — read-only',             icon:'brand-notion', tools:['notion-search','notion-fetch','notion-get-comments','notion-get-teams','notion-get-users'], transport:'streamable-http', auth:'oauth', cat:'docs' },
+    { id:'stripe',    name:'Stripe',            desc:'Customers, payments, subscriptions, invoices, products — read-only', icon:'brand-stripe', tools:['list_customers','list_payment_intents','list_subscriptions','list_invoices','list_products','list_prices','list_coupons','list_disputes','retrieve_balance','get_stripe_account_info','fetch_stripe_resources','search_stripe_resources','search_stripe_documentation','stripe_api_details','stripe_api_search','stripe_integration_recommender'], transport:'streamable-http', auth:'oauth', cat:'payments' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -166,6 +167,15 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Notion Connected', message: 'Your Notion workspace is now linked. Agents can search and read pages, databases, blocks, and comments.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('stripe_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Stripe Connected', message: 'Your Stripe account is now linked. Agents can read customers, charges, subscriptions, invoices, and products.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -488,6 +498,11 @@ const IntegrationsView = (() => {
     ? `${SB.client.supabaseUrl}/functions/v1/notion-oauth`
     : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/notion-oauth';
 
+  /** Stripe OAuth base URL for the edge function */
+  const STRIPE_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/stripe-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/stripe-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
@@ -519,6 +534,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'notion') {
       return _initiateNotionOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'stripe') {
+      return _initiateStripeOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -656,6 +674,22 @@ const IntegrationsView = (() => {
 
     const redirectUrl = window.location.origin + '/app/#/security';
     const authUrl = `${NOTION_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    window.location.href = authUrl;
+  }
+
+  /** Initiate Stripe OAuth flow — redirects to Stripe consent screen */
+  function _initiateStripeOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Stripe.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${STRIPE_OAUTH_URL}/authorize`
       + `?user_id=${encodeURIComponent(user.id)}`
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
