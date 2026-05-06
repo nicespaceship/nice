@@ -469,4 +469,110 @@ describe('Blueprints', () => {
       expect(removeCalls.length).toBe(1);
     });
   });
+
+  describe('resolveLiveAgent — catalog-driven capability merge', () => {
+    beforeEach(() => { globalThis.SB = undefined; });
+
+    it('returns the agent unchanged when no blueprint_id matches catalog', () => {
+      const agent = { id: 'unknown-uuid', name: 'Stray', config: { role: 'X', tools: ['a'] } };
+      const live = Blueprints.resolveLiveAgent(agent);
+      expect(live).toEqual(agent);
+    });
+
+    it('returns null/undefined unchanged', () => {
+      expect(Blueprints.resolveLiveAgent(null)).toBe(null);
+      expect(Blueprints.resolveLiveAgent(undefined)).toBe(undefined);
+    });
+
+    it('refreshes catalog-driven config fields on a slug-keyed activation', () => {
+      // sa1 catalog config is { role: 'Research' } — pretend the catalog
+      // grew a system_prompt and tools list after the user activated.
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'You are a research umbrella.';
+      catalog.config.tools = ['web-search', 'browser'];
+      catalog.config.llm_engine = 'gemini-2.5-pro';
+      catalog.config.is_captain = false;
+
+      const stored = {
+        id: 'sa1', name: 'Web Researcher',
+        config: { role: 'Research', tools: [], system_prompt: 'old', temperature: 0.5 },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('You are a research umbrella.');
+      expect(live.config.tools).toEqual(['web-search', 'browser']);
+      expect(live.config.llm_engine).toBe('gemini-2.5-pro');
+      expect(live.config.is_captain).toBe(false);
+      // User-tunable fields preserved
+      expect(live.config.temperature).toBe(0.5);
+      expect(live.config.role).toBe('Research');
+    });
+
+    it('preserves stored agent identity (id, name)', () => {
+      const stored = { id: 'sa2', name: 'My Custom Reviewer', config: { role: 'Code' } };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.id).toBe('sa2');
+      expect(live.name).toBe('My Custom Reviewer');
+    });
+
+    it('resolves catalog by agent.blueprint_id when id is a UUID', () => {
+      const catalog = Blueprints.getAgent('sa3');
+      catalog.config.system_prompt = 'You are an analyst.';
+      catalog.config.tools = ['bigquery'];
+
+      const stored = {
+        id: '11111111-2222-4333-8444-555555555555',
+        name: 'Wizard-created agent',
+        blueprint_id: 'sa3',
+        config: { role: 'Data', tools: [] },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('You are an analyst.');
+      expect(live.config.tools).toEqual(['bigquery']);
+    });
+
+    it('resolves catalog by config.blueprint_id (legacy storage location)', () => {
+      const catalog = Blueprints.getAgent('sa3');
+      catalog.config.system_prompt = 'You are an analyst.';
+
+      const stored = {
+        id: 'uuid-2',
+        config: { role: 'Data', blueprint_id: 'sa3' },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.system_prompt).toBe('You are an analyst.');
+      // blueprint_id must survive on the merged config so downstream callers
+      // can re-resolve later without losing the catalog link.
+      expect(live.config.blueprint_id).toBe('sa3');
+    });
+
+    it('resolves bp-prefixed and bare ids interchangeably', () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Umbrella prompt.';
+
+      const withPrefix = { id: 'uuid-3', blueprint_id: 'bp-sa1', config: {} };
+      const withoutPrefix = { id: 'uuid-4', blueprint_id: 'sa1', config: {} };
+      expect(Blueprints.resolveLiveAgent(withPrefix).config.system_prompt).toBe('Umbrella prompt.');
+      expect(Blueprints.resolveLiveAgent(withoutPrefix).config.system_prompt).toBe('Umbrella prompt.');
+    });
+
+    it('does not clobber stored config fields outside the catalog allowlist', () => {
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog-driven.';
+
+      const stored = {
+        id: 'sa1', name: 'X',
+        config: {
+          role: 'Research',
+          tools: [],
+          temperature: 0.9,
+          memory: true,
+          custom_user_field: 'keep me',
+        },
+      };
+      const live = Blueprints.resolveLiveAgent(stored);
+      expect(live.config.temperature).toBe(0.9);
+      expect(live.config.memory).toBe(true);
+      expect(live.config.custom_user_field).toBe('keep me');
+    });
+  });
 });

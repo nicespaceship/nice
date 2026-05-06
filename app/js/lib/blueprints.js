@@ -1038,6 +1038,65 @@ const Blueprints = (() => {
     return [..._activatedAgentIds];
   }
 
+  /**
+   * Capability fields the catalog owns. Edits to these on a catalog blueprint
+   * propagate to every activated copy via resolveLiveAgent. The remaining
+   * config fields (role, temperature, memory) stay user-tunable.
+   */
+  const _CATALOG_DRIVEN_CONFIG = [
+    'system_prompt', 'tools', 'llm_engine', 'is_captain',
+    'role_type', 'agentRole', 'type',
+  ];
+
+  /**
+   * Merge a stored agent with its catalog blueprint, preferring catalog
+   * for capability fields and stored values for user-tunable fields.
+   *
+   * Without this, every activation snapshots the catalog at deploy time
+   * and a later edit to (e.g.) a stub agent's system_prompt never reaches
+   * the activated copy. Resolver runs at read time on every getActivatedAgents
+   * call so callers always see the live catalog config.
+   *
+   * Resolves the catalog blueprint by, in order:
+   *   1. agent.blueprint_id (preferred — set by activation paths that know the catalog ID)
+   *   2. agent.config.blueprint_id (legacy)
+   *   3. agent.id (for slug-keyed activations like 'bp-agent-google-workspace')
+   *
+   * Returns the agent unchanged if no catalog match is found, so unknown
+   * IDs and offline-only custom builds keep working.
+   */
+  function resolveLiveAgent(agent) {
+    if (!agent) return agent;
+    const candidates = [];
+    if (agent.blueprint_id) candidates.push(agent.blueprint_id);
+    if (agent.config && agent.config.blueprint_id) candidates.push(agent.config.blueprint_id);
+    if (agent.id) candidates.push(agent.id);
+
+    let catalog = null;
+    for (const cid of candidates) {
+      if (!cid) continue;
+      catalog = _agents.find(a => a.id === cid)
+            || _agents.find(a => a.id === 'bp-' + cid)
+            || (typeof cid === 'string' && cid.startsWith('bp-')
+                ? _agents.find(a => a.id === cid.slice(3)) : null);
+      if (catalog) break;
+    }
+    if (!catalog || catalog === agent) return agent;
+
+    const aCfg = agent.config || {};
+    const cCfg = catalog.config || {};
+    const mergedCfg = { ...aCfg };
+    for (const k of _CATALOG_DRIVEN_CONFIG) {
+      if (cCfg[k] !== undefined) mergedCfg[k] = cCfg[k];
+    }
+    return {
+      ...agent,
+      description: catalog.description || agent.description,
+      flavor: catalog.flavor || agent.flavor,
+      config: mergedCfg,
+    };
+  }
+
   /** Returns fully constructed agent objects from activated blueprint IDs */
   function getActivatedAgents() {
     const result = [];
@@ -1051,6 +1110,10 @@ const Blueprints = (() => {
         try { bp = (JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]')).find(a => a.id === bpId); } catch {}
       }
       if (!bp) return;
+      // Live-merge with catalog: capability fields (system_prompt, tools, llm_engine,
+      // role_type, agentRole, is_captain, type) refresh from catalog every read so
+      // catalog edits reach activated copies without re-deploy.
+      bp = resolveLiveAgent(bp);
       const lookupId = bpId.startsWith('bp-') ? bpId : 'bp-' + bpId;
       const custom = typeof CardRenderer !== 'undefined' && CardRenderer.getCustomLabels
         ? CardRenderer.getCustomLabels(lookupId) : {};
@@ -2363,6 +2426,7 @@ const Blueprints = (() => {
     // Agent activation
     activateAgent, deactivateAgent, isAgentActivated,
     getActivatedAgentIds, getActivatedAgents,
+    resolveLiveAgent,
 
     // Ship activation
     activateShip, deactivateShip, isShipActivated, cleanupOrphans,
