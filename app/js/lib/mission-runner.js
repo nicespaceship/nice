@@ -701,7 +701,13 @@ const MissionRunner = (() => {
   }
 
   /* Find the crew agent filling a given slot name/role on a ship.
-     Resolution order: role_type match → name substring → slot key. */
+     Resolution order:
+       1. role_type match within slotted agents
+       2. name substring match within slotted agents
+       3. direct slot-key lookup
+       4. capability-based fallback: any activated agent whose tools match
+          the role — lets captains dispatch to wired umbrella agents even when
+          they're not explicitly in the ship's slot_assignments. */
   function _resolveSlotAgent(ship, slotName, agents) {
     if (!ship || !slotName || !agents) return null;
     const name = slotName.toLowerCase();
@@ -723,6 +729,34 @@ const MissionRunner = (() => {
     const directId = assignments[slotName] || assignments[name];
     if (directId) return agents.find(a => a.id === directId) || null;
 
+    return _resolveByCapability(name, agents);
+  }
+
+  // Maps dispatch role names to tool-ID substrings for capability-based fallback.
+  const _ROLE_TOOL_HINTS = {
+    communications: ['gmail', 'calendar', 'drive', 'outlook', 'sharepoint', 'microsoft', 'slack', 'email'],
+    sales:          ['hubspot', 'salesforce', 'crm', 'deal'],
+    engineering:    ['github', 'linear', 'jira', 'code', 'deploy'],
+    analytics:      ['amplitude', 'bigquery', 'analytics'],
+    marketing:      ['hubspot', 'mailchimp', 'klaviyo', 'campaign'],
+    finance:        ['stripe', 'billing', 'invoice'],
+    product:        ['notion', 'roadmap', 'feature'],
+    research:       ['browser', 'web-search', 'search'],
+    people:         ['slack', 'hr', 'recruit'],
+  };
+
+  // Find an activated agent whose tool list matches a role name.
+  // Skips captains (avoids routing to self) and tool-less stubs.
+  function _resolveByCapability(roleName, agents) {
+    const hints = _ROLE_TOOL_HINTS[roleName];
+    if (!hints || !agents) return null;
+    for (const agent of agents) {
+      if (_isCaptainAgent(agent)) continue;
+      const tools = agent.config?.tools;
+      if (!Array.isArray(tools) || !tools.length) continue;
+      const toolStr = tools.join(' ').toLowerCase();
+      if (hints.some(h => toolStr.includes(h))) return agent;
+    }
     return null;
   }
 

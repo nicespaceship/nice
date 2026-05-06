@@ -688,6 +688,49 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       ]);
       State.set('activated-agents', []);
     });
+
+    it('falls back to capability-matched agent when dispatch slot has no matching slotted agent', async () => {
+      // Ship has only stub crew in slot_assignments (no wired agents slotted).
+      // An activated umbrella agent with matching tools should be found via capability fallback.
+      const stubCrew = { id: 'stub-1', name: 'Apollo', config: { role_type: 'pilot', tools: [] } };
+      const workspaceAgent = { id: 'bp-agent-ws', name: 'Workspace Agent', config: { role_type: 'specialist', tools: ['calendar_list_events', 'gmail_search'] } };
+      State.set('agents', [stubCrew]);
+      State.set('activated-agents', [workspaceAgent]);
+
+      const shipAllStubs = {
+        id: 'ship-bsg2', name: 'Galactica',
+        // Workspace agent is NOT in slot_assignments — only the stub crew is
+        slot_assignments: { 'slot-0': 'cap-1', 'slot-1': 'stub-1' },
+      };
+
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          calls.push({ bpId: bp.id || bp.name, prompt });
+          if (calls.length === 1) {
+            return { finalAnswer: '[DISPATCH: communications] What emails did I get today?', steps: [], metadata: {} };
+          }
+          if (calls.length === 2) {
+            // Should be Workspace Agent, not the stub
+            return { finalAnswer: '3 emails from HQ.', steps: [], metadata: {} };
+          }
+          return { finalAnswer: 'You received 3 emails from HQ today.', steps: [], metadata: {} };
+        },
+      };
+
+      const result = await MissionRunner.runWithDispatch(captainBp, 'Any emails today?', shipAllStubs, {});
+      expect(result.finalAnswer).toBe('You received 3 emails from HQ today.');
+      // Crew call must have gone to Workspace Agent (id 'bp-agent-ws'), not the stub ('stub-1')
+      expect(calls[1].bpId).toBe('bp-agent-ws');
+      delete globalThis.AgentExecutor;
+
+      // Restore
+      State.set('agents', [
+        { id: 'cap-1', name: 'Adama', config: { role_type: 'captain', is_captain: true, tools: [] } },
+        { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales', tools: ['crm-search'] } },
+      ]);
+      State.set('activated-agents', []);
+    });
   });
 
   it('templated run (no source flag) still lands in review (regression guard)', async () => {
