@@ -19,6 +19,7 @@ const IntegrationsView = (() => {
     { id:'github',    name:'GitHub',            desc:'Repos, issues, pull requests, code, releases, Actions — read-only', icon:'brand-github', tools:['search_code','search_issues','search_pull_requests','search_repositories','search_users','get_commit','get_file_contents','get_label','get_latest_release','get_me','get_release_by_tag','get_tag','get_team_members','get_teams','issue_read','pull_request_read','list_branches','list_commits','list_issue_types','list_issues','list_pull_requests','list_releases','list_tags'], transport:'streamable-http', auth:'oauth', cat:'dev' },
     { id:'slack',     name:'Slack',             desc:'Messages, channels, threads, canvases, users — read-only',         icon:'brand-slack',  tools:['slack_search_public','slack_search_public_and_private','slack_search_channels','slack_search_users','slack_read_channel','slack_read_thread','slack_read_canvas','slack_read_user_profile'], transport:'streamable-http', auth:'oauth', cat:'comms' },
     { id:'linear',    name:'Linear',            desc:'Issues, projects, comments, teams, cycles, docs — read-only',      icon:'brand-linear', tools:['list_issues','get_issue','list_projects','get_project','list_teams','get_team','list_users','get_user','list_comments','list_cycles','list_milestones','get_milestone','list_documents','get_document','list_issue_labels','list_project_labels','list_issue_statuses','get_issue_status','get_attachment','extract_images','search_documentation'], transport:'streamable-http', auth:'oauth', cat:'pm' },
+    { id:'notion',    name:'Notion',            desc:'Pages, databases, comments, teams, users — read-only',             icon:'brand-notion', tools:['notion-search','notion-fetch','notion-get-comments','notion-get-teams','notion-get-users'], transport:'streamable-http', auth:'oauth', cat:'docs' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -156,6 +157,15 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Linear Connected', message: 'Your Linear workspace is now linked. Agents can read issues, projects, comments, teams, and cycles.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('notion_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Notion Connected', message: 'Your Notion workspace is now linked. Agents can search and read pages, databases, blocks, and comments.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -473,6 +483,11 @@ const IntegrationsView = (() => {
     ? `${SB.client.supabaseUrl}/functions/v1/linear-oauth`
     : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/linear-oauth';
 
+  /** Notion OAuth base URL for the edge function */
+  const NOTION_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/notion-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/notion-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
@@ -501,6 +516,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'linear') {
       return _initiateLinearOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'notion') {
+      return _initiateNotionOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -622,6 +640,22 @@ const IntegrationsView = (() => {
 
     const redirectUrl = window.location.origin + '/app/#/security';
     const authUrl = `${LINEAR_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    window.location.href = authUrl;
+  }
+
+  /** Initiate Notion OAuth flow — redirects to Notion consent screen */
+  function _initiateNotionOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Notion.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${NOTION_OAUTH_URL}/authorize`
       + `?user_id=${encodeURIComponent(user.id)}`
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 

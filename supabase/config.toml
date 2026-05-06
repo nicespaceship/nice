@@ -403,6 +403,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.linear-oauth]
 verify_jwt = false
+[functions.notion-oauth]
+verify_jwt = false
 
 [analytics]
 enabled = true
