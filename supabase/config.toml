@@ -401,6 +401,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.slack-oauth]
 verify_jwt = false
+[functions.linear-oauth]
+verify_jwt = false
 
 [analytics]
 enabled = true
