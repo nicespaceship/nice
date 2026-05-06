@@ -409,6 +409,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.atlassian-oauth]
 verify_jwt = false
+[functions.cloudflare-oauth]
+verify_jwt = false
 
 [analytics]
 enabled = true

@@ -29,14 +29,15 @@ const SecurityView = (() => {
       if (logs.length) {
         // Map audit entries to threat-like events, most recent first
         return logs.slice(-20).reverse().map(entry => {
-          const action = entry.action || entry.type || 'activity';
+          const action = String(entry.action || entry.type || 'activity');
+          const desc = typeof entry.description === 'string' ? entry.description : '';
           let severity = 'low';
-          if (/fail|error|denied|reject|exceed/i.test(action + ' ' + (entry.description || ''))) severity = 'high';
-          else if (/auth|token|budget|warning/i.test(action + ' ' + (entry.description || ''))) severity = 'medium';
+          if (/fail|error|denied|reject|exceed/i.test(action + ' ' + desc)) severity = 'high';
+          else if (/auth|token|budget|warning/i.test(action + ' ' + desc)) severity = 'medium';
           return {
             ts: new Date(entry.timestamp || entry.ts || Date.now()).getTime(),
             severity,
-            msg: (entry.description || action.replace(/_/g, ' ')).substring(0, 120),
+            msg: (desc || action.replace(/_/g, ' ')).substring(0, 120),
           };
         });
       }
