@@ -23,6 +23,12 @@ const IntegrationsView = (() => {
     { id:'stripe',    name:'Stripe',            desc:'Customers, payments, subscriptions, invoices, products — read-only', icon:'brand-stripe', tools:['list_customers','list_payment_intents','list_subscriptions','list_invoices','list_products','list_prices','list_coupons','list_disputes','retrieve_balance','get_stripe_account_info','fetch_stripe_resources','search_stripe_resources','search_stripe_documentation','stripe_api_details','stripe_api_search','stripe_integration_recommender'], transport:'streamable-http', auth:'oauth', cat:'payments' },
     { id:'atlassian', name:'Atlassian',         desc:'Jira issues, Confluence pages, Compass components — read-only',     icon:'brand-atlassian', tools:['searchJiraIssuesUsingJql','getJiraIssue','getVisibleJiraProjects','getTransitionsForJiraIssue','getIssueLinkTypes','getJiraIssueRemoteIssueLinks','getJiraIssueTypeMetaWithFields','getJiraProjectIssueTypesMetadata','lookupJiraAccountId','searchConfluenceUsingCql','getConfluencePage','getConfluenceSpaces','getPagesInConfluenceSpace','getConfluencePageDescendants','getConfluencePageFooterComments','getConfluencePageInlineComments','getConfluenceCommentChildren','searchAtlassian','fetchAtlassian','getTeamworkGraphContext','getTeamworkGraphObject','getCompassComponent','getCompassComponents','getCompassComponentActivityEvents','getCompassComponentLabels','getCompassComponentTypes','getCompassCustomFieldDefinitions','getCompassComponentsOwnedByMyTeams','atlassianUserInfo','getAccessibleAtlassianResources'], transport:'streamable-http', auth:'oauth', cat:'pm' },
     { id:'cloudflare',name:'Cloudflare',        desc:'Workers, KV, R2, D1, Hyperdrive — read-only (D1 query allows raw SQL)', icon:'brand-cloudflare', tools:['accounts_list','set_active_account','search_cloudflare_documentation','workers_list','workers_get_worker','workers_get_worker_code','kv_namespaces_list','kv_namespace_get','r2_buckets_list','r2_bucket_get','d1_databases_list','d1_database_get','d1_database_query','hyperdrive_configs_list','hyperdrive_config_get','migrate_pages_to_workers_guide'], transport:'streamable-http', auth:'oauth', cat:'dev' },
+    { id:'sentry',    name:'Sentry',            desc:'Issues, events, projects, releases, Seer analysis — read-only',     icon:'brand-sentry', tools:['find_organizations','find_projects','find_teams','find_releases','find_dsns','get_issue_details','get_event_details','get_trace_details','get_doc_url','search_issues','search_events','analyze_issue_with_seer','get_seer_run_state','whoami'], transport:'streamable-http', auth:'oauth', cat:'dev' },
+    { id:'zapier',    name:'Zapier',            desc:'Discover and run any of 9,000+ Zapier-connected apps — actions you enable surface as tools', icon:'brand-zapier', tools:['discover_zapier_actions','enable_zapier_action','list_enabled_zapier_actions','execute_zapier_read_action'], transport:'streamable-http', auth:'oauth', cat:'automation' },
+    { id:'airtable',  name:'Airtable',          desc:'Workspaces, bases, tables, records, comments — read-only',           icon:'brand-airtable', tools:['list_workspaces','list_bases','get_base_schema','list_tables','list_records','search_records','get_record','list_record_comments'], transport:'streamable-http', auth:'oauth', cat:'docs' },
+    { id:'monday',    name:'monday.com',        desc:'Boards, items, sub-items, updates, documents — read-only',           icon:'brand-monday', tools:['monday-list-boards','monday-get-board-groups','monday-list-items-in-groups','monday-list-subitems-in-items','monday-get-board-by-id','monday-get-item-by-id','monday-get-update','monday-list-documents','monday-get-document-content'], transport:'streamable-http', auth:'oauth', cat:'pm' },
+    { id:'klaviyo',   name:'Klaviyo',           desc:'Profiles, lists, segments, campaigns, flows, events, metrics — read-only', icon:'brand-klaviyo', tools:['get_profiles','get_profile','get_lists','get_list','get_segments','get_segment','get_campaigns','get_campaign','get_events','get_metrics','get_metric','get_flows','get_flow'], transport:'streamable-http', auth:'oauth', cat:'marketing' },
+    { id:'miro',      name:'Miro',              desc:'Boards, items, connectors, tags, search — read-only',                icon:'brand-miro', tools:['list_boards','get_specific_board','list_items_on_board','get_specific_item','list_connectors_on_board','get_specific_connector','list_tags_on_board','get_tag','search_board_content'], transport:'streamable-http', auth:'oauth', cat:'design' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -196,6 +202,60 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Cloudflare Connected', message: 'Your Cloudflare account is now linked. Agents can list Workers, KV, R2, D1, and Hyperdrive resources, and query D1 databases.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('sentry_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Sentry Connected', message: 'Your Sentry organization is now linked. Agents can read issues, events, projects, releases, and run Seer analysis.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('zapier_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Visit mcp.zapier.com to enable specific actions across 9,000+ apps.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('airtable_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Airtable Connected', message: 'Your Airtable workspace is now linked. Agents can list bases, read records, and search.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('monday_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'monday.com Connected', message: 'Your monday.com workspace is now linked. Agents can read boards, items, sub-items, updates, and documents.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('klaviyo_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Klaviyo Connected', message: 'Your Klaviyo account is now linked. Agents can read profiles, lists, segments, campaigns, flows, and metrics.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('miro_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Miro Connected', message: 'Your Miro account is now linked. Agents can read boards, items, connectors, and tags.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -498,6 +558,12 @@ const IntegrationsView = (() => {
   const STRIPE_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/stripe-oauth`;
   const ATLASSIAN_OAUTH_URL = `${NICE_API_BASE}/functions/v1/atlassian-oauth`;
   const CLOUDFLARE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cloudflare-oauth`;
+  const SENTRY_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/sentry-oauth`;
+  const ZAPIER_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/zapier-oauth`;
+  const AIRTABLE_OAUTH_URL  = `${NICE_API_BASE}/functions/v1/airtable-oauth`;
+  const MONDAY_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/monday-oauth`;
+  const KLAVIYO_OAUTH_URL   = `${NICE_API_BASE}/functions/v1/klaviyo-oauth`;
+  const MIRO_OAUTH_URL      = `${NICE_API_BASE}/functions/v1/miro-oauth`;
 
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
@@ -539,6 +605,24 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'cloudflare') {
       return _initiateCloudflareOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'sentry') {
+      return _initiateSentryOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'zapier') {
+      return _initiateZapierOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'airtable') {
+      return _initiateAirtableOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'monday') {
+      return _initiateMondayOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'klaviyo') {
+      return _initiateKlaviyoOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'miro') {
+      return _initiateMiroOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -729,6 +813,23 @@ const IntegrationsView = (() => {
 
     window.location.href = authUrl;
   }
+
+  function _initiateOAuthGeneric(name, baseUrl) {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: `Please sign in to connect ${name}.`, type: 'error' });
+      return;
+    }
+    const redirectUrl = window.location.origin + '/app/#/security';
+    window.location.href = `${baseUrl}/authorize?user_id=${encodeURIComponent(user.id)}&redirect_url=${encodeURIComponent(redirectUrl)}`;
+  }
+
+  function _initiateSentryOAuth()   { _initiateOAuthGeneric('Sentry',     SENTRY_OAUTH_URL); }
+  function _initiateZapierOAuth()   { _initiateOAuthGeneric('Zapier',     ZAPIER_OAUTH_URL); }
+  function _initiateAirtableOAuth() { _initiateOAuthGeneric('Airtable',   AIRTABLE_OAUTH_URL); }
+  function _initiateMondayOAuth()   { _initiateOAuthGeneric('monday.com', MONDAY_OAUTH_URL); }
+  function _initiateKlaviyoOAuth()  { _initiateOAuthGeneric('Klaviyo',    KLAVIYO_OAUTH_URL); }
+  function _initiateMiroOAuth()     { _initiateOAuthGeneric('Miro',       MIRO_OAUTH_URL); }
 
   function _disconnectMcp(connId, el) {
     if (!confirm('Disconnect this MCP? All agents will lose access to its tools.')) return;

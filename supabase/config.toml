@@ -411,6 +411,18 @@ verify_jwt = false
 verify_jwt = false
 [functions.cloudflare-oauth]
 verify_jwt = false
+[functions.sentry-oauth]
+verify_jwt = false
+[functions.zapier-oauth]
+verify_jwt = false
+[functions.airtable-oauth]
+verify_jwt = false
+[functions.monday-oauth]
+verify_jwt = false
+[functions.klaviyo-oauth]
+verify_jwt = false
+[functions.miro-oauth]
+verify_jwt = false
 
 [analytics]
 enabled = true
