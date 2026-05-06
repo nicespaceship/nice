@@ -22,6 +22,7 @@ const IntegrationsView = (() => {
     { id:'notion',    name:'Notion',            desc:'Pages, databases, comments, teams, users — read-only',             icon:'brand-notion', tools:['notion-search','notion-fetch','notion-get-comments','notion-get-teams','notion-get-users'], transport:'streamable-http', auth:'oauth', cat:'docs' },
     { id:'stripe',    name:'Stripe',            desc:'Customers, payments, subscriptions, invoices, products — read-only', icon:'brand-stripe', tools:['list_customers','list_payment_intents','list_subscriptions','list_invoices','list_products','list_prices','list_coupons','list_disputes','retrieve_balance','get_stripe_account_info','fetch_stripe_resources','search_stripe_resources','search_stripe_documentation','stripe_api_details','stripe_api_search','stripe_integration_recommender'], transport:'streamable-http', auth:'oauth', cat:'payments' },
     { id:'atlassian', name:'Atlassian',         desc:'Jira issues, Confluence pages, Compass components — read-only',     icon:'brand-atlassian', tools:['searchJiraIssuesUsingJql','getJiraIssue','getVisibleJiraProjects','getTransitionsForJiraIssue','getIssueLinkTypes','getJiraIssueRemoteIssueLinks','getJiraIssueTypeMetaWithFields','getJiraProjectIssueTypesMetadata','lookupJiraAccountId','searchConfluenceUsingCql','getConfluencePage','getConfluenceSpaces','getPagesInConfluenceSpace','getConfluencePageDescendants','getConfluencePageFooterComments','getConfluencePageInlineComments','getConfluenceCommentChildren','searchAtlassian','fetchAtlassian','getTeamworkGraphContext','getTeamworkGraphObject','getCompassComponent','getCompassComponents','getCompassComponentActivityEvents','getCompassComponentLabels','getCompassComponentTypes','getCompassCustomFieldDefinitions','getCompassComponentsOwnedByMyTeams','atlassianUserInfo','getAccessibleAtlassianResources'], transport:'streamable-http', auth:'oauth', cat:'pm' },
+    { id:'cloudflare',name:'Cloudflare',        desc:'Workers, KV, R2, D1, Hyperdrive — read-only (D1 query allows raw SQL)', icon:'brand-cloudflare', tools:['accounts_list','set_active_account','search_cloudflare_documentation','workers_list','workers_get_worker','workers_get_worker_code','kv_namespaces_list','kv_namespace_get','r2_buckets_list','r2_bucket_get','d1_databases_list','d1_database_get','d1_database_query','hyperdrive_configs_list','hyperdrive_config_get','migrate_pages_to_workers_guide'], transport:'streamable-http', auth:'oauth', cat:'dev' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -186,6 +187,15 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Atlassian Connected', message: 'Your Atlassian site is now linked. Agents can search Jira issues, read Confluence pages, and pull Compass components.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('cloudflare_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Cloudflare Connected', message: 'Your Cloudflare account is now linked. Agents can list Workers, KV, R2, D1, and Hyperdrive resources, and query D1 databases.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -487,6 +497,7 @@ const IntegrationsView = (() => {
   const NOTION_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/notion-oauth`;
   const STRIPE_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/stripe-oauth`;
   const ATLASSIAN_OAUTH_URL = `${NICE_API_BASE}/functions/v1/atlassian-oauth`;
+  const CLOUDFLARE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cloudflare-oauth`;
 
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
@@ -525,6 +536,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'atlassian') {
       return _initiateAtlassianOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'cloudflare') {
+      return _initiateCloudflareOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -694,6 +708,22 @@ const IntegrationsView = (() => {
 
     const redirectUrl = window.location.origin + '/app/#/security';
     const authUrl = `${ATLASSIAN_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    window.location.href = authUrl;
+  }
+
+  /** Initiate Cloudflare OAuth flow — redirects to Cloudflare consent screen */
+  function _initiateCloudflareOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Cloudflare.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${CLOUDFLARE_OAUTH_URL}/authorize`
       + `?user_id=${encodeURIComponent(user.id)}`
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 
