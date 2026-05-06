@@ -688,6 +688,84 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       ]);
       State.set('activated-agents', []);
     });
+
+    it('includes unslotted wired agents in the captain manifest so captain knows to dispatch', async () => {
+      // Ship has only a stub crew in slot_assignments. An activated wired agent is NOT slotted
+      // but should appear in the captain's system_prompt manifest so the captain has the signal
+      // to issue [DISPATCH: communications].
+      const stub = { id: 'stub-nav', name: 'Starbuck', config: { role_type: 'pilot', tools: [] } };
+      const wired = { id: 'bp-agent-ws2', name: 'Workspace Agent', config: { role_type: 'specialist', tools: ['gmail_search'] } };
+      State.set('agents', [stub]);
+      State.set('activated-agents', [wired]);
+
+      const shipStubsOnly = {
+        id: 'ship-ghost', name: 'Ghost',
+        slot_assignments: { 'slot-0': 'cap-1', 'slot-1': 'stub-nav' },
+      };
+
+      let capturedSystemPrompt = '';
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          if (!capturedSystemPrompt) capturedSystemPrompt = bp.config?.system_prompt || '';
+          return { finalAnswer: 'No dispatch needed.', steps: [], metadata: {} };
+        },
+      };
+
+      await MissionRunner.runWithDispatch(captainBp, 'Check my inbox.', shipStubsOnly, {});
+      // Manifest must mention the wired agent and its role so the captain knows it can dispatch
+      expect(capturedSystemPrompt).toContain('Workspace Agent');
+      delete globalThis.AgentExecutor;
+
+      // Restore
+      State.set('agents', [
+        { id: 'cap-1', name: 'Adama', config: { role_type: 'captain', is_captain: true, tools: [] } },
+        { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales', tools: ['crm-search'] } },
+      ]);
+      State.set('activated-agents', []);
+    });
+
+    it('falls back to capability-matched agent when dispatch slot has no matching slotted agent', async () => {
+      // Ship has only stub crew in slot_assignments (no wired agents slotted).
+      // An activated umbrella agent with matching tools should be found via capability fallback.
+      const stubCrew = { id: 'stub-1', name: 'Apollo', config: { role_type: 'pilot', tools: [] } };
+      const workspaceAgent = { id: 'bp-agent-ws', name: 'Workspace Agent', config: { role_type: 'specialist', tools: ['calendar_list_events', 'gmail_search'] } };
+      State.set('agents', [stubCrew]);
+      State.set('activated-agents', [workspaceAgent]);
+
+      const shipAllStubs = {
+        id: 'ship-bsg2', name: 'Galactica',
+        // Workspace agent is NOT in slot_assignments — only the stub crew is
+        slot_assignments: { 'slot-0': 'cap-1', 'slot-1': 'stub-1' },
+      };
+
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          calls.push({ bpId: bp.id || bp.name, prompt });
+          if (calls.length === 1) {
+            return { finalAnswer: '[DISPATCH: communications] What emails did I get today?', steps: [], metadata: {} };
+          }
+          if (calls.length === 2) {
+            // Should be Workspace Agent, not the stub
+            return { finalAnswer: '3 emails from HQ.', steps: [], metadata: {} };
+          }
+          return { finalAnswer: 'You received 3 emails from HQ today.', steps: [], metadata: {} };
+        },
+      };
+
+      const result = await MissionRunner.runWithDispatch(captainBp, 'Any emails today?', shipAllStubs, {});
+      expect(result.finalAnswer).toBe('You received 3 emails from HQ today.');
+      // Crew call must have gone to Workspace Agent (id 'bp-agent-ws'), not the stub ('stub-1')
+      expect(calls[1].bpId).toBe('bp-agent-ws');
+      delete globalThis.AgentExecutor;
+
+      // Restore
+      State.set('agents', [
+        { id: 'cap-1', name: 'Adama', config: { role_type: 'captain', is_captain: true, tools: [] } },
+        { id: 'a-sales', name: 'Apollo', config: { role_type: 'sales', tools: ['crm-search'] } },
+      ]);
+      State.set('activated-agents', []);
+    });
   });
 
   it('templated run (no source flag) still lands in review (regression guard)', async () => {
