@@ -16,6 +16,7 @@ const IntegrationsView = (() => {
     { id:'google',    name:'Google Workspace', desc:'Gmail, Drive, Calendar — read & write',                    icon:'mail', tools:['gmail_search','gmail_read','gmail_send','gmail_draft','drive_search','drive_read','calendar_list','calendar_create','calendar_update'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
     { id:'microsoft', name:'Microsoft 365',    desc:'Outlook, Calendar, Contacts, OneDrive — read & write',     icon:'mail', tools:['outlook_search_messages','outlook_send_message','outlook_create_draft','calendar_ms_list_events','calendar_ms_create_event','contacts_ms_search','onedrive_search_files','onedrive_read_file','onedrive_upload_file'], transport:'streamable-http', auth:'oauth', cat:'workspace' },
     { id:'hubspot',   name:'HubSpot',           desc:'CRM objects, properties, campaigns — read & write',          icon:'users', tools:['search_crm_objects','get_crm_objects','manage_crm_objects','search_properties','get_properties','search_owners','get_organization_details','get_user_details','get_campaign_contacts_by_type','get_campaign_analytics','get_campaign_asset_metrics'], transport:'streamable-http', auth:'oauth', cat:'crm' },
+    { id:'github',    name:'GitHub',            desc:'Repos, issues, pull requests, code, releases, Actions — read-only', icon:'code',  tools:['search_code','search_issues','search_pull_requests','search_repositories','search_users','get_commit','get_file_contents','get_label','get_latest_release','get_me','get_release_by_tag','get_tag','get_team_members','get_teams','issue_read','pull_request_read','list_branches','list_commits','list_issue_types','list_issues','list_pull_requests','list_releases','list_tags'], transport:'streamable-http', auth:'oauth', cat:'dev' },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
@@ -126,6 +127,15 @@ const IntegrationsView = (() => {
       _loadMcps();
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'HubSpot Connected', message: 'Your HubSpot account is now linked. Agents can read and update contacts, deals, and companies.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
+    if (params.get('github_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'GitHub Connected', message: 'Your GitHub account is now linked. Agents can read repos, issues, pull requests, and Actions.', type: 'system' });
       }
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
@@ -428,6 +438,11 @@ const IntegrationsView = (() => {
     ? `${SB.client.supabaseUrl}/functions/v1/hubspot-oauth`
     : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/hubspot-oauth';
 
+  /** GitHub OAuth base URL for the edge function */
+  const GITHUB_OAUTH_URL = (typeof SB !== 'undefined' && SB.client?.supabaseUrl)
+    ? `${SB.client.supabaseUrl}/functions/v1/github-oauth`
+    : 'https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/github-oauth';
+
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
@@ -447,6 +462,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'hubspot') {
       return _initiateHubspotOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'github') {
+      return _initiateGithubOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -520,6 +538,22 @@ const IntegrationsView = (() => {
 
     const redirectUrl = window.location.origin + '/app/#/security';
     const authUrl = `${HUBSPOT_OAUTH_URL}/authorize`
+      + `?user_id=${encodeURIComponent(user.id)}`
+      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+
+    window.location.href = authUrl;
+  }
+
+  /** Initiate GitHub OAuth flow — redirects to GitHub consent screen */
+  function _initiateGithubOAuth() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect GitHub.', type: 'error' });
+      return;
+    }
+
+    const redirectUrl = window.location.origin + '/app/#/security';
+    const authUrl = `${GITHUB_OAUTH_URL}/authorize`
       + `?user_id=${encodeURIComponent(user.id)}`
       + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
 

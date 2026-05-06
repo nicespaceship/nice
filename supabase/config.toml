@@ -397,6 +397,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.hubspot-oauth]
 verify_jwt = false
+[functions.github-oauth]
+verify_jwt = false
 
 [analytics]
 enabled = true
