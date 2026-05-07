@@ -569,7 +569,7 @@ const ShipSetupWizard = (() => {
             const crewSlotIdx = Object.entries(_data.slotAssignments).find(([, v]) => v === aid)?.[0];
             const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${crewSlotIdx}` : null;
             const baseCfg = crewMember?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] };
-            const newAgent = {
+            let newAgent = {
               id: `agent-${Date.now()}-${i}`,
               name: agentName,
               category: crewMember?.config?.agentRole || 'Ops',
@@ -580,6 +580,9 @@ const ShipSetupWizard = (() => {
               tags: [], activated: true,
               flavor: `Auto-created for ${_data.shipName || _blueprint.name}.`,
             };
+            // Persist to user_agents so a localStorage wipe doesn't strand
+            // the slot character with a dangling synthetic id. No-op on guest.
+            newAgent = await _persistSlotAgent(newAgent);
             resolvedId = newAgent.id;
             Blueprints.activateAgent(newAgent.id);
             if (typeof State !== 'undefined') {
@@ -613,7 +616,7 @@ const ShipSetupWizard = (() => {
         const agentName = crewMember?.label || `${slot.label} Agent`;
         const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${i}` : null;
         const baseCfg = crewMember?.config || { role: slot.label, type: 'Agent', llm_engine: 'claude-4', tools: [] };
-        const newAgent = {
+        let newAgent = {
           id: `agent-${Date.now()}-auto-${i}`,
           name: agentName,
           category: crewMember?.config?.agentRole || slot.label,
@@ -624,6 +627,8 @@ const ShipSetupWizard = (() => {
           tags: [], activated: true,
           flavor: `Auto-created for ${slot.label} station.`,
         };
+        // Same persistence pattern as the custom-slot branch above.
+        newAgent = await _persistSlotAgent(newAgent);
         Blueprints.activateAgent(newAgent.id);
         if (typeof State !== 'undefined') {
           const agents = State.get('agents') || [];
@@ -770,5 +775,36 @@ const ShipSetupWizard = (() => {
 
   function _wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  return { open, close };
+  /* ── Persist a wizard-created slot character to user_agents ──
+     Slot characters created here used to live ONLY in localStorage's
+     `nice-custom-agents` with synthetic ids. A localStorage wipe
+     stranded `slot_assignments` referencing dangling ids and broke
+     every activated ship's dispatch chain (see Falcon dispatch session
+     2026-05-07). Mirror the persistence pattern from setup-wizard.js
+     and crew-generator.js so signed-in users get a durable Supabase
+     row from the start; guests fall through to local-only. */
+  async function _persistSlotAgent(agent) {
+    const userId = (typeof State !== 'undefined' && State.get('user') && State.get('user').id) || null;
+    if (!userId || typeof SB === 'undefined' || !SB.isReady()) return agent;
+    try {
+      // Match the row shape used by crew-generator.js and consumed by
+      // _loadUserCreations in blueprints.js — config JSONB carries
+      // everything except (id, user_id, name, rarity, status).
+      const created = await SB.db('user_agents').create({
+        user_id: userId,
+        name: agent.name,
+        rarity: agent.rarity || 'Common',
+        status: agent.status || 'idle',
+        config: agent.config || {},
+      });
+      if (created && created.id) {
+        return Object.assign({}, agent, { id: created.id, supabase_id: created.id });
+      }
+    } catch (err) {
+      console.warn('[ShipSetupWizard] user_agents create failed for', agent.name, '— falling back to local-only:', err.message);
+    }
+    return agent;
+  }
+
+  return { open, close, _persistSlotAgent };
 })();
