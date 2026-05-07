@@ -95,8 +95,98 @@ describe('AgentExecutor', () => {
     });
 
     it('JSON-stringifies object enum values rather than producing [object Object]', () => {
+      // No type declared — sanitizer adds type:'string' so Gemini accepts
+      // the enum (Gemini rejects enum without type:string).
       expect(sanitize({ enum: [{ x: 1 }] }))
-        .toEqual({ enum: ['{"x":1}'] });
+        .toEqual({ type: 'string', enum: ['{"x":1}'] });
+    });
+
+    it('adds type:"string" when an enum is set without a declared type', () => {
+      // Klaviyo's MCP schema (live failure case 2026-05-07) has bare
+      // { enum: [...] } leaves nested inside any_of branches. JSON Schema
+      // infers string from string literals; Gemini doesn't, and rejects
+      // with `only allowed for STRING type`. Default the type when one
+      // wasn't declared so the schema reaches Gemini valid.
+      expect(sanitize({ enum: ['foo', 'bar'] }))
+        .toEqual({ type: 'string', enum: ['foo', 'bar'] });
+      expect(sanitize({ const: 'bar' }))
+        .toEqual({ type: 'string', enum: ['bar'] });
+    });
+
+    it('preserves explicit non-string types alongside enum (per #433)', () => {
+      // type:"boolean" / "integer" / "null" with stringified enum values
+      // is the contract from #433 — Gemini parses the string-encoded
+      // values back to the parent type at function-call time. The
+      // type-defaulting fix above must not override an explicit type.
+      expect(sanitize({ type: 'boolean', enum: [true] }))
+        .toEqual({ type: 'boolean', enum: ['true'] });
+      expect(sanitize({ type: 'integer', enum: [1, 2] }))
+        .toEqual({ type: 'integer', enum: ['1', '2'] });
+    });
+
+    it('adds type:"string" inside any_of branches where the leaf has no type', () => {
+      // Mirrors the deeply-nested Klaviyo shape that broke Gemini before
+      // this fix. Each any_of branch is sanitized independently; bare
+      // enum/const leaves there get type:"string" so the schema is
+      // valid OpenAPI-3.0-subset for Gemini.
+      const input = {
+        type: 'object',
+        properties: {
+          display: {
+            anyOf: [
+              { enum: ['compact', 'expanded'] },
+              { type: 'object', properties: { mode: { const: 'custom' } } },
+            ],
+          },
+        },
+      };
+      expect(sanitize(input)).toEqual({
+        type: 'object',
+        properties: {
+          display: {
+            anyOf: [
+              { type: 'string', enum: ['compact', 'expanded'] },
+              { type: 'object', properties: { mode: { type: 'string', enum: ['custom'] } } },
+            ],
+          },
+        },
+      });
+    });
+
+    it('handles enum-without-type buried many levels deep (Klaviyo shape)', () => {
+      // The live Gemini 400 was at function_declarations[131] with the
+      // offending leaf ~11 levels deep inside any_of/properties chains.
+      // This test verifies the recursion + type-defaulting reach the
+      // bottom of arbitrarily nested compositions.
+      const deep = {
+        type: 'object',
+        properties: {
+          filters: {
+            anyOf: [
+              {
+                type: 'object',
+                properties: {
+                  field: {
+                    anyOf: [
+                      {
+                        type: 'object',
+                        properties: {
+                          display: { enum: ['a', 'b', 'c'] },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+      };
+      const result = sanitize(deep);
+      const leaf = result.properties.filters.anyOf[0]
+        .properties.field.anyOf[0]
+        .properties.display;
+      expect(leaf).toEqual({ type: 'string', enum: ['a', 'b', 'c'] });
     });
 
     it('converts type: ["string", "null"] to type: "string" + nullable: true', () => {

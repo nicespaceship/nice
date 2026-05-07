@@ -486,6 +486,7 @@ const AgentExecutor = (() => {
     if (Array.isArray(node)) return node.map(_sanitizeForGemini);
     if (!node || typeof node !== 'object') return node;
     const out = {};
+    let enumSet = false;
     for (const key of Object.keys(node)) {
       if (_GEMINI_DROP_FIELDS.has(key)) continue;
       const value = node[key];
@@ -495,6 +496,7 @@ const AgentExecutor = (() => {
         // (boolean discriminators, numeric literals) to their string form
         // rather than producing `enum: [true]` which Gemini rejects.
         out.enum = [_stringifyEnumValue(value)];
+        enumSet = true;
         continue;
       }
       if (key === 'enum' && Array.isArray(value)) {
@@ -502,6 +504,7 @@ const AgentExecutor = (() => {
         // schemas with `enum: [true, false]` or `enum: [1, 2, 3]` would
         // otherwise fail with `Invalid value at ...enum[0] (TYPE_STRING)`.
         out.enum = value.map(_stringifyEnumValue);
+        enumSet = true;
         continue;
       }
       if (key === 'type' && Array.isArray(value)) {
@@ -514,6 +517,15 @@ const AgentExecutor = (() => {
       }
       out[key] = _sanitizeForGemini(value);
     }
+    // Gemini rejects `enum` on a node without `type: "string"` with
+    // `only allowed for STRING type`. Source schemas (Klaviyo's MCP for
+    // one) put plain `{ enum: [...] }` leaves inside any_of/oneOf
+    // branches with no type declared — JSON Schema infers string from
+    // the literals, Gemini doesn't. Default the type when an enum was
+    // set without one. Existing `type: "boolean"` / `"integer"` / etc.
+    // are preserved per #433 (Gemini parses string-encoded enums back
+    // to the parent type at function-call time).
+    if (enumSet && !out.type) out.type = 'string';
     return out;
   }
 
