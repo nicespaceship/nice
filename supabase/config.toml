@@ -411,6 +411,12 @@ verify_jwt = false
 verify_jwt = false
 [functions.cloudflare-oauth]
 verify_jwt = false
+[functions.cf-browser-oauth]
+verify_jwt = false
+[functions.cf-observability-oauth]
+verify_jwt = false
+[functions.cf-builds-oauth]
+verify_jwt = false
 [functions.sentry-oauth]
 verify_jwt = false
 [functions.zapier-oauth]
