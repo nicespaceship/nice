@@ -50,15 +50,27 @@ const PromptPanel = (() => {
   let _routeAgent = null; // agent context from current route (e.g. #/agents/:id)
   let _routeShip = null;  // ship context from current route (#/bridge/spaceships/:id or schematic active ship)
 
-  // On a hard refresh, BlueprintsView/Router renders before
-  // State.spaceships hydrates from Supabase. _updateRouteContext finds
-  // no ship and falls back to "Ask NICE…", and stays stale because
-  // syncRoute only fires on hash change. Re-resolve when ships arrive.
-  function _onShipsHydrate() {
+  // _updateRouteContext only re-runs on hashchange by default. Three
+  // additional triggers cover state mutations that affect routing
+  // without changing the URL:
+  //   - State.spaceships changes (initial hydration after sign-in,
+  //     ship activation, deactivation)
+  //   - State.agents changes (slot characters arrive after ship
+  //     activation; an agent the user is messaging becomes available)
+  //   - localStorage[mcShip] changes (active-ship swap on Schematic;
+  //     dispatched same-tab via StorageEvent by activation flows and
+  //     the Schematic ship-picker)
+  function _resyncRoute() {
     try { _updateRouteContext(); } catch { /* race during init */ }
   }
   if (typeof State !== 'undefined' && State.on) {
-    State.on('spaceships', _onShipsHydrate);
+    State.on('spaceships', _resyncRoute);
+    State.on('agents', _resyncRoute);
+  }
+  if (typeof window !== 'undefined' && typeof Utils !== 'undefined') {
+    window.addEventListener('storage', (e) => {
+      if (e && e.key === Utils.KEYS.mcShip) _resyncRoute();
+    });
   }
 
   /* ── File attachments (staged until send) ──

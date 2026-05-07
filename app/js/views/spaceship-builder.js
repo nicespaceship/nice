@@ -408,7 +408,10 @@ const SpaceshipBuilderView = (() => {
         _showSetupChoice(shipId, { name, category, description: desc, flavor, tags, slotCount: cls.slots.length, slots: row.slots });
         return;
       }
-      if (shipId) localStorage.setItem(Utils.KEYS.mcShip, shipId);
+      if (shipId) {
+        localStorage.setItem(Utils.KEYS.mcShip, shipId);
+        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: shipId }));
+      }
       Router.navigate('#/bridge?tab=schematic');
     } catch (err) {
       errEl.textContent = err.message || 'Failed to save spaceship.';

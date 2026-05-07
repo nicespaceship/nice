@@ -341,7 +341,10 @@ const SetupWizard = (() => {
       actions.querySelector('#wiz-close-done').addEventListener('click', close);
       actions.querySelector('#wiz-view-ship').addEventListener('click', () => {
         close();
-        if (shipId) localStorage.setItem(Utils.KEYS.mcShip, shipId);
+        if (shipId) {
+          localStorage.setItem(Utils.KEYS.mcShip, shipId);
+          window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: shipId }));
+        }
         location.hash = '#/bridge?tab=schematic';
       });
       document.getElementById('wiz-run-mission')?.addEventListener('click', () => {
