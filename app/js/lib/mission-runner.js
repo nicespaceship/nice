@@ -732,7 +732,38 @@ const MissionRunner = (() => {
     return _resolveByCapability(name, agents);
   }
 
-  // Maps dispatch role names to tool-ID substrings for capability-based fallback.
+  // Role → required capability_tags. Dispatch resolves a role to a wired
+  // agent by intersecting these required tags with the agent's
+  // capability_tags (set on the catalog blueprint, see migration
+  // 20260507053945_blueprints_capability_tags.sql). An agent matches if
+  // any of its tags appears in the required list.
+  //
+  // Vocabulary is documented in the migration. Keep this map small and
+  // role-named — narrative aliases (e.g. "pilot") fall through to the
+  // legacy substring matcher below.
+  const _ROLE_REQUIRED_CAPS = {
+    captain:        [],
+    communications: ['email', 'messaging', 'calendar', 'communications'],
+    sales:          ['crm', 'sales'],
+    engineering:    ['code', 'issues', 'engineering'],
+    product:        ['pm', 'issues', 'product', 'docs'],
+    operations:     ['pm', 'automation', 'database', 'ops'],
+    marketing:      ['marketing', 'messaging', 'media-gen', 'email'],
+    analytics:      ['analytics'],
+    finance:        ['payments', 'finance'],
+    design:         ['design', 'media-gen'],
+    research:       ['research', 'web', 'docs'],
+    people:         ['messaging'],
+    legal:          ['docs'],
+    security:       ['observability', 'infrastructure'],
+    documentation: ['docs'],
+    support:        ['messaging', 'crm'],
+  };
+
+  // Legacy fallback. Used when an activated agent's catalog blueprint
+  // can't be resolved (custom builds, missing blueprint_id, or the
+  // blueprint exists but predates the capability_tags migration).
+  // Removed once the soak confirms tag coverage is sufficient.
   const _ROLE_TOOL_HINTS = {
     communications: ['gmail', 'calendar', 'drive', 'outlook', 'sharepoint', 'microsoft', 'slack', 'email'],
     sales:          ['hubspot', 'salesforce', 'crm', 'deal'],
@@ -745,17 +776,83 @@ const MissionRunner = (() => {
     people:         ['slack', 'hr', 'recruit'],
   };
 
-  // Find an activated agent whose tool list matches a role name.
-  // Skips captains (avoids routing to self) and tool-less stubs.
+  // Resolve the capability_tags for an agent at dispatch time. Reads
+  // (in order): top-level `capability_tags`, `config.capability_tags`,
+  // catalog blueprint via `blueprint_id` or `id`. Returns an empty
+  // array when nothing matches — caller falls back to substring
+  // matching.
+  function _getAgentCapabilityTags(agent) {
+    if (!agent) return [];
+    if (Array.isArray(agent.capability_tags) && agent.capability_tags.length) {
+      return agent.capability_tags;
+    }
+    const cfgTags = agent.config?.capability_tags;
+    if (Array.isArray(cfgTags) && cfgTags.length) return cfgTags;
+    if (typeof Blueprints !== 'undefined' && Blueprints.isReady?.()) {
+      const ids = [agent.blueprint_id, agent.id].filter(Boolean);
+      for (const id of ids) {
+        const bp = Blueprints.getAgent(id);
+        if (bp && Array.isArray(bp.capability_tags) && bp.capability_tags.length) {
+          return bp.capability_tags;
+        }
+      }
+    }
+    return [];
+  }
+
+  // Find an activated agent whose capability_tags match a role.
+  // Falls back to substring-matching tool IDs against _ROLE_TOOL_HINTS
+  // when no tagged agent is found (e.g. custom builds without a
+  // catalog blueprint). Skips captains and tool-less stubs.
+  //
+  // Within a tag match, prefers kind='capability' (umbrella) over
+  // kind='character' (persona overlay). When both are activated, the
+  // umbrella is the canonical dispatch target — characters are only
+  // surfaced as crew when they're explicitly slotted on the ship.
   function _resolveByCapability(roleName, agents) {
+    if (!agents || !agents.length) return null;
+    const requiredTags = _ROLE_REQUIRED_CAPS[roleName];
+    if (Array.isArray(requiredTags) && requiredTags.length) {
+      const tagMatches = [];
+      for (const agent of agents) {
+        if (_isCaptainAgent(agent)) continue;
+        const tools = agent.config?.tools;
+        if (!Array.isArray(tools) || !tools.length) continue;
+        const tags = _getAgentCapabilityTags(agent);
+        if (!tags.length) continue;
+        if (tags.some(t => requiredTags.includes(t))) tagMatches.push(agent);
+      }
+      if (tagMatches.length) {
+        const capability = tagMatches.find(a => _agentKind(a) === 'capability');
+        return capability || tagMatches[0];
+      }
+    }
     const hints = _ROLE_TOOL_HINTS[roleName];
-    if (!hints || !agents) return null;
+    if (!hints) return null;
     for (const agent of agents) {
       if (_isCaptainAgent(agent)) continue;
       const tools = agent.config?.tools;
       if (!Array.isArray(tools) || !tools.length) continue;
       const toolStr = tools.join(' ').toLowerCase();
       if (hints.some(h => toolStr.includes(h))) return agent;
+    }
+    return null;
+  }
+
+  // Resolve the kind discriminator for an agent at dispatch time.
+  // Reads (in order): top-level `kind`, `config.kind`, catalog
+  // blueprint via `blueprint_id` or `id`. Returns null when nothing
+  // matches — caller treats unknown-kind as character for ranking.
+  function _agentKind(agent) {
+    if (!agent) return null;
+    if (agent.kind) return agent.kind;
+    if (agent.config?.kind) return agent.config.kind;
+    if (typeof Blueprints !== 'undefined' && Blueprints.isReady?.()) {
+      const ids = [agent.blueprint_id, agent.id].filter(Boolean);
+      for (const id of ids) {
+        const bp = Blueprints.getAgent(id);
+        if (bp?.kind) return bp.kind;
+      }
     }
     return null;
   }
@@ -838,7 +935,7 @@ const MissionRunner = (() => {
     // When a ship's crew_overrides only has character stubs (tools: []), the
     // captain's manifest would otherwise list no wired agents and would never
     // know to issue [DISPATCH: communications] etc.
-    for (const role of Object.keys(_ROLE_TOOL_HINTS)) {
+    for (const role of Object.keys(_ROLE_REQUIRED_CAPS)) {
       const capable = _resolveByCapability(role, agents);
       if (capable && !slottedIds.has(capable.id) && !crewAgents.find(a => a.id === capable.id)) {
         crewAgents.push(capable);
@@ -969,8 +1066,12 @@ const MissionRunner = (() => {
     // Exported for unit tests
     _extractDispatches,
     _resolveSlotAgent,
+    _resolveByCapability,
+    _getAgentCapabilityTags,
+    _agentKind,
     _isCaptainAgent,
     _buildCrewManifest,
     _injectCaptainContext,
+    _ROLE_REQUIRED_CAPS,
   };
 })();

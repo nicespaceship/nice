@@ -942,6 +942,46 @@ const Blueprints = (() => {
   }
 
   /**
+   * List capability blueprints (kind='capability'). These are the wired
+   * umbrellas that actually carry tools — HubSpot Agent, GitHub Agent,
+   * etc. Excludes characters (persona overlays) and spaceships.
+   *
+   * Falls back to checking presence of capability_tags for blueprints
+   * loaded before the kind column existed (cached snapshots).
+   */
+  function listCapabilities() {
+    if (!_catalogLoaded) _loadCatalogFromDB();
+    return _agents.filter(a => {
+      if (a.kind === 'capability') return true;
+      if (a.kind) return false;
+      return Array.isArray(a.capability_tags) && a.capability_tags.length > 0;
+    });
+  }
+
+  /**
+   * List character blueprints (kind='character'). These are persona
+   * overlays — Apollo, Geordi, Picard. Some wrap capabilities via
+   * config.capability_id; some are stubs (tool-less).
+   */
+  function listCharacters() {
+    if (!_catalogLoaded) _loadCatalogFromDB();
+    return _agents.filter(a => a.kind === 'character');
+  }
+
+  /**
+   * Look up a capability blueprint by id. Returns null if the id
+   * resolves to a character or spaceship instead — callers shouldn't
+   * mistake one for the other.
+   */
+  function getCapability(id) {
+    const bp = getAgent(id);
+    if (!bp) return null;
+    if (bp.kind === 'capability') return bp;
+    if (!bp.kind && Array.isArray(bp.capability_tags) && bp.capability_tags.length) return bp;
+    return null;
+  }
+
+  /**
    * List the user's own blueprints — custom builds and imports, distinct
    * from catalog activations. Splits by type so the view can render them
    * in two sections.
@@ -1120,6 +1160,8 @@ const Blueprints = (() => {
       ...agent,
       description: catalog.description || agent.description,
       flavor: catalog.flavor || agent.flavor,
+      kind: catalog.kind || agent.kind,
+      capability_tags: catalog.capability_tags || agent.capability_tags,
       config: mergedCfg,
     };
   }
@@ -1247,6 +1289,8 @@ const Blueprints = (() => {
         desc: bp.desc || bp.description,
         description: bp.description || bp.desc,
         tags: bp.tags,
+        kind: bp.kind,
+        capability_tags: bp.capability_tags || [],
         stats: bp.stats,
       };
       // Attach Supabase UUID if available
@@ -2532,6 +2576,7 @@ const Blueprints = (() => {
 
     // Catalog queries
     getAgent, listAgents, getSpaceship, listSpaceships,
+    listCapabilities, listCharacters, getCapability,
     listMyBlueprints,
     get,
 

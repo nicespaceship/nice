@@ -537,6 +537,111 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     });
   });
 
+  describe('_resolveByCapability', () => {
+    it('matches an agent by capability_tags before falling back to substring', () => {
+      const taggedHubspot = {
+        id: 'bp-agent-hubspot',
+        name: 'HubSpot Agent',
+        capability_tags: ['crm', 'sales'],
+        config: { role_type: 'specialist', tools: ['search_crm_objects', 'get_crm_objects'] },
+      };
+      const result = MissionRunner._resolveByCapability('sales', [taggedHubspot]);
+      expect(result.id).toBe('bp-agent-hubspot');
+    });
+
+    it('reads capability_tags from config when top-level is absent', () => {
+      const agent = {
+        id: 'a-cfg', name: 'Cfg Agent',
+        config: { role_type: 'specialist', tools: ['search_crm_objects'], capability_tags: ['crm'] },
+      };
+      expect(MissionRunner._resolveByCapability('sales', [agent])?.id).toBe('a-cfg');
+    });
+
+    it('skips captains so dispatch never routes to self', () => {
+      const cap = {
+        id: 'cap-1', name: 'Adama',
+        capability_tags: ['crm'],
+        config: { role_type: 'captain', is_captain: true, tools: ['search_crm_objects'] },
+      };
+      expect(MissionRunner._resolveByCapability('sales', [cap])).toBeNull();
+    });
+
+    it('skips tool-less stubs even when tags would match', () => {
+      const stub = {
+        id: 'stub-1', name: 'Stub',
+        capability_tags: ['crm'],
+        config: { role_type: 'sales', tools: [] },
+      };
+      expect(MissionRunner._resolveByCapability('sales', [stub])).toBeNull();
+    });
+
+    it('falls back to substring matching for agents without capability_tags', () => {
+      const untagged = {
+        id: 'a-untagged', name: 'Custom Agent',
+        config: { role_type: 'specialist', tools: ['gmail_search', 'calendar_list_events'] },
+      };
+      expect(MissionRunner._resolveByCapability('communications', [untagged])?.id).toBe('a-untagged');
+    });
+
+    it('prefers tagged agents over substring-only matches', () => {
+      const substringOnly = {
+        id: 'a-substring',
+        config: { role_type: 'specialist', tools: ['gmail_search'] },
+      };
+      const tagged = {
+        id: 'a-tagged',
+        capability_tags: ['email', 'communications'],
+        config: { role_type: 'specialist', tools: ['some_other_tool'] },
+      };
+      const result = MissionRunner._resolveByCapability('communications', [substringOnly, tagged]);
+      expect(result.id).toBe('a-tagged');
+    });
+
+    it('returns null for unknown roles', () => {
+      const agent = {
+        id: 'a', capability_tags: ['crm'],
+        config: { role_type: 'specialist', tools: ['x'] },
+      };
+      expect(MissionRunner._resolveByCapability('mythical-role', [agent])).toBeNull();
+    });
+
+    it('exports _ROLE_REQUIRED_CAPS with the canonical role vocabulary', () => {
+      const map = MissionRunner._ROLE_REQUIRED_CAPS;
+      expect(map.communications).toContain('email');
+      expect(map.engineering).toContain('code');
+      expect(map.sales).toContain('crm');
+      expect(map.captain).toEqual([]);
+    });
+
+    it('prefers kind=capability over kind=character when both match', () => {
+      const character = {
+        id: 'bp-agent-349', name: 'Lando',
+        kind: 'character',
+        capability_tags: ['crm', 'sales'],
+        config: { role_type: 'sales', tools: ['search_crm_objects'] },
+      };
+      const capability = {
+        id: 'bp-agent-hubspot', name: 'HubSpot Agent',
+        kind: 'capability',
+        capability_tags: ['crm', 'sales'],
+        config: { role_type: 'specialist', tools: ['search_crm_objects'] },
+      };
+      // Order shouldn't matter — capability should win in either order
+      expect(MissionRunner._resolveByCapability('sales', [character, capability]).id).toBe('bp-agent-hubspot');
+      expect(MissionRunner._resolveByCapability('sales', [capability, character]).id).toBe('bp-agent-hubspot');
+    });
+
+    it('falls through to character when no capability is present', () => {
+      const character = {
+        id: 'bp-agent-349', name: 'Lando',
+        kind: 'character',
+        capability_tags: ['crm', 'sales'],
+        config: { role_type: 'sales', tools: ['search_crm_objects'] },
+      };
+      expect(MissionRunner._resolveByCapability('sales', [character]).id).toBe('bp-agent-349');
+    });
+  });
+
   describe('_buildCrewManifest', () => {
     it('returns empty string for empty crew', () => {
       expect(MissionRunner._buildCrewManifest(null, [])).toBe('');
