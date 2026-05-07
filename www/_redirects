@@ -1,0 +1,8 @@
+# The app lives on nicespaceship.ai. If a user lands on
+# nicespaceship.com/app/* (typo, stale link, confusion between .com and .ai),
+# 301 them to the same path on the app domain instead of falling through to
+# the marketing site's index.html (which silently returns the home page).
+
+/app   https://nicespaceship.ai/app/         301
+/app/  https://nicespaceship.ai/app/         301
+/app/* https://nicespaceship.ai/app/:splat   301
