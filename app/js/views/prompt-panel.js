@@ -494,6 +494,12 @@ const PromptPanel = (() => {
   }
 
   /* ── Execute EXEC actions from LLM responses ── */
+  // Mirrors ship-log.js / workflow-engine.js. Slot-character user_agents
+  // carry synthetic `agent-<ts>-<idx>` ids that are local-only — passing
+  // one to a UUID column triggers Postgres "invalid input syntax for type
+  // uuid" and the user sees `**Failed:** invalid input syntax for type uuid`.
+  const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   async function _executeExec(action, params) {
     const user = State.get('user');
     if (!user) return { ok: false, msg: 'Not signed in' };
@@ -513,6 +519,10 @@ const PromptPanel = (() => {
           if (agentId && agentId.startsWith('bp-') && typeof Blueprints !== 'undefined') {
             agentId = Blueprints.getAgentUuid(agentId) || null;
           }
+          // Anything left that isn't a well-formed UUID (synthetic slot-char
+          // ids like 'agent-<ts>-<idx>', stray prefixes, etc.) → null so the
+          // INSERT succeeds. agentName is preserved for the user-facing reply.
+          if (agentId && !_UUID_RE.test(agentId)) agentId = null;
         }
         try {
           // Try Supabase if authenticated with a real user
