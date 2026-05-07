@@ -450,6 +450,19 @@ const AgentExecutor = (() => {
     'exclusiveMinimum', 'exclusiveMaximum',
   ]);
 
+  /* Coerce an enum value to a Gemini-compatible string. Gemini's `enum`
+     is TYPE_STRING — booleans, numbers, null all get rejected with
+     `Invalid value at ...enum[0] (TYPE_STRING)`. JSON-stringify objects
+     so a sliced view stays readable; everything else gets String(). */
+  function _stringifyEnumValue(v) {
+    if (typeof v === 'string') return v;
+    if (v === null || v === undefined) return String(v);
+    if (typeof v === 'object') {
+      try { return JSON.stringify(v); } catch { return String(v); }
+    }
+    return String(v);
+  }
+
   function _sanitizeForGemini(node) {
     if (Array.isArray(node)) return node.map(_sanitizeForGemini);
     if (!node || typeof node !== 'object') return node;
@@ -459,7 +472,17 @@ const AgentExecutor = (() => {
       const value = node[key];
       if (key === 'const') {
         // Gemini doesn't support `const` — express as a single-value enum.
-        out.enum = [value];
+        // Gemini's enum is TYPE_STRING-only, so coerce non-string consts
+        // (boolean discriminators, numeric literals) to their string form
+        // rather than producing `enum: [true]` which Gemini rejects.
+        out.enum = [_stringifyEnumValue(value)];
+        continue;
+      }
+      if (key === 'enum' && Array.isArray(value)) {
+        // Same TYPE_STRING constraint applies to `enum` directly. Source
+        // schemas with `enum: [true, false]` or `enum: [1, 2, 3]` would
+        // otherwise fail with `Invalid value at ...enum[0] (TYPE_STRING)`.
+        out.enum = value.map(_stringifyEnumValue);
         continue;
       }
       if (key === 'type' && Array.isArray(value)) {
