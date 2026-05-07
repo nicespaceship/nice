@@ -804,17 +804,27 @@ const MissionRunner = (() => {
   // Falls back to substring-matching tool IDs against _ROLE_TOOL_HINTS
   // when no tagged agent is found (e.g. custom builds without a
   // catalog blueprint). Skips captains and tool-less stubs.
+  //
+  // Within a tag match, prefers kind='capability' (umbrella) over
+  // kind='character' (persona overlay). When both are activated, the
+  // umbrella is the canonical dispatch target — characters are only
+  // surfaced as crew when they're explicitly slotted on the ship.
   function _resolveByCapability(roleName, agents) {
     if (!agents || !agents.length) return null;
     const requiredTags = _ROLE_REQUIRED_CAPS[roleName];
     if (Array.isArray(requiredTags) && requiredTags.length) {
+      const tagMatches = [];
       for (const agent of agents) {
         if (_isCaptainAgent(agent)) continue;
         const tools = agent.config?.tools;
         if (!Array.isArray(tools) || !tools.length) continue;
         const tags = _getAgentCapabilityTags(agent);
         if (!tags.length) continue;
-        if (tags.some(t => requiredTags.includes(t))) return agent;
+        if (tags.some(t => requiredTags.includes(t))) tagMatches.push(agent);
+      }
+      if (tagMatches.length) {
+        const capability = tagMatches.find(a => _agentKind(a) === 'capability');
+        return capability || tagMatches[0];
       }
     }
     const hints = _ROLE_TOOL_HINTS[roleName];
@@ -825,6 +835,24 @@ const MissionRunner = (() => {
       if (!Array.isArray(tools) || !tools.length) continue;
       const toolStr = tools.join(' ').toLowerCase();
       if (hints.some(h => toolStr.includes(h))) return agent;
+    }
+    return null;
+  }
+
+  // Resolve the kind discriminator for an agent at dispatch time.
+  // Reads (in order): top-level `kind`, `config.kind`, catalog
+  // blueprint via `blueprint_id` or `id`. Returns null when nothing
+  // matches — caller treats unknown-kind as character for ranking.
+  function _agentKind(agent) {
+    if (!agent) return null;
+    if (agent.kind) return agent.kind;
+    if (agent.config?.kind) return agent.config.kind;
+    if (typeof Blueprints !== 'undefined' && Blueprints.isReady?.()) {
+      const ids = [agent.blueprint_id, agent.id].filter(Boolean);
+      for (const id of ids) {
+        const bp = Blueprints.getAgent(id);
+        if (bp?.kind) return bp.kind;
+      }
     }
     return null;
   }
@@ -1040,6 +1068,7 @@ const MissionRunner = (() => {
     _resolveSlotAgent,
     _resolveByCapability,
     _getAgentCapabilityTags,
+    _agentKind,
     _isCaptainAgent,
     _buildCrewManifest,
     _injectCaptainContext,

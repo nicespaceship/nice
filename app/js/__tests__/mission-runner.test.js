@@ -612,6 +612,34 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       expect(map.sales).toContain('crm');
       expect(map.captain).toEqual([]);
     });
+
+    it('prefers kind=capability over kind=character when both match', () => {
+      const character = {
+        id: 'bp-agent-349', name: 'Lando',
+        kind: 'character',
+        capability_tags: ['crm', 'sales'],
+        config: { role_type: 'sales', tools: ['search_crm_objects'] },
+      };
+      const capability = {
+        id: 'bp-agent-hubspot', name: 'HubSpot Agent',
+        kind: 'capability',
+        capability_tags: ['crm', 'sales'],
+        config: { role_type: 'specialist', tools: ['search_crm_objects'] },
+      };
+      // Order shouldn't matter — capability should win in either order
+      expect(MissionRunner._resolveByCapability('sales', [character, capability]).id).toBe('bp-agent-hubspot');
+      expect(MissionRunner._resolveByCapability('sales', [capability, character]).id).toBe('bp-agent-hubspot');
+    });
+
+    it('falls through to character when no capability is present', () => {
+      const character = {
+        id: 'bp-agent-349', name: 'Lando',
+        kind: 'character',
+        capability_tags: ['crm', 'sales'],
+        config: { role_type: 'sales', tools: ['search_crm_objects'] },
+      };
+      expect(MissionRunner._resolveByCapability('sales', [character]).id).toBe('bp-agent-349');
+    });
   });
 
   describe('_buildCrewManifest', () => {

@@ -1120,6 +1120,7 @@ const Blueprints = (() => {
       ...agent,
       description: catalog.description || agent.description,
       flavor: catalog.flavor || agent.flavor,
+      kind: catalog.kind || agent.kind,
       capability_tags: catalog.capability_tags || agent.capability_tags,
       config: mergedCfg,
     };
@@ -1248,6 +1249,7 @@ const Blueprints = (() => {
         desc: bp.desc || bp.description,
         description: bp.description || bp.desc,
         tags: bp.tags,
+        kind: bp.kind,
         capability_tags: bp.capability_tags || [],
         stats: bp.stats,
       };
