@@ -171,16 +171,35 @@ const AgentExecutor = (() => {
 
     // Provider-agnostic tools schema for nice-ai. LLM sees the bare tool
     // name (the same one ToolRegistry auto-aliases), not the mcp:prefix.
-    const toolsSchema = availableTools.map(t => ({
-      name: t.name,
-      description: t.description || '',
-      parameters: _normalizeSchema(t.schema),
-    }));
+    //
+    // Dedup by name: Gemini's function_declarations API rejects duplicate
+    // names with `Duplicate function declaration found: <name>` and the
+    // whole call fails. Multiple MCPs can expose tools with the same bare
+    // name (Replicate.search + Atlassian.search, etc.). ToolRegistry's
+    // alias map is first-registration-wins, so the second tool was already
+    // unreachable via name resolution — dropping it from the schema just
+    // tells the LLM the truth instead of hiding an unusable declaration.
+    const seenNames = new Set();
+    const toolsSchema = [];
+    const dedupedTools = [];
+    for (const t of availableTools) {
+      if (seenNames.has(t.name)) {
+        console.warn('[AgentExecutor] Duplicate tool name dropped from LLM schema:', t.name, '(kept earlier registration; this one was', t.id + ')');
+        continue;
+      }
+      seenNames.add(t.name);
+      dedupedTools.push(t);
+      toolsSchema.push({
+        name: t.name,
+        description: t.description || '',
+        parameters: _normalizeSchema(t.schema),
+      });
+    }
 
     // Legacy ReAct text fallback for providers that haven't wired native
     // tool-use yet. On modern Claude / Gemini / OpenAI the API pins
     // stop_reason='tool_use' and the model can't skip the call.
-    const toolDescriptions = availableTools.map(t =>
+    const toolDescriptions = dedupedTools.map(t =>
       t.name + ': ' + (t.description || '')
     ).join('\n');
     const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
