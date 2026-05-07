@@ -29,6 +29,7 @@ const IntegrationsView = (() => {
     { id:'monday',    name:'monday.com',        desc:'Boards, items, sub-items, updates, documents — pending monday.com public-app review',           icon:'brand-monday', tools:['monday-list-boards','monday-get-board-groups','monday-list-items-in-groups','monday-list-subitems-in-items','monday-get-board-by-id','monday-get-item-by-id','monday-get-update','monday-list-documents','monday-get-document-content'], transport:'streamable-http', auth:'oauth', cat:'pm', comingSoon:true },
     { id:'klaviyo',   name:'Klaviyo',           desc:'Profiles, lists, segments, campaigns, flows, events, metrics — read-only', icon:'brand-klaviyo', tools:['get_profiles','get_profile','get_lists','get_list','get_segments','get_segment','get_campaigns','get_campaign','get_events','get_metrics','get_metric','get_flows','get_flow'], transport:'streamable-http', auth:'oauth', cat:'marketing' },
     { id:'miro',      name:'Miro',              desc:'Boards, items, connectors, tags, search — read-only',                icon:'brand-miro', tools:['list_boards','get_specific_board','list_items_on_board','get_specific_item','list_connectors_on_board','get_specific_connector','list_tags_on_board','get_tag','search_board_content'], transport:'streamable-http', auth:'oauth', cat:'design' },
+    { id:'replicate', name:'Replicate',         desc:'Image, video, and audio generation — search and run thousands of models (Flux, Stable Diffusion, Bark, Kling, Luma, and more)', icon:'brand-replicate', tools:['search_models','list_models','get_model','create_prediction','get_prediction','cancel_prediction','list_collections','get_collection','list_hardware','get_account'], transport:'streamable-http', auth:'oauth', cat:'media' },
     { id:'vercel',    name:'Vercel',            desc:'Deployments, projects, build & runtime logs — pending Vercel partner approval',  icon:'brand-vercel', tools:['list_teams','list_projects','get_project','list_deployments','get_deployment','get_deployment_build_logs','get_runtime_logs','search_documentation'], transport:'streamable-http', auth:'oauth', cat:'dev', comingSoon:true },
     { id:'asana',     name:'Asana',             desc:'Projects, tasks, sections, comments — pending Asana partner approval',           icon:'brand-asana', tools:['list_workspaces','list_projects','get_project','list_tasks','get_task','search_tasks'], transport:'streamable-http', auth:'oauth', cat:'pm', comingSoon:true },
     { id:'figma',     name:'Figma',             desc:'Files, frames, components, design tokens — pending Figma Dev Mode partner approval', icon:'brand-figma', tools:['list_files','get_file','get_node','get_components','search_files'], transport:'streamable-http', auth:'oauth', cat:'design', comingSoon:true },
@@ -264,6 +265,15 @@ const IntegrationsView = (() => {
       const cleanHash = hashParts[0] || '#/security';
       history.replaceState(null, '', cleanHash);
     }
+    if (params.get('replicate_connected') === 'true') {
+      _oauthHandled = true;
+      _loadMcps();
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Replicate Connected', message: 'Your Replicate account is now linked. Agents can search models and generate images, video, and audio.', type: 'system' });
+      }
+      const cleanHash = hashParts[0] || '#/security';
+      history.replaceState(null, '', cleanHash);
+    }
   }
 
   /* ── Render ───────────────────────────────────────────────────── */
@@ -276,7 +286,7 @@ const IntegrationsView = (() => {
 
     /* Derive unique categories */
     const mcpCats = [...new Set(MCP_CATALOG.map(m => m.cat))];
-    const catLabels = { llm:'LLM', payments:'Payments', cloud:'Cloud', comms:'Comms', data:'Data', crm:'CRM', dev:'DevOps', auto:'Automation', other:'Other', workspace:'Workspace', design:'Design', pm:'Project Mgmt', ops:'Monitoring' };
+    const catLabels = { llm:'LLM', payments:'Payments', cloud:'Cloud', comms:'Comms', data:'Data', crm:'CRM', dev:'DevOps', auto:'Automation', other:'Other', workspace:'Workspace', design:'Design', pm:'Project Mgmt', ops:'Monitoring', media:'Media' };
 
     el.innerHTML = `
       <div class="integrations-wrap">
@@ -568,6 +578,7 @@ const IntegrationsView = (() => {
   const MONDAY_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/monday-oauth`;
   const KLAVIYO_OAUTH_URL   = `${NICE_API_BASE}/functions/v1/klaviyo-oauth`;
   const MIRO_OAUTH_URL      = `${NICE_API_BASE}/functions/v1/miro-oauth`;
+  const REPLICATE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/replicate-oauth`;
 
   function _connectMcp(catalogId, el) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
@@ -627,6 +638,9 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'miro') {
       return _initiateMiroOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'replicate') {
+      return _initiateReplicateOAuth();
     }
 
     // Standard connections (API key / bearer / none)
@@ -834,6 +848,7 @@ const IntegrationsView = (() => {
   function _initiateMondayOAuth()   { _initiateOAuthGeneric('monday.com', MONDAY_OAUTH_URL); }
   function _initiateKlaviyoOAuth()  { _initiateOAuthGeneric('Klaviyo',    KLAVIYO_OAUTH_URL); }
   function _initiateMiroOAuth()     { _initiateOAuthGeneric('Miro',       MIRO_OAUTH_URL); }
+  function _initiateReplicateOAuth(){ _initiateOAuthGeneric('Replicate',  REPLICATE_OAUTH_URL); }
 
   function _disconnectMcp(connId, el) {
     if (!confirm('Disconnect this MCP? All agents will lose access to its tools.')) return;
