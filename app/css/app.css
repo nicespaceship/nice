@@ -2504,7 +2504,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   display:flex; flex-direction:column; align-items:center; gap:16px;
 }
 .auth-logo { display:flex; align-items:center; justify-content:center; }
-.auth-logo-svg { width:48px; height:48px; color:var(--accent); }
+.auth-logo-svg { width:56px; height:56px; color:var(--accent); }
 .auth-title { font-family:var(--font-b); font-size:1.1rem; font-weight:var(--fw-bold); margin:0; }
 .auth-sub { font-family:var(--font-b); font-size:.62rem; letter-spacing:var(--tracking-normal); color:var(--text-muted); margin:0; }
 
@@ -2550,7 +2550,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 
 /* Social sign-in buttons */
-.auth-google-btn, .auth-github-btn, .auth-x-btn, .auth-apple-btn {
+.auth-google-btn, .auth-github-btn, .auth-microsoft-btn, .auth-x-btn, .auth-apple-btn {
   display:flex; align-items:center; justify-content:center; gap:10px;
   width:100%; padding:10px; border:1px solid var(--border); border-radius:var(--radius);
   background:var(--bg-alt); color:var(--text); font-family:var(--font-b); font-size:.78rem;
@@ -2558,6 +2558,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .auth-google-btn:hover { border-color:var(--accent); background:rgba(255,255,255,.04); }
 .auth-github-btn:hover { border-color:#6e40c9; background:rgba(110,64,201,.08); }
+.auth-microsoft-btn:hover { border-color:#00A4EF; background:rgba(0,164,239,.08); }
 .auth-x-btn:hover { border-color:var(--text); background:rgba(255,255,255,.04); }
 .auth-apple-btn:hover { border-color:#a2aaad; background:rgba(255,255,255,.04); }
 .auth-divider {
@@ -6885,6 +6886,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .intg-list-row:hover { background:var(--bg-alt); }
 .intg-list-row--connected { border-color:var(--accent); }
 .intg-list-icon { flex-shrink:0; width:24px; display:flex; align-items:center; justify-content:center; color:var(--accent); }
+.intg-list-icon-svg { width:24px; height:24px; }
 .intg-list-name { font-weight:var(--fw-medium); font-size:.8rem; min-width:120px; }
 .intg-list-desc { flex:1; font-size:.7rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .intg-list-cat { font-size:.55rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--accent2, var(--accent)); min-width:60px; }
@@ -6906,6 +6908,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .mcp-catalog-card--connected { border-color:var(--accent); }
 .mcp-catalog-top { display:flex; align-items:flex-start; gap:10px; }
 .mcp-catalog-icon { flex-shrink:0; }
+.mcp-catalog-icon-svg { width:36px; height:36px; display:block; }
 .mcp-catalog-info { display:flex; flex-direction:column; gap:2px; }
 .mcp-catalog-name { font-family:var(--font-b); font-size:.85rem; font-weight:var(--fw-bold); }
 .mcp-catalog-desc { font-family:var(--font-b); font-size:.6rem; color:var(--text-muted); letter-spacing:var(--tracking-normal); }

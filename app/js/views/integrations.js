@@ -298,7 +298,7 @@ const IntegrationsView = (() => {
       const connected = !!conn;
       if (viewMode === 'list') {
         return `<div class="intg-list-row ${connected ? 'intg-list-row--connected' : ''}" data-cat="${mcp.cat}">
-          <div class="intg-list-icon"><svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${mcp.icon}"/></svg></div>
+          <div class="intg-list-icon"><svg class="intg-list-icon-svg"><use href="#icon-${mcp.icon}"/></svg></div>
           <span class="intg-list-name">${mcp.name}</span>
           <span class="intg-list-desc">${mcp.desc}</span>
           <span class="intg-list-cat mono">${mcp.cat}</span>
@@ -318,7 +318,7 @@ const IntegrationsView = (() => {
 
       return `<div class="mcp-catalog-card ${connected ? 'mcp-catalog-card--connected' : ''}" data-cat="${mcp.cat}">
         <div class="mcp-catalog-top">
-          <div class="mcp-catalog-icon"><svg class="icon icon-md" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${mcp.icon}"/></svg></div>
+          <div class="mcp-catalog-icon"><svg class="mcp-catalog-icon-svg"><use href="#icon-${mcp.icon}"/></svg></div>
           <div class="mcp-catalog-info">
             <span class="mcp-catalog-name">${mcp.name}${scopeBadge}</span>
             <span class="mcp-catalog-desc">${mcp.desc}</span>
