@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -345,6 +345,56 @@ describe('ShipLog', () => {
 
       // Restore for other tests
       State.set('enabled_models', { 'gemini-2.5-flash': true, 'claude-sonnet-4-6': true });
+    });
+
+    // 2026-05-08: Falcon M365 dispatch surfaced literal '[object Object]' in
+    // the captain's [CREW REPORT] block. Root cause was String() coercion
+    // of an object content shape from nice-ai. These tests pin the
+    // normalized output so future content-shape regressions don't make
+    // it back to user-visible chat.
+    describe('content normalization (Bug 2 regression)', () => {
+      let _origInvoke;
+      beforeEach(() => { _origInvoke = SB.functions.invoke; });
+      afterEach(() => { SB.functions.invoke = _origInvoke; });
+
+      it('JSON-stringifies an object-shaped content instead of coercing to "[object Object]"', async () => {
+        SB.functions.invoke = async () => ({
+          data: { content: { events: [{ subject: 'Standup', start: '10am' }] }, model: 'm', usage: { input_tokens: 1, output_tokens: 1 } },
+          error: null,
+        });
+        const result = await ShipLog.execute('ship-objcontent', null, 'check calendar');
+        expect(result.content).not.toBe('[object Object]');
+        expect(typeof result.content).toBe('string');
+        expect(result.content).toContain('Standup');
+      });
+
+      it('extracts text from an Anthropic-style content array', async () => {
+        SB.functions.invoke = async () => ({
+          data: { content: [{ type: 'text', text: 'Hello from Claude' }], model: 'm', usage: { input_tokens: 1, output_tokens: 1 } },
+          error: null,
+        });
+        const result = await ShipLog.execute('ship-anthropic', null, 'hi');
+        expect(result.content).toBe('Hello from Claude');
+      });
+
+      it('falls back to JSON when array elements have no .text and no .type', async () => {
+        SB.functions.invoke = async () => ({
+          data: { content: [{ surprise: 'gotcha' }], model: 'm', usage: { input_tokens: 1, output_tokens: 1 } },
+          error: null,
+        });
+        const result = await ShipLog.execute('ship-weird-array', null, 'hi');
+        expect(result.content).not.toBe('[object Object]');
+        expect(result.content).toContain('gotcha');
+      });
+
+      it('handles null/undefined content gracefully', async () => {
+        SB.functions.invoke = async () => ({
+          data: { content: null, model: 'm', usage: { input_tokens: 1, output_tokens: 1 } },
+          error: null,
+        });
+        const result = await ShipLog.execute('ship-nullcontent', null, 'hi');
+        expect(result.content).toBe('');
+      });
     });
   });
 

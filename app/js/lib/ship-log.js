@@ -27,6 +27,16 @@ const ShipLog = (() => {
   // instead of spamming console errors.
   const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+  /* Stringify any value the user might end up seeing without producing
+     '[object Object]'. Falls through to a tagged placeholder for
+     circular structures rather than throwing. */
+  function _safeStringify(v) {
+    if (v == null) return '';
+    if (typeof v === 'string') return v;
+    try { return JSON.stringify(v, null, 2); }
+    catch { return '[unserializable: ' + (v?.constructor?.name || typeof v) + ']'; }
+  }
+
   function _resolveScope(scopeId) {
     if (!scopeId || typeof scopeId !== 'string') {
       return { spaceship_id: null, mission_id: null, persistable: false };
@@ -206,10 +216,29 @@ const ShipLog = (() => {
         response = await _callLLM(agentBlueprint, prompt, context, llmConfig);
       }
       // Normalize content: Gemini returns string, Anthropic returns [{type:"text",text:"..."}]
+      // Unknown shapes (object content, missing fields) fall through to JSON
+      // serialization rather than the implicit String() coercion that turned
+      // user-visible replies into the literal '[object Object]' on 2026-05-08
+      // (M365 calendar dispatch via Falcon).
       const rawContent = response.content;
-      const textContent = typeof rawContent === 'string'
-        ? rawContent
-        : (Array.isArray(rawContent) && rawContent[0]?.text) || String(rawContent || '');
+      let textContent;
+      if (typeof rawContent === 'string') {
+        textContent = rawContent;
+      } else if (Array.isArray(rawContent)) {
+        const firstText = rawContent.find(p => p && typeof p === 'object' && typeof p.text === 'string');
+        if (firstText) {
+          textContent = firstText.text;
+        } else {
+          textContent = rawContent
+            .map(p => (typeof p === 'string' ? p : _safeStringify(p)))
+            .filter(Boolean).join('\n');
+        }
+      } else if (rawContent && typeof rawContent === 'object') {
+        console.warn('[ShipLog] Unexpected non-string/non-array content from nice-ai — JSON-stringifying instead of coercing to "[object Object]". Shape:', Object.keys(rawContent));
+        textContent = _safeStringify(rawContent);
+      } else {
+        textContent = '';
+      }
       response.content = textContent;
 
       // Prefer API-reported token counts; fall back to length estimate only as last resort

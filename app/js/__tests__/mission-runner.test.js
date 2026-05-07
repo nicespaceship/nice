@@ -871,6 +871,37 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       ]);
       State.set('activated-agents', []);
     });
+
+    // 2026-05-08: Falcon M365 dispatch surfaced literal '[object Object]' in
+    // the captain's [CREW REPORT] block. AgentExecutor's contract is
+    // string-typed finalAnswer, but if anything upstream regresses, the
+    // implicit string coercion of an object produces visible garbage.
+    it('JSON-stringifies a non-string crewResult.finalAnswer instead of producing literal [object Object]', async () => {
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          calls.push({ bpId: bp.id || bp.name, prompt });
+          if (calls.length === 1) {
+            return { finalAnswer: '[DISPATCH: sales] What deals are stalling?', steps: [], metadata: {} };
+          }
+          if (calls.length === 2) {
+            // Pathological: crew returns an object as finalAnswer rather than a string
+            return { finalAnswer: { events: [{ subject: 'Standup' }] }, steps: [], metadata: {} };
+          }
+          // Captain synthesis sees the crew report — pin its content here
+          return { finalAnswer: prompt, steps: [], metadata: {} };
+        },
+      };
+
+      const result = await MissionRunner.runWithDispatch(captainBp, 'What deals?', ship, {});
+      // The synthesis prompt (prompt of call 3) should contain the crew report
+      // and that report MUST NOT be the literal string '[object Object]'.
+      const synthesisPrompt = calls[2].prompt;
+      expect(synthesisPrompt).toContain('[CREW REPORT: sales]');
+      expect(synthesisPrompt).not.toContain('[object Object]');
+      expect(synthesisPrompt).toContain('Standup');
+      delete globalThis.AgentExecutor;
+    });
   });
 
   it('templated run (no source flag) still lands in review (regression guard)', async () => {
