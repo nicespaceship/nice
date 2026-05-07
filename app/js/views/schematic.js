@@ -772,7 +772,13 @@ const SchematicView = (() => {
     if (!available.length) return null;
     const fallbackId = _normalizeShipId(available[0].id);
     if (stored !== fallbackId) {
-      try { localStorage.setItem(Utils.KEYS.mcShip, fallbackId); } catch {}
+      try {
+        localStorage.setItem(Utils.KEYS.mcShip, fallbackId);
+        // Same-tab listeners (prompt-panel route resync) only fire if we
+        // dispatch the event manually — setItem doesn't trigger 'storage'
+        // for the originating tab.
+        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: fallbackId }));
+      } catch {}
     }
     return fallbackId;
   }
