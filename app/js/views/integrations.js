@@ -112,167 +112,56 @@ const IntegrationsView = (() => {
   }
 
   /* ── OAuth Return Handler ─────────────────────────────────────── */
+  /* Lookup of `?<provider>_connected=true` params we may receive when
+     the OAuth callback redirects back here. Adding a new provider is
+     a single new row, not another duplicated if-block. */
+  const OAUTH_RETURN_TOASTS = {
+    google_connected:    { title: 'Google Connected',       message: 'Your Google account is now linked. Agents can access Gmail, Calendar, and Drive.' },
+    microsoft_connected: { title: 'Microsoft 365 Connected', message: 'Your Microsoft account is now linked. Agents can access Outlook, Calendar, Contacts, and OneDrive.' },
+    hubspot_connected:   { title: 'HubSpot Connected',      message: 'Your HubSpot account is now linked. Agents can read and update contacts, deals, and companies.' },
+    github_connected:    { title: 'GitHub Connected',       message: 'Your GitHub account is now linked. Agents can read repos, issues, pull requests, and Actions.' },
+    slack_connected:     { title: 'Slack Connected',        message: 'Your Slack workspace is now linked. Agents can read messages, channels, threads, canvases, and users.' },
+    linear_connected:    { title: 'Linear Connected',       message: 'Your Linear workspace is now linked. Agents can read issues, projects, comments, teams, and cycles.' },
+    notion_connected:    { title: 'Notion Connected',       message: 'Your Notion workspace is now linked. Agents can search and read pages, databases, blocks, and comments.' },
+    stripe_connected:    { title: 'Stripe Connected',       message: 'Your Stripe account is now linked. Agents can read customers, charges, subscriptions, invoices, and products.' },
+    atlassian_connected: { title: 'Atlassian Connected',    message: 'Your Atlassian site is now linked. Agents can search Jira issues, read Confluence pages, and pull Compass components.' },
+    cloudflare_connected:{ title: 'Cloudflare Connected',   message: 'Your Cloudflare account is now linked. Agents can list Workers, KV, R2, D1, and Hyperdrive resources, and query D1 databases.' },
+    sentry_connected:    { title: 'Sentry Connected',       message: 'Your Sentry organization is now linked. Agents can read issues, events, projects, releases, and run Seer analysis.' },
+    zapier_connected:    { title: 'Zapier Connected',       message: 'Your Zapier MCP server is now linked. Visit mcp.zapier.com to enable specific actions across 9,000+ apps.' },
+    airtable_connected:  { title: 'Airtable Connected',     message: 'Your Airtable workspace is now linked. Agents can list bases, read records, and search.' },
+    monday_connected:    { title: 'monday.com Connected',   message: 'Your monday.com workspace is now linked. Agents can read boards, items, sub-items, updates, and documents.' },
+    klaviyo_connected:   { title: 'Klaviyo Connected',      message: 'Your Klaviyo account is now linked. Agents can read profiles, lists, segments, campaigns, flows, and metrics.' },
+    miro_connected:      { title: 'Miro Connected',         message: 'Your Miro account is now linked. Agents can read boards, items, connectors, and tags.' },
+    replicate_connected: { title: 'Replicate Connected',    message: 'Your Replicate account is now linked. Agents can search models and generate images, video, and audio.' },
+  };
+
   let _oauthHandled = false;
-  function _handleOAuthReturn() {
+  function _handleOAuthReturn(el) {
     if (_oauthHandled) return;
-    // Check for google_connected param in both URL search and hash
     const hashParts = window.location.hash.split('?');
     const params = new URLSearchParams(hashParts[1] || window.location.search || '');
-    if (params.get('google_connected') === 'true') {
-      _oauthHandled = true;
-      // Reload MCP connections from DB
-      _loadMcps();
-      // Show success notification
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Google Connected', message: 'Your Google account is now linked. Agents can access Gmail, Calendar, and Drive.', type: 'system' });
-      }
-      // Clean URL — remove the query param
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
+
+    let toast = null;
+    for (const key of Object.keys(OAUTH_RETURN_TOASTS)) {
+      if (params.get(key) === 'true') { toast = OAUTH_RETURN_TOASTS[key]; break; }
     }
-    if (params.get('microsoft_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Microsoft 365 Connected', message: 'Your Microsoft account is now linked. Agents can access Outlook, Calendar, Contacts, and OneDrive.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('hubspot_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'HubSpot Connected', message: 'Your HubSpot account is now linked. Agents can read and update contacts, deals, and companies.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('github_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'GitHub Connected', message: 'Your GitHub account is now linked. Agents can read repos, issues, pull requests, and Actions.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('slack_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Slack Connected', message: 'Your Slack workspace is now linked. Agents can read messages, channels, threads, canvases, and users.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('linear_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Linear Connected', message: 'Your Linear workspace is now linked. Agents can read issues, projects, comments, teams, and cycles.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('notion_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Notion Connected', message: 'Your Notion workspace is now linked. Agents can search and read pages, databases, blocks, and comments.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('stripe_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Stripe Connected', message: 'Your Stripe account is now linked. Agents can read customers, charges, subscriptions, invoices, and products.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('atlassian_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Atlassian Connected', message: 'Your Atlassian site is now linked. Agents can search Jira issues, read Confluence pages, and pull Compass components.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('cloudflare_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Cloudflare Connected', message: 'Your Cloudflare account is now linked. Agents can list Workers, KV, R2, D1, and Hyperdrive resources, and query D1 databases.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('sentry_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Sentry Connected', message: 'Your Sentry organization is now linked. Agents can read issues, events, projects, releases, and run Seer analysis.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('zapier_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Visit mcp.zapier.com to enable specific actions across 9,000+ apps.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('airtable_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Airtable Connected', message: 'Your Airtable workspace is now linked. Agents can list bases, read records, and search.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('monday_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'monday.com Connected', message: 'Your monday.com workspace is now linked. Agents can read boards, items, sub-items, updates, and documents.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('klaviyo_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Klaviyo Connected', message: 'Your Klaviyo account is now linked. Agents can read profiles, lists, segments, campaigns, flows, and metrics.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('miro_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Miro Connected', message: 'Your Miro account is now linked. Agents can read boards, items, connectors, and tags.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
-    }
-    if (params.get('replicate_connected') === 'true') {
-      _oauthHandled = true;
-      _loadMcps();
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Replicate Connected', message: 'Your Replicate account is now linked. Agents can search models and generate images, video, and audio.', type: 'system' });
-      }
-      const cleanHash = hashParts[0] || '#/security';
-      history.replaceState(null, '', cleanHash);
+    if (!toast) return;
+
+    _oauthHandled = true;
+    // Clean URL first so a re-render won't see the param a second time.
+    const cleanHash = hashParts[0] || '#/security';
+    history.replaceState(null, '', cleanHash);
+    // Re-render the view once the async DB load completes — without this
+    // the freshly-inserted mcp_connections row arrives AFTER render() has
+    // already painted the cards from the seed, leaving the just-connected
+    // service stuck on "Connect" until the user navigates away and back.
+    _loadMcps((rows) => {
+      if (!el || !document.contains(el)) return;
+      if (!Array.isArray(rows) || rows.length === 0) return;
+      render(el);
+    });
+    if (typeof Notify !== 'undefined') {
+      Notify.send({ title: toast.title, message: toast.message, type: 'system' });
     }
   }
 
@@ -496,11 +385,17 @@ const IntegrationsView = (() => {
   }
 
   /* ── Data Loading ─────────────────────────────────────────────── */
-  function _loadMcps() {
+  /* `onAsyncLoad` fires once the DB fetch returns rows so callers
+     (e.g. the OAuth-return handler) can re-render with real data.
+     Sync return is the seed for the first paint. */
+  function _loadMcps(onAsyncLoad) {
     const user = State.get('user');
     if (!user) return [];
     SB.db('mcp_connections').list({ userId: user.id }).then(rows => {
-      if (rows && rows.length) State.set('mcp_connections', rows);
+      if (rows && rows.length) {
+        State.set('mcp_connections', rows);
+        if (typeof onAsyncLoad === 'function') onAsyncLoad(rows);
+      }
     }).catch(() => {});
     const seed = _seedMcpConnections();
     State.set('mcp_connections', seed);
