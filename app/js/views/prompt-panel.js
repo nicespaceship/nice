@@ -3355,6 +3355,21 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // When viewing a ship detail page or the Schematic with an active
   // ship, auto-scope to that ship (triage routes to crew internally).
 
+  // Resolve a ship lookup key against State.spaceships, tolerating the
+  // `bp-` prefix scheme that ship-setup-wizard writes to mcShip vs the
+  // raw catalog id stored in `s.blueprint_id`. Mirrors activateShip's
+  // resolver — if a future caller adds another id-shape, update both.
+  function _findShipByAnyId(ships, key) {
+    if (!key || !Array.isArray(ships) || !ships.length) return null;
+    const stripped = typeof key === 'string' && key.startsWith('bp-') ? key.slice(3) : null;
+    const prefixed = typeof key === 'string' && !key.startsWith('bp-') ? 'bp-' + key : null;
+    return ships.find(s => s && (
+      s.id === key || s.blueprint_id === key
+      || (stripped && (s.id === stripped || s.blueprint_id === stripped))
+      || (prefixed && (s.id === prefixed || s.blueprint_id === prefixed))
+    )) || null;
+  }
+
   function _updateRouteContext() {
     const path = (location.hash || '#/').replace('#', '') || '/';
     const input = _panel?.querySelector('#nice-ai-input');
@@ -3383,8 +3398,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (shipMatch && shipMatch[1] !== 'new') {
       const shipId = shipMatch[1];
       const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
-      const ship = ships.find(s => s.id === shipId)
-        || ships.find(s => s.blueprint_id === shipId);
+      const ship = _findShipByAnyId(ships, shipId);
       if (ship) {
         _routeAgent = null;
         _routeShip = ship;
@@ -3407,8 +3421,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         ? localStorage.getItem(Utils.KEYS.mcShip) : null;
       if (activeShipId) {
         const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
-        const ship = ships.find(s => s.id === activeShipId)
-          || ships.find(s => s.blueprint_id === activeShipId);
+        const ship = _findShipByAnyId(ships, activeShipId);
         if (ship) {
           _routeAgent = null;
           _routeShip = ship;
