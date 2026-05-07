@@ -70,6 +70,35 @@ describe('AgentExecutor', () => {
         .toEqual({ type: 'string', enum: ['open'] });
     });
 
+    it('coerces non-string const to string in the enum (Gemini enum is TYPE_STRING only)', () => {
+      // Boolean discriminators are common in MCP tool schemas — JSON
+      // Schema's `oneOf: [{ const: true }, { const: false }]`. Gemini
+      // rejects `enum: [true]` with `Invalid value at ...enum[0]
+      // (TYPE_STRING)` so we stringify.
+      expect(sanitize({ type: 'boolean', const: true }))
+        .toEqual({ type: 'boolean', enum: ['true'] });
+      expect(sanitize({ type: 'boolean', const: false }))
+        .toEqual({ type: 'boolean', enum: ['false'] });
+      expect(sanitize({ type: 'integer', const: 42 }))
+        .toEqual({ type: 'integer', enum: ['42'] });
+      expect(sanitize({ type: 'null', const: null }))
+        .toEqual({ type: 'null', enum: ['null'] });
+    });
+
+    it('coerces enum array values to strings (Gemini enum is TYPE_STRING only)', () => {
+      expect(sanitize({ type: 'boolean', enum: [true, false] }))
+        .toEqual({ type: 'boolean', enum: ['true', 'false'] });
+      expect(sanitize({ type: 'integer', enum: [1, 2, 3] }))
+        .toEqual({ type: 'integer', enum: ['1', '2', '3'] });
+      expect(sanitize({ type: 'string', enum: ['a', 'b', 'c'] }))
+        .toEqual({ type: 'string', enum: ['a', 'b', 'c'] });
+    });
+
+    it('JSON-stringifies object enum values rather than producing [object Object]', () => {
+      expect(sanitize({ enum: [{ x: 1 }] }))
+        .toEqual({ enum: ['{"x":1}'] });
+    });
+
     it('converts type: ["string", "null"] to type: "string" + nullable: true', () => {
       expect(sanitize({ type: ['string', 'null'] }))
         .toEqual({ type: 'string', nullable: true });
