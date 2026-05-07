@@ -432,13 +432,60 @@ const AgentExecutor = (() => {
     return out;
   }
 
+  /* ── JSON Schema fields Gemini's function_declarations API rejects.
+     Gemini accepts an OpenAPI-3.0 subset; these produce INVALID_ARGUMENT
+     400s and AgentExecutor falls back to single-shot (no tool use). MCP
+     servers ship raw JSON Schema — strip the unsupported fields before
+     handing the schema off to the provider. Safe for Anthropic + OpenAI
+     too: they accept the subset.
+
+     Audited against the live Gemini failure on 2026-05-08 (Falcon
+     captain dispatch via Gemini 2.5 Flash). ── */
+  const _GEMINI_DROP_FIELDS = new Set([
+    '$schema', '$ref', '$defs', '$id', 'definitions',
+    'additionalProperties', 'unevaluatedProperties',
+    'propertyNames', 'patternProperties',
+    'dependentSchemas', 'dependentRequired',
+    'if', 'then', 'else', 'not', 'contains',
+    'exclusiveMinimum', 'exclusiveMaximum',
+  ]);
+
+  function _sanitizeForGemini(node) {
+    if (Array.isArray(node)) return node.map(_sanitizeForGemini);
+    if (!node || typeof node !== 'object') return node;
+    const out = {};
+    for (const key of Object.keys(node)) {
+      if (_GEMINI_DROP_FIELDS.has(key)) continue;
+      const value = node[key];
+      if (key === 'const') {
+        // Gemini doesn't support `const` — express as a single-value enum.
+        out.enum = [value];
+        continue;
+      }
+      if (key === 'type' && Array.isArray(value)) {
+        // type: ["string", "null"] is JSON Schema 2020 syntax; Gemini
+        // wants type as a scalar plus nullable: true for the null case.
+        const nonNull = value.filter(t => t !== 'null');
+        out.type = nonNull[0] || 'string';
+        if (value.includes('null')) out.nullable = true;
+        continue;
+      }
+      out[key] = _sanitizeForGemini(value);
+    }
+    return out;
+  }
+
   /* ── Coerce tool.schema to a JSONSchema object for the tools param ── */
   function _normalizeSchema(schema) {
+    let normalized;
     if (!schema || typeof schema !== 'object') {
-      return { type: 'object', properties: {} };
+      normalized = { type: 'object', properties: {} };
+    } else if (schema.type === 'object') {
+      normalized = schema;
+    } else {
+      normalized = { type: 'object', properties: { input: schema } };
     }
-    if (schema.type === 'object') return schema;
-    return { type: 'object', properties: { input: schema } };
+    return _sanitizeForGemini(normalized);
   }
 
   /* ── Build system prompt ──
@@ -908,5 +955,5 @@ const AgentExecutor = (() => {
     else if (_IDLE_EVENTS.has(ev)) AgentActivity.markIdle(agentId);
   }
 
-  return { execute, converse, classifyTool, _isSideEffectTool, _logToShipLog };
+  return { execute, converse, classifyTool, _isSideEffectTool, _logToShipLog, _normalizeSchema, _sanitizeForGemini };
 })();
