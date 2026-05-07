@@ -146,15 +146,40 @@ const AgentExecutor = (() => {
       mcpToolIds = McpBridge.loadTools();
     }
 
-    // If the blueprint declares an explicit tool list, scope to that —
-    // including an explicit empty array, which means "no tools available."
-    // Only fall back to all-MCPs when toolIds is undefined (generic agent
-    // with no `tools` config field). The previous check used
-    // `declared.length > 0` which silently turned `tools: []` into
-    // "use everything" — Adama on the Battlestar got M365's
-    // `calendar_ms_list_events` that way and answered calendar questions
-    // he should have refused.
-    const allToolIds = Array.isArray(toolIds) ? toolIds.filter(Boolean) : mcpToolIds;
+    // Tool resolution chain (most specific wins):
+    //   1. Explicit `toolIds` array (even empty) → use as-is. Empty means
+    //      "no tools available." The previous check used `length > 0`
+    //      which silently turned `tools: []` into "use everything" —
+    //      Adama on the Battlestar got M365's `calendar_ms_list_events`
+    //      that way and answered calendar questions he should have refused.
+    //   2. No `toolIds`, blueprint has `config.capability_id` → resolve
+    //      that capability blueprint and use ITS tools. Slot characters
+    //      (Apollo, Geordi, R2-D2) are persona stubs that wrap an
+    //      umbrella capability via capability_id. Without this resolution
+    //      they leak the union of every connected MCP into the LLM schema
+    //      (Falcon's R2 saw ~314 tools instead of GitHub's 23 on the
+    //      2026-05-07 dispatch session) — blowing past Gemini's
+    //      function_declarations limits and surfacing schema bugs
+    //      (Klaviyo's deeply-nested enum) that capability-scoped agents
+    //      never encounter.
+    //   3. Otherwise → fall back to all connected MCPs. The legacy
+    //      "generic agent" path; broad by design.
+    let allToolIds;
+    if (Array.isArray(toolIds)) {
+      allToolIds = toolIds.filter(Boolean);
+    } else {
+      let capabilityTools = null;
+      const capId = agentBlueprint && agentBlueprint.config && agentBlueprint.config.capability_id;
+      if (capId && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
+        const resolveCap = typeof Blueprints.getCapability === 'function'
+          ? Blueprints.getCapability
+          : Blueprints.getAgent;
+        const cap = (typeof resolveCap === 'function') ? resolveCap(capId) : null;
+        const capTools = cap && cap.config && cap.config.tools;
+        if (Array.isArray(capTools)) capabilityTools = capTools.filter(Boolean);
+      }
+      allToolIds = capabilityTools != null ? capabilityTools : mcpToolIds;
+    }
     const availableTools = [];
     const seen = new Set();
     if (typeof ToolRegistry !== 'undefined') {

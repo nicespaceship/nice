@@ -834,6 +834,116 @@ describe('AgentExecutor', () => {
       globalThis.McpBridge = _origMcpBridge;
       ToolRegistry.deregister(STUB_FALLBACK_TOOL);
     });
+
+    it('resolves config.capability_id to the umbrella capability\'s tools when the blueprint has no tools field', async () => {
+      // Slot characters (Apollo, Geordi, R2-D2) are persona stubs that
+      // wrap an umbrella capability via config.capability_id and ship
+      // with no tools field of their own. Pre-fix the agent fell through
+      // to the all-MCPs branch and saw the union of every connected
+      // provider — Falcon's R2 saw ~314 tools instead of GitHub's 23
+      // on the 2026-05-07 dispatch session, blowing past Gemini's
+      // function_declarations limits.
+      const CAP_TOOL_GITHUB = 'mcp:cap:github_list_pull_requests';
+      const LEAKED_TOOL_KLAVIYO = 'mcp:cap:klaviyo_get_metric';
+
+      ToolRegistry.deregister(CAP_TOOL_GITHUB);
+      ToolRegistry.deregister(LEAKED_TOOL_KLAVIYO);
+      ToolRegistry.register({
+        id: CAP_TOOL_GITHUB,
+        name: 'github_list_pull_requests',
+        description: 'GitHub PRs',
+        schema: { type: 'object', properties: {} },
+        execute: async () => [],
+      });
+      ToolRegistry.register({
+        id: LEAKED_TOOL_KLAVIYO,
+        name: 'klaviyo_get_metric',
+        description: 'Klaviyo metric',
+        schema: { type: 'object', properties: {} },
+        execute: async () => [],
+      });
+
+      const _origMcpBridge = globalThis.McpBridge;
+      const _origBlueprints = globalThis.Blueprints;
+      globalThis.McpBridge = {
+        loadTools: () => [CAP_TOOL_GITHUB, LEAKED_TOOL_KLAVIYO],
+      };
+      globalThis.Blueprints = {
+        isReady: () => true,
+        getCapability: (id) => id === 'bp-agent-github'
+          ? { id, name: 'GitHub Agent', config: { tools: ['github_list_pull_requests'] } }
+          : null,
+        getAgent: () => null,
+      };
+
+      _scriptedResponses.push({
+        content: 'Final Answer: ok',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+
+      const controller = AgentExecutor.converse(
+        // Slot character: persona stub with capability_id, no tools field
+        { id: 'agent-r2', name: 'R2-D2', config: { role: 'Engineering', capability_id: 'bp-agent-github' } },
+        { /* no tools opt — capability_id should resolve */ spaceshipId: 'ship-falcon' },
+      );
+      await controller.send('what PRs were merged today');
+
+      const req = _capturedRequests[0];
+      const toolNames = (req.tools || []).map(t => t.name);
+      expect(toolNames).toContain('github_list_pull_requests');
+      expect(toolNames).not.toContain('klaviyo_get_metric');
+
+      globalThis.McpBridge = _origMcpBridge;
+      globalThis.Blueprints = _origBlueprints;
+      ToolRegistry.deregister(CAP_TOOL_GITHUB);
+      ToolRegistry.deregister(LEAKED_TOOL_KLAVIYO);
+    });
+
+    it('falls back to all-MCPs when capability_id is set but the capability is not found', async () => {
+      // Defensive: if a slot character points at a capability blueprint
+      // that's been removed or hasn't loaded yet, don't strand the agent
+      // with zero tools. Fall through to the legacy all-MCPs path so the
+      // agent still has *something* to work with.
+      const ORPHAN_FALLBACK_TOOL = 'mcp:cap:orphan_fallback_tool';
+      ToolRegistry.deregister(ORPHAN_FALLBACK_TOOL);
+      ToolRegistry.register({
+        id: ORPHAN_FALLBACK_TOOL,
+        name: 'orphan_fallback_tool',
+        description: 'Just a tool',
+        schema: { type: 'object', properties: {} },
+        execute: async () => null,
+      });
+
+      const _origMcpBridge = globalThis.McpBridge;
+      const _origBlueprints = globalThis.Blueprints;
+      globalThis.McpBridge = { loadTools: () => [ORPHAN_FALLBACK_TOOL] };
+      globalThis.Blueprints = {
+        isReady: () => true,
+        getCapability: () => null,
+        getAgent: () => null,
+      };
+
+      _scriptedResponses.push({
+        content: 'Final Answer: ok',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-orphan', name: 'Stub', config: { role: 'Engineering', capability_id: 'bp-agent-removed' } },
+        { spaceshipId: 'ship-orphan' },
+      );
+      await controller.send('go');
+
+      const req = _capturedRequests[0];
+      const toolNames = (req.tools || []).map(t => t.name);
+      expect(toolNames).toContain('orphan_fallback_tool');
+
+      globalThis.McpBridge = _origMcpBridge;
+      globalThis.Blueprints = _origBlueprints;
+      ToolRegistry.deregister(ORPHAN_FALLBACK_TOOL);
+    });
   });
 
   describe('_parseReActResponse (via structured JSON)', () => {
