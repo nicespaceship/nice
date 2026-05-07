@@ -8,6 +8,214 @@ describe('AgentExecutor', () => {
     });
   });
 
+  describe('_sanitizeForGemini', () => {
+    const sanitize = AgentExecutor._sanitizeForGemini;
+
+    it('strips $schema, $ref, $defs, $id, definitions', () => {
+      const result = sanitize({
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        $id: 'urn:foo',
+        $ref: '#/definitions/Bar',
+        $defs: { Bar: { type: 'string' } },
+        definitions: { Baz: { type: 'number' } },
+        type: 'object',
+        properties: { name: { type: 'string' } },
+      });
+      expect(result).toEqual({
+        type: 'object',
+        properties: { name: { type: 'string' } },
+      });
+    });
+
+    it('strips additionalProperties, propertyNames, patternProperties, unevaluatedProperties', () => {
+      const result = sanitize({
+        type: 'object',
+        properties: { name: { type: 'string' } },
+        additionalProperties: false,
+        unevaluatedProperties: false,
+        propertyNames: { pattern: '^[a-z]+$' },
+        patternProperties: { '^x_': { type: 'number' } },
+      });
+      expect(result).toEqual({
+        type: 'object',
+        properties: { name: { type: 'string' } },
+      });
+    });
+
+    it('strips conditional and combinator extras (if/then/else, not, contains, dependent*)', () => {
+      const result = sanitize({
+        type: 'object',
+        properties: { x: { type: 'number' } },
+        if: { properties: { x: { minimum: 0 } } },
+        then: { required: ['x'] },
+        else: { required: [] },
+        not: { type: 'string' },
+        contains: { type: 'integer' },
+        dependentSchemas: {},
+        dependentRequired: {},
+      });
+      expect(result).toEqual({
+        type: 'object',
+        properties: { x: { type: 'number' } },
+      });
+    });
+
+    it('strips exclusiveMinimum and exclusiveMaximum', () => {
+      expect(sanitize({ type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 100 }))
+        .toEqual({ type: 'number' });
+    });
+
+    it('converts const to a single-value enum', () => {
+      expect(sanitize({ type: 'string', const: 'open' }))
+        .toEqual({ type: 'string', enum: ['open'] });
+    });
+
+    it('converts type: ["string", "null"] to type: "string" + nullable: true', () => {
+      expect(sanitize({ type: ['string', 'null'] }))
+        .toEqual({ type: 'string', nullable: true });
+    });
+
+    it('handles type: ["null"] alone by defaulting to string', () => {
+      // Pathological input — better to ship a usable schema than crash.
+      expect(sanitize({ type: ['null'] }))
+        .toEqual({ type: 'string', nullable: true });
+    });
+
+    it('preserves a non-array type as-is', () => {
+      expect(sanitize({ type: 'string' })).toEqual({ type: 'string' });
+    });
+
+    it('recursively sanitizes nested properties', () => {
+      const result = sanitize({
+        type: 'object',
+        properties: {
+          inner: {
+            $schema: 'foo',
+            type: 'object',
+            additionalProperties: false,
+            properties: { x: { type: 'string', const: 'literal' } },
+          },
+        },
+      });
+      expect(result).toEqual({
+        type: 'object',
+        properties: {
+          inner: {
+            type: 'object',
+            properties: { x: { type: 'string', enum: ['literal'] } },
+          },
+        },
+      });
+    });
+
+    it('recursively sanitizes array items', () => {
+      const result = sanitize({
+        type: 'array',
+        items: {
+          $schema: 'bar',
+          type: 'object',
+          additionalProperties: true,
+          properties: { id: { type: ['integer', 'null'] } },
+        },
+      });
+      expect(result).toEqual({
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { id: { type: 'integer', nullable: true } },
+        },
+      });
+    });
+
+    it('preserves valid Gemini fields (description, enum, required, format, default, nullable)', () => {
+      const input = {
+        type: 'object',
+        description: 'A user',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', description: 'Their name', default: 'Anon' },
+          status: { type: 'string', enum: ['active', 'inactive'] },
+          age: { type: 'integer', format: 'int32' },
+          email: { type: 'string', nullable: true },
+        },
+      };
+      expect(sanitize(input)).toEqual(input);
+    });
+
+    it('handles primitive and null inputs gracefully', () => {
+      expect(sanitize(null)).toBe(null);
+      expect(sanitize(undefined)).toBe(undefined);
+      expect(sanitize('string')).toBe('string');
+      expect(sanitize(42)).toBe(42);
+      expect(sanitize(true)).toBe(true);
+    });
+
+    it('handles empty object and empty array', () => {
+      expect(sanitize({})).toEqual({});
+      expect(sanitize([])).toEqual([]);
+    });
+
+    it('strips fields from a realistic MCP-discovered tool schema (the live failure case)', () => {
+      // Mirrors what we saw in the Gemini 400 on 2026-05-08 — stripped
+      // schema produces zero unsupported fields.
+      const realistic = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        additionalProperties: false,
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Search query' },
+          limit: { type: ['integer', 'null'], exclusiveMinimum: 0 },
+          filter: {
+            anyOf: [
+              { type: 'object', additionalProperties: false, properties: { tag: { const: 'open' } } },
+              { type: 'null' },
+            ],
+          },
+        },
+        required: ['query'],
+      };
+      const result = sanitize(realistic);
+      const stringified = JSON.stringify(result);
+      expect(stringified).not.toMatch(/\$schema|additionalProperties|exclusiveMinimum|"const"/);
+      expect(result.properties.query).toEqual({ type: 'string', description: 'Search query' });
+      expect(result.properties.limit).toEqual({ type: 'integer', nullable: true });
+      expect(result.required).toEqual(['query']);
+    });
+  });
+
+  describe('_normalizeSchema', () => {
+    const normalize = AgentExecutor._normalizeSchema;
+
+    it('returns empty-properties object for null/undefined/non-object', () => {
+      expect(normalize(null)).toEqual({ type: 'object', properties: {} });
+      expect(normalize(undefined)).toEqual({ type: 'object', properties: {} });
+      expect(normalize('not a schema')).toEqual({ type: 'object', properties: {} });
+    });
+
+    it('passes through and sanitizes an object schema', () => {
+      const result = normalize({
+        $schema: 'foo',
+        type: 'object',
+        additionalProperties: false,
+        properties: { x: { type: 'string' } },
+      });
+      expect(result).toEqual({
+        type: 'object',
+        properties: { x: { type: 'string' } },
+      });
+    });
+
+    it('wraps a non-object schema under properties.input', () => {
+      expect(normalize({ type: 'string' }))
+        .toEqual({ type: 'object', properties: { input: { type: 'string' } } });
+    });
+
+    it('wraps and sanitizes the wrapped non-object schema', () => {
+      expect(normalize({ type: 'string', const: 'foo' }))
+        .toEqual({ type: 'object', properties: { input: { type: 'string', enum: ['foo'] } } });
+    });
+  });
+
   describe('converse', () => {
     it('returns a conversation controller with send, history, reset, getTokensUsed', () => {
       const controller = AgentExecutor.converse({
