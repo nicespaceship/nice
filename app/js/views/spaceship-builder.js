@@ -375,7 +375,7 @@ const SpaceshipBuilderView = (() => {
           shipId = existingShip.id;
         } else {
           row.user_id = user.id;
-          const created = await SB.db('user_spaceships').create(row);
+          const { ship: created } = await Blueprints.findOrCreateActiveShip(null, () => row);
           shipId = created?.id;
         }
       } else {
@@ -408,7 +408,8 @@ const SpaceshipBuilderView = (() => {
         _showSetupChoice(shipId, { name, category, description: desc, flavor, tags, slotCount: cls.slots.length, slots: row.slots });
         return;
       }
-      Router.navigate('#/bridge?tab=spaceship');
+      if (shipId) localStorage.setItem(Utils.KEYS.mcShip, shipId);
+      Router.navigate('#/bridge?tab=schematic');
     } catch (err) {
       errEl.textContent = err.message || 'Failed to save spaceship.';
       btn.disabled = false;

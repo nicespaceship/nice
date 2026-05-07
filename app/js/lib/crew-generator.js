@@ -259,7 +259,8 @@ Rules:
     };
 
     try {
-      var shipCreated = await SB.db('user_spaceships').create(shipRow);
+      var foaResult = await Blueprints.findOrCreateActiveShip(blueprintId, function() { return shipRow; });
+      var shipCreated = foaResult.ship;
       if (!shipCreated || !shipCreated.id) return { error: 'Failed to create ship' };
 
       // Add to State

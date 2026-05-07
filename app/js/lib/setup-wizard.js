@@ -341,6 +341,7 @@ const SetupWizard = (() => {
       actions.querySelector('#wiz-close-done').addEventListener('click', close);
       actions.querySelector('#wiz-view-ship').addEventListener('click', () => {
         close();
+        if (shipId) localStorage.setItem(Utils.KEYS.mcShip, shipId);
         location.hash = '#/bridge?tab=schematic';
       });
       document.getElementById('wiz-run-mission')?.addEventListener('click', () => {
@@ -571,7 +572,7 @@ Needs help with: ${needLabels.join(', ')}`;
         // and used by every reader since #288) is config.slot_assignments
         // — writing into the `slots` jsonb column hides the data from
         // _getSlottedAgents and the WorkflowEngine triage candidates.
-        const created = await SB.db('user_spaceships').create({
+        const { ship: created } = await Blueprints.findOrCreateActiveShip(null, () => ({
           user_id: userId,
           name: shipData.name,
           status: 'deployed',
@@ -588,7 +589,7 @@ Needs help with: ${needLabels.join(', ')}`;
             stats: shipData.stats,
             source: 'setup_wizard',
           },
-        });
+        }));
         if (created?.id) shipId = created.id;
       } catch (e) { console.warn('[SetupWizard] Ship create fallback to local:', e); }
     }

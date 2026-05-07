@@ -818,4 +818,130 @@ describe('Blueprints', () => {
       expect(globalThis.State.get('agents')[0]).toEqual(orig);
     });
   });
+
+  // 8 spaceship-activation entry points historically each created a fresh
+  // user_spaceships row regardless of whether the user already had one for
+  // the same blueprint. findOrCreateActiveShip centralises the find-or-create
+  // logic so duplicate rows can no longer accumulate. Backed by a unique
+  // partial index on (user_id, blueprint_id) WHERE status != 'archived'.
+  describe('findOrCreateActiveShip', () => {
+    let createCalls;
+    let findScript;
+    let _origSB;
+
+    beforeEach(async () => {
+      createCalls = [];
+      findScript = { data: null }; // default: no existing row
+
+      _origSB = globalThis.SB;
+      // Fluent client mock: every chained method returns the same builder;
+      // maybeSingle() resolves to whatever findScript currently holds.
+      const builder = {};
+      builder.from = () => builder;
+      builder.select = () => builder;
+      builder.eq = () => builder;
+      builder.neq = () => builder;
+      builder.order = () => builder;
+      builder.limit = () => builder;
+      builder.maybeSingle = async () => findScript;
+
+      globalThis.SB = {
+        get client() { return builder; },
+        isReady: () => true,
+        isOnline: () => true,
+        auth: () => ({ user: () => ({ id: 'user-1' }) }),
+        db: (table) => ({
+          create: async (row) => {
+            createCalls.push({ table, row });
+            return { id: 'new-ship-uuid', ...row };
+          },
+          list: async () => [],
+          update: async () => ({}),
+          remove: async () => ({}),
+        }),
+      };
+      globalThis.State.set('user', { id: 'user-1' });
+      await Blueprints.init();
+    });
+
+    afterEach(() => { globalThis.SB = _origSB; });
+
+    it('creates a new row when no existing active ship matches the blueprint', async () => {
+      findScript = { data: null };
+
+      const result = await Blueprints.findOrCreateActiveShip('ship-falcon', () => ({
+        name: 'Millennium Falcon',
+        status: 'deployed',
+      }));
+
+      expect(result.created).toBe(true);
+      expect(result.ship.id).toBe('new-ship-uuid');
+      expect(createCalls).toHaveLength(1);
+      expect(createCalls[0].row.user_id).toBe('user-1');
+      expect(createCalls[0].row.blueprint_id).toBe('ship-falcon');
+      expect(createCalls[0].row.name).toBe('Millennium Falcon');
+    });
+
+    it('returns the existing row when one already exists for the blueprint', async () => {
+      findScript = {
+        data: {
+          id: 'existing-uuid',
+          user_id: 'user-1',
+          blueprint_id: 'ship-falcon',
+          name: 'Falcon (already activated)',
+          status: 'deployed',
+        },
+      };
+
+      const result = await Blueprints.findOrCreateActiveShip('ship-falcon', () => ({
+        name: 'Should not be inserted',
+      }));
+
+      expect(result.created).toBe(false);
+      expect(result.ship.id).toBe('existing-uuid');
+      expect(createCalls).toHaveLength(0); // factory never invoked
+    });
+
+    it('skips the find phase for custom builds (blueprint_id=null) and always creates', async () => {
+      // Even if find WOULD return a hit, custom builds shouldn't dedupe —
+      // they're unique-per-instance by definition.
+      findScript = { data: { id: 'should-not-be-returned' } };
+
+      const result = await Blueprints.findOrCreateActiveShip(null, () => ({
+        name: 'Custom Workshop Ship',
+        status: 'standby',
+      }));
+
+      expect(result.created).toBe(true);
+      expect(result.ship.id).toBe('new-ship-uuid');
+      expect(createCalls).toHaveLength(1);
+      // Helper does NOT auto-fill blueprint_id when null is passed
+      expect(createCalls[0].row.blueprint_id).toBeUndefined();
+    });
+
+    it('returns {ship: null, created: false} in guest mode (no signed-in user)', async () => {
+      globalThis.State.set('user', null);
+
+      const result = await Blueprints.findOrCreateActiveShip('ship-falcon', () => ({
+        name: 'Should never be created',
+      }));
+
+      expect(result).toEqual({ ship: null, created: false });
+      expect(createCalls).toHaveLength(0);
+    });
+
+    it('preserves caller-supplied user_id and blueprint_id when present in the row', async () => {
+      findScript = { data: null };
+
+      await Blueprints.findOrCreateActiveShip('ship-falcon', () => ({
+        user_id: 'user-1',
+        blueprint_id: 'ship-falcon',
+        name: 'Pre-stamped',
+      }));
+
+      expect(createCalls).toHaveLength(1);
+      expect(createCalls[0].row.user_id).toBe('user-1');
+      expect(createCalls[0].row.blueprint_id).toBe('ship-falcon');
+    });
+  });
 });

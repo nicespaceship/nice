@@ -1779,13 +1779,13 @@ const NICE = (() => {
       const shipName = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship(shipId))
         ? Blueprints.getSpaceship(shipId).name : 'My Ship';
 
-      await SB.db('user_spaceships').create({
+      await Blueprints.findOrCreateActiveShip(shipId, () => ({
         user_id: user.id,
         name: shipName,
         blueprint_id: shipId,
         slots: slots,
         status: 'standby',
-      });
+      }));
 
       localStorage.setItem(migratedKey, '1');
     } catch (err) {

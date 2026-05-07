@@ -619,7 +619,7 @@ Rules:
       let shipId = `ship-${Date.now()}`;
       if (userId && typeof SB !== 'undefined' && SB.isReady()) {
         try {
-          const { data: created } = await SB.db('user_spaceships').create({
+          const { ship: created } = await Blueprints.findOrCreateActiveShip(null, () => ({
             user_id: userId,
             name: shipData.name,
             status: 'deployed',
@@ -635,7 +635,7 @@ Rules:
               caps: shipData.caps,
               stats: shipData.stats,
             },
-          });
+          }));
           if (created?.id) shipId = created.id;
         } catch (e) { console.warn('[CrewDesigner] Ship create fallback to local:', e); }
       }
@@ -736,6 +736,7 @@ Rules:
 
     el.querySelector('#cd-view-schematic')?.addEventListener('click', () => {
       close();
+      if (shipId) localStorage.setItem(Utils.KEYS.mcShip, shipId);
       if (typeof Router !== 'undefined') location.hash = '#/bridge?tab=schematic';
     });
     el.querySelector('#cd-test-mission-btn')?.addEventListener('click', () => {

@@ -671,7 +671,7 @@ const ShipSetupWizard = (() => {
             class_id:         _data.classId,
           },
         };
-        const created = await SB.db('user_spaceships').create(dbShipRow);
+        const { ship: created } = await Blueprints.findOrCreateActiveShip(_blueprint.id, () => dbShipRow);
         if (created && created.id && created.id !== shipStateId) {
           // Swap shipStateId to the DB UUID so every downstream layer
           // (_shipState, _activatedShipIds, State.spaceships) shares one
