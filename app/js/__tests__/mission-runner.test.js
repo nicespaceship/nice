@@ -673,6 +673,68 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       ]);
     });
 
+    it('resolves crew agent to catalog blueprint via name fallback when blueprint_id is synthetic', async () => {
+      // Slot characters created by ship-setup-wizard carry synthetic blueprint_ids
+      // ('n1'..'n12') taken from the catalog ship's crew[].id. Those are slot
+      // indices, not real catalog ids, so Blueprints.getAgent() returns null.
+      // Without name-based fallback the resolver falls back to the State stub
+      // (no llm_engine → defaults to gemini-2.5-flash → all sub-agent calls
+      // 503 when Gemini is overloaded). Mirror the outer-agent ladder.
+      const catalogR2 = {
+        id: 'bp-agent-353',
+        name: 'R2-D2',
+        config: {
+          role_type: 'engineering',
+          tools: ['list_pull_requests', 'get_pull_request'],
+          llm_engine: 'claude-sonnet-4-6',
+        },
+      };
+      const slotR2 = {
+        id: 'agent-1778179922740-6',
+        name: 'R2-D2',
+        blueprint_id: 'n7', // synthetic — does not resolve via getAgent
+        config: { agentRole: 'Engineering' }, // no llm_engine, no tools
+      };
+      State.set('agents', [
+        { id: 'cap-1', name: 'Adama', config: { role_type: 'captain', is_captain: true, tools: [] } },
+        slotR2,
+      ]);
+      const shipWithSynthetic = {
+        id: 'ship-falcon-test', name: 'Falcon',
+        slot_assignments: { 'slot-0': 'cap-1', 'slot-1': slotR2.id },
+      };
+
+      const _origBp = globalThis.Blueprints;
+      globalThis.Blueprints = {
+        isReady: () => true,
+        getAgent: (id) => (id === 'bp-agent-353' ? catalogR2 : null), // 'n7' returns null
+        listAgents: () => [catalogR2],
+      };
+
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          calls.push({ bpId: bp.id, model: bp.config?.llm_engine, tools: bp.config?.tools });
+          if (calls.length === 1) return { finalAnswer: '[DISPATCH: engineering] List today’s PRs.', steps: [], metadata: {} };
+          if (calls.length === 2) return { finalAnswer: 'PR #1, PR #2.', steps: [], metadata: {} };
+          return { finalAnswer: 'Two PRs landed today.', steps: [], metadata: {} };
+        },
+      };
+
+      await MissionRunner.runWithDispatch(captainBp, 'What PRs?', shipWithSynthetic, {});
+
+      // Crew call (the second AgentExecutor.execute call) must use the catalog
+      // blueprint, not the synthetic stub. That means llm_engine is set and
+      // the GitHub tools are present.
+      expect(calls).toHaveLength(3);
+      expect(calls[1].bpId).toBe('bp-agent-353');
+      expect(calls[1].model).toBe('claude-sonnet-4-6');
+      expect(calls[1].tools).toEqual(['list_pull_requests', 'get_pull_request']);
+
+      delete globalThis.AgentExecutor;
+      globalThis.Blueprints = _origBp;
+    });
+
     it('returns captain answer directly when no dispatch tokens', async () => {
       let callCount = 0;
       globalThis.AgentExecutor = {

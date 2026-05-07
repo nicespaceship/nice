@@ -990,10 +990,26 @@ const MissionRunner = (() => {
           return '[CREW REPORT: ' + slot + ']\nNo agent assigned to slot "' + slot + '".';
         }
 
-        let crewBp = crewAgent;
-        if (crewAgent.blueprint_id && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
-          crewBp = Blueprints.getAgent(crewAgent.blueprint_id) || crewAgent;
+        // Resolve crew agent → catalog blueprint with the same id-then-name
+        // fallback ladder used at the outer-agent layer (mission-runner.run
+        // around line 88-103). Slot characters created by ship-setup-wizard
+        // carry synthetic blueprint_ids ('n1'..'n12' from the catalog ship
+        // crew defs) that don't resolve via Blueprints.getAgent. Without the
+        // name fallback the resolver returns the State stub, which has no
+        // llm_engine and inherits the global default 'gemini-2.5-flash' —
+        // every Gemini 503 surfaces as "R2 silent" because the wired catalog
+        // R2-D2 (claude-sonnet-4-6 + 23 GitHub tools) was never picked up.
+        let crewBp = null;
+        if (typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
+          if (crewAgent.blueprint_id) {
+            crewBp = Blueprints.getAgent(crewAgent.blueprint_id) || null;
+          }
+          if (!crewBp && crewAgent.name) {
+            const needle = crewAgent.name.toLowerCase();
+            crewBp = Blueprints.listAgents().find(a => a.name && a.name.toLowerCase() === needle) || null;
+          }
         }
+        if (!crewBp) crewBp = crewAgent;
 
         try {
           const crewResult = await AgentExecutor.execute(crewBp, subPrompt, {
