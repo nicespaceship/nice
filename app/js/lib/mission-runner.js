@@ -1002,7 +1002,17 @@ const MissionRunner = (() => {
             approvalMode: opts.approvalMode,
             maxSteps: (crewBp.config?.maxSteps || 5),
           });
-          return '[CREW REPORT: ' + slot + ']\n' + (crewResult.finalAnswer || 'No response.');
+          // Defensive stringify — finalAnswer SHOULD always be a string per
+          // AgentExecutor contract, but if anything upstream regresses, the
+          // implicit string-coercion of an object produces '[object Object]'
+          // verbatim in the captain's context (seen 2026-05-08, M365 path).
+          let answer = crewResult.finalAnswer;
+          if (answer != null && typeof answer !== 'string') {
+            console.warn('[MissionRunner] crewResult.finalAnswer is not a string for slot "' + slot + '" — coercing instead of letting it surface as [object Object]. Type:', typeof answer);
+            try { answer = JSON.stringify(answer, null, 2); }
+            catch { answer = String(answer); }
+          }
+          return '[CREW REPORT: ' + slot + ']\n' + (answer || 'No response.');
         } catch (err) {
           return '[CREW REPORT: ' + slot + ']\nError: ' + (err.message || 'Unknown error');
         }
