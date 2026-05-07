@@ -1120,6 +1120,7 @@ const Blueprints = (() => {
       ...agent,
       description: catalog.description || agent.description,
       flavor: catalog.flavor || agent.flavor,
+      capability_tags: catalog.capability_tags || agent.capability_tags,
       config: mergedCfg,
     };
   }
@@ -1247,6 +1248,7 @@ const Blueprints = (() => {
         desc: bp.desc || bp.description,
         description: bp.description || bp.desc,
         tags: bp.tags,
+        capability_tags: bp.capability_tags || [],
         stats: bp.stats,
       };
       // Attach Supabase UUID if available
