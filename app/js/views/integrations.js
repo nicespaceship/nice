@@ -23,6 +23,9 @@ const IntegrationsView = (() => {
     { id:'stripe',    name:'Stripe',            desc:'Customers, payments, subscriptions, invoices, products — read-only', icon:'brand-stripe', tools:['list_customers','list_payment_intents','list_subscriptions','list_invoices','list_products','list_prices','list_coupons','list_disputes','retrieve_balance','get_stripe_account_info','fetch_stripe_resources','search_stripe_resources','search_stripe_documentation','stripe_api_details','stripe_api_search','stripe_integration_recommender'], transport:'streamable-http', auth:'oauth', cat:'payments' },
     { id:'atlassian', name:'Atlassian',         desc:'Jira issues, Confluence pages, Compass components — read-only',     icon:'brand-atlassian', tools:['searchJiraIssuesUsingJql','getJiraIssue','getVisibleJiraProjects','getTransitionsForJiraIssue','getIssueLinkTypes','getJiraIssueRemoteIssueLinks','getJiraIssueTypeMetaWithFields','getJiraProjectIssueTypesMetadata','lookupJiraAccountId','searchConfluenceUsingCql','getConfluencePage','getConfluenceSpaces','getPagesInConfluenceSpace','getConfluencePageDescendants','getConfluencePageFooterComments','getConfluencePageInlineComments','getConfluenceCommentChildren','searchAtlassian','fetchAtlassian','getTeamworkGraphContext','getTeamworkGraphObject','getCompassComponent','getCompassComponents','getCompassComponentActivityEvents','getCompassComponentLabels','getCompassComponentTypes','getCompassCustomFieldDefinitions','getCompassComponentsOwnedByMyTeams','atlassianUserInfo','getAccessibleAtlassianResources'], transport:'streamable-http', auth:'oauth', cat:'pm' },
     { id:'cloudflare',name:'Cloudflare',        desc:'Workers, KV, R2, D1, Hyperdrive — read-only (D1 query allows raw SQL)', icon:'brand-cloudflare', tools:['accounts_list','set_active_account','search_cloudflare_documentation','workers_list','workers_get_worker','workers_get_worker_code','kv_namespaces_list','kv_namespace_get','r2_buckets_list','r2_bucket_get','d1_databases_list','d1_database_get','d1_database_query','hyperdrive_configs_list','hyperdrive_config_get','migrate_pages_to_workers_guide'], transport:'streamable-http', auth:'oauth', cat:'dev' },
+    { id:'cf-browser', name:'Cloudflare Browser',       desc:'Read web pages — HTML, Markdown, screenshots — billed to your Cloudflare account', icon:'brand-cloudflare', tools:['accounts_list','set_active_account','get_url_html_content','get_url_markdown','get_url_screenshot'], transport:'streamable-http', auth:'oauth', cat:'dev' },
+    { id:'cf-observability', name:'Cloudflare Observability', desc:'Workers logs, metrics, field discovery — read-only debugging for production Workers', icon:'brand-cloudflare', tools:['accounts_list','set_active_account','query_worker_observability','observability_keys','observability_values'], transport:'streamable-http', auth:'oauth', cat:'dev' },
+    { id:'cf-builds',  name:'Cloudflare Builds',        desc:'Workers Builds CI/CD — list builds, fetch details, pull logs — read-only',          icon:'brand-cloudflare', tools:['accounts_list','set_active_account','workers_builds_set_active_worker','workers_builds_list_builds','workers_builds_get_build','workers_builds_get_build_logs'], transport:'streamable-http', auth:'oauth', cat:'dev' },
     { id:'sentry',    name:'Sentry',            desc:'Issues, events, projects, releases, Seer analysis — read-only',     icon:'brand-sentry', tools:['find_organizations','find_projects','find_teams','find_releases','find_dsns','get_issue_details','get_event_details','get_trace_details','get_doc_url','search_issues','search_events','analyze_issue_with_seer','get_seer_run_state','whoami'], transport:'streamable-http', auth:'oauth', cat:'dev' },
     { id:'zapier',    name:'Zapier',            desc:'Discover and run any of 9,000+ Zapier-connected apps — actions you enable surface as tools', icon:'brand-zapier', tools:['discover_zapier_actions','enable_zapier_action','list_enabled_zapier_actions','execute_zapier_read_action'], transport:'streamable-http', auth:'oauth', cat:'automation' },
     { id:'airtable',  name:'Airtable',          desc:'Workspaces, bases, tables, records, comments — read-only',           icon:'brand-airtable', tools:['list_workspaces','list_bases','get_base_schema','list_tables','list_records','search_records','get_record','list_record_comments'], transport:'streamable-http', auth:'oauth', cat:'docs' },
@@ -126,6 +129,9 @@ const IntegrationsView = (() => {
     stripe_connected:    { title: 'Stripe Connected',       message: 'Your Stripe account is now linked. Agents can read customers, charges, subscriptions, invoices, and products.' },
     atlassian_connected: { title: 'Atlassian Connected',    message: 'Your Atlassian site is now linked. Agents can search Jira issues, read Confluence pages, and pull Compass components.' },
     cloudflare_connected:{ title: 'Cloudflare Connected',   message: 'Your Cloudflare account is now linked. Agents can list Workers, KV, R2, D1, and Hyperdrive resources, and query D1 databases.' },
+    cf_browser_connected:{ title: 'Cloudflare Browser Connected', message: 'Browser Rendering is now linked. Agents can fetch HTML, convert pages to Markdown, and capture screenshots from public URLs.' },
+    cf_observability_connected:{ title: 'Cloudflare Observability Connected', message: 'Workers Observability is now linked. Agents can query logs, metrics, and field values for your Workers.' },
+    cf_builds_connected:{ title: 'Cloudflare Builds Connected', message: 'Workers Builds is now linked. Agents can list builds, read build details, and fetch build logs for your Workers.' },
     sentry_connected:    { title: 'Sentry Connected',       message: 'Your Sentry organization is now linked. Agents can read issues, events, projects, releases, and run Seer analysis.' },
     zapier_connected:    { title: 'Zapier Connected',       message: 'Your Zapier MCP server is now linked. Visit mcp.zapier.com to enable specific actions across 9,000+ apps.' },
     airtable_connected:  { title: 'Airtable Connected',     message: 'Your Airtable workspace is now linked. Agents can list bases, read records, and search.' },
@@ -467,6 +473,9 @@ const IntegrationsView = (() => {
   const STRIPE_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/stripe-oauth`;
   const ATLASSIAN_OAUTH_URL = `${NICE_API_BASE}/functions/v1/atlassian-oauth`;
   const CLOUDFLARE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cloudflare-oauth`;
+  const CF_BROWSER_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cf-browser-oauth`;
+  const CF_OBSERVABILITY_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cf-observability-oauth`;
+  const CF_BUILDS_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cf-builds-oauth`;
   const SENTRY_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/sentry-oauth`;
   const ZAPIER_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/zapier-oauth`;
   const AIRTABLE_OAUTH_URL  = `${NICE_API_BASE}/functions/v1/airtable-oauth`;
@@ -515,6 +524,15 @@ const IntegrationsView = (() => {
     }
     if (catalog.auth === 'oauth' && catalogId === 'cloudflare') {
       return _initiateCloudflareOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'cf-browser') {
+      return _initiateCfBrowserOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'cf-observability') {
+      return _initiateCfObservabilityOAuth();
+    }
+    if (catalog.auth === 'oauth' && catalogId === 'cf-builds') {
+      return _initiateCfBuildsOAuth();
     }
     if (catalog.auth === 'oauth' && catalogId === 'sentry') {
       return _initiateSentryOAuth();
@@ -744,6 +762,9 @@ const IntegrationsView = (() => {
   function _initiateKlaviyoOAuth()  { _initiateOAuthGeneric('Klaviyo',    KLAVIYO_OAUTH_URL); }
   function _initiateMiroOAuth()     { _initiateOAuthGeneric('Miro',       MIRO_OAUTH_URL); }
   function _initiateReplicateOAuth(){ _initiateOAuthGeneric('Replicate',  REPLICATE_OAUTH_URL); }
+  function _initiateCfBrowserOAuth()       { _initiateOAuthGeneric('Cloudflare Browser',       CF_BROWSER_OAUTH_URL); }
+  function _initiateCfObservabilityOAuth() { _initiateOAuthGeneric('Cloudflare Observability', CF_OBSERVABILITY_OAUTH_URL); }
+  function _initiateCfBuildsOAuth()        { _initiateOAuthGeneric('Cloudflare Builds',        CF_BUILDS_OAUTH_URL); }
 
   function _disconnectMcp(connId, el) {
     if (!confirm('Disconnect this MCP? All agents will lose access to its tools.')) return;
