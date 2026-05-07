@@ -364,6 +364,51 @@ describe('AgentExecutor', () => {
       expect(req.tools[0].parameters).toEqual({ type: 'object', properties: { query: { type: 'string' } } });
     });
 
+    it('dedupes tools by bare name so Gemini does not reject duplicate function declarations', async () => {
+      // Two MCPs both expose a tool literally named "search" — Replicate
+      // and Atlassian on prod. The IDs are unique (mcp:replicate:search vs
+      // mcp:atlassian:search) but the LLM-facing name collides. Gemini
+      // returns `Duplicate function declaration found: search` and the
+      // whole call fails with no useful response.
+      const REP_ID = 'mcp:replicate:search';
+      const ATL_ID = 'mcp:atlassian:search';
+      ToolRegistry.deregister(REP_ID);
+      ToolRegistry.deregister(ATL_ID);
+      ToolRegistry.register({
+        id: REP_ID, name: 'search',
+        description: 'Replicate search',
+        schema: { type: 'object', properties: { q: { type: 'string' } } },
+        execute: async () => ({ source: 'replicate' }),
+      });
+      ToolRegistry.register({
+        id: ATL_ID, name: 'search',
+        description: 'Atlassian search',
+        schema: { type: 'object', properties: { q: { type: 'string' } } },
+        execute: async () => ({ source: 'atlassian' }),
+      });
+
+      _scriptedResponses.push({
+        content: 'Final Answer: nothing to do.',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 10, output_tokens: 5 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: 'agent-dup-1', name: 'Dup tester', config: { role: 'Assistant', tools: [REP_ID, ATL_ID] } },
+        { tools: [REP_ID, ATL_ID], spaceshipId: 'ship-1' },
+      );
+      await controller.send('go');
+
+      const req = _capturedRequests[0];
+      const searchTools = req.tools.filter(t => t.name === 'search');
+      expect(searchTools.length).toBe(1); // exactly one survives dedup
+      // First-registration wins, mirroring ToolRegistry.resolve('search').
+      expect(searchTools[0].description).toBe('Replicate search');
+
+      ToolRegistry.deregister(REP_ID);
+      ToolRegistry.deregister(ATL_ID);
+    });
+
     it('executes a native tool_use block and loops with tool_result', async () => {
       // Turn 1 from LLM: native Anthropic-style tool_use block
       _scriptedResponses.push({
