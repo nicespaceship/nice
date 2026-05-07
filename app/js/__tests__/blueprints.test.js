@@ -3,11 +3,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 // Blueprints depends on BlueprintsView for seeds — stub it
 globalThis.BlueprintsView = {
   SEED: [
-    { id: 'sa1', name: 'Web Researcher', config: { role: 'Research' }, category: 'Research', rarity: 'Common', tags: ['web', 'search'] },
-    { id: 'sa2', name: 'Code Reviewer', config: { role: 'Code' }, category: 'Code', rarity: 'Rare', tags: ['code', 'review'] },
-    { id: 'sa3', name: 'Data Analyst', config: { role: 'Data' }, category: 'Data', rarity: 'Epic', tags: ['data', 'analytics'] },
-    { id: 'sa4', name: 'Content Writer', config: { role: 'Content' }, category: 'Content', rarity: 'Legendary', tags: ['content', 'writing'] },
-    { id: 'sa5', name: 'DevOps Bot', config: { role: 'Ops' }, category: 'Ops', rarity: 'Common', description: 'Handles CI/CD pipelines' },
+    { id: 'sa1', name: 'Web Researcher', config: { role: 'Research' }, category: 'Research', rarity: 'Common', tags: ['web', 'search'], kind: 'character' },
+    { id: 'sa2', name: 'Code Reviewer', config: { role: 'Code' }, category: 'Code', rarity: 'Rare', tags: ['code', 'review'], kind: 'capability', capability_tags: ['code', 'engineering'] },
+    { id: 'sa3', name: 'Data Analyst', config: { role: 'Data' }, category: 'Data', rarity: 'Epic', tags: ['data', 'analytics'], kind: 'character' },
+    { id: 'sa4', name: 'Content Writer', config: { role: 'Content' }, category: 'Content', rarity: 'Legendary', tags: ['content', 'writing'], kind: 'character' },
+    // sa5 intentionally has no `kind` field — exercises the legacy
+    // capability_tags-based fallback in listCapabilities.
+    { id: 'sa5', name: 'DevOps Bot', config: { role: 'Ops' }, category: 'Ops', rarity: 'Common', description: 'Handles CI/CD pipelines', capability_tags: ['infrastructure'] },
   ],
   SPACESHIP_SEED: [
     { id: 'ship-01', name: 'Scout Mk I', class_id: 'class-1' },
@@ -106,6 +108,55 @@ describe('Blueprints', () => {
     const agents1 = Blueprints.listAgents();
     const agents2 = Blueprints.listAgents();
     expect(agents1).not.toBe(agents2);
+  });
+
+  describe('listCapabilities / listCharacters / getCapability', () => {
+    it('listCapabilities returns kind=capability blueprints', () => {
+      const caps = Blueprints.listCapabilities();
+      const ids = caps.map(c => c.id);
+      expect(ids).toContain('sa2');
+    });
+
+    it('listCapabilities also returns legacy entries with capability_tags but no kind', () => {
+      const caps = Blueprints.listCapabilities();
+      const ids = caps.map(c => c.id);
+      // sa5 has capability_tags=['infrastructure'] but no kind field.
+      expect(ids).toContain('sa5');
+    });
+
+    it('listCapabilities excludes characters', () => {
+      const caps = Blueprints.listCapabilities();
+      const ids = caps.map(c => c.id);
+      expect(ids).not.toContain('sa1');
+      expect(ids).not.toContain('sa3');
+      expect(ids).not.toContain('sa4');
+    });
+
+    it('listCharacters returns kind=character blueprints only', () => {
+      const chars = Blueprints.listCharacters();
+      const ids = chars.map(c => c.id).sort();
+      expect(ids).toEqual(['sa1', 'sa3', 'sa4']);
+    });
+
+    it('getCapability returns capability blueprint by id', () => {
+      const cap = Blueprints.getCapability('sa2');
+      expect(cap).not.toBeNull();
+      expect(cap.name).toBe('Code Reviewer');
+    });
+
+    it('getCapability returns null for character id', () => {
+      expect(Blueprints.getCapability('sa1')).toBeNull();
+    });
+
+    it('getCapability returns null for unknown id', () => {
+      expect(Blueprints.getCapability('nonexistent')).toBeNull();
+    });
+
+    it('getCapability returns legacy entries (capability_tags, no kind)', () => {
+      const cap = Blueprints.getCapability('sa5');
+      expect(cap).not.toBeNull();
+      expect(cap.id).toBe('sa5');
+    });
   });
 
   describe('deactivateShip cascade', () => {
