@@ -32,6 +32,7 @@ const IntegrationsView = (() => {
     { id:'vercel',    name:'Vercel',            desc:'Deployments, projects, build & runtime logs — pending Vercel partner approval',  icon:'brand-vercel', tools:['list_teams','list_projects','get_project','list_deployments','get_deployment','get_deployment_build_logs','get_runtime_logs','search_documentation'], transport:'streamable-http', auth:'oauth', cat:'dev', comingSoon:true },
     { id:'asana',     name:'Asana',             desc:'Projects, tasks, sections, comments — pending Asana partner approval',           icon:'brand-asana', tools:['list_workspaces','list_projects','get_project','list_tasks','get_task','search_tasks'], transport:'streamable-http', auth:'oauth', cat:'pm', comingSoon:true },
     { id:'figma',     name:'Figma',             desc:'Files, frames, components, design tokens — pending Figma Dev Mode partner approval', icon:'brand-figma', tools:['list_files','get_file','get_node','get_components','search_files'], transport:'streamable-http', auth:'oauth', cat:'design', comingSoon:true },
+    { id:'docusign',  name:'DocuSign',          desc:'Envelopes, templates, accounts, folders — pending DocuSign Partner Program enrollment', icon:'brand-docusign', tools:['list_envelopes','get_envelope','list_templates','get_template','list_accounts','list_folders','get_user_info'], transport:'streamable-http', auth:'oauth', cat:'docs', comingSoon:true },
   ];
 
   /* Exact match on catalog_id, then umbrella-prefix fallback so
