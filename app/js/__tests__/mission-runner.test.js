@@ -655,6 +655,82 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     });
   });
 
+  describe('_categorizeDispatchError', () => {
+    const cat = MissionRunner._categorizeDispatchError;
+
+    it('flags 503 / 429 / capacity messages as PROVIDER_OVERLOADED', () => {
+      // Live-failure case from 2026-05-07: ShipLog throws "AI call failed:
+      // 503 - Service Unavailable" when Gemini Flash is overloaded. Han
+      // synthesized this as "R2 was silent" pre-fix — the categorizer
+      // is what lets the captain prompt name the actual condition.
+      expect(cat(new Error('AI call failed: 503 - Service Unavailable')).category)
+        .toBe('PROVIDER_OVERLOADED');
+      expect(cat(new Error('429 Too Many Requests')).category)
+        .toBe('PROVIDER_OVERLOADED');
+      expect(cat({ message: 'Gemini overloaded — try again' }).category)
+        .toBe('PROVIDER_OVERLOADED');
+      expect(cat('Provider at capacity').category).toBe('PROVIDER_OVERLOADED');
+    });
+
+    it('flags 401 / 402 / 403 / billing messages as PROVIDER_AUTH_FAILED', () => {
+      expect(cat(new Error('401 Unauthorized')).category).toBe('PROVIDER_AUTH_FAILED');
+      expect(cat(new Error('Invalid API key')).category).toBe('PROVIDER_AUTH_FAILED');
+      expect(cat(new Error('Payment required (402)')).category).toBe('PROVIDER_AUTH_FAILED');
+      expect(cat(new Error('insufficient credit in pool')).category).toBe('PROVIDER_AUTH_FAILED');
+    });
+
+    it('flags 400 / schema rejection messages as PROVIDER_BAD_REQUEST', () => {
+      // Klaviyo's deeply-nested enum rejection (the case PR #440 fixed)
+      // and Gemini's TYPE_STRING enum-coercion errors land here.
+      expect(cat(new Error('400 Invalid request')).category).toBe('PROVIDER_BAD_REQUEST');
+      expect(cat(new Error('only allowed for STRING type')).category).toBe('PROVIDER_BAD_REQUEST');
+      expect(cat(new Error('Invalid value at function_declarations[131]')).category)
+        .toBe('PROVIDER_BAD_REQUEST');
+    });
+
+    it('falls through to INTERNAL_ERROR for unrecognized messages', () => {
+      expect(cat(new Error('TypeError: Cannot read property foo of undefined')).category)
+        .toBe('INTERNAL_ERROR');
+      expect(cat(null).category).toBe('INTERNAL_ERROR');
+      expect(cat(undefined).category).toBe('INTERNAL_ERROR');
+      expect(cat('').category).toBe('INTERNAL_ERROR');
+    });
+
+    it('returns a non-empty hint for every category except INTERNAL_ERROR-with-no-detail', () => {
+      // The hint is what gets surfaced to the captain alongside the
+      // category — empty hints would defeat the point of categorizing.
+      // INTERNAL_ERROR is allowed to carry a hint too (surface verbatim).
+      expect(cat(new Error('503')).hint).toMatch(/capacity|retry|provider/i);
+      expect(cat(new Error('401')).hint).toMatch(/credentials|billing|wallet/i);
+      expect(cat(new Error('400')).hint).toMatch(/schema|prompt|verbatim/i);
+      expect(cat(new Error('boom')).hint).toMatch(/verbatim|wrong/i);
+    });
+  });
+
+  describe('_injectCaptainContext — error-handling guidance', () => {
+    // Forward-fix for the 2026-05-07 silent-R2 synthesis bug: the captain's
+    // prompt now teaches it to surface ERROR_CATEGORY-tagged crew reports
+    // accurately instead of inventing a "crew member was silent" story.
+    it('teaches the captain to recognize ERROR_CATEGORY blocks', () => {
+      const ship = { slot_assignments: { 'slot-0': 'cap-1' } };
+      const crew = [{ id: 'a-eng', name: 'R2-D2', config: { role_type: 'engineering' } }];
+      const captainBp = { id: 'cap-1', name: 'Han', config: { role_type: 'captain', system_prompt: 'You are Han.' } };
+      const result = MissionRunner._injectCaptainContext(captainBp, ship, crew);
+      const sp = result.config.system_prompt;
+      expect(sp).toContain('CREW ERROR REPORTS');
+      expect(sp).toContain('[ERROR_CATEGORY:');
+      expect(sp).toContain('PROVIDER_OVERLOADED');
+      expect(sp).toContain('PROVIDER_AUTH_FAILED');
+      expect(sp).toContain('PROVIDER_BAD_REQUEST');
+      expect(sp).toContain('INTERNAL_ERROR');
+      // Specific guard against the live failure mode — the prompt must
+      // explicitly forbid the "silent" synthesis path.
+      expect(sp).toMatch(/silent|did(n['’]t|n[o']t) respond|no data/i);
+      // The original captain system_prompt is preserved underneath.
+      expect(sp).toContain('You are Han.');
+    });
+  });
+
   describe('runWithDispatch', () => {
     const captainBp = {
       id: 'cap-1', name: 'Adama',
@@ -777,6 +853,41 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       // Synthesis prompt contains the crew report
       expect(calls[2].prompt).toContain('[CREW REPORT: sales]');
       expect(calls[2].prompt).toContain('Deals Alpha and Beta are stalling.');
+      delete globalThis.AgentExecutor;
+    });
+
+    it('formats a thrown crew error as an [ERROR_CATEGORY] block in the synthesis prompt', async () => {
+      // Forward-fix for the 2026-05-07 silent-R2 synthesis. When a crew
+      // agent's LLM call throws (Gemini 503 / Klaviyo schema reject), the
+      // [CREW REPORT] now carries an [ERROR_CATEGORY: ...] tag plus a
+      // hint, so the captain's prompt-side guidance can name the actual
+      // condition instead of inventing a "crew member was silent" story.
+      const calls = [];
+      globalThis.AgentExecutor = {
+        execute: async (bp, prompt) => {
+          calls.push({ prompt });
+          if (calls.length === 1) {
+            return { finalAnswer: '[DISPATCH: sales] What deals are stalling?', steps: [], metadata: {} };
+          }
+          if (calls.length === 2) {
+            // Crew agent's LLM call fails with the same shape ShipLog
+            // throws when Gemini Flash is overloaded.
+            throw new Error('AI call failed: 503 - Service Unavailable');
+          }
+          return { finalAnswer: 'Provider is overloaded right now — please retry shortly.', steps: [], metadata: {} };
+        },
+      };
+
+      await MissionRunner.runWithDispatch(captainBp, 'What deals need attention?', ship, {});
+      expect(calls).toHaveLength(3);
+      const synthesisPrompt = calls[2].prompt;
+      expect(synthesisPrompt).toContain('[CREW REPORT: sales]');
+      expect(synthesisPrompt).toContain('[ERROR_CATEGORY: PROVIDER_OVERLOADED]');
+      expect(synthesisPrompt).toMatch(/capacity|retry/i);
+      // The raw underlying message must travel through so the captain can
+      // surface it verbatim if the category guidance asks (PROVIDER_BAD_REQUEST
+      // and INTERNAL_ERROR both expect verbatim surfacing).
+      expect(synthesisPrompt).toContain('AI call failed: 503');
       delete globalThis.AgentExecutor;
     });
 

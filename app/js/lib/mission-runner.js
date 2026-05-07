@@ -882,6 +882,41 @@ const MissionRunner = (() => {
     return lines.join('\n');
   }
 
+  /* Categorize a thrown dispatch error so the [CREW REPORT] can carry an
+     actionable label the captain knows how to surface. Pre-fix the catch
+     block surfaced the raw thrown message verbatim ("Error: AI call
+     failed: 503 - Service Unavailable") and the captain's prompt had no
+     guidance — Han Solo synthesized provider 503s as "R2 was silent" on
+     the 2026-05-07 Falcon dispatch session. Mirrors the categories
+     already detected in agent-executor's _isOverloadError, expanded for
+     the auth + bad-request bands the user surfaces benefit from naming
+     distinctly. */
+  function _categorizeDispatchError(err) {
+    const msg = String((err && err.message) || err || '');
+    if (/\b(503|429)\b|overload|unavailable|high.?demand|rate.?limit|capacity/i.test(msg)) {
+      return {
+        category: 'PROVIDER_OVERLOADED',
+        hint: 'The LLM provider was at capacity. This is transient — retry in 30 seconds.',
+      };
+    }
+    if (/\b(401|403|402)\b|unauthorized|forbidden|invalid.?api.?key|billing|payment.?required|insufficient.?credit/i.test(msg)) {
+      return {
+        category: 'PROVIDER_AUTH_FAILED',
+        hint: 'The LLM provider rejected credentials or billing. The user should check Settings → Wallet or model access.',
+      };
+    }
+    if (/\b400\b|invalid.?request|invalid.?argument|function.?declarations|TYPE_STRING|only.?allowed.?for/i.test(msg)) {
+      return {
+        category: 'PROVIDER_BAD_REQUEST',
+        hint: 'The LLM rejected the schema or prompt. This is a NICE-side bug — surface the underlying message verbatim.',
+      };
+    }
+    return {
+      category: 'INTERNAL_ERROR',
+      hint: 'Something went wrong inside NICE. Surface the underlying message verbatim.',
+    };
+  }
+
   /* Prepend dispatch protocol + crew manifest to the captain's system_prompt. */
   function _injectCaptainContext(captainBp, ship, crewAgents) {
     const manifest = _buildCrewManifest(ship, crewAgents);
@@ -894,6 +929,14 @@ const MissionRunner = (() => {
       'You may dispatch to multiple crew members in a single response.\n' +
       'Wait for crew reports, then synthesize them into one clear final answer.\n' +
       'Never include [DISPATCH:] tokens in your synthesized final answer.\n\n' +
+      'CREW ERROR REPORTS\n' +
+      'If a [CREW REPORT] starts with [ERROR_CATEGORY: <name>], the crew member could NOT complete the dispatch.\n' +
+      'Never claim a crew member was "silent", "didn\'t respond", or "had no data" when an ERROR_CATEGORY is present — name the actual category.\n' +
+      '  PROVIDER_OVERLOADED — tell the user the LLM provider is overloaded right now and to retry shortly. Do not invent an answer.\n' +
+      '  PROVIDER_AUTH_FAILED — tell the user the provider rejected credentials/billing; suggest checking Settings → Wallet.\n' +
+      '  PROVIDER_BAD_REQUEST — apologize and surface the underlying error message verbatim; flag it as a NICE-side issue.\n' +
+      '  INTERNAL_ERROR — surface the underlying message verbatim.\n' +
+      'If EVERY crew report you received is an ERROR_CATEGORY, do not synthesize a fake answer — surface the errors to the user directly.\n\n' +
       manifest;
 
     const existing = captainBp.config?.system_prompt || '';
@@ -1030,7 +1073,18 @@ const MissionRunner = (() => {
           }
           return '[CREW REPORT: ' + slot + ']\n' + (answer || 'No response.');
         } catch (err) {
-          return '[CREW REPORT: ' + slot + ']\nError: ' + (err.message || 'Unknown error');
+          // Categorize so the captain's prompt-side guidance can surface
+          // the right user-visible message (transient overload vs. auth
+          // failure vs. NICE-side bug) instead of synthesizing around a
+          // bare "Error:" string. See _categorizeDispatchError for the
+          // category vocabulary and DISPATCH PROTOCOL prompt for the
+          // captain's response template.
+          const { category, hint } = _categorizeDispatchError(err);
+          const detail = (err && err.message) || (typeof err === 'string' ? err : 'Unknown error');
+          const lines = ['[CREW REPORT: ' + slot + ']', '[ERROR_CATEGORY: ' + category + ']'];
+          if (hint) lines.push(hint);
+          lines.push('Underlying error: ' + detail);
+          return lines.join('\n');
         }
       }));
 
@@ -1098,6 +1152,7 @@ const MissionRunner = (() => {
     _isCaptainAgent,
     _buildCrewManifest,
     _injectCaptainContext,
+    _categorizeDispatchError,
     _ROLE_REQUIRED_CAPS,
   };
 })();
