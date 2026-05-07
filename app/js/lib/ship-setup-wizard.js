@@ -467,7 +467,9 @@ const ShipSetupWizard = (() => {
       actions.querySelector('#ship-wiz-close').addEventListener('click', close);
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {
         close();
-        localStorage.setItem(Utils.KEYS.mcShip, 'bp-' + _blueprint.id);
+        const mcShipValue = 'bp-' + _blueprint.id;
+        localStorage.setItem(Utils.KEYS.mcShip, mcShipValue);
+        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: mcShipValue }));
         // Navigate to schematic — use temporary hash to force re-render
         location.hash = '#/_reload';
         setTimeout(() => { location.hash = '#/bridge?tab=schematic'; }, 50);
@@ -671,7 +673,7 @@ const ShipSetupWizard = (() => {
             class_id:         _data.classId,
           },
         };
-        const created = await SB.db('user_spaceships').create(dbShipRow);
+        const { ship: created } = await Blueprints.findOrCreateActiveShip(_blueprint.id, () => dbShipRow);
         if (created && created.id && created.id !== shipStateId) {
           // Swap shipStateId to the DB UUID so every downstream layer
           // (_shipState, _activatedShipIds, State.spaceships) shares one

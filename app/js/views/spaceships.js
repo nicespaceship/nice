@@ -450,12 +450,12 @@ const SpaceshipsView = (() => {
     const finalAgentIds = Object.values(slotAssignments).filter(Boolean);
 
     try {
-      await SB.db('user_spaceships').create({
+      await Blueprints.findOrCreateActiveShip(null, () => ({
         user_id:   user.id,
         name,
         slots: slotAssignments,
         status:    'standby',
-      });
+      }));
       document.getElementById('modal-new-fleet')?.classList.remove('open');
       document.getElementById('fleet-form')?.reset();
       _loadSpaceships();
@@ -614,14 +614,18 @@ const SpaceshipsView = (() => {
         importName = importName + ' ' + i;
       }
       try {
-        await SB.db('user_spaceships').create({
+        // Ship-key imports: pass null as blueprintId so each import creates
+        // a fresh row even if the same key is imported twice. The class_id
+        // is stored in blueprint_id for compatibility with existing readers,
+        // but it's not a catalog blueprint id.
+        await Blueprints.findOrCreateActiveShip(null, () => ({
           user_id: user.id,
           name: importName,
           blueprint_id: decoded.class_id,
           slots: {},
           status: 'standby',
           imported_via: 'ship_key',
-        });
+        }));
         document.getElementById('modal-import-ship')?.classList.remove('open');
         if (typeof Notify !== 'undefined') {
           Notify.send({ title: 'Spaceship Key Imported', message: `${importName} has been built from Spaceship Key.`, type: 'system' });

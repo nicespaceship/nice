@@ -1316,6 +1316,85 @@ const Blueprints = (() => {
   ═══════════════════════════════════════════════════════════════ */
 
   /**
+   * Find an existing active user_spaceships row for (user_id, blueprint_id),
+   * or create a new one. The single entry point for every spaceship
+   * activation flow — replaces 8 ad-hoc SB.db('user_spaceships').create()
+   * call sites that historically produced duplicate rows for the same
+   * blueprint.
+   *
+   * @param {string|null} blueprintId — Catalog blueprint id (e.g.
+   *   'ship-falcon'). Pass null for custom builds; those always create
+   *   a new row because each custom ship is unique-per-instance.
+   * @param {() => object} rowFactory — Lazy factory returning the row
+   *   payload to insert when a fresh create is needed. The user_id and
+   *   blueprint_id fields are auto-filled from session/argument if the
+   *   factory omits them.
+   * @returns {Promise<{ship: object|null, created: boolean}>} ship is
+   *   null in guest/offline mode; otherwise the existing or freshly
+   *   created row. created indicates whether an INSERT happened.
+   */
+  async function findOrCreateActiveShip(blueprintId, rowFactory) {
+    if (!_canSync()) return { ship: null, created: false };
+    const userId = _getUserId();
+    if (!userId) return { ship: null, created: false };
+
+    // Custom builds (no blueprint_id) skip the find phase — every
+    // instance is unique by definition. The DB unique partial index
+    // also excludes null blueprint_id rows.
+    if (blueprintId) {
+      try {
+        const c = SB.client;
+        if (c) {
+          const { data: existing } = await c
+            .from('user_spaceships')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('blueprint_id', blueprintId)
+            .neq('status', 'archived')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (existing) return { ship: existing, created: false };
+        }
+      } catch (e) {
+        // Fall through to create — preserves prior behaviour where
+        // the activation flow continued even if the find query failed.
+      }
+    }
+
+    const row = rowFactory() || {};
+    if (!row.user_id) row.user_id = userId;
+    if (blueprintId && !row.blueprint_id) row.blueprint_id = blueprintId;
+
+    try {
+      const ship = await SB.db('user_spaceships').create(row);
+      return { ship, created: true };
+    } catch (e) {
+      // Race condition: another tab/window inserted between our find and
+      // create. The unique partial index rejects the duplicate; recover
+      // by returning the row that won the race.
+      if (blueprintId) {
+        try {
+          const c = SB.client;
+          if (c) {
+            const { data: winner } = await c
+              .from('user_spaceships')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('blueprint_id', blueprintId)
+              .neq('status', 'archived')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (winner) return { ship: winner, created: false };
+          }
+        } catch {}
+      }
+      throw e;
+    }
+  }
+
+  /**
    * Activate a ship — the single entry point that guarantees every state
    * layer reflects ownership before it returns.
    *
@@ -2587,7 +2666,7 @@ const Blueprints = (() => {
 
     // Ship activation
     activateShip, deactivateShip, isShipActivated, cleanupOrphans,
-    getActivatedShipIds, getActivatedShips,
+    getActivatedShipIds, getActivatedShips, findOrCreateActiveShip,
 
     // Ship state persistence
     getShipState, saveShipState, reassignAgentToShip, handoffShipId,
@@ -2660,7 +2739,7 @@ const Blueprints = (() => {
         const { _guest, id, ...row } = ship;
         row.user_id = userId;
         try {
-          const created = await SB.db('user_spaceships').create(row);
+          const { ship: created } = await findOrCreateActiveShip(row.blueprint_id || null, () => row);
           if (created?.id) {
             _activatedShipIds = _activatedShipIds.map(sid => sid === id ? created.id : sid);
             ship.id = created.id;
