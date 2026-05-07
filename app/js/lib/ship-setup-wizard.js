@@ -109,14 +109,26 @@ const ShipSetupWizard = (() => {
     };
   }
 
-  function _getAgentCatalog() {
+  function _getAgentCatalog(opts) {
     // Prefer Blueprints (full 261 agents from DB) over small static SEED
+    let pool;
     if (typeof Blueprints !== 'undefined' && Blueprints.listAgents) {
       const all = Blueprints.listAgents();
-      if (all.length) return [...all];
+      if (all.length) pool = [...all];
     }
-    if (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED && BlueprintsView.SEED.length) return [...BlueprintsView.SEED];
-    return [];
+    if (!pool) {
+      pool = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED && BlueprintsView.SEED.length)
+        ? [...BlueprintsView.SEED]
+        : [];
+    }
+    // Auto-recommend paths pass { recommendable: true } to skip
+    // power-user-only umbrellas (e.g. Replicate — BYO Replicate account,
+    // billed to the user). Manual dropdowns keep the full catalog so a
+    // user who explicitly wants Replicate can still pick it.
+    if (opts && opts.recommendable) {
+      pool = pool.filter(a => !(a && a.metadata && a.metadata.power_user_only));
+    }
+    return pool;
   }
 
   /** Ensure catalog is loaded before rendering dropdowns */
@@ -344,7 +356,7 @@ const ShipSetupWizard = (() => {
      agents" bug for the 237 catalog ships that have no crew spec. */
   function _fallbackAssign() {
     const sc = _getShipClass();
-    const agents = _getAgentCatalog();
+    const agents = _getAgentCatalog({ recommendable: true });
     const shipRarity = _blueprint.rarity || 'Common';
     const cfg = _blueprint.config || {};
     const roles = Array.isArray(cfg.crew_roles) ? cfg.crew_roles : [];
