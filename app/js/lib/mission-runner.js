@@ -873,10 +873,18 @@ const MissionRunner = (() => {
       'Your crew (dispatch using the role name in lowercase):',
     ];
     for (const agent of crewAgents) {
-      const role = (agent.config?.role_type || agent.config?.role || agent.config?.agentRole || 'specialist').toLowerCase();
+      const rawRole = agent.config?.role_type || agent.config?.role || agent.config?.agentRole || 'Specialist';
+      const role = rawRole.toLowerCase();
+      // Default cap to the role itself, not the literal word "Specialist".
+      // When every crew line ended in "— Specialist", the LLM treated
+      // "specialist" as the canonical dispatch role and emitted
+      // [DISPATCH: specialist] regardless of the bracket prefix —
+      // _resolveSlotAgent then rejected it as "No agent assigned to slot
+      // 'specialist'." Mirroring the role keeps the bracket prefix as
+      // the dominant dispatch signal in the prompt.
       const cap = agent.config?.system_prompt
         ? agent.config.system_prompt.substring(0, 100).replace(/\n/g, ' ') + '…'
-        : (agent.description || 'Specialist');
+        : (agent.description || rawRole);
       lines.push('  [' + role + '] ' + agent.name + ' — ' + cap);
     }
     return lines.join('\n');

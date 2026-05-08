@@ -665,6 +665,20 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       expect(manifest).toContain('[governance]');
       expect(manifest).not.toContain('[specialist]');
     });
+
+    it('does not echo the literal word Specialist in the cap fallback', () => {
+      // Live failure (BSG, 2026-05-07): every crew line ended in
+      // "— Specialist" because crew with no description/system_prompt fell
+      // back to that string. With "specialist" appearing 12+ times in the
+      // prompt, the captain treated it as the canonical dispatch role and
+      // emitted [DISPATCH: specialist] regardless of the bracket prefix.
+      // The cap should mirror the agent's actual role to keep the bracket
+      // role as the dominant signal.
+      const crew = [{ name: 'President Roslin', config: { agentRole: 'Governance' } }];
+      const manifest = MissionRunner._buildCrewManifest(null, crew);
+      expect(manifest).not.toContain('Specialist');
+      expect(manifest).toContain('Governance');
+    });
   });
 
   describe('_categorizeDispatchError', () => {
