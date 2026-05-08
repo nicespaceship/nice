@@ -653,6 +653,18 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       expect(manifest).toContain('[sales]');
       expect(manifest).toContain('Apollo');
     });
+
+    it('reads agentRole when role_type / role are absent', () => {
+      // Slot characters created by the ship-setup-wizard persistence path
+      // (#442) write only config.agentRole — mirroring user_spaceships.slots
+      // .crew[].config. Pre-fix the manifest defaulted everyone to
+      // 'specialist', and the captain emitted dispatch with role
+      // 'specialist' which no slotted agent matches → INTERNAL_ERROR.
+      const crew = [{ name: 'President Roslin', config: { agentRole: 'Governance' } }];
+      const manifest = MissionRunner._buildCrewManifest(null, crew);
+      expect(manifest).toContain('[governance]');
+      expect(manifest).not.toContain('[specialist]');
+    });
   });
 
   describe('_categorizeDispatchError', () => {
