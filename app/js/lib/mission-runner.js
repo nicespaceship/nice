@@ -873,7 +873,7 @@ const MissionRunner = (() => {
       'Your crew (dispatch using the role name in lowercase):',
     ];
     for (const agent of crewAgents) {
-      const role = (agent.config?.role_type || agent.config?.role || 'specialist').toLowerCase();
+      const role = (agent.config?.role_type || agent.config?.role || agent.config?.agentRole || 'specialist').toLowerCase();
       const cap = agent.config?.system_prompt
         ? agent.config.system_prompt.substring(0, 100).replace(/\n/g, ' ') + '…'
         : (agent.description || 'Specialist');
