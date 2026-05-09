@@ -119,7 +119,7 @@
       <h2>Quick Start</h2>
       <ol>
         <li><strong>Sign in</strong> — Create an account or sign in with Google. Gemini 2.5 Flash is unlimited and always free — no API keys, no token meter.</li>
-        <li><strong>Browse the Bridge</strong> — Explore 900+ pre-built blueprints in the catalog (~690 agents and ~235 spaceships). Filter by category, rarity, or search by name.</li>
+        <li><strong>Browse the Bridge</strong> — Explore 500+ pre-built blueprints in the catalog (~480 agents and ~25 spaceships). Filter by category, rarity, or search by name.</li>
         <li><strong>Activate your first agent</strong> — Click any agent card and hit <kbd>Activate</kbd>. The agent appears in your fleet.</li>
         <li><strong>Run a mission</strong> — Type into the prompt panel ("Ask NICE…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
         <li><strong>Build a spaceship</strong> — Activate a spaceship blueprint to create a multi-agent team. Assign agents to crew slots and let them collaborate via the Ship's Log.</li>
@@ -141,7 +141,7 @@
         </div>
         <div class="docs-card">
           <h3>Blueprints</h3>
-          <p>Templates for agents and spaceships. The catalog has 900+ pre-built blueprints. You can also build custom ones in the Workshop.</p>
+          <p>Templates for agents and spaceships. The catalog has 500+ pre-built blueprints. You can also build custom ones in the Workshop.</p>
         </div>
       </div>
 
@@ -298,19 +298,48 @@
 
     'integrations': `
       <h1>Integrations</h1>
-      <p class="docs-lead">Connect external services so your agents can read and write emails, manage calendars, work with documents, and more. Integrations attach to a spaceship — every crew member inherits the connection.</p>
+      <p class="docs-lead">Connect external services via MCP (Model Context Protocol) so your agents can read and write the tools you already use. Integrations attach to a spaceship — every crew member inherits the connection through a single OAuth grant.</p>
 
-      <h2>Google Workspace</h2>
-      <p>Sign in with Google (any account — Gmail, Workspace, any domain) to connect Gmail, Calendar, and Drive. Agents get:</p>
+      <h2>Wired integrations</h2>
+      <p>19 services are connected and ready to use today. All run through <code>mcp-gateway</code>, which auto-refreshes OAuth tokens before every tool call. Write tools are gated by the ship's approval mode — in <em>review</em> mode, side-effect tools (send, create, delete) trigger an inline approval prompt.</p>
+
+      <h3>Workspace &amp; communications</h3>
       <ul>
-        <li><strong>Gmail</strong> — search and read emails, send / draft / reply, manage labels (<code>gmail.modify</code> scope)</li>
-        <li><strong>Calendar</strong> — read events, check availability, create / update / delete events (<code>calendar</code> scope)</li>
-        <li><strong>Drive</strong> — search and read files, create / update / upload files (<code>drive.file</code> scope — limited to files the app creates or opens)</li>
+        <li><strong>Google Workspace</strong> — Gmail (search, read, send, draft, labels), Calendar (read, create, update, delete events), Drive (search, read, create, upload — files created or opened by NICE)</li>
+        <li><strong>Microsoft 365</strong> — Outlook Mail, Outlook Calendar, Contacts, OneDrive</li>
+        <li><strong>Slack</strong> — messages, channels, threads, canvases, users (read-only)</li>
       </ul>
-      <p>OAuth tokens are stored in Supabase and auto-refreshed by <code>mcp-gateway</code> before each tool call. Write tools are gated by the ship's approval mode — in <em>review</em> mode, side-effect tools (send, create, delete) trigger an inline approval prompt before execution.</p>
 
-      <h2>Microsoft 365</h2>
-      <p>Sign in with Microsoft to connect Outlook Mail, Outlook Calendar, OneDrive, and SharePoint. Same model as Google — OAuth at the spaceship level, all agents inherit the connection. Live as of 2026-04-24.</p>
+      <h3>Engineering &amp; observability</h3>
+      <ul>
+        <li><strong>GitHub</strong> — repos, issues, PRs, code, releases, Actions (read-only)</li>
+        <li><strong>Linear</strong> — issues, projects, comments, teams, cycles, docs (read-only)</li>
+        <li><strong>Atlassian</strong> — Jira issues, Confluence pages, Compass components (read-only)</li>
+        <li><strong>Sentry</strong> — issues, events, projects, releases, Seer analysis (read-only)</li>
+        <li><strong>Cloudflare</strong> — Workers, KV, R2, D1, Hyperdrive (read-only; D1 query allows raw SQL)</li>
+        <li><strong>Cloudflare Browser</strong> — fetch URLs as HTML, Markdown, or screenshot (BYO Cloudflare account)</li>
+        <li><strong>Cloudflare Observability</strong> — Workers logs, metrics, field discovery (read-only)</li>
+        <li><strong>Cloudflare Builds</strong> — Workers Builds CI/CD: list, fetch, logs (read-only)</li>
+      </ul>
+
+      <h3>Sales, marketing &amp; payments</h3>
+      <ul>
+        <li><strong>HubSpot</strong> — CRM objects, properties, campaigns, owners (read &amp; write)</li>
+        <li><strong>Stripe</strong> — customers, payments, subscriptions, invoices, products (read-only)</li>
+        <li><strong>Klaviyo</strong> — profiles, lists, segments, campaigns, flows, events, metrics (read-only)</li>
+      </ul>
+
+      <h3>Docs, design &amp; automation</h3>
+      <ul>
+        <li><strong>Notion</strong> — pages, databases, comments, teams, users (read-only)</li>
+        <li><strong>Airtable</strong> — workspaces, bases, tables, records, comments (read-only)</li>
+        <li><strong>Miro</strong> — boards, items, connectors, tags, search (read-only)</li>
+        <li><strong>Zapier</strong> — discover and run any of 9,000+ Zapier-connected apps (actions you enable surface as tools)</li>
+        <li><strong>Replicate</strong> — search and run thousands of open-source models (Flux, Stable Diffusion, Kling, Luma, Bark) — billed to <em>your</em> Replicate account, not NICE</li>
+      </ul>
+
+      <h2>Coming soon</h2>
+      <p>Five more integrations are pending partner approval: monday.com, Vercel, Asana, Figma, and DocuSign.</p>
 
       <h2>Adding Custom MCPs</h2>
       <p>Any MCP-compatible server can be connected. Open <strong>Profile → Integrations</strong>, click <strong>Add Custom MCP</strong>, provide the server URL, select the transport (Streamable HTTP or SSE), and configure authentication.</p>
