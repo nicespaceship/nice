@@ -1593,6 +1593,14 @@ const NICE = (() => {
       if (user) {
         _migrateLocalSpaceships(user);
         if (typeof Blueprints !== 'undefined' && Blueprints.migrateGuestState) Blueprints.migrateGuestState();
+        // Backfill stranded synthetic-id slot characters from before #442
+        // shipped (or after a localStorage `nice-custom-agents` wipe).
+        // Idempotent — no-op for users whose ships are already on UUIDs.
+        if (typeof BlueprintBackfill !== 'undefined' && BlueprintBackfill.runOnLoad) {
+          BlueprintBackfill.runOnLoad().catch(err =>
+            console.warn('[BlueprintBackfill] runOnLoad failed:', err.message)
+          );
+        }
         _loadTokenBalance(user);
         _loadAdminFlag(user);
         // Load subscription + auto-enable entitled models. Settings view
