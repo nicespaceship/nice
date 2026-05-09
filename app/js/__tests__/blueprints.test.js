@@ -944,4 +944,133 @@ describe('Blueprints', () => {
       expect(createCalls[0].row.blueprint_id).toBe('ship-falcon');
     });
   });
+
+  // _loadUserCreations writes ship rows with `stats: catalogBp.stats || ... ||
+  // { crew: <count>, slots: '6' }`. When init runs in parallel with the catalog
+  // load (the common case on hard reload), catalogBp is null and slots gets
+  // locked to "6" regardless of the ship's true crew size. The Schematic then
+  // reads slots="6" and renders 6 cards even when the user has 12 slot
+  // assignments. _healStaleShipStats walks State.spaceships once the catalog
+  // is queryable and rewrites stats from the matching catalog row.
+  describe('healStaleShipStats — catalog-load timing race', () => {
+    let _origSeed;
+
+    beforeEach(async () => {
+      _origSeed = globalThis.BlueprintsView.SPACESHIP_SEED;
+      globalThis.BlueprintsView.SPACESHIP_SEED = [
+        { id: 'ship-falcon', name: 'Falcon', class_id: 'class-4',
+          stats: { crew: '12', slots: '12', tier: 'LEGENDARY' },
+          metadata: { crew: [
+            { id: 'n1', label: 'Han Solo' },
+            { id: 'n2', label: 'Chewbacca' },
+          ] } },
+        { id: 'ship-noslots', name: 'No Stats Ship' },
+      ];
+      await Blueprints.init();
+    });
+
+    afterEach(() => {
+      globalThis.BlueprintsView.SPACESHIP_SEED = _origSeed;
+    });
+
+    it('rewrites stale slots from the catalog and reports dirty', () => {
+      globalThis.State.set('spaceships', [{
+        id: 'falcon-uuid-1',
+        name: 'Falcon',
+        blueprint_id: 'ship-falcon',
+        stats: { crew: '12', slots: '6' }, // pre-catalog fallback
+        metadata: { caps: [] },
+      }]);
+
+      const dirty = Blueprints.healStaleShipStats();
+
+      expect(dirty).toBe(true);
+      const ship = globalThis.State.get('spaceships').find(s => s.id === 'falcon-uuid-1');
+      expect(ship.stats.slots).toBe('12');
+      expect(ship.stats.tier).toBe('LEGENDARY');
+      // Metadata also restored — getCrewDefs reads metadata.crew for slot labels.
+      expect(ship.metadata.crew).toHaveLength(2);
+      expect(ship.metadata.crew[0].label).toBe('Han Solo');
+    });
+
+    it('is idempotent when stats already match the catalog', () => {
+      globalThis.State.set('spaceships', [{
+        id: 'falcon-uuid-1',
+        blueprint_id: 'ship-falcon',
+        stats: { crew: '12', slots: '12', tier: 'LEGENDARY' },
+        metadata: { crew: [{ id: 'n1', label: 'Han Solo' }] },
+      }]);
+
+      const dirty = Blueprints.healStaleShipStats();
+
+      expect(dirty).toBe(false);
+    });
+
+    it('skips entries without a blueprint_id (custom Crew Designer ships)', () => {
+      globalThis.State.set('spaceships', [{
+        id: 'custom-uuid',
+        name: 'My Custom Ship',
+        stats: { crew: '5', slots: '6' },
+      }]);
+
+      const dirty = Blueprints.healStaleShipStats();
+
+      expect(dirty).toBe(false);
+      const ship = globalThis.State.get('spaceships').find(s => s.id === 'custom-uuid');
+      expect(ship.stats.slots).toBe('6'); // untouched
+    });
+
+    it('skips entries whose blueprint_id is not in the catalog', () => {
+      globalThis.State.set('spaceships', [{
+        id: 'orphan-uuid',
+        blueprint_id: 'ship-deleted-from-catalog',
+        stats: { slots: '6' },
+      }]);
+
+      const dirty = Blueprints.healStaleShipStats();
+
+      expect(dirty).toBe(false);
+    });
+
+    it('skips when the catalog row has no usable stats.slots', () => {
+      globalThis.State.set('spaceships', [{
+        id: 'noslots-uuid',
+        blueprint_id: 'ship-noslots',
+        stats: { slots: '6' },
+      }]);
+
+      const dirty = Blueprints.healStaleShipStats();
+
+      expect(dirty).toBe(false);
+    });
+
+    it('returns false for empty / missing State.spaceships', () => {
+      globalThis.State.set('spaceships', []);
+      expect(Blueprints.healStaleShipStats()).toBe(false);
+
+      globalThis.State.set('spaceships', null);
+      expect(Blueprints.healStaleShipStats()).toBe(false);
+    });
+
+    it('preserves user-modified state.spaceships entries when only stats are stale', () => {
+      // The heal must not clobber unrelated fields (status, slot_assignments, etc.)
+      globalThis.State.set('spaceships', [{
+        id: 'falcon-uuid-1',
+        blueprint_id: 'ship-falcon',
+        name: 'My Renamed Falcon',
+        status: 'deployed',
+        config: { slot_assignments: { 0: 'agent-a', 1: 'agent-b' } },
+        stats: { slots: '6' },
+      }]);
+
+      Blueprints.healStaleShipStats();
+
+      const ship = globalThis.State.get('spaceships').find(s => s.id === 'falcon-uuid-1');
+      expect(ship.name).toBe('My Renamed Falcon');
+      expect(ship.status).toBe('deployed');
+      expect(ship.config.slot_assignments).toEqual({ 0: 'agent-a', 1: 'agent-b' });
+      expect(ship.stats.slots).toBe('12');
+    });
+
+  });
 });

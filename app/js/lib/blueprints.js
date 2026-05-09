@@ -645,6 +645,7 @@ const Blueprints = (() => {
         if (cached.length) {
           _mergeRows(cached);
           _catalogLoaded = true;
+          _finalizeCatalogLoad();
 
           // Differential sync in background — fetch only rows updated since cache
           if (typeof SB !== 'undefined' && typeof SB.isReady === 'function' && SB.isReady() && SB.isOnline()) {
@@ -658,12 +659,13 @@ const Blueprints = (() => {
     // 2. No cache or expired — full fetch from Supabase
     if (typeof SB === 'undefined' || typeof SB.isReady !== 'function' || !SB.isReady() || !SB.isOnline()) {
       _catalogLoaded = true; // seeds-only mode
+      _finalizeCatalogLoad();
       return;
     }
 
     try {
       const c = SB.client;
-      if (!c || typeof c.from !== 'function') { _catalogLoaded = true; return; }
+      if (!c || typeof c.from !== 'function') { _catalogLoaded = true; _finalizeCatalogLoad(); return; }
 
       // Load both catalog AND community scopes. The scope discriminator
       // is applied by the list/search methods (which filter to scope='catalog'
@@ -687,13 +689,7 @@ const Blueprints = (() => {
     } catch { /* seed fallback */ }
 
     _catalogLoaded = true;
-    _seedMockCounts(); // Cover newly loaded blueprints
-    // Notify views that the catalog is now populated. BlueprintsView
-    // renders the sub-tab badges (Spaceships / Agents) at mount time
-    // with whatever count is available; without this event the badges
-    // stay frozen at 0 when the cache evicts (e.g. on the v2→v3→v4
-    // bumps in #377). Set value to a timestamp so subscribers can dedupe.
-    if (typeof State !== 'undefined') State.set('catalog-loaded', Date.now());
+    _finalizeCatalogLoad();
   }
 
   /** Fetch only blueprints updated since lastSync and merge them */
@@ -847,6 +843,64 @@ const Blueprints = (() => {
 
   function _canSync() {
     return typeof SB !== 'undefined' && SB.isReady() && SB.isOnline() && _getUserId();
+  }
+
+  /**
+   * Heal stale ship stats in State.spaceships once the catalog is queryable.
+   *
+   * `_loadUserCreations` writes ship rows with
+   *   stats: catalogBp.stats || meta.stats || { crew: <count>, slots: '6' }
+   * — when init runs in parallel with catalog load (the common case on hard
+   * reload), `catalogBp` is null and the fallback locks `slots` to "6"
+   * regardless of the ship's true crew size. After the catalog arrives this
+   * walks State.spaceships and rewrites stats from the matching catalog row,
+   * so getSlotCount returns the right number on the next render.
+   *
+   * Idempotent — entries already aligned with the catalog are skipped.
+   * Returns true if any entry was rewritten.
+   */
+  function _healStaleShipStats() {
+    if (typeof State === 'undefined') return false;
+    const ships = State.get('spaceships');
+    if (!Array.isArray(ships) || !ships.length) return false;
+    let dirty = false;
+    ships.forEach(s => {
+      if (!s || !s.blueprint_id) return;
+      const catalogBp = getSpaceship(s.blueprint_id) || getSpaceship('bp-' + s.blueprint_id);
+      if (!catalogBp || !catalogBp.stats) return;
+      const currentSlots = parseInt(s.stats?.slots, 10) || 0;
+      const catalogSlots = parseInt(catalogBp.stats.slots, 10) || 0;
+      if (catalogSlots && currentSlots !== catalogSlots) {
+        s.stats = { ...catalogBp.stats };
+        // _loadUserCreations falls back to `metadata: { caps: meta.caps || [] }`
+        // when catalogBp is null, which strips the crew labels getCrewDefs reads.
+        // Restore catalog metadata so slot rendering picks up the real names.
+        if (catalogBp.metadata && (!s.metadata || !s.metadata.crew)) {
+          s.metadata = { ...catalogBp.metadata };
+        }
+        dirty = true;
+      }
+    });
+    if (dirty) State.set('spaceships', ships);
+    return dirty;
+  }
+
+  /**
+   * Finalise a catalog load: seed mock counts, heal stale State entries,
+   * and fan out the two events views care about. Called from every path
+   * that flips `_catalogLoaded = true` so subscribers fire whether the
+   * catalog came from cache, full fetch, or seeds-only mode. Without this
+   * the cache-hit path (the common case on warm reload) never notified
+   * subscribers — Schematic stayed at the pre-catalog slot count.
+   */
+  function _finalizeCatalogLoad() {
+    _seedMockCounts();
+    _healStaleShipStats();
+    if (typeof State !== 'undefined') State.set('catalog-loaded', Date.now());
+    // Re-fire activated-ships so SchematicView and other subscribers
+    // re-render with the freshly enriched stats. _healStaleShipStats
+    // fixes State.spaceships, but Schematic listens on activated-ships.
+    _fireShipState();
   }
 
   /** Generate deterministic mock connected counts from seed data for dev/testing */
@@ -2682,6 +2736,11 @@ const Blueprints = (() => {
 
     // Lazy catalog loading
     ensureCatalogLoaded,
+
+    // Heal State.spaceships entries whose stats came from the pre-catalog
+    // fallback in _loadUserCreations. Exposed for testability and as an
+    // escape hatch — _finalizeCatalogLoad already calls it on every load.
+    healStaleShipStats: _healStaleShipStats,
 
     // Search & serial key lookup
     search, searchCatalog, getBySerial,
