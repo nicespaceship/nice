@@ -442,7 +442,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 }
 .mcp-tile:hover { border-color: var(--accent2); transform: translateY(-2px); }
 .mcp-tile img,
-.mcp-tile-svg { width: 32px; height: 32px; transition: opacity 0.2s; }
+.mcp-tile-svg { width: 32px; height: 32px; object-fit: contain; transition: opacity 0.2s; }
 .mcp-tile-mono {
   font-family: var(--font-brand, var(--font));
   font-size: var(--text-sm); font-weight: var(--fw-bold); color: var(--text);
