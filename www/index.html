@@ -199,11 +199,11 @@
             <h3 id="tp-title">11 Themes</h3>
             <p id="tp-desc">Hover a theme to preview it. Every skin changes colors, fonts, borders, and glow.</p>
             <div class="bento-themes">
-              <div class="bento-theme-card" data-theme-name="NICE" data-bg="#080808" data-accent="#ffffff" data-accent2="#888" data-text="#f0f0f0" data-border="#2a2a2a" data-glow="none">
+              <div class="bento-theme-card" data-theme-name="CORE" data-bg="#080808" data-accent="#ffffff" data-accent2="#888" data-text="#f0f0f0" data-border="#2a2a2a" data-glow="none">
                 <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
-                <span class="btc-name">NICE</span>
+                <span class="btc-name">CORE</span>
               </div>
-              <div class="bento-theme-card" data-theme-name="HAL-9000" data-bg="#f2f2f0" data-accent="#666" data-accent2="#999" data-text="#1a1a1a" data-border="#d0d0ce" data-glow="none">
+              <div class="bento-theme-card" data-theme-name="HAL-9000" data-bg="#000000" data-accent="#ef4444" data-accent2="#b0b0b6" data-text="#f5f5f5" data-border="#2a2a2a" data-glow="0 0 12px rgba(239,68,68,0.25)">
                 <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
                 <span class="btc-name">HAL-9000</span>
               </div>
@@ -251,13 +251,13 @@
             <h3 id="rp-title">12 Ranks</h3>
             <p id="rp-desc">Hover a rank to see what it unlocks.</p>
             <div class="bento-ranks">
-              <div class="bento-rank" data-rank="Ensign" data-slots="6" data-rarity="Common" data-xp="0" data-class="Scout"><span class="br-badge">&#x2B21;</span> Ensign <span class="br-xp">0 XP</span></div>
-              <div class="bento-rank" data-rank="Lieutenant" data-slots="6" data-rarity="Rare" data-xp="25,000" data-class="Frigate"><span class="br-badge">&#x2B21;&#x2B21;&#x2B21;</span> Lieutenant <span class="br-xp">25K</span></div>
-              <div class="bento-rank" data-rank="Commander" data-slots="6" data-rarity="Epic" data-xp="100,000" data-class="Cruiser"><span class="br-badge">&#x2605;</span> Commander <span class="br-xp">100K</span></div>
-              <div class="bento-rank" data-rank="Captain" data-slots="6" data-rarity="Legendary" data-xp="200,000" data-class="Dreadnought"><span class="br-badge">&#x2605;&#x2605;</span> Captain <span class="br-xp">200K</span></div>
-              <div class="bento-rank" data-rank="Commodore" data-slots="6" data-rarity="Legendary" data-xp="500,000" data-class="Dreadnought"><span class="br-badge">&#x2726;</span> Commodore <span class="br-xp">500K</span></div>
-              <div class="bento-rank" data-rank="Admiral" data-slots="6" data-rarity="Legendary" data-xp="1,500,000" data-class="Dreadnought"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;</span> Admiral <span class="br-xp">1.5M</span></div>
-              <div class="bento-rank" data-rank="Fleet Admiral" data-slots="6" data-rarity="Legendary" data-xp="2,500,000" data-class="Dreadnought"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;&#x2726;</span> Fleet Admiral <span class="br-xp">2.5M</span></div>
+              <div class="bento-rank" data-rank="Ensign" data-slots="6" data-rarity="Common" data-xp="0"><span class="br-badge">&#x2B21;</span> Ensign <span class="br-xp">0 XP</span></div>
+              <div class="bento-rank" data-rank="Lieutenant" data-slots="6" data-rarity="Rare" data-xp="25,000"><span class="br-badge">&#x2B21;&#x2B21;&#x2B21;</span> Lieutenant <span class="br-xp">25K</span></div>
+              <div class="bento-rank" data-rank="Commander" data-slots="6" data-rarity="Epic" data-xp="100,000"><span class="br-badge">&#x2605;</span> Commander <span class="br-xp">100K</span></div>
+              <div class="bento-rank" data-rank="Captain" data-slots="6" data-rarity="Legendary" data-xp="200,000"><span class="br-badge">&#x2605;&#x2605;</span> Captain <span class="br-xp">200K</span></div>
+              <div class="bento-rank" data-rank="Commodore" data-slots="6" data-rarity="Legendary" data-xp="500,000"><span class="br-badge">&#x2726;</span> Commodore <span class="br-xp">500K</span></div>
+              <div class="bento-rank" data-rank="Admiral" data-slots="6" data-rarity="Legendary" data-xp="1,500,000"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;</span> Admiral <span class="br-xp">1.5M</span></div>
+              <div class="bento-rank" data-rank="Fleet Admiral" data-slots="6" data-rarity="Legendary" data-xp="2,500,000"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;&#x2726;</span> Fleet Admiral <span class="br-xp">2.5M</span></div>
             </div>
           </div>
 
@@ -534,7 +534,7 @@
         document.querySelectorAll('.bento-rank').forEach(r => r.classList.remove('rank-active'));
         rank.classList.add('rank-active');
         title.textContent = rank.dataset.rank;
-        desc.textContent = rank.dataset.slots + ' slots \u00b7 ' + rank.dataset.rarity + ' max \u00b7 ' + rank.dataset.class + ' class \u00b7 ' + rank.dataset.xp + ' XP';
+        desc.textContent = rank.dataset.slots + ' slots \u00b7 ' + rank.dataset.rarity + ' max rarity \u00b7 ' + rank.dataset.xp + ' XP';
       });
       rank.addEventListener('mouseleave', () => {
         rank.classList.remove('rank-active');
@@ -569,7 +569,7 @@
         fill.style.width = cls.dataset.shipPct + '%';
         rankEl.textContent = cls.dataset.shipClass;
         xpEl.textContent = cls.dataset.shipAgents + ' agents';
-        nextEl.textContent = 'Requires ' + cls.dataset.shipRank + ' rank \u00b7 ' + cls.dataset.shipRarity + ' max rarity';
+        nextEl.textContent = 'Field ' + cls.dataset.shipAgents + ' agents to deploy this class';
       });
       cls.addEventListener('mouseleave', () => {
         cls.classList.remove('active');
