@@ -14,7 +14,7 @@
    instead and re-run this script.
 ═══════════════════════════════════════════════════════════════════ */
 
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -22,6 +22,7 @@ import { createRequire } from 'node:module';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 const outPath = join(repoRoot, 'www', 'pricing.html');
+const aboutPath = join(repoRoot, 'www', 'about.html');
 const require = createRequire(import.meta.url);
 
 const TokenConfig = require(join(repoRoot, 'app/js/lib/token-config.js'));
@@ -254,8 +255,102 @@ ${premiumModels.map(modelLi).join('\n')}
 `;
 }
 
+/* ── About-page block render ──────────────────────────────────── */
+
+function renderAboutProGrid() {
+  const proSub = StripeConfig.SUBSCRIPTIONS.pro;
+  const standardAllowance = TokenConfig.POOLS.standard.monthlyAllowance;
+  const standardModelsList = modelsInPool('standard').map(m => m.name).join(', ');
+  const freeModelNames = freeModels().map(m => m.name).join(', ');
+
+  return `        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3>Free</h3>
+            <div class="pricing-price">$0</div>
+            <div class="pricing-period">forever</div>
+            <ul class="pricing-features">
+              <li>6 agent slots</li>
+              <li>Common blueprints</li>
+              <li>${freeModelNames} (unlimited)</li>
+              <li>XP progression to Legendary</li>
+              <li>All core integrations</li>
+            </ul>
+            <a href="https://nicespaceship.ai" class="btn-secondary" style="width:100%;text-align:center">Get Started Free</a>
+          </div>
+          <div class="pricing-card featured">
+            <h3>Pro</h3>
+            <div class="pricing-price">${fmtPrice(proSub.price)}</div>
+            <div class="pricing-period">per month</div>
+            <ul class="pricing-features">
+              <li>12 agent slots</li>
+              <li>Legendary blueprints instantly</li>
+              <li>${fmtTokens(standardAllowance)} Standard tokens / month</li>
+              <li>Standard pool models (${standardModelsList})</li>
+              <li>Token top-ups that never expire</li>
+            </ul>
+            <a href="https://nicespaceship.ai/#/security?tab=wallet" class="btn-primary" style="width:100%;text-align:center">Choose Pro</a>
+          </div>
+        </div>`;
+}
+
+function renderAboutAddonsGrid() {
+  const claudeSub = StripeConfig.SUBSCRIPTIONS.claude;
+  const premiumSub = StripeConfig.SUBSCRIPTIONS.premium;
+  const claudeAllowance = TokenConfig.POOLS.claude.monthlyAllowance;
+  const premiumAllowance = TokenConfig.POOLS.premium.monthlyAllowance;
+  const claudeModels = modelsInPool('claude');
+  const premiumModels = modelsInPool('premium');
+  const claudeRange = topUpRange('claude');
+  const premiumRange = topUpRange('premium');
+
+  const fmtTopUps = (range) =>
+    `Top-ups: +${fmtTokens(range.boost.tokens)} / ${fmtPrice(range.boost.price)} · +${fmtTokens(range.max.tokens)} / ${fmtPrice(range.max.price)}`;
+
+  return `        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3>Claude Add-on</h3>
+            <div class="pricing-price">+${fmtPrice(claudeSub.price)}</div>
+            <div class="pricing-period">per month, on top of Pro</div>
+            <ul class="pricing-features">
+${claudeModels.map(modelLi).join('\n')}
+              <li>${fmtTokens(claudeAllowance)} Claude tokens / month</li>
+              <li>${fmtTopUps(claudeRange)}</li>
+            </ul>
+            <a href="https://nicespaceship.ai/#/security?tab=wallet" class="btn-secondary" style="width:100%;text-align:center">Add Claude</a>
+          </div>
+          <div class="pricing-card featured">
+            <h3>Premium Add-on</h3>
+            <div class="pricing-price">+${fmtPrice(premiumSub.price)}</div>
+            <div class="pricing-period">per month, on top of Pro</div>
+            <ul class="pricing-features">
+${premiumModels.map(modelLi).join('\n')}
+              <li>${fmtTokens(premiumAllowance)} Premium tokens / month (weighted)</li>
+              <li>${fmtTopUps(premiumRange)}</li>
+            </ul>
+            <a href="https://nicespaceship.ai/#/security?tab=wallet" class="btn-primary" style="width:100%;text-align:center">Add Premium</a>
+          </div>
+        </div>`;
+}
+
+function replaceMarkerBlock(source, markerName, replacement) {
+  const re = new RegExp(`(<!-- BUILD-PRICING:${markerName}:start -->)[\\s\\S]*?(<!-- BUILD-PRICING:${markerName}:end -->)`);
+  if (!re.test(source)) {
+    throw new Error(`Marker block "${markerName}" not found in target file`);
+  }
+  return source.replace(re, `$1\n${replacement}\n        $2`);
+}
+
+function updateAboutPage() {
+  let about = readFileSync(aboutPath, 'utf8');
+  about = replaceMarkerBlock(about, 'about-pro', renderAboutProGrid());
+  about = replaceMarkerBlock(about, 'about-addons', renderAboutAddonsGrid());
+  writeFileSync(aboutPath, about);
+  console.log(`  wrote www/about.html (pricing + add-on blocks)`);
+}
+
 /* ── Run ──────────────────────────────────────────────────────── */
 
 writeFileSync(outPath, render());
 console.log(`  wrote www/pricing.html`);
+updateAboutPage();
 console.log(`\n✓ Generated from app/js/lib/{token-config,stripe-config,model-catalog}.js`);
