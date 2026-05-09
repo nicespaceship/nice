@@ -4,8 +4,9 @@ const Stats = (() => {
   const CACHE_KEY = 'ns-community-stats';
 
   // Static counts (update when new models/MCPs are added)
+  // SSOT for MCPS: app/js/views/integrations.js INTEGRATIONS_CATALOG (count entries without comingSoon:true)
   const LLMS = 10;   // MODEL_CATALOG: Gemini ×2, GPT-5 ×4 (mini, Pro, Codex, o3), Claude ×2, Llama, Grok
-  const MCPS = 2;    // Live edge functions: Google Workspace (gmail/calendar/drive), Microsoft 365
+  const MCPS = 19;   // Wired umbrellas: Google, Microsoft, HubSpot, GitHub, Slack, Linear, Notion, Stripe, Atlassian, Cloudflare ×4, Sentry, Zapier, Airtable, Klaviyo, Miro, Replicate
 
   function _animate(el, target) {
     if (!el) return;
