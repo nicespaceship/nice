@@ -106,67 +106,80 @@
       <div class="container">
         <div class="section-header centered">
           <span class="badge"><span class="badge-dot"></span> How it works</span>
-          <h2>The NICE ecosystem</h2>
+          <h2>Neural Intelligence Command Engine ecosystem</h2>
           <p class="section-desc">AI models power your agents. Agents execute through integrations. You just watch it work.</p>
         </div>
 
-        <div class="flow-tree">
-          <!-- Column 1: AI Models -->
-          <div class="flow-col flow-col-models">
-            <div class="flow-col-label">AI Models</div>
-            <div class="flow-node" data-flow="model" data-tip="Google's fastest model. Free for all users."><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini</div>
-            <div class="flow-node" data-flow="model" data-tip="Anthropic. Best reasoning and analysis."><i class="fa-solid fa-brain"></i> Claude</div>
-            <div class="flow-node" data-flow="model" data-tip="OpenAI flagship. Creative writing and code."><i class="fa-solid fa-robot"></i> GPT-5</div>
-            <div class="flow-node" data-flow="model" data-tip="xAI. Real-time knowledge and search."><i class="fa-solid fa-bolt"></i> Grok</div>
-            <div class="flow-node" data-flow="model" data-tip="Open-weight. 10M context. Local-friendly."><i class="fa-solid fa-layer-group"></i> Llama 4</div>
-            <div class="flow-node" data-flow="model" data-tip="AI image generation from text prompts."><i class="fa-solid fa-image"></i> DALL-E / Flux</div>
-            <div class="flow-node" data-flow="model" data-tip="AI video generation and editing."><i class="fa-solid fa-video"></i> Veo / Runway</div>
-            <div class="flow-node" data-flow="model" data-tip="AI voice synthesis and cloning."><i class="fa-solid fa-microphone"></i> ElevenLabs</div>
-          </div>
-
-          <!-- Connector -->
-          <div class="flow-connector">
-            <div class="flow-arrow-line"></div>
-            <div class="flow-arrow-label">routes to</div>
-          </div>
-
-          <!-- Column 2: NICE Platform -->
-          <div class="flow-col flow-col-nice">
-            <div class="flow-col-label">NICE &middot; Neural Intelligence Command Engine</div>
-            <div class="flow-node flow-node-lg flow-node-accent" data-flow="nice" data-tip="Top-level orchestrator. Routes tasks to the right agent and model.">
-              <i class="fa-solid fa-rocket"></i>
-              <strong>Spaceships</strong>
-              <span>Orchestrators</span>
+        <!-- Schematic flow: AI Model → NICE Engine → Integrations → Output -->
+        <div class="schematic" aria-label="NICE workflow schematic">
+          <div class="schematic-stage">
+            <div class="schematic-node" data-stage="ai" data-tip="10 frontier models — Gemini, Claude, GPT-5, Grok, Llama, plus image, video, and voice. NICE picks the right one for each task.">
+              <img class="schematic-node-icon" src="/assets/brands/ai-model.svg" alt="" aria-hidden="true" width="32" height="32"/>
+              <strong>AI Model</strong>
+              <span>Gemini, Claude, GPT-5</span>
             </div>
-            <div class="flow-node flow-node-lg" data-flow="nice" data-tip="AI agents with specific skills. Drag and drop into spaceship slots.">
-              <i class="fa-solid fa-users"></i>
-              <strong>Agents</strong>
-              <span>900+ Blueprints</span>
-            </div>
-            <div class="flow-node flow-node-lg" data-flow="nice" data-tip="Chain multiple agents into pipeline, parallel, or loop patterns.">
-              <i class="fa-solid fa-diagram-project"></i>
-              <strong>Workflows</strong>
-              <span>Multi-step missions</span>
-            </div>
+            <span class="schematic-stage-label">Input</span>
           </div>
 
-          <!-- Connector -->
-          <div class="flow-connector">
-            <div class="flow-arrow-line"></div>
-            <div class="flow-arrow-label">executes via</div>
+          <div class="schematic-link"><span class="schematic-pulse"></span></div>
+
+          <div class="schematic-stage">
+            <div class="schematic-node schematic-node-engine" data-stage="engine" data-tip="Spaceships orchestrate a crew of agents through reusable workflow templates. The engine that turns prompts into completed missions.">
+              <span class="schematic-engine-glyph"></span>
+              <strong>NICE</strong>
+              <span>Spaceship and Agent Blueprints</span>
+            </div>
+            <span class="schematic-stage-label">Process</span>
           </div>
 
-          <!-- Column 3: MCP Integrations -->
-          <div class="flow-col flow-col-outputs">
-            <div class="flow-col-label">Integrations (MCP)</div>
-            <div class="flow-node" data-flow="output" data-tip="Full suite: Gmail, Calendar, Drive via OAuth."><i class="fa-brands fa-google"></i> Google Workspace</div>
-            <div class="flow-node" data-flow="output" data-tip="Read, search, send, and draft emails."><i class="fa-solid fa-envelope"></i> Gmail</div>
-            <div class="flow-node" data-flow="output" data-tip="View, create, and update calendar events."><i class="fa-solid fa-calendar"></i> Google Calendar</div>
-            <div class="flow-node" data-flow="output" data-tip="Search and read documents and files."><i class="fa-solid fa-hard-drive"></i> Google Drive</div>
-            <div class="flow-node" data-flow="output" data-tip="Outlook, Calendar, Contacts, OneDrive via OAuth."><i class="fa-brands fa-microsoft"></i> Microsoft 365</div>
-            <div class="flow-node" data-flow="output" data-tip="Read, search, send, and draft Outlook mail."><i class="fa-solid fa-envelope-open"></i> Outlook Mail</div>
-            <div class="flow-node" data-flow="output" data-tip="View and create Outlook calendar events."><i class="fa-solid fa-calendar-day"></i> Microsoft Calendar</div>
-            <div class="flow-node" data-flow="output" data-tip="Search, read, and upload files in OneDrive."><i class="fa-solid fa-cloud-arrow-up"></i> OneDrive</div>
+          <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:0.6s"></span></div>
+
+          <div class="schematic-stage">
+            <div class="schematic-node" data-stage="mcp" data-tip="19 wired MCP servers connecting your agents to Google, Microsoft, GitHub, Slack, HubSpot, Stripe, and more — all via OAuth, no API keys.">
+              <img class="schematic-node-icon" src="/assets/brands/integrations.svg" alt="" aria-hidden="true" width="32" height="32"/>
+              <strong>Integrations</strong>
+              <span>19 connected MCPs</span>
+            </div>
+            <span class="schematic-stage-label">Tools</span>
+          </div>
+
+          <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:1.2s"></span></div>
+
+          <div class="schematic-stage">
+            <div class="schematic-node" data-stage="output" data-tip="Real actions taken on your tools — emails sent, PRs opened, deals updated, calendar events booked. The work is actually done.">
+              <i class="fa-solid fa-circle-check"></i>
+              <strong>Output</strong>
+              <span>Email sent, PR opened</span>
+            </div>
+            <span class="schematic-stage-label">Result</span>
+          </div>
+        </div>
+
+        <!-- MCP brand wall -->
+        <div class="mcp-wall" aria-label="Integrated services">
+          <div class="mcp-wall-title">Integrate with what you already use</div>
+          <div class="mcp-wall-grid">
+            <div class="mcp-tile" data-name="Google Workspace"><img src="/assets/brands/google.png" alt="Google Workspace" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Microsoft 365"><svg class="mcp-tile-svg" viewBox="0 0 23 23" aria-label="Microsoft 365"><path fill="#F25022" d="M0 0h11v11H0z"/><path fill="#7FBA00" d="M12 0h11v11H12z"/><path fill="#00A4EF" d="M0 12h11v11H0z"/><path fill="#FFB900" d="M12 12h11v11H12z"/></svg></div>
+            <div class="mcp-tile" data-name="GitHub"><img src="https://cdn.simpleicons.org/github/ffffff" alt="GitHub" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Slack"><svg class="mcp-tile-svg" viewBox="0 0 24 24" aria-label="Slack"><path fill="#E01E5A" d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z"/><path fill="#36C5F0" d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z"/><path fill="#2EB67D" d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312z"/><path fill="#ECB22E" d="M15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/></svg></div>
+            <div class="mcp-tile" data-name="HubSpot"><img src="https://cdn.simpleicons.org/hubspot" alt="HubSpot" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Stripe"><img src="https://cdn.simpleicons.org/stripe" alt="Stripe" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Atlassian"><img src="https://cdn.simpleicons.org/atlassian" alt="Atlassian" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Linear"><img src="https://cdn.simpleicons.org/linear" alt="Linear" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Notion"><img src="https://cdn.simpleicons.org/notion/ffffff" alt="Notion" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Cloudflare"><img src="/assets/brands/cloudflare.svg" alt="Cloudflare" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Sentry"><img src="https://cdn.simpleicons.org/sentry/ffffff" alt="Sentry" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Zapier"><span class="mcp-tile-mono" style="color:#FF4F00" aria-label="Zapier">Zapier</span></div>
+            <div class="mcp-tile" data-name="Airtable"><img src="/assets/brands/airtable.webp" alt="Airtable" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Klaviyo"><span class="mcp-tile-mono" aria-label="Klaviyo">Klaviyo</span></div>
+            <div class="mcp-tile" data-name="Miro"><img src="https://cdn.simpleicons.org/miro/FFD02F" alt="Miro" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" data-name="Replicate"><img src="https://cdn.simpleicons.org/replicate/ffffff" alt="Replicate" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile mcp-tile-soon" data-name="monday.com"><img src="/assets/brands/monday.svg" alt="monday.com" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" data-name="Vercel"><img src="/assets/brands/vercel.svg" alt="Vercel" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" data-name="Asana"><img src="https://cdn.simpleicons.org/asana" alt="Asana" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" data-name="Figma"><img src="/assets/brands/figma.png" alt="Figma" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" data-name="DocuSign"><img src="/assets/brands/docusign.png" alt="DocuSign" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
           </div>
         </div>
 
@@ -186,11 +199,11 @@
             <h3 id="tp-title">11 Themes</h3>
             <p id="tp-desc">Hover a theme to preview it. Every skin changes colors, fonts, borders, and glow.</p>
             <div class="bento-themes">
-              <div class="bento-theme-card" data-theme-name="NICE" data-bg="#080808" data-accent="#ffffff" data-accent2="#888" data-text="#f0f0f0" data-border="#2a2a2a" data-glow="none">
+              <div class="bento-theme-card" data-theme-name="CORE" data-bg="#080808" data-accent="#ffffff" data-accent2="#888" data-text="#f0f0f0" data-border="#2a2a2a" data-glow="none">
                 <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
-                <span class="btc-name">NICE</span>
+                <span class="btc-name">CORE</span>
               </div>
-              <div class="bento-theme-card" data-theme-name="HAL-9000" data-bg="#f2f2f0" data-accent="#666" data-accent2="#999" data-text="#1a1a1a" data-border="#d0d0ce" data-glow="none">
+              <div class="bento-theme-card" data-theme-name="HAL-9000" data-bg="#000000" data-accent="#ef4444" data-accent2="#b0b0b6" data-text="#f5f5f5" data-border="#2a2a2a" data-glow="0 0 12px rgba(239,68,68,0.25)">
                 <div class="btc-preview"><div class="btc-sidebar"></div><div class="btc-main"><div class="btc-bar"></div><div class="btc-cards"><div class="btc-c"></div><div class="btc-c"></div><div class="btc-c"></div></div></div></div>
                 <span class="btc-name">HAL-9000</span>
               </div>
@@ -238,13 +251,13 @@
             <h3 id="rp-title">12 Ranks</h3>
             <p id="rp-desc">Hover a rank to see what it unlocks.</p>
             <div class="bento-ranks">
-              <div class="bento-rank" data-rank="Ensign" data-slots="6" data-rarity="Common" data-xp="0" data-class="Scout"><span class="br-badge">&#x2B21;</span> Ensign <span class="br-xp">0 XP</span></div>
-              <div class="bento-rank" data-rank="Lieutenant" data-slots="6" data-rarity="Rare" data-xp="25,000" data-class="Frigate"><span class="br-badge">&#x2B21;&#x2B21;&#x2B21;</span> Lieutenant <span class="br-xp">25K</span></div>
-              <div class="bento-rank" data-rank="Commander" data-slots="6" data-rarity="Epic" data-xp="100,000" data-class="Cruiser"><span class="br-badge">&#x2605;</span> Commander <span class="br-xp">100K</span></div>
-              <div class="bento-rank" data-rank="Captain" data-slots="6" data-rarity="Legendary" data-xp="200,000" data-class="Dreadnought"><span class="br-badge">&#x2605;&#x2605;</span> Captain <span class="br-xp">200K</span></div>
-              <div class="bento-rank" data-rank="Commodore" data-slots="6" data-rarity="Legendary" data-xp="500,000" data-class="Dreadnought"><span class="br-badge">&#x2726;</span> Commodore <span class="br-xp">500K</span></div>
-              <div class="bento-rank" data-rank="Admiral" data-slots="6" data-rarity="Legendary" data-xp="1,500,000" data-class="Dreadnought"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;</span> Admiral <span class="br-xp">1.5M</span></div>
-              <div class="bento-rank" data-rank="Fleet Admiral" data-slots="6" data-rarity="Legendary" data-xp="2,500,000" data-class="Dreadnought"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;&#x2726;</span> Fleet Admiral <span class="br-xp">2.5M</span></div>
+              <div class="bento-rank" data-rank="Ensign" data-slots="6" data-rarity="Common" data-xp="0"><span class="br-badge">&#x2B21;</span> Ensign <span class="br-xp">0 XP</span></div>
+              <div class="bento-rank" data-rank="Lieutenant" data-slots="6" data-rarity="Rare" data-xp="25,000"><span class="br-badge">&#x2B21;&#x2B21;&#x2B21;</span> Lieutenant <span class="br-xp">25K</span></div>
+              <div class="bento-rank" data-rank="Commander" data-slots="6" data-rarity="Epic" data-xp="100,000"><span class="br-badge">&#x2605;</span> Commander <span class="br-xp">100K</span></div>
+              <div class="bento-rank" data-rank="Captain" data-slots="6" data-rarity="Legendary" data-xp="200,000"><span class="br-badge">&#x2605;&#x2605;</span> Captain <span class="br-xp">200K</span></div>
+              <div class="bento-rank" data-rank="Commodore" data-slots="6" data-rarity="Legendary" data-xp="500,000"><span class="br-badge">&#x2726;</span> Commodore <span class="br-xp">500K</span></div>
+              <div class="bento-rank" data-rank="Admiral" data-slots="6" data-rarity="Legendary" data-xp="1,500,000"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;</span> Admiral <span class="br-xp">1.5M</span></div>
+              <div class="bento-rank" data-rank="Fleet Admiral" data-slots="6" data-rarity="Legendary" data-xp="2,500,000"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;&#x2726;</span> Fleet Admiral <span class="br-xp">2.5M</span></div>
             </div>
           </div>
 
@@ -394,15 +407,19 @@
           <div class="faq-list">
             <div class="faq-item open">
               <button class="faq-q">What is NICE? <span class="faq-icon">+</span></button>
-              <div class="faq-a">NICE (Neural Intelligence Command Engine) is an open-source AI agent platform. Deploy a team of AI agents from 900+ blueprints. They handle email, social, analytics, CRM, and more. NICE is the LLM provider — no API keys needed.</div>
+              <div class="faq-a">NICE (Neural Intelligence Command Engine) is an open-source AI agent platform. Deploy a crew of AI agents from 500+ blueprints, connect them to 19+ services via MCP, and let them run real work — email, calendars, CRM, GitHub, Slack, and more. NICE is the LLM provider — no API keys needed.</div>
             </div>
             <div class="faq-item">
               <button class="faq-q">What is a Blueprint? <span class="faq-icon">+</span></button>
-              <div class="faq-a">A blueprint is a pre-built AI agent or spaceship template. Each one comes configured with a system prompt, tools, and category — ready to deploy. Browse 900+ blueprints for industries like marketing, real estate, legal, hospitality, and more.</div>
+              <div class="faq-a">A blueprint is a pre-built AI agent or spaceship template. Each one comes configured with a system prompt, role, and capabilities — ready to deploy. Browse 500+ blueprints across marketing, sales, engineering, operations, and more, or build your own.</div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-q">What's an integration (MCP)? <span class="faq-icon">+</span></button>
+              <div class="faq-a">An integration connects your agents to your tools — Google Workspace, Microsoft 365, GitHub, Slack, HubSpot, Stripe, Notion, Linear, and more. NICE uses MCP (Model Context Protocol) servers to call APIs on your behalf. Connect once via OAuth; every agent on the spaceship inherits the access.</div>
             </div>
             <div class="faq-item">
               <button class="faq-q">Is this free to use? <span class="faq-icon">+</span></button>
-              <div class="faq-a">Yes. Gemini 2.5 Flash is unlimited on the Free tier. Pro is $9.99/month and unlocks 12 slots, Legendary blueprints, and all non-flagship models. Frontier models (Claude 4.6 Sonnet, Claude 4.7 Opus, GPT-5.4 Pro, GPT-5.3 Codex, OpenAI o3, Gemini 2.5 Pro) live behind optional $9.99 add-ons so you only pay for what you use.</div>
+              <div class="faq-a">Yes. Gemini 2.5 Flash is unlimited on the Free tier. NICE Pro ($9.99/month) unlocks 12-slot Flagship spaceships, Legendary blueprints, and the standard model pool. Frontier models — Claude 4.7 Opus, Claude 4.6 Sonnet, GPT-5.4 Pro, OpenAI o3, GPT-5.3 Codex, Gemini 2.5 Pro — live behind optional $9.99 add-ons (Claude pool or Premium pool), so you only enable what you need.</div>
             </div>
             <div class="faq-item">
               <button class="faq-q">Do I need to bring my own API keys? <span class="faq-icon">+</span></button>
@@ -457,9 +474,9 @@
     // Inject the NICE product glyph in the hero (path data lives in nav.js)
     const heroGlyph = document.getElementById('hero-glyph');
     if (heroGlyph) heroGlyph.innerHTML = Nav.niceGlyph('hero-glyph-svg');
-    // And in the "NICE" column label of the flow tree
-    const flowNiceLabel = document.querySelector('.flow-col-nice .flow-col-label');
-    if (flowNiceLabel) flowNiceLabel.insertAdjacentHTML('afterbegin', Nav.niceGlyph('flow-col-glyph'));
+    // And as the icon of the engine card in the schematic
+    const engineGlyph = document.querySelector('.schematic-engine-glyph');
+    if (engineGlyph) engineGlyph.innerHTML = Nav.niceGlyph('schematic-engine-glyph-svg');
 
     // Theme preview: paint mini previews with real colors + morph parent on hover
     document.querySelectorAll('.bento-theme-card').forEach(card => {
@@ -521,7 +538,7 @@
         document.querySelectorAll('.bento-rank').forEach(r => r.classList.remove('rank-active'));
         rank.classList.add('rank-active');
         title.textContent = rank.dataset.rank;
-        desc.textContent = rank.dataset.slots + ' slots \u00b7 ' + rank.dataset.rarity + ' max \u00b7 ' + rank.dataset.class + ' class \u00b7 ' + rank.dataset.xp + ' XP';
+        desc.textContent = rank.dataset.slots + ' slots \u00b7 ' + rank.dataset.rarity + ' max rarity \u00b7 ' + rank.dataset.xp + ' XP';
       });
       rank.addEventListener('mouseleave', () => {
         rank.classList.remove('rank-active');
@@ -556,7 +573,7 @@
         fill.style.width = cls.dataset.shipPct + '%';
         rankEl.textContent = cls.dataset.shipClass;
         xpEl.textContent = cls.dataset.shipAgents + ' agents';
-        nextEl.textContent = 'Requires ' + cls.dataset.shipRank + ' rank \u00b7 ' + cls.dataset.shipRarity + ' max rarity';
+        nextEl.textContent = 'Field ' + cls.dataset.shipAgents + ' agents to deploy this class';
       });
       cls.addEventListener('mouseleave', () => {
         cls.classList.remove('active');
