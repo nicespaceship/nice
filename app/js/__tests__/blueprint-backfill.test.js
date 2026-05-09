@@ -153,11 +153,12 @@ describe('BlueprintBackfill.runOnLoad', () => {
     expect(result.createdAgents).toBe(3);
     expect(_state.user_agents.length).toBe(3);
 
-    // Persona, role, and rarity all sourced from slots.crew[idx]
+    // Persona, role, and rarity all sourced from slots.crew[idx].
+    // user_agents has no `category` column — role lives in config.agentRole.
     const han = _state.user_agents.find((a) => a.name === 'Han Solo');
     expect(han).toBeDefined();
     expect(han.rarity).toBe('Legendary');
-    expect(han.category).toBe('Captain');
+    expect(han).not.toHaveProperty('category');
     expect(han.config.agentRole).toBe('Captain');
     expect(han.config.role).toBe('Captain');
     expect(han.config.type).toBe('Agent');
