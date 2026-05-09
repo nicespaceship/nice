@@ -123,14 +123,11 @@
 
           <div class="schematic-link"><span class="schematic-pulse"></span></div>
 
-          <div class="schematic-stage schematic-stage-engine">
+          <div class="schematic-stage">
             <div class="schematic-node schematic-node-engine" data-stage="engine">
-              <span class="schematic-engine-eyebrow">Neural Intelligence Command Engine</span>
-              <div class="schematic-engine-stack">
-                <span class="schematic-engine-row"><i class="fa-solid fa-rocket"></i> Spaceship</span>
-                <span class="schematic-engine-row"><i class="fa-solid fa-users"></i> Agents</span>
-                <span class="schematic-engine-row"><i class="fa-solid fa-diagram-project"></i> Workflow</span>
-              </div>
+              <span class="schematic-engine-glyph"></span>
+              <strong>Neural Intelligence Command Engine</strong>
+              <span>Agents, Blueprints, Workflow</span>
             </div>
             <span class="schematic-stage-label">Process</span>
           </div>
@@ -473,9 +470,9 @@
     // Inject the NICE product glyph in the hero (path data lives in nav.js)
     const heroGlyph = document.getElementById('hero-glyph');
     if (heroGlyph) heroGlyph.innerHTML = Nav.niceGlyph('hero-glyph-svg');
-    // And in the "NICE" column label of the flow tree
-    const flowNiceLabel = document.querySelector('.flow-col-nice .flow-col-label');
-    if (flowNiceLabel) flowNiceLabel.insertAdjacentHTML('afterbegin', Nav.niceGlyph('flow-col-glyph'));
+    // And as the icon of the engine card in the schematic
+    const engineGlyph = document.querySelector('.schematic-engine-glyph');
+    if (engineGlyph) engineGlyph.innerHTML = Nav.niceGlyph('schematic-engine-glyph-svg');
 
     // Theme preview: paint mini previews with real colors + morph parent on hover
     document.querySelectorAll('.bento-theme-card').forEach(card => {

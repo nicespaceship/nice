@@ -386,19 +386,9 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   border-color: var(--accent2);
   background: linear-gradient(180deg, rgba(165,180,252,0.06) 0%, var(--panel-bg) 100%);
   box-shadow: 0 0 32px rgba(165,180,252,0.12);
-  gap: 14px;
 }
-.schematic-engine-eyebrow {
-  font-size: var(--text-xs); color: var(--accent); font-weight: var(--fw-bold);
-  text-transform: uppercase; letter-spacing: var(--tracking-caps); text-align: center;
-}
-.schematic-engine-stack { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-.schematic-engine-row {
-  display: flex; align-items: center; gap: 10px; justify-content: center;
-  padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg); font-size: var(--text-sm); color: var(--text); font-weight: var(--fw-medium);
-}
-.schematic-engine-row i { color: var(--accent2); font-size: var(--text-sm); width: 16px; text-align: center; }
+.schematic-engine-glyph { display: inline-flex; align-items: center; justify-content: center; }
+.schematic-engine-glyph svg { width: 32px; height: 32px; color: var(--accent2); }
 
 .schematic-link {
   position: relative; align-self: center; min-width: 56px;
