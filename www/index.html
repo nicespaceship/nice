@@ -113,7 +113,7 @@
         <!-- Schematic flow: AI Model → NICE Engine → Integrations → Output -->
         <div class="schematic" aria-label="NICE workflow schematic">
           <div class="schematic-stage">
-            <div class="schematic-node" data-stage="ai">
+            <div class="schematic-node" data-stage="ai" data-tip="10 frontier models — Gemini, Claude, GPT-5, Grok, Llama, plus image, video, and voice. NICE picks the right one for each task.">
               <img class="schematic-node-icon" src="/assets/brands/ai-model.svg" alt="" aria-hidden="true" width="32" height="32"/>
               <strong>AI Model</strong>
               <span>Gemini, Claude, GPT-5</span>
@@ -124,7 +124,7 @@
           <div class="schematic-link"><span class="schematic-pulse"></span></div>
 
           <div class="schematic-stage">
-            <div class="schematic-node schematic-node-engine" data-stage="engine">
+            <div class="schematic-node schematic-node-engine" data-stage="engine" data-tip="Spaceships orchestrate a crew of agents through reusable workflow templates. The engine that turns prompts into completed missions.">
               <span class="schematic-engine-glyph"></span>
               <strong>NICE</strong>
               <span>Spaceship and Agent Blueprints</span>
@@ -135,7 +135,7 @@
           <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:0.6s"></span></div>
 
           <div class="schematic-stage">
-            <div class="schematic-node" data-stage="mcp">
+            <div class="schematic-node" data-stage="mcp" data-tip="19 wired MCP servers connecting your agents to Google, Microsoft, GitHub, Slack, HubSpot, Stripe, and more — all via OAuth, no API keys.">
               <img class="schematic-node-icon" src="/assets/brands/integrations.svg" alt="" aria-hidden="true" width="32" height="32"/>
               <strong>Integrations</strong>
               <span>19 connected MCPs</span>
@@ -146,7 +146,7 @@
           <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:1.2s"></span></div>
 
           <div class="schematic-stage">
-            <div class="schematic-node" data-stage="output">
+            <div class="schematic-node" data-stage="output" data-tip="Real actions taken on your tools — emails sent, PRs opened, deals updated, calendar events booked. The work is actually done.">
               <i class="fa-solid fa-circle-check"></i>
               <strong>Output</strong>
               <span>Email sent, PR opened</span>
