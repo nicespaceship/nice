@@ -127,10 +127,8 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   max-width: var(--max-w); margin: 0 auto; padding: 0 24px;
   display: flex; align-items: center; height: 52px; gap: 24px;
 }
-.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.nav-brand-icon { display: block; width: 24px; height: 24px; }
-.nav-logo { width: 18px; height: 18px; filter: invert(1); }
-.nav-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-sm); color: var(--text); font-weight: 900; letter-spacing: 0.67em; text-transform: uppercase; }
+.nav-brand { display: flex; align-items: center; text-decoration: none; }
+.nav-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-md); color: var(--text); font-weight: 900; letter-spacing: 0.67em; text-transform: uppercase; }
 .nav-links { display: flex; gap: 2px; flex: 1; justify-content: center; }
 .nav-link {
   color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--fw-regular);
