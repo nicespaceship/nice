@@ -81,12 +81,15 @@ const BlueprintBackfill = (() => {
     const rarity = (local && local.rarity) || (crewMember && crewMember.rarity) || 'Common';
     const status = (local && local.status) || 'idle';
 
+    // Row shape mirrors ship-setup-wizard.js _persistSlotAgent verbatim:
+    // (user_id, name, rarity, status, config). user_agents has no
+    // `category` column — role lives in config.agentRole, surfaced to
+    // Schematic via the same config path the wizard writes.
     const row = {
       user_id: user.id,
       name,
       rarity,
       status,
-      category: role,
       config: Object.assign(
         {
           role,
