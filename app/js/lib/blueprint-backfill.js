@@ -207,13 +207,7 @@ const BlueprintBackfill = (() => {
     State.set('spaceships', nextShips);
   }
 
-  /**
-   * Boot-time entry point. Idempotent. No-op for guests, offline users,
-   * and users whose ships already have UUID-only assignments.
-   *
-   * @returns {Promise<{fixedSlots: number, ships: number, createdAgents: number}>}
-   */
-  async function runOnLoad() {
+  async function _runOnLoadInternal() {
     const empty = { fixedSlots: 0, ships: 0, createdAgents: 0 };
     const user = (typeof State !== 'undefined') ? State.get('user') : null;
     if (!user || !user.id) return empty;
@@ -260,6 +254,26 @@ const BlueprintBackfill = (() => {
     }
 
     return { fixedSlots, ships: shipsTouched, createdAgents };
+  }
+
+  // Re-entrant calls collapse onto one in-flight promise. Without this
+  // guard, an auth callback firing concurrently with another invocation
+  // (TOKEN_REFRESHED, manual reload during boot, etc.) would mint a
+  // duplicate set of user_agents rows — confirmed live on Falcon
+  // 2026-05-08, 12 orphan rows had to be cleaned up via SQL.
+  let _inFlight = null;
+
+  /**
+   * Boot-time entry point. Idempotent across re-entrant calls. No-op for
+   * guests, offline users, and users whose ships already have UUID-only
+   * assignments.
+   *
+   * @returns {Promise<{fixedSlots: number, ships: number, createdAgents: number}>}
+   */
+  function runOnLoad() {
+    if (_inFlight) return _inFlight;
+    _inFlight = _runOnLoadInternal().finally(() => { _inFlight = null; });
+    return _inFlight;
   }
 
   return {

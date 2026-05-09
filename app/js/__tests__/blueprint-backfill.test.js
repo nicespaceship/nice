@@ -346,6 +346,68 @@ describe('BlueprintBackfill.runOnLoad', () => {
     expect(arg.type).toBe('system');
   });
 
+  it('two concurrent runOnLoad calls collapse onto one in-flight promise', async () => {
+    // Repro of the 2026-05-08 Falcon duplicate-row incident: the auth
+    // callback fired runOnLoad and a parallel manual invocation raced
+    // it. Both saw synthetic ids, both minted user_agents rows, both
+    // updated user_spaceships. We had to drop 12 orphan rows via SQL.
+    // After the guard, re-entrant calls return the same promise — one
+    // set of rows, one update, one notification.
+    globalThis.State.set('user', { id: 'user-han' });
+    _state.user_spaceships = [makeFalcon()];
+
+    const [a, b] = await Promise.all([
+      BlueprintBackfill.runOnLoad(),
+      BlueprintBackfill.runOnLoad(),
+    ]);
+
+    expect(a).toEqual(b);
+    expect(a.fixedSlots).toBe(3);
+    expect(_state.user_agents.length).toBe(3); // not 6
+    expect(_updates.length).toBe(1);            // single ship UPDATE
+    expect(globalThis.Notify.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('a fresh runOnLoad after the prior one settled does new work', async () => {
+    // The lock must release on settle, otherwise a re-login or a
+    // TOKEN_REFRESHED firing the auth callback again would silently
+    // skip work. After the first call clears the synthetic ids, a
+    // second call should still be allowed (and is a no-op because
+    // every assignment is now a UUID).
+    globalThis.State.set('user', { id: 'user-han' });
+    _state.user_spaceships = [makeFalcon()];
+
+    const first = await BlueprintBackfill.runOnLoad();
+    expect(first.fixedSlots).toBe(3);
+
+    // Second call: the lock has released, work runs again — but the
+    // ship is now UUID-only, so it's a no-op. Importantly: not blocked.
+    const second = await BlueprintBackfill.runOnLoad();
+    expect(second).toEqual({ fixedSlots: 0, ships: 0, createdAgents: 0 });
+    expect(_state.user_agents.length).toBe(3); // unchanged
+  });
+
+  it('the in-flight lock releases even if the internal call rejects', async () => {
+    // The internal function is wrapped in try/catch so most errors
+    // turn into a graceful empty result. But if something throws
+    // BEFORE the try/catch (e.g. State.get throws), the promise
+    // rejects — the .finally() must still clear the lock so the
+    // next call can recover.
+    const origGet = globalThis.State.get;
+    globalThis.State.get = () => { throw new Error('State exploded'); };
+
+    let firstError;
+    try { await BlueprintBackfill.runOnLoad(); } catch (e) { firstError = e; }
+    expect(firstError).toBeDefined();
+    expect(firstError.message).toBe('State exploded');
+
+    // Restore State and confirm the next call proceeds — the lock did not stick.
+    globalThis.State.get = origGet;
+    globalThis.State.set('user', null); // guest path
+    const result = await BlueprintBackfill.runOnLoad();
+    expect(result).toEqual({ fixedSlots: 0, ships: 0, createdAgents: 0 });
+  });
+
   it.afterEach?.(() => {
     globalThis.SB = _origSB;
     globalThis.Notify = _origNotify;
