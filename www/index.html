@@ -110,65 +110,79 @@
           <p class="section-desc">AI models power your agents. Agents execute through integrations. You just watch it work.</p>
         </div>
 
-        <div class="flow-tree">
-          <!-- Column 1: AI Models -->
-          <div class="flow-col flow-col-models">
-            <div class="flow-col-label">AI Models</div>
-            <div class="flow-node" data-flow="model" data-tip="Google's fastest model. Free for all users."><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini</div>
-            <div class="flow-node" data-flow="model" data-tip="Anthropic. Best reasoning and analysis."><i class="fa-solid fa-brain"></i> Claude</div>
-            <div class="flow-node" data-flow="model" data-tip="OpenAI flagship. Creative writing and code."><i class="fa-solid fa-robot"></i> GPT-5</div>
-            <div class="flow-node" data-flow="model" data-tip="xAI. Real-time knowledge and search."><i class="fa-solid fa-bolt"></i> Grok</div>
-            <div class="flow-node" data-flow="model" data-tip="Open-weight. 10M context. Local-friendly."><i class="fa-solid fa-layer-group"></i> Llama 4</div>
-            <div class="flow-node" data-flow="model" data-tip="AI image generation from text prompts."><i class="fa-solid fa-image"></i> DALL-E / Flux</div>
-            <div class="flow-node" data-flow="model" data-tip="AI video generation and editing."><i class="fa-solid fa-video"></i> Veo / Runway</div>
-            <div class="flow-node" data-flow="model" data-tip="AI voice synthesis and cloning."><i class="fa-solid fa-microphone"></i> ElevenLabs</div>
-          </div>
-
-          <!-- Connector -->
-          <div class="flow-connector">
-            <div class="flow-arrow-line"></div>
-            <div class="flow-arrow-label">routes to</div>
-          </div>
-
-          <!-- Column 2: NICE Platform -->
-          <div class="flow-col flow-col-nice">
-            <div class="flow-col-label">NICE &middot; Neural Intelligence Command Engine</div>
-            <div class="flow-node flow-node-lg flow-node-accent" data-flow="nice" data-tip="Top-level orchestrator. Routes tasks to the right agent and model.">
-              <i class="fa-solid fa-rocket"></i>
-              <strong>Spaceships</strong>
-              <span>Orchestrators</span>
+        <!-- Schematic flow: AI Model → NICE Engine → Integrations → Output -->
+        <div class="schematic" aria-label="NICE workflow schematic">
+          <div class="schematic-stage">
+            <div class="schematic-node" data-stage="ai">
+              <i class="fa-solid fa-brain"></i>
+              <strong>AI Model</strong>
+              <span>Gemini, Claude, GPT-5</span>
             </div>
-            <div class="flow-node flow-node-lg" data-flow="nice" data-tip="AI agents with specific skills. Drag and drop into spaceship slots.">
-              <i class="fa-solid fa-users"></i>
-              <strong>Agents</strong>
-              <span>900+ Blueprints</span>
-            </div>
-            <div class="flow-node flow-node-lg" data-flow="nice" data-tip="Chain multiple agents into pipeline, parallel, or loop patterns.">
-              <i class="fa-solid fa-diagram-project"></i>
-              <strong>Workflows</strong>
-              <span>Multi-step missions</span>
-            </div>
+            <span class="schematic-stage-label">Input</span>
           </div>
 
-          <!-- Connector -->
-          <div class="flow-connector">
-            <div class="flow-arrow-line"></div>
-            <div class="flow-arrow-label">executes via</div>
+          <div class="schematic-link"><span class="schematic-pulse"></span></div>
+
+          <div class="schematic-stage schematic-stage-engine">
+            <div class="schematic-node schematic-node-engine" data-stage="engine">
+              <span class="schematic-engine-eyebrow">Neural Intelligence Command Engine</span>
+              <div class="schematic-engine-stack">
+                <span class="schematic-engine-row"><i class="fa-solid fa-rocket"></i> Spaceship</span>
+                <span class="schematic-engine-row"><i class="fa-solid fa-users"></i> Agents</span>
+                <span class="schematic-engine-row"><i class="fa-solid fa-diagram-project"></i> Workflow</span>
+              </div>
+            </div>
+            <span class="schematic-stage-label">Process</span>
           </div>
 
-          <!-- Column 3: MCP Integrations -->
-          <div class="flow-col flow-col-outputs">
-            <div class="flow-col-label">Integrations (MCP)</div>
-            <div class="flow-node" data-flow="output" data-tip="Gmail, Calendar, Drive via OAuth."><i class="fa-brands fa-google"></i> Google Workspace</div>
-            <div class="flow-node" data-flow="output" data-tip="Outlook, Calendar, Contacts, OneDrive via OAuth."><i class="fa-brands fa-microsoft"></i> Microsoft 365</div>
-            <div class="flow-node" data-flow="output" data-tip="Repos, issues, pull requests, code, releases, Actions."><i class="fa-brands fa-github"></i> GitHub</div>
-            <div class="flow-node" data-flow="output" data-tip="Messages, channels, threads, canvases, users."><i class="fa-brands fa-slack"></i> Slack</div>
-            <div class="flow-node" data-flow="output" data-tip="CRM objects, properties, campaigns, owners."><i class="fa-brands fa-hubspot"></i> HubSpot</div>
-            <div class="flow-node" data-flow="output" data-tip="Customers, payments, subscriptions, invoices, products."><i class="fa-brands fa-stripe-s"></i> Stripe</div>
-            <div class="flow-node" data-flow="output" data-tip="Jira issues, Confluence pages, Compass components."><i class="fa-brands fa-atlassian"></i> Atlassian</div>
-            <div class="flow-node" data-flow="output" data-tip="Issues, projects, comments, teams, cycles, docs."><i class="fa-solid fa-list-check"></i> Linear</div>
-            <div class="flow-node" data-flow="output" data-tip="Pages, databases, comments, teams, users."><i class="fa-solid fa-book"></i> Notion</div>
-            <div class="flow-node" data-flow="output" data-tip="Plus Cloudflare (Workers, KV, R2, D1, Browser, Observability, Builds), Sentry, Zapier, Airtable, Klaviyo, Miro, and Replicate."><i class="fa-solid fa-plus"></i> 10 more integrations</div>
+          <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:0.6s"></span></div>
+
+          <div class="schematic-stage">
+            <div class="schematic-node" data-stage="mcp">
+              <i class="fa-solid fa-plug"></i>
+              <strong>Integrations</strong>
+              <span>19 connected MCPs</span>
+            </div>
+            <span class="schematic-stage-label">Tools</span>
+          </div>
+
+          <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:1.2s"></span></div>
+
+          <div class="schematic-stage">
+            <div class="schematic-node" data-stage="output">
+              <i class="fa-solid fa-circle-check"></i>
+              <strong>Output</strong>
+              <span>Email sent, PR opened</span>
+            </div>
+            <span class="schematic-stage-label">Result</span>
+          </div>
+        </div>
+
+        <!-- MCP brand wall -->
+        <div class="mcp-wall" aria-label="Integrated services">
+          <div class="mcp-wall-title">Integrate with what you already use</div>
+          <div class="mcp-wall-grid">
+            <div class="mcp-tile" title="Google Workspace"><img src="https://cdn.simpleicons.org/google/ffffff" alt="Google Workspace" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Microsoft 365"><i class="fa-brands fa-microsoft mcp-tile-fa" aria-label="Microsoft 365"></i></div>
+            <div class="mcp-tile" title="GitHub"><img src="https://cdn.simpleicons.org/github/ffffff" alt="GitHub" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Slack"><i class="fa-brands fa-slack mcp-tile-fa" aria-label="Slack"></i></div>
+            <div class="mcp-tile" title="HubSpot"><img src="https://cdn.simpleicons.org/hubspot/ffffff" alt="HubSpot" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Stripe"><img src="https://cdn.simpleicons.org/stripe/ffffff" alt="Stripe" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Atlassian (Jira, Confluence, Compass)"><img src="https://cdn.simpleicons.org/atlassian/ffffff" alt="Atlassian" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Linear"><img src="https://cdn.simpleicons.org/linear/ffffff" alt="Linear" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Notion"><img src="https://cdn.simpleicons.org/notion/ffffff" alt="Notion" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Cloudflare (Workers, KV, R2, D1, Browser, Observability, Builds)"><img src="https://cdn.simpleicons.org/cloudflare/ffffff" alt="Cloudflare" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Sentry"><img src="https://cdn.simpleicons.org/sentry/ffffff" alt="Sentry" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Zapier"><span class="mcp-tile-mono" aria-label="Zapier">Zapier</span></div>
+            <div class="mcp-tile" title="Airtable"><img src="https://cdn.simpleicons.org/airtable/ffffff" alt="Airtable" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Klaviyo"><span class="mcp-tile-mono" aria-label="Klaviyo">Klaviyo</span></div>
+            <div class="mcp-tile" title="Miro"><img src="https://cdn.simpleicons.org/miro/ffffff" alt="Miro" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile" title="Replicate"><img src="https://cdn.simpleicons.org/replicate/ffffff" alt="Replicate" loading="lazy" width="32" height="32"/></div>
+            <div class="mcp-tile mcp-tile-soon" title="monday.com — pending public-app review"><span class="mcp-tile-mono" aria-label="monday.com">monday</span><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" title="Vercel — pending partner approval"><img src="https://cdn.simpleicons.org/vercel/ffffff" alt="Vercel" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" title="Asana — pending partner approval"><img src="https://cdn.simpleicons.org/asana/ffffff" alt="Asana" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" title="Figma — pending Dev Mode partner approval"><img src="https://cdn.simpleicons.org/figma/ffffff" alt="Figma" loading="lazy" width="32" height="32"/><span class="mcp-tile-soon-tag">Soon</span></div>
+            <div class="mcp-tile mcp-tile-soon" title="DocuSign — pending Partner Program enrollment"><span class="mcp-tile-mono" aria-label="DocuSign">DocuSign</span><span class="mcp-tile-soon-tag">Soon</span></div>
           </div>
         </div>
 

@@ -359,84 +359,140 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .flow-section { position: relative; overflow: hidden; }
 .flow-section > canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 .flow-section > .container { position: relative; z-index: 1; }
-.flow-tree {
-  display: grid; grid-template-columns: 1fr 48px 1.2fr 48px 1fr;
-  align-items: start; gap: 0; margin-top: 48px;
+/* ─── Schematic flow: AI Model → NICE Engine → Integrations → Output ─── */
+.schematic {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr auto 1.4fr auto 1fr auto 1fr;
+  align-items: stretch; gap: 0; margin-top: 56px;
 }
-.flow-col { display: flex; flex-direction: column; gap: 6px; }
-.flow-col-label {
-  font-size: var(--text-xs); font-weight: var(--fw-medium); color: var(--text-dim);
+.schematic-stage { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.schematic-stage-label {
+  font-size: var(--text-xs); color: var(--text-dim);
   text-transform: uppercase; letter-spacing: var(--tracking-caps);
-  margin-bottom: 8px; text-align: center;
+  text-align: center; font-weight: var(--fw-medium);
 }
-.flow-col-glyph {
-  display: inline-block; vertical-align: middle;
-  width: 14px; height: 14px; margin-right: 6px;
-  color: var(--accent2);
-}
-.flow-node {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--panel-bg); font-size: var(--text-sm); color: var(--text-muted);
-  transition: all 0.2s; white-space: nowrap;
-}
-.flow-node i { color: var(--accent2); font-size: var(--text-xs); width: 16px; text-align: center; flex-shrink: 0; }
-.flow-node:hover { border-color: var(--accent2); color: var(--text); }
-.flow-node[data-tip] { position: relative; cursor: default; }
-.flow-node[data-tip]::after {
-  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%;
-  transform: translateX(-50%); padding: 6px 10px; border-radius: 6px;
-  background: var(--text); color: var(--bg); font-size: var(--text-xs); line-height: var(--lh-snug);
-  white-space: normal; width: max-content; max-width: 200px; text-align: center;
-  pointer-events: none; opacity: 0; transition: opacity 0.2s;
-  z-index: 10; font-weight: var(--fw-regular);
-}
-.flow-node[data-tip]:hover::after { opacity: 1; }
-.flow-node-lg {
-  flex-direction: column; align-items: center; text-align: center;
-  padding: 20px 12px; gap: 4px;
-}
-.flow-node-lg i { font-size: var(--text-lg); width: auto; margin-bottom: 4px; }
-.flow-node-lg strong { font-size: var(--text-sm); color: var(--text); font-weight: var(--fw-medium); }
-.flow-node-lg span { font-size: var(--text-xs); color: var(--text-dim); }
-.flow-node-accent { border-color: var(--accent2); box-shadow: 0 0 16px rgba(165,180,252,0.08); }
-
-/* connectors between columns */
-.flow-connector {
+.schematic-node {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  position: relative; padding: 20px 0;
+  flex: 1; gap: 6px; min-height: 132px;
+  padding: 20px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--panel-bg); transition: all 0.2s;
 }
-.flow-arrow-line {
-  width: 2px; flex: 1; min-height: 60px;
-  background: linear-gradient(180deg, transparent 0%, var(--accent2) 30%, var(--accent2) 70%, transparent 100%);
-  opacity: 0.2;
+.schematic-node:hover { border-color: var(--accent2); }
+.schematic-node > i { font-size: var(--text-2xl); color: var(--accent2); }
+.schematic-node strong { font-size: var(--text-base); color: var(--text); font-weight: var(--fw-bold); }
+.schematic-node span { font-size: var(--text-xs); color: var(--text-dim); text-align: center; }
+
+.schematic-node-engine {
+  border-color: var(--accent2);
+  background: linear-gradient(180deg, rgba(165,180,252,0.06) 0%, var(--panel-bg) 100%);
+  box-shadow: 0 0 32px rgba(165,180,252,0.12);
+  gap: 14px;
 }
-.flow-arrow-label {
+.schematic-engine-eyebrow {
+  font-size: var(--text-xs); color: var(--accent); font-weight: var(--fw-bold);
+  text-transform: uppercase; letter-spacing: var(--tracking-caps); text-align: center;
+}
+.schematic-engine-stack { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.schematic-engine-row {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); font-size: var(--text-sm); color: var(--text); font-weight: var(--fw-medium);
+}
+.schematic-engine-row i { color: var(--accent2); font-size: var(--text-sm); width: 16px; text-align: center; }
+
+.schematic-link {
+  position: relative; align-self: center; min-width: 56px;
+  height: 2px; background: linear-gradient(90deg, var(--accent2), transparent);
+  opacity: 0.25; margin: 0 8px;
+}
+.schematic-pulse {
+  position: absolute; top: 50%; left: 0; width: 8px; height: 8px;
+  background: var(--accent); border-radius: 50%; transform: translate(-4px, -50%);
+  box-shadow: 0 0 12px var(--accent);
+  animation: schematic-flow 2.4s linear infinite;
+}
+@keyframes schematic-flow {
+  0%   { left: 0;    opacity: 0; }
+  15%  {             opacity: 1; }
+  85%  {             opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+/* ─── MCP brand wall ─── */
+.mcp-wall {
+  position: relative; z-index: 2;
+  margin-top: 56px; padding: 32px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--panel-bg);
+}
+.mcp-wall-title {
   font-size: var(--text-xs); color: var(--text-dim); text-transform: uppercase;
-  letter-spacing: var(--tracking-caps); writing-mode: vertical-lr; text-orientation: mixed;
-  transform: rotate(180deg); white-space: nowrap; padding: 8px 0;
+  letter-spacing: var(--tracking-caps); font-weight: var(--fw-medium);
+  text-align: center; margin-bottom: 24px;
+}
+.mcp-wall-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px;
+}
+.mcp-tile {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  height: 72px; padding: 16px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); transition: all 0.2s;
+}
+.mcp-tile:hover { border-color: var(--accent2); transform: translateY(-2px); }
+.mcp-tile img { width: 32px; height: 32px; opacity: 0.75; transition: opacity 0.2s; }
+.mcp-tile:hover img { opacity: 1; }
+.mcp-tile-fa { font-size: 28px; color: var(--text); opacity: 0.75; transition: opacity 0.2s; }
+.mcp-tile:hover .mcp-tile-fa { opacity: 1; }
+.mcp-tile-mono {
+  font-family: var(--font-brand, var(--font));
+  font-size: var(--text-sm); font-weight: var(--fw-bold); color: var(--text);
+  letter-spacing: 0.02em; opacity: 0.75; transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.mcp-tile:hover .mcp-tile-mono { opacity: 1; }
+.mcp-tile-soon img { opacity: 0.35; }
+.mcp-tile-soon:hover img { opacity: 0.6; }
+.mcp-tile-soon-tag {
+  position: absolute; top: 6px; right: 6px;
+  font-size: 9px; line-height: 1; padding: 3px 6px; border-radius: 3px;
+  background: rgba(165,180,252,0.15); color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.05em; font-weight: var(--fw-bold);
 }
 
-/* flow canvas overlay */
-#flow-canvas {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none; z-index: 1;
-}
-.flow-tree { position: relative; z-index: 2; }
-
-/* mobile: stack vertically */
-@media (max-width: 768px) {
-  .flow-tree { grid-template-columns: 1fr; gap: 4px; }
-  .flow-connector { flex-direction: row; padding: 4px 0; height: 28px; }
-  .flow-arrow-line { width: 100%; height: 2px; min-height: 0; flex: 1;
-    background: linear-gradient(90deg, transparent 0%, var(--accent2) 30%, var(--accent2) 70%, transparent 100%);
+/* tablet + mobile: schematic stacks vertically, wall reflows */
+@media (max-width: 1024px) {
+  .schematic {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
-  .flow-arrow-label { writing-mode: horizontal-tb; transform: none; padding: 0 8px; }
-  .flow-col { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 6px; }
-  .flow-col-label { width: 100%; text-align: center; }
-  .flow-node-lg { flex-direction: row; padding: 10px 14px; gap: 8px; }
-  .flow-node-lg i { font-size: var(--text-base); margin-bottom: 0; }
-  #flow-canvas { display: none; }
+  .schematic-stage { flex-direction: column-reverse; gap: 6px; }
+  .schematic-stage-label { text-align: left; padding-left: 4px; }
+  .schematic-node { min-height: 0; padding: 16px; }
+  .schematic-node-engine { gap: 10px; }
+  .schematic-link {
+    width: 2px; height: 32px; min-width: 0; min-height: 0;
+    background: linear-gradient(180deg, var(--accent2), transparent);
+    margin: 0 auto;
+  }
+  .schematic-pulse {
+    top: 0; left: 50%; transform: translate(-50%, -4px);
+    animation-name: schematic-flow-vertical;
+  }
+  @keyframes schematic-flow-vertical {
+    0%   { top: 0;    opacity: 0; }
+    15%  {            opacity: 1; }
+    85%  {            opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+  .mcp-wall-grid { grid-template-columns: repeat(5, 1fr); }
+}
+@media (max-width: 640px) {
+  .mcp-wall { padding: 20px; }
+  .mcp-wall-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .mcp-tile { height: 60px; padding: 12px; }
+  .mcp-tile img { width: 26px; height: 26px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
