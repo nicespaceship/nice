@@ -379,6 +379,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 }
 .schematic-node:hover { border-color: var(--accent2); }
 .schematic-node > i { font-size: var(--text-2xl); color: var(--accent2); }
+.schematic-node-icon { width: 32px; height: 32px; object-fit: contain; }
 .schematic-node strong { font-size: var(--text-base); color: var(--text); font-weight: var(--fw-bold); }
 .schematic-node span { font-size: var(--text-xs); color: var(--text-dim); text-align: center; }
 
