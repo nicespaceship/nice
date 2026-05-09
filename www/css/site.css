@@ -463,8 +463,6 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   z-index: 5;
 }
 .mcp-tile:hover::after { opacity: 1; }
-.mcp-tile-soon img { opacity: 0.6; filter: grayscale(0.4); }
-.mcp-tile-soon:hover img { opacity: 1; filter: none; }
 .mcp-tile-soon-tag {
   position: absolute; top: 6px; right: 6px;
   font-size: 9px; line-height: 1; padding: 3px 6px; border-radius: 3px;
