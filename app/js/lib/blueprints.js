@@ -248,7 +248,7 @@ const Blueprints = (() => {
    */
   function _resolveNewAgents() {
     let dirty = false;
-    const customAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+    const customAgents = _readLocalAgents();
     const customById = new Map(customAgents.map(a => [a.id, a]));
 
     for (const [shipId, state] of Object.entries(_shipState)) {
@@ -846,6 +846,28 @@ const Blueprints = (() => {
   }
 
   /**
+   * True when no Supabase user is signed in. Read-path branches gate
+   * localStorage reads behind this so signed-in users get a clean
+   * State.agents (mirrored from `user_agents`) view — wiping
+   * `nice-custom-agents` no longer breaks dispatch once 3a (forward
+   * UUID writes) and 3b (BlueprintBackfill recovery) have shipped.
+   */
+  function _isGuestSession() {
+    return !_getUserId();
+  }
+
+  /**
+   * Parse the `nice-custom-agents` localStorage cache. SSOT for guest
+   * sessions; for signed-in sessions State.agents is authoritative and
+   * this only matters in flows that mutate the cache directly
+   * (`_resolveNewAgents`, `migrateGuestState`, `cleanupOrphans` writes).
+   */
+  function _readLocalAgents() {
+    try { return JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]'); }
+    catch { return []; }
+  }
+
+  /**
    * Heal stale ship stats in State.spaceships once the catalog is queryable.
    *
    * `_loadUserCreations` writes ship rows with
@@ -951,12 +973,18 @@ const Blueprints = (() => {
   function getAgent(id) {
     let a = _agents.find(a => a.id === id);
     if (a) return a;
-    // Check custom agents (auto-created from ship auto-fill)
+    // State.agents is the canonical store for user-created agents
+    // (mirrored from user_agents for signed-in, hydrated from localStorage
+    // for guests via _loadUserCreations).
     if (typeof State !== 'undefined') {
       a = (State.get('agents') || []).find(a => a.id === id);
       if (a) return a;
     }
-    try { a = (JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]')).find(a => a.id === id); } catch {}
+    // Guest fallback only — signed-in State.agents already covers
+    // every persisted custom agent.
+    if (_isGuestSession()) {
+      a = _readLocalAgents().find(a => a.id === id);
+    }
     return a || null;
   }
 
@@ -1056,10 +1084,11 @@ const Blueprints = (() => {
       const guestShips = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
       guestShips.forEach(s => { if (s && s.id && !seen.has(s.id)) { ships.push(s); seen.add(s.id); } });
     } catch {}
-    try {
-      const guestAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-      guestAgents.forEach(a => { if (a && a.id && !seen.has(a.id)) { agents.push(a); seen.add(a.id); } });
-    } catch {}
+    if (_isGuestSession()) {
+      _readLocalAgents().forEach(a => {
+        if (a && a.id && !seen.has(a.id)) { agents.push(a); seen.add(a.id); }
+      });
+    }
     return { spaceships: ships, agents: agents };
   }
 
@@ -1263,16 +1292,21 @@ const Blueprints = (() => {
     let dbUpdated = 0;
     const dbWrites = [];
 
-    // 1. customAgents localStorage — the offline / guest store
-    try {
-      const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-      let dirty = false;
-      for (let i = 0; i < stored.length; i++) {
-        const next = _diffAgainstCatalog(stored[i]);
-        if (next) { stored[i] = next; dirty = true; refreshedIds.add(next.id); }
-      }
-      if (dirty) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
-    } catch {}
+    // 1. customAgents localStorage — guest sessions only. For signed-in
+    //    users State.agents (mirrored from user_agents) is authoritative,
+    //    and step 2 also writes back to Supabase; refreshing the cache
+    //    here would be wasted work.
+    if (_isGuestSession()) {
+      try {
+        const stored = _readLocalAgents();
+        let dirty = false;
+        for (let i = 0; i < stored.length; i++) {
+          const next = _diffAgainstCatalog(stored[i]);
+          if (next) { stored[i] = next; dirty = true; refreshedIds.add(next.id); }
+        }
+        if (dirty) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
+      } catch {}
+    }
 
     // 2. State.agents — drives every view. Refire after to repaint.
     if (typeof State !== 'undefined') {
@@ -1309,14 +1343,9 @@ const Blueprints = (() => {
   function getActivatedAgents() {
     const result = [];
     _activatedAgentIds.forEach(bpId => {
+      // getAgent already walks _agents → State.agents → localStorage
+      // (guest only); no need to repeat the fallback chain here.
       let bp = getAgent(bpId);
-      // Fallback: check State + localStorage for auto-created agents (from ship auto-fill)
-      if (!bp && typeof State !== 'undefined') {
-        bp = (State.get('agents') || []).find(a => a.id === bpId);
-      }
-      if (!bp) {
-        try { bp = (JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]')).find(a => a.id === bpId); } catch {}
-      }
       if (!bp) return;
       // Live-merge with catalog: capability fields (system_prompt, tools, llm_engine,
       // role_type, agentRole, is_captain, type) refresh from catalog every read so
@@ -1605,11 +1634,16 @@ const Blueprints = (() => {
     for (const agentId of agentIdsToRemove) {
       removedAgentIds.push(agentId);
       _activatedAgentIds = _activatedAgentIds.filter(id => id !== agentId);
-      try {
-        const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-        const filtered = custom.filter(a => a.id !== agentId);
-        if (filtered.length !== custom.length) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
-      } catch {}
+      // Mirror the removal into the guest cache so a wipe-then-revisit
+      // doesn't resurrect dead agents. Skipped for signed-in users —
+      // user_agents is the SSOT and gets the delete below.
+      if (_isGuestSession()) {
+        try {
+          const custom = _readLocalAgents();
+          const filtered = custom.filter(a => a.id !== agentId);
+          if (filtered.length !== custom.length) localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
+        } catch {}
+      }
     }
     if (removedAgentIds.length) _persistAgents();
 
@@ -1741,10 +1775,11 @@ const Blueprints = (() => {
     if (typeof State !== 'undefined') {
       (State.get('agents') || []).forEach(a => { if (a?.id) allLocalAgents.add(a.id); });
     }
-    try {
-      const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-      custom.forEach(a => { if (a?.id) allLocalAgents.add(a.id); });
-    } catch {}
+    // Guest sessions only — for signed-in users every persisted custom
+    // agent is already in State.agents via _loadUserCreations.
+    if (_isGuestSession()) {
+      _readLocalAgents().forEach(a => { if (a?.id) allLocalAgents.add(a.id); });
+    }
 
     const orphanIds = [...allLocalAgents].filter(isOrphan);
     if (!orphanIds.length) return [];
@@ -1772,14 +1807,18 @@ const Blueprints = (() => {
       if (cleaned.length !== agents.length) State.set('agents', cleaned);
     }
 
-    // 3. customAgents localStorage
-    try {
-      const custom = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-      const filtered = custom.filter(a => !orphanSet.has(a?.id));
-      if (filtered.length !== custom.length) {
-        localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
-      }
-    } catch {}
+    // 3. customAgents localStorage — guest sessions only. Signed-in
+    //    users don't read this cache (see _isGuestSession gates above),
+    //    so leaving stale entries is harmless and skips unneeded I/O.
+    if (_isGuestSession()) {
+      try {
+        const custom = _readLocalAgents();
+        const filtered = custom.filter(a => !orphanSet.has(a?.id));
+        if (filtered.length !== custom.length) {
+          localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(filtered));
+        }
+      } catch {}
+    }
 
     // 4. _uuidMap — drop mappings for removed local IDs
     let uuidMapDirty = false;
@@ -2771,7 +2810,7 @@ const Blueprints = (() => {
 
     // Migrate guest agents
     try {
-      const guestAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+      const guestAgents = _readLocalAgents();
       const toMigrate = guestAgents.filter(a => a._guest);
       for (const agent of toMigrate) {
         const { _guest, id, ...row } = agent;
