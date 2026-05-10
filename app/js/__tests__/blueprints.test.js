@@ -46,6 +46,26 @@ describe('Blueprints', () => {
     expect(Blueprints.getAgent('nonexistent')).toBeNull();
   });
 
+  it('getAgent: guest sessions fall through to nice-custom-agents localStorage', () => {
+    globalThis.State.set('user', null);
+    globalThis.localStorage.setItem(
+      globalThis.Utils.KEYS.customAgents,
+      JSON.stringify([{ id: 'guest-only-agent', name: 'Guest', config: {} }]),
+    );
+    const a = Blueprints.getAgent('guest-only-agent');
+    expect(a).not.toBeNull();
+    expect(a.name).toBe('Guest');
+  });
+
+  it('getAgent: signed-in sessions skip localStorage (State.agents is SSOT)', () => {
+    globalThis.State.set('user', { id: 'user-1' });
+    globalThis.localStorage.setItem(
+      globalThis.Utils.KEYS.customAgents,
+      JSON.stringify([{ id: 'stale-cache-agent', name: 'Stale', config: {} }]),
+    );
+    expect(Blueprints.getAgent('stale-cache-agent')).toBeNull();
+  });
+
   it('should list all agents', () => {
     const agents = Blueprints.listAgents();
     expect(agents.length).toBe(5);
@@ -789,7 +809,31 @@ describe('Blueprints', () => {
       expect(updateCalls).toHaveLength(1); // only the first call wrote
     });
 
-    it('also refreshes customAgents localStorage entries', async () => {
+    it('does NOT refresh customAgents localStorage for signed-in sessions', async () => {
+      // Signed-in users have State.agents (mirrored from user_agents) as
+      // the SSOT. Refreshing the legacy localStorage cache would be
+      // wasted work and would defeat the localStorage-wipe-safety
+      // guarantee that 3a/3b/3c collectively establish.
+      const catalog = Blueprints.getAgent('sa1');
+      catalog.config.system_prompt = 'Catalog v2.';
+
+      const stored = [{
+        id: 'agent-local-1', name: 'X', blueprint_id: 'sa1',
+        config: { role: 'Research', system_prompt: 'stale' },
+      }];
+      globalThis.localStorage.setItem(globalThis.Utils.KEYS.customAgents, JSON.stringify(stored));
+
+      await Blueprints.refreshActivatedAgentsFromCatalog();
+
+      const after = JSON.parse(globalThis.localStorage.getItem(globalThis.Utils.KEYS.customAgents));
+      expect(after[0].config.system_prompt).toBe('stale');
+    });
+
+    it('refreshes customAgents localStorage entries for guest sessions', async () => {
+      // Guest sessions have no user_agents row; localStorage IS the SSOT
+      // for custom agent data. The catalog-diff walk must run.
+      globalThis.State.set('user', null);
+
       const catalog = Blueprints.getAgent('sa1');
       catalog.config.system_prompt = 'Catalog v2.';
 
