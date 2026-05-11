@@ -562,9 +562,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .schematic-node span { font-size: var(--text-xs); color: var(--text-dim); text-align: center; }
 
 .schematic-node-engine {
-  border-color: var(--accent2);
-  background: linear-gradient(180deg, rgba(15,82,186,0.06) 0%, var(--panel-bg) 100%);
-  box-shadow: 0 0 32px rgba(15,82,186,0.12);
+  background: var(--panel-bg);
 }
 .schematic-engine-glyph { display: inline-flex; align-items: center; justify-content: center; }
 .schematic-engine-glyph svg { width: 32px; height: 32px; color: var(--accent2); }
