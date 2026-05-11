@@ -421,137 +421,133 @@
               </svg>
               </div>
 
-              <!-- Blueprint graphic — actual spaceship schematic from the app -->
+              <!-- Blueprint graphic — actual full Legendary blueprint card -->
               <div class="faq-graphic faq-graphic-blueprint">
-                <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 440 600" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <pattern id="bp-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
                       <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(15,82,186,0.05)" stroke-width="0.5"/>
                     </pattern>
                   </defs>
 
-                  <!-- Background grid + frame -->
-                  <rect x="6" y="6" width="428" height="368" rx="8" fill="url(#bp-grid-pattern)" stroke="var(--border)" stroke-width="0.6"/>
+                  <!-- Outer card frame with gold legendary border -->
+                  <rect x="4" y="4" width="432" height="592" rx="16" fill="#ffffff" stroke="#ff9500" stroke-width="3"/>
 
-                  <!-- Top-left tag: Ops -->
-                  <g transform="translate(20, 22)">
-                    <rect width="42" height="22" rx="5" fill="rgba(15,82,186,0.10)"/>
-                    <text x="21" y="15" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="var(--accent2)">Ops</text>
+                  <!-- Title -->
+                  <text x="22" y="48" font-family="Inter" font-size="22" font-weight="700" fill="var(--text)">SDF-1 Macross</text>
+
+                  <!-- Schematic block — shifted down by 60 to sit below the title -->
+                  <g transform="translate(0, 60)">
+                    <!-- Inner schematic frame (with grid) — encompasses the slot grid below -->
+                    <rect x="14" y="6" width="412" height="338" rx="8" fill="url(#bp-grid-pattern)" stroke="var(--border)" stroke-width="0.6"/>
+
+                    <!-- Top-left tag: Ops -->
+                    <g transform="translate(28, 18)">
+                      <rect width="42" height="22" rx="5" fill="rgba(15,82,186,0.10)"/>
+                      <text x="21" y="15" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="var(--accent2)">Ops</text>
+                    </g>
+
+                    <!-- Top-right badge: LEGENDARY -->
+                    <g transform="translate(322, 18)">
+                      <rect width="86" height="22" rx="4" fill="rgba(255,153,0,0.06)" stroke="#ff9500" stroke-width="0.8"/>
+                      <text x="43" y="15" text-anchor="middle" font-family="Inter" font-size="9" font-weight="700" letter-spacing="0.08em" fill="#ff9500">LEGENDARY</text>
+                    </g>
+
+                    <!-- Connection lines from center hub to all 6 slots -->
+                    <g stroke="var(--accent2)" stroke-width="0.7" opacity="0.35">
+                      <line x1="220" y1="180" x2="110" y2="110"/>
+                      <line x1="220" y1="180" x2="220" y2="110"/>
+                      <line x1="220" y1="180" x2="330" y2="110"/>
+                      <line x1="220" y1="180" x2="110" y2="250"/>
+                      <line x1="220" y1="180" x2="220" y2="250"/>
+                      <line x1="220" y1="180" x2="330" y2="250"/>
+                    </g>
+
+                    <!-- Traveling pulse dots along each line (staggered) -->
+                    <g fill="var(--accent2)">
+                      <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;110" dur="3s" begin="0s" repeatCount="indefinite"/><animate attributeName="cy" values="180;110" dur="3s" begin="0s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="0s" repeatCount="indefinite"/></circle>
+                      <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;220" dur="3s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="cy" values="180;110" dur="3s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="0.5s" repeatCount="indefinite"/></circle>
+                      <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;330" dur="3s" begin="1s" repeatCount="indefinite"/><animate attributeName="cy" values="180;110" dur="3s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="1s" repeatCount="indefinite"/></circle>
+                      <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;110" dur="3s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="cy" values="180;250" dur="3s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="1.5s" repeatCount="indefinite"/></circle>
+                      <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;220" dur="3s" begin="2s" repeatCount="indefinite"/><animate attributeName="cy" values="180;250" dur="3s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="2s" repeatCount="indefinite"/></circle>
+                      <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;330" dur="3s" begin="2.5s" repeatCount="indefinite"/><animate attributeName="cy" values="180;250" dur="3s" begin="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="2.5s" repeatCount="indefinite"/></circle>
+                    </g>
+
+                    <!-- Center hub -->
+                    <g transform="translate(220, 180)">
+                      <circle r="14" fill="rgba(15,82,186,0.12)" stroke="var(--accent2)" stroke-width="0.8"/>
+                      <circle r="6" fill="var(--accent2)"/>
+                      <circle r="14" stroke="var(--accent2)" stroke-width="0.6" fill="none">
+                        <animate attributeName="r" values="14;30" dur="3s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.5;0" dur="3s" repeatCount="indefinite"/>
+                      </circle>
+                    </g>
+
+                    <!-- 6 crew slots with orbiting agent dots -->
+                    <g transform="translate(110, 110)">
+                      <circle r="30" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
+                      <text x="0" y="6" text-anchor="middle" font-size="20" font-weight="200" fill="var(--text-dim)">+</text>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="18s" repeatCount="indefinite"/><circle cx="-24" cy="-10" r="4" fill="#ff2d55"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.4s" repeatCount="indefinite"/></circle></g>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="22s" repeatCount="indefinite"/><circle cx="-20" cy="18" r="4" fill="#2d9fff"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.8s" repeatCount="indefinite"/></circle></g>
+                    </g>
+                    <g transform="translate(220, 110)">
+                      <circle r="30" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
+                      <text x="0" y="6" text-anchor="middle" font-size="20" font-weight="200" fill="var(--text-dim)">+</text>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="16s" repeatCount="indefinite"/><circle cx="-16" cy="-22" r="4" fill="#2d9fff"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.1s" repeatCount="indefinite"/></circle></g>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="24s" repeatCount="indefinite"/><circle cx="18" cy="18" r="4" fill="#34d399"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.6s" repeatCount="indefinite"/></circle></g>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="19s" repeatCount="indefinite"/><circle cx="12" cy="-22" r="4" fill="#fb923c"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.6s" repeatCount="indefinite"/></circle></g>
+                    </g>
+                    <g transform="translate(330, 110)">
+                      <circle r="30" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
+                      <text x="0" y="6" text-anchor="middle" font-size="20" font-weight="200" fill="var(--text-dim)">+</text>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="20s" repeatCount="indefinite"/><circle cx="18" cy="-20" r="4" fill="#a82dff"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.3s" repeatCount="indefinite"/></circle></g>
+                    </g>
+                    <g transform="translate(110, 250)">
+                      <circle r="30" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
+                      <text x="0" y="6" text-anchor="middle" font-size="20" font-weight="200" fill="var(--text-dim)">+</text>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="23s" repeatCount="indefinite"/><circle cx="-26" cy="-2" r="4" fill="#34d399"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.9s" repeatCount="indefinite"/></circle></g>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="17s" repeatCount="indefinite"/><circle cx="-10" cy="22" r="4" fill="#c084fc"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.5s" repeatCount="indefinite"/></circle></g>
+                    </g>
+                    <g transform="translate(220, 250)">
+                      <circle r="30" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
+                      <text x="0" y="6" text-anchor="middle" font-size="20" font-weight="200" fill="var(--text-dim)">+</text>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="21s" repeatCount="indefinite"/><circle cx="-2" cy="-10" r="4" fill="#fb923c"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.2s" repeatCount="indefinite"/></circle></g>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="19s" repeatCount="indefinite"/><circle cx="6" cy="20" r="4" fill="#ff2d55"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.7s" repeatCount="indefinite"/></circle></g>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="25s" repeatCount="indefinite"/><circle cx="18" cy="20" r="4" fill="#ec4899"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.8s" repeatCount="indefinite"/></circle></g>
+                    </g>
+                    <g transform="translate(330, 250)">
+                      <circle r="30" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
+                      <text x="0" y="6" text-anchor="middle" font-size="20" font-weight="200" fill="var(--text-dim)">+</text>
+                      <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="18s" repeatCount="indefinite"/><circle cx="26" cy="-6" r="4" fill="#fbbf24"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.4s" repeatCount="indefinite"/></circle></g>
+                    </g>
+
+                    <!-- ID stamp at bottom of schematic -->
+                    <g transform="translate(28, 310)">
+                      <rect width="118" height="22" rx="4" fill="rgba(0,0,0,0.04)"/>
+                      <text x="59" y="15" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="var(--text-muted)" letter-spacing="0.06em">D2E2-UVNZ-U8ET</text>
+                    </g>
                   </g>
 
-                  <!-- Top-right badge: LEGENDARY -->
-                  <g transform="translate(330, 22)">
-                    <rect width="86" height="22" rx="4" fill="rgba(255,153,0,0.06)" stroke="#ff9500" stroke-width="0.8"/>
-                    <text x="43" y="15" text-anchor="middle" font-family="Inter" font-size="9" font-weight="700" letter-spacing="0.08em" fill="#ff9500">LEGENDARY</text>
+                  <!-- Quote section -->
+                  <g transform="translate(22, 422)">
+                    <rect x="0" y="0" width="3" height="22" fill="var(--accent2)"/>
+                    <text x="14" y="17" font-family="Inter" font-size="15" font-style="italic" fill="var(--text)">"Do you remember love?"</text>
                   </g>
 
-                  <!-- Connection lines from center hub to all 6 slots -->
-                  <g stroke="var(--accent2)" stroke-width="0.7" opacity="0.35">
-                    <line x1="220" y1="200" x2="110" y2="130"/>
-                    <line x1="220" y1="200" x2="220" y2="130"/>
-                    <line x1="220" y1="200" x2="330" y2="130"/>
-                    <line x1="220" y1="200" x2="110" y2="280"/>
-                    <line x1="220" y1="200" x2="220" y2="280"/>
-                    <line x1="220" y1="200" x2="330" y2="280"/>
-                  </g>
-
-                  <!-- Traveling pulse dots along each line (slow, staggered) -->
-                  <g fill="var(--accent2)">
-                    <circle r="2.2" opacity="0">
-                      <animate attributeName="cx" values="220;110" dur="3s" begin="0s" repeatCount="indefinite"/>
-                      <animate attributeName="cy" values="200;130" dur="3s" begin="0s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="0s" repeatCount="indefinite"/>
-                    </circle>
-                    <circle r="2.2" opacity="0">
-                      <animate attributeName="cx" values="220;220" dur="3s" begin="0.5s" repeatCount="indefinite"/>
-                      <animate attributeName="cy" values="200;130" dur="3s" begin="0.5s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="0.5s" repeatCount="indefinite"/>
-                    </circle>
-                    <circle r="2.2" opacity="0">
-                      <animate attributeName="cx" values="220;330" dur="3s" begin="1s" repeatCount="indefinite"/>
-                      <animate attributeName="cy" values="200;130" dur="3s" begin="1s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="1s" repeatCount="indefinite"/>
-                    </circle>
-                    <circle r="2.2" opacity="0">
-                      <animate attributeName="cx" values="220;110" dur="3s" begin="1.5s" repeatCount="indefinite"/>
-                      <animate attributeName="cy" values="200;280" dur="3s" begin="1.5s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="1.5s" repeatCount="indefinite"/>
-                    </circle>
-                    <circle r="2.2" opacity="0">
-                      <animate attributeName="cx" values="220;220" dur="3s" begin="2s" repeatCount="indefinite"/>
-                      <animate attributeName="cy" values="200;280" dur="3s" begin="2s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="2s" repeatCount="indefinite"/>
-                    </circle>
-                    <circle r="2.2" opacity="0">
-                      <animate attributeName="cx" values="220;330" dur="3s" begin="2.5s" repeatCount="indefinite"/>
-                      <animate attributeName="cy" values="200;280" dur="3s" begin="2.5s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0;0.9;0" dur="3s" begin="2.5s" repeatCount="indefinite"/>
-                    </circle>
-                  </g>
-
-                  <!-- Center hub -->
-                  <g transform="translate(220, 200)">
-                    <circle r="16" fill="rgba(15,82,186,0.12)" stroke="var(--accent2)" stroke-width="0.8"/>
-                    <circle r="7" fill="var(--accent2)"/>
-                    <circle r="16" stroke="var(--accent2)" stroke-width="0.6" fill="none">
-                      <animate attributeName="r" values="16;36" dur="3s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0.5;0" dur="3s" repeatCount="indefinite"/>
-                    </circle>
-                  </g>
-
-                  <!-- 6 crew slots — dashed rings with + markers and assigned-agent dots -->
-                  <!-- Slot top-left -->
-                  <g transform="translate(110, 130)">
-                    <circle r="34" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
-                    <text x="0" y="6" text-anchor="middle" font-size="22" font-weight="200" fill="var(--text-dim)">+</text>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="18s" repeatCount="indefinite"/><circle cx="-28" cy="-12" r="4" fill="#ff2d55"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.4s" repeatCount="indefinite"/></circle></g>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="22s" repeatCount="indefinite"/><circle cx="-24" cy="20" r="4" fill="#2d9fff"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.8s" repeatCount="indefinite"/></circle></g>
-                  </g>
-
-                  <!-- Slot top-center -->
-                  <g transform="translate(220, 130)">
-                    <circle r="34" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
-                    <text x="0" y="6" text-anchor="middle" font-size="22" font-weight="200" fill="var(--text-dim)">+</text>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="16s" repeatCount="indefinite"/><circle cx="-18" cy="-26" r="4" fill="#2d9fff"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.1s" repeatCount="indefinite"/></circle></g>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="24s" repeatCount="indefinite"/><circle cx="22" cy="20" r="4" fill="#34d399"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.6s" repeatCount="indefinite"/></circle></g>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="19s" repeatCount="indefinite"/><circle cx="14" cy="-26" r="4" fill="#fb923c"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.6s" repeatCount="indefinite"/></circle></g>
-                  </g>
-
-                  <!-- Slot top-right -->
-                  <g transform="translate(330, 130)">
-                    <circle r="34" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
-                    <text x="0" y="6" text-anchor="middle" font-size="22" font-weight="200" fill="var(--text-dim)">+</text>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="20s" repeatCount="indefinite"/><circle cx="20" cy="-24" r="4" fill="#a82dff"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.3s" repeatCount="indefinite"/></circle></g>
-                  </g>
-
-                  <!-- Slot bottom-left -->
-                  <g transform="translate(110, 280)">
-                    <circle r="34" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
-                    <text x="0" y="6" text-anchor="middle" font-size="22" font-weight="200" fill="var(--text-dim)">+</text>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="23s" repeatCount="indefinite"/><circle cx="-30" cy="-4" r="4" fill="#34d399"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.9s" repeatCount="indefinite"/></circle></g>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="17s" repeatCount="indefinite"/><circle cx="-12" cy="26" r="4" fill="#c084fc"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.5s" repeatCount="indefinite"/></circle></g>
-                  </g>
-
-                  <!-- Slot bottom-center -->
-                  <g transform="translate(220, 280)">
-                    <circle r="34" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
-                    <text x="0" y="6" text-anchor="middle" font-size="22" font-weight="200" fill="var(--text-dim)">+</text>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="21s" repeatCount="indefinite"/><circle cx="-2" cy="-12" r="4" fill="#fb923c"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.2s" repeatCount="indefinite"/></circle></g>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="19s" repeatCount="indefinite"/><circle cx="6" cy="22" r="4" fill="#ff2d55"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.7s" repeatCount="indefinite"/></circle></g>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="-360 0 0" dur="25s" repeatCount="indefinite"/><circle cx="20" cy="22" r="4" fill="#ec4899"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.8s" repeatCount="indefinite"/></circle></g>
-                  </g>
-
-                  <!-- Slot bottom-right -->
-                  <g transform="translate(330, 280)">
-                    <circle r="34" fill="rgba(255,255,255,0.55)" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3 3"/>
-                    <text x="0" y="6" text-anchor="middle" font-size="22" font-weight="200" fill="var(--text-dim)">+</text>
-                    <g><animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="18s" repeatCount="indefinite"/><circle cx="30" cy="-8" r="4" fill="#fbbf24"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.4s" repeatCount="indefinite"/></circle></g>
-                  </g>
-
-                  <!-- Bottom-left ID stamp -->
-                  <g transform="translate(20, 340)">
-                    <rect width="118" height="22" rx="4" fill="rgba(0,0,0,0.04)"/>
-                    <text x="59" y="15" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="var(--text-muted)" letter-spacing="0.06em">AR0R-YRKR-Y5L4</text>
+                  <!-- Stats row -->
+                  <g transform="translate(0, 490)" text-anchor="middle">
+                    <g transform="translate(110, 0)">
+                      <text font-family="Inter" font-size="28" font-weight="700" fill="var(--accent2)">12</text>
+                      <text y="26" font-family="Inter" font-size="11" font-weight="600" letter-spacing="0.08em" fill="var(--text-muted)">AGENTS</text>
+                    </g>
+                    <g transform="translate(220, 0)">
+                      <text font-family="Inter" font-size="28" font-weight="700" fill="var(--accent2)">12</text>
+                      <text y="26" font-family="Inter" font-size="11" font-weight="600" letter-spacing="0.08em" fill="var(--text-muted)">SLOTS</text>
+                    </g>
+                    <g transform="translate(330, 0)">
+                      <text font-family="Inter" font-size="28" font-weight="700" fill="var(--accent2)">0</text>
+                      <text y="26" font-family="Inter" font-size="11" font-weight="600" letter-spacing="0.08em" fill="var(--text-muted)">DEPLOYS</text>
+                    </g>
                   </g>
                 </svg>
               </div>
