@@ -531,7 +531,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .schematic-stage { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
 .schematic-stage-label {
   font-size: var(--text-sm); color: var(--text);
-  text-align: center; font-weight: var(--fw-bold);
+  text-align: center; font-weight: var(--fw-medium);
 }
 .schematic-node {
   position: relative; overflow: hidden; isolation: isolate;
@@ -593,7 +593,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 }
 .mcp-wall-title {
   font-size: var(--text-sm); color: var(--text);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-medium);
   text-align: center; margin-bottom: 24px;
 }
 .mcp-wall-grid {
