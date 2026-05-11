@@ -879,7 +879,7 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
   background: var(--panel-bg); overflow: hidden; transition: border-color 0.2s;
 }
 .faq-item:hover { border-color: var(--border-hi); }
-.faq-item.open { border-color: var(--border-hi); }
+.faq-item.open { border-color: var(--accent2); }
 .faq-q {
   display: flex; justify-content: space-between; align-items: center;
   padding: 18px 20px; cursor: pointer; font-size: var(--text-base); font-weight: var(--fw-medium);
