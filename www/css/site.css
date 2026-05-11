@@ -886,7 +886,8 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
   color: var(--text); background: none; border: none; width: 100%;
   text-align: left; font-family: var(--font);
 }
-.faq-q:hover { color: var(--accent); }
+.faq-q { transition: background 0.15s; }
+.faq-q:hover { background: var(--hover-bg); }
 .faq-q:focus { outline: none; }
 .faq-q:focus-visible { outline: 2px solid var(--border-hi); outline-offset: -2px; border-radius: var(--radius); }
 .faq-icon { font-size: var(--text-md); color: var(--text-dim); transition: transform 0.3s; flex-shrink: 0; }
