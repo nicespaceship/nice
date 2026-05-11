@@ -2,8 +2,8 @@
 const WarpStars = (() => {
   let canvas, ctx, w, h, raf;
   let stars = [];
-  const COUNT = 200;
-  const SPEED = 0.15;
+  const COUNT = 320;
+  const SPEED = 0.18;
   const cx = () => w / 2;
   const cy = () => h / 2;
 

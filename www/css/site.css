@@ -325,18 +325,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   pointer-events: none;
   z-index: 0;
 }
-.hero.hero-v2 .hero-bg-warp { z-index: 1; opacity: 0.55; mix-blend-mode: multiply; }
-.hero.hero-v2 .hero-constellation {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none; z-index: 2;
-  opacity: 0.85;
-  transform-origin: center;
-}
-.hero.hero-v2 .hero-constellation svg {
-  width: 95%; height: 95%; max-width: 1400px;
-  filter: drop-shadow(0 0 24px rgba(15,82,186,0.05));
-}
+.hero.hero-v2 .hero-bg-warp { z-index: 1; opacity: 0.75; mix-blend-mode: multiply; }
 .hero.hero-v2 .hero-content {
   position: relative; z-index: 3;
   max-width: var(--max-w);
@@ -403,12 +392,6 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   50%      { transform: translateY(4px); opacity: 1; }
 }
 
-/* Constellation cleanup on smaller screens — labels would overflow and clutter */
-@media (max-width: 1024px) {
-  .hero.hero-v2 .hero-constellation { opacity: 0.55; }
-  .hero.hero-v2 .hero-constellation svg { width: 130%; max-width: none; }
-  .hero.hero-v2 .hero-constellation .hc-slot text { display: none; }
-}
 @media (max-width: 768px) {
   .hero.hero-v2 { min-height: 88vh; }
   .hero.hero-v2 .hero-glyph-svg { width: 64px; height: 64px; }
