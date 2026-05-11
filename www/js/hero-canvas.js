@@ -16,6 +16,35 @@ const HeroCanvas = (() => {
     grid: 'rgba(15,82,186,0.04)',    // very dim Sapphire
   };
 
+  /* ── Mythic RGB cycle for the still nodes ──
+     Same palette as mythic-rgb-border + the chromatic card backdrops.
+     Each node's color is offset by its index so the hue rolls around
+     the ring instead of all 24 changing in lockstep. */
+  const RGB_PALETTE = [
+    [255, 45, 85],   // ff2d55
+    [255, 107, 45],  // ff6b2d
+    [255, 211, 45],  // ffd32d
+    [45, 255, 107],  // 2dff6b
+    [45, 159, 255],  // 2d9fff
+    [168, 45, 255],  // a82dff
+  ];
+  let colorPhase = 0;
+  const PHASE_SPEED = 0.0008; // full cycle ≈ 21 seconds at 60fps
+
+  function rgbAt(t) {
+    const n = RGB_PALETTE.length;
+    const f = ((t % 1) + 1) % 1 * n;
+    const i = Math.floor(f) % n;
+    const j = (i + 1) % n;
+    const k = f - Math.floor(f);
+    const a = RGB_PALETTE[i], b = RGB_PALETTE[j];
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * k),
+      Math.round(a[1] + (b[1] - a[1]) * k),
+      Math.round(a[2] + (b[2] - a[2]) * k),
+    ];
+  }
+
   /* ── star ── */
   function makeStar() {
     return {
@@ -107,6 +136,7 @@ const HeroCanvas = (() => {
   /* ── render loop ── */
   function loop() {
     ctx.clearRect(0, 0, w, h);
+    colorPhase = (colorPhase + PHASE_SPEED) % 1;
 
     // ── subtle grid ──
     ctx.strokeStyle = C.grid;
@@ -204,12 +234,15 @@ const HeroCanvas = (() => {
       ctx.fill();
     }
 
-    // ── draw nodes ──
-    for (const n of nodes) {
+    // ── draw nodes (RGB cycle, offset per index so the hue rolls round) ──
+    for (let ni = 0; ni < nodes.length; ni++) {
+      const n = nodes[ni];
+      const [r, g, b] = rgbAt(colorPhase + ni / nodes.length);
+      const prefix = 'rgba(' + r + ',' + g + ',' + b + ',';
       // outer glow
       const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.glow);
-      grad.addColorStop(0, C.node + '0.28)');
-      grad.addColorStop(1, C.node + '0)');
+      grad.addColorStop(0, prefix + '0.32)');
+      grad.addColorStop(1, prefix + '0)');
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.glow, 0, Math.PI * 2);
       ctx.fillStyle = grad;
@@ -217,12 +250,12 @@ const HeroCanvas = (() => {
       // core
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = C.node + '0.85)';
+      ctx.fillStyle = prefix + '0.95)';
       ctx.fill();
       // outer ring
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = C.node + '0.20)';
+      ctx.strokeStyle = prefix + '0.24)';
       ctx.lineWidth = 0.5;
       ctx.stroke();
     }
