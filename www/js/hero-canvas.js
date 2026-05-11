@@ -28,17 +28,29 @@ const HeroCanvas = (() => {
     };
   }
 
-  /* ── node (neural network point) ── */
-  function makeNode() {
-    const cx = Math.random() * w * 1.1 - w * 0.05;
-    const cy = Math.random() * h * 1.1 - h * 0.05;
-    const orbitR = Math.random() * 40 + 8;
-    const angle = Math.random() * Math.PI * 2;
+  /* ── node (neural network point) ──
+     Symmetric concentric-ring layout, mirroring the NICE schematic language.
+     8 inner + 16 outer = 24 nodes total (matches NODE_COUNT). Each node drifts
+     in a small orbit around its ring position so the lattice still breathes. */
+  const INNER_RING = 8;
+  function makeNode(idx) {
+    const isInner = idx < INNER_RING;
+    const i = isInner ? idx : idx - INNER_RING;
+    const count = isInner ? INNER_RING : NODE_COUNT - INNER_RING;
+    const baseR = Math.min(w, h);
+    const radius = isInner ? baseR * 0.42 : baseR * 0.62;
+    // Rotate the outer ring by half a step so it interleaves with the inner —
+    // gives a richer, more web-like topology when neighbours pair up.
+    const offset = isInner ? 0 : Math.PI / count;
+    const ringAngle = (i / count) * Math.PI * 2 + offset;
     return {
-      cx, cy, orbitR, angle,
+      cx: w / 2 + Math.cos(ringAngle) * radius,
+      cy: h / 2 + Math.sin(ringAngle) * radius,
+      orbitR: 10 + Math.random() * 6,
+      angle: Math.random() * Math.PI * 2,
       speed: (Math.random() * 0.0002 + 0.00005) * (Math.random() > 0.5 ? 1 : -1),
-      r: Math.random() * 2.5 + 1.5,
-      glow: Math.random() * 10 + 6,
+      r: isInner ? 2.5 : 2,
+      glow: isInner ? 10 : 8,
       x: 0, y: 0,
     };
   }
@@ -65,7 +77,7 @@ const HeroCanvas = (() => {
     resize();
     window.addEventListener('resize', resize);
     stars = Array.from({ length: STAR_COUNT }, makeStar);
-    nodes = Array.from({ length: NODE_COUNT }, makeNode);
+    nodes = Array.from({ length: NODE_COUNT }, (_, i) => makeNode(i));
     pulses = Array.from({ length: PULSE_COUNT }, makePulse);
     loop();
   }
@@ -77,7 +89,7 @@ const HeroCanvas = (() => {
     // Stars and nodes use absolute coordinates baked in at creation —
     // a viewport resize would leave them clustered in the old bounds.
     if (stars.length) stars = Array.from({ length: STAR_COUNT }, makeStar);
-    if (nodes.length) nodes = Array.from({ length: NODE_COUNT }, makeNode);
+    if (nodes.length) nodes = Array.from({ length: NODE_COUNT }, (_, i) => makeNode(i));
   }
 
   /* ── find closest N nodes to a given node ── */
