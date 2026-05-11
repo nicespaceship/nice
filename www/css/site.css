@@ -1156,7 +1156,18 @@ a.docs-card:hover { border-color: var(--accent2); }
   to   { transform: rotate(360deg); }
 }
 
+/* RGB border + glow on card hover — same Mythic palette as the chromatic
+   backdrop. Animation overrides any static :hover border-color rules. */
+.schematic-node:hover,
+.mcp-tile:hover,
+.bento-card:hover {
+  animation: mythic-rgb-border 4s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .schematic-node::before,
   .mcp-wall::before { animation: none; }
+  .schematic-node:hover,
+  .mcp-tile:hover,
+  .bento-card:hover { animation: none; }
 }
