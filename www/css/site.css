@@ -475,6 +475,9 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .mcp-tile:hover { border-color: var(--accent2); transform: translateY(-2px); }
 .mcp-tile img,
 .mcp-tile-svg { width: 32px; height: 32px; object-fit: contain; transition: opacity 0.2s; }
+/* Monochrome brand icons (GitHub, Notion, Sentry, Replicate, Vercel) ship
+   as dark logos that need inversion on the dark theme so they stay visible. */
+body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
 .mcp-tile-mono {
   font-family: var(--font-brand, var(--font));
   font-size: var(--text-sm); font-weight: var(--fw-bold); color: var(--text);
