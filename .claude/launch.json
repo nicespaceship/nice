@@ -13,12 +13,6 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "www", "-l", "3100", "--no-clipboard"],
       "port": 3100
-    },
-    {
-      "name": "Benduffey Site",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "benduffey", "-l", "3200", "--no-clipboard"],
-      "port": 3200
     }
   ]
 }
