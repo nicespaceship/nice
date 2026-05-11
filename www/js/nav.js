@@ -43,7 +43,7 @@ const Nav = (() => {
             ${LINKS.map(l => `<a href="${l.href}" class="nav-link${_isActive(l.href) ? ' active' : ''}">${l.label}</a>`).join('')}
           </div>
           <div class="nav-right">
-            <a href="https://nicespaceship.ai" class="nav-cta">${CTA_GLYPH_SVG}<span>Launch NICE</span></a>
+            <a href="https://nicespaceship.ai" class="nav-cta">Launch NICE</a>
             <button class="nav-mobile-btn" id="nav-mobile-toggle" aria-label="Menu">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
