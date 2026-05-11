@@ -1156,6 +1156,23 @@ a.docs-card:hover { border-color: var(--accent2); }
   to   { transform: rotate(360deg); }
 }
 
+/* Borderless cards by default — RGB animation on hover supplies the only
+   visible border. Keep `1px solid` so the animated border-color has width. */
+.feature-card,
+.step-card,
+.schematic-node,
+.mcp-wall,
+.mcp-tile,
+.cost-card,
+.model-card,
+.testimonial-card,
+.bento-card,
+.faq-item,
+.pricing-card,
+.docs-card {
+  border-color: transparent;
+}
+
 /* RGB border + glow on card hover — same Mythic palette as the chromatic
    backdrop. Animation overrides any static :hover border-color rules. */
 .schematic-node:hover,
