@@ -27,7 +27,7 @@
   --font-brand: 'Orbitron', sans-serif;
   --radius: 10px;
   --nav-bg: rgba(255,255,255,0.92);
-  --panel-bg: rgba(250,250,250,0.85);
+  --panel-bg: #fafafa;
   --max-w: 1200px;
   --hero-grad: radial-gradient(ellipse 100% 60% at 50% 0%, rgba(15,82,186,0.04) 0%, transparent 70%);
 
@@ -73,7 +73,7 @@ body[data-theme="dark"] {
   --glow: 0 0 0 1px rgba(15,82,186,0.15);
   --glow-hi: 0 0 12px rgba(15,82,186,0.18);
   --nav-bg: rgba(10,10,10,0.92);
-  --panel-bg: rgba(20,20,23,0.85);
+  --panel-bg: #141417;
   --hero-grad: radial-gradient(ellipse 100% 60% at 50% 0%, rgba(15,82,186,0.05) 0%, transparent 70%);
   --hover-bg: rgba(255,255,255,0.06);
 }
@@ -160,12 +160,12 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .btn-primary:hover { background: var(--accent2); color: var(--bg); text-decoration: none; }
 .btn-secondary {
   display: inline-flex; align-items: center; gap: 6px;
-  background: transparent; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--fw-medium);
+  background: var(--bg); color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--fw-medium);
   padding: 10px 20px; border: 1px solid var(--border); border-radius: 999px;
   font-family: var(--font); cursor: pointer; transition: all 0.15s;
   text-decoration: none;
 }
-.btn-secondary:hover { border-color: var(--border-hi); color: var(--text); text-decoration: none; }
+.btn-secondary:hover { border-color: var(--border-hi); color: var(--text); background: var(--surface2); text-decoration: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
    NAVIGATION
