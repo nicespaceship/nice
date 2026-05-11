@@ -429,7 +429,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 /* ═══════════════════════════════════════════════════════════════════
    LOGO TICKER
 ═══════════════════════════════════════════════════════════════════ */
-.logo-ticker { overflow: hidden; padding: 28px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; }
+.logo-ticker { overflow: hidden; padding: 28px 0; position: relative; }
 .logo-ticker::before, .logo-ticker::after {
   content: ''; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2; pointer-events: none;
 }
