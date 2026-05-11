@@ -3,7 +3,7 @@ const WarpStars = (() => {
   let canvas, ctx, w, h, raf;
   let stars = [];
   const COUNT = 320;
-  const SPEED = 0.18;
+  const SPEED = 0.06;
   const cx = () => w / 2;
   const cy = () => h / 2;
 
