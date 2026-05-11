@@ -74,6 +74,10 @@ const HeroCanvas = (() => {
     const hero = canvas.parentElement;
     w = canvas.width = hero.offsetWidth;
     h = canvas.height = hero.offsetHeight;
+    // Stars and nodes use absolute coordinates baked in at creation —
+    // a viewport resize would leave them clustered in the old bounds.
+    if (stars.length) stars = Array.from({ length: STAR_COUNT }, makeStar);
+    if (nodes.length) nodes = Array.from({ length: NODE_COUNT }, makeNode);
   }
 
   /* ── find closest N nodes to a given node ── */
