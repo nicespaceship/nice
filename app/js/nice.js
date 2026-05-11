@@ -27,6 +27,16 @@ const Theme = (() => {
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'CORE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
+    // Dark variant of CORE. Same persona, same voice, same Sapphire CTA;
+    // surfaces flip to near-black. Pairs with the moon/sun toggle in the HUD
+    // dock — `Theme.toggleDarkLight` swaps nice ↔ nice-dark, same pattern as
+    // office ↔ office-dark. builtin:false keeps it out of the main dock row.
+    { id:'nice-dark', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
+      data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'#262626','--border-hi':'#404040','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'0 0 0 1px rgba(15,82,186,0.12)','--glow-hi':'0 0 12px rgba(15,82,186,0.18)','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'#262626','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
+      reactor:{ html:() => DefaultCore.html() },
+      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'CORE',
+        settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
+    },
     { id:'hal-9000', name:'HAL-9000', persona:{ name:'HAL', callsign:'Dave' }, chatsLabel:'Mission Logs', chips:['Run a full system diagnostic',"What's our mission status?",'Open the pod bay doors'], builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#0a0a0a','--bg-alt':'#121212','--surface':'#121212','--surface2':'#1a1a1a','--border':'#2a2a2a','--border-hi':'#8a8a90','--accent':'#ef4444','--accent2':'#b0b0b6','--text':'#f5f5f5','--text-muted':'#8a8a90','--text-dim':'#555555','--glow':'0 0 12px rgba(239,68,68,0.25)','--panel-bg':'#121212','--panel-border':'#2a2a2a' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
       copy:{
@@ -425,6 +435,8 @@ const Theme = (() => {
     const current = localStorage.getItem(_K_THEME) || 'nice';
     if (current === 'office') set('office-dark');
     else if (current === 'office-dark') set('office');
+    else if (current === 'nice') set('nice-dark');
+    else if (current === 'nice-dark') set('nice');
     // No-op for all other themes — toggle is hidden
   }
 
@@ -433,9 +445,11 @@ const Theme = (() => {
     if (!btn) return;
     const current = localStorage.getItem(_K_THEME) || 'nice';
     const isOffice = current === 'office' || current === 'office-dark';
-    btn.style.display = isOffice ? '' : 'none';
-    if (isOffice) {
-      const isLight = current === 'office';
+    const isCore = current === 'nice' || current === 'nice-dark';
+    const showToggle = isOffice || isCore;
+    btn.style.display = showToggle ? '' : 'none';
+    if (showToggle) {
+      const isLight = current === 'office' || current === 'nice';
       const icon = isLight ? '#icon-moon' : '#icon-sun';
       btn.innerHTML = `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${icon}"/></svg>`;
     }

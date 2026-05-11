@@ -52,7 +52,7 @@
    project_nice_brand_kit_142849.md. Marketing site uses --accent for primary
    surface and --accent2 for hover; mirrored exactly here for cross-property
    coherence. */
-:root, [data-theme="nice"] {
+:root, :is([data-theme="nice"],[data-theme="nice-dark"]) {
   --bg:           #ffffff;
   --bg2:          #fafafa;
   --bg-alt:       #fafafa;
@@ -125,14 +125,14 @@
 /* Scan line removed — was distracting on content pages */
 
 /* Sidebar — glass panel */
-[data-theme="nice"] .app-sidebar {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-sidebar {
   background: var(--bg);
   border-right: 1px solid var(--border);
 }
-[data-theme="nice"] .side-header {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-header {
   background: transparent;
 }
-[data-theme="nice"] .side-link {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link {
   border-radius: var(--radius);
   margin: 2px 6px;
   padding: 8px 12px;
@@ -142,52 +142,52 @@
   color: var(--text-muted);
   transition: all .15s;
 }
-[data-theme="nice"] .side-link:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link:hover {
   color: var(--text);
   background: rgba(15,82,186,0.05);
 }
-[data-theme="nice"] .side-link.active {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link.active {
   color: var(--accent);
   background: rgba(15,82,186,0.08);
 }
-[data-theme="nice"] .side-link svg { opacity: 0.5; }
-[data-theme="nice"] .side-link.active svg { opacity: 1; }
-[data-theme="nice"] .side-footer {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link svg { opacity: 0.5; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link.active svg { opacity: 1; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-footer {
   background: transparent;
 }
-[data-theme="nice"] .hdr-user-badge {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .hdr-user-badge {
   background: transparent; color: var(--text-muted); border-color: var(--border);
 }
 
 /* Topbar — subtle gradient line */
-[data-theme="nice"] .app-topbar {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-topbar {
   background: var(--bg);
   border-bottom: none;
   position: relative;
 }
-[data-theme="nice"] .app-topbar::after {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-topbar::after {
   content: '';
   position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent 0%, var(--border) 30%, var(--border-hi) 50%, var(--border) 70%, transparent 100%);
 }
 
 /* Panels — glass cards */
-[data-theme="nice"] .widget-card,
-[data-theme="nice"] .tc-section,
-[data-theme="nice"] .detail-section {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .widget-card,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .tc-section,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .detail-section {
   border: 1px solid var(--border);
   background: var(--panel-bg);
   transition: border-color .2s, box-shadow .2s, transform .15s;
 }
-[data-theme="nice"] .widget-card:hover,
-[data-theme="nice"] .detail-section:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .widget-card:hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .detail-section:hover {
   border-color: var(--border-hi);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
 /* Buttons — soft command */
-[data-theme="nice"] .btn {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -198,25 +198,25 @@
   font-size: .6rem;
   transition: all .15s;
 }
-[data-theme="nice"] .btn:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn:hover {
   background: rgba(15,82,186,0.08);
   color: var(--text);
   border-color: var(--border-hi);
   box-shadow: var(--glow);
 }
-[data-theme="nice"] .btn-primary {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn-primary {
   background: var(--accent);
   color: var(--bg);
   border-color: var(--accent);
 }
-[data-theme="nice"] .btn-primary:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn-primary:hover {
   background: var(--accent2);
   border-color: var(--accent2);
   box-shadow: 0 0 16px rgba(15,82,186,0.15);
 }
 
 /* Log view tabs */
-[data-theme="nice"] .log-view-tab {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .log-view-tab {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -225,225 +225,225 @@
   font-size: var(--text-sm);
   transition: all .15s;
 }
-[data-theme="nice"] .log-view-tab.active {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .log-view-tab.active {
   color: var(--accent);
   border-color: var(--accent);
   background: rgba(15,82,186,0.06);
 }
-[data-theme="nice"] .log-view-tab:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .log-view-tab:hover {
   color: var(--text);
   border-color: var(--border-hi);
 }
 
 /* Sub-tabs & filters */
-[data-theme="nice"] .bp-sub-tab {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-sub-tab {
   border: 1px solid var(--border);
   background: transparent; color: var(--text-muted);
   font-family: var(--font-h); font-weight: var(--fw-regular);
   font-size: var(--text-sm);
 }
-[data-theme="nice"] .bp-sub-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(15,82,186,0.06); }
-[data-theme="nice"] .bp-rarity-btn {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-sub-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(15,82,186,0.06); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn {
   border: 1px solid var(--border);
   background: transparent; color: var(--text-dim);
   font-family: var(--font-h); font-size: .5rem;
 }
-[data-theme="nice"] .bp-rarity-btn.active { color: var(--text); border-color: var(--border-hi); background: rgba(15,82,186,0.06); }
-[data-theme="nice"] .bp-view-btn {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn.active { color: var(--text); border-color: var(--border-hi); background: rgba(15,82,186,0.06); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-view-btn {
   border: 1px solid var(--border); background: transparent;
 }
-[data-theme="nice"] .bp-view-btn.active { border-color: var(--border-hi); background: rgba(15,82,186,0.06); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-view-btn.active { border-color: var(--border-hi); background: rgba(15,82,186,0.06); }
 
 /* Mission cards */
-[data-theme="nice"] .mc-card {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card {
   border: 1px solid var(--border);
   border-left: 2px solid var(--border-hi);
   background: var(--panel-bg);
   transition: border-color .2s, box-shadow .2s, transform .15s;
 }
-[data-theme="nice"] .mc-card:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-[data-theme="nice"] .mc-card-running { border-left-color: var(--accent); }
-[data-theme="nice"] .mc-card-completed { border-left-color: var(--text-muted); }
-[data-theme="nice"] .mc-card-failed { border-left-color: var(--color-error, #ef4444); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card-running { border-left-color: var(--accent); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card-completed { border-left-color: var(--text-muted); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card-failed { border-left-color: var(--color-error, #ef4444); }
 
 /* Pipeline nodes */
-[data-theme="nice"] .mc-pipe-node {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-pipe-node {
   border: 1px solid var(--border);
   background: transparent; color: var(--text-muted);
   transition: all .15s;
 }
-[data-theme="nice"] .mc-pipe-node:hover,
-[data-theme="nice"] .mc-pipe-active {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-pipe-node:hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-pipe-active {
   background: var(--accent); color: var(--bg); border-color: var(--accent);
 }
 
 /* Inputs */
-[data-theme="nice"] input[type="text"],
-[data-theme="nice"] input[type="number"],
-[data-theme="nice"] input[type="email"],
-[data-theme="nice"] input[type="password"],
-[data-theme="nice"] textarea:not(.nice-ai-input),
-[data-theme="nice"] .search-input {
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="text"],
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="number"],
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="email"],
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="password"],
+:is([data-theme="nice"],[data-theme="nice-dark"]) textarea:not(.nice-ai-input),
+:is([data-theme="nice"],[data-theme="nice-dark"]) .search-input {
   border: 1px solid var(--border);
   background: var(--surface2); color: var(--text);
   font-family: var(--font-b); font-size: .75rem;
   transition: border-color .15s, box-shadow .15s;
 }
-[data-theme="nice"] input::placeholder,
-[data-theme="nice"] textarea::placeholder { color: var(--text-muted); }
-[data-theme="nice"] input[type="text"]:focus,
-[data-theme="nice"] input[type="number"]:focus,
-[data-theme="nice"] input[type="email"]:focus,
-[data-theme="nice"] input[type="password"]:focus,
-[data-theme="nice"] textarea:focus,
-[data-theme="nice"] .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(15,82,186,0.08); outline: none; }
-[data-theme="nice"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
+:is([data-theme="nice"],[data-theme="nice-dark"]) input::placeholder,
+:is([data-theme="nice"],[data-theme="nice-dark"]) textarea::placeholder { color: var(--text-muted); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="text"]:focus,
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="number"]:focus,
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="email"]:focus,
+:is([data-theme="nice"],[data-theme="nice-dark"]) input[type="password"]:focus,
+:is([data-theme="nice"],[data-theme="nice-dark"]) textarea:focus,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(15,82,186,0.08); outline: none; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border: 1px solid var(--border); color: var(--text);
   background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
 }
-[data-theme="nice"] .filter-select {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .filter-select {
   border: 1px solid var(--border); color: var(--text);
   background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
 }
-[data-theme="nice"] .search-box { background: var(--surface2); border-color: var(--border); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .search-box { background: var(--surface2); border-color: var(--border); }
 
 /* Prompt panel */
-[data-theme="nice"] .nice-ai-input-area {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-input-area {
   border: 1px solid var(--border); border-radius: 16px;
   background: var(--bg);
 }
-[data-theme="nice"] .nice-ai-input-area:focus-within { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(15,82,186,0.08); }
-[data-theme="nice"] .nice-ai-input { color: var(--text); }
-[data-theme="nice"] .nice-ai-input::placeholder { color: var(--text-dim); }
-[data-theme="nice"] .nice-ai-chip {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-input-area:focus-within { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(15,82,186,0.08); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-input { color: var(--text); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-input::placeholder { color: var(--text-dim); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-chip {
   border: 1px solid var(--border);
   background: transparent; color: var(--text-muted);
   font-family: var(--font-b); font-size: var(--text-xs);
   transition: all .15s;
 }
-[data-theme="nice"] .nice-ai-chip:hover { border-color: var(--border-hi); color: var(--text); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-chip:hover { border-color: var(--border-hi); color: var(--text); }
 
 /* Schematic */
-[data-theme="nice"] .schematic-wired .blueprint-card-mini { border-radius: var(--radius); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .schematic-wired .blueprint-card-mini { border-radius: var(--radius); }
 
 /* HUD */
-[data-theme="nice"] .app-hud-panel {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel {
   background: rgba(255,255,255,0.95);
   border: 1px solid var(--border);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-[data-theme="nice"] .app-hud-panel .dock-lbl { color: var(--text-muted); }
-[data-theme="nice"] .app-hud-panel .dock-lbl a { color: var(--accent2); }
-[data-theme="nice"] .app-hud-panel .dock-lbl-val { color: var(--accent); font-weight: 500; }
-[data-theme="nice"] .app-hud-panel .db { border: 2px solid var(--border); }
-[data-theme="nice"] .app-hud-panel .db.active { border-color: var(--accent); box-shadow: 0 0 10px rgba(15,82,186,0.15); }
-[data-theme="nice"] .app-hud-panel .fb { border-color: var(--border); color: var(--text-muted); }
-[data-theme="nice"] .app-hud-panel .fb.active { background: rgba(15,82,186,0.08); color: var(--accent); border-color: var(--accent); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel .dock-lbl { color: var(--text-muted); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel .dock-lbl a { color: var(--accent2); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel .dock-lbl-val { color: var(--accent); font-weight: 500; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel .db { border: 2px solid var(--border); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel .db.active { border-color: var(--accent); box-shadow: 0 0 10px rgba(15,82,186,0.15); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel .fb { border-color: var(--border); color: var(--text-muted); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hud-panel .fb.active { background: rgba(15,82,186,0.08); color: var(--accent); border-color: var(--accent); }
 
 /* Scrollbar */
-[data-theme="nice"] ::-webkit-scrollbar { width: 5px; }
-[data-theme="nice"] ::-webkit-scrollbar-track { background: transparent; }
-[data-theme="nice"] ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
-[data-theme="nice"] ::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) ::-webkit-scrollbar { width: 5px; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) ::-webkit-scrollbar-track { background: transparent; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) ::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
 
 /* Popover */
-[data-theme="nice"] .side-popover { background: var(--bg); border: 1px solid var(--border); }
-[data-theme="nice"] .side-popover-item {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover { background: var(--bg); border: 1px solid var(--border); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover-item {
   color: var(--text-muted); font-family: var(--font-b);
   text-transform: uppercase; letter-spacing: .08em; font-size: .58rem;
   transition: all .15s;
 }
-[data-theme="nice"] .side-popover-item:hover { background: rgba(15,82,186,0.06); color: var(--text); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-popover-item:hover { background: rgba(15,82,186,0.06); color: var(--text); }
 
 /* Sidebar folder */
-[data-theme="nice"] .side-folder-toggle { color: var(--text-dim); border-color: var(--border); }
-[data-theme="nice"] .side-folder-body { border-left-color: var(--border); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-folder-toggle { color: var(--text-dim); border-color: var(--border); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-folder-body { border-left-color: var(--border); }
 
 /* ── Extended polish ── */
 
 /* Greeting — gradient text */
-[data-theme="nice"] .chat-home-greeting {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .chat-home-greeting {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent) 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* Prompt bar — glow on focus */
-[data-theme="nice"] .nice-ai-input-area:focus-within {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-input-area:focus-within {
   border-color: var(--accent2);
   box-shadow: 0 0 0 2px rgba(15,82,186,0.12), 0 0 20px rgba(15,82,186,0.06);
 }
 
 /* Active sidebar — left accent bar + icon glow */
-[data-theme="nice"] .side-link.active {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link.active {
   color: var(--accent);
   background: rgba(15,82,186,0.08);
   box-shadow: inset 3px 0 0 var(--accent2);
 }
-[data-theme="nice"] .side-link.active svg {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link.active svg {
   opacity: 1;
   filter: drop-shadow(0 0 4px rgba(15,82,186,0.3));
 }
 
 
 /* Toggles — accent glow when checked */
-[data-theme="nice"] .toggle-switch input:checked + .toggle-slider {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .toggle-switch input:checked + .toggle-slider {
   background: var(--accent2);
   box-shadow: 0 0 8px rgba(15,82,186,0.2);
 }
-[data-theme="nice"] .bp-toggle-switch.on .toggle-track {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-toggle-switch.on .toggle-track {
   background: var(--accent2);
   box-shadow: 0 0 8px rgba(15,82,186,0.2);
 }
 
 /* Scrollbar — accent on hover */
-[data-theme="nice"] ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
 
 /* Focus rings — accent for accessibility */
-[data-theme="nice"] .btn:focus-visible,
-[data-theme="nice"] input:focus-visible,
-[data-theme="nice"] select:focus-visible,
-[data-theme="nice"] textarea:focus-visible,
-[data-theme="nice"] .side-link:focus-visible {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn:focus-visible,
+:is([data-theme="nice"],[data-theme="nice-dark"]) input:focus-visible,
+:is([data-theme="nice"],[data-theme="nice-dark"]) select:focus-visible,
+:is([data-theme="nice"],[data-theme="nice-dark"]) textarea:focus-visible,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-link:focus-visible {
   outline: 2px solid var(--accent2);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(15,82,186,0.08);
 }
 
 /* Cards — subtle inner glow on hover */
-[data-theme="nice"] .mc-card:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .mc-card:hover {
   border-color: var(--border-hi);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(15,82,186,0.06);
 }
-[data-theme="nice"] .integ-card:hover,
-[data-theme="nice"] .spaceship-card:hover,
-[data-theme="nice"] .security-card:hover,
-[data-theme="nice"] .settings-section:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .integ-card:hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .spaceship-card:hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .security-card:hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .settings-section:hover {
   border-color: var(--border-hi);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
 /* Selects — focus ring */
-[data-theme="nice"] select:focus {
+:is([data-theme="nice"],[data-theme="nice-dark"]) select:focus {
   border-color: var(--accent2);
   box-shadow: 0 0 0 2px rgba(15,82,186,0.08);
   outline: none;
 }
 
 /* HUD button — subtle accent */
-[data-theme="nice"] .hud-btn {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .hud-btn {
   border-color: var(--border);
   transition: all .15s;
 }
-[data-theme="nice"] .hud-btn:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .hud-btn:hover {
   border-color: var(--accent2);
   color: var(--accent);
   box-shadow: 0 0 8px rgba(15,82,186,0.08);
@@ -452,8 +452,8 @@
 /* ── Background animations ── */
 
 /* Ambient gradient orbs */
-[data-theme="nice"] body::before,
-[data-theme="nice"] body::after {
+:is([data-theme="nice"],[data-theme="nice-dark"]) body::before,
+:is([data-theme="nice"],[data-theme="nice-dark"]) body::after {
   content: '';
   position: fixed;
   border-radius: 50%;
@@ -462,13 +462,13 @@
   pointer-events: none;
   z-index: 0;
 }
-[data-theme="nice"] body::before {
+:is([data-theme="nice"],[data-theme="nice-dark"]) body::before {
   width: 500px; height: 500px;
   background: radial-gradient(circle, rgba(15,82,186,0.06) 0%, transparent 70%);
   top: -10%; left: -5%;
   animation: orbFloat1 25s ease-in-out infinite;
 }
-[data-theme="nice"] body::after {
+:is([data-theme="nice"],[data-theme="nice-dark"]) body::after {
   width: 400px; height: 400px;
   background: radial-gradient(circle, rgba(15,82,186,0.08) 0%, transparent 70%);
   bottom: -10%; right: -5%;
@@ -476,7 +476,7 @@
 }
 
 /* Third orb via app-main */
-[data-theme="nice"] .app-main::before {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-main::before {
   content: '';
   position: fixed;
   width: 350px; height: 350px;
@@ -507,7 +507,7 @@
 }
 
 /* Radial pulse — breathing glow from center */
-[data-theme="nice"] .app-main::after {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-main::after {
   content: '';
   position: fixed;
   top: 50%; left: 50%;
@@ -526,16 +526,42 @@
 
 /* Reduced motion — disable all background animations */
 @media (prefers-reduced-motion: reduce) {
-  [data-theme="nice"] body::before,
-  [data-theme="nice"] body::after,
-  [data-theme="nice"] .app-main::before,
-  [data-theme="nice"] .app-main::after {
+  :is([data-theme="nice"],[data-theme="nice-dark"]) body::before,
+  :is([data-theme="nice"],[data-theme="nice-dark"]) body::after,
+  :is([data-theme="nice"],[data-theme="nice-dark"]) .app-main::before,
+  :is([data-theme="nice"],[data-theme="nice-dark"]) .app-main::after {
     animation: none !important;
     opacity: 0.3 !important;
   }
 }
-[data-theme="nice"] .side-mission-item { color: var(--text-dim); transition: all .15s; }
-[data-theme="nice"] .side-mission-item:hover { background: rgba(15,82,186,0.04); color: var(--text); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mission-item { color: var(--text-dim); transition: all .15s; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mission-item:hover { background: rgba(15,82,186,0.04); color: var(--text); }
+
+/* ── CORE Dark — flip the few light-only literals ──────────────────────
+   The :is(nice, nice-dark) selectors above share all token-based rules;
+   only literals that hardcoded a light value need a dark override here. */
+[data-theme="nice-dark"] .app-hud-panel { background: rgba(20,20,20,0.95); }
+[data-theme="nice-dark"] .widget-card:hover,
+[data-theme="nice-dark"] .detail-section:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+[data-theme="nice-dark"] .mc-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+[data-theme="nice-dark"] .integ-card:hover,
+[data-theme="nice-dark"] .spaceship-card:hover,
+[data-theme="nice-dark"] .security-card:hover,
+[data-theme="nice-dark"] .settings-section:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+[data-theme="nice-dark"] .btn-solid { background: rgba(15,82,186,0.15); }
+/* Text-on-accent: Sapphire is dark in both modes, so white text is the
+   right contrast pick. The base rules set color: var(--bg) which works
+   for light CORE (white) but resolves to near-black on nice-dark. */
+[data-theme="nice-dark"] .btn-primary,
+[data-theme="nice-dark"] .btn-solid,
+[data-theme="nice-dark"] .btn-solid:hover,
+[data-theme="nice-dark"] .mc-pipe-active,
+[data-theme="nice-dark"] .mc-pipe-node:hover,
+[data-theme="nice-dark"] .key-btn:hover,
+[data-theme="nice-dark"] .key-btn.key-active,
+[data-theme="nice-dark"] .nss-mode-btn.active,
+[data-theme="nice-dark"] .nss-btn-deploy,
+[data-theme="nice-dark"] .cw-run { color: #fff; }
 
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -4429,8 +4455,8 @@ body {
   transform: translateY(-2px);
   border-color: var(--border-hi);
 }
-[data-theme="nice"] .panel:hover,
-[data-theme="nice"] .glass:hover { border-color: var(--border-hi); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .panel:hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .glass:hover { border-color: var(--border-hi); }
 
 /* HUD corner marks */
 .hud::before, .hud::after {
@@ -4461,10 +4487,10 @@ body {
 }
 [data-theme="lcars"] .btn { border-radius: 20px; }
 .btn:hover { background: rgba(255,255,255,0.07); box-shadow: var(--glow-hi); }
-[data-theme="nice"] .btn:hover { background: rgba(15,82,186,0.08); color: var(--text); box-shadow: var(--glow); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn:hover { background: rgba(15,82,186,0.08); color: var(--text); box-shadow: var(--glow); }
 .btn-solid { background: rgba(255,255,255,0.07); box-shadow: var(--glow); }
-[data-theme="nice"] .btn-solid { background: var(--accent); color: var(--bg); }
-[data-theme="nice"] .btn-solid:hover { background: var(--accent2); color: var(--bg); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn-solid { background: var(--accent); color: var(--bg); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn-solid:hover { background: var(--accent2); color: var(--bg); }
 
 /* ─────────────────────────────────────────────────────────────────
    MODULE: HERO (full-height homepage)
