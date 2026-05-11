@@ -52,6 +52,30 @@
   --tracking-display: -0.01em;
   --tracking-normal:  0;
   --tracking-caps:    0.08em;
+
+  /* Hover overlay — flips per theme (dark surfaces need a light overlay,
+     light surfaces need a dark overlay, for the same "lift" effect). */
+  --hover-bg: rgba(0,0,0,0.04);
+}
+
+/* ── DARK MODE — token overrides; Sapphire stays constant ── */
+body[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --bg-alt: #141414;
+  --surface: #141414;
+  --surface2: #1f1f1f;
+  --border: #262626;
+  --border-hi: #404040;
+  --text: #fafafa;
+  --text-muted: #a3a3a3;
+  --text-dim: #737373;
+  --glow: 0 0 0 1px rgba(15,82,186,0.15);
+  --glow-hi: 0 0 12px rgba(15,82,186,0.18);
+  --nav-bg: rgba(10,10,10,0.92);
+  --panel-bg: rgba(20,20,23,0.85);
+  --hero-grad: radial-gradient(ellipse 100% 60% at 50% 0%, rgba(15,82,186,0.05) 0%, transparent 70%);
+  --hover-bg: rgba(255,255,255,0.06);
 }
 
 html { scroll-behavior: smooth; }
@@ -136,7 +160,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   padding: 6px 12px; text-decoration: none; border-radius: var(--radius);
   transition: all 0.15s;
 }
-.nav-link:hover { color: var(--text); background: rgba(0,0,0,0.04); text-decoration: none; }
+.nav-link:hover { color: var(--text); background: var(--hover-bg); text-decoration: none; }
 .nav-link.active { color: var(--accent); }
 .nav-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .nav-theme-btn {
@@ -155,6 +179,16 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 }
 .nav-cta:hover { background: var(--accent2); text-decoration: none; }
 .nav-cta-icon { display: block; width: 16px; height: 16px; }
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  background: transparent; color: var(--text-muted);
+  border: 1px solid var(--border); border-radius: 999px;
+  font-size: var(--text-sm); cursor: pointer; padding: 0;
+  transition: all 0.15s; font-family: inherit;
+}
+.theme-toggle:hover { color: var(--text); border-color: var(--border-hi); background: var(--hover-bg); }
+.theme-toggle i { display: block; }
 .nav-mobile-btn { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 4px; }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -796,7 +830,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .docs-sidebar h4 { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-caps); color: var(--text-muted); margin: 20px 0 8px; }
 .docs-sidebar h4:first-child { margin-top: 0; }
 .docs-sidebar a { display: block; padding: 6px 12px; font-size: var(--text-sm); color: var(--text-muted); text-decoration: none; border-radius: var(--radius); transition: all 0.15s; }
-.docs-sidebar a:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+.docs-sidebar a:hover { color: var(--text); background: var(--hover-bg); }
 .docs-sidebar a.active { color: var(--accent2); background: rgba(15,82,186,0.08); }
 .docs-content { padding: 40px 48px; max-width: 800px; }
 .docs-content h1 { margin-bottom: 8px; }
