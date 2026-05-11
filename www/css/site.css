@@ -821,7 +821,10 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
 .blueprint-tile-rarity.rare { border-color: rgba(96,165,250,0.3); color: #60a5fa; background: rgba(96,165,250,0.06); }
 .blueprint-tile-rarity.epic { border-color: rgba(167,139,250,0.3); color: #a78bfa; background: rgba(167,139,250,0.06); }
 .blueprint-tile-rarity.legendary { border-color: rgba(251,191,36,0.3); color: #fbbf24; background: rgba(251,191,36,0.06); }
-.blueprint-tile-rarity.mythic { border-color: rgba(248,113,113,0.3); color: #f87171; background: rgba(248,113,113,0.06); }
+.blueprint-tile-rarity.mythic {
+  background: var(--bg);
+  animation: mythic-rgb-border 14s linear infinite, mythic-text-glow 14s linear infinite;
+}
 .blueprint-tile-type { font-size: var(--text-xs); color: var(--text-dim); }
 .catalog-empty { text-align: center; padding: 60px 24px; color: var(--text-muted); }
 
