@@ -838,8 +838,24 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
 }
 .faq-heading { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .faq-heading h2 { line-height: 1.1; color: var(--text); position: relative; z-index: 1; white-space: nowrap; }
-.faq-schematic { margin-top: 32px; max-width: 450px; width: 450px; height: 450px; opacity: 0.7; pointer-events: none; }
-.faq-schematic svg { width: 100%; height: 100%; }
+.faq-schematic {
+  position: relative;
+  margin-top: 32px;
+  max-width: 450px; width: 450px; height: 450px;
+  pointer-events: none;
+}
+.faq-graphic {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.faq-graphic.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+.faq-graphic svg { width: 100%; height: 100%; }
 .faq-heading h2, .faq-list { position: relative; z-index: 1; }
 
 /* station background behind heading column */

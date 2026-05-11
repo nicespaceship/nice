@@ -315,7 +315,8 @@
         <div class="faq-layout">
           <div class="faq-heading" data-reveal>
             <h2>Frequently asked questions</h2>
-            <div class="faq-schematic" aria-hidden="true" data-parallax="0.04" data-parallax-rotate="-3">
+            <div class="faq-schematic" aria-hidden="true">
+              <div class="faq-graphic faq-graphic-nice is-active">
               <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <style>
                   .bp-label { font-family: 'Fira Code', monospace; fill: #555; font-size: 6.5px; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -412,34 +413,271 @@
                 <!-- Title -->
                 <text x="220" y="375" text-anchor="middle" class="bp-label" style="font-size:7px;fill:#555;letter-spacing:0.15em">Spaceship Schematic // NCC-NICE-001</text>
               </svg>
+              </div>
+
+              <!-- Blueprint card graphic -->
+              <div class="faq-graphic faq-graphic-blueprint">
+                <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="bp-card-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(15,82,186,0.10)"/>
+                      <stop offset="100%" stop-color="rgba(15,82,186,0.02)"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Card body -->
+                  <rect x="130" y="50" width="180" height="270" rx="12" stroke="var(--accent2)" stroke-width="1.2" fill="url(#bp-card-grad)"/>
+                  <!-- Top stripe -->
+                  <rect x="130" y="50" width="180" height="36" rx="12" fill="rgba(15,82,186,0.18)"/>
+                  <rect x="130" y="78" width="180" height="8" fill="rgba(15,82,186,0.18)"/>
+                  <!-- Icon -->
+                  <circle cx="160" cy="68" r="10" stroke="var(--accent2)" stroke-width="1" fill="rgba(255,255,255,0.6)"/>
+                  <circle cx="160" cy="68" r="3.5" fill="var(--accent2)"/>
+                  <!-- Title bars -->
+                  <rect x="180" y="62" width="100" height="5" rx="2" fill="var(--text)" opacity="0.65"/>
+                  <rect x="180" y="71" width="60" height="3.5" rx="1.5" fill="var(--text)" opacity="0.35"/>
+                  <!-- Body fields -->
+                  <rect x="148" y="108" width="60" height="5" rx="2" fill="var(--text)" opacity="0.5"/>
+                  <rect x="148" y="120" width="144" height="3" rx="1.5" fill="var(--text)" opacity="0.18"/>
+                  <rect x="148" y="128" width="120" height="3" rx="1.5" fill="var(--text)" opacity="0.18"/>
+                  <rect x="148" y="148" width="78" height="5" rx="2" fill="var(--text)" opacity="0.5"/>
+                  <rect x="148" y="160" width="144" height="3" rx="1.5" fill="var(--text)" opacity="0.18"/>
+                  <rect x="148" y="168" width="100" height="3" rx="1.5" fill="var(--text)" opacity="0.18"/>
+                  <!-- Capability chips -->
+                  <rect x="148" y="194" width="40" height="14" rx="7" stroke="var(--accent2)" stroke-width="0.7" fill="rgba(15,82,186,0.06)"/>
+                  <rect x="194" y="194" width="52" height="14" rx="7" stroke="var(--accent2)" stroke-width="0.7" fill="rgba(15,82,186,0.06)"/>
+                  <rect x="252" y="194" width="38" height="14" rx="7" stroke="var(--accent2)" stroke-width="0.7" fill="rgba(15,82,186,0.06)"/>
+                  <!-- Stats row -->
+                  <rect x="148" y="232" width="42" height="22" rx="3" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(0,0,0,0.02)"/>
+                  <rect x="200" y="232" width="42" height="22" rx="3" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(0,0,0,0.02)"/>
+                  <rect x="252" y="232" width="42" height="22" rx="3" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(0,0,0,0.02)"/>
+                  <!-- Rarity bar -->
+                  <rect x="148" y="278" width="144" height="6" rx="3" fill="rgba(168,45,255,0.45)"/>
+                  <text x="148" y="304" font-family="'Fira Code', monospace" font-size="7" fill="#555" letter-spacing="0.1em">RARE · 2,400 XP</text>
+                  <!-- Stack lines (suggesting 500+ cards) -->
+                  <rect x="118" y="62" width="180" height="270" rx="12" stroke="var(--accent2)" stroke-width="0.6" fill="none" opacity="0.4"/>
+                  <rect x="106" y="74" width="180" height="270" rx="12" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0.2"/>
+                </svg>
+              </div>
+
+              <!-- MCP connections graphic -->
+              <div class="faq-graphic faq-graphic-mcp">
+                <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Center NICE hex -->
+                  <g transform="translate(220, 190)">
+                    <polygon points="0,-32 28,-16 28,16 0,32 -28,16 -28,-16" stroke="var(--accent2)" stroke-width="1.4" fill="rgba(15,82,186,0.10)"/>
+                    <circle r="9" fill="var(--accent2)"/>
+                    <circle r="14" stroke="var(--accent2)" stroke-width="0.6" fill="none" opacity="0.6">
+                      <animate attributeName="r" values="14;36" dur="3s" repeatCount="indefinite"/>
+                      <animate attributeName="opacity" values="0.6;0" dur="3s" repeatCount="indefinite"/>
+                    </circle>
+                    <text y="62" text-anchor="middle" font-family="'Fira Code', monospace" font-size="9" fill="var(--text)" letter-spacing="0.1em" font-weight="700">NICE</text>
+                  </g>
+                  <!-- Orbit ring -->
+                  <circle cx="220" cy="190" r="120" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0.25" stroke-dasharray="3 4"/>
+                  <!-- Brand nodes -->
+                  <g font-family="'Fira Code', monospace" font-size="7" letter-spacing="0.05em" fill="var(--text-muted)" text-anchor="middle">
+                    <g transform="translate(220, 70)">
+                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3" font-size="10" font-weight="700" fill="#4285F4">G</text>
+                    </g>
+                    <g transform="translate(324, 130)">
+                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3" font-size="9" font-weight="700" fill="var(--text)">Hb</text>
+                    </g>
+                    <g transform="translate(324, 250)">
+                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3" font-size="9" font-weight="700" fill="var(--text)">Gh</text>
+                    </g>
+                    <g transform="translate(220, 310)">
+                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3" font-size="9" font-weight="700" fill="#611f69">Sl</text>
+                    </g>
+                    <g transform="translate(116, 250)">
+                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3" font-size="9" font-weight="700" fill="#635bff">St</text>
+                    </g>
+                    <g transform="translate(116, 130)">
+                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3" font-size="9" font-weight="700" fill="var(--text)">No</text>
+                    </g>
+                  </g>
+                  <!-- Connection lines -->
+                  <g stroke="var(--accent2)" stroke-width="0.6" opacity="0.4">
+                    <line x1="220" y1="190" x2="220" y2="88"/>
+                    <line x1="220" y1="190" x2="306" y2="138"/>
+                    <line x1="220" y1="190" x2="306" y2="242"/>
+                    <line x1="220" y1="190" x2="220" y2="292"/>
+                    <line x1="220" y1="190" x2="134" y2="242"/>
+                    <line x1="220" y1="190" x2="134" y2="138"/>
+                  </g>
+                  <text x="220" y="370" text-anchor="middle" font-family="'Fira Code', monospace" font-size="7" fill="#555" letter-spacing="0.15em">19 connected MCPs · OAuth 2.0</text>
+                </svg>
+              </div>
+
+              <!-- Free / pricing graphic -->
+              <div class="faq-graphic faq-graphic-free">
+                <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Tier 1: Free -->
+                  <g transform="translate(40, 100)">
+                    <rect width="110" height="180" rx="12" stroke="var(--accent2)" stroke-width="1.4" fill="rgba(15,82,186,0.06)"/>
+                    <text x="55" y="34" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="var(--text)">Free</text>
+                    <text x="55" y="86" text-anchor="middle" font-family="Inter" font-size="36" font-weight="700" fill="var(--text)">$0</text>
+                    <text x="55" y="104" text-anchor="middle" font-family="Inter" font-size="8" fill="var(--text-muted)">forever</text>
+                    <line x1="20" y1="124" x2="90" y2="124" stroke="var(--border-hi)" stroke-width="0.6"/>
+                    <text x="55" y="144" text-anchor="middle" font-family="Inter" font-size="8" fill="var(--text-muted)">Gemini 2.5 Flash</text>
+                    <text x="55" y="160" text-anchor="middle" font-family="Inter" font-size="8" fill="var(--text-muted)">500+ blueprints</text>
+                  </g>
+                  <!-- Tier 2: Pro -->
+                  <g transform="translate(165, 100)">
+                    <rect width="110" height="180" rx="12" fill="rgba(15,82,186,0.95)"/>
+                    <text x="55" y="34" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#fff">NICE Pro</text>
+                    <text x="55" y="86" text-anchor="middle" font-family="Inter" font-size="36" font-weight="700" fill="#fff">$9.99</text>
+                    <text x="55" y="104" text-anchor="middle" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.8)">per month</text>
+                    <line x1="20" y1="124" x2="90" y2="124" stroke="rgba(255,255,255,0.4)" stroke-width="0.6"/>
+                    <text x="55" y="144" text-anchor="middle" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.85)">Standard model pool</text>
+                    <text x="55" y="160" text-anchor="middle" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.85)">12-slot Flagships</text>
+                  </g>
+                  <!-- Tier 3: Add-ons -->
+                  <g transform="translate(290, 100)">
+                    <rect width="110" height="180" rx="12" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="4 3" fill="none"/>
+                    <text x="55" y="34" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="var(--text)">Add-ons</text>
+                    <text x="55" y="86" text-anchor="middle" font-family="Inter" font-size="36" font-weight="700" fill="var(--text)">+$9.99</text>
+                    <text x="55" y="104" text-anchor="middle" font-family="Inter" font-size="8" fill="var(--text-muted)">each, monthly</text>
+                    <line x1="20" y1="124" x2="90" y2="124" stroke="var(--border-hi)" stroke-width="0.6"/>
+                    <text x="55" y="144" text-anchor="middle" font-family="Inter" font-size="8" fill="var(--text-muted)">Claude pool</text>
+                    <text x="55" y="160" text-anchor="middle" font-family="Inter" font-size="8" fill="var(--text-muted)">Premium pool</text>
+                  </g>
+                  <text x="220" y="60" text-anchor="middle" font-family="'Fira Code', monospace" font-size="8" fill="#555" letter-spacing="0.15em">PICK ONLY WHAT YOU NEED</text>
+                  <text x="220" y="320" text-anchor="middle" font-family="Inter" font-size="9" fill="var(--text-muted)">No credit card to start.</text>
+                </svg>
+              </div>
+
+              <!-- API keys graphic -->
+              <div class="faq-graphic faq-graphic-keys">
+                <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Vault -->
+                  <rect x="140" y="100" width="160" height="180" rx="10" stroke="var(--accent2)" stroke-width="1.4" fill="rgba(15,82,186,0.06)"/>
+                  <rect x="140" y="100" width="160" height="32" rx="10" fill="rgba(15,82,186,0.14)"/>
+                  <circle cx="220" cy="116" r="4" fill="var(--accent2)"/>
+                  <text x="220" y="152" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="var(--text)">NICE holds your keys</text>
+                  <!-- Key rows -->
+                  <g font-family="'Fira Code', monospace" font-size="8" fill="var(--text-muted)" letter-spacing="0.05em">
+                    <g transform="translate(160, 180)">
+                      <rect width="120" height="22" rx="4" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.8)"/>
+                      <circle cx="14" cy="11" r="5" stroke="var(--accent2)" stroke-width="0.7" fill="none"/>
+                      <line x1="19" y1="11" x2="26" y2="11" stroke="var(--accent2)" stroke-width="0.7"/>
+                      <text x="36" y="14">GOOGLE_AI_API_KEY</text>
+                    </g>
+                    <g transform="translate(160, 210)">
+                      <rect width="120" height="22" rx="4" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.8)"/>
+                      <circle cx="14" cy="11" r="5" stroke="var(--accent2)" stroke-width="0.7" fill="none"/>
+                      <line x1="19" y1="11" x2="26" y2="11" stroke="var(--accent2)" stroke-width="0.7"/>
+                      <text x="36" y="14">ANTHROPIC_API_KEY</text>
+                    </g>
+                    <g transform="translate(160, 240)">
+                      <rect width="120" height="22" rx="4" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.8)"/>
+                      <circle cx="14" cy="11" r="5" stroke="var(--accent2)" stroke-width="0.7" fill="none"/>
+                      <line x1="19" y1="11" x2="26" y2="11" stroke="var(--accent2)" stroke-width="0.7"/>
+                      <text x="36" y="14">OPENAI_API_KEY</text>
+                    </g>
+                  </g>
+                  <!-- User holds nothing -->
+                  <g transform="translate(220, 332)">
+                    <text text-anchor="middle" font-family="Inter" font-size="10" font-weight="500" fill="var(--text)">You toggle models on. That's it.</text>
+                  </g>
+                  <!-- Crossed key for user -->
+                  <g transform="translate(60, 190)" opacity="0.55">
+                    <circle r="22" stroke="var(--text-dim)" stroke-width="0.7" fill="none"/>
+                    <text y="-30" text-anchor="middle" font-family="Inter" font-size="9" fill="var(--text-muted)">You</text>
+                    <circle cx="-6" cy="0" r="6" stroke="var(--text-dim)" stroke-width="1" fill="none"/>
+                    <line x1="0" y1="0" x2="14" y2="0" stroke="var(--text-dim)" stroke-width="1"/>
+                    <line x1="-22" y1="-22" x2="22" y2="22" stroke="#ef4444" stroke-width="1.8"/>
+                  </g>
+                </svg>
+              </div>
+
+              <!-- Security graphic -->
+              <div class="faq-graphic faq-graphic-secure">
+                <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Shield -->
+                  <path d="M 220 60 L 300 95 L 300 200 Q 300 270 220 320 Q 140 270 140 200 L 140 95 Z" stroke="var(--accent2)" stroke-width="1.6" fill="rgba(15,82,186,0.08)"/>
+                  <!-- Check -->
+                  <path d="M 188 192 L 212 216 L 256 168" stroke="var(--accent2)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- Top label -->
+                  <text x="220" y="42" text-anchor="middle" font-family="'Fira Code', monospace" font-size="9" fill="var(--text)" letter-spacing="0.18em" font-weight="700">OAUTH 2.0</text>
+                  <!-- Bottom labels -->
+                  <g font-family="Inter" font-size="9" fill="var(--text-muted)" text-anchor="middle">
+                    <g transform="translate(80, 175)">
+                      <rect x="-46" y="-12" width="92" height="22" rx="11" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3">server-side tokens</text>
+                    </g>
+                    <g transform="translate(80, 220)">
+                      <rect x="-46" y="-12" width="92" height="22" rx="11" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3">never in browser</text>
+                    </g>
+                    <g transform="translate(360, 175)">
+                      <rect x="-46" y="-12" width="92" height="22" rx="11" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3">MIT licensed</text>
+                    </g>
+                    <g transform="translate(360, 220)">
+                      <rect x="-46" y="-12" width="92" height="22" rx="11" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
+                      <text y="3">audit it yourself</text>
+                    </g>
+                  </g>
+                  <!-- Connection lines -->
+                  <g stroke="var(--accent2)" stroke-width="0.5" opacity="0.35" stroke-dasharray="3 3">
+                    <line x1="126" y1="175" x2="160" y2="175"/>
+                    <line x1="126" y1="220" x2="160" y2="220"/>
+                    <line x1="314" y1="175" x2="280" y2="175"/>
+                    <line x1="314" y1="220" x2="280" y2="220"/>
+                  </g>
+                </svg>
+              </div>
+
+              <!-- Open source graphic -->
+              <div class="faq-graphic faq-graphic-oss">
+                <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Code brackets -->
+                  <g transform="translate(220, 175)">
+                    <text text-anchor="middle" font-family="'Fira Code', monospace" font-size="120" font-weight="700" fill="var(--text)">&lt;/&gt;</text>
+                  </g>
+                  <!-- MIT badge -->
+                  <g transform="translate(220, 270)">
+                    <rect x="-58" y="0" width="116" height="34" rx="17" stroke="var(--accent2)" stroke-width="1.4" fill="rgba(15,82,186,0.08)"/>
+                    <text y="22" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" letter-spacing="0.06em" fill="var(--text)">MIT LICENSE</text>
+                  </g>
+                  <text x="220" y="62" text-anchor="middle" font-family="'Fira Code', monospace" font-size="9" fill="var(--text-muted)" letter-spacing="0.18em">github.com/nicespaceship/nice</text>
+                  <text x="220" y="336" text-anchor="middle" font-family="Inter" font-size="10" fill="var(--text-muted)">Fork it. Self-host it. Contribute blueprints.</text>
+                </svg>
+              </div>
             </div>
           </div>
           <div class="faq-list" data-reveal-stagger="60">
-            <div class="faq-item open" data-reveal>
+            <div class="faq-item open" data-reveal data-graphic="nice">
               <button class="faq-q">What is NICE? <span class="faq-icon">+</span></button>
               <div class="faq-a">NICE (Neural Intelligence Command Engine) is an open-source AI agent platform. Deploy a crew of AI agents from 500+ blueprints, connect them to 19+ services via MCP, and let them run real work — email, calendars, CRM, GitHub, Slack, and more. NICE is the LLM provider — no API keys needed.</div>
             </div>
-            <div class="faq-item" data-reveal>
+            <div class="faq-item" data-reveal data-graphic="blueprint">
               <button class="faq-q">What is a Blueprint? <span class="faq-icon">+</span></button>
               <div class="faq-a">A blueprint is a pre-built AI agent or spaceship template. Each one comes configured with a system prompt, role, and capabilities — ready to deploy. Browse 500+ blueprints across marketing, sales, engineering, operations, and more, or build your own.</div>
             </div>
-            <div class="faq-item" data-reveal>
+            <div class="faq-item" data-reveal data-graphic="mcp">
               <button class="faq-q">What's an integration (MCP)? <span class="faq-icon">+</span></button>
               <div class="faq-a">An integration connects your agents to your tools — Google Workspace, Microsoft 365, GitHub, Slack, HubSpot, Stripe, Notion, Linear, and more. NICE uses MCP (Model Context Protocol) servers to call APIs on your behalf. Connect once via OAuth; every agent on the spaceship inherits the access.</div>
             </div>
-            <div class="faq-item" data-reveal>
+            <div class="faq-item" data-reveal data-graphic="free">
               <button class="faq-q">Is this free to use? <span class="faq-icon">+</span></button>
               <div class="faq-a">Yes. Gemini 2.5 Flash is unlimited on the Free tier. NICE Pro ($9.99/month) unlocks 12-slot Flagship spaceships, Legendary blueprints, and the standard model pool. Frontier models — Claude 4.7 Opus, Claude 4.6 Sonnet, GPT-5.4 Pro, OpenAI o3, GPT-5.3 Codex, Gemini 2.5 Pro — live behind optional $9.99 add-ons (Claude pool or Premium pool), so you only enable what you need.</div>
             </div>
-            <div class="faq-item" data-reveal>
+            <div class="faq-item" data-reveal data-graphic="keys">
               <button class="faq-q">Do I need to bring my own API keys? <span class="faq-icon">+</span></button>
               <div class="faq-a">No. NICE holds all provider keys server-side. You toggle models on and off — that's it.</div>
             </div>
-            <div class="faq-item" data-reveal>
+            <div class="faq-item" data-reveal data-graphic="secure">
               <button class="faq-q">How secure is my data on the platform? <span class="faq-icon">+</span></button>
               <div class="faq-a">All connections use OAuth 2.0 with server-side token storage. Your credentials never touch the browser. The entire codebase is open source — audit it yourself.</div>
             </div>
-            <div class="faq-item" data-reveal>
+            <div class="faq-item" data-reveal data-graphic="oss">
               <button class="faq-q">Is it really open source? <span class="faq-icon">+</span></button>
               <div class="faq-a">Yes. MIT License. Full codebase on GitHub. Fork it, self-host it, contribute blueprints. Nothing is hidden.</div>
             </div>
@@ -621,13 +859,20 @@
       });
     });
 
-    // FAQ accordion
+    // FAQ accordion — opening a question swaps the illustration on the left
+    function _swapFaqGraphic(key) {
+      document.querySelectorAll('.faq-graphic').forEach(g => g.classList.remove('is-active'));
+      const target = document.querySelector('.faq-graphic-' + key);
+      if (target) target.classList.add('is-active');
+    }
     document.querySelectorAll('.faq-q').forEach(btn => {
       btn.addEventListener('click', () => {
         const item = btn.parentElement;
         const wasOpen = item.classList.contains('open');
         document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
         if (!wasOpen) item.classList.add('open');
+        const openItem = document.querySelector('.faq-item.open');
+        _swapFaqGraphic(openItem ? openItem.dataset.graphic : 'nice');
       });
     });
   </script>
