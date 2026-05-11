@@ -152,8 +152,8 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   display: flex; align-items: center; height: 52px; gap: 24px;
 }
 .nav-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
-.nav-brand-icon { display: block; width: 22px; height: 22px; color: var(--text); flex-shrink: 0; }
-.nav-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-base); color: var(--text); font-weight: 900; letter-spacing: 0.4em; text-transform: uppercase; }
+.nav-brand-icon { display: block; width: 28px; height: 28px; color: var(--text); flex-shrink: 0; }
+.nav-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-md); color: var(--text); font-weight: 900; letter-spacing: 0.4em; text-transform: uppercase; }
 .nav-links { display: flex; gap: 2px; flex: 1; justify-content: center; }
 .nav-link {
   color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--fw-regular);
@@ -918,8 +918,8 @@ a.docs-card:hover { border-color: var(--accent2); }
 .footer-col a { display: block; color: var(--text-muted); font-size: var(--text-sm); padding: 3px 0; text-decoration: none; transition: color 0.15s; }
 .footer-col a:hover { color: var(--accent); }
 .footer-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.footer-brand-icon { display: block; width: 22px; height: 22px; color: var(--text); flex-shrink: 0; }
-.footer-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-sm); font-weight: 900; color: var(--text); letter-spacing: 0.4em; text-transform: uppercase; }
+.footer-brand-icon { display: block; width: 28px; height: 28px; color: var(--text); flex-shrink: 0; }
+.footer-brand-text { font-family: var(--font-brand, var(--font)); font-size: var(--text-base); font-weight: 900; color: var(--text); letter-spacing: 0.4em; text-transform: uppercase; }
 .footer-desc { font-size: var(--text-sm); color: var(--text-dim); line-height: var(--lh-base); max-width: 240px; }
 .footer-socials { display: flex; gap: 16px; margin-top: 16px; }
 .footer-socials a {
