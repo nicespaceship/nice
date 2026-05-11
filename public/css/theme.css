@@ -47,23 +47,27 @@
    MODULE: THEME TOKENS
 ───────────────────────────────────────────────────────────────── */
 
-/* Nice Spaceship — modern dark command center */
+/* CORE — light + Sapphire (Phase 3a brand kit, mirrors www/css/site.css)
+   Action color: Sapphire #0F52BA (primary) / #1862ce (hover) — locked in
+   project_nice_brand_kit_142849.md. Marketing site uses --accent for primary
+   surface and --accent2 for hover; mirrored exactly here for cross-property
+   coherence. */
 :root, [data-theme="nice"] {
-  --bg:           #09090b;
-  --bg2:          #18181b;
-  --bg-alt:       #18181b;
-  --surface:      #18181b;
-  --surface2:     #27272a;
-  --border:       #3f3f46;
-  --border-hi:    #71717a;
-  --accent:       #e0e7ff;
-  --accent2:      #a5b4fc;
-  --text:         #fafafa;
-  --fg:           #fafafa;
-  --text-muted:   #a1a1aa;
-  --text-dim:     #3f3f46;
-  --glow:         0 0 0 1px rgba(224,231,255,0.06);
-  --glow-hi:      0 0 12px rgba(224,231,255,0.08);
+  --bg:           #ffffff;
+  --bg2:          #fafafa;
+  --bg-alt:       #fafafa;
+  --surface:      #ffffff;
+  --surface2:     #f5f5f5;
+  --border:       #e5e5e5;
+  --border-hi:    #d4d4d4;
+  --accent:       #1862ce;
+  --accent2:      #0F52BA;
+  --text:         #0a0a0a;
+  --fg:           #0a0a0a;
+  --text-muted:   #525252;
+  --text-dim:     #a3a3a3;
+  --glow:         0 0 0 1px rgba(15,82,186,0.06);
+  --glow-hi:      0 0 12px rgba(15,82,186,0.08);
   --font-d:       'Inter', sans-serif;
   --font-h:       'Inter', sans-serif;
   --font-b:       'Inter', sans-serif;
@@ -72,10 +76,10 @@
   --radius:       10px;
   --scan:         0;
   --border-width: 1px;
-  --nav-bg:       rgba(9,9,11,0.92);
-  --panel-bg:     rgba(24,24,27,0.75);
-  --hero-grad:    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(224,231,255,0.04) 0%, transparent 70%);
-  --bg-pattern:   radial-gradient(circle, rgba(165,180,252,0.06) 1px, transparent 1px);
+  --nav-bg:       rgba(255,255,255,0.92);
+  --panel-bg:     rgba(255,255,255,0.75);
+  --hero-grad:    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(15,82,186,0.04) 0%, transparent 70%);
+  --bg-pattern:   radial-gradient(circle, rgba(15,82,186,0.06) 1px, transparent 1px);
 }
 
 /* Robotech — light day mode, exact inversion of spaceship */

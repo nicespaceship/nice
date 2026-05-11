@@ -19,8 +19,8 @@ const Theme = (() => {
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
-    { id:'nice', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
-      data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' },
+    { id:'nice', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
+      data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'#e5e5e5','--border-hi':'#d4d4d4','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'0 0 0 1px rgba(15,82,186,0.06)','--glow-hi':'0 0 12px rgba(15,82,186,0.08)','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'#e5e5e5' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
       // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
@@ -257,7 +257,7 @@ const Theme = (() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
       const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-      meta.setAttribute('content', bg || '#080808');
+      meta.setAttribute('content', bg || '#ffffff');
     }
 
     // Theme-specific personality (body copy / toasts / placeholders / ranks)
