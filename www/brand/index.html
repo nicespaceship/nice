@@ -1,0 +1,1192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NICE SPACESHIP — Brand Kit</title>
+<meta name="description" content="The single source of truth for how NICE SPACESHIP looks, reads, and behaves across nicespaceship.com, the app, partner materials, and everywhere else the brand appears." />
+<meta property="og:title" content="NICE SPACESHIP — Brand Kit" />
+<meta property="og:description" content="The single source of truth for how NICE SPACESHIP looks, reads, and behaves." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://nicespaceship.com/brand" />
+<meta property="og:site_name" content="NICE SPACESHIP" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="NICE SPACESHIP — Brand Kit" />
+<meta name="twitter:description" content="The single source of truth for how NICE SPACESHIP looks, reads, and behaves." />
+<link rel="icon" href="/assets/nice-mark.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Pure monochrome — black, white, gray only */
+
+    /* Surfaces */
+    --bg:           #ffffff;
+    --bg-alt:       #fafafa;
+    --surface:      #ffffff;
+    --surface-2:    #f5f5f5;
+
+    /* Borders — hairline only */
+    --border:       #e5e5e5;
+    --border-hi:    #d4d4d4;
+
+    /* Text — grayscale steps */
+    --text:         #0a0a0a;
+    --text-strong:  #000000;
+    --text-muted:   #525252;
+    --text-dim:     #a3a3a3;
+
+    /* Action color — LOCKED: Sapphire #0F52BA (same in both modes) */
+    --accent:       #0F52BA;
+    --accent-hi:    #1862ce;
+    --accent-ink:   #ffffff;
+  }
+
+  /* ── DARK MODE — inverts surfaces / text / borders; Sapphire is constant across themes ── */
+  body[data-theme="dark"] {
+    --bg:          #0a0a0a;
+    --bg-alt:      #141414;
+    --surface:     #141414;
+    --surface-2:   #1f1f1f;
+    --border:      #262626;
+    --border-hi:   #404040;
+    --text:        #fafafa;
+    --text-strong: #ffffff;
+    --text-muted:  #a3a3a3;
+    --text-dim:    #737373;
+  }
+
+  /* ── THEME TOGGLE BAR ── */
+  .theme-toggle {
+    position: sticky; top: 0; z-index: 60;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  body[data-theme="dark"] .theme-toggle { background: rgba(10,10,10,0.92); backdrop-filter: blur(12px); }
+  body[data-theme="light"] .theme-toggle,
+  body:not([data-theme]) .theme-toggle { background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); }
+  .theme-toggle-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 12px 32px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .theme-toggle .label {
+    font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .theme-toggle .opts { display: flex; gap: 8px; }
+  .theme-opt {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: var(--text-sm); font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.12s ease;
+  }
+  .theme-opt:hover { color: var(--text); border-color: var(--border-hi); }
+  .theme-opt .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 1px solid var(--border-hi);
+  }
+  .theme-opt[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  :root {
+    /* Type scale */
+    --text-xs:   0.75rem;
+    --text-sm:   0.875rem;
+    --text-base: 1rem;
+    --text-md:   1.125rem;
+    --text-lg:   1.5rem;
+    --text-xl:   2rem;
+    --text-2xl:  3rem;
+    --text-3xl:  clamp(2.5rem, 6vw, 4.5rem);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  p { margin: 0; }
+  code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
+
+  /* ── HEADER (site nav) ───────────────────── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .nav-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 14px 32px;
+    display: flex; align-items: center; gap: 32px;
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    letter-spacing: 0.35em; font-size: 0.85rem;
+    color: var(--text-strong);
+  }
+  /* Inline NICE mark — colored by parent's `color:` value via fill:currentColor */
+  .nice-mark { display: block; fill: currentColor; }
+  .nav-glyph { width: 26px; height: 26px; color: var(--text-strong); }
+
+  /* ── FOOTER (full-bleed black, Pattern A interlude) ── */
+  .site-footer {
+    background: #000;
+    color: #fff;
+    padding: 80px 32px 48px;
+    margin-top: 96px;
+  }
+  .footer-inner { max-width: 1280px; margin: 0 auto; }
+  .footer-lockup {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .footer-lockup .glyph { width: 32px; height: 32px; color: #fff; }
+  .footer-lockup .word {
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    letter-spacing: 0.4em; font-size: 1rem; color: #fff;
+  }
+  .footer-tagline {
+    font-size: var(--text-sm); color: rgba(255,255,255,0.6);
+    margin-bottom: 48px; max-width: 36ch;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-bottom: 48px;
+    max-width: 720px;
+  }
+  .footer-col h4 {
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: var(--text-xs); text-transform: uppercase;
+    letter-spacing: 0.12em; color: rgba(255,255,255,0.5);
+    margin-bottom: 16px;
+  }
+  .footer-col a {
+    display: block;
+    color: rgba(255,255,255,0.85); text-decoration: none;
+    font-size: var(--text-sm); padding: 4px 0;
+    transition: color 0.12s ease;
+  }
+  .footer-col a:hover { color: #fff; }
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: var(--text-xs); color: rgba(255,255,255,0.5);
+  }
+  @media (max-width: 720px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+    .footer-bottom { flex-direction: column; gap: 12px; }
+  }
+  .nav-links { display: flex; gap: 28px; flex: 1; }
+  .nav-links a {
+    font-size: var(--text-sm); font-weight: 500;
+    color: var(--text-muted);
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta { display: flex; gap: 8px; }
+
+  /* ── BUTTONS — flat, no glow ──────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border-radius: 6px;
+    font-family: inherit; font-size: var(--text-sm); font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent); color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
+  .btn-secondary {
+    background: var(--bg);
+    color: var(--text);
+    border-color: var(--border-hi);
+  }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--text); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border-color: transparent;
+  }
+  .btn-ghost:hover { color: var(--text); background: var(--surface-2); }
+  .btn-sm { padding: 6px 12px; font-size: var(--text-xs); }
+  .btn-lg { padding: 14px 26px; font-size: var(--text-base); }
+
+  /* ── LAYOUT ───────────────────────────────────── */
+  .page { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+  section { padding: 96px 0; }
+  section + section { border-top: 1px solid var(--border); }
+  .eyebrow {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-bottom: 16px;
+  }
+  .section-sub {
+    font-size: var(--text-md);
+    color: var(--text-muted);
+    max-width: 640px;
+    margin-bottom: 48px;
+  }
+
+  /* ── HERO ─────────────────────────────────────── */
+  .hero {
+    padding: 128px 0 96px;
+    text-align: center;
+    border-top: none;
+  }
+  .hero h1 {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin-bottom: 24px;
+    max-width: 18ch;
+    margin-left: auto; margin-right: auto;
+  }
+  .hero p {
+    font-size: var(--text-md);
+    color: var(--text-muted);
+    max-width: 36ch;
+    margin: 0 auto 36px;
+  }
+  .hero-ctas { display: flex; gap: 12px; justify-content: center; }
+
+  /* ── LOCKUP ───────────────────────────────────── */
+  .lockup-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .lockup-tile {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .lockup-stage {
+    padding: 96px 48px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+  }
+  .lockup-stage.on-white { background: #ffffff; border-bottom: 1px solid var(--border); }
+  .lockup-stage.on-black { background: #000000; }
+  .lockup-glyph { width: 88px; height: 88px; }
+  .lockup-glyph.is-black { color: #000; }
+  .lockup-glyph.is-white { color: #fff; }
+  .lockup-wordmark {
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    letter-spacing: 0.4em; font-size: 1.5rem;
+  }
+  .lockup-wordmark.is-black { color: #000; }
+  .lockup-wordmark.is-white { color: #fff; }
+  .lockup-tile .meta {
+    padding: 14px 18px;
+    background: var(--bg);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: var(--text-sm);
+  }
+  .lockup-tile .meta strong { color: var(--text); font-weight: 600; }
+  .lockup-tile .meta span { color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: var(--text-xs); }
+
+  /* ── PALETTE ──────────────────────────────────── */
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .swatch {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .swatch .chip {
+    height: 96px;
+    border-bottom: 1px solid var(--border);
+  }
+  .swatch .meta { padding: 14px 16px; }
+  .swatch .name { font-weight: 600; font-size: var(--text-sm); margin-bottom: 2px; }
+  .swatch .hex { font-family: 'JetBrains Mono', monospace; font-size: var(--text-xs); color: var(--text-muted); }
+  .swatch .role { font-size: var(--text-xs); color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+
+  .group-head {
+    font-size: var(--text-sm); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 32px 0 16px;
+  }
+  .group-head:first-child { margin-top: 0; }
+
+  /* ── TYPOGRAPHY SPECIMENS ──────────────────────── */
+  .type-stack { display: grid; gap: 32px; }
+  .type-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    align-items: baseline;
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .type-meta strong { display: block; color: var(--text); font-weight: 600; }
+  .type-sample-display {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .type-sample-h2 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.025em; }
+  .type-sample-h3 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.015em; }
+  .type-sample-body { font-size: var(--text-md); color: var(--text); line-height: 1.6; max-width: 60ch; }
+  .type-sample-small { font-size: var(--text-sm); color: var(--text-muted); }
+  .type-sample-mono { font-family: 'JetBrains Mono', monospace; font-size: var(--text-sm); }
+  .type-sample-wordmark {
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    letter-spacing: 0.4em; font-size: 1.25rem;
+  }
+
+  /* ── BUTTONS GALLERY ──────────────────────────── */
+  .btn-gallery { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+
+  /* ── CARDS ────────────────────────────────────── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+  }
+  .card:hover { border-color: var(--border-hi); }
+  .card-meta {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .card-title { font-size: var(--text-md); font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .card-body { font-size: var(--text-sm); color: var(--text-muted); line-height: 1.55; }
+  .card-stats {
+    margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 20px;
+  }
+  .card-stat span { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .card-stat strong { display: block; font-family: 'JetBrains Mono', monospace; color: var(--text); font-size: var(--text-sm); margin-top: 2px; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-left: 6px;
+  }
+  .badge-new { background: var(--accent); color: var(--accent-ink); }
+  .badge-pro { background: var(--surface-2); color: var(--text); border: 1px solid var(--border-hi); }
+
+  /* ── BLUEPRINT CARDS — color exemption from brand kit ── */
+  .bp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .bp-card {
+    background: #000;
+    color: #fff;
+    border: 2px solid var(--bp-rarity, #94a3b8);
+    border-radius: 14px;
+    padding: 20px;
+    transition: transform 0.12s ease;
+  }
+  .bp-card:hover { transform: translateY(-2px); }
+  .bp-card .bp-eyebrow {
+    color: var(--bp-rarity);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .bp-card .bp-title {
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .bp-card .bp-body {
+    color: #94a3b8;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+  .bp-card .bp-stats {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 20px;
+  }
+  .bp-card .bp-stat span {
+    color: #94a3b8;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .bp-card .bp-stat strong {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    color: #fff;
+    font-size: 0.875rem;
+    margin-top: 2px;
+    font-weight: 600;
+  }
+  .bp-card.r-common    { --bp-rarity: #94a3b8; }
+  .bp-card.r-rare      { --bp-rarity: #b6dff9; }
+  .bp-card.r-epic      { --bp-rarity: #a855f7; }
+  .bp-card.r-legendary { --bp-rarity: #f59e0b; }
+  .bp-card.r-mythic {
+    border: 2px solid transparent;
+    background:
+      linear-gradient(#000, #000) padding-box,
+      linear-gradient(135deg, #ff2d55, #a855f7, #6366f1, #06b6d4, #22c55e, #fbbf24) border-box;
+  }
+  .bp-card.r-mythic .bp-eyebrow {
+    background: linear-gradient(135deg, #ff2d55, #a855f7, #6366f1, #06b6d4, #22c55e, #fbbf24);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .bp-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .bp-badge-new { background: #000; color: #fff; }
+  .bp-badge-pro { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+  /* ── MARKETING PATTERN MOCKS ──────────────────── */
+  .mkt-patterns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .mkt-frame {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .mkt-frame .frame-label {
+    padding: 12px 18px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+  .mkt-frame .frame-label strong { color: var(--text); }
+  .mkt-band {
+    padding: 36px 28px;
+  }
+  .mkt-band.is-white { background: var(--bg); }
+  .mkt-band.is-offwhite { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .mkt-band.is-black { background: #000; color: #fff; }
+  .mkt-band.is-black h3 { color: #fff; }
+  .mkt-band.is-black p { color: rgba(255, 255, 255, 0.7); }
+  .mkt-band.is-black .mkt-feature-dot { background: #fff; }
+  .mkt-band-lockup { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .mkt-band-lockup .glyph { width: 36px; height: 36px; }
+  .mkt-band-lockup .word { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 0.35em; font-size: 0.85rem; }
+  .mkt-band.is-black .mkt-band-lockup .glyph { color: #fff; }
+  .mkt-band.is-black .mkt-band-lockup .word { color: #fff; }
+  .mkt-band h3 {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-bottom: 8px;
+  }
+  .mkt-band p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .mkt-feature {
+    display: flex; gap: 14px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+    font-size: var(--text-sm);
+  }
+  .mkt-feature-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    margin-top: 8px; flex-shrink: 0;
+  }
+  .mkt-band.is-navy .mkt-feature-dot { background: #fff; }
+  .frame-caption {
+    padding: 14px 18px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .frame-caption strong { color: var(--text); }
+
+  /* ── DASHBOARD MOCK (light) ───────────────────── */
+  .dash {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 540px;
+    background: var(--bg);
+  }
+  .dash-side {
+    background: var(--bg-alt);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+  }
+  .dash-brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    margin-bottom: 24px;
+  }
+  .dash-brand .dot { width: 26px; height: 26px; color: var(--text-strong); }
+  .dash-brand .name { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 0.3em; font-size: 0.78rem; }
+  .dash-nav { display: flex; flex-direction: column; gap: 2px; }
+  .dash-nav-item {
+    padding: 8px 12px; border-radius: 6px;
+    font-size: var(--text-sm); color: var(--text-muted);
+    cursor: pointer;
+  }
+  .dash-nav-item:hover { background: var(--surface-2); color: var(--text); }
+  .dash-nav-item.active {
+    background: var(--bg);
+    color: var(--text); font-weight: 600;
+    border: 1px solid var(--border);
+  }
+  .dash-main { padding: 24px 28px; }
+  .dash-top {
+    display: flex; align-items: center; gap: 12px;
+    padding-bottom: 20px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dash-ask {
+    flex: 1;
+    padding: 9px 14px;
+    border: 1px solid var(--border-hi);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+  .dash-ask strong { color: var(--text); }
+  .dash-section-title {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .dash-section-title h3 {
+    font-size: var(--text-md);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── INFO BOX (decided / open) ────────────────── */
+  .info-box {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+  }
+  .info-box ul { padding-left: 20px; color: var(--text-muted); }
+  .info-box li { margin-bottom: 12px; line-height: 1.6; }
+  .info-box li strong { color: var(--text); }
+  .info-box .recommendation {
+    margin-top: 16px;
+    padding: 16px 18px;
+    background: var(--bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    font-size: var(--text-sm);
+    color: var(--text);
+  }
+  .info-box .recommendation strong { color: var(--accent); }
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ── THEME TOGGLE ── -->
+<div class="theme-toggle">
+  <div class="theme-toggle-inner">
+    <div class="label">Theme</div>
+    <div class="opts" id="theme-opts">
+      <button class="theme-opt" data-set="light" aria-pressed="true"><span class="dot" style="background:#fff"></span>Light <span style="color:var(--text-dim);font-weight:400">(default)</span></button>
+      <button class="theme-opt" data-set="dark"  aria-pressed="false"><span class="dot" style="background:#0a0a0a"></span>Dark</button>
+    </div>
+    <div class="label" id="theme-current">current: <span style="color:var(--accent)">light</span></div>
+  </div>
+</div>
+
+<!-- ── SVG SYMBOL DEFS — NICE mark ── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="nice-mark" viewBox="0 0 5000 5000" fill="currentColor">
+      <path d="M2463.17,3633.17c348.87-33.89,529.56,395.76,262.71,618.71-179.73,150.16-459.24,78.58-546.6-137.16-85.98-212.33,54.43-459.26,283.89-481.55Z"/>
+      <path d="M3763.2,2905.2c246.91-17.2,431.6,227.75,353.89,461.89-87.4,263.37-443.86,323.54-610.74,100.57-168.07-224.56-21.82-543.04,256.85-562.46Z"/>
+      <path d="M2467.2,673.2c345.58-32.47,524.02,397,258.68,618.68-180.13,150.49-459.08,78.97-546.6-137.16-87.17-215.28,55.93-459.73,287.92-481.52Z"/>
+      <path d="M1203.18,2905.19c275.09-15.44,457.71,280.84,322.9,522.88-119.67,214.87-425.07,238.14-577.97,45.82-177.41-223.16-28.22-552.8,255.07-568.7Z"/>
+      <path d="M3537.4,2014.6c-177.73-177.72-114.08-485.01,120.51-574.69,274.93-105.11,544.87,148.19,461.85,429.85-73.68,249.96-398.06,329.14-582.35,144.85Z"/>
+      <path d="M1187.2,1409.2c279.69-26.25,476.07,269.48,341.49,517.49-117.32,216.2-419.09,243.76-576.57,55.2-178.93-214.25-41.59-546.72,235.08-572.68Z"/>
+      <path d="M2447.2,1853.2c550.99-42.77,908.61,573.22,585.69,1025.69-276.72,387.72-866.37,355.58-1097.57-60.2-228.12-410.24,44.43-929.2,511.88-965.49ZM2455.2,1953.2c-427.55,33.48-653.11,541.85-388.78,882.39,257.89,332.24,777.21,269.58,942.28-116.89,164.38-384.87-139.97-797.88-553.5-765.5Z"/>
+      <path d="M1272,2204v604c-33.72-4.09-66.28-4.09-100,0v-604c31.79,6.4,68.34,6.38,100,0Z"/>
+      <path d="M3836,2808c-34.42-3.47-65.53-5.37-100,0v-596c2.93-1.06,4.78,4,6,4h84c1.4,0,4.44-7.1,10,2v590Z"/>
+      <polygon points="3375.95 1580 2868.23 1291.66 2912.04 1203.99 3418.07 1491.98 3423.59 1497.98 3375.95 1580"/>
+      <polygon points="2139.99 1291.94 1637.96 1579.88 1588.37 1497.36 2086.75 1204.5 2095.49 1210.49 2139.99 1291.94"/>
+      <path d="M2139.98,3712.08c2.15,3.03-33.45,55.51-38.18,63.72-4.14,7.19-5.9,25.29-15.33,23.83l-494.1-289.2,43.94-82.16,11.78,1.54,491.88,282.27Z"/>
+      <path d="M3366,3424.08l45.38,82.85-3.37,11.08-492.12,280.28c-7.13-25.22-36.8-54.55-44.83-75.52-1.4-3.67-4.89-6.66-1.38-10.87l496.32-287.83Z"/>
+      <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ── NAV ── -->
+<header class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">
+      <svg class="nice-mark nav-glyph" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
+      <span>SPACESHIP</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/about">About</a>
+      <a href="/blueprints">Blueprints</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/docs">Documentation</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://nicespaceship.ai">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="https://nicespaceship.ai">Launch NICE</a>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <h1>The NICE SPACESHIP brand kit.</h1>
+    <p>The single source of truth for how NICE looks, reads, and behaves across nicespaceship.com, the app, partner materials, and everywhere else the brand appears.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary btn-lg" href="#brand-standards">Brand standards</a>
+      <a class="btn btn-secondary btn-lg" href="/assets/nice-mark.svg" download>Download the mark</a>
+    </div>
+  </section>
+
+  <!-- ── LOCKUP ── -->
+  <section>
+    <div class="eyebrow">Lockup · two contrasts only</div>
+    <h2 class="section-title">Monochrome by rule.</h2>
+    <p class="section-sub">The SPACESHIP lockup carries the brand at full strength. Render it in one of two forms: black on white, or white on black. Glyph and wordmark always share a single color. Any other treatment dilutes the mark.</p>
+
+    <div class="lockup-pair">
+      <div class="lockup-tile">
+        <div class="lockup-stage on-white">
+          <svg class="nice-mark lockup-glyph is-black" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
+          <div class="lockup-wordmark is-black">SPACESHIP</div>
+        </div>
+        <div class="meta"><strong>Black on white</strong><span>#000 on #fff</span></div>
+      </div>
+      <div class="lockup-tile">
+        <div class="lockup-stage on-black">
+          <svg class="nice-mark lockup-glyph is-white" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
+          <div class="lockup-wordmark is-white">SPACESHIP</div>
+        </div>
+        <div class="meta"><strong>White on black</strong><span>#fff on #000</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PALETTE ── -->
+  <section>
+    <div class="eyebrow">Palette · pure monochrome</div>
+    <h2 class="section-title">Black, white, gray. That's it.</h2>
+    <p class="section-sub">NICE uses monochrome surfaces by rule. No brand color appears on any surface, text, badge, or border. The single chromatic moment lives on the CTA (Sapphire <code>#0F52BA</code>). Restraint defines the brand; color drives the action.</p>
+
+    <div class="group-head">Surfaces</div>
+    <div class="palette-grid">
+      <div class="swatch"><div class="chip" style="background:#ffffff;border-bottom-color:#e5e5e5"></div><div class="meta"><div class="name">--bg / --surface</div><div class="hex">#ffffff</div><div class="role">Page bg and card surface. Pure white.</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#fafafa;border-bottom-color:#e5e5e5"></div><div class="meta"><div class="name">--bg-alt</div><div class="hex">#fafafa</div><div class="role">Section alt bands, very subtle elevation.</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#f5f5f5;border-bottom-color:#e5e5e5"></div><div class="meta"><div class="name">--surface-2</div><div class="hex">#f5f5f5</div><div class="role">Hover backgrounds, inputs, light chips.</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#000000"></div><div class="meta"><div class="name">dark interlude</div><div class="hex">#000000</div><div class="role">Pure black for cinematic section breaks + the lockup's dark contrast surface.</div></div></div>
+    </div>
+
+    <div class="group-head">Text</div>
+    <div class="palette-grid">
+      <div class="swatch"><div class="chip" style="background:#0a0a0a"></div><div class="meta"><div class="name">--text</div><div class="hex">#0a0a0a</div><div class="role">Body and headlines. Near-black reads softer than pure black on white.</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#525252"></div><div class="meta"><div class="name">--text-muted</div><div class="hex">#525252</div><div class="role">Secondary text, meta.</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#a3a3a3"></div><div class="meta"><div class="name">--text-dim</div><div class="hex">#a3a3a3</div><div class="role">Tertiary, disabled, captions.</div></div></div>
+    </div>
+
+    <div class="group-head">Borders</div>
+    <div class="palette-grid">
+      <div class="swatch"><div class="chip" style="background:#e5e5e5"></div><div class="meta"><div class="name">--border</div><div class="hex">#e5e5e5</div><div class="role">Hairline dividers. The only chrome on the page.</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#d4d4d4"></div><div class="meta"><div class="name">--border-hi</div><div class="hex">#d4d4d4</div><div class="role">More visible. Carries focus rings and secondary button borders.</div></div></div>
+    </div>
+
+  </section>
+
+  <!-- ── TYPOGRAPHY ── -->
+  <section>
+    <div class="eyebrow">Typography</div>
+    <h2 class="section-title">Two families. Editorial energy.</h2>
+    <p class="section-sub">Inter does everything: display, body, UI. Orbitron belongs to the SPACESHIP lockup. JetBrains Mono runs telemetry, hex values, and code.</p>
+
+    <div class="type-stack">
+      <div class="type-row">
+        <div class="type-meta"><strong>Wordmark</strong>Orbitron Black<br/>0.4em tracking<br/>Used only for SPACESHIP lockup</div>
+        <div class="type-sample-wordmark">SPACESHIP</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><strong>Display / hero</strong>Inter 700<br/>-0.035em tracking<br/>clamp(2.5rem, 6vw, 4.5rem)</div>
+        <div class="type-sample-display">The command engine for your AI fleet.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><strong>Section title (H2)</strong>Inter 700<br/>-0.025em tracking<br/>3rem / 48px</div>
+        <div class="type-sample-h2">Build, deploy, command.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><strong>Subhead (H3)</strong>Inter 600<br/>-0.015em tracking<br/>1.5rem / 24px</div>
+        <div class="type-sample-h3">Toggle every major AI model like TV channels.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><strong>Body lead</strong>Inter 400<br/>1.125rem / 18px<br/>1.6 line height</div>
+        <div class="type-sample-body">NICE is a Neural Intelligence Command Engine. Describe what you want your business to do, and NICE designs the spaceship (captain, crew, tools) and dispatches it. No API keys. No scaffolding. No devops.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><strong>Small / meta</strong>Inter 400<br/>0.875rem / 14px<br/>--text-muted</div>
+        <div class="type-sample-small">Free tier forever, no card required.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><strong>Mono</strong>JetBrains Mono<br/>Telemetry, hex, code</div>
+        <div class="type-sample-mono">status: running &nbsp;·&nbsp; 3 of 7 steps &nbsp;·&nbsp; @lando</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BUTTONS ── -->
+  <section>
+    <div class="eyebrow">Buttons · flat, no glow</div>
+    <h2 class="section-title">Three flat variants.</h2>
+    <p class="section-sub">Primary takes a solid Sapphire pill, the only place the brand color appears. Secondary uses white with a hairline border. Ghost drops the border and shows a subtle hover background. Buttons earn attention through color, weight, and placement. Flat surfaces only, no shadow, no gradient.</p>
+
+    <div class="group-head">Sizes</div>
+    <div class="btn-gallery">
+      <a class="btn btn-primary btn-sm">Launch</a>
+      <a class="btn btn-primary">Launch your spaceship</a>
+      <a class="btn btn-primary btn-lg">Launch your spaceship</a>
+    </div>
+
+    <div class="group-head">Variants</div>
+    <div class="btn-gallery">
+      <a class="btn btn-primary">Primary · Launch</a>
+      <a class="btn btn-secondary">Secondary · Browse blueprints</a>
+      <a class="btn btn-ghost">Ghost · Sign in</a>
+    </div>
+  </section>
+
+  <!-- ── CONTENT SURFACES ── -->
+  <section>
+    <div class="eyebrow">Content surfaces</div>
+    <h2 class="section-title">Hairline borders. White surfaces. No shadow.</h2>
+    <p class="section-sub">For prose UI: info panels, settings sections, content cards in the app shell. Single 1px border, no drop shadow, no glow, no gradient. Elevation comes from spacing, not depth tricks. Blueprint cards (next section) follow different rules.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-meta">Account</div>
+        <div class="card-title">Profile &amp; preferences</div>
+        <div class="card-body">Manage your display name, email, and notification preferences.</div>
+      </div>
+      <div class="card">
+        <div class="card-meta">Models</div>
+        <div class="card-title">AI providers</div>
+        <div class="card-body">Toggle which models are active across your fleet. Every major provider, one switch.</div>
+      </div>
+      <div class="card">
+        <div class="card-meta">Wallet</div>
+        <div class="card-title">Token balance</div>
+        <div class="card-body">Token pools that power premium model usage across the fleet.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BLUEPRINT CARDS · COLOR EXEMPTION ── -->
+  <section>
+    <div class="eyebrow">Blueprint cards</div>
+    <h2 class="section-title">A visual system of their own.</h2>
+    <p class="section-sub">Blueprint cards (agents, spaceships, and the wider catalog) form NICE's collectibles. They carry rarity, category, and crew identity, and they run a visual system of their own. Card stock holds pure black <code>#000</code> in both light and dark mode. Rarity borders and category accents glow with full chroma by design. The cards sit on NICE's monochrome surfaces at full contrast. Cards bring the color.</p>
+
+    <div class="bp-grid">
+      <div class="bp-card r-common">
+        <div class="bp-eyebrow">Common · Scout</div>
+        <div class="bp-title">Research Agent</div>
+        <div class="bp-body">Web search and summarization. Default starting kit.</div>
+        <div class="bp-stats">
+          <div class="bp-stat"><span>XP</span><strong>1.2K</strong></div>
+          <div class="bp-stat"><span>Runs</span><strong>14</strong></div>
+        </div>
+      </div>
+      <div class="bp-card r-rare">
+        <div class="bp-eyebrow">Rare · Cruiser</div>
+        <div class="bp-title">Voyager <span class="bp-badge bp-badge-new">New</span></div>
+        <div class="bp-body">Janeway captains a 4-slot expedition crew.</div>
+        <div class="bp-stats">
+          <div class="bp-stat"><span>XP</span><strong>3.2K</strong></div>
+          <div class="bp-stat"><span>Runs</span><strong>11</strong></div>
+        </div>
+      </div>
+      <div class="bp-card r-epic">
+        <div class="bp-eyebrow">Epic · Cruiser</div>
+        <div class="bp-title">Enterprise-D</div>
+        <div class="bp-body">8-slot bridge crew. Captain Picard dispatches mission scope.</div>
+        <div class="bp-stats">
+          <div class="bp-stat"><span>XP</span><strong>8.9K</strong></div>
+          <div class="bp-stat"><span>Runs</span><strong>42</strong></div>
+        </div>
+      </div>
+      <div class="bp-card r-legendary">
+        <div class="bp-eyebrow">Legendary · Flagship</div>
+        <div class="bp-title">Millennium Falcon</div>
+        <div class="bp-body">Lando · C-3PO · R2-D2 wired to HubSpot, M365, GitHub.</div>
+        <div class="bp-stats">
+          <div class="bp-stat"><span>XP</span><strong>12.4K</strong></div>
+          <div class="bp-stat"><span>Runs</span><strong>87</strong></div>
+        </div>
+      </div>
+      <div class="bp-card r-mythic">
+        <div class="bp-eyebrow">Mythic · Dreadnought</div>
+        <div class="bp-title">Matrix <span class="bp-badge bp-badge-pro">Pro</span></div>
+        <div class="bp-body">Trinity · Morpheus · Tank · Neo. 8-slot operator team.</div>
+        <div class="bp-stats">
+          <div class="bp-stat"><span>XP</span><strong>21.0K</strong></div>
+          <div class="bp-stat"><span>Runs</span><strong>156</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:32px">
+      <div class="recommendation">
+        <strong>Card SSOT:</strong> Rarity colors live in <code>BlueprintUtils.RARITY_COLORS</code>. Common <code>#94a3b8</code>, Rare <code>#b6dff9</code>, Epic <code>#a855f7</code>, Legendary <code>#f59e0b</code>, Mythic <code>#ff2d55</code>. Category colors live in <code>BlueprintUtils.CATEGORY_COLORS</code>. Cards also run a parallel typography scale (<code>--card-text-*</code> tokens). The card system governs both color and type, not the prose system.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MARKETING PATTERNS ── -->
+  <section>
+    <div class="eyebrow">nicespaceship.com rhythm</div>
+    <h2 class="section-title">Two patterns for breaking up the page.</h2>
+    <p class="section-sub">Editorial pages need rhythm. Without dark interludes a long page reads monotonous; with them it reads cinematic. NICE uses two patterns. Pattern B sets the default rhythm for every page on nicespaceship.com. Pattern A's black interlude marks the moments where the lockup deserves full presence.</p>
+
+    <div class="mkt-patterns">
+      <!-- Pattern A -->
+      <div class="mkt-frame">
+        <div class="frame-label">Pattern A · <strong>black interludes</strong></div>
+        <div class="mkt-band is-white">
+          <h3>The command engine for your AI fleet.</h3>
+          <p>Build, deploy, command custom AI agents.</p>
+          <a class="btn btn-primary btn-sm">Launch your spaceship</a>
+        </div>
+        <div class="mkt-band is-black">
+          <div class="mkt-band-lockup">
+            <svg class="nice-mark glyph" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
+            <div class="word">SPACESHIP</div>
+          </div>
+          <h3>500+ blueprints. Every major model.</h3>
+          <p>Toggle every major AI model like TV channels.</p>
+          <div class="mkt-feature"><span class="mkt-feature-dot"></span><div>Crew designer: describe your business, deploy a custom ship</div></div>
+          <div class="mkt-feature"><span class="mkt-feature-dot"></span><div>Free tier forever, no card required</div></div>
+        </div>
+        <div class="mkt-band is-white">
+          <h3>Ready to deploy?</h3>
+          <p>Free tier. No card required.</p>
+          <a class="btn btn-primary btn-sm">Get started</a>
+        </div>
+        <div class="frame-caption"><strong>Read:</strong> White hero → black interlude carrying the white-on-black lockup → white CTA. Cinematic rhythm; the brand lockup gets one strong moment per page.</div>
+      </div>
+
+      <!-- Pattern B -->
+      <div class="mkt-frame">
+        <div class="frame-label">Pattern B · <strong>all-white, off-white break</strong></div>
+        <div class="mkt-band is-white">
+          <h3>The command engine for your AI fleet.</h3>
+          <p>Build, deploy, command custom AI agents.</p>
+          <a class="btn btn-primary btn-sm">Launch your spaceship</a>
+        </div>
+        <div class="mkt-band is-offwhite">
+          <h3>500+ blueprints. Every major model.</h3>
+          <p>Toggle every major AI model like TV channels.</p>
+          <div class="mkt-feature"><span class="mkt-feature-dot"></span><div>Crew designer: describe your business, deploy a custom ship</div></div>
+          <div class="mkt-feature"><span class="mkt-feature-dot"></span><div>Free tier forever, no card required</div></div>
+        </div>
+        <div class="mkt-band is-white">
+          <h3>Ready to deploy?</h3>
+          <p>Free tier. No card required.</p>
+          <a class="btn btn-primary btn-sm">Get started</a>
+        </div>
+        <div class="frame-caption"><strong>Read:</strong> Pure editorial. The page is a single canvas; only the CTA carries color. The off-white band gives the middle subtle rhythm without breaking the calm. This is the default rhythm for every page on nicespaceship.com.</div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:32px">
+      <div class="recommendation">
+        <strong>Rule:</strong> Pattern B sets the default rhythm for every page on nicespaceship.com. Pattern A's black interlude marks the moments where the lockup needs full presence: the About page, the footer band, the brand page itself. Use Pattern A elsewhere and it loses its weight.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DASHBOARD IN LIGHT ── -->
+  <section>
+    <div class="eyebrow">In-app · brand applied</div>
+    <h2 class="section-title">The brand inside the product.</h2>
+    <p class="section-sub">The same monochrome surfaces, Sapphire CTAs, and hairline borders carry through into the NICE app. nicespaceship.com and the first-load app screen feel like one product. Use the theme toggle above to see this dashboard in light and dark.</p>
+
+    <div class="dash">
+      <aside class="dash-side">
+        <div class="dash-brand">
+          <svg class="nice-mark dot" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
+          <div class="name">NICE</div>
+        </div>
+        <nav class="dash-nav">
+          <div class="dash-nav-item active">Home</div>
+          <div class="dash-nav-item">Bridge</div>
+          <div class="dash-nav-item">Schematic</div>
+          <div class="dash-nav-item">Blueprints</div>
+          <div class="dash-nav-item">Missions</div>
+          <div class="dash-nav-item">Operations</div>
+          <div class="dash-nav-item">Captain's Log</div>
+          <div class="dash-nav-item">Wallet</div>
+        </nav>
+      </aside>
+      <main class="dash-main">
+        <div class="dash-top">
+          <div class="dash-ask"><strong>Ask NICE</strong> &nbsp;·&nbsp; What should I work on today?</div>
+          <a class="btn btn-secondary btn-sm">Import</a>
+          <a class="btn btn-primary btn-sm">+ New mission</a>
+        </div>
+
+        <div class="dash-section-title">
+          <h3>Active Spaceships</h3>
+          <span style="font-size:var(--text-xs);color:var(--text-muted)">3 live</span>
+        </div>
+
+        <div class="bp-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+          <div class="bp-card r-legendary">
+            <div class="bp-eyebrow">Legendary · Flagship</div>
+            <div class="bp-title">Millennium Falcon</div>
+            <div class="bp-body">Lando · C-3PO · R2-D2</div>
+            <div class="bp-stats">
+              <div class="bp-stat"><span>XP</span><strong>12.4K</strong></div>
+              <div class="bp-stat"><span>Runs</span><strong>87</strong></div>
+            </div>
+          </div>
+          <div class="bp-card r-mythic">
+            <div class="bp-eyebrow">Mythic · Dreadnought</div>
+            <div class="bp-title">Matrix <span class="bp-badge bp-badge-pro">Pro</span></div>
+            <div class="bp-body">Trinity, Morpheus, Tank, Neo.</div>
+            <div class="bp-stats">
+              <div class="bp-stat"><span>XP</span><strong>21.0K</strong></div>
+              <div class="bp-stat"><span>Runs</span><strong>156</strong></div>
+            </div>
+          </div>
+          <div class="bp-card r-epic">
+            <div class="bp-eyebrow">Epic · Scout</div>
+            <div class="bp-title">Voyager <span class="bp-badge bp-badge-new">New</span></div>
+            <div class="bp-body">Janeway captains 4-slot crew.</div>
+            <div class="bp-stats">
+              <div class="bp-stat"><span>XP</span><strong>3.2K</strong></div>
+              <div class="bp-stat"><span>Runs</span><strong>11</strong></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ── BRAND STANDARDS ── -->
+  <section id="brand-standards">
+    <div class="eyebrow">Brand standards</div>
+    <h2 class="section-title">The rules in one place.</h2>
+    <p class="section-sub">Use this section as the authoritative reference when applying the NICE brand. Every choice on this page maps to a rule below.</p>
+    <div class="info-box">
+      <ul>
+        <li><strong>Color discipline.</strong> Surfaces, text, badges, and borders use pure monochrome: black, white, and gray only. Sapphire <code>#0F52BA</code> owns the single place the brand color appears.</li>
+        <li><strong>The lockup.</strong> Black-on-white or white-on-black. Glyph and wordmark always share a single color. These are the only valid forms.</li>
+        <li><strong>Surfaces (light).</strong> <code>#ffffff</code> primary · <code>#fafafa</code> section alt · <code>#f5f5f5</code> hover and input.</li>
+        <li><strong>Surfaces (dark).</strong> <code>#0a0a0a</code> primary · <code>#141414</code> section alt · <code>#1f1f1f</code> hover and input.</li>
+        <li><strong>Borders.</strong> Hairline only. Light: <code>#e5e5e5</code> / <code>#d4d4d4</code>. Dark: <code>#262626</code> / <code>#404040</code>.</li>
+        <li><strong>Text.</strong> Light: <code>#0a0a0a</code> body, <code>#525252</code> muted, <code>#a3a3a3</code> dim. Dark: <code>#fafafa</code> body, <code>#a3a3a3</code> muted, <code>#737373</code> dim.</li>
+        <li><strong>CTA.</strong> Sapphire <code>#0F52BA</code>. Hover <code>#1862ce</code>. Ink <code>#ffffff</code>. Same value in both themes.</li>
+        <li><strong>Buttons.</strong> Flat. No shadow, no glow, no gradient. Solid Sapphire (primary), white with hairline border (secondary), bg-on-hover only (ghost).</li>
+        <li><strong>Radius scale.</strong> Badges / chips <code>4px</code> · Buttons <code>6px</code> · Content cards <code>12px</code> · Blueprint cards <code>14px</code> · Marketing frames + lockup tiles <code>12px</code>. No pill shapes anywhere.</li>
+        <li><strong>Typography.</strong> Inter for all UI and prose. Orbitron Black for the SPACESHIP wordmark only. JetBrains Mono for telemetry, hex values, and code.</li>
+        <li><strong>Page rhythm.</strong> Pattern B sets the default for every page on nicespaceship.com. Pattern A's black interlude marks moments where the lockup carries full presence: About page, footer band, brand page.</li>
+        <li><strong>Blueprint cards.</strong> Cards run their own visual system: pure black <code>#000</code> stock plus the rarity and category palette in both themes. This applies only to card surfaces. Buttons and CTAs inside a card follow the brand rules.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── CTA COLOR LOCKED ── -->
+  <section>
+    <div class="eyebrow">CTA color · locked</div>
+    <h2 class="section-title">Sapphire <code style="font-size:0.7em;padding:4px 10px;vertical-align:0.15em">#0F52BA</code></h2>
+    <p class="section-sub">The one chromatic moment in an otherwise monochrome brand. Deep enough to read premium-considered, saturated enough to clearly own the action role, restrained enough to sit inside editorial whitespace without raising its voice. Hover <code>#1862ce</code>, ink <code>#ffffff</code>.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px">
+      <div class="swatch">
+        <div class="chip" style="background:#0F52BA;height:120px"></div>
+        <div class="meta">
+          <div class="name">--accent</div>
+          <div class="hex">#0F52BA</div>
+          <div class="role">Primary CTAs, links, focus rings, key accent moments.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#1862ce;height:120px"></div>
+        <div class="meta">
+          <div class="name">--accent-hi</div>
+          <div class="hex">#1862ce</div>
+          <div class="role">Hover state. Lifts slightly to signal the press.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── THEME SYSTEM ── -->
+  <section>
+    <div class="eyebrow">Theme system</div>
+    <h2 class="section-title">Light default. Dark supported.</h2>
+    <p class="section-sub">NICE ships in two modes. Light is the default across nicespaceship.com and the app. Dark is a first-class supported mode, available alongside the named in-app skins. Both modes use a single <code>body[data-theme]</code> attribute that swaps every surface, text, and border token in one declaration.</p>
+
+    <div class="info-box">
+      <p style="color:var(--text);margin-bottom:16px"><strong>Flips with the theme:</strong></p>
+      <ul>
+        <li>Page background, section alt, card surface, hover surface</li>
+        <li>Text (body, muted, dim)</li>
+        <li>Borders (default and prominent)</li>
+        <li>Nav glyph and dashboard sidebar glyph (via <code>currentColor</code>, inheriting from <code>--text-strong</code>)</li>
+      </ul>
+      <p style="color:var(--text);margin: 16px 0"><strong>Constant across both modes:</strong></p>
+      <ul>
+        <li><strong>Sapphire CTA.</strong> <code>#0F52BA</code> carries the brand identity across both modes.</li>
+        <li><strong>Lockup contrasts.</strong> Black-on-white and white-on-black both stand as canonical forms.</li>
+        <li><strong>Pattern A's black interlude.</strong> The lockup-showcase band always uses pure black.</li>
+        <li><strong>Blueprint cards.</strong> Pure black card stock plus the rarity palette, in both modes.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-lockup">
+      <svg class="nice-mark glyph" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
+      <div class="word">SPACESHIP</div>
+    </div>
+    <p class="footer-tagline">Neural Intelligence Command Engine. Open source, MIT licensed.</p>
+
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="https://nicespaceship.ai">Launch NICE</a>
+        <a href="/blueprints">Blueprints</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/docs">Documentation</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.reddit.com/r/nicespaceship_ai/" target="_blank" rel="noopener">Community</a>
+        <a href="/about">About</a>
+        <a href="/brand">Brand kit</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/accessibility">Accessibility</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>&copy; <span id="footer-year"></span> NICE SPACESHIP</span>
+      <span>United Federation of Planets</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (() => {
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+    const body = document.body;
+    const opts = document.querySelectorAll('.theme-opt');
+    const current = document.getElementById('theme-current');
+    opts.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const set = btn.dataset.set;
+        body.setAttribute('data-theme', set);
+        opts.forEach(o => o.setAttribute('aria-pressed', String(o === btn)));
+        if (current) current.innerHTML = 'current: <span style="color:var(--accent)">' + set + '</span>';
+      });
+    });
+  })();
+</script>
+</body>
+</html>
