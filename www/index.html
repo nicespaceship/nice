@@ -423,28 +423,31 @@
 
               <!-- Blueprint graphic — actual full Legendary blueprint card -->
               <div class="faq-graphic faq-graphic-blueprint">
-                <svg viewBox="0 0 440 600" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                <svg viewBox="0 0 440 750" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <pattern id="bp-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
                       <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(15,82,186,0.05)" stroke-width="0.5"/>
                     </pattern>
                   </defs>
 
-                  <!-- Outer card frame with gold legendary border -->
-                  <rect x="4" y="4" width="432" height="592" rx="16" fill="#ffffff" stroke="#ff9500" stroke-width="3"/>
+                  <!-- Outer card frame with thicker gold legendary border -->
+                  <rect x="6" y="6" width="428" height="738" rx="18" fill="#ffffff" stroke="#ff9500" stroke-width="6"/>
 
-                  <!-- Title -->
-                  <text x="22" y="48" font-family="Inter" font-size="22" font-weight="700" fill="var(--text)">USS Enterprise</text>
+                  <!-- Title (two lines) -->
+                  <text font-family="Inter" font-size="22" font-weight="700" fill="var(--text)">
+                    <tspan x="22" y="46">USS Enterprise NCC-</tspan>
+                    <tspan x="22" y="74">1701-D</tspan>
+                  </text>
 
-                  <!-- Schematic block — shifted down by 60 to sit below the title -->
-                  <g transform="translate(0, 60)">
+                  <!-- Schematic block — shifted to clear the 2-line title -->
+                  <g transform="translate(0, 96)">
                     <!-- Inner schematic frame (with grid) — encompasses the slot grid below -->
                     <rect x="14" y="6" width="412" height="338" rx="8" fill="url(#bp-grid-pattern)" stroke="var(--border)" stroke-width="0.6"/>
 
-                    <!-- Top-left tag: Ops -->
+                    <!-- Top-left tag: Engineering -->
                     <g transform="translate(28, 18)">
-                      <rect width="42" height="22" rx="5" fill="rgba(15,82,186,0.10)"/>
-                      <text x="21" y="15" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="var(--accent2)">Ops</text>
+                      <rect width="86" height="22" rx="5" fill="rgba(15,82,186,0.10)"/>
+                      <text x="43" y="15" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="var(--accent2)">Engineering</text>
                     </g>
 
                     <!-- Top-right badge: LEGENDARY -->
@@ -524,18 +527,28 @@
                     <!-- ID stamp at bottom of schematic -->
                     <g transform="translate(28, 310)">
                       <rect width="118" height="22" rx="4" fill="rgba(0,0,0,0.04)"/>
-                      <text x="59" y="15" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="var(--text-muted)" letter-spacing="0.06em">D2E2-UVNZ-U8ET</text>
+                      <text x="59" y="15" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10" fill="var(--text-muted)" letter-spacing="0.06em">9WXG-2Q6W-ZU9D</text>
                     </g>
                   </g>
 
-                  <!-- Quote section -->
-                  <g transform="translate(22, 422)">
-                    <rect x="0" y="0" width="3" height="22" fill="var(--accent2)"/>
-                    <text x="14" y="17" font-family="Inter" font-size="15" font-style="italic" fill="var(--text)">"Do you remember love?"</text>
+                  <!-- Marquee strip -->
+                  <g transform="translate(22, 458)">
+                    <rect width="396" height="32" fill="#0a0a0a"/>
+                    <text x="18" y="21" font-family="'Fira Code', monospace" font-size="13" fill="var(--accent2)" letter-spacing="0.04em">Full enterprise command.</text>
+                  </g>
+
+                  <!-- Bullet list -->
+                  <g transform="translate(28, 524)" font-family="Inter" font-size="15" fill="var(--text)">
+                    <text x="0" y="14" font-size="12" fill="var(--accent2)">◆</text>
+                    <text x="20" y="14">Full enterprise command, 12 agents</text>
+                    <text x="0" y="50" font-size="12" fill="var(--accent2)">◆</text>
+                    <text x="20" y="50">Unlimited capacity</text>
+                    <text x="0" y="86" font-size="12" fill="var(--accent2)">◆</text>
+                    <text x="20" y="86">Every integration</text>
                   </g>
 
                   <!-- Stats row -->
-                  <g transform="translate(0, 490)" text-anchor="middle">
+                  <g transform="translate(0, 660)" text-anchor="middle">
                     <g transform="translate(110, 0)">
                       <text font-family="Inter" font-size="28" font-weight="700" fill="var(--accent2)">12</text>
                       <text y="26" font-family="Inter" font-size="11" font-weight="600" letter-spacing="0.08em" fill="var(--text-muted)">AGENTS</text>
