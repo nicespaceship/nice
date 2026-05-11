@@ -528,10 +528,22 @@
                     </g>
                   </g>
 
-                  <!-- Marquee strip -->
+                  <!-- Marquee strip — text loops continuously left -->
+                  <defs>
+                    <clipPath id="bp-marquee-clip"><rect width="396" height="32"/></clipPath>
+                  </defs>
                   <g transform="translate(22, 458)">
                     <rect width="396" height="32" fill="#0a0a0a"/>
-                    <text x="18" y="21" font-family="'Fira Code', monospace" font-size="13" fill="var(--accent2)" letter-spacing="0.04em">Full enterprise command.</text>
+                    <g clip-path="url(#bp-marquee-clip)">
+                      <g>
+                        <animateTransform attributeName="transform" type="translate" from="0 0" to="-260 0" dur="8s" repeatCount="indefinite"/>
+                        <text y="21" font-family="'Fira Code', monospace" font-size="13" fill="#60a5fa" letter-spacing="0.04em">
+                          <tspan x="18">Full enterprise command.</tspan>
+                          <tspan x="278">Full enterprise command.</tspan>
+                          <tspan x="538">Full enterprise command.</tspan>
+                        </text>
+                      </g>
+                    </g>
                   </g>
 
                   <!-- Bullet list -->
