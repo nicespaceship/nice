@@ -530,9 +530,9 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 }
 .schematic-stage { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
 .schematic-stage-label {
-  font-size: var(--text-xs); color: var(--text-dim);
+  font-size: var(--text-sm); color: var(--text);
   text-transform: uppercase; letter-spacing: var(--tracking-caps);
-  text-align: center; font-weight: var(--fw-medium);
+  text-align: center; font-weight: var(--fw-bold);
 }
 .schematic-node {
   position: relative; overflow: hidden; isolation: isolate;
@@ -559,7 +559,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .schematic-node[data-stage="output"] > i { color: #22c55e; }
 .schematic-node-icon { width: 32px; height: 32px; object-fit: contain; }
 .schematic-node strong { font-size: var(--text-base); color: var(--text); font-weight: var(--fw-bold); }
-.schematic-node span { font-size: var(--text-xs); color: var(--text-dim); text-align: center; }
+.schematic-node span { font-size: var(--text-xs); color: var(--text-muted); text-align: center; }
 
 .schematic-node-engine {
   background: var(--panel-bg);
@@ -593,8 +593,8 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   background: var(--panel-bg);
 }
 .mcp-wall-title {
-  font-size: var(--text-xs); color: var(--text-dim); text-transform: uppercase;
-  letter-spacing: var(--tracking-caps); font-weight: var(--fw-medium);
+  font-size: var(--text-sm); color: var(--text); text-transform: uppercase;
+  letter-spacing: var(--tracking-caps); font-weight: var(--fw-bold);
   text-align: center; margin-bottom: 24px;
 }
 .mcp-wall-grid {
