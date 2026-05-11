@@ -1153,6 +1153,29 @@ a.docs-card:hover { border-color: var(--accent2); }
   to   { transform: rotate(360deg); }
 }
 
+/* Section-level chromatic for the Level Up section — lighter and softer
+   than the card chromatic, rotating in the opposite direction so the two
+   motion fields read as distinct. */
+.experience-section {
+  position: relative; overflow: hidden; isolation: isolate;
+}
+.experience-section::before {
+  content: '';
+  position: absolute; inset: -25%;
+  z-index: -1;
+  background: conic-gradient(
+    from 180deg,
+    #2d9fff, #a82dff, #ff2d55, #ff6b2d, #ffd32d, #2dff6b, #2d9fff
+  );
+  filter: blur(140px);
+  opacity: 0.09;
+  animation: chromatic-spin 42s linear infinite reverse;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .experience-section::before { animation: none; }
+}
+
 /* Borderless cards by default — RGB animation on hover supplies the only
    visible border. Keep `1px solid` so the animated border-color has width. */
 .feature-card,
