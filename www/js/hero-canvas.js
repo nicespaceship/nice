@@ -7,13 +7,13 @@ const HeroCanvas = (() => {
   const NODE_COUNT = 24;
   const PULSE_COUNT = 18;
 
-  /* ── palette (matches app theme) ── */
+  /* ── palette — Sapphire on light (matches brand kit Phase 2a/3) ── */
   const C = {
-    star: 'rgba(224,231,255,',       // accent
-    node: 'rgba(165,180,252,',       // accent2
-    line: 'rgba(165,180,252,',       // accent2
-    pulse: 'rgba(165,180,252,',      // accent2
-    grid: 'rgba(63,63,70,0.08)',     // border dim
+    star: 'rgba(15,82,186,',         // Sapphire core
+    node: 'rgba(15,82,186,',         // Sapphire
+    line: 'rgba(15,82,186,',         // Sapphire
+    pulse: 'rgba(24,98,206,',        // Sapphire hover (lighter)
+    grid: 'rgba(15,82,186,0.04)',    // very dim Sapphire
   };
 
   /* ── star ── */
@@ -109,7 +109,8 @@ const HeroCanvas = (() => {
       const flicker = Math.sin(s.twinkle) * 0.3 + 0.7;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = C.star + (s.a * flicker) + ')';
+      // bump alpha for visibility on light bg
+      ctx.fillStyle = C.star + (s.a * flicker * 1.6) + ')';
       ctx.fill();
     }
 
@@ -126,7 +127,7 @@ const HeroCanvas = (() => {
       for (const nb of neighbors) {
         if (nb.d > 350) continue;
         if (nb.i < i) continue; // avoid drawing twice
-        const alpha = (1 - nb.d / 350) * 0.1;
+        const alpha = (1 - nb.d / 350) * 0.18;
         ctx.beginPath();
         ctx.moveTo(nodes[i].x, nodes[i].y);
         ctx.lineTo(nodes[nb.i].x, nodes[nb.i].y);
@@ -191,7 +192,7 @@ const HeroCanvas = (() => {
     for (const n of nodes) {
       // outer glow
       const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.glow);
-      grad.addColorStop(0, C.node + '0.2)');
+      grad.addColorStop(0, C.node + '0.28)');
       grad.addColorStop(1, C.node + '0)');
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.glow, 0, Math.PI * 2);
@@ -200,20 +201,20 @@ const HeroCanvas = (() => {
       // core
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = C.node + '0.6)';
+      ctx.fillStyle = C.node + '0.85)';
       ctx.fill();
       // outer ring
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = C.node + '0.12)';
+      ctx.strokeStyle = C.node + '0.20)';
       ctx.lineWidth = 0.5;
       ctx.stroke();
     }
 
     // ── subtle central aura ──
     const auraGrad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.min(w, h) * 0.45);
-    auraGrad.addColorStop(0, 'rgba(165,180,252,0.025)');
-    auraGrad.addColorStop(1, 'rgba(165,180,252,0)');
+    auraGrad.addColorStop(0, 'rgba(15,82,186,0.05)');
+    auraGrad.addColorStop(1, 'rgba(15,82,186,0)');
     ctx.fillStyle = auraGrad;
     ctx.fillRect(0, 0, w, h);
 

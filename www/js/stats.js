@@ -31,8 +31,9 @@ const Stats = (() => {
   }
 
   async function load() {
-    // Defaults
-    let blueprints = 800;
+    // Defaults — match the catalog floor so the bar never shows 0
+    // even when Supabase blocks the anon read or the fetch fails.
+    let blueprints = 500;
     let missions = 0;
 
     // Try live Supabase fetch
