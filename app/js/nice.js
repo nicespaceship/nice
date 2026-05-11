@@ -19,11 +19,21 @@ const Theme = (() => {
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
-    { id:'nice', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#080808', preview:['#080808','#ffffff','#888888'],
-      data:{ colors:{ '--bg':'#080808','--bg2':'#101010','--surface':'#161616','--surface2':'#1e1e1e','--border':'#2a2a2a','--border-hi':'#555555','--accent':'#ffffff','--accent2':'#888888','--text':'#f0f0f0','--text-muted':'#666666','--glow':'none','--panel-bg':'rgba(16,16,16,0.97)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'0px' },
+    { id:'nice', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
+      data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'#e5e5e5','--border-hi':'#d4d4d4','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'0 0 0 1px rgba(15,82,186,0.06)','--glow-hi':'0 0 12px rgba(15,82,186,0.08)','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'#e5e5e5' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
       // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
+      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'CORE',
+        settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
+    },
+    // Dark variant of CORE. Same persona, same voice, same Sapphire CTA;
+    // surfaces flip to near-black. Pairs with the moon/sun toggle in the HUD
+    // dock — `Theme.toggleDarkLight` swaps nice ↔ nice-dark, same pattern as
+    // office ↔ office-dark. builtin:false keeps it out of the main dock row.
+    { id:'nice-dark', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
+      data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'#262626','--border-hi':'#404040','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'0 0 0 1px rgba(15,82,186,0.12)','--glow-hi':'0 0 12px rgba(15,82,186,0.18)','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'#262626','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
+      reactor:{ html:() => DefaultCore.html() },
       voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'CORE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
@@ -257,7 +267,7 @@ const Theme = (() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
       const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-      meta.setAttribute('content', bg || '#080808');
+      meta.setAttribute('content', bg || '#ffffff');
     }
 
     // Theme-specific personality (body copy / toasts / placeholders / ranks)
@@ -425,6 +435,8 @@ const Theme = (() => {
     const current = localStorage.getItem(_K_THEME) || 'nice';
     if (current === 'office') set('office-dark');
     else if (current === 'office-dark') set('office');
+    else if (current === 'nice') set('nice-dark');
+    else if (current === 'nice-dark') set('nice');
     // No-op for all other themes — toggle is hidden
   }
 
@@ -433,11 +445,19 @@ const Theme = (() => {
     if (!btn) return;
     const current = localStorage.getItem(_K_THEME) || 'nice';
     const isOffice = current === 'office' || current === 'office-dark';
-    btn.style.display = isOffice ? '' : 'none';
-    if (isOffice) {
-      const isLight = current === 'office';
-      const icon = isLight ? '#icon-moon' : '#icon-sun';
-      btn.innerHTML = `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${icon}"/></svg>`;
+    const isCore = current === 'nice' || current === 'nice-dark';
+    const showToggle = isOffice || isCore;
+    btn.style.display = showToggle ? '' : 'none';
+    if (showToggle) {
+      const isLight = current === 'office' || current === 'nice';
+      // CORE uses the marketing site's FontAwesome solid moon/sun (inlined as
+      // #icon-*-fa); Office keeps the Feather-style outline icons.
+      const iconSuffix = isCore ? '-fa' : '';
+      const icon = (isLight ? '#icon-moon' : '#icon-sun') + iconSuffix;
+      const svgAttrs = isCore
+        ? 'fill="currentColor" stroke="none"'
+        : 'fill="none" stroke="currentColor" stroke-width="1.5"';
+      btn.innerHTML = `<svg class="icon icon-sm" ${svgAttrs}><use href="${icon}"/></svg>`;
     }
   }
 

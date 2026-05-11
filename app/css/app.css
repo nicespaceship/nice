@@ -36,13 +36,13 @@
 
 /* Spacing scale (4px base) */
 :root {
-  /* Brand color — NICE SPACESHIP navy. Mirrored as literal in
-     app/index.html (theme-color), app/manifest.json (theme_color +
-     background_color), and app/icons/icon.svg. Update all four together. */
+  /* Historical brand reference — navy is no longer used on surfaces.
+     Action color is Sapphire #0F52BA (see --accent2 in theme.css CORE block).
+     See project_nice_brand_kit_142849.md. */
   --brand-navy: #142849;
 
-  --bg-alt: #18181b;
-  --panel-border: #2a2a2a;
+  --bg-alt: #fafafa;
+  --panel-border: #e5e5e5;
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 12px;
