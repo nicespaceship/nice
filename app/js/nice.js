@@ -450,8 +450,14 @@ const Theme = (() => {
     btn.style.display = showToggle ? '' : 'none';
     if (showToggle) {
       const isLight = current === 'office' || current === 'nice';
-      const icon = isLight ? '#icon-moon' : '#icon-sun';
-      btn.innerHTML = `<svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${icon}"/></svg>`;
+      // CORE uses the marketing site's FontAwesome solid moon/sun (inlined as
+      // #icon-*-fa); Office keeps the Feather-style outline icons.
+      const iconSuffix = isCore ? '-fa' : '';
+      const icon = (isLight ? '#icon-moon' : '#icon-sun') + iconSuffix;
+      const svgAttrs = isCore
+        ? 'fill="currentColor" stroke="none"'
+        : 'fill="none" stroke="currentColor" stroke-width="1.5"';
+      btn.innerHTML = `<svg class="icon icon-sm" ${svgAttrs}><use href="${icon}"/></svg>`;
     }
   }
 
