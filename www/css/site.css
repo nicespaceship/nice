@@ -324,8 +324,19 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   width: 100%; height: 100%;
   pointer-events: none;
   z-index: 0;
+  /* Carve a clear ellipse around the headline so motion stays on the
+     periphery and the copy reads without competing visual noise. */
+  -webkit-mask-image: radial-gradient(ellipse 42% 38% at center, transparent 0%, transparent 40%, #000 78%, #000 100%);
+          mask-image: radial-gradient(ellipse 42% 38% at center, transparent 0%, transparent 40%, #000 78%, #000 100%);
 }
 .hero.hero-v2 .hero-bg-warp { z-index: 1; opacity: 0.75; mix-blend-mode: multiply; }
+@media (max-width: 768px) {
+  /* Tighter ellipse on mobile — the headline takes more relative width */
+  .hero.hero-v2 .hero-bg-layer {
+    -webkit-mask-image: radial-gradient(ellipse 65% 32% at center, transparent 0%, transparent 30%, #000 75%, #000 100%);
+            mask-image: radial-gradient(ellipse 65% 32% at center, transparent 0%, transparent 30%, #000 75%, #000 100%);
+  }
+}
 .hero.hero-v2 .hero-content {
   position: relative; z-index: 3;
   max-width: var(--max-w);

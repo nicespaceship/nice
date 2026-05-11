@@ -211,13 +211,6 @@ const HeroCanvas = (() => {
       ctx.stroke();
     }
 
-    // ── subtle central aura ──
-    const auraGrad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.min(w, h) * 0.45);
-    auraGrad.addColorStop(0, 'rgba(15,82,186,0.05)');
-    auraGrad.addColorStop(1, 'rgba(15,82,186,0)');
-    ctx.fillStyle = auraGrad;
-    ctx.fillRect(0, 0, w, h);
-
     raf = requestAnimationFrame(loop);
   }
 
