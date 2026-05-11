@@ -535,7 +535,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   text-align: center; font-weight: var(--fw-medium);
 }
 .schematic-node {
-  position: relative;
+  position: relative; overflow: hidden; isolation: isolate;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   flex: 1; gap: 6px; min-height: 132px;
   padding: 20px 16px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -589,7 +589,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 
 /* ─── MCP brand wall ─── */
 .mcp-wall {
-  position: relative; z-index: 2;
+  position: relative; z-index: 2; overflow: hidden; isolation: isolate;
   margin-top: 56px; padding: 32px;
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--panel-bg);
@@ -603,7 +603,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px;
 }
 .mcp-tile {
-  position: relative;
+  position: relative; overflow: hidden; isolation: isolate;
   display: flex; align-items: center; justify-content: center;
   height: 72px; padding: 16px;
   border: 1px solid var(--border); border-radius: var(--radius);
@@ -1123,4 +1123,49 @@ a.docs-card:hover { border-color: var(--accent2); }
   /* Tighten brand tracking so the wordmark fits on one line next to the menu button. */
   .nav-brand-text { letter-spacing: 0.3em; }
   .stats-bar { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHROMATIC ARRAY — animated rainbow conic-gradient backdrop applied
+   to the How-It-Works flow cards and MCP wall. Same palette as the
+   Mythic blueprint cards so it stays inside the existing color system.
+═══════════════════════════════════════════════════════════════════ */
+.schematic-node::before,
+.mcp-wall::before,
+.mcp-tile::before {
+  content: '';
+  position: absolute; inset: -40%;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    #ff2d55, #ff6b2d, #ffd32d, #2dff6b, #2d9fff, #a82dff, #ff2d55
+  );
+  filter: blur(48px);
+  animation: chromatic-spin 18s linear infinite;
+  pointer-events: none;
+}
+.schematic-node::before { opacity: 0.22; animation-duration: 16s; }
+.mcp-wall::before       { opacity: 0.10; filter: blur(90px); animation-duration: 32s; }
+.mcp-tile::before       { opacity: 0.16; filter: blur(36px); animation-duration: 22s; }
+
+/* Stagger animation across siblings so they don't lock-step */
+.schematic-stage:nth-child(3) .schematic-node::before { animation-delay: -4s; }
+.schematic-stage:nth-child(5) .schematic-node::before { animation-delay: -8s; }
+.schematic-stage:nth-child(7) .schematic-node::before { animation-delay: -12s; }
+.mcp-tile:nth-child(7n+2)::before { animation-delay: -3s; }
+.mcp-tile:nth-child(7n+3)::before { animation-delay: -7s; }
+.mcp-tile:nth-child(7n+4)::before { animation-delay: -11s; }
+.mcp-tile:nth-child(7n+5)::before { animation-delay: -15s; }
+.mcp-tile:nth-child(7n+6)::before { animation-delay: -19s; }
+.mcp-tile:nth-child(7n)::before   { animation-delay: -5s; }
+
+@keyframes chromatic-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schematic-node::before,
+  .mcp-wall::before,
+  .mcp-tile::before { animation: none; }
 }
