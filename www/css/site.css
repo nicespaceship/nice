@@ -142,7 +142,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 /* ── Layout ── */
 .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
 .container-narrow { max-width: 720px; margin: 0 auto; padding: 0 24px; }
-.section { padding: 72px 0; border-top: 1px solid var(--border); }
+.section { padding: 72px 0; }
 .text-center { text-align: center; }
 .section-header { margin-bottom: 36px; }
 .section-header.centered { text-align: center; }
@@ -1051,7 +1051,7 @@ a.docs-card:hover { border-color: var(--accent2); }
 /* ═══════════════════════════════════════════════════════════════════
    FOOTER
 ═══════════════════════════════════════════════════════════════════ */
-.footer { border-top: 1px solid var(--border); padding: 48px 0 20px; }
+.footer { padding: 48px 0 20px; }
 .footer-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
 .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 36px; margin-bottom: 36px; }
 .footer-col h4 { color: var(--text-dim); font-size: var(--text-xs); margin-bottom: 12px; font-weight: var(--fw-medium); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
@@ -1075,7 +1075,7 @@ a.docs-card:hover { border-color: var(--accent2); }
 .footer-launch:hover { color: var(--accent); }
 .footer-bottom {
   display: flex; justify-content: space-between; padding-top: 16px;
-  border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--text-dim);
+  font-size: var(--text-xs); color: var(--text-dim);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
