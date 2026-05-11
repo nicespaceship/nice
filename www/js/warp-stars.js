@@ -15,7 +15,7 @@ const WarpStars = (() => {
       y: Math.sin(angle) * dist,
       z: fromCenter ? 0.01 : Math.random(),
       pz: 0,
-      speed: Math.random() * 0.004 + 0.002,
+      speed: Math.random() * 0.0015 + 0.0015,
     };
   }
 
