@@ -480,6 +480,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 ═══════════════════════════════════════════════════════════════════ */
 .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .feature-card {
+  position: relative;
   background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius);
   overflow: hidden; transition: all 0.2s;
 }
@@ -1198,41 +1199,128 @@ canvas.cta-bg { width: 100%; height: 100%; }
 .nebula-blob-1 {
   width: 520px; height: 520px; left: -140px; top: 6%;
   background: radial-gradient(circle, rgba(15,82,186,0.45), rgba(15,82,186,0) 70%);
-  animation: nebula-drift-1 24s ease-in-out infinite;
+  animation: nebula-drift-1 11s ease-in-out infinite;
 }
 .nebula-blob-2 {
   width: 440px; height: 440px; right: -120px; top: -40px;
   background: radial-gradient(circle, rgba(168,45,255,0.40), rgba(168,45,255,0) 70%);
-  animation: nebula-drift-2 30s ease-in-out infinite;
+  animation: nebula-drift-2 14s ease-in-out infinite;
 }
 .nebula-blob-3 {
   width: 400px; height: 400px; left: 24%; bottom: -160px;
   background: radial-gradient(circle, rgba(255,45,107,0.32), rgba(255,45,107,0) 70%);
-  animation: nebula-drift-3 27s ease-in-out infinite;
+  animation: nebula-drift-3 12s ease-in-out infinite;
 }
 .nebula-blob-4 {
   width: 480px; height: 480px; right: 14%; bottom: -200px;
   background: radial-gradient(circle, rgba(45,159,255,0.36), rgba(45,159,255,0) 70%);
-  animation: nebula-drift-4 33s ease-in-out infinite;
+  animation: nebula-drift-4 15s ease-in-out infinite;
 }
+/* 4-stage keyframes — blob never returns to rest at a predictable midpoint,
+   so the motion reads as continuous drift instead of a back-and-forth pulse. */
 @keyframes nebula-drift-1 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50%      { transform: translate3d(90px, -50px, 0) scale(1.12); }
+  25%      { transform: translate3d(140px, -40px, 0) scale(1.18); }
+  50%      { transform: translate3d(80px, -100px, 0) scale(0.92); }
+  75%      { transform: translate3d(-60px, -30px, 0) scale(1.10); }
 }
 @keyframes nebula-drift-2 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50%      { transform: translate3d(-110px, 60px, 0) scale(0.88); }
+  25%      { transform: translate3d(-150px, 70px, 0) scale(0.82); }
+  50%      { transform: translate3d(-40px, 130px, 0) scale(1.20); }
+  75%      { transform: translate3d(80px, 50px, 0) scale(0.94); }
 }
 @keyframes nebula-drift-3 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50%      { transform: translate3d(70px, -80px, 0) scale(1.18); }
+  25%      { transform: translate3d(100px, -120px, 0) scale(1.25); }
+  50%      { transform: translate3d(-50px, -60px, 0) scale(0.86); }
+  75%      { transform: translate3d(-90px, -130px, 0) scale(1.12); }
 }
 @keyframes nebula-drift-4 {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50%      { transform: translate3d(-80px, -60px, 0) scale(0.94); }
+  25%      { transform: translate3d(-120px, -90px, 0) scale(1.16); }
+  50%      { transform: translate3d(40px, -50px, 0) scale(0.88); }
+  75%      { transform: translate3d(120px, -110px, 0) scale(1.06); }
 }
 @media (prefers-reduced-motion: reduce) {
   .nebula-blob { animation: none !important; }
+}
+
+/* Card-scoped nebula — same Sapphire/violet drifting blob pattern but sized
+   for a feature card. Solid edge-to-edge (card's overflow:hidden + radius
+   handles clipping). */
+.card-nebula-mask {
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+}
+.card-nebula-blob {
+  position: absolute; pointer-events: none;
+  border-radius: 50%; filter: blur(42px); will-change: transform;
+}
+.card-nebula-blob-1 {
+  width: 180px; height: 180px; left: -50px; top: -40px;
+  background: radial-gradient(circle, rgba(15,82,186,0.55), rgba(15,82,186,0) 70%);
+}
+.card-nebula-blob-2 {
+  width: 160px; height: 160px; right: -60px; bottom: -50px;
+  background: radial-gradient(circle, rgba(168,45,255,0.50), rgba(168,45,255,0) 70%);
+}
+
+/* Per-card variants — each card runs its own 2-blob choreography so the 3
+   cards never sync up. v1 = orbital swirl, v2 = vertical sweep, v3 = diagonal
+   pulse. Different durations + paths + scale curves on each. */
+.card-nebula-mask.v1 .card-nebula-blob-1 { animation: card-nebula-v1-a 8s  ease-in-out infinite; }
+.card-nebula-mask.v1 .card-nebula-blob-2 { animation: card-nebula-v1-b 10s ease-in-out infinite; }
+.card-nebula-mask.v2 .card-nebula-blob-1 { animation: card-nebula-v2-a 11s ease-in-out infinite; }
+.card-nebula-mask.v2 .card-nebula-blob-2 { animation: card-nebula-v2-b 7s  ease-in-out infinite; }
+.card-nebula-mask.v3 .card-nebula-blob-1 { animation: card-nebula-v3-a 9s  ease-in-out infinite; }
+.card-nebula-mask.v3 .card-nebula-blob-2 { animation: card-nebula-v3-b 13s ease-in-out infinite; }
+
+/* v1 — Orbital swirl. Blobs trace looping arcs around the card centre. */
+@keyframes card-nebula-v1-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(60px, 35px, 0) scale(1.25); }
+  50%      { transform: translate3d(30px, 60px, 0) scale(0.85); }
+  75%      { transform: translate3d(-30px, 30px, 0) scale(1.12); }
+}
+@keyframes card-nebula-v1-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(-55px, -45px, 0) scale(0.82); }
+  50%      { transform: translate3d(-20px, -65px, 0) scale(1.22); }
+  75%      { transform: translate3d(30px, -25px, 0) scale(0.95); }
+}
+
+/* v2 — Vertical sweep. Blobs travel mostly up-and-down with light horizontal
+   drift, scale pumps hard at the apex. */
+@keyframes card-nebula-v2-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.9); }
+  33%      { transform: translate3d(20px, 80px, 0) scale(1.30); }
+  66%      { transform: translate3d(-15px, 40px, 0) scale(0.78); }
+}
+@keyframes card-nebula-v2-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.1); }
+  33%      { transform: translate3d(-25px, -75px, 0) scale(0.80); }
+  66%      { transform: translate3d(10px, -30px, 0) scale(1.28); }
+}
+
+/* v3 — Diagonal pulse. Blobs cross corner-to-corner with abrupt scale snaps,
+   reads faster + more aggressive than v1/v2. */
+@keyframes card-nebula-v3-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  20%      { transform: translate3d(70px, -20px, 0) scale(1.35); }
+  40%      { transform: translate3d(50px, 50px, 0) scale(0.75); }
+  60%      { transform: translate3d(-40px, 60px, 0) scale(1.20); }
+  80%      { transform: translate3d(-30px, -10px, 0) scale(0.90); }
+}
+@keyframes card-nebula-v3-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  20%      { transform: translate3d(-65px, 30px, 0) scale(0.78); }
+  40%      { transform: translate3d(-30px, -55px, 0) scale(1.30); }
+  60%      { transform: translate3d(40px, -30px, 0) scale(0.85); }
+  80%      { transform: translate3d(50px, 40px, 0) scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-nebula-blob { animation: none !important; }
 }
 
 /* Borderless cards by default — RGB animation on hover supplies the only
