@@ -738,10 +738,7 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
    BENTO GRID (themes + gamification)
 ═══════════════════════════════════════════════════════════════════ */
 .experience-section {
-  background:
-    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(15,82,186,0.06) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 60% at 80% 70%, rgba(15,82,186,0.04) 0%, transparent 70%),
-    var(--bg);
+  background: var(--bg);
 }
 .bento-grid {
   display: grid; grid-template-columns: 1.4fr 1fr;
