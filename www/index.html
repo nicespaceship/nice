@@ -324,100 +324,112 @@
             <div class="faq-schematic" aria-hidden="true">
               <div class="faq-graphic faq-graphic-nice is-active">
               <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <style>
-                  .bp-label { font-family: 'Fira Code', monospace; fill: #555; font-size: 6.5px; letter-spacing: 0.08em; text-transform: uppercase; }
-                  .bp-val { font-family: 'Fira Code', monospace; fill: #777; font-size: 5.5px; }
-                  .bp-dim { font-family: 'Fira Code', monospace; fill: #444; font-size: 5px; letter-spacing: 0.05em; }
-                </style>
+                <!-- HUD corner brackets -->
+                <g stroke="var(--accent2)" stroke-width="1" fill="none" opacity="0.45">
+                  <path d="M 8 28 L 8 8 L 28 8"/>
+                  <path d="M 412 8 L 432 8 L 432 28"/>
+                  <path d="M 8 352 L 8 372 L 28 372"/>
+                  <path d="M 412 372 L 432 372 L 432 352"/>
+                </g>
 
-                <!-- Left annotations -->
-                <text x="8" y="55" class="bp-label">Agent Slot A1</text>
-                <text x="8" y="65" class="bp-val">type: analytics</text>
-                <text x="8" y="74" class="bp-dim">rarity: rare // xp: 2,400</text>
-                <line x1="8" y1="78" x2="70" y2="78" stroke="#333" stroke-width="0.5"/>
+                <!-- Top eyebrow -->
+                <text x="220" y="24" text-anchor="middle" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.22em" fill="var(--text-muted)">NEURAL INTELLIGENCE COMMAND ENGINE</text>
 
-                <text x="8" y="170" class="bp-label">Orchestrator Core</text>
-                <text x="8" y="180" class="bp-val">mode: hierarchical</text>
-                <text x="8" y="189" class="bp-dim">agents: 6 / max: 12</text>
-                <line x1="8" y1="193" x2="70" y2="193" stroke="#333" stroke-width="0.5"/>
+                <!-- Concentric guide rings -->
+                <g stroke="var(--accent2)" fill="none" opacity="0.18" stroke-dasharray="2 3">
+                  <circle cx="220" cy="195" r="68" stroke-width="0.5"/>
+                  <circle cx="220" cy="195" r="140" stroke-width="0.5"/>
+                </g>
 
-                <text x="8" y="260" class="bp-label">Agent Slot B1</text>
-                <text x="8" y="270" class="bp-val">type: content</text>
-                <text x="8" y="279" class="bp-dim">status: active // pid: 0x3F</text>
-                <line x1="8" y1="283" x2="70" y2="283" stroke="#333" stroke-width="0.5"/>
+                <!-- Outer ring labels (compass) -->
+                <g font-family="'Fira Code', monospace" font-size="7" letter-spacing="0.18em" fill="var(--text-dim)" text-anchor="middle">
+                  <text x="220" y="50">MCP</text>
+                  <text x="220" y="346">MCP</text>
+                  <text x="64" y="199" text-anchor="start">AGENT</text>
+                  <text x="376" y="199" text-anchor="end">AGENT</text>
+                </g>
 
-                <!-- Right annotations -->
-                <text x="432" y="55" class="bp-label" text-anchor="end">Agent Slot A2</text>
-                <text x="432" y="65" class="bp-val" text-anchor="end">type: research</text>
-                <text x="432" y="74" class="bp-dim" text-anchor="end">tools: 4 // llm: gemini</text>
-                <line x1="370" y1="78" x2="432" y2="78" stroke="#333" stroke-width="0.5"/>
+                <!-- Spokes: NICE core → 6 inner agent slots -->
+                <g stroke="var(--accent2)" stroke-width="0.6" opacity="0.4">
+                  <line x1="220" y1="195" x2="288" y2="195"/>
+                  <line x1="220" y1="195" x2="254" y2="254"/>
+                  <line x1="220" y1="195" x2="186" y2="254"/>
+                  <line x1="220" y1="195" x2="152" y2="195"/>
+                  <line x1="220" y1="195" x2="186" y2="136"/>
+                  <line x1="220" y1="195" x2="254" y2="136"/>
+                </g>
 
-                <text x="432" y="170" class="bp-label" text-anchor="end">Ship Class</text>
-                <text x="432" y="180" class="bp-val" text-anchor="end">class: dreadnought</text>
-                <text x="432" y="189" class="bp-dim" text-anchor="end">rank: commander // 100K xp</text>
-                <line x1="370" y1="193" x2="432" y2="193" stroke="#333" stroke-width="0.5"/>
+                <!-- Spokes: inner agents → outer MCP icons (dashed) -->
+                <g stroke="var(--accent2)" stroke-width="0.4" opacity="0.18" stroke-dasharray="3 3">
+                  <line x1="288" y1="195" x2="341" y2="265"/>
+                  <line x1="254" y1="254" x2="220" y2="335"/>
+                  <line x1="186" y1="254" x2="99" y2="265"/>
+                  <line x1="152" y1="195" x2="99" y2="125"/>
+                  <line x1="186" y1="136" x2="220" y2="55"/>
+                  <line x1="254" y1="136" x2="341" y2="125"/>
+                </g>
 
-                <text x="432" y="260" class="bp-label" text-anchor="end">Agent Slot B2</text>
-                <text x="432" y="270" class="bp-val" text-anchor="end">type: marketing</text>
-                <text x="432" y="279" class="bp-dim" text-anchor="end">missions: 47 // uptime: 99.2%</text>
-                <line x1="370" y1="283" x2="432" y2="283" stroke="#333" stroke-width="0.5"/>
+                <!-- Traveling pulses (MCP → agent → core), staggered -->
+                <g fill="var(--accent2)">
+                  <circle r="2.2" opacity="0"><animate attributeName="cx" values="341;288;220" keyTimes="0;0.5;1" dur="4s" begin="0s" repeatCount="indefinite"/><animate attributeName="cy" values="265;195;195" keyTimes="0;0.5;1" dur="4s" begin="0s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.2;0.8;1" dur="4s" begin="0s" repeatCount="indefinite"/></circle>
+                  <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;254;220" keyTimes="0;0.5;1" dur="4s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="cy" values="335;254;195" keyTimes="0;0.5;1" dur="4s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.2;0.8;1" dur="4s" begin="0.6s" repeatCount="indefinite"/></circle>
+                  <circle r="2.2" opacity="0"><animate attributeName="cx" values="99;186;220" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="cy" values="265;254;195" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.2;0.8;1" dur="4s" begin="1.2s" repeatCount="indefinite"/></circle>
+                  <circle r="2.2" opacity="0"><animate attributeName="cx" values="99;152;220" keyTimes="0;0.5;1" dur="4s" begin="1.8s" repeatCount="indefinite"/><animate attributeName="cy" values="125;195;195" keyTimes="0;0.5;1" dur="4s" begin="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.2;0.8;1" dur="4s" begin="1.8s" repeatCount="indefinite"/></circle>
+                  <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;186;220" keyTimes="0;0.5;1" dur="4s" begin="2.4s" repeatCount="indefinite"/><animate attributeName="cy" values="55;136;195" keyTimes="0;0.5;1" dur="4s" begin="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.2;0.8;1" dur="4s" begin="2.4s" repeatCount="indefinite"/></circle>
+                  <circle r="2.2" opacity="0"><animate attributeName="cx" values="341;254;220" keyTimes="0;0.5;1" dur="4s" begin="3s" repeatCount="indefinite"/><animate attributeName="cy" values="125;136;195" keyTimes="0;0.5;1" dur="4s" begin="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.2;0.8;1" dur="4s" begin="3s" repeatCount="indefinite"/></circle>
+                </g>
 
-                <!-- Top center annotation -->
-                <text x="175" y="16" class="bp-label">Agent Slot A3</text>
-                <text x="175" y="25" class="bp-dim">type: ops // priority: high</text>
+                <!-- Inner ring: 6 agent slots -->
+                <g>
+                  <g transform="translate(288, 195)"><circle r="14" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.6)" stroke-dasharray="3 3"/><circle r="3.5" fill="#f87171"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="4s" repeatCount="indefinite"/></circle></g>
+                  <g transform="translate(254, 254)"><circle r="14" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.6)" stroke-dasharray="3 3"/><circle r="3.5" fill="#fb923c"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.7s" repeatCount="indefinite"/></circle></g>
+                  <g transform="translate(186, 254)"><circle r="14" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.6)" stroke-dasharray="3 3"/><circle r="3.5" fill="#34d399"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.2s" repeatCount="indefinite"/></circle></g>
+                  <g transform="translate(152, 195)"><circle r="14" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.6)" stroke-dasharray="3 3"/><circle r="3.5" fill="#60a5fa"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="3.5s" repeatCount="indefinite"/></circle></g>
+                  <g transform="translate(186, 136)"><circle r="14" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.6)" stroke-dasharray="3 3"/><circle r="3.5" fill="#c084fc"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="4.2s" repeatCount="indefinite"/></circle></g>
+                  <g transform="translate(254, 136)"><circle r="14" stroke="var(--border-hi)" stroke-width="0.6" fill="rgba(255,255,255,0.6)" stroke-dasharray="3 3"/><circle r="3.5" fill="#fbbf24"><animate attributeName="opacity" values="0.95;0.55;0.95" dur="2.8s" repeatCount="indefinite"/></circle></g>
+                </g>
 
-                <!-- Bottom center annotation -->
-                <text x="175" y="340" class="bp-label">Agent Slot B3</text>
-                <text x="175" y="349" class="bp-dim">type: support // queue: 12</text>
+                <!-- Outer ring: 6 MCP brand chips -->
+                <g font-family="Inter" font-size="9" font-weight="700" text-anchor="middle">
+                  <g transform="translate(341, 265)"><circle r="14" fill="#fff" stroke="var(--border-hi)" stroke-width="0.6"/><text y="3" fill="#4285F4">G</text></g>
+                  <g transform="translate(220, 335)"><circle r="14" fill="#fff" stroke="var(--border-hi)" stroke-width="0.6"/><text y="3" fill="var(--text)">Gh</text></g>
+                  <g transform="translate(99, 265)"><circle r="14" fill="#fff" stroke="var(--border-hi)" stroke-width="0.6"/><text y="3" fill="#611f69">Sl</text></g>
+                  <g transform="translate(99, 125)"><circle r="14" fill="#fff" stroke="var(--border-hi)" stroke-width="0.6"/><text y="3" fill="#635bff">St</text></g>
+                  <g transform="translate(220, 55)"><circle r="14" fill="#fff" stroke="var(--border-hi)" stroke-width="0.6"/><text y="3" fill="#ff7a59">Hb</text></g>
+                  <g transform="translate(341, 125)"><circle r="14" fill="#fff" stroke="var(--border-hi)" stroke-width="0.6"/><text y="3" fill="var(--text)">No</text></g>
+                </g>
 
-                <!-- Connection lines -->
-                <line x1="220" y1="180" x2="120" y2="90" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
-                <line x1="220" y1="180" x2="320" y2="90" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
-                <line x1="220" y1="180" x2="120" y2="270" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
-                <line x1="220" y1="180" x2="320" y2="270" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
-                <line x1="220" y1="180" x2="220" y2="70" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
-                <line x1="220" y1="180" x2="220" y2="290" stroke="var(--accent2)" stroke-width="0.5" opacity="0.3"/>
+                <!-- NICE core: glyph + expanding pulse ring -->
+                <g transform="translate(220, 195)">
+                  <circle r="28" stroke="var(--accent2)" stroke-width="0.8" fill="rgba(15,82,186,0.06)"/>
+                  <circle r="20" stroke="var(--accent2)" stroke-width="0.5" fill="none" stroke-dasharray="4 3" opacity="0.45"/>
+                  <!-- NICE constellation glyph: hexagon + 6 vertex dots + center -->
+                  <polygon points="0,-12 10.4,-6 10.4,6 0,12 -10.4,6 -10.4,-6" stroke="var(--accent2)" stroke-width="1.4" fill="none"/>
+                  <circle cx="0"     cy="-12" r="2.2" fill="var(--accent2)"/>
+                  <circle cx="10.4"  cy="-6"  r="2.2" fill="var(--accent2)"/>
+                  <circle cx="10.4"  cy="6"   r="2.2" fill="var(--accent2)"/>
+                  <circle cx="0"     cy="12"  r="2.2" fill="var(--accent2)"/>
+                  <circle cx="-10.4" cy="6"   r="2.2" fill="var(--accent2)"/>
+                  <circle cx="-10.4" cy="-6"  r="2.2" fill="var(--accent2)"/>
+                  <circle r="4" fill="var(--accent2)"/>
+                  <!-- Expanding pulse ring -->
+                  <circle r="28" stroke="var(--accent2)" stroke-width="0.6" fill="none" opacity="0">
+                    <animate attributeName="r" values="28;58" dur="3.5s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.4;0" dur="3.5s" repeatCount="indefinite"/>
+                  </circle>
+                  <circle r="28" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0">
+                    <animate attributeName="r" values="28;58" dur="3.5s" begin="1.75s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.4;0" dur="3.5s" begin="1.75s" repeatCount="indefinite"/>
+                  </circle>
+                </g>
 
-                <!-- Center spaceship node -->
-                <circle cx="220" cy="180" r="28" stroke="var(--accent2)" stroke-width="1" fill="none" opacity="0.4"/>
-                <circle cx="220" cy="180" r="18" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0.2" stroke-dasharray="4 3"/>
-                <circle cx="220" cy="180" r="5" fill="var(--accent2)" opacity="0.8">
-                  <animate attributeName="opacity" values="0.8;0.4;0.8" dur="3s" repeatCount="indefinite"/>
-                </circle>
-
-                <!-- Agent nodes -->
-                <circle cx="120" cy="90" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
-                <circle cx="120" cy="90" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
-                <circle cx="120" cy="90" r="3.5" fill="#f87171" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="4s" repeatCount="indefinite"/></circle>
-
-                <circle cx="320" cy="90" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
-                <circle cx="320" cy="90" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
-                <circle cx="320" cy="90" r="3.5" fill="#60a5fa" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.5s" repeatCount="indefinite"/></circle>
-
-                <circle cx="220" cy="70" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
-                <circle cx="220" cy="70" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
-                <circle cx="220" cy="70" r="3.5" fill="#fbbf24" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="2.8s" repeatCount="indefinite"/></circle>
-
-                <circle cx="120" cy="270" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
-                <circle cx="120" cy="270" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
-                <circle cx="120" cy="270" r="3.5" fill="#34d399" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.2s" repeatCount="indefinite"/></circle>
-
-                <circle cx="320" cy="270" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
-                <circle cx="320" cy="270" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
-                <circle cx="320" cy="270" r="3.5" fill="#c084fc" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="4.2s" repeatCount="indefinite"/></circle>
-
-                <circle cx="220" cy="290" r="20" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.3"/>
-                <circle cx="220" cy="290" r="12" stroke="var(--border-hi)" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="3 3"/>
-                <circle cx="220" cy="290" r="3.5" fill="#fb923c" opacity="0.9"><animate attributeName="opacity" values="0.9;0.5;0.9" dur="3.7s" repeatCount="indefinite"/></circle>
-
-                <!-- Pulse rings -->
-                <circle cx="220" cy="180" r="28" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0">
-                  <animate attributeName="r" values="28;50" dur="4s" repeatCount="indefinite"/>
-                  <animate attributeName="opacity" values="0.3;0" dur="4s" repeatCount="indefinite"/>
-                </circle>
-
-                <!-- Title -->
-                <text x="220" y="375" text-anchor="middle" class="bp-label" style="font-size:7px;fill:#555;letter-spacing:0.15em">Spaceship Schematic // NCC-NICE-001</text>
+                <!-- Bottom readout strip -->
+                <g>
+                  <rect x="8" y="356" width="424" height="18" rx="3" fill="rgba(15,82,186,0.05)"/>
+                  <text x="20" y="369" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.10em" fill="var(--text-muted)">12 AGENTS · 19 MCPS · 10 MODELS · 500+ BLUEPRINTS</text>
+                  <circle cx="412" cy="365" r="3" fill="#34d399"><animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></circle>
+                  <text x="404" y="369" text-anchor="end" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.14em" fill="#34d399">ONLINE</text>
+                </g>
               </svg>
               </div>
 
