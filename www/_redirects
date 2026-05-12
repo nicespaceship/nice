@@ -8,4 +8,6 @@
 /app/* https://nicespaceship.ai/app/:splat   301
 
 # Renamed 2026-05-12: "About" was too generic.
-/about  /explore  301
+/about    /explore           301
+# Pricing folded into the explore page 2026-05-12.
+/pricing  /explore#pricing   301

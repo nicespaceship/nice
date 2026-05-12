@@ -3,7 +3,7 @@ const Nav = (() => {
   const LINKS = [
     { href: '/explore', label: 'Explore' },
     { href: '/blueprints', label: 'Blueprints' },
-    { href: '/pricing', label: 'Pricing' },
+    { href: '/explore#pricing', label: 'Pricing' },
     { href: '/docs', label: 'Documentation' },
   ];
 
@@ -82,7 +82,7 @@ const Nav = (() => {
             <h4>Product</h4>
             <a href="https://nicespaceship.ai">NICE</a>
             <a href="/blueprints">Blueprints</a>
-            <a href="/pricing">Pricing</a>
+            <a href="/explore#pricing">Pricing</a>
             <a href="/docs">Documentation</a>
           </div>
           <div class="footer-col">
