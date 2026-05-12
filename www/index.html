@@ -988,17 +988,112 @@
               <!-- Open source graphic -->
               <div class="faq-graphic faq-graphic-oss">
                 <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Code brackets -->
+                  <!-- HUD corner brackets -->
+                  <g stroke="var(--accent2)" stroke-width="1" fill="none" opacity="0.45">
+                    <path d="M 8 28 L 8 8 L 28 8"/>
+                    <path d="M 412 8 L 432 8 L 432 28"/>
+                    <path d="M 8 320 L 8 340 L 28 340"/>
+                    <path d="M 412 340 L 432 340 L 432 320"/>
+                  </g>
+
+                  <!-- Top eyebrow -->
+                  <text x="220" y="24" text-anchor="middle" font-family="'Fira Code', monospace" font-size="9" fill="var(--text-muted)" letter-spacing="0.10em">github.com/nicespaceship/nice</text>
+
+                  <!-- Connection lines from pills to center -->
+                  <g stroke="var(--accent2)" stroke-width="0.5" opacity="0.25" stroke-dasharray="3 3">
+                    <line x1="138" y1="106" x2="180" y2="170"/>
+                    <line x1="302" y1="106" x2="260" y2="170"/>
+                    <line x1="138" y1="304" x2="180" y2="240"/>
+                    <line x1="302" y1="304" x2="260" y2="240"/>
+                  </g>
+
+                  <!-- Animated traveling pulses (community contributions flowing in/out) -->
+                  <g fill="var(--accent2)">
+                    <circle r="2.4" opacity="0"><animate attributeName="cx" values="138;220" dur="3.2s" begin="0s" repeatCount="indefinite"/><animate attributeName="cy" values="106;200" dur="3.2s" begin="0s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur="3.2s" begin="0s" repeatCount="indefinite"/></circle>
+                    <circle r="2.4" opacity="0"><animate attributeName="cx" values="302;220" dur="3.2s" begin="0.8s" repeatCount="indefinite"/><animate attributeName="cy" values="106;200" dur="3.2s" begin="0.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur="3.2s" begin="0.8s" repeatCount="indefinite"/></circle>
+                    <circle r="2.4" opacity="0"><animate attributeName="cx" values="220;302" dur="3.2s" begin="1.6s" repeatCount="indefinite"/><animate attributeName="cy" values="200;304" dur="3.2s" begin="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur="3.2s" begin="1.6s" repeatCount="indefinite"/></circle>
+                    <circle r="2.4" opacity="0"><animate attributeName="cx" values="220;138" dur="3.2s" begin="2.4s" repeatCount="indefinite"/><animate attributeName="cy" values="200;304" dur="3.2s" begin="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur="3.2s" begin="2.4s" repeatCount="indefinite"/></circle>
+                  </g>
+
+                  <!-- Code brackets centerpiece + Octocat + MIT badge -->
                   <g transform="translate(220, 175)">
-                    <text text-anchor="middle" font-family="'Fira Code', monospace" font-size="120" font-weight="700" fill="var(--text)">&lt;/&gt;</text>
+                    <text text-anchor="middle" font-family="'Fira Code', monospace" font-size="68" font-weight="700" fill="var(--text)">&lt;/&gt;</text>
+                    <!-- Subtle pulse ring behind brackets -->
+                    <circle r="50" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0">
+                      <animate attributeName="r" values="50;90" dur="3.5s" repeatCount="indefinite"/>
+                      <animate attributeName="opacity" values="0.35;0" dur="3.5s" repeatCount="indefinite"/>
+                    </circle>
                   </g>
-                  <!-- MIT badge -->
-                  <g transform="translate(220, 270)">
-                    <rect x="-58" y="0" width="116" height="34" rx="17" stroke="var(--accent2)" stroke-width="1.4" fill="rgba(15,82,186,0.08)"/>
-                    <text y="22" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" letter-spacing="0.02em" fill="var(--text)">MIT License</text>
+
+                  <!-- GitHub octocat -->
+                  <g transform="translate(220, 232)">
+                    <circle r="14" fill="#fff" stroke="var(--accent2)" stroke-width="1.2"/>
+                    <image x="-10" y="-10" width="20" height="20" href="https://cdn.simpleicons.org/github/181717"/>
                   </g>
-                  <text x="220" y="62" text-anchor="middle" font-family="'Fira Code', monospace" font-size="9" fill="var(--text-muted)" letter-spacing="0.18em">github.com/nicespaceship/nice</text>
-                  <text x="220" y="336" text-anchor="middle" font-family="Inter" font-size="10" fill="var(--text-muted)">Fork it. Self-host it. Contribute blueprints.</text>
+
+                  <!-- MIT License badge -->
+                  <g transform="translate(220, 272)">
+                    <rect x="-58" y="0" width="116" height="32" rx="16" stroke="var(--accent2)" stroke-width="1.4" fill="rgba(15,82,186,0.10)"/>
+                    <text y="21" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" letter-spacing="0.02em" fill="var(--text)">MIT License</text>
+                  </g>
+
+                  <!-- 4 action pills at corners -->
+                  <g font-family="Inter" font-size="10" font-weight="600" fill="var(--text)" text-anchor="middle">
+                    <!-- Top-left: Fork it -->
+                    <g transform="translate(80, 106)">
+                      <rect x="-58" y="-15" width="116" height="30" rx="15" stroke="var(--accent2)" stroke-width="1" fill="#fff"/>
+                      <g transform="translate(-40, 0)" stroke="var(--accent2)" stroke-width="1.4" fill="none" stroke-linecap="round">
+                        <circle cx="-4" cy="-4" r="2"/>
+                        <circle cx="4" cy="-4" r="2"/>
+                        <circle cx="0" cy="6" r="2"/>
+                        <path d="M -4 -2 Q -4 4 0 4 M 4 -2 Q 4 4 0 4"/>
+                      </g>
+                      <text x="6" y="4">Fork it</text>
+                    </g>
+                    <!-- Top-right: Clone it -->
+                    <g transform="translate(360, 106)">
+                      <rect x="-58" y="-15" width="116" height="30" rx="15" stroke="var(--accent2)" stroke-width="1" fill="#fff"/>
+                      <g transform="translate(-40, 0)" stroke="var(--accent2)" stroke-width="1.4" fill="none" stroke-linecap="round">
+                        <path d="M 0 -6 L 0 4"/>
+                        <path d="M -4 0 L 0 4 L 4 0"/>
+                        <line x1="-5" y1="7" x2="5" y2="7"/>
+                      </g>
+                      <text x="6" y="4">Clone it</text>
+                    </g>
+                    <!-- Bottom-left: Self-host -->
+                    <g transform="translate(80, 304)">
+                      <rect x="-58" y="-15" width="116" height="30" rx="15" stroke="var(--accent2)" stroke-width="1" fill="#fff"/>
+                      <g transform="translate(-40, 0)" stroke="var(--accent2)" stroke-width="1" fill="rgba(15,82,186,0.10)">
+                        <rect x="-6" y="-7" width="12" height="4" rx="0.6"/>
+                        <rect x="-6" y="-1.5" width="12" height="4" rx="0.6"/>
+                        <rect x="-6" y="4" width="12" height="4" rx="0.6"/>
+                        <circle cx="-4" cy="-5" r="0.6" fill="var(--accent2)" stroke="none"/>
+                        <circle cx="-4" cy="0.5" r="0.6" fill="var(--accent2)" stroke="none"/>
+                        <circle cx="-4" cy="6" r="0.6" fill="var(--accent2)" stroke="none"/>
+                      </g>
+                      <text x="6" y="4">Self-host</text>
+                    </g>
+                    <!-- Bottom-right: Contribute -->
+                    <g transform="translate(360, 304)">
+                      <rect x="-58" y="-15" width="116" height="30" rx="15" stroke="var(--accent2)" stroke-width="1" fill="#fff"/>
+                      <g transform="translate(-44, 0)" stroke="var(--accent2)" stroke-width="1.4" fill="none" stroke-linecap="round">
+                        <circle cx="-4" cy="-5" r="2"/>
+                        <circle cx="-4" cy="5" r="2"/>
+                        <path d="M -4 -3 L -4 3"/>
+                        <path d="M -4 -3 Q 4 -3 4 3"/>
+                        <circle cx="4" cy="5" r="2"/>
+                      </g>
+                      <text x="6" y="4">Contribute</text>
+                    </g>
+                  </g>
+
+                  <!-- Bottom readout strip -->
+                  <g>
+                    <rect x="8" y="356" width="424" height="18" rx="3" fill="rgba(15,82,186,0.05)"/>
+                    <text x="20" y="369" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.05em" fill="var(--text-muted)">MIT license · Public repo · 0 hidden code · 100% audit-ready</text>
+                    <circle cx="412" cy="365" r="3" fill="#34d399"><animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></circle>
+                    <text x="404" y="369" text-anchor="end" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.08em" fill="#34d399">Open</text>
+                  </g>
                 </svg>
               </div>
             </div>
