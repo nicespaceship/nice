@@ -828,17 +828,11 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
 
 .faq-section {
   overflow: hidden; position: relative;
-  background:
-    radial-gradient(ellipse 70% 50% at 30% 60%, rgba(15,82,186,0.05) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 70% at 70% 30%, rgba(15,82,186,0.04) 0%, transparent 70%),
-    var(--bg);
+  background: var(--bg);
 }
-.faq-grid-bg {
-  background:
-    radial-gradient(ellipse 70% 50% at 30% 60%, rgba(15,82,186,0.05) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 70% at 70% 30%, rgba(15,82,186,0.04) 0%, transparent 70%),
-    var(--bg);
-}
+/* .faq-grid-bg used to layer Sapphire radial washes — removed for a cleaner
+   plate. Class kept as a no-op so the existing markup doesn't break. */
+.faq-grid-bg { background: var(--bg); }
 .faq-layout {
   display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: stretch; position: relative;
 }
