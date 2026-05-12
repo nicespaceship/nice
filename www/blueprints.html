@@ -54,7 +54,7 @@
       font-family: var(--font); transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.04em;
     }
     .bp-rarity-btn:hover { border-color: var(--border-hi); }
-    .bp-rarity-btn.active { background: rgba(165,180,252,0.08); border-color: var(--accent2); color: var(--accent2); }
+    .bp-rarity-btn.active { background: rgba(15,82,186,0.08); border-color: var(--accent2); color: var(--accent2); }
     .bp-rarity-btn[data-rarity="all"] { color: var(--text); }
     .bp-rarity-btn[data-rarity="common"] { color: var(--text); }
     .bp-rarity-btn[data-rarity="rare"] { color: #60a5fa; }
@@ -101,6 +101,14 @@
     .bp-drawer-overlay.open { opacity: 1; pointer-events: auto; }
 
     .bp-drawer {
+      /* Always-dark side panel — frames the TCG card which is itself locked
+         to dark stock. Lock dark token values here so prose and chrome stay
+         readable when the page is in light mode. */
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --border: rgba(255,255,255,0.10);
+      --border-hi: rgba(255,255,255,0.20);
       position: fixed; right: 0; top: 0; bottom: 0; width: 420px; z-index: 250;
       background: var(--surface-2, #18181b); border-left: 1px solid var(--border);
       box-shadow: -4px 0 24px rgba(0,0,0,0.3);
@@ -192,11 +200,11 @@
               <button class="bp-tab" data-type="agent"><i class="fa-solid fa-robot"></i> Agents</button>
             </div>
             <div class="bp-view-toggle" id="bp-view-toggle">
-              <button class="bp-view-btn active" data-view="default" title="Grid view">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
-              </button>
-              <button class="bp-view-btn" data-view="card" title="Card view">
+              <button class="bp-view-btn active" data-view="card" title="Card view">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="0" width="12" height="14" rx="2"/></svg>
+              </button>
+              <button class="bp-view-btn" data-view="default" title="Grid view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
               </button>
               <button class="bp-view-btn" data-view="list" title="List view">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
@@ -277,7 +285,7 @@
       let page = 0;
       let drawerIndex = -1;
       let drawerKeyHandler = null;
-      let viewMode = 'default';
+      let viewMode = 'card';
       const PAGE_SIZE = 48;
       const RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
 
