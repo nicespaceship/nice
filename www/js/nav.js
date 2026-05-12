@@ -3,7 +3,6 @@ const Nav = (() => {
   const LINKS = [
     { href: '/explore', label: 'Explore' },
     { href: '/blueprints', label: 'Blueprints' },
-    { href: '/explore#pricing', label: 'Pricing' },
     { href: '/docs', label: 'Documentation' },
   ];
 
