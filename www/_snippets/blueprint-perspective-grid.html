@@ -1,0 +1,69 @@
+<!--
+  Saved snippet: Blueprint System mirrored perspective grid.
+
+  Originally lived in www/explore.html under the "The Blueprint System"
+  section as a Sapphire-tinted perspective grid (floor + ceiling) that
+  scrolled toward a center horizon. Removed from /explore on 2026-05-12;
+  preserved here for later reuse.
+
+  To re-enable:
+    1. Paste the <style> block into the page's <head> (or move into site.css).
+    2. Add the two <div> elements as the first children of the section
+       you want the grid behind. The section needs `position:relative;
+       overflow:hidden` so the absolutely-positioned grid stays inside.
+    3. The grid uses var(--accent2) colour values and a `grid-scroll`
+       keyframe that scrolls 0->40px on a 3s loop.
+-->
+
+<style>
+  @keyframes grid-scroll { 0% { background-position: 0 0; } 100% { background-position: 0 40px; } }
+
+  .bp-grid-bg {
+    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      linear-gradient(rgba(15,82,186,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,82,186,0.08) 1px, transparent 1px),
+      linear-gradient(rgba(15,82,186,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,82,186,0.03) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+    animation: grid-scroll 3s linear infinite;
+    transform: perspective(400px) rotateX(55deg);
+    transform-origin: center 70%;
+    mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
+  }
+
+  /* Dark mode boost — Sapphire at 12/8/4/3% disappears on near-black,
+     so push the four opacity tiers up. Same hue, mask, and animation. */
+  body[data-theme="dark"] .bp-grid-bg,
+  body[data-theme="dark"] .bp-grid-bg-top {
+    background:
+      linear-gradient(rgba(15,82,186,0.55) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,82,186,0.40) 1px, transparent 1px),
+      linear-gradient(rgba(15,82,186,0.20) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,82,186,0.15) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+  }
+
+  /* Ceiling grid — mirrored copy of the floor grid. Same perspective tilt
+     flipped on X so it recedes upward to the same horizon line. Mask is
+     flipped so it fades into the section centre instead of the bottom. */
+  .bp-grid-bg-top {
+    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      linear-gradient(rgba(15,82,186,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,82,186,0.08) 1px, transparent 1px),
+      linear-gradient(rgba(15,82,186,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,82,186,0.03) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+    animation: grid-scroll 3s linear infinite reverse;
+    transform: perspective(400px) rotateX(-55deg);
+    transform-origin: center 30%;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
+  }
+</style>
+
+<!-- Markup: drop these as the first two children of the host section. -->
+<div class="bp-grid-bg"></div>
+<div class="bp-grid-bg-top"></div>

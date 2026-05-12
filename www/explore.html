@@ -87,49 +87,10 @@
     @media (prefers-reduced-motion: reduce) {
       .hero-h1-rgb-blue { animation: none; }
     }
-    .bp-grid-bg {
-      position: absolute; inset: 0; pointer-events: none; z-index: 0;
-      background:
-        linear-gradient(rgba(15,82,186,0.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,82,186,0.08) 1px, transparent 1px),
-        linear-gradient(rgba(15,82,186,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,82,186,0.03) 1px, transparent 1px);
-      background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
-      animation: grid-scroll 3s linear infinite;
-      transform: perspective(400px) rotateX(55deg);
-      transform-origin: center 70%;
-      mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
-      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
-    }
-    /* Dark mode — Sapphire at 12/8/4/3% disappears on near-black. Boost the
-       four opacity tiers so the grid reads as a faint Sapphire perspective
-       tunnel instead of vanishing. Same hue, same animation, same mask. */
-    body[data-theme="dark"] .bp-grid-bg,
-    body[data-theme="dark"] .bp-grid-bg-top {
-      background:
-        linear-gradient(rgba(15,82,186,0.55) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,82,186,0.40) 1px, transparent 1px),
-        linear-gradient(rgba(15,82,186,0.20) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,82,186,0.15) 1px, transparent 1px);
-      background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
-    }
-    /* Ceiling grid — mirrored copy of the floor grid. Same perspective tilt
-       flipped on X so it recedes upward to the same horizon line. Mask is
-       flipped so it fades into the section centre instead of the bottom. */
-    .bp-grid-bg-top {
-      position: absolute; inset: 0; pointer-events: none; z-index: 0;
-      background:
-        linear-gradient(rgba(15,82,186,0.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,82,186,0.08) 1px, transparent 1px),
-        linear-gradient(rgba(15,82,186,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,82,186,0.03) 1px, transparent 1px);
-      background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
-      animation: grid-scroll 3s linear infinite reverse;
-      transform: perspective(400px) rotateX(-55deg);
-      transform-origin: center 30%;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
-      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.12) 65%, transparent 85%);
-    }
+    /* Blueprint System perspective grid (.bp-grid-bg + .bp-grid-bg-top)
+       removed 2026-05-12. Saved at /_snippets/blueprint-perspective-grid.html
+       for later reuse. The grid-scroll keyframe is unused now but kept above
+       for any future addition. */
 
     @media (max-width: 768px) {
       .bp-example-grid, .bp-example-grid.reverse { grid-template-columns: 1fr; gap: 32px; }
@@ -230,8 +191,6 @@
     </section>
 
     <section class="section section-alt" style="position:relative;overflow:hidden;background:var(--bg)">
-      <div class="bp-grid-bg"></div>
-      <div class="bp-grid-bg-top"></div>
       <div class="container" style="position:relative;z-index:1">
         <h2 style="text-align:center;margin-bottom:8px">The Blueprint System</h2>
         <p style="text-align:center;color:var(--text-muted);margin-bottom:16px;max-width:560px;margin-left:auto;margin-right:auto">Every workflow starts with a blueprint. Browse, activate, deploy.</p>
