@@ -248,6 +248,11 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 #hero-canvas, #warp-canvas {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none; z-index: 0;
+  /* Fade out the center so the starfield clears behind hero copy.
+     Matches the schematic-bg radial mask shape so all layers fade
+     from the same focal area. */
+  -webkit-mask-image: radial-gradient(ellipse 35% 38% at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 40%, #000 70%);
+  mask-image: radial-gradient(ellipse 35% 38% at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 40%, #000 70%);
 }
 .hero > *:not(canvas):not(.hero-ring):not(.hero-ring-outer):not(.hero-constellation):not(.hero-scroll-cue) { position: relative; z-index: 3; }
 .hero-ring, .hero-ring-outer { z-index: 1; }
@@ -733,10 +738,7 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
    BENTO GRID (themes + gamification)
 ═══════════════════════════════════════════════════════════════════ */
 .experience-section {
-  background:
-    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(15,82,186,0.06) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 60% at 80% 70%, rgba(15,82,186,0.04) 0%, transparent 70%),
-    var(--bg);
+  background: var(--bg);
 }
 .bento-grid {
   display: grid; grid-template-columns: 1.4fr 1fr;
@@ -823,17 +825,11 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
 
 .faq-section {
   overflow: hidden; position: relative;
-  background:
-    radial-gradient(ellipse 70% 50% at 30% 60%, rgba(15,82,186,0.05) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 70% at 70% 30%, rgba(15,82,186,0.04) 0%, transparent 70%),
-    var(--bg);
+  background: var(--bg);
 }
-.faq-grid-bg {
-  background:
-    radial-gradient(ellipse 70% 50% at 30% 60%, rgba(15,82,186,0.05) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 70% at 70% 30%, rgba(15,82,186,0.04) 0%, transparent 70%),
-    var(--bg);
-}
+/* .faq-grid-bg used to layer Sapphire radial washes — removed for a cleaner
+   plate. Class kept as a no-op so the existing markup doesn't break. */
+.faq-grid-bg { background: var(--bg); }
 .faq-layout {
   display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: stretch; position: relative;
 }
@@ -1278,6 +1274,8 @@ canvas.cta-bg { width: 100%; height: 100%; }
 .card-nebula-mask.v2 .card-nebula-blob-2 { animation: card-nebula-v2-b 7s  ease-in-out infinite; }
 .card-nebula-mask.v3 .card-nebula-blob-1 { animation: card-nebula-v3-a 9s  ease-in-out infinite; }
 .card-nebula-mask.v3 .card-nebula-blob-2 { animation: card-nebula-v3-b 13s ease-in-out infinite; }
+.card-nebula-mask.v4 .card-nebula-blob-1 { animation: card-nebula-v4-a 12s ease-in-out infinite; }
+.card-nebula-mask.v4 .card-nebula-blob-2 { animation: card-nebula-v4-b 9s  ease-in-out infinite; }
 
 /* v1 — Orbital swirl. Blobs trace looping arcs around the card centre. */
 @keyframes card-nebula-v1-a {
@@ -1322,6 +1320,22 @@ canvas.cta-bg { width: 100%; height: 100%; }
   60%      { transform: translate3d(40px, -30px, 0) scale(0.85); }
   80%      { transform: translate3d(50px, 40px, 0) scale(1.15); }
 }
+
+/* v4 — Lazy figure-eight. Slowest of the four with wide arcs and gentle scale
+   shifts so it reads as ambient drift instead of a defined motion path. */
+@keyframes card-nebula-v4-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  25%      { transform: translate3d(-45px, 25px, 0) scale(0.92); }
+  50%      { transform: translate3d(40px, 55px, 0) scale(1.20); }
+  75%      { transform: translate3d(55px, -20px, 0) scale(0.85); }
+}
+@keyframes card-nebula-v4-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.95); }
+  25%      { transform: translate3d(50px, -35px, 0) scale(1.18); }
+  50%      { transform: translate3d(-45px, -45px, 0) scale(0.80); }
+  75%      { transform: translate3d(-50px, 20px, 0) scale(1.10); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-nebula-blob { animation: none !important; }
 }
@@ -1357,4 +1371,218 @@ canvas.cta-bg { width: 100%; height: 100%; }
   .schematic-node:hover,
   .mcp-tile:hover,
   .bento-card:hover { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HOME — scroll-narrative stage with fixed NICE constellation icon.
+   Same pattern as benduffey.com, scoped here under .home-* classes.
+   ═══════════════════════════════════════════════════════════════════ */
+body.home { overflow-x: hidden; }
+
+.home-stage {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+}
+.home-mark-wrap {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 70vmin; height: 70vmin;
+  transform: translateY(0);
+  transition:
+    width 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.home-mark-wrap.is-compact {
+  width: 26vmin; height: 26vmin;
+  transform: translateY(-30vh);
+}
+.home-mark {
+  width: 100%; height: 100%;
+  fill: var(--text);
+  opacity: 0.96;
+  filter: drop-shadow(0 0 80px rgba(15,82,186,0.18));
+  transform-origin: 50% 50%;
+  animation: home-mark-breath 8s ease-in-out infinite;
+  transition: opacity 0.7s, filter 0.7s;
+}
+.home-mark-wrap.is-compact .home-mark {
+  opacity: 0.9;
+  filter: drop-shadow(0 0 40px rgba(15,82,186,0.22));
+}
+.home-mark > g     { transform-origin: 2500px 2500px; }
+.home-mark-orbit    { animation: home-mark-glow 7s ease-in-out infinite 2.4s; }
+.home-mark-pillars  { animation: home-mark-glow 4.5s ease-in-out infinite 0.8s; }
+.home-mark-chevrons { animation: home-mark-glow 5.5s ease-in-out infinite 1.6s; }
+.home-mark-core     { animation: home-mark-glow 6s ease-in-out infinite; }
+
+@keyframes home-mark-breath {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.025); }
+}
+@keyframes home-mark-glow {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.72; }
+}
+
+.home-stage-ring {
+  position: absolute; left: 50%; top: 50%;
+  width: 100%; height: 100%;
+  border: 1px solid var(--accent2);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.85);
+}
+.home-stage-ring-1 { animation: home-ring-pulse 7s ease-out infinite; }
+.home-stage-ring-2 { animation: home-ring-pulse 7s ease-out infinite 2.3s; }
+.home-stage-ring-3 { animation: home-ring-pulse 7s ease-out infinite 4.6s; }
+
+@keyframes home-ring-pulse {
+  0%   { transform: translate(-50%, -50%) scale(0.85); opacity: 0.22; }
+  100% { transform: translate(-50%, -50%) scale(1.45); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-mark, .home-mark > g,
+  .home-stage-ring-1, .home-stage-ring-2, .home-stage-ring-3 { animation: none; }
+}
+
+/* Side timeline — minimal scroll-progress indicator on the right edge. */
+.home-timeline {
+  position: fixed; right: 24px; top: 50%;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 22px;
+  z-index: 40;
+}
+.home-timeline-item {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.home-timeline-item:hover { color: var(--text); text-decoration: none; }
+.home-timeline-label {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  order: 1;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.home-timeline-dot {
+  order: 2;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-muted);
+  opacity: 0.4;
+  transition: background 0.25s, opacity 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.home-timeline-item:hover .home-timeline-label,
+.home-timeline-item.is-active .home-timeline-label {
+  opacity: 1; transform: translateX(0);
+}
+.home-timeline-item.is-active .home-timeline-dot {
+  background: var(--accent);
+  opacity: 1;
+  transform: scale(1.55);
+  box-shadow: 0 0 0 4px rgba(24,98,206,0.16);
+}
+@media (max-width: 768px) {
+  .home-timeline { display: none; }
+}
+
+/* Stops — full-viewport sections, content reveals on scroll. */
+.home-main { position: relative; z-index: 1; }
+.home-stop {
+  min-height: 100vh;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 80px 24px 8vh;
+  position: relative;
+}
+.home-stop-hero {
+  align-items: center;
+}
+.home-stop-content {
+  width: 100%;
+  max-width: 600px;
+  padding: 28px 32px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.home-stop.is-visible .home-stop-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+.home-stop-eyebrow {
+  display: inline-block;
+  font-size: var(--text-xs); font-weight: var(--fw-medium);
+  text-transform: uppercase; letter-spacing: var(--tracking-caps);
+  color: var(--accent2);
+  margin-bottom: 14px;
+}
+.home-stop-content h2 {
+  font-size: var(--text-2xl); font-weight: var(--fw-bold);
+  line-height: var(--lh-snug); letter-spacing: var(--tracking-display);
+  margin-bottom: 14px;
+}
+.home-stop-content p {
+  font-size: var(--text-md); color: var(--text-muted);
+  line-height: var(--lh-base);
+  margin-bottom: 20px;
+}
+.home-stop-list {
+  list-style: none; padding: 0; margin: 16px 0 0;
+  display: grid; gap: 10px;
+}
+.home-stop-list li {
+  font-size: var(--text-sm); color: var(--text-muted);
+  line-height: var(--lh-base);
+  padding: 10px 14px;
+  border-left: 2px solid var(--accent2);
+  background: var(--surface2);
+  border-radius: 4px;
+}
+.home-stop-list li strong {
+  color: var(--text); display: block;
+  font-weight: var(--fw-medium);
+  margin-bottom: 2px;
+}
+.home-stop-ctas {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+/* Scroll hint at the bottom of the hero stop */
+.home-scroll-hint {
+  position: absolute;
+  left: 50%; bottom: 32px;
+  transform: translateX(-50%);
+  font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: var(--tracking-caps);
+  color: var(--text-muted);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: home-hint-bob 2.4s ease-in-out infinite;
+  opacity: 0.7;
+}
+@keyframes home-hint-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%      { transform: translate(-50%, 6px); }
+}
+
+@media (max-width: 768px) {
+  .home-mark-wrap { width: 60vmin; height: 60vmin; }
+  .home-mark-wrap.is-compact { width: 28vmin; height: 28vmin; transform: translateY(-28vh); }
+  .home-stop-content { padding: 22px 20px; }
 }
