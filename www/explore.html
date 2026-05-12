@@ -198,7 +198,7 @@
         <div class="bp-example-grid">
           <div>
             <h2 style="background:linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Spaceships</h2>
-            <p>A Spaceship orchestrates your business workflow with a pre-configured crew of AI agents. Deploy one and your team starts working.</p>
+            <p>A Spaceship orchestrates a workflow with a pre-configured crew of agents. Activate one and the team gets to work.</p>
             <h3 style="margin-top:24px">Rarity & Progression</h3>
             <p>Five rarities from Common to Mythic. Rank up to unlock rarer blueprints. You earn Mythic. You can't buy it.</p>
           </div>
@@ -211,7 +211,7 @@
           <div>
             <h2 style="background:linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Agents</h2>
             <p>Agents do the work. Each carries a role, tools, and an AI model. They draft emails, analyze data, schedule posts, and generate reports.</p>
-            <h3 style="margin-top:24px">How They Work Together</h3>
+            <h3 style="margin-top:24px">How they work together</h3>
             <p>Pick a Spaceship, activate it, connect your integrations, and run missions. Swap agents in and out whenever the work changes.</p>
           </div>
         </div>
@@ -221,14 +221,14 @@
     <section class="section flow-section" id="how-it-works">
       <div class="container">
         <div class="section-header centered" data-reveal>
-          <h2>Neural Intelligence Command Engine ecosystem</h2>
-          <p class="section-desc">AI models power your agents. Agents execute through integrations. You just watch it work.</p>
+          <h2>How NICE works</h2>
+          <p class="section-desc">AI models power your agents. Agents execute through integrations. You just watch the work get done.</p>
         </div>
 
         <!-- Schematic flow: AI Model → NICE Engine → Integrations → Output -->
         <div class="schematic" aria-label="NICE workflow schematic" data-reveal-stagger="140">
           <div class="schematic-stage" data-reveal>
-            <div class="schematic-node" data-stage="ai" data-tip="10 frontier models — Gemini, Claude, GPT-5, Grok, Llama, plus image, video, and voice. NICE picks the right one for each task.">
+            <div class="schematic-node" data-stage="ai" data-tip="10 frontier models: Gemini, Claude, GPT-5, Grok, Llama, plus image, video, and voice. NICE picks the right one for each task.">
               <div class="card-nebula-mask v1" aria-hidden="true">
                 <div class="card-nebula-blob card-nebula-blob-1"></div>
                 <div class="card-nebula-blob card-nebula-blob-2"></div>
@@ -258,7 +258,7 @@
           <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:0.6s"></span></div>
 
           <div class="schematic-stage" data-reveal>
-            <div class="schematic-node" data-stage="mcp" data-tip="19 wired MCP servers connecting your agents to Google, Microsoft, GitHub, Slack, HubSpot, Stripe, and more — all via OAuth, no API keys.">
+            <div class="schematic-node" data-stage="mcp" data-tip="19 wired MCP servers connecting your agents to Google, Microsoft, GitHub, Slack, HubSpot, Stripe, and more. All via OAuth, no API keys.">
               <div class="card-nebula-mask v3" aria-hidden="true">
                 <div class="card-nebula-blob card-nebula-blob-1"></div>
                 <div class="card-nebula-blob card-nebula-blob-2"></div>
@@ -273,7 +273,7 @@
           <div class="schematic-link"><span class="schematic-pulse" style="animation-delay:1.2s"></span></div>
 
           <div class="schematic-stage" data-reveal>
-            <div class="schematic-node" data-stage="output" data-tip="Real actions taken on your tools — emails sent, PRs opened, deals updated, calendar events booked. The work is actually done.">
+            <div class="schematic-node" data-stage="output" data-tip="Real actions on your tools: emails sent, PRs opened, deals updated, calendar events booked.">
               <div class="card-nebula-mask v4" aria-hidden="true">
                 <div class="card-nebula-blob card-nebula-blob-1"></div>
                 <div class="card-nebula-blob card-nebula-blob-2"></div>
@@ -448,7 +448,7 @@
               <h3>91 Modules</h3>
               <div class="feature-copy">
                 <p class="feature-subtitle">IIFE architecture, zero build step</p>
-                <p class="feature-hover">56 lib modules and 28 views, IIFE pattern. No bundler, no transpiler — files ship as written.</p>
+                <p class="feature-hover">56 lib modules and 28 views. IIFE pattern. No bundler, no transpiler. Files ship as written.</p>
               </div>
             </div>
           </div>
@@ -462,7 +462,7 @@
               <h3>1,200+ Tests</h3>
               <div class="feature-copy">
                 <p class="feature-subtitle">Unit + E2E, CI on every push</p>
-                <p class="feature-hover">Vitest unit suite plus Playwright E2E. Every PR runs the full suite before merge — failing tests block ship.</p>
+                <p class="feature-hover">Vitest unit suite plus Playwright E2E. Every PR runs the full suite before merge. Failing tests block ship.</p>
               </div>
             </div>
           </div>
@@ -1273,27 +1273,27 @@
           <div class="faq-list" data-reveal-stagger="60">
             <div class="faq-item open" data-reveal data-graphic="nice">
               <button class="faq-q">What is NICE? <span class="faq-icon">+</span></button>
-              <div class="faq-a">NICE (Neural Intelligence Command Engine) is an open-source AI agent platform. Deploy a crew of AI agents from 500+ blueprints, connect them to 19+ services via MCP, and let them run real work — email, calendars, CRM, GitHub, Slack, and more. NICE is the LLM provider — no API keys needed.</div>
+              <div class="faq-a">An open-source AI agent platform. Deploy a crew from 500+ blueprints, connect to your tools through MCP (email, calendars, CRM, GitHub, Slack, and more), and let the agents run the work. NICE holds the LLM keys, so you don't need to.</div>
             </div>
             <div class="faq-item" data-reveal data-graphic="blueprint">
               <button class="faq-q">What is a Blueprint? <span class="faq-icon">+</span></button>
-              <div class="faq-a">A blueprint is a pre-built AI agent or spaceship template. Each one comes configured with a system prompt, role, and capabilities — ready to deploy. Browse 500+ blueprints across marketing, sales, engineering, operations, and more, or build your own.</div>
+              <div class="faq-a">A pre-built agent or spaceship template, configured with a system prompt, role, and capabilities, ready to deploy. Browse 500+ blueprints across marketing, sales, engineering, operations, and more, or build your own.</div>
             </div>
             <div class="faq-item" data-reveal data-graphic="mcp">
               <button class="faq-q">What's an integration (MCP)? <span class="faq-icon">+</span></button>
-              <div class="faq-a">An integration connects your agents to your tools — Google Workspace, Microsoft 365, GitHub, Slack, HubSpot, Stripe, Notion, Linear, and more. NICE uses MCP (Model Context Protocol) servers to call APIs on your behalf. Connect once via OAuth; every agent on the spaceship inherits the access.</div>
+              <div class="faq-a">An integration connects your agents to your tools: Google Workspace, Microsoft 365, GitHub, Slack, HubSpot, Stripe, Notion, Linear, and more. NICE uses MCP (Model Context Protocol) servers to call APIs on your behalf. Connect once via OAuth; every agent on the spaceship inherits the access.</div>
             </div>
             <div class="faq-item" data-reveal data-graphic="free">
               <button class="faq-q">Is this free to use? <span class="faq-icon">+</span></button>
-              <div class="faq-a">Yes. Gemini 2.5 Flash is unlimited on the Free tier. NICE Pro ($9.99/month) unlocks 12-slot Flagship spaceships, Legendary blueprints, and the standard model pool. Frontier models — Claude 4.7 Opus, Claude 4.6 Sonnet, GPT-5.4 Pro, OpenAI o3, GPT-5.3 Codex, Gemini 2.5 Pro — live behind optional $9.99 add-ons (Claude pool or Premium pool), so you only enable what you need.</div>
+              <div class="faq-a">Yes. Gemini 2.5 Flash is unlimited on the Free tier. NICE Pro ($9.99/month) unlocks 12-slot Flagship spaceships, Legendary blueprints, and the standard model pool. Frontier models (Claude 4.7 Opus, Claude 4.6 Sonnet, GPT-5.4 Pro, OpenAI o3, GPT-5.3 Codex, Gemini 2.5 Pro) live behind optional $9.99 add-ons, so you only pay for what you need.</div>
             </div>
             <div class="faq-item" data-reveal data-graphic="keys">
               <button class="faq-q">Do I need to bring my own API keys? <span class="faq-icon">+</span></button>
-              <div class="faq-a">No. NICE holds all provider keys server-side. You toggle models on and off — that's it.</div>
+              <div class="faq-a">No. NICE holds all provider keys server-side. You toggle models on and off. That's it.</div>
             </div>
             <div class="faq-item" data-reveal data-graphic="secure">
               <button class="faq-q">How secure is my data on the platform? <span class="faq-icon">+</span></button>
-              <div class="faq-a">All connections use OAuth 2.0 with server-side token storage. Your credentials never touch the browser. The entire codebase is open source — audit it yourself.</div>
+              <div class="faq-a">All connections use OAuth 2.0 with server-side token storage. Your credentials never touch the browser. The entire codebase is open source. Audit it yourself.</div>
             </div>
             <div class="faq-item" data-reveal data-graphic="oss">
               <button class="faq-q">Is it really open source? <span class="faq-icon">+</span></button>
@@ -1381,7 +1381,7 @@
     <section class="section">
       <div class="container">
         <h2 style="text-align:center;margin-bottom:8px">Token Top-ups</h2>
-        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px">Pro only. One-time purchases that credit the matching pool and never expire. Max packs are the best value (17% off).</p>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px">Pro only. One-time purchases that credit the matching pool. Never expire. Max packs save 17%.</p>
         <div class="pricing-grid">
           <div class="pricing-card">
             <h3>Standard</h3>
@@ -1423,8 +1423,8 @@
     <section class="section section-alt" style="text-align:center">
       <div class="container">
         <h2>Replace your entire stack</h2>
-        <p style="color:var(--text-muted);margin-bottom:24px">The average SMB spends over $1,300 / month on marketing tools and agencies.</p>
-        <p style="font-size:1.2rem;color:var(--color-success);font-weight:700">NICE Pro replaces most of them for $9.99 / month.</p>
+        <p style="color:var(--text-muted);margin-bottom:24px">The average SMB spends over $1,300/month on marketing tools and agencies.</p>
+        <p style="font-size:1.2rem;color:var(--color-success);font-weight:700">NICE Pro replaces most of them for $9.99/month.</p>
         <p style="color:var(--text-muted)">Stack frontier add-ons only when you need them.</p>
         <a href="https://nicespaceship.ai" class="btn-primary" style="margin-top:24px">Launch NICE for Free</a>
       </div>
