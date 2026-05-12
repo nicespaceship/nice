@@ -895,7 +895,10 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
   .faq-layout { grid-template-columns: 1fr; gap: 24px; }
   .faq-heading h2 { font-size: var(--text-xl); white-space: normal; text-align: center; }
   .faq-heading { align-items: center; }
-  .faq-schematic { width: 100%; max-width: 100%; height: auto; }
+  /* Schematic graphics are position:absolute inset:0 — height:auto would
+     collapse the container to 0 and hide them. Use aspect-ratio so the
+     square scales with the column width. */
+  .faq-schematic { width: 100%; max-width: 420px; height: auto; aspect-ratio: 1 / 1; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
