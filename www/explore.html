@@ -1491,9 +1491,10 @@
     // Expose Scroll early so Parallax can pick it up
     window.Scroll = Scroll;
 
-    ThemeLite.init();
-    Nav.render();
-    Nav.renderFooter();
+    // ThemeLite.init / Nav.render / Nav.renderFooter intentionally NOT called
+    // here — the first inline bootstrap above already ran them. Calling
+    // ThemeLite.init() twice registers a second delegated click handler on
+    // document, so each click toggles twice and the user sees no change.
     Stats.load();
     HeroCanvas.init();
     BlueprintGrid.init();
