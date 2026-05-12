@@ -305,10 +305,10 @@
               <div class="bento-xp-next" id="prog-next">Next: Captain &mdash; unlocks Legendary rarity</div>
             </div>
             <div class="bento-classes">
-              <div class="bento-class" data-ship-class="Scout" data-ship-agents="1-2" data-ship-rank="Ensign" data-ship-rarity="Common" data-ship-pct="8"><strong>Scout</strong><span>1-2 agents</span></div>
-              <div class="bento-class" data-ship-class="Cruiser" data-ship-agents="3-5" data-ship-rank="Commander" data-ship-rarity="Epic" data-ship-pct="40"><strong>Cruiser</strong><span>3-5 agents</span></div>
-              <div class="bento-class" data-ship-class="Dreadnought" data-ship-agents="6-10" data-ship-rank="Captain" data-ship-rarity="Legendary" data-ship-pct="70"><strong>Dreadnought</strong><span>6-10 agents</span></div>
-              <div class="bento-class" data-ship-class="Flagship" data-ship-agents="11+" data-ship-rank="Fleet Admiral" data-ship-rarity="Legendary" data-ship-pct="100"><strong>Flagship</strong><span>11+ agents</span></div>
+              <div class="bento-class" data-ship-class="Class 1" data-ship-slots="6" data-ship-rank="Ensign" data-ship-rarity="Common" data-ship-xp="0" data-ship-pct="0"><strong>Class 1</strong><span>6 slots</span></div>
+              <div class="bento-class" data-ship-class="Class 2" data-ship-slots="8" data-ship-rank="Lieutenant" data-ship-rarity="Rare" data-ship-xp="25K" data-ship-pct="25"><strong>Class 2</strong><span>8 slots</span></div>
+              <div class="bento-class" data-ship-class="Class 3" data-ship-slots="10" data-ship-rank="Commander" data-ship-rarity="Epic" data-ship-xp="100K" data-ship-pct="50"><strong>Class 3</strong><span>10 slots</span></div>
+              <div class="bento-class" data-ship-class="Class 4" data-ship-slots="12" data-ship-rank="Captain" data-ship-rarity="Legendary" data-ship-xp="200K" data-ship-pct="100"><strong>Class 4</strong><span>12 slots</span></div>
             </div>
           </div>
         </div>
@@ -1399,8 +1399,8 @@
         cls.classList.add('active');
         fill.style.width = cls.dataset.shipPct + '%';
         rankEl.textContent = cls.dataset.shipClass;
-        xpEl.textContent = cls.dataset.shipAgents + ' agents';
-        nextEl.textContent = 'Field ' + cls.dataset.shipAgents + ' agents to deploy this class';
+        xpEl.textContent = cls.dataset.shipSlots + ' slots · ' + cls.dataset.shipRarity;
+        nextEl.textContent = cls.dataset.shipRank + ' rank · ' + cls.dataset.shipXp + ' XP to unlock';
       });
       cls.addEventListener('mouseleave', () => {
         cls.classList.remove('active');
