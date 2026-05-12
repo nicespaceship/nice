@@ -139,6 +139,9 @@
   <main>
     <!-- Hero -->
     <section class="hero">
+      <!-- Animated background layers (warp stars + hero canvas) ported from the old home hero -->
+      <canvas id="warp-canvas" class="hero-bg-layer hero-bg-warp"></canvas>
+      <canvas id="hero-canvas" class="hero-bg-layer"></canvas>
       <!-- 12-slot schematic background -->
       <div id="schematic-bg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:0;opacity:0.20;pointer-events:none;transition:transform 0.1s ease-out;-webkit-mask-image:radial-gradient(ellipse 35% 38% at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 40%, #000 70%);mask-image:radial-gradient(ellipse 35% 38% at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 40%, #000 70%)">
         <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:min(900px,90vw);height:auto">
@@ -347,29 +350,6 @@
     </section>
   
     <!-- ─── PRESERVED FROM ORIGINAL HOME PAGE ─── -->
-
-    <!-- Hero -->
-    <section class="hero hero-v2">
-      <canvas id="warp-canvas" class="hero-bg-layer hero-bg-warp"></canvas>
-      <canvas id="hero-canvas" class="hero-bg-layer"></canvas>
-
-      <!-- Foreground content -->
-      <div class="hero-content">
-        <div class="hero-glyph" id="hero-glyph" data-reveal></div>
-        <h1 data-reveal data-reveal-delay="80">Build your Spaceship.<br/>Deploy your Agents.<br/>Run everything.</h1>
-        <p class="hero-acronym" data-reveal data-reveal-delay="180">Neural Intelligence Command Engine</p>
-        <p class="hero-sub" data-reveal data-reveal-delay="260">Agentic workflows powered by 10 AI models. 500+ blueprints. Zero configuration.</p>
-        <div class="hero-ctas" data-reveal data-reveal-delay="340">
-          <a href="https://nicespaceship.ai" class="btn-primary">Launch NICE <span>→</span></a>
-          <a href="/blueprints" class="btn-secondary">Browse blueprints</a>
-        </div>
-      </div>
-
-      <a href="#how-it-works" class="hero-scroll-cue" aria-label="Scroll to How it works">
-        <span class="hero-scroll-cue-line"></span>
-        <i class="fa-solid fa-chevron-down"></i>
-      </a>
-    </section>
 
     <!-- Logo Ticker -->
     <section class="logo-ticker">
