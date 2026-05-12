@@ -765,12 +765,20 @@
                     <!-- simple person silhouette -->
                     <circle cx="0" cy="-7" r="6" fill="var(--text-dim)"/>
                     <path d="M -10 14 Q -10 0 0 0 Q 10 0 10 14 Z" fill="var(--text-dim)"/>
-                    <!-- strikethrough key indicator -->
-                    <circle cx="-30" cy="22" r="5" stroke="#ef4444" stroke-width="1" fill="none"/>
-                    <line x1="-26" y1="22" x2="-18" y2="22" stroke="#ef4444" stroke-width="1"/>
-                    <line x1="-36" y1="16" x2="-12" y2="28" stroke="#ef4444" stroke-width="1.4"/>
                     <text y="46" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="var(--text)">You</text>
                     <text y="60" text-anchor="middle" font-family="Inter" font-size="9" fill="var(--text-muted)">no keys</text>
+                    <!-- strikethrough key icon, centered under the label -->
+                    <g transform="translate(0, 80)" stroke-linecap="round">
+                      <!-- key shape: bow (circle) + shaft + 2 teeth -->
+                      <g fill="none" stroke="#ef4444" stroke-width="1.6">
+                        <circle cx="-9" cy="0" r="4.5"/>
+                        <line x1="-4.5" y1="0" x2="10" y2="0"/>
+                        <line x1="4" y1="0" x2="4" y2="4"/>
+                        <line x1="10" y1="0" x2="10" y2="3"/>
+                      </g>
+                      <!-- diagonal strikethrough -->
+                      <line x1="-15" y1="-7" x2="15" y2="7" stroke="#ef4444" stroke-width="2"/>
+                    </g>
                   </g>
 
                   <!-- Flow arrow: USER → NICE -->
