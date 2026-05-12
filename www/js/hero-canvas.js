@@ -7,14 +7,43 @@ const HeroCanvas = (() => {
   const NODE_COUNT = 24;
   const PULSE_COUNT = 18;
 
-  /* ── palette (matches app theme) ── */
+  /* ── palette — Sapphire on light (matches brand kit Phase 2a/3) ── */
   const C = {
-    star: 'rgba(224,231,255,',       // accent
-    node: 'rgba(165,180,252,',       // accent2
-    line: 'rgba(165,180,252,',       // accent2
-    pulse: 'rgba(165,180,252,',      // accent2
-    grid: 'rgba(63,63,70,0.08)',     // border dim
+    star: 'rgba(15,82,186,',         // Sapphire core
+    node: 'rgba(15,82,186,',         // Sapphire
+    line: 'rgba(15,82,186,',         // Sapphire
+    pulse: 'rgba(24,98,206,',        // Sapphire hover (lighter)
+    grid: 'rgba(15,82,186,0.04)',    // very dim Sapphire
   };
+
+  /* ── Mythic RGB cycle for the still nodes ──
+     Same palette as mythic-rgb-border + the chromatic card backdrops.
+     Each node's color is offset by its index so the hue rolls around
+     the ring instead of all 24 changing in lockstep. */
+  const RGB_PALETTE = [
+    [255, 45, 85],   // ff2d55
+    [255, 107, 45],  // ff6b2d
+    [255, 211, 45],  // ffd32d
+    [45, 255, 107],  // 2dff6b
+    [45, 159, 255],  // 2d9fff
+    [168, 45, 255],  // a82dff
+  ];
+  let colorPhase = 0;
+  const PHASE_SPEED = 0.0008; // full cycle ≈ 21 seconds at 60fps
+
+  function rgbAt(t) {
+    const n = RGB_PALETTE.length;
+    const f = ((t % 1) + 1) % 1 * n;
+    const i = Math.floor(f) % n;
+    const j = (i + 1) % n;
+    const k = f - Math.floor(f);
+    const a = RGB_PALETTE[i], b = RGB_PALETTE[j];
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * k),
+      Math.round(a[1] + (b[1] - a[1]) * k),
+      Math.round(a[2] + (b[2] - a[2]) * k),
+    ];
+  }
 
   /* ── star ── */
   function makeStar() {
@@ -28,17 +57,29 @@ const HeroCanvas = (() => {
     };
   }
 
-  /* ── node (neural network point) ── */
-  function makeNode() {
-    const cx = Math.random() * w * 1.1 - w * 0.05;
-    const cy = Math.random() * h * 1.1 - h * 0.05;
-    const orbitR = Math.random() * 40 + 8;
-    const angle = Math.random() * Math.PI * 2;
+  /* ── node (neural network point) ──
+     Symmetric concentric-ring layout, mirroring the NICE schematic language.
+     8 inner + 16 outer = 24 nodes total (matches NODE_COUNT). Each node drifts
+     in a small orbit around its ring position so the lattice still breathes. */
+  const INNER_RING = 8;
+  function makeNode(idx) {
+    const isInner = idx < INNER_RING;
+    const i = isInner ? idx : idx - INNER_RING;
+    const count = isInner ? INNER_RING : NODE_COUNT - INNER_RING;
+    const baseR = Math.min(w, h);
+    const radius = isInner ? baseR * 0.42 : baseR * 0.62;
+    // Rotate the outer ring by half a step so it interleaves with the inner —
+    // gives a richer, more web-like topology when neighbours pair up.
+    const offset = isInner ? 0 : Math.PI / count;
+    const ringAngle = (i / count) * Math.PI * 2 + offset;
     return {
-      cx, cy, orbitR, angle,
+      cx: w / 2 + Math.cos(ringAngle) * radius,
+      cy: h / 2 + Math.sin(ringAngle) * radius,
+      orbitR: 10 + Math.random() * 6,
+      angle: Math.random() * Math.PI * 2,
       speed: (Math.random() * 0.0002 + 0.00005) * (Math.random() > 0.5 ? 1 : -1),
-      r: Math.random() * 2.5 + 1.5,
-      glow: Math.random() * 10 + 6,
+      r: isInner ? 2.5 : 2,
+      glow: isInner ? 10 : 8,
       x: 0, y: 0,
     };
   }
@@ -65,7 +106,7 @@ const HeroCanvas = (() => {
     resize();
     window.addEventListener('resize', resize);
     stars = Array.from({ length: STAR_COUNT }, makeStar);
-    nodes = Array.from({ length: NODE_COUNT }, makeNode);
+    nodes = Array.from({ length: NODE_COUNT }, (_, i) => makeNode(i));
     pulses = Array.from({ length: PULSE_COUNT }, makePulse);
     loop();
   }
@@ -74,6 +115,10 @@ const HeroCanvas = (() => {
     const hero = canvas.parentElement;
     w = canvas.width = hero.offsetWidth;
     h = canvas.height = hero.offsetHeight;
+    // Stars and nodes use absolute coordinates baked in at creation —
+    // a viewport resize would leave them clustered in the old bounds.
+    if (stars.length) stars = Array.from({ length: STAR_COUNT }, makeStar);
+    if (nodes.length) nodes = Array.from({ length: NODE_COUNT }, (_, i) => makeNode(i));
   }
 
   /* ── find closest N nodes to a given node ── */
@@ -91,6 +136,7 @@ const HeroCanvas = (() => {
   /* ── render loop ── */
   function loop() {
     ctx.clearRect(0, 0, w, h);
+    colorPhase = (colorPhase + PHASE_SPEED) % 1;
 
     // ── subtle grid ──
     ctx.strokeStyle = C.grid;
@@ -109,7 +155,8 @@ const HeroCanvas = (() => {
       const flicker = Math.sin(s.twinkle) * 0.3 + 0.7;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = C.star + (s.a * flicker) + ')';
+      // bump alpha for visibility on light bg
+      ctx.fillStyle = C.star + (s.a * flicker * 1.6) + ')';
       ctx.fill();
     }
 
@@ -126,7 +173,7 @@ const HeroCanvas = (() => {
       for (const nb of neighbors) {
         if (nb.d > 350) continue;
         if (nb.i < i) continue; // avoid drawing twice
-        const alpha = (1 - nb.d / 350) * 0.1;
+        const alpha = (1 - nb.d / 350) * 0.18;
         ctx.beginPath();
         ctx.moveTo(nodes[i].x, nodes[i].y);
         ctx.lineTo(nodes[nb.i].x, nodes[nb.i].y);
@@ -187,12 +234,15 @@ const HeroCanvas = (() => {
       ctx.fill();
     }
 
-    // ── draw nodes ──
-    for (const n of nodes) {
+    // ── draw nodes (RGB cycle, offset per index so the hue rolls round) ──
+    for (let ni = 0; ni < nodes.length; ni++) {
+      const n = nodes[ni];
+      const [r, g, b] = rgbAt(colorPhase + ni / nodes.length);
+      const prefix = 'rgba(' + r + ',' + g + ',' + b + ',';
       // outer glow
       const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.glow);
-      grad.addColorStop(0, C.node + '0.2)');
-      grad.addColorStop(1, C.node + '0)');
+      grad.addColorStop(0, prefix + '0.32)');
+      grad.addColorStop(1, prefix + '0)');
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.glow, 0, Math.PI * 2);
       ctx.fillStyle = grad;
@@ -200,22 +250,15 @@ const HeroCanvas = (() => {
       // core
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = C.node + '0.6)';
+      ctx.fillStyle = prefix + '0.95)';
       ctx.fill();
       // outer ring
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = C.node + '0.12)';
+      ctx.strokeStyle = prefix + '0.24)';
       ctx.lineWidth = 0.5;
       ctx.stroke();
     }
-
-    // ── subtle central aura ──
-    const auraGrad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.min(w, h) * 0.45);
-    auraGrad.addColorStop(0, 'rgba(165,180,252,0.025)');
-    auraGrad.addColorStop(1, 'rgba(165,180,252,0)');
-    ctx.fillStyle = auraGrad;
-    ctx.fillRect(0, 0, w, h);
 
     raf = requestAnimationFrame(loop);
   }

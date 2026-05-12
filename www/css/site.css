@@ -19,7 +19,7 @@
   --accent2: #0F52BA;
   --text: #0a0a0a;
   --text-muted: #525252;
-  --text-dim: #a3a3a3;
+  --text-dim: #6b6b6b;
   --glow: 0 0 0 1px rgba(15,82,186,0.08);
   --glow-hi: 0 0 12px rgba(15,82,186,0.10);
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -27,7 +27,7 @@
   --font-brand: 'Orbitron', sans-serif;
   --radius: 10px;
   --nav-bg: rgba(255,255,255,0.92);
-  --panel-bg: rgba(250,250,250,0.85);
+  --panel-bg: #fafafa;
   --max-w: 1200px;
   --hero-grad: radial-gradient(ellipse 100% 60% at 50% 0%, rgba(15,82,186,0.04) 0%, transparent 70%);
 
@@ -73,12 +73,40 @@ body[data-theme="dark"] {
   --glow: 0 0 0 1px rgba(15,82,186,0.15);
   --glow-hi: 0 0 12px rgba(15,82,186,0.18);
   --nav-bg: rgba(10,10,10,0.92);
-  --panel-bg: rgba(20,20,23,0.85);
+  --panel-bg: #141417;
   --hero-grad: radial-gradient(ellipse 100% 60% at 50% 0%, rgba(15,82,186,0.05) 0%, transparent 70%);
   --hover-bg: rgba(255,255,255,0.06);
 }
 
 html { scroll-behavior: smooth; }
+/* Lenis disables native smooth-scroll when active. CSS scroll-snap also breaks
+   with smooth-scroll libraries, so we keep this off when Lenis is loaded. */
+html.lenis { height: auto; }
+html.lenis, html.lenis body { overscroll-behavior: contain; }
+html.lenis-smooth { scroll-behavior: auto; }
+html.lenis-smooth body { min-height: 100%; }
+html.lenis-stopped body { overflow: hidden; }
+html.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+
+/* Reveal-on-scroll — opt-in via [data-reveal] */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  [data-parallax] { transform: none !important; }
+}
+
+/* Parallax elements get GPU promotion to keep transforms smooth */
+[data-parallax] { will-change: transform; transition: transform 0.05s linear; }
 body {
   font-family: var(--font);
   background: var(--bg);
@@ -114,7 +142,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 /* ── Layout ── */
 .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
 .container-narrow { max-width: 720px; margin: 0 auto; padding: 0 24px; }
-.section { padding: 72px 0; border-top: 1px solid var(--border); }
+.section { padding: 72px 0; }
 .text-center { text-align: center; }
 .section-header { margin-bottom: 36px; }
 .section-header.centered { text-align: center; }
@@ -132,12 +160,12 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .btn-primary:hover { background: var(--accent2); color: var(--bg); text-decoration: none; }
 .btn-secondary {
   display: inline-flex; align-items: center; gap: 6px;
-  background: transparent; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--fw-medium);
+  background: var(--bg); color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--fw-medium);
   padding: 10px 20px; border: 1px solid var(--border); border-radius: 999px;
   font-family: var(--font); cursor: pointer; transition: all 0.15s;
   text-decoration: none;
 }
-.btn-secondary:hover { border-color: var(--border-hi); color: var(--text); text-decoration: none; }
+.btn-secondary:hover { border-color: var(--border-hi); color: var(--text); background: var(--surface2); text-decoration: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
    NAVIGATION
@@ -202,7 +230,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 /* Content-light hero — for pages with just h1 + tagline (e.g. pricing).
    Drops the homepage's 525px min-height to size to its content. */
 .hero.hero-compact { min-height: 0; padding-bottom: 32px; }
-.hero > *:not(canvas):not(.hero-ring):not(.hero-ring-outer) { max-width: var(--max-w); margin-left: auto; margin-right: auto; }
+.hero > *:not(canvas):not(.hero-ring):not(.hero-ring-outer):not(.hero-constellation):not(.hero-scroll-cue) { max-width: var(--max-w); margin-left: auto; margin-right: auto; }
 .hero-ring {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
@@ -221,7 +249,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none; z-index: 0;
 }
-.hero > *:not(canvas):not(.hero-ring):not(.hero-ring-outer) { position: relative; z-index: 2; }
+.hero > *:not(canvas):not(.hero-ring):not(.hero-ring-outer):not(.hero-constellation):not(.hero-scroll-cue) { position: relative; z-index: 3; }
 .hero-ring, .hero-ring-outer { z-index: 1; }
 .hero-ring-outer {
   position: absolute; left: 50%; top: 50%;
@@ -281,6 +309,115 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .hero-screenshot img { width: 100%; display: block; }
 
 /* ═══════════════════════════════════════════════════════════════════
+   HERO v2 — full-viewport layered stage
+   Three background layers (warp, neural canvas, constellation SVG)
+   sit behind a centered content block that fades out on scroll.
+═══════════════════════════════════════════════════════════════════ */
+.hero.hero-v2 {
+  min-height: calc(100vh - 52px);
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  isolation: isolate;
+}
+.hero.hero-v2 .hero-bg-layer {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  /* Carve a clear ellipse around the headline so motion stays on the
+     periphery and the copy reads without competing visual noise. */
+  -webkit-mask-image: radial-gradient(ellipse 42% 38% at center, transparent 0%, transparent 40%, #000 78%, #000 100%);
+          mask-image: radial-gradient(ellipse 42% 38% at center, transparent 0%, transparent 40%, #000 78%, #000 100%);
+}
+.hero.hero-v2 .hero-bg-warp { z-index: 1; opacity: 0.75; mix-blend-mode: multiply; }
+@media (max-width: 768px) {
+  /* Tighter ellipse on mobile — the headline takes more relative width */
+  .hero.hero-v2 .hero-bg-layer {
+    -webkit-mask-image: radial-gradient(ellipse 65% 32% at center, transparent 0%, transparent 30%, #000 75%, #000 100%);
+            mask-image: radial-gradient(ellipse 65% 32% at center, transparent 0%, transparent 30%, #000 75%, #000 100%);
+  }
+}
+.hero.hero-v2 .hero-content {
+  position: relative; z-index: 3;
+  max-width: var(--max-w);
+  padding: 0 24px;
+  text-align: center;
+  /* Drive opacity + parallax-lift from the JS-set --hero-progress (0-1).
+     Content fades and rises slightly as the user scrolls past the hero. */
+  opacity: calc(1 - var(--hero-progress, 0) * 1.2);
+  transform: translate3d(0, calc(var(--hero-progress, 0) * -40px), 0);
+  will-change: opacity, transform;
+}
+.hero.hero-v2 .hero-glyph { margin-bottom: 24px; }
+.hero.hero-v2 .hero-glyph-svg {
+  width: 96px; height: 96px;
+  filter: drop-shadow(0 0 28px rgba(15,82,186,0.25));
+  animation: hero-glyph-float 9s ease-in-out infinite;
+}
+@keyframes hero-glyph-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-8px) rotate(2deg); }
+}
+.hero.hero-v2 h1 {
+  font-size: clamp(2.5rem, 5.5vw, 4.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 auto 18px;
+  max-width: 880px;
+  font-weight: var(--fw-bold);
+}
+.hero.hero-v2 .hero-acronym {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.16em;
+  margin-bottom: 16px;
+}
+.hero.hero-v2 .hero-sub {
+  font-size: var(--text-md);
+  max-width: 520px;
+  margin: 0 auto 32px;
+}
+.hero.hero-v2 .hero-ctas { margin-bottom: 0; }
+
+/* Scroll cue */
+.hero-scroll-cue {
+  position: absolute; left: 50%; bottom: 28px;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  z-index: 4;
+  opacity: calc(1 - var(--hero-progress, 0) * 2);
+  pointer-events: auto;
+  transition: color 0.2s;
+}
+.hero-scroll-cue:hover { color: var(--accent2); text-decoration: none; }
+.hero-scroll-cue-line {
+  width: 1px; height: 36px;
+  background: linear-gradient(180deg, transparent, var(--border-hi));
+}
+.hero-scroll-cue i { animation: scroll-cue-bob 2.4s ease-in-out infinite; }
+@keyframes scroll-cue-bob {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50%      { transform: translateY(4px); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .hero.hero-v2 { min-height: 88vh; }
+  .hero.hero-v2 .hero-glyph-svg { width: 64px; height: 64px; }
+  .hero.hero-v2 h1 { font-size: clamp(2rem, 8vw, 3rem); }
+  .hero.hero-v2 .hero-sub { font-size: var(--text-base); }
+  .hero-scroll-cue { bottom: 18px; }
+  .hero-scroll-cue-line { height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero.hero-v2 .hero-glyph-svg { animation: none; }
+  .hero-scroll-cue i { animation: none; }
+  .hero.hero-v2 .hero-content { opacity: 1; transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    LOGO CLOUD
 ═══════════════════════════════════════════════════════════════════ */
 .logo-cloud { text-align: center; padding: 32px 0; }
@@ -292,7 +429,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 /* ═══════════════════════════════════════════════════════════════════
    LOGO TICKER
 ═══════════════════════════════════════════════════════════════════ */
-.logo-ticker { overflow: hidden; padding: 28px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; }
+.logo-ticker { overflow: hidden; padding: 28px 0; position: relative; }
 .logo-ticker::before, .logo-ticker::after {
   content: ''; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2; pointer-events: none;
 }
@@ -343,6 +480,7 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 ═══════════════════════════════════════════════════════════════════ */
 .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .feature-card {
+  position: relative;
   background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius);
   overflow: hidden; transition: all 0.2s;
 }
@@ -393,12 +531,11 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 }
 .schematic-stage { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
 .schematic-stage-label {
-  font-size: var(--text-xs); color: var(--text-dim);
-  text-transform: uppercase; letter-spacing: var(--tracking-caps);
+  font-size: var(--text-sm); color: var(--text);
   text-align: center; font-weight: var(--fw-medium);
 }
 .schematic-node {
-  position: relative;
+  position: relative; overflow: hidden; isolation: isolate;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   flex: 1; gap: 6px; min-height: 132px;
   padding: 20px 16px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -422,12 +559,10 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 .schematic-node[data-stage="output"] > i { color: #22c55e; }
 .schematic-node-icon { width: 32px; height: 32px; object-fit: contain; }
 .schematic-node strong { font-size: var(--text-base); color: var(--text); font-weight: var(--fw-bold); }
-.schematic-node span { font-size: var(--text-xs); color: var(--text-dim); text-align: center; }
+.schematic-node span { font-size: var(--text-xs); color: var(--text-muted); text-align: center; }
 
 .schematic-node-engine {
-  border-color: var(--accent2);
-  background: linear-gradient(180deg, rgba(15,82,186,0.06) 0%, var(--panel-bg) 100%);
-  box-shadow: 0 0 32px rgba(15,82,186,0.12);
+  background: var(--panel-bg);
 }
 .schematic-engine-glyph { display: inline-flex; align-items: center; justify-content: center; }
 .schematic-engine-glyph svg { width: 32px; height: 32px; color: var(--accent2); }
@@ -452,14 +587,14 @@ p { margin-bottom: 0.75rem; font-size: var(--text-base); line-height: var(--lh-b
 
 /* ─── MCP brand wall ─── */
 .mcp-wall {
-  position: relative; z-index: 2;
+  position: relative; z-index: 2; overflow: hidden; isolation: isolate;
   margin-top: 56px; padding: 32px;
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--panel-bg);
 }
 .mcp-wall-title {
-  font-size: var(--text-xs); color: var(--text-dim); text-transform: uppercase;
-  letter-spacing: var(--tracking-caps); font-weight: var(--fw-medium);
+  font-size: var(--text-sm); color: var(--text);
+  font-weight: var(--fw-medium);
   text-align: center; margin-bottom: 24px;
 }
 .mcp-wall-grid {
@@ -695,20 +830,33 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
 }
 .faq-grid-bg {
   background:
-    linear-gradient(rgba(0,0,0,0.10) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,0,0,0.10) 1px, transparent 1px),
     radial-gradient(ellipse 70% 50% at 30% 60%, rgba(15,82,186,0.05) 0%, transparent 70%),
     radial-gradient(ellipse 50% 70% at 70% 30%, rgba(15,82,186,0.04) 0%, transparent 70%),
     var(--bg);
-  background-size: 60px 60px, 60px 60px, 100% 100%, 100% 100%, 100% 100%;
 }
 .faq-layout {
   display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: stretch; position: relative;
 }
 .faq-heading { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .faq-heading h2 { line-height: 1.1; color: var(--text); position: relative; z-index: 1; white-space: nowrap; }
-.faq-schematic { margin-top: 32px; max-width: 450px; width: 450px; height: 450px; opacity: 0.7; pointer-events: none; }
-.faq-schematic svg { width: 100%; height: 100%; }
+.faq-schematic {
+  position: relative;
+  margin-top: 32px;
+  max-width: 450px; width: 450px; height: 450px;
+  pointer-events: none;
+}
+.faq-graphic {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.faq-graphic.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+.faq-graphic svg { width: 100%; height: 100%; }
 .faq-heading h2, .faq-list { position: relative; z-index: 1; }
 
 /* station background behind heading column */
@@ -732,14 +880,17 @@ body[data-theme="dark"] .mcp-tile-flip img { filter: brightness(0) invert(1); }
   background: var(--panel-bg); overflow: hidden; transition: border-color 0.2s;
 }
 .faq-item:hover { border-color: var(--border-hi); }
-.faq-item.open { border-color: var(--border-hi); }
+.faq-item.open { border-color: var(--accent2); }
 .faq-q {
   display: flex; justify-content: space-between; align-items: center;
   padding: 18px 20px; cursor: pointer; font-size: var(--text-base); font-weight: var(--fw-medium);
   color: var(--text); background: none; border: none; width: 100%;
   text-align: left; font-family: var(--font);
 }
-.faq-q:hover { color: var(--accent); }
+.faq-q { transition: background 0.15s; }
+.faq-q:hover { background: var(--hover-bg); }
+.faq-q:focus { outline: none; }
+.faq-q:focus-visible { outline: 2px solid var(--border-hi); outline-offset: -2px; border-radius: var(--radius); }
 .faq-icon { font-size: var(--text-md); color: var(--text-dim); transition: transform 0.3s; flex-shrink: 0; }
 .faq-item.open .faq-icon { transform: rotate(45deg); }
 .faq-a { display: none; padding: 0 20px 18px; font-size: var(--text-sm); color: var(--text-muted); line-height: var(--lh-base); }
@@ -904,9 +1055,16 @@ a.docs-card:hover { border-color: var(--accent2); }
 /* ═══════════════════════════════════════════════════════════════════
    CTA SECTION
 ═══════════════════════════════════════════════════════════════════ */
-.cta-section { text-align: center; position: relative; overflow: hidden; }
+.cta-section { text-align: center; position: relative; overflow: hidden; isolation: isolate; }
 .cta-section > canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 .cta-section > .container { position: relative; z-index: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CTA SPACE BACKGROUND — slow rotating cosmos with periodic comet streaks
+   Canvas-driven, see ctaCosmos() inline script in index.html.
+═══════════════════════════════════════════════════════════════════ */
+.cta-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+canvas.cta-bg { width: 100%; height: 100%; }
 .cta-section h2 { margin: 0 auto 12px; white-space: nowrap; }
 .mobile-br { display: none; }
 .cta-section p { max-width: 400px; margin: 0 auto 24px; }
@@ -914,7 +1072,7 @@ a.docs-card:hover { border-color: var(--accent2); }
 /* ═══════════════════════════════════════════════════════════════════
    FOOTER
 ═══════════════════════════════════════════════════════════════════ */
-.footer { border-top: 1px solid var(--border); padding: 48px 0 20px; }
+.footer { padding: 48px 0 20px; }
 .footer-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
 .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 36px; margin-bottom: 36px; }
 .footer-col h4 { color: var(--text-dim); font-size: var(--text-xs); margin-bottom: 12px; font-weight: var(--fw-medium); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
@@ -938,7 +1096,7 @@ a.docs-card:hover { border-color: var(--accent2); }
 .footer-launch:hover { color: var(--accent); }
 .footer-bottom {
   display: flex; justify-content: space-between; padding-top: 16px;
-  border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--text-dim);
+  font-size: var(--text-xs); color: var(--text-dim);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -986,4 +1144,214 @@ a.docs-card:hover { border-color: var(--accent2); }
   /* Tighten brand tracking so the wordmark fits on one line next to the menu button. */
   .nav-brand-text { letter-spacing: 0.3em; }
   .stats-bar { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHROMATIC ARRAY — animated rainbow conic-gradient backdrop applied
+   to the How-It-Works flow cards and MCP wall. Same palette as the
+   Mythic blueprint cards so it stays inside the existing color system.
+═══════════════════════════════════════════════════════════════════ */
+.schematic-node::before,
+.mcp-wall::before {
+  content: '';
+  position: absolute; inset: -40%;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    #ff2d55, #ff6b2d, #ffd32d, #2dff6b, #2d9fff, #a82dff, #ff2d55
+  );
+  filter: blur(48px);
+  animation: chromatic-spin 18s linear infinite;
+  pointer-events: none;
+}
+.schematic-node::before { opacity: 0.22; animation-duration: 16s; }
+.mcp-wall::before       { opacity: 0.10; filter: blur(90px); animation-duration: 32s; }
+
+/* Stagger animation across the flow-card siblings so they don't lock-step */
+.schematic-stage:nth-child(3) .schematic-node::before { animation-delay: -4s; }
+.schematic-stage:nth-child(5) .schematic-node::before { animation-delay: -8s; }
+.schematic-stage:nth-child(7) .schematic-node::before { animation-delay: -12s; }
+
+@keyframes chromatic-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Level Up section background — drifting nebula blobs (Sapphire / violet /
+   pink / sky), each translating + scaling on its own loop. Sits behind the
+   bento cards which keep their solid stock on top. */
+.experience-section {
+  position: relative; overflow: hidden; isolation: isolate;
+}
+.nebula-mask {
+  position: absolute; inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Fade the nebula to invisible at the top + bottom of the section so it
+     blends into the neighbouring sections instead of clipping at a hard edge. */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+          mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+}
+.nebula-blob {
+  position: absolute; pointer-events: none;
+  border-radius: 50%; filter: blur(110px); will-change: transform;
+}
+.nebula-blob-1 {
+  width: 520px; height: 520px; left: -140px; top: 6%;
+  background: radial-gradient(circle, rgba(15,82,186,0.45), rgba(15,82,186,0) 70%);
+  animation: nebula-drift-1 11s ease-in-out infinite;
+}
+.nebula-blob-2 {
+  width: 440px; height: 440px; right: -120px; top: -40px;
+  background: radial-gradient(circle, rgba(168,45,255,0.40), rgba(168,45,255,0) 70%);
+  animation: nebula-drift-2 14s ease-in-out infinite;
+}
+.nebula-blob-3 {
+  width: 400px; height: 400px; left: 24%; bottom: -160px;
+  background: radial-gradient(circle, rgba(255,45,107,0.32), rgba(255,45,107,0) 70%);
+  animation: nebula-drift-3 12s ease-in-out infinite;
+}
+.nebula-blob-4 {
+  width: 480px; height: 480px; right: 14%; bottom: -200px;
+  background: radial-gradient(circle, rgba(45,159,255,0.36), rgba(45,159,255,0) 70%);
+  animation: nebula-drift-4 15s ease-in-out infinite;
+}
+/* 4-stage keyframes — blob never returns to rest at a predictable midpoint,
+   so the motion reads as continuous drift instead of a back-and-forth pulse. */
+@keyframes nebula-drift-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(140px, -40px, 0) scale(1.18); }
+  50%      { transform: translate3d(80px, -100px, 0) scale(0.92); }
+  75%      { transform: translate3d(-60px, -30px, 0) scale(1.10); }
+}
+@keyframes nebula-drift-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(-150px, 70px, 0) scale(0.82); }
+  50%      { transform: translate3d(-40px, 130px, 0) scale(1.20); }
+  75%      { transform: translate3d(80px, 50px, 0) scale(0.94); }
+}
+@keyframes nebula-drift-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(100px, -120px, 0) scale(1.25); }
+  50%      { transform: translate3d(-50px, -60px, 0) scale(0.86); }
+  75%      { transform: translate3d(-90px, -130px, 0) scale(1.12); }
+}
+@keyframes nebula-drift-4 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(-120px, -90px, 0) scale(1.16); }
+  50%      { transform: translate3d(40px, -50px, 0) scale(0.88); }
+  75%      { transform: translate3d(120px, -110px, 0) scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nebula-blob { animation: none !important; }
+}
+
+/* Card-scoped nebula — same Sapphire/violet drifting blob pattern but sized
+   for a feature card. Solid edge-to-edge (card's overflow:hidden + radius
+   handles clipping). */
+.card-nebula-mask {
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+}
+.card-nebula-blob {
+  position: absolute; pointer-events: none;
+  border-radius: 50%; filter: blur(42px); will-change: transform;
+}
+.card-nebula-blob-1 {
+  width: 180px; height: 180px; left: -50px; top: -40px;
+  background: radial-gradient(circle, rgba(15,82,186,0.55), rgba(15,82,186,0) 70%);
+}
+.card-nebula-blob-2 {
+  width: 160px; height: 160px; right: -60px; bottom: -50px;
+  background: radial-gradient(circle, rgba(168,45,255,0.50), rgba(168,45,255,0) 70%);
+}
+
+/* Per-card variants — each card runs its own 2-blob choreography so the 3
+   cards never sync up. v1 = orbital swirl, v2 = vertical sweep, v3 = diagonal
+   pulse. Different durations + paths + scale curves on each. */
+.card-nebula-mask.v1 .card-nebula-blob-1 { animation: card-nebula-v1-a 8s  ease-in-out infinite; }
+.card-nebula-mask.v1 .card-nebula-blob-2 { animation: card-nebula-v1-b 10s ease-in-out infinite; }
+.card-nebula-mask.v2 .card-nebula-blob-1 { animation: card-nebula-v2-a 11s ease-in-out infinite; }
+.card-nebula-mask.v2 .card-nebula-blob-2 { animation: card-nebula-v2-b 7s  ease-in-out infinite; }
+.card-nebula-mask.v3 .card-nebula-blob-1 { animation: card-nebula-v3-a 9s  ease-in-out infinite; }
+.card-nebula-mask.v3 .card-nebula-blob-2 { animation: card-nebula-v3-b 13s ease-in-out infinite; }
+
+/* v1 — Orbital swirl. Blobs trace looping arcs around the card centre. */
+@keyframes card-nebula-v1-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(60px, 35px, 0) scale(1.25); }
+  50%      { transform: translate3d(30px, 60px, 0) scale(0.85); }
+  75%      { transform: translate3d(-30px, 30px, 0) scale(1.12); }
+}
+@keyframes card-nebula-v1-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(-55px, -45px, 0) scale(0.82); }
+  50%      { transform: translate3d(-20px, -65px, 0) scale(1.22); }
+  75%      { transform: translate3d(30px, -25px, 0) scale(0.95); }
+}
+
+/* v2 — Vertical sweep. Blobs travel mostly up-and-down with light horizontal
+   drift, scale pumps hard at the apex. */
+@keyframes card-nebula-v2-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.9); }
+  33%      { transform: translate3d(20px, 80px, 0) scale(1.30); }
+  66%      { transform: translate3d(-15px, 40px, 0) scale(0.78); }
+}
+@keyframes card-nebula-v2-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.1); }
+  33%      { transform: translate3d(-25px, -75px, 0) scale(0.80); }
+  66%      { transform: translate3d(10px, -30px, 0) scale(1.28); }
+}
+
+/* v3 — Diagonal pulse. Blobs cross corner-to-corner with abrupt scale snaps,
+   reads faster + more aggressive than v1/v2. */
+@keyframes card-nebula-v3-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  20%      { transform: translate3d(70px, -20px, 0) scale(1.35); }
+  40%      { transform: translate3d(50px, 50px, 0) scale(0.75); }
+  60%      { transform: translate3d(-40px, 60px, 0) scale(1.20); }
+  80%      { transform: translate3d(-30px, -10px, 0) scale(0.90); }
+}
+@keyframes card-nebula-v3-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  20%      { transform: translate3d(-65px, 30px, 0) scale(0.78); }
+  40%      { transform: translate3d(-30px, -55px, 0) scale(1.30); }
+  60%      { transform: translate3d(40px, -30px, 0) scale(0.85); }
+  80%      { transform: translate3d(50px, 40px, 0) scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-nebula-blob { animation: none !important; }
+}
+
+/* Borderless cards by default — RGB animation on hover supplies the only
+   visible border. Keep `1px solid` so the animated border-color has width. */
+.feature-card,
+.step-card,
+.schematic-node,
+.mcp-wall,
+.mcp-tile,
+.cost-card,
+.model-card,
+.testimonial-card,
+.bento-card,
+.faq-item,
+.pricing-card,
+.docs-card {
+  border-color: transparent;
+}
+
+/* RGB border + glow on card hover — same Mythic palette as the chromatic
+   backdrop. Animation overrides any static :hover border-color rules. */
+.schematic-node:hover,
+.mcp-tile:hover,
+.bento-card:hover {
+  animation: mythic-rgb-border 4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schematic-node::before,
+  .mcp-wall::before { animation: none; }
+  .schematic-node:hover,
+  .mcp-tile:hover,
+  .bento-card:hover { animation: none; }
 }
