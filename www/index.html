@@ -639,20 +639,36 @@
                     <circle r="2.2" opacity="0"><animate attributeName="cx" values="158;220" dur="3.5s" begin="3.3s" repeatCount="indefinite"/><animate attributeName="cy" values="78;190" dur="3.5s" begin="3.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="3.3s" repeatCount="indefinite"/></circle>
                   </g>
 
-                  <!-- 12 brand chips around the orbit -->
-                  <g font-family="Inter" font-size="10" font-weight="700" text-anchor="middle">
-                    <g transform="translate(220, 65)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" fill="#4285F4">G</text></g>
-                    <g transform="translate(282, 78)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#F25022">Ms</text></g>
-                    <g transform="translate(332, 125)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#ff7a59">Hb</text></g>
-                    <g transform="translate(350, 190)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="var(--text)">Gh</text></g>
-                    <g transform="translate(332, 255)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#611f69">Sl</text></g>
-                    <g transform="translate(282, 302)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#635bff">St</text></g>
-                    <g transform="translate(220, 315)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="var(--text)">No</text></g>
-                    <g transform="translate(158, 302)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#0052CC">At</text></g>
-                    <g transform="translate(108, 255)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#5E6AD2">Li</text></g>
-                    <g transform="translate(90, 190)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#F38020">Cf</text></g>
-                    <g transform="translate(108, 125)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#FF4F00">Za</text></g>
-                    <g transform="translate(158, 78)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#362D59">Se</text></g>
+                  <!-- 12 brand chips around the orbit (real brand logos) -->
+                  <g>
+                    <g transform="translate(220, 65)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/google/4285F4"/></g>
+                    <g transform="translate(282, 78)">
+                      <circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/>
+                      <g transform="translate(-9, -9)">
+                        <rect width="8" height="8" fill="#F25022"/>
+                        <rect x="10" width="8" height="8" fill="#7FBA00"/>
+                        <rect y="10" width="8" height="8" fill="#00A4EF"/>
+                        <rect x="10" y="10" width="8" height="8" fill="#FFB900"/>
+                      </g>
+                    </g>
+                    <g transform="translate(332, 125)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/hubspot/ff7a59"/></g>
+                    <g transform="translate(350, 190)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/github/181717"/></g>
+                    <g transform="translate(332, 255)">
+                      <circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/>
+                      <svg x="-11" y="-11" width="22" height="22" viewBox="0 0 24 24">
+                        <path fill="#E01E5A" d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z"/>
+                        <path fill="#36C5F0" d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z"/>
+                        <path fill="#2EB67D" d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312z"/>
+                        <path fill="#ECB22E" d="M15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+                      </svg>
+                    </g>
+                    <g transform="translate(282, 302)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/stripe/635BFF"/></g>
+                    <g transform="translate(220, 315)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/notion/000000"/></g>
+                    <g transform="translate(158, 302)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/atlassian/0052CC"/></g>
+                    <g transform="translate(108, 255)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/linear/5E6AD2"/></g>
+                    <g transform="translate(90, 190)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/cloudflare/F38020"/></g>
+                    <g transform="translate(108, 125)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/zapier/FF4F00"/></g>
+                    <g transform="translate(158, 78)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><image x="-11" y="-11" width="22" height="22" href="https://cdn.simpleicons.org/sentry/362D59"/></g>
                   </g>
 
                   <!-- NICE core (hex + glyph + dual pulse rings) -->
