@@ -589,55 +589,97 @@
               <!-- MCP connections graphic -->
               <div class="faq-graphic faq-graphic-mcp">
                 <svg viewBox="0 0 440 380" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Center NICE hex -->
+                  <!-- HUD corner brackets -->
+                  <g stroke="var(--accent2)" stroke-width="1" fill="none" opacity="0.45">
+                    <path d="M 8 28 L 8 8 L 28 8"/>
+                    <path d="M 412 8 L 432 8 L 432 28"/>
+                    <path d="M 8 320 L 8 340 L 28 340"/>
+                    <path d="M 412 340 L 432 340 L 432 320"/>
+                  </g>
+
+                  <!-- Top eyebrow -->
+                  <text x="220" y="24" text-anchor="middle" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.22em" fill="var(--text-muted)">MODEL CONTEXT PROTOCOL · OAUTH 2.0</text>
+
+                  <!-- Rotating orbit ring (visual rotation only) -->
+                  <g transform="translate(220 190)">
+                    <circle r="130" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0.22" stroke-dasharray="3 6">
+                      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="60s" repeatCount="indefinite"/>
+                    </circle>
+                  </g>
+
+                  <!-- 12 spokes from center to each brand chip -->
+                  <g stroke="var(--accent2)" stroke-width="0.5" opacity="0.32">
+                    <line x1="220" y1="190" x2="220" y2="65"/>
+                    <line x1="220" y1="190" x2="282" y2="78"/>
+                    <line x1="220" y1="190" x2="332" y2="125"/>
+                    <line x1="220" y1="190" x2="350" y2="190"/>
+                    <line x1="220" y1="190" x2="332" y2="255"/>
+                    <line x1="220" y1="190" x2="282" y2="302"/>
+                    <line x1="220" y1="190" x2="220" y2="315"/>
+                    <line x1="220" y1="190" x2="158" y2="302"/>
+                    <line x1="220" y1="190" x2="108" y2="255"/>
+                    <line x1="220" y1="190" x2="90" y2="190"/>
+                    <line x1="220" y1="190" x2="108" y2="125"/>
+                    <line x1="220" y1="190" x2="158" y2="78"/>
+                  </g>
+
+                  <!-- Traveling pulses on each spoke (inward, staggered) -->
+                  <g fill="var(--accent2)">
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;220" dur="3.5s" begin="0s" repeatCount="indefinite"/><animate attributeName="cy" values="65;190" dur="3.5s" begin="0s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="0s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="282;220" dur="3.5s" begin="0.3s" repeatCount="indefinite"/><animate attributeName="cy" values="78;190" dur="3.5s" begin="0.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="0.3s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="332;220" dur="3.5s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="cy" values="125;190" dur="3.5s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="0.6s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="350;220" dur="3.5s" begin="0.9s" repeatCount="indefinite"/><animate attributeName="cy" values="190;190" dur="3.5s" begin="0.9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="0.9s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="332;220" dur="3.5s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="cy" values="255;190" dur="3.5s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="1.2s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="282;220" dur="3.5s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="cy" values="302;190" dur="3.5s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="1.5s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="220;220" dur="3.5s" begin="1.8s" repeatCount="indefinite"/><animate attributeName="cy" values="315;190" dur="3.5s" begin="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="1.8s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="158;220" dur="3.5s" begin="2.1s" repeatCount="indefinite"/><animate attributeName="cy" values="302;190" dur="3.5s" begin="2.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="2.1s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="108;220" dur="3.5s" begin="2.4s" repeatCount="indefinite"/><animate attributeName="cy" values="255;190" dur="3.5s" begin="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="2.4s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="90;220" dur="3.5s" begin="2.7s" repeatCount="indefinite"/><animate attributeName="cy" values="190;190" dur="3.5s" begin="2.7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="2.7s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="108;220" dur="3.5s" begin="3s" repeatCount="indefinite"/><animate attributeName="cy" values="125;190" dur="3.5s" begin="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="3s" repeatCount="indefinite"/></circle>
+                    <circle r="2.2" opacity="0"><animate attributeName="cx" values="158;220" dur="3.5s" begin="3.3s" repeatCount="indefinite"/><animate attributeName="cy" values="78;190" dur="3.5s" begin="3.3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.9;0" dur="3.5s" begin="3.3s" repeatCount="indefinite"/></circle>
+                  </g>
+
+                  <!-- 12 brand chips around the orbit -->
+                  <g font-family="Inter" font-size="10" font-weight="700" text-anchor="middle">
+                    <g transform="translate(220, 65)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" fill="#4285F4">G</text></g>
+                    <g transform="translate(282, 78)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#F25022">Ms</text></g>
+                    <g transform="translate(332, 125)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#ff7a59">Hb</text></g>
+                    <g transform="translate(350, 190)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="var(--text)">Gh</text></g>
+                    <g transform="translate(332, 255)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#611f69">Sl</text></g>
+                    <g transform="translate(282, 302)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#635bff">St</text></g>
+                    <g transform="translate(220, 315)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="var(--text)">No</text></g>
+                    <g transform="translate(158, 302)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#0052CC">At</text></g>
+                    <g transform="translate(108, 255)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#5E6AD2">Li</text></g>
+                    <g transform="translate(90, 190)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#F38020">Cf</text></g>
+                    <g transform="translate(108, 125)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#FF4F00">Za</text></g>
+                    <g transform="translate(158, 78)"><circle r="16" fill="#fff" stroke="var(--border-hi)" stroke-width="0.7"/><text y="3" font-size="9" fill="#362D59">Se</text></g>
+                  </g>
+
+                  <!-- NICE core (hex + glyph + dual pulse rings) -->
                   <g transform="translate(220, 190)">
                     <polygon points="0,-32 28,-16 28,16 0,32 -28,16 -28,-16" stroke="var(--accent2)" stroke-width="1.4" fill="rgba(15,82,186,0.10)"/>
-                    <circle r="9" fill="var(--accent2)"/>
-                    <circle r="14" stroke="var(--accent2)" stroke-width="0.6" fill="none" opacity="0.6">
-                      <animate attributeName="r" values="14;36" dur="3s" repeatCount="indefinite"/>
-                      <animate attributeName="opacity" values="0.6;0" dur="3s" repeatCount="indefinite"/>
+                    <polygon points="0,-12 10.4,-6 10.4,6 0,12 -10.4,6 -10.4,-6" stroke="var(--accent2)" stroke-width="1.2" fill="none"/>
+                    <circle cx="0"     cy="-12" r="2"   fill="var(--accent2)"/>
+                    <circle cx="10.4"  cy="-6"  r="2"   fill="var(--accent2)"/>
+                    <circle cx="10.4"  cy="6"   r="2"   fill="var(--accent2)"/>
+                    <circle cx="0"     cy="12"  r="2"   fill="var(--accent2)"/>
+                    <circle cx="-10.4" cy="6"   r="2"   fill="var(--accent2)"/>
+                    <circle cx="-10.4" cy="-6"  r="2"   fill="var(--accent2)"/>
+                    <circle r="3.5" fill="var(--accent2)"/>
+                    <circle r="32" stroke="var(--accent2)" stroke-width="0.6" fill="none" opacity="0">
+                      <animate attributeName="r" values="32;58" dur="3.5s" repeatCount="indefinite"/>
+                      <animate attributeName="opacity" values="0.45;0" dur="3.5s" repeatCount="indefinite"/>
                     </circle>
-                    <text y="62" text-anchor="middle" font-family="'Fira Code', monospace" font-size="9" fill="var(--text)" letter-spacing="0.1em" font-weight="700">NICE</text>
+                    <text y="50" text-anchor="middle" font-family="Inter" font-size="11" fill="var(--text)" letter-spacing="0.16em" font-weight="700">NICE</text>
                   </g>
-                  <!-- Orbit ring -->
-                  <circle cx="220" cy="190" r="120" stroke="var(--accent2)" stroke-width="0.5" fill="none" opacity="0.25" stroke-dasharray="3 4"/>
-                  <!-- Brand nodes -->
-                  <g font-family="'Fira Code', monospace" font-size="7" letter-spacing="0.05em" fill="var(--text-muted)" text-anchor="middle">
-                    <g transform="translate(220, 70)">
-                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
-                      <text y="3" font-size="10" font-weight="700" fill="#4285F4">G</text>
-                    </g>
-                    <g transform="translate(324, 130)">
-                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
-                      <text y="3" font-size="9" font-weight="700" fill="var(--text)">Hb</text>
-                    </g>
-                    <g transform="translate(324, 250)">
-                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
-                      <text y="3" font-size="9" font-weight="700" fill="var(--text)">Gh</text>
-                    </g>
-                    <g transform="translate(220, 310)">
-                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
-                      <text y="3" font-size="9" font-weight="700" fill="#611f69">Sl</text>
-                    </g>
-                    <g transform="translate(116, 250)">
-                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
-                      <text y="3" font-size="9" font-weight="700" fill="#635bff">St</text>
-                    </g>
-                    <g transform="translate(116, 130)">
-                      <circle r="18" stroke="var(--border-hi)" stroke-width="0.7" fill="rgba(255,255,255,0.9)"/>
-                      <text y="3" font-size="9" font-weight="700" fill="var(--text)">No</text>
-                    </g>
+
+                  <!-- Bottom readout strip -->
+                  <g>
+                    <rect x="8" y="356" width="424" height="18" rx="3" fill="rgba(15,82,186,0.05)"/>
+                    <text x="20" y="369" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.10em" fill="var(--text-muted)">19 MCPS · OAUTH 2.0 · AUTO TOKEN REFRESH</text>
+                    <circle cx="412" cy="365" r="3" fill="#34d399"><animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></circle>
+                    <text x="404" y="369" text-anchor="end" font-family="'Fira Code', monospace" font-size="8" letter-spacing="0.14em" fill="#34d399">LIVE</text>
                   </g>
-                  <!-- Connection lines -->
-                  <g stroke="var(--accent2)" stroke-width="0.6" opacity="0.4">
-                    <line x1="220" y1="190" x2="220" y2="88"/>
-                    <line x1="220" y1="190" x2="306" y2="138"/>
-                    <line x1="220" y1="190" x2="306" y2="242"/>
-                    <line x1="220" y1="190" x2="220" y2="292"/>
-                    <line x1="220" y1="190" x2="134" y2="242"/>
-                    <line x1="220" y1="190" x2="134" y2="138"/>
-                  </g>
-                  <text x="220" y="370" text-anchor="middle" font-family="'Fira Code', monospace" font-size="7" fill="#555" letter-spacing="0.15em">19 connected MCPs · OAuth 2.0</text>
                 </svg>
               </div>
 
