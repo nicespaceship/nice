@@ -273,7 +273,7 @@
               <div class="bento-rank" data-rank="Captain" data-slots="12" data-rarity="Legendary" data-xp="200,000"><span class="br-badge">&#x2605;&#x2605;</span> Captain <span class="br-xp">200K</span></div>
               <div class="bento-rank" data-rank="Commodore" data-slots="12" data-rarity="Legendary" data-xp="500,000"><span class="br-badge">&#x2726;</span> Commodore <span class="br-xp">500K</span></div>
               <div class="bento-rank" data-rank="Admiral" data-slots="12" data-rarity="Mythic" data-xp="1,500,000"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;</span> Admiral <span class="br-xp">1.5M</span></div>
-              <div class="bento-rank" data-rank="Fleet Admiral" data-slots="12" data-rarity="Mythic" data-xp="2,500,000"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;&#x2726;</span> Fleet Admiral <span class="br-xp">2.5M</span></div>
+              <div class="bento-rank" data-rank="Fleet Admiral" data-slots="12" data-rarity="Mythic" data-xp="2,500,000" data-perk="1 year NICE Pro free"><span class="br-badge">&#x2726;&#x2726;&#x2726;&#x2726;&#x2726;</span> Fleet Admiral <span class="br-xp">2.5M</span></div>
             </div>
           </div>
 
@@ -1365,7 +1365,9 @@
         document.querySelectorAll('.bento-rank').forEach(r => r.classList.remove('rank-active'));
         rank.classList.add('rank-active');
         title.textContent = rank.dataset.rank;
-        desc.textContent = rank.dataset.slots + ' slots \u00b7 ' + rank.dataset.rarity + ' max rarity \u00b7 ' + rank.dataset.xp + ' XP';
+        let detail = rank.dataset.slots + ' slots \u00b7 ' + rank.dataset.rarity + ' max rarity \u00b7 ' + rank.dataset.xp + ' XP';
+        if (rank.dataset.perk) detail += ' \u00b7 ' + rank.dataset.perk;
+        desc.textContent = detail;
       });
       rank.addEventListener('mouseleave', () => {
         rank.classList.remove('rank-active');

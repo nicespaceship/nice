@@ -156,6 +156,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 | 5 | 12 | Legendary | Pro        | —    | subscription-granted |
 
 - **Mythic is milestone-only**, never directly granted by class or subscription. Even subscribers earn it. The primary unlock milestone is reaching Admiral rank (1.5M XP); Fleet Admiral inherits Mythic access.
+- **Fleet Admiral (2.5M XP)** unlocks Mythic + 1 year of NICE Pro free.
 - Pro subscription grants Class 5: same 12 slots as Captain, Legendary cap. The perk is the instant unlock.
 - All cards visible to browse; activation gated by XP rank
 - Custom blueprints start Common, evolve through usage milestones
