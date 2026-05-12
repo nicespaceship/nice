@@ -1280,6 +1280,8 @@ canvas.cta-bg { width: 100%; height: 100%; }
 .card-nebula-mask.v2 .card-nebula-blob-2 { animation: card-nebula-v2-b 7s  ease-in-out infinite; }
 .card-nebula-mask.v3 .card-nebula-blob-1 { animation: card-nebula-v3-a 9s  ease-in-out infinite; }
 .card-nebula-mask.v3 .card-nebula-blob-2 { animation: card-nebula-v3-b 13s ease-in-out infinite; }
+.card-nebula-mask.v4 .card-nebula-blob-1 { animation: card-nebula-v4-a 12s ease-in-out infinite; }
+.card-nebula-mask.v4 .card-nebula-blob-2 { animation: card-nebula-v4-b 9s  ease-in-out infinite; }
 
 /* v1 — Orbital swirl. Blobs trace looping arcs around the card centre. */
 @keyframes card-nebula-v1-a {
@@ -1324,6 +1326,22 @@ canvas.cta-bg { width: 100%; height: 100%; }
   60%      { transform: translate3d(40px, -30px, 0) scale(0.85); }
   80%      { transform: translate3d(50px, 40px, 0) scale(1.15); }
 }
+
+/* v4 — Lazy figure-eight. Slowest of the four with wide arcs and gentle scale
+   shifts so it reads as ambient drift instead of a defined motion path. */
+@keyframes card-nebula-v4-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  25%      { transform: translate3d(-45px, 25px, 0) scale(0.92); }
+  50%      { transform: translate3d(40px, 55px, 0) scale(1.20); }
+  75%      { transform: translate3d(55px, -20px, 0) scale(0.85); }
+}
+@keyframes card-nebula-v4-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.95); }
+  25%      { transform: translate3d(50px, -35px, 0) scale(1.18); }
+  50%      { transform: translate3d(-45px, -45px, 0) scale(0.80); }
+  75%      { transform: translate3d(-50px, 20px, 0) scale(1.10); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-nebula-blob { animation: none !important; }
 }
