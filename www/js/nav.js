@@ -1,7 +1,7 @@
 /* NICE SPACESHIP — Shared Navigation */
 const Nav = (() => {
   const LINKS = [
-    { href: '/about', label: 'About' },
+    { href: '/explore', label: 'Explore' },
     { href: '/blueprints', label: 'Blueprints' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/docs', label: 'Documentation' },
@@ -89,7 +89,7 @@ const Nav = (() => {
             <h4>Resources</h4>
             <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener">GitHub</a>
             <a href="https://www.reddit.com/r/nicespaceship/" target="_blank" rel="noopener">Community</a>
-            <a href="/about">About</a>
+            <a href="/explore">Explore</a>
           </div>
           <div class="footer-col">
             <h4>Legal</h4>

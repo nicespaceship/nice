@@ -6,3 +6,6 @@
 /app   https://nicespaceship.ai/app/         301
 /app/  https://nicespaceship.ai/app/         301
 /app/* https://nicespaceship.ai/app/:splat   301
+
+# Renamed 2026-05-12: "About" was too generic.
+/about  /explore  301

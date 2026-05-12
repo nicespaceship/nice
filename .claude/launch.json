@@ -13,6 +13,18 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "www", "-l", "3100", "--no-clipboard"],
       "port": 3100
+    },
+    {
+      "name": "benduffey.com",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "3200", "--directory", "/Users/nicespaceship/Documents/GitHub/benduffey.com"],
+      "port": 3200
+    },
+    {
+      "name": "Marketing Site (zealous)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "/Users/nicespaceship/Documents/GitHub/nice/.claude/worktrees/zealous-morse-675058/www", "-l", "3300", "--no-clipboard"],
+      "port": 3300
     }
   ]
 }
