@@ -2446,7 +2446,36 @@ body.stage-inside .home-output-icon-wrap {
   box-shadow: 0 0 0 4px rgba(24,98,206,0.16);
 }
 @media (max-width: 768px) {
-  .home-timeline { display: none; }
+  /* Horizontal timeline strip at the top — fills the role of the
+     header on the middle stages where the header is hidden. Visible
+     on stages 2–6 (mission → launch); hidden on intro + site where
+     the real header is back. Dots align vertically with the
+     floating theme toggle (top: 24px, 32×32px). */
+  .home-timeline {
+    display: flex; flex-direction: row; align-items: center;
+    position: fixed; top: 24px; left: 50%; right: auto;
+    height: 32px;
+    transform: translateX(-50%);
+    gap: 14px; z-index: 99;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  body.home:not(.stage-intro):not(.stage-site) .home-timeline {
+    opacity: 1; pointer-events: auto;
+  }
+  .home-timeline-item {
+    display: flex; align-items: center;
+    padding: 0 2px; height: 100%;
+    position: relative;
+  }
+  .home-timeline-label,
+  .home-timeline-item:hover .home-timeline-label,
+  .home-timeline-item.is-active .home-timeline-label {
+    position: absolute;
+    top: calc(100% + 6px); bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }
 
 /* Stops — full-viewport sections, content reveals on scroll. */
