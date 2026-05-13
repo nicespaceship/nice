@@ -121,7 +121,17 @@ img { max-width: 100%; height: auto; display: block; }
 ::selection { background: var(--accent2); color: var(--bg); }
 
 /* ── Typography ── */
-h1, h2, h3, h4, h5, h6 { font-family: var(--font); font-weight: var(--fw-medium); letter-spacing: var(--tracking-display); color: var(--text); }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+  /* Auto-balance multi-line headings so single words don't drop to
+     their own line (typographic "widow"). Browser caps at ~6 lines,
+     so paragraphs are unaffected. iOS Safari 17.4+, Chrome 114+,
+     Firefox 121+; degrades to normal wrapping in older browsers. */
+  text-wrap: balance;
+}
 h1 { font-size: var(--text-3xl); line-height: var(--lh-tight); }
 h2 { font-size: var(--text-2xl); line-height: var(--lh-tight); }
 h3 { font-size: var(--text-md); line-height: var(--lh-snug); }
