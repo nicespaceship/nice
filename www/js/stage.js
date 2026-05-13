@@ -76,16 +76,20 @@ const HomeStage = (() => {
     }, { threshold: 0.15 });
     sections.forEach((s) => io.observe(s));
 
-    // Fade out the fixed home-stage (HUD + schematic) once the footer
-    // scrolls into view, otherwise on mobile the HUD's fixed center
-    // overlaps the NICE SPACESHIP wordmark + tagline in the footer.
+    // Fade out the fixed home-stage (HUD + schematic) once the user
+    // has scrolled deep enough into stage-site that the footer
+    // wordmark + tagline visibly overlap the HUD's center. The
+    // negative bottom rootMargin shrinks the root's bottom edge so
+    // the IO only fires when the footer top is in the upper half of
+    // the viewport, by which point the user is well past the
+    // "nicespaceship.com" landing pose and into the footer proper.
     const footer = document.querySelector('.footer');
     if (footer) {
       const footerIO = new IntersectionObserver((entries) => {
         for (const e of entries) {
           document.body.classList.toggle('is-footer-visible', e.isIntersecting);
         }
-      }, { threshold: 0.01 });
+      }, { threshold: 0, rootMargin: '0px 0px -50% 0px' });
       footerIO.observe(footer);
     }
 
