@@ -2658,4 +2658,17 @@ body:not(.stage-intro) .home-scroll-hint { opacity: 0; pointer-events: none; }
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(6px); }
 }
+@media (max-width: 768px) {
+  /* Mobile: bottom-center, sitting in the gap below the persistent
+     card (card is at bottom:56px) so the cue doesn't clip the
+     card's rounded corner. */
+  .home-scroll-hint {
+    right: auto; left: 50%; bottom: 14px;
+    animation: home-hint-bob-mobile 2.4s ease-in-out infinite;
+  }
+  @keyframes home-hint-bob-mobile {
+    0%, 100% { transform: translate(-50%, 0); }
+    50%      { transform: translate(-50%, 6px); }
+  }
+}
 
