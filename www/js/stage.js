@@ -1,11 +1,28 @@
 /* nicespaceship.com — Home scroll-stage controller.
    Manages the fixed NICE constellation icon, reveal-on-scroll for stops,
-   and the side timeline's active state. Same pattern as benduffey.com. */
+   the side timeline's active state, AND drives per-section stage
+   choreography by writing `data-stage` onto .home-mark-wrap. The intro
+   `data-anim="constellation"` is set inline in HTML so the reveal fires
+   on first paint. */
 const HomeStage = (() => {
   let wrap = null;
   let items = [];
   let sections = [];
   let ticking = false;
+  let currentStage = null;
+
+  // Order matters — sets a known list for body class swapping.
+  const STAGES = ['intro', 'mission', 'platform', 'how', 'inside', 'launch'];
+
+  function _setStage(name) {
+    if (name === currentStage) return;
+    currentStage = name;
+    wrap.setAttribute('data-stage', name);
+    // Also stamp body so non-mark-wrap elements (cascade, output-icons)
+    // can toggle visibility per stage.
+    for (const s of STAGES) document.body.classList.remove('stage-' + s);
+    document.body.classList.add('stage-' + name);
+  }
 
   function _onScroll() {
     if (ticking) return;
@@ -28,6 +45,9 @@ const HomeStage = (() => {
         it.classList.toggle('is-active', it.dataset.section === activeId);
       }
 
+      // Drive stage choreography from the active section ID.
+      if (activeId && STAGES.includes(activeId)) _setStage(activeId);
+
       ticking = false;
     });
   }
@@ -37,6 +57,13 @@ const HomeStage = (() => {
     items = Array.from(document.querySelectorAll('.home-timeline-item'));
     sections = Array.from(document.querySelectorAll('.home-stop'));
     if (!wrap || !items.length || !sections.length) return;
+
+    // Make sure the intro constellation reveal plays on first paint.
+    // (Also set inline in HTML, but keep this defensive.)
+    if (!wrap.getAttribute('data-anim')) {
+      wrap.setAttribute('data-anim', 'constellation');
+    }
+    _setStage('intro');
 
     // Reveal stops as they intersect.
     const io = new IntersectionObserver((entries) => {

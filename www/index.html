@@ -24,12 +24,25 @@
 <body class="home">
   <header id="site-header"></header>
 
+  <!-- Inside stage cascade — fixed full-viewport rain of blueprint cards.
+       Populated by HomeAnimations.init(). -->
+  <div class="home-card-cascade" aria-hidden="true"></div>
+
+  <!-- Inside stage output icons — abundance of output items flying outward
+       from core through the 6 gaps where connectors used to be.
+       Populated by HomeAnimations.init(). -->
+  <div class="home-output-icons" aria-hidden="true"></div>
+
   <!-- Fixed stage: the NICE constellation icon, always in view. -->
   <div class="home-stage" aria-hidden="true">
-    <div class="home-mark-wrap">
+    <div class="home-mark-wrap" data-anim="constellation" data-stage="intro">
       <div class="home-stage-ring home-stage-ring-1"></div>
       <div class="home-stage-ring home-stage-ring-2"></div>
       <div class="home-stage-ring home-stage-ring-3"></div>
+
+      <!-- Mission/Platform data shower (populated by HomeAnimations.init()) -->
+      <div class="home-particles home-particles-shower"></div>
+
       <svg class="home-mark" viewBox="0 0 5000 5000" preserveAspectRatio="xMidYMid meet">
         <g class="home-mark-orbit">
           <path d="M2467.2,673.2c345.58-32.47,524.02,397,258.68,618.68-180.13,150.49-459.08,78.97-546.6-137.16-87.17-215.28,55.93-459.73,287.92-481.52Z"/>
@@ -49,9 +62,291 @@
           <path d="M2139.98,3712.08c2.15,3.03-33.45,55.51-38.18,63.72-4.14,7.19-5.9,25.29-15.33,23.83l-494.1-289.2,43.94-82.16,11.78,1.54,491.88,282.27Z"/>
           <path d="M3366,3424.08l45.38,82.85-3.37,11.08-492.12,280.28c-7.13-25.22-36.8-54.55-44.83-75.52-1.4-3.67-4.89-6.66-1.38-10.87l496.32-287.83Z"/>
         </g>
+        <!-- LLM provider logos overlaid on the 6 outer dots during Mission.
+             Order matches clockwise from top: Anthropic, OpenAI, Google AI,
+             xAI Grok, Llama (Meta), Gemini. -->
+        <g class="home-mark-logos">
+          <defs>
+            <linearGradient id="home-gemini-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#A459FF"/>
+              <stop offset="1" stop-color="#1A73E8"/>
+            </linearGradient>
+          </defs>
+          <!-- 1. Anthropic — top -->
+          <g class="home-mark-logo" transform="translate(2504, 1022)">
+            <g fill="#CC785C" transform="scale(11)">
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(36)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(72)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(108)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(144)"/>
+            </g>
+          </g>
+          <!-- 2. OpenAI — top-right -->
+          <g class="home-mark-logo" transform="translate(3785, 1766)">
+            <svg class="invert-on-dark" x="-160" y="-160" width="320" height="320" viewBox="0 0 24 24">
+              <path fill="#000000" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+            </svg>
+          </g>
+          <!-- 3. Google AI — bottom-right -->
+          <g class="home-mark-logo" transform="translate(3785, 3255)">
+            <svg x="-160" y="-160" width="320" height="320" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+          </g>
+          <!-- 4. xAI Grok — bottom -->
+          <g class="home-mark-logo" transform="translate(2504, 3981)">
+            <svg class="invert-on-dark" x="-160" y="-160" width="320" height="320" viewBox="0 0 2000 1920">
+              <path fill="#000" d="M1997.505,5.546c-1.276,1.84-2.543,3.686-3.831,5.517c-44.395,63.091-89.508,125.693-132.964,189.424c-35.057,51.414-65.323,105.683-89.053,163.428c-34.447,83.828-47.232,171.046-42.05,261.249c3.355,58.404,12.861,115.859,25.887,172.786c16.297,71.216,24.256,143.247,20.188,216.29c-10.123,181.765-76.927,339.812-201.209,472.789c-107.86,115.406-239.56,189.915-394.446,221.624c-157.969,32.34-310.586,13.132-457.667-52.146c-43.51-19.311-84.795-42.677-124.218-69.344c-1.094-0.74-2.147-1.54-3.745-2.692c1.543-0.883,2.689-1.656,3.927-2.231c72.526-33.658,145.071-67.276,217.555-101.023c3.285-1.53,5.91-1.054,8.984,0.124c74.663,28.608,151.849,42.899,231.896,39.624c123.328-5.045,232.105-47.967,325.71-128.201c99.013-84.869,160.993-191.673,184.036-320.194c18.823-104.981,7.281-207.124-32.8-305.964c-13.942-34.381-52.565-47.733-86.226-30.057c-4.108,2.157-7.994,4.818-11.734,7.582c-216.828,160.265-433.63,320.565-650.436,480.86c-1.834,1.356-3.69,2.684-5.536,4.025c-0.344-0.374-0.689-0.747-1.033-1.121C1184.605,820.085,1590.468,412.274,1996.331,4.463C1996.722,4.824,1997.114,5.185,1997.505,5.546z"/>
+              <path fill="#000" d="M635.931,1353.173C425.433,1541.452,215.15,1729.537,4.867,1917.623c-0.275-0.19-0.551-0.38-0.826-0.57c1.039-1.478,2.041-2.984,3.123-4.431c29.898-39.969,63.26-76.964,97.26-113.421c40.804-43.752,82.042-87.114,122.109-131.532c35.108-38.921,66.724-80.614,91.953-126.809c19.879-36.398,34.424-74.673,40.535-115.893c7.782-52.496,1.059-103.422-17.762-152.706c-13.437-35.185-26.864-70.312-36.291-106.847c-21.394-82.908-28.324-166.979-21.201-252.304c19.974-239.28,151.763-453.739,355.913-578.35c90.292-55.114,188.023-89.471,292.95-102.908c130.165-16.669,256.024-0.09,377.981,48.558c52.942,21.118,102.709,47.566,149.092,80.552c1.22,0.868,2.42,1.767,3.601,2.688c0.244,0.19,0.36,0.544,0.758,1.179c-1.649,0.801-3.241,1.608-4.86,2.357c-71.815,33.205-143.623,66.428-215.499,99.5c-2.256,1.038-5.598,1.456-7.816,0.587c-152.615-59.802-303.123-52.584-449.63,18.494c-142.377,69.074-234.294,183.195-283.161,332.63c-22.431,68.594-30.403,139.234-23.761,211.172c11.547,125.044,63.341,231.057,152.534,319.089c1.067,1.053,2.142,2.099,3.193,3.168C635.287,1352.055,635.421,1352.372,635.931,1353.173z"/>
+            </svg>
+          </g>
+          <!-- 5. Llama / Meta — bottom-left -->
+          <g class="home-mark-logo" transform="translate(1221, 3255)">
+            <svg x="-160" y="-160" width="320" height="320" viewBox="0 0 24 24">
+              <path fill="#0866FF" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/>
+            </svg>
+          </g>
+          <!-- 6. Gemini — top-left -->
+          <g class="home-mark-logo" transform="translate(1222, 1758)">
+            <svg x="-160" y="-160" width="320" height="320" viewBox="0 0 24 24">
+              <path fill="url(#home-gemini-grad)" d="M12 2c-1 5-4 8-10 9 6 1 9 4 10 11 1-7 4-10 10-11-6-1-9-4-10-9z"/>
+            </svg>
+          </g>
+        </g>
+        <!-- MCP integration nodes — 12 chips total, two interleaved rings:
+             Inner ring (6, at LLM hex positions): Google, Microsoft, GitHub,
+                Slack, HubSpot, Stripe. Emerges straight from core.
+             Outer ring (6, rotated 30°): Atlassian, monday.com, Notion,
+                Cloudflare, Figma, Zapier. Spins clockwise into place. -->
+        <g class="home-mcp-orbit-inner">
+          <!-- 1. Google Workspace — top -->
+          <g class="home-mcp-node" transform="translate(2504, 1022)">
+            <circle r="350"/>
+            <image href="/assets/brands/google.png" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 2. Microsoft 365 — top-right -->
+          <g class="home-mcp-node" transform="translate(3785, 1766)">
+            <circle r="350"/>
+            <svg x="-150" y="-150" width="300" height="300" viewBox="0 0 23 23">
+              <path fill="#F25022" d="M0 0h11v11H0z"/>
+              <path fill="#7FBA00" d="M12 0h11v11H12z"/>
+              <path fill="#00A4EF" d="M0 12h11v11H0z"/>
+              <path fill="#FFB900" d="M12 12h11v11H12z"/>
+            </svg>
+          </g>
+          <!-- 3. GitHub — bottom-right -->
+          <g class="home-mcp-node" transform="translate(3785, 3255)">
+            <circle r="350"/>
+            <image class="invert-on-dark" href="https://cdn.simpleicons.org/github" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 4. Slack — bottom -->
+          <g class="home-mcp-node" transform="translate(2504, 3981)">
+            <circle r="350"/>
+            <svg x="-150" y="-150" width="300" height="300" viewBox="0 0 24 24">
+              <path fill="#E01E5A" d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z"/>
+              <path fill="#36C5F0" d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z"/>
+              <path fill="#2EB67D" d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312z"/>
+              <path fill="#ECB22E" d="M15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+            </svg>
+          </g>
+          <!-- 5. HubSpot — bottom-left -->
+          <g class="home-mcp-node" transform="translate(1221, 3255)">
+            <circle r="350"/>
+            <image href="https://cdn.simpleicons.org/hubspot/FF7A59" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 6. Stripe — top-left -->
+          <g class="home-mcp-node" transform="translate(1222, 1758)">
+            <circle r="350"/>
+            <image href="https://cdn.simpleicons.org/stripe/635BFF" x="-160" y="-160" width="320" height="320"/>
+          </g>
+        </g>
+        <!-- Inside-stage data lines + particles. Lines extend from the
+             core's outer ring to each agent card center on entry. Sits
+             BEFORE agent-cards so cards cover the line ends. -->
+        <g class="home-inside-lines">
+          <line class="home-inside-line" x1="2500" y1="1850" x2="2504" y2="1022"/>
+          <line class="home-inside-line" x1="3063" y1="2175" x2="3785" y2="1766"/>
+          <line class="home-inside-line" x1="3063" y1="2825" x2="3785" y2="3255"/>
+          <line class="home-inside-line" x1="2500" y1="3150" x2="2504" y2="3981"/>
+          <line class="home-inside-line" x1="1937" y1="2825" x2="1221" y2="3255"/>
+          <line class="home-inside-line" x1="1937" y1="2175" x2="1222" y2="1758"/>
+        </g>
+        <g class="home-inside-particles">
+          <circle class="home-inside-particle home-inside-particle-1" r="36" cx="0" cy="0"/>
+          <circle class="home-inside-particle home-inside-particle-2" r="36" cx="0" cy="0"/>
+          <circle class="home-inside-particle home-inside-particle-3" r="36" cx="0" cy="0"/>
+          <circle class="home-inside-particle home-inside-particle-4" r="36" cx="0" cy="0"/>
+          <circle class="home-inside-particle home-inside-particle-5" r="36" cx="0" cy="0"/>
+          <circle class="home-inside-particle home-inside-particle-6" r="36" cx="0" cy="0"/>
+        </g>
+
+        <!-- Agent blueprint cards — appear at end of How stage,
+             one per outer-ring direction, each a different rarity. -->
+        <g class="home-agent-cards">
+          <!-- 1. Mythic — top -->
+          <g class="home-agent-card home-agent-card-1 home-rarity-mythic" transform="translate(2504, 1022) scale(1.7)">
+            <rect class="home-card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="home-card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="home-card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="home-card-line" x="-110" y="92" width="160" height="14" rx="4"/>
+            <rect class="home-card-badge"  x="-80" y="160" width="160" height="36" rx="18"/>
+            <text class="home-card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">MYTHIC</text>
+          </g>
+          <!-- 2. Legendary — top-right -->
+          <g class="home-agent-card home-agent-card-2 home-rarity-legendary" transform="translate(3785, 1766) scale(1.7)">
+            <rect class="home-card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="home-card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="home-card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="home-card-line" x="-110" y="92" width="180" height="14" rx="4"/>
+            <rect class="home-card-badge"  x="-94" y="160" width="188" height="36" rx="18"/>
+            <text class="home-card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">LEGENDARY</text>
+          </g>
+          <!-- 3. Epic — bottom-right -->
+          <g class="home-agent-card home-agent-card-3 home-rarity-epic" transform="translate(3785, 3255) scale(1.7)">
+            <rect class="home-card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="home-card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="home-card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="home-card-line" x="-110" y="92" width="170" height="14" rx="4"/>
+            <rect class="home-card-badge"  x="-60" y="160" width="120" height="36" rx="18"/>
+            <text class="home-card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">EPIC</text>
+          </g>
+          <!-- 4. Rare — bottom -->
+          <g class="home-agent-card home-agent-card-4 home-rarity-rare" transform="translate(2504, 3981) scale(1.7)">
+            <rect class="home-card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="home-card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="home-card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="home-card-line" x="-110" y="92" width="160" height="14" rx="4"/>
+            <rect class="home-card-badge"  x="-60" y="160" width="120" height="36" rx="18"/>
+            <text class="home-card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">RARE</text>
+          </g>
+          <!-- 5. Epic — bottom-left -->
+          <g class="home-agent-card home-agent-card-5 home-rarity-epic" transform="translate(1221, 3255) scale(1.7)">
+            <rect class="home-card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="home-card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="home-card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="home-card-line" x="-110" y="92" width="180" height="14" rx="4"/>
+            <rect class="home-card-badge"  x="-60" y="160" width="120" height="36" rx="18"/>
+            <text class="home-card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">EPIC</text>
+          </g>
+          <!-- 6. Common — top-left -->
+          <g class="home-agent-card home-agent-card-6 home-rarity-common" transform="translate(1222, 1758) scale(1.7)">
+            <rect class="home-card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="home-card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="home-card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="home-card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="home-card-line" x="-110" y="92" width="150" height="14" rx="4"/>
+            <rect class="home-card-badge"  x="-74" y="160" width="148" height="36" rx="18"/>
+            <text class="home-card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">COMMON</text>
+          </g>
+        </g>
+        <!-- mark-core (placed AFTER agent-cards so it renders ON TOP
+             of cards — cards disappear BEHIND core during Launch's
+             spiral collapse). -->
         <g class="home-mark-core">
           <path d="M2447.2,1853.2c550.99-42.77,908.61,573.22,585.69,1025.69-276.72,387.72-866.37,355.58-1097.57-60.2-228.12-410.24,44.43-929.2,511.88-965.49ZM2455.2,1953.2c-427.55,33.48-653.11,541.85-388.78,882.39,257.89,332.24,777.21,269.58,942.28-116.89,164.38-384.87-139.97-797.88-553.5-765.5Z"/>
           <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
+        </g>
+        <g class="home-mcp-orbit-outer">
+          <!-- 7. Atlassian -->
+          <g class="home-mcp-node" transform="translate(3525, 725)">
+            <circle r="350"/>
+            <image href="https://cdn.simpleicons.org/atlassian/0052CC" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 8. monday.com -->
+          <g class="home-mcp-node" transform="translate(4550, 2500)">
+            <circle r="350"/>
+            <image href="/assets/brands/monday.svg" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 9. Notion -->
+          <g class="home-mcp-node" transform="translate(3525, 4275)">
+            <circle r="350"/>
+            <image class="invert-on-dark" href="https://cdn.simpleicons.org/notion/000000" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 10. Cloudflare -->
+          <g class="home-mcp-node" transform="translate(1475, 4275)">
+            <circle r="350"/>
+            <image href="/assets/brands/cloudflare.svg" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 11. Figma -->
+          <g class="home-mcp-node" transform="translate(450, 2500)">
+            <circle r="350"/>
+            <image href="/assets/brands/figma.png" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 12. Zapier -->
+          <g class="home-mcp-node" transform="translate(1475, 725)">
+            <circle r="350"/>
+            <text x="0" y="22" text-anchor="middle" font-family="Inter, sans-serif" font-size="120" font-weight="800" fill="#FF4F00">Zapier</text>
+          </g>
+        </g>
+
+        <!-- Center-core LLM cycle (Inside stage only). Each logo fades in
+             and out one at a time at the center of the icon. -->
+        <g class="home-core-llm-cycle">
+          <!-- 1. Anthropic -->
+          <g class="home-core-llm" transform="translate(2500, 2500)">
+            <g fill="#CC785C" transform="scale(14)">
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(36)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(72)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(108)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(144)"/>
+            </g>
+          </g>
+          <!-- 2. OpenAI -->
+          <g class="home-core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 24 24">
+              <path class="home-core-llm-contrast" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+            </svg>
+          </g>
+          <!-- 3. Google AI -->
+          <g class="home-core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+          </g>
+          <!-- 4. xAI Grok -->
+          <g class="home-core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 2000 1920">
+              <path class="home-core-llm-contrast" d="M1997.505,5.546c-1.276,1.84-2.543,3.686-3.831,5.517c-44.395,63.091-89.508,125.693-132.964,189.424c-35.057,51.414-65.323,105.683-89.053,163.428c-34.447,83.828-47.232,171.046-42.05,261.249c3.355,58.404,12.861,115.859,25.887,172.786c16.297,71.216,24.256,143.247,20.188,216.29c-10.123,181.765-76.927,339.812-201.209,472.789c-107.86,115.406-239.56,189.915-394.446,221.624c-157.969,32.34-310.586,13.132-457.667-52.146c-43.51-19.311-84.795-42.677-124.218-69.344c-1.094-0.74-2.147-1.54-3.745-2.692c1.543-0.883,2.689-1.656,3.927-2.231c72.526-33.658,145.071-67.276,217.555-101.023c3.285-1.53,5.91-1.054,8.984,0.124c74.663,28.608,151.849,42.899,231.896,39.624c123.328-5.045,232.105-47.967,325.71-128.201c99.013-84.869,160.993-191.673,184.036-320.194c18.823-104.981,7.281-207.124-32.8-305.964c-13.942-34.381-52.565-47.733-86.226-30.057c-4.108,2.157-7.994,4.818-11.734,7.582c-216.828,160.265-433.63,320.565-650.436,480.86c-1.834,1.356-3.69,2.684-5.536,4.025c-0.344-0.374-0.689-0.747-1.033-1.121C1184.605,820.085,1590.468,412.274,1996.331,4.463C1996.722,4.824,1997.114,5.185,1997.505,5.546z"/>
+              <path class="home-core-llm-contrast" d="M635.931,1353.173C425.433,1541.452,215.15,1729.537,4.867,1917.623c-0.275-0.19-0.551-0.38-0.826-0.57c1.039-1.478,2.041-2.984,3.123-4.431c29.898-39.969,63.26-76.964,97.26-113.421c40.804-43.752,82.042-87.114,122.109-131.532c35.108-38.921,66.724-80.614,91.953-126.809c19.879-36.398,34.424-74.673,40.535-115.893c7.782-52.496,1.059-103.422-17.762-152.706c-13.437-35.185-26.864-70.312-36.291-106.847c-21.394-82.908-28.324-166.979-21.201-252.304c19.974-239.28,151.763-453.739,355.913-578.35c90.292-55.114,188.023-89.471,292.95-102.908c130.165-16.669,256.024-0.09,377.981,48.558c52.942,21.118,102.709,47.566,149.092,80.552c1.22,0.868,2.42,1.767,3.601,2.688c0.244,0.19,0.36,0.544,0.758,1.179c-1.649,0.801-3.241,1.608-4.86,2.357c-71.815,33.205-143.623,66.428-215.499,99.5c-2.256,1.038-5.598,1.456-7.816,0.587c-152.615-59.802-303.123-52.584-449.63,18.494c-142.377,69.074-234.294,183.195-283.161,332.63c-22.431,68.594-30.403,139.234-23.761,211.172c11.547,125.044,63.341,231.057,152.534,319.089c1.067,1.053,2.142,2.099,3.193,3.168C635.287,1352.055,635.421,1352.372,635.931,1353.173z"/>
+            </svg>
+          </g>
+          <!-- 5. Llama / Meta -->
+          <g class="home-core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 24 24">
+              <path fill="#0866FF" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/>
+            </svg>
+          </g>
+          <!-- 6. Gemini -->
+          <g class="home-core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 24 24">
+              <path fill="url(#home-gemini-grad)" d="M12 2c-1 5-4 8-10 9 6 1 9 4 10 11 1-7 4-10 10-11-6-1-9-4-10-9z"/>
+            </svg>
+          </g>
         </g>
       </svg>
     </div>
@@ -165,11 +460,13 @@
   <script src="/js/theme-lite.js"></script>
   <script src="/js/nav.js"></script>
   <script src="/js/stage.js"></script>
+  <script src="/js/home-animations.js"></script>
   <script>
     ThemeLite.init();
     Nav.render();
     Nav.renderFooter();
     HomeStage.init();
+    HomeAnimations.init();
   </script>
 </body>
 </html>
