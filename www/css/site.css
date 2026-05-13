@@ -1913,9 +1913,13 @@ body.stage-intro .home-schematic-bg {
   66%      { stroke: #3a7bff; }
 }
 
-/* Logos that are black-on-white default need to invert in dark mode. */
+/* Logos that are black-on-white default need to invert in dark mode.
+   Reference an SVG-native filter primitive (defined in www/index.html
+   inside the home-mark SVG) so it works reliably in Safari, where
+   `filter: invert(1)` on <svg>/<image> children of another SVG does
+   not consistently apply. */
 body[data-theme="dark"] .invert-on-dark {
-  filter: invert(1) brightness(1.1);
+  filter: url(#home-icon-invert);
 }
 
 /* Data shower: full on Mission, ambient on Platform, hidden on How. */
