@@ -2627,14 +2627,3 @@ body:not(.stage-intro) .home-scroll-hint { opacity: 0; pointer-events: none; }
   50%      { transform: translateY(6px); }
 }
 
-@media (max-width: 768px) {
-  .home-mark-wrap { width: 60vmin; height: 60vmin; }
-  .home-mark-wrap.is-compact { width: 28vmin; height: 28vmin; transform: translateY(-28vh); }
-  .home-mark-wrap.is-compact[data-stage="how"],
-  .home-mark-wrap.is-compact[data-stage="inside"],
-  .home-mark-wrap.is-compact[data-stage="launch"] {
-    width: 56vmin; height: 56vmin;
-    transform: translateY(-18vh);
-  }
-  .home-stage-card-frame { padding: 22px 20px; }
-}
