@@ -285,7 +285,9 @@
       let page = 0;
       let drawerIndex = -1;
       let drawerKeyHandler = null;
-      let viewMode = 'card';
+      // Default to list view on mobile (screens narrow enough that
+       // card art renders awkwardly); card view everywhere else.
+      let viewMode = window.matchMedia('(max-width: 768px)').matches ? 'list' : 'card';
       const PAGE_SIZE = 48;
       const RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
 
@@ -297,6 +299,11 @@
           order: 'name.asc',
           limit: 1000,
         }) || [];
+
+        // Sync the toggle's active state with viewMode (HTML hardcodes card).
+        document.querySelectorAll('.bp-view-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.view === viewMode);
+        });
 
         _buildCatFilters();
         _bindEvents();
