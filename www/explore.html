@@ -55,6 +55,39 @@
     }
     .approach-item p { margin: 0; }
 
+    /* Hide the animated nebula backgrounds inside the "How NICE works"
+       and "Built in the Open" cards. The cards keep their default
+       surface + border but lose the colorful drifting blobs and the
+       spinning conic-gradient backdrop on schematic + MCP wall cards. */
+    #how-it-works .card-nebula-mask,
+    .os-section .card-nebula-mask {
+      display: none;
+    }
+    #how-it-works .schematic-node::before,
+    #how-it-works .mcp-wall::before {
+      display: none;
+    }
+    /* Match the docs-card gray surface (#fafafa) so the explore cards
+       read consistently with /docs. --panel-bg gets overridden elsewhere
+       to white on this page, so set the gray directly. Mirror the same
+       cards that read as gray on this page in dark mode: schematic
+       flow, MCP wall, Built-in-Open features, Level-up bento cards,
+       pricing cards. */
+    #how-it-works .schematic-node,
+    #how-it-works .mcp-wall,
+    .os-section .feature-card,
+    .bento-card,
+    .pricing-card {
+      background: #fafafa;
+    }
+    body[data-theme="dark"] #how-it-works .schematic-node,
+    body[data-theme="dark"] #how-it-works .mcp-wall,
+    body[data-theme="dark"] .os-section .feature-card,
+    body[data-theme="dark"] .bento-card,
+    body[data-theme="dark"] .pricing-card {
+      background: #141417;
+    }
+
     .pricing-card { display: flex; flex-direction: column; }
     .pricing-features { flex: 1; }
 

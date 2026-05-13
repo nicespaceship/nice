@@ -224,12 +224,144 @@ const HomeAnimations = (() => {
     PREWARM_URLS.forEach((url) => { const i = new Image(); i.src = url; });
   }
 
+  // ─── HUD TICKS ──────────────────────────────────────────────────
+  // 36 radial tick marks around the inside of the HUD frame on Intro.
+  // Each tick gets a stagger delay so they pulse around the rim in a
+  // continuous scan rather than firing in sync.
+  const TICK_COUNT = 36;
+  const TICK_R_INNER = 2325;
+  const TICK_R_OUTER = 2440;
+
+  function _generateHUDTicks() {
+    const ticks = document.querySelector('.home-hud-ticks');
+    if (!ticks) return;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < TICK_COUNT; i++) {
+      const tick = document.createElementNS(SVG_NS, 'line');
+      tick.setAttribute('class', 'home-hud-tick');
+      tick.setAttribute('x1', '0');
+      tick.setAttribute('y1', String(-TICK_R_INNER));
+      tick.setAttribute('x2', '0');
+      tick.setAttribute('y2', String(-TICK_R_OUTER));
+      tick.setAttribute('transform', `translate(2500 2500) rotate(${i * 10})`);
+      tick.style.setProperty('--tick-delay', ((i * 5 / TICK_COUNT)).toFixed(2) + 's');
+      frag.appendChild(tick);
+    }
+    ticks.appendChild(frag);
+  }
+
+  // ─── SCHEMATIC TRACES ───────────────────────────────────────────
+  // Manhattan-routed circuit traces drifting across the Intro
+  // background. Each trace starts at an edge, makes 2-4 right-angle
+  // turns, ends with a small square pad. Traces fade in/out on a
+  // staggered loop so the background reads as live blueprint art.
+  const TRACE_COUNT = 28;
+  const TRACE_VB_W = 1600;
+  const TRACE_VB_H = 900;
+
+  function _generateSchematicTraces() {
+    const host = document.querySelector('.home-schematic-traces');
+    if (!host) return;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < TRACE_COUNT; i++) {
+      const startEdge = Math.floor(Math.random() * 4); // 0=top 1=right 2=bottom 3=left
+      let x = 0, y = 0;
+      if (startEdge === 0) { x = Math.random() * TRACE_VB_W; y = 0; }
+      else if (startEdge === 1) { x = TRACE_VB_W; y = Math.random() * TRACE_VB_H; }
+      else if (startEdge === 2) { x = Math.random() * TRACE_VB_W; y = TRACE_VB_H; }
+      else { x = 0; y = Math.random() * TRACE_VB_H; }
+
+      const segs = 2 + Math.floor(Math.random() * 3); // 2-4 turns
+      let d = `M ${x.toFixed(0)} ${y.toFixed(0)}`;
+      let horizontal = startEdge === 1 || startEdge === 3;
+      for (let s = 0; s < segs; s++) {
+        if (horizontal) {
+          const dx = (40 + Math.random() * 180) * (startEdge === 1 ? -1 : (Math.random() > 0.5 ? 1 : -1));
+          x = Math.max(20, Math.min(TRACE_VB_W - 20, x + dx));
+          d += ` L ${x.toFixed(0)} ${y.toFixed(0)}`;
+        } else {
+          const dy = (40 + Math.random() * 180) * (startEdge === 2 ? -1 : (Math.random() > 0.5 ? 1 : -1));
+          y = Math.max(20, Math.min(TRACE_VB_H - 20, y + dy));
+          d += ` L ${x.toFixed(0)} ${y.toFixed(0)}`;
+        }
+        horizontal = !horizontal;
+      }
+
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('class', 'home-schematic-trace');
+      path.setAttribute('d', d);
+      const delay = (-Math.random() * 7).toFixed(2) + 's';
+      path.style.setProperty('--trace-delay', delay);
+      frag.appendChild(path);
+
+      // End-pad: small filled rect at the last vertex
+      const padSize = 4 + Math.floor(Math.random() * 4);
+      const pad = document.createElementNS(SVG_NS, 'rect');
+      pad.setAttribute('class', 'home-schematic-trace-end');
+      pad.setAttribute('x', (x - padSize / 2).toFixed(0));
+      pad.setAttribute('y', (y - padSize / 2).toFixed(0));
+      pad.setAttribute('width', String(padSize));
+      pad.setAttribute('height', String(padSize));
+      pad.style.setProperty('--trace-delay', delay);
+      frag.appendChild(pad);
+    }
+    host.appendChild(frag);
+  }
+
+  // ─── STAGE CARD HEIGHT ──────────────────────────────────────────
+  // The persistent card at the bottom holds 6 absolute-positioned
+  // panes (one per stage). The frame's height transitions to the
+  // active pane's offsetHeight so the card resizes smoothly when
+  // the user scrolls between stages.
+  let _frame = null;
+  let _panes = null;
+
+  function _activeStage() {
+    const cls = document.body.className;
+    const m = cls.match(/stage-([a-z]+)/);
+    return m ? m[1] : null;
+  }
+  function _measure() {
+    if (!_frame) return;
+    const stage = _activeStage();
+    if (!stage) return;
+    const pane = _panes[stage];
+    if (!pane) return;
+    _frame.style.height = pane.offsetHeight + 'px';
+  }
+  function _initStageCard() {
+    _frame = document.querySelector('.home-stage-card-frame');
+    if (!_frame) return;
+    _panes = {};
+    document.querySelectorAll('.home-stage-card-pane').forEach((p) => {
+      _panes[p.dataset.stage] = p;
+    });
+    _measure();
+    // Re-measure when the active stage class changes on body.
+    new MutationObserver(_measure).observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    // And when the viewport resizes (line-wrapping changes pane height).
+    window.addEventListener('resize', _measure);
+    // Final pass once fonts have loaded (FA, Orbitron) — text height
+    // can shift when web fonts swap in.
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(_measure);
+    } else {
+      setTimeout(_measure, 600);
+    }
+  }
+
   function init() {
     _preWarmImages();
     _generateShower();
     _generateCascade();
     _generateOutputs();
     _enhanceAgentCards();
+    _generateHUDTicks();
+    _generateSchematicTraces();
+    _initStageCard();
   }
 
   return { init };

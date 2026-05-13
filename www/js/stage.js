@@ -12,7 +12,10 @@ const HomeStage = (() => {
   let currentStage = null;
 
   // Order matters — sets a known list for body class swapping.
-  const STAGES = ['intro', 'mission', 'platform', 'how', 'inside', 'launch'];
+  // `site` is the conclusion stop after Launch; the persistent card
+  // fades out, the original site header reappears, and the page
+  // reads like the real nicespaceship.com home.
+  const STAGES = ['intro', 'mission', 'platform', 'how', 'inside', 'launch', 'site'];
 
   function _setStage(name) {
     if (name === currentStage) return;

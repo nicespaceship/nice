@@ -36,10 +36,11 @@ const Nav = (() => {
         <div class="nav-inner">
           <a href="/" class="nav-brand">
             ${NAV_BRAND_GLYPH_SVG}
-            <span class="nav-brand-text">SPACESHIP</span>
+            <span class="nav-brand-text">NICE SPACESHIP</span>
           </a>
           <div class="nav-links" id="nav-links">
             ${LINKS.map(l => `<a href="${l.href}" class="nav-link${_isActive(l.href) ? ' active' : ''}">${l.label}</a>`).join('')}
+            <a href="https://nicespaceship.ai" class="nav-cta">Launch NICE</a>
           </div>
           <div class="nav-right">
             <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode"><i class="fa-solid fa-${(document.body.getAttribute('data-theme') === 'dark') ? 'sun' : 'moon'}"></i></button>
@@ -65,10 +66,10 @@ const Nav = (() => {
         <div class="footer-grid">
           <div class="footer-col">
             <div class="footer-brand">
-              ${FOOTER_GLYPH_SVG}
-              <span class="footer-brand-text">SPACESHIP</span>
+              <span class="footer-brand-text">NICE SPACESHIP</span>
             </div>
-            <p class="footer-desc">Neural Intelligence Command Engine.<br/>Open source, MIT licensed.</p>
+            <p class="footer-desc"><span class="footer-desc-icon">${FOOTER_GLYPH_SVG}</span>Neural Intelligence Command Engine</p>
+            <p class="footer-meta">Open source, MIT licensed.</p>
             <div class="footer-socials">
               <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
               <a href="https://www.reddit.com/r/nicespaceship/" target="_blank" rel="noopener" title="Reddit"><i class="fa-brands fa-reddit"></i></a>
