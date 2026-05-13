@@ -22,7 +22,34 @@
   <link rel="stylesheet" href="/css/site.css" />
 </head>
 <body class="home">
+  <!-- Original site header — hidden during the scroll narrative,
+       restored at the opening `intro` and final `site` stages so the
+       page reads like the real nicespaceship.com home. The SPACESHIP
+       wordmark sits in the header's left-aligned brand spot.
+       Rendered by Nav.render(). -->
   <header id="site-header"></header>
+
+  <!-- Floating theme toggle (visible during the scroll narrative
+       only; hidden on stages where the header owns its own). -->
+  <button class="theme-toggle floating-theme-toggle" id="floating-theme-toggle" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+
+  <!-- Scroll cue: bottom-right, anchored below the side timeline's
+       "Launch" item. Fades out once the user leaves Intro. -->
+  <div class="home-scroll-hint" aria-hidden="true">
+    <span>Scroll</span>
+    <i class="fa-solid fa-chevron-down"></i>
+  </div>
+
+  <!-- Intro stage schematic-blueprint background — fixed full-viewport
+       grid + circuit traces sitting behind the HUD. Visible only when
+       body.stage-intro is set. SVG paths populated by HomeAnimations.init().
+       The .home-circuit-traces group holds the 3 named traces that
+       visually connect the HUD's outer ring to the floating CTAs. -->
+  <div class="home-schematic-bg" aria-hidden="true">
+    <svg class="home-schematic-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+      <g class="home-schematic-traces"></g>
+    </svg>
+  </div>
 
   <!-- Inside stage cascade — fixed full-viewport rain of blueprint cards.
        Populated by HomeAnimations.init(). -->
@@ -44,6 +71,16 @@
       <div class="home-particles home-particles-shower"></div>
 
       <svg class="home-mark" viewBox="0 0 5000 5000" preserveAspectRatio="xMidYMid meet">
+        <!-- HUD frame (Intro stage only). Sits behind the constellation so
+             the brand mark reads on top. Disc → outer frame → glow arcs
+             → tick marks → 6 short indicator lines radiating from core. -->
+        <g class="home-mark-hud" aria-hidden="true">
+          <circle class="home-hud-disc" cx="2500" cy="2500" r="2240"/>
+          <circle class="home-hud-frame" cx="2500" cy="2500" r="2380" fill="none"/>
+          <circle class="home-hud-frame-inner" cx="2500" cy="2500" r="2210" fill="none"/>
+          <circle class="home-hud-arcs" cx="2500" cy="2500" r="2300" fill="none"/>
+          <g class="home-hud-ticks"></g>
+        </g>
         <g class="home-mark-orbit">
           <path d="M2467.2,673.2c345.58-32.47,524.02,397,258.68,618.68-180.13,150.49-459.08,78.97-546.6-137.16-87.17-215.28,55.93-459.73,287.92-481.52Z"/>
           <path d="M3537.4,2014.6c-177.73-177.72-114.08-485.01,120.51-574.69,274.93-105.11,544.87,148.19,461.85,429.85-73.68,249.96-398.06,329.14-582.35,144.85Z"/>
@@ -355,105 +392,89 @@
   <!-- Side timeline: section progress indicator -->
   <nav class="home-timeline" aria-label="Page sections">
     <a href="#intro" class="home-timeline-item is-active" data-section="intro">
-      <span class="home-timeline-label">Intro</span>
+      <span class="home-timeline-label">What is NICE?</span>
       <span class="home-timeline-dot"></span>
     </a>
     <a href="#mission" class="home-timeline-item" data-section="mission">
-      <span class="home-timeline-label">Mission</span>
+      <span class="home-timeline-label">The Engine</span>
       <span class="home-timeline-dot"></span>
     </a>
     <a href="#platform" class="home-timeline-item" data-section="platform">
-      <span class="home-timeline-label">Platform</span>
+      <span class="home-timeline-label">The Protocol</span>
       <span class="home-timeline-dot"></span>
     </a>
     <a href="#how" class="home-timeline-item" data-section="how">
-      <span class="home-timeline-label">How it works</span>
+      <span class="home-timeline-label">The Blueprint</span>
       <span class="home-timeline-dot"></span>
     </a>
     <a href="#inside" class="home-timeline-item" data-section="inside">
-      <span class="home-timeline-label">Inside</span>
+      <span class="home-timeline-label">The Spaceship</span>
       <span class="home-timeline-dot"></span>
     </a>
     <a href="#launch" class="home-timeline-item" data-section="launch">
-      <span class="home-timeline-label">Launch</span>
+      <span class="home-timeline-label">The Launch</span>
+      <span class="home-timeline-dot"></span>
+    </a>
+    <a href="#site" class="home-timeline-item" data-section="site">
+      <span class="home-timeline-label">nicespaceship.com</span>
       <span class="home-timeline-dot"></span>
     </a>
   </nav>
 
 
   <main class="home-main">
-    <!-- Stop 1: Intro — icon-only hero -->
-    <section id="intro" class="home-stop home-stop-hero">
-      <div class="home-scroll-hint">
-        <span>Scroll</span>
-        <i class="fa-solid fa-chevron-down"></i>
-      </div>
-    </section>
+    <!-- Six scroll-depth markers — each section is 100vh tall but
+         empty. The copy lives in one persistent card below; only the
+         active stage's pane shows. The 7th stop (`ctas`) is the
+         conclusion: persistent card fades out, in-flow CTA card sits
+         just above the footer. -->
+    <section id="intro" class="home-stop home-stop-hero"></section>
+    <section id="mission" class="home-stop"></section>
+    <section id="platform" class="home-stop"></section>
+    <section id="how" class="home-stop"></section>
+    <section id="inside" class="home-stop"></section>
+    <section id="launch" class="home-stop"></section>
+    <!-- Final stop: the persistent card fades out, the original
+         header reappears, the HUD recenters. Reads like the real
+         nicespaceship.com homepage. Section is empty by design. -->
+    <section id="site" class="home-stop home-stop-end"></section>
+  </main>
 
-    <!-- Stop 2: Mission & Approach -->
-    <section id="mission" class="home-stop">
-      <div class="home-stop-content">
-        <span class="home-stop-eyebrow">Mission</span>
-        <h2>Give everyone AI agents.</h2>
-        <p>AI is the most powerful technology since the internet. Most people still stop at chatbots. NICE SPACESHIP changes that. No coding. No API keys. Browse a blueprint, activate it, and let the agents work.</p>
-        <ul class="home-stop-list">
-          <li><strong>Open Source</strong>MIT licensed. Full codebase published. Contribute blueprints or self-host.</li>
-          <li><strong>Multi-LLM</strong>Claude, Gemini, GPT, Llama, Grok. Routed to the best model for each task.</li>
-          <li><strong>Business-First</strong>Replace $1,300 per month in SaaS tools with $9.99. Built for SMBs first.</li>
-        </ul>
+  <!-- Persistent stage card — fixed bottom-center, always present.
+       Holds one pane per stage; CSS shows only the pane whose
+       data-stage matches body.stage-<name>. Grid-stack so the card
+       sizes to the tallest pane to avoid layout shift on swap. -->
+  <aside class="home-stage-card" aria-live="polite">
+    <div class="home-stage-card-frame">
+      <div class="home-stage-card-pane" data-stage="intro">
+        <h2>Agent orchestration, simplified.</h2>
+        <p>NICE is the Neural Intelligence Command Engine. Direct AI like an instrument, not a chatbot.</p>
       </div>
-    </section>
-
-    <!-- Stop 3: The Platform -->
-    <section id="platform" class="home-stop">
-      <div class="home-stop-content">
-        <span class="home-stop-eyebrow">The Platform</span>
-        <h2>Build your Spaceship. Deploy your Agents. Run everything.</h2>
-        <p>NICE (<em>Neural Intelligence Command Engine</em>) is a full agentic AI platform. Deploy fleets of AI agents without touching an API key or writing code. Free tier on Gemini 2.5 Flash. Premium tiers unlock every major model.</p>
+      <div class="home-stage-card-pane" data-stage="mission">
+        <h2>Every model. One engine.</h2>
+        <p>NICE doesn't compete with Claude, Gemini, or GPT. NICE routes your tasks to whichever one runs them best. Decipher, analyze, distribute.</p>
       </div>
-    </section>
-
-    <!-- Stop 3: How it works -->
-    <section id="how" class="home-stop">
-      <div class="home-stop-content">
-        <span class="home-stop-eyebrow">How it works</span>
-        <h2>Three primitives. Infinite missions.</h2>
-        <ul class="home-stop-list">
-          <li><strong>Spaceships</strong>Pre-built crews ready to deploy. Each ship orchestrates a team of agents toward a real outcome.</li>
-          <li><strong>Agents</strong>Specialized workers powered by your choice of LLM, equipped with the right tools through MCP.</li>
-          <li><strong>Missions</strong>Reusable templates with schedules, workflows, and approval gates. Run them on demand or on a cron.</li>
-        </ul>
+      <div class="home-stage-card-pane" data-stage="platform">
+        <h2>Every tool. One protocol.</h2>
+        <p>NICE speaks MCP, the open standard for AI tool access. Agents read your email, query your database, open your tickets, ship your code.</p>
       </div>
-    </section>
-
-    <!-- Stop 4: What's inside -->
-    <section id="inside" class="home-stop">
-      <div class="home-stop-content">
-        <span class="home-stop-eyebrow">What's inside</span>
-        <h2>Every major AI model. Every major SaaS tool.</h2>
-        <ul class="home-stop-list">
-          <li><strong>500+ pre-built blueprints</strong>Marketing, sales, ops, engineering, finance, legal. Activate one, customize, ship.</li>
-          <li><strong>Every major LLM</strong>Gemini, Claude, GPT, Grok, Llama. One toggle, zero API keys.</li>
-          <li><strong>Native MCP integrations</strong>Google Workspace, Microsoft 365, GitHub, HubSpot, Slack, Linear, Notion, Stripe, and more.</li>
-          <li><strong>Open source, MIT licensed</strong>Full source on GitHub. Build on it, fork it, run it yourself.</li>
-        </ul>
+      <div class="home-stage-card-pane" data-stage="how">
+        <h2>Agent blueprints, ready to go.</h2>
+        <p>An agent blueprint is a complete AI worker, pre-built and ready to activate. Each one handles a specific job, uses the right tools, and runs on the model best suited to the task. You don't build the agent. You pick the blueprint.</p>
       </div>
-    </section>
-
-    <!-- Stop 5: Launch -->
-    <section id="launch" class="home-stop">
-      <div class="home-stop-content">
-        <span class="home-stop-eyebrow">Get started</span>
-        <h2>Launch your fleet.</h2>
-        <p>Free tier is unlimited Gemini 2.5 Flash. No credit card. Premium tiers start at $9.99 per month.</p>
+      <div class="home-stage-card-pane" data-stage="inside">
+        <h2>A spaceship runs an operation.</h2>
+        <p>NICE is the engine. A spaceship is a coordinated operation, staffed by agents who own each part of the work. Marketing, sales, engineering: every operation runs as its own spaceship.</p>
+      </div>
+      <div class="home-stage-card-pane" data-stage="launch">
+        <h2>Launch your first spaceship.</h2>
+        <p>Everything you've seen runs the moment you sign up. Pick a blueprint, activate a spaceship, watch the agents go. Your operation starts now.</p>
         <div class="home-stop-ctas">
           <a href="https://nicespaceship.ai" class="btn-primary"><i class="fa-solid fa-rocket"></i> Launch NICE</a>
-          <a href="/explore#pricing" class="btn-secondary"><i class="fa-solid fa-tag"></i> Pricing</a>
-          <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener" class="btn-secondary"><i class="fa-brands fa-github"></i> GitHub</a>
         </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </aside>
 
   <footer id="site-footer" class="footer"></footer>
 

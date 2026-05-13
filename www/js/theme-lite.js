@@ -13,8 +13,10 @@ const ThemeLite = (() => {
   }
 
   function _syncIcon(theme) {
-    const icon = document.querySelector('#theme-toggle i');
-    if (icon) icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    // Sync every theme-toggle icon (header toggle + floating toggle
+    // on the home page can both be present in the DOM at once).
+    const cls = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    document.querySelectorAll('.theme-toggle i').forEach(i => { i.className = cls; });
   }
 
   function _apply(theme) {
@@ -26,7 +28,7 @@ const ThemeLite = (() => {
     const saved = _readSaved();
     _apply(saved === 'dark' ? 'dark' : 'light');
     document.addEventListener('click', (e) => {
-      if (e.target.closest('#theme-toggle')) toggle();
+      if (e.target.closest('.theme-toggle')) toggle();
     });
   }
 
