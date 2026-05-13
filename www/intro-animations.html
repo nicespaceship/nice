@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NICE icon — intro animation sandbox</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f5f6f8;
+    --ink: #0c0d10;
+    --ink-soft: #5a5e66;
+    --line: #e1e3e8;
+    --accent: #0f52ba; /* Sapphire */
+    --accent-soft: rgba(15,82,186,0.12);
+    --picker-bg: rgba(255,255,255,0.86);
+    --chip-bg: #ffffff;
+    --dot-color: #000000; /* How-stage dot color before colorize */
+  }
+  body[data-theme="dark"] {
+    --bg: #0a0c12;
+    --bg-soft: #181b24;
+    --ink: #f5f6f8;
+    --ink-soft: #8d93a0;
+    --line: #2c3140;
+    --accent: #4d8eff;
+    --accent-soft: rgba(77,142,255,0.16);
+    --picker-bg: rgba(20,24,32,0.86);
+    --chip-bg: #000000;
+    --dot-color: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    overflow: hidden;
+  }
+  .picker {
+    position: fixed;
+    top: 24px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 8px;
+    background: var(--picker-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    z-index: 100;
+    font-size: 13px;
+  }
+  .picker { top: 28px; }
+  .picker-stage { top: 102px; }
+  .picker-stage button.is-active {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .picker-eyebrow {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--ink-soft);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .picker-eyebrow.is-anim  { top: 10px; }
+  .picker-eyebrow.is-stage { top: 84px; }
+  .picker button {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .picker button:hover { background: var(--bg-soft); color: var(--ink); }
+  .picker button.is-active {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .replay {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    font: inherit;
+    font-size: 13px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  }
+  .replay:hover { background: var(--accent); color: #fff; }
+  .theme-toggle {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--picker-bg);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 100;
+    transition: transform 0.2s ease;
+  }
+  .theme-toggle:hover { transform: scale(1.06); }
+  .label {
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    color: var(--ink-soft);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    z-index: 100;
+    text-align: center;
+  }
+  .label .row { display: block; }
+  .label .row + .row { margin-top: 4px; }
+
+  .stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .mark-wrap {
+    position: relative;
+    width: 60vmin; height: 60vmin;
+    transition: transform 1s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  /* Zoom the entire composition on How (and Inside, which inherits How's
+     end state) so the agent cards read clearly. */
+  .mark-wrap[data-stage="how"],
+  .mark-wrap[data-stage="inside"] {
+    transform: scale(1.35);
+  }
+  .stage-ring {
+    position: absolute; left: 50%; top: 50%;
+    width: 100%; height: 100%;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+    pointer-events: none;
+  }
+  .mark {
+    width: 100%; height: 100%;
+    fill: var(--ink);
+    transform-origin: 50% 50%;
+    filter: drop-shadow(0 0 80px rgba(15,82,186,0.10));
+  }
+  .mark > g { transform-origin: 2500px 2500px; }
+
+  /* Centered flash overlay used by singularity */
+  .flash {
+    position: absolute; left: 50%; top: 50%;
+    width: 20px; height: 20px;
+    background: radial-gradient(circle, #fff 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+    z-index: 2;
+  }
+  /* Schematic grid crosshair overlay */
+  .crosshair {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      linear-gradient(to right, transparent calc(50% - 0.5px), var(--accent) calc(50% - 0.5px), var(--accent) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--accent) calc(50% - 0.5px), var(--accent) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  }
+
+  /* ===========================================================
+     1. BOOT-UP — chevrons → core → orbit dots → pillars
+     =========================================================== */
+  .mark-wrap[data-anim="boot"] .mark-chevrons { animation: boot-chevrons 0.45s cubic-bezier(0.2,1,0.3,1) 0s both; }
+  .mark-wrap[data-anim="boot"] .mark-core     { animation: boot-core 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.4s both; }
+  .mark-wrap[data-anim="boot"] .mark-orbit path { opacity: 0; transform-origin: 2500px 2500px; }
+  .mark-wrap[data-anim="boot"] .mark-orbit path:nth-child(1) { animation: boot-orbit-dot 0.4s cubic-bezier(0.2,1,0.3,1) 0.55s both; }
+  .mark-wrap[data-anim="boot"] .mark-orbit path:nth-child(2) { animation: boot-orbit-dot 0.4s cubic-bezier(0.2,1,0.3,1) 0.62s both; }
+  .mark-wrap[data-anim="boot"] .mark-orbit path:nth-child(3) { animation: boot-orbit-dot 0.4s cubic-bezier(0.2,1,0.3,1) 0.69s both; }
+  .mark-wrap[data-anim="boot"] .mark-orbit path:nth-child(4) { animation: boot-orbit-dot 0.4s cubic-bezier(0.2,1,0.3,1) 0.76s both; }
+  .mark-wrap[data-anim="boot"] .mark-orbit path:nth-child(5) { animation: boot-orbit-dot 0.4s cubic-bezier(0.2,1,0.3,1) 0.83s both; }
+  .mark-wrap[data-anim="boot"] .mark-orbit path:nth-child(6) { animation: boot-orbit-dot 0.4s cubic-bezier(0.2,1,0.3,1) 0.9s both; }
+  .mark-wrap[data-anim="boot"] .mark-pillars  { animation: boot-pillars 0.35s cubic-bezier(0.2,1,0.3,1) 1.0s both; }
+  .mark-wrap[data-anim="boot"] .stage-ring-1 { animation: ring-flash 0.6s ease-out 0.45s both; }
+
+  @keyframes boot-chevrons {
+    from { transform: scale(2.4); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  @keyframes boot-core {
+    0%   { transform: scale(0); opacity: 0; }
+    60%  { transform: scale(1.18); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes boot-orbit-dot {
+    from { transform: scale(0.4); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  @keyframes boot-pillars {
+    from { transform: scaleY(0); opacity: 0; }
+    to   { transform: scaleY(1); opacity: 1; }
+  }
+  @keyframes ring-flash {
+    0%   { transform: translate(-50%, -50%) scale(0.85); opacity: 0.5; }
+    100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+  }
+
+  /* ===========================================================
+     2. SCHEMATIC — circular reveal from center + crosshair flash
+     =========================================================== */
+  .mark-wrap[data-anim="schematic"] .mark {
+    animation: schematic-reveal 1.4s cubic-bezier(0.4,0,0.2,1) both;
+  }
+  .mark-wrap[data-anim="schematic"] .crosshair {
+    animation: crosshair-flash 1.6s ease-out both;
+  }
+  @keyframes schematic-reveal {
+    0%   { clip-path: circle(0% at 50% 50%); opacity: 0.85; }
+    40%  { opacity: 1; }
+    100% { clip-path: circle(75% at 50% 50%); opacity: 1; }
+  }
+  @keyframes crosshair-flash {
+    0%   { opacity: 0; }
+    20%  { opacity: 0.35; }
+    70%  { opacity: 0.2; }
+    100% { opacity: 0; }
+  }
+
+  /* ===========================================================
+     3. SINGULARITY — single point → flash → big bang outward
+     =========================================================== */
+  .mark-wrap[data-anim="singularity"] .mark-orbit    { animation: singularity-fade 0.5s ease-out 0.55s both; }
+  .mark-wrap[data-anim="singularity"] .mark-chevrons { animation: singularity-fade 0.5s ease-out 0.75s both; }
+  .mark-wrap[data-anim="singularity"] .mark-pillars  { animation: singularity-fade 0.5s ease-out 0.75s both; }
+  .mark-wrap[data-anim="singularity"] .mark-core     { animation: singularity-core 0.8s cubic-bezier(0.2,1.6,0.4,1) 0.25s both; }
+  .mark-wrap[data-anim="singularity"] .flash         { animation: singularity-flash 0.6s ease-out 0.15s both; }
+  .mark-wrap[data-anim="singularity"] .stage-ring-1  { animation: singularity-ring 0.9s cubic-bezier(0.2,0.8,0.4,1) 0.25s both; }
+  .mark-wrap[data-anim="singularity"] .stage-ring-2  { animation: singularity-ring 0.9s cubic-bezier(0.2,0.8,0.4,1) 0.45s both; }
+  .mark-wrap[data-anim="singularity"] .stage-ring-3  { animation: singularity-ring 0.9s cubic-bezier(0.2,0.8,0.4,1) 0.65s both; }
+
+  @keyframes singularity-fade {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes singularity-core {
+    0%   { opacity: 0; transform: scale(0); }
+    50%  { opacity: 1; transform: scale(1.4); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes singularity-flash {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+    30%  { opacity: 1; transform: translate(-50%, -50%) scale(40); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(80); }
+  }
+  @keyframes singularity-ring {
+    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
+  }
+
+  /* ===========================================================
+     4. CONSTELLATION — dots twinkle in, then connectors appear,
+        then the whole mark settles into a slow clockwise rotation
+     =========================================================== */
+  .mark-wrap[data-anim="constellation"] .mark {
+    animation: const-spin 1.5s linear 2.65s both;
+  }
+  .mark-wrap[data-anim="constellation"] .mark-core      { animation: const-fade 0.6s ease-out 0s both; }
+  .mark-wrap[data-anim="constellation"] .mark-orbit path { opacity: 0; transform-origin: 2500px 2500px; }
+  .mark-wrap[data-anim="constellation"] .mark-orbit path:nth-child(1) { animation: const-twinkle 0.7s ease-out 0.4s both; }
+  .mark-wrap[data-anim="constellation"] .mark-orbit path:nth-child(2) { animation: const-twinkle 0.7s ease-out 0.95s both; }
+  .mark-wrap[data-anim="constellation"] .mark-orbit path:nth-child(3) { animation: const-twinkle 0.7s ease-out 0.6s both; }
+  .mark-wrap[data-anim="constellation"] .mark-orbit path:nth-child(4) { animation: const-twinkle 0.7s ease-out 1.15s both; }
+  .mark-wrap[data-anim="constellation"] .mark-orbit path:nth-child(5) { animation: const-twinkle 0.7s ease-out 0.75s both; }
+  .mark-wrap[data-anim="constellation"] .mark-orbit path:nth-child(6) { animation: const-twinkle 0.7s ease-out 1.3s both; }
+  .mark-wrap[data-anim="constellation"] .mark-pillars  { animation: const-line 0.7s ease-out 1.8s both; }
+  .mark-wrap[data-anim="constellation"] .mark-chevrons { animation: const-line 0.7s ease-out 1.95s both; }
+
+  @keyframes const-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes const-twinkle {
+    0%   { opacity: 0; transform: scale(0.3); }
+    50%  { opacity: 1; transform: scale(1.4); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes const-line {
+    from { opacity: 0; transform: scale(1.1); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes const-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* ===========================================================
+     5. MAGNETIC — scattered pieces converge with overshoot
+     =========================================================== */
+  .mark-wrap[data-anim="magnetic"] .mark-orbit    { animation: magnet-out-in 0.95s cubic-bezier(0.34,1.4,0.5,1) 0s both; }
+  .mark-wrap[data-anim="magnetic"] .mark-chevrons { animation: magnet-far-in 1.0s cubic-bezier(0.34,1.4,0.5,1) 0.05s both; }
+  .mark-wrap[data-anim="magnetic"] .mark-pillars  { animation: magnet-tall-in 0.9s cubic-bezier(0.34,1.4,0.5,1) 0.15s both; }
+  .mark-wrap[data-anim="magnetic"] .mark-core     { animation: magnet-tiny-in 0.85s cubic-bezier(0.34,1.4,0.5,1) 0.2s both; }
+
+  @keyframes magnet-out-in {
+    from { transform: scale(2.2); opacity: 0; }
+    65%  { transform: scale(0.94); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  @keyframes magnet-far-in {
+    from { transform: scale(3); opacity: 0; }
+    65%  { transform: scale(0.93); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  @keyframes magnet-tall-in {
+    from { transform: scaleY(4) scaleX(0.6); opacity: 0; }
+    65%  { transform: scaleY(0.94) scaleX(1.05); opacity: 1; }
+    100% { transform: scaleY(1) scaleX(1); }
+  }
+  @keyframes magnet-tiny-in {
+    from { transform: scale(0); opacity: 0; }
+    65%  { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+
+  /* ===========================================================
+     6. WARP — zoom from huge + blurred to landing
+     =========================================================== */
+  .mark-wrap[data-anim="warp"] .mark {
+    animation: warp-in 0.85s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .mark-wrap[data-anim="warp"] .stage-ring-1 { animation: warp-trail 0.85s ease-out 0.2s both; }
+  .mark-wrap[data-anim="warp"] .stage-ring-2 { animation: warp-trail 0.85s ease-out 0.35s both; }
+
+  @keyframes warp-in {
+    0%   { transform: scale(7); opacity: 0; filter: blur(40px); }
+    60%  { transform: scale(1.06); opacity: 1; filter: blur(2px); }
+    100% { transform: scale(1); opacity: 1; filter: blur(0); }
+  }
+  @keyframes warp-trail {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.5; }
+    100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+  }
+
+  /* ===========================================================
+     PARTICLES — two pools.
+     .particles-spokes : 6 blue dots aligned with outer nodes
+                          (Mission dispatch + Launch trails).
+                          Blue = data within NICE.
+     .particles-shower : 180 colored dots generated by JS
+                          (Inside — data flowing in from outside).
+     =========================================================== */
+  .particles {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .particle {
+    position: absolute;
+    left: 50%; top: 50%;
+    border-radius: 50%;
+    opacity: 0;
+  }
+
+  /* Spokes — fixed 6 dots, Sapphire */
+  .particles-spokes .particle {
+    width: 1.6vmin; height: 1.6vmin;
+    margin: -0.8vmin 0 0 -0.8vmin;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(15,82,186,0.6);
+  }
+  .particles-spokes .particle:nth-child(1) { --angle:   0deg; --delay: 0s;    }
+  .particles-spokes .particle:nth-child(2) { --angle:  60deg; --delay: 0.12s; }
+  .particles-spokes .particle:nth-child(3) { --angle: 120deg; --delay: 0.24s; }
+  .particles-spokes .particle:nth-child(4) { --angle: 180deg; --delay: 0.36s; }
+  .particles-spokes .particle:nth-child(5) { --angle: 240deg; --delay: 0.48s; }
+  .particles-spokes .particle:nth-child(6) { --angle: 300deg; --delay: 0.60s; }
+
+  /* Shower — 180 small dots, random angles/delays/colors via JS */
+  .particles-shower .particle {
+    width: 1vmin; height: 1vmin;
+    margin: -0.5vmin 0 0 -0.5vmin;
+    /* background + --angle + --delay set inline by JS */
+  }
+
+  /* ============================================================
+     STAGE: INTRO — no continuous loop. Constellation reveal + spin
+     plays from data-anim; otherwise the icon just sits there.
+     ============================================================ */
+
+  /* ============================================================
+     STAGES: MISSION + PLATFORM — share the lit-up state.
+     Mission adds the data shower. Platform inherits everything
+     Mission ends with, so the cross-stage transition is seamless.
+     Animation declarations are IDENTICAL across both selectors so
+     the browser keeps animations running uninterrupted on switch.
+     ============================================================ */
+
+  /* Outer orbit: breathing scale pulse on Mission only.
+     Platform replaces this with a collapse-to-core animation below. */
+  .mark-wrap[data-stage="mission"] .mark-orbit {
+    animation: orbit-intake-breath 4s ease-in-out infinite;
+  }
+  @keyframes orbit-intake-breath {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.12); }
+  }
+
+  /* Outer dots become white "chips" so logos read clearly */
+  .mark-orbit path {
+    transition: fill 0.5s ease, stroke 0.5s ease, stroke-width 0.5s ease;
+  }
+  .mark-wrap[data-stage="mission"]  .mark-orbit path,
+  .mark-wrap[data-stage="platform"] .mark-orbit path {
+    fill: var(--chip-bg);
+    stroke: var(--accent);
+    stroke-width: 40;
+  }
+
+  /* Core outer ring: RGB cycle + breathing scale pulse.
+     2.4s delay matches the first shower contact on Mission; on
+     Platform there's no shower but we keep the same delay so the
+     animation declaration is identical and Mission→Platform doesn't
+     restart the cycle mid-color. */
+  .mark-wrap[data-stage="mission"]  .mark-core path:nth-child(1),
+  .mark-wrap[data-stage="platform"] .mark-core path:nth-child(1) {
+    transform-origin: 2500px 2500px;
+    animation:
+      core-rgb-cycle 3.5s linear 2.4s infinite,
+      ring-breath 3s ease-in-out 2.4s infinite;
+  }
+  .mark-wrap[data-stage="mission"]  .mark-core path:nth-child(2),
+  .mark-wrap[data-stage="platform"] .mark-core path:nth-child(2) {
+    animation: core-rgb-cycle 3.5s linear 2.4s infinite;
+  }
+  @keyframes core-rgb-cycle {
+    0%, 100% { fill: #ff3a3a; filter: drop-shadow(0 0 8px rgba(255, 58, 58, 0.85)); }
+    33%      { fill: #3aff5b; filter: drop-shadow(0 0 8px rgba(58, 255, 91, 0.85)); }
+    66%      { fill: #3a7bff; filter: drop-shadow(0 0 8px rgba(58, 123, 255, 0.85)); }
+  }
+  @keyframes ring-breath {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.08); }
+  }
+
+  /* The 6 connector paths (2 pillars + 4 chevrons) cycle RGB in sync */
+  .mark-wrap[data-stage="mission"]  .mark-pillars path,
+  .mark-wrap[data-stage="mission"]  .mark-chevrons path,
+  .mark-wrap[data-stage="mission"]  .mark-chevrons polygon,
+  .mark-wrap[data-stage="platform"] .mark-pillars path,
+  .mark-wrap[data-stage="platform"] .mark-chevrons path,
+  .mark-wrap[data-stage="platform"] .mark-chevrons polygon {
+    animation: core-rgb-cycle 3.5s linear 2.4s infinite;
+  }
+
+  /* LLM logos: faded in on Mission, breath-synced with the orbit.
+     Platform's collapse-to-core animation handles their exit. */
+  .mark-logos { opacity: 0; transition: opacity 0.6s ease; }
+  .mark-wrap[data-stage="mission"] .mark-logos {
+    opacity: 1;
+    transition-delay: 0.4s;
+    animation: orbit-intake-breath 4s ease-in-out infinite;
+  }
+
+  /* ============================================================
+     STAGE: PLATFORM — Mission's LLM nodes collapse into the core
+     (0–0.8s), then 12 MCP nodes emerge from the core (0.7s onward)
+     and settle into a two-ring layout (6 inner + 6 outer).
+     Core/connectors/ring continue their RGB cycle uninterrupted.
+     ============================================================ */
+  .mark-wrap[data-stage="platform"] .mark-orbit,
+  .mark-wrap[data-stage="platform"] .mark-logos {
+    animation: collapse-to-core 0.8s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  }
+  /* How keeps logos hidden but reveals the orbit dots at the end */
+  .mark-wrap[data-stage="how"] .mark-logos {
+    animation: collapse-to-core 0.8s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  }
+  @keyframes collapse-to-core {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0); }
+  }
+
+  /* MCP orbit — two sub-groups so the outer ring can spin into place
+     while the inner ring emerges straight. Both hidden until Platform. */
+  .mcp-orbit-inner, .mcp-orbit-outer {
+    opacity: 0;
+    transform-origin: 2500px 2500px;
+  }
+  .mcp-orbit-inner { transform: scale(0); }
+  .mcp-orbit-outer { transform: scale(0) rotate(-60deg); }
+
+  .mark-wrap[data-stage="platform"] .mcp-orbit-inner {
+    animation: emit-from-core 0.95s 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+  .mark-wrap[data-stage="platform"] .mcp-orbit-outer {
+    animation: emit-with-spin 1.1s 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+  @keyframes emit-from-core {
+    0%   { opacity: 0; transform: scale(0); }
+    60%  { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes emit-with-spin {
+    0%   { opacity: 0; transform: scale(0)    rotate(-60deg); }
+    60%  { opacity: 1; transform: scale(1.08) rotate(-8deg);  }
+    100% { opacity: 1; transform: scale(1)    rotate(0deg);   }
+  }
+
+  /* MCP nodes: same chip styling as LLM dots — light bg in light mode,
+     black bg in dark mode. Sapphire stroke in both. On Platform, the
+     stroke cycles RGB in sync with the core. */
+  .mcp-node circle {
+    fill: var(--chip-bg);
+    stroke: var(--accent);
+    stroke-width: 40;
+  }
+  /* Apply on BOTH Mission and Platform with identical timing to the core
+     animation (3.5s / 2.4s delay). On Mission the chips are hidden but
+     the animation runs in sync — so when they appear on Platform, the
+     stroke color matches the core's current color exactly. */
+  .mark-wrap[data-stage="mission"]  .mcp-node circle,
+  .mark-wrap[data-stage="platform"] .mcp-node circle {
+    animation: chip-rgb-stroke 3.5s linear 2.4s infinite;
+  }
+  @keyframes chip-rgb-stroke {
+    0%, 100% { stroke: #ff3a3a; }
+    33%      { stroke: #3aff5b; }
+    66%      { stroke: #3a7bff; }
+  }
+  /* Logos that are black-on-white by default need to invert in dark mode
+     so they stay readable on the now-black chip. */
+  body[data-theme="dark"] .invert-on-dark {
+    filter: invert(1) brightness(1.1);
+  }
+
+  /* Data shower: full on Mission, ambient on Platform, hidden on How. */
+  .mark-wrap[data-stage="mission"]  .particles-shower { opacity: 1; }
+  .mark-wrap[data-stage="platform"] .particles-shower { opacity: 0.15; }
+  .mark-wrap[data-stage="mission"] .particles-shower .particle {
+    animation: shower-flow-in 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation-delay: var(--delay);
+  }
+  .mark-wrap[data-stage="platform"] .particles-shower .particle {
+    animation: shower-flow-in 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation-delay: var(--delay);
+  }
+  @keyframes shower-flow-in {
+    0%   { transform: rotate(var(--angle)) translateY(-80vmax); opacity: 0; }
+    18%  { opacity: 1; }
+    92%  { transform: rotate(var(--angle)) translateY(-1.5vmin); opacity: 1; }
+    100% { transform: rotate(var(--angle)) translateY(0);        opacity: 0; }
+  }
+
+  /* ============================================================
+     STAGE: PLATFORM — inherits Mission's full lit state above
+     (white dots, logos, RGB core/ring/connectors, breathing).
+     No data shower. Platform-specific behavior will layer here.
+     ============================================================ */
+
+  /* ============================================================
+     STAGE: HOW — continuation of Platform.
+     Phase 1 (0–1.5s): 12 MCP chips + the 6 connector lines spin
+                       clockwise (full 360°).
+     Phase 2 (1.5–2.3s): MCP chips collapse into the core (scale 0).
+     Phase 3 (2.3–3.0s): The original 6 LLM-position dots reappear
+                         at default monochrome — forming the NICE
+                         brand mark.
+     Core/connectors snap to default fill at stage start; the spin
+     covers that visual moment.
+     ============================================================ */
+  .mark-wrap[data-stage="how"] .mcp-orbit-inner {
+    animation: how-spin-collapse 2.3s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  }
+  .mark-wrap[data-stage="how"] .mcp-orbit-outer {
+    animation: how-spin-collapse 2.3s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  }
+  @keyframes how-spin-collapse {
+    0%   { opacity: 1; transform: scale(1)    rotate(0deg);   }
+    65%  { opacity: 1; transform: scale(0.95) rotate(360deg); }
+    100% { opacity: 0; transform: scale(0)    rotate(360deg); }
+  }
+
+  /* Connectors spin in lockstep, then hold at the original orientation */
+  .mark-wrap[data-stage="how"] .mark-pillars,
+  .mark-wrap[data-stage="how"] .mark-chevrons {
+    transform-origin: 2500px 2500px;
+    animation: how-lines-spin 2.3s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  }
+  @keyframes how-lines-spin {
+    0%   { transform: rotate(0deg); }
+    65%  { transform: rotate(360deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Group reveals as the NICE icon. The 6 individual dots morph
+     sequentially (next block) — no group-level fade. */
+  .mark-wrap[data-stage="how"] .mark-orbit {
+    animation: how-orbit-reveal 3s ease-out forwards;
+  }
+  @keyframes how-orbit-reveal {
+    0%   { opacity: 0; transform: scale(0); }
+    65%  { opacity: 0; transform: scale(0); }
+    85%  { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Per-dot morph — SCOPED to How stage only, so other stages
+     (Intro constellation, Mission/Platform chip rules) keep their
+     default path-level transform-origin (2500px 2500px). The dots
+     also fill BLACK during How (not the theme-dependent --ink), so
+     they read as "empty slots" during the settle phase before they
+     colorize into rarities. */
+  .mark-wrap[data-stage="how"] .mark-orbit path {
+    fill: var(--dot-color); /* black in light mode, white in dark mode */
+    opacity: 1; /* override the constellation intro's opacity: 0 on paths */
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+  }
+  /* Sequence:
+     1. NICE icon reveals (0–3s, dots monochrome).
+     2. Settle (3–5s).
+     3. All 6 dots colorize to their rarity colors at the same time
+        (5.0–5.5s). User sees the full hex of colored dots.
+     4. Dots shrink one-by-one clockwise from top (5.5s, 6.0s, 6.5s,
+        7.0s, 7.5s, 8.0s), each card growing in its place. */
+  .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(1) {
+    --morph-color: #FF3EB5; /* Mythic */
+    animation:
+      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-fade 0.8s 5.5s ease-in forwards;
+  }
+  .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(2) {
+    --morph-color: #FBBF24; /* Legendary */
+    animation:
+      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-fade 0.8s 6.0s ease-in forwards;
+  }
+  .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(3) {
+    --morph-color: #C084FC; /* Epic */
+    animation:
+      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-fade 0.8s 6.5s ease-in forwards;
+  }
+  .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(4) {
+    --morph-color: #60A5FA; /* Rare */
+    animation:
+      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-fade 0.8s 7.0s ease-in forwards;
+  }
+  .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(5) {
+    --morph-color: #C084FC; /* Epic */
+    animation:
+      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-fade 0.8s 7.5s ease-in forwards;
+  }
+  .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(6) {
+    --morph-color: #9CA3AF; /* Common */
+    animation:
+      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-fade 0.8s 8.0s ease-in forwards;
+  }
+  @keyframes dot-colorize {
+    0%   { fill: var(--dot-color); transform: scale(1); }
+    60%  { fill: var(--morph-color); transform: scale(1.28); }
+    100% { fill: var(--morph-color); transform: scale(1.1); }
+  }
+  /* Dot fades (no shrink) as its card clip-path expands from circle. */
+  @keyframes dot-fade {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Agent blueprint cards — 6 cards push out from each NICE orbit dot
+     starting at 5s (after NICE icon settles + 2s pause). Each card
+     animates from its inner dot position (scale 0) to its outer
+     position (scale 1), then locks. Rarities mixed for variety. */
+  .agent-cards { opacity: 1; }
+  .agent-card { opacity: 0; }
+  /* Each card morphs via clip-path: starts as a tiny circle at the
+     dot's position, expands as a circle/ellipse, then squares off
+     into the rounded-rect card shape. SVG transform attribute keeps
+     the card centered at its slot; CSS only animates clip-path +
+     opacity, no scale. Matches the dot-fade for crossover effect. */
+  .mark-wrap[data-stage="how"] .agent-card-1 { animation: card-morph 0.8s 5.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .mark-wrap[data-stage="how"] .agent-card-2 { animation: card-morph 0.8s 6.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .mark-wrap[data-stage="how"] .agent-card-3 { animation: card-morph 0.8s 6.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .mark-wrap[data-stage="how"] .agent-card-4 { animation: card-morph 0.8s 7.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .mark-wrap[data-stage="how"] .agent-card-5 { animation: card-morph 0.8s 7.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .mark-wrap[data-stage="how"] .agent-card-6 { animation: card-morph 0.8s 8.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+  /* Card morph keyframe — circle expands into rounded rect via inset()
+     clip-path with `round`. Same keyframe for all 6 cards because their
+     position comes from each card's SVG transform attribute, not CSS. */
+  @keyframes card-morph {
+    0%   { opacity: 0; clip-path: inset(50% 50% 50% 50% round 50%); }
+    12%  { opacity: 1; clip-path: inset(45% 45% 45% 45% round 50%); }
+    55%  { opacity: 1; clip-path: inset(20% 35% 20% 35% round 40%); }
+    100% { opacity: 1; clip-path: inset(0% 0% 0% 0% round 7%); }
+  }
+
+  /* Rarity colors for the blueprint cards */
+  .rarity-common    { --card-stroke: #9CA3AF; --card-art:    #4B5563; }
+  .rarity-rare      { --card-stroke: #60A5FA; --card-art:    #2563EB; }
+  .rarity-epic      { --card-stroke: #C084FC; --card-art:    #7C3AED; }
+  .rarity-legendary { --card-stroke: #FBBF24; --card-art:    #D97706; }
+  .rarity-mythic    { --card-stroke: #FF3EB5; --card-art:    #8C52FF; }
+  /* Mythic gets the RGB cycle on its border + badge (highest-rarity flair) */
+  .rarity-mythic .card-border {
+    animation: chip-rgb-stroke 3.5s linear infinite;
+  }
+  .rarity-mythic .card-badge {
+    animation: core-rgb-cycle 3.5s linear infinite;
+  }
+  .agent-card .card-body   { fill: #14171F; }
+  .agent-card .card-border { stroke: var(--card-stroke); stroke-width: 12; fill: none; }
+  .agent-card .card-art    { fill: var(--card-art); }
+  .agent-card .card-badge  { fill: var(--card-stroke); }
+  .agent-card .card-text   { fill: #ffffff; font-family: 'Inter', sans-serif; font-weight: 800; }
+  .agent-card .card-line   { fill: rgba(255,255,255,0.5); }
+
+  /* MCP cycle + EQ bars + Mythic RGB are INSIDE-STAGE ONLY.
+     On all other stages (including How), cards keep the generic
+     look: placeholder white circle in the art area, two static
+     gray lines, fixed Mythic stroke color. */
+  .card-mcp { opacity: 0; }
+  .eq-bar {
+    fill: rgba(255, 255, 255, 0.55);
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    opacity: 0;
+  }
+
+  .mark-wrap[data-stage="inside"] .card-mcp {
+    animation: card-mcp-cycle 60s linear infinite;
+    animation-delay: var(--mcp-cycle-delay, 0s);
+  }
+  .mark-wrap[data-stage="inside"] .eq-bar {
+    opacity: 1;
+    animation: eq-bounce 0.95s ease-in-out infinite;
+    animation-delay: var(--eq-delay, 0s);
+  }
+  /* Hide the generic placeholder circle + 2 lines on Inside */
+  .mark-wrap[data-stage="inside"] .agent-card > circle { opacity: 0; }
+  .mark-wrap[data-stage="inside"] .card-line { opacity: 0; }
+
+  @keyframes card-mcp-cycle {
+    0%   { opacity: 0; }
+    1%   { opacity: 1; }
+    4%   { opacity: 1; }
+    5%   { opacity: 0; }
+    100% { opacity: 0; }
+  }
+  @keyframes eq-bounce {
+    0%, 100% { transform: scaleY(0.16); }
+    50%      { transform: scaleY(1);    }
+  }
+
+  /* ============================================================
+     STAGE: INSIDE — inherits How's end state (NICE connectors + core
+     with 6 agent cards in place) and adds a colorful card cascade
+     in the background. Theme: abundance — "every major AI model,
+     every major SaaS tool, 500+ blueprints".
+     ============================================================ */
+  /* Hide the inner orbit dots (they morphed into cards on How).
+     `:nth-child(n)` matches the per-path constellation rule's specificity
+     so we can override its const-twinkle animation. */
+  .mark-wrap[data-stage="inside"] .mark-orbit path:nth-child(n) {
+    animation: none;
+    opacity: 0;
+  }
+  /* Hide LLM logos (already collapsed) */
+  .mark-wrap[data-stage="inside"] .mark-logos { opacity: 0; }
+  /* Show the 6 agent cards at their final state (full size + rounded) */
+  .mark-wrap[data-stage="inside"] .agent-card { opacity: 1; }
+
+  /* Center core: 6 LLM logos fade in/out one at a time, 2.5s per logo,
+     15s total cycle (loops). Only visible on Inside stage. */
+  .core-llm { opacity: 0; }
+  /* Theme-aware contrast for the originally-black logos on the core,
+     since the core fill is var(--ink) which inverts between modes. */
+  .core-llm-contrast { fill: var(--bg); }
+  .mark-wrap[data-stage="inside"] .core-llm {
+    animation: core-llm-cycle 15s linear infinite;
+  }
+  .mark-wrap[data-stage="inside"] .core-llm:nth-child(1) { animation-delay: 0s; }
+  .mark-wrap[data-stage="inside"] .core-llm:nth-child(2) { animation-delay: 2.5s; }
+  .mark-wrap[data-stage="inside"] .core-llm:nth-child(3) { animation-delay: 5s; }
+  .mark-wrap[data-stage="inside"] .core-llm:nth-child(4) { animation-delay: 7.5s; }
+  .mark-wrap[data-stage="inside"] .core-llm:nth-child(5) { animation-delay: 10s; }
+  .mark-wrap[data-stage="inside"] .core-llm:nth-child(6) { animation-delay: 12.5s; }
+  @keyframes core-llm-cycle {
+    0%, 17%, 100% { opacity: 0; }
+    3%, 14%       { opacity: 1; }
+  }
+  .card-cascade {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    z-index: 0;
+    overflow: hidden;
+  }
+  body.stage-inside .card-cascade { opacity: 1; }
+
+  .cascade-card {
+    position: absolute;
+    top: -16vh;
+    width: 60px;
+    height: 84px;
+    border: 3px solid var(--cascade-color);
+    border-radius: 8px;
+    background: var(--bg-soft);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--cascade-color) 50%, transparent);
+    animation: cascade-fall var(--cascade-duration) linear infinite;
+    animation-delay: var(--cascade-delay);
+    will-change: transform, opacity;
+  }
+  .cascade-card::before {
+    /* small rarity-color band at top of card */
+    content: "";
+    position: absolute;
+    inset: 6px 6px auto 6px;
+    height: 36px;
+    background: var(--cascade-color);
+    border-radius: 4px;
+    opacity: 0.85;
+  }
+  .cascade-card::after {
+    /* badge at bottom */
+    content: "";
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 32px; height: 8px;
+    background: var(--cascade-color);
+    border-radius: 4px;
+    opacity: 0.7;
+  }
+
+  @keyframes cascade-fall {
+    0%   { transform: translateY(0)      scale(var(--cascade-scale)); opacity: 0; }
+    8%   { opacity: 0.14; }
+    92%  { opacity: 0.14; }
+    100% { transform: translateY(118vh)  scale(var(--cascade-scale)); opacity: 0; }
+  }
+
+  /* ============================================================
+     STAGE: LAUNCH — continuous spin + particle trails shoot
+     outward beyond the frame. Theme: ignition / takeoff.
+     ============================================================ */
+  .mark-wrap[data-stage="launch"] .mark {
+    animation: launch-spin 5s linear infinite;
+  }
+  @keyframes launch-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .mark-wrap[data-stage="launch"] .particles-spokes { opacity: 1; }
+  .mark-wrap[data-stage="launch"] .particles-spokes .particle {
+    animation: launch-trail 1.4s ease-out infinite;
+    animation-delay: var(--delay);
+  }
+  @keyframes launch-trail {
+    0%   { transform: rotate(var(--angle)) translateY(-9vmin);  opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: rotate(var(--angle)) translateY(-42vmin); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mark-wrap > *, .mark-wrap [class*="mark-"], .particle { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <!-- Inside stage cascade — fixed full-viewport rain of blueprint cards -->
+  <div class="card-cascade" aria-hidden="true"></div>
+
+  <div class="picker-eyebrow is-anim">Intro animation (plays once)</div>
+  <div class="picker" role="tablist">
+    <button data-anim="boot">1. Boot-up</button>
+    <button data-anim="schematic">2. Schematic</button>
+    <button data-anim="singularity">3. Singularity</button>
+    <button class="is-active" data-anim="constellation">4. Constellation</button>
+    <button data-anim="magnetic">5. Magnetic</button>
+    <button data-anim="warp">6. Warp</button>
+  </div>
+
+  <div class="picker-eyebrow is-stage">Stage choreography (continuous)</div>
+  <div class="picker picker-stage" role="tablist">
+    <button class="is-active" data-stage="intro">Intro</button>
+    <button data-stage="mission">Mission</button>
+    <button data-stage="platform">Platform</button>
+    <button data-stage="how">How</button>
+    <button data-stage="inside">Inside</button>
+    <button data-stage="launch">Launch</button>
+  </div>
+
+  <div class="label" id="label">
+    <span class="row" id="anim-label">Anim: 4 — Constellation</span>
+    <span class="row" id="stage-label">Stage: Intro</span>
+  </div>
+
+  <div class="stage">
+    <div class="mark-wrap" data-anim="constellation" data-stage="intro">
+      <div class="stage-ring stage-ring-1"></div>
+      <div class="stage-ring stage-ring-2"></div>
+      <div class="stage-ring stage-ring-3"></div>
+      <div class="flash"></div>
+      <div class="crosshair"></div>
+      <div class="particles particles-spokes">
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+      </div>
+      <div class="particles particles-shower"></div>
+      <svg class="mark" viewBox="0 0 5000 5000" preserveAspectRatio="xMidYMid meet">
+        <g class="mark-orbit">
+          <path d="M2467.2,673.2c345.58-32.47,524.02,397,258.68,618.68-180.13,150.49-459.08,78.97-546.6-137.16-87.17-215.28,55.93-459.73,287.92-481.52Z"/>
+          <path d="M3537.4,2014.6c-177.73-177.72-114.08-485.01,120.51-574.69,274.93-105.11,544.87,148.19,461.85,429.85-73.68,249.96-398.06,329.14-582.35,144.85Z"/>
+          <path d="M3763.2,2905.2c246.91-17.2,431.6,227.75,353.89,461.89-87.4,263.37-443.86,323.54-610.74,100.57-168.07-224.56-21.82-543.04,256.85-562.46Z"/>
+          <path d="M2463.17,3633.17c348.87-33.89,529.56,395.76,262.71,618.71-179.73,150.16-459.24,78.58-546.6-137.16-85.98-212.33,54.43-459.26,283.89-481.55Z"/>
+          <path d="M1203.18,2905.19c275.09-15.44,457.71,280.84,322.9,522.88-119.67,214.87-425.07,238.14-577.97,45.82-177.41-223.16-28.22-552.8,255.07-568.7Z"/>
+          <path d="M1187.2,1409.2c279.69-26.25,476.07,269.48,341.49,517.49-117.32,216.2-419.09,243.76-576.57,55.2-178.93-214.25-41.59-546.72,235.08-572.68Z"/>
+        </g>
+        <g class="mark-pillars">
+          <path d="M1272,2204v604c-33.72-4.09-66.28-4.09-100,0v-604c31.79,6.4,68.34,6.38,100,0Z"/>
+          <path d="M3836,2808c-34.42-3.47-65.53-5.37-100,0v-596c2.93-1.06,4.78,4,6,4h84c1.4,0,4.44-7.1,10,2v590Z"/>
+        </g>
+        <g class="mark-chevrons">
+          <polygon points="3375.95 1580 2868.23 1291.66 2912.04 1203.99 3418.07 1491.98 3423.59 1497.98 3375.95 1580"/>
+          <polygon points="2139.99 1291.94 1637.96 1579.88 1588.37 1497.36 2086.75 1204.5 2095.49 1210.49 2139.99 1291.94"/>
+          <path d="M2139.98,3712.08c2.15,3.03-33.45,55.51-38.18,63.72-4.14,7.19-5.9,25.29-15.33,23.83l-494.1-289.2,43.94-82.16,11.78,1.54,491.88,282.27Z"/>
+          <path d="M3366,3424.08l45.38,82.85-3.37,11.08-492.12,280.28c-7.13-25.22-36.8-54.55-44.83-75.52-1.4-3.67-4.89-6.66-1.38-10.87l496.32-287.83Z"/>
+        </g>
+        <g class="mark-core">
+          <path d="M2447.2,1853.2c550.99-42.77,908.61,573.22,585.69,1025.69-276.72,387.72-866.37,355.58-1097.57-60.2-228.12-410.24,44.43-929.2,511.88-965.49ZM2455.2,1953.2c-427.55,33.48-653.11,541.85-388.78,882.39,257.89,332.24,777.21,269.58,942.28-116.89,164.38-384.87-139.97-797.88-553.5-765.5Z"/>
+          <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
+        </g>
+        <!-- LLM provider logos overlaid on the 6 outer dots during Mission.
+             Order matches clockwise from top: Anthropic, OpenAI, Google AI,
+             xAI Grok, Llama (Meta), Gemini. -->
+        <g class="mark-logos">
+          <defs>
+            <linearGradient id="gemini-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#A459FF"/>
+              <stop offset="1" stop-color="#1A73E8"/>
+            </linearGradient>
+          </defs>
+          <!-- 1. Anthropic — top -->
+          <g class="mark-logo" transform="translate(2504, 1022)">
+            <g fill="#CC785C" transform="scale(11)">
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(36)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(72)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(108)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(144)"/>
+            </g>
+          </g>
+          <!-- 2. OpenAI — top-right -->
+          <g class="mark-logo" transform="translate(3785, 1766)">
+            <svg class="invert-on-dark" x="-160" y="-160" width="320" height="320" viewBox="0 0 24 24">
+              <path fill="#000000" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+            </svg>
+          </g>
+          <!-- 3. Google AI — bottom-right -->
+          <g class="mark-logo" transform="translate(3785, 3255)">
+            <svg x="-160" y="-160" width="320" height="320" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+          </g>
+          <!-- 4. xAI Grok — bottom -->
+          <g class="mark-logo" transform="translate(2504, 3981)">
+            <svg class="invert-on-dark" x="-160" y="-160" width="320" height="320" viewBox="0 0 2000 1920">
+              <path fill="#000" d="M1997.505,5.546c-1.276,1.84-2.543,3.686-3.831,5.517c-44.395,63.091-89.508,125.693-132.964,189.424c-35.057,51.414-65.323,105.683-89.053,163.428c-34.447,83.828-47.232,171.046-42.05,261.249c3.355,58.404,12.861,115.859,25.887,172.786c16.297,71.216,24.256,143.247,20.188,216.29c-10.123,181.765-76.927,339.812-201.209,472.789c-107.86,115.406-239.56,189.915-394.446,221.624c-157.969,32.34-310.586,13.132-457.667-52.146c-43.51-19.311-84.795-42.677-124.218-69.344c-1.094-0.74-2.147-1.54-3.745-2.692c1.543-0.883,2.689-1.656,3.927-2.231c72.526-33.658,145.071-67.276,217.555-101.023c3.285-1.53,5.91-1.054,8.984,0.124c74.663,28.608,151.849,42.899,231.896,39.624c123.328-5.045,232.105-47.967,325.71-128.201c99.013-84.869,160.993-191.673,184.036-320.194c18.823-104.981,7.281-207.124-32.8-305.964c-13.942-34.381-52.565-47.733-86.226-30.057c-4.108,2.157-7.994,4.818-11.734,7.582c-216.828,160.265-433.63,320.565-650.436,480.86c-1.834,1.356-3.69,2.684-5.536,4.025c-0.344-0.374-0.689-0.747-1.033-1.121C1184.605,820.085,1590.468,412.274,1996.331,4.463C1996.722,4.824,1997.114,5.185,1997.505,5.546z"/>
+              <path fill="#000" d="M635.931,1353.173C425.433,1541.452,215.15,1729.537,4.867,1917.623c-0.275-0.19-0.551-0.38-0.826-0.57c1.039-1.478,2.041-2.984,3.123-4.431c29.898-39.969,63.26-76.964,97.26-113.421c40.804-43.752,82.042-87.114,122.109-131.532c35.108-38.921,66.724-80.614,91.953-126.809c19.879-36.398,34.424-74.673,40.535-115.893c7.782-52.496,1.059-103.422-17.762-152.706c-13.437-35.185-26.864-70.312-36.291-106.847c-21.394-82.908-28.324-166.979-21.201-252.304c19.974-239.28,151.763-453.739,355.913-578.35c90.292-55.114,188.023-89.471,292.95-102.908c130.165-16.669,256.024-0.09,377.981,48.558c52.942,21.118,102.709,47.566,149.092,80.552c1.22,0.868,2.42,1.767,3.601,2.688c0.244,0.19,0.36,0.544,0.758,1.179c-1.649,0.801-3.241,1.608-4.86,2.357c-71.815,33.205-143.623,66.428-215.499,99.5c-2.256,1.038-5.598,1.456-7.816,0.587c-152.615-59.802-303.123-52.584-449.63,18.494c-142.377,69.074-234.294,183.195-283.161,332.63c-22.431,68.594-30.403,139.234-23.761,211.172c11.547,125.044,63.341,231.057,152.534,319.089c1.067,1.053,2.142,2.099,3.193,3.168C635.287,1352.055,635.421,1352.372,635.931,1353.173z"/>
+            </svg>
+          </g>
+          <!-- 5. Llama / Meta — bottom-left -->
+          <g class="mark-logo" transform="translate(1221, 3255)">
+            <svg x="-160" y="-160" width="320" height="320" viewBox="0 0 24 24">
+              <path fill="#0866FF" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/>
+            </svg>
+          </g>
+          <!-- 6. Gemini — top-left -->
+          <g class="mark-logo" transform="translate(1222, 1758)">
+            <svg x="-160" y="-160" width="320" height="320" viewBox="0 0 24 24">
+              <path fill="url(#gemini-grad)" d="M12 2c-1 5-4 8-10 9 6 1 9 4 10 11 1-7 4-10 10-11-6-1-9-4-10-9z"/>
+            </svg>
+          </g>
+        </g>
+        <!-- MCP integration nodes — 12 chips total, two interleaved rings:
+             Inner ring (6, at LLM hex positions): Google, Microsoft, GitHub,
+                Slack, HubSpot, Stripe. Emerges straight from core.
+             Outer ring (6, rotated 30° = sits BETWEEN each pair of inner
+                nodes): Atlassian, Linear, Notion, Cloudflare, Sentry, Zapier.
+                Spins clockwise into place during emit. -->
+        <g class="mcp-orbit-inner">
+          <!-- 1. Google Workspace — top (angle 90°) -->
+          <g class="mcp-node" transform="translate(2504, 1022)">
+            <circle r="350"/>
+            <image href="/assets/brands/google.png" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 2. Microsoft 365 — top-right (angle 30°) -->
+          <g class="mcp-node" transform="translate(3785, 1766)">
+            <circle r="350"/>
+            <svg x="-150" y="-150" width="300" height="300" viewBox="0 0 23 23">
+              <path fill="#F25022" d="M0 0h11v11H0z"/>
+              <path fill="#7FBA00" d="M12 0h11v11H12z"/>
+              <path fill="#00A4EF" d="M0 12h11v11H0z"/>
+              <path fill="#FFB900" d="M12 12h11v11H12z"/>
+            </svg>
+          </g>
+          <!-- 3. GitHub — bottom-right (angle -30°) -->
+          <g class="mcp-node" transform="translate(3785, 3255)">
+            <circle r="350"/>
+            <image class="invert-on-dark" href="https://cdn.simpleicons.org/github" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 4. Slack — bottom (angle -90°) -->
+          <g class="mcp-node" transform="translate(2504, 3981)">
+            <circle r="350"/>
+            <svg x="-150" y="-150" width="300" height="300" viewBox="0 0 24 24">
+              <path fill="#E01E5A" d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z"/>
+              <path fill="#36C5F0" d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z"/>
+              <path fill="#2EB67D" d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312z"/>
+              <path fill="#ECB22E" d="M15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+            </svg>
+          </g>
+          <!-- 5. HubSpot — bottom-left (angle -150°) -->
+          <g class="mcp-node" transform="translate(1221, 3255)">
+            <circle r="350"/>
+            <image href="https://cdn.simpleicons.org/hubspot/FF7A59" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 6. Stripe — top-left (angle 150°) -->
+          <g class="mcp-node" transform="translate(1222, 1758)">
+            <circle r="350"/>
+            <image href="https://cdn.simpleicons.org/stripe/635BFF" x="-160" y="-160" width="320" height="320"/>
+          </g>
+        </g>
+        <!-- Agent blueprint cards — appear at end of How stage,
+             one per outer-ring direction, each a different rarity. -->
+        <g class="agent-cards">
+          <!-- 1. Mythic — top -->
+          <g class="agent-card agent-card-1 rarity-mythic" transform="translate(2504, 1022) scale(1.7)">
+            <rect class="card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="card-line" x="-110" y="92" width="160" height="14" rx="4"/>
+            <rect class="card-badge"  x="-80" y="160" width="160" height="36" rx="18"/>
+            <text class="card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">MYTHIC</text>
+          </g>
+          <!-- 2. Legendary — top-right -->
+          <g class="agent-card agent-card-2 rarity-legendary" transform="translate(3785, 1766) scale(1.7)">
+            <rect class="card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="card-line" x="-110" y="92" width="180" height="14" rx="4"/>
+            <rect class="card-badge"  x="-94" y="160" width="188" height="36" rx="18"/>
+            <text class="card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">LEGENDARY</text>
+          </g>
+          <!-- 3. Epic — bottom-right -->
+          <g class="agent-card agent-card-3 rarity-epic" transform="translate(3785, 3255) scale(1.7)">
+            <rect class="card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="card-line" x="-110" y="92" width="170" height="14" rx="4"/>
+            <rect class="card-badge"  x="-60" y="160" width="120" height="36" rx="18"/>
+            <text class="card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">EPIC</text>
+          </g>
+          <!-- 4. Rare — bottom -->
+          <g class="agent-card agent-card-4 rarity-rare" transform="translate(2504, 3981) scale(1.7)">
+            <rect class="card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="card-line" x="-110" y="92" width="160" height="14" rx="4"/>
+            <rect class="card-badge"  x="-60" y="160" width="120" height="36" rx="18"/>
+            <text class="card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">RARE</text>
+          </g>
+          <!-- 5. Epic — bottom-left -->
+          <g class="agent-card agent-card-5 rarity-epic" transform="translate(1221, 3255) scale(1.7)">
+            <rect class="card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="card-line" x="-110" y="92" width="180" height="14" rx="4"/>
+            <rect class="card-badge"  x="-60" y="160" width="120" height="36" rx="18"/>
+            <text class="card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">EPIC</text>
+          </g>
+          <!-- 6. Common — top-left -->
+          <g class="agent-card agent-card-6 rarity-common" transform="translate(1222, 1758) scale(1.7)">
+            <rect class="card-body"   x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-border" x="-160" y="-225" width="320" height="450" rx="28"/>
+            <rect class="card-art"    x="-138" y="-205" width="276" height="200" rx="14"/>
+            <circle cx="0" cy="-105" r="36" fill="rgba(255,255,255,0.85)"/>
+            <text class="card-text" x="0" y="40" text-anchor="middle" font-size="30">AGENT</text>
+            <rect class="card-line" x="-110" y="68" width="220" height="14" rx="4"/>
+            <rect class="card-line" x="-110" y="92" width="150" height="14" rx="4"/>
+            <rect class="card-badge"  x="-74" y="160" width="148" height="36" rx="18"/>
+            <text class="card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">COMMON</text>
+          </g>
+        </g>
+        <g class="mcp-orbit-outer">
+          <!-- 7. Atlassian — between Google + Microsoft (angle 60°) -->
+          <g class="mcp-node" transform="translate(3525, 725)">
+            <circle r="350"/>
+            <image href="https://cdn.simpleicons.org/atlassian/0052CC" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 8. monday.com — between Microsoft + GitHub (angle 0°, right side) -->
+          <g class="mcp-node" transform="translate(4550, 2500)">
+            <circle r="350"/>
+            <image href="/assets/brands/monday.svg" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 9. Notion — between GitHub + Slack (angle -60°) -->
+          <g class="mcp-node" transform="translate(3525, 4275)">
+            <circle r="350"/>
+            <image class="invert-on-dark" href="https://cdn.simpleicons.org/notion/000000" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 10. Cloudflare — between Slack + HubSpot (angle -120°) -->
+          <g class="mcp-node" transform="translate(1475, 4275)">
+            <circle r="350"/>
+            <image href="/assets/brands/cloudflare.svg" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 11. Figma — between HubSpot + Stripe (angle 180°, left side) -->
+          <g class="mcp-node" transform="translate(450, 2500)">
+            <circle r="350"/>
+            <image href="/assets/brands/figma.png" x="-160" y="-160" width="320" height="320"/>
+          </g>
+          <!-- 12. Zapier — between Stripe + Google (angle 120°) -->
+          <g class="mcp-node" transform="translate(1475, 725)">
+            <circle r="350"/>
+            <text x="0" y="22" text-anchor="middle" font-family="Inter, sans-serif" font-size="120" font-weight="800" fill="#FF4F00">Zapier</text>
+          </g>
+        </g>
+
+        <!-- Center-core LLM cycle (Inside stage only). Each logo fades in
+             and out one at a time at the center of the icon. -->
+        <g class="core-llm-cycle">
+          <!-- 1. Anthropic -->
+          <g class="core-llm" transform="translate(2500, 2500)">
+            <g fill="#CC785C" transform="scale(14)">
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(36)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(72)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(108)"/>
+              <rect x="-1.4" y="-13" width="2.8" height="26" rx="1.4" transform="rotate(144)"/>
+            </g>
+          </g>
+          <!-- 2. OpenAI -->
+          <g class="core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 24 24">
+              <path class="core-llm-contrast" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+            </svg>
+          </g>
+          <!-- 3. Google AI -->
+          <g class="core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+          </g>
+          <!-- 4. xAI Grok -->
+          <g class="core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 2000 1920">
+              <path class="core-llm-contrast" d="M1997.505,5.546c-1.276,1.84-2.543,3.686-3.831,5.517c-44.395,63.091-89.508,125.693-132.964,189.424c-35.057,51.414-65.323,105.683-89.053,163.428c-34.447,83.828-47.232,171.046-42.05,261.249c3.355,58.404,12.861,115.859,25.887,172.786c16.297,71.216,24.256,143.247,20.188,216.29c-10.123,181.765-76.927,339.812-201.209,472.789c-107.86,115.406-239.56,189.915-394.446,221.624c-157.969,32.34-310.586,13.132-457.667-52.146c-43.51-19.311-84.795-42.677-124.218-69.344c-1.094-0.74-2.147-1.54-3.745-2.692c1.543-0.883,2.689-1.656,3.927-2.231c72.526-33.658,145.071-67.276,217.555-101.023c3.285-1.53,5.91-1.054,8.984,0.124c74.663,28.608,151.849,42.899,231.896,39.624c123.328-5.045,232.105-47.967,325.71-128.201c99.013-84.869,160.993-191.673,184.036-320.194c18.823-104.981,7.281-207.124-32.8-305.964c-13.942-34.381-52.565-47.733-86.226-30.057c-4.108,2.157-7.994,4.818-11.734,7.582c-216.828,160.265-433.63,320.565-650.436,480.86c-1.834,1.356-3.69,2.684-5.536,4.025c-0.344-0.374-0.689-0.747-1.033-1.121C1184.605,820.085,1590.468,412.274,1996.331,4.463C1996.722,4.824,1997.114,5.185,1997.505,5.546z"/>
+              <path class="core-llm-contrast" d="M635.931,1353.173C425.433,1541.452,215.15,1729.537,4.867,1917.623c-0.275-0.19-0.551-0.38-0.826-0.57c1.039-1.478,2.041-2.984,3.123-4.431c29.898-39.969,63.26-76.964,97.26-113.421c40.804-43.752,82.042-87.114,122.109-131.532c35.108-38.921,66.724-80.614,91.953-126.809c19.879-36.398,34.424-74.673,40.535-115.893c7.782-52.496,1.059-103.422-17.762-152.706c-13.437-35.185-26.864-70.312-36.291-106.847c-21.394-82.908-28.324-166.979-21.201-252.304c19.974-239.28,151.763-453.739,355.913-578.35c90.292-55.114,188.023-89.471,292.95-102.908c130.165-16.669,256.024-0.09,377.981,48.558c52.942,21.118,102.709,47.566,149.092,80.552c1.22,0.868,2.42,1.767,3.601,2.688c0.244,0.19,0.36,0.544,0.758,1.179c-1.649,0.801-3.241,1.608-4.86,2.357c-71.815,33.205-143.623,66.428-215.499,99.5c-2.256,1.038-5.598,1.456-7.816,0.587c-152.615-59.802-303.123-52.584-449.63,18.494c-142.377,69.074-234.294,183.195-283.161,332.63c-22.431,68.594-30.403,139.234-23.761,211.172c11.547,125.044,63.341,231.057,152.534,319.089c1.067,1.053,2.142,2.099,3.193,3.168C635.287,1352.055,635.421,1352.372,635.931,1353.173z"/>
+            </svg>
+          </g>
+          <!-- 5. Llama / Meta -->
+          <g class="core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 24 24">
+              <path fill="#0866FF" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/>
+            </svg>
+          </g>
+          <!-- 6. Gemini -->
+          <g class="core-llm" transform="translate(2500, 2500)">
+            <svg x="-180" y="-180" width="360" height="360" viewBox="0 0 24 24">
+              <path fill="url(#gemini-grad)" d="M12 2c-1 5-4 8-10 9 6 1 9 4 10 11 1-7 4-10 10-11-6-1-9-4-10-9z"/>
+            </svg>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <button class="replay" type="button" id="replay">
+    Replay
+  </button>
+  <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+
+<script>
+  const wrap = document.querySelector('.mark-wrap');
+  const animLabel = document.getElementById('anim-label');
+  const stageLabel = document.getElementById('stage-label');
+  const replay = document.getElementById('replay');
+  const animButtons = [...document.querySelectorAll('.picker:not(.picker-stage) button')];
+  const stageButtons = [...document.querySelectorAll('.picker-stage button')];
+
+  // Shower particles — 180 colored dots streaming in for the Inside stage.
+  // Sapphire (--accent) is intentionally NOT in this palette — it's reserved
+  // for "data within NICE" (Mission spokes + Launch trails).
+  const SHOWER_PALETTE = [
+    '#ff5e7e', // coral
+    '#ffa724', // amber
+    '#f7d100', // yellow
+    '#2ed573', // green
+    '#00d9ff', // cyan
+    '#8c52ff', // purple
+    '#ff3eb5', // magenta
+    '#7afbff', // ice
+    '#ffce5c', // gold
+    '#a0ff5c', // lime
+  ];
+  // Delay range = longest stage cycle (Platform 6s) so particles spread
+  // uniformly across the full cycle on both Mission and Platform. Negative
+  // values jump each particle mid-cycle at page load — no warm-up gap.
+  const SHOWER_DELAY_RANGE = 6;
+  const SHOWER_COUNT = 180;
+  (function generateShower() {
+    const shower = document.querySelector('.particles-shower');
+    if (!shower) return;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < SHOWER_COUNT; i++) {
+      const p = document.createElement('span');
+      p.className = 'particle';
+      const angle = Math.random() * 360;
+      const delay = -Math.random() * SHOWER_DELAY_RANGE;
+      const color = SHOWER_PALETTE[i % SHOWER_PALETTE.length];
+      p.style.setProperty('--angle', angle + 'deg');
+      p.style.setProperty('--delay', delay + 's');
+      p.style.background = color;
+      p.style.boxShadow = '0 0 8px ' + color;
+      frag.appendChild(p);
+    }
+    shower.appendChild(frag);
+  })();
+
+  // Inside-stage card cascade — many small rarity-colored cards raining
+  // down the background. Random horizontal position, size, color, speed.
+  const CASCADE_PALETTE = [
+    '#FF3EB5', '#FBBF24', '#C084FC', '#60A5FA', '#9CA3AF',
+    '#FF5E7E', '#2ED573', '#00D9FF', '#FFCE5C', '#A0FF5C',
+    '#8C52FF', '#F7D100', '#7AFBFF', '#FF5C8A',
+  ];
+  const CASCADE_COUNT = 70;
+  (function generateCascade() {
+    const cascade = document.querySelector('.card-cascade');
+    if (!cascade) return;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < CASCADE_COUNT; i++) {
+      const card = document.createElement('div');
+      card.className = 'cascade-card';
+      const color = CASCADE_PALETTE[Math.floor(Math.random() * CASCADE_PALETTE.length)];
+      const left = Math.random() * 100;
+      const duration = 11 + Math.random() * 10;
+      const delay = -Math.random() * duration;
+      const scale = 0.55 + Math.random() * 0.7;
+      card.style.setProperty('--cascade-color', color);
+      card.style.setProperty('--cascade-duration', duration + 's');
+      card.style.setProperty('--cascade-delay', delay + 's');
+      card.style.setProperty('--cascade-scale', scale);
+      card.style.left = left + '%';
+      frag.appendChild(card);
+    }
+    cascade.appendChild(frag);
+  })();
+
+  // Agent-card enhancements: cycle white MCP logos inside the art area,
+  // and replace the 2 placeholder lines with animated equalizer bars.
+  const MCP_LOGO_URLS = [
+    'https://cdn.simpleicons.org/github/ffffff',
+    'https://cdn.simpleicons.org/hubspot/ffffff',
+    'https://cdn.simpleicons.org/stripe/ffffff',
+    'https://cdn.simpleicons.org/atlassian/ffffff',
+    'https://cdn.simpleicons.org/linear/ffffff',
+    'https://cdn.simpleicons.org/notion/ffffff',
+    'https://cdn.simpleicons.org/sentry/ffffff',
+    'https://cdn.simpleicons.org/zapier/ffffff',
+    'https://cdn.simpleicons.org/figma/ffffff',
+    'https://cdn.simpleicons.org/cloudflare/ffffff',
+    'https://cdn.simpleicons.org/airtable/ffffff',
+    'https://cdn.simpleicons.org/miro/ffffff',
+    'https://cdn.simpleicons.org/vercel/ffffff',
+    'https://cdn.simpleicons.org/asana/ffffff',
+    'https://cdn.simpleicons.org/replicate/ffffff',
+    'https://cdn.simpleicons.org/gmail/ffffff',
+    'https://cdn.simpleicons.org/googledrive/ffffff',
+    'https://cdn.simpleicons.org/googlecalendar/ffffff',
+    'https://cdn.simpleicons.org/pagerduty/ffffff',
+    'https://cdn.simpleicons.org/intercom/ffffff',
+  ];
+  const STEP_DURATION = 3; // seconds per MCP logo
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // Pre-warm the browser image cache for every MCP URL so the SVG <image>
+  // elements never show the broken-placeholder while a fetch is in flight.
+  MCP_LOGO_URLS.forEach(url => { const i = new Image(); i.src = url; });
+
+  (function enhanceAgentCards() {
+    const cards = document.querySelectorAll('.agent-card');
+    if (!cards.length) return;
+    cards.forEach((card, cardIdx) => {
+      // Keep the placeholder circle + lines (they're the generic look
+      // shown on How and other stages). MCP cycle + EQ bars are added
+      // on top and only activate on Inside via stage-scoped CSS.
+
+      // Insert all MCP logos in this card. Round-robin offset by
+      // cardIdx ensures the 6 cards never show the same MCP simultaneously.
+      const mcpGroup = document.createElementNS(SVG_NS, 'g');
+      mcpGroup.setAttribute('class', 'card-mcp-cycle');
+      const N = MCP_LOGO_URLS.length;
+      for (let p = 0; p < N; p++) {
+        const href = MCP_LOGO_URLS[(p + cardIdx) % N];
+        const img = document.createElementNS(SVG_NS, 'image');
+        img.setAttribute('class', 'card-mcp');
+        img.setAttribute('href', href);
+        img.setAttribute('x', '-50');
+        img.setAttribute('y', '-155');
+        img.setAttribute('width', '100');
+        img.setAttribute('height', '100');
+        img.style.setProperty('--mcp-cycle-delay', (p * STEP_DURATION) + 's');
+        mcpGroup.appendChild(img);
+      }
+      // Insert mcp group before the AGENT text (so logos render below text)
+      const agentText = card.querySelector('text');
+      card.insertBefore(mcpGroup, agentText);
+
+      // Keep the 2 placeholder lines (visible on non-Inside stages).
+      // Add equalizer bars on top — they're hidden by default and only
+      // visible/animated on Inside via stage-scoped CSS.
+      const eqGroup = document.createElementNS(SVG_NS, 'g');
+      eqGroup.setAttribute('class', 'card-eq');
+      const BAR_COUNT = 14;
+      const BAR_WIDTH = 12;
+      const BAR_SPACING = 4;
+      const BAR_AREA_WIDTH = BAR_COUNT * BAR_WIDTH + (BAR_COUNT - 1) * BAR_SPACING;
+      const startX = -BAR_AREA_WIDTH / 2;
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const bar = document.createElementNS(SVG_NS, 'rect');
+        bar.setAttribute('class', 'eq-bar');
+        bar.setAttribute('x', String(startX + i * (BAR_WIDTH + BAR_SPACING)));
+        bar.setAttribute('y', '70');
+        bar.setAttribute('width', String(BAR_WIDTH));
+        bar.setAttribute('height', '30');
+        bar.setAttribute('rx', '2');
+        bar.style.setProperty('--eq-delay', (Math.random() * 0.95).toFixed(2) + 's');
+        eqGroup.appendChild(bar);
+      }
+      // Insert before badge
+      const badge = card.querySelector('.card-badge');
+      card.insertBefore(eqGroup, badge);
+    });
+  })();
+
+  const ANIM_LABELS = {
+    boot: '1 — Boot-up sequence',
+    schematic: '2 — Schematic draw-in',
+    singularity: '3 — Singularity → big bang',
+    constellation: '4 — Constellation reveal',
+    magnetic: '5 — Magnetic assembly',
+    warp: '6 — Warp arrival',
+  };
+  const STAGE_LABELS = {
+    intro:    'Intro — brand mark (no continuous loop)',
+    mission:  'Mission — colorful data shower flowing into core',
+    platform: 'Platform — LLMs collapse into core, 12 MCPs emerge',
+    how:      'How — 12 MCPs spin + collapse, NICE icon reveals',
+    inside:   'Inside — nodes drift + blue spokes dispatch from core',
+    launch:   'Launch — spin + outward particle trails',
+  };
+
+  function playAnim(name) {
+    // Force reflow by removing then re-adding so the animation restarts.
+    wrap.removeAttribute('data-anim');
+    void wrap.offsetWidth;
+    wrap.setAttribute('data-anim', name);
+    animButtons.forEach(b => b.classList.toggle('is-active', b.dataset.anim === name));
+    animLabel.textContent = 'Anim: ' + (ANIM_LABELS[name] || name);
+  }
+
+  function setStage(name) {
+    wrap.setAttribute('data-stage', name);
+    // Also stamp the body so non-mark-wrap elements (like the cascade) can
+    // toggle visibility per stage.
+    const allStages = ['intro','mission','platform','how','inside','launch'];
+    allStages.forEach(s => document.body.classList.remove('stage-' + s));
+    document.body.classList.add('stage-' + name);
+    stageButtons.forEach(b => b.classList.toggle('is-active', b.dataset.stage === name));
+    stageLabel.textContent = 'Stage: ' + (STAGE_LABELS[name] || name);
+  }
+
+  animButtons.forEach(b => b.addEventListener('click', () => playAnim(b.dataset.anim)));
+  stageButtons.forEach(b => b.addEventListener('click', () => setStage(b.dataset.stage)));
+  replay.addEventListener('click', () => {
+    const current = wrap.getAttribute('data-anim') || 'constellation';
+    playAnim(current);
+  });
+
+  // Dark mode toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  function setTheme(name) {
+    if (name === 'dark') document.body.setAttribute('data-theme', 'dark');
+    else document.body.removeAttribute('data-theme');
+    themeToggle.textContent = name === 'dark' ? '☀️' : '🌙';
+  }
+  themeToggle.addEventListener('click', () => {
+    setTheme(document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  // Keyboard: 1-6 → anim, Q/W/E/R/T/Y → stage, Space/R → replay.
+  const STAGE_KEYS = ['q','w','e','r','t','y'];
+  document.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    const idx = parseInt(e.key, 10);
+    const stageIdx = STAGE_KEYS.indexOf(key);
+    if (idx >= 1 && idx <= 6) {
+      playAnim(animButtons[idx - 1].dataset.anim);
+    } else if (stageIdx >= 0) {
+      setStage(stageButtons[stageIdx].dataset.stage);
+    } else if (key === ' ' || (key === 'r' && e.shiftKey)) {
+      e.preventDefault();
+      replay.click();
+    }
+  });
+</script>
+</body>
+</html>
