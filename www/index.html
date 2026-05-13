@@ -71,6 +71,20 @@
       <div class="home-particles home-particles-shower"></div>
 
       <svg class="home-mark" viewBox="0 0 5000 5000" preserveAspectRatio="xMidYMid meet">
+        <!-- SVG-native color inversion filter for icons that need to flip
+             black→white in dark mode. Safari does not reliably apply the
+             CSS `filter: invert(1)` shorthand to <svg>/<image> children of
+             another SVG, so we reference this primitive via `filter:
+             url(#...)` from the dark-theme rule instead. -->
+        <defs>
+          <filter id="home-icon-invert" x="-10%" y="-10%" width="120%" height="120%">
+            <feColorMatrix type="matrix"
+              values="-1 0 0 0 1
+                       0 -1 0 0 1
+                       0 0 -1 0 1
+                       0 0 0 1 0"/>
+          </filter>
+        </defs>
         <!-- HUD frame (Intro stage only). Sits behind the constellation so
              the brand mark reads on top. Disc → outer frame → glow arcs
              → tick marks → 6 short indicator lines radiating from core. -->
