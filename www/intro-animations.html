@@ -148,7 +148,7 @@
   /* Zoom the entire composition on How (and Inside, which inherits How's
      end state) so the agent cards read clearly. */
   .mark-wrap[data-stage="how"],
-  .mark-wrap[data-stage="inside"] {
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) {
     transform: scale(1.35);
   }
   .stage-ring {
@@ -167,6 +167,17 @@
     filter: drop-shadow(0 0 80px rgba(15,82,186,0.10));
   }
   .mark > g { transform-origin: 2500px 2500px; }
+  /* Force .mark-core into its own compositing layer so it ALWAYS paints
+     on top of .agent-cards' transformed layer during Launch's spiral —
+     CSS transforms on SVG groups can create compositing layers that
+     escape DOM-order painting in some browsers. translateZ(0) is a
+     visual no-op but promotes mark-core to its own layer, which (being
+     later in DOM than .agent-cards) composites above it.
+     Cards visibly slip BEHIND the core's ring + inner dot at end of spiral. */
+  .mark > g.mark-core {
+    will-change: transform;
+    transform: translateZ(0);
+  }
 
   /* Centered flash overlay used by singularity */
   .flash {
@@ -511,20 +522,20 @@
   .mcp-orbit-outer { transform: scale(0) rotate(-60deg); }
 
   .mark-wrap[data-stage="platform"] .mcp-orbit-inner {
-    animation: emit-from-core 0.95s 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    animation: emit-from-core 0.85s 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   }
   .mark-wrap[data-stage="platform"] .mcp-orbit-outer {
-    animation: emit-with-spin 1.1s 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    animation: emit-with-spin 1.0s 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   }
+  /* Removed the overshoot keyframe — single smooth motion eliminates the
+     "settle pause" perception during the outer ring's rotation. */
   @keyframes emit-from-core {
     0%   { opacity: 0; transform: scale(0); }
-    60%  { opacity: 1; transform: scale(1.08); }
     100% { opacity: 1; transform: scale(1); }
   }
   @keyframes emit-with-spin {
-    0%   { opacity: 0; transform: scale(0)    rotate(-60deg); }
-    60%  { opacity: 1; transform: scale(1.08) rotate(-8deg);  }
-    100% { opacity: 1; transform: scale(1)    rotate(0deg);   }
+    0%   { opacity: 0; transform: scale(0) rotate(-60deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg);   }
   }
 
   /* MCP nodes: same chip styling as LLM dots — light bg in light mode,
@@ -647,31 +658,31 @@
   .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(1) {
     --morph-color: #FF3EB5; /* Mythic */
     animation:
-      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-colorize 0.5s 4.0s ease-out forwards,
       dot-fade 0.8s 5.5s ease-in forwards;
   }
   .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(2) {
     --morph-color: #FBBF24; /* Legendary */
     animation:
-      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-colorize 0.5s 4.2s ease-out forwards,
       dot-fade 0.8s 6.0s ease-in forwards;
   }
   .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(3) {
     --morph-color: #C084FC; /* Epic */
     animation:
-      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-colorize 0.5s 4.4s ease-out forwards,
       dot-fade 0.8s 6.5s ease-in forwards;
   }
   .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(4) {
     --morph-color: #60A5FA; /* Rare */
     animation:
-      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-colorize 0.5s 4.6s ease-out forwards,
       dot-fade 0.8s 7.0s ease-in forwards;
   }
   .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(5) {
     --morph-color: #C084FC; /* Epic */
     animation:
-      dot-colorize 0.5s 5.0s ease-out forwards,
+      dot-colorize 0.5s 4.8s ease-out forwards,
       dot-fade 0.8s 7.5s ease-in forwards;
   }
   .mark-wrap[data-stage="how"] .mark-orbit path:nth-child(6) {
@@ -751,18 +762,18 @@
     opacity: 0;
   }
 
-  .mark-wrap[data-stage="inside"] .card-mcp {
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .card-mcp {
     animation: card-mcp-cycle 60s linear infinite;
     animation-delay: var(--mcp-cycle-delay, 0s);
   }
-  .mark-wrap[data-stage="inside"] .eq-bar {
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .eq-bar {
     opacity: 1;
     animation: eq-bounce 0.95s ease-in-out infinite;
     animation-delay: var(--eq-delay, 0s);
   }
   /* Hide the generic placeholder circle + 2 lines on Inside */
-  .mark-wrap[data-stage="inside"] .agent-card > circle { opacity: 0; }
-  .mark-wrap[data-stage="inside"] .card-line { opacity: 0; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .agent-card > circle { opacity: 0; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .card-line { opacity: 0; }
 
   @keyframes card-mcp-cycle {
     0%   { opacity: 0; }
@@ -785,14 +796,119 @@
   /* Hide the inner orbit dots (they morphed into cards on How).
      `:nth-child(n)` matches the per-path constellation rule's specificity
      so we can override its const-twinkle animation. */
-  .mark-wrap[data-stage="inside"] .mark-orbit path:nth-child(n) {
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .mark-orbit path:nth-child(n) {
     animation: none;
     opacity: 0;
   }
   /* Hide LLM logos (already collapsed) */
-  .mark-wrap[data-stage="inside"] .mark-logos { opacity: 0; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .mark-logos { opacity: 0; }
   /* Show the 6 agent cards at their final state (full size + rounded) */
-  .mark-wrap[data-stage="inside"] .agent-card { opacity: 1; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .agent-card { opacity: 1; }
+
+  /* End-of-Inside ripple — the 6 thick connector lines (2 pillars +
+     4 chevrons) explode outward off-screen at 6s, followed at 6.2s by
+     the background cascade scattering outward. Leaves a clean schematic
+     (core + cards + data lines/particles) on a blank background. */
+  .mark-wrap[data-stage="inside"] .mark-pillars,
+  .mark-wrap[data-stage="inside"] .mark-chevrons {
+    transform-origin: 2500px 2500px;
+    animation: inside-connectors-ripple 1.4s 6s cubic-bezier(0.3, 0.1, 0.6, 1) forwards;
+  }
+  @keyframes inside-connectors-ripple {
+    0%   { transform: scale(1); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  body.stage-inside .card-cascade {
+    animation: inside-cascade-ripple 1.5s 6.2s ease-in forwards;
+  }
+  @keyframes inside-cascade-ripple {
+    0%   { transform: scale(1);   opacity: 1; }
+    100% { transform: scale(2.4) rotate(8deg); opacity: 0; }
+  }
+
+  /* After the data particles start traveling (1.1s), the core's outer
+     ring + the 6 connector lines (2 pillars + 4 chevrons) transition
+     to the same Sapphire blue as the data flow — same color family. */
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .mark-core path:nth-child(1),
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .mark-pillars path,
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .mark-chevrons path,
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .mark-chevrons polygon {
+    animation: inside-blue-shift 0.7s 1.1s ease-out forwards;
+  }
+  @keyframes inside-blue-shift {
+    to { fill: var(--accent); }
+  }
+
+  /* Inside data lines: extend from core outer ring to each agent card
+     when Inside activates. ~900 units of stroke-dasharray covers the
+     line length (~828 plus margin). */
+  .inside-line {
+    stroke: var(--accent);
+    stroke-width: 8;
+    fill: none;
+    opacity: 0;
+    stroke-dasharray: 900;
+    stroke-dashoffset: 900;
+  }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .inside-line {
+    opacity: 0.75;
+    animation: inside-line-extend 0.9s 0.2s ease-out forwards;
+  }
+  @keyframes inside-line-extend {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* Inside particles travel along each line from core → card. Each
+     particle has its own keyframe (one per direction). Starts after
+     the lines extend (delay ~1.1s). */
+  .inside-particle {
+    fill: var(--accent);
+    opacity: 0;
+    filter: drop-shadow(0 0 14px var(--accent));
+  }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .inside-particle-1 { animation: inside-travel-1 2.4s 1.1s linear infinite; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .inside-particle-2 { animation: inside-travel-2 2.4s 1.25s linear infinite; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .inside-particle-3 { animation: inside-travel-3 2.4s 1.4s linear infinite; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .inside-particle-4 { animation: inside-travel-4 2.4s 1.55s linear infinite; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .inside-particle-5 { animation: inside-travel-5 2.4s 1.7s linear infinite; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .inside-particle-6 { animation: inside-travel-6 2.4s 1.85s linear infinite; }
+
+  @keyframes inside-travel-1 {
+    0%   { transform: translate(2500px, 1850px); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translate(2504px, 1022px); opacity: 0; }
+  }
+  @keyframes inside-travel-2 {
+    0%   { transform: translate(3063px, 2175px); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translate(3785px, 1766px); opacity: 0; }
+  }
+  @keyframes inside-travel-3 {
+    0%   { transform: translate(3063px, 2825px); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translate(3785px, 3255px); opacity: 0; }
+  }
+  @keyframes inside-travel-4 {
+    0%   { transform: translate(2500px, 3150px); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translate(2504px, 3981px); opacity: 0; }
+  }
+  @keyframes inside-travel-5 {
+    0%   { transform: translate(1937px, 2825px); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translate(1221px, 3255px); opacity: 0; }
+  }
+  @keyframes inside-travel-6 {
+    0%   { transform: translate(1937px, 2175px); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translate(1222px, 1758px); opacity: 0; }
+  }
 
   /* Center core: 6 LLM logos fade in/out one at a time, 2.5s per logo,
      15s total cycle (loops). Only visible on Inside stage. */
@@ -800,15 +916,15 @@
   /* Theme-aware contrast for the originally-black logos on the core,
      since the core fill is var(--ink) which inverts between modes. */
   .core-llm-contrast { fill: var(--bg); }
-  .mark-wrap[data-stage="inside"] .core-llm {
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .core-llm {
     animation: core-llm-cycle 15s linear infinite;
   }
-  .mark-wrap[data-stage="inside"] .core-llm:nth-child(1) { animation-delay: 0s; }
-  .mark-wrap[data-stage="inside"] .core-llm:nth-child(2) { animation-delay: 2.5s; }
-  .mark-wrap[data-stage="inside"] .core-llm:nth-child(3) { animation-delay: 5s; }
-  .mark-wrap[data-stage="inside"] .core-llm:nth-child(4) { animation-delay: 7.5s; }
-  .mark-wrap[data-stage="inside"] .core-llm:nth-child(5) { animation-delay: 10s; }
-  .mark-wrap[data-stage="inside"] .core-llm:nth-child(6) { animation-delay: 12.5s; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .core-llm:nth-child(1) { animation-delay: 0s; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .core-llm:nth-child(2) { animation-delay: 2.5s; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .core-llm:nth-child(3) { animation-delay: 5s; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .core-llm:nth-child(4) { animation-delay: 7.5s; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .core-llm:nth-child(5) { animation-delay: 10s; }
+  .mark-wrap:is([data-stage="inside"],[data-stage="launch"]) .core-llm:nth-child(6) { animation-delay: 12.5s; }
   @keyframes core-llm-cycle {
     0%, 17%, 100% { opacity: 0; }
     3%, 14%       { opacity: 1; }
@@ -821,7 +937,16 @@
     z-index: 0;
     overflow: hidden;
   }
+  /* Cascade reveal on How (after the last agent card finishes morphing at
+     ~8.8s), then stays visible on Inside + Launch. */
+  body.stage-how .card-cascade {
+    animation: cascade-reveal 0.8s 9.0s ease-out forwards;
+  }
+  @keyframes cascade-reveal {
+    to { opacity: 1; }
+  }
   body.stage-inside .card-cascade { opacity: 1; }
+  /* Launch: cascade stays hidden (already pushed out by Inside's ripple). */
 
   .cascade-card {
     position: absolute;
@@ -865,26 +990,115 @@
     100% { transform: translateY(118vh)  scale(var(--cascade-scale)); opacity: 0; }
   }
 
-  /* ============================================================
-     STAGE: LAUNCH — continuous spin + particle trails shoot
-     outward beyond the frame. Theme: ignition / takeoff.
-     ============================================================ */
-  .mark-wrap[data-stage="launch"] .mark {
-    animation: launch-spin 5s linear infinite;
+  /* Output icon flow — emoji items shoot outward from core through the
+     6 gaps between cards (where connectors were). Starts after the
+     end-of-Inside ripple (~7.5s). */
+  .output-icons {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
   }
-  @keyframes launch-spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+  /* .output-icon-wrap handles direction (rotate + translate). The inner
+     .output-icon counter-rotates so the emoji glyph stays upright. */
+  .output-icon-wrap {
+    position: absolute;
+    left: 50%; top: 50%;
+    opacity: 0;
+    pointer-events: none;
+    line-height: 1;
   }
-  .mark-wrap[data-stage="launch"] .particles-spokes { opacity: 1; }
-  .mark-wrap[data-stage="launch"] .particles-spokes .particle {
-    animation: launch-trail 1.4s ease-out infinite;
-    animation-delay: var(--delay);
+  .output-icon {
+    display: inline-block;
+    font-size: var(--icon-size, 26px);
+    line-height: 1;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+    transform: rotate(calc(-1 * var(--angle, 0deg)));
   }
-  @keyframes launch-trail {
+  body.stage-inside .output-icon-wrap {
+    animation: output-flow-out var(--out-duration, 5s) linear infinite;
+    animation-delay: var(--out-delay, 7.5s);
+  }
+  @keyframes output-flow-out {
     0%   { transform: rotate(var(--angle)) translateY(-9vmin);  opacity: 0; }
-    15%  { opacity: 1; }
-    100% { transform: rotate(var(--angle)) translateY(-42vmin); opacity: 0; }
+    12%  { opacity: 1; }
+    82%  { opacity: 1; }
+    100% { transform: rotate(var(--angle)) translateY(-90vmax); opacity: 0; }
+  }
+
+  /* ============================================================
+     STAGE: LAUNCH — inherits Inside's full end state (schematic with
+     agent cards, MCP cycle, EQ bars, blue core + connectors, data
+     lines + particles, LLM core cycle, cascade).
+     Phase 1 (0–1.2s): 3 stage rings explode outward (singularity-style);
+                       background cascade fades out.
+     Phase 2 (1.5–3s): 6 agent cards rotate clockwise + shrink to nothing.
+                       Data lines, particles, LLM core cycle fade out.
+     Phase 3 (2.5s+): Connectors + core revert from Sapphire to default
+                      monochrome. 6 NICE orbit dots reappear.
+     End state: original NICE brand mark.
+     ============================================================ */
+
+  /* Phase 1: rings explode outward (singularity-style) */
+  .mark-wrap[data-stage="launch"] .stage-ring-1 {
+    animation: launch-ring-explode 1.2s 0s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+  }
+  .mark-wrap[data-stage="launch"] .stage-ring-2 {
+    animation: launch-ring-explode 1.2s 0.2s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+  }
+  .mark-wrap[data-stage="launch"] .stage-ring-3 {
+    animation: launch-ring-explode 1.2s 0.4s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+  }
+  @keyframes launch-ring-explode {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; }
+  }
+
+  /* (Cascade fade-out removed — cascade is already gone from Inside's
+     end-ripple, and Launch's visibility selector no longer matches.) */
+
+  /* Phase 2: data lines, particles, and core-LLM cycle fade out (1.6s) */
+  .mark-wrap[data-stage="launch"] .inside-lines,
+  .mark-wrap[data-stage="launch"] .inside-particles,
+  .mark-wrap[data-stage="launch"] .core-llm-cycle {
+    animation: launch-fade-out 0.7s 1.6s ease-out forwards;
+  }
+  @keyframes launch-fade-out {
+    to { opacity: 0; }
+  }
+
+  /* Phase 2: 6 agent cards rotate clockwise + shrink to scale 0 (1.5–3s) */
+  .mark-wrap[data-stage="launch"] .agent-cards {
+    transform-origin: 2500px 2500px;
+    animation: launch-cards-spiral 1.5s 1.5s cubic-bezier(0.5, 0, 0.7, 1) forwards;
+  }
+  @keyframes launch-cards-spiral {
+    0%   { transform: rotate(0deg)    scale(1);    opacity: 1; }
+    75%  { transform: rotate(330deg)  scale(0.32); opacity: 1; }
+    100% { transform: rotate(360deg)  scale(0);    opacity: 0; }
+  }
+
+  /* Phase 3: connectors + core ring revert from Sapphire to default (2.5s) */
+  .mark-wrap[data-stage="launch"] .mark-core path:nth-child(1),
+  .mark-wrap[data-stage="launch"] .mark-pillars path,
+  .mark-wrap[data-stage="launch"] .mark-chevrons path,
+  .mark-wrap[data-stage="launch"] .mark-chevrons polygon {
+    animation:
+      inside-blue-shift 0.7s 1.1s ease-out forwards,
+      launch-revert-default 0.7s 2.5s ease-out forwards;
+  }
+  @keyframes launch-revert-default {
+    to { fill: var(--ink); }
+  }
+
+  /* Phase 3: 6 NICE orbit dots reappear at their original positions (2.8s) */
+  .mark-wrap[data-stage="launch"] .mark-orbit path:nth-child(n) {
+    animation: launch-dots-reappear 0.8s 2.8s ease-out forwards;
+  }
+  @keyframes launch-dots-reappear {
+    0%   { fill: var(--accent); opacity: 0; transform: scale(0); }
+    60%  { fill: var(--accent); opacity: 1; transform: scale(1.12); }
+    100% { fill: var(--ink);    opacity: 1; transform: scale(1); }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -895,6 +1109,10 @@
 <body>
   <!-- Inside stage cascade — fixed full-viewport rain of blueprint cards -->
   <div class="card-cascade" aria-hidden="true"></div>
+
+  <!-- Inside stage output icons — abundance of output items flying outward
+       from core through the 6 gaps where connectors used to be. -->
+  <div class="output-icons" aria-hidden="true"></div>
 
   <div class="picker-eyebrow is-anim">Intro animation (plays once)</div>
   <div class="picker" role="tablist">
@@ -956,10 +1174,8 @@
           <path d="M2139.98,3712.08c2.15,3.03-33.45,55.51-38.18,63.72-4.14,7.19-5.9,25.29-15.33,23.83l-494.1-289.2,43.94-82.16,11.78,1.54,491.88,282.27Z"/>
           <path d="M3366,3424.08l45.38,82.85-3.37,11.08-492.12,280.28c-7.13-25.22-36.8-54.55-44.83-75.52-1.4-3.67-4.89-6.66-1.38-10.87l496.32-287.83Z"/>
         </g>
-        <g class="mark-core">
-          <path d="M2447.2,1853.2c550.99-42.77,908.61,573.22,585.69,1025.69-276.72,387.72-866.37,355.58-1097.57-60.2-228.12-410.24,44.43-929.2,511.88-965.49ZM2455.2,1953.2c-427.55,33.48-653.11,541.85-388.78,882.39,257.89,332.24,777.21,269.58,942.28-116.89,164.38-384.87-139.97-797.88-553.5-765.5Z"/>
-          <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
-        </g>
+        <!-- mark-core moved later so it renders ON TOP of agent-cards
+             during Launch's spiral collapse (cards disappear BEHIND core). -->
         <!-- LLM provider logos overlaid on the 6 outer dots during Mission.
              Order matches clockwise from top: Anthropic, OpenAI, Google AI,
              xAI Grok, Llama (Meta), Gemini. -->
@@ -1063,6 +1279,27 @@
             <image href="https://cdn.simpleicons.org/stripe/635BFF" x="-160" y="-160" width="320" height="320"/>
           </g>
         </g>
+        <!-- Inside-stage data lines + particles. Lines extend from the
+             core's outer ring to each agent card center on entry, and
+             particles continuously travel along them from core → cards.
+             Sits BEFORE agent-cards so cards cover the line ends. -->
+        <g class="inside-lines">
+          <line class="inside-line" x1="2500" y1="1850" x2="2504" y2="1022"/>
+          <line class="inside-line" x1="3063" y1="2175" x2="3785" y2="1766"/>
+          <line class="inside-line" x1="3063" y1="2825" x2="3785" y2="3255"/>
+          <line class="inside-line" x1="2500" y1="3150" x2="2504" y2="3981"/>
+          <line class="inside-line" x1="1937" y1="2825" x2="1221" y2="3255"/>
+          <line class="inside-line" x1="1937" y1="2175" x2="1222" y2="1758"/>
+        </g>
+        <g class="inside-particles">
+          <circle class="inside-particle inside-particle-1" r="36" cx="0" cy="0"/>
+          <circle class="inside-particle inside-particle-2" r="36" cx="0" cy="0"/>
+          <circle class="inside-particle inside-particle-3" r="36" cx="0" cy="0"/>
+          <circle class="inside-particle inside-particle-4" r="36" cx="0" cy="0"/>
+          <circle class="inside-particle inside-particle-5" r="36" cx="0" cy="0"/>
+          <circle class="inside-particle inside-particle-6" r="36" cx="0" cy="0"/>
+        </g>
+
         <!-- Agent blueprint cards — appear at end of How stage,
              one per outer-ring direction, each a different rarity. -->
         <g class="agent-cards">
@@ -1138,6 +1375,13 @@
             <rect class="card-badge"  x="-74" y="160" width="148" height="36" rx="18"/>
             <text class="card-text" x="0" y="184" text-anchor="middle" font-size="18" letter-spacing="0.10em">COMMON</text>
           </g>
+        </g>
+        <!-- mark-core (placed AFTER agent-cards so it renders ON TOP
+             of cards — cards disappear BEHIND core during Launch's
+             spiral collapse). -->
+        <g class="mark-core">
+          <path d="M2447.2,1853.2c550.99-42.77,908.61,573.22,585.69,1025.69-276.72,387.72-866.37,355.58-1097.57-60.2-228.12-410.24,44.43-929.2,511.88-965.49ZM2455.2,1953.2c-427.55,33.48-653.11,541.85-388.78,882.39,257.89,332.24,777.21,269.58,942.28-116.89,164.38-384.87-139.97-797.88-553.5-765.5Z"/>
+          <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
         </g>
         <g class="mcp-orbit-outer">
           <!-- 7. Atlassian — between Google + Microsoft (angle 60°) -->
@@ -1304,6 +1548,55 @@
       frag.appendChild(card);
     }
     cascade.appendChild(frag);
+  })();
+
+  // Output icon flow — emoji items shooting out from the core through the
+  // 6 gaps between agent cards (at angles 0/60/120/180/240/300°).
+  const OUTPUT_ICONS = [
+    // Communication / messaging
+    '📧','📨','✉️','💌','📤','📥','📬','📭','📮','📞','📲','💬','💭','📢','📣','🔔','🐦','🗨️',
+    // Documents
+    '📄','📑','📋','📝','📜','📃','📒','📓','📕','📗','📘','📙','📚','🗂️','📁','📂','🗃️','🗄️','🧾',
+    // Charts / data / code
+    '📊','📈','📉','💾','🔗','🧮','📐','📏','#️⃣',
+    // Media — image / video / audio
+    '🎞️','🎬','🎥','📷','📸','🖼️','📺','📻','🎵','🎶','🎼','🎤','🎧','🎙️','🔊','🎨','🖌️','🖍️',
+    // Tech devices
+    '💻','🖥️','📱','⌚','💽','💿','📀','🖨️','🖱️','🎮','🕹️',
+    // Marketing / business / commerce
+    '📰','🗞️','🏷️','💼','💰','💵','💳','💎','🛒','🧰','🎟️','🎫','📦','🎁','🏆','🥇','🎖️','🏅','🎯','📌','📍',
+    // Energy / ideas / brand flair
+    '⭐','🌟','✨','💡','🚀','⚡','🔥','🌐','📡','🌍','⚙️','🔧','🔍','🔐','❤️','🎉','🎊','👍',
+  ];
+  // Gaps between agent cards (in CSS rotate scheme: 0°=up, clockwise).
+  // Cards sit at 0/60/120/180/240/300; gaps are at the midpoints.
+  const OUTPUT_BASE_ANGLES = [30, 90, 150, 210, 270, 330];
+  const OUTPUT_COUNT = 60;
+  const OUTPUT_DELAY_START = 7.5; // matches inside-cascade-ripple end + buffer
+  (function generateOutputs() {
+    const outputs = document.querySelector('.output-icons');
+    if (!outputs) return;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < OUTPUT_COUNT; i++) {
+      const wrap = document.createElement('span');
+      wrap.className = 'output-icon-wrap';
+      const icon = document.createElement('span');
+      icon.className = 'output-icon';
+      icon.textContent = OUTPUT_ICONS[Math.floor(Math.random() * OUTPUT_ICONS.length)];
+      wrap.appendChild(icon);
+      const baseAngle = OUTPUT_BASE_ANGLES[i % OUTPUT_BASE_ANGLES.length];
+      const angleJitter = (Math.random() - 0.5) * 36; // ±18° spread per direction
+      const angle = baseAngle + angleJitter;
+      const duration = 4 + Math.random() * 4;            // 4–8s travel
+      const delay = OUTPUT_DELAY_START + Math.random() * 5; // 7.5–12.5s staggered start
+      const size = 16 + Math.random() * 44;              // 16–60px wider range
+      wrap.style.setProperty('--angle', angle + 'deg');
+      wrap.style.setProperty('--out-duration', duration + 's');
+      wrap.style.setProperty('--out-delay', delay + 's');
+      wrap.style.setProperty('--icon-size', size + 'px');
+      frag.appendChild(wrap);
+    }
+    outputs.appendChild(frag);
   })();
 
   // Agent-card enhancements: cycle white MCP logos inside the art area,
