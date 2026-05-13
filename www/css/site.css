@@ -1407,7 +1407,11 @@ body[data-theme="dark"] {
   display: flex; align-items: center; justify-content: center;
   pointer-events: none;
   z-index: 0;
+  transition: opacity 0.4s ease-out;
 }
+/* When the footer scrolls into view at the bottom of stage-site,
+   fade the fixed HUD so it doesn't overlap the wordmark + tagline. */
+body.is-footer-visible .home-stage { opacity: 0; }
 .home-mark-wrap {
   position: relative;
   display: flex; align-items: center; justify-content: center;

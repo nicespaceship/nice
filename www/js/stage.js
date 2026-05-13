@@ -76,6 +76,19 @@ const HomeStage = (() => {
     }, { threshold: 0.15 });
     sections.forEach((s) => io.observe(s));
 
+    // Fade out the fixed home-stage (HUD + schematic) once the footer
+    // scrolls into view, otherwise on mobile the HUD's fixed center
+    // overlaps the NICE SPACESHIP wordmark + tagline in the footer.
+    const footer = document.querySelector('.footer');
+    if (footer) {
+      const footerIO = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          document.body.classList.toggle('is-footer-visible', e.isIntersecting);
+        }
+      }, { threshold: 0.01 });
+      footerIO.observe(footer);
+    }
+
     // Smooth-scroll on timeline click.
     items.forEach((it) => {
       it.addEventListener('click', (e) => {
