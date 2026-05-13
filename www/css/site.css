@@ -1113,11 +1113,28 @@ canvas.cta-bg { width: 100%; height: 100%; }
 
 @media (max-width: 768px) {
   .nav-links {
-    display: none; position: fixed; top: 52px; left: 0; right: 0;
+    display: flex; position: fixed; top: 52px; left: 0; right: 0;
     background: var(--bg); border-bottom: 1px solid var(--border);
     flex-direction: column; padding: 12px; gap: 2px; z-index: 99;
+    transform: translateY(-12px);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.22s ease-out,
+      visibility 0s linear 0.28s;
   }
-  .nav-links.open { display: flex; }
+  .nav-links.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition:
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.22s ease-out,
+      visibility 0s linear 0s;
+  }
   .nav-mobile-btn { display: block; }
   .nav-cta { display: none; }
   .nav-links.open .nav-cta {
