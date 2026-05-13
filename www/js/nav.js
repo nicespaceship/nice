@@ -87,8 +87,8 @@ const Nav = (() => {
           <div class="footer-col">
             <h4>Resources</h4>
             <a href="/docs">Documentation</a>
-            <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener">GitHub</a>
             <a href="/explore">Explore</a>
+            <a href="https://github.com/nicespaceship/nice" target="_blank" rel="noopener">GitHub</a>
           </div>
           <div class="footer-col">
             <h4>Legal</h4>
