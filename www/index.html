@@ -209,10 +209,13 @@
             <circle r="350"/>
             <image href="https://cdn.simpleicons.org/hubspot/FF7A59" x="-160" y="-160" width="320" height="320"/>
           </g>
-          <!-- 6. Stripe — top-left -->
+          <!-- 6. Stripe — top-left. Inline SVG instead of cdn.simpleicons.org
+               because Safari fails to render <image> from that specific URL. -->
           <g class="home-mcp-node" transform="translate(1222, 1758)">
             <circle r="350"/>
-            <image href="https://cdn.simpleicons.org/stripe/635BFF" x="-160" y="-160" width="320" height="320"/>
+            <svg x="-150" y="-150" width="300" height="300" viewBox="0 0 24 24">
+              <path fill="#635BFF" d="M13.479 9.883c-1.626-.604-2.512-1.067-2.512-1.803 0-.622.511-.977 1.42-.977 1.665 0 3.474.629 4.713 1.215l.692-4.193C16.834 3.748 14.857 3.236 12.6 3.236c-2.058 0-3.766.523-4.97 1.487-1.241.997-1.879 2.418-1.879 4.136 0 3.137 1.93 4.485 4.937 5.587 1.965.692 2.598 1.121 2.598 1.857 0 .779-.737 1.255-1.812 1.255-1.5 0-3.927-.733-5.601-1.626l-.704 4.205c1.43.838 4.105 1.627 6.715 1.627 2.183 0 4.001-.486 5.211-1.508 1.4-1.169 2.114-2.871 2.114-5.025 0-3.121-1.992-4.456-4.93-5.358z"/>
+            </svg>
           </g>
         </g>
         <!-- Inside-stage data lines + particles. Lines extend from the
