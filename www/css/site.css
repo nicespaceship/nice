@@ -2647,6 +2647,12 @@ body.stage-launch   .home-stage-card-pane[data-stage="launch"] {
   line-height: var(--lh-base);
   margin-bottom: 12px;
 }
+/* Mobile: tighten the persistent card type so it sits comfortably
+   in the smaller viewport (was 24/15, now 22/14). */
+@media (max-width: 768px) {
+  .home-stage-card-pane h2 { font-size: 22px; line-height: 30px; }
+  .home-stage-card-pane p { font-size: 14px; }
+}
 .home-stage-card-pane p:last-child { margin-bottom: 0; }
 .home-stage-card-pane .home-stop-ctas:last-child { margin-bottom: 0; }
 .home-stage-card-pane .home-stop-list { margin-top: 12px; }
