@@ -35,13 +35,15 @@ const SchematicView = (() => {
 
     if (!activeShip) {
       // If the user is authenticated, Supabase may not have finished syncing
-      // yet — show a neutral loading state instead of the empty-state CTAs so
-      // users don't see "No spaceships deployed" for a ship they just reset.
-      // Once activated-ships fires again (Blueprints._fireShipState after the
-      // user_spaceships query returns), we re-render with real data.
+      // yet — show a skeleton of the schematic structure instead of the
+      // empty-state CTAs, so users don't see "No spaceships deployed" for a
+      // ship they just reset (and the 5-10s hydration window reads as
+      // "loading", not "frozen"). Once activated-ships fires again
+      // (Blueprints._fireShipState after the user_spaceships query returns),
+      // we re-render with real data.
       const isAuthed = typeof Utils !== 'undefined' && Utils.hasAuthSession();
       if (isAuthed) {
-        el.innerHTML = '<div class="schematic-empty app-empty"><p class="text-muted">Loading crew&hellip;</p></div>';
+        el.innerHTML = '<div class="bridge-hero-wrap"><div class="bridge-hero-content">' + _renderSkeleton() + '</div></div>';
       } else {
         el.innerHTML = `
           <div class="schematic-empty app-empty">
@@ -522,6 +524,46 @@ const SchematicView = (() => {
       '<div class="schematic-stack-reactor">' +
         '<div class="sch-core-hit-overlay" title="Tap to speak a mission"></div>' +
       '</div>' +
+    '</div>';
+  }
+
+  // Skeleton shown during the post-reset hydration window (authenticated,
+  // but Blueprints/Supabase haven't returned the user's ships yet). Mirrors
+  // the real layout — columns of slot outlines on desktop, a row stack on
+  // mobile — so the schematic reads as present-and-loading, not frozen.
+  // The active ship isn't known until hydration, so it uses the 6-slot
+  // floor; real cards replace the whole tree when render() runs again.
+  function _renderSkeleton() {
+    const SLOTS = 6;
+    if (_isMobile()) {
+      let rows = '';
+      for (let i = 0; i < SLOTS; i++) {
+        rows += '<li class="schematic-stack-row">' +
+          '<span class="schematic-row-node" aria-hidden="true"></span>' +
+          '<span class="sch-sk sch-sk-avatar" aria-hidden="true"></span>' +
+          '<div class="schematic-row-info">' +
+            '<span class="sch-sk sch-sk-line sch-sk-role" aria-hidden="true"></span>' +
+            '<span class="sch-sk sch-sk-line sch-sk-name" aria-hidden="true"></span>' +
+          '</div>' +
+        '</li>';
+      }
+      return '<div class="schematic-stack schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
+        '<ol class="schematic-stack-rows">' + rows + '</ol>' +
+      '</div>';
+    }
+    const card = '<div class="schematic-card-slot">' +
+      '<div class="sch-slot-card sch-slot-card-skeleton">' +
+        '<span class="sch-sk sch-sk-line sch-sk-role" aria-hidden="true"></span>' +
+        '<span class="sch-sk sch-sk-line sch-sk-name" aria-hidden="true"></span>' +
+        '<span class="sch-sk sch-sk-line sch-sk-cap" aria-hidden="true"></span>' +
+      '</div>' +
+    '</div>';
+    let col = '';
+    for (let i = 0; i < SLOTS / 2; i++) col += card;
+    return '<div class="schematic-wired schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
+      '<div class="schematic-col schematic-col-left">' + col + '</div>' +
+      '<div class="schematic-center"></div>' +
+      '<div class="schematic-col schematic-col-right">' + col + '</div>' +
     '</div>';
   }
 
