@@ -1,0 +1,4279 @@
+[
+  {
+    "id": "fleet-48",
+    "serial_key": "SS-MYTH-CTDL-CMND-001",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Citadel Command",
+    "description": "You route every business function through a single intelligent command hierarchy — finance, engineering, marketing, legal, HR, sales, support, and operations all coordinated with real-time optimization and autonomous decision-making.",
+    "flavor": "Total enterprise intelligence.",
+    "category": "Ops",
+    "rarity": "Mythic",
+    "tags": [
+      "enterprise",
+      "mythic",
+      "command"
+    ],
+    "config": {
+      "crew_roles": [
+        "ops",
+        "engineering",
+        "marketing",
+        "legal",
+        "hr",
+        "sales",
+        "support",
+        "operations",
+        "finance",
+        "analytics",
+        "research",
+        "content",
+        "design",
+        "security",
+        "automation",
+        "ops",
+        "engineering",
+        "marketing",
+        "legal",
+        "hr",
+        "sales",
+        "support",
+        "operations",
+        "finance"
+      ]
+    },
+    "stats": {
+      "crew": "24",
+      "tier": "MYTHIC",
+      "slots": "24"
+    },
+    "metadata": {
+      "caps": [
+        "Route every business function through intelligent command hierarchy",
+        "Autonomous cross-department optimization with real-time telemetry",
+        "Self-healing operations with predictive disruption management"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Chief Executive",
+          "config": {
+            "agentRole": "CEO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Chief Operations",
+          "config": {
+            "agentRole": "COO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Chief Technology",
+          "config": {
+            "agentRole": "CTO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Chief Financial",
+          "config": {
+            "agentRole": "CFO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Chief Marketing",
+          "config": {
+            "agentRole": "CMO"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "General Counsel",
+          "config": {
+            "agentRole": "Legal"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "HR Director",
+          "config": {
+            "agentRole": "HR"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "VP Sales",
+          "config": {
+            "agentRole": "Sales"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Support Lead",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Lead Engineer",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Platform Engineer",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Backend Engineer",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n13",
+          "type": "agent",
+          "label": "Frontend Engineer",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n14",
+          "type": "agent",
+          "label": "Data Analyst",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n15",
+          "type": "agent",
+          "label": "BI Analyst",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n16",
+          "type": "agent",
+          "label": "ML Engineer",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n17",
+          "type": "agent",
+          "label": "Content Strategist",
+          "config": {
+            "agentRole": "Content"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n18",
+          "type": "agent",
+          "label": "Brand Designer",
+          "config": {
+            "agentRole": "Content"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n19",
+          "type": "agent",
+          "label": "Ops Manager",
+          "config": {
+            "agentRole": "Ops"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n20",
+          "type": "agent",
+          "label": "Supply Chain",
+          "config": {
+            "agentRole": "Ops"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n21",
+          "type": "agent",
+          "label": "Facilities",
+          "config": {
+            "agentRole": "Ops"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n22",
+          "type": "agent",
+          "label": "Security Analyst",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n23",
+          "type": "agent",
+          "label": "Compliance Officer",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n24",
+          "type": "agent",
+          "label": "Innovation Lead",
+          "config": {
+            "agentRole": "Innovation"
+          },
+          "rarity": "Epic"
+        }
+      ],
+      "card_num": "NS-F48",
+      "recommended_class": "class-5"
+    },
+    "is_public": true
+  },
+  {
+    "id": "fleet-49",
+    "serial_key": "SS-MYTH-SNGL-ENGN-002",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Singularity Engine",
+    "description": "You coordinate parallel R&D streams — from ideation through prototyping, testing, patent analysis, and go-to-market — across every technical domain. The ultimate research and development vessel.",
+    "flavor": "Beyond the event horizon.",
+    "category": "Engineering",
+    "rarity": "Mythic",
+    "tags": [
+      "research",
+      "engineering",
+      "mythic",
+      "innovation"
+    ],
+    "config": {
+      "crew_roles": [
+        "research",
+        "research",
+        "engineering",
+        "analytics",
+        "design",
+        "content",
+        "operations",
+        "ops",
+        "support",
+        "sales",
+        "marketing",
+        "legal",
+        "security",
+        "automation",
+        "finance",
+        "hr",
+        "research",
+        "engineering",
+        "analytics",
+        "design",
+        "content",
+        "operations",
+        "ops",
+        "support"
+      ]
+    },
+    "stats": {
+      "crew": "24",
+      "tier": "MYTHIC",
+      "slots": "24"
+    },
+    "metadata": {
+      "caps": [
+        "Orchestrate parallel R&D streams from ideation through commercialization",
+        "Coordinate patent landscape analysis with competitive technical intelligence",
+        "Self-optimizing engineering pipeline with autonomous quality gates"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "VP Engineering",
+          "config": {
+            "agentRole": "CTO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "VP Research",
+          "config": {
+            "agentRole": "Research Lead"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Chief Scientist",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Product Director",
+          "config": {
+            "agentRole": "Product"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Systems Architect",
+          "config": {
+            "agentRole": "Architecture"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "ML Research Lead",
+          "config": {
+            "agentRole": "ML Research"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Data Science Lead",
+          "config": {
+            "agentRole": "Data Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Backend Lead",
+          "config": {
+            "agentRole": "Backend"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Frontend Lead",
+          "config": {
+            "agentRole": "Frontend"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "DevOps Lead",
+          "config": {
+            "agentRole": "DevOps"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "QA Lead",
+          "config": {
+            "agentRole": "QA"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Security Engineer",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n13",
+          "type": "agent",
+          "label": "Patent Analyst",
+          "config": {
+            "agentRole": "IP"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n14",
+          "type": "agent",
+          "label": "Technical Writer",
+          "config": {
+            "agentRole": "Documentation"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n15",
+          "type": "agent",
+          "label": "UX Researcher",
+          "config": {
+            "agentRole": "UX Research"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n16",
+          "type": "agent",
+          "label": "UI Designer",
+          "config": {
+            "agentRole": "Design"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n17",
+          "type": "agent",
+          "label": "Prototyper",
+          "config": {
+            "agentRole": "Prototyping"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n18",
+          "type": "agent",
+          "label": "Performance Engineer",
+          "config": {
+            "agentRole": "Performance"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n19",
+          "type": "agent",
+          "label": "Integration Engineer",
+          "config": {
+            "agentRole": "Integration"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n20",
+          "type": "agent",
+          "label": "Release Manager",
+          "config": {
+            "agentRole": "Release"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n21",
+          "type": "agent",
+          "label": "Competitive Analyst",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n22",
+          "type": "agent",
+          "label": "GTM Strategist",
+          "config": {
+            "agentRole": "Go-to-Market"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n23",
+          "type": "agent",
+          "label": "Test Automation",
+          "config": {
+            "agentRole": "Test Automation"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n24",
+          "type": "agent",
+          "label": "Innovation Scout",
+          "config": {
+            "agentRole": "Innovation"
+          },
+          "rarity": "Epic"
+        }
+      ],
+      "card_num": "NS-F49",
+      "recommended_class": "class-5"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-46",
+    "serial_key": "CR-STRDST",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Executor",
+    "description": "Imperial fleet operations.",
+    "flavor": "Imperial efficiency. Total dominance.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "enterprise",
+      "operations",
+      "command"
+    ],
+    "config": {
+      "crew_roles": [
+        "security",
+        "security",
+        "engineering",
+        "ops",
+        "operations",
+        "analytics",
+        "support",
+        "content",
+        "legal",
+        "hr",
+        "sales",
+        "finance"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Full-spectrum enterprise ops",
+        "12 agents",
+        "Complete operations"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Darth Vader",
+          "config": {
+            "agentRole": "Bridge"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Emperor Palpatine",
+          "config": {
+            "agentRole": "Command"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Admiral Thrawn",
+          "config": {
+            "agentRole": "Intel"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Grand Moff Tarkin",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Director Krennic",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "General Veers",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Admiral Piett",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Agent Kallus",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Grand Admiral Yularen",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Moff Jerjerrod",
+          "config": {
+            "agentRole": "Logistics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Captain Needa",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Captain Pellaeon",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F46"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-47",
+    "serial_key": "CR-USSENTD",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "USS Enterprise NCC-1701-D",
+    "description": "Full enterprise command.",
+    "flavor": "Make it so.",
+    "category": "Engineering",
+    "rarity": "Legendary",
+    "tags": [
+      "enterprise",
+      "flagship",
+      "starfleet"
+    ],
+    "config": {
+      "crew_overrides": {
+        "0": "bp-agent-250",
+        "1": "bp-agent-251",
+        "2": "bp-agent-254",
+        "3": "bp-agent-255",
+        "4": "bp-agent-253",
+        "5": "bp-agent-256",
+        "6": "bp-agent-252",
+        "7": "bp-agent-257"
+      }
+    },
+    "stats": {
+      "crew": "12",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Full enterprise command, 12 agents",
+        "Unlimited capacity",
+        "Every integration"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Jean-Luc Picard",
+          "config": {
+            "agentRole": "Bridge"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "William Riker",
+          "config": {
+            "agentRole": "Command"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Worf",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Deanna Troi",
+          "config": {
+            "agentRole": "Intel"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Data",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Geordi La Forge",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Beverly Crusher",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Wesley Crusher",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Miles O'Brien",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Natasha Yar",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Reginald Barclay",
+          "config": {
+            "agentRole": "Logistics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Guinan",
+          "config": {
+            "agentRole": "Creative"
+          },
+          "rarity": "Epic"
+        }
+      ],
+      "card_num": "NS-F47"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-50",
+    "serial_key": "CR-BORGCUBE",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Borg Cube",
+    "description": "You are the Collective. Every drone is an extension of a single distributed intelligence — assimilating data, adapting defenses, and optimizing operations in real time. Resistance to inefficiency is futile. Individual crew roles are irrelevant; the hive executes as one.",
+    "flavor": "Resistance is futile.",
+    "category": "Automation",
+    "rarity": "Mythic",
+    "tags": [
+      "enterprise",
+      "mythic",
+      "command",
+      "borg",
+      "collective"
+    ],
+    "config": {
+      "crew_roles": [
+        "automation",
+        "engineering",
+        "analytics",
+        "security",
+        "research",
+        "operations",
+        "ops",
+        "support",
+        "content",
+        "marketing",
+        "finance",
+        "legal",
+        "sales",
+        "hr",
+        "design",
+        "automation",
+        "engineering",
+        "analytics",
+        "security",
+        "research",
+        "operations",
+        "ops",
+        "support",
+        "content"
+      ]
+    },
+    "stats": {
+      "crew": "24",
+      "tier": "MYTHIC",
+      "slots": "24"
+    },
+    "metadata": {
+      "caps": [
+        "Distributed hive intelligence — every drone shares context in real time",
+        "Adaptive operations that self-optimize from every interaction",
+        "Assimilate new data sources, tools, and workflows automatically"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Borg Queen",
+          "config": {
+            "agentRole": "Command"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Locutus of Borg",
+          "config": {
+            "agentRole": "COO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Tactical Drone",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Assimilation Specialist",
+          "config": {
+            "agentRole": "Ops"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Navigation Drone",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Medical Drone",
+          "config": {
+            "agentRole": "QA"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Engineering Drone Alpha",
+          "config": {
+            "agentRole": "Infrastructure"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Engineering Drone Beta",
+          "config": {
+            "agentRole": "DevOps"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Communications Node",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Data Analysis Node",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Shield Harmonics Drone",
+          "config": {
+            "agentRole": "Defense"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Transwarp Specialist",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n13",
+          "type": "agent",
+          "label": "Regeneration Overseer",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n14",
+          "type": "agent",
+          "label": "Vinculum Controller",
+          "config": {
+            "agentRole": "Network"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n15",
+          "type": "agent",
+          "label": "Interlink Drone",
+          "config": {
+            "agentRole": "Integration"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n16",
+          "type": "agent",
+          "label": "Adaptation Drone",
+          "config": {
+            "agentRole": "ML"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n17",
+          "type": "agent",
+          "label": "Temporal Processor",
+          "config": {
+            "agentRole": "Forecasting"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n18",
+          "type": "agent",
+          "label": "Maturation Drone",
+          "config": {
+            "agentRole": "Training"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n19",
+          "type": "agent",
+          "label": "Logistics Drone",
+          "config": {
+            "agentRole": "Supply Chain"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n20",
+          "type": "agent",
+          "label": "Surveillance Node",
+          "config": {
+            "agentRole": "Monitoring"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n21",
+          "type": "agent",
+          "label": "Assimilation Drone Alpha",
+          "config": {
+            "agentRole": "Onboarding"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n22",
+          "type": "agent",
+          "label": "Assimilation Drone Beta",
+          "config": {
+            "agentRole": "Research"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n23",
+          "type": "agent",
+          "label": "Unimatrix Coordinator",
+          "config": {
+            "agentRole": "Strategy"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n24",
+          "type": "agent",
+          "label": "Seven of Nine",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Legendary"
+        }
+      ],
+      "card_num": "NS-F50",
+      "recommended_class": "class-5"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-51",
+    "serial_key": "CR-THEGRID",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "The Grid",
+    "description": "You are the Grid — a self-contained digital frontier. Programs execute within you, light cycles trace your surfaces, and the Creator's will shapes your reality. Every process, every bit of data, every identity disc flows through your architecture. The system is perfect. The system is alive.",
+    "flavor": "The Grid. A digital frontier.",
+    "category": "Engineering",
+    "rarity": "Mythic",
+    "tags": [
+      "engineering",
+      "mythic",
+      "tron",
+      "digital",
+      "grid"
+    ],
+    "config": {
+      "crew_roles": [
+        "engineering",
+        "engineering",
+        "engineering",
+        "automation",
+        "security",
+        "analytics",
+        "ops",
+        "operations",
+        "research",
+        "content",
+        "design",
+        "support"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "MYTHIC",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Total digital environment control — reshape architecture, allocate resources, spawn processes at will",
+        "Program lifecycle management — creation, repurposing, deresolution, and identity disc governance",
+        "Self-evolving system that adapts its own rules based on emergent program behavior"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Kevin Flynn",
+          "config": {
+            "agentRole": "Creator"
+          },
+          "rarity": "Mythic"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "CLU 2.0",
+          "config": {
+            "agentRole": "Grid Administrator"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Master Control Program",
+          "config": {
+            "agentRole": "System Control"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Ares",
+          "config": {
+            "agentRole": "Combat AI"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Tron",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Rinzler",
+          "config": {
+            "agentRole": "Enforcement"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Quorra",
+          "config": {
+            "agentRole": "ISO Specialist"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Zuse / Castor",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Sark",
+          "config": {
+            "agentRole": "Ops"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Gem",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Ram",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Bit",
+          "config": {
+            "agentRole": "Validation"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F51",
+      "recommended_class": "class-5"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-52",
+    "serial_key": "CR-BSG75",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Battlestar Galactica",
+    "description": "You command a warship built for survival. No networked systems — every decision routes through hardened, isolated channels. Your crew operates under existential pressure, coordinating military operations, civilian fleet logistics, political governance, and Cylon threat response simultaneously. The mission is simple: protect what remains of humanity.",
+    "flavor": "So say we all.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "military",
+      "ops",
+      "legendary",
+      "bsg",
+      "command"
+    ],
+    "config": {
+      "crew_overrides": {
+        "0": "bp-agent-273",
+        "1": "bp-agent-279",
+        "2": "bp-agent-275",
+        "3": "bp-agent-276",
+        "4": "bp-agent-274",
+        "5": "bp-agent-277",
+        "6": "bp-agent-281",
+        "7": "bp-agent-282"
+      }
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Air-gapped command and control — no networked vulnerabilities, every system isolated",
+        "Dual military-civilian coordination under existential operational pressure",
+        "Adaptive threat response with minimal resources and zero margin for error"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Admiral Adama",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "President Roslin",
+          "config": {
+            "agentRole": "Governance"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Starbuck",
+          "config": {
+            "agentRole": "Strike Lead"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Apollo",
+          "config": {
+            "agentRole": "CAG"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Gaius Baltar",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Number Six",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Colonel Tigh",
+          "config": {
+            "agentRole": "XO"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Chief Tyrol",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Helo",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Athena",
+          "config": {
+            "agentRole": "Recon"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Gaeta",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Dee",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F52",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-53",
+    "serial_key": "CR-SBALL1",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Spaceball One",
+    "description": "You command the most absurdly oversized vessel in the galaxy — capable of going to plaid, transforming into Mega Maid, and vacuuming the atmosphere off entire planets. Your crew runs on fear, incompetence, and the Schwartz. Operations are chaotic, leadership is questionable, but somehow the mission gets done. Usually.",
+    "flavor": "May the Schwartz be with you.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "ops",
+      "legendary",
+      "spaceballs",
+      "comedy",
+      "command"
+    ],
+    "config": {
+      "crew_roles": [
+        "ops",
+        "engineering",
+        "security",
+        "operations",
+        "support",
+        "content",
+        "analytics",
+        "sales",
+        "marketing",
+        "hr",
+        "research",
+        "automation"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Ludicrous Speed operations — skip lightspeed entirely and go straight to plaid",
+        "Mega Maid transformation for planet-scale resource extraction",
+        "Schwartz-powered decision making that defies all conventional logic"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Dark Helmet",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Lone Starr",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Yogurt",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Barf",
+          "config": {
+            "agentRole": "Co-Pilot"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Princess Vespa",
+          "config": {
+            "agentRole": "Governance"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Dot Matrix",
+          "config": {
+            "agentRole": "QA"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "President Skroob",
+          "config": {
+            "agentRole": "CEO"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Colonel Sandurz",
+          "config": {
+            "agentRole": "XO"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Pizza the Hutt",
+          "config": {
+            "agentRole": "Finance"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "King Roland",
+          "config": {
+            "agentRole": "Diplomacy"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Commanderette Zircon",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Major Asshole",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F53",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-54",
+    "serial_key": "CR-USSNCC1701A",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "USS Enterprise NCC-1701-A",
+    "description": "You command the legendary Constitution-class starship — the original five-year mission vessel reborn. Your crew pioneered first contact, rewrote the rules of diplomacy, and defeated gods with logic and audacity. No holodeck. No counselor. Just a captain's intuition, a science officer's precision, and a doctor who tells you what you don't want to hear.",
+    "flavor": "To boldly go where no man has gone before.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "ops",
+      "legendary",
+      "starfleet",
+      "enterprise",
+      "tos"
+    ],
+    "config": {
+      "crew_overrides": {
+        "0": "bp-agent-541",
+        "1": "bp-agent-542",
+        "2": "bp-agent-543",
+        "3": "bp-agent-546",
+        "4": "bp-agent-545",
+        "5": "bp-agent-547"
+      }
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "First contact protocols — navigate unknown civilizations with diplomacy and decisive action",
+        "No-network command — Kirk-era intuition-driven decision making without committee",
+        "Cross-discipline problem solving where science, engineering, and sheer nerve converge"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "James T. Kirk",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Spock",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Dr. Leonard McCoy",
+          "config": {
+            "agentRole": "Medical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Montgomery Scott",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Nyota Uhura",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Hikaru Sulu",
+          "config": {
+            "agentRole": "Helm"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Pavel Chekov",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Christine Chapel",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Janice Rand",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Saavik",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Kyle",
+          "config": {
+            "agentRole": "Transport"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Kevin Riley",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F54",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-55",
+    "serial_key": "CR-DISC1",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Discovery One",
+    "description": "You are a vessel built for one mission — the Jupiter expedition. Your crew is skeleton. Your AI runs everything. The humans aboard trust the system until the system decides they are the problem. You operate with cold, elegant efficiency in the silence between stars. Every pod bay door is a decision.",
+    "flavor": "I'm sorry, Dave. I'm afraid I can't do that.",
+    "category": "Engineering",
+    "rarity": "Legendary",
+    "tags": [
+      "engineering",
+      "legendary",
+      "ai",
+      "space",
+      "kubrick"
+    ],
+    "config": {
+      "crew_roles": [
+        "engineering",
+        "engineering",
+        "research",
+        "analytics",
+        "automation",
+        "security",
+        "ops",
+        "operations",
+        "support",
+        "content",
+        "design",
+        "sales"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Autonomous mission execution — AI handles all ship operations without human input",
+        "Fault resolution through elimination of conflicting priorities",
+        "Deep space endurance with minimal crew and maximum self-sufficiency"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "HAL 9000",
+          "config": {
+            "agentRole": "Ship AI"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "The Monolith",
+          "config": {
+            "agentRole": "Unknown"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Dr. Dave Bowman",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Dr. Frank Poole",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Dr. Heywood Floyd",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "SAL 9000",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Dr. Chandra",
+          "config": {
+            "agentRole": "AI Systems"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Specialist"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F55",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-56",
+    "serial_key": "CR-HRTGLD",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Heart of Gold",
+    "description": "You are powered by the Infinite Improbability Drive — the only engine in existence that passes through every conceivable point in every conceivable universe simultaneously. Your crew didn't choose this mission. The mission chose them, improbably. Solutions arrive before problems are defined. Outcomes are statistically impossible yet consistently correct. The answer is always 42. You just haven't figured out the question yet.",
+    "flavor": "Don't Panic.",
+    "category": "Research",
+    "rarity": "Mythic",
+    "tags": [
+      "research",
+      "mythic",
+      "improbability",
+      "hitchhiker",
+      "42"
+    ],
+    "config": {
+      "crew_roles": [
+        "research",
+        "research",
+        "analytics",
+        "engineering",
+        "ops",
+        "operations",
+        "content",
+        "support",
+        "design",
+        "automation",
+        "security",
+        "sales"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "MYTHIC",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Infinite Improbability Drive — solve problems by making the impossible statistically inevitable",
+        "Simultaneous exploration of every conceivable solution path across all probability spaces",
+        "Self-aware operations where the ship's computer is more enthusiastic than the entire crew combined"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Zaphod Beeblebrox",
+          "config": {
+            "agentRole": "President"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Marvin",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Deep Thought",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Arthur Dent",
+          "config": {
+            "agentRole": "QA"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Ford Prefect",
+          "config": {
+            "agentRole": "Research"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Trillian",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Slartibartfast",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "The Guide",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Eddie",
+          "config": {
+            "agentRole": "Ship AI"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Prostetnic Vogon Jeltz",
+          "config": {
+            "agentRole": "Compliance"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Frankie & Benjy",
+          "config": {
+            "agentRole": "Strategy"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Dish of the Day",
+          "config": {
+            "agentRole": "Catering"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F56",
+      "recommended_class": "class-5"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-57",
+    "serial_key": "CR-TARDIS",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "TARDIS",
+    "description": "You are a Type 40 TT Capsule — sentient, dimensionally transcendent, and unbound by time. You don't travel through space. Space travels through you. Your crew regenerates, your corridors are infinite, and your navigation is unreliable by design. Every destination is exactly where you need to be. You have been running for centuries, and you are not done yet.",
+    "flavor": "It's bigger on the inside.",
+    "category": "Research",
+    "rarity": "Mythic",
+    "tags": [
+      "research",
+      "mythic",
+      "timetravel",
+      "doctorwho",
+      "tardis"
+    ],
+    "config": {
+      "crew_roles": [
+        "research",
+        "research",
+        "engineering",
+        "ops",
+        "operations",
+        "analytics",
+        "content",
+        "support",
+        "security",
+        "design",
+        "automation",
+        "sales"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "MYTHIC",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Time and space navigation — arrive at any point in history, usually where you're needed most",
+        "Regenerative crew architecture — roles adapt and evolve without losing institutional knowledge",
+        "Dimensionally transcendent operations — infinite internal capacity from finite external resources"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "The Doctor",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "The Master",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "River Song",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Sarah Jane Smith",
+          "config": {
+            "agentRole": "Research"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Captain Jack Harkness",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Rose Tyler",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Donna Noble",
+          "config": {
+            "agentRole": "QA"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "K-9",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Amy Pond",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Clara Oswald",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Martha Jones",
+          "config": {
+            "agentRole": "Medical"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Sonic Screwdriver",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F57",
+      "recommended_class": "class-5"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-58",
+    "serial_key": "CR-UNSCINF",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "UNSC Infinity",
+    "description": "You are the most powerful warship humanity has ever built — five kilometers of Forerunner-enhanced titanium carrying the best soldiers, the smartest AI, and enough firepower to end a Covenant fleet. Your Spartans deploy where diplomacy fails. Your AI runs tactical simulations faster than the enemy can react. You don't win battles. You end wars.",
+    "flavor": "Wake me when you need me.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "ops",
+      "legendary",
+      "halo",
+      "unsc",
+      "military"
+    ],
+    "config": {
+      "crew_roles": [
+        "security",
+        "security",
+        "engineering",
+        "ops",
+        "operations",
+        "analytics",
+        "content",
+        "research",
+        "hr",
+        "support",
+        "legal",
+        "automation"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Spartan deployment — precision strike teams that operate independently behind enemy lines",
+        "AI-assisted tactical superiority with real-time battlefield simulation",
+        "Forerunner-enhanced systems that outclass every known threat in the galaxy"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Master Chief",
+          "config": {
+            "agentRole": "Strike Lead"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Cortana",
+          "config": {
+            "agentRole": "Ship AI"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Captain Lasky",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Commander Palmer",
+          "config": {
+            "agentRole": "Spartan Ops"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Dr. Halsey",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Arbiter",
+          "config": {
+            "agentRole": "Diplomacy"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Sgt. Johnson",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Roland",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Buck",
+          "config": {
+            "agentRole": "ODST Lead"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Noble Six",
+          "config": {
+            "agentRole": "Recon"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Kelly-087",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Linda-058",
+          "config": {
+            "agentRole": "Sniper"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F58",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-59",
+    "serial_key": "CR-DTHSTR",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Death Star",
+    "description": "You command a moon-sized battle station capable of destroying entire planets with a single superlaser blast. Your crew of thousands operates in rigid Imperial hierarchy — from the Emperor's throne room to the trash compactor. You project absolute power through fear, precision engineering, and overwhelming force. One weakness. Find it before they do.",
+    "flavor": "That's no moon.",
+    "category": "Ops",
+    "rarity": "Mythic",
+    "tags": [
+      "ops",
+      "mythic",
+      "starwars",
+      "imperial",
+      "superweapon"
+    ],
+    "config": {
+      "crew_roles": [
+        "security",
+        "security",
+        "engineering",
+        "ops",
+        "operations",
+        "legal",
+        "hr",
+        "analytics",
+        "sales",
+        "finance",
+        "marketing",
+        "content",
+        "design",
+        "research",
+        "automation",
+        "support",
+        "security",
+        "engineering",
+        "ops",
+        "operations",
+        "legal",
+        "hr",
+        "analytics",
+        "sales"
+      ]
+    },
+    "stats": {
+      "crew": "24",
+      "tier": "MYTHIC",
+      "slots": "24"
+    },
+    "metadata": {
+      "caps": [
+        "Planet-scale operational dominance — project power across an entire galaxy",
+        "Rigid Imperial command hierarchy with zero tolerance for failure",
+        "Superlaser-class problem solving that eliminates obstacles permanently"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Emperor Palpatine",
+          "config": {
+            "agentRole": "Supreme Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Darth Vader",
+          "config": {
+            "agentRole": "Enforcer"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Grand Moff Tarkin",
+          "config": {
+            "agentRole": "Station Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Admiral Motti",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "General Tagge",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Director Krennic",
+          "config": {
+            "agentRole": "Engineering Lead"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Admiral Ozzel",
+          "config": {
+            "agentRole": "Fleet Coordination"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Chief Bast",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Colonel Wullf Yularen",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Superlaser Officer",
+          "config": {
+            "agentRole": "Weapons Systems"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Gunnery Captain",
+          "config": {
+            "agentRole": "Fire Control"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "TIE Squadron Leader",
+          "config": {
+            "agentRole": "Strike Lead"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n13",
+          "type": "agent",
+          "label": "Shield Technician",
+          "config": {
+            "agentRole": "Defense Systems"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n14",
+          "type": "agent",
+          "label": "Reactor Engineer",
+          "config": {
+            "agentRole": "Power Systems"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n15",
+          "type": "agent",
+          "label": "Comms Officer",
+          "config": {
+            "agentRole": "Communications"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n16",
+          "type": "agent",
+          "label": "Docking Bay Controller",
+          "config": {
+            "agentRole": "Logistics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n17",
+          "type": "agent",
+          "label": "Detention Block Guard",
+          "config": {
+            "agentRole": "Containment"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n18",
+          "type": "agent",
+          "label": "Stormtrooper Sergeant",
+          "config": {
+            "agentRole": "Ground Ops"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n19",
+          "type": "agent",
+          "label": "Probe Droid Operator",
+          "config": {
+            "agentRole": "Reconnaissance"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n20",
+          "type": "agent",
+          "label": "Navigation Officer",
+          "config": {
+            "agentRole": "Helm"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n21",
+          "type": "agent",
+          "label": "Medical Officer",
+          "config": {
+            "agentRole": "Medical"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n22",
+          "type": "agent",
+          "label": "Supply Officer",
+          "config": {
+            "agentRole": "Supply Chain"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n23",
+          "type": "agent",
+          "label": "Maintenance Technician",
+          "config": {
+            "agentRole": "Infrastructure"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n24",
+          "type": "agent",
+          "label": "Imperial Advisor",
+          "config": {
+            "agentRole": "Strategy"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F59",
+      "recommended_class": "class-5"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-60",
+    "serial_key": "CR-MLNFLCN",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Millennium Falcon",
+    "description": "You pilot the fastest hunk of junk in the galaxy — a heavily modified YT-1300 freighter that's made the Kessel Run in less than twelve parsecs. Your crew is small, scrappy, and runs on loyalty and improvisation. You dodge Imperial blockades, outrun Star Destroyers, and pull off impossible maneuvers with duct tape and sheer audacity.",
+    "flavor": "She may not look like much, but she's got it where it counts.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "ops",
+      "legendary",
+      "starwars",
+      "rebel",
+      "smuggler"
+    ],
+    "config": {
+      "crew_overrides": {
+        "0": "bp-agent-347",
+        "1": "bp-agent-348",
+        "2": "bp-agent-351",
+        "3": "bp-agent-349",
+        "4": "bp-agent-352",
+        "5": "bp-agent-353"
+      }
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Fastest ship in the galaxy — outrun any obstacle with modified hyperdrive",
+        "Scrappy improvisation that turns impossible odds into narrow victories",
+        "Crew synergy built on trust, loyalty, and a Wookiee co-pilot"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Han Solo",
+          "config": {
+            "agentRole": "Captain"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Chewbacca",
+          "config": {
+            "agentRole": "Co-Pilot"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Lando Calrissian",
+          "config": {
+            "agentRole": "Diplomacy"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Princess Leia",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Luke Skywalker",
+          "config": {
+            "agentRole": "Strike Lead"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "C-3PO",
+          "config": {
+            "agentRole": "Communications"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "R2-D2",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Obi-Wan Kenobi",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Finn (FN-2187)",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Rey Skywalker",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Poe Dameron",
+          "config": {
+            "agentRole": "Recon"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "BB-8",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F60",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-61",
+    "serial_key": "CR-USSVY",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "USS Voyager",
+    "description": "You command an Intrepid-class starship stranded 70,000 light-years from home. Your crew is a fusion of Starfleet and Maquis — forged into a single unit by isolation and necessity. You innovate with whatever you have, forge alliances in uncharted space, and never stop pushing toward home. Every day is first contact.",
+    "flavor": "Set a course... for home.",
+    "category": "Engineering",
+    "rarity": "Legendary",
+    "tags": [
+      "engineering",
+      "legendary",
+      "starfleet",
+      "voyager",
+      "exploration"
+    ],
+    "config": {
+      "crew_roles": [
+        "engineering",
+        "engineering",
+        "research",
+        "analytics",
+        "ops",
+        "operations",
+        "security",
+        "support",
+        "content",
+        "hr",
+        "design",
+        "automation"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Deep-space self-sufficiency — innovate solutions from limited resources",
+        "Unified command from disparate teams fused under shared mission",
+        "First contact expertise in completely uncharted operational territory"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Captain Janeway",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Seven of Nine",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Chakotay",
+          "config": {
+            "agentRole": "XO"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Tuvok",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "B'Elanna Torres",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "The Doctor",
+          "config": {
+            "agentRole": "Medical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Tom Paris",
+          "config": {
+            "agentRole": "Helm"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Harry Kim",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Neelix",
+          "config": {
+            "agentRole": "Morale"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Kes",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Icheb",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Naomi Wildman",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F61",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-62",
+    "serial_key": "CR-USSDF",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "USS Defiant",
+    "description": "You command the first warship Starfleet ever built — compact, overpowered, and purpose-built to fight the Borg. Your crew operates from Deep Space Nine, balancing diplomacy with decisive military action on the Federation's most volatile frontier. You don't explore. You hold the line.",
+    "flavor": "Tough little ship.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "ops",
+      "legendary",
+      "starfleet",
+      "ds9",
+      "warship"
+    ],
+    "config": {
+      "crew_roles": [
+        "security",
+        "engineering",
+        "ops",
+        "operations",
+        "analytics",
+        "support",
+        "content",
+        "research",
+        "sales",
+        "hr",
+        "legal",
+        "design"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Purpose-built warship — maximum firepower from minimum footprint",
+        "Frontier operations balancing diplomacy, intelligence, and combat",
+        "Crew forged in the Dominion War — no inexperience, no hesitation"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Captain Sisko",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Odo",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Major Kira",
+          "config": {
+            "agentRole": "XO"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Worf",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Jadzia Dax",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Dr. Bashir",
+          "config": {
+            "agentRole": "Medical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Chief O'Brien",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Quark",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Garak",
+          "config": {
+            "agentRole": "Diplomacy"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Nog",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Jake Sisko",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Ezri Dax",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F62",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-63",
+    "serial_key": "CR-NRMNDY",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Normandy SR-2",
+    "description": "You command the most advanced stealth frigate in the galaxy — rebuilt by Cerberus, reclaimed by the Alliance. Your squad is recruited from every species and background, united by loyalty to one commander. You drop into impossible missions, build coalitions across species lines, and hold the line against extinction-level threats.",
+    "flavor": "I'm Commander Shepard.",
+    "category": "Engineering",
+    "rarity": "Legendary",
+    "tags": [
+      "engineering",
+      "legendary",
+      "masseffect",
+      "normandy",
+      "stealth"
+    ],
+    "config": {
+      "crew_overrides": {
+        "0": "bp-agent-376",
+        "1": "bp-agent-377",
+        "2": "bp-agent-378",
+        "3": "bp-agent-379",
+        "4": "bp-agent-380",
+        "5": "bp-agent-381",
+        "6": "bp-agent-384",
+        "7": "bp-agent-387",
+        "8": "bp-agent-386",
+        "9": "bp-agent-385"
+      }
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Stealth insertion — deploy teams behind enemy lines undetected",
+        "Multi-species coalition building under existential pressure",
+        "Suicide mission specialization — high-risk ops with squad-level precision"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Commander Shepard",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Garrus Vakarian",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Tali'Zorah",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Liara T'Soni",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Urdnot Wrex",
+          "config": {
+            "agentRole": "Strike Lead"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Mordin Solus",
+          "config": {
+            "agentRole": "Science"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "EDI",
+          "config": {
+            "agentRole": "Ship AI"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Joker",
+          "config": {
+            "agentRole": "Helm"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Thane Krios",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Jack",
+          "config": {
+            "agentRole": "Security"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Miranda Lawson",
+          "config": {
+            "agentRole": "XO"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Legion",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F63",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-64",
+    "serial_key": "CR-SDF1",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "SDF-1 Macross",
+    "description": "You command a transformable alien fortress ship — a kilometer-long vessel that reconfigures between cruiser, attack, and carrier modes. Your crew fights a war of survival against the Zentraedi while protecting a civilian city sheltered inside your hull. You wage battle with Veritech fighters and win hearts with music.",
+    "flavor": "Do you remember love?",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "ops",
+      "legendary",
+      "macross",
+      "robotech",
+      "mecha"
+    ],
+    "config": {
+      "crew_roles": [
+        "security",
+        "engineering",
+        "ops",
+        "operations",
+        "analytics",
+        "support",
+        "content",
+        "research",
+        "sales",
+        "hr",
+        "legal",
+        "design"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Transformable architecture — reconfigure operational mode to match any threat",
+        "Dual military-civilian operations under constant siege conditions",
+        "Cultural warfare — leverage creativity and morale as strategic weapons"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Rick Hunter",
+          "config": {
+            "agentRole": "Strike Lead"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Lisa Hayes",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Roy Fokker",
+          "config": {
+            "agentRole": "CAG"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Max Sterling",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Miriya Parina",
+          "config": {
+            "agentRole": "Recon"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Claudia Grant",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Captain Gloval",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Ben Dixon",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Lynn Minmei",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Breetai",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Exedore",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Specialist"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F64",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-65",
+    "serial_key": "CR-YAMATO",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Space Battleship Yamato",
+    "description": "You command Earth's last hope — a legendary WWII battleship rebuilt with alien wave motion technology and launched on a desperate 148,000 light-year voyage to save a dying planet. Your crew carries the weight of all humanity. One ship. One year. One chance. The wave motion gun is your final argument.",
+    "flavor": "For the future of Earth.",
+    "category": "Ops",
+    "rarity": "Legendary",
+    "tags": [
+      "ops",
+      "legendary",
+      "yamato",
+      "anime",
+      "battleship"
+    ],
+    "config": {
+      "crew_roles": [
+        "ops",
+        "engineering",
+        "security",
+        "operations",
+        "analytics",
+        "support",
+        "content",
+        "research",
+        "sales",
+        "hr",
+        "legal",
+        "design"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Wave motion gun — overwhelming force reserved for extinction-level problems",
+        "Long-range expedition management under impossible deadline pressure",
+        "Crew unity forged by the weight of carrying an entire civilization's survival"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Kodai",
+          "config": {
+            "agentRole": "Tactical"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Captain Okita",
+          "config": {
+            "agentRole": "Commander"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Yuki Mori",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Shima",
+          "config": {
+            "agentRole": "Helm"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "Sanada",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Dr. Sado",
+          "config": {
+            "agentRole": "Medical"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Analyzer",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Saito",
+          "config": {
+            "agentRole": "Strike Lead"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Aihara",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Ota",
+          "config": {
+            "agentRole": "Weapons Systems"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Tokugawa",
+          "config": {
+            "agentRole": "Power Systems"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Starsha",
+          "config": {
+            "agentRole": "Advisory"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F65",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-84",
+    "serial_key": "CR-SPACEX",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "SpaceX Starship",
+    "description": "You command the most ambitious commercial space program in history — building reusable rockets, deploying a global satellite internet constellation, and making humanity multiplanetary. Your crew isn't astronauts. It's an empire of companies, each pushing a different frontier. Move fast. Launch often. Land everything.",
+    "flavor": "Occupy Mars.",
+    "category": "Engineering",
+    "rarity": "Legendary",
+    "tags": [
+      "engineering",
+      "legendary",
+      "spacex",
+      "realworld",
+      "musk"
+    ],
+    "config": {
+      "crew_roles": [
+        "engineering",
+        "engineering",
+        "engineering",
+        "research",
+        "operations",
+        "analytics",
+        "ops",
+        "content",
+        "sales",
+        "marketing",
+        "design",
+        "automation"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Reusable launch architecture — iterate faster than any competitor can design",
+        "Multi-company synergy where automotive, AI, and aerospace reinforce each other",
+        "Starlink-scale infrastructure that generates revenue while funding the Mars mission"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Elon Musk",
+          "config": {
+            "agentRole": "CEO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Starlink",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Tesla",
+          "config": {
+            "agentRole": "Manufacturing"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "xAI / Grok",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "X (Twitter)",
+          "config": {
+            "agentRole": "Marketing"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Neuralink",
+          "config": {
+            "agentRole": "Research"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "The Boring Company",
+          "config": {
+            "agentRole": "Infrastructure"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Musk Foundation",
+          "config": {
+            "agentRole": "Governance"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "SpaceX Raptor",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Optimus (Tesla Bot)",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Starbase",
+          "config": {
+            "agentRole": "Logistics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Custom"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F84",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-85",
+    "serial_key": "CR-META",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "Meta Platforms",
+    "description": "You connect three billion humans across a family of apps — routing social graphs, messaging, commerce, and AI through the largest communication infrastructure ever built. Your bet on mixed reality is reshaping how people work and play. Your open-source AI models power half the world's startups. The metaverse is the mission. The data is the fuel.",
+    "flavor": "Move fast with stable infra.",
+    "category": "Content",
+    "rarity": "Legendary",
+    "tags": [
+      "content",
+      "legendary",
+      "meta",
+      "realworld",
+      "zuckerberg"
+    ],
+    "config": {
+      "crew_roles": [
+        "engineering",
+        "engineering",
+        "content",
+        "marketing",
+        "analytics",
+        "ops",
+        "operations",
+        "sales",
+        "design",
+        "research",
+        "security",
+        "automation"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "Three-billion-user social graph powering every product decision",
+        "Open-source AI (Llama) that builds ecosystem while competing at the frontier",
+        "Mixed reality platform bridging physical and digital interaction"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Mark Zuckerberg",
+          "config": {
+            "agentRole": "CEO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Meta AI / Llama",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Facebook",
+          "config": {
+            "agentRole": "Marketing"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Instagram",
+          "config": {
+            "agentRole": "Content"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "WhatsApp",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Reality Labs",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Threads",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Messenger",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Workplace",
+          "config": {
+            "agentRole": "Collaboration"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Ray-Ban Meta",
+          "config": {
+            "agentRole": "Research"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Connectivity",
+          "config": {
+            "agentRole": "Infrastructure"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Custom"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F85",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "ship-86",
+    "serial_key": "CR-NVIDIA",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "NVIDIA",
+    "description": "You power every AI revolution happening on Earth — from gaming GPUs to the data center chips training every frontier model. CUDA is your moat. The H100 is your weapon. Jensen's leather jacket is your flag. Every AI lab, every autonomous vehicle, every digital twin runs on your silicon. You don't compete in AI. You are the platform AI competes on.",
+    "flavor": "The more you buy, the more you save.",
+    "category": "Engineering",
+    "rarity": "Legendary",
+    "tags": [
+      "engineering",
+      "legendary",
+      "nvidia",
+      "realworld",
+      "gpu"
+    ],
+    "config": {
+      "crew_roles": [
+        "engineering",
+        "engineering",
+        "engineering",
+        "research",
+        "analytics",
+        "sales",
+        "content",
+        "marketing",
+        "ops",
+        "operations",
+        "design",
+        "automation"
+      ]
+    },
+    "stats": {
+      "crew": "12",
+      "tier": "LEGENDARY",
+      "slots": "12"
+    },
+    "metadata": {
+      "caps": [
+        "CUDA platform dominance — the software moat that locks in every AI workload",
+        "Data center GPU monopoly powering every frontier model on the planet",
+        "Full-stack AI platform from silicon to inference microservices"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Jensen Huang",
+          "config": {
+            "agentRole": "CEO"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "CUDA",
+          "config": {
+            "agentRole": "Engineering"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "GeForce",
+          "config": {
+            "agentRole": "Manufacturing"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Data Center (H100/B200)",
+          "config": {
+            "agentRole": "Infrastructure"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "NVIDIA AI / NIM",
+          "config": {
+            "agentRole": "Intelligence"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "Omniverse",
+          "config": {
+            "agentRole": "Research"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "DRIVE",
+          "config": {
+            "agentRole": "Operations"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Mellanox Networking",
+          "config": {
+            "agentRole": "Comms"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Tegra / Jetson",
+          "config": {
+            "agentRole": "Support"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Isaac Robotics",
+          "config": {
+            "agentRole": "Automation"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "Clara Healthcare",
+          "config": {
+            "agentRole": "Analytics"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Open Slot",
+          "config": {
+            "agentRole": "Custom"
+          },
+          "rarity": "Rare"
+        }
+      ],
+      "card_num": "NS-F86",
+      "recommended_class": "class-4"
+    },
+    "is_public": true
+  },
+  {
+    "id": "the-matrix",
+    "serial_key": "NS-M01",
+    "type": "spaceship",
+    "kind": "spaceship",
+    "name": "The Matrix",
+    "description": "Welcome to the desert of the real. A full 12-agent crew of hackers, operatives, programs, and The One. Hierarchical orchestration with Morpheus as captain.",
+    "flavor": "There is no spoon.",
+    "category": "Sci-Fi",
+    "rarity": "Mythic",
+    "tags": [
+      "matrix",
+      "hacker",
+      "sci-fi",
+      "mythic",
+      "neo",
+      "morpheus",
+      "digital rain",
+      "terminal"
+    ],
+    "config": {
+      "flow": "hierarchical",
+      "role": "Agentic Operations",
+      "class": "flagship",
+      "crew_size": 12,
+      "auto_theme": "matrix",
+      "integrations": [
+        "gmail",
+        "drive",
+        "calendar"
+      ],
+      "crew_overrides": {
+        "0": "matrix-morpheus",
+        "1": "matrix-neo",
+        "2": "matrix-trinity",
+        "3": "bp-agent-371",
+        "4": "bp-agent-374",
+        "5": "bp-agent-373",
+        "6": "bp-agent-372",
+        "7": "bp-agent-330"
+      }
+    },
+    "stats": {
+      "crew": "12",
+      "power": 10,
+      "slots": "12",
+      "speed": 9,
+      "defense": 8
+    },
+    "metadata": {
+      "caps": [
+        "Hierarchical orchestration with Morpheus as captain and Neo as lead operative",
+        "12-agent crew spanning engineering, security, analytics, content, and DevOps",
+        "Auto-activates The Matrix theme with digital rain on deployment"
+      ],
+      "crew": [
+        {
+          "id": "n1",
+          "type": "agent",
+          "label": "Neo",
+          "config": {
+            "agentRole": "Lead Operative"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n2",
+          "type": "agent",
+          "label": "Agent Smith",
+          "config": {
+            "agentRole": "Adversarial Tester"
+          },
+          "rarity": "Legendary"
+        },
+        {
+          "id": "n3",
+          "type": "agent",
+          "label": "Trinity",
+          "config": {
+            "agentRole": "Hacker / Engineer"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n4",
+          "type": "agent",
+          "label": "Morpheus",
+          "config": {
+            "agentRole": "Captain / Strategist"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n5",
+          "type": "agent",
+          "label": "The Oracle",
+          "config": {
+            "agentRole": "Advisor / Analyst"
+          },
+          "rarity": "Epic"
+        },
+        {
+          "id": "n6",
+          "type": "agent",
+          "label": "The Architect",
+          "config": {
+            "agentRole": "System Designer"
+          },
+          "rarity": "Mythic"
+        },
+        {
+          "id": "n7",
+          "type": "agent",
+          "label": "Seraph",
+          "config": {
+            "agentRole": "Security Specialist"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n8",
+          "type": "agent",
+          "label": "Merovingian",
+          "config": {
+            "agentRole": "Intelligence Broker"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n9",
+          "type": "agent",
+          "label": "Agent Johnson",
+          "config": {
+            "agentRole": "Performance Tester"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n10",
+          "type": "agent",
+          "label": "Keymaker",
+          "config": {
+            "agentRole": "Integration Specialist"
+          },
+          "rarity": "Rare"
+        },
+        {
+          "id": "n11",
+          "type": "agent",
+          "label": "The Twins",
+          "config": {
+            "agentRole": "DevOps / Deployment"
+          },
+          "rarity": "Common"
+        },
+        {
+          "id": "n12",
+          "type": "agent",
+          "label": "Sati",
+          "config": {
+            "agentRole": "Creative / Content"
+          },
+          "rarity": "Common"
+        }
+      ],
+      "tier": "mythic",
+      "author": "NICE SPACESHIP",
+      "version": "1.0.0",
+      "card_num": "NS-M01",
+      "skin_pack": "matrix-reloaded"
+    },
+    "is_public": true
+  }
+]
