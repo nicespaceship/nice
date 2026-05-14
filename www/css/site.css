@@ -1173,6 +1173,17 @@ canvas.cta-bg { width: 100%; height: 100%; }
   .btn-primary, .btn-secondary { text-align: center; justify-content: center; width: 100%; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 4px; }
+  /* On mobile the brand col fills a full viewport so the reactor +
+     wordmark/tagline/social row act as a "hard stop" on stage-site.
+     The Product/Resources/Legal columns appear only after the user
+     scrolls past this fold. */
+  .footer-grid > .footer-col:first-child {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-bottom: 32px;
+  }
   .pricing-grid { grid-template-columns: 1fr; }
   /* Shrink brand to one line next to the theme toggle + menu button. */
   .nav-brand-text {
@@ -1472,6 +1483,14 @@ body.is-footer-visible .home-stage { opacity: 0; }
    at narrow widths. Desktop stays at 70vmin. */
 @media (max-width: 768px) {
   .home-mark-wrap { --home-mark-size: 77vmin; }
+  /* Agent-card stages (how / inside / launch) need additional room
+     for the 6 cards in the surrounding hex — bump to 95vmin so the
+     cards and reactor core read clearly on mobile. */
+  .home-mark-wrap[data-stage="how"],
+  .home-mark-wrap[data-stage="inside"],
+  .home-mark-wrap[data-stage="launch"] {
+    --home-mark-size: 95vmin;
+  }
 }
 .home-mark {
   width: 100%; height: 100%;
