@@ -77,20 +77,20 @@ const HomeStage = (() => {
     sections.forEach((s) => io.observe(s));
 
     // Fade out the fixed home-stage (HUD + schematic) once the user
-    // has scrolled deep enough into stage-site that the footer
-    // wordmark + tagline visibly overlap the HUD's center. The
-    // negative bottom rootMargin shrinks the root's bottom edge so
-    // the IO only fires when the footer top is in the upper half of
-    // the viewport, by which point the user is well past the
-    // "nicespaceship.com" landing pose and into the footer proper.
-    const footer = document.querySelector('.footer');
-    if (footer) {
+    // has scrolled past the brand "hard stop" into the link columns.
+    // The brand col is 100vh on mobile, so we observe the SECOND
+    // footer column (Product) — fires when that column enters the
+    // upper half of the viewport, by which point the user has
+    // intentionally scrolled past the reactor + wordmark landing.
+    const fadeTarget = document.querySelector('.footer-grid > .footer-col:nth-child(2)')
+      || document.querySelector('.footer');
+    if (fadeTarget) {
       const footerIO = new IntersectionObserver((entries) => {
         for (const e of entries) {
           document.body.classList.toggle('is-footer-visible', e.isIntersecting);
         }
       }, { threshold: 0, rootMargin: '0px 0px -50% 0px' });
-      footerIO.observe(footer);
+      footerIO.observe(fadeTarget);
     }
 
     // Smooth-scroll on timeline click.
