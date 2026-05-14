@@ -2681,6 +2681,15 @@ body.stage-launch   .home-stage-card-pane[data-stage="launch"] {
   display: flex; gap: 10px; flex-wrap: wrap;
   margin-top: 20px;
 }
+/* Stage-card CTA matches the .nav-cta in the open mobile menu
+   exactly — same padding, font-size, tracking, full-width stretch.
+   `display: inline-flex` re-asserts visibility on mobile where
+   `.nav-cta` is otherwise hidden until the menu is open. */
+.nav-cta.home-stop-cta {
+  display: inline-flex;
+  align-self: stretch; flex: 1;
+  justify-content: center;
+}
 
 /* Scroll cue — fixed bottom-right, anchored beneath the side
    timeline's last item ("Launch") to read as part of the rail. */
