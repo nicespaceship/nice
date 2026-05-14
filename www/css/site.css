@@ -2387,6 +2387,40 @@ body.stage-inside .home-output-icon-wrap {
   100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; }
 }
 
+/* Continuous ripple rings — kick in after the Phase 1 explosion
+   has settled (~2.5s) and loop forever. Sit behind the reactor
+   core, give the Launch stage a persistent "broadcasting" feel. */
+.home-ripple-ring {
+  position: absolute; left: 50%; top: 50%;
+  width: 100%; height: 100%;
+  border: 1px solid var(--accent2);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.35);
+  pointer-events: none;
+}
+.home-mark-wrap[data-stage="launch"] .home-ripple-ring-1 {
+  animation: home-launch-ripple 3.6s 2.5s ease-out infinite;
+}
+.home-mark-wrap[data-stage="launch"] .home-ripple-ring-2 {
+  animation: home-launch-ripple 3.6s 3.7s ease-out infinite;
+}
+.home-mark-wrap[data-stage="launch"] .home-ripple-ring-3 {
+  animation: home-launch-ripple 3.6s 4.9s ease-out infinite;
+}
+@keyframes home-launch-ripple {
+  0%   { transform: translate(-50%, -50%) scale(0.35); opacity: 0.55; }
+  80%  { opacity: 0.08; }
+  100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-mark-wrap[data-stage="launch"] .home-ripple-ring-1,
+  .home-mark-wrap[data-stage="launch"] .home-ripple-ring-2,
+  .home-mark-wrap[data-stage="launch"] .home-ripple-ring-3 {
+    animation: none;
+  }
+}
+
 /* Phase 2: data lines, particles, core-LLM cycle fade out (1.6s) */
 .home-mark-wrap[data-stage="launch"] .home-inside-lines,
 .home-mark-wrap[data-stage="launch"] .home-inside-particles,
