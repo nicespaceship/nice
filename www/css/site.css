@@ -2083,24 +2083,40 @@ body[data-theme="dark"] .invert-on-dark {
   100% { opacity: 0; }
 }
 
-/* Agent blueprint cards — 6 push out from each NICE orbit dot
-   starting at 5.5s. Each card morphs via clip-path from a tiny circle
-   to a rounded rect. SVG transform attribute keeps the card centered
-   at its slot; CSS only animates clip-path + opacity, no scale. */
+/* Agent blueprint cards — 6 burst out from the center reactor to
+   each NICE orbit dot. CSS transform overrides the SVG attribute,
+   driving both position and scale. Per-card CSS vars hold the
+   final slot coords so the keyframes can be shared. The cards sit
+   earlier in the SVG paint order than .home-mark-core, so they
+   visually emerge from BEHIND the reactor as they grow. */
 .home-agent-cards { opacity: 1; }
-.home-agent-card { opacity: 0; }
-.home-mark-wrap[data-stage="how"] .home-agent-card-1 { animation: home-card-morph 0.8s 5.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.home-mark-wrap[data-stage="how"] .home-agent-card-2 { animation: home-card-morph 0.8s 6.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.home-mark-wrap[data-stage="how"] .home-agent-card-3 { animation: home-card-morph 0.8s 6.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.home-mark-wrap[data-stage="how"] .home-agent-card-4 { animation: home-card-morph 0.8s 7.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.home-mark-wrap[data-stage="how"] .home-agent-card-5 { animation: home-card-morph 0.8s 7.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.home-mark-wrap[data-stage="how"] .home-agent-card-6 { animation: home-card-morph 0.8s 8.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.home-agent-card {
+  opacity: 0;
+  transform: translate(var(--slot-x), var(--slot-y)) scale(var(--slot-scale, 1.7));
+}
+.home-agent-card-1 { --slot-x: 2504px; --slot-y: 1022px; }
+.home-agent-card-2 { --slot-x: 3785px; --slot-y: 1766px; }
+.home-agent-card-3 { --slot-x: 3785px; --slot-y: 3255px; }
+.home-agent-card-4 { --slot-x: 2504px; --slot-y: 3981px; }
+.home-agent-card-5 { --slot-x: 1221px; --slot-y: 3255px; }
+.home-agent-card-6 { --slot-x: 1222px; --slot-y: 1758px; }
+@media (max-width: 768px) {
+  /* Smaller, uniform on mobile so the 6 cards don't crowd the
+     reactor or escape the screen. */
+  .home-agent-card { --slot-scale: 1.1; }
+}
 
-@keyframes home-card-morph {
-  0%   { opacity: 0; clip-path: inset(50% 50% 50% 50% round 50%); }
-  12%  { opacity: 1; clip-path: inset(45% 45% 45% 45% round 50%); }
-  55%  { opacity: 1; clip-path: inset(20% 35% 20% 35% round 40%); }
-  100% { opacity: 1; clip-path: inset(0% 0% 0% 0% round 7%); }
+.home-mark-wrap[data-stage="how"] .home-agent-card-1 { animation: home-card-burst 0.9s 5.5s cubic-bezier(0.34, 1.35, 0.64, 1) forwards; }
+.home-mark-wrap[data-stage="how"] .home-agent-card-2 { animation: home-card-burst 0.9s 5.7s cubic-bezier(0.34, 1.35, 0.64, 1) forwards; }
+.home-mark-wrap[data-stage="how"] .home-agent-card-3 { animation: home-card-burst 0.9s 5.9s cubic-bezier(0.34, 1.35, 0.64, 1) forwards; }
+.home-mark-wrap[data-stage="how"] .home-agent-card-4 { animation: home-card-burst 0.9s 6.1s cubic-bezier(0.34, 1.35, 0.64, 1) forwards; }
+.home-mark-wrap[data-stage="how"] .home-agent-card-5 { animation: home-card-burst 0.9s 6.3s cubic-bezier(0.34, 1.35, 0.64, 1) forwards; }
+.home-mark-wrap[data-stage="how"] .home-agent-card-6 { animation: home-card-burst 0.9s 6.5s cubic-bezier(0.34, 1.35, 0.64, 1) forwards; }
+
+@keyframes home-card-burst {
+  0%   { opacity: 0; transform: translate(2500px, 2500px) scale(0); }
+  15%  { opacity: 1; }
+  100% { opacity: 1; transform: translate(var(--slot-x), var(--slot-y)) scale(var(--slot-scale, 1.7)); }
 }
 
 /* Rarity colors for the blueprint cards */
