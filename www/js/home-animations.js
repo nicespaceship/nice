@@ -119,7 +119,7 @@ const HomeAnimations = (() => {
       const angle = baseAngle + angleJitter;
       const duration = 4 + Math.random() * 4;             // 4–8s travel
       const delay = OUTPUT_DELAY_START + Math.random() * 5; // 7.5–12.5s start
-      const size = 16 + Math.random() * 44;               // 16–60px
+      const size = 22;                                    // uniform + smaller
       wrap.style.setProperty('--angle', angle + 'deg');
       wrap.style.setProperty('--out-duration', duration + 's');
       wrap.style.setProperty('--out-delay', delay + 's');
