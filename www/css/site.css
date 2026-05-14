@@ -2103,6 +2103,24 @@ body[data-theme="dark"] .invert-on-dark {
   100% { opacity: 1; clip-path: inset(0% 0% 0% 0% round 7%); }
 }
 
+/* Mobile: cards 20% bigger on the 3 stages where they're visible.
+   CSS transform overrides the SVG `transform` attribute, so per-card
+   --slot-x / --slot-y vars hold the same coords as the attribute and
+   the scale jumps from 1.7 → 2.04. */
+@media (max-width: 768px) {
+  .home-agent-card-1 { --slot-x: 2504px; --slot-y: 1022px; }
+  .home-agent-card-2 { --slot-x: 3785px; --slot-y: 1766px; }
+  .home-agent-card-3 { --slot-x: 3785px; --slot-y: 3255px; }
+  .home-agent-card-4 { --slot-x: 2504px; --slot-y: 3981px; }
+  .home-agent-card-5 { --slot-x: 1221px; --slot-y: 3255px; }
+  .home-agent-card-6 { --slot-x: 1222px; --slot-y: 1758px; }
+  .home-mark-wrap[data-stage="how"]    .home-agent-card,
+  .home-mark-wrap[data-stage="inside"] .home-agent-card,
+  .home-mark-wrap[data-stage="launch"] .home-agent-card {
+    transform: translate(var(--slot-x), var(--slot-y)) scale(2.04);
+  }
+}
+
 /* Rarity colors for the blueprint cards */
 .home-rarity-common    { --card-stroke: #9CA3AF; --card-art:    #4B5563; }
 .home-rarity-rare      { --card-stroke: #60A5FA; --card-art:    #2563EB; }
