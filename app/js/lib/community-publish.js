@@ -79,8 +79,7 @@ const CommunityPublish = (() => {
           </div>
           <div class="auth-field">
             <label for="cp-desc">Description</label>
-            <textarea id="cp-desc" rows="4" maxlength="2000" placeholder="What does this do? When should someone use it?"
-              style="width:100%;resize:vertical;background:var(--bg-alt);border:1px solid var(--border);color:var(--text);padding:8px;font-family:var(--font-b);font-size:.82rem;border-radius:6px"></textarea>
+            <textarea id="cp-desc" rows="4" maxlength="2000" placeholder="What does this do? When should someone use it?"></textarea>
           </div>
           <div class="auth-field">
             <label for="cp-tags">Tags (comma-separated)</label>

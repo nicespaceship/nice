@@ -115,7 +115,7 @@ const SpaceshipBuilderView = (() => {
             <div class="builder-row">
               <div class="auth-field" style="grid-column:1/-1">
                 <label for="sb-desc">Description</label>
-                <textarea id="sb-desc" rows="2" placeholder="What does this spaceship do?" style="width:100%;resize:vertical;background:var(--bg-alt);border:1px solid var(--border);color:var(--text);padding:8px;font-family:var(--font-b);font-size:.82rem">${_esc(ship?.description || ship?.desc || '')}</textarea>
+                <textarea id="sb-desc" rows="2" placeholder="What does this spaceship do?">${_esc(ship?.description || ship?.desc || '')}</textarea>
               </div>
               <div class="auth-field">
                 <label for="sb-flavor">Tagline</label>

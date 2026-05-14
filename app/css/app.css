@@ -2524,13 +2524,22 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   font-family:var(--font-b); font-size:.58rem; letter-spacing:var(--tracking-caps);
   color:var(--text-muted); text-transform:uppercase;
 }
-.auth-field input {
+.auth-field input, .auth-field textarea {
   padding:10px 12px; background:var(--surface); border:var(--border-width) solid var(--border);
   color:var(--text); font-family:var(--font-b); font-size:.82rem;
   border-radius:var(--radius); transition:border-color .2s;
 }
-.auth-field input:focus { outline:none; border-color:var(--accent); }
-.auth-field input::placeholder { color:var(--text-dim); }
+.auth-field textarea { resize:vertical; }
+.auth-field input:focus, .auth-field textarea:focus { outline:none; border-color:var(--accent); }
+.auth-field input::placeholder, .auth-field textarea::placeholder { color:var(--text-dim); }
+
+/* Read-only key-display inputs in the agent/spaceship share modals.
+   Was a triple-duplicated inline style blob across agents.js + spaceships.js. */
+.share-key-input {
+  flex:1; padding:8px; background:var(--bg-alt); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--text); font-family:var(--font-m);
+  font-size:.7rem; cursor:text;
+}
 
 .auth-remember {
   display:flex; align-items:center; gap:8px; cursor:pointer;
@@ -10080,22 +10089,21 @@ body.preview-active .nice-ai {
 
 /* ─────────────────────────────────────────────────────────────────
    iOS Safari auto-zoom prevention
-   Safari zooms when a focused input's computed font-size is below 16px
+   Safari zooms when a focused field's computed font-size is below 16px
    and never zooms back. Floor every text-entry control at 16px on
-   mobile. Checkbox/radio/range/color/file have no text and are exempt.
-   Pinch-zoom remains available.
+   mobile. Checkbox/radio/range/color/file have no editable text and
+   are exempt; `data-allow-zoom` is an explicit per-element opt-out
+   (the prompt-bar model select uses it). Pinch-zoom stays available.
 
-   Placed LAST in the file deliberately: many component rules
-   (`.cd-textarea`, `.cd-agent-edit textarea`, etc.) set sub-16px
-   font-sizes that would win on equal specificity. The compound
-   `:not()` chain on the input selector and the `:not([data-allow-zoom])`
-   guard on textarea/select also raise specificity above class-level
-   rules that would otherwise win.
+   Placed LAST in the file deliberately. Grouping the three element
+   types inside :is() lets the :not() chain apply its specificity to
+   all of them, lifting the selector to (0,6,1) — above the per-theme
+   font-size overrides (16-bit, pixel font) that reach (0,3,1) on
+   textareas and selects and would otherwise win. Inline font-size
+   styles still beat this rule; those are removed at the source.
 ───────────────────────────────────────────────────────────────── */
 @media (max-width:768px) {
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
-  textarea:not([data-allow-zoom]),
-  select:not([data-allow-zoom]) {
+  :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-allow-zoom]) {
     font-size:16px;
   }
 }
