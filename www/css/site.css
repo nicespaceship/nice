@@ -2240,6 +2240,17 @@ body.stage-inside .home-card-cascade {
 @keyframes home-inside-line-extend {
   to { stroke-dashoffset: 0; }
 }
+/* Mobile: the two vertical lines (1st = top, 4th = bottom) butt
+   straight into the cards because they hit a flat edge (not a
+   rounded corner like the diagonals). Override dasharray so the
+   visible stroke stops well short of the card edge, matching the
+   visual gap the diagonals get from the rounded corner radius. */
+@media (max-width: 768px) {
+  .home-inside-line:nth-child(1),
+  .home-inside-line:nth-child(4) {
+    stroke-dasharray: 430 900;
+  }
+}
 
 /* Inside particles travel along each line from core → card. */
 .home-inside-particle {
