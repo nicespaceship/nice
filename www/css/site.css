@@ -2827,3 +2827,17 @@ body:not(.stage-intro) .home-scroll-hint { opacity: 0; pointer-events: none; }
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   iOS SAFARI AUTO-ZOOM PREVENTION
+   Safari zooms the page when a focused field's computed font-size is
+   below 16px and never zooms back. Floor every text-entry control at
+   16px on mobile. Mirrors the rule in app/css/app.css so the marketing
+   site and the app behave identically. Checkbox/radio/range/color/file
+   have no editable text and are exempt; pinch-zoom stays available.
+═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-allow-zoom]) {
+    font-size: 16px;
+  }
+}
+
