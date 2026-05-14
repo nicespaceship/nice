@@ -1472,6 +1472,14 @@ body.is-footer-visible .home-stage { opacity: 0; }
    at narrow widths. Desktop stays at 70vmin. */
 @media (max-width: 768px) {
   .home-mark-wrap { --home-mark-size: 77vmin; }
+  /* Agent-card stages (how / inside / launch) need additional room
+     for the 6 cards in the surrounding hex — bump to 95vmin so the
+     cards and reactor core read clearly on mobile. */
+  .home-mark-wrap[data-stage="how"],
+  .home-mark-wrap[data-stage="inside"],
+  .home-mark-wrap[data-stage="launch"] {
+    --home-mark-size: 95vmin;
+  }
 }
 .home-mark {
   width: 100%; height: 100%;
