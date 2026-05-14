@@ -2124,6 +2124,25 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(4) .sch-slot-card { animation-delay:-3s; }
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(5) .sch-slot-card { animation-delay:-0.5s; }
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(6) .sch-slot-card { animation-delay:-2.5s; }
+
+/* ── Schematic skeleton — post-reset hydration placeholder ── */
+.schematic-skeleton { pointer-events:none; }
+/* Skeleton slot card keeps the .sch-slot-card footprint + border but
+   drops the float so the state reads as "filling in", not "alive". */
+.sch-slot-card-skeleton { animation:none; gap:5px; }
+.sch-sk {
+  background:var(--border);
+  border-radius:4px;
+  animation:sch-sk-pulse 1.4s ease-in-out infinite;
+}
+.sch-sk-line { display:block; }
+.sch-sk-role { width:58%; height:5px; }
+.sch-sk-name { width:84%; height:9px; }
+.sch-sk-cap  { width:46%; height:5px; }
+.sch-sk-avatar { grid-column:2; width:36px; height:36px; border-radius:50%; }
+@keyframes sch-sk-pulse { 0%, 100% { opacity:.3; } 50% { opacity:.65; } }
+@media (prefers-reduced-motion:reduce) { .sch-sk { animation:none; opacity:.45; } }
+
 /* Mobile three-layer row: capability line below role + name */
 .schematic-row-cap {
   font-family:var(--font-b);
