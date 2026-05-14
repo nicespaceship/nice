@@ -2566,6 +2566,16 @@ body.stage-inside .home-output-icon-wrap {
     left: 50%;
     transform: translateX(-50%);
   }
+  /* Touch devices briefly fire :hover on tap. With the desktop rule
+     showing labels on hover, the old label fades out (0.25s) while
+     the new is-active label fades in — they overlap. Disable the
+     hover trigger on mobile so only the active label is ever shown. */
+  .home-timeline-item:hover .home-timeline-label {
+    opacity: 0;
+  }
+  .home-timeline-item.is-active .home-timeline-label {
+    opacity: 1;
+  }
 }
 
 /* Stops — full-viewport sections, content reveals on scroll. */
