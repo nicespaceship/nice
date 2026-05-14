@@ -75,14 +75,14 @@ const AgentsView = (() => {
             <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
               <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:8px">Soul Key &mdash; share the blueprint DNA</label>
               <div style="display:flex;gap:8px">
-                <input type="text" id="share-soul-key" readonly style="flex:1;font-family:var(--font-m);font-size:.7rem;padding:8px;background:var(--bg-alt);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:text" />
+                <input type="text" id="share-soul-key" class="share-key-input" readonly />
                 <button class="btn btn-sm" id="share-soul-copy" title="Copy Soul Key" style="white-space:nowrap">Copy</button>
               </div>
             </div>
             <div style="border-top:1px solid var(--border);margin:16px 0;padding-top:16px">
               <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:8px">Share Link &mdash; anyone with the link can import (expires 30 days)</label>
               <div style="display:flex;gap:8px">
-                <input type="text" id="share-link-url" readonly placeholder="Click Generate to create a share link" style="flex:1;font-family:var(--font-m);font-size:.7rem;padding:8px;background:var(--bg-alt);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:text" />
+                <input type="text" id="share-link-url" class="share-key-input" readonly placeholder="Click Generate to create a share link" />
                 <button class="btn btn-sm" id="share-link-gen" style="white-space:nowrap">Generate</button>
                 <button class="btn btn-sm" id="share-link-copy" title="Copy Link" style="white-space:nowrap;display:none">Copy</button>
               </div>
@@ -103,7 +103,7 @@ const AgentsView = (() => {
           <div class="modal-body">
             <div class="auth-field">
               <label for="import-soul-input">Paste a Soul Key to reconstruct an agent blueprint</label>
-              <input type="text" id="import-soul-input" placeholder="NICE-SK-..." style="font-family:var(--font-m);font-size:.75rem" />
+              <input type="text" id="import-soul-input" placeholder="NICE-SK-..." style="font-family:var(--font-m)" />
             </div>
             <div id="import-soul-preview" style="display:none;margin:12px 0;padding:12px;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;font-size:.8rem"></div>
             <div class="auth-error" id="import-soul-error"></div>

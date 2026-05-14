@@ -2424,8 +2424,7 @@ const BlueprintsView = (() => {
           </div>
           <div class="auth-field">
             <label for="bp-report-details">Details (optional)</label>
-            <textarea id="bp-report-details" rows="3" maxlength="1000"
-              style="width:100%;resize:vertical;background:var(--bg-alt);border:1px solid var(--border);color:var(--text);padding:8px;font-family:var(--font-b);font-size:.82rem;border-radius:6px"></textarea>
+            <textarea id="bp-report-details" rows="3" maxlength="1000"></textarea>
           </div>
           <div class="auth-error" id="bp-report-error"></div>
           <button class="auth-submit" id="bp-report-submit">Submit report</button>

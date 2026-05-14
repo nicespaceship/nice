@@ -328,7 +328,7 @@ const SetupWizard = (() => {
             <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first mission</p>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your crew${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
             <div style="display:flex;gap:8px;align-items:center">
-              <input type="text" id="wiz-first-mission" value="${_esc(firstMissionPrompt)}" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;font-family:var(--font-b)" />
+              <input type="text" id="wiz-first-mission" class="wizard-input" value="${_esc(firstMissionPrompt)}" style="flex:1" />
               <button class="btn btn-sm btn-primary" id="wiz-run-mission" style="white-space:nowrap">Run</button>
             </div>
           </div>

@@ -110,7 +110,7 @@ const SpaceshipsView = (() => {
             <div style="margin-bottom:12px">
               <label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:8px">Spaceship Key &mdash; share the spaceship blueprint DNA</label>
               <div style="display:flex;gap:8px">
-                <input type="text" id="share-ship-key" readonly style="flex:1;font-family:var(--font-m);font-size:.7rem;padding:8px;background:var(--bg-alt);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:text" />
+                <input type="text" id="share-ship-key" class="share-key-input" readonly />
                 <button class="btn btn-sm" id="share-ship-copy" title="Copy Spaceship Key" style="white-space:nowrap">Copy</button>
               </div>
             </div>
@@ -130,7 +130,7 @@ const SpaceshipsView = (() => {
           <div class="modal-body">
             <div class="auth-field">
               <label for="import-ship-input">Paste a Spaceship Key to reconstruct a spaceship blueprint</label>
-              <input type="text" id="import-ship-input" placeholder="NICE-ShK-..." style="font-family:var(--font-m);font-size:.75rem" />
+              <input type="text" id="import-ship-input" placeholder="NICE-ShK-..." style="font-family:var(--font-m)" />
             </div>
             <div id="import-ship-preview" style="display:none;margin:12px 0;padding:12px;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;font-size:.8rem"></div>
             <div class="auth-error" id="import-ship-error"></div>
