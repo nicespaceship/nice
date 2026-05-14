@@ -1863,10 +1863,13 @@ body.stage-intro .home-schematic-bg {
 .home-mark-wrap[data-stage="platform"] .home-mark-core path:nth-child(2) {
   animation: home-core-rgb-cycle 3.5s linear 2.4s infinite;
 }
+/* `fill` recolor only — the per-keyframe drop-shadow that used to ride
+   along here was the last animated Safari blur (see #482). Safari
+   recomputes the 8px blur every frame on this continuous cycle. */
 @keyframes home-core-rgb-cycle {
-  0%, 100% { fill: #ff3a3a; filter: drop-shadow(0 0 8px rgba(255, 58, 58, 0.85)); }
-  33%      { fill: #3aff5b; filter: drop-shadow(0 0 8px rgba(58, 255, 91, 0.85)); }
-  66%      { fill: #3a7bff; filter: drop-shadow(0 0 8px rgba(58, 123, 255, 0.85)); }
+  0%, 100% { fill: #ff3a3a; }
+  33%      { fill: #3aff5b; }
+  66%      { fill: #3a7bff; }
 }
 @keyframes home-ring-breath {
   0%, 100% { transform: scale(1); }
