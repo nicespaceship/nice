@@ -2380,7 +2380,10 @@ body.stage-inside .home-card-cascade { opacity: 1; }
 }
 .home-output-icon-wrap {
   position: absolute;
-  left: 50%; top: 50%;
+  /* Align with the reactor core (which lives inside .home-mark-wrap
+     with `transform: translateY(-12vh)`) so emojis emerge from the
+     reactor's literal center, not viewport center. */
+  left: 50%; top: calc(50% - 12vh);
   opacity: 0;
   pointer-events: none;
   line-height: 1;
@@ -2397,8 +2400,12 @@ body.stage-inside .home-output-icon-wrap {
   animation-delay: var(--out-delay, 7.5s);
 }
 @keyframes home-output-flow-out {
-  0%   { transform: rotate(var(--angle)) translateY(-9vmin);  opacity: 0; }
-  12%  { opacity: 1; }
+  /* Emoji starts at translateY(0) = reactor center (hidden behind
+     the reactor since .home-output-icons paints before .home-stage
+     in the DOM). Fades in once it has emerged past the reactor's
+     edge (~22% of the flight), then fades out at the viewport edge. */
+  0%   { transform: rotate(var(--angle)) translateY(0);       opacity: 0; }
+  22%  { opacity: 1; }
   82%  { opacity: 1; }
   100% { transform: rotate(var(--angle)) translateY(-90vmax); opacity: 0; }
 }
