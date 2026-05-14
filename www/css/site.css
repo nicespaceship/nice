@@ -1496,8 +1496,10 @@ body.is-footer-visible .home-stage { opacity: 0; }
   width: 100%; height: 100%;
   fill: var(--text);
   transform-origin: 50% 50%;
-  filter: drop-shadow(0 0 80px rgba(15,82,186,0.10));
-  transition: opacity 0.7s, filter 0.7s;
+  transition: opacity 0.7s;
+  /* 80px drop-shadow at 0.10 opacity was the single biggest paint
+     cost on Safari — barely visible, but recomputed every frame
+     during the constellation spin. Dropped. */
 }
 .home-mark > g { transform-origin: 2500px 2500px; }
 
@@ -1636,9 +1638,13 @@ body[data-theme="dark"] {
   stroke-width: 70;
   stroke-linecap: butt;
   stroke-dasharray: 2810 803;
-  filter: drop-shadow(0 0 26px var(--hud-arc-glow));
   transform-origin: 2500px 2500px;
   animation: home-hud-arc-spin 22s linear infinite;
+  /* `will-change: transform` promotes the spinning arcs to their own
+     compositor layer so Safari can rotate without repainting. The
+     drop-shadow that used to live here was the perf killer — Safari
+     recomputes the blur every animation frame on SVG strokes. */
+  will-change: transform;
 }
 @keyframes home-hud-arc-spin {
   from { transform: rotate(0deg); }
@@ -1665,7 +1671,6 @@ body[data-theme="dark"] {
    loop immediately since the constellation is already visible. */
 .home-mark-wrap[data-stage="intro"] .home-mark-orbit,
 .home-mark-wrap[data-stage="site"]  .home-mark-orbit {
-  filter: drop-shadow(0 0 18px var(--hud-arc-glow));
   transform-origin: 2500px 2500px;
 }
 .home-mark-wrap[data-stage="intro"] .home-mark-orbit {
@@ -1678,7 +1683,6 @@ body[data-theme="dark"] {
 .home-mark-wrap[data-stage="intro"] .home-mark-chevrons,
 .home-mark-wrap[data-stage="site"]  .home-mark-pillars,
 .home-mark-wrap[data-stage="site"]  .home-mark-chevrons {
-  filter: drop-shadow(0 0 10px var(--hud-arc-glow));
   transform-origin: 2500px 2500px;
 }
 .home-mark-wrap[data-stage="intro"] .home-mark-pillars,
@@ -1691,7 +1695,6 @@ body[data-theme="dark"] {
 }
 .home-mark-wrap[data-stage="intro"] .home-mark-core,
 .home-mark-wrap[data-stage="site"]  .home-mark-core {
-  filter: drop-shadow(0 0 22px var(--hud-arc-glow));
   transform-origin: 2500px 2500px;
 }
 .home-mark-wrap[data-stage="intro"] .home-mark-core {
