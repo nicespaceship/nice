@@ -1173,16 +1173,16 @@ canvas.cta-bg { width: 100%; height: 100%; }
   .btn-primary, .btn-secondary { text-align: center; justify-content: center; width: 100%; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 4px; }
-  /* On mobile the brand col fills a full viewport so the reactor +
-     wordmark/tagline/social row act as a "hard stop" on stage-site.
-     The Product/Resources/Legal columns appear only after the user
-     scrolls past this fold. */
+  /* On mobile the brand col is 42vh tall with content bottom-aligned,
+     so when stage-site lands the reactor + wordmark/tagline/social
+     row sit together in a single viewport. The Product/Resources/
+     Legal columns only appear after the user scrolls past this fold. */
   .footer-grid > .footer-col:first-child {
-    min-height: 100vh;
+    min-height: 42vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding-bottom: 32px;
+    padding-bottom: 24px;
   }
   .pricing-grid { grid-template-columns: 1fr; }
   /* Shrink brand to one line next to the theme toggle + menu button. */
