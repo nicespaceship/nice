@@ -35,13 +35,14 @@ const Blueprints = (() => {
     ships:  'nice-bp-activated-ships',
     shipState: 'nice-ship-state',
     uuidMap: 'nice-bp-uuid-map',
-    // Bumped to v4 in #377 (2026-05-04 catalog clean-slate reset:
-    // Common purge → Rare/Epic ships purge, two waves in one PR).
-    // The diff-sync path can only add/update rows, not detect deletes,
-    // so any mass delete leaves stale entries in any client cache
-    // forever. Bumping the cache key is the only way to mass-invalidate.
-    catalogCache: 'nice-bp-catalog-v4',
-    catalogCacheTs: 'nice-bp-catalog-v4-ts',
+    // Bumped to v5 in the 2026-05-14 catalog rebuild (Phase 1: the
+    // fictional 489 character agents + 24 ships were wiped, leaving the
+    // 20 capability umbrellas). The diff-sync path can only add/update
+    // rows, not detect deletes, so any mass delete leaves stale entries
+    // in any client cache forever. Bumping the cache key is the only way
+    // to mass-invalidate.
+    catalogCache: 'nice-bp-catalog-v5',
+    catalogCacheTs: 'nice-bp-catalog-v5-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -57,6 +58,8 @@ const Blueprints = (() => {
     try { localStorage.removeItem('nice-bp-catalog-v2-ts'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v3'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v3-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v4'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v4-ts'); } catch {}
 
     _loadSeeds();
     _loadActivationState();
