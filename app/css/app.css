@@ -2125,6 +2125,50 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(5) .sch-slot-card { animation-delay:-0.5s; }
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(6) .sch-slot-card { animation-delay:-2.5s; }
 
+/* ── Locked slots — rank-gated, visible but not actionable ──
+   Surfaces the growth ladder: the user sees every slot the ship will
+   ever have, with the rank gate inline on the card itself. */
+.schematic-card-locked { opacity:.45; cursor:default; }
+.schematic-card-locked .sch-slot-card { animation:none; pointer-events:none; }
+.schematic-wired .schematic-card-slot.schematic-card-locked:hover .sch-slot-card { box-shadow:none; }
+.sch-slot-card-locked {
+  border-color:var(--text-muted);
+  border-style:dashed;
+  background:transparent;
+}
+.sch-slot-card-locked .sch-slot-role { color:var(--text-muted); opacity:.7; }
+.sch-slot-name-locked {
+  color:var(--text-muted);
+  font-weight:var(--fw-medium);
+  font-style:italic;
+  display:flex; align-items:center; justify-content:center; gap:3px;
+}
+.sch-slot-lock-glyph { display:inline-flex; align-items:center; color:var(--text-muted); }
+.sch-slot-card-locked .sch-slot-cap {
+  font-style:italic;
+  opacity:.7;
+}
+
+/* Mobile stack row — locked variant */
+.schematic-stack-row-locked {
+  opacity:.5;
+  cursor:default;
+  pointer-events:none;
+}
+.schematic-stack-row-locked .schematic-row-avatar {
+  background:transparent;
+  border:1px dashed var(--text-muted);
+  color:var(--text-muted);
+}
+.schematic-stack-row-locked .schematic-row-name {
+  font-style:italic;
+  color:var(--text-muted);
+}
+.schematic-stack-row-locked .schematic-row-cap {
+  font-style:italic;
+  opacity:.85;
+}
+
 /* ── Schematic skeleton — post-reset hydration placeholder ── */
 .schematic-skeleton { pointer-events:none; }
 /* Skeleton slot card keeps the .sch-slot-card footprint + border but
@@ -7532,6 +7576,21 @@ html[data-theme] .nice-ai-input:focus-visible {
 .ship-wizard-agent-name { font-weight:var(--fw-medium); color:var(--text); }
 .ship-wizard-agent-role { font-size:.75rem; color:var(--text-muted); }
 .ship-wizard-slot-empty { color:var(--text-muted); font-style:italic; }
+.ship-wizard-slot-locked {
+  border-style:dashed;
+  opacity:.65;
+  background:transparent;
+}
+.ship-wizard-slot-locked .ship-wizard-slot-label { color:var(--text-muted); }
+.ship-wizard-slot-lock {
+  display:inline-block;
+  padding:6px 10px;
+  font-size:.78rem;
+  color:var(--text-muted);
+  font-style:italic;
+  width:100%;
+  text-align:right;
+}
 /* ── Class Selection Grid ── */
 .ship-wizard-class-grid {
   display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px;

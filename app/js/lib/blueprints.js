@@ -566,6 +566,7 @@ const Blueprints = (() => {
           role: s.role_type || null,
           slot: zeroIndexed,
           agent_id: s.default_agent_id || null,
+          min_class: s.min_class || 'class-1',
         };
       });
     return {
@@ -663,7 +664,7 @@ const Blueprints = (() => {
           .select('*, capability:capabilities(*), role:roles(*)')
           .in('id', uuidIds),
         c.from('spaceship_blueprints')
-          .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label)')
+          .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label, min_class)')
           .in('id', uuidIds),
       ]);
 
@@ -849,7 +850,7 @@ const Blueprints = (() => {
     );
     const shCall = applySince(
       c.from('spaceship_blueprints')
-        .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label)')
+        .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label, min_class)')
         .eq('visibility', 'public')
         .order('name', { ascending: true })
     );

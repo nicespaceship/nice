@@ -153,6 +153,26 @@ const ShipSetupWizard = (() => {
     return crew.slice(0, _getSlotCount());
   }
 
+  /** Whether a slot is locked behind a class gate the current user has
+      not reached. Locked slots stay visible in the wizard so the user
+      sees the growth ladder, but are never auto-assigned, never
+      auto-created on deploy, and never persisted to user_ship_slots. */
+  function _isSlotLocked(slot) {
+    if (!slot || !slot.min_class) return false;
+    if (typeof Gamification === 'undefined' || !Gamification.isClassUnlocked) return false;
+    return !Gamification.isClassUnlocked(slot.min_class);
+  }
+
+  function _unlockRankName(minClass) {
+    if (!minClass) return '';
+    if (minClass === 'class-5') return 'NICE Pro';
+    if (typeof Gamification !== 'undefined' && Gamification.getFirstRankForClass) {
+      const r = Gamification.getFirstRankForClass(minClass);
+      if (r && r.name) return r.name;
+    }
+    return minClass;
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      STEP 0 — Name Your Spaceship
   ═══════════════════════════════════════════════════════════════ */
@@ -197,13 +217,18 @@ const ShipSetupWizard = (() => {
   function _renderStepAgents(body, actions) {
     const sc = _getShipClass();
     const slotCount = sc.slots?.length || 0;
+    const unlockedCount = (sc.slots || []).filter(s => !_isSlotLocked(s)).length;
+    const lockedCount = slotCount - unlockedCount;
     const displayName = _data.shipName || _blueprint.name;
     const crew = _getCrewDefs();
     const hasCrewDefs = crew.length > 0;
+    const slotCopy = lockedCount > 0
+      ? `Fill ${unlockedCount} of ${slotCount} agent slots on <strong>${_esc(displayName)}</strong> (${lockedCount} unlock as you rank up)`
+      : `Fill ${slotCount} agent slots on <strong>${_esc(displayName)}</strong>`;
 
     body.innerHTML = `
       <h2 class="wizard-title">Assign Your Agents</h2>
-      <p class="wizard-subtitle">Fill ${slotCount} agent slots on <strong>${_esc(displayName)}</strong></p>
+      <p class="wizard-subtitle">${slotCopy}</p>
       <div class="ship-wizard-mode-cards">
         <div class="ship-wizard-mode-card${_data.agentMode === 'auto' ? ' selected' : ''}" data-mode="auto">
           <div class="ship-wizard-mode-icon">&#10022;</div>
@@ -262,9 +287,31 @@ const ShipSetupWizard = (() => {
     const agents = _getAgentCatalog();
     const crew = _getCrewDefs();
 
+    // Count unlocked / locked separately so the activation copy reads true.
+    const totalSlots = sc.slots.length;
+    const unlockedSlots = sc.slots.filter(s => !_isSlotLocked(s));
+    const lockedCount = totalSlots - unlockedSlots.length;
+
     let html = '<div class="ship-wizard-slots">';
     for (let i = 0; i < sc.slots.length; i++) {
       const slot = sc.slots[i];
+
+      if (_isSlotLocked(slot)) {
+        // Surface the locked slot inline so the growth ladder is visible
+        // from the wizard, but no dropdown — the slot can't be assigned
+        // until the user reaches the gating rank.
+        const rankName = _unlockRankName(slot.min_class);
+        html += `<div class="ship-wizard-slot ship-wizard-slot-locked">
+          <div class="ship-wizard-slot-info">
+            <span class="ship-wizard-slot-label">${_esc(slot.label)}</span>
+          </div>
+          <div class="ship-wizard-slot-select">
+            <span class="ship-wizard-slot-lock">Unlocks at ${_esc(rankName)}</span>
+          </div>
+        </div>`;
+        continue;
+      }
+
       // Ship rarity = max agent rarity the ship can accept
       const shipRarity = _blueprint.rarity || 'Common';
       const compatible = agents
@@ -301,9 +348,12 @@ const ShipSetupWizard = (() => {
     html += '</div>';
 
     const filledCount = Object.values(_data.slotAssignments).filter(Boolean).length;
-    const unfilled = sc.slots.length - filledCount;
+    const unfilled = unlockedSlots.length - filledCount;
     if (unfilled > 0) {
       html += `<div class="ship-wizard-analysis" style="margin-top:8px"><em>${unfilled} unfilled slot${unfilled > 1 ? 's' : ''} will be auto-created on deploy.</em></div>`;
+    }
+    if (lockedCount > 0) {
+      html += `<div class="ship-wizard-analysis" style="margin-top:4px"><em>${lockedCount} more slot${lockedCount > 1 ? 's' : ''} unlock as you rank up.</em></div>`;
     }
 
     container.innerHTML = html;
@@ -325,8 +375,10 @@ const ShipSetupWizard = (() => {
     const crew = _getCrewDefs();
 
     // Use blueprint crew first (e.g. Picard, Riker, Worf for Enterprise; Neo, Trinity for The Matrix)
+    // Skip locked slots — they can't be assigned at the user's current rank.
     if (crew.length > 0) {
       for (let i = 0; i < sc.slots.length; i++) {
+        if (_isSlotLocked(sc.slots[i])) continue;
         const member = crew[i];
         if (member) {
           _data.slotAssignments[i] = `__new__${member.label || member.name || 'Agent ' + (i + 1)}`;
@@ -376,6 +428,7 @@ const ShipSetupWizard = (() => {
       );
       for (let i = 0; i < sc.slots.length; i++) {
         if (_data.slotAssignments[i]) continue;
+        if (_isSlotLocked(sc.slots[i])) continue;
         if (next[i]) _data.slotAssignments[i] = next[i];
       }
       return;
@@ -388,6 +441,7 @@ const ShipSetupWizard = (() => {
 
     for (let i = 0; i < sc.slots.length; i++) {
       if (_data.slotAssignments[i]) continue;
+      if (_isSlotLocked(sc.slots[i])) continue;
 
       const slot = sc.slots[i];
       const label = (slot.label || '').toLowerCase();
@@ -448,11 +502,17 @@ const ShipSetupWizard = (() => {
         })
         .join(', ');
 
+      const unlockedTotal = sc.slots.filter(s => !_isSlotLocked(s)).length;
+      const lockedTotal = sc.slots.length - unlockedTotal;
+      const lockNote = lockedTotal > 0
+        ? `<p class="wizard-subtitle">${lockedTotal} more station${lockedTotal > 1 ? 's' : ''} unlock as you rank up.</p>`
+        : '';
       body.innerHTML = `
         <div class="wizard-success">
           <div class="wizard-success-icon"><svg width="48" height="48" viewBox="0 0 1240.37 1240.21" fill="currentColor"><path d="M962.08,762.91c-3.6,3.81-23,22.39-23.4,25.12s1.65,9.46,1.81,12.8c6.2,134.27-22.47,251.36-96.57,363.41-10.14,15.32-44.07,64.4-57.7,72.3-10.64,6.16-17.08,4.1-26.74-2.68l-205.91-206.08-2.61-1.47c-13.79,3.14-27.33,7.97-41.2,10.78-12.14,2.46-39.23,7.32-50.52,5.02-5.43-1.11-8.8-8.83-13.02-7.63-56.83,48.42-130.21,76.33-203.49,88.59-23.32,3.9-79.67,11.72-100.43,4.99-28.92-9.37-32.15-31.74-31.74-58.17,1.36-87.99,28.47-185.28,80.14-256.85,2.24-3.1,15.39-18.18,15.71-19.38.7-2.69-7.89-8.08-8.8-14.88-1.33-9.98,3.07-34.86,5.18-45.64,2.91-14.86,7.64-29.47,11.6-44.06L6.97,481.35c-6.58-10.16-9.77-14.46-3.86-25.92,4.89-9.48,28.96-27.24,38.49-34.51,113.03-86.2,243.65-127.64,386.44-121.64,5.01.21,23.34,2.94,26.44,1.52,117.49-117.68,260.78-215.29,420.81-265.18,95.99-29.93,217.05-45.19,316.54-29.13,13.03,2.1,32.43,2.67,37.16,16.84,5.97,17.89,9.64,56.02,10.55,75.45,12,255.12-107.2,483.74-277.46,664.12ZM842.3,261.63c-101.28,8.13-152.88,125.4-90.22,205.62,56.08,71.8,169.37,61.28,211.94-18.9,46.73-88.01-22.45-194.69-121.72-186.72ZM276.84,862.98c-1.02-.92-3.11-5.35-5.37-4.22-.87.43-8.43,11.31-9.79,13.25-32.97,47.21-49,105.67-56.19,162.31,1.77,1.77,42.17-6.13,48.04-7.46,31.2-7.03,64.74-18.77,92.63-34.37,4.52-2.53,34.5-21.3,35.27-23.8.34-1.12-.09-2.12-.89-2.92-35.52-32.96-67.86-70.35-103.71-102.79Z"/></svg></div>
           <h2 class="wizard-title">${_esc(_data.shipName || _blueprint.name)} is Deployed!</h2>
-          <p class="wizard-subtitle">${filledCount} of ${sc.slots.length} agent stations filled.</p>
+          <p class="wizard-subtitle">${filledCount} of ${unlockedTotal} agent stations filled.</p>
+          ${lockNote}
           ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned!</p>' : ''}
           <div class="ship-wizard-analysis">
             <strong>Agents:</strong> ${_esc(agentNames)}<br>
@@ -608,9 +668,12 @@ const ShipSetupWizard = (() => {
         }
       }
 
-      // Auto-create agents for unfilled slots
+      // Auto-create agents for unfilled slots — skip locked slots so the
+      // user_ship_slots / user_agents rows only cover what the user can
+      // actually access at their current rank.
       for (let i = 0; i < sc.slots.length; i++) {
         if (_data.slotAssignments[i]) continue;
+        if (_isSlotLocked(sc.slots[i])) continue;
         const slot = sc.slots[i];
         const crewMember = crew[i];
         const agentName = crewMember?.label || `${slot.label} Agent`;
@@ -807,5 +870,5 @@ const ShipSetupWizard = (() => {
     return agent;
   }
 
-  return { open, close, _persistSlotAgent };
+  return { open, close, _persistSlotAgent, _isSlotLocked, _unlockRankName };
 })();

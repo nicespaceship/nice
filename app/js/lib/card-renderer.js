@@ -85,12 +85,28 @@ const CardRenderer = (() => {
     </svg>`;
   }
 
-  /* ── Slot Diagram Art (spaceship cards) ── */
-  function slotDiagramArt(classId, serial) {
+  /* ── Slot Diagram Art (spaceship cards) ──
+     Renders the ship's slot constellation. When `opts.slots` is supplied
+     (each slot { min_class, max?, maxRarity? }), the diagram shows every
+     slot the ship defines and dims/locks the ones above the viewer's
+     current class so the growth ladder is visible from rank 1. Without
+     `opts.slots` the function falls back to the synthetic class layout
+     (used for catalog-card art before crew data has loaded). */
+  function slotDiagramArt(classId, serial, opts) {
+    opts = opts || {};
     const cls = SHIP_CLASSES[classId] || SHIP_CLASSES['class-1'];
-    const slots = cls.slots;
+    const liveSlots = Array.isArray(opts.slots) && opts.slots.length ? opts.slots : null;
+    const slots = liveSlots || cls.slots;
     const n = slots.length;
     if (!serial) serial = serialHash(classId, 12);
+
+    // Tests + early-boot renders (before Gamification has loaded) treat
+    // every slot as unlocked so the visual is never broken in those
+    // environments. Live UI hits the real comparator.
+    const _gam = typeof Gamification !== 'undefined' ? Gamification : null;
+    const userRank = _gam && _gam.getCurrentClass ? _gam.getClassRank(_gam.getCurrentClass().id || 'class-1') : 99;
+    const slotRank = (s) => _gam && _gam.getClassRank ? _gam.getClassRank(s && s.min_class) : 0;
+    const isLocked = (s) => slotRank(s) > userRank;
 
     const cx = 100, cy = 60;
     const positions = n === 2
@@ -115,6 +131,7 @@ const CardRenderer = (() => {
     const dotColors = ['#f43f5e','#f97316','#eab308','#22c55e','#14b8a6','#06b6d4',
                        '#3b82f6','#6366f1','#a855f7','#ec4899','#84cc16','#fb923c'];
     const localOrbitR = 18;
+    const LOCKED_COLOR = '#475569';
 
     let svg = `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
       <line x1="10" y1="20" x2="190" y2="20" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
@@ -134,11 +151,16 @@ const CardRenderer = (() => {
     conns.forEach(pair => {
       const a = positions[pair[0]], b = positions[pair[1]];
       if (!a || !b) return;
-      svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#3b82f6" stroke-width="0.6" opacity="0.1"/>`;
+      // Connections fade when either endpoint is locked, so the unlocked
+      // half of the ship reads as the "alive" graph and the locked half
+      // as the future expansion.
+      const dimmed = isLocked(slots[pair[0]]) || isLocked(slots[pair[1]]);
+      svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#3b82f6" stroke-width="0.6" opacity="${dimmed ? 0.04 : 0.1}"/>`;
     });
 
-    positions.forEach(p => {
-      svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#3b82f6" stroke-width="0.8" opacity="0.12"/>`;
+    positions.forEach((p, i) => {
+      const dimmed = isLocked(slots[i]);
+      svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#3b82f6" stroke-width="0.8" opacity="${dimmed ? 0.05 : 0.12}"/>`;
     });
 
     // Cap slot rendering to the number of available positions (class-3 has
@@ -147,15 +169,27 @@ const CardRenderer = (() => {
 
     renderSlots.forEach((slot, i) => {
       const p = positions[i];
-      const color = SLOT_COLORS[slot.max] || '#6366f1';
+      const locked = isLocked(slot);
+      const color = locked ? LOCKED_COLOR : (SLOT_COLORS[slot.max || slot.maxRarity] || '#6366f1');
       const r = 14;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r + 3}" fill="${color}" opacity="0.12"/>`;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>`;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${color}" opacity="0.06"/>`;
-      svg += `<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="12" font-weight="300" opacity="0.6">+</text>`;
+      const ringOpacity = locked ? 0.35 : 0.7;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r + 3}" fill="${color}" opacity="${locked ? 0.05 : 0.12}"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="none" stroke="${color}" stroke-width="${locked ? 1 : 1.5}" stroke-dasharray="${locked ? '2,3' : '5,3'}" opacity="${ringOpacity}"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${color}" opacity="${locked ? 0.03 : 0.06}"/>`;
+      if (locked) {
+        // Lock glyph — small padlock centered on the slot.
+        const lx = p.x - 4, ly = p.y - 4;
+        svg += `<g transform="translate(${lx},${ly})" fill="${color}" stroke="${color}" stroke-width="0.6" opacity="0.85">` +
+                 `<rect x="0" y="3.5" width="8" height="5" rx="0.8"/>` +
+                 `<path d="M2,3.5 L2,2 a2,2 0 0,1 4,0 L6,3.5" fill="none"/>` +
+               `</g>`;
+      } else {
+        svg += `<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="12" font-weight="300" opacity="0.6">+</text>`;
+      }
     });
 
     renderSlots.forEach((slot, i) => {
+      if (isLocked(slot)) return; // No orbital motion on locked slots.
       const p = positions[i];
       const spd = serial.speeds[i] || 0;
       const dur = 20 - (spd * 1.5);
@@ -169,6 +203,9 @@ const CardRenderer = (() => {
     conns.forEach((pair, ci) => {
       const a = positions[pair[0]], b = positions[pair[1]];
       if (!a || !b) return;
+      // Skip travel particles for edges that touch a locked slot — the
+      // path is "asleep" until that side wakes up.
+      if (isLocked(slots[pair[0]]) || isLocked(slots[pair[1]])) return;
       const spd = travelSpeeds[ci % travelSpeeds.length] || 3;
       const dur = 6 + (9 - spd) * 1.2;
       const dotR = 1.2 + (spd * 0.08);
@@ -335,8 +372,13 @@ const CardRenderer = (() => {
     const badgeStyle = `style="color:${rarityColor};border:1px solid ${rarityColor}"`;
 
     // ── Art ──
+    // Live ship slots drive the diagram length + per-slot lock state.
+    // Fall back to the synthetic class layout for ships with no crew
+    // data yet (custom builds before slots are wired).
+    const shipSlots = isShip ? BlueprintUtils.getCrewDefs(bp) : null;
+    const slotOpts = (shipSlots && shipSlots.length) ? { slots: shipSlots } : undefined;
     const artContent = isShip
-      ? (_isSpecialShip(bp) ? slotDiagramArt(classId, serial) : slotDiagramArt('slot-6', serial))
+      ? (_isSpecialShip(bp) ? slotDiagramArt(classId, serial, slotOpts) : slotDiagramArt('slot-6', serial, slotOpts))
       : avatarArt(bp.name, bp.category || bp.role, serial);
 
     // ── ONE template ──
@@ -394,7 +436,9 @@ const CardRenderer = (() => {
       const shipRarityColor = SLOT_COLORS[shipRarity] || '#94a3b8';
       const serial = serialHash(data.id || data.name, 12);
       const artClassId = _isSpecialShip(data) ? _deriveClassId(data) : 'slot-6';
-      art = slotDiagramArt(artClassId, serial);
+      const shipSlots = BlueprintUtils.getCrewDefs(data);
+      const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
+      art = slotDiagramArt(artClassId, serial, slotOpts);
       badgeHTML = `<span class="blueprint-card-grid-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-bp-id="${data.id}"`;
     }
@@ -456,7 +500,9 @@ const CardRenderer = (() => {
       const shipRarityColor = SLOT_COLORS[shipRarity] || '#94a3b8';
       const serial = serialHash(data.id || data.name, 12);
       const artClassId = _isSpecialShip(data) ? _deriveClassId(data) : 'slot-6';
-      art = slotDiagramArt(artClassId, serial);
+      const shipSlots = BlueprintUtils.getCrewDefs(data);
+      const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
+      art = slotDiagramArt(artClassId, serial, slotOpts);
       badgeHTML = `<span class="blueprint-card-compact-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-status="${data.status || ''}"`;
 
@@ -521,7 +567,9 @@ const CardRenderer = (() => {
       badgeLabel = shipRarity;
       const serial = serialHash(data.id || data.name, 12);
       const artClassId = _isSpecialShip(data) ? _deriveClassId(data) : 'slot-6';
-      art = slotDiagramArt(artClassId, serial);
+      const shipSlots = BlueprintUtils.getCrewDefs(data);
+      const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
+      art = slotDiagramArt(artClassId, serial, slotOpts);
     }
 
     return `<div class="blueprint-card-mini${assigned}" ${dataAttrs}${draggable} style="border-color:${badgeColor}">

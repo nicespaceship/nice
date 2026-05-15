@@ -178,7 +178,9 @@ const SchematicView = (() => {
     // Mobile ladder rows. Tap the action button OR an empty row → open
     // the swap bottom sheet (in-place agent assignment, no route change).
     // Tap a filled row body → open the agent's blueprint drawer.
+    // Locked rows are inert — they explain the rank gate but accept no clicks.
     el.querySelectorAll('.schematic-stack-row').forEach(row => {
+      if (row.dataset.locked === 'true') return;
       row.addEventListener('click', (e) => {
         const action = e.target.closest('.schematic-row-action');
         const slotId = row.dataset.slotId;
@@ -225,11 +227,15 @@ const SchematicView = (() => {
 
     function _miniCard(c, side) {
       const bp = c.bp;
+      const locked = _isSlotLocked(c.slot);
       const status = bp ? _agentStatus(bp.id) : 'idle';
       const filled = !!bp;
-      const cls = 'schematic-card-slot schematic-card-' + side + (filled ? '' : ' schematic-card-empty');
+      const cls = 'schematic-card-slot schematic-card-' + side +
+        (filled ? '' : ' schematic-card-empty') +
+        (locked ? ' schematic-card-locked' : '');
       return '<div class="' + cls + '" data-slot-idx="' + c.index + '"' +
-        (filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '') +
+        (filled && !locked ? ' data-bp-id="' + _esc(bp.id) + '"' : '') +
+        (locked ? ' data-locked="true"' : '') +
         ' data-status="' + status + '">' +
         _renderSlotCard(bp, c.slot) +
         '<span class="schematic-card-node" aria-hidden="true"></span>' +
@@ -490,26 +496,36 @@ const SchematicView = (() => {
       const bpId = slotMap[String(slot.id)] || null;
       const bp = bpId ? _resolveBp(bpId) : null;
       const filled = !!bp;
-      const name = filled ? (bp.name || 'Agent') : 'Empty';
+      const locked = _isSlotLocked(slot);
+      const name = locked ? 'Locked' : (filled ? (bp.name || 'Agent') : 'Empty');
       const rarity = filled ? _getBpRarity(bp) : (slot.maxRarity || 'Common');
-      const rarityColor = RC[rarity] || 'var(--text-muted)';
-      const initial = filled ? (bp.name || '?').charAt(0).toUpperCase() : '+';
+      const rarityColor = locked ? 'var(--text-muted)' : (RC[rarity] || 'var(--text-muted)');
       const roleLabel = _roleLabel(slot.label || ('Slot ' + (i + 1)));
-      const cap = filled ? _capabilityLabel(bp) : null;
-      const dataBp = filled ? ' data-bp-id="' + _esc(bp.id) + '"' : '';
+      const cap = locked
+        ? 'Unlocks at ' + _unlockRankName(slot.min_class)
+        : (filled ? _capabilityLabel(bp) : null);
+      const dataBp = filled && !locked ? ' data-bp-id="' + _esc(bp.id) + '"' : '';
+      const dataLocked = locked ? ' data-locked="true"' : '';
       const status = _agentStatus(filled ? bp.id : null);
-      const cls = 'schematic-stack-row' + (filled ? ' schematic-stack-row-filled' : ' schematic-stack-row-empty');
-      return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + _esc(slot.id) + '" data-status="' + status + '"' + dataBp + ' style="--row-tint:' + rarityColor + '">' +
+      let cls = 'schematic-stack-row';
+      if (locked) cls += ' schematic-stack-row-locked';
+      else if (filled) cls += ' schematic-stack-row-filled';
+      else cls += ' schematic-stack-row-empty';
+      const lockGlyph = '<svg viewBox="0 0 12 14" width="11" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="6" width="9" height="7" rx="1"/><path d="M3.5 6V4a2.5 2.5 0 0 1 5 0v2"/></svg>';
+      const avatarContent = locked ? lockGlyph : _esc(filled ? (bp.name || '?').charAt(0).toUpperCase() : '+');
+      return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + _esc(slot.id) + '" data-status="' + status + '"' + dataBp + dataLocked + ' style="--row-tint:' + rarityColor + '">' +
         '<span class="schematic-row-node" aria-hidden="true"></span>' +
-        '<span class="schematic-row-avatar">' + _esc(initial) + '</span>' +
+        '<span class="schematic-row-avatar">' + avatarContent + '</span>' +
         '<div class="schematic-row-info">' +
           '<div class="schematic-row-role">' + _esc(roleLabel) + '</div>' +
           '<div class="schematic-row-name">' + _esc(name) + '</div>' +
           (cap ? '<div class="schematic-row-cap">' + _esc(cap) + '</div>' : '') +
         '</div>' +
-        '<button class="schematic-row-action" type="button" aria-label="' + (filled ? 'Manage' : 'Assign agent') + '" data-slot-id="' + _esc(slot.id) + '">' +
-          (filled ? '⋯' : '+') +
-        '</button>' +
+        (locked
+          ? ''
+          : '<button class="schematic-row-action" type="button" aria-label="' + (filled ? 'Manage' : 'Assign agent') + '" data-slot-id="' + _esc(slot.id) + '">' +
+              (filled ? '⋯' : '+') +
+            '</button>') +
       '</li>';
     }).join('');
 
@@ -757,6 +773,19 @@ const SchematicView = (() => {
     const cap   = _capabilityLabel(bp);
     const name  = bp ? (bp.name || 'Agent') : null;
     const isStub = bp && !cap; // agent assigned but no live MCP tools
+    if (_isSlotLocked(slot)) {
+      const rankName = _unlockRankName(slot.min_class);
+      return '<div class="sch-slot-card sch-slot-card-locked" title="Unlocks at ' + _esc(rankName) + '">' +
+        '<div class="sch-slot-role">' + _esc(role) + '</div>' +
+        '<div class="sch-slot-name sch-slot-name-locked"><span class="sch-slot-lock-glyph" aria-hidden="true">' +
+          '<svg viewBox="0 0 12 14" width="11" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+            '<rect x="1.5" y="6" width="9" height="7" rx="1"/>' +
+            '<path d="M3.5 6V4a2.5 2.5 0 0 1 5 0v2"/>' +
+          '</svg>' +
+        '</span>Locked</div>' +
+        '<div class="sch-slot-cap">Unlocks at ' + _esc(rankName) + '</div>' +
+      '</div>';
+    }
     if (bp) {
       return '<div class="sch-slot-card' + (isStub ? ' sch-slot-card-stub' : '') + '">' +
         '<div class="sch-slot-role">' + _esc(role) + '</div>' +
@@ -771,6 +800,22 @@ const SchematicView = (() => {
       '<div class="sch-slot-name sch-slot-name-empty">Empty</div>' +
       '<div class="sch-slot-cap">Assign agent</div>' +
     '</div>';
+  }
+
+  function _isSlotLocked(slot) {
+    if (!slot || !slot.min_class) return false;
+    if (typeof Gamification === 'undefined' || !Gamification.isClassUnlocked) return false;
+    return !Gamification.isClassUnlocked(slot.min_class);
+  }
+
+  function _unlockRankName(minClass) {
+    if (!minClass) return '';
+    if (minClass === 'class-5') return 'NICE Pro';
+    if (typeof Gamification !== 'undefined' && Gamification.getFirstRankForClass) {
+      const r = Gamification.getFirstRankForClass(minClass);
+      if (r && r.name) return r.name;
+    }
+    return minClass;
   }
 
   function _getAvailableAgents(slotMap) {
