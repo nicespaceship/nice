@@ -135,3 +135,42 @@ describe('ShipSetupWizard._persistSlotAgent', () => {
     globalThis.SB = _origSB;
   });
 });
+
+describe('ShipSetupWizard._isSlotLocked / _unlockRankName', () => {
+  // Slot lock state is driven by `slot.min_class` vs the user's current
+  // class. The wizard uses these helpers to skip dropdown rendering,
+  // auto-assignment, and on-deploy agent creation for rank-gated slots.
+  beforeEach(() => {
+    globalThis.localStorage.clear();
+    globalThis.State._reset();
+  });
+
+  it('slots without min_class are never locked', () => {
+    expect(ShipSetupWizard._isSlotLocked({ id: 0, label: 'Captain' })).toBe(false);
+    expect(ShipSetupWizard._isSlotLocked(null)).toBe(false);
+  });
+
+  it('class-1 slots are open to every user', () => {
+    expect(ShipSetupWizard._isSlotLocked({ min_class: 'class-1' })).toBe(false);
+  });
+
+  it('class-2+ slots are locked for an Ensign (0 XP)', () => {
+    expect(ShipSetupWizard._isSlotLocked({ min_class: 'class-2' })).toBe(true);
+    expect(ShipSetupWizard._isSlotLocked({ min_class: 'class-3' })).toBe(true);
+    expect(ShipSetupWizard._isSlotLocked({ min_class: 'class-4' })).toBe(true);
+  });
+
+  it('Lieutenant rank (25K XP) unlocks class-2 but not class-3', () => {
+    globalThis.localStorage.setItem('nice-xp', '25000');
+    expect(ShipSetupWizard._isSlotLocked({ min_class: 'class-2' })).toBe(false);
+    expect(ShipSetupWizard._isSlotLocked({ min_class: 'class-3' })).toBe(true);
+  });
+
+  it('_unlockRankName resolves the gating rank name for user-facing copy', () => {
+    expect(ShipSetupWizard._unlockRankName('class-2')).toBe('Lieutenant');
+    expect(ShipSetupWizard._unlockRankName('class-3')).toBe('Commander');
+    expect(ShipSetupWizard._unlockRankName('class-4')).toBe('Captain');
+    // class-5 is subscription-only — surface the product name.
+    expect(ShipSetupWizard._unlockRankName('class-5')).toBe('NICE Pro');
+  });
+});

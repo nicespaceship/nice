@@ -89,6 +89,53 @@ describe('Gamification', () => {
     });
   });
 
+  describe('Class Gating (slot min_class)', () => {
+    it('getClassRank maps class-1..class-5 onto 1..5', () => {
+      expect(Gamification.getClassRank('class-1')).toBe(1);
+      expect(Gamification.getClassRank('class-2')).toBe(2);
+      expect(Gamification.getClassRank('class-3')).toBe(3);
+      expect(Gamification.getClassRank('class-4')).toBe(4);
+      expect(Gamification.getClassRank('class-5')).toBe(5);
+    });
+
+    it('getClassRank returns 0 for unknown ids so gates never accidentally open', () => {
+      expect(Gamification.getClassRank('class-99')).toBe(0);
+      expect(Gamification.getClassRank('')).toBe(0);
+      expect(Gamification.getClassRank(undefined)).toBe(0);
+    });
+
+    it('isClassUnlocked: class-1 gate is always open', () => {
+      expect(Gamification.isClassUnlocked('class-1')).toBe(true);
+      expect(Gamification.isClassUnlocked(null)).toBe(true);
+    });
+
+    it('isClassUnlocked: free user at 0 XP cannot unlock class-2..5', () => {
+      // setup.js does not load Subscription, so we are class-1 by default.
+      expect(Gamification.isClassUnlocked('class-2')).toBe(false);
+      expect(Gamification.isClassUnlocked('class-3')).toBe(false);
+      expect(Gamification.isClassUnlocked('class-4')).toBe(false);
+      expect(Gamification.isClassUnlocked('class-5')).toBe(false);
+    });
+
+    it('isClassUnlocked: rank-up at 25K XP unlocks class-2 (Lieutenant)', () => {
+      Gamification.addXP('create_agent');
+      // Force XP to Lieutenant threshold by writing the stored key directly —
+      // mirrors how the live system updates state without retriggering XP logic.
+      localStorage.setItem('nice-xp', '25000');
+      expect(Gamification.isClassUnlocked('class-2')).toBe(true);
+      expect(Gamification.isClassUnlocked('class-3')).toBe(false);
+    });
+
+    it('getFirstRankForClass: returns the earliest rank granting each class', () => {
+      expect(Gamification.getFirstRankForClass('class-1').name).toBe('Ensign');
+      expect(Gamification.getFirstRankForClass('class-2').name).toBe('Lieutenant');
+      expect(Gamification.getFirstRankForClass('class-3').name).toBe('Commander');
+      expect(Gamification.getFirstRankForClass('class-4').name).toBe('Captain');
+      // class-5 is subscription-only; no rank grants it.
+      expect(Gamification.getFirstRankForClass('class-5')).toBeNull();
+    });
+  });
+
   describe('Slot Progression', () => {
     it('RANKS all have 6 slots — slot count is sub-based, not rank-based', () => {
       // Every rank now grants 6 slots — Pro subscription (handled in

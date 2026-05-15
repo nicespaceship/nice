@@ -220,6 +220,29 @@ const Gamification = (() => {
     return SPACESHIP_CLASSES.find(function(c) { return c.id === classId; }) || SPACESHIP_CLASSES[0];
   }
 
+  /** Numeric ordering for class ids so callers can do >=/< comparisons.
+      Unknown ids map to 0 so they never satisfy a real `min_class` gate. */
+  var _CLASS_RANK = { 'class-1': 1, 'class-2': 2, 'class-3': 3, 'class-4': 4, 'class-5': 5 };
+  function getClassRank(classId) {
+    return _CLASS_RANK[classId] || 0;
+  }
+
+  /** Whether the current user has unlocked content gated by `targetClassId`.
+      Pro (class-5) beats every gating value; class-1 gates are always open. */
+  function isClassUnlocked(targetClassId) {
+    if (!targetClassId || targetClassId === 'class-1') return true;
+    return getClassRank(getCurrentClass().id) >= getClassRank(targetClassId);
+  }
+
+  /** Earliest rank that grants the given class (so we can surface
+      "Unlocks at Lieutenant" instead of "class-2"). class-5 has no
+      rank that grants it — Pro subscription only — so callers receive
+      null and should fall back to subscription copy. */
+  function getFirstRankForClass(classId) {
+    if (!classId) return null;
+    return RANKS.find(function(r) { return r.classId === classId; }) || null;
+  }
+
   /** Slot count is purely subscription-based: Free = 6, Pro = 12.
       Rank no longer scales slots — that's only a rarity gate now. */
   function getMaxSlots() {
@@ -878,7 +901,7 @@ const Gamification = (() => {
     getUnlockedAchievements, unlockAchievement, checkAchievements, renderAchievementGallery,
     getResources, renderResourceBar,
     formatLogEntry, _toStardate,
-    calcAgentRarity, canSlotAccept, isRarityUnlocked, getCurrentClass, getSpaceshipClass, getMaxSlots, getSlotTemplate, renderRarityBadge,
+    calcAgentRarity, canSlotAccept, isRarityUnlocked, getCurrentClass, getClassRank, isClassUnlocked, getFirstRankForClass, getSpaceshipClass, getMaxSlots, getSlotTemplate, renderRarityBadge,
     getStreak, getStreakMultiplier,
     getMissionXP, addMissionXP,
     recordAgentMission, getAgentStats, checkAgentMilestone, getAgentProgression,
