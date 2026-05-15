@@ -171,10 +171,20 @@ const AgentExecutor = (() => {
       let capabilityTools = null;
       const capId = agentBlueprint && agentBlueprint.config && agentBlueprint.config.capability_id;
       if (capId && typeof Blueprints !== 'undefined' && Blueprints.isReady()) {
-        const resolveCap = typeof Blueprints.getCapability === 'function'
-          ? Blueprints.getCapability
-          : Blueprints.getAgent;
-        const cap = (typeof resolveCap === 'function') ? resolveCap(capId) : null;
+        // Try strict capability first (kind='capability'); fall through to
+        // getAgent which also returns character-kind umbrellas (HubSpot/
+        // GitHub/Slack agents). Slot defaults wired via ship_slots.
+        // default_agent_id point at characters, so the strict-only resolver
+        // returned null and dropped the auto-created agent into the
+        // all-MCPs fallback (Path 3) — exactly what Path 2 was meant to
+        // prevent.
+        let cap = null;
+        if (typeof Blueprints.getCapability === 'function') {
+          cap = Blueprints.getCapability(capId);
+        }
+        if (!cap && typeof Blueprints.getAgent === 'function') {
+          cap = Blueprints.getAgent(capId);
+        }
         const capTools = cap && cap.config && cap.config.tools;
         if (Array.isArray(capTools)) capabilityTools = capTools.filter(Boolean);
       }
