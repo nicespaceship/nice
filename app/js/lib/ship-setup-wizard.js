@@ -628,7 +628,17 @@ const ShipSetupWizard = (() => {
             // back at the right node inside _blueprint.metadata.crew on read.
             const crewSlotIdx = Object.entries(_data.slotAssignments).find(([, v]) => v === aid)?.[0];
             const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${crewSlotIdx}` : null;
-            const baseCfg = crewMember?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] };
+            // New-schema slots expose `agent_id` (the wired umbrella from
+            // ship_slots.default_agent_id). Wire it as `capability_id` so the
+            // runtime tool resolver inherits the umbrella's tools via Path 2
+            // in agent-executor._buildExecContext. Without this, auto-created
+            // slot agents ship with config.tools = [] and Path 1 short-circuits
+            // to "no tools available" regardless of seed wiring.
+            const defaultUmbrellaId = crewMember?.agent_id || null;
+            const baseCfg = crewMember?.config
+              || (defaultUmbrellaId
+                    ? { role: agentName, type: 'Agent', llm_engine: 'claude-4', capability_id: defaultUmbrellaId }
+                    : { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] });
             let newAgent = {
               id: `agent-${Date.now()}-${i}`,
               name: agentName,
@@ -678,7 +688,14 @@ const ShipSetupWizard = (() => {
         const crewMember = crew[i];
         const agentName = crewMember?.label || `${slot.label} Agent`;
         const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${i}` : null;
-        const baseCfg = crewMember?.config || { role: slot.label, type: 'Agent', llm_engine: 'claude-4', tools: [] };
+        // See the __new__ branch above — slot.default_agent_id surfaces here
+        // as crewMember.agent_id and must wire to capability_id so the runtime
+        // tool resolver inherits the umbrella's tools.
+        const defaultUmbrellaId = crewMember?.agent_id || null;
+        const baseCfg = crewMember?.config
+          || (defaultUmbrellaId
+                ? { role: slot.label, type: 'Agent', llm_engine: 'claude-4', capability_id: defaultUmbrellaId }
+                : { role: slot.label, type: 'Agent', llm_engine: 'claude-4', tools: [] });
         let newAgent = {
           id: `agent-${Date.now()}-auto-${i}`,
           name: agentName,
