@@ -2515,6 +2515,11 @@ const NICE = (() => {
     _updateHeaderUser();
     State.on('user', _updateHeaderUser);
 
+    // Role vocabulary (SSOT for role → required capability tags).
+    // Boots from `public.roles`; SEED fallback already populated
+    // synchronously inside the module so sync getters never see null.
+    if (typeof Roles !== 'undefined') Roles.init();
+
     // Blueprint store (loads seeds immediately, fetches DB in background)
     if (typeof Blueprints !== 'undefined') Blueprints.init();
 

@@ -52,9 +52,11 @@ globalThis.Blueprints = { isReady: () => false, getAgent: () => null };
 globalThis.LLMConfig = { forBlueprint: () => ({ model: 'mock', temperature: 0.7 }) };
 
 // Load ShipLog first (dependency), then WorkflowEngine (DAG path),
-// then MissionRunner which consults both at runtime.
+// then Roles (role → required_capability_tags SSOT), then
+// MissionRunner which consults all three at runtime.
 loadModule('lib/ship-log.js');
 loadModule('lib/workflow-engine.js');
+loadModule('lib/roles.js');
 loadModule('lib/mission-runner.js');
 
 describe('MissionRunner', () => {
@@ -605,12 +607,11 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       expect(MissionRunner._resolveByCapability('mythical-role', [agent])).toBeNull();
     });
 
-    it('exports _ROLE_REQUIRED_CAPS with the canonical role vocabulary', () => {
-      const map = MissionRunner._ROLE_REQUIRED_CAPS;
-      expect(map.communications).toContain('email');
-      expect(map.engineering).toContain('code');
-      expect(map.sales).toContain('crm');
-      expect(map.captain).toEqual([]);
+    it('exposes the canonical role vocabulary via Roles', () => {
+      expect(Roles.getRequiredTags('communications')).toContain('email');
+      expect(Roles.getRequiredTags('engineering')).toContain('code');
+      expect(Roles.getRequiredTags('sales')).toContain('crm');
+      expect(Roles.getRequiredTags('captain')).toEqual([]);
     });
 
     it('prefers kind=capability over kind=character when both match', () => {
