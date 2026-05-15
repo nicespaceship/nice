@@ -5,7 +5,31 @@
    and the legacy `user_spaceships.slots` column are both retired.
 
    Row shape:
-     id, user_spaceship_id, slot_index, user_agent_id, role_type, created_at
+     id, user_spaceship_id, slot_position, user_agent_id, role_type, created_at
+
+   ── Slot numbering convention (intermediate scaffolding) ─────────────
+   The DB stores `slot_position` as a 1-indexed integer (CHECK >= 1).
+   That matches what users read in the UI: "Slot 1" = `slot_position = 1`.
+
+   The JS layer is still on the 0-indexed convention (loop counters,
+   `crew[].slot` field, `slot_assignments` JSONB keys, synthetic
+   `shipClass.slots` `id` field, etc.). Migrating every consumer in one
+   PR was unsafe — too many sites for atomic correctness.
+
+   So this module does the +1 / -1 translation at the IO boundary:
+     • writes: `slot_position = jsKey + 1`
+     • reads:  `jsKey = slot_position - 1`
+
+   This is *intermediate* scaffolding (Branch by Abstraction). Follow-up
+   PRs will incrementally migrate each consumer surface (wizard,
+   crew-generator, spaceships view, synthetic shipClass.slots, etc.) to
+   the 1-indexed convention. Once every consumer is migrated, this
+   translation will be removed and the API surface will speak
+   slot_position directly — the system collapses to a single 1-indexed
+   convention end-to-end.
+
+   While the scaffolding is in place: callers of this module pass and
+   receive 0-indexed JS keys. They do not need to know the DB is 1-indexed.
 
    Authorization: RLS on the table cross-checks the parent `user_spaceships`
    via EXISTS, so an unscoped SELECT only returns the caller's slots.
@@ -24,6 +48,8 @@ const ShipSlots = (() => {
    * @param {string[]} userSpaceshipIds
    * @returns {Promise<Record<string, Record<number, string|null>>>}
    *   keyed by `user_spaceship_id`, value is `{ slotIndex: userAgentId|null }`
+   *   where `slotIndex` is 0-indexed (translated from the DB's 1-indexed
+   *   `slot_position`).
    */
   async function fetchForShips(userSpaceshipIds) {
     if (!_canSync()) return {};
@@ -31,7 +57,7 @@ const ShipSlots = (() => {
     try {
       const { data, error } = await SB.client
         .from('user_ship_slots')
-        .select('user_spaceship_id, slot_index, user_agent_id')
+        .select('user_spaceship_id, slot_position, user_agent_id')
         .in('user_spaceship_id', userSpaceshipIds);
       if (error) {
         console.warn('[ShipSlots] fetchForShips failed:', error.message);
@@ -40,7 +66,9 @@ const ShipSlots = (() => {
       const out = {};
       for (const row of data || []) {
         if (!out[row.user_spaceship_id]) out[row.user_spaceship_id] = {};
-        out[row.user_spaceship_id][row.slot_index] = row.user_agent_id || null;
+        // DB is 1-indexed; expose 0-indexed keys to JS callers.
+        const jsIdx = (row.slot_position != null) ? (row.slot_position - 1) : 0;
+        out[row.user_spaceship_id][jsIdx] = row.user_agent_id || null;
       }
       return out;
     } catch (err) {
@@ -52,6 +80,7 @@ const ShipSlots = (() => {
   /**
    * Fetch slot rows for one ship.
    * @returns {Promise<Record<number, string|null>>}
+   *   `{ slotIndex: userAgentId|null }`, 0-indexed keys.
    */
   async function getForShip(userSpaceshipId) {
     if (!userSpaceshipId) return {};
@@ -61,18 +90,18 @@ const ShipSlots = (() => {
 
   /**
    * Replace ALL slot rows for one ship with the given assignments. Empty
-   * slots (null `user_agent_id`) keep their row so the slot index space
-   * stays dense — readers can count rows to derive slot count for custom
-   * ships. Pass an empty map to clear all slots.
+   * slots (null `user_agent_id`) keep their row so the slot space stays
+   * dense — readers can count rows to derive slot count for custom ships.
+   * Pass an empty map to clear all slots.
    *
    * Roles default to `null` unless `opts.roleMap` provides them. The
    * column stays loose-typed today (see C.1 migration notes); future
    * builder UIs will populate it via the same opts.
    *
    * @param {string} userSpaceshipId
-   * @param {Record<number, string|null>} assignments
+   * @param {Record<number, string|null>} assignments  Keys are 0-indexed JS slot indices.
    * @param {Object} [opts]
-   * @param {Record<number, string|null>} [opts.roleMap]
+   * @param {Record<number, string|null>} [opts.roleMap]  Optional role per slot index.
    * @returns {Promise<boolean>}
    */
   async function setForShip(userSpaceshipId, assignments, opts) {
@@ -80,9 +109,9 @@ const ShipSlots = (() => {
     const roleMap = (opts && opts.roleMap) || {};
     const c = SB.client;
 
-    // Replace-all semantics. UNIQUE (user_spaceship_id, slot_index) makes
+    // Replace-all semantics. UNIQUE (user_spaceship_id, slot_position) makes
     // delete-then-insert the safest cut — partial upserts on a sparse map
-    // would leave stale rows for slot indices the new map doesn't mention.
+    // would leave stale rows for slot positions the new map doesn't mention.
     try {
       const { error: delErr } = await c
         .from('user_ship_slots')
@@ -103,7 +132,8 @@ const ShipSlots = (() => {
       if (Number.isNaN(slotIdx)) continue;
       rows.push({
         user_spaceship_id: userSpaceshipId,
-        slot_index: slotIdx,
+        // JS callers pass 0-indexed; DB enforces 1-indexed (CHECK >= 1).
+        slot_position: slotIdx + 1,
         user_agent_id: agentId || null,
         role_type: roleMap[slotIdx] || roleMap[slotIdxStr] || null,
       });
@@ -127,7 +157,7 @@ const ShipSlots = (() => {
   /**
    * Upsert one slot row.
    * @param {string} userSpaceshipId
-   * @param {number} slotIndex
+   * @param {number} slotIndex  0-indexed JS slot index.
    * @param {string|null} userAgentId
    * @param {Object} [opts]
    * @param {string|null} [opts.roleType]
@@ -139,10 +169,11 @@ const ShipSlots = (() => {
     try {
       const { error } = await SB.client.from('user_ship_slots').upsert({
         user_spaceship_id: userSpaceshipId,
-        slot_index: parseInt(slotIndex, 10),
+        // JS callers pass 0-indexed; DB enforces 1-indexed.
+        slot_position: parseInt(slotIndex, 10) + 1,
         user_agent_id: userAgentId || null,
         role_type: role,
-      }, { onConflict: 'user_spaceship_id,slot_index' });
+      }, { onConflict: 'user_spaceship_id,slot_position' });
       if (error) {
         console.warn('[ShipSlots] setSlot failed:', error.message);
         return false;

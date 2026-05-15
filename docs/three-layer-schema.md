@@ -102,12 +102,12 @@ The one-to-many that makes slots uncapped *and* clean. Replaces the three overla
 |---|---|---|
 | `id` | uuid PK | |
 | `spaceship_id` | uuid NOT NULL → `spaceship_blueprints(id)` ON DELETE CASCADE | |
-| `slot_index` | int NOT NULL | ordering |
+| `slot_position` | int NOT NULL | 1-indexed slot number (CHECK `>= 1`); matches what the UI calls "Slot N" |
 | `role_type` | text NOT NULL → `roles(slug)` ON DELETE RESTRICT | the role this slot is for |
 | `default_agent_id` | uuid → `agent_blueprints(id)` ON DELETE SET NULL | prebuilt crew member; null = open slot |
 | `label` | text | optional display override |
 | `created_at` | timestamptz | |
-| | | UNIQUE `(spaceship_id, slot_index)` |
+| | | UNIQUE `(spaceship_id, slot_position)` |
 
 ### Instance layer
 
@@ -115,7 +115,9 @@ Activated copies, per user. Mostly carries forward, with FK types corrected and 
 
 - **`user_agents`** — `blueprint_id` becomes `uuid → agent_blueprints(id) ON DELETE SET NULL` (was loose `text`). Keeps `config` jsonb (the activated copy), `rarity`, `user_id`, `name`, `status`, timestamps.
 - **`user_spaceships`** — `blueprint_id` becomes `uuid → spaceship_blueprints(id) ON DELETE SET NULL`. The legacy `slots` jsonb is dropped; `config.slot_assignments` is replaced by:
-- **`user_ship_slots`** (new) — instance-layer mirror of `ship_slots`: `id`, `user_spaceship_id → user_spaceships(id) ON DELETE CASCADE`, `slot_index`, `role_type → roles(slug)`, `user_agent_id → user_agents(id) ON DELETE SET NULL`, UNIQUE `(user_spaceship_id, slot_index)`.
+- **`user_ship_slots`** (new) — instance-layer mirror of `ship_slots`: `id`, `user_spaceship_id → user_spaceships(id) ON DELETE CASCADE`, `slot_position` (1-indexed, CHECK `>= 1`), `role_type → roles(slug)`, `user_agent_id → user_agents(id) ON DELETE SET NULL`, UNIQUE `(user_spaceship_id, slot_position)`.
+
+> **Slot numbering**: `slot_position` is 1-indexed in the DB so that what users see in the UI ("Slot 1", "Slot 2", …) matches the data layer verbatim. No mental `+1` translation is needed when reading SQL. The JS layer is still on the 0-indexed convention (loop counters, `crew[].slot`, synthetic `shipClass.slots`), so `app/js/lib/ship-slots.js` does a `+1`/`-1` translation at the IO boundary as intermediate refactoring scaffolding (Branch by Abstraction). Follow-up PRs will incrementally migrate each consumer surface to 1-indexed, then collapse the translation.
 
 ## Row-Level Security
 
