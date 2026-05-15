@@ -1,10 +1,8 @@
 /**
  * Verifies that user_spaceships rows are hoisted into State.spaceships with
- * the right shape across the three row variants we have in the wild:
- *   1. Post-migration: top-level `category`/`rarity`, structured `config` JSONB
- *   2. Post-dock:      same as (1) but `slots` has been overwritten to a
- *                      plain { slotId: agentId } map by _addAgent/_removeAgentFromSlot
- *   3. Pre-migration:  legacy `slots` bag holding everything, empty `config`
+ * slot assignments resolved from `user_ship_slots` (SSOT after Phase C.1).
+ * Structural fields (description, flavor, tags, stats, caps) come from the
+ * row's `config` JSONB; slot data never touches the row anymore.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
@@ -37,6 +35,20 @@ globalThis.SB = {
   realtime: { subscribe: () => ({}) },
 };
 
+// ShipSlots mock — feeds slot_assignments per ship via _slotsByShip.
+let _slotsByShip = {};
+globalThis.ShipSlots = {
+  fetchForShips: async (ids) => {
+    const out = {};
+    for (const id of ids) if (_slotsByShip[id]) out[id] = _slotsByShip[id];
+    return out;
+  },
+  setForShip: async () => true,
+  setSlot: async () => true,
+  clearSlot: async () => true,
+  deleteForShip: async () => true,
+};
+
 // Load Blueprints into globals
 const { readFileSync } = await import('fs');
 const { resolve, dirname } = await import('path');
@@ -50,27 +62,27 @@ describe('Blueprints — user_spaceships hoisting', () => {
   beforeEach(() => {
     _shipRows = [];
     _agentRows = [];
+    _slotsByShip = {};
   });
 
-  it('hoists top-level category/rarity and reads structural fields from config', async () => {
+  it('hoists top-level category/rarity, reads config fields, and pulls slot_assignments from ShipSlots', async () => {
     _shipRows = [{
       id: 'ship-uuid-1',
       name: 'Post-Migration Ship',
       blueprint_id: null,
-      category: 'Analytics',       // top-level (new column)
-      rarity: 'Rare',              // top-level (new column)
+      category: 'Analytics',
+      rarity: 'Rare',
       status: 'standby',
       config: {
         description: 'Crunches data',
         flavor: 'Faster than thought',
         tags: ['data', 'bi'],
-        slot_assignments: { 0: 'agent-a', 1: 'agent-b' },
         stats: { crew: '2', slots: '6' },
         caps: ['BI dashboards'],
       },
-      slots: {},                   // empty — no legacy data
       created_at: '2026-04-16T00:00:00Z',
     }];
+    _slotsByShip = { 'ship-uuid-1': { 0: 'agent-a', 1: 'agent-b' } };
     await Blueprints.init();
 
     const ship = (globalThis.State.get('spaceships') || []).find(s => s.id === 'ship-uuid-1');
@@ -83,7 +95,7 @@ describe('Blueprints — user_spaceships hoisting', () => {
     expect(ship.config.slot_assignments).toEqual({ 0: 'agent-a', 1: 'agent-b' });
   });
 
-  it('after in-place dock overwrites `slots` to a plain map, slot_assignments stay fresh', async () => {
+  it('reads fresh assignments from user_ship_slots even when config has no slot data', async () => {
     _shipRows = [{
       id: 'ship-uuid-2',
       name: 'Docked Ship',
@@ -91,56 +103,38 @@ describe('Blueprints — user_spaceships hoisting', () => {
       category: 'Ops',
       rarity: 'Common',
       status: 'deployed',
-      config: {
-        description: 'Still here',
-        slot_assignments: { 0: 'stale-agent' },   // config went stale after dock
-      },
-      slots: { 0: 'fresh-agent-a', 1: 'fresh-agent-b' },  // plain map written by _addAgent
+      config: { description: 'Still here' },
       created_at: '2026-04-16T00:00:00Z',
     }];
+    _slotsByShip = { 'ship-uuid-2': { 0: 'fresh-agent-a', 1: 'fresh-agent-b' } };
     await Blueprints.init();
 
     const ship = (globalThis.State.get('spaceships') || []).find(s => s.id === 'ship-uuid-2');
     expect(ship).toBeDefined();
-    // Fresh assignments come from the plain `slots` map, not stale config
     expect(ship.config.slot_assignments).toEqual({ 0: 'fresh-agent-a', 1: 'fresh-agent-b' });
-    // Structural data still reads from config
     expect(ship.description).toBe('Still here');
   });
 
-  it('legacy rows with only `slots` bag populate description/flavor/tags/slot_assignments', async () => {
+  it('preserves null slot rows from user_ship_slots so the schematic knows the slot space', async () => {
     _shipRows = [{
       id: 'ship-uuid-3',
-      name: 'Legacy Ship',
+      name: 'Sparse Ship',
       blueprint_id: null,
-      // category/rarity not hoisted yet for this row
-      category: null,
-      rarity: 'Common',    // column default
+      category: 'Research',
+      rarity: 'Common',
       status: 'standby',
-      config: {},          // empty — predates the migration
-      slots: {
-        category: 'Research',
-        description: 'Old school ship',
-        flavor: 'Ancient wisdom',
-        tags: ['legacy'],
-        slot_assignments: { 0: 'legacy-agent' },
-        stats: { crew: '1', slots: '6' },
-        caps: ['old ops'],
-      },
+      config: { description: 'Half-staffed' },
       created_at: '2026-04-01T00:00:00Z',
     }];
+    _slotsByShip = { 'ship-uuid-3': { 0: 'agent-a', 1: null, 2: null } };
     await Blueprints.init();
 
     const ship = (globalThis.State.get('spaceships') || []).find(s => s.id === 'ship-uuid-3');
     expect(ship).toBeDefined();
-    expect(ship.category).toBe('Research');           // from slots.category fallback
-    expect(ship.description).toBe('Old school ship');
-    expect(ship.flavor).toBe('Ancient wisdom');
-    expect(ship.tags).toEqual(['legacy']);
-    expect(ship.config.slot_assignments).toEqual({ 0: 'legacy-agent' });
+    expect(ship.config.slot_assignments).toEqual({ 0: 'agent-a', 1: null, 2: null });
   });
 
-  it('empty-slots-empty-config row still initializes to sensible defaults', async () => {
+  it('row with no user_ship_slots and empty config initializes to sensible defaults', async () => {
     _shipRows = [{
       id: 'ship-uuid-4',
       name: 'Blank Ship',
@@ -149,7 +143,6 @@ describe('Blueprints — user_spaceships hoisting', () => {
       rarity: 'Common',
       status: 'standby',
       config: {},
-      slots: {},
       created_at: '2026-04-16T00:00:00Z',
     }];
     await Blueprints.init();

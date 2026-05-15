@@ -53,6 +53,19 @@ function makeMock({ readers = {}, insertErrors = {}, inserted } = {}) {
   };
 }
 
+/** ShipSlots mock — Phase C.1 routes slot writes through this lib. */
+function installShipSlots() {
+  const calls = [];
+  globalThis.ShipSlots = {
+    fetchForShips: async () => ({}),
+    setForShip: async (shipId, assignments) => { calls.push({ shipId, assignments }); return true; },
+    setSlot: async () => true,
+    clearSlot: async () => true,
+    deleteForShip: async () => true,
+  };
+  return calls;
+}
+
 describe('Blueprints.downloadCommunityBlueprint', () => {
   beforeEach(() => {
     globalThis.State._reset();
@@ -111,7 +124,7 @@ describe('Blueprints.downloadCommunityBlueprint', () => {
     expect(created).toBeDefined();
   });
 
-  it('expands ship slot_placeholders into empty slot_assignments on clone', async () => {
+  it('expands ship slot_placeholders into empty user_ship_slots rows on clone', async () => {
     const mock = makeMock({
       readers: {
         blueprints: () => ({
@@ -127,19 +140,21 @@ describe('Blueprints.downloadCommunityBlueprint', () => {
       },
     });
     globalThis.SB = mock;
+    const slotCalls = installShipSlots();
 
     await Blueprints.downloadCommunityBlueprint('community-ship-1');
 
     const insert = mock.calls.inserts.find(c => c.table === 'user_spaceships');
     expect(insert).toBeDefined();
     expect(insert.payload.category).toBe('Analytics');
-    expect(insert.payload.config.slot_assignments).toEqual({ '0': null, '1': null, '2': null });
+    // Slot data lives in user_ship_slots after Phase C.1, not in the row itself.
+    expect(insert.payload.config.slot_assignments).toBeUndefined();
     expect(insert.payload.config.slot_placeholders).toBeUndefined(); // consumed
+    expect(insert.payload.slots).toBeUndefined();
     expect(insert.payload.config.stats).toEqual({ crew: '3', slots: '6' });
     expect(insert.payload.config.caps).toEqual(['Analytics ops']);
-    // Slots mirror for back-compat with legacy readers
-    expect(insert.payload.slots.category).toBe('Analytics');
-    expect(insert.payload.slots.slot_assignments).toEqual({ '0': null, '1': null, '2': null });
+    // Empty slot rows persisted via ShipSlots so the schematic knows the slot space.
+    expect(slotCalls).toEqual([{ shipId: 'new-row-id', assignments: { '0': null, '1': null, '2': null } }]);
   });
 
   it('does not leak a private slot_assignments map from a malformed snapshot', async () => {
@@ -160,13 +175,15 @@ describe('Blueprints.downloadCommunityBlueprint', () => {
       },
     });
     globalThis.SB = mock;
+    const slotCalls = installShipSlots();
 
     await Blueprints.downloadCommunityBlueprint('community-ship-evil');
 
     const insert = mock.calls.inserts.find(c => c.table === 'user_spaceships');
-    // Leaked UUID replaced with null — the downloader fills in their own agent
-    expect(insert.payload.config.slot_assignments).toEqual({ '0': null });
-    const serialized = JSON.stringify(insert.payload);
+    // The leaked map is dropped from config; ShipSlots gets the placeholder map (null values).
+    expect(insert.payload.config.slot_assignments).toBeUndefined();
+    expect(slotCalls).toEqual([{ shipId: 'new-row-id', assignments: { '0': null } }]);
+    const serialized = JSON.stringify(insert.payload) + JSON.stringify(slotCalls);
     expect(serialized).not.toContain('leaked-agent-uuid');
   });
 

@@ -662,20 +662,15 @@ const ShipSetupWizard = (() => {
           rarity:       _blueprint.rarity || 'Common',
           category:     _blueprint.category || '',
           status:       'deployed',
-          slots: {
-            crew:             _blueprint.crew || (_blueprint.metadata && _blueprint.metadata.crew) || [],
-            slot_assignments: _data.slotAssignments,
-            class_id:         _data.classId,
-            caps:             _blueprint.caps || (_blueprint.metadata && _blueprint.metadata.caps) || [],
-            description:      _blueprint.description || '',
-            flavor:           _blueprint.flavor || '',
-            tags:             _blueprint.tags || [],
-            stats:            _blueprint.stats || {},
-          },
           config: {
-            slot_assignments: _data.slotAssignments,
-            agent_ids:        resolvedAgentIds,
-            class_id:         _data.classId,
+            crew:        _blueprint.crew || (_blueprint.metadata && _blueprint.metadata.crew) || [],
+            agent_ids:   resolvedAgentIds,
+            class_id:    _data.classId,
+            caps:        _blueprint.caps || (_blueprint.metadata && _blueprint.metadata.caps) || [],
+            description: _blueprint.description || '',
+            flavor:      _blueprint.flavor || '',
+            tags:        _blueprint.tags || [],
+            stats:       _blueprint.stats || {},
           },
         };
         const { ship: created } = await Blueprints.findOrCreateActiveShip(_blueprint.id, () => dbShipRow);
@@ -692,6 +687,12 @@ const ShipSetupWizard = (() => {
             }
           }
           shipStateId = created.id;
+        }
+        // Slot assignments persist to user_ship_slots (Phase C.1 cut).
+        // By this point all `__new__` placeholders have been resolved to
+        // real user_agents UUIDs above, so the FK constraint is satisfied.
+        if (created && created.id && typeof ShipSlots !== 'undefined') {
+          await ShipSlots.setForShip(created.id, _data.slotAssignments);
         }
       } catch (e) {
         // Fall through with the local-only id. Wizard still completes on

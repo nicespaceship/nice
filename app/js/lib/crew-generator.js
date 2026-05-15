@@ -130,18 +130,19 @@ Rules:
     // Update spaceship slots
     if (Object.keys(slotAssignments).length) {
       try {
-        var slotsData = spaceship.slots || {};
-        slotsData.slot_assignments = slotAssignments;
-        slotsData.stats = { crew: String(savedAgents.length), slots: String(agents.length) };
-        await SB.db('user_spaceships').update(spaceshipId, { slots: slotsData });
+        if (typeof ShipSlots !== 'undefined') {
+          await ShipSlots.setForShip(spaceshipId, slotAssignments);
+        }
 
-        // Update State
+        // Update State (in-memory stats; persisted config stays untouched —
+        // the user_spaceships row's config was set when the ship was created).
+        var stats = { crew: String(savedAgents.length), slots: String(agents.length) };
         var ships = State.get('spaceships') || [];
         var ship = ships.find(function(s) { return s.id === spaceshipId; });
         if (ship) {
           ship.config = ship.config || {};
           ship.config.slot_assignments = slotAssignments;
-          ship.stats = slotsData.stats;
+          ship.stats = stats;
           State.set('spaceships', ships);
         }
 
@@ -238,16 +239,16 @@ Rules:
 
     State.set('agents', stateAgents);
 
-    // Create the spaceship in user_spaceships
+    // Create the spaceship in user_spaceships. Slot assignments are
+    // persisted separately via ShipSlots.setForShip after the row exists.
     var totalSlots = parseInt(bp.stats?.slots || '12', 10);
     var shipRow = {
       user_id: user.id,
       name: bp.name,
       blueprint_id: blueprintId,
       status: 'active',
-      slots: {
+      config: {
         crew: agentCrewData,
-        slot_assignments: slotAssignments,
         category: bp.category || '',
         description: bp.description || '',
         flavor: bp.flavor || '',
@@ -262,6 +263,9 @@ Rules:
       var foaResult = await Blueprints.findOrCreateActiveShip(blueprintId, function() { return shipRow; });
       var shipCreated = foaResult.ship;
       if (!shipCreated || !shipCreated.id) return { error: 'Failed to create ship' };
+      if (typeof ShipSlots !== 'undefined' && Object.keys(slotAssignments).length) {
+        await ShipSlots.setForShip(shipCreated.id, slotAssignments);
+      }
 
       // Add to State
       var stateShips = State.get('spaceships') || [];
