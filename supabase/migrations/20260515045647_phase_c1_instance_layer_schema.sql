@@ -5,7 +5,11 @@
 --   * user_spaceships.blueprint_id  : text → uuid → spaceship_blueprints(id)
 --   * user_spaceships.slots         : DROP (legacy jsonb, replaced by user_ship_slots rows in C.2)
 --   * agent_blueprints.role_type    : NOT NULL (FK to roles(slug) RESTRICT already in place from Phase A)
---   * user_ship_slots.role_type     : NOT NULL + FK action SET NULL → RESTRICT (match design doc)
+--
+-- `user_ship_slots.role_type` stays nullable + FK action SET NULL — the column is not
+-- load-bearing for dispatch today (mission-runner reads slot_assignments, not slot.role_type),
+-- and the builder UIs don't capture per-slot roles for custom ships. Tightening is deferred
+-- until builder UIs mature; the catalog-side `ship_slots.role_type` stays NOT NULL.
 --
 -- All instance tables are empty in prod (Phase 1 wipe + no re-activation since), so the
 -- text → uuid casts are trivial — no backfill SQL needed. The existing partial unique index
@@ -32,14 +36,5 @@ ALTER TABLE public.user_spaceships
 -- 4. Tighten agent_blueprints.role_type to NOT NULL (FK already in place).
 ALTER TABLE public.agent_blueprints
   ALTER COLUMN role_type SET NOT NULL;
-
--- 5. user_ship_slots.role_type : NOT NULL + change FK action from SET NULL → RESTRICT.
-ALTER TABLE public.user_ship_slots
-  ALTER COLUMN role_type SET NOT NULL;
-
-ALTER TABLE public.user_ship_slots
-  DROP CONSTRAINT user_ship_slots_role_type_fkey,
-  ADD CONSTRAINT user_ship_slots_role_type_fkey
-    FOREIGN KEY (role_type) REFERENCES public.roles(slug) ON DELETE RESTRICT;
 
 COMMIT;
