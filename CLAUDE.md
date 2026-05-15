@@ -328,7 +328,7 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 63 modules
+### Lib Modules (`app/js/lib/`) — 64 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
@@ -394,6 +394,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `ModelCatalog` | `model-catalog.js` | SSOT for the AI-model presentation layer — display name, provider, speed/quality bars, marketing copy |
 | `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain` |
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
+| `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 
 ### View Modules (`app/js/views/`) — 28 views
 | View | File | Route(s) | Title |
