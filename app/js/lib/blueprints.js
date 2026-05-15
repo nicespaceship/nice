@@ -550,17 +550,24 @@ const Blueprints = (() => {
     const card = sh.card || {};
     const cfg = sh.config || {};
     const slots = Array.isArray(sh.slots) ? sh.slots : [];
-    // Build crew[] in slot_index order from ship_slots rows. Mirrors the
-    // legacy `metadata.crew` shape so card-renderer / wizards keep working.
+    // Build crew[] in slot order from ship_slots rows. Mirrors the legacy
+    // `metadata.crew` shape so card-renderer / wizards keep working.
+    //
+    // INTERMEDIATE: DB stores 1-indexed `slot_position`; the JS layer is
+    // still on the 0-indexed convention. Translate at the read boundary
+    // until every consumer is migrated, then collapse this `- 1` shift.
     const crew = slots
       .slice()
-      .sort((a, b) => (a.slot_index || 0) - (b.slot_index || 0))
-      .map((s) => ({
-        label: s.label || s.role_type || `Slot ${s.slot_index}`,
-        role: s.role_type || null,
-        slot: s.slot_index,
-        agent_id: s.default_agent_id || null,
-      }));
+      .sort((a, b) => (a.slot_position || 0) - (b.slot_position || 0))
+      .map((s) => {
+        const zeroIndexed = (s.slot_position != null) ? (s.slot_position - 1) : 0;
+        return {
+          label: s.label || s.role_type || `Slot ${zeroIndexed}`,
+          role: s.role_type || null,
+          slot: zeroIndexed,
+          agent_id: s.default_agent_id || null,
+        };
+      });
     return {
       id: sh.id,
       slug: sh.slug,
@@ -656,7 +663,7 @@ const Blueprints = (() => {
           .select('*, capability:capabilities(*), role:roles(*)')
           .in('id', uuidIds),
         c.from('spaceship_blueprints')
-          .select('*, slots:ship_slots(slot_index, role_type, default_agent_id, label)')
+          .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label)')
           .in('id', uuidIds),
       ]);
 
@@ -842,7 +849,7 @@ const Blueprints = (() => {
     );
     const shCall = applySince(
       c.from('spaceship_blueprints')
-        .select('*, slots:ship_slots(slot_index, role_type, default_agent_id, label)')
+        .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label)')
         .eq('visibility', 'public')
         .order('name', { ascending: true })
     );
