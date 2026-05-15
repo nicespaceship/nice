@@ -35,14 +35,17 @@ const Blueprints = (() => {
     ships:  'nice-bp-activated-ships',
     shipState: 'nice-ship-state',
     uuidMap: 'nice-bp-uuid-map',
-    // Bumped to v5 in the 2026-05-14 catalog rebuild (Phase 1: the
-    // fictional 489 character agents + 24 ships were wiped, leaving the
-    // 20 capability umbrellas). The diff-sync path can only add/update
-    // rows, not detect deletes, so any mass delete leaves stale entries
-    // in any client cache forever. Bumping the cache key is the only way
-    // to mass-invalidate.
-    catalogCache: 'nice-bp-catalog-v5',
-    catalogCacheTs: 'nice-bp-catalog-v5-ts',
+    // Bumped to v6 in the 2026-05-14 Phase B2 rewire — the catalog now
+    // sources from the normalized three-layer schema (`capabilities`,
+    // `agent_blueprints`, `spaceship_blueprints` ⨝ `ship_slots`) rather
+    // than the legacy single `blueprints` table. The cached array still
+    // holds rows in the legacy shape (post-translator) so the rest of
+    // the module reads it unchanged. Previous bump (v4→v5) was the
+    // Phase 1 catalog wipe; the diff-sync path can only add/update
+    // rows, not detect deletes, so any shape or content cut requires a
+    // key bump to mass-invalidate stale caches.
+    catalogCache: 'nice-bp-catalog-v6',
+    catalogCacheTs: 'nice-bp-catalog-v6-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -60,6 +63,8 @@ const Blueprints = (() => {
     try { localStorage.removeItem('nice-bp-catalog-v3-ts'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v4'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v4-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v5'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v5-ts'); } catch {}
 
     _loadSeeds();
     _loadActivationState();
@@ -416,6 +421,176 @@ const Blueprints = (() => {
   }
 
   /** Normalize a DB row into seed-compatible format */
+  /* ═══════════════════════════════════════════════════════════════
+     New-tables → legacy row-shape translators (Phase B2 rewire).
+
+     Each fn takes one row from the normalized three-layer schema
+     (`capabilities`, `agent_blueprints` ⨝ `capabilities` ⨝ `roles`,
+     `spaceship_blueprints` ⨝ `ship_slots`) and returns a row in the
+     legacy single-`blueprints`-table shape that `_normalizeRow` and
+     every downstream consumer expects. The translation is the only
+     place that knows about both shapes; the rest of the module
+     consumes the legacy shape unchanged. When Phase D drops the old
+     `blueprints` table, these translators stay — they become the SSOT
+     for the row shape the rest of the codebase reads.
+  ═══════════════════════════════════════════════════════════════ */
+
+  function _translateCapabilityRow(cap) {
+    if (!cap) return null;
+    const card = cap.card || {};
+    const cfg = cap.config || {};
+    const llm = cfg.llm_defaults || {};
+    return {
+      id: cap.id,
+      slug: cap.slug,
+      name: cap.name,
+      description: cap.description || '',
+      flavor: cap.flavor || '',
+      category: cap.category || '',
+      rarity: cap.rarity || 'Common',
+      scope: cap.scope || 'catalog',
+      type: 'agent',                   // capabilities surface as Common-tier agents
+      kind: 'capability',
+      visibility: cap.visibility || 'public',
+      is_public: cap.visibility === 'public',
+      activation_count: 0,
+      serial_key: card.serial_key || null,
+      tags: card.tags || [],
+      stats: card.stats || {},
+      capability_tags: cap.capability_tags || [],
+      mcp_provider: cap.mcp_provider || null,
+      capability_id: cap.id,           // self-ref so umbrella resolution stays trivial
+      config: {
+        role: card.role || cap.category || '',
+        type: 'Agent',
+        tools: cap.tools || [],
+        memory: llm.memory,
+        maxSteps: llm.max_steps,
+        role_type: card.role_type || null,
+        llm_engine: llm.engine,
+        temperature: llm.temperature,
+        system_prompt: cfg.system_prompt || '',
+      },
+      metadata: {
+        art: card.art || null,
+        caps: card.caps || [],
+        flavor: cap.flavor || '',
+        card_num: card.card_num || null,
+        agentType: 'Agent',
+        tools_required: cap.mcp_provider ? [cap.mcp_provider] : [],
+      },
+      created_at: cap.created_at,
+      updated_at: cap.updated_at,
+    };
+  }
+
+  function _translateAgentBlueprintRow(ag) {
+    if (!ag) return null;
+    const card = ag.card || {};
+    const agCfg = ag.config || {};
+    const llm = agCfg.llm_defaults || {};
+    // Joined rows (PostgREST embed): `capability` from capabilities, `role` from roles.
+    const cap = ag.capability || null;
+    const role = ag.role || null;
+    return {
+      id: ag.id,
+      slug: ag.slug,
+      name: ag.name,
+      description: ag.description || '',
+      flavor: ag.flavor || '',
+      category: ag.category || (role ? role.label : '') || '',
+      rarity: ag.rarity || 'Common',
+      scope: ag.scope || 'catalog',
+      type: 'agent',
+      kind: 'character',                // persona overlay wrapping a capability
+      visibility: ag.visibility || 'public',
+      is_public: ag.visibility === 'public',
+      activation_count: 0,
+      serial_key: card.serial_key || null,
+      tags: card.tags || [],
+      stats: card.stats || {},
+      capability_tags: (cap && cap.capability_tags) || [],
+      mcp_provider: (cap && cap.mcp_provider) || null,
+      capability_id: ag.capability_id || null,
+      role_type: ag.role_type || null,
+      config: {
+        role: (role && role.label) || ag.category || '',
+        type: 'Agent',
+        tools: (cap && cap.tools) || [],
+        memory: llm.memory,
+        maxSteps: llm.max_steps,
+        role_type: ag.role_type || null,
+        capability_id: ag.capability_id || null,
+        llm_engine: llm.engine,
+        temperature: llm.temperature,
+        system_prompt: agCfg.system_prompt || '',
+      },
+      metadata: {
+        art: card.art || null,
+        caps: card.caps || ((cap && cap.card && cap.card.caps) || []),
+        flavor: ag.flavor || '',
+        card_num: card.card_num || null,
+        agentType: 'Agent',
+        tools_required: cap && cap.mcp_provider ? [cap.mcp_provider] : [],
+      },
+      created_at: ag.created_at,
+      updated_at: ag.updated_at,
+    };
+  }
+
+  function _translateSpaceshipBlueprintRow(sh) {
+    if (!sh) return null;
+    const card = sh.card || {};
+    const cfg = sh.config || {};
+    const slots = Array.isArray(sh.slots) ? sh.slots : [];
+    // Build crew[] in slot_index order from ship_slots rows. Mirrors the
+    // legacy `metadata.crew` shape so card-renderer / wizards keep working.
+    const crew = slots
+      .slice()
+      .sort((a, b) => (a.slot_index || 0) - (b.slot_index || 0))
+      .map((s) => ({
+        label: s.label || s.role_type || `Slot ${s.slot_index}`,
+        role: s.role_type || null,
+        slot: s.slot_index,
+        agent_id: s.default_agent_id || null,
+      }));
+    return {
+      id: sh.id,
+      slug: sh.slug,
+      name: sh.name,
+      description: sh.description || '',
+      flavor: sh.flavor || '',
+      category: sh.category || '',
+      rarity: sh.rarity || 'Common',
+      scope: sh.scope || 'catalog',
+      type: 'spaceship',
+      visibility: sh.visibility || 'public',
+      is_public: sh.visibility === 'public',
+      activation_count: 0,
+      serial_key: card.serial_key || null,
+      tags: card.tags || [],
+      stats: card.stats || { slots: String(slots.length || 6) },
+      config: {
+        ship_system_prompt: cfg.ship_system_prompt || cfg.system_prompt || '',
+        ship_voice: cfg.ship_voice || null,
+        workflow_patterns: cfg.workflow_patterns || [],
+        flow: cfg.flow || null,
+        auto_theme: cfg.auto_theme || null,
+        crew_roles: crew,
+      },
+      metadata: {
+        art: card.art || null,
+        caps: card.caps || [],
+        flavor: sh.flavor || '',
+        card_num: card.card_num || null,
+        recommended_class: card.recommended_class || null,
+        crew: crew,
+      },
+      created_at: sh.created_at,
+      updated_at: sh.updated_at,
+    };
+  }
+
   function _normalizeRow(r) {
     const CLASS_TO_TIER = { 'class-1':'scout', 'class-2':'frigate', 'class-3':'cruiser', 'class-4':'dreadnought', 'class-5':'flagship' };
     if (r.type === 'agent') {
@@ -450,23 +625,39 @@ const Blueprints = (() => {
     });
   }
 
-  /** Load only the user's activated blueprints from DB (fast init) */
+  /** Load only the user's activated blueprints from DB (fast init).
+   *  Phase B2: any id may now resolve to one of `capabilities`,
+   *  `agent_blueprints`, or `spaceship_blueprints`. We try each in
+   *  parallel and translate matches. Activated ids may be uuids (new
+   *  schema) or legacy text ids (carried over from pre-rewire caches);
+   *  the `.in('id', uuids)` calls silently ignore non-uuids so the
+   *  parallel fan-out is safe to issue with the full id set.
+   */
   async function _loadActivatedFromDB() {
     try {
       const c = SB.client;
       if (!c || typeof c.from !== 'function') return;
 
-      // Collect all IDs we need data for
       const ids = [...new Set([..._activatedAgentIds, ..._activatedShipIds])];
       if (!ids.length) return;
+      const uuidIds = ids.filter(id => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+      if (!uuidIds.length) return;
 
-      const { data: rows, error } = await c
-        .from('blueprints')
-        .select('*')
-        .in('id', ids);
+      const [capRes, agRes, shRes] = await Promise.all([
+        c.from('capabilities').select('*').in('id', uuidIds),
+        c.from('agent_blueprints')
+          .select('*, capability:capabilities(*), role:roles(*)')
+          .in('id', uuidIds),
+        c.from('spaceship_blueprints')
+          .select('*, slots:ship_slots(slot_index, role_type, default_agent_id, label)')
+          .in('id', uuidIds),
+      ]);
 
-      if (error || !rows || !rows.length) return;
-      _mergeRows(rows);
+      const rows = [];
+      (capRes.data || []).forEach(r => { const t = _translateCapabilityRow(r); if (t) rows.push(t); });
+      (agRes.data  || []).forEach(r => { const t = _translateAgentBlueprintRow(r); if (t) rows.push(t); });
+      (shRes.data  || []).forEach(r => { const t = _translateSpaceshipBlueprintRow(r); if (t) rows.push(t); });
+      if (rows.length) _mergeRows(rows);
     } catch { /* seed fallback already loaded */ }
   }
 
@@ -625,6 +816,56 @@ const Blueprints = (() => {
   }
 
   /**
+   * Pull catalog rows from the normalized three-layer schema and run them
+   * through the legacy-shape translators. Three queries in parallel:
+   * `capabilities`, `agent_blueprints` (with `capability` + `role`
+   * embeds), `spaceship_blueprints` (with `slots` embed). Returns the
+   * concatenated translated array. Errors on individual tables are
+   * logged and skipped — the rest still return.
+   *
+   * @param {Object} c — `SB.client`
+   * @param {Object} [opts]
+   * @param {string} [opts.since] — ISO timestamp; if set, only rows whose
+   *   `updated_at` is strictly greater are returned (diff-sync mode).
+   * @returns {Promise<Array>} translated rows in legacy shape
+   */
+  async function _fetchCatalogFromNewTables(c, opts = {}) {
+    const out = [];
+    const applySince = (q) => (opts.since ? q.gt('updated_at', opts.since) : q);
+
+    const capCall = applySince(
+      c.from('capabilities')
+        .select('*')
+        .eq('visibility', 'public')
+        .order('name', { ascending: true })
+    );
+    const agCall = applySince(
+      c.from('agent_blueprints')
+        .select('*, capability:capabilities(*), role:roles(*)')
+        .eq('visibility', 'public')
+        .order('name', { ascending: true })
+    );
+    const shCall = applySince(
+      c.from('spaceship_blueprints')
+        .select('*, slots:ship_slots(slot_index, role_type, default_agent_id, label)')
+        .eq('visibility', 'public')
+        .order('name', { ascending: true })
+    );
+
+    const [capRes, agRes, shRes] = await Promise.all([capCall, agCall, shCall]);
+
+    if (capRes.error) console.warn('[Blueprints] capabilities fetch failed:', capRes.error.message);
+    if (agRes.error)  console.warn('[Blueprints] agent_blueprints fetch failed:', agRes.error.message);
+    if (shRes.error)  console.warn('[Blueprints] spaceship_blueprints fetch failed:', shRes.error.message);
+
+    (capRes.data || []).forEach(r => { const t = _translateCapabilityRow(r); if (t) out.push(t); });
+    (agRes.data  || []).forEach(r => { const t = _translateAgentBlueprintRow(r); if (t) out.push(t); });
+    (shRes.data  || []).forEach(r => { const t = _translateSpaceshipBlueprintRow(r); if (t) out.push(t); });
+
+    return out;
+  }
+
+  /**
    * Load full catalog from DB with localStorage cache + differential sync.
    * Called lazily when user browses blueprints or calls listAgents/listSpaceships.
    */
@@ -670,45 +911,49 @@ const Blueprints = (() => {
       const c = SB.client;
       if (!c || typeof c.from !== 'function') { _catalogLoaded = true; _finalizeCatalogLoad(); return; }
 
-      // Load both catalog AND community scopes. The scope discriminator
-      // is applied by the list/search methods (which filter to scope='catalog'
-      // for Agents/Spaceships browsing), not at the cache level — a
-      // single-row lookup by ID must succeed regardless of scope, so
-      // activated marketplace blueprints still resolve after install.
-      const { data: rows, error } = await c
-        .from('blueprints')
-        .select('*')
-        .eq('is_public', true)
-        .order('name', { ascending: true });
+      // Phase B2 rewire: pull from the normalized three-layer schema.
+      // - `capabilities` — the umbrella functions (HubSpot Agent, GitHub
+      //   Agent, …); surface as kind='capability' agents.
+      // - `agent_blueprints` — persona overlays wrapping a capability;
+      //   surface as kind='character' agents. Joined to `capabilities`
+      //   (for tools + mcp_provider) and `roles` (for label).
+      // - `spaceship_blueprints` — orchestrators; joined to `ship_slots`
+      //   so crew[] is reconstructed from the child rows.
+      // All filters on `visibility='public'` (matches the legacy
+      // `is_public=true` semantics — a user's own private blueprints
+      // come through `_loadUserCreations`, not the catalog).
+      const rowsTranslated = await _fetchCatalogFromNewTables(c);
 
-      if (!error && rows && rows.length) {
-        _mergeRows(rows);
-        // Cache the results
+      if (rowsTranslated.length) {
+        _mergeRows(rowsTranslated);
+        // Cache the translated rows (legacy shape, post-translator).
         try {
-          localStorage.setItem(_KEYS.catalogCache, JSON.stringify(rows));
+          localStorage.setItem(_KEYS.catalogCache, JSON.stringify(rowsTranslated));
           localStorage.setItem(_KEYS.catalogCacheTs, String(Date.now()));
         } catch { /* storage full — still works without cache */ }
       }
-    } catch { /* seed fallback */ }
+    } catch (e) {
+      console.warn('[Blueprints] catalog fetch failed:', e?.message);
+      /* seed fallback */
+    }
 
     _catalogLoaded = true;
     _finalizeCatalogLoad();
   }
 
-  /** Fetch only blueprints updated since lastSync and merge them */
+  /** Fetch only blueprints updated since lastSync and merge them.
+   *  Phase B2: sources from the new three-layer tables via
+   *  `_fetchCatalogFromNewTables(c, { since })`. The result is already
+   *  translated to legacy shape, so the per-row merge below stays
+   *  unchanged — it reads `r.type` exactly as before.
+   */
   async function _diffSyncCatalog(lastSyncIso) {
     try {
       const c = SB.client;
       if (!c || typeof c.from !== 'function') return;
 
-      const { data: rows, error } = await c
-        .from('blueprints')
-        .select('*')
-        .eq('is_public', true)
-        .gt('updated_at', lastSyncIso)
-        .order('name', { ascending: true });
-
-      if (error || !rows || !rows.length) return;
+      const rows = await _fetchCatalogFromNewTables(c, { since: lastSyncIso });
+      if (!rows.length) return;
 
       // Replace existing entries with updated versions
       rows.forEach(r => {
@@ -2177,104 +2422,22 @@ const Blueprints = (() => {
     // This replaces the old separate Marketplace sub-tab.
     scope = 'all',
   } = {}) {
-    const from = (page - 1) * perPage;
-    const to = from + perPage - 1;
-
-    // Try Supabase direct query
-    if (typeof SB !== 'undefined' && SB.isReady() && SB.isOnline()) {
-      try {
-        const c = SB.client;
-        if (c && typeof c.from === 'function') {
-          // Left-join the published listing so community rows carry their
-          // rating / downloads / listing_id in a single round trip. Catalog
-          // rows get an empty array for `listing` (hence normalized below).
-          let q = c.from('blueprints')
-            .select('*, listing:marketplace_listings!left(id, rating, rating_count, downloads, author_id, status)', { count: 'exact' })
-            .eq('is_public', true)
-            .eq('type', type);
-
-          // Scope filter: omit → all; 'official' → catalog; 'community' → community.
-          if (scope === 'official') q = q.eq('scope', 'catalog');
-          else if (scope === 'community') q = q.eq('scope', 'community');
-
-          // Full-text search via tsvector (GIN-indexed), with ilike fallback for short queries
-          if (query) {
-            if (query.length >= 3) {
-              // Use Postgres full-text search (fast, uses GIN index)
-              q = q.textSearch('search_vector', query, { type: 'websearch' });
-            } else {
-              // Short queries: prefix match on name
-              const escaped = query.replace(/[%_]/g, '\\$&');
-              q = q.ilike('name', `%${escaped}%`);
-            }
-          }
-
-          // Rarity filter (all types use Common/Rare/Epic/Legendary/Mythic in the `rarity` column)
-          if (rarity) {
-            q = q.eq('rarity', rarity);
-          }
-
-          // Category filter
-          if (category) {
-            q = q.eq('category', category);
-          }
-
-          // Sort
-          if (sort === 'popular') {
-            q = q.order('activation_count', { ascending: false, nullsFirst: false });
-          } else if (sort === 'rating') {
-            q = q.order('rating_avg', { ascending: false, nullsFirst: false });
-          } else if (sort === 'name-desc') {
-            q = q.order('name', { ascending: false });
-          } else {
-            q = q.order('name', { ascending: true });
-          }
-
-          // Pagination
-          q = q.range(from, to);
-
-          const { data: rows, error, count } = await q;
-
-          if (!error && rows) {
-            const total = count ?? rows.length;
-            // If DB has fewer blueprints than local seeds (not fully seeded), use local
-            const localCount = type === 'spaceship' ? _spaceships.length : _agents.length;
-            if (total < localCount && !query && !rarity && !category && scope === 'all') {
-              return _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage, scope });
-            }
-
-            // Normalize the listing sidecar: PostgREST returns left-join
-            // embeds as an array. Collapse it to a single object (or null
-            // if the row isn't listed) so callers don't have to unwrap it.
-            rows.forEach(r => {
-              if (Array.isArray(r.listing)) {
-                const published = r.listing.find(l => l && l.status === 'published');
-                r.listing = published || null;
-              }
-            });
-
-            // Client-side rarity sort (no DB column for sort order)
-            if (sort === 'rarity-desc' || sort === 'rarity-asc') {
-              const ro = { Mythic: 5, Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
-              const dir = sort === 'rarity-desc' ? -1 : 1;
-              rows.sort((a, b) => dir * ((ro[a.rarity] || 0) - (ro[b.rarity] || 0)));
-            }
-
-            return {
-              results: rows,
-              total,
-              page,
-              perPage,
-              hasMore: from + rows.length < total,
-            };
-          }
-        }
-      } catch (e) {
-        console.warn('[Blueprints] searchCatalog DB failed, falling back:', e.message);
-      }
-    }
-
-    // Offline fallback: filter in-memory seeds
+    // Phase B2 rewire: the legacy direct-query path (`from('blueprints')`
+    // with tsvector full-text search + `marketplace_listings` left-join +
+    // server-side pagination) is retired here. Reasons:
+    //   - The new three-layer schema has no `search_vector` GIN index.
+    //     With ~20 catalog rows post-wipe, in-memory filtering is fine.
+    //   - Server-side pagination across three tables (capabilities,
+    //     agent_blueprints, spaceship_blueprints) doesn't translate
+    //     cleanly — the catalog is small enough to paginate locally.
+    //   - The `marketplace_listings.blueprint_id` FK still points at the
+    //     legacy `blueprints` table. The community publish + listing
+    //     rewire is Phase B3 work, not B2.
+    // Ensure the catalog is loaded into `_agents` / `_spaceships` (via
+    // the new tables) and paginate locally. The `search()` edge-function
+    // path is untouched — `blueprint-search` still reads the legacy
+    // `blueprints` table and will be migrated alongside Phase D.
+    await ensureCatalogLoaded();
     return _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage, scope });
   }
 
