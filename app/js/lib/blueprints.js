@@ -40,12 +40,17 @@ const Blueprints = (() => {
     // `agent_blueprints`, `spaceship_blueprints` ⨝ `ship_slots`) rather
     // than the legacy single `blueprints` table. The cached array still
     // holds rows in the legacy shape (post-translator) so the rest of
-    // the module reads it unchanged. Previous bump (v4→v5) was the
-    // Phase 1 catalog wipe; the diff-sync path can only add/update
-    // rows, not detect deletes, so any shape or content cut requires a
-    // key bump to mass-invalidate stale caches.
-    catalogCache: 'nice-bp-catalog-v6',
-    catalogCacheTs: 'nice-bp-catalog-v6-ts',
+    // the module reads it unchanged. Bumps:
+    //   v4→v5 — Phase 1 catalog wipe.
+    //   v5→v6 — Phase B2 rewire onto new tables.
+    //   v6→v7 — Phase D translator surfaces top-level serial_key/tags/
+    //           activation_count from new columns + dedupes capability
+    //           rows whose agent_blueprints mirror exists.
+    // The diff-sync path can only add/update rows, not detect deletes,
+    // so any shape or content cut requires a key bump to mass-invalidate
+    // stale caches.
+    catalogCache: 'nice-bp-catalog-v7',
+    catalogCacheTs: 'nice-bp-catalog-v7-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -65,6 +70,8 @@ const Blueprints = (() => {
     try { localStorage.removeItem('nice-bp-catalog-v4-ts'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v5'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v5-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v6'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v6-ts'); } catch {}
 
     _loadSeeds();
     _loadActivationState();
@@ -505,9 +512,9 @@ const Blueprints = (() => {
       kind: 'character',                // persona overlay wrapping a capability
       visibility: ag.visibility || 'public',
       is_public: ag.visibility === 'public',
-      activation_count: 0,
-      serial_key: card.serial_key || null,
-      tags: card.tags || [],
+      activation_count: ag.activation_count || 0,
+      serial_key: ag.serial_key || card.serial_key || null,
+      tags: (Array.isArray(ag.tags) && ag.tags.length) ? ag.tags : (card.tags || []),
       stats: card.stats || {},
       capability_tags: (cap && cap.capability_tags) || [],
       mcp_provider: (cap && cap.mcp_provider) || null,
@@ -566,9 +573,9 @@ const Blueprints = (() => {
       type: 'spaceship',
       visibility: sh.visibility || 'public',
       is_public: sh.visibility === 'public',
-      activation_count: 0,
-      serial_key: card.serial_key || null,
-      tags: card.tags || [],
+      activation_count: sh.activation_count || 0,
+      serial_key: sh.serial_key || card.serial_key || null,
+      tags: (Array.isArray(sh.tags) && sh.tags.length) ? sh.tags : (card.tags || []),
       stats: card.stats || { slots: String(slots.length || 6) },
       config: {
         ship_system_prompt: cfg.ship_system_prompt || cfg.system_prompt || '',
@@ -846,7 +853,16 @@ const Blueprints = (() => {
     if (agRes.error)  console.warn('[Blueprints] agent_blueprints fetch failed:', agRes.error.message);
     if (shRes.error)  console.warn('[Blueprints] spaceship_blueprints fetch failed:', shRes.error.message);
 
-    (capRes.data || []).forEach(r => { const t = _translateCapabilityRow(r); if (t) out.push(t); });
+    // After Phase D.1 every umbrella capability has a 1:1 agent_blueprints
+    // mirror with the same slug. Skip the capability translation when the
+    // mirror exists so the catalog browse stops double-rendering each
+    // umbrella (one rich card + one stub card with empty stats).
+    const agentSlugs = new Set((agRes.data || []).map(r => r.slug));
+    (capRes.data || []).forEach(r => {
+      if (agentSlugs.has(r.slug)) return;
+      const t = _translateCapabilityRow(r);
+      if (t) out.push(t);
+    });
     (agRes.data  || []).forEach(r => { const t = _translateAgentBlueprintRow(r); if (t) out.push(t); });
     (shRes.data  || []).forEach(r => { const t = _translateSpaceshipBlueprintRow(r); if (t) out.push(t); });
 
