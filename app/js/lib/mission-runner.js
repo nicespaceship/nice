@@ -732,33 +732,10 @@ const MissionRunner = (() => {
     return _resolveByCapability(name, agents);
   }
 
-  // Role → required capability_tags. Dispatch resolves a role to a wired
-  // agent by intersecting these required tags with the agent's
-  // capability_tags (set on the catalog blueprint, see migration
-  // 20260507053945_blueprints_capability_tags.sql). An agent matches if
-  // any of its tags appears in the required list.
-  //
-  // Vocabulary is documented in the migration. Keep this map small and
-  // role-named — narrative aliases (e.g. "pilot") fall through to the
-  // legacy substring matcher below.
-  const _ROLE_REQUIRED_CAPS = {
-    captain:        [],
-    communications: ['email', 'messaging', 'calendar', 'communications'],
-    sales:          ['crm', 'sales'],
-    engineering:    ['code', 'issues', 'engineering'],
-    product:        ['pm', 'issues', 'product', 'docs'],
-    operations:     ['pm', 'automation', 'database', 'ops'],
-    marketing:      ['marketing', 'messaging', 'media-gen', 'email'],
-    analytics:      ['analytics'],
-    finance:        ['payments', 'finance'],
-    design:         ['design', 'media-gen'],
-    research:       ['research', 'web', 'docs'],
-    people:         ['messaging'],
-    legal:          ['docs'],
-    security:       ['observability', 'infrastructure'],
-    documentation: ['docs'],
-    support:        ['messaging', 'crm'],
-  };
+  // Role → required capability_tags lives in `public.roles.required_capability_tags`
+  // and is read through the `Roles` lib module. Adjust the data in the
+  // role-seed migration (latest: 20260515034139); this file never
+  // hardcodes the mapping anymore.
 
   // Legacy fallback. Used when an activated agent's catalog blueprint
   // can't be resolved (custom builds, missing blueprint_id, or the
@@ -811,7 +788,7 @@ const MissionRunner = (() => {
   // surfaced as crew when they're explicitly slotted on the ship.
   function _resolveByCapability(roleName, agents) {
     if (!agents || !agents.length) return null;
-    const requiredTags = _ROLE_REQUIRED_CAPS[roleName];
+    const requiredTags = (typeof Roles !== 'undefined') ? Roles.getRequiredTags(roleName) : [];
     if (Array.isArray(requiredTags) && requiredTags.length) {
       const tagMatches = [];
       for (const agent of agents) {
@@ -986,7 +963,8 @@ const MissionRunner = (() => {
     // When a ship's crew_overrides only has character stubs (tools: []), the
     // captain's manifest would otherwise list no wired agents and would never
     // know to issue [DISPATCH: communications] etc.
-    for (const role of Object.keys(_ROLE_REQUIRED_CAPS)) {
+    const _allRoleSlugs = (typeof Roles !== 'undefined') ? Roles.list().map(r => r.slug) : [];
+    for (const role of _allRoleSlugs) {
       const capable = _resolveByCapability(role, agents);
       if (capable && !slottedIds.has(capable.id) && !crewAgents.find(a => a.id === capable.id)) {
         crewAgents.push(capable);
@@ -1161,6 +1139,5 @@ const MissionRunner = (() => {
     _buildCrewManifest,
     _injectCaptainContext,
     _categorizeDispatchError,
-    _ROLE_REQUIRED_CAPS,
   };
 })();
