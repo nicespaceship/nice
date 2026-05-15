@@ -450,12 +450,14 @@ const SpaceshipsView = (() => {
     const finalAgentIds = Object.values(slotAssignments).filter(Boolean);
 
     try {
-      await Blueprints.findOrCreateActiveShip(null, () => ({
+      const { ship: created } = await Blueprints.findOrCreateActiveShip(null, () => ({
         user_id:   user.id,
         name,
-        slots: slotAssignments,
         status:    'standby',
       }));
+      if (created?.id && typeof ShipSlots !== 'undefined' && Object.keys(slotAssignments).length) {
+        await ShipSlots.setForShip(created.id, slotAssignments);
+      }
       document.getElementById('modal-new-fleet')?.classList.remove('open');
       document.getElementById('fleet-form')?.reset();
       _loadSpaceships();
@@ -622,7 +624,6 @@ const SpaceshipsView = (() => {
           user_id: user.id,
           name: importName,
           blueprint_id: decoded.class_id,
-          slots: {},
           status: 'standby',
           imported_via: 'ship_key',
         }));
@@ -1415,8 +1416,12 @@ const SpaceshipDetailView = (() => {
   async function _assignAgentToSlot(el, id, fleet, slotId, agentId, allAgents, agentMap, spaceshipClass) {
     // Remove agent from any other slot first
     const assignments = { ...(fleet.slots || fleet.slot_assignments || {}) };
+    const vacatedSlots = [];
     for (const sid of Object.keys(assignments)) {
-      if (assignments[sid] === agentId) assignments[sid] = null;
+      if (assignments[sid] === agentId && sid !== String(slotId)) {
+        assignments[sid] = null;
+        vacatedSlots.push(sid);
+      }
     }
     assignments[slotId] = agentId;
     fleet.slots = assignments;
@@ -1436,9 +1441,14 @@ const SpaceshipDetailView = (() => {
     State.set('spaceships', spaceships);
     Blueprints.saveShipState(id, fleet);
 
-    try {
-      await SB.db('user_spaceships').update(id, { slots: assignments });
-    } catch(e) { /* local state already updated */ }
+    if (typeof ShipSlots !== 'undefined') {
+      try {
+        await ShipSlots.setSlot(id, slotId, agentId);
+        for (const sid of vacatedSlots) {
+          await ShipSlots.setSlot(id, sid, null);
+        }
+      } catch(e) { /* local state already updated */ }
+    }
 
     // Gamification
     if (typeof Gamification !== 'undefined') {
@@ -1498,8 +1508,11 @@ const SpaceshipDetailView = (() => {
     State.set('spaceships', spaceships);
     Blueprints.saveShipState(id, fleet);
 
+    if (typeof ShipSlots !== 'undefined') {
+      try { await ShipSlots.setSlot(id, slotId, null); } catch(e) {}
+    }
     try {
-      await SB.db('user_spaceships').update(id, { slots: assignments, status: fleet.status });
+      await SB.db('user_spaceships').update(id, { status: fleet.status });
     } catch(e) { /* local state already updated */ }
 
     if (typeof Gamification !== 'undefined') Gamification.addXP('undock_agent');

@@ -351,7 +351,6 @@ const SpaceshipBuilderView = (() => {
       description: desc,
       flavor,
       tags,
-      slot_assignments: slots,
       stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
       caps: [category + ' operations', cls.slots.length + ' agent slots'],
     };
@@ -361,9 +360,6 @@ const SpaceshipBuilderView = (() => {
       category,
       rarity,
       config: configBody,
-      // Dual-write `slots` as a compatibility mirror until the loader stops
-      // reading from it (tracked as the Stage A4 drop-slots migration).
-      slots: Object.assign({ category }, configBody),
     };
 
     try {
@@ -377,6 +373,9 @@ const SpaceshipBuilderView = (() => {
           row.user_id = user.id;
           const { ship: created } = await Blueprints.findOrCreateActiveShip(null, () => row);
           shipId = created?.id;
+        }
+        if (shipId && typeof ShipSlots !== 'undefined') {
+          await ShipSlots.setForShip(shipId, slots);
         }
       } else {
         // Guest mode: save to localStorage

@@ -546,8 +546,10 @@ Needs help with: ${needLabels.join(', ')}`;
 
     // 2. Create spaceship
     setStatus('Deploying spaceship...');
+    // Numeric slot keys match the catalog convention (slot.id = position
+    // index) so downstream readers find slots via positional lookup.
     const slotAssignments = {};
-    createdAgentIds.forEach((id, i) => { slotAssignments[`slot-${i}`] = id; });
+    createdAgentIds.forEach((id, i) => { slotAssignments[i] = id; });
 
     const shipData = {
       name: _data.shipName,
@@ -569,18 +571,12 @@ Needs help with: ${needLabels.join(', ')}`;
     let shipId = `ship-${Date.now()}`;
     if (userId && hasSB) {
       try {
-        // Same destructure-bug story as the agent create above. Plus:
-        // slot_assignments goes inside `config` here, not `slots`. The
-        // canonical shape (verified against the existing Smoke Test Ship
-        // and used by every reader since #288) is config.slot_assignments
-        // — writing into the `slots` jsonb column hides the data from
-        // _getSlottedAgents and the WorkflowEngine triage candidates.
+        // Slot assignments persist via ShipSlots after the row exists.
         const { ship: created } = await Blueprints.findOrCreateActiveShip(null, () => ({
           user_id: userId,
           name: shipData.name,
           status: 'deployed',
           config: {
-            slot_assignments: slotAssignments,
             agent_ids: createdAgentIds,
             flow_pattern: proposal.spaceship?.flow_pattern || 'sequential',
             category: proposal.spaceship?.category || 'Operations',
@@ -593,7 +589,12 @@ Needs help with: ${needLabels.join(', ')}`;
             source: 'setup_wizard',
           },
         }));
-        if (created?.id) shipId = created.id;
+        if (created?.id) {
+          shipId = created.id;
+          if (typeof ShipSlots !== 'undefined' && Object.keys(slotAssignments).length) {
+            await ShipSlots.setForShip(shipId, slotAssignments);
+          }
+        }
       } catch (e) { console.warn('[SetupWizard] Ship create fallback to local:', e); }
     }
 

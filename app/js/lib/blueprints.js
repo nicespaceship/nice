@@ -674,33 +674,22 @@ const Blueprints = (() => {
       // Load custom spaceships
       const { data: ships } = await c.from('user_spaceships').select('*');
       if (ships && ships.length) {
+        // SSOT for slot assignments is `user_ship_slots` after Phase C.1.
+        // Fetch all slot rows for these ships in one round-trip; legacy
+        // `slots` column is dropped and `config.slot_assignments` is no
+        // longer written.
+        const shipIds = ships.map(s => s.id);
+        const slotsByShip = (typeof ShipSlots !== 'undefined')
+          ? await ShipSlots.fetchForShips(shipIds)
+          : {};
+
         const stateShips = State.get('spaceships') || [];
         const existingIds = new Set(stateShips.map(s => s.id));
         ships.forEach(s => {
-          // Prefer the new `config` JSONB for structural fields (description,
-          // flavor, tags, stats, caps). Fall back to legacy `slots` for rows
-          // that predate the schema parity migration.
+          // Structural fields (description, flavor, tags, caps) live in the
+          // `config` JSONB. Slot assignments live in `user_ship_slots`.
           const cfg = (s.config && Object.keys(s.config).length) ? s.config : {};
-          const legacySlots = s.slots || {};
-          const meta = Object.keys(cfg).length ? cfg : legacySlots;
-
-          // slot_assignments is a special case. In-place dock/undock flows
-          // (see app/js/views/spaceships.js _addAgent / _removeAgentFromSlot)
-          // overwrite the `slots` column with a plain { slotId: agentId } map,
-          // which makes the `slots` column the freshest source for crew data
-          // after the first dock. Detect shape:
-          //   * legacySlots.slot_assignments present → builder's bag output
-          //   * legacySlots non-empty, no slot_assignments key → plain map
-          //     written by a dock flow, treat as assignments directly
-          //   * legacySlots empty → use config.slot_assignments
-          var freshAssignments;
-          if (legacySlots.slot_assignments) {
-            freshAssignments = legacySlots.slot_assignments;
-          } else if (Object.keys(legacySlots).length) {
-            freshAssignments = legacySlots;
-          } else {
-            freshAssignments = cfg.slot_assignments || {};
-          }
+          const freshAssignments = slotsByShip[s.id] || {};
 
           // Cross-reference blueprint catalog for rarity/stats if blueprint_id exists
           var catalogBp = null;
@@ -708,20 +697,20 @@ const Blueprints = (() => {
             catalogBp = getSpaceship(s.blueprint_id) || getSpaceship('bp-' + s.blueprint_id);
           }
           if (!existingIds.has(s.id)) {
-            var crewCount = Object.keys(freshAssignments).length;
-            if (!crewCount && Array.isArray(meta.crew)) crewCount = meta.crew.length;
+            var crewCount = Object.values(freshAssignments).filter(Boolean).length;
+            if (!crewCount && Array.isArray(cfg.crew)) crewCount = cfg.crew.length;
 
             stateShips.push({
               id: s.id, name: s.name, type: 'spaceship',
-              category: s.category || (catalogBp && catalogBp.category) || meta.category || '',
-              description: (catalogBp && catalogBp.description) || meta.description || '',
-              flavor: (catalogBp && catalogBp.flavor) || meta.flavor || '',
-              tags: (catalogBp && catalogBp.tags) || meta.tags || [],
-              rarity: s.rarity || (catalogBp && catalogBp.rarity) || meta.rarity || 'Common',
+              category: s.category || (catalogBp && catalogBp.category) || cfg.category || '',
+              description: (catalogBp && catalogBp.description) || cfg.description || '',
+              flavor: (catalogBp && catalogBp.flavor) || cfg.flavor || '',
+              tags: (catalogBp && catalogBp.tags) || cfg.tags || [],
+              rarity: s.rarity || (catalogBp && catalogBp.rarity) || cfg.rarity || 'Common',
               status: s.status || 'standby',
               config: { slot_assignments: freshAssignments },
-              stats: (catalogBp && catalogBp.stats) || meta.stats || { crew: String(crewCount), slots: '6' },
-              metadata: (catalogBp && catalogBp.metadata) || { caps: meta.caps || [] },
+              stats: (catalogBp && catalogBp.stats) || cfg.stats || { crew: String(crewCount), slots: '6' },
+              metadata: (catalogBp && catalogBp.metadata) || { caps: cfg.caps || [] },
               blueprint_id: s.blueprint_id,
               created_at: s.created_at,
             });
@@ -731,26 +720,25 @@ const Blueprints = (() => {
           if (!_activatedShipIds.includes(s.id)) {
             _activatedShipIds.push(s.id);
           }
-          // Always restore ship state (slot assignments) from DB
-          // Handle both formats: slot_assignments object and crew array
+          // Restore ship state. Slot assignments come from user_ship_slots;
+          // legacy crew-array fallback only fires when no slot rows exist.
           var assignments = Object.assign({}, freshAssignments);
-          var agentIds = [];
-          if (Object.keys(assignments).length) {
-            agentIds = Object.values(assignments).filter(Boolean);
-          } else if (Array.isArray(meta.crew) && meta.crew.length) {
-            meta.crew.forEach(function(c, idx) {
+          var agentIds = Object.values(assignments).filter(Boolean);
+          if (!agentIds.length && Array.isArray(cfg.crew) && cfg.crew.length) {
+            cfg.crew.forEach(function(c, idx) {
               if (c.agent_id) { assignments[String(idx)] = c.agent_id; agentIds.push(c.agent_id); }
             });
           }
-          // Backfill missing slots from catalog crew (Legendary/Mythic ships should be full)
+          // Backfill missing slots from catalog crew (Legendary/Mythic ships should be full).
+          // `__new__` placeholders live in memory only — user_ship_slots rejects
+          // non-uuid `user_agent_id` via FK, so the wizard must resolve them
+          // before any ShipSlots.setForShip call.
           if (catalogBp) {
             var catalogCrew = catalogBp.metadata?.crew || catalogBp.crew || [];
-            var totalSlots = parseInt(catalogBp.stats?.slots || '6', 10);
             if (catalogCrew.length > Object.keys(assignments).length) {
               catalogCrew.forEach(function(c, idx) {
                 var key = String(idx);
                 if (!assignments[key]) {
-                  // Use __new__ prefix so ShipSetupWizard can resolve them
                   var crewId = '__new__' + (c.label || c.name || 'Agent ' + (idx + 1));
                   assignments[key] = crewId;
                   agentIds.push(crewId);
@@ -2783,18 +2771,19 @@ const Blueprints = (() => {
     // fields that shouldn't propagate into the downloader's own row.
     const cfg = Object.assign({}, bp.config || {});
 
+    let placeholderAssignments = null;
     if (type === 'spaceship') {
       // Expand slot_placeholders into an empty assignments map keyed by
-      // slot index. The wizard / Schematic will resolve these into real
-      // agent ids the downloader picks for themselves.
+      // slot index. After insert we persist the empty rows to
+      // user_ship_slots so the schematic / wizard knows the slot space.
       const placeholders = Array.isArray(cfg.slot_placeholders) ? cfg.slot_placeholders : [];
-      const assignments = {};
+      placeholderAssignments = {};
       placeholders.forEach((p) => {
         const idx = typeof p === 'object' ? p.slot : p;
-        if (idx != null && !isNaN(Number(idx))) assignments[String(idx)] = null;
+        if (idx != null && !isNaN(Number(idx))) placeholderAssignments[String(idx)] = null;
       });
-      cfg.slot_assignments = assignments;
       delete cfg.slot_placeholders;
+      delete cfg.slot_assignments;
     }
 
     // Put back hoisted top-level fields so the downloader's copy surfaces
@@ -2812,9 +2801,6 @@ const Blueprints = (() => {
           rarity:       bp.rarity || 'Common',
           status:       'standby',
           config:       cfg,
-          // Keep the legacy `slots` mirror in sync for one release; see
-          // supabase/migrations/20260416000001_user_spaceships_config_columns.sql
-          slots:        Object.assign({ category: bp.category || null }, cfg),
         }
       : {
           user_id:      user.id,
@@ -2831,6 +2817,15 @@ const Blueprints = (() => {
       .select()
       .maybeSingle();
     if (ierr) throw ierr;
+
+    // Slot assignments live in user_ship_slots (Phase C.1). The downloader
+    // gets empty slot rows so the wizard / Schematic knows the slot space.
+    if (type === 'spaceship' && created?.id && placeholderAssignments
+        && Object.keys(placeholderAssignments).length
+        && typeof ShipSlots !== 'undefined') {
+      try { await ShipSlots.setForShip(created.id, placeholderAssignments); }
+      catch { /* slot rows are not load-bearing for catalog browse */ }
+    }
 
     // Increment the download counter on the listing. Best effort — we
     // already wrote the row, and the RPC is RLS-gated server-side.
@@ -3002,12 +2997,20 @@ const Blueprints = (() => {
       for (const ship of toMigrate) {
         const { _guest, id, ...row } = ship;
         row.user_id = userId;
+        const guestAssignments = (row.config && row.config.slot_assignments) || ship.slot_assignments || null;
+        if (row.config && row.config.slot_assignments) {
+          row.config = Object.assign({}, row.config);
+          delete row.config.slot_assignments;
+        }
         try {
           const { ship: created } = await findOrCreateActiveShip(row.blueprint_id || null, () => row);
           if (created?.id) {
             _activatedShipIds = _activatedShipIds.map(sid => sid === id ? created.id : sid);
             ship.id = created.id;
             delete ship._guest;
+            if (guestAssignments && Object.keys(guestAssignments).length && typeof ShipSlots !== 'undefined') {
+              try { await ShipSlots.setForShip(created.id, guestAssignments); } catch {}
+            }
           }
         } catch (e) { /* skip duplicates */ }
       }

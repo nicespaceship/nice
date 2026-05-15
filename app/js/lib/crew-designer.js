@@ -615,7 +615,8 @@ Rules:
         caps: _data.editedAgents.map(a => a.role).filter((v, i, arr) => arr.indexOf(v) === i),
       };
 
-      // Supabase insert uses only valid columns: name, status, slots (jsonb)
+      // Supabase insert uses only valid columns: name, status, config (jsonb).
+      // Slot assignments persist separately via ShipSlots.setForShip.
       let shipId = `ship-${Date.now()}`;
       if (userId && typeof SB !== 'undefined' && SB.isReady()) {
         try {
@@ -623,9 +624,7 @@ Rules:
             user_id: userId,
             name: shipData.name,
             status: 'deployed',
-            slots: {
-              slot_assignments: slotAssignments,
-              agent_ids: createdAgentIds,
+            config: {
               flow_pattern: _data.flowPattern || 'sequential',
               category: _data.shipCategory || 'Custom',
               description: _data.shipDescription || '',
@@ -634,9 +633,15 @@ Rules:
               suggested_test_mission: _data.testMission,
               caps: shipData.caps,
               stats: shipData.stats,
+              source: 'crew_designer',
             },
           }));
-          if (created?.id) shipId = created.id;
+          if (created?.id) {
+            shipId = created.id;
+            if (typeof ShipSlots !== 'undefined' && Object.keys(slotAssignments).length) {
+              await ShipSlots.setForShip(shipId, slotAssignments);
+            }
+          }
         } catch (e) { console.warn('[CrewDesigner] Ship create fallback to local:', e); }
       }
 

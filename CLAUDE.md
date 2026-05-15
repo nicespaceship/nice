@@ -390,7 +390,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `HalCore` | `hal-core.js` | HAL-9000 camera-eye centerpiece reactor — mountable core markup, sibling of `DefaultCore`/`JarvisHUD` |
 | `AgentActivity` | `agent-activity.js` | In-memory pub/sub for "is this agent working?" signals — drives the schematic status node (idle/recent/active) |
 | `CrewMatcher` | `crew-matcher.js` | Resolves a spaceship's `crew_roles` + `crew_overrides` spec into a `slot_assignments` map at activation |
-| `BlueprintBackfill` | `blueprint-backfill.js` | Boot-time recovery for activated ships whose `slot_assignments` point at synthetic agent ids with no `user_agents` row |
+| `ShipSlots` | `ship-slots.js` | SSOT for slot assignments via `public.user_ship_slots` after Phase C.1 (`fetchForShips` / `setForShip` replace-all / `setSlot` upsert / `clearSlot` / `deleteForShip`) |
 | `ModelCatalog` | `model-catalog.js` | SSOT for the AI-model presentation layer — display name, provider, speed/quality bars, marketing copy |
 | `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain` |
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
