@@ -396,6 +396,69 @@ describe('ShipLog', () => {
         expect(result.content).toBe('');
       });
     });
+
+    // 2026-05-15: ship-log.js:362 referenced SB.auth.session() (sync,
+    // nonexistent) instead of awaiting SB.auth.getSession() (async). The
+    // optional-chain swallowed the typo and the Authorization header silently
+    // fell back to the HS256 anon key, which nice-ai's strict
+    // auth.getUser() rejected with 401 on every streaming chat. Pin the
+    // Bearer-token source so the typo can't return.
+    describe('streaming auth (Bug regression)', () => {
+      let _origInvoke, _origInvokeStream, _origAuth, _origUrl, _origKey, _origFetch;
+      const _ANON_KEY = 'eyJ.anon.key.placeholder';
+      const _USER_JWT = 'eyJ.user.jwt.placeholder';
+      let _capturedHeaders = null;
+
+      beforeEach(() => {
+        _origInvoke = SB.functions.invoke;
+        _origInvokeStream = SB.functions.invokeStream;
+        _origAuth = SB.auth;
+        _origUrl = SB._url; _origKey = SB._key;
+        _origFetch = globalThis.fetch;
+        _capturedHeaders = null;
+        SB.functions.invokeStream = async () => null; // gates the streaming branch in execute()
+        SB._url = 'https://test.supabase.co';
+        SB._key = _ANON_KEY;
+        SB.auth = { getSession: async () => ({ access_token: _USER_JWT }) };
+        globalThis.fetch = async (url, opts) => {
+          _capturedHeaders = opts?.headers || {};
+          // Emit one SSE chunk + completion so _callLLMStream resolves cleanly
+          const sse =
+            'data: {"type":"content_block_delta","delta":{"text":"hi"}}\n\n' +
+            'data: [DONE]\n\n';
+          const stream = new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode(sse));
+              controller.close();
+            },
+          });
+          return { ok: true, status: 200, body: stream };
+        };
+      });
+      afterEach(() => {
+        SB.functions.invoke = _origInvoke;
+        SB.functions.invokeStream = _origInvokeStream;
+        SB.auth = _origAuth;
+        SB._url = _origUrl; SB._key = _origKey;
+        globalThis.fetch = _origFetch;
+      });
+
+      it('uses the user JWT (not the anon key) as the streaming Bearer token', async () => {
+        const onChunk = () => {};
+        await ShipLog.execute('ship-stream-auth', { id: 'a1', name: 'StreamBot', config: {} }, 'hi', { onChunk });
+        expect(_capturedHeaders).not.toBeNull();
+        expect(_capturedHeaders.Authorization).toBe('Bearer ' + _USER_JWT);
+        expect(_capturedHeaders.Authorization).not.toBe('Bearer ' + _ANON_KEY);
+        expect(_capturedHeaders.apikey).toBe(_ANON_KEY);
+      });
+
+      it('falls back to the anon key when no session is available (guest path)', async () => {
+        SB.auth = { getSession: async () => null };
+        const onChunk = () => {};
+        await ShipLog.execute('ship-stream-anon', { id: 'a1', name: 'StreamBot', config: {} }, 'hi', { onChunk });
+        expect(_capturedHeaders.Authorization).toBe('Bearer ' + _ANON_KEY);
+      });
+    });
   });
 
   describe('relay', () => {

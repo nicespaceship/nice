@@ -359,7 +359,10 @@ const ShipLog = (() => {
     // Use fetch directly for streaming (SB.functions.invoke doesn't support streams)
     const supabaseUrl = SB.client?.supabaseUrl || SB._url || '';
     const supabaseKey = SB.client?.supabaseKey || SB._key || '';
-    const session = SB.auth?.session?.();
+    // SB.auth.getSession is async — the previous SB.auth.session() call did not exist on
+    // the wrapper, so accessToken silently fell back to the anon key and nice-ai's
+    // strict auth.getUser() returned 401 on every streaming call.
+    const session = (typeof SB.auth?.getSession === 'function') ? await SB.auth.getSession() : null;
     const accessToken = session?.access_token || supabaseKey;
 
     const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {

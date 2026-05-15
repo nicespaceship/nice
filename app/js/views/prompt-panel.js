@@ -2144,7 +2144,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const routeShip = (mentioned || agentBp) ? null : _routeShip;
     const targetShip = mentionedShip || routeShip;
 
-    const _agentHasTools = agentBp && agentBp.config && agentBp.config.tools && agentBp.config.tools.length > 0;
+    // Explicit tools win, but a `capability_id` (set by the wizard for slot-default
+    // agents per #512) means AgentExecutor._buildExecContext will resolve the
+    // umbrella's tools at runtime — route through AgentExecutor instead of the
+    // plain ShipLog streaming path so those tools actually load.
+    const _agentHasTools = agentBp && agentBp.config && (
+      (Array.isArray(agentBp.config.tools) && agentBp.config.tools.length > 0)
+      || !!agentBp.config.capability_id
+    );
 
     if (_agentHasTools && typeof AgentExecutor !== 'undefined') {
       // Resolve the real ship UUID for ship_log scoping. `bpId` is the
