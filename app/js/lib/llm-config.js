@@ -5,17 +5,49 @@
 
 const LLMConfig = (() => {
 
+  // Stale or naming-convention aliases that legacy seed data, hardcoded UI
+  // defaults, and older blueprints still emit. Resolved to the canonical
+  // model id from ModelCatalog so nice-ai sees a known model and the
+  // fallback-chain filter (which compares against enabledModels keys —
+  // also canonical) works correctly.
+  //
+  // Surfaced 2026-05-15: an Engineering Lead slot agent (auto-created with
+  // llm_engine='claude-4' from ship-setup-wizard.js) reached nice-ai after
+  // #514 fixed the streaming/routing path, then 404'd because 'claude-4'
+  // is not a real model id. Add new aliases here when seed data drifts;
+  // do not silently let unknown ids reach nice-ai.
+  const MODEL_ALIASES = {
+    // Hardcoded UI defaults / broken legacy aliases (404 from nice-ai)
+    'claude-4':           'claude-4-6-sonnet',
+    'claude-4-opus':      'claude-4-7-opus',
+    'grok':               'grok-4-1-fast',
+
+    // Naming-convention drift — both forms accepted by nice-ai today, but
+    // MODEL_CATALOG (the SSOT) uses the year-family-tier form.
+    'claude-sonnet-4-6':  'claude-4-6-sonnet',
+    'claude-opus-4-7':    'claude-4-7-opus',
+    'gemini-2.5-flash':   'gemini-2-5-flash',
+    'gemini-2.5-pro':     'gemini-2-5-pro',
+  };
+
+  function _canonicalize(id) {
+    if (!id || typeof id !== 'string') return id;
+    return MODEL_ALIASES[id] || id;
+  }
+
   // Ordered capability ladder — most to least capable.
+  // IDs match MODEL_CATALOG so the buildFallbackChain filter matches the
+  // user's enabledModels keys (which come from MODEL_CATALOG too).
   // Used to build per-call fallback chains: if the primary model is overloaded,
   // we walk down to the next model the user has enabled.
   // noTools: true — provider tool-use schema not compatible; strip tools on fallback.
   const CAPABILITY_CHAIN = [
-    { id: 'claude-opus-4-7',   tier: 'premium',  noTools: false },
+    { id: 'claude-4-7-opus',   tier: 'premium',  noTools: false },
     { id: 'gpt-5-4-pro',       tier: 'premium',  noTools: false },
     { id: 'gemini-2-5-pro',    tier: 'premium',  noTools: false },
-    { id: 'claude-sonnet-4-6', tier: 'standard', noTools: false },
+    { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
     { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
-    { id: 'grok',              tier: 'standard', noTools: true  },
+    { id: 'grok-4-1-fast',     tier: 'standard', noTools: true  },
     { id: 'llama-4-scout',     tier: 'standard', noTools: true  },
     { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
   ];
@@ -23,10 +55,11 @@ const LLMConfig = (() => {
   // Returns ordered fallback entries for a given primary model.
   // Only includes models the user has enabled; gemini-2-5-flash always included last.
   function buildFallbackChain(primaryModel, enabledModels) {
+    const canonical = _canonicalize(primaryModel);
     const enabled = enabledModels && typeof enabledModels === 'object'
-      ? Object.keys(enabledModels).filter(k => enabledModels[k])
+      ? Object.keys(enabledModels).filter(k => enabledModels[k]).map(_canonicalize)
       : [];
-    const idx = CAPABILITY_CHAIN.findIndex(m => m.id === primaryModel);
+    const idx = CAPABILITY_CHAIN.findIndex(m => m.id === canonical);
     return CAPABILITY_CHAIN
       .slice(idx >= 0 ? idx + 1 : 0)
       .filter(m => m.id === 'gemini-2-5-flash' || enabled.includes(m.id));
@@ -84,11 +117,11 @@ const LLMConfig = (() => {
       }
       model = learned || (profile && profile.fallback) || 'gemini-2-5-flash';
     }
-    params.model = model;
+    params.model = _canonicalize(model);
 
     // model_profile overrides — explicit values trump stat-derived envelope
     if (profile) {
-      if (profile.fallback) params.fallback = profile.fallback;
+      if (profile.fallback) params.fallback = _canonicalize(profile.fallback);
       if (typeof profile.temperature === 'number') {
         params.temperature = Math.max(0, Math.min(2, profile.temperature));
       }
@@ -125,5 +158,5 @@ const LLMConfig = (() => {
     return isNaN(n) ? 50 : Math.max(0, Math.min(100, n));
   }
 
-  return { fromStats, forBlueprint, buildFallbackChain, CAPABILITY_CHAIN };
+  return { fromStats, forBlueprint, buildFallbackChain, canonicalize: _canonicalize, CAPABILITY_CHAIN, MODEL_ALIASES };
 })();
