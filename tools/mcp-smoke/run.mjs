@@ -12,9 +12,10 @@
  * input and asserts non-error response. Covers the "agent's tool
  * call actually returns valid data" failure mode.
  *
- * Auth — set EITHER:
- *   SUPABASE_USER_JWT       direct (copy access_token from nice-auth localStorage)
- *   SUPABASE_REFRESH_TOKEN  exchanged for a fresh JWT at start (used by CI)
+ * Auth — set ONE of:
+ *   SUPABASE_USER_JWT                            direct (paste access_token from nice-auth localStorage)
+ *   SUPABASE_USER_EMAIL + SUPABASE_USER_PASSWORD password sign-in each run (preferred for CI)
+ *   SUPABASE_REFRESH_TOKEN                       exchanged for a fresh JWT (warning: Supabase rotates RTs, the second run with the same stored token fails)
  *
  * Usage:
  *   node tools/mcp-smoke/run.mjs hubspot
@@ -38,6 +39,29 @@ const providersDir = resolve(__dir, 'providers');
 // ── Auth ───────────────────────────────────────────────────────────
 async function getJwt() {
   if (process.env.SUPABASE_USER_JWT) return process.env.SUPABASE_USER_JWT;
+
+  // Preferred for CI: email + password. Fresh sign-in each run, no
+  // token rotation gotcha. Same security profile as a stored refresh
+  // token (both are full-account credentials).
+  if (process.env.SUPABASE_USER_EMAIL && process.env.SUPABASE_USER_PASSWORD) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: process.env.SUPABASE_USER_EMAIL,
+        password: process.env.SUPABASE_USER_PASSWORD,
+      }),
+    });
+    if (!res.ok) {
+      console.error(`password sign-in ${res.status}:`, await res.text());
+      process.exit(1);
+    }
+    return (await res.json()).access_token;
+  }
+
+  // Refresh-token path: convenient for local dev but Supabase rotates
+  // tokens on each exchange (10s reuse window) — the second run with
+  // the same stored token will fail with refresh_token_not_found.
   if (process.env.SUPABASE_REFRESH_TOKEN) {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
       method: 'POST',
@@ -50,7 +74,8 @@ async function getJwt() {
     }
     return (await res.json()).access_token;
   }
-  console.error('error: set SUPABASE_USER_JWT or SUPABASE_REFRESH_TOKEN (see README)');
+
+  console.error('error: set SUPABASE_USER_JWT, SUPABASE_USER_EMAIL + SUPABASE_USER_PASSWORD, or SUPABASE_REFRESH_TOKEN (see README)');
   process.exit(2);
 }
 
