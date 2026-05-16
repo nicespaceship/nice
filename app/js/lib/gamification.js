@@ -90,20 +90,22 @@ const Gamification = (() => {
   /* ── Ship Classes (count-based classification by active agents) ── */
 
   /* ── Agent Rarity System ── */
-  // Tier weights for the agent rarity calculation. Keys mirror
-  // MODEL_CATALOG ids where possible; legacy / aliased keys are kept so
-  // stored agents (and tests) still resolve until a broader rarity-rule
-  // refresh lands.
+  // Tier weights for agent rarity calculation. Keys mirror MODEL_CATALOG
+  // ids (the SSOT). `calcAgentRarity` canonicalizes the llm_engine via
+  // LLMConfig.canonicalize before lookup, so legacy aliases like
+  // 'claude-4' resolve to 'claude-4-6-sonnet' (tier 4) without needing
+  // an explicit entry here. Truly stale ids (e.g. 'gpt-4o', 'claude-3.5')
+  // are no longer present in MODEL_CATALOG and fall through to the
+  // default tier 1 on unknown lookup.
+  // `nice-auto` is a sentinel ("let intel pick") that LLMConfig does not
+  // canonicalize away — it gets its own tier so auto-pick agents score
+  // as mid-tier.
   const MODEL_TIERS = {
-    // Canonical catalog ids
-    'claude-4-7-opus':   4, 'claude-4-6-sonnet': 4, 'gpt-5-4-pro': 4, 'openai-o3': 4, 'gpt-5-3-codex': 3,
-    'gemini-2-5-pro':    3, 'grok-4-1-fast': 3, 'gpt-5-mini': 2, 'llama-4-scout': 2, 'gemini-2-5-flash': 1,
-    // Legacy / aliased ids
-    'claude-4': 4, 'claude-4-opus': 4, 'gpt-4o': 4, 'grok-3': 4,
-    'claude-4-sonnet': 3, 'claude-3.5': 3, 'claude-3.5-sonnet': 3, 'gemini-2': 3,
-    'gemini-2-flash': 2, 'gemini-1.5-pro': 2, 'grok-3-mini': 2,
-    'gpt-4o-mini': 1,
-    'nice-auto': 3,
+    'claude-4-7-opus':   4, 'claude-4-6-sonnet': 4, 'gpt-5-4-pro': 4, 'openai-o3': 4,
+    'gpt-5-3-codex':     3, 'gemini-2-5-pro': 3, 'grok-4-1-fast': 3,
+    'gpt-5-mini':        2, 'llama-4-scout': 2,
+    'gemini-2-5-flash':  1,
+    'nice-auto':         3,
   };
 
   const TYPE_SCORES = {
@@ -139,8 +141,14 @@ const Gamification = (() => {
     const toolCount = (config.tools || []).length;
     score += toolCount === 0 ? 0 : Math.min(4, Math.ceil(toolCount / 2));
 
-    // Model tier (1-4 pts) — check both top-level and config
-    const llm = agent.llm_engine || config.llm_engine || '';
+    // Model tier (1-4 pts) — canonicalize llm_engine first so legacy
+    // aliases (e.g. 'claude-4' from pre-#517 wizard runs) resolve to
+    // their canonical id before tier lookup. Without canonicalize, the
+    // raw alias would miss the table and silently score as tier 1.
+    const rawLlm = agent.llm_engine || config.llm_engine || '';
+    const llm = (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize)
+      ? LLMConfig.canonicalize(rawLlm)
+      : rawLlm;
     score += MODEL_TIERS[llm] || 1;
 
     // Agent type (1-3 pts) — check both top-level and config

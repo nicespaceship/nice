@@ -267,6 +267,39 @@ describe('Gamification', () => {
       const rarity = Gamification.calcAgentRarity(agent);
       expect(rarity.color).toBe('#f59e0b');
     });
+
+    // Tier-lookup behaviour after the MODEL_TIERS cleanup. Pre-cleanup
+    // the table held 11 stale legacy entries; now lookups canonicalize
+    // via LLMConfig and the table holds only the 10 canonical ids +
+    // `nice-auto`. Equivalent agents score the same way they did before.
+    it('canonicalizes legacy claude-4 to claude-4-6-sonnet for tier lookup (tier 4)', () => {
+      const legacy = { llm_engine: 'claude-4', type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      const canonical = { llm_engine: 'claude-4-6-sonnet', type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      expect(Gamification.calcAgentRarity(legacy).score).toBe(Gamification.calcAgentRarity(canonical).score);
+    });
+
+    it('canonicalizes the dotted gemini-2.5-flash alias to gemini-2-5-flash (tier 1)', () => {
+      const dotted = { llm_engine: 'gemini-2.5-flash', type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      const canonical = { llm_engine: 'gemini-2-5-flash', type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      expect(Gamification.calcAgentRarity(dotted).score).toBe(Gamification.calcAgentRarity(canonical).score);
+    });
+
+    it('truly stale ids (gpt-4o, claude-3.5-sonnet) fall through to default tier 1', () => {
+      // Neither id is in MODEL_CATALOG or MODEL_ALIASES, so canonicalize is
+      // a no-op and the lookup misses. The agent scores as if it had no
+      // recognised model — same shape as an agent with llm_engine=''.
+      const stale = { llm_engine: 'gpt-4o', type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      const blank = { llm_engine: '',       type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      expect(Gamification.calcAgentRarity(stale).score).toBe(Gamification.calcAgentRarity(blank).score);
+    });
+
+    it('nice-auto sentinel keeps its mid-tier weight (3) — LLMConfig does not canonicalize it away', () => {
+      const auto = { llm_engine: 'nice-auto', type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      const mini = { llm_engine: 'gpt-5-mini', type: 'Specialist', config: { tools: [], memory: false, temperature: 0.7 } };
+      // nice-auto (tier 3) should score strictly higher than gpt-5-mini (tier 2)
+      // with all other factors equal.
+      expect(Gamification.calcAgentRarity(auto).score).toBeGreaterThan(Gamification.calcAgentRarity(mini).score);
+    });
   });
 
   describe('Slot Acceptance', () => {
