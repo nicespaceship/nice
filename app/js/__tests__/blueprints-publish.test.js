@@ -209,4 +209,59 @@ describe('Blueprints.unpublishFromCommunity', () => {
     await expect(Blueprints.unpublishFromCommunity())
       .rejects.toThrow('Missing blueprint id');
   });
+
+  /**
+   * Discriminator mock — tracks .delete() calls per table and lets the
+   * caller stub marketplace_listings.category. Covers the Phase D.5
+   * branching where unpublish picks agent_blueprints vs spaceship_blueprints
+   * based on the listing category.
+   */
+  function discriminatorMock({ listingCategory } = {}) {
+    const deletedTables = [];
+    return {
+      deletedTables,
+      client: {
+        from(table) {
+          const api = {
+            _op: null,
+            select() { return this; },
+            eq() { return this; },
+            delete() { this._op = 'delete'; deletedTables.push(table); return this; },
+            maybeSingle() {
+              if (table === 'marketplace_listings') {
+                return Promise.resolve({
+                  data: listingCategory ? { category: listingCategory } : null,
+                  error: null,
+                });
+              }
+              return Promise.resolve({ data: null, error: null });
+            },
+            then(resolve) { resolve({ error: null }); },
+          };
+          return api;
+        },
+      },
+    };
+  }
+
+  it('routes the blueprint delete to agent_blueprints when listing.category is agent', async () => {
+    const mock = discriminatorMock({ listingCategory: 'agent' });
+    globalThis.SB = mock;
+    await Blueprints.unpublishFromCommunity('bp-agent-1');
+    expect(mock.deletedTables).toEqual(['marketplace_listings', 'agent_blueprints']);
+  });
+
+  it('routes the blueprint delete to spaceship_blueprints when listing.category is spaceship', async () => {
+    const mock = discriminatorMock({ listingCategory: 'spaceship' });
+    globalThis.SB = mock;
+    await Blueprints.unpublishFromCommunity('bp-ship-1');
+    expect(mock.deletedTables).toEqual(['marketplace_listings', 'spaceship_blueprints']);
+  });
+
+  it('skips the blueprint delete when no listing exists (already unpublished)', async () => {
+    const mock = discriminatorMock({ listingCategory: null });
+    globalThis.SB = mock;
+    await Blueprints.unpublishFromCommunity('bp-orphan');
+    expect(mock.deletedTables).toEqual(['marketplace_listings']);
+  });
 });

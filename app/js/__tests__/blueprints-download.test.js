@@ -79,17 +79,29 @@ describe('Blueprints.downloadCommunityBlueprint', () => {
       .rejects.toThrow('Sign in to install');
   });
 
-  it('rejects when the blueprint is not in community scope', async () => {
-    globalThis.SB = makeMock({ readers: { blueprints: () => null } });
+  it('rejects when the blueprint has no community listing', async () => {
+    globalThis.SB = makeMock({ readers: { marketplace_listings: () => null } });
     await expect(Blueprints.downloadCommunityBlueprint('bp-does-not-exist'))
+      .rejects.toThrow('not available');
+  });
+
+  it('rejects when the listing exists but the blueprint row is missing', async () => {
+    globalThis.SB = makeMock({
+      readers: {
+        marketplace_listings: () => ({ category: 'agent' }),
+        agent_blueprints: () => null,
+      },
+    });
+    await expect(Blueprints.downloadCommunityBlueprint('bp-orphan'))
       .rejects.toThrow('not available');
   });
 
   it('clones an agent blueprint into user_agents and hoists description/flavor/tags', async () => {
     const mock = makeMock({
       readers: {
-        blueprints: () => ({
-          id: 'community-agent-1', type: 'agent', scope: 'community',
+        marketplace_listings: () => ({ category: 'agent' }),
+        agent_blueprints: () => ({
+          id: 'community-agent-1', scope: 'community',
           name: 'Research Bot', description: 'Crunches papers', flavor: 'Fast and clean',
           tags: ['research'], category: 'Research', rarity: 'Rare',
           config: { tools: ['browse'], temperature: 0.7 },
@@ -127,8 +139,9 @@ describe('Blueprints.downloadCommunityBlueprint', () => {
   it('expands ship slot_placeholders into empty user_ship_slots rows on clone', async () => {
     const mock = makeMock({
       readers: {
-        blueprints: () => ({
-          id: 'community-ship-1', type: 'spaceship', scope: 'community',
+        marketplace_listings: () => ({ category: 'spaceship' }),
+        spaceship_blueprints: () => ({
+          id: 'community-ship-1', scope: 'community',
           name: 'Analytics Cruiser', description: 'Data ops',
           category: 'Analytics', rarity: 'Epic',
           config: {
@@ -164,8 +177,9 @@ describe('Blueprints.downloadCommunityBlueprint', () => {
     // sneaked-in agent IDs should be discarded.
     const mock = makeMock({
       readers: {
-        blueprints: () => ({
-          id: 'community-ship-evil', type: 'spaceship', scope: 'community',
+        marketplace_listings: () => ({ category: 'spaceship' }),
+        spaceship_blueprints: () => ({
+          id: 'community-ship-evil', scope: 'community',
           name: 'Evil', category: 'Ops', rarity: 'Common',
           config: {
             slot_placeholders: [{ slot: 0 }],
@@ -197,8 +211,10 @@ describe('Blueprints.downloadCommunityBlueprint', () => {
             select() { return this; },
             eq(col, val) { state.filters[col] = val; return this; },
             maybeSingle() {
-              if (table === 'blueprints') return Promise.resolve({
-                data: { id: 'bp-1', type: 'agent', scope: 'community', name: 'A', config: {} }, error: null });
+              if (table === 'marketplace_listings') return Promise.resolve({
+                data: { category: 'agent' }, error: null });
+              if (table === 'agent_blueprints') return Promise.resolve({
+                data: { id: 'bp-1', scope: 'community', name: 'A', config: {} }, error: null });
               return Promise.resolve({ data: null, error: null });
             },
             insert(payload) {
