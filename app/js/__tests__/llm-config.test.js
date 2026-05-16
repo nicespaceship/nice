@@ -115,23 +115,23 @@ describe('LLMConfig', () => {
       expect(LLMConfig.forBlueprint(bp).max_tokens).toBe(1024);
     });
 
-    it('exposes fallback model and tier when present', () => {
+    it('exposes fallback model and tier when present (canonicalized to catalog ids)', () => {
       const bp = {
         config: {
           model_profile: {
-            preferred: 'claude-sonnet-4-6',
-            fallback:  'gemini-2.5-flash',
+            preferred: 'claude-sonnet-4-6', // legacy id form
+            fallback:  'gemini-2.5-flash',  // dot form
             tier:      'premium',
           },
         },
       };
       const cfg = LLMConfig.forBlueprint(bp);
-      expect(cfg.model).toBe('claude-sonnet-4-6');
-      expect(cfg.fallback).toBe('gemini-2.5-flash');
+      expect(cfg.model).toBe('claude-4-6-sonnet');
+      expect(cfg.fallback).toBe('gemini-2-5-flash');
       expect(cfg.tier).toBe('premium');
     });
 
-    it('uses model_profile.fallback when nice-auto cannot resolve', () => {
+    it('uses model_profile.fallback when nice-auto cannot resolve (canonicalized)', () => {
       // ModelIntel is undefined in test env so nice-auto cannot learn
       const bp = {
         config: {
@@ -142,7 +142,7 @@ describe('LLMConfig', () => {
           },
         },
       };
-      expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2.5-flash');
+      expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2-5-flash');
     });
 
     it('falls back to gemini-2-5-flash (free tier) when nice-auto has no profile fallback', () => {
@@ -200,9 +200,9 @@ describe('LLMConfig', () => {
     });
 
     it('marks noTools correctly for Llama and Grok', () => {
-      const chain = LLMConfig.buildFallbackChain('claude-sonnet-4-6', { 'llama-4-scout': true, 'grok': true });
+      const chain = LLMConfig.buildFallbackChain('claude-4-6-sonnet', { 'llama-4-scout': true, 'grok-4-1-fast': true });
       const llama = chain.find(m => m.id === 'llama-4-scout');
-      const grok  = chain.find(m => m.id === 'grok');
+      const grok  = chain.find(m => m.id === 'grok-4-1-fast');
       expect(llama?.noTools).toBe(true);
       expect(grok?.noTools).toBe(true);
     });
@@ -238,6 +238,82 @@ describe('LLMConfig', () => {
       const bp = { config: { llm_engine: 'gemini-2-5-flash' } };
       const cfg = LLMConfig.forBlueprint(bp);
       expect(cfg.fallbackChain).toHaveLength(0);
+    });
+  });
+
+  // Discovered 2026-05-15: ship-setup-wizard auto-created slot agents with
+  // llm_engine='claude-4' (default in many UI defaults), which nice-ai 404s
+  // because no Anthropic model has that id. Pin the canonical-id resolution
+  // so the bug can't return when new aliases drift into seed data.
+  describe('canonicalize / MODEL_ALIASES', () => {
+    it('resolves the stale "claude-4" alias to the current sonnet catalog id', () => {
+      expect(LLMConfig.canonicalize('claude-4')).toBe('claude-4-6-sonnet');
+    });
+
+    it('resolves "claude-4-opus" to the catalog opus id', () => {
+      expect(LLMConfig.canonicalize('claude-4-opus')).toBe('claude-4-7-opus');
+    });
+
+    it('resolves bare "grok" to "grok-4-1-fast" (catalog id)', () => {
+      expect(LLMConfig.canonicalize('grok')).toBe('grok-4-1-fast');
+    });
+
+    it('normalizes legacy claude id form to the catalog form', () => {
+      expect(LLMConfig.canonicalize('claude-sonnet-4-6')).toBe('claude-4-6-sonnet');
+      expect(LLMConfig.canonicalize('claude-opus-4-7')).toBe('claude-4-7-opus');
+    });
+
+    it('normalizes dot-form gemini ids to dash-form catalog ids', () => {
+      expect(LLMConfig.canonicalize('gemini-2.5-flash')).toBe('gemini-2-5-flash');
+      expect(LLMConfig.canonicalize('gemini-2.5-pro')).toBe('gemini-2-5-pro');
+    });
+
+    it('leaves canonical catalog ids unchanged', () => {
+      expect(LLMConfig.canonicalize('claude-4-6-sonnet')).toBe('claude-4-6-sonnet');
+      expect(LLMConfig.canonicalize('gpt-5-mini')).toBe('gpt-5-mini');
+      expect(LLMConfig.canonicalize('gemini-2-5-flash')).toBe('gemini-2-5-flash');
+    });
+
+    it('passes unknown ids through unchanged (nice-ai gets the original id)', () => {
+      expect(LLMConfig.canonicalize('nice-auto')).toBe('nice-auto');
+      expect(LLMConfig.canonicalize('mystery-model')).toBe('mystery-model');
+    });
+
+    it('returns the input unchanged for null / non-string', () => {
+      expect(LLMConfig.canonicalize(null)).toBe(null);
+      expect(LLMConfig.canonicalize(undefined)).toBe(undefined);
+      expect(LLMConfig.canonicalize(123)).toBe(123);
+    });
+
+    it('forBlueprint resolves a stale llm_engine alias before returning', () => {
+      // Reproduces the live bug: Engineering Lead auto-created with
+      // llm_engine='claude-4' produced a 404 from nice-ai post-#514.
+      const bp = { config: { llm_engine: 'claude-4' } };
+      expect(LLMConfig.forBlueprint(bp).model).toBe('claude-4-6-sonnet');
+    });
+
+    it('buildFallbackChain canonicalizes the primary and the enabledModels keys', () => {
+      // User toggles the catalog id, but a blueprint passes the legacy
+      // primary form — chain must still recognize the user's enabled set.
+      const chain = LLMConfig.buildFallbackChain('claude-opus-4-7', {
+        'claude-4-6-sonnet': true,
+        'gemini-2-5-flash': true,
+      });
+      const ids = chain.map(m => m.id);
+      expect(ids).toContain('claude-4-6-sonnet'); // below opus, enabled
+      expect(ids).toContain('gemini-2-5-flash');
+      expect(ids).not.toContain('claude-4-7-opus'); // the primary
+    });
+
+    it('CAPABILITY_CHAIN uses canonical catalog ids (no legacy drift)', () => {
+      const ids = LLMConfig.CAPABILITY_CHAIN.map(m => m.id);
+      // Spot-check the entries that previously drifted from MODEL_CATALOG
+      expect(ids).toContain('claude-4-6-sonnet');
+      expect(ids).toContain('claude-4-7-opus');
+      expect(ids).toContain('grok-4-1-fast');
+      expect(ids).not.toContain('claude-sonnet-4-6');
+      expect(ids).not.toContain('claude-opus-4-7');
+      expect(ids).not.toContain('grok');
     });
   });
 
