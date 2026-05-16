@@ -116,3 +116,57 @@ describe('Seed migration validation', () => {
     });
   }
 });
+
+/**
+ * Cross-migration collision checks — added 2026-05-16 after two parallel
+ * sessions opened ship PRs with identical migration timestamps and identical
+ * `card_num` values. The per-migration checks above catch typo'd slugs and
+ * unknown roles; these two catch collisions that only surface when both
+ * branches try to land on main.
+ */
+describe('Cross-migration collisions', () => {
+  it('no two migrations share a timestamp prefix (would collide on schema_migrations.version PK)', () => {
+    const seen = new Map(); // timestamp → first filename to claim it
+    const collisions = [];
+    for (const name of listMigrations()) {
+      const m = name.match(/^(\d{14})_/);
+      if (!m) continue; // skip non-timestamped files (none expected, but defensive)
+      const ts = m[1];
+      if (seen.has(ts)) {
+        collisions.push(`${ts}: ${seen.get(ts)} vs ${name}`);
+      } else {
+        seen.set(ts, name);
+      }
+    }
+    expect(collisions, `Duplicate migration timestamps:\n  ${collisions.join('\n  ')}`).toEqual([]);
+  });
+
+  /**
+   * Pulls the `'card_num', <int>` value out of every spaceship_blueprints
+   * INSERT in a migration. Returns an array of {file, card_num} so the
+   * collision message can name both offenders.
+   */
+  function parseShipCardNums(name) {
+    const sql = readMigration(name);
+    if (!sql.includes('INSERT INTO public.spaceship_blueprints')) return [];
+    const out = [];
+    const re = /'card_num'\s*,\s*(\d+)/g;
+    let m;
+    while ((m = re.exec(sql)) !== null) out.push({ file: name, card_num: parseInt(m[1], 10) });
+    return out;
+  }
+
+  it('no two spaceship_blueprints seeds share a card_num (display ordering convention: increment from 1, no gaps)', () => {
+    const all = listMigrations().flatMap(parseShipCardNums);
+    const seen = new Map(); // card_num → first filename to claim it
+    const collisions = [];
+    for (const { file, card_num } of all) {
+      if (seen.has(card_num)) {
+        collisions.push(`card_num=${card_num}: ${seen.get(card_num)} vs ${file}`);
+      } else {
+        seen.set(card_num, file);
+      }
+    }
+    expect(collisions, `Duplicate ship card_num values:\n  ${collisions.join('\n  ')}`).toEqual([]);
+  });
+});
