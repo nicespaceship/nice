@@ -1,0 +1,52 @@
+name: Supabase migrate
+
+# Apply pending migrations to the linked Supabase project automatically
+# when new files in supabase/migrations/ land on main.
+#
+# The 2026-05-16 reconciliation pass (#541) aligned local files 1:1 with
+# prod supabase_migrations.schema_migrations, so routine pushes with no
+# new migration files are a no-op. Only PRs that add a new migration
+# trigger an actual `db push` call.
+#
+# Manual run via workflow_dispatch — useful for re-trying a failed push
+# without making an empty commit.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Link Supabase project
+        run: npx --yes supabase link --project-ref zacllshbgmnwsmliteqx
+
+      - name: List migration state (pre-push)
+        run: npx --yes supabase migration list
+
+      - name: Push pending migrations
+        run: npx --yes supabase db push --yes
+
+      - name: List migration state (post-push)
+        if: always()
+        run: npx --yes supabase migration list
