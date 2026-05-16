@@ -116,6 +116,7 @@ loadScriptGlobal('lib/audit-log.js');
 loadScriptGlobal('lib/onboarding.js');  // Depends on AuditLog + State (both already available)
 loadScriptGlobal('lib/content-queue.js'); // Depends on Utils + State
 loadScriptGlobal('lib/notify.js');      // Before Gamification (Gamification calls Notify.send)
+loadScriptGlobal('lib/llm-config.js');  // Before Gamification (Gamification.calcAgentRarity calls LLMConfig.canonicalize)
 loadScriptGlobal('lib/gamification.js');
 loadScriptGlobal('lib/data-io.js');
 loadScriptGlobal('lib/command-palette.js');
