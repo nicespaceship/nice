@@ -720,11 +720,31 @@ const SchematicView = (() => {
   }
 
   // Derive a short capability label from the blueprint's tool list.
-  // Maps MCP tool IDs to human-readable provider names.
+  // Maps MCP tool IDs to human-readable provider names. Slot agents
+  // auto-created by the wizard (#512) carry config.capability_id instead
+  // of an explicit config.tools array — resolve through the umbrella
+  // blueprint so the schematic reflects what AgentExecutor._buildExecContext
+  // actually loads at runtime. Without this, every #512 slot agent
+  // rendered as "No live tools" even though the chat had full tool access.
   function _capabilityLabel(bp) {
     if (!bp) return null;
-    const tools = (bp.config && bp.config.tools) || [];
-    if (!tools.length) return null;
+    let tools = (bp.config && bp.config.tools) || [];
+    let umbrellaName = null;
+    if (bp.config && bp.config.capability_id && typeof Blueprints !== 'undefined') {
+      const capId = bp.config.capability_id;
+      // getCapability is strict (returns null for kind='character'); fall
+      // through to getAgent for the character-kind umbrellas that hold the
+      // real catalog (HubSpot Agent, GitHub Agent, etc.).
+      const cap = (Blueprints.getCapability && Blueprints.getCapability(capId))
+               || (Blueprints.getAgent && Blueprints.getAgent(capId))
+               || null;
+      if (cap) {
+        if (!tools.length && cap.config && Array.isArray(cap.config.tools)) {
+          tools = cap.config.tools;
+        }
+        if (cap.name) umbrellaName = String(cap.name).replace(/\s+agent$/i, '').trim() || null;
+      }
+    }
     const t = tools[0] || '';
     if (t.includes('hubspot'))                               return 'HubSpot';
     if (t.includes('gmail') || t.includes('calendar') || t.includes('drive')) return 'Google Workspace';
@@ -736,6 +756,11 @@ const SchematicView = (() => {
     if (t.includes('stripe'))                                return 'Stripe';
     if (t.includes('generate-image') || t.includes('generate-video')) return 'Media';
     if (t.includes('browser') || t.includes('web-search'))  return 'Web';
+    // Prefer the umbrella's brand name ("GitHub Agent" → "GitHub") over a
+    // generic type/role fallback — only reached when the prefix-matcher
+    // above doesn't recognise the first tool name.
+    if (umbrellaName) return umbrellaName;
+    if (!tools.length) return null;
     return (bp.config && (bp.config.type || bp.config.role)) || null;
   }
 
@@ -1002,5 +1027,5 @@ const SchematicView = (() => {
     }
   }
 
-  return { render, destroy };
+  return { render, destroy, _capabilityLabel };
 })();
