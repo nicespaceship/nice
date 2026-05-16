@@ -8272,6 +8272,77 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .bp-drawer-overlay.open { display:block; }
 
+/* Ship-specific drawer detail: narrative scene + crew roster. */
+.bp-drawer-desc {
+  margin:0; opacity:.85; font-size:.88rem; line-height:1.55; color:var(--text);
+}
+.bp-drawer-section { display:flex; flex-direction:column; gap:8px; }
+.bp-drawer-section-label {
+  font-family:var(--font-b); font-size:var(--text-xs);
+  text-transform:uppercase; letter-spacing:var(--tracking-caps);
+  font-weight:var(--fw-bold); color:var(--text-muted);
+}
+.bp-drawer-flavor {
+  background:color-mix(in srgb, var(--accent) 6%, transparent);
+  border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0;
+  padding:12px 14px;
+}
+.bp-drawer-flavor p {
+  margin:0; font-size:.82rem; line-height:1.6; color:var(--text);
+  font-style:italic; opacity:.92;
+}
+.bp-drawer-crew-list {
+  display:flex; flex-direction:column; gap:6px;
+  border:1px solid var(--border); border-radius:var(--radius);
+  background:color-mix(in srgb, var(--bg-alt) 50%, transparent);
+  padding:8px;
+}
+.bp-drawer-crew-row {
+  display:grid; grid-template-columns:24px 1fr auto; gap:10px;
+  align-items:center; padding:6px 6px;
+  border-radius:calc(var(--radius) - 2px);
+  transition:background .15s;
+}
+.bp-drawer-crew-row:hover { background:color-mix(in srgb, var(--accent) 8%, transparent); }
+.bp-drawer-crew-num {
+  font-family:var(--font-m); font-size:.7rem; font-weight:var(--fw-bold);
+  color:var(--text-muted); text-align:center;
+}
+.bp-drawer-crew-info { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.bp-drawer-crew-label {
+  font-size:.82rem; font-weight:var(--fw-medium); color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.bp-drawer-crew-meta {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  font-size:.68rem; color:var(--text-muted);
+}
+.bp-drawer-crew-role {
+  text-transform:uppercase; letter-spacing:.06em; font-weight:var(--fw-medium);
+}
+.bp-drawer-crew-role::after { content:"·"; padding:0 0 0 8px; opacity:.5; }
+.bp-drawer-crew-agent { font-family:var(--font-m); font-size:.7rem; }
+.bp-drawer-crew-agent.muted { opacity:.55; font-style:italic; }
+.bp-drawer-crew-class {
+  font-family:var(--font-m); font-size:.65rem; font-weight:var(--fw-bold);
+  padding:2px 6px; border-radius:3px; line-height:1;
+  border:1px solid currentColor;
+}
+.bp-drawer-crew-class-1 { color:#94a3b8; }
+.bp-drawer-crew-class-2 { color:#b6dff9; }
+.bp-drawer-crew-class-3 { color:#a855f7; }
+.bp-drawer-crew-class-4 { color:#f59e0b; }
+.bp-drawer-crew-legend {
+  display:flex; flex-wrap:wrap; gap:10px; padding:4px 4px 0;
+  font-size:.65rem; color:var(--text-muted);
+}
+.bp-drawer-crew-legend span { display:inline-flex; align-items:center; gap:4px; }
+.bp-drawer-crew-swatch {
+  display:inline-block; width:8px; height:8px; border-radius:2px;
+  background:currentColor;
+}
+
 /* Card selected highlight (for drawer + compare) */
 .blueprint-card.blueprint-selected,
 .bpl-row.blueprint-selected {
