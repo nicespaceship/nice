@@ -459,6 +459,216 @@ describe('ShipLog', () => {
         expect(_capturedHeaders.Authorization).toBe('Bearer ' + _ANON_KEY);
       });
     });
+
+    // 2026-05-16: previous session (#515) added MODEL_ALIASES to canonicalize
+    // stale model ids before they hit nice-ai. But LLMConfig.forBlueprint
+    // already returned a `fallbackChain` array — no caller consumed it.
+    // When a model 404'd at runtime (post-#515 still possible for any id not
+    // in MODEL_ALIASES) or 503'd, the call failed instead of degrading.
+    // _callLLM + _callLLMStream now walk the chain on retryable HTTP
+    // errors (404/429/503), capped at 3 fallback attempts, skipping 402
+    // (billing) and 400/401/403 (validation/auth — same problem on every model).
+    describe('LLM fallback on retryable errors', () => {
+      let _origInvoke, _origLLMConfig;
+      let _origInvokeStream, _origAuth, _origFetch, _origUrl, _origKey;
+      let _invokeCalls;
+      beforeEach(() => {
+        _origInvoke = SB.functions.invoke;
+        _origLLMConfig = globalThis.LLMConfig;
+        _invokeCalls = [];
+        globalThis.LLMConfig = {
+          forBlueprint: () => ({
+            model: 'claude-4-7-opus',
+            temperature: 0.7, max_tokens: 1024,
+            fallbackChain: [
+              { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
+              { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
+            ],
+          }),
+        };
+      });
+      afterEach(() => {
+        SB.functions.invoke = _origInvoke;
+        globalThis.LLMConfig = _origLLMConfig;
+      });
+
+      it('walks the chain on 404 (model not found) and surfaces the fallback model', async () => {
+        const scripted = [
+          { data: null, error: { context: { status: 404 }, message: 'model not found' } },
+          { data: { content: 'ok from sonnet', model: 'claude-4-6-sonnet', usage: { input_tokens: 1, output_tokens: 1 } }, error: null },
+        ];
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return scripted.shift();
+        };
+        const r = await ShipLog.execute('ship-404', { id: 'a', name: 'A', config: {} }, 'hi');
+        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-6-sonnet']);
+        expect(r.content).toBe('ok from sonnet');
+      });
+
+      it('walks the chain on 503 (overload)', async () => {
+        const scripted = [
+          { data: null, error: { context: { status: 503 }, message: 'service unavailable' } },
+          { data: { content: 'fallback ok', model: 'claude-4-6-sonnet', usage: { input_tokens: 1, output_tokens: 1 } }, error: null },
+        ];
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return scripted.shift();
+        };
+        const r = await ShipLog.execute('ship-503', { id: 'a', name: 'A', config: {} }, 'hi');
+        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-6-sonnet']);
+        expect(r.content).toBe('fallback ok');
+      });
+
+      it('walks the chain on 429 (rate limit)', async () => {
+        const scripted = [
+          { data: null, error: { context: { status: 429 }, message: 'rate limit' } },
+          { data: { content: 'rl fallback', model: 'claude-4-6-sonnet', usage: { input_tokens: 1, output_tokens: 1 } }, error: null },
+        ];
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return scripted.shift();
+        };
+        const r = await ShipLog.execute('ship-429', { id: 'a', name: 'A', config: {} }, 'hi');
+        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-6-sonnet']);
+        expect(r.content).toBe('rl fallback');
+      });
+
+      it('does NOT fall back on 402 (billing) — caller must surface the upgrade CTA, never auto-swap pools', async () => {
+        const scripted = [
+          { data: null, error: { context: { status: 402, json: async () => ({ error: 'pay up', code: 'subscription_required' }) }, message: 'payment required' } },
+        ];
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return scripted.shift();
+        };
+        await expect(ShipLog.execute('ship-402', { id: 'a', name: 'A', config: {} }, 'hi'))
+          .rejects.toThrow(/AI call failed/);
+        expect(_invokeCalls).toEqual(['claude-4-7-opus']);
+      });
+
+      it('does NOT fall back on 401 (auth) — same problem on every model', async () => {
+        const scripted = [
+          { data: null, error: { context: { status: 401 }, message: 'unauthorized' } },
+        ];
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return scripted.shift();
+        };
+        await expect(ShipLog.execute('ship-401', { id: 'a', name: 'A', config: {} }, 'hi'))
+          .rejects.toThrow();
+        expect(_invokeCalls).toEqual(['claude-4-7-opus']);
+      });
+
+      it('caps at 3 fallback attempts when the chain is longer', async () => {
+        globalThis.LLMConfig.forBlueprint = () => ({
+          model: 'claude-4-7-opus',
+          temperature: 0.7, max_tokens: 1024,
+          fallbackChain: [
+            { id: 'gpt-5-4-pro',       tier: 'premium',  noTools: false },
+            { id: 'gemini-2-5-pro',    tier: 'premium',  noTools: false },
+            { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
+            { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
+            { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
+          ],
+        });
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return { data: null, error: { context: { status: 503 }, message: 'down' } };
+        };
+        await expect(ShipLog.execute('ship-cap', { id: 'a', name: 'A', config: {} }, 'hi')).rejects.toThrow();
+        // primary + 3 fallback attempts = 4 total calls
+        expect(_invokeCalls.length).toBe(4);
+      });
+
+      it('empty fallback chain → throws on primary failure (no retry)', async () => {
+        globalThis.LLMConfig.forBlueprint = () => ({
+          model: 'claude-4-7-opus',
+          temperature: 0.7, max_tokens: 1024,
+          fallbackChain: [],
+        });
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return { data: null, error: { context: { status: 503 }, message: 'down' } };
+        };
+        await expect(ShipLog.execute('ship-empty', { id: 'a', name: 'A', config: {} }, 'hi')).rejects.toThrow();
+        expect(_invokeCalls).toEqual(['claude-4-7-opus']);
+      });
+
+      describe('streaming pre-stream fallback', () => {
+        beforeEach(() => {
+          _origInvokeStream = SB.functions.invokeStream;
+          _origAuth = SB.auth;
+          _origFetch = globalThis.fetch;
+          _origUrl = SB._url; _origKey = SB._key;
+          SB.functions.invokeStream = async () => null;
+          SB._url = 'https://test.supabase.co';
+          SB._key = 'anon-key';
+          SB.auth = { getSession: async () => ({ access_token: 'user-jwt' }) };
+        });
+        afterEach(() => {
+          SB.functions.invokeStream = _origInvokeStream;
+          SB.auth = _origAuth;
+          SB._url = _origUrl; SB._key = _origKey;
+          globalThis.fetch = _origFetch;
+        });
+
+        function _streamResponse(text) {
+          const sse = 'data: {"content":"' + text + '"}\n\ndata: [DONE]\n\n';
+          const stream = new ReadableStream({
+            start(c) { c.enqueue(new TextEncoder().encode(sse)); c.close(); },
+          });
+          return { ok: true, status: 200, body: stream };
+        }
+
+        function _errorResponse(status, errBody) {
+          return {
+            ok: false, status, body: null,
+            clone: () => ({ json: async () => errBody }),
+            text: async () => JSON.stringify(errBody),
+          };
+        }
+
+        it('falls back on pre-stream 404 (mid-stream cannot fall back)', async () => {
+          const fetchCalls = [];
+          const responses = [
+            _errorResponse(404, { error: 'not found' }),
+            _streamResponse('hi'),
+          ];
+          globalThis.fetch = async (_url, opts) => {
+            fetchCalls.push(JSON.parse(opts.body).model);
+            return responses.shift();
+          };
+          const r = await ShipLog.execute('ship-stream-404', { id: 'a', name: 'A', config: {} }, 'hi', { onChunk: () => {} });
+          expect(fetchCalls).toEqual(['claude-4-7-opus', 'claude-4-6-sonnet']);
+          expect(r.content).toBe('hi');
+        });
+
+        it('does NOT fall back on pre-stream 402 (billing)', async () => {
+          const fetchCalls = [];
+          globalThis.fetch = async (_url, opts) => {
+            fetchCalls.push(JSON.parse(opts.body).model);
+            return _errorResponse(402, { error: 'pay up', code: 'subscription_required' });
+          };
+          await expect(
+            ShipLog.execute('ship-stream-402', { id: 'a', name: 'A', config: {} }, 'hi', { onChunk: () => {} })
+          ).rejects.toThrow();
+          expect(fetchCalls).toEqual(['claude-4-7-opus']);
+        });
+
+        it('does NOT fall back on pre-stream 401 (auth)', async () => {
+          const fetchCalls = [];
+          globalThis.fetch = async (_url, opts) => {
+            fetchCalls.push(JSON.parse(opts.body).model);
+            return _errorResponse(401, { error: 'unauthorized' });
+          };
+          await expect(
+            ShipLog.execute('ship-stream-401', { id: 'a', name: 'A', config: {} }, 'hi', { onChunk: () => {} })
+          ).rejects.toThrow();
+          expect(fetchCalls).toEqual(['claude-4-7-opus']);
+        });
+      });
+    });
   });
 
   describe('relay', () => {

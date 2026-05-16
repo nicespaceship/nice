@@ -873,7 +873,7 @@ const MissionRunner = (() => {
      failed: 503 - Service Unavailable") and the captain's prompt had no
      guidance — Han Solo synthesized provider 503s as "R2 was silent" on
      the 2026-05-07 Falcon dispatch session. Mirrors the categories
-     already detected in agent-executor's _isOverloadError, expanded for
+     already detected in agent-executor's _isRetryableError, expanded for
      the auth + bad-request bands the user surfaces benefit from naming
      distinctly. */
   function _categorizeDispatchError(err) {

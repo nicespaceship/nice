@@ -322,17 +322,53 @@ const ShipLog = (() => {
     };
   }
 
+  /* Returns true for errors that warrant a model swap.
+     Mirrors agent-executor.js's _isRetryableError — keep the two in sync.
+     YES — 404/429/503; NO — 402 (billing), 400/401/403 (validation/auth). */
+  function _isRetryableError(error, data) {
+    const httpStatus = error?.context?.status;
+    if (httpStatus === 402 || httpStatus === 400 || httpStatus === 401 || httpStatus === 403) return false;
+    if (httpStatus === 404 || httpStatus === 429 || httpStatus === 503) return true;
+    const dataErr = data && data.error;
+    const msg = String(
+      (typeof dataErr === 'string' ? dataErr : dataErr?.message) ||
+      error?.message ||
+      ''
+    );
+    return /\b(404|429|503)\b|overload|unavailable|high.?demand|rate.?limit|capacity|not.?found|unknown.?model/i.test(msg);
+  }
+
   /* ── Real LLM call via nice-ai Edge Function ──
      On HTTP 402 the body carries `{ error, code, ... }` identifying a
      billing gap (subscription_required | addon_required |
      insufficient_tokens | past_due). Subscription.handleBillingError
      shows the right CTA toast; we still throw so the caller knows the
-     call failed. */
+     call failed.
+     Auto-fallback: on 503/429/404 walks config.fallbackChain in capability
+     order, capped at MAX_FALLBACKS. */
   async function _callLLM(blueprint, prompt, context, config) {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
     const params = _buildLLMParams(blueprint, prompt, context, config);
-    const { data, error } = await SB.functions.invoke('nice-ai', { body: params });
+    let { data, error } = await SB.functions.invoke('nice-ai', { body: params });
+
+    const fallbackChain = Array.isArray(config?.fallbackChain) ? config.fallbackChain : [];
+    const MAX_FALLBACKS = 3;
+    let tried = 0;
+    let prevModel = params.model;
+    for (const fb of fallbackChain) {
+      if (tried >= MAX_FALLBACKS) break;
+      if (!((error || data?.error) && _isRetryableError(error, data))) break;
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
+      }
+      params.model = fb.id;
+      const fbRes = await SB.functions.invoke('nice-ai', { body: params });
+      data  = fbRes.data;
+      error = fbRes.error;
+      prevModel = fb.id;
+      tried++;
+    }
 
     if (error) {
       let body = null;
@@ -349,7 +385,11 @@ const ShipLog = (() => {
     return data;
   }
 
-  /* ── Streaming LLM call via nice-ai Edge Function ── */
+  /* ── Streaming LLM call via nice-ai Edge Function ──
+     Pre-stream fallback only: if the initial fetch errors before any
+     chunks have arrived, walks config.fallbackChain (404/429/503, capped
+     at MAX_FALLBACKS). Mid-stream errors cannot fall back — partial
+     chunks would interleave from two providers. */
   async function _callLLMStream(blueprint, prompt, context, config, onChunk) {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
@@ -365,15 +405,37 @@ const ShipLog = (() => {
     const session = (typeof SB.auth?.getSession === 'function') ? await SB.auth.getSession() : null;
     const accessToken = session?.access_token || supabaseKey;
 
-    const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-        'apikey': supabaseKey,
-      },
-      body: JSON.stringify(params),
-    });
+    async function _doFetch(reqParams) {
+      return await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify(reqParams),
+      });
+    }
+
+    let res = await _doFetch(params);
+
+    const fallbackChain = Array.isArray(config?.fallbackChain) ? config.fallbackChain : [];
+    const MAX_FALLBACKS = 3;
+    let tried = 0;
+    let prevModel = params.model;
+    while (!res.ok && tried < MAX_FALLBACKS) {
+      const status = res.status;
+      if (status !== 404 && status !== 429 && status !== 503) break;
+      const fb = fallbackChain[tried];
+      if (!fb) break;
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
+      }
+      params.model = fb.id;
+      res = await _doFetch(params);
+      prevModel = fb.id;
+      tried++;
+    }
 
     if (!res.ok) {
       let body = null;
@@ -390,7 +452,8 @@ const ShipLog = (() => {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let fullContent = '';
-    let model = config.model || 'gemini-2.5-flash';
+    // params.model reflects the actually-used model (may differ from config.model after fallback)
+    let model = params.model || 'gemini-2.5-flash';
 
     while (true) {
       const { done, value } = await reader.read();

@@ -1124,6 +1124,106 @@ describe('AgentExecutor — _logToShipLog', () => {
   });
 });
 
+// 2026-05-16: previous session shipped #515 (model alias canonicalization)
+// after live discovery that hardcoded llm_engine='claude-4' was 404'ing on
+// nice-ai. _isOverloadError (renamed _isRetryableError) was scoped to
+// 503/429 only — even with the chain in hand, a 404 on an alias-miss would
+// surface as a hard failure. Extending to 404 closes the gap that #515 only
+// partly covered (aliases for KNOWN stale ids; the chain handles UNKNOWN ones).
+describe('AgentExecutor — _callLLM fallback', () => {
+  let _origSB, _origLLMConfig, _origShipLog, _invokeCalls;
+  beforeEach(() => {
+    _invokeCalls = [];
+    _origSB = globalThis.SB;
+    _origLLMConfig = globalThis.LLMConfig;
+    _origShipLog = globalThis.ShipLog;
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({
+        model: 'claude-4-7-opus',
+        temperature: 0.3, max_tokens: 2048,
+        fallbackChain: [
+          { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
+          { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
+        ],
+      }),
+    };
+    globalThis.ShipLog = { append: () => Promise.resolve({ id: 'sl' }) };
+  });
+  afterEach(() => {
+    globalThis.SB = _origSB;
+    globalThis.LLMConfig = _origLLMConfig;
+    globalThis.ShipLog = _origShipLog;
+  });
+
+  it('walks the chain on 404 (model not found)', async () => {
+    const scripted = [
+      { data: null, error: { context: { status: 404 }, message: 'no such model' } },
+      { data: { content: 'Final Answer: ok', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } }, error: null },
+    ];
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _invokeCalls.push(opts.body.model); return scripted.shift(); },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-404', name: 'X', config: { role: 'Assistant', llm_engine: 'claude-4-7-opus' } },
+      { spaceshipId: 'ship-fb-1' },
+    );
+    const result = await controller.send('hello');
+    expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-6-sonnet']);
+    expect(result.error).not.toBe(true);
+    expect(result.text).toContain('ok');
+  });
+
+  it('does NOT fall back on 402 (billing)', async () => {
+    const scripted = [
+      { data: null, error: { context: { status: 402, json: async () => ({ error: 'pay', code: 'addon_required' }) }, message: 'payment required' } },
+    ];
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _invokeCalls.push(opts.body.model); return scripted.shift(); },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-402', name: 'X', config: { role: 'Assistant', llm_engine: 'claude-4-7-opus' } },
+      { spaceshipId: 'ship-fb-2' },
+    );
+    const result = await controller.send('hello');
+    expect(_invokeCalls).toEqual(['claude-4-7-opus']); // no retry — billing handled separately
+    expect(result.error).toBe(true);
+  });
+
+  it('caps at 3 fallback attempts even when the chain is longer', async () => {
+    globalThis.LLMConfig.forBlueprint = () => ({
+      model: 'claude-4-7-opus',
+      temperature: 0.3, max_tokens: 2048,
+      fallbackChain: [
+        { id: 'gpt-5-4-pro',       tier: 'premium',  noTools: false },
+        { id: 'gemini-2-5-pro',    tier: 'premium',  noTools: false },
+        { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
+        { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
+        { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
+      ],
+    });
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return { data: null, error: { context: { status: 503 }, message: 'down' } };
+        },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap', name: 'X', config: { role: 'Assistant', llm_engine: 'claude-4-7-opus' } },
+      { spaceshipId: 'ship-fb-3' },
+    );
+    const result = await controller.send('hello');
+    // primary + 3 fallback attempts = 4 total
+    expect(_invokeCalls.length).toBe(4);
+    expect(result.error).toBe(true);
+  });
+});
+
 describe('AgentMemory', () => {
   const TEST_AGENT = 'test-agent-memory-' + Date.now();
 
