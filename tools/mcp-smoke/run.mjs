@@ -18,9 +18,10 @@
  *   SUPABASE_REFRESH_TOKEN                       exchanged for a fresh JWT (warning: Supabase rotates RTs, the second run with the same stored token fails)
  *
  * Usage:
- *   node tools/mcp-smoke/run.mjs hubspot          # one provider, drift + tier 3
- *   node tools/mcp-smoke/run.mjs --all            # all connected providers (for CI)
- *   node tools/mcp-smoke/run.mjs --inspect linear # print tool names + required inputs (for picking tier-3 configs)
+ *   node tools/mcp-smoke/run.mjs hubspot                            # one provider, drift + tier 3
+ *   node tools/mcp-smoke/run.mjs --all                              # all connected providers (for CI)
+ *   node tools/mcp-smoke/run.mjs --inspect linear                   # print tool names + required inputs (for picking tier-3 configs)
+ *   node tools/mcp-smoke/run.mjs --describe klaviyo <tool_name>     # dump full inputSchema for one tool (for picking input values)
  *
  * Exit codes: 0 pass, 1 functional failure, 2 misuse / missing args.
  */
@@ -82,13 +83,20 @@ async function getJwt() {
 
 const arg = process.argv[2];
 if (!arg) {
-  console.error('usage: node tools/mcp-smoke/run.mjs <provider> | --all | --inspect <provider>');
+  console.error('usage: node tools/mcp-smoke/run.mjs <provider> | --all | --inspect <provider> | --describe <provider> <tool>');
   process.exit(2);
 }
 
 const inspectTarget = arg === '--inspect' ? process.argv[3] : null;
 if (arg === '--inspect' && !inspectTarget) {
   console.error('usage: --inspect <provider>');
+  process.exit(2);
+}
+
+const describeProvider = arg === '--describe' ? process.argv[3] : null;
+const describeTool = arg === '--describe' ? process.argv[4] : null;
+if (arg === '--describe' && (!describeProvider || !describeTool)) {
+  console.error('usage: --describe <provider> <tool>');
   process.exit(2);
 }
 
@@ -213,6 +221,34 @@ const conns = await listConnections();
 if (conns.length === 0) {
   console.error('no connected mcp_connections found for this user');
   process.exit(1);
+}
+
+// Describe mode: dump the full inputSchema for one tool. Use when
+// --inspect surfaced a required field whose accepted values aren't
+// obvious (e.g. Klaviyo's `model` string, which is a Pydantic class
+// name) and you need to see the property's type/description/enum
+// before writing a tier-3 config.
+if (describeProvider && describeTool) {
+  const match = conns.find(c => c.catalog_id === describeProvider);
+  if (!match) {
+    console.error(`catalog_id="${describeProvider}" not in connected mcp_connections`);
+    console.error(`available: ${conns.map(c => c.catalog_id).join(', ')}`);
+    process.exit(1);
+  }
+  const tools = await discover(match.id);
+  const tool = tools.find(t => t.name === describeTool);
+  if (!tool) {
+    console.error(`tool "${describeTool}" not in ${describeProvider} discover output`);
+    console.error(`available: ${tools.map(t => t.name).join(', ')}`);
+    process.exit(1);
+  }
+  console.log(`${describeProvider}.${describeTool}`);
+  console.log('description:');
+  console.log(tool.description || '(none)');
+  console.log('');
+  console.log('inputSchema:');
+  console.log(JSON.stringify(tool.inputSchema || {}, null, 2));
+  process.exit(0);
 }
 
 // Inspect mode: dump tool names + required inputs for one provider.

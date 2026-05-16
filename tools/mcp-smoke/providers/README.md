@@ -59,20 +59,16 @@ Safe-read tools confirmed against the live MCPs as of 2026-05-16:
 - Atlassian: `atlassianUserInfo` ({}) — "Get current user info"
 - Slack: `slack_read_user_profile` ({}) — current user profile (defaults to caller)
 - Cloudflare (+ cf-observability + cf-builds + cf-browser): `accounts_list` ({}) — accounts on the connected token (≥1)
-
-### Deferred — needs probe
-
-- **Klaviyo** — every tool requires a `model` string whose valid values
-  aren't surfaced in the JSON schema. Likely a Pydantic class name
-  (e.g. "Account", "Profile"); needs upstream-docs check or trial.
-  Skipped to avoid guessing.
+- Klaviyo: `klaviyo_get_account_details` ({ model: "other" }) — account details. The `model` field is the calling-LLM enum, not a Pydantic class; valid values are claude/gpt/gemini/other.
 
 ### Pattern for new providers
 
 Each provider has its own "me/whoami" or "list one of the always-present
 things" equivalent. Always run `--inspect <slug>` first, then pick from
-the actual surface. Don't extrapolate from the list above without
-verifying — Klaviyo above is the cautionary example.
+the actual surface. When a required field's accepted values aren't
+obvious from the description, run `--describe <provider> <tool>` to dump
+the full inputSchema (Klaviyo's `model` enum was hidden behind a generic
+`required: [model]` row — `--describe` surfaced the four valid values).
 
 Anything that creates / updates / deletes / sends — **don't**. In
 particular, Linear exposes `save_issue`, `save_project`, `save_document`

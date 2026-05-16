@@ -1,0 +1,4 @@
+{
+  "tool": "klaviyo_get_account_details",
+  "input": { "model": "other" }
+}
