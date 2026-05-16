@@ -298,7 +298,7 @@ const Blueprints = (() => {
           const node = nodes.find(n => n.label === agentName);
           const newId = `agent-${shipBpId}-${slotIdx}`;
           const crewBpId = `${shipBpId}-crew-${slotIdx}`;
-          const baseCfg = node?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] };
+          const baseCfg = node?.config || { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] };
           const newAgent = {
             id: newId, name: agentName,
             category: node?.config?.agentRole || 'Ops',
@@ -326,7 +326,7 @@ const Blueprints = (() => {
             const node = nodes[parseInt(slotIdx, 10)];
             if (node) {
               const crewBpId = `${shipBpId}-crew-${slotIdx}`;
-              const baseCfg = node.config || { role: node.label, type: 'Agent', llm_engine: 'claude-4', tools: [] };
+              const baseCfg = node.config || { role: node.label, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] };
               const newAgent = {
                 id: agentId, name: node.label,
                 category: node.config?.agentRole || 'Ops',

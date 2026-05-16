@@ -435,7 +435,7 @@ const AgentBuilderView = (() => {
       document.getElementById('b-name').value = '';
       document.getElementById('b-role').value = tmpl.role || 'Research';
       document.getElementById('b-type').value = tmpl.type || 'Specialist';
-      document.getElementById('b-model').value = tmpl.llm_engine || 'claude-4';
+      document.getElementById('b-model').value = tmpl.llm_engine || 'claude-4-6-sonnet';
       document.getElementById('b-temp').value = tmpl.config?.temperature ?? 0.7;
       if (tempVal) tempVal.textContent = tmpl.config?.temperature ?? 0.7;
       if (memoryBtn) {

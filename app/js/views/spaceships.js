@@ -1030,7 +1030,7 @@ const SpaceshipDetailView = (() => {
               name: custom.name || bp.name,
               role: custom.role || bp.config?.role || bp.category || 'General',
               status: 'idle',
-              llm_engine: bp.config?.llm_engine || 'claude-4',
+              llm_engine: bp.config?.llm_engine || 'claude-4-6-sonnet',
               type: bp.config?.type || 'Specialist',
               config: { tools: bp.config?.tools || [], temperature: 0.7, memory: true },
               created_at: new Date().toISOString(),

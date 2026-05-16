@@ -250,7 +250,7 @@ const AgentsView = (() => {
           <div class="status-dot ${dotClass}"></div>
         </div>
         <div class="agent-card-meta">
-          <span class="agent-tag">${_esc(a.llm_engine || 'claude-4')}</span>
+          <span class="agent-tag">${_esc(a.llm_engine || 'claude-4-6-sonnet')}</span>
           <span class="agent-tag">${_esc(a.type || 'Specialist')}</span>
           <span class="agent-tag status-tag-${a.status}">${_esc(Utils.titleCase(a.status))}</span>
           ${busyBadge}
@@ -359,7 +359,7 @@ const AgentsView = (() => {
       n: agent.name,
       r: agent.role || '',
       t: agent.type || '',
-      m: agent.llm_engine || 'claude-4',
+      m: agent.llm_engine || 'claude-4-6-sonnet',
       tp: agent.config?.temperature ?? 0.7,
       mm: agent.config?.memory !== false ? 1 : 0,
       tl: (agent.config?.tools || []),
@@ -385,7 +385,7 @@ const AgentsView = (() => {
         name: soul.n || 'Unnamed Agent',
         role: soul.r || 'General',
         type: soul.t || 'Specialist',
-        llm_engine: soul.m || 'claude-4',
+        llm_engine: soul.m || 'claude-4-6-sonnet',
         config: {
           temperature: soul.tp ?? 0.7,
           memory: soul.mm !== 0,
@@ -641,7 +641,7 @@ const AgentDetailView = (() => {
                 <span class="status-dot ${dotClass}"></span>
                 <span class="detail-status">${_esc(Utils.titleCase(agent.status))}</span>
                 <span class="agent-tag">${_esc(agent.role || 'Agent')}</span>
-                <span class="agent-tag">${agent.llm_engine === 'nice-auto' ? 'NICE Auto' : _esc(agent.llm_engine || 'claude-4')}</span>
+                <span class="agent-tag">${agent.llm_engine === 'nice-auto' ? 'NICE Auto' : _esc(agent.llm_engine || 'claude-4-6-sonnet')}</span>
               </div>
             </div>
           </div>
@@ -651,7 +651,7 @@ const AgentDetailView = (() => {
               <h3 class="detail-section-title">Configuration</h3>
               <div class="detail-kv">
                 <div class="detail-kv-row"><span class="kv-label">Type</span><span class="kv-val">${_esc(agent.type || 'Specialist')}</span></div>
-                <div class="detail-kv-row"><span class="kv-label">Model</span><span class="kv-val mono">${agent.llm_engine === 'nice-auto' ? 'NICE Auto' + _resolveAutoHint(agent) : _esc(agent.llm_engine || 'claude-4')}</span></div>
+                <div class="detail-kv-row"><span class="kv-label">Model</span><span class="kv-val mono">${agent.llm_engine === 'nice-auto' ? 'NICE Auto' + _resolveAutoHint(agent) : _esc(agent.llm_engine || 'claude-4-6-sonnet')}</span></div>
                 <div class="detail-kv-row"><span class="kv-label">Temperature</span><span class="kv-val">${config.temperature ?? 0.7}</span></div>
                 <div class="detail-kv-row"><span class="kv-label">Memory</span><span class="kv-val">${config.memory ? 'Enabled' : 'Disabled'}</span></div>
               </div>

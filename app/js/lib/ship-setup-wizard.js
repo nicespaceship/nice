@@ -637,8 +637,8 @@ const ShipSetupWizard = (() => {
             const defaultUmbrellaId = crewMember?.agent_id || null;
             const baseCfg = crewMember?.config
               || (defaultUmbrellaId
-                    ? { role: agentName, type: 'Agent', llm_engine: 'claude-4', capability_id: defaultUmbrellaId }
-                    : { role: agentName, type: 'Agent', llm_engine: 'claude-4', tools: [] });
+                    ? { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
+                    : { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] });
             let newAgent = {
               id: `agent-${Date.now()}-${i}`,
               name: agentName,
@@ -694,8 +694,8 @@ const ShipSetupWizard = (() => {
         const defaultUmbrellaId = crewMember?.agent_id || null;
         const baseCfg = crewMember?.config
           || (defaultUmbrellaId
-                ? { role: slot.label, type: 'Agent', llm_engine: 'claude-4', capability_id: defaultUmbrellaId }
-                : { role: slot.label, type: 'Agent', llm_engine: 'claude-4', tools: [] });
+                ? { role: slot.label, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
+                : { role: slot.label, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] });
         let newAgent = {
           id: `agent-${Date.now()}-auto-${i}`,
           name: agentName,

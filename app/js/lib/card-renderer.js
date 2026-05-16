@@ -480,7 +480,7 @@ const CardRenderer = (() => {
       dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}" data-status="${data.status || ''}"`;
 
       const config = data.config || {};
-      const roleTags = [data.llm_engine || 'claude-4', data.type || 'Specialist'].filter(Boolean);
+      const roleTags = [data.llm_engine || 'claude-4-6-sonnet', data.type || 'Specialist'].filter(Boolean);
       metaHTML = `<div class="blueprint-card-compact-meta">
         ${roleTags.map(t => `<span class="agent-tag">${_esc(t)}</span>`).join('')}
         ${data.status ? `<span class="agent-tag status-tag-${data.status}">${_esc(data.status)}</span>` : ''}
