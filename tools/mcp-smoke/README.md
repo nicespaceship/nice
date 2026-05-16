@@ -48,17 +48,25 @@ The nightly GH Action [`.github/workflows/mcp-smoke.yml`](../../.github/workflow
 runs `--all` against your prod connections at 06:00 UTC and on manual
 dispatch. Setup:
 
-1. Sign in at https://nicespaceship.ai.
-2. DevTools → Application → Local Storage → `nice-auth` → copy the
-   **`refresh_token`** field (not `access_token`). Refresh tokens are
-   long-lived; the runner exchanges them for a fresh JWT at start.
-3. In the repo's Settings → Secrets → Actions, add a new secret named
-   `SUPABASE_REFRESH_TOKEN` with the value from step 2.
-4. Trigger one manual run from the Actions tab to verify before
-   relying on the cron.
+1. Make sure your nicespaceship.ai account has a password set (not
+   OAuth-only). If you signed in with Google, set one via the Supabase
+   dashboard → Authentication → Users → your row → "Send password
+   recovery", or just complete the email-link flow once.
+2. In the repo's Settings → Secrets and variables → Actions, add two
+   new secrets:
+   - `SUPABASE_USER_EMAIL` — your account email
+   - `SUPABASE_USER_PASSWORD` — your account password
+3. Actions tab → MCP smoke → **Run workflow** to verify before relying
+   on the cron.
 
-If you sign out everywhere or rotate sessions, the CI refresh token
-invalidates and the workflow will start failing — re-issue from step 2.
+Each CI run signs in fresh, so there's no token rotation or expiry to
+manage. If you change your password, update the secret.
+
+> **Note on `SUPABASE_REFRESH_TOKEN`** — the runner still supports the
+> refresh-token path for local use, but it's brittle in CI: Supabase
+> rotates refresh tokens on each exchange (10s reuse window), so the
+> second nightly run with the same stored token fails. Email + password
+> is the right pattern for unattended runs.
 
 ## Exit codes
 

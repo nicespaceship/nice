@@ -6,8 +6,8 @@ name: MCP smoke
 # connected. Fails the workflow if any umbrella errors or any tier-3
 # call returns an error.
 #
-# Requires repo secret SUPABASE_REFRESH_TOKEN — see
-# tools/mcp-smoke/README.md for how to issue one.
+# Requires repo secrets SUPABASE_USER_EMAIL + SUPABASE_USER_PASSWORD —
+# see tools/mcp-smoke/README.md for setup.
 
 on:
   schedule:
@@ -28,5 +28,6 @@ jobs:
           node-version: '20'
       - name: Run MCP smoke against all connected umbrellas
         env:
-          SUPABASE_REFRESH_TOKEN: ${{ secrets.SUPABASE_REFRESH_TOKEN }}
+          SUPABASE_USER_EMAIL: ${{ secrets.SUPABASE_USER_EMAIL }}
+          SUPABASE_USER_PASSWORD: ${{ secrets.SUPABASE_USER_PASSWORD }}
         run: node tools/mcp-smoke/run.mjs --all
