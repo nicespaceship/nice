@@ -1224,6 +1224,184 @@ describe('AgentExecutor — _callLLM fallback', () => {
   });
 });
 
+// Provider-aware tool cap. OpenAI rejects requests with more than 128
+// function declarations with a 400 — see the live-verify discovery in the
+// 2026-05-16 hand-off where a generic agent on prod sent 284 tools to
+// gpt-5-mini via the post-#518 fallback chain. Anthropic and Gemini
+// currently have no comparable count cap; their bodies are left untouched.
+describe('AgentExecutor — provider tool cap', () => {
+  let _origSB, _origLLMConfig, _origShipLog, _capturedRequests;
+  const REGISTERED_IDS = [];
+
+  beforeEach(() => {
+    _capturedRequests = [];
+    _origSB = globalThis.SB;
+    _origLLMConfig = globalThis.LLMConfig;
+    _origShipLog = globalThis.ShipLog;
+    globalThis.ShipLog = { append: () => Promise.resolve({ id: 'sl' }) };
+  });
+
+  afterEach(() => {
+    globalThis.SB = _origSB;
+    globalThis.LLMConfig = _origLLMConfig;
+    globalThis.ShipLog = _origShipLog;
+    REGISTERED_IDS.forEach(id => ToolRegistry.deregister(id));
+    REGISTERED_IDS.length = 0;
+  });
+
+  function _registerMockTools(count, prefix) {
+    const names = [];
+    for (let i = 0; i < count; i++) {
+      const id = `mcp:cap:${prefix}_${i}`;
+      const name = `${prefix}_tool_${i}`;
+      ToolRegistry.register({
+        id, name,
+        description: `Mock ${name}`,
+        schema: { type: 'object', properties: { q: { type: 'string' } } },
+        execute: async () => 'ok',
+      });
+      REGISTERED_IDS.push(id);
+      names.push(name);
+    }
+    return names;
+  }
+
+  function _stubFinalAnswer() {
+    return { content: 'Final Answer: ok', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } };
+  }
+
+  it('truncates tools to 128 entries when calling an OpenAI gpt-* model', async () => {
+    const names = _registerMockTools(200, 'cap_oai');
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({ model: 'gpt-5-mini', temperature: 0.3, max_tokens: 2048, fallbackChain: [] }),
+    };
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _capturedRequests.push(opts.body); return { data: _stubFinalAnswer(), error: null }; },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap-oai', name: 'X', config: { role: 'Assistant' } },
+      { tools: names, spaceshipId: 'ship-cap-1' },
+    );
+    await controller.send('hi');
+    expect(_capturedRequests.length).toBe(1);
+    expect(_capturedRequests[0].model).toBe('gpt-5-mini');
+    expect(_capturedRequests[0].tools.length).toBe(128);
+  });
+
+  it('does not truncate tools for Anthropic claude-* models', async () => {
+    const names = _registerMockTools(200, 'cap_ant');
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({ model: 'claude-4-6-sonnet', temperature: 0.3, max_tokens: 2048, fallbackChain: [] }),
+    };
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _capturedRequests.push(opts.body); return { data: _stubFinalAnswer(), error: null }; },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap-ant', name: 'X', config: { role: 'Assistant' } },
+      { tools: names, spaceshipId: 'ship-cap-2' },
+    );
+    await controller.send('hi');
+    expect(_capturedRequests[0].tools.length).toBe(200);
+  });
+
+  it('does not truncate tools for Gemini gemini-* models', async () => {
+    const names = _registerMockTools(200, 'cap_gem');
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({ model: 'gemini-2-5-flash', temperature: 0.3, max_tokens: 2048, fallbackChain: [] }),
+    };
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _capturedRequests.push(opts.body); return { data: _stubFinalAnswer(), error: null }; },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap-gem', name: 'X', config: { role: 'Assistant' } },
+      { tools: names, spaceshipId: 'ship-cap-3' },
+    );
+    await controller.send('hi');
+    expect(_capturedRequests[0].tools.length).toBe(200);
+  });
+
+  it('passes through unchanged when tool count is under the OpenAI cap (100 < 128)', async () => {
+    const names = _registerMockTools(100, 'cap_under');
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({ model: 'gpt-5-mini', temperature: 0.3, max_tokens: 2048, fallbackChain: [] }),
+    };
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _capturedRequests.push(opts.body); return { data: _stubFinalAnswer(), error: null }; },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap-under', name: 'X', config: { role: 'Assistant' } },
+      { tools: names, spaceshipId: 'ship-cap-4' },
+    );
+    await controller.send('hi');
+    expect(_capturedRequests[0].tools.length).toBe(100);
+  });
+
+  it('applies the cap per-call across a provider-crossing fallback (claude primary keeps 200, gpt fallback gets 128)', async () => {
+    const names = _registerMockTools(200, 'cap_fb');
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({
+        model: 'claude-4-6-sonnet',
+        temperature: 0.3, max_tokens: 2048,
+        fallbackChain: [{ id: 'gpt-5-mini', tier: 'standard', noTools: false }],
+      }),
+    };
+    const scripted = [
+      { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
+      { data: _stubFinalAnswer(), error: null },
+    ];
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _capturedRequests.push(opts.body); return scripted.shift(); },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap-fb', name: 'X', config: { role: 'Assistant' } },
+      { tools: names, spaceshipId: 'ship-cap-5' },
+    );
+    await controller.send('hi');
+    expect(_capturedRequests.length).toBe(2);
+    expect(_capturedRequests[0].model).toBe('claude-4-6-sonnet');
+    expect(_capturedRequests[0].tools.length).toBe(200);
+    expect(_capturedRequests[1].model).toBe('gpt-5-mini');
+    expect(_capturedRequests[1].tools.length).toBe(128);
+  });
+
+  it('still drops tools entirely when fallback entry sets noTools (Grok/Llama path)', async () => {
+    const names = _registerMockTools(200, 'cap_notools');
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({
+        model: 'claude-4-6-sonnet',
+        temperature: 0.3, max_tokens: 2048,
+        fallbackChain: [{ id: 'grok-4-1-fast', tier: 'standard', noTools: true }],
+      }),
+    };
+    const scripted = [
+      { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
+      { data: _stubFinalAnswer(), error: null },
+    ];
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _capturedRequests.push(opts.body); return scripted.shift(); },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap-notools', name: 'X', config: { role: 'Assistant' } },
+      { tools: names, spaceshipId: 'ship-cap-6' },
+    );
+    await controller.send('hi');
+    expect(_capturedRequests[1].model).toBe('grok-4-1-fast');
+    expect(_capturedRequests[1].tools).toBeUndefined();
+  });
+});
+
 describe('AgentMemory', () => {
   const TEST_AGENT = 'test-agent-memory-' + Date.now();
 

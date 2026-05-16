@@ -693,6 +693,42 @@ const AgentExecutor = (() => {
     return null;
   }
 
+  /* ── Per-provider hard caps on the `tools` array ──
+     OpenAI rejects requests with more than 128 function declarations:
+       400 Invalid 'tools': array too long. Expected an array with maximum
+       length 128, but got an array with length 284 instead.
+     Anthropic and Gemini have no comparable count-based cap in current
+     documentation, so we leave their bodies untouched. Grok/Llama drop
+     tools entirely via the noTools fallback branch and never reach here.
+
+     When a generic agent (no capability_id, falls through to all-MCP
+     tools) lands on an OpenAI model — either as its declared primary or
+     via the runtime fallback chain — sending 200+ tools is a guaranteed
+     400. The cap is deterministic (first N from the dedup order in
+     _buildExecContext), so the same tools win across retries. */
+  const PROVIDER_TOOL_LIMITS = {
+    openai: 128,
+  };
+
+  function _providerForModel(modelId) {
+    if (!modelId || typeof modelId !== 'string') return null;
+    if (modelId.startsWith('gpt-') || modelId === 'o3' || modelId === 'codex') return 'openai';
+    if (modelId.startsWith('claude-')) return 'anthropic';
+    if (modelId.startsWith('gemini-')) return 'google';
+    if (modelId.startsWith('grok-')) return 'xai';
+    if (modelId.startsWith('llama-')) return 'meta';
+    return null;
+  }
+
+  function _capToolsForModel(modelId, tools) {
+    if (!Array.isArray(tools) || tools.length === 0) return tools;
+    const provider = _providerForModel(modelId);
+    const limit = provider && PROVIDER_TOOL_LIMITS[provider];
+    if (!limit || tools.length <= limit) return tools;
+    console.warn('[AgentExecutor] Truncating tools for', modelId, '(' + provider + '): ' + tools.length + ' → ' + limit + '. Generic-agent / capability_id-missing path is sending more tools than the provider accepts. First ' + limit + ' kept in dedup order.');
+    return tools.slice(0, limit);
+  }
+
   /* ── Call LLM via nice-ai edge function ──
      Passes `tools` when the executor has a tools schema so nice-ai can
      translate to each provider's native tool-use API (Anthropic tool_use,
@@ -701,7 +737,9 @@ const AgentExecutor = (() => {
      decide whether to loop.
 
      Auto-fallback: on transient/availability errors (503/429/404) walks
-     LLMConfig.fallbackChain in capability order, capped at MAX_FALLBACKS. */
+     LLMConfig.fallbackChain in capability order, capped at MAX_FALLBACKS.
+     Tool count is capped per-provider on every call (primary + each
+     fallback) since the fallback chain can cross provider families. */
   async function _callLLM(blueprint, systemPrompt, messages, spaceshipId, toolsSchema) {
     if (typeof SB === 'undefined' || !SB.functions) {
       throw new Error('SB.functions not available');
@@ -720,7 +758,7 @@ const AgentExecutor = (() => {
       max_tokens:  llmConfig.max_tokens || 2048,
     };
     if (Array.isArray(toolsSchema) && toolsSchema.length > 0) {
-      requestBody.tools = toolsSchema;
+      requestBody.tools = _capToolsForModel(requestBody.model, toolsSchema);
     }
 
     let { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
@@ -739,7 +777,7 @@ const AgentExecutor = (() => {
       }
       const fbBody = fb.noTools
         ? { ...requestBody, model: fb.id, tools: undefined }
-        : { ...requestBody, model: fb.id };
+        : { ...requestBody, model: fb.id, tools: _capToolsForModel(fb.id, toolsSchema) };
       const fbRes = await SB.functions.invoke('nice-ai', { body: fbBody });
       data  = fbRes.data;
       error = fbRes.error;
