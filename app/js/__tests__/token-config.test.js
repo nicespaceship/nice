@@ -252,3 +252,53 @@ describe('TokenConfig — initialPools', () => {
     }
   });
 });
+
+describe('TokenConfig — pricing', () => {
+  it('every model in the catalog has a pricing object with numeric input + output', () => {
+    for (const [id, m] of Object.entries(TokenConfig.MODELS)) {
+      expect(m.pricing, `${id} missing pricing`).toBeDefined();
+      expect(typeof m.pricing.input, `${id} input not numeric`).toBe('number');
+      expect(typeof m.pricing.output, `${id} output not numeric`).toBe('number');
+      expect(m.pricing.output, `${id} output should be ≥ input`).toBeGreaterThanOrEqual(m.pricing.input);
+    }
+  });
+
+  it('pricingFor returns the same shape as MODELS[id].pricing', () => {
+    expect(TokenConfig.pricingFor('claude-4-6-sonnet')).toEqual({ input: 3.00, output: 15.00 });
+    expect(TokenConfig.pricingFor('gpt-5-mini')).toEqual({ input: 0.25, output: 2.00 });
+    expect(TokenConfig.pricingFor('gemini-2-5-flash')).toEqual({ input: 0.30, output: 2.50 });
+  });
+
+  it('pricingFor returns null for unknown ids (caller decides fallback)', () => {
+    expect(TokenConfig.pricingFor('claude-3.5-sonnet')).toBeNull();
+    expect(TokenConfig.pricingFor('gpt-4o')).toBeNull();
+    expect(TokenConfig.pricingFor('gemini-2')).toBeNull();
+    expect(TokenConfig.pricingFor('llama-3')).toBeNull();
+    expect(TokenConfig.pricingFor('')).toBeNull();
+    expect(TokenConfig.pricingFor(null)).toBeNull();
+    expect(TokenConfig.pricingFor(undefined)).toBeNull();
+  });
+
+  it('pricingFor does NOT auto-canonicalize — legacy aliases miss (callers must canonicalize via LLMConfig)', () => {
+    // 'claude-4' is a legacy alias for 'claude-4-6-sonnet' (per LLMConfig.MODEL_ALIASES).
+    // TokenConfig has no LLMConfig dep so the raw lookup misses. Analytics + cost
+    // views canonicalize at the use site before calling pricingFor.
+    expect(TokenConfig.pricingFor('claude-4')).toBeNull();
+    expect(TokenConfig.pricingFor('grok')).toBeNull();
+  });
+
+  it('claude-4-7-opus is the most expensive Anthropic model (Opus > Sonnet on both axes)', () => {
+    const opus = TokenConfig.pricingFor('claude-4-7-opus');
+    const sonnet = TokenConfig.pricingFor('claude-4-6-sonnet');
+    expect(opus.input).toBeGreaterThan(sonnet.input);
+    expect(opus.output).toBeGreaterThan(sonnet.output);
+  });
+
+  it('premium-pool models cost more on output than the standard-pool default (gpt-5-mini)', () => {
+    const mini = TokenConfig.pricingFor('gpt-5-mini');
+    for (const [id, m] of Object.entries(TokenConfig.MODELS)) {
+      if (m.pool !== 'premium') continue;
+      expect(m.pricing.output, `${id} (premium) should cost more on output than gpt-5-mini`).toBeGreaterThan(mini.output);
+    }
+  });
+});
