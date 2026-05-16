@@ -18,8 +18,9 @@
  *   SUPABASE_REFRESH_TOKEN                       exchanged for a fresh JWT (warning: Supabase rotates RTs, the second run with the same stored token fails)
  *
  * Usage:
- *   node tools/mcp-smoke/run.mjs hubspot
- *   node tools/mcp-smoke/run.mjs --all      # all connected providers (for CI)
+ *   node tools/mcp-smoke/run.mjs hubspot          # one provider, drift + tier 3
+ *   node tools/mcp-smoke/run.mjs --all            # all connected providers (for CI)
+ *   node tools/mcp-smoke/run.mjs --inspect linear # print tool names + required inputs (for picking tier-3 configs)
  *
  * Exit codes: 0 pass, 1 functional failure, 2 misuse / missing args.
  */
@@ -81,7 +82,13 @@ async function getJwt() {
 
 const arg = process.argv[2];
 if (!arg) {
-  console.error('usage: node tools/mcp-smoke/run.mjs <provider> | --all');
+  console.error('usage: node tools/mcp-smoke/run.mjs <provider> | --all | --inspect <provider>');
+  process.exit(2);
+}
+
+const inspectTarget = arg === '--inspect' ? process.argv[3] : null;
+if (arg === '--inspect' && !inspectTarget) {
+  console.error('usage: --inspect <provider>');
   process.exit(2);
 }
 
@@ -206,6 +213,29 @@ const conns = await listConnections();
 if (conns.length === 0) {
   console.error('no connected mcp_connections found for this user');
   process.exit(1);
+}
+
+// Inspect mode: dump tool names + required inputs for one provider.
+// No drift, no tier 3, no cache writes — just the surface, formatted
+// for "which of these is safe to call from tier 3?" decisions.
+if (inspectTarget) {
+  const match = conns.find(c => c.catalog_id === inspectTarget);
+  if (!match) {
+    console.error(`catalog_id="${inspectTarget}" not in connected mcp_connections`);
+    console.error(`available: ${conns.map(c => c.catalog_id).join(', ')}`);
+    process.exit(1);
+  }
+  const tools = await discover(match.id);
+  console.log(`${inspectTarget} — ${tools.length} tools:`);
+  for (const t of tools.slice().sort((a, b) => a.name.localeCompare(b.name))) {
+    const req = t.inputSchema?.required || [];
+    const reqLabel = req.length ? `[${req.join(', ')}]` : '(none)';
+    const desc = (t.description || '').replace(/\s+/g, ' ').slice(0, 140);
+    console.log(`  ${t.name}`);
+    console.log(`    required: ${reqLabel}`);
+    if (desc) console.log(`    ${desc}`);
+  }
+  process.exit(0);
 }
 
 let targets;

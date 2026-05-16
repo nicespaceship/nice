@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: '0 6 * * *'  # nightly 06:00 UTC
   workflow_dispatch:
+    inputs:
+      args:
+        description: 'Args for run.mjs (e.g. "--all", "--inspect hubspot", "linear")'
+        required: false
+        default: '--all'
 
 permissions:
   contents: read
@@ -26,8 +31,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run MCP smoke against all connected umbrellas
+      - name: Run MCP smoke
         env:
           SUPABASE_USER_EMAIL: ${{ secrets.SUPABASE_USER_EMAIL }}
           SUPABASE_USER_PASSWORD: ${{ secrets.SUPABASE_USER_PASSWORD }}
-        run: node tools/mcp-smoke/run.mjs --all
+          RUN_ARGS: ${{ github.event.inputs.args || '--all' }}
+        run: node tools/mcp-smoke/run.mjs $RUN_ARGS
