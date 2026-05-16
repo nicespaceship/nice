@@ -8,8 +8,13 @@ const CostView = (() => {
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
+  // Per-million token rates. Keys mirror MODEL_CATALOG ids; legacy keys
+  // are kept so stored agents still resolve until a broader pricing-table
+  // refresh lands. Rates here are placeholders — refresh from upstream
+  // when productizing cost analytics.
   const MODEL_COSTS = {
-    'claude-4':            { input: 15.00, output: 75.00 },
+    'claude-4-6-sonnet':   { input: 15.00, output: 75.00 },
+    'claude-4':            { input: 15.00, output: 75.00 }, // legacy alias
     'claude-3.5-sonnet':   { input: 3.00,  output: 15.00 },
     'gpt-4o':              { input: 5.00,  output: 15.00 },
     'gemini-2':            { input: 3.50,  output: 10.50 },
@@ -199,8 +204,8 @@ const CostView = (() => {
 
     return tasks.filter(t => t.status === 'completed' || t.status === 'running').map(t => {
       const agent = agentMap[t.agent_id];
-      const model = agent?.llm_engine || 'claude-4';
-      const rates = MODEL_COSTS[model] || MODEL_COSTS['claude-4'];
+      const model = agent?.llm_engine || 'claude-4-6-sonnet';
+      const rates = MODEL_COSTS[model] || MODEL_COSTS['claude-4-6-sonnet'];
       const tokens = 800 + Math.floor(Math.random() * 3200); // Simulated
       const cost = ((tokens / 1000000) * rates.input) + ((tokens * 0.3 / 1000000) * rates.output);
       return {
@@ -362,7 +367,7 @@ const CostView = (() => {
       const agentLogs = logs.filter(l => l.agent_id === a.id);
       const total = agentLogs.reduce((s, l) => s + (l.amount || 0), 0);
       const tokens = agentLogs.reduce((s, l) => s + (l.tokens_used || 0), 0);
-      const model = a.llm_engine || 'claude-4';
+      const model = a.llm_engine || 'claude-4-6-sonnet';
       return { agent: a, total, tokens, model, count: agentLogs.length };
     }).sort((a, b) => b.total - a.total);
 

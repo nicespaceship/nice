@@ -90,7 +90,15 @@ const Gamification = (() => {
   /* ── Ship Classes (count-based classification by active agents) ── */
 
   /* ── Agent Rarity System ── */
+  // Tier weights for the agent rarity calculation. Keys mirror
+  // MODEL_CATALOG ids where possible; legacy / aliased keys are kept so
+  // stored agents (and tests) still resolve until a broader rarity-rule
+  // refresh lands.
   const MODEL_TIERS = {
+    // Canonical catalog ids
+    'claude-4-7-opus':   4, 'claude-4-6-sonnet': 4, 'gpt-5-4-pro': 4, 'openai-o3': 4, 'gpt-5-3-codex': 3,
+    'gemini-2-5-pro':    3, 'grok-4-1-fast': 3, 'gpt-5-mini': 2, 'llama-4-scout': 2, 'gemini-2-5-flash': 1,
+    // Legacy / aliased ids
     'claude-4': 4, 'claude-4-opus': 4, 'gpt-4o': 4, 'grok-3': 4,
     'claude-4-sonnet': 3, 'claude-3.5': 3, 'claude-3.5-sonnet': 3, 'gemini-2': 3,
     'gemini-2-flash': 2, 'gemini-1.5-pro': 2, 'grok-3-mini': 2,

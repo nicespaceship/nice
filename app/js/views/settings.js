@@ -11,7 +11,7 @@ const SettingsView = (() => {
     sound: false,
     autoRefresh: true,
     compactMode: false,
-    defaultModel: 'claude-4',
+    defaultModel: 'claude-4-6-sonnet',
     defaultTemp: 0.7,
     budgetAlert: 80,
   };

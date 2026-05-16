@@ -766,7 +766,7 @@ const MissionDetailView = (() => {
                   <div class="agent-avatar" style="background:${_agentColor(agent.role)}">${_esc(agentInitials)}</div>
                   <div>
                     <div style="font-weight:600;font-size:.82rem">${_esc(agent.name)}</div>
-                    <div style="font-size:.68rem;color:var(--text-muted)">${_esc(agent.role || 'Agent')} &middot; ${_esc(agent.llm_engine || 'claude-4')}</div>
+                    <div style="font-size:.68rem;color:var(--text-muted)">${_esc(agent.role || 'Agent')} &middot; ${_esc(agent.llm_engine || 'claude-4-6-sonnet')}</div>
                   </div>
                 </div>
               ` : '<p class="text-muted" style="font-size:.78rem">No agent assigned</p>'}
