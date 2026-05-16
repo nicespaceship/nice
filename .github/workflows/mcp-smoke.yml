@@ -1,0 +1,32 @@
+name: MCP smoke
+
+# Layer 2 health check: runs the per-umbrella tier-2 smoke (discover +
+# drift) and any tier-3 introspective tool calls configured in
+# tools/mcp-smoke/providers/*.json against every MCP this user has
+# connected. Fails the workflow if any umbrella errors or any tier-3
+# call returns an error.
+#
+# Requires repo secret SUPABASE_REFRESH_TOKEN — see
+# tools/mcp-smoke/README.md for how to issue one.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # nightly 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run MCP smoke against all connected umbrellas
+        env:
+          SUPABASE_REFRESH_TOKEN: ${{ secrets.SUPABASE_REFRESH_TOKEN }}
+        run: node tools/mcp-smoke/run.mjs --all
