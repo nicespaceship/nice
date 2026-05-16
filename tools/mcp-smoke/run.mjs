@@ -70,7 +70,7 @@ const headers = {
 // ── Gateway calls ──────────────────────────────────────────────────
 async function listConnections() {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/mcp_connections?status=eq.connected&select=id,provider,status`,
+    `${SUPABASE_URL}/rest/v1/mcp_connections?status=eq.connected&catalog_id=not.is.null&select=id,catalog_id,status`,
     { headers }
   );
   if (!res.ok) throw new Error(`mcp_connections query ${res.status}: ${await res.text()}`);
@@ -147,23 +147,23 @@ function loadTier3Config(provider) {
   return JSON.parse(readFileSync(path, 'utf-8'));
 }
 
-// ── Per-provider smoke ─────────────────────────────────────────────
+// ── Per-umbrella smoke ─────────────────────────────────────────────
 async function smokeOne(connection) {
-  const { provider, id } = connection;
+  const { catalog_id, id } = connection;
   const notes = [];
   let failed = false;
 
   const tools = await discover(id);
   if (tools.length === 0) {
-    return { provider, ok: false, notes: ['zero tools returned'] };
+    return { catalog_id, ok: false, notes: ['zero tools returned'] };
   }
   const { sigs, hash } = hashSigs(tools);
-  const drift = diffDrift(provider, sigs, hash);
+  const drift = diffDrift(catalog_id, sigs, hash);
   notes.push(`${tools.length} tools, hash ${hash}, drift: ${drift}`);
 
-  const cfg = loadTier3Config(provider);
+  const cfg = loadTier3Config(catalog_id);
   if (!cfg) {
-    notes.push(`tier 3: skipped (no providers/${provider}.json)`);
+    notes.push(`tier 3: skipped (no providers/${catalog_id}.json)`);
   } else {
     try {
       await invoke(id, cfg.tool, cfg.input || {});
@@ -173,7 +173,7 @@ async function smokeOne(connection) {
       notes.push(`tier 3: ${cfg.tool} FAILED — ${e.message}`);
     }
   }
-  return { provider, ok: !failed, notes };
+  return { catalog_id, ok: !failed, notes };
 }
 
 // ── Main ───────────────────────────────────────────────────────────
@@ -187,10 +187,10 @@ let targets;
 if (arg === '--all') {
   targets = conns;
 } else {
-  const match = conns.find(c => c.provider === arg);
+  const match = conns.find(c => c.catalog_id === arg);
   if (!match) {
-    console.error(`provider="${arg}" not in connected mcp_connections`);
-    console.error(`available: ${conns.map(c => c.provider).join(', ')}`);
+    console.error(`catalog_id="${arg}" not in connected mcp_connections`);
+    console.error(`available: ${conns.map(c => c.catalog_id).join(', ')}`);
     process.exit(1);
   }
   targets = [match];
@@ -198,7 +198,7 @@ if (arg === '--all') {
 
 let anyFailed = false;
 for (const conn of targets) {
-  process.stdout.write(`${conn.provider.padEnd(20)} ... `);
+  process.stdout.write(`${conn.catalog_id.padEnd(20)} ... `);
   try {
     const r = await smokeOne(conn);
     if (!r.ok) anyFailed = true;
