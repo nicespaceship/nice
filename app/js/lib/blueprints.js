@@ -2442,13 +2442,9 @@ const Blueprints = (() => {
     //   - Server-side pagination across three tables (capabilities,
     //     agent_blueprints, spaceship_blueprints) doesn't translate
     //     cleanly — the catalog is small enough to paginate locally.
-    //   - The `marketplace_listings.blueprint_id` FK still points at the
-    //     legacy `blueprints` table. The community publish + listing
-    //     rewire is Phase B3 work, not B2.
-    // Ensure the catalog is loaded into `_agents` / `_spaceships` (via
-    // the new tables) and paginate locally. The `search()` edge-function
-    // path is untouched — `blueprint-search` still reads the legacy
-    // `blueprints` table and will be migrated alongside Phase D.
+    // The `blueprint-search` edge function was rewritten in Phase D.4
+    // onto the same new tables (UNION across agent_blueprints +
+    // spaceship_blueprints) — see `supabase/functions/blueprint-search/`.
     await ensureCatalogLoaded();
     return _searchCatalogLocal({ type, query, rarity, category, sort, page, perPage, scope });
   }
@@ -2567,16 +2563,18 @@ const Blueprints = (() => {
   /* ═══════════════════════════════════════════════════════════════
      Marketplace
      ────────────────────────────────────────────────────────────────
-     Community blueprints live in the same `blueprints` table as the
-     seeded catalog (discriminated by `scope='community'`). A
-     `marketplace_listings` row sits alongside each one to carry
-     rating / downloads / author / publish state.
+     Community blueprints live in `agent_blueprints` or
+     `spaceship_blueprints` (Phase D), discriminated by
+     `scope='community'`. The `marketplace_listings` row sidecar carries
+     rating / downloads / author / publish state; its `category` column
+     ('agent'|'spaceship') points at the right blueprint table.
 
-     searchCatalog() left-joins the listing so every community card
-     comes back with its listing sidecar in a single round trip — so
-     there's no separate Marketplace list API. The helpers below are
-     only for the actions (rate / install counter / publish / review
-     lookup) that can't be bundled into the browse query.
+     searchCatalog() loads the catalog in-memory and filters locally —
+     the catalog is small post-wipe, so the listing sidecar comes
+     through the same `_agents` / `_spaceships` cache rather than a
+     server-side join. The helpers below are for the actions (rate /
+     install counter / publish / unpublish / download / review lookup)
+     that can't be bundled into the browse query.
   ═══════════════════════════════════════════════════════════════ */
 
   async function getMyMarketplaceReview(listingId) {
@@ -2732,6 +2730,16 @@ const Blueprints = (() => {
     if (!user) throw new Error('Sign in to unpublish');
     if (!blueprintId) throw new Error('Missing blueprint id');
 
+    // Phase D.5: blueprint snapshot now lives in agent_blueprints or
+    // spaceship_blueprints. listing.category is the discriminator —
+    // matches the pattern community-review uses on the server side.
+    const { data: listing } = await c
+      .from('marketplace_listings')
+      .select('category')
+      .eq('blueprint_id', blueprintId)
+      .eq('author_id', user.id)
+      .maybeSingle();
+
     const { error: lerr } = await c
       .from('marketplace_listings')
       .delete()
@@ -2739,8 +2747,14 @@ const Blueprints = (() => {
       .eq('author_id', user.id);
     if (lerr) throw lerr;
 
+    if (!listing) return { ok: true };
+
+    const targetTable = listing.category === 'spaceship'
+      ? 'spaceship_blueprints'
+      : 'agent_blueprints';
+
     const { error: berr } = await c
-      .from('blueprints')
+      .from(targetTable)
       .delete()
       .eq('id', blueprintId)
       .eq('scope', 'community')
@@ -2779,8 +2793,25 @@ const Blueprints = (() => {
     if (!user) throw new Error('Sign in to install');
     if (!blueprintId) throw new Error('Missing blueprint id');
 
+    // Phase D.5: source row lives in agent_blueprints or
+    // spaceship_blueprints. The marketplace_listings.category column is
+    // the discriminator; a blueprint without a listing is unreachable
+    // from browse, so a missing listing is "not available".
+    const { data: listing, error: derr } = await c
+      .from('marketplace_listings')
+      .select('category')
+      .eq('blueprint_id', blueprintId)
+      .maybeSingle();
+    if (derr) throw derr;
+    if (!listing) throw new Error('This blueprint is not available in the community');
+
+    const sourceTable = listing.category === 'spaceship'
+      ? 'spaceship_blueprints'
+      : 'agent_blueprints';
+    const type = listing.category === 'spaceship' ? 'spaceship' : 'agent';
+
     const { data: bp, error: berr } = await c
-      .from('blueprints')
+      .from(sourceTable)
       .select('*')
       .eq('id', blueprintId)
       .eq('scope', 'community')
@@ -2788,7 +2819,6 @@ const Blueprints = (() => {
     if (berr) throw berr;
     if (!bp) throw new Error('This blueprint is not available in the community');
 
-    const type = bp.type === 'spaceship' ? 'spaceship' : 'agent';
     const table = type === 'spaceship' ? 'user_spaceships' : 'user_agents';
 
     // Sanitize the snapshotted config. Drop scope-bound / author-bound
