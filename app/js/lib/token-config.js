@@ -53,32 +53,40 @@ const TokenConfig = (() => {
     },
   };
 
-  /* ── Model → pool + weight map ────────────────────────────── */
+  /* ── Model → pool + weight + pricing map ──────────────────── */
   /* Weight is how many pool tokens a SINGLE message on that model
      consumes. Weights roughly mirror the provider's real cost ratio
      so every SKU stays profitable regardless of which model a user
      prefers. Models with weight 0 never debit (e.g. Gemini Flash).
 
+     `pricing` is the per-million-token rate ($/MTok) the provider
+     publishes for input and output. Used by analytics + cost views
+     to estimate spend; the proprietary `nice-ai` edge function is
+     the source of truth for the actual debit on each request.
+     Rates fetched from each provider's published page as of May
+     2026 — refresh on a quarterly cadence (or whenever a provider
+     announces a price change) to keep cost analytics accurate.
+
      The 10 entries below correspond to the current LLM lineup; any
      model not listed is treated as `free` by isFreeModel(). */
   const MODELS = {
     // ── Free tier (no pool, always free)
-    'gemini-2-5-flash':   { pool: null,       weight: 0,  tier: 'free'     },
+    'gemini-2-5-flash':   { pool: null,       weight: 0,  tier: 'free',     pricing: { input: 0.30,  output: 2.50   } },
 
     // ── Standard pool (Pro plan, no add-on)
-    'gpt-5-mini':         { pool: 'standard', weight: 1,  tier: 'standard' },
-    'llama-4-scout':      { pool: 'standard', weight: 1,  tier: 'standard' },
-    'grok-4-1-fast':      { pool: 'standard', weight: 2,  tier: 'standard' },
+    'gpt-5-mini':         { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.25,  output: 2.00   } },
+    'llama-4-scout':      { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.11,  output: 0.34   } },
+    'grok-4-1-fast':      { pool: 'standard', weight: 2,  tier: 'standard', pricing: { input: 0.20,  output: 0.50   } },
 
     // ── Claude pool (Claude add-on)
-    'claude-4-6-sonnet':  { pool: 'claude',   weight: 3,  tier: 'claude'   },
-    'claude-4-7-opus':    { pool: 'claude',   weight: 10, tier: 'claude'   },
+    'claude-4-6-sonnet':  { pool: 'claude',   weight: 3,  tier: 'claude',   pricing: { input: 3.00,  output: 15.00  } },
+    'claude-4-7-opus':    { pool: 'claude',   weight: 10, tier: 'claude',   pricing: { input: 5.00,  output: 25.00  } },
 
     // ── Premium pool (Premium add-on)
-    'gpt-5-4-pro':        { pool: 'premium',  weight: 5,  tier: 'premium'  },
-    'gpt-5-3-codex':      { pool: 'premium',  weight: 5,  tier: 'premium'  },
-    'openai-o3':          { pool: 'premium',  weight: 15, tier: 'premium'  },
-    'gemini-2-5-pro':     { pool: 'premium',  weight: 3,  tier: 'premium'  },
+    'gpt-5-4-pro':        { pool: 'premium',  weight: 5,  tier: 'premium',  pricing: { input: 30.00, output: 180.00 } },
+    'gpt-5-3-codex':      { pool: 'premium',  weight: 5,  tier: 'premium',  pricing: { input: 1.25,  output: 10.00  } },
+    'openai-o3':          { pool: 'premium',  weight: 15, tier: 'premium',  pricing: { input: 2.00,  output: 8.00   } },
+    'gemini-2-5-pro':     { pool: 'premium',  weight: 3,  tier: 'premium',  pricing: { input: 1.25,  output: 10.00  } },
   };
 
   /* ── Lookups ──────────────────────────────────────────────── */
@@ -102,6 +110,13 @@ const TokenConfig = (() => {
   function isFreeModel(modelId) {
     const m = MODELS[modelId];
     return !m || m.pool === null || m.weight === 0;
+  }
+
+  /** Returns the per-million-token { input, output } rates for a model,
+      or null if unknown. Callers should canonicalize stale aliases
+      (via LLMConfig.canonicalize) before lookup. */
+  function pricingFor(modelId) {
+    return MODELS[modelId]?.pricing || null;
   }
 
   /** Returns the list of model ids that consume from a given pool. */
@@ -181,7 +196,7 @@ const TokenConfig = (() => {
 
   return {
     POOLS, MODELS,
-    getModel, poolFor, weightFor, isFreeModel, modelsInPool,
+    getModel, poolFor, weightFor, isFreeModel, modelsInPool, pricingFor,
     monthlyAllowance, requiredAddon,
     remainingInPool, messagesRemainingFor, canRunModel, previewDebit,
     initialPools,

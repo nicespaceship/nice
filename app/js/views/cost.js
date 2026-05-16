@@ -8,18 +8,17 @@ const CostView = (() => {
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
-  // Per-million token rates. Keys mirror MODEL_CATALOG ids; legacy keys
-  // are kept so stored agents still resolve until a broader pricing-table
-  // refresh lands. Rates here are placeholders — refresh from upstream
-  // when productizing cost analytics.
-  const MODEL_COSTS = {
-    'claude-4-6-sonnet':   { input: 15.00, output: 75.00 },
-    'claude-4':            { input: 15.00, output: 75.00 }, // legacy alias
-    'claude-3.5-sonnet':   { input: 3.00,  output: 15.00 },
-    'gpt-4o':              { input: 5.00,  output: 15.00 },
-    'gemini-2':            { input: 3.50,  output: 10.50 },
-    'llama-3':             { input: 0.00,  output: 0.00  },
-  };
+  // Per-million-token rates live on TokenConfig.MODELS (the SSOT for
+  // pool + weight + pricing). Legacy llm_engine ids canonicalize via
+  // LLMConfig.canonicalize before lookup so a stored `'claude-4'`
+  // agent bills at the same rate as the canonical `'claude-4-6-sonnet'`
+  // it aliases to. Sonnet is the fallback when an id resolves to nothing.
+  function _ratesFor(modelId) {
+    const canonical = (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize)
+      ? LLMConfig.canonicalize(modelId)
+      : modelId;
+    return TokenConfig.pricingFor(canonical) || TokenConfig.pricingFor('claude-4-6-sonnet');
+  }
 
   function render(el) {
     const user = State.get('user');
@@ -205,7 +204,7 @@ const CostView = (() => {
     return tasks.filter(t => t.status === 'completed' || t.status === 'running').map(t => {
       const agent = agentMap[t.agent_id];
       const model = agent?.llm_engine || 'claude-4-6-sonnet';
-      const rates = MODEL_COSTS[model] || MODEL_COSTS['claude-4-6-sonnet'];
+      const rates = _ratesFor(model);
       const tokens = 800 + Math.floor(Math.random() * 3200); // Simulated
       const cost = ((tokens / 1000000) * rates.input) + ((tokens * 0.3 / 1000000) * rates.output);
       return {
