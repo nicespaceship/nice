@@ -45,7 +45,7 @@ SUPABASE_USER_JWT=<token> node tools/mcp-smoke/run.mjs hubspot
 
 ## What "introspective" means here
 
-Examples of safe-read tools confirmed against the live MCPs as of 2026-05-16:
+Safe-read tools confirmed against the live MCPs as of 2026-05-16:
 
 - HubSpot: `get_user_details` ({}) — user + team + hub info
 - Notion: `notion-get-users` ({}) — workspace users (≥1, bot user)
@@ -55,15 +55,24 @@ Examples of safe-read tools confirmed against the live MCPs as of 2026-05-16:
 - Google Drive: `drive_search_files` ({}) — no filter, returns array (possibly empty on fresh drive)
 - Microsoft 365: `outlook_list_folders` ({}) — mail folders (Inbox always present)
 - GitHub: `get_me` ({}) — authenticated user details
+- Replicate: `get_account` ({}) — connected account info
+- Atlassian: `atlassianUserInfo` ({}) — "Get current user info"
+- Slack: `slack_read_user_profile` ({}) — current user profile (defaults to caller)
+- Cloudflare (+ cf-observability + cf-builds + cf-browser): `accounts_list` ({}) — accounts on the connected token (≥1)
 
-Patterns to look for on other providers:
+### Deferred — needs probe
 
-- Stripe: `retrieve_account` (read-only on the connected account)
-- Slack: `auth_test` / `users_me`
-- Klaviyo, Sentry, Atlassian, Cloudflare, Replicate, etc.: each
-  provider has its own "me/whoami" or "list one of the always-present
-  things" equivalent — pick from the actual `--inspect` output, don't
-  guess.
+- **Klaviyo** — every tool requires a `model` string whose valid values
+  aren't surfaced in the JSON schema. Likely a Pydantic class name
+  (e.g. "Account", "Profile"); needs upstream-docs check or trial.
+  Skipped to avoid guessing.
+
+### Pattern for new providers
+
+Each provider has its own "me/whoami" or "list one of the always-present
+things" equivalent. Always run `--inspect <slug>` first, then pick from
+the actual surface. Don't extrapolate from the list above without
+verifying — Klaviyo above is the cautionary example.
 
 Anything that creates / updates / deletes / sends — **don't**. In
 particular, Linear exposes `save_issue`, `save_project`, `save_document`
