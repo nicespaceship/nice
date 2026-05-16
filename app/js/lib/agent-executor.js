@@ -700,8 +700,8 @@ const AgentExecutor = (() => {
      (string or canonical parts array) + stop_reason for the executor to
      decide whether to loop.
 
-     Auto-fallback: on transient overload errors (503 / 429 / UNAVAILABLE)
-     retries once with gemini-2.5-flash before surfacing the failure. */
+     Auto-fallback: on transient/availability errors (503/429/404) walks
+     LLMConfig.fallbackChain in capability order, capped at MAX_FALLBACKS. */
   async function _callLLM(blueprint, systemPrompt, messages, spaceshipId, toolsSchema) {
     if (typeof SB === 'undefined' || !SB.functions) {
       throw new Error('SB.functions not available');
@@ -725,14 +725,17 @@ const AgentExecutor = (() => {
 
     let { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
 
-    // Auto-fallback on transient overload — walk LLMConfig.fallbackChain (built from
-    // the user's enabled models in capability order). Stops as soon as a call succeeds
-    // or a non-overload error is returned.
+    // Walk LLMConfig.fallbackChain on retryable errors (503/429/404 — see
+    // _isRetryableError). Stops on success, non-retryable error, or cap.
     const fallbackChain = llmConfig.fallbackChain || [];
+    const MAX_FALLBACKS = 3;
+    let tried = 0;
+    let prevModel = requestBody.model;
     for (const fb of fallbackChain) {
-      if (!((error || data?.error) && _isOverloadError(error, data))) break;
+      if (tried >= MAX_FALLBACKS) break;
+      if (!((error || data?.error) && _isRetryableError(error, data))) break;
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Model busy', message: requestBody.model + ' overloaded — retrying with ' + fb.id, type: 'info' });
+        Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
       }
       const fbBody = fb.noTools
         ? { ...requestBody, model: fb.id, tools: undefined }
@@ -740,6 +743,8 @@ const AgentExecutor = (() => {
       const fbRes = await SB.functions.invoke('nice-ai', { body: fbBody });
       data  = fbRes.data;
       error = fbRes.error;
+      prevModel = fb.id;
+      tried++;
     }
 
     if (error) {
@@ -773,16 +778,22 @@ const AgentExecutor = (() => {
     };
   }
 
-  /* Returns true for transient capacity errors that warrant a model swap. */
-  function _isOverloadError(error, data) {
+  /* Returns true for errors that warrant a model swap.
+     YES — 404 (model not found, e.g. stale id like 'claude-4' before #515 alias),
+           429 (rate limit), 503 (overload).
+     NO  — 402 (billing — handled by Subscription.handleBillingError, never auto-upgrade
+           a paying user to a model on a different pool),
+           400/401/403 (validation/auth — same problem on every model). */
+  function _isRetryableError(error, data) {
     const httpStatus = error?.context?.status;
-    if (httpStatus === 503 || httpStatus === 429) return true;
+    if (httpStatus === 402 || httpStatus === 400 || httpStatus === 401 || httpStatus === 403) return false;
+    if (httpStatus === 404 || httpStatus === 429 || httpStatus === 503) return true;
     const msg = String(
       _coerceErrorMessage(data?.error) ||
       _coerceErrorMessage(error?.message) ||
       ''
     );
-    return /\b(503|429)\b|overload|unavailable|high.?demand|rate.?limit|capacity/i.test(msg);
+    return /\b(404|429|503)\b|overload|unavailable|high.?demand|rate.?limit|capacity|not.?found|unknown.?model/i.test(msg);
   }
 
   /* ── Single-shot fallback (no tools, just call ShipLog directly) ── */
