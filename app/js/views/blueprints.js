@@ -2491,7 +2491,15 @@ const BlueprintsView = (() => {
     if (type === 'skin' && bp.copy?.nav) {
       caps = Object.entries(bp.copy.nav).map(([k, v]) => `${k} → ${v}`);
     }
-    const capsHTML = caps.length ? `<div class="bp-drawer-caps">${caps.map(c => `<span class="agent-tool-tag">${_esc(c)}</span>`).join('')}</div>` : '';
+    const capsHTML = caps.length ? `
+      <div class="bp-drawer-section">
+        <div class="bp-drawer-section-label">${type === 'spaceship' ? 'Capabilities' : 'Tools'}</div>
+        <div class="bp-drawer-caps">${caps.map(c => `<span class="agent-tool-tag">${_esc(c)}</span>`).join('')}</div>
+      </div>` : '';
+
+    // Ship-specific detail block: flavor scene + 12-slot crew roster.
+    // Surfaces the rich data we're already loading but were hiding.
+    const shipDetailHTML = type === 'spaceship' ? _renderShipDetail(bp) : '';
 
     // Actions per type
     const actionsHTML = _renderDrawerActions(bp, type);
@@ -2516,14 +2524,77 @@ const BlueprintsView = (() => {
       </div>
       <div class="bp-drawer-body">
         <div class="bp-drawer-hero">${heroHTML}</div>
-        <p style="margin:12px 0;opacity:.8;font-size:.85rem">${_esc(bp.description || bp.desc || bp.flavor || '')}</p>
+        <p class="bp-drawer-desc">${_esc(bp.description || bp.desc || bp.flavor || '')}</p>
         ${socialHTML}
         ${depsHTML}
+        ${shipDetailHTML}
         <div class="bp-drawer-stats">${statsHTML}</div>
         ${capsHTML}
         <div class="bp-drawer-actions">${actionsHTML}</div>
         ${relatedHTML}
       </div>`;
+  }
+
+  /**
+   * Ship-specific drawer detail: narrative scene + crew roster.
+   * Spaceship blueprints carry rich data (flavor narrative, 12 slot
+   * definitions with role/label/default-agent/class) that the generic
+   * blueprint drawer wasn't surfacing. Render them as their own
+   * sections so a user clicking a ship sees what it actually is.
+   */
+  function _renderShipDetail(bp) {
+    const flavor = bp.flavor || bp.metadata?.flavor || '';
+    const description = bp.description || bp.desc || '';
+    const crew = bp.crew || bp.config?.crew_roles || bp.metadata?.crew || [];
+
+    const flavorBlock = (flavor && flavor !== description) ? `
+      <div class="bp-drawer-section bp-drawer-flavor">
+        <div class="bp-drawer-section-label">A moment on board</div>
+        <p>${_esc(flavor)}</p>
+      </div>` : '';
+
+    let crewBlock = '';
+    if (crew.length) {
+      const rows = crew.map(slot => {
+        const slotNum = (slot.slot != null ? slot.slot : 0) + 1;
+        const label = _esc(slot.label || 'Slot');
+        const role = _esc(slot.role || '');
+        const minClass = slot.min_class || 'class-1';
+        const classNum = parseInt((minClass.match(/(\d+)/) || [])[1] || '1', 10);
+        let agentName = '';
+        if (slot.agent_id && typeof Blueprints !== 'undefined' && typeof Blueprints.getAgent === 'function') {
+          const ag = Blueprints.getAgent(slot.agent_id);
+          if (ag) agentName = ag.name;
+        }
+        const agentChip = agentName
+          ? `<span class="bp-drawer-crew-agent">${_esc(agentName)}</span>`
+          : `<span class="bp-drawer-crew-agent muted">Custom slot</span>`;
+        return `
+          <div class="bp-drawer-crew-row">
+            <span class="bp-drawer-crew-num">${slotNum}</span>
+            <div class="bp-drawer-crew-info">
+              <div class="bp-drawer-crew-label">${label}</div>
+              <div class="bp-drawer-crew-meta">
+                ${role ? `<span class="bp-drawer-crew-role">${role}</span>` : ''}
+                ${agentChip}
+              </div>
+            </div>
+            <span class="bp-drawer-crew-class bp-drawer-crew-class-${classNum}" title="Unlocked at class ${classNum}">C${classNum}</span>
+          </div>`;
+      }).join('');
+      crewBlock = `
+        <div class="bp-drawer-section bp-drawer-crew">
+          <div class="bp-drawer-section-label">Crew of ${crew.length}</div>
+          <div class="bp-drawer-crew-list">${rows}</div>
+          <div class="bp-drawer-crew-legend">
+            <span><i class="bp-drawer-crew-swatch bp-drawer-crew-class-1"></i>C1 starter</span>
+            <span><i class="bp-drawer-crew-swatch bp-drawer-crew-class-2"></i>C2 Lt</span>
+            <span><i class="bp-drawer-crew-swatch bp-drawer-crew-class-3"></i>C3 Cmdr</span>
+            <span><i class="bp-drawer-crew-swatch bp-drawer-crew-class-4"></i>C4 Capt</span>
+          </div>
+        </div>`;
+    }
+    return flavorBlock + crewBlock;
   }
 
   function _renderDrawerStats(bp, type) {
