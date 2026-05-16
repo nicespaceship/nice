@@ -50,16 +50,20 @@ Examples of safe-read tools confirmed against the live MCPs as of 2026-05-16:
 - HubSpot: `get_user_details` ({}) — user + team + hub info
 - Notion: `notion-get-users` ({}) — workspace users (≥1, bot user)
 - Linear: `list_teams` ({}) — workspace teams (≥1, workspace requires)
+- Google Gmail: `gmail_list_labels` ({}) — system labels (INBOX, SENT, DRAFT) always present
+- Google Calendar: `calendar_list_calendars` ({}) — primary calendar always present
+- Google Drive: `drive_search_files` ({}) — no filter, returns array (possibly empty on fresh drive)
+- Microsoft 365: `outlook_list_folders` ({}) — mail folders (Inbox always present)
+- GitHub: `get_me` ({}) — authenticated user details
 
 Patterns to look for on other providers:
 
-- GitHub: `get_me` / `get_authenticated_user`
 - Stripe: `retrieve_account` (read-only on the connected account)
 - Slack: `auth_test` / `users_me`
-- Google Workspace: `gmail.users.getProfile` (own profile)
-- Microsoft 365: `me` (own user)
-- Klaviyo, Sentry, etc.: each provider has its own "me/whoami"
-  equivalent — pick from the actual `--inspect` output, don't guess.
+- Klaviyo, Sentry, Atlassian, Cloudflare, Replicate, etc.: each
+  provider has its own "me/whoami" or "list one of the always-present
+  things" equivalent — pick from the actual `--inspect` output, don't
+  guess.
 
 Anything that creates / updates / deletes / sends — **don't**. In
 particular, Linear exposes `save_issue`, `save_project`, `save_document`
