@@ -25,6 +25,8 @@ const CardRenderer = (() => {
 
   const AGENT_ICON_BTN = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;display:block" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="8" width="10" height="8" rx="2"/><path d="M9 2h6M12 2v6"/><circle cx="9.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none"/><path d="M9 16v2M15 16v2M3 12h4M17 12h4"/></svg>';
 
+  const FLIP_ICON_BTN = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><polyline points="21 3 21 8 16 8"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><polyline points="3 21 3 16 8 16"/></svg>';
+
   /* ── Serial Hash — deterministic alphanumeric fingerprint ── */
   const _SERIAL_CHARS = 'A0B1C2D3E4F5G6H7J8K9LMNPQRSTUVWXYZ';
 
@@ -288,6 +290,102 @@ const CardRenderer = (() => {
     return _renderFull(type, data, options);
   }
 
+  /* ── Front crew list (ships only) ──
+     Replaces the flavor quote + cap lines on the front of ship cards
+     with a dense 2-column roster: every slot's role label with a
+     class-color dot. Mirrors the drawer's class-number derivation so
+     the visual language stays consistent. */
+  function _renderCrewList(bp) {
+    const crew = bp.crew || bp.config?.crew_roles || bp.metadata?.crew || [];
+    if (!crew.length) return '';
+    return `<ul class="blueprint-card-crew-list">${crew.map(slot => {
+      const label = slot.label || slot.role || 'Slot';
+      const minClass = slot.min_class || 'class-1';
+      const classNum = parseInt((minClass.match(/(\d+)/) || [])[1] || '1', 10);
+      return `<li class="blueprint-card-crew-item bp-crew-c${classNum}" title="${_esc(label)} — Class ${classNum}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span></li>`;
+    }).join('')}</ul>`;
+  }
+
+  /* ── Back-face content ──
+     Front of card is the visual artifact. Back is the "rules text" — the
+     discipline the card encodes (ships) or the operating spec (agents).
+     Parser is permissive: matches the bullet block under a "How (you|to)
+     work:" header in seeded prompts, falls back to caps when absent so
+     custom blueprints still render something.  */
+
+  function _extractDisciplines(prompt) {
+    if (!prompt || typeof prompt !== 'string') return [];
+    const lines = prompt.split('\n');
+    const startIdx = lines.findIndex(l => /^\s*How (?:you|to) work:\s*$/.test(l));
+    if (startIdx === -1) return [];
+
+    const bullets = [];
+    let current = null;
+    for (let i = startIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      if (/^[A-Z][^:\n]{0,60}:$/.test(trimmed) && trimmed !== '-') {
+        if (current !== null) { bullets.push(current.trim()); current = null; }
+        break;
+      }
+
+      if (/^\s*-\s+/.test(line)) {
+        if (current !== null) bullets.push(current.trim());
+        current = line.replace(/^\s*-\s+/, '');
+      } else if (current !== null && trimmed) {
+        current += ' ' + trimmed;
+      } else if (current !== null && !trimmed) {
+        bullets.push(current.trim());
+        current = null;
+      }
+    }
+    if (current !== null) bullets.push(current.trim());
+    return bullets.filter(Boolean);
+  }
+
+  function _renderShipBack(bp) {
+    const prompt = bp.config?.ship_system_prompt || bp.ship_system_prompt || '';
+    const disciplines = _extractDisciplines(prompt);
+    const caps = bp.caps || bp.card?.caps || bp.metadata?.caps || [];
+    const items = disciplines.length ? disciplines : caps;
+    const title = disciplines.length ? 'Discipline' : 'Capabilities';
+
+    const body = items.length
+      ? `<ul class="blueprint-card-back-list">${items.map(d => `<li>${_esc(d)}</li>`).join('')}</ul>`
+      : `<p class="blueprint-card-back-empty">No discipline notes yet.</p>`;
+
+    return `<div class="blueprint-card-back-header"><span class="blueprint-card-back-title">${title}</span></div>
+      <div class="blueprint-card-back-body">${body}</div>`;
+  }
+
+  function _renderAgentBack(bp) {
+    const prompt = bp.config?.system_prompt || bp.system_prompt || bp.config?.prompt || '';
+    const tools = bp.config?.tools || [];
+    const model = bp.llm_engine || bp.config?.llm_engine || '';
+
+    const promptHTML = prompt
+      ? `<p class="blueprint-card-back-prompt">${_esc(prompt)}</p>`
+      : `<p class="blueprint-card-back-empty">No system prompt set.</p>`;
+
+    const toolsHTML = tools.length
+      ? `<div class="blueprint-card-back-section">
+           <span class="blueprint-card-back-label">Tools</span>
+           <div class="blueprint-card-back-chips">${tools.map(t => `<span class="blueprint-card-back-chip">${_esc(t)}</span>`).join('')}</div>
+         </div>`
+      : '';
+
+    const modelHTML = model
+      ? `<div class="blueprint-card-back-section">
+           <span class="blueprint-card-back-label">Model</span>
+           <span class="blueprint-card-back-chip blueprint-card-back-chip-model">${_esc(model)}</span>
+         </div>`
+      : '';
+
+    return `<div class="blueprint-card-back-header"><span class="blueprint-card-back-title">System Prompt</span></div>
+      <div class="blueprint-card-back-body">${promptHTML}${toolsHTML}${modelHTML}</div>`;
+  }
+
   /* ── Full TCG Card — ONE unified template for all types and rarities ── */
 
   const _SPECIAL_SHIPS = ['USS Enterprise NCC-1701-D', 'Star Destroyer'];
@@ -381,30 +479,43 @@ const CardRenderer = (() => {
       ? (_isSpecialShip(bp) ? slotDiagramArt(classId, serial, slotOpts) : slotDiagramArt('slot-6', serial, slotOpts))
       : avatarArt(bp.name, bp.category || bp.role, serial);
 
+    // ── Back face content (rules text) ──
+    const backHTML = isShip ? _renderShipBack(bp) : _renderAgentBack(bp);
+
     // ── ONE template ──
+    // Front face wraps the existing card content. Back face holds the
+    // rules text. Flip button lives in the perspective container outside
+    // the rotating inner so it stays in place across the flip.
     return `<div class="blueprint-card ${clickClass}" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}${draggable}>
-      <div class="blueprint-card-name-bar">
-        <span class="blueprint-card-name"${nameEditable}>${_esc(displayName)}</span>
-        ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
-        ${statusDot}
+      <button class="blueprint-card-flip-btn" type="button" data-action="flip-card" aria-label="Flip card" title="Flip card">${FLIP_ICON_BTN}</button>
+      <div class="blueprint-card-inner">
+        <div class="blueprint-card-front">
+          <div class="blueprint-card-name-bar">
+            <span class="blueprint-card-name"${nameEditable}>${_esc(displayName)}</span>
+            ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
+            ${statusDot}
+          </div>
+          <div class="blueprint-card-art">
+            ${roleLabel ? `<div class="blueprint-card-art-role"><span class="blueprint-card-serial-code"${roleEditable}>${_esc(roleLabel)}</span></div>` : ''}
+            <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
+            <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
+            ${artContent}
+          </div>
+          <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
+          <div class="blueprint-card-text-box">
+            ${isShip
+              ? _renderCrewList(bp)
+              : `<p class="blueprint-card-flavor">"${_esc(flavor)}"</p>${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}`}
+          </div>
+          ${opts.overlay ? `<div class="blueprint-card-overlay">${opts.overlay}</div>` : ''}
+          <div class="blueprint-card-stats">
+            ${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}
+          </div>
+          ${opts.footer ? `<div class="blueprint-card-footer">${opts.footer}</div>` : ''}
+          ${opts.actions ? `<div class="blueprint-card-actions">${opts.actions}</div>` : ''}
+        </div>
+        <div class="blueprint-card-back">${backHTML}</div>
       </div>
-      <div class="blueprint-card-art">
-        ${roleLabel ? `<div class="blueprint-card-art-role"><span class="blueprint-card-serial-code"${roleEditable}>${_esc(roleLabel)}</span></div>` : ''}
-        <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
-        <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
-        ${artContent}
-      </div>
-      <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
-      <div class="blueprint-card-text-box">
-        <p class="blueprint-card-flavor">"${_esc(flavor)}"</p>
-        ${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}
-      </div>
-      ${opts.overlay ? `<div class="blueprint-card-overlay">${opts.overlay}</div>` : ''}
-      <div class="blueprint-card-stats">
-        ${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}
-      </div>
-      ${opts.footer ? `<div class="blueprint-card-footer">${opts.footer}</div>` : ''}
-      ${opts.actions ? `<div class="blueprint-card-actions">${opts.actions}</div>` : ''}
     </div>`;
   }
 
@@ -617,6 +728,34 @@ const CardRenderer = (() => {
     }, true);
   }
 
+  /* ── Card flip — single delegated listener on document body.
+     Capture phase + stopPropagation so the click never reaches the
+     card's bubble-phase drawer/activation handlers attached per view.
+     Idempotent: re-binding is a no-op. */
+  function bindFlipCards(root) {
+    const target = root || (typeof document !== 'undefined' ? document.body : null);
+    if (!target || target._niceFlipCardsBound) return;
+    target._niceFlipCardsBound = true;
+    target.addEventListener('click', function(e) {
+      const btn = e.target.closest && e.target.closest('[data-action="flip-card"]');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const card = btn.closest('.blueprint-card');
+      if (!card) return;
+      card.classList.toggle('flipped');
+    }, true);
+  }
+
+  // Auto-bind once the DOM is ready so views don't have to wire this up.
+  if (typeof document !== 'undefined') {
+    if (document.body) {
+      bindFlipCards(document.body);
+    } else {
+      document.addEventListener('DOMContentLoaded', function() { bindFlipCards(document.body); });
+    }
+  }
+
   /* ── Public API ── */
   return {
     render,
@@ -628,6 +767,8 @@ const CardRenderer = (() => {
     getCustomLabels,
     setCustomLabel,
     bindEditableCards,
+    bindFlipCards,
+    _extractDisciplines,
     RARITY_COLORS,
     ROLE_COLORS,
     CATEGORY_COLORS,
@@ -636,5 +777,6 @@ const CardRenderer = (() => {
     NS_LOGO_MINI,
     NS_LOGO_BTN,
     AGENT_ICON_BTN,
+    FLIP_ICON_BTN,
   };
 })();

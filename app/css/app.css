@@ -6564,7 +6564,213 @@ html[data-theme] .nice-ai-input:focus-visible {
   .blueprint-card[data-rarity="mythic"]::before,
   .blueprint-card-grid[data-rarity="mythic"]::before { animation:none !important; }
   .blueprint-card:hover .blueprint-card-art::after { animation:none !important; }
+  .blueprint-card-inner { transition:none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Ship card front — crew roster (replaces flavor + caps for ships).
+   Dense 2-column list of role labels with class-color dots. Mirrors
+   the drawer's class swatches so the visual language matches.
+   ═══════════════════════════════════════════════════════════════════ */
+.blueprint-card-crew-list {
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  column-gap:10px;
+  row-gap:2px;
+}
+.blueprint-card-crew-item {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:var(--card-text-meta);
+  line-height:1.35;
+  color:var(--text);
+  overflow:hidden;
+  min-width:0;
+}
+.blueprint-card-crew-dot {
+  flex:0 0 6px;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#94a3b8;
+}
+.blueprint-card-crew-item.bp-crew-c1 .blueprint-card-crew-dot { background:#94a3b8; }
+.blueprint-card-crew-item.bp-crew-c2 .blueprint-card-crew-dot { background:#b6dff9; }
+.blueprint-card-crew-item.bp-crew-c3 .blueprint-card-crew-dot { background:#a855f7; }
+.blueprint-card-crew-item.bp-crew-c4 .blueprint-card-crew-dot { background:#f59e0b; }
+.blueprint-card-crew-label {
+  flex:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  min-width:0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Card flip — front shows the visual artifact, back shows the
+   discipline (ships) or system-prompt spec (agents). Inner element
+   does the rotation; the flip button lives in the outer perspective
+   container so it stays put across the flip.
+   ═══════════════════════════════════════════════════════════════════ */
+.blueprint-card { transform-style:preserve-3d; }
+
+.blueprint-card-inner {
+  position:relative;
+  width:100%;
+  transform-style:preserve-3d;
+  -webkit-transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.4, 0, .2, 1);
+}
+.blueprint-card.flipped .blueprint-card-inner { transform:rotateY(180deg); }
+
+.blueprint-card-front,
+.blueprint-card-back {
+  -webkit-backface-visibility:hidden;
+          backface-visibility:hidden;
+}
+.blueprint-card-front { position:relative; }
+.blueprint-card-back {
+  position:absolute;
+  inset:0;
+  transform:rotateY(180deg);
+  display:flex;
+  flex-direction:column;
+  padding:14px;
+  background:var(--bg-alt, var(--bg));
+  border-radius:inherit;
+  overflow:hidden;
+}
+
+/* Stop the front from intercepting clicks while flipped, and vice versa */
+.blueprint-card.flipped .blueprint-card-front { pointer-events:none; }
+.blueprint-card:not(.flipped) .blueprint-card-back { pointer-events:none; }
+
+.blueprint-card-back-header {
+  padding:0 4px 8px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:10px;
+}
+.blueprint-card-back-title {
+  font-size:var(--card-text-micro);
+  font-weight:var(--fw-bold);
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  color:var(--text-muted);
+}
+
+.blueprint-card-back-body {
+  flex:1;
+  overflow-y:auto;
+  padding:0 4px 4px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;
+}
+.blueprint-card-back-body::-webkit-scrollbar { width:6px; }
+.blueprint-card-back-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+.blueprint-card-back-list {
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.blueprint-card-back-list li {
+  position:relative;
+  padding-left:12px;
+  font-size:var(--card-text-body);
+  line-height:1.45;
+  color:var(--text);
+}
+.blueprint-card-back-list li::before {
+  content:'';
+  position:absolute;
+  left:2px; top:.55em;
+  width:4px; height:4px;
+  border-radius:50%;
+  background:var(--accent);
+}
+
+.blueprint-card-back-prompt {
+  margin:0 0 10px;
+  font-size:var(--card-text-body);
+  line-height:1.5;
+  color:var(--text);
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.blueprint-card-back-section {
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px dashed var(--border);
+}
+.blueprint-card-back-label {
+  display:block;
+  font-size:var(--card-text-micro);
+  font-weight:var(--fw-bold);
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:6px;
+}
+.blueprint-card-back-chips {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}
+.blueprint-card-back-chip {
+  display:inline-block;
+  padding:2px 8px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  font-size:var(--card-text-micro);
+  color:var(--text-muted);
+  font-family:var(--font-m);
+}
+.blueprint-card-back-chip-model { color:var(--accent); border-color:var(--accent); }
+.blueprint-card-back-empty {
+  color:var(--text-muted);
+  font-style:italic;
+  font-size:var(--card-text-body);
+  margin:0;
+}
+
+/* Flip button — corner button in the perspective container */
+.blueprint-card-flip-btn {
+  position:absolute;
+  top:8px; right:8px;
+  width:26px; height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--bg-alt, var(--bg));
+  border:1px solid var(--border);
+  border-radius:50%;
+  color:var(--text-muted);
+  cursor:pointer;
+  z-index:20;
+  padding:0;
+  opacity:.7;
+  transition:opacity .15s, color .15s, border-color .15s, background .15s, transform .25s;
+}
+.blueprint-card-flip-btn:hover {
+  opacity:1;
+  color:var(--accent);
+  border-color:var(--accent);
+}
+.blueprint-card-flip-btn:focus-visible {
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  opacity:1;
+}
+.blueprint-card.flipped .blueprint-card-flip-btn { color:var(--accent); border-color:var(--accent); opacity:1; }
+.blueprint-card.flipped .blueprint-card-flip-btn svg { transform:rotate(180deg); }
 
 /* ═══════════════════════════════════════════════════════════════════
    COMPUTING — Spaceship Slot Formation + Drag-and-Drop
