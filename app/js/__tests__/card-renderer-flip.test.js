@@ -176,7 +176,7 @@ describe('CardRenderer — flip + back face', () => {
       expect(html).toContain('data-tab="crew"');
       expect(html).toContain('data-tab="specialties"');
       expect(html).toContain('data-tab="workflows"');
-      expect(html).toContain('data-tab="day-in-life"');
+      expect(html).toContain('data-tab="protocols"');
     });
 
     it('marks Crew as the default active tab + panel', () => {
@@ -199,7 +199,7 @@ describe('CardRenderer — flip + back face', () => {
     it('renders Coming-soon stubs for the other 3 tabs', () => {
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="workflows"[^>]*>[\s\S]*?Workflows[\s\S]*?Coming soon/);
-      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="day-in-life"[^>]*>[\s\S]*?A day in the life[\s\S]*?Coming soon/);
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="protocols"[^>]*>[\s\S]*?Protocols[\s\S]*?Coming soon/);
     });
 
     it('places a hover-title overlay inside the art zone', () => {
