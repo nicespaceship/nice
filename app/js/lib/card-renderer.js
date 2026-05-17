@@ -407,19 +407,56 @@ const CardRenderer = (() => {
     return _renderFull(type, data, options);
   }
 
-  /* Renders one front-tab's panel. Crew tab uses the crew list; the
-     other three are Coming-soon stubs so the strip reads as wired
-     even before per-tab seed data lands. */
+  /* Renders one front-tab's panel. All four tabs now back to real
+     data when present: Crew roster, parsed "How you work:" bullets,
+     curated noun-phrase tags, and named multi-step procedures per
+     ship. Falls back to the Coming-soon stub when a ship hasn't
+     populated the field. */
   function _renderFrontTabPanel(tabId, bp) {
     if (tabId === 'crew') {
       const crewHTML = _renderCrewList(bp);
       return crewHTML || `<p class="blueprint-card-front-empty">No crew defined.</p>`;
+    }
+    if (tabId === 'protocols') {
+      const prompt = bp.config?.ship_system_prompt || bp.ship_system_prompt || '';
+      const protocols = _extractDisciplines(prompt);
+      if (protocols.length) {
+        return `<ul class="blueprint-card-front-protocols-list">${protocols.map(p => `<li>${_esc(_protocolHeadline(p))}</li>`).join('')}</ul>`;
+      }
+    }
+    if (tabId === 'specialties') {
+      const specialties = bp.specialties || bp.card?.specialties || bp.config?.specialties || [];
+      if (specialties.length) {
+        return `<ul class="blueprint-card-front-specialties-list">${specialties.map(s => `<li class="blueprint-card-front-specialty">${_esc(s)}</li>`).join('')}</ul>`;
+      }
+    }
+    if (tabId === 'workflows') {
+      const workflows = bp.workflows || bp.card?.workflows || bp.config?.workflows || [];
+      if (workflows.length) {
+        return `<div class="blueprint-card-front-workflows">${workflows.map(w => `
+          <section class="blueprint-card-front-workflow">
+            <h5 class="blueprint-card-front-workflow-title">${_esc(w.title || '')}</h5>
+            <ol class="blueprint-card-front-workflow-steps">${(w.steps || []).map(s => `<li>${_esc(s)}</li>`).join('')}</ol>
+          </section>`).join('')}</div>`;
+      }
     }
     const label = (SHIP_FRONT_TABS.find(t => t.id === tabId) || {}).title || tabId;
     return `<div class="blueprint-card-front-soon">
         <p class="blueprint-card-front-soon-title">${_esc(label)}</p>
         <p class="blueprint-card-front-soon-hint">Coming soon</p>
       </div>`;
+  }
+
+  /* Trims a long discipline bullet down to its leading clause so it
+     reads as a scannable rule on the card front. Cuts at the first
+     sentence-ending punctuation; if the bullet is already short
+     enough, returns it untouched. */
+  function _protocolHeadline(bullet) {
+    if (!bullet) return '';
+    const trimmed = bullet.trim();
+    const match = trimmed.match(/^[^.!?]+[.!?]/);
+    const lead = (match ? match[0] : trimmed).trim();
+    return lead.replace(/[.!?]+$/, '');
   }
 
   /* ── Front crew list (ships only) ──

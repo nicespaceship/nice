@@ -6704,6 +6704,21 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-front-panel { display:none; }
 .blueprint-card-front-panel.active { display:block; }
 
+/* Ship cards need a deeper text-box than the default 75px so tab
+   panels with rich content (12-row crew roster, multi-step workflows,
+   long protocol list) have meaningful viewing area before the user
+   needs to scroll. Agent cards keep the original 75px since their
+   flavor + caps are typically 2-3 short lines. */
+.blueprint-card[data-type="spaceship"] .blueprint-card-text-box {
+  min-height:140px;
+  scrollbar-color:var(--accent) transparent;
+}
+.blueprint-card[data-type="spaceship"] .blueprint-card-text-box::-webkit-scrollbar { width:6px; }
+.blueprint-card[data-type="spaceship"] .blueprint-card-text-box::-webkit-scrollbar-thumb {
+  background:var(--accent);
+  border-radius:3px;
+}
+
 /* Coming-soon stub — preserves the text-box vertical rhythm so
    switching tabs doesn't shift the stats row below. */
 .blueprint-card-front-soon {
@@ -6736,6 +6751,124 @@ html[data-theme] .nice-ai-input:focus-visible {
   text-align:center;
   margin:0;
   padding:8px;
+}
+
+/* Protocols panel — parsed "How you work:" bullets from the ship
+   system prompt. Compact bulleted list; scrolls within the text-box
+   when content overflows so the surrounding TCG silhouette holds. */
+.blueprint-card-front-protocols-list {
+  list-style:none;
+  margin:0;
+  padding:0 2px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  max-height:100%;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;
+}
+.blueprint-card-front-protocols-list::-webkit-scrollbar { width:4px; }
+.blueprint-card-front-protocols-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.blueprint-card-front-protocols-list li {
+  position:relative;
+  padding-left:10px;
+  font-size:var(--card-text-meta);
+  line-height:1.35;
+  color:var(--text);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.blueprint-card-front-protocols-list li::before {
+  content:'';
+  position:absolute;
+  left:2px; top:.55em;
+  width:3px; height:3px;
+  border-radius:50%;
+  background:var(--accent);
+}
+
+/* Specialties panel — curated noun-phrase tags per ship. Flex-wrap
+   chip layout so each tag reads as a discrete capability area
+   rather than a sentence; scrolls if the per-ship list outgrows
+   the panel. */
+.blueprint-card-front-specialties-list {
+  list-style:none;
+  margin:0;
+  padding:0 2px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  max-height:100%;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;
+}
+.blueprint-card-front-specialties-list::-webkit-scrollbar { width:4px; }
+.blueprint-card-front-specialties-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.blueprint-card-front-specialty {
+  display:inline-block;
+  padding:2px 8px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:var(--card-text-meta);
+  color:var(--text);
+  background:rgba(255,255,255,.02);
+  white-space:nowrap;
+}
+
+/* Workflows panel — named multi-step procedures per ship. Each
+   workflow is a small section: an overline-style title, then a
+   numbered step list. Scrolls within the panel since the full set
+   commonly overflows the visible text-box area. */
+.blueprint-card-front-workflows {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:0 2px;
+  max-height:100%;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;
+}
+.blueprint-card-front-workflows::-webkit-scrollbar { width:4px; }
+.blueprint-card-front-workflows::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.blueprint-card-front-workflow {
+  border-bottom:1px dashed var(--border);
+  padding-bottom:6px;
+}
+.blueprint-card-front-workflow:last-child {
+  border-bottom:none;
+  padding-bottom:0;
+}
+.blueprint-card-front-workflow-title {
+  margin:0 0 3px;
+  font-size:var(--card-text-micro);
+  font-weight:var(--fw-bold);
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  color:var(--accent);
+}
+.blueprint-card-front-workflow-steps {
+  list-style:decimal inside;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+}
+.blueprint-card-front-workflow-steps li {
+  font-size:var(--card-text-meta);
+  line-height:1.3;
+  color:var(--text);
+  padding-left:2px;
+}
+.blueprint-card-front-workflow-steps li::marker {
+  color:var(--text-muted);
+  font-size:var(--card-text-micro);
 }
 
 /* Hover-title overlay inside the art zone — transparent by default,
@@ -6775,6 +6908,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-inner {
   position:relative;
   width:100%;
+  flex:1 1 0;
+  min-height:0;
   transform-style:preserve-3d;
   -webkit-transform-style:preserve-3d;
   transition:transform .6s cubic-bezier(.4, 0, .2, 1);
@@ -6786,7 +6921,17 @@ html[data-theme] .nice-ai-input:focus-visible {
   -webkit-backface-visibility:hidden;
           backface-visibility:hidden;
 }
-.blueprint-card-front { position:relative; }
+/* Front must be a flex column at the full inner height so the
+   text-box below the art zone can claim the remaining space and
+   scroll when its tab panel overflows. Without this chain the card
+   silhouette clips content because the front grows past 100%. */
+.blueprint-card-front {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  min-height:0;
+}
 .blueprint-card-back {
   position:absolute;
   inset:0;

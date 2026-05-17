@@ -196,14 +196,114 @@ describe('CardRenderer — flip + back face', () => {
       expect(html).toMatch(/bp-crew-c4[^"]*"[^>]*title="Insurance Lead/);
     });
 
-    it('renders Coming-soon stubs for the other 3 tabs', () => {
-      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
+    it('renders Coming-soon stub for Workflows (still pending data)', () => {
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="workflows"[^>]*>[\s\S]*?Workflows[\s\S]*?Coming soon/);
+    });
+
+    it('specialties panel falls back to Coming soon when ship has no specialties', () => {
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
+    });
+
+    it('protocols panel falls back to Coming soon when ship has no system prompt', () => {
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="protocols"[^>]*>[\s\S]*?Protocols[\s\S]*?Coming soon/);
     });
 
     it('places a hover-title overlay inside the art zone', () => {
       expect(html).toContain('class="blueprint-card-art-hover-title"');
+    });
+
+    it('protocols panel renders parsed "How you work:" bullets when present', () => {
+      const SHIP_WITH_PROTOCOLS = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-protocols-ship',
+        config: {
+          ship_system_prompt: [
+            'You are the Captain.',
+            '',
+            'How you work:',
+            '- HIPAA is the floor, not the ceiling. Minimum-necessary PHI on every disclosure.',
+            '- Informed consent is signed before any procedure, not after. The form lists the risks.',
+            '- Coding accuracy cuts both ways. Documentation supports the level billed.',
+          ].join('\n'),
+        },
+      };
+      const protocolsHTML = CardRenderer.render('spaceship', 'full', SHIP_WITH_PROTOCOLS);
+      expect(protocolsHTML).toContain('class="blueprint-card-front-protocols-list"');
+      expect(protocolsHTML).toContain('HIPAA is the floor, not the ceiling');
+      expect(protocolsHTML).toContain('Informed consent is signed before any procedure, not after');
+      expect(protocolsHTML).toContain('Coding accuracy cuts both ways');
+      expect(protocolsHTML).not.toMatch(/blueprint-card-front-panel[^>]*data-tab="protocols"[^>]*>[\s\S]*?Coming soon/);
+    });
+
+    it('workflows panel renders titled multi-step procedures when card.workflows is set', () => {
+      const SHIP_WITH_WORKFLOWS = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-workflows-ship',
+        card: {
+          workflows: [
+            { title: 'New patient onboarding', steps: ['Verify eligibility', 'Send intake forms', 'Prep chart', 'Confirm first visit'] },
+            { title: 'Denial appeal pipeline', steps: ['Review denial reason', 'Pull supporting docs', 'Draft appeal letter', 'Submit + track'] },
+          ],
+        },
+      };
+      const wfHTML = CardRenderer.render('spaceship', 'full', SHIP_WITH_WORKFLOWS);
+      expect(wfHTML).toContain('class="blueprint-card-front-workflows"');
+      expect(wfHTML).toContain('New patient onboarding');
+      expect(wfHTML).toContain('Denial appeal pipeline');
+      expect(wfHTML).toContain('<li>Verify eligibility</li>');
+      expect(wfHTML).toContain('<li>Submit + track</li>');
+      const wfPanel = wfHTML.match(/<div class="blueprint-card-front-panel[^"]*" data-tab="workflows">([\s\S]*?)<\/div><\/div>/);
+      expect(wfPanel).not.toBeNull();
+      expect(wfPanel[1]).not.toContain('Coming soon');
+    });
+
+    it('workflows panel honors top-level + config-nested aliases', () => {
+      const SHIP_TOP = { ...SHIP_WITH_CREW, id: 'bp-wf-top', workflows: [{ title: 'Top wf', steps: ['a'] }] };
+      const SHIP_CONFIG = { ...SHIP_WITH_CREW, id: 'bp-wf-config', config: { workflows: [{ title: 'Nested wf', steps: ['b'] }] } };
+      expect(CardRenderer.render('spaceship', 'full', SHIP_TOP)).toContain('Top wf');
+      expect(CardRenderer.render('spaceship', 'full', SHIP_CONFIG)).toContain('Nested wf');
+    });
+
+    it('specialties panel renders curated noun-phrase chips when card.specialties is set', () => {
+      const SHIP_WITH_SPECIALTIES = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-specialties-ship',
+        card: {
+          specialties: ['revenue cycle', 'denial workflow', 'eligibility verification'],
+        },
+      };
+      const specHTML = CardRenderer.render('spaceship', 'full', SHIP_WITH_SPECIALTIES);
+      expect(specHTML).toContain('class="blueprint-card-front-specialties-list"');
+      expect(specHTML).toContain('>revenue cycle<');
+      expect(specHTML).toContain('>denial workflow<');
+      expect(specHTML).toContain('>eligibility verification<');
+      const specPanel = specHTML.match(/<div class="blueprint-card-front-panel[^"]*" data-tab="specialties">([\s\S]*?)<\/div><div class="blueprint-card-front-panel/);
+      expect(specPanel).not.toBeNull();
+      expect(specPanel[1]).not.toContain('Coming soon');
+    });
+
+    it('specialties panel honors top-level + config-nested aliases', () => {
+      const SHIP_TOP = { ...SHIP_WITH_CREW, id: 'bp-spec-top', specialties: ['top-level tag'] };
+      const SHIP_CONFIG = { ...SHIP_WITH_CREW, id: 'bp-spec-config', config: { specialties: ['nested tag'] } };
+      const topHTML = CardRenderer.render('spaceship', 'full', SHIP_TOP);
+      const configHTML = CardRenderer.render('spaceship', 'full', SHIP_CONFIG);
+      expect(topHTML).toContain('>top-level tag<');
+      expect(configHTML).toContain('>nested tag<');
+    });
+
+    it('protocol bullets get trimmed to their leading clause for scannability', () => {
+      const SHIP = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-trim-ship',
+        config: {
+          ship_system_prompt: 'How you work:\n- HIPAA is the floor. Minimum-necessary PHI on every disclosure.',
+        },
+      };
+      const trimHTML = CardRenderer.render('spaceship', 'full', SHIP);
+      const frontMatch = trimHTML.match(/<ul class="blueprint-card-front-protocols-list">([\s\S]*?)<\/ul>/);
+      expect(frontMatch).not.toBeNull();
+      expect(frontMatch[1]).toContain('<li>HIPAA is the floor</li>');
+      expect(frontMatch[1]).not.toContain('Minimum-necessary PHI');
     });
 
     it('agent front keeps the marquee + flavor + caps (unchanged)', () => {
