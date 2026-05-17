@@ -175,7 +175,7 @@ describe('CardRenderer — flip + back face', () => {
     it('renders all 4 tabs in the strip', () => {
       expect(html).toContain('data-tab="crew"');
       expect(html).toContain('data-tab="specialties"');
-      expect(html).toContain('data-tab="plugs-into"');
+      expect(html).toContain('data-tab="workflows"');
       expect(html).toContain('data-tab="day-in-life"');
     });
 
@@ -198,7 +198,7 @@ describe('CardRenderer — flip + back face', () => {
 
     it('renders Coming-soon stubs for the other 3 tabs', () => {
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
-      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="plugs-into"[^>]*>[\s\S]*?Plugs into[\s\S]*?Coming soon/);
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="workflows"[^>]*>[\s\S]*?Workflows[\s\S]*?Coming soon/);
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="day-in-life"[^>]*>[\s\S]*?A day in the life[\s\S]*?Coming soon/);
     });
 
@@ -260,17 +260,17 @@ describe('CardRenderer — flip + back face', () => {
             <div class="blueprint-card-art"><div class="blueprint-card-art-hover-title"><span></span></div></div>
             <div class="blueprint-card-front-tabs">
               <button class="blueprint-card-front-tab active" data-tab="crew" data-title="Crew"></button>
-              <button class="blueprint-card-front-tab" data-tab="plugs-into" data-title="Plugs into"></button>
+              <button class="blueprint-card-front-tab" data-tab="workflows" data-title="Workflows"></button>
             </div>
           </div>
         </div>`;
 
-      const tabPlug = document.querySelector('[data-tab="plugs-into"].blueprint-card-front-tab');
+      const tabPlug = document.querySelector('[data-tab="workflows"].blueprint-card-front-tab');
       const overlay = document.querySelector('.blueprint-card-art-hover-title');
       const span = overlay.querySelector('span');
 
       tabPlug.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-      expect(span.textContent).toBe('Plugs into');
+      expect(span.textContent).toBe('Workflows');
       expect(overlay.classList.contains('visible')).toBe(true);
 
       tabPlug.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
