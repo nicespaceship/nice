@@ -27,6 +27,25 @@ const CardRenderer = (() => {
 
   const FLIP_ICON_BTN = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><polyline points="21 3 21 8 16 8"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><polyline points="3 21 3 16 8 16"/></svg>';
 
+  /* ── Ship front tab icons (Lucide-style 12px line glyphs) ── */
+  const TAB_ICONS = {
+    crew:         '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    'try-this':   '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>',
+    'plugs-into': '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>',
+    'day-in-life':'<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  };
+
+  /* Tabs on the front of a ship card. Crew is the live default; the
+     others are Coming-soon placeholders until per-tab seed data lands
+     (example_missions, mcp_slugs, day_in_life_steps). Hovering an icon
+     surfaces its title as an overlay in the art zone above. */
+  const SHIP_FRONT_TABS = [
+    { id: 'crew',         title: 'Crew',              icon: TAB_ICONS.crew         },
+    { id: 'try-this',     title: 'Try this',          icon: TAB_ICONS['try-this']  },
+    { id: 'plugs-into',   title: 'Plugs into',        icon: TAB_ICONS['plugs-into']},
+    { id: 'day-in-life',  title: 'A day in the life', icon: TAB_ICONS['day-in-life']},
+  ];
+
   /* ── Serial Hash — deterministic alphanumeric fingerprint ── */
   const _SERIAL_CHARS = 'A0B1C2D3E4F5G6H7J8K9LMNPQRSTUVWXYZ';
 
@@ -290,11 +309,25 @@ const CardRenderer = (() => {
     return _renderFull(type, data, options);
   }
 
+  /* Renders one front-tab's panel. Crew tab uses the crew list; the
+     other three are Coming-soon stubs so the strip reads as wired
+     even before per-tab seed data lands. */
+  function _renderFrontTabPanel(tabId, bp) {
+    if (tabId === 'crew') {
+      const crewHTML = _renderCrewList(bp);
+      return crewHTML || `<p class="blueprint-card-front-empty">No crew defined.</p>`;
+    }
+    const label = (SHIP_FRONT_TABS.find(t => t.id === tabId) || {}).title || tabId;
+    return `<div class="blueprint-card-front-soon">
+        <p class="blueprint-card-front-soon-title">${_esc(label)}</p>
+        <p class="blueprint-card-front-soon-hint">Coming soon</p>
+      </div>`;
+  }
+
   /* ── Front crew list (ships only) ──
-     Replaces the flavor quote + cap lines on the front of ship cards
-     with a dense 2-column roster: every slot's role label with a
-     class-color dot. Mirrors the drawer's class-number derivation so
-     the visual language stays consistent. */
+     Renders the 12-role roster as a dense 2-column list with
+     class-color dots. Reused inside the Crew tab panel; mirrors the
+     drawer's class-number derivation so visual language is consistent. */
   function _renderCrewList(bp) {
     const crew = bp.crew || bp.config?.crew_roles || bp.metadata?.crew || [];
     if (!crew.length) return '';
@@ -500,11 +533,16 @@ const CardRenderer = (() => {
             <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
             <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
             ${artContent}
+            ${isShip ? `<div class="blueprint-card-art-hover-title"><span></span></div>` : ''}
           </div>
-          <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
+          ${isShip
+            ? `<div class="blueprint-card-front-tabs" role="tablist">
+                ${SHIP_FRONT_TABS.map((t, i) => `<button type="button" class="blueprint-card-front-tab${i === 0 ? ' active' : ''}" data-tab="${t.id}" data-title="${_esc(t.title)}" aria-label="${_esc(t.title)}" title="${_esc(t.title)}">${t.icon}</button>`).join('')}
+              </div>`
+            : `<div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>`}
           <div class="blueprint-card-text-box">
             ${isShip
-              ? _renderCrewList(bp)
+              ? SHIP_FRONT_TABS.map((t, i) => `<div class="blueprint-card-front-panel${i === 0 ? ' active' : ''}" data-tab="${t.id}">${_renderFrontTabPanel(t.id, bp)}</div>`).join('')
               : `<p class="blueprint-card-flavor">"${_esc(flavor)}"</p>${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}`}
           </div>
           ${opts.overlay ? `<div class="blueprint-card-overlay">${opts.overlay}</div>` : ''}
@@ -747,12 +785,61 @@ const CardRenderer = (() => {
     }, true);
   }
 
+  /* ── Front tabs — click toggles active panel; hover shows the tab
+     title as an overlay in the art zone above. Click never reaches
+     the card's drawer-open handler (capture + stopPropagation). */
+  function bindFrontTabs(root) {
+    const target = root || (typeof document !== 'undefined' ? document.body : null);
+    if (!target || target._niceFrontTabsBound) return;
+    target._niceFrontTabsBound = true;
+
+    target.addEventListener('click', function(e) {
+      const tab = e.target.closest && e.target.closest('.blueprint-card-front-tab');
+      if (!tab) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const front = tab.closest('.blueprint-card-front');
+      if (!front) return;
+      const id = tab.dataset.tab;
+      front.querySelectorAll('.blueprint-card-front-tab').forEach(t => t.classList.toggle('active', t === tab));
+      front.querySelectorAll('.blueprint-card-front-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === id));
+    }, true);
+
+    target.addEventListener('mouseover', function(e) {
+      const tab = e.target.closest && e.target.closest('.blueprint-card-front-tab');
+      if (!tab) return;
+      const front = tab.closest('.blueprint-card-front');
+      if (!front) return;
+      const overlay = front.querySelector('.blueprint-card-art-hover-title');
+      if (!overlay) return;
+      const span = overlay.querySelector('span');
+      if (span) span.textContent = tab.dataset.title || '';
+      overlay.classList.add('visible');
+    });
+
+    target.addEventListener('mouseout', function(e) {
+      const tab = e.target.closest && e.target.closest('.blueprint-card-front-tab');
+      if (!tab) return;
+      const related = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.blueprint-card-front-tab');
+      if (related && related.closest('.blueprint-card-front') === tab.closest('.blueprint-card-front')) return;
+      const front = tab.closest('.blueprint-card-front');
+      if (!front) return;
+      const overlay = front.querySelector('.blueprint-card-art-hover-title');
+      if (!overlay) return;
+      overlay.classList.remove('visible');
+    });
+  }
+
   // Auto-bind once the DOM is ready so views don't have to wire this up.
   if (typeof document !== 'undefined') {
     if (document.body) {
       bindFlipCards(document.body);
+      bindFrontTabs(document.body);
     } else {
-      document.addEventListener('DOMContentLoaded', function() { bindFlipCards(document.body); });
+      document.addEventListener('DOMContentLoaded', function() {
+        bindFlipCards(document.body);
+        bindFrontTabs(document.body);
+      });
     }
   }
 
@@ -768,6 +855,7 @@ const CardRenderer = (() => {
     setCustomLabel,
     bindEditableCards,
     bindFlipCards,
+    bindFrontTabs,
     _extractDisciplines,
     RARITY_COLORS,
     ROLE_COLORS,

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('CardRenderer — flip + back face', () => {
   describe('_extractDisciplines', () => {
@@ -136,7 +136,7 @@ describe('CardRenderer — flip + back face', () => {
     });
   });
 
-  describe('ship front — crew list replaces flavor + caps', () => {
+  describe('ship front — tab strip with crew as default panel', () => {
     const SHIP_WITH_CREW = {
       id: 'bp-crew-ship',
       name: 'Crew Ship',
@@ -144,8 +144,8 @@ describe('CardRenderer — flip + back face', () => {
       rarity: 'Common',
       tags: [],
       description: 'd',
-      flavor: 'A flavor that should NOT appear on the front',
-      caps: ['cap one should NOT appear', 'cap two'],
+      flavor: 'A flavor scene.',
+      caps: ['cap one'],
       crew: [
         { slot: 0, label: 'Captain',        min_class: 'class-1' },
         { slot: 1, label: 'Front Desk',     min_class: 'class-1' },
@@ -158,10 +158,26 @@ describe('CardRenderer — flip + back face', () => {
 
     const html = CardRenderer.render('spaceship', 'full', SHIP_WITH_CREW);
 
-    it('renders the crew list', () => {
+    it('replaces the scrolling marquee with an icon tab strip', () => {
+      expect(html).toContain('class="blueprint-card-front-tabs"');
+      expect(html).not.toContain('class="blueprint-card-marquee"');
+    });
+
+    it('renders all 4 tabs in the strip', () => {
+      expect(html).toContain('data-tab="crew"');
+      expect(html).toContain('data-tab="try-this"');
+      expect(html).toContain('data-tab="plugs-into"');
+      expect(html).toContain('data-tab="day-in-life"');
+    });
+
+    it('marks Crew as the default active tab + panel', () => {
+      expect(html).toMatch(/blueprint-card-front-tab active[^>]*data-tab="crew"/);
+      expect(html).toMatch(/blueprint-card-front-panel active[^>]*data-tab="crew"/);
+    });
+
+    it('renders the crew roster inside the Crew panel', () => {
       expect(html).toContain('class="blueprint-card-crew-list"');
       expect(html).toContain('Captain');
-      expect(html).toContain('Front Desk');
       expect(html).toContain('Insurance Lead');
     });
 
@@ -171,25 +187,85 @@ describe('CardRenderer — flip + back face', () => {
       expect(html).toMatch(/bp-crew-c4[^"]*"[^>]*title="Insurance Lead/);
     });
 
-    it('does not render flavor or caps on the front', () => {
-      // Front face — must not contain the flavor quote or cap text
-      const frontHTML = html.split('blueprint-card-back')[0];
-      expect(frontHTML).not.toContain('A flavor that should NOT appear');
-      expect(frontHTML).not.toContain('cap one should NOT');
-      expect(frontHTML).not.toContain('blueprint-card-flavor');
+    it('renders Coming-soon stubs for the other 3 tabs', () => {
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="try-this"[^>]*>[\s\S]*?Try this[\s\S]*?Coming soon/);
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="plugs-into"[^>]*>[\s\S]*?Plugs into[\s\S]*?Coming soon/);
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="day-in-life"[^>]*>[\s\S]*?A day in the life[\s\S]*?Coming soon/);
     });
 
-    it('agent front still shows flavor + caps (unchanged)', () => {
+    it('places a hover-title overlay inside the art zone', () => {
+      expect(html).toContain('class="blueprint-card-art-hover-title"');
+    });
+
+    it('agent front keeps the marquee + flavor + caps (unchanged)', () => {
       const agent = {
         id: 'bp-a', name: 'A', type: 'agent', rarity: 'Common', tags: [],
+        description: 'desc',
         flavor: 'agent flavor stays', caps: ['agent cap stays'],
         stats: { spd: '1', acc: '1', cap: '1', pwr: '1' },
       };
       const agentHTML = CardRenderer.render('agent', 'full', agent);
-      const frontHTML = agentHTML.split('blueprint-card-back')[0];
-      expect(frontHTML).toContain('agent flavor stays');
-      expect(frontHTML).toContain('agent cap stays');
-      expect(frontHTML).not.toContain('blueprint-card-crew-list');
+      expect(agentHTML).toContain('blueprint-card-marquee');
+      expect(agentHTML).toContain('agent flavor stays');
+      expect(agentHTML).toContain('agent cap stays');
+      expect(agentHTML).not.toContain('blueprint-card-front-tabs');
+      expect(agentHTML).not.toContain('blueprint-card-art-hover-title');
+    });
+  });
+
+  describe('bindFrontTabs interactions', () => {
+    beforeEach(() => { document.body.innerHTML = ''; });
+
+    it('clicking a tab swaps active tab and panel', () => {
+      document.body.innerHTML = `
+        <div class="blueprint-card">
+          <div class="blueprint-card-front">
+            <div class="blueprint-card-art"><div class="blueprint-card-art-hover-title"><span></span></div></div>
+            <div class="blueprint-card-front-tabs">
+              <button class="blueprint-card-front-tab active" data-tab="crew" data-title="Crew"></button>
+              <button class="blueprint-card-front-tab" data-tab="try-this" data-title="Try this"></button>
+            </div>
+            <div class="blueprint-card-text-box">
+              <div class="blueprint-card-front-panel active" data-tab="crew">CREW</div>
+              <div class="blueprint-card-front-panel" data-tab="try-this">TRY</div>
+            </div>
+          </div>
+        </div>`;
+
+      const tabTry  = document.querySelector('[data-tab="try-this"].blueprint-card-front-tab');
+      const tabCrew = document.querySelector('[data-tab="crew"].blueprint-card-front-tab');
+      const panelTry  = document.querySelector('.blueprint-card-front-panel[data-tab="try-this"]');
+      const panelCrew = document.querySelector('.blueprint-card-front-panel[data-tab="crew"]');
+
+      tabTry.click();
+      expect(tabTry.classList.contains('active')).toBe(true);
+      expect(tabCrew.classList.contains('active')).toBe(false);
+      expect(panelTry.classList.contains('active')).toBe(true);
+      expect(panelCrew.classList.contains('active')).toBe(false);
+    });
+
+    it('hovering a tab shows its title in the art-zone overlay; leaving hides it', () => {
+      document.body.innerHTML = `
+        <div class="blueprint-card">
+          <div class="blueprint-card-front">
+            <div class="blueprint-card-art"><div class="blueprint-card-art-hover-title"><span></span></div></div>
+            <div class="blueprint-card-front-tabs">
+              <button class="blueprint-card-front-tab active" data-tab="crew" data-title="Crew"></button>
+              <button class="blueprint-card-front-tab" data-tab="plugs-into" data-title="Plugs into"></button>
+            </div>
+          </div>
+        </div>`;
+
+      const tabPlug = document.querySelector('[data-tab="plugs-into"].blueprint-card-front-tab');
+      const overlay = document.querySelector('.blueprint-card-art-hover-title');
+      const span = overlay.querySelector('span');
+
+      tabPlug.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      expect(span.textContent).toBe('Plugs into');
+      expect(overlay.classList.contains('visible')).toBe(true);
+
+      tabPlug.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
+      expect(overlay.classList.contains('visible')).toBe(false);
     });
   });
 

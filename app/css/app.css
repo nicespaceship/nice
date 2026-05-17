@@ -6611,6 +6611,120 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   Ship front tab strip — replaces the scrolling marquee with a row
+   of small icon-only buttons. Active tab gets the accent treatment;
+   hover surfaces the tab's title as an overlay in the art zone above.
+   ═══════════════════════════════════════════════════════════════════ */
+.blueprint-card-front-tabs {
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:2px;
+  padding:4px 6px;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.02);
+}
+.blueprint-card-front-tab {
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:5px 0;
+  background:transparent;
+  border:none;
+  border-radius:3px;
+  color:var(--text-muted);
+  cursor:pointer;
+  transition:color .12s, background .12s;
+}
+.blueprint-card-front-tab:hover {
+  color:var(--accent);
+  background:rgba(99,102,241,.06);
+}
+.blueprint-card-front-tab.active {
+  color:var(--accent);
+}
+.blueprint-card-front-tab.active::after {
+  content:'';
+  position:absolute;
+  bottom:-1px;
+  left:25%; right:25%;
+  height:2px;
+  background:var(--accent);
+  border-radius:1px;
+}
+.blueprint-card-front-tab:focus-visible {
+  outline:2px solid var(--accent);
+  outline-offset:1px;
+}
+
+/* Tab panels — only the active one is visible. Content sits inside
+   the existing text-box slot so the surrounding TCG silhouette is
+   preserved. */
+.blueprint-card-front-panel { display:none; }
+.blueprint-card-front-panel.active { display:block; }
+
+/* Coming-soon stub — preserves the text-box vertical rhythm so
+   switching tabs doesn't shift the stats row below. */
+.blueprint-card-front-soon {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:2px;
+  padding:8px 4px;
+  color:var(--text-muted);
+}
+.blueprint-card-front-soon-title {
+  font-size:var(--card-text-body);
+  font-weight:var(--fw-medium);
+  margin:0;
+  color:var(--text);
+}
+.blueprint-card-front-soon-hint {
+  font-size:var(--card-text-micro);
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  margin:0;
+  opacity:.7;
+}
+.blueprint-card-front-empty {
+  color:var(--text-muted);
+  font-style:italic;
+  font-size:var(--card-text-body);
+  text-align:center;
+  margin:0;
+  padding:8px;
+}
+
+/* Hover-title overlay inside the art zone — transparent by default,
+   fades in centered over the slot constellation when any tab icon is
+   hovered. */
+.blueprint-card-art-hover-title {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.55);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .14s ease;
+  z-index:6;
+}
+.blueprint-card-art-hover-title.visible { opacity:1; }
+.blueprint-card-art-hover-title span {
+  font-size:var(--text-lg);
+  font-weight:var(--fw-bold);
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  color:#fff;
+  text-align:center;
+  padding:0 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Card flip — front shows the visual artifact, back shows the
    discipline (ships) or system-prompt spec (agents). Inner element
    does the rotation; the flip button lives in the outer perspective
