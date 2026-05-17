@@ -6,6 +6,13 @@
 - Product domain: `nicespaceship.ai`
 - Company domain: `nicespaceship.com`
 
+## Blueprint Copy Standards
+Applies to ALL catalog content — blueprint `name`, `description`, `flavor`, `subtitle`, `caps`, ship `config.ship_system_prompt`, agent `config.system_prompt`, slot `label`, and any other user-facing string sourced from a seed migration.
+
+- **Active voice.** Subject performs the verb. "The Front Desk Coordinator confirms appointments" — not "Appointments are confirmed by the Front Desk Coordinator." Reads as direct operator copy, not a press release.
+- **No em-dashes (`—`) unless truly necessary.** Default to commas, colons, semicolons, or a new sentence. Em-dashes are reserved for parenthetical asides that genuinely need a stronger break than a comma. If a comma works, use a comma. Hyphens (`-`) in compound words ("six-person", "end-of-day") are fine; the rule is about em-dashes only.
+- Applies on every new seed and any edit to an existing seed. Pre-existing em-dashes in shipped seeds are not a forced sweep — fix them when you touch the file for another reason.
+
 ## Housekeeping
 At the start of each session, run `git worktree prune` and delete any stale `claude/*` branches (local and remote) that have no uncommitted work. Keep the repo clean.
 

@@ -2504,9 +2504,18 @@ const BlueprintsView = (() => {
     // Actions per type
     const actionsHTML = _renderDrawerActions(bp, type);
 
-    // Social row
+    // Social row — serial code sits directly above the rating + installs
+    // line. Serial moved out of the card-front art zone in the same pass
+    // that added the sub-header row; the drawer is its only surface now.
     const connCount = _connCount(bp);
-    const socialHTML = `<div class="bp-drawer-social">
+    const _serial = (typeof CardRenderer !== 'undefined' && CardRenderer.serialHash)
+      ? CardRenderer.serialHash(bp.id || bp.name, type === 'spaceship' ? 12 : undefined)
+      : null;
+    const serialHTML = _serial ? `<div class="bp-drawer-serial-row">
+      <span class="bp-drawer-serial-label">Serial</span>
+      <span class="bp-drawer-serial-code">${_esc(_serial.code)}</span>
+    </div>` : '';
+    const socialHTML = `${serialHTML}<div class="bp-drawer-social">
       <span class="bp-stars" id="bp-drawer-stars">${_renderStars(bp.rating || 0)}</span>
       <span style="opacity:.6;font-size:.75rem">${_formatNum(bp.downloads || connCount)} installs</span>
     </div>`;

@@ -25,6 +25,27 @@ const CardRenderer = (() => {
 
   const AGENT_ICON_BTN = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;display:block" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="8" width="10" height="8" rx="2"/><path d="M9 2h6M12 2v6"/><circle cx="9.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none"/><path d="M9 16v2M15 16v2M3 12h4M17 12h4"/></svg>';
 
+  const FLIP_ICON_BTN = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><polyline points="21 3 21 8 16 8"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><polyline points="3 21 3 16 8 16"/></svg>';
+
+  /* ── Ship front tab icons (Lucide-style 12px line glyphs) ── */
+  const TAB_ICONS = {
+    crew:         '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    specialties:  '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>',
+    workflows:    '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg>',
+    protocols:    '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>',
+  };
+
+  /* Tabs on the front of a ship card. Crew is the live default; the
+     others are Coming-soon placeholders until per-tab seed data lands
+     (specialties, workflows, protocols). Hovering an icon surfaces
+     its title as an overlay in the art zone above. */
+  const SHIP_FRONT_TABS = [
+    { id: 'crew',         title: 'Crew',        icon: TAB_ICONS.crew        },
+    { id: 'specialties',  title: 'Specialties', icon: TAB_ICONS.specialties },
+    { id: 'workflows',    title: 'Workflows',   icon: TAB_ICONS.workflows   },
+    { id: 'protocols',    title: 'Protocols',   icon: TAB_ICONS.protocols   },
+  ];
+
   /* ── Serial Hash — deterministic alphanumeric fingerprint ── */
   const _SERIAL_CHARS = 'A0B1C2D3E4F5G6H7J8K9LMNPQRSTUVWXYZ';
 
@@ -95,10 +116,6 @@ const CardRenderer = (() => {
   function slotDiagramArt(classId, serial, opts) {
     opts = opts || {};
     const cls = SHIP_CLASSES[classId] || SHIP_CLASSES['class-1'];
-    const liveSlots = Array.isArray(opts.slots) && opts.slots.length ? opts.slots : null;
-    const slots = liveSlots || cls.slots;
-    const n = slots.length;
-    if (!serial) serial = serialHash(classId, 12);
 
     // Tests + early-boot renders (before Gamification has loaded) treat
     // every slot as unlocked so the visual is never broken in those
@@ -107,6 +124,16 @@ const CardRenderer = (() => {
     const userRank = _gam && _gam.getCurrentClass ? _gam.getClassRank(_gam.getCurrentClass().id || 'class-1') : 99;
     const slotRank = (s) => _gam && _gam.getClassRank ? _gam.getClassRank(s && s.min_class) : 0;
     const isLocked = (s) => slotRank(s) > userRank;
+
+    // Front-of-card art now shows only the slots the viewer has
+    // unlocked. Locked slots are surfaced elsewhere (drawer crew
+    // roster, class progression display) — keeping the screen as a
+    // clean canvas for the active crew.
+    const liveSlots = Array.isArray(opts.slots) && opts.slots.length ? opts.slots : null;
+    const allSlots = liveSlots || cls.slots;
+    const slots = allSlots.filter(s => !isLocked(s));
+    const n = slots.length;
+    if (!serial) serial = serialHash(classId, 12);
 
     const cx = 100, cy = 60;
     const positions = n === 2
@@ -219,6 +246,98 @@ const CardRenderer = (() => {
     return svg;
   }
 
+  /* ── Node Hex Art (spaceship cards, ported from marketing inside-stage)
+     Central pulsing core with 6 nodes arranged in a vertically-compressed
+     hex (top + bottom pulled in for the 200×120 rectangle). Data lines
+     connect core ↔ each node; particles travel core → node on a stagger.
+     Each node is colored by its slot's class (C1 slate / C2 light blue /
+     C3 purple / C4 amber) so the animation stays tied to the user's
+     specific ship. Only unlocked slots render; locked ones live in the
+     drawer + Crew tab. */
+  function nodeHexArt(slots, serial) {
+    if (!serial) serial = serialHash('nodeHex', 12);
+
+    // Locked-slot filter — same logic as slotDiagramArt's gating.
+    const _gam = typeof Gamification !== 'undefined' ? Gamification : null;
+    const userRank = _gam && _gam.getCurrentClass ? _gam.getClassRank(_gam.getCurrentClass().id || 'class-1') : 99;
+    const slotRank = (s) => _gam && _gam.getClassRank ? _gam.getClassRank(s && s.min_class) : 0;
+    const isLocked = (s) => slotRank(s) > userRank;
+
+    const allSlots = (slots || []).filter(Boolean);
+    const unlocked = allSlots.filter(s => !isLocked(s)).slice(0, 6);
+
+    // Vertically-compressed hex: top + bottom pulled in (y closer to center),
+    // sides at full horizontal reach. Fits the 200×120 rectangle cleanly.
+    const positions = [
+      { x: 100, y: 22 },   // top
+      { x: 162, y: 38 },   // top-right
+      { x: 162, y: 82 },   // bottom-right
+      { x: 100, y: 98 },   // bottom
+      { x:  38, y: 82 },   // bottom-left
+      { x:  38, y: 38 },   // top-left
+    ].slice(0, unlocked.length);
+
+    const cx = 100, cy = 60;
+    const slotColor = (s) => SLOT_COLORS[s && (s.max || s.maxRarity || ({
+      'class-1': 'Common', 'class-2': 'Rare', 'class-3': 'Epic', 'class-4': 'Legendary', 'class-5': 'Legendary',
+    })[s && s.min_class])] || '#94a3b8';
+
+    let svg = `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">`;
+
+    // Faint grid background — keeps the screen feeling like a display.
+    svg += `<g opacity="0.06" stroke="#6366f1" stroke-width="0.4">
+      <line x1="0" y1="30" x2="200" y2="30"/>
+      <line x1="0" y1="60" x2="200" y2="60"/>
+      <line x1="0" y1="90" x2="200" y2="90"/>
+      <line x1="50" y1="0" x2="50" y2="120"/>
+      <line x1="100" y1="0" x2="100" y2="120"/>
+      <line x1="150" y1="0" x2="150" y2="120"/>
+    </g>`;
+
+    // Data lines core → node. Drawn first so nodes and core sit on top.
+    positions.forEach((p, i) => {
+      const color = slotColor(unlocked[i]);
+      svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="${color}" stroke-width="0.7" opacity="0.32"/>`;
+    });
+
+    // Traveling particles — core → node, staggered loop. SVG <animate>
+    // inline so each card is self-contained; no global CSS keyframes
+    // needed. No drop-shadow filter (Safari can't animate it smoothly).
+    positions.forEach((p, i) => {
+      const dur = 2.4;
+      const delay = 0.18 * i;
+      const color = slotColor(unlocked[i]);
+      svg += `<circle r="1.6" fill="${color}" opacity="0">
+        <animate attributeName="opacity" values="0;0.95;0.95;0" dur="${dur}s" begin="${delay}s" repeatCount="indefinite" keyTimes="0;0.12;0.88;1"/>
+        <animate attributeName="cx" values="${cx};${p.x}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="${cy};${p.y}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>
+      </circle>`;
+    });
+
+    // Pulsing core — concentric rings + bright center, NICE brand
+    // Sapphire (#0F52BA) and lighter brand blue (#1862ce). Outer halo
+    // breathes via r-attribute animation (works across browsers
+    // including Safari, without filter-shadow recompute cost).
+    svg += `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="#1862ce" stroke-width="0.5" opacity="0.35">
+      <animate attributeName="r" values="11;15;11" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.45;0.15;0.45" dur="3s" repeatCount="indefinite"/>
+    </circle>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="9" fill="rgba(15, 82, 186, 0.12)"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="6" fill="#0F52BA" opacity="0.95"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="#ffffff" opacity="0.95"/>`;
+
+    // Nodes — halo + ring + filled dot at each hex position.
+    positions.forEach((p, i) => {
+      const color = slotColor(unlocked[i]);
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="8" fill="${color}" opacity="0.12"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="none" stroke="${color}" stroke-width="1" opacity="0.7"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}" opacity="0.9"/>`;
+    });
+
+    svg += `</svg>`;
+    return svg;
+  }
+
   /* ── Palette Art ── */
   function paletteArt(name, previewColors, serial) {
     const pc = previewColors || ['#080808', '#ffffff', '#888888'];
@@ -286,6 +405,116 @@ const CardRenderer = (() => {
     if (size === 'mini')    return _renderMini(type, data, options);
     if (size === 'grid')    return _renderGrid(type, data, options);
     return _renderFull(type, data, options);
+  }
+
+  /* Renders one front-tab's panel. Crew tab uses the crew list; the
+     other three are Coming-soon stubs so the strip reads as wired
+     even before per-tab seed data lands. */
+  function _renderFrontTabPanel(tabId, bp) {
+    if (tabId === 'crew') {
+      const crewHTML = _renderCrewList(bp);
+      return crewHTML || `<p class="blueprint-card-front-empty">No crew defined.</p>`;
+    }
+    const label = (SHIP_FRONT_TABS.find(t => t.id === tabId) || {}).title || tabId;
+    return `<div class="blueprint-card-front-soon">
+        <p class="blueprint-card-front-soon-title">${_esc(label)}</p>
+        <p class="blueprint-card-front-soon-hint">Coming soon</p>
+      </div>`;
+  }
+
+  /* ── Front crew list (ships only) ──
+     Renders the 12-role roster as a dense 2-column list with
+     class-color dots. Reused inside the Crew tab panel; mirrors the
+     drawer's class-number derivation so visual language is consistent. */
+  function _renderCrewList(bp) {
+    const crew = bp.crew || bp.config?.crew_roles || bp.metadata?.crew || [];
+    if (!crew.length) return '';
+    return `<ul class="blueprint-card-crew-list">${crew.map(slot => {
+      const label = slot.label || slot.role || 'Slot';
+      const minClass = slot.min_class || 'class-1';
+      const classNum = parseInt((minClass.match(/(\d+)/) || [])[1] || '1', 10);
+      return `<li class="blueprint-card-crew-item bp-crew-c${classNum}" title="${_esc(label)} — Class ${classNum}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span></li>`;
+    }).join('')}</ul>`;
+  }
+
+  /* ── Back-face content ──
+     Front of card is the visual artifact. Back is the "rules text" — the
+     discipline the card encodes (ships) or the operating spec (agents).
+     Parser is permissive: matches the bullet block under a "How (you|to)
+     work:" header in seeded prompts, falls back to caps when absent so
+     custom blueprints still render something.  */
+
+  function _extractDisciplines(prompt) {
+    if (!prompt || typeof prompt !== 'string') return [];
+    const lines = prompt.split('\n');
+    const startIdx = lines.findIndex(l => /^\s*How (?:you|to) work:\s*$/.test(l));
+    if (startIdx === -1) return [];
+
+    const bullets = [];
+    let current = null;
+    for (let i = startIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      if (/^[A-Z][^:\n]{0,60}:$/.test(trimmed) && trimmed !== '-') {
+        if (current !== null) { bullets.push(current.trim()); current = null; }
+        break;
+      }
+
+      if (/^\s*-\s+/.test(line)) {
+        if (current !== null) bullets.push(current.trim());
+        current = line.replace(/^\s*-\s+/, '');
+      } else if (current !== null && trimmed) {
+        current += ' ' + trimmed;
+      } else if (current !== null && !trimmed) {
+        bullets.push(current.trim());
+        current = null;
+      }
+    }
+    if (current !== null) bullets.push(current.trim());
+    return bullets.filter(Boolean);
+  }
+
+  function _renderShipBack(bp) {
+    const prompt = bp.config?.ship_system_prompt || bp.ship_system_prompt || '';
+    const disciplines = _extractDisciplines(prompt);
+    const caps = bp.caps || bp.card?.caps || bp.metadata?.caps || [];
+    const items = disciplines.length ? disciplines : caps;
+    const title = disciplines.length ? 'Discipline' : 'Capabilities';
+
+    const body = items.length
+      ? `<ul class="blueprint-card-back-list">${items.map(d => `<li>${_esc(d)}</li>`).join('')}</ul>`
+      : `<p class="blueprint-card-back-empty">No discipline notes yet.</p>`;
+
+    return `<div class="blueprint-card-back-header"><span class="blueprint-card-back-title">${title}</span></div>
+      <div class="blueprint-card-back-body">${body}</div>`;
+  }
+
+  function _renderAgentBack(bp) {
+    const prompt = bp.config?.system_prompt || bp.system_prompt || bp.config?.prompt || '';
+    const tools = bp.config?.tools || [];
+    const model = bp.llm_engine || bp.config?.llm_engine || '';
+
+    const promptHTML = prompt
+      ? `<p class="blueprint-card-back-prompt">${_esc(prompt)}</p>`
+      : `<p class="blueprint-card-back-empty">No system prompt set.</p>`;
+
+    const toolsHTML = tools.length
+      ? `<div class="blueprint-card-back-section">
+           <span class="blueprint-card-back-label">Tools</span>
+           <div class="blueprint-card-back-chips">${tools.map(t => `<span class="blueprint-card-back-chip">${_esc(t)}</span>`).join('')}</div>
+         </div>`
+      : '';
+
+    const modelHTML = model
+      ? `<div class="blueprint-card-back-section">
+           <span class="blueprint-card-back-label">Model</span>
+           <span class="blueprint-card-back-chip blueprint-card-back-chip-model">${_esc(model)}</span>
+         </div>`
+      : '';
+
+    return `<div class="blueprint-card-back-header"><span class="blueprint-card-back-title">System Prompt</span></div>
+      <div class="blueprint-card-back-body">${promptHTML}${toolsHTML}${modelHTML}</div>`;
   }
 
   /* ── Full TCG Card — ONE unified template for all types and rarities ── */
@@ -372,39 +601,59 @@ const CardRenderer = (() => {
     const badgeStyle = `style="color:${rarityColor};border:1px solid ${rarityColor}"`;
 
     // ── Art ──
-    // Live ship slots drive the diagram length + per-slot lock state.
-    // Fall back to the synthetic class layout for ships with no crew
-    // data yet (custom builds before slots are wired).
+    // Ship cards on the front use the ported marketing inside-stage
+    // animation (nodeHexArt): pulsing core + 6 unlocked nodes in
+    // compressed hex + flowing particles. Agent cards keep avatarArt.
     const shipSlots = isShip ? BlueprintUtils.getCrewDefs(bp) : null;
-    const slotOpts = (shipSlots && shipSlots.length) ? { slots: shipSlots } : undefined;
     const artContent = isShip
-      ? (_isSpecialShip(bp) ? slotDiagramArt(classId, serial, slotOpts) : slotDiagramArt('slot-6', serial, slotOpts))
+      ? nodeHexArt(shipSlots, serial)
       : avatarArt(bp.name, bp.category || bp.role, serial);
 
+    // ── Back face content (rules text) ──
+    const backHTML = isShip ? _renderShipBack(bp) : _renderAgentBack(bp);
+
     // ── ONE template ──
+    // Front face wraps the existing card content. Back face holds the
+    // rules text. Flip button lives in the perspective container outside
+    // the rotating inner so it stays in place across the flip.
     return `<div class="blueprint-card ${clickClass}" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}${draggable}>
-      <div class="blueprint-card-name-bar">
-        <span class="blueprint-card-name"${nameEditable}>${_esc(displayName)}</span>
-        ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
-        ${statusDot}
+      <button class="blueprint-card-flip-btn" type="button" data-action="flip-card" aria-label="Flip card" title="Flip card">${FLIP_ICON_BTN}</button>
+      <div class="blueprint-card-inner">
+        <div class="blueprint-card-front">
+          <div class="blueprint-card-name-bar">
+            <span class="blueprint-card-name"${nameEditable}>${_esc(displayName)}</span>
+            ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
+            ${statusDot}
+          </div>
+          <div class="blueprint-card-sub-header">
+            ${roleLabel
+              ? `<span class="blueprint-card-sub-category"${roleEditable}>${_esc(roleLabel)}</span>`
+              : '<span class="blueprint-card-sub-category"></span>'}
+            <span class="blueprint-card-sub-rarity${badgeClass}" ${badgeStyle}>${rarityLabel}</span>
+          </div>
+          <div class="blueprint-card-art">
+            ${artContent}
+            ${isShip ? `<div class="blueprint-card-art-hover-title"><span></span></div>` : ''}
+          </div>
+          ${isShip
+            ? `<div class="blueprint-card-front-tabs" role="tablist">
+                ${SHIP_FRONT_TABS.map((t, i) => `<button type="button" class="blueprint-card-front-tab${i === 0 ? ' active' : ''}" data-tab="${t.id}" data-title="${_esc(t.title)}" aria-label="${_esc(t.title)}" title="${_esc(t.title)}">${t.icon}</button>`).join('')}
+              </div>`
+            : `<div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>`}
+          <div class="blueprint-card-text-box">
+            ${isShip
+              ? SHIP_FRONT_TABS.map((t, i) => `<div class="blueprint-card-front-panel${i === 0 ? ' active' : ''}" data-tab="${t.id}">${_renderFrontTabPanel(t.id, bp)}</div>`).join('')
+              : `<p class="blueprint-card-flavor">"${_esc(flavor)}"</p>${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}`}
+          </div>
+          ${opts.overlay ? `<div class="blueprint-card-overlay">${opts.overlay}</div>` : ''}
+          ${isShip ? '' : `<div class="blueprint-card-stats">
+            ${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}
+          </div>`}
+          ${opts.footer ? `<div class="blueprint-card-footer">${opts.footer}</div>` : ''}
+          ${opts.actions ? `<div class="blueprint-card-actions">${opts.actions}</div>` : ''}
+        </div>
+        <div class="blueprint-card-back">${backHTML}</div>
       </div>
-      <div class="blueprint-card-art">
-        ${roleLabel ? `<div class="blueprint-card-art-role"><span class="blueprint-card-serial-code"${roleEditable}>${_esc(roleLabel)}</span></div>` : ''}
-        <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
-        <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
-        ${artContent}
-      </div>
-      <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
-      <div class="blueprint-card-text-box">
-        <p class="blueprint-card-flavor">"${_esc(flavor)}"</p>
-        ${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}
-      </div>
-      ${opts.overlay ? `<div class="blueprint-card-overlay">${opts.overlay}</div>` : ''}
-      <div class="blueprint-card-stats">
-        ${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}
-      </div>
-      ${opts.footer ? `<div class="blueprint-card-footer">${opts.footer}</div>` : ''}
-      ${opts.actions ? `<div class="blueprint-card-actions">${opts.actions}</div>` : ''}
     </div>`;
   }
 
@@ -617,17 +866,98 @@ const CardRenderer = (() => {
     }, true);
   }
 
+  /* ── Card flip — single delegated listener on document body.
+     Capture phase + stopPropagation so the click never reaches the
+     card's bubble-phase drawer/activation handlers attached per view.
+     Idempotent: re-binding is a no-op. */
+  function bindFlipCards(root) {
+    const target = root || (typeof document !== 'undefined' ? document.body : null);
+    if (!target || target._niceFlipCardsBound) return;
+    target._niceFlipCardsBound = true;
+    target.addEventListener('click', function(e) {
+      const btn = e.target.closest && e.target.closest('[data-action="flip-card"]');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const card = btn.closest('.blueprint-card');
+      if (!card) return;
+      card.classList.toggle('flipped');
+    }, true);
+  }
+
+  /* ── Front tabs — click toggles active panel; hover shows the tab
+     title as an overlay in the art zone above. Click never reaches
+     the card's drawer-open handler (capture + stopPropagation). */
+  function bindFrontTabs(root) {
+    const target = root || (typeof document !== 'undefined' ? document.body : null);
+    if (!target || target._niceFrontTabsBound) return;
+    target._niceFrontTabsBound = true;
+
+    target.addEventListener('click', function(e) {
+      const tab = e.target.closest && e.target.closest('.blueprint-card-front-tab');
+      if (!tab) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const front = tab.closest('.blueprint-card-front');
+      if (!front) return;
+      const id = tab.dataset.tab;
+      front.querySelectorAll('.blueprint-card-front-tab').forEach(t => t.classList.toggle('active', t === tab));
+      front.querySelectorAll('.blueprint-card-front-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === id));
+    }, true);
+
+    target.addEventListener('mouseover', function(e) {
+      const tab = e.target.closest && e.target.closest('.blueprint-card-front-tab');
+      if (!tab) return;
+      const front = tab.closest('.blueprint-card-front');
+      if (!front) return;
+      const overlay = front.querySelector('.blueprint-card-art-hover-title');
+      if (!overlay) return;
+      const span = overlay.querySelector('span');
+      if (span) span.textContent = tab.dataset.title || '';
+      overlay.classList.add('visible');
+    });
+
+    target.addEventListener('mouseout', function(e) {
+      const tab = e.target.closest && e.target.closest('.blueprint-card-front-tab');
+      if (!tab) return;
+      const related = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.blueprint-card-front-tab');
+      if (related && related.closest('.blueprint-card-front') === tab.closest('.blueprint-card-front')) return;
+      const front = tab.closest('.blueprint-card-front');
+      if (!front) return;
+      const overlay = front.querySelector('.blueprint-card-art-hover-title');
+      if (!overlay) return;
+      overlay.classList.remove('visible');
+    });
+  }
+
+  // Auto-bind once the DOM is ready so views don't have to wire this up.
+  if (typeof document !== 'undefined') {
+    if (document.body) {
+      bindFlipCards(document.body);
+      bindFrontTabs(document.body);
+    } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        bindFlipCards(document.body);
+        bindFrontTabs(document.body);
+      });
+    }
+  }
+
   /* ── Public API ── */
   return {
     render,
     roleColor,
     avatarArt,
     slotDiagramArt,
+    nodeHexArt,
     paletteArt,
     serialHash,
     getCustomLabels,
     setCustomLabel,
     bindEditableCards,
+    bindFlipCards,
+    bindFrontTabs,
+    _extractDisciplines,
     RARITY_COLORS,
     ROLE_COLORS,
     CATEGORY_COLORS,
@@ -636,5 +966,6 @@ const CardRenderer = (() => {
     NS_LOGO_MINI,
     NS_LOGO_BTN,
     AGENT_ICON_BTN,
+    FLIP_ICON_BTN,
   };
 })();
