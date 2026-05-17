@@ -116,10 +116,6 @@ const CardRenderer = (() => {
   function slotDiagramArt(classId, serial, opts) {
     opts = opts || {};
     const cls = SHIP_CLASSES[classId] || SHIP_CLASSES['class-1'];
-    const liveSlots = Array.isArray(opts.slots) && opts.slots.length ? opts.slots : null;
-    const slots = liveSlots || cls.slots;
-    const n = slots.length;
-    if (!serial) serial = serialHash(classId, 12);
 
     // Tests + early-boot renders (before Gamification has loaded) treat
     // every slot as unlocked so the visual is never broken in those
@@ -128,6 +124,16 @@ const CardRenderer = (() => {
     const userRank = _gam && _gam.getCurrentClass ? _gam.getClassRank(_gam.getCurrentClass().id || 'class-1') : 99;
     const slotRank = (s) => _gam && _gam.getClassRank ? _gam.getClassRank(s && s.min_class) : 0;
     const isLocked = (s) => slotRank(s) > userRank;
+
+    // Front-of-card art now shows only the slots the viewer has
+    // unlocked. Locked slots are surfaced elsewhere (drawer crew
+    // roster, class progression display) — keeping the screen as a
+    // clean canvas for the active crew.
+    const liveSlots = Array.isArray(opts.slots) && opts.slots.length ? opts.slots : null;
+    const allSlots = liveSlots || cls.slots;
+    const slots = allSlots.filter(s => !isLocked(s));
+    const n = slots.length;
+    if (!serial) serial = serialHash(classId, 12);
 
     const cx = 100, cy = 60;
     const positions = n === 2
