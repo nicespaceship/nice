@@ -407,10 +407,11 @@ const CardRenderer = (() => {
     return _renderFull(type, data, options);
   }
 
-  /* Renders one front-tab's panel. Crew + Protocols + Specialties
-     use real data (crew roster, parsed "How you work:" bullets,
-     curated noun-phrase tags per ship); Workflows is a Coming-soon
-     stub until per-tab seed data lands. */
+  /* Renders one front-tab's panel. All four tabs now back to real
+     data when present: Crew roster, parsed "How you work:" bullets,
+     curated noun-phrase tags, and named multi-step procedures per
+     ship. Falls back to the Coming-soon stub when a ship hasn't
+     populated the field. */
   function _renderFrontTabPanel(tabId, bp) {
     if (tabId === 'crew') {
       const crewHTML = _renderCrewList(bp);
@@ -427,6 +428,16 @@ const CardRenderer = (() => {
       const specialties = bp.specialties || bp.card?.specialties || bp.config?.specialties || [];
       if (specialties.length) {
         return `<ul class="blueprint-card-front-specialties-list">${specialties.map(s => `<li class="blueprint-card-front-specialty">${_esc(s)}</li>`).join('')}</ul>`;
+      }
+    }
+    if (tabId === 'workflows') {
+      const workflows = bp.workflows || bp.card?.workflows || bp.config?.workflows || [];
+      if (workflows.length) {
+        return `<div class="blueprint-card-front-workflows">${workflows.map(w => `
+          <section class="blueprint-card-front-workflow">
+            <h5 class="blueprint-card-front-workflow-title">${_esc(w.title || '')}</h5>
+            <ol class="blueprint-card-front-workflow-steps">${(w.steps || []).map(s => `<li>${_esc(s)}</li>`).join('')}</ol>
+          </section>`).join('')}</div>`;
       }
     }
     const label = (SHIP_FRONT_TABS.find(t => t.id === tabId) || {}).title || tabId;

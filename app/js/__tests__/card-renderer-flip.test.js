@@ -235,6 +235,35 @@ describe('CardRenderer — flip + back face', () => {
       expect(protocolsHTML).not.toMatch(/blueprint-card-front-panel[^>]*data-tab="protocols"[^>]*>[\s\S]*?Coming soon/);
     });
 
+    it('workflows panel renders titled multi-step procedures when card.workflows is set', () => {
+      const SHIP_WITH_WORKFLOWS = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-workflows-ship',
+        card: {
+          workflows: [
+            { title: 'New patient onboarding', steps: ['Verify eligibility', 'Send intake forms', 'Prep chart', 'Confirm first visit'] },
+            { title: 'Denial appeal pipeline', steps: ['Review denial reason', 'Pull supporting docs', 'Draft appeal letter', 'Submit + track'] },
+          ],
+        },
+      };
+      const wfHTML = CardRenderer.render('spaceship', 'full', SHIP_WITH_WORKFLOWS);
+      expect(wfHTML).toContain('class="blueprint-card-front-workflows"');
+      expect(wfHTML).toContain('New patient onboarding');
+      expect(wfHTML).toContain('Denial appeal pipeline');
+      expect(wfHTML).toContain('<li>Verify eligibility</li>');
+      expect(wfHTML).toContain('<li>Submit + track</li>');
+      const wfPanel = wfHTML.match(/<div class="blueprint-card-front-panel[^"]*" data-tab="workflows">([\s\S]*?)<\/div><\/div>/);
+      expect(wfPanel).not.toBeNull();
+      expect(wfPanel[1]).not.toContain('Coming soon');
+    });
+
+    it('workflows panel honors top-level + config-nested aliases', () => {
+      const SHIP_TOP = { ...SHIP_WITH_CREW, id: 'bp-wf-top', workflows: [{ title: 'Top wf', steps: ['a'] }] };
+      const SHIP_CONFIG = { ...SHIP_WITH_CREW, id: 'bp-wf-config', config: { workflows: [{ title: 'Nested wf', steps: ['b'] }] } };
+      expect(CardRenderer.render('spaceship', 'full', SHIP_TOP)).toContain('Top wf');
+      expect(CardRenderer.render('spaceship', 'full', SHIP_CONFIG)).toContain('Nested wf');
+    });
+
     it('specialties panel renders curated noun-phrase chips when card.specialties is set', () => {
       const SHIP_WITH_SPECIALTIES = {
         ...SHIP_WITH_CREW,
