@@ -264,6 +264,30 @@ describe('CardRenderer — flip + back face', () => {
       expect(CardRenderer.render('spaceship', 'full', SHIP_CONFIG)).toContain('Nested wf');
     });
 
+    it('workflows panel renders an accordion with the first item open and the rest collapsed', () => {
+      const SHIP_WITH_FOUR_WORKFLOWS = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-wf-accordion',
+        card: {
+          workflows: [
+            { title: 'First', steps: ['a', 'b'] },
+            { title: 'Second', steps: ['c'] },
+            { title: 'Third', steps: ['d'] },
+            { title: 'Fourth', steps: ['e'] },
+          ],
+        },
+      };
+      const html = CardRenderer.render('spaceship', 'full', SHIP_WITH_FOUR_WORKFLOWS);
+      const details = html.match(/<details[^>]*class="blueprint-card-front-workflow"[^>]*>/g) || [];
+      expect(details.length).toBe(4);
+      expect(details[0]).toContain(' open');
+      expect(details[1]).not.toContain(' open');
+      expect(details[2]).not.toContain(' open');
+      expect(details[3]).not.toContain(' open');
+      expect(html).toContain('<summary class="blueprint-card-front-workflow-title">First</summary>');
+      expect(html).toContain('<summary class="blueprint-card-front-workflow-title">Fourth</summary>');
+    });
+
     it('specialties panel renders curated noun-phrase chips when card.specialties is set', () => {
       const SHIP_WITH_SPECIALTIES = {
         ...SHIP_WITH_CREW,

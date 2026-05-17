@@ -6820,14 +6820,15 @@ html[data-theme] .nice-ai-input:focus-visible {
   white-space:nowrap;
 }
 
-/* Workflows panel — named multi-step procedures per ship. Each
-   workflow is a small section: an overline-style title, then a
-   numbered step list. Scrolls within the panel since the full set
-   commonly overflows the visible text-box area. */
+/* Workflows panel — named multi-step procedures per ship rendered as a
+   native <details>/<summary> accordion. Default-collapsed except the
+   first item, so the panel reads as four scannable titles on first
+   open instead of a wall of ~20 step lines. Steps scroll inside the
+   panel only when the user expands enough to overflow. */
 .blueprint-card-front-workflows {
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:4px;
   padding:0 2px;
   max-height:100%;
   overflow-y:auto;
@@ -6838,24 +6839,57 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-front-workflows::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 .blueprint-card-front-workflow {
   border-bottom:1px dashed var(--border);
-  padding-bottom:6px;
+  padding-bottom:4px;
 }
 .blueprint-card-front-workflow:last-child {
   border-bottom:none;
   padding-bottom:0;
 }
 .blueprint-card-front-workflow-title {
-  margin:0 0 3px;
+  margin:0;
+  padding:2px 0 2px 12px;
   font-size:var(--card-text-micro);
   font-weight:var(--fw-bold);
   letter-spacing:var(--tracking-caps);
   text-transform:uppercase;
   color:var(--accent);
+  cursor:pointer;
+  list-style:none;
+  position:relative;
+  user-select:none;
+}
+/* Hide the native disclosure triangle in both rendering engines. */
+.blueprint-card-front-workflow-title::-webkit-details-marker { display:none; }
+.blueprint-card-front-workflow-title::marker { content:''; }
+/* Custom chevron that rotates 90deg on [open]. */
+.blueprint-card-front-workflow-title::before {
+  content:'';
+  position:absolute;
+  left:2px;
+  top:50%;
+  width:0;
+  height:0;
+  border-style:solid;
+  border-width:3px 0 3px 5px;
+  border-color:transparent transparent transparent currentColor;
+  transform:translateY(-50%);
+  transition:transform .15s ease;
+}
+.blueprint-card-front-workflow[open] > .blueprint-card-front-workflow-title::before {
+  transform:translateY(-50%) rotate(90deg);
+}
+.blueprint-card-front-workflow-title:hover {
+  color:var(--accent2, var(--accent));
+}
+.blueprint-card-front-workflow-title:focus-visible {
+  outline:1px solid var(--accent);
+  outline-offset:1px;
+  border-radius:2px;
 }
 .blueprint-card-front-workflow-steps {
   list-style:decimal inside;
-  margin:0;
-  padding:0;
+  margin:3px 0 2px;
+  padding:0 0 0 10px;
   display:flex;
   flex-direction:column;
   gap:1px;

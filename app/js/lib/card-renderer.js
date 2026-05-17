@@ -433,11 +433,18 @@ const CardRenderer = (() => {
     if (tabId === 'workflows') {
       const workflows = bp.workflows || bp.card?.workflows || bp.config?.workflows || [];
       if (workflows.length) {
-        return `<div class="blueprint-card-front-workflows">${workflows.map(w => `
-          <section class="blueprint-card-front-workflow">
-            <h5 class="blueprint-card-front-workflow-title">${_esc(w.title || '')}</h5>
+        /* Accordion: each workflow is a <details> so the panel reads as
+           four scannable titles by default instead of a wall of ~20 step
+           lines. First one defaults open so the panel doesn't look empty
+           on first click of the Workflows tab. Native <details>/<summary>
+           handles keyboard activation; clicks are stopped from bubbling
+           to the view's card → drawer-open handler by
+           bindFrontInteractive. */
+        return `<div class="blueprint-card-front-workflows">${workflows.map((w, i) => `
+          <details class="blueprint-card-front-workflow"${i === 0 ? ' open' : ''}>
+            <summary class="blueprint-card-front-workflow-title">${_esc(w.title || '')}</summary>
             <ol class="blueprint-card-front-workflow-steps">${(w.steps || []).map(s => `<li>${_esc(s)}</li>`).join('')}</ol>
-          </section>`).join('')}</div>`;
+          </details>`).join('')}</div>`;
       }
     }
     const label = (SHIP_FRONT_TABS.find(t => t.id === tabId) || {}).title || tabId;
@@ -967,15 +974,32 @@ const CardRenderer = (() => {
     });
   }
 
+  /* ── Interactive content inside front-tab panels —
+     Captures clicks on <summary> elements (workflow accordion titles)
+     so they trigger the native disclosure toggle without also bubbling
+     to the view's card → drawer-open handler in blueprints.js:718. */
+  function bindFrontInteractive(root) {
+    const target = root || (typeof document !== 'undefined' ? document.body : null);
+    if (!target || target._niceFrontInteractiveBound) return;
+    target._niceFrontInteractiveBound = true;
+    target.addEventListener('click', function(e) {
+      const summary = e.target.closest && e.target.closest('.blueprint-card-front-panel summary');
+      if (!summary) return;
+      e.stopPropagation();
+    }, true);
+  }
+
   // Auto-bind once the DOM is ready so views don't have to wire this up.
   if (typeof document !== 'undefined') {
     if (document.body) {
       bindFlipCards(document.body);
       bindFrontTabs(document.body);
+      bindFrontInteractive(document.body);
     } else {
       document.addEventListener('DOMContentLoaded', function() {
         bindFlipCards(document.body);
         bindFrontTabs(document.body);
+        bindFrontInteractive(document.body);
       });
     }
   }
@@ -994,6 +1018,7 @@ const CardRenderer = (() => {
     bindEditableCards,
     bindFlipCards,
     bindFrontTabs,
+    bindFrontInteractive,
     _extractDisciplines,
     RARITY_COLORS,
     ROLE_COLORS,
