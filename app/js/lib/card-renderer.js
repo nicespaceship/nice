@@ -407,9 +407,10 @@ const CardRenderer = (() => {
     return _renderFull(type, data, options);
   }
 
-  /* Renders one front-tab's panel. Crew + Protocols use real data
-     (crew roster, parsed "How you work:" bullets); Specialties +
-     Workflows are Coming-soon stubs until per-tab seed data lands. */
+  /* Renders one front-tab's panel. Crew + Protocols + Specialties
+     use real data (crew roster, parsed "How you work:" bullets,
+     curated noun-phrase tags per ship); Workflows is a Coming-soon
+     stub until per-tab seed data lands. */
   function _renderFrontTabPanel(tabId, bp) {
     if (tabId === 'crew') {
       const crewHTML = _renderCrewList(bp);
@@ -420,6 +421,12 @@ const CardRenderer = (() => {
       const protocols = _extractDisciplines(prompt);
       if (protocols.length) {
         return `<ul class="blueprint-card-front-protocols-list">${protocols.map(p => `<li>${_esc(_protocolHeadline(p))}</li>`).join('')}</ul>`;
+      }
+    }
+    if (tabId === 'specialties') {
+      const specialties = bp.specialties || bp.card?.specialties || bp.config?.specialties || [];
+      if (specialties.length) {
+        return `<ul class="blueprint-card-front-specialties-list">${specialties.map(s => `<li class="blueprint-card-front-specialty">${_esc(s)}</li>`).join('')}</ul>`;
       }
     }
     const label = (SHIP_FRONT_TABS.find(t => t.id === tabId) || {}).title || tabId;

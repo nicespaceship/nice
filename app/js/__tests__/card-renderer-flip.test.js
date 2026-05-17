@@ -196,9 +196,12 @@ describe('CardRenderer — flip + back face', () => {
       expect(html).toMatch(/bp-crew-c4[^"]*"[^>]*title="Insurance Lead/);
     });
 
-    it('renders Coming-soon stubs for Specialties + Workflows (still pending data)', () => {
-      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
+    it('renders Coming-soon stub for Workflows (still pending data)', () => {
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="workflows"[^>]*>[\s\S]*?Workflows[\s\S]*?Coming soon/);
+    });
+
+    it('specialties panel falls back to Coming soon when ship has no specialties', () => {
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
     });
 
     it('protocols panel falls back to Coming soon when ship has no system prompt', () => {
@@ -230,6 +233,33 @@ describe('CardRenderer — flip + back face', () => {
       expect(protocolsHTML).toContain('Informed consent is signed before any procedure, not after');
       expect(protocolsHTML).toContain('Coding accuracy cuts both ways');
       expect(protocolsHTML).not.toMatch(/blueprint-card-front-panel[^>]*data-tab="protocols"[^>]*>[\s\S]*?Coming soon/);
+    });
+
+    it('specialties panel renders curated noun-phrase chips when card.specialties is set', () => {
+      const SHIP_WITH_SPECIALTIES = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-specialties-ship',
+        card: {
+          specialties: ['revenue cycle', 'denial workflow', 'eligibility verification'],
+        },
+      };
+      const specHTML = CardRenderer.render('spaceship', 'full', SHIP_WITH_SPECIALTIES);
+      expect(specHTML).toContain('class="blueprint-card-front-specialties-list"');
+      expect(specHTML).toContain('>revenue cycle<');
+      expect(specHTML).toContain('>denial workflow<');
+      expect(specHTML).toContain('>eligibility verification<');
+      const specPanel = specHTML.match(/<div class="blueprint-card-front-panel[^"]*" data-tab="specialties">([\s\S]*?)<\/div><div class="blueprint-card-front-panel/);
+      expect(specPanel).not.toBeNull();
+      expect(specPanel[1]).not.toContain('Coming soon');
+    });
+
+    it('specialties panel honors top-level + config-nested aliases', () => {
+      const SHIP_TOP = { ...SHIP_WITH_CREW, id: 'bp-spec-top', specialties: ['top-level tag'] };
+      const SHIP_CONFIG = { ...SHIP_WITH_CREW, id: 'bp-spec-config', config: { specialties: ['nested tag'] } };
+      const topHTML = CardRenderer.render('spaceship', 'full', SHIP_TOP);
+      const configHTML = CardRenderer.render('spaceship', 'full', SHIP_CONFIG);
+      expect(topHTML).toContain('>top-level tag<');
+      expect(configHTML).toContain('>nested tag<');
     });
 
     it('protocol bullets get trimmed to their leading clause for scannability', () => {
