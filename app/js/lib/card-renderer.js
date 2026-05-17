@@ -314,16 +314,17 @@ const CardRenderer = (() => {
       </circle>`;
     });
 
-    // Pulsing core — concentric rings + bright center. Outer halo
-    // breathes via r-attribute animation (works in all modern browsers,
-    // including Safari, without filter recompute).
-    svg += `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="#6366f1" stroke-width="0.5" opacity="0.35">
+    // Pulsing core — concentric rings + bright center, NICE brand
+    // Sapphire (#0F52BA) and lighter brand blue (#1862ce). Outer halo
+    // breathes via r-attribute animation (works across browsers
+    // including Safari, without filter-shadow recompute cost).
+    svg += `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="#1862ce" stroke-width="0.5" opacity="0.35">
       <animate attributeName="r" values="11;15;11" dur="3s" repeatCount="indefinite"/>
       <animate attributeName="opacity" values="0.45;0.15;0.45" dur="3s" repeatCount="indefinite"/>
     </circle>`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="9" fill="rgba(99, 102, 241, 0.10)"/>`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="6" fill="#6366f1" opacity="0.85"/>`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="#ffffff" opacity="0.9"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="9" fill="rgba(15, 82, 186, 0.12)"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="6" fill="#0F52BA" opacity="0.95"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="#ffffff" opacity="0.95"/>`;
 
     // Nodes — halo + ring + filled dot at each hex position.
     positions.forEach((p, i) => {
