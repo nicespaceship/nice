@@ -575,6 +575,7 @@ const Blueprints = (() => {
       name: sh.name,
       description: sh.description || '',
       flavor: sh.flavor || '',
+      marquee: sh.marquee || '',
       category: sh.category || '',
       rarity: sh.rarity || 'Common',
       scope: sh.scope || 'catalog',

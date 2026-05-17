@@ -328,7 +328,10 @@ const CardRenderer = (() => {
       ? `${cls.name} · ${memberCount} agent${memberCount !== 1 ? 's' : ''}`
       : [bp.role, bp.type, bp.llm_engine].filter(Boolean).join(' · ') || '';
     const desc = bp.desc || bp.description || bp.flavor || fallbackDesc;
-    const marqueeText = _esc(desc);
+    // Marquee prefers the dedicated short-form field over the long-form
+    // description; falls back so older custom blueprints without a marquee
+    // value still render something on the scrolling band.
+    const marqueeText = _esc(bp.marquee || desc);
     const flavor = bp.flavor || bp.description || bp.desc || desc;
 
     // ── Capabilities (same derivation for both types) ──
