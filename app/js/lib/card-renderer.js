@@ -246,6 +246,97 @@ const CardRenderer = (() => {
     return svg;
   }
 
+  /* ── Node Hex Art (spaceship cards, ported from marketing inside-stage)
+     Central pulsing core with 6 nodes arranged in a vertically-compressed
+     hex (top + bottom pulled in for the 200×120 rectangle). Data lines
+     connect core ↔ each node; particles travel core → node on a stagger.
+     Each node is colored by its slot's class (C1 slate / C2 light blue /
+     C3 purple / C4 amber) so the animation stays tied to the user's
+     specific ship. Only unlocked slots render; locked ones live in the
+     drawer + Crew tab. */
+  function nodeHexArt(slots, serial) {
+    if (!serial) serial = serialHash('nodeHex', 12);
+
+    // Locked-slot filter — same logic as slotDiagramArt's gating.
+    const _gam = typeof Gamification !== 'undefined' ? Gamification : null;
+    const userRank = _gam && _gam.getCurrentClass ? _gam.getClassRank(_gam.getCurrentClass().id || 'class-1') : 99;
+    const slotRank = (s) => _gam && _gam.getClassRank ? _gam.getClassRank(s && s.min_class) : 0;
+    const isLocked = (s) => slotRank(s) > userRank;
+
+    const allSlots = (slots || []).filter(Boolean);
+    const unlocked = allSlots.filter(s => !isLocked(s)).slice(0, 6);
+
+    // Vertically-compressed hex: top + bottom pulled in (y closer to center),
+    // sides at full horizontal reach. Fits the 200×120 rectangle cleanly.
+    const positions = [
+      { x: 100, y: 22 },   // top
+      { x: 162, y: 38 },   // top-right
+      { x: 162, y: 82 },   // bottom-right
+      { x: 100, y: 98 },   // bottom
+      { x:  38, y: 82 },   // bottom-left
+      { x:  38, y: 38 },   // top-left
+    ].slice(0, unlocked.length);
+
+    const cx = 100, cy = 60;
+    const slotColor = (s) => SLOT_COLORS[s && (s.max || s.maxRarity || ({
+      'class-1': 'Common', 'class-2': 'Rare', 'class-3': 'Epic', 'class-4': 'Legendary', 'class-5': 'Legendary',
+    })[s && s.min_class])] || '#94a3b8';
+
+    let svg = `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">`;
+
+    // Faint grid background — keeps the screen feeling like a display.
+    svg += `<g opacity="0.06" stroke="#6366f1" stroke-width="0.4">
+      <line x1="0" y1="30" x2="200" y2="30"/>
+      <line x1="0" y1="60" x2="200" y2="60"/>
+      <line x1="0" y1="90" x2="200" y2="90"/>
+      <line x1="50" y1="0" x2="50" y2="120"/>
+      <line x1="100" y1="0" x2="100" y2="120"/>
+      <line x1="150" y1="0" x2="150" y2="120"/>
+    </g>`;
+
+    // Data lines core → node. Drawn first so nodes and core sit on top.
+    positions.forEach((p, i) => {
+      const color = slotColor(unlocked[i]);
+      svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="${color}" stroke-width="0.7" opacity="0.32"/>`;
+    });
+
+    // Traveling particles — core → node, staggered loop. SVG <animate>
+    // inline so each card is self-contained; no global CSS keyframes
+    // needed. No drop-shadow filter (Safari can't animate it smoothly).
+    positions.forEach((p, i) => {
+      const dur = 2.4;
+      const delay = 0.18 * i;
+      const color = slotColor(unlocked[i]);
+      svg += `<circle r="1.6" fill="${color}" opacity="0">
+        <animate attributeName="opacity" values="0;0.95;0.95;0" dur="${dur}s" begin="${delay}s" repeatCount="indefinite" keyTimes="0;0.12;0.88;1"/>
+        <animate attributeName="cx" values="${cx};${p.x}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="${cy};${p.y}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>
+      </circle>`;
+    });
+
+    // Pulsing core — concentric rings + bright center. Outer halo
+    // breathes via r-attribute animation (works in all modern browsers,
+    // including Safari, without filter recompute).
+    svg += `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="#6366f1" stroke-width="0.5" opacity="0.35">
+      <animate attributeName="r" values="11;15;11" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.45;0.15;0.45" dur="3s" repeatCount="indefinite"/>
+    </circle>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="9" fill="rgba(99, 102, 241, 0.10)"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="6" fill="#6366f1" opacity="0.85"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="#ffffff" opacity="0.9"/>`;
+
+    // Nodes — halo + ring + filled dot at each hex position.
+    positions.forEach((p, i) => {
+      const color = slotColor(unlocked[i]);
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="8" fill="${color}" opacity="0.12"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="none" stroke="${color}" stroke-width="1" opacity="0.7"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}" opacity="0.9"/>`;
+    });
+
+    svg += `</svg>`;
+    return svg;
+  }
+
   /* ── Palette Art ── */
   function paletteArt(name, previewColors, serial) {
     const pc = previewColors || ['#080808', '#ffffff', '#888888'];
@@ -509,13 +600,12 @@ const CardRenderer = (() => {
     const badgeStyle = `style="color:${rarityColor};border:1px solid ${rarityColor}"`;
 
     // ── Art ──
-    // Live ship slots drive the diagram length + per-slot lock state.
-    // Fall back to the synthetic class layout for ships with no crew
-    // data yet (custom builds before slots are wired).
+    // Ship cards on the front use the ported marketing inside-stage
+    // animation (nodeHexArt): pulsing core + 6 unlocked nodes in
+    // compressed hex + flowing particles. Agent cards keep avatarArt.
     const shipSlots = isShip ? BlueprintUtils.getCrewDefs(bp) : null;
-    const slotOpts = (shipSlots && shipSlots.length) ? { slots: shipSlots } : undefined;
     const artContent = isShip
-      ? (_isSpecialShip(bp) ? slotDiagramArt(classId, serial, slotOpts) : slotDiagramArt('slot-6', serial, slotOpts))
+      ? nodeHexArt(shipSlots, serial)
       : avatarArt(bp.name, bp.category || bp.role, serial);
 
     // ── Back face content (rules text) ──
@@ -858,6 +948,7 @@ const CardRenderer = (() => {
     roleColor,
     avatarArt,
     slotDiagramArt,
+    nodeHexArt,
     paletteArt,
     serialHash,
     getCustomLabels,
