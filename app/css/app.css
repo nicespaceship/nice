@@ -6611,6 +6611,46 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   Sub-header row — sits directly under the name bar, surfaces the
+   category (left) and rarity badge (right). Replaces the old serial
+   /category/rarity overlays that lived inside the art zone; the
+   serial now lives in the drawer above the installs count.
+   ═══════════════════════════════════════════════════════════════════ */
+.blueprint-card-sub-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:5px 10px;
+  border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.02);
+  min-height:24px;
+}
+.blueprint-card-sub-category {
+  font-size:var(--card-text-meta);
+  font-family:var(--font-m);
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  color:var(--text-muted);
+  font-weight:var(--fw-medium);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  min-width:0;
+}
+.blueprint-card-sub-rarity {
+  font-size:var(--card-text-micro);
+  font-family:var(--font-m);
+  letter-spacing:var(--tracking-caps);
+  text-transform:uppercase;
+  font-weight:var(--fw-bold);
+  padding:2px 8px;
+  border-radius:10px;
+  flex-shrink:0;
+  background:rgba(0,0,0,.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Ship front tab strip — replaces the scrolling marquee with a row
    of small icon-only buttons. Active tab gets the accent treatment;
    hover surfaces the tab's title as an overlay in the art zone above.
@@ -8563,6 +8603,30 @@ html[data-theme] .nice-ai-input:focus-visible {
   display:flex; flex-wrap:wrap; gap:8px;
 }
 .bp-drawer-actions .btn { flex:1; min-width:100px; text-align:center; }
+.bp-drawer-serial-row {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+  font-size:.7rem;
+  color:var(--text-muted);
+}
+.bp-drawer-serial-label {
+  font-family:var(--font-m);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  font-weight:600;
+  opacity:.7;
+}
+.bp-drawer-serial-code {
+  font-family:var(--font-m);
+  letter-spacing:.05em;
+  color:var(--text);
+  background:rgba(255,255,255,.04);
+  padding:2px 6px;
+  border-radius:3px;
+  border:1px solid var(--border);
+}
 .bp-drawer-social {
   display:flex; align-items:center; gap:16px; font-size:.75rem; color:var(--text-muted);
 }

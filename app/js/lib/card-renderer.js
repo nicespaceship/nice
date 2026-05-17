@@ -528,10 +528,13 @@ const CardRenderer = (() => {
             ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
             ${statusDot}
           </div>
+          <div class="blueprint-card-sub-header">
+            ${roleLabel
+              ? `<span class="blueprint-card-sub-category"${roleEditable}>${_esc(roleLabel)}</span>`
+              : '<span class="blueprint-card-sub-category"></span>'}
+            <span class="blueprint-card-sub-rarity${badgeClass}" ${badgeStyle}>${rarityLabel}</span>
+          </div>
           <div class="blueprint-card-art">
-            ${roleLabel ? `<div class="blueprint-card-art-role"><span class="blueprint-card-serial-code"${roleEditable}>${_esc(roleLabel)}</span></div>` : ''}
-            <div class="blueprint-card-art-class"><span class="blueprint-card-serial-code${badgeClass}" ${badgeStyle}>${rarityLabel}</span></div>
-            <div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div>
             ${artContent}
             ${isShip ? `<div class="blueprint-card-art-hover-title"><span></span></div>` : ''}
           </div>

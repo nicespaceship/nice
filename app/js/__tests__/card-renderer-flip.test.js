@@ -163,6 +163,15 @@ describe('CardRenderer — flip + back face', () => {
       expect(html).not.toContain('class="blueprint-card-marquee"');
     });
 
+    it('renders the sub-header row with category + rarity (serial no longer on the front)', () => {
+      expect(html).toContain('class="blueprint-card-sub-header"');
+      expect(html).toContain('class="blueprint-card-sub-category"');
+      expect(html).toMatch(/blueprint-card-sub-rarity[^"]*"[^>]*>COMMON</);
+      expect(html).not.toContain('blueprint-card-art-role');
+      expect(html).not.toContain('blueprint-card-art-class');
+      expect(html).not.toContain('blueprint-card-art-serial');
+    });
+
     it('renders all 4 tabs in the strip', () => {
       expect(html).toContain('data-tab="crew"');
       expect(html).toContain('data-tab="try-this"');
