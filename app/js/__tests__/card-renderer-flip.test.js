@@ -196,14 +196,55 @@ describe('CardRenderer — flip + back face', () => {
       expect(html).toMatch(/bp-crew-c4[^"]*"[^>]*title="Insurance Lead/);
     });
 
-    it('renders Coming-soon stubs for the other 3 tabs', () => {
+    it('renders Coming-soon stubs for Specialties + Workflows (still pending data)', () => {
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="workflows"[^>]*>[\s\S]*?Workflows[\s\S]*?Coming soon/);
+    });
+
+    it('protocols panel falls back to Coming soon when ship has no system prompt', () => {
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="protocols"[^>]*>[\s\S]*?Protocols[\s\S]*?Coming soon/);
     });
 
     it('places a hover-title overlay inside the art zone', () => {
       expect(html).toContain('class="blueprint-card-art-hover-title"');
+    });
+
+    it('protocols panel renders parsed "How you work:" bullets when present', () => {
+      const SHIP_WITH_PROTOCOLS = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-protocols-ship',
+        config: {
+          ship_system_prompt: [
+            'You are the Captain.',
+            '',
+            'How you work:',
+            '- HIPAA is the floor, not the ceiling. Minimum-necessary PHI on every disclosure.',
+            '- Informed consent is signed before any procedure, not after. The form lists the risks.',
+            '- Coding accuracy cuts both ways. Documentation supports the level billed.',
+          ].join('\n'),
+        },
+      };
+      const protocolsHTML = CardRenderer.render('spaceship', 'full', SHIP_WITH_PROTOCOLS);
+      expect(protocolsHTML).toContain('class="blueprint-card-front-protocols-list"');
+      expect(protocolsHTML).toContain('HIPAA is the floor, not the ceiling');
+      expect(protocolsHTML).toContain('Informed consent is signed before any procedure, not after');
+      expect(protocolsHTML).toContain('Coding accuracy cuts both ways');
+      expect(protocolsHTML).not.toMatch(/blueprint-card-front-panel[^>]*data-tab="protocols"[^>]*>[\s\S]*?Coming soon/);
+    });
+
+    it('protocol bullets get trimmed to their leading clause for scannability', () => {
+      const SHIP = {
+        ...SHIP_WITH_CREW,
+        id: 'bp-trim-ship',
+        config: {
+          ship_system_prompt: 'How you work:\n- HIPAA is the floor. Minimum-necessary PHI on every disclosure.',
+        },
+      };
+      const trimHTML = CardRenderer.render('spaceship', 'full', SHIP);
+      const frontMatch = trimHTML.match(/<ul class="blueprint-card-front-protocols-list">([\s\S]*?)<\/ul>/);
+      expect(frontMatch).not.toBeNull();
+      expect(frontMatch[1]).toContain('<li>HIPAA is the floor</li>');
+      expect(frontMatch[1]).not.toContain('Minimum-necessary PHI');
     });
 
     it('agent front keeps the marquee + flavor + caps (unchanged)', () => {
