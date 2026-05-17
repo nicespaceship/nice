@@ -174,7 +174,7 @@ describe('CardRenderer — flip + back face', () => {
 
     it('renders all 4 tabs in the strip', () => {
       expect(html).toContain('data-tab="crew"');
-      expect(html).toContain('data-tab="try-this"');
+      expect(html).toContain('data-tab="specialties"');
       expect(html).toContain('data-tab="plugs-into"');
       expect(html).toContain('data-tab="day-in-life"');
     });
@@ -197,7 +197,7 @@ describe('CardRenderer — flip + back face', () => {
     });
 
     it('renders Coming-soon stubs for the other 3 tabs', () => {
-      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="try-this"[^>]*>[\s\S]*?Try this[\s\S]*?Coming soon/);
+      expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="specialties"[^>]*>[\s\S]*?Specialties[\s\S]*?Coming soon/);
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="plugs-into"[^>]*>[\s\S]*?Plugs into[\s\S]*?Coming soon/);
       expect(html).toMatch(/blueprint-card-front-panel[^>]*data-tab="day-in-life"[^>]*>[\s\S]*?A day in the life[\s\S]*?Coming soon/);
     });
@@ -232,18 +232,18 @@ describe('CardRenderer — flip + back face', () => {
             <div class="blueprint-card-art"><div class="blueprint-card-art-hover-title"><span></span></div></div>
             <div class="blueprint-card-front-tabs">
               <button class="blueprint-card-front-tab active" data-tab="crew" data-title="Crew"></button>
-              <button class="blueprint-card-front-tab" data-tab="try-this" data-title="Try this"></button>
+              <button class="blueprint-card-front-tab" data-tab="specialties" data-title="Specialties"></button>
             </div>
             <div class="blueprint-card-text-box">
               <div class="blueprint-card-front-panel active" data-tab="crew">CREW</div>
-              <div class="blueprint-card-front-panel" data-tab="try-this">TRY</div>
+              <div class="blueprint-card-front-panel" data-tab="specialties">TRY</div>
             </div>
           </div>
         </div>`;
 
-      const tabTry  = document.querySelector('[data-tab="try-this"].blueprint-card-front-tab');
+      const tabTry  = document.querySelector('[data-tab="specialties"].blueprint-card-front-tab');
       const tabCrew = document.querySelector('[data-tab="crew"].blueprint-card-front-tab');
-      const panelTry  = document.querySelector('.blueprint-card-front-panel[data-tab="try-this"]');
+      const panelTry  = document.querySelector('.blueprint-card-front-panel[data-tab="specialties"]');
       const panelCrew = document.querySelector('.blueprint-card-front-panel[data-tab="crew"]');
 
       tabTry.click();
