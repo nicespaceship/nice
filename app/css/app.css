@@ -6704,6 +6704,42 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-front-panel { display:none; }
 .blueprint-card-front-panel.active { display:block; }
 
+/* Ship cards need a deeper text-box than the default 75px so tab
+   panels with rich content (12-row crew roster, multi-step workflows,
+   long protocol list) have meaningful viewing area before the user
+   needs to scroll. Agent cards keep the original 75px since their
+   flavor + caps are typically 2-3 short lines. */
+.blueprint-card[data-type="spaceship"] .blueprint-card-text-box {
+  min-height:140px;
+  scrollbar-color:var(--accent) transparent;
+  position:relative;
+}
+.blueprint-card[data-type="spaceship"] .blueprint-card-text-box::-webkit-scrollbar { width:6px; }
+.blueprint-card[data-type="spaceship"] .blueprint-card-text-box::-webkit-scrollbar-thumb {
+  background:var(--accent);
+  border-radius:3px;
+}
+
+/* Scroll-hint fade — overlay-mode scrollbars on macOS auto-hide,
+   so users can't tell at a glance that the panel is scrollable.
+   The fade is a wrapper on the panel container that drops a subtle
+   gradient at the bottom of the text-box, suggesting more content
+   below. Sits in the front-face flex column above the text-box's
+   own content so it doesn't get pushed away by scrolling. */
+.blueprint-card[data-type="spaceship"] .blueprint-card-text-box::after {
+  content:'';
+  position:sticky;
+  display:block;
+  bottom:0;
+  left:0;
+  right:0;
+  height:18px;
+  margin-top:-18px;
+  background:linear-gradient(to bottom, transparent, var(--panel-bg) 90%);
+  pointer-events:none;
+  flex-shrink:0;
+}
+
 /* Coming-soon stub — preserves the text-box vertical rhythm so
    switching tabs doesn't shift the stats row below. */
 .blueprint-card-front-soon {
@@ -6893,6 +6929,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-inner {
   position:relative;
   width:100%;
+  flex:1 1 0;
+  min-height:0;
   transform-style:preserve-3d;
   -webkit-transform-style:preserve-3d;
   transition:transform .6s cubic-bezier(.4, 0, .2, 1);
@@ -6904,7 +6942,17 @@ html[data-theme] .nice-ai-input:focus-visible {
   -webkit-backface-visibility:hidden;
           backface-visibility:hidden;
 }
-.blueprint-card-front { position:relative; }
+/* Front must be a flex column at the full inner height so the
+   text-box below the art zone can claim the remaining space and
+   scroll when its tab panel overflows. Without this chain the card
+   silhouette clips content because the front grows past 100%. */
+.blueprint-card-front {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  min-height:0;
+}
 .blueprint-card-back {
   position:absolute;
   inset:0;
