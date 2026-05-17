@@ -585,6 +585,12 @@ const Blueprints = (() => {
       serial_key: sh.serial_key || card.serial_key || null,
       tags: (Array.isArray(sh.tags) && sh.tags.length) ? sh.tags : (card.tags || []),
       stats: card.stats || { slots: String(slots.length || 6) },
+      // Lifted from card jsonb to the top level so card-renderer's
+      // front-tab panels pick them up via `bp.specialties` / `bp.workflows`.
+      // Without this, both tabs fell through to the "Coming soon" stub
+      // even though every seeded ship populates the data.
+      specialties: Array.isArray(card.specialties) ? card.specialties : [],
+      workflows: Array.isArray(card.workflows) ? card.workflows : [],
       config: {
         ship_system_prompt: cfg.ship_system_prompt || cfg.system_prompt || '',
         ship_voice: cfg.ship_voice || null,
