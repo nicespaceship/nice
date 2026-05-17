@@ -45,7 +45,15 @@ jobs:
         run: npx --yes supabase migration list
 
       - name: Push pending migrations
-        run: npx --yes supabase db push --yes
+        # `--include-all` applies every local migration not in remote, not just
+        # those with a newer timestamp than the latest remote row. Without it,
+        # if two PRs land out of timestamp order (newer-stamped one merges
+        # first), the older-stamped migration in the second push is silently
+        # skipped. Bit us on 2026-05-17 when #548 (timestamp ...050000) merged
+        # 15s before #547 (...040000 + ...060000); the ...040000 file was
+        # skipped and had to be applied manually via MCP + a schema_migrations
+        # row INSERT.
+        run: npx --yes supabase db push --include-all --yes
 
       - name: List migration state (post-push)
         if: always()
