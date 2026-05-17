@@ -639,12 +639,20 @@ const ShipSetupWizard = (() => {
               || (defaultUmbrellaId
                     ? { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
                     : { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] });
+            // For captain slots, ship_slots.default_agent_id IS a real
+            // agent_blueprints UUID (the-<ship>-specialist). Override the
+            // synthetic crewBpId so the top-level user_agents.blueprint_id
+            // FK column resolves to the specialist row. Worker slots stay
+            // on the synthetic id (tracked in config.blueprint_id only).
+            const topBpId = (crewMember?.role === 'captain' && _isUuid(defaultUmbrellaId))
+              ? defaultUmbrellaId
+              : crewBpId;
             let newAgent = {
               id: `agent-${Date.now()}-${i}`,
               name: agentName,
               category: crewMember?.config?.agentRole || 'Ops',
               rarity: crewMember?.rarity || 'Common',
-              blueprint_id: crewBpId,
+              blueprint_id: topBpId,
               config: crewBpId ? { ...baseCfg, blueprint_id: crewBpId } : baseCfg,
               stats: { spd: '3.0s', acc: '92%', cap: '5K', pwr: '75' },
               tags: [], activated: true,
@@ -696,12 +704,17 @@ const ShipSetupWizard = (() => {
           || (defaultUmbrellaId
                 ? { role: slot.label, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
                 : { role: slot.label, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] });
+        // Captain-slot override: top-level FK gets the specialist UUID.
+        // See the __new__ branch above for the rationale.
+        const topBpId = (crewMember?.role === 'captain' && _isUuid(defaultUmbrellaId))
+          ? defaultUmbrellaId
+          : crewBpId;
         let newAgent = {
           id: `agent-${Date.now()}-auto-${i}`,
           name: agentName,
           category: crewMember?.config?.agentRole || slot.label,
           rarity: crewMember?.rarity || 'Common',
-          blueprint_id: crewBpId,
+          blueprint_id: topBpId,
           config: crewBpId ? { ...baseCfg, blueprint_id: crewBpId } : baseCfg,
           stats: { spd: '3.0s', acc: '90%', cap: '3K', pwr: '70' },
           tags: [], activated: true,
@@ -864,20 +877,31 @@ const ShipSetupWizard = (() => {
      2026-05-07). Mirror the persistence pattern from setup-wizard.js
      and crew-generator.js so signed-in users get a durable Supabase
      row from the start; guests fall through to local-only. */
+  // UUID v4 (and other RFC-4122 variants the DB uses for primary keys).
+  // Used to decide whether agent.blueprint_id is safe to forward into the
+  // user_agents.blueprint_id FK column. The wizard's worker-slot path
+  // generates synthetic ids like `the-loft-crew-1` that aren't UUIDs and
+  // would error the INSERT; the captain path passes the specialist UUID
+  // and must be forwarded.
+  const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function _isUuid(s) { return typeof s === 'string' && _UUID_RE.test(s); }
+
   async function _persistSlotAgent(agent) {
     const userId = (typeof State !== 'undefined' && State.get('user') && State.get('user').id) || null;
     if (!userId || typeof SB === 'undefined' || !SB.isReady()) return agent;
     try {
       // Match the row shape used by crew-generator.js and consumed by
       // _loadUserCreations in blueprints.js — config JSONB carries
-      // everything except (id, user_id, name, rarity, status).
-      const created = await SB.db('user_agents').create({
+      // everything except (id, user_id, name, rarity, status, blueprint_id).
+      const row = {
         user_id: userId,
         name: agent.name,
         rarity: agent.rarity || 'Common',
         status: agent.status || 'idle',
         config: agent.config || {},
-      });
+      };
+      if (_isUuid(agent.blueprint_id)) row.blueprint_id = agent.blueprint_id;
+      const created = await SB.db('user_agents').create(row);
       if (created && created.id) {
         return Object.assign({}, agent, { id: created.id, supabase_id: created.id });
       }
