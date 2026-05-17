@@ -6794,14 +6794,15 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* Specialties panel — curated noun-phrase tags per ship. Flex-wrap
    chip layout so each tag reads as a discrete capability area
    rather than a sentence; scrolls if the per-ship list outgrows
-   the panel. */
+   the panel. Each chip carries a leading accent dot + accent-tinted
+   border so the panel feels "of the card" rather than generic. */
 .blueprint-card-front-specialties-list {
   list-style:none;
   margin:0;
   padding:0 2px;
   display:flex;
   flex-wrap:wrap;
-  gap:4px;
+  gap:5px;
   max-height:100%;
   overflow-y:auto;
   scrollbar-width:thin;
@@ -6810,14 +6811,29 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-front-specialties-list::-webkit-scrollbar { width:4px; }
 .blueprint-card-front-specialties-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 .blueprint-card-front-specialty {
-  display:inline-block;
-  padding:2px 8px;
-  border:1px solid var(--border);
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:2px 9px 2px 7px;
+  border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
   border-radius:10px;
   font-size:var(--card-text-meta);
   color:var(--text);
-  background:rgba(255,255,255,.02);
+  background:color-mix(in srgb, var(--accent) 6%, transparent);
   white-space:nowrap;
+  transition:border-color .15s ease, background-color .15s ease;
+}
+.blueprint-card-front-specialty::before {
+  content:'';
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:var(--accent);
+  flex:0 0 auto;
+}
+.blueprint-card-front-specialty:hover {
+  border-color:color-mix(in srgb, var(--accent) 60%, transparent);
+  background:color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 /* Workflows panel — named multi-step procedures per ship rendered as a
