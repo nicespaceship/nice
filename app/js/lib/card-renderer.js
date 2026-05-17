@@ -546,9 +546,9 @@ const CardRenderer = (() => {
               : `<p class="blueprint-card-flavor">"${_esc(flavor)}"</p>${caps.slice(0,3).map(c => `<p class="blueprint-card-cap">${_esc(c)}</p>`).join('')}`}
           </div>
           ${opts.overlay ? `<div class="blueprint-card-overlay">${opts.overlay}</div>` : ''}
-          <div class="blueprint-card-stats">
+          ${isShip ? '' : `<div class="blueprint-card-stats">
             ${statLbls.map((l,i) => `<div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${statVals[i]}</span><span class="blueprint-card-stat-lbl">${l}</span></div>`).join('')}
-          </div>
+          </div>`}
           ${opts.footer ? `<div class="blueprint-card-footer">${opts.footer}</div>` : ''}
           ${opts.actions ? `<div class="blueprint-card-actions">${opts.actions}</div>` : ''}
         </div>
