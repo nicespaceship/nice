@@ -6712,32 +6712,11 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card[data-type="spaceship"] .blueprint-card-text-box {
   min-height:140px;
   scrollbar-color:var(--accent) transparent;
-  position:relative;
 }
 .blueprint-card[data-type="spaceship"] .blueprint-card-text-box::-webkit-scrollbar { width:6px; }
 .blueprint-card[data-type="spaceship"] .blueprint-card-text-box::-webkit-scrollbar-thumb {
   background:var(--accent);
   border-radius:3px;
-}
-
-/* Scroll-hint fade — overlay-mode scrollbars on macOS auto-hide,
-   so users can't tell at a glance that the panel is scrollable.
-   The fade is a wrapper on the panel container that drops a subtle
-   gradient at the bottom of the text-box, suggesting more content
-   below. Sits in the front-face flex column above the text-box's
-   own content so it doesn't get pushed away by scrolling. */
-.blueprint-card[data-type="spaceship"] .blueprint-card-text-box::after {
-  content:'';
-  position:sticky;
-  display:block;
-  bottom:0;
-  left:0;
-  right:0;
-  height:18px;
-  margin-top:-18px;
-  background:linear-gradient(to bottom, transparent, var(--panel-bg) 90%);
-  pointer-events:none;
-  flex-shrink:0;
 }
 
 /* Coming-soon stub — preserves the text-box vertical rhythm so
