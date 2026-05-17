@@ -131,6 +131,43 @@ describe('ShipSetupWizard._persistSlotAgent', () => {
     expect(_capturedRows[0].row.status).toBe('idle');
   });
 
+  it('forwards blueprint_id to the INSERT when it is a UUID (captain slot)', async () => {
+    // Captain slots receive the the-<ship>-specialist UUID via
+    // ship_slots.default_agent_id. Persisting it as the top-level FK
+    // lets the runtime resolve the specialist blueprint for tools +
+    // prompt without falling through to the legacy config-only path.
+    globalThis.State.set('user', { id: 'user-captain' });
+    const agent = {
+      id: 'agent-captain-1',
+      name: 'Founder',
+      rarity: 'Rare',
+      blueprint_id: '8a8e3ffc-47e0-4ce9-8e2d-b6b3b3ff5d9a', // the-loft-specialist
+      config: { role: 'Founder', type: 'Agent' },
+    };
+    await ShipSetupWizard._persistSlotAgent(agent);
+    expect(_capturedRows[0].row.blueprint_id).toBe('8a8e3ffc-47e0-4ce9-8e2d-b6b3b3ff5d9a');
+  });
+
+  it('omits blueprint_id from the INSERT when it is a synthetic non-UUID id (worker slot)', async () => {
+    // Worker slots carry a synthetic id like `the-loft-crew-9` so the
+    // legacy config.blueprint_id readers still resolve back to the right
+    // crew node. The user_agents.blueprint_id FK column rejects non-UUID
+    // strings, so the persist path must drop them on the floor and let
+    // the column stay NULL.
+    globalThis.State.set('user', { id: 'user-worker' });
+    const agent = {
+      id: 'agent-worker-1',
+      name: 'Data Lead',
+      rarity: 'Common',
+      blueprint_id: 'the-loft-crew-9',
+      config: { role: 'Data Lead', capability_id: '61dbc5ec-a4ef-4821-90c8-a1a629d6df89', blueprint_id: 'the-loft-crew-9' },
+    };
+    await ShipSetupWizard._persistSlotAgent(agent);
+    expect('blueprint_id' in _capturedRows[0].row).toBe(false);
+    // config.blueprint_id (the synthetic) still rides along in JSONB.
+    expect(_capturedRows[0].row.config.blueprint_id).toBe('the-loft-crew-9');
+  });
+
   it.afterEach?.(() => {
     globalThis.SB = _origSB;
   });
