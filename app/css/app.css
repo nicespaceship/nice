@@ -9334,6 +9334,13 @@ body.preview-active .nice-ai {
   .bpl-row { grid-template-columns:24px minmax(0, 280px) minmax(0, 200px) minmax(0, 1fr) 70px; }
   .bpl-row > .bpl-rating { display:none; }
   .bpl-row > .bpl-action { grid-column:5; }
+  /* The list container uses `gap:1px` between rows. The body has a
+     Sapphire-tinted radial-gradient dot pattern, so the dots bleed
+     through that 1px gap and read as a subtle shadow beneath each
+     row. Painting the container surface fills the gap with the same
+     opaque color the rows use, masking the bleed. Container only
+     paints between/beyond rows — the rows themselves still show. */
+  .bp-view-list { background:var(--surface); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
