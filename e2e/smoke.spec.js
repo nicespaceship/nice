@@ -250,12 +250,16 @@ test.describe('Agentic Features', () => {
 });
 
 test.describe('Blueprint Filters', () => {
-  test('tier filter dropdown exists on bridge view', async ({ page }) => {
+  test('category filter dropdown exists on bridge view', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/bridge', 'Bridge');
     await page.waitForTimeout(1500);
-    const tierFilter = page.locator('#bp-tier');
-    await expect(tierFilter).toBeAttached();
+    // The tier filter was removed in #565 — it filtered by default
+    // llm_engine, but every catalog ship defaults to the same free
+    // model so the dropdown was a one-sided no-op. Asserting against
+    // the category filter (which is real and stable) instead.
+    const categoryFilter = page.locator('#bp-category');
+    await expect(categoryFilter).toBeAttached();
   });
 });
 

@@ -91,9 +91,12 @@ const BlueprintsView = (() => {
   // narrows to the seeded NICE library; 'community' narrows to user-
   // published content. Replaces the old standalone Marketplace sub-tab.
   let _sourceFilter = 'all';
-  const _mobileDefault = window.innerWidth <= 768 ? 'compact' : 'card';
-  let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || _mobileDefault;
-  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _mobileDefault;
+  // Desktop + tablet default to the rich card grid (the artifact view).
+  // Phones get the dense list — three columns of TCG cards never read
+  // well at <=640px and the row layout is the natural mobile shape.
+  const _viewportDefault = window.innerWidth <= 640 ? 'list' : 'card';
+  let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || _viewportDefault;
+  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _viewportDefault;
   let _colSort = { key: null, dir: 'asc' }; // column header sort state
 
   /* ── Paginated catalog search state ── */
@@ -241,14 +244,47 @@ const BlueprintsView = (() => {
     el.innerHTML = `
       <div class="bp-wrap">
 
-        <!-- Blueprints sub-tabs (Spaceships / Agents are catalogs; Active
-             is the user's deployed ships + agents; Workshop is custom
-             builds + imports) -->
-        <div class="bp-sub-tabs" id="bp-sub-tabs">
-          <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
-          <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
+        <!-- Header row: sub-tabs left, search + view-toggle right.
+             Desktop + tablet render on one row (search/toggle aligned
+             to the right of the Workshop tab); mobile stacks them. -->
+        <div class="bp-header-row">
+          <!-- Blueprints sub-tabs (Spaceships / Agents are catalogs;
+               Active is the user's deployed ships + agents; Workshop is
+               custom builds + imports) -->
+          <div class="bp-sub-tabs" id="bp-sub-tabs">
+            <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
+            <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
+            <button class="bp-sub-tab" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
+            <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
+          </div>
+
+          <!-- Search row: always contains search + view-toggle; on
+               mobile also renders a Filters button (see
+               .bp-filter-toggle). The filter controls themselves live
+               in .bp-filter-controls which is an inline flex row on
+               desktop and a bottom sheet on mobile. -->
+          <div class="bp-search-row">
+            <div class="search-box">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+              <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" data-allow-zoom />
+            </div>
+            <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
+              <span>Filters</span>
+              <span class="bp-filter-count" id="bp-filter-count" hidden></span>
+            </button>
+            <div class="bp-view-toggle" id="bp-view-toggle">
+              <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
+              </button>
+              <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
+              </button>
+              <button class="bp-view-btn${_viewMode==='list'?' active':''}" data-view="list" title="List view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -256,35 +292,6 @@ const BlueprintsView = (() => {
 
         <!-- Schematic content (rendered by DockView when active) -->
         <div id="bp-schematic-content" style="display:none"></div>
-
-
-
-        <!-- Search row: always contains search + view-toggle; on mobile
-             also renders a Filters button (see .bp-filter-toggle). The
-             filter controls themselves live in .bp-filter-controls which
-             is an inline flex row on desktop and a bottom sheet on mobile. -->
-        <div class="bp-search-row">
-          <div class="search-box">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-            <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" />
-          </div>
-          <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
-            <span>Filters</span>
-            <span class="bp-filter-count" id="bp-filter-count" hidden></span>
-          </button>
-          <div class="bp-view-toggle" id="bp-view-toggle">
-            <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button class="bp-view-btn${_viewMode==='list'?' active':''}" data-view="list" title="List view">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
-            </button>
-            <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
-            </button>
-          </div>
-        </div>
 
         <div class="bp-sheet-backdrop" id="bp-filter-sheet-backdrop" hidden></div>
         <div class="bp-filter-controls" id="bp-filter-sheet" role="group" aria-label="Blueprint filters">
@@ -310,14 +317,6 @@ const BlueprintsView = (() => {
               <select id="bp-category" class="filter-select" aria-label="Filter by category">
                 <option value="">All Categories</option>
                 ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
-              </select>
-            </label>
-            <label class="bp-filter-field">
-              <span class="bp-filter-label">Tier</span>
-              <select id="bp-tier" class="filter-select" aria-label="Filter by tier">
-                <option value="">All Tiers</option>
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
               </select>
             </label>
             <div class="bp-filter-field">
@@ -1201,7 +1200,6 @@ const BlueprintsView = (() => {
     const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
     const sort = document.getElementById('bp-sort')?.value || 'name';
     const category = document.getElementById('bp-category')?.value || '';
-    const tier = document.getElementById('bp-tier')?.value || '';
 
     let list = _getAllBlueprints();
 
@@ -1217,16 +1215,6 @@ const BlueprintsView = (() => {
     // Category filter
     if (category) {
       list = list.filter(b => (b.category || '').toLowerCase() === category.toLowerCase());
-    }
-
-    // Tier filter — free models use Gemini, premium requires paid models
-    if (tier) {
-      const FREE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-lite', 'gemini-2-flash'];
-      list = list.filter(b => {
-        const engine = b.config?.llm_engine || b.llm_engine || 'gemini-2.5-flash';
-        const isFree = FREE_MODELS.some(m => engine.toLowerCase().includes(m.toLowerCase()));
-        return tier === 'free' ? isFree : !isFree;
-      });
     }
 
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
@@ -2038,7 +2026,6 @@ const BlueprintsView = (() => {
     if (!badge) return;
     let n = 0;
     if (document.getElementById('bp-category')?.value) n++;
-    if (document.getElementById('bp-tier')?.value) n++;
     if (_sourceFilter && _sourceFilter !== 'all') n++;
     const activeRarity = document.querySelector('.bp-rarity-btn.active')?.dataset.rarity;
     if (activeRarity && activeRarity !== 'all') n++;
@@ -2123,7 +2110,6 @@ const BlueprintsView = (() => {
     });
     document.getElementById('bp-sort')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
     document.getElementById('bp-category')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
-    document.getElementById('bp-tier')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
 
     // Mobile filters sheet — same controls, rendered as a bottom drawer
     // on narrow viewports. Desktop CSS overrides display so the sheet is
@@ -2140,7 +2126,6 @@ const BlueprintsView = (() => {
     document.getElementById('bp-filter-clear')?.addEventListener('click', () => {
       const sort = document.getElementById('bp-sort'); if (sort) sort.value = 'name';
       const cat = document.getElementById('bp-category'); if (cat) cat.value = '';
-      const tier = document.getElementById('bp-tier'); if (tier) tier.value = '';
       _sourceFilter = 'all';
       document.querySelectorAll('.bp-source-btn').forEach(b => { const on = b.dataset.source === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
       document.querySelectorAll('.bp-rarity-btn').forEach(b => { const on = b.dataset.rarity === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });

@@ -2793,6 +2793,16 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   background:none; border:none; color:var(--text); font-family:var(--font-b);
   font-size:.78rem; outline:none; width:200px; padding-left:6px;
 }
+/* Universal: when the input lives inside a .search-box wrapper the
+   wrapper provides the border + background. Per-theme rules add their
+   own border/bg to bare `.search-input`, so without this override the
+   wrapped form renders as box-in-box. Specificity (0,3,0) — beats
+   `:is([data-theme]) .search-input` (0,2,0) in every theme. */
+[data-theme] .search-box .search-input,
+.search-box .search-input {
+  border:none;
+  background:transparent;
+}
 .search-input::placeholder { color:var(--text-dim); }
 .filter-select {
   padding:8px 32px 8px 12px; background:var(--surface); border:var(--border-width) solid var(--border);
@@ -3705,6 +3715,26 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 [data-theme] .bp-rarity-btn:hover { color:var(--text); border-color:var(--border-hi); }
 [data-theme] .bp-rarity-btn.active { color:var(--accent); border-color:var(--accent); background:rgba(var(--accent-rgb,100,100,100),0.08); }
+/* Header row: sub-tabs on the left, search + view-toggle on the right.
+   Desktop + tablet share one line (no wrap); mobile collapses the
+   container via display:contents at the ≤640 breakpoint so children
+   stack as normal block elements. Children manage their own
+   visibility (both hide together on non-Blueprints tabs), so the
+   container collapses naturally when both are hidden. */
+.bp-header-row {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-bottom:8px;
+}
+.bp-header-row .bp-sub-tabs { margin-bottom:0; flex:0 0 auto; }
+.bp-header-row .bp-search-row { flex:1 1 auto; justify-content:flex-end; margin-bottom:0; min-width:0; flex-wrap:nowrap; }
+/* Let the search box shrink inside the header row so tablet widths
+   (768px) keep sub-tabs + search + view-toggle on a single line. The
+   input grows to its native 260px when there's room and shrinks
+   gracefully when sub-tabs eat the budget. */
+.bp-header-row .bp-search-row .search-box { flex:1 1 auto; min-width:0; max-width:260px; }
+.bp-header-row .bp-search-row .search-box .search-input { width:100%; }
 .bp-search-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .bp-search-row .search-box .search-input { width:260px; }
 #bp-deactivate-all { margin-left:auto; white-space:nowrap; }
@@ -3779,9 +3809,22 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 /* ── Empty State ── */
 .bp-view-empty { display:flex; justify-content:center; align-items:center; }
 
-/* ── List View ── */
+/* ── List View ──
+   7-track grid: rarity dot, name (1.5fr), category (1fr), description
+   (3fr — eats the most width since it carries the most signal),
+   rating (60px), inter-cell spacer (16px) before the action so Deploy
+   doesn't sit flush against Rating, action (80px). Slots / Deploys /
+   Connected columns are hidden because they're noise (Slots always 12
+   on every catalog ship, Deploys always 0, Connected is mock seed
+   data). Their <span>s stay in the DOM via the renderer so the
+   sortable header / sort state code can keep working when activation
+   tracking lands. */
 .bp-view-list { display:flex; flex-direction:column; gap:1px; }
-.bpl-row { display:grid; grid-template-columns:24px 1.5fr .7fr 2fr 50px 50px 40px 60px 70px 16px 72px; gap:8px; align-items:center; padding:8px 12px; background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:border-color .15s, background .15s; font-size:.75rem; }
+.bpl-row { display:grid; grid-template-columns:24px 1.5fr 1fr 3fr 60px 16px 80px; gap:16px; align-items:center; padding:8px 12px; background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:border-color .15s, background .15s; font-size:.75rem; }
+.bpl-row .bpl-stat1,
+.bpl-row .bpl-stat2,
+.bpl-row .bpl-stat3,
+.bpl-row .bpl-dl { display:none; }
 .bpl-row:hover { border-color:var(--border-hi); background:var(--bg-alt); }
 .bpl-header { font-family:var(--font-b); font-size:.6rem; text-transform:uppercase; letter-spacing:var(--tracking-caps); color:var(--text-muted); cursor:default; border-color:transparent; background:transparent; }
 .bpl-header:hover { border-color:transparent; background:transparent; }
@@ -4860,10 +4903,8 @@ html[data-theme] .nice-ai-input:focus-visible {
   .bp-toolbar-actions .btn { padding:4px 8px; font-size:var(--text-xs); }
   /* Disable hover lift on touch devices */
   .blueprint-card:hover, .blueprint-card-grid:hover, .blueprint-card-compact:hover { transform:none !important; }
-  /* .bp-view-card / .bp-view-compact grid-template-columns set in the
-     later @media block (single source of truth, no !important needed). */
-  .bpl-row { grid-template-columns:24px 1fr .6fr auto; }
-  .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
+  /* .bp-view-card / .bp-view-compact grid-template-columns + .bpl-row
+     rules are set in the later @media block at line 9301 (SSOT). */
   .ana-stats { grid-template-columns:repeat(2, 1fr); }
   .ana-charts { grid-template-columns:1fr; }
   .cost-overview { grid-template-columns:repeat(2, 1fr); }
@@ -8752,7 +8793,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   background:var(--panel-bg); border-left:var(--border-width,1px) solid var(--border);
   transform:translateX(100%); transition:transform .3s ease;
   display:flex; flex-direction:column; overflow:hidden;
-  box-shadow:-4px 0 24px rgba(0,0,0,.3);
 }
 .bp-drawer.open { transform:translateX(0); }
 .bp-drawer-header {
@@ -9235,7 +9275,6 @@ body.preview-active .nice-ai {
     padding-bottom:env(safe-area-inset-bottom);
     border-left:none; border-top:var(--border-width,1px) solid var(--border);
     border-radius:1rem 1rem 0 0;
-    box-shadow:0 -8px 32px rgba(0,0,0,.4);
   }
   .bp-drawer-overlay.open { display:block; }
   .bp-compare-bar, .bp-hangar-bar { left:0; }
@@ -9291,11 +9330,67 @@ body.preview-active .nice-ai {
   .bp-search-row { gap:6px; }
   .bp-rarity-filters { overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
   .bp-rarity-btn { white-space:nowrap; flex-shrink:0; }
-  .bp-view-card { grid-template-columns:1fr; }
+  /* Tablet: 2 cards per row. Cards default to the desktop auto-fill
+     (minmax 280px), which would naturally give 2 cols at 768 anyway,
+     but pinning to repeat(2,1fr) guarantees the 2-up layout across
+     the whole tablet range (641-768). Mobile (≤640) forces 1fr in
+     the rule below. */
+  .bp-view-card { grid-template-columns:repeat(2, 1fr); }
   .bp-view-compact { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
-  .bpl-row { grid-template-columns:24px 1fr .6fr auto; font-size:var(--text-xs); }
-  .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
-  .bpl-header .bpl-desc, .bpl-header .bpl-stat1, .bpl-header .bpl-stat2, .bpl-header .bpl-stat3, .bpl-header .bpl-dl { display:none; }
+  /* Six-track grid: rarity dot, name (160px), category (180px), 1fr
+     spacer, rating (50px), action (100px). Name + cat are sized to
+     fit the longest visible content with ~30px breathing room; sized
+     tightly so unused track width doesn't pool as visible whitespace
+     between header label and text. The spacer absorbs leftover width
+     so rating + Deploy stay anchored to the right edge. Action col is
+     intentionally 30px wider than the ~70px button so the button has
+     internal padding — keeps Deploy from sitting flush against Rating
+     even when the inter-cell gap is small. Rating + action explicitly
+     placed at columns 5/6 so auto-flow doesn't put them next to cat
+     when sibling cells get display:none. Gap bumped to 14px on tablet
+     for cell-to-cell breathing room. */
+  .bpl-row {
+    grid-template-columns:24px 160px 180px 1fr 50px 100px;
+    gap:14px;
+    font-size:var(--text-xs);
+  }
+  .bpl-row > .bpl-rating { grid-column:5; }
+  .bpl-row > .bpl-action { grid-column:6; }
+  .bpl-row > span:nth-child(10) { display:none; }
+  /* Description hides at narrow widths (no room for prose). Stats +
+     connected are already hidden universally in the base rule. */
+  .bpl-desc { display:none; }
+  .bpl-header .bpl-desc { display:none; }
+  /* The default `--panel-bg` is 0.75-0.97 alpha so the body's
+     Sapphire dot-grid (radial-gradient on body) bleeds through and
+     reads as a subtle right/bottom shadow. Use the opaque surface
+     token instead — same look as desktop, no dot bleed.
+     Same pattern on the list container: `gap:1px` between rows lets
+     the same dot pattern bleed through the slivers and the rows
+     read as having a faint trailing shadow. Painting the container
+     surface fills the gap with the row color; the container only
+     paints where children don't (between/beyond rows).
+     Third bleed surface: `.app-view-content` has 24px padding on every
+     side, and the body's dot pattern shows through that gutter to the
+     right of the list. Painting the view content when it hosts a list
+     view kills the gutter bleed without affecting other views. */
+  .bpl-row,
+  .bp-view-list { background:var(--surface); }
+  .app-view-content:has(.bp-view-list) { background:var(--surface); }
+}
+
+/* Phone-only: rating is squished into ~50px alongside name + cat +
+   Deploy, and the same value already shows in the card drawer when
+   the user taps a row. Drop the column entirely on phones and pack
+   the action button into slot 5 so the spacer absorbs the leftover. */
+@media (max-width:640px) {
+  .bpl-row { grid-template-columns:24px minmax(0, 280px) minmax(0, 200px) minmax(0, 1fr) 70px; }
+  .bpl-row > .bpl-rating { display:none; }
+  .bpl-row > .bpl-action { grid-column:5; }
+  /* Override the tablet 2-up card grid back to single-column for
+     phones — TCG-style cards at 5:7 aspect get cramped at 2-up on
+     <640px viewports. */
+  .bp-view-card { grid-template-columns:1fr; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -10484,6 +10579,10 @@ body.preview-active .nice-ai {
 @media (max-width:640px) {
   .app-view-content:has(.bp-sub-tabs),
   .app-view-content:has(.security-tabs) { padding-top:0; }
+  /* On mobile the header-row collapses out of layout so the sub-tabs
+     can be position:sticky against the actual scroll container, and
+     the search row falls back to its own line underneath. */
+  .bp-header-row { display:contents; }
   .bp-sub-tabs {
     position:sticky;
     top:0;
@@ -10679,6 +10778,12 @@ body.preview-active .nice-ai {
   .bp-search-row { flex-wrap:nowrap; gap:6px; }
   .bp-search-row .search-box { flex:1 1 0; min-width:0; }
   .bp-search-row .search-box .search-input { width:100% !important; }
+  /* Search input opts into the iOS auto-zoom (via data-allow-zoom on
+     the element) so it can drop from the 16px floor down to --text-sm
+     and match the filter/view-toggle row visually. The trade-off is
+     iOS Safari will briefly zoom on focus; users on phones tap the
+     input rarely enough that the visual consistency wins. */
+  .bp-search-row .search-input { font-size:var(--text-sm); }
   .bp-filter-toggle { flex-shrink:0; padding:6px 8px; }
   .bp-filter-toggle span:not(.bp-filter-count) { display:none; }
   .bp-view-toggle { flex-shrink:0; margin-left:0; }
@@ -10698,11 +10803,18 @@ body.preview-active .nice-ai {
     border-radius:var(--radius, 10px) var(--radius, 10px) 0 0;
     z-index:10000; overflow:hidden;
     transform:translateY(100%);
-    transition:transform .2s ease;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  /* Shadow only when the sheet is open. When closed the sheet sits
+     at translateY(100%) with its top edge flush against the viewport
+     bottom — an unconditional `box-shadow: 0 -4px 20px` would cast
+     ~24px upward into the visible viewport and read as a fade at the
+     bottom of every mobile page. */
+  .bp-sheet.open,
+  .bp-filter-controls.open {
+    transform:translateY(0);
     box-shadow:0 -4px 20px rgba(0,0,0,.3);
   }
-  .bp-sheet.open,
-  .bp-filter-controls.open { transform:translateY(0); }
   .bp-sheet[hidden] { display:none; }
 
   .bp-sheet > .bp-sheet-handle,
@@ -10719,13 +10831,17 @@ body.preview-active .nice-ai {
     flex-shrink:0;
   }
   .bp-sheet-title {
-    font-family:var(--font-b); font-size:var(--text-md); font-weight:var(--fw-medium);
+    font-family:var(--font-b); font-size:var(--text-md); font-weight:var(--fw-bold);
     margin:0; color:var(--text);
   }
   .bp-sheet-close {
     width:28px; height:28px; padding:0;
     background:transparent; border:none;
-    color:var(--text-muted); font-size:1.4rem; line-height:1; cursor:pointer;
+    color:var(--text-muted);
+    font-family:var(--font-b);
+    font-size:var(--text-lg);
+    font-weight:var(--fw-regular);
+    line-height:1; cursor:pointer;
   }
   .bp-sheet-close:hover { color:var(--text); }
 
@@ -10756,22 +10872,39 @@ body.preview-active .nice-ai {
   .bp-filter-controls .bp-filter-field {
     display:flex; flex-direction:column; gap:6px;
   }
+  /* Eyebrow labels: per CLAUDE.md, overline role = --text-xs + bold
+     + uppercase + tracking-caps. Was rendering fw-regular which read
+     as inert noise; bold makes them read as field labels. */
   .bp-filter-controls .bp-filter-label {
     display:block;
     font-family:var(--font-b); font-size:var(--text-xs);
+    font-weight:var(--fw-bold);
     letter-spacing:var(--tracking-caps); text-transform:uppercase;
     color:var(--text-muted);
   }
+  /* Selects: --text-sm (13px) matches the surrounding button row.
+     Selects don't trigger iOS auto-zoom (the global ≥16px floor was
+     narrowed to text-entry controls only — see the rule at the
+     bottom of this file). */
   .bp-filter-controls .filter-select {
-    width:100%; padding:10px 12px; font-size:var(--text-sm);
+    width:100%; padding:10px 12px;
+    font-size:var(--text-sm);
+    font-weight:var(--fw-regular);
   }
   .bp-filter-controls .bp-source-filter,
   .bp-filter-controls .bp-rarity-filters {
     display:flex; flex-wrap:wrap; gap:4px;
   }
+  /* Buttons: unified at --text-sm + fw-medium. Previously source was
+     fw-medium and rarity fell through to fw-regular, so the two pill
+     rows read at different weights despite identical roles. */
   .bp-filter-controls .bp-source-btn,
   .bp-filter-controls .bp-rarity-btn {
-    flex:1 1 auto; padding:8px 10px; font-size:var(--text-xs);
+    flex:1 1 auto; padding:8px 10px;
+    font-size:var(--text-sm);
+    font-weight:var(--fw-medium);
+    text-transform:none;
+    letter-spacing:var(--tracking-normal);
   }
 
   .bp-filter-controls > .bp-sheet-footer {
@@ -10780,6 +10913,14 @@ body.preview-active .nice-ai {
     padding-bottom:max(12px, env(safe-area-inset-bottom));
     border-top:var(--border-width, 1px) solid var(--border);
     flex-shrink:0;
+  }
+  /* Footer CTAs: the base .btn drops them to 9.6px which reads as
+     tiny on a bottom sheet. Lift to --text-sm to match the row of
+     filter buttons above. */
+  .bp-filter-controls > .bp-sheet-footer .btn {
+    font-size:var(--text-sm);
+    font-weight:var(--fw-medium);
+    letter-spacing:var(--tracking-normal);
   }
   .bp-filter-clear { flex:1 1 0; }
   .bp-filter-apply { flex:2 1 0; }
@@ -10832,21 +10973,55 @@ body.preview-active .nice-ai {
 
 /* ─────────────────────────────────────────────────────────────────
    iOS Safari auto-zoom prevention
-   Safari zooms when a focused field's computed font-size is below 16px
-   and never zooms back. Floor every text-entry control at 16px on
-   mobile. Checkbox/radio/range/color/file have no editable text and
-   are exempt; `data-allow-zoom` is an explicit per-element opt-out
-   (the prompt-bar model select uses it). Pinch-zoom stays available.
+   Safari zooms when a focused TEXT-ENTRY field's computed font-size
+   is below 16px and never zooms back. Only `<input>` (text-typed) and
+   `<textarea>` need the floor — `<select>` opens a native picker on
+   iOS, not a virtual keyboard, and never triggers auto-zoom. Keeping
+   selects in the rule was forcing every filter dropdown to 16px even
+   when designers spec'd smaller, which read as visually dominant.
 
-   Placed LAST in the file deliberately. Grouping the three element
+   Checkbox/radio/range/color/file have no editable text and are
+   exempt; `data-allow-zoom` is an explicit per-element opt-out
+   (the prompt-bar model select uses it for legacy reasons; safe to
+   keep). Pinch-zoom stays available.
+
+   Placed LAST in the file deliberately. Grouping the two element
    types inside :is() lets the :not() chain apply its specificity to
-   all of them, lifting the selector to (0,6,1) — above the per-theme
-   font-size overrides (16-bit, pixel font) that reach (0,3,1) on
-   textareas and selects and would otherwise win. Inline font-size
-   styles still beat this rule; those are removed at the source.
+   both, lifting the selector to (0,6,1) — above per-theme font-size
+   overrides (16-bit, pixel font) that reach (0,3,1) on textareas
+   and would otherwise win. Inline font-size styles still beat this
+   rule; those are removed at the source.
 ───────────────────────────────────────────────────────────────── */
 @media (max-width:768px) {
-  :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-allow-zoom]) {
+  :is(input, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-allow-zoom]) {
     font-size:16px;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   No drop shadows
+   Brand directive: the NICE app is flat. Hundreds of `box-shadow`
+   declarations across app.css + theme.css were creating recurring
+   bleed issues — bottom sheets casting shadows when closed, drawers
+   leaking shadows from offscreen, body gradient + opaque overlays
+   producing perceived edge shadows, theme hover halos turning on at
+   the wrong moments. Rather than fix each one in isolation, kill
+   every drop shadow in the app at the universal-selector level.
+
+   Only `box-shadow` is killed here. `filter` is intentionally left
+   alone because the property is overloaded with blur, brightness,
+   color-matrix and other non-shadow uses across the theme files —
+   blanket killing it would break ambient blurs, dark-mode icon
+   inverts, and animation brightness pulses. The handful of
+   `filter:drop-shadow(...)` usages can be removed at the source if
+   they surface as bleed.
+
+   `text-shadow` is also untouched — it's used for legible text
+   against busy backgrounds (some themes' hero text), not for depth.
+
+   `!important` is justified: this is a deliberate global design
+   decision, not a workaround for a specific layout bug. Placed last
+   so it overrides every per-theme + per-component shadow rule. */
+*, *::before, *::after {
+  box-shadow:none !important;
 }
