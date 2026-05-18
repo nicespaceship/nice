@@ -9305,8 +9305,13 @@ body.preview-active .nice-ai {
   /* Five-column layout puts the Deploy button on the same row as the
      rating, instead of wrapping to a second row. The empty spacer span
      (between connected/dl and action) gets `display:none` so it
-     doesn't consume a grid cell. */
-  .bpl-row { grid-template-columns:24px 1fr .6fr auto auto; font-size:var(--text-xs); }
+     doesn't consume a grid cell.
+     Rating + action columns are fixed widths so the header row's
+     RATING label aligns with the data rows' rating values + Deploy
+     buttons. Auto-sizing each row independently would put RATING (the
+     wide header text) above the Deploy column instead of the rating
+     value. */
+  .bpl-row { grid-template-columns:24px 1fr .6fr 50px 70px; font-size:var(--text-xs); }
   .bpl-row > span:nth-child(10) { display:none; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
   .bpl-header .bpl-desc, .bpl-header .bpl-stat1, .bpl-header .bpl-stat2, .bpl-header .bpl-stat3, .bpl-header .bpl-dl { display:none; }
