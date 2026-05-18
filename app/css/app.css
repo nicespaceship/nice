@@ -4880,10 +4880,8 @@ html[data-theme] .nice-ai-input:focus-visible {
   .bp-toolbar-actions .btn { padding:4px 8px; font-size:var(--text-xs); }
   /* Disable hover lift on touch devices */
   .blueprint-card:hover, .blueprint-card-grid:hover, .blueprint-card-compact:hover { transform:none !important; }
-  /* .bp-view-card / .bp-view-compact grid-template-columns set in the
-     later @media block (single source of truth, no !important needed). */
-  .bpl-row { grid-template-columns:24px 1fr .6fr auto; }
-  .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
+  /* .bp-view-card / .bp-view-compact grid-template-columns + .bpl-row
+     rules are set in the later @media block at line 9301 (SSOT). */
   .ana-stats { grid-template-columns:repeat(2, 1fr); }
   .ana-charts { grid-template-columns:1fr; }
   .cost-overview { grid-template-columns:repeat(2, 1fr); }
@@ -9304,9 +9302,19 @@ body.preview-active .nice-ai {
   .bp-rarity-btn { white-space:nowrap; flex-shrink:0; }
   .bp-view-card { grid-template-columns:1fr; }
   .bp-view-compact { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
-  .bpl-row { grid-template-columns:24px 1fr .6fr auto; font-size:var(--text-xs); }
+  /* Five-column layout puts the Deploy button on the same row as the
+     rating, instead of wrapping to a second row. The empty spacer span
+     (between connected/dl and action) gets `display:none` so it
+     doesn't consume a grid cell. */
+  .bpl-row { grid-template-columns:24px 1fr .6fr auto auto; font-size:var(--text-xs); }
+  .bpl-row > span:nth-child(10) { display:none; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
   .bpl-header .bpl-desc, .bpl-header .bpl-stat1, .bpl-header .bpl-stat2, .bpl-header .bpl-stat3, .bpl-header .bpl-dl { display:none; }
+  /* The default `--panel-bg` is 0.75-0.97 alpha so the body's
+     Sapphire dot-grid (radial-gradient on body) bleeds through and
+     reads as a subtle right/bottom shadow. Use the opaque surface
+     token instead — same look as desktop, no dot bleed. */
+  .bpl-row { background:var(--surface); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
