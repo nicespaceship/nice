@@ -10775,13 +10775,17 @@ body.preview-active .nice-ai {
     flex-shrink:0;
   }
   .bp-sheet-title {
-    font-family:var(--font-b); font-size:var(--text-md); font-weight:var(--fw-medium);
+    font-family:var(--font-b); font-size:var(--text-md); font-weight:var(--fw-bold);
     margin:0; color:var(--text);
   }
   .bp-sheet-close {
     width:28px; height:28px; padding:0;
     background:transparent; border:none;
-    color:var(--text-muted); font-size:1.4rem; line-height:1; cursor:pointer;
+    color:var(--text-muted);
+    font-family:var(--font-b);
+    font-size:var(--text-lg);
+    font-weight:var(--fw-regular);
+    line-height:1; cursor:pointer;
   }
   .bp-sheet-close:hover { color:var(--text); }
 
@@ -10812,22 +10816,39 @@ body.preview-active .nice-ai {
   .bp-filter-controls .bp-filter-field {
     display:flex; flex-direction:column; gap:6px;
   }
+  /* Eyebrow labels: per CLAUDE.md, overline role = --text-xs + bold
+     + uppercase + tracking-caps. Was rendering fw-regular which read
+     as inert noise; bold makes them read as field labels. */
   .bp-filter-controls .bp-filter-label {
     display:block;
     font-family:var(--font-b); font-size:var(--text-xs);
+    font-weight:var(--fw-bold);
     letter-spacing:var(--tracking-caps); text-transform:uppercase;
     color:var(--text-muted);
   }
+  /* Selects: --text-sm (13px) matches the surrounding button row.
+     Selects don't trigger iOS auto-zoom (the global ≥16px floor was
+     narrowed to text-entry controls only — see the rule at the
+     bottom of this file). */
   .bp-filter-controls .filter-select {
-    width:100%; padding:10px 12px; font-size:var(--text-sm);
+    width:100%; padding:10px 12px;
+    font-size:var(--text-sm);
+    font-weight:var(--fw-regular);
   }
   .bp-filter-controls .bp-source-filter,
   .bp-filter-controls .bp-rarity-filters {
     display:flex; flex-wrap:wrap; gap:4px;
   }
+  /* Buttons: unified at --text-sm + fw-medium. Previously source was
+     fw-medium and rarity fell through to fw-regular, so the two pill
+     rows read at different weights despite identical roles. */
   .bp-filter-controls .bp-source-btn,
   .bp-filter-controls .bp-rarity-btn {
-    flex:1 1 auto; padding:8px 10px; font-size:var(--text-xs);
+    flex:1 1 auto; padding:8px 10px;
+    font-size:var(--text-sm);
+    font-weight:var(--fw-medium);
+    text-transform:none;
+    letter-spacing:var(--tracking-normal);
   }
 
   .bp-filter-controls > .bp-sheet-footer {
@@ -10836,6 +10857,14 @@ body.preview-active .nice-ai {
     padding-bottom:max(12px, env(safe-area-inset-bottom));
     border-top:var(--border-width, 1px) solid var(--border);
     flex-shrink:0;
+  }
+  /* Footer CTAs: the base .btn drops them to 9.6px which reads as
+     tiny on a bottom sheet. Lift to --text-sm to match the row of
+     filter buttons above. */
+  .bp-filter-controls > .bp-sheet-footer .btn {
+    font-size:var(--text-sm);
+    font-weight:var(--fw-medium);
+    letter-spacing:var(--tracking-normal);
   }
   .bp-filter-clear { flex:1 1 0; }
   .bp-filter-apply { flex:2 1 0; }
@@ -10888,21 +10917,27 @@ body.preview-active .nice-ai {
 
 /* ─────────────────────────────────────────────────────────────────
    iOS Safari auto-zoom prevention
-   Safari zooms when a focused field's computed font-size is below 16px
-   and never zooms back. Floor every text-entry control at 16px on
-   mobile. Checkbox/radio/range/color/file have no editable text and
-   are exempt; `data-allow-zoom` is an explicit per-element opt-out
-   (the prompt-bar model select uses it). Pinch-zoom stays available.
+   Safari zooms when a focused TEXT-ENTRY field's computed font-size
+   is below 16px and never zooms back. Only `<input>` (text-typed) and
+   `<textarea>` need the floor — `<select>` opens a native picker on
+   iOS, not a virtual keyboard, and never triggers auto-zoom. Keeping
+   selects in the rule was forcing every filter dropdown to 16px even
+   when designers spec'd smaller, which read as visually dominant.
 
-   Placed LAST in the file deliberately. Grouping the three element
+   Checkbox/radio/range/color/file have no editable text and are
+   exempt; `data-allow-zoom` is an explicit per-element opt-out
+   (the prompt-bar model select uses it for legacy reasons; safe to
+   keep). Pinch-zoom stays available.
+
+   Placed LAST in the file deliberately. Grouping the two element
    types inside :is() lets the :not() chain apply its specificity to
-   all of them, lifting the selector to (0,6,1) — above the per-theme
-   font-size overrides (16-bit, pixel font) that reach (0,3,1) on
-   textareas and selects and would otherwise win. Inline font-size
-   styles still beat this rule; those are removed at the source.
+   both, lifting the selector to (0,6,1) — above per-theme font-size
+   overrides (16-bit, pixel font) that reach (0,3,1) on textareas
+   and would otherwise win. Inline font-size styles still beat this
+   rule; those are removed at the source.
 ───────────────────────────────────────────────────────────────── */
 @media (max-width:768px) {
-  :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-allow-zoom]) {
+  :is(input, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-allow-zoom]) {
     font-size:16px;
   }
 }
