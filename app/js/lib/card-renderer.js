@@ -638,7 +638,6 @@ const CardRenderer = (() => {
     const statusDot = opts.statusDot || '';
     const draggable = opts.draggable ? ' draggable="true"' : '';
     const statusAttr = bp.status ? ` data-status="${bp.status}"` : '';
-    const subtitle = bp.subtitle || bp.metadata?.subtitle || '';
 
     // ── Rarity badge — same treatment for ALL rarities ──
     const badgeClass = rarity === 'mythic' ? ' mythic-badge-animated' : '';
@@ -666,7 +665,6 @@ const CardRenderer = (() => {
         <div class="blueprint-card-front">
           <div class="blueprint-card-name-bar">
             <span class="blueprint-card-name"${nameEditable}>${_esc(displayName)}</span>
-            ${subtitle ? `<span class="blueprint-card-subtitle">${_esc(subtitle)}</span>` : ''}
             ${statusDot}
           </div>
           <div class="blueprint-card-sub-header">
