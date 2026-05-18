@@ -266,7 +266,7 @@ const BlueprintsView = (() => {
           <div class="bp-search-row">
             <div class="search-box">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-              <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" />
+              <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" data-allow-zoom />
             </div>
             <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>

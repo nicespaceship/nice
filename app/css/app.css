@@ -10728,6 +10728,12 @@ body.preview-active .nice-ai {
   .bp-search-row { flex-wrap:nowrap; gap:6px; }
   .bp-search-row .search-box { flex:1 1 0; min-width:0; }
   .bp-search-row .search-box .search-input { width:100% !important; }
+  /* Search input opts into the iOS auto-zoom (via data-allow-zoom on
+     the element) so it can drop from the 16px floor down to --text-sm
+     and match the filter/view-toggle row visually. The trade-off is
+     iOS Safari will briefly zoom on focus; users on phones tap the
+     input rarely enough that the visual consistency wins. */
+  .bp-search-row .search-input { font-size:var(--text-sm); }
   .bp-filter-toggle { flex-shrink:0; padding:6px 8px; }
   .bp-filter-toggle span:not(.bp-filter-count) { display:none; }
   .bp-view-toggle { flex-shrink:0; margin-left:0; }
