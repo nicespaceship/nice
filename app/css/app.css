@@ -6926,6 +6926,15 @@ html[data-theme] .nice-ai-input:focus-visible {
   color:var(--text-muted);
   font-size:var(--card-text-micro);
 }
+/* Per-step agent attribution — ties each step back to a Crew slot
+   so the Workflows tab reads as "step — Role" instead of orphaned
+   verbs. Tone muted so the verb still leads visually. */
+.blueprint-card-front-workflow-attribution {
+  color:var(--text-muted);
+  font-style:italic;
+  font-weight:var(--fw-regular);
+  white-space:nowrap;
+}
 
 /* Hover-title overlay inside the art zone — transparent by default,
    fades in centered over the slot constellation when any tab icon is

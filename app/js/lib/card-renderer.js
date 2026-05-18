@@ -433,17 +433,23 @@ const CardRenderer = (() => {
     if (tabId === 'workflows') {
       const workflows = bp.workflows || bp.card?.workflows || bp.config?.workflows || [];
       if (workflows.length) {
+        const crew = bp.crew || bp.config?.crew_roles || bp.metadata?.crew || [];
         /* Accordion: each workflow is a <details> so the panel reads as
            four scannable titles by default instead of a wall of ~20 step
            lines. First one defaults open so the panel doesn't look empty
            on first click of the Workflows tab. Native <details>/<summary>
            handles keyboard activation; clicks are stopped from bubbling
            to the view's card → drawer-open handler by
-           bindFrontInteractive. */
+           bindFrontInteractive.
+           Steps accept two shapes: a bare string (legacy / user-built)
+           or `{ step, agent_slot }` where `agent_slot` is 1-indexed
+           into ship_slots. The agent label resolves via bp.crew at
+           render time so slot renames propagate without touching the
+           workflow data. */
         return `<div class="blueprint-card-front-workflows">${workflows.map((w, i) => `
           <details class="blueprint-card-front-workflow"${i === 0 ? ' open' : ''}>
             <summary class="blueprint-card-front-workflow-title">${_esc(w.title || '')}</summary>
-            <ol class="blueprint-card-front-workflow-steps">${(w.steps || []).map(s => `<li>${_esc(s)}</li>`).join('')}</ol>
+            <ol class="blueprint-card-front-workflow-steps">${(w.steps || []).map(s => _renderWorkflowStep(s, crew)).join('')}</ol>
           </details>`).join('')}</div>`;
       }
     }
@@ -452,6 +458,19 @@ const CardRenderer = (() => {
         <p class="blueprint-card-front-soon-title">${_esc(label)}</p>
         <p class="blueprint-card-front-soon-hint">Coming soon</p>
       </div>`;
+  }
+
+  /* Renders one workflow step. Accepts either a bare string or
+     `{ step, agent_slot }`. When `agent_slot` resolves against the
+     ship's crew, appends the slot label as an inline attribution
+     so each step ties back to its owner on the Crew tab. */
+  function _renderWorkflowStep(s, crew) {
+    if (typeof s === 'string') return `<li>${_esc(s)}</li>`;
+    const text = s && s.step ? s.step : '';
+    const slot = (s && s.agent_slot && Array.isArray(crew)) ? crew[s.agent_slot - 1] : null;
+    const label = slot && slot.label ? slot.label : '';
+    if (!label) return `<li>${_esc(text)}</li>`;
+    return `<li>${_esc(text)} <span class="blueprint-card-front-workflow-attribution">— ${_esc(label)}</span></li>`;
   }
 
   /* Trims a long discipline bullet down to its leading clause so it
