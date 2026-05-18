@@ -9326,6 +9326,16 @@ body.preview-active .nice-ai {
   .bpl-row { background:var(--surface); }
 }
 
+/* Phone-only: rating is squished into ~50px alongside name + cat +
+   Deploy, and the same value already shows in the card drawer when
+   the user taps a row. Drop the column entirely on phones and pack
+   the action button into slot 5 so the spacer absorbs the leftover. */
+@media (max-width:640px) {
+  .bpl-row { grid-template-columns:24px minmax(0, 280px) minmax(0, 200px) minmax(0, 1fr) 70px; }
+  .bpl-row > .bpl-rating { display:none; }
+  .bpl-row > .bpl-action { grid-column:5; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    CODE IDE
 ═══════════════════════════════════════════════════════════════════ */
