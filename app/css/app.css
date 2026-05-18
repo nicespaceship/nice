@@ -9302,16 +9302,20 @@ body.preview-active .nice-ai {
   .bp-rarity-btn { white-space:nowrap; flex-shrink:0; }
   .bp-view-card { grid-template-columns:1fr; }
   .bp-view-compact { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
-  /* Five-column layout puts the Deploy button on the same row as the
-     rating, instead of wrapping to a second row. The empty spacer span
-     (between connected/dl and action) gets `display:none` so it
-     doesn't consume a grid cell.
-     Rating + action columns are fixed widths so the header row's
-     RATING label aligns with the data rows' rating values + Deploy
-     buttons. Auto-sizing each row independently would put RATING (the
-     wide header text) above the Deploy column instead of the rating
-     value. */
-  .bpl-row { grid-template-columns:24px 1fr .6fr 50px 70px; font-size:var(--text-xs); }
+  /* Six-track grid: rarity dot, name (caps at 280px), category (caps
+     at 200px), 1fr spacer, rating (fixed 50px), action (fixed 70px).
+     The spacer absorbs leftover width so rating + Deploy stay anchored
+     to the right edge instead of stretching the name/cat columns into
+     half-empty whitespace. Name + cat use `minmax(0, ...)` so they
+     shrink and ellipsis at narrow widths instead of forcing horizontal
+     overflow. Rating + action are explicitly placed in columns 5/6 so
+     the auto-flow doesn't put them next to category. */
+  .bpl-row {
+    grid-template-columns:24px minmax(0, 280px) minmax(0, 200px) minmax(0, 1fr) 50px 70px;
+    font-size:var(--text-xs);
+  }
+  .bpl-row > .bpl-rating { grid-column:5; }
+  .bpl-row > .bpl-action { grid-column:6; }
   .bpl-row > span:nth-child(10) { display:none; }
   .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
   .bpl-header .bpl-desc, .bpl-header .bpl-stat1, .bpl-header .bpl-stat2, .bpl-header .bpl-stat3, .bpl-header .bpl-dl { display:none; }
