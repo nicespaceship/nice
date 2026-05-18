@@ -9321,7 +9321,12 @@ body.preview-active .nice-ai {
   .bp-search-row { gap:6px; }
   .bp-rarity-filters { overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
   .bp-rarity-btn { white-space:nowrap; flex-shrink:0; }
-  .bp-view-card { grid-template-columns:1fr; }
+  /* Tablet: 2 cards per row. Cards default to the desktop auto-fill
+     (minmax 280px), which would naturally give 2 cols at 768 anyway,
+     but pinning to repeat(2,1fr) guarantees the 2-up layout across
+     the whole tablet range (641-768). Mobile (≤640) forces 1fr in
+     the rule below. */
+  .bp-view-card { grid-template-columns:repeat(2, 1fr); }
   .bp-view-compact { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
   /* Six-track grid: rarity dot, name (160px), category (180px), 1fr
      spacer, rating (50px), action (100px). Name + cat are sized to
@@ -9373,6 +9378,10 @@ body.preview-active .nice-ai {
   .bpl-row { grid-template-columns:24px minmax(0, 280px) minmax(0, 200px) minmax(0, 1fr) 70px; }
   .bpl-row > .bpl-rating { display:none; }
   .bpl-row > .bpl-action { grid-column:5; }
+  /* Override the tablet 2-up card grid back to single-column for
+     phones — TCG-style cards at 5:7 aspect get cramped at 2-up on
+     <640px viewports. */
+  .bp-view-card { grid-template-columns:1fr; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
