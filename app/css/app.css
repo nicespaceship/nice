@@ -10732,8 +10732,15 @@ body.preview-active .nice-ai {
      the element) so it can drop from the 16px floor down to --text-sm
      and match the filter/view-toggle row visually. The trade-off is
      iOS Safari will briefly zoom on focus; users on phones tap the
-     input rarely enough that the visual consistency wins. */
-  .bp-search-row .search-input { font-size:var(--text-sm); }
+     input rarely enough that the visual consistency wins.
+     Border + background stripped because the theme adds its own
+     border to .search-input, which then renders as a nested box
+     inside the .search-box wrapper that already has its own border. */
+  .bp-search-row .search-box .search-input {
+    font-size:var(--text-sm);
+    border:none;
+    background:transparent;
+  }
   .bp-filter-toggle { flex-shrink:0; padding:6px 8px; }
   .bp-filter-toggle span:not(.bp-filter-count) { display:none; }
   .bp-view-toggle { flex-shrink:0; margin-left:0; }
