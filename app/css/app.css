@@ -3809,9 +3809,22 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 /* ── Empty State ── */
 .bp-view-empty { display:flex; justify-content:center; align-items:center; }
 
-/* ── List View ── */
+/* ── List View ──
+   7-track grid: rarity dot, name (1.5fr), category (1fr), description
+   (3fr — eats the most width since it carries the most signal),
+   rating (60px), inter-cell spacer (16px) before the action so Deploy
+   doesn't sit flush against Rating, action (80px). Slots / Deploys /
+   Connected columns are hidden because they're noise (Slots always 12
+   on every catalog ship, Deploys always 0, Connected is mock seed
+   data). Their <span>s stay in the DOM via the renderer so the
+   sortable header / sort state code can keep working when activation
+   tracking lands. */
 .bp-view-list { display:flex; flex-direction:column; gap:1px; }
-.bpl-row { display:grid; grid-template-columns:24px 1.5fr .7fr 2fr 50px 50px 40px 60px 70px 16px 72px; gap:8px; align-items:center; padding:8px 12px; background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:border-color .15s, background .15s; font-size:.75rem; }
+.bpl-row { display:grid; grid-template-columns:24px 1.5fr 1fr 3fr 60px 16px 80px; gap:16px; align-items:center; padding:8px 12px; background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:border-color .15s, background .15s; font-size:.75rem; }
+.bpl-row .bpl-stat1,
+.bpl-row .bpl-stat2,
+.bpl-row .bpl-stat3,
+.bpl-row .bpl-dl { display:none; }
 .bpl-row:hover { border-color:var(--border-hi); background:var(--bg-alt); }
 .bpl-header { font-family:var(--font-b); font-size:.6rem; text-transform:uppercase; letter-spacing:var(--tracking-caps); color:var(--text-muted); cursor:default; border-color:transparent; background:transparent; }
 .bpl-header:hover { border-color:transparent; background:transparent; }
@@ -9332,8 +9345,10 @@ body.preview-active .nice-ai {
   .bpl-row > .bpl-rating { grid-column:5; }
   .bpl-row > .bpl-action { grid-column:6; }
   .bpl-row > span:nth-child(10) { display:none; }
-  .bpl-desc, .bpl-stat1, .bpl-stat2, .bpl-stat3, .bpl-dl { display:none; }
-  .bpl-header .bpl-desc, .bpl-header .bpl-stat1, .bpl-header .bpl-stat2, .bpl-header .bpl-stat3, .bpl-header .bpl-dl { display:none; }
+  /* Description hides at narrow widths (no room for prose). Stats +
+     connected are already hidden universally in the base rule. */
+  .bpl-desc { display:none; }
+  .bpl-header .bpl-desc { display:none; }
   /* The default `--panel-bg` is 0.75-0.97 alpha so the body's
      Sapphire dot-grid (radial-gradient on body) bleeds through and
      reads as a subtle right/bottom shadow. Use the opaque surface
