@@ -9312,16 +9312,21 @@ body.preview-active .nice-ai {
   .bp-rarity-btn { white-space:nowrap; flex-shrink:0; }
   .bp-view-card { grid-template-columns:1fr; }
   .bp-view-compact { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
-  /* Six-track grid: rarity dot, name (caps at 280px), category (caps
-     at 200px), 1fr spacer, rating (fixed 50px), action (fixed 70px).
-     The spacer absorbs leftover width so rating + Deploy stay anchored
-     to the right edge instead of stretching the name/cat columns into
-     half-empty whitespace. Name + cat use `minmax(0, ...)` so they
-     shrink and ellipsis at narrow widths instead of forcing horizontal
-     overflow. Rating + action are explicitly placed in columns 5/6 so
-     the auto-flow doesn't put them next to category. */
+  /* Six-track grid: rarity dot, name (160px), category (180px), 1fr
+     spacer, rating (50px), action (100px). Name + cat are sized to
+     fit the longest visible content with ~30px breathing room; sized
+     tightly so unused track width doesn't pool as visible whitespace
+     between header label and text. The spacer absorbs leftover width
+     so rating + Deploy stay anchored to the right edge. Action col is
+     intentionally 30px wider than the ~70px button so the button has
+     internal padding — keeps Deploy from sitting flush against Rating
+     even when the inter-cell gap is small. Rating + action explicitly
+     placed at columns 5/6 so auto-flow doesn't put them next to cat
+     when sibling cells get display:none. Gap bumped to 14px on tablet
+     for cell-to-cell breathing room. */
   .bpl-row {
-    grid-template-columns:24px minmax(0, 280px) minmax(0, 200px) minmax(0, 1fr) 50px 70px;
+    grid-template-columns:24px 160px 180px 1fr 50px 100px;
+    gap:14px;
     font-size:var(--text-xs);
   }
   .bpl-row > .bpl-rating { grid-column:5; }
