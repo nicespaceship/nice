@@ -319,14 +319,6 @@ const BlueprintsView = (() => {
                 ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
               </select>
             </label>
-            <label class="bp-filter-field">
-              <span class="bp-filter-label">Tier</span>
-              <select id="bp-tier" class="filter-select" aria-label="Filter by tier">
-                <option value="">All Tiers</option>
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
-              </select>
-            </label>
             <div class="bp-filter-field">
               <span class="bp-filter-label">Source</span>
               <div class="bp-source-filter" id="bp-source-filter" role="group" aria-label="Filter by source">
@@ -1208,7 +1200,6 @@ const BlueprintsView = (() => {
     const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
     const sort = document.getElementById('bp-sort')?.value || 'name';
     const category = document.getElementById('bp-category')?.value || '';
-    const tier = document.getElementById('bp-tier')?.value || '';
 
     let list = _getAllBlueprints();
 
@@ -1224,16 +1215,6 @@ const BlueprintsView = (() => {
     // Category filter
     if (category) {
       list = list.filter(b => (b.category || '').toLowerCase() === category.toLowerCase());
-    }
-
-    // Tier filter — free models use Gemini, premium requires paid models
-    if (tier) {
-      const FREE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-lite', 'gemini-2-flash'];
-      list = list.filter(b => {
-        const engine = b.config?.llm_engine || b.llm_engine || 'gemini-2.5-flash';
-        const isFree = FREE_MODELS.some(m => engine.toLowerCase().includes(m.toLowerCase()));
-        return tier === 'free' ? isFree : !isFree;
-      });
     }
 
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
@@ -2045,7 +2026,6 @@ const BlueprintsView = (() => {
     if (!badge) return;
     let n = 0;
     if (document.getElementById('bp-category')?.value) n++;
-    if (document.getElementById('bp-tier')?.value) n++;
     if (_sourceFilter && _sourceFilter !== 'all') n++;
     const activeRarity = document.querySelector('.bp-rarity-btn.active')?.dataset.rarity;
     if (activeRarity && activeRarity !== 'all') n++;
@@ -2130,7 +2110,6 @@ const BlueprintsView = (() => {
     });
     document.getElementById('bp-sort')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
     document.getElementById('bp-category')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
-    document.getElementById('bp-tier')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
 
     // Mobile filters sheet — same controls, rendered as a bottom drawer
     // on narrow viewports. Desktop CSS overrides display so the sheet is
@@ -2147,7 +2126,6 @@ const BlueprintsView = (() => {
     document.getElementById('bp-filter-clear')?.addEventListener('click', () => {
       const sort = document.getElementById('bp-sort'); if (sort) sort.value = 'name';
       const cat = document.getElementById('bp-category'); if (cat) cat.value = '';
-      const tier = document.getElementById('bp-tier'); if (tier) tier.value = '';
       _sourceFilter = 'all';
       document.querySelectorAll('.bp-source-btn').forEach(b => { const on = b.dataset.source === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
       document.querySelectorAll('.bp-rarity-btn').forEach(b => { const on = b.dataset.rarity === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
