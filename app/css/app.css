@@ -9322,8 +9322,14 @@ body.preview-active .nice-ai {
   /* The default `--panel-bg` is 0.75-0.97 alpha so the body's
      Sapphire dot-grid (radial-gradient on body) bleeds through and
      reads as a subtle right/bottom shadow. Use the opaque surface
-     token instead — same look as desktop, no dot bleed. */
-  .bpl-row { background:var(--surface); }
+     token instead — same look as desktop, no dot bleed.
+     Same pattern on the list container: `gap:1px` between rows lets
+     the same dot pattern bleed through the slivers and the rows
+     read as having a faint trailing shadow. Painting the container
+     surface fills the gap with the row color; the container only
+     paints where children don't (between/beyond rows). */
+  .bpl-row,
+  .bp-view-list { background:var(--surface); }
 }
 
 /* Phone-only: rating is squished into ~50px alongside name + cat +
@@ -9334,13 +9340,6 @@ body.preview-active .nice-ai {
   .bpl-row { grid-template-columns:24px minmax(0, 280px) minmax(0, 200px) minmax(0, 1fr) 70px; }
   .bpl-row > .bpl-rating { display:none; }
   .bpl-row > .bpl-action { grid-column:5; }
-  /* The list container uses `gap:1px` between rows. The body has a
-     Sapphire-tinted radial-gradient dot pattern, so the dots bleed
-     through that 1px gap and read as a subtle shadow beneath each
-     row. Painting the container surface fills the gap with the same
-     opaque color the rows use, masking the bleed. Container only
-     paints between/beyond rows — the rows themselves still show. */
-  .bp-view-list { background:var(--surface); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
