@@ -91,9 +91,12 @@ const BlueprintsView = (() => {
   // narrows to the seeded NICE library; 'community' narrows to user-
   // published content. Replaces the old standalone Marketplace sub-tab.
   let _sourceFilter = 'all';
-  const _mobileDefault = window.innerWidth <= 768 ? 'compact' : 'card';
-  let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || _mobileDefault;
-  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _mobileDefault;
+  // Desktop + tablet default to the rich card grid (the artifact view).
+  // Phones get the dense list — three columns of TCG cards never read
+  // well at <=640px and the row layout is the natural mobile shape.
+  const _viewportDefault = window.innerWidth <= 640 ? 'list' : 'card';
+  let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || _viewportDefault;
+  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _viewportDefault;
   let _colSort = { key: null, dir: 'asc' }; // column header sort state
 
   /* ── Paginated catalog search state ── */
@@ -241,14 +244,47 @@ const BlueprintsView = (() => {
     el.innerHTML = `
       <div class="bp-wrap">
 
-        <!-- Blueprints sub-tabs (Spaceships / Agents are catalogs; Active
-             is the user's deployed ships + agents; Workshop is custom
-             builds + imports) -->
-        <div class="bp-sub-tabs" id="bp-sub-tabs">
-          <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
-          <button class="bp-sub-tab" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
-          <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
+        <!-- Header row: sub-tabs left, search + view-toggle right.
+             Desktop + tablet render on one row (search/toggle aligned
+             to the right of the Workshop tab); mobile stacks them. -->
+        <div class="bp-header-row">
+          <!-- Blueprints sub-tabs (Spaceships / Agents are catalogs;
+               Active is the user's deployed ships + agents; Workshop is
+               custom builds + imports) -->
+          <div class="bp-sub-tabs" id="bp-sub-tabs">
+            <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
+            <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
+            <button class="bp-sub-tab" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
+            <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
+          </div>
+
+          <!-- Search row: always contains search + view-toggle; on
+               mobile also renders a Filters button (see
+               .bp-filter-toggle). The filter controls themselves live
+               in .bp-filter-controls which is an inline flex row on
+               desktop and a bottom sheet on mobile. -->
+          <div class="bp-search-row">
+            <div class="search-box">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+              <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" />
+            </div>
+            <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
+              <span>Filters</span>
+              <span class="bp-filter-count" id="bp-filter-count" hidden></span>
+            </button>
+            <div class="bp-view-toggle" id="bp-view-toggle">
+              <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
+              </button>
+              <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
+              </button>
+              <button class="bp-view-btn${_viewMode==='list'?' active':''}" data-view="list" title="List view">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
@@ -256,35 +292,6 @@ const BlueprintsView = (() => {
 
         <!-- Schematic content (rendered by DockView when active) -->
         <div id="bp-schematic-content" style="display:none"></div>
-
-
-
-        <!-- Search row: always contains search + view-toggle; on mobile
-             also renders a Filters button (see .bp-filter-toggle). The
-             filter controls themselves live in .bp-filter-controls which
-             is an inline flex row on desktop and a bottom sheet on mobile. -->
-        <div class="bp-search-row">
-          <div class="search-box">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-            <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" />
-          </div>
-          <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
-            <span>Filters</span>
-            <span class="bp-filter-count" id="bp-filter-count" hidden></span>
-          </button>
-          <div class="bp-view-toggle" id="bp-view-toggle">
-            <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button class="bp-view-btn${_viewMode==='list'?' active':''}" data-view="list" title="List view">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
-            </button>
-            <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
-            </button>
-          </div>
-        </div>
 
         <div class="bp-sheet-backdrop" id="bp-filter-sheet-backdrop" hidden></div>
         <div class="bp-filter-controls" id="bp-filter-sheet" role="group" aria-label="Blueprint filters">

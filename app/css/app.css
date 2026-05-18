@@ -3705,6 +3705,26 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 [data-theme] .bp-rarity-btn:hover { color:var(--text); border-color:var(--border-hi); }
 [data-theme] .bp-rarity-btn.active { color:var(--accent); border-color:var(--accent); background:rgba(var(--accent-rgb,100,100,100),0.08); }
+/* Header row: sub-tabs on the left, search + view-toggle on the right.
+   Desktop + tablet share one line (no wrap); mobile collapses the
+   container via display:contents at the ≤640 breakpoint so children
+   stack as normal block elements. Children manage their own
+   visibility (both hide together on non-Blueprints tabs), so the
+   container collapses naturally when both are hidden. */
+.bp-header-row {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-bottom:8px;
+}
+.bp-header-row .bp-sub-tabs { margin-bottom:0; flex:0 0 auto; }
+.bp-header-row .bp-search-row { flex:1 1 auto; justify-content:flex-end; margin-bottom:0; min-width:0; flex-wrap:nowrap; }
+/* Let the search box shrink inside the header row so tablet widths
+   (768px) keep sub-tabs + search + view-toggle on a single line. The
+   input grows to its native 260px when there's room and shrinks
+   gracefully when sub-tabs eat the budget. */
+.bp-header-row .bp-search-row .search-box { flex:1 1 auto; min-width:0; max-width:260px; }
+.bp-header-row .bp-search-row .search-box .search-input { width:100%; }
 .bp-search-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .bp-search-row .search-box .search-input { width:260px; }
 #bp-deactivate-all { margin-left:auto; white-space:nowrap; }
@@ -10475,6 +10495,10 @@ body.preview-active .nice-ai {
 @media (max-width:640px) {
   .app-view-content:has(.bp-sub-tabs),
   .app-view-content:has(.security-tabs) { padding-top:0; }
+  /* On mobile the header-row collapses out of layout so the sub-tabs
+     can be position:sticky against the actual scroll container, and
+     the search row falls back to its own line underneath. */
+  .bp-header-row { display:contents; }
   .bp-sub-tabs {
     position:sticky;
     top:0;
