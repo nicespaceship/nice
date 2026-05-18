@@ -9357,9 +9357,14 @@ body.preview-active .nice-ai {
      the same dot pattern bleed through the slivers and the rows
      read as having a faint trailing shadow. Painting the container
      surface fills the gap with the row color; the container only
-     paints where children don't (between/beyond rows). */
+     paints where children don't (between/beyond rows).
+     Third bleed surface: `.app-view-content` has 24px padding on every
+     side, and the body's dot pattern shows through that gutter to the
+     right of the list. Painting the view content when it hosts a list
+     view kills the gutter bleed without affecting other views. */
   .bpl-row,
   .bp-view-list { background:var(--surface); }
+  .app-view-content:has(.bp-view-list) { background:var(--surface); }
 }
 
 /* Phone-only: rating is squished into ~50px alongside name + cat +
