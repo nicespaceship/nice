@@ -21,11 +21,23 @@ const HalCore = (() => {
       +     '</div>'
       +     '<div class="hal-core-bezel">'
       +       '<div class="hal-core-lens">'
+                /* Single wide curved glass highlight on the top of
+                   the lens — the studio-light reflection across the
+                   dome's upper third. */
       +         '<div class="hal-core-flare"></div>'
       +       '</div>'
       +     '</div>'
+              /* Horizontal chrome strip above the speaker — same
+                 thickness as the bottom of the monolith frame,
+                 touching the inside of the left + right chrome on
+                 both sides. Reads as the frame's bottom rail
+                 separating the eye from the speaker section. */
+      +     '<div class="hal-divider"></div>'
+              /* Speaker grille sits inside the monolith — one chrome
+                 frame wraps the entire faceplate (nameplate, eye,
+                 grille) like the 2001 prop. */
+      +     '<div class="hal-speaker"></div>'
       +   '</div>'
-      +   '<div class="hal-speaker"></div>'
       + '</div>';
   }
   return { html };
