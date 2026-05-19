@@ -1008,13 +1008,45 @@ const PromptPanel = (() => {
     }
   }
 
-  function _addMonitorThinking() {
+  /* Pending assistant card — renders the same shape as a real reply
+     (agent name on top, content slot below) but the content slot holds
+     a breathing-dots indicator instead of text. When the real response
+     arrives `_renderMonitor()` rewrites the feed and this element is
+     wiped naturally; until then the user sees a placeholder bubble
+     that morphs into the eventual message rather than a tiny meter
+     floating in the panel.
+
+     Accepts an opts object `{ label, agent }`, or a bare string as a
+     legacy label-only call. Idempotent: a second call updates the
+     existing element in place rather than appending a duplicate, so
+     the per-step dispatch progress callback can keep poking the label
+     ("Step 2: Using search…") without churning DOM. */
+  function _addMonitorThinking(opts) {
     if (!_monitorContent) return;
-    const div = document.createElement('div');
-    div.className = 'monitor-thinking';
-    div.id = 'monitor-thinking';
-    div.innerHTML = '<div class="monitor-thinking-dots"><span></span><span></span><span></span></div><span class="monitor-thinking-label">Thinking…</span>';
-    _monitorContent.appendChild(div);
+    const o = (typeof opts === 'string') ? { label: opts } : (opts || {});
+    const label = o.label || 'Thinking…';
+    let el = document.getElementById('monitor-thinking');
+    if (el) {
+      const lbl = el.querySelector('.monitor-thinking-label');
+      if (lbl) lbl.textContent = label;
+      if (o.agent) {
+        const ag = el.querySelector('.monitor-card-agent');
+        if (ag) ag.textContent = o.agent;
+      }
+      const monitorEl = document.getElementById('nice-monitor');
+      if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
+      return;
+    }
+    el = document.createElement('div');
+    el.className = 'monitor-card monitor-card-pending';
+    el.id = 'monitor-thinking';
+    el.innerHTML =
+      '<div class="monitor-card-agent">' + _esc(o.agent || 'NICE') + '</div>' +
+      '<div class="monitor-card-text">' +
+        '<div class="monitor-thinking-dots"><span></span><span></span><span></span></div>' +
+        '<span class="monitor-thinking-label">' + _esc(label) + '</span>' +
+      '</div>';
+    _monitorContent.appendChild(el);
     const monitorEl = document.getElementById('nice-monitor');
     if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
   }
