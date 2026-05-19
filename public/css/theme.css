@@ -860,26 +860,60 @@
   display:flex; flex-direction:column; align-items:center; gap:4px;
   position:absolute;
   top:50%; left:50%; transform:translate(-50%,-50%);
-  height:95%; aspect-ratio:1 / 2.6;
+  height:95%; aspect-ratio:1 / 2.8;
   max-width:100%;
   pointer-events:none;
+  /* Container-query scaling unit. The base design was calibrated at a
+     210px-wide monolith; this declaration gives descendants a single
+     `--hal-u` value that resolves to 1px at that base width and
+     scales linearly with the reactor. Every absolute pixel value in
+     the HAL CSS below is expressed as `calc(N * var(--hal-u))` so
+     chrome thickness, inner bezel, rounded corners, rail height, and
+     negative margins all stay proportional when the reactor shrinks
+     on mobile (`min(620px, 85vmin)`) or expands. */
+  container-type:inline-size;
+  --hal-u:calc(100cqi / 210);
 }
 
 /* Matte-black monolith face — the main frame that holds the nameplate
-   and the camera eye. Chrome outer rim with a subtle top-light gradient
-   for depth. Inner border line separates the rim from the face. */
+   and the camera eye. Chrome outer rim with a top-light gradient for
+   depth, rounded corners to match the 2001 prop. Border-image alone
+   doesn't paint inside `border-radius` cleanly, so the rounded chrome
+   look is layered via the gradient on `background` + an inner `::before`
+   that masks the central area to black. */
 [data-theme="hal-9000"] .hal-monolith {
   flex:1 1 auto; width:100%;
   position:relative;
-  background:#000;
-  border:5px solid;
-  border-image:linear-gradient(180deg, #e0e0e6 0%, #b0b0b6 40%, #8a8a90 100%) 1;
-  box-shadow:
-    inset 0 0 0 1px #3a3a3a,
-    inset 0 2px 10px rgba(0,0,0,0.7);
+  background:linear-gradient(180deg, #f0f0f5 0%, #d0d0d8 18%, #a8a8b0 38%, #686870 65%, #383840 100%);
+  border-radius:calc(14 * var(--hal-u));
   display:flex; flex-direction:column; align-items:center;
-  padding:5% 8% 18% 8%;
+  padding:calc(9 * var(--hal-u));
   box-sizing:border-box;
+}
+[data-theme="hal-9000"] .hal-monolith::before {
+  content:'';
+  position:absolute; inset:calc(9 * var(--hal-u));
+  background:#000;
+  border-radius:calc(7 * var(--hal-u));
+  /* Inner bezel — a dark step where the chrome frame meets the dark
+     well. Reads as a recessed lip on the inner edge of the chrome,
+     mimicking how a real machined metal frame steps down before the
+     inset surface. Pairs with the ring's matching step. */
+  border:calc(5 * var(--hal-u)) solid #1a1a1f;
+}
+/* Children sit above the dark ::before well */
+[data-theme="hal-9000"] .hal-monolith > * { position:relative; z-index:1; }
+[data-theme="hal-9000"] .hal-monolith {
+  /* Re-state the flex padding inside the dark well so the nameplate +
+     eye + grille have breathing room from the chrome frame. The grille
+     sits at the bottom inside the same chrome wrap (no separate frame),
+     so the bottom padding matches the sides instead of reserving the
+     old 18% for an external speaker. Horizontal padding lowered from
+     8% to 2% so the inner content area (nameplate / eye / speaker
+     widths) stays at the same absolute size when the monolith was
+     narrowed from 227px to 200px — the chrome frame shrinks, the
+     inside doesn't. */
+  padding:calc(5cqi + 9 * var(--hal-u)) calc(4.5cqi + 9 * var(--hal-u)) calc(9 * var(--hal-u));
 }
 
 /* HAL 9000 nameplate — blue/black pill mounted near the top. Fills
@@ -887,7 +921,7 @@
    to their text (HAL is 3 chars, 9000 is 4). */
 [data-theme="hal-9000"] .hal-nameplate {
   display:flex; align-items:stretch;
-  width:97%; height:clamp(28px, 6%, 44px);
+  width:97%; height:clamp(calc(28 * var(--hal-u)), calc(35 * var(--hal-u)), calc(44 * var(--hal-u)));
   margin-bottom:auto;
   border:1px solid #c0c0c6;
   border-radius:0;
@@ -896,7 +930,7 @@
   font-family:'Inter', sans-serif;
   font-weight:700;
   letter-spacing:.06em;
-  font-size:clamp(13px, 2.8vmin, 20px);
+  font-size:clamp(11px, calc(15 * var(--hal-u)), 20px);
   line-height:1;
 }
 [data-theme="hal-9000"] .hal-nameplate-hal {
@@ -915,57 +949,155 @@
   letter-spacing:.04em;
 }
 
-/* Eye — anchored in the lower-middle of the monolith face, sized to
-   roughly 40% of the frame width (matches the reference photograph
-   where HAL's lens fills about the same fraction of the faceplate). */
+/* Eye — anchored in the lower-middle of the monolith face. The bezel
+   is the chrome ring itself: background-gradient paints the silver
+   shine (top-light), an inner ::before pseudo-element paints the dark
+   well between chrome and lens. The lens sits inset deeper so both
+   layers read clearly. Built without box-shadow because the universal
+   `box-shadow:none !important` rule wipes those. */
 [data-theme="hal-9000"] .hal-core-bezel {
   position:relative;
-  width:90%; aspect-ratio:1 / 1; border-radius:50%;
-  margin-top:auto; margin-bottom:10%;
-  /* Deep black recess — the lens floats in this well, creating a
-     visible ring of black between the red glass and the chrome housing */
-  background:
-    radial-gradient(circle, #000 55%, #0a0a0a 100%);
-  box-shadow:
-    /* Thin chrome bezel — bright rim, soft shadow, dark edge */
-    0 0 0 2px #c0c0c6,
-    0 0 0 5px #8a8a90,
-    0 0 0 7px #3a3a3a;
+  width:98%; aspect-ratio:1 / 1; border-radius:50%;
+  margin-top:auto; margin-bottom:25%;
+  background:radial-gradient(circle at 50% 28%,
+    #f8f8fc 0%, #d8d8dc 8%, #a8a8b0 22%, #6a6a72 50%, #303038 85%, #1a1a20 100%);
 }
-/* Lens is inset from the bezel so the black well reads as a ring */
+[data-theme="hal-9000"] .hal-core-bezel::before {
+  /* Dark inner well between chrome ring and lens — the visible
+     black ring you see around HAL's red glass in the 2001 prop.
+     Inset controls chrome ring thickness: bigger inset = thicker
+     ring; smaller = thinner. The 2px dark border is the inner
+     bezel: a recessed step on the inside edge of the chrome ring,
+     matching the monolith frame's inner bezel. */
+  content:'';
+  position:absolute; inset:5%;
+  border-radius:50%;
+  background:radial-gradient(circle at 50% 60%, #1a0a0a 0%, #000 70%);
+  border:calc(5 * var(--hal-u)) solid #1a1a1f;
+  z-index:1;
+}
+/* Lens — insets deeper than the dark well so a ring of black is
+   visible between chrome and glass. The outer 25% of the gradient
+   fades through translucent dark red to transparent, letting the
+   well behind feather the edge of the lens (no hard circular border).
+   Slightly smaller than the chrome ring (18% inset, was 14%). */
 [data-theme="hal-9000"] .hal-core-lens {
-  position:absolute; inset:14%; border-radius:50%;
+  position:absolute; inset:22%; border-radius:50%;
   background:
-    radial-gradient(circle at 44% 40%,
-      #ffaa00 0%, #ef4444 14%, #dc2626 28%,
-      #991b1b 48%, #450a0a 72%, #0a0202 100%
+    radial-gradient(circle at 50% 50%,
+      #ffaa00 0%, #ef4444 9%, #d01818 22%,
+      #8a1010 48%, rgba(58, 14, 14, 0.85) 70%,
+      rgba(20, 4, 4, 0.35) 90%, transparent 100%
     );
-  box-shadow:
-    /* Soft falloff from the lens edge into the black well */
-    0 0 12px 2px rgba(239,68,68,0.35),
-    inset 0 0 30px rgba(0,0,0,0.55),
-    inset 0 3px 8px rgba(0,0,0,0.4);
   animation:hal-eye-pulse 6s ease-in-out infinite;
+  z-index:2;
+  overflow:hidden;
 }
+/* Wide glass reflection at top of lens — the iconic curved highlight
+   that catches the studio light across the dome's upper third.
+   Repurposes `.hal-core-flare` (was a small soft elliptical glow).
+   Sits above the lens gradient via z-index in the lens stacking
+   context. */
 [data-theme="hal-9000"] .hal-core-flare {
   position:absolute;
-  top:8%; left:14%; width:55%; height:28%;
-  background:linear-gradient(180deg, rgba(255,255,255,0.9), transparent);
-  border-radius:50%; opacity:0.18;
-  animation:hal-reflect-rotate 6s ease-in-out infinite;
-  transform-origin:center center;
+  top:5%; left:8%; width:84%; height:38%;
+  background:radial-gradient(ellipse at 50% 100%,
+    rgba(255,255,255,0.55) 0%,
+    rgba(255,255,255,0.3) 22%,
+    rgba(255,255,255,0.12) 48%,
+    transparent 75%
+  );
+  border-radius:50%;
+  pointer-events:none;
 }
 
-/* Speaker grille — fine dotted mesh, sits below the monolith with a
-   small gap. Matches the lower rectangular pad in the HAL faceplate. */
+/* Chat mode — the monitor overlay opens (`.app-main.monitor-active`).
+   Drop the monolith chrome, dark well, nameplate, rail, and speaker
+   so only the eye remains. The eye scales to 60% of the wrapper
+   square — smaller than the full monolith view so chat content
+   reads cleanly above the 0.2-opacity reactor. */
+[data-theme="hal-9000"] .app-main.monitor-active .hal-core {
+  aspect-ratio:1 / 1;
+  height:60%;
+}
+[data-theme="hal-9000"] .app-main.monitor-active .hal-monolith {
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  padding:0;
+}
+/* Hide the chrome's dark well + inner bezel border so the square
+   shape doesn't ghost behind the round eye. */
+[data-theme="hal-9000"] .app-main.monitor-active .hal-monolith::before {
+  display:none;
+}
+[data-theme="hal-9000"] .app-main.monitor-active .hal-nameplate,
+[data-theme="hal-9000"] .app-main.monitor-active .hal-divider,
+[data-theme="hal-9000"] .app-main.monitor-active .hal-speaker {
+  display:none;
+}
+[data-theme="hal-9000"] .app-main.monitor-active .hal-core-bezel {
+  width:100%;
+  margin:0;
+}
+
+/* Horizontal chrome rail above the speaker — reads as a piece of the
+   monolith frame itself, not a strip floating on the dark interior.
+   To sell that, the rail wears the same chrome+bezel sandwich as the
+   rest of the frame: a 5px inner bezel step on its top edge (facing
+   the eye) and another on its bottom edge (facing the speaker),
+   with the 9px chrome gradient in the middle. Total 19px tall.
+   Negative inline margin (-9.5px each side) extends the rail past
+   the monolith's horizontal padding buffer so the chrome touches
+   the inside of the left + right frame on both ends. */
+[data-theme="hal-9000"] .hal-divider {
+  /* Only the TOP inner bezel is needed — that side faces the eye
+     area and continues the inner-bezel pattern around the frame's
+     interior. The rail's bottom faces the speaker mesh; the mesh
+     itself reads as the dark surface, so the bottom inner bezel
+     would be a redundant dark strip between rail and mesh. Height
+     becomes 14px (5px top bezel + 9px chrome). */
+  flex:0 0 calc(14 * var(--hal-u));
+  align-self:stretch;
+  margin-inline:calc(-9.5 * var(--hal-u));
+  /* The chrome gradient matches the side frame's gradient sampled at
+     the rail's Y position (~78-82% down the monolith). The frame's
+     full gradient runs through #f0f0f5 → #383840 over the monolith
+     height; at the rail's position the side chrome is in the dark
+     end (#56565e → #50505a). Using those tones here keeps the rail
+     and the side chrome the same shade at the junction, so they
+     read as one continuous piece of metal. */
+  background:linear-gradient(180deg, #56565e 0%, #50505a 100%);
+  border-top:calc(5 * var(--hal-u)) solid #1a1a1f;
+  box-sizing:border-box;
+  z-index:1;
+}
+
+/* Speaker grille — fine perforated mesh of evenly-spaced round holes,
+   embedded INSIDE the monolith. The 2001 prop's faceplate is one
+   continuous chrome frame around nameplate + eye + grille; the grille
+   itself has no separate bezel, just the dotted pattern over the
+   dark inner well. Sits at the bottom of the flex column. */
 [data-theme="hal-9000"] .hal-speaker {
-  flex:0 0 12%; width:100%;
+  flex:0 0 13%;
+  /* Extend past the horizontal padding so the speaker mesh reaches
+     the chrome inner edges on both sides — matches the rail's
+     negative inline margin so the dotted pattern fills the full
+     width inside the frame, no black gaps between speaker and
+     side chrome. width:auto + align-self:stretch lets the negative
+     margins actually expand the box (width:100% would just shift). */
+  margin-inline:calc(-9.5 * var(--hal-u));
+  align-self:stretch;
   background:
-    radial-gradient(circle, rgba(255,255,255,0.11) 0.8px, transparent 1.2px) 0 0 / 5px 5px,
-    #080808;
-  border:3px solid;
-  border-image:linear-gradient(180deg, #8a8a90 0%, #6a6a70 100%) 1;
-  box-shadow:inset 0 0 0 1px #000, inset 0 2px 6px rgba(0,0,0,0.7);
+    radial-gradient(circle, rgba(180,180,190,0.5) 0.7px, transparent 1.3px) 0 0 / 3px 3px,
+    radial-gradient(ellipse at 50% 0%, #1a1a1e 0%, #050505 60%);
+  /* Round the bottom corners to match the dark well's bottom corners
+     (`.hal-monolith::before` has `border-radius: 7px`). Without this
+     the speaker's square corners sit outside the well's curved inner
+     edge and the chrome's rounded bottom-corner curve shows through
+     as a wedge of chrome behind the speaker. */
+  border-bottom-left-radius:calc(7 * var(--hal-u));
+  border-bottom-right-radius:calc(7 * var(--hal-u));
 }
 
 @keyframes hal-reflect-rotate {
