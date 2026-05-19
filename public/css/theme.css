@@ -1016,6 +1016,18 @@
    so only the eye remains. The eye scales to 60% of the wrapper
    square — smaller than the full monolith view so chat content
    reads cleanly above the 0.2-opacity reactor. */
+/* Chat-home idle (no conversation yet) — the greeting and suggestion
+   chips render at the top of `.chat-home-empty` in normal flow, while
+   the reactor is `position:fixed` filling the same vertical band. On
+   HAL the monolith is `height:95%` of the reactor box, so its chrome
+   ring and nameplate sit directly under the chips row and the two
+   visually collide. Shrink the idle monolith to 65% so the chips
+   clear the chrome. The 60% eye-only chat-mode rule below still wins
+   the moment a conversation starts (monitor-active flips on). */
+[data-theme="hal-9000"] .app-main:not(.monitor-active):has(.chat-home-empty) .hal-core {
+  height:65%;
+}
+
 [data-theme="hal-9000"] .app-main.monitor-active .hal-core {
   aspect-ratio:1 / 1;
   height:60%;
