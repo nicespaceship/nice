@@ -165,6 +165,40 @@ describe('LLMConfig', () => {
       expect(cfg.tier).toBe('free');
     });
 
+    const withState = (enabledModels, fn) => {
+      const prev = globalThis.State;
+      globalThis.State = { get: () => enabledModels };
+      try { fn(); } finally {
+        if (prev === undefined) delete globalThis.State; else globalThis.State = prev;
+      }
+    };
+
+    it('demotes inaccessible model to free Flash when user has no other access', () => {
+      // Captain blueprints ship with `claude-sonnet-4-6` but a free-tier
+      // user only has Gemini Flash enabled — without demotion, nice-ai
+      // rejects with "subscription is inactive".
+      withState({ 'gemini-2-5-flash': true }, () => {
+        const bp = { config: { llm_engine: 'claude-sonnet-4-6' } };
+        expect(LLMConfig.forBlueprint(bp).model).toBe('gemini-2-5-flash');
+      });
+    });
+
+    it('demotes to the highest-capability enabled model below the primary', () => {
+      // User has GPT-5 Mini + Llama enabled; primary is Claude Opus (above both).
+      // Should walk DOWN the chain and pick GPT-5 Mini (higher than Llama).
+      withState({ 'gpt-5-mini': true, 'llama-4-scout': true, 'gemini-2-5-flash': true }, () => {
+        const bp = { config: { llm_engine: 'claude-4-7-opus' } };
+        expect(LLMConfig.forBlueprint(bp).model).toBe('gpt-5-mini');
+      });
+    });
+
+    it('keeps the resolved model when the user has it enabled', () => {
+      withState({ 'claude-4-6-sonnet': true, 'gemini-2-5-flash': true }, () => {
+        const bp = { config: { llm_engine: 'claude-sonnet-4-6' } };
+        expect(LLMConfig.forBlueprint(bp).model).toBe('claude-4-6-sonnet');
+      });
+    });
+
     it('ignores invalid max_output_tokens (non-number, zero, negative)', () => {
       const bp1 = { stats: { pwr: 50 }, config: { model_profile: { max_output_tokens: 0 } } };
       const bp2 = { stats: { pwr: 50 }, config: { model_profile: { max_output_tokens: -100 } } };
