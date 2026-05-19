@@ -233,14 +233,15 @@
 
 <!-- ═══ SIDEBAR (Full-height, Claude/ChatGPT style) ═══ -->
 <aside class="app-sidebar" id="app-sidebar" role="navigation" aria-label="Main navigation">
-  <!-- Sidebar Header — empty when sidebar is open (theme decoration
-       anchor only). When collapsed, the NICE brand icon takes over
-       and acts as the click-to-open affordance. Always-NICE-on-close
-       is intentional branding (per Benjamin 2026-05-04) — the rail
-       reads as "this is NICE", not "you are in mode X". -->
+  <!-- Sidebar Header — hamburger that opens/closes the full menu.
+       In collapsed state the Spaceship / Chat / Code mode tabs below
+       still render as a vertical icon stack so each mode is one click
+       away without expanding the sidebar. The Spaceship tab uses the
+       NICE constellation icon, so the NICE mark stays visible on the
+       rail as the Spaceship CTA. -->
   <div class="side-header">
-    <button type="button" class="side-rail-brand" id="side-rail-brand" aria-label="Open menu" title="Open menu">
-      <svg viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
+    <button type="button" class="side-rail-hamburger" id="side-rail-hamburger" aria-label="Toggle menu" title="Toggle menu">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-menu"/></svg>
     </button>
   </div>
 
@@ -251,15 +252,15 @@
        uses the NICE constellation icon (#icon-nice) — the visual ↔
        schematic pattern is exactly the orchestrator-with-crew layout. -->
   <div class="side-mode-tabs" role="tablist" aria-label="App mode">
-    <button type="button" class="side-mode-tab" data-mode="spaceship" role="tab" aria-selected="true" aria-controls="side-nav-spaceship">
+    <button type="button" class="side-mode-tab" data-mode="spaceship" role="tab" aria-selected="true" aria-controls="side-nav-spaceship" aria-label="Spaceship">
       <svg class="icon icon-sm" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
       <span>Spaceship</span>
     </button>
-    <button type="button" class="side-mode-tab" data-mode="chat" role="tab" aria-selected="false" aria-controls="side-nav-chat">
+    <button type="button" class="side-mode-tab" data-mode="chat" role="tab" aria-selected="false" aria-controls="side-nav-chat" aria-label="Chat">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
       <span>Chat</span>
     </button>
-    <button type="button" class="side-mode-tab" data-mode="code" role="tab" aria-selected="false" aria-controls="side-nav-code">
+    <button type="button" class="side-mode-tab" data-mode="code" role="tab" aria-selected="false" aria-controls="side-nav-code" aria-label="Code">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
       <span>Code</span>
     </button>
