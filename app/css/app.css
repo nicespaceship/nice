@@ -11027,6 +11027,67 @@ body.preview-active .nice-ai {
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   NICE Brand Core overlay (CORE + nice-dark themes only)
+
+   Layers the Stage 1 marketing-site glyph (`.nice-core-mark` from
+   `nice-core.js`) on top of `DefaultCore`'s concentric pulsing rings.
+   Sits absolutely at the same 0/0/100%/100% extent as the default
+   reactor SVG so both SVGs share the same center + scale.
+
+   Brand-mark fill uses `var(--text)` so it reads as black-on-white
+   on the `nice` theme and white-on-black on `nice-dark`. HUD frame
+   uses `--border` / `--border-hi`, animated arcs use `--accent`
+   (Sapphire). No box-shadows — the universal kill rule below wipes
+   them anyway, and the brand kit is flat.
+───────────────────────────────────────────────────────────────── */
+.nice-core-mark {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  /* Scaled to 60% of the reactor wrapper so the brand mark reads as a
+     mark sitting inside the rings rather than as a frame around them.
+     DefaultCore stays at 100% — its outer breathing ring (45% of the
+     wrapper) and the brand mark's HUD frame (now ~28% of the wrapper)
+     are concentric and clearly separated. Transform compounds with the
+     parent reactor's breathing pulse without conflict. */
+  transform:scale(0.6);
+  transform-origin:center;
+}
+/* Brand mark itself — orbit dots, pillars, chevrons, center ring. */
+.nice-core-mark-body { fill:var(--text); }
+/* Subtle translucent backplate so the mark reads cleanly on top of
+   `DefaultCore`'s pulsing rings without smothering them. Same fill
+   pattern as `.home-hud-disc` on the marketing site. */
+.nice-core-hud-disc {
+  fill:var(--bg);
+  fill-opacity:0.4;
+}
+.nice-core-hud-frame {
+  stroke:var(--border);
+  stroke-width:14;
+}
+.nice-core-hud-frame-inner {
+  stroke:var(--border-hi);
+  stroke-width:3;
+}
+/* Four animated arc segments — Sapphire accent, slow clockwise spin.
+   Dasharray ratio mirrors the marketing site exactly (2π × 2300 ÷ 360
+   × 70° = 2810, × 20° = 803), so each cycle covers 90° (70° stroke +
+   20° gap × 4). Geometry is identical to .home-hud-arcs. */
+.nice-core-hud-arcs {
+  stroke:var(--accent);
+  stroke-width:70;
+  stroke-linecap:butt;
+  stroke-dasharray:2810 803;
+  transform-origin:2500px 2500px;
+  animation:niceCoreArcSpin 22s linear infinite;
+}
+@keyframes niceCoreArcSpin {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
    No drop shadows
    Brand directive: the NICE app is flat. Hundreds of `box-shadow`
    declarations across app.css + theme.css were creating recurring

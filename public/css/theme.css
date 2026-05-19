@@ -1121,11 +1121,11 @@
    the SVG trace layer is hidden. */
 [data-theme="hal-9000"] .schematic-svg { display:none; }
 
-/* Reactor wrapper brightness — HAL eye reads best at ~0.9 idle so the
-   red lens punches through the black bg. Default `.jv-pp-reactor` uses
-   0.5 which mutes the glow. */
-[data-theme="hal-9000"] .jv-pp-reactor { opacity:0.92; }
-[data-theme="hal-9000"][data-jv-state="streaming"] .jv-pp-reactor { opacity:1; }
+/* Reactor wrapper brightness is now universal (idle 1 / chat-monitor
+   0.2) — see the .jv-pp-reactor base + .app-main.monitor-active rules
+   in this file. The earlier HAL-specific 0.92 / 1 overrides were a
+   workaround for the older 0.5 default that muted HAL's red lens;
+   that default is gone, so HAL inherits the universal rule. */
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion:reduce) {
@@ -3082,15 +3082,18 @@
   transform:translate(-50%,-50%);
   width:min(620px, 85vmin); height:min(620px, 85vmin);
   pointer-events:none; z-index:0;
-  opacity:0.5;
-  /* Default: opacity only. The wired-schematic path sets --reactor-x/y
-     inline on <html> in pixel coords and re-measures on theme switches
+  opacity:1;
+  /* Idle baseline 1.0 — the reactor reads as a foreground element on
+     Home / Schematic / Spaceship-detail. The chat monitor overlay
+     fades it down via .app-main.monitor-active below so chat content
+     reads on top. The wired-schematic path sets --reactor-x/y inline
+     on <html> in pixel coords and re-measures on theme switches
      (mini-chat height → reactor target shifts), so animating top/left
      here would slide the reactor through stale positions for 300ms.
      The `:not([style*="--reactor-x"])` rule below re-enables the slide
-     for surfaces where the anchor is CSS-driven (Schematic empty state,
-     Home, Spaceship-detail), letting the reactor track the sidebar
-     toggle in sync with .nice-ai + .app-main. */
+     for surfaces where the anchor is CSS-driven (Schematic empty
+     state, Home, Spaceship-detail), letting the reactor track the
+     sidebar toggle in sync with .nice-ai + .app-main. */
   transition:opacity 200ms ease;
   /* Default hidden; Home / Schematic / Spaceship-detail opt in via
      CoreReactor.setVisible(true) which sets .reactor-visible on <html>.
@@ -3123,6 +3126,17 @@ html:not([style*="--reactor-x"]) .jv-pp-reactor {
   50%      { opacity:0.85; transform:translate(-50%,-50%) scale(1.03); }
 }
 [data-jv-state="speaking"] .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }
+
+/* Universal idle/chat reactor opacity rule. Every theme reads the
+   reactor as a foreground element on idle pages (Home, Schematic,
+   Spaceship-detail). When the chat monitor overlay opens, fade the
+   reactor down so chat content reads cleanly on top. The 200ms ease
+   transition above (on the base rule) smooths the fade. Higher
+   specificity than [data-jv-state="streaming"], so the dim wins even
+   while a chat request is in flight. */
+.app-main.monitor-active .jv-pp-reactor {
+  opacity:0.2;
+}
 
 /* ── Audio-reactive drive (speaking state) ──
    JS writes --jv-vol (0..1) on <html> from the TTS AnalyserNode and sets
