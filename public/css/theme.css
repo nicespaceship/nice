@@ -3107,8 +3107,21 @@ html.reactor-visible .jv-pp-reactor { display:block; }
 html:not([style*="--reactor-x"]) .jv-pp-reactor {
   transition:opacity 200ms ease, top .3s ease, left .3s ease;
 }
-/* Brighten when responding (state machine writes data-jv-state on <html>) */
-[data-jv-state="streaming"] .jv-pp-reactor { opacity:0.75; }
+/* Brighten + breathe when responding. PromptPanel._setSending(true)
+   writes data-jv-state="streaming" the moment the user submits, so
+   this animation runs for the full request-in-flight window (thinking
+   + tool steps + token stream). Slow ~1.6s loop reads as "alive and
+   working" without flickering. Pairs with .monitor-card-pending in
+   the chat feed — foreground placeholder bubble + ambient centerpiece
+   pulse together. Speaking stays opacity-only because that's already
+   audio-reactive via --jv-vol. */
+[data-jv-state="streaming"] .jv-pp-reactor {
+  animation:reactorBreathe 1.6s ease-in-out infinite;
+}
+@keyframes reactorBreathe {
+  0%, 100% { opacity:0.45; transform:translate(-50%,-50%) scale(1.00); }
+  50%      { opacity:0.85; transform:translate(-50%,-50%) scale(1.03); }
+}
 [data-jv-state="speaking"] .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }
 
 /* ── Audio-reactive drive (speaking state) ──

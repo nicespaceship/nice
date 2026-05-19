@@ -4428,10 +4428,25 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   max-width:80%;
 }
 
-/* Monitor thinking state */
+/* Monitor thinking state — pending assistant card. Lives inside a
+   `.monitor-card.monitor-card-pending` so the placeholder reads as a
+   real reply that hasn't filled in yet. The dots + label sit in the
+   text slot; when the actual response lands `_renderMonitor()` wipes
+   the feed and the real card takes this one's place. */
 .monitor-thinking {
   display:flex; align-items:center; gap:12px;
   padding:24px; animation:monitorFadeIn .3s ease;
+}
+.monitor-card-pending {
+  animation:monitorFadeIn .3s ease, monitorPendingBreathe 2.4s ease-in-out .3s infinite;
+}
+.monitor-card-pending .monitor-card-text {
+  display:flex; align-items:center; gap:12px;
+  min-height:24px;
+}
+@keyframes monitorPendingBreathe {
+  0%, 100% { border-color:var(--border, rgba(255,255,255,.08)); }
+  50%      { border-color:var(--accent, rgba(255,255,255,.25)); }
 }
 .monitor-thinking-dots {
   display:flex; gap:6px;
@@ -4443,7 +4458,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .monitor-thinking-dots span:nth-child(2) { animation-delay:.2s; }
 .monitor-thinking-dots span:nth-child(3) { animation-delay:.4s; }
 .monitor-thinking-label {
-  font-family:var(--font-b); font-size:.76rem; color:var(--text-muted);
+  font-family:var(--font-b); font-size:var(--text-sm); color:var(--text-muted);
   letter-spacing:var(--tracking-normal);
 }
 
