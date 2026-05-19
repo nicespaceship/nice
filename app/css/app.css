@@ -1328,22 +1328,16 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   display:flex; align-items:center; justify-content:center;
   background:var(--nav-bg-dk, transparent);
 }
-.side-rail-brand {
+.side-rail-hamburger {
   display:flex; align-items:center; justify-content:center;
   width:48px; height:48px; padding:0;
   background:transparent; border:0; border-radius:8px;
   color:var(--nav-text, var(--text));
   cursor:pointer; transition:background .15s, color .15s;
 }
-.side-rail-brand svg { width:40px; height:40px; fill:currentColor; display:block; }
-.side-rail-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
-/* When sidebar is open, hide the rail-brand and slim the header to
-   a thin strip. The strip stays visible (not height:0) so per-theme
-   decorations anchored on .side-header / .side-header::after — LCARS
-   overlay, JARVIS reactor pulse, Cyberpunk light strip — keep
-   showing above the mode tabs. */
+.side-rail-hamburger svg { width:24px; height:24px; display:block; }
+.side-rail-hamburger:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .app-sidebar.open .side-header { padding:6px 0; }
-.app-sidebar.open .side-rail-brand { display:none; }
 .side-header .app-hdr-menu { display:none; }
 
 /* Mode tabs — Spaceship vs Standalone Chat. Top of sidebar nav, full
@@ -1639,12 +1633,30 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar:not(.open) .side-divider,
 .app-sidebar:not(.open) #side-chats-folder .side-folder-body { display:none; }
 
-/* Collapsed sidebar: only the NICE rail-brand at top is visible.
-   Mode tabs and per-mode sub-nav both hide — they only render when
-   the sidebar is expanded. Always-NICE-on-close is intentional
-   branding: the rail reads as "this is NICE", not "you are in
-   mode X". */
-.app-sidebar:not(.open) .side-mode-tabs,
+/* Collapsed sidebar: the hamburger at the top opens the menu, and
+   the mode tabs render below it as a vertical icon stack so each
+   mode (Spaceship / Chat / Code) is one click away from the rail.
+   The per-mode sub-nav (mission list, chat history, file tree) still
+   only appears when the sidebar is expanded. */
+.app-sidebar:not(.open) .side-mode-tabs {
+  flex-direction:column;
+  background:transparent;
+  margin:0; padding:0;
+  gap:4px;
+}
+.app-sidebar:not(.open) .side-mode-tab {
+  flex:0 0 auto;
+  width:48px; height:48px;
+  margin:0 auto;
+  padding:0; gap:0;
+  border-radius:8px;
+}
+.app-sidebar:not(.open) .side-mode-tab span { display:none; }
+.app-sidebar:not(.open) .side-mode-tab .icon { width:24px; height:24px; }
+.app-sidebar:not(.open) .side-mode-tab[aria-selected="true"] {
+  background:color-mix(in srgb, var(--accent, var(--nav-text, var(--text))) 14%, transparent);
+  box-shadow:none;
+}
 .app-sidebar:not(.open) .side-mode-section { display:none; }
 
 /* Mobile: the panel drops down from under the mobile top bar as a

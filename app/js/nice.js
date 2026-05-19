@@ -833,15 +833,16 @@ const NICE = (() => {
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    // Collapsed-rail NICE brand icon — the only affordance visible
-    // when the sidebar is closed. Clicking opens the sidebar; closing
-    // happens via outside-click (document listener below).
-    const railBrand = document.getElementById('side-rail-brand');
-    if (railBrand) {
-      railBrand.addEventListener('click', (e) => {
+    // Collapsed-rail hamburger — toggles the sidebar open/closed.
+    // Stays visible in both states so the same control closes the
+    // menu the user just opened. Mode-tab icons render below the
+    // hamburger in collapsed state for one-click mode switching.
+    const railHamburger = document.getElementById('side-rail-hamburger');
+    if (railHamburger) {
+      railHamburger.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        sidebar.classList.add('open');
+        sidebar.classList.toggle('open');
       });
     }
 

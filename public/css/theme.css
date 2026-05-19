@@ -2244,9 +2244,10 @@
 [data-theme="lcars"] .app-sidebar.open .side-header {
   padding:18px 16px;
 }
-/* Closed-state brand: #ff9966 orange on #cc99ff violet is same-luminance
-   pastel mush. Force black for clear contrast against the violet elbow. */
-[data-theme="lcars"] .side-rail-brand { color:#000; }
+/* Closed-state hamburger: #ff9966 orange on #cc99ff violet is
+   same-luminance pastel mush. Force black for clear contrast against
+   the violet elbow. */
+[data-theme="lcars"] .side-rail-hamburger { color:#000; }
 /* Mode tabs sit in the overlap zone of the elbow's bottom curve
    (.side-header::after, positioned -24px below the header). Bump the
    tabs above the curve so the Spaceship / Chat / Code controls stay
@@ -2254,7 +2255,7 @@
    other LCARS panel (.side-link, the filler bar) reads as a flush-left
    bar with a rounded right end, so the centered base styling looked
    visually orphaned. */
-[data-theme="lcars"] .side-mode-tabs {
+[data-theme="lcars"] .app-sidebar.open .side-mode-tabs {
   position:relative;
   z-index:6;
   margin:0 10px 8px 0;
@@ -2263,13 +2264,14 @@
 }
 /* Inactive mode-tab labels inherit --nav-text-muted (violet) which reads
    as low-contrast on the dark-orange container. Match the .side-link
-   pattern: black text on the colored panel. Active tab has its own
-   black background with orange text and is left alone. */
-[data-theme="lcars"] .side-mode-tab { color:#000; }
-[data-theme="lcars"] .side-mode-tab:not([aria-selected="true"]):hover { color:#000; }
+   pattern: black text on the colored panel. Scoped to the open state —
+   in the collapsed rail the tabs sit on the dark sidebar body, not on
+   the orange chrome, so they keep the default muted-on-dark color. */
+[data-theme="lcars"] .app-sidebar.open .side-mode-tab { color:#000; }
+[data-theme="lcars"] .app-sidebar.open .side-mode-tab:not([aria-selected="true"]):hover { color:#000; }
 /* Active tab keeps its orange on the black pill — also on hover, so the
    base .side-mode-tab:hover rule in app.css doesn't repaint it. */
-[data-theme="lcars"] .side-mode-tab[aria-selected="true"]:hover { color:#ff9966; }
+[data-theme="lcars"] .app-sidebar.open .side-mode-tab[aria-selected="true"]:hover { color:#ff9966; }
 /* Elbow curve — bottom-right corner */
 [data-theme="lcars"] .side-header::after {
   content:'';
