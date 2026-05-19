@@ -4531,6 +4531,23 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   transition:left .3s ease, width .3s ease;
 }
 .app-sidebar.open ~ .nice-ai { left:calc(50% + 140px); width:calc(100% - 328px); }
+/* The fixed-position reactor anchors on the visible content area, not
+   the raw viewport. The sidebar takes 56px collapsed / 280px open from
+   the left, so the reactor's default x-anchor shifts by half the sidebar
+   width to stay visually centered with the tabs above and the prompt
+   panel below. Mirrors the .nice-ai pattern directly above (same
+   28 / 140 offsets, same `.app-sidebar.open ~` trigger).
+   Scoped to the desktop layout (>768px) because mobile's sidebar is a
+   drawer that overlays content instead of displacing it; the mobile
+   @media block above keeps the anchor at viewport-center for that case.
+   The Schematic view's JS overrides --reactor-x in pixel coordinates
+   when a wired ship layout is mounted (already accounts for sidebar);
+   this rule covers the empty-state default + the Home + Spaceship-
+   detail surfaces where the JS never runs. */
+@media (min-width:769px) {
+  html { --reactor-x:calc(50% + 28px); }
+  html:has(.app-sidebar.open) { --reactor-x:calc(50% + 140px); }
+}
 /* All interactive children need pointer-events restored */
 .nice-ai-input-area { pointer-events:auto; }
 /* Drop the focus-within glow halo across every theme. The always-on
@@ -4997,17 +5014,13 @@ html[data-theme] .nice-ai-input:focus-visible {
   height:100%; overflow:hidden;
   max-width:720px; margin:0 auto;
   padding:0 20px;
-  /* Compensate for `.app-main { margin-left: <sidebar-w> }` so the home
-     block centers on the viewport, not in the post-sidebar content area —
-     same viewport-anchored discipline as the reactor (PR #146). Mobile
-     (<=768px) uses a slide-over sidebar; .app-main has no margin offset
-     there, so no compensation is needed. */
-  position:relative;
-  transition:left .3s ease;
-}
-@media (min-width: 769px) {
-  .chat-home { left:-28px; }                      /* -(56px collapsed / 2) */
-  .app-sidebar.open ~ .app-main .chat-home { left:-140px; }  /* -(280px open / 2) */
+  /* Natural `margin:0 auto` centering inside .app-main. Previously this
+     applied a negative-left offset to viewport-anchor the block "to
+     match the reactor" (PR #146). Once the reactor itself moved off
+     viewport-anchoring and onto app-main-anchoring (so it lines up
+     with the bridge tabs + prompt panel), the offset became the bug —
+     the greeting + chips drifted left of the reactor + prompt panel
+     they're stacked with. */
 }
 
 /* Empty state — greeting anchored above the HUD/reactor */

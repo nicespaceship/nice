@@ -2951,9 +2951,14 @@
   width:min(620px, 85vmin); height:min(620px, 85vmin);
   pointer-events:none; z-index:0;
   opacity:0.5;
-  /* Only transition opacity — top/left snap to the new anchor immediately
-     so theme switches (which change mini-chat height → reactor target)
-     don't interpolate through a stale position for 200ms. */
+  /* Default: opacity only. The wired-schematic path sets --reactor-x/y
+     inline on <html> in pixel coords and re-measures on theme switches
+     (mini-chat height → reactor target shifts), so animating top/left
+     here would slide the reactor through stale positions for 300ms.
+     The `:not([style*="--reactor-x"])` rule below re-enables the slide
+     for surfaces where the anchor is CSS-driven (Schematic empty state,
+     Home, Spaceship-detail), letting the reactor track the sidebar
+     toggle in sync with .nice-ai + .app-main. */
   transition:opacity 200ms ease;
   /* Default hidden; Home / Schematic / Spaceship-detail opt in via
      CoreReactor.setVisible(true) which sets .reactor-visible on <html>.
@@ -2962,6 +2967,14 @@
   display:none;
 }
 html.reactor-visible .jv-pp-reactor { display:block; }
+/* Animate top/left when the anchor is CSS-driven so sidebar toggles
+   slide the reactor along with the prompt panel + app-main (both also
+   transition at .3s ease). Excluded when schematic.js sets --reactor-x
+   inline because that path re-measures on theme switches and would
+   otherwise interpolate through stale anchor positions. */
+html:not([style*="--reactor-x"]) .jv-pp-reactor {
+  transition:opacity 200ms ease, top .3s ease, left .3s ease;
+}
 /* Brighten when responding (state machine writes data-jv-state on <html>) */
 [data-jv-state="streaming"] .jv-pp-reactor { opacity:0.75; }
 [data-jv-state="speaking"] .jv-pp-reactor { opacity:calc(0.7 + 0.3 * var(--jv-vol, 0)); }
