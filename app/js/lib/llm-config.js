@@ -117,7 +117,30 @@ const LLMConfig = (() => {
       }
       model = learned || (profile && profile.fallback) || 'gemini-2-5-flash';
     }
-    params.model = _canonicalize(model);
+    model = _canonicalize(model);
+
+    // Capability fallback: if the resolved model isn't accessible to the
+    // user (not in enabled_models and not the always-free Flash), walk
+    // DOWN the capability chain to the first accessible model. Without
+    // this, blueprints that hard-code a paid-tier model (e.g. all eleven
+    // captain specialists ship with `claude-sonnet-4-6`) hit a 402
+    // "subscription is inactive" when a free-tier user invokes them.
+    // The fallbackChain below only fires on 503/429 overload — hard
+    // subscription rejection has to be intercepted before the call.
+    // Guard: skip the check when enabled_models is unset/empty (test
+    // env, pre-bootstrap state) so the existing free-default behavior
+    // is preserved when we can't determine access.
+    const enabledModels = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    const knowsAccess = Object.keys(enabledModels).length > 0;
+    const isAccessible = (id) => id === 'gemini-2-5-flash' || !!enabledModels[id];
+    if (knowsAccess && !isAccessible(model)) {
+      const idx = CAPABILITY_CHAIN.findIndex(m => m.id === model);
+      const next = CAPABILITY_CHAIN
+        .slice(idx >= 0 ? idx + 1 : 0)
+        .find(m => isAccessible(m.id));
+      model = next ? next.id : 'gemini-2-5-flash';
+    }
+    params.model = model;
 
     // model_profile overrides — explicit values trump stat-derived envelope
     if (profile) {
@@ -134,7 +157,6 @@ const LLMConfig = (() => {
     // Overload fallback chain — ordered list of models to retry if the primary
     // is unavailable (503/429). Filtered to the user's enabled models so we
     // never silently charge a pool the user hasn't subscribed to.
-    const enabledModels = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
     params.fallbackChain = buildFallbackChain(model, enabledModels);
 
     return params;
