@@ -198,7 +198,7 @@
   log(`   Star Destroyer Executor: 12 crew, 5 missions`);
   log(`   Total: 24 agents, 10 missions queued`);
   log('═══════════════════════════════════════════════');
-  log('Navigate to #/dock to see your fleet.');
+  log('Navigate to #/bridge?tab=schematic to see your fleet.');
   log('Navigate to #/missions to see queued missions.');
 
   return { enterpriseMissions, destroyerMissions };

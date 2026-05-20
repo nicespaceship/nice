@@ -57,7 +57,6 @@ const PRECACHE_ASSETS = [
   '/app/js/views/alerts.js',
   '/app/js/views/wallet.js',
   '/app/js/views/security.js',
-  '/app/js/views/dock-view.js',
   '/app/js/views/ship-log-view.js',
   // Main orchestrator
   '/app/js/nice.js',

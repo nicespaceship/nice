@@ -1508,7 +1508,6 @@ const PromptPanel = (() => {
     '#/settings':   ['/theme', '/shortcuts', 'Switch to synthwave', 'Show profile'],
     '#/profile':    ['What\'s my rank?', '/rank', 'Show achievements', 'Open settings'],
     '#/agents':     ['What can you do?', 'Run a mission', 'Show recent tasks', 'What\'s your status?'],
-    '#/dock':       ['Show fleet status', 'Deploy a ship', 'Switch ship', 'Browse blueprints'],
     '#/bridge?tab=operations&sub=log': ['Show active missions', 'How many completed today?', 'Export log'],
   };
 

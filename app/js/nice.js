@@ -1830,7 +1830,7 @@ const NICE = (() => {
     // 4 primary zones
     Router.on('/', HomeView);                       // NICE (chat home)
     Router.on('/bridge', BlueprintsView);            // Bridge
-    Router.on('/dock', { title: 'Bridge', render: () => { location.hash = '#/'; } });
+    Router.on('/dock', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=schematic'; } });
 
     // Bridge sub-routes
     Router.on('/bridge/agents', BlueprintsView);

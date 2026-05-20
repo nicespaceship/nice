@@ -18,6 +18,150 @@ const SchematicView = (() => {
   let _unsubActivity = null;
   let _unsubShips = null;
   let _rerendering = false;
+  let _radarRaf = 0;
+  let _radarRo = null;
+
+  function _stopRadar() {
+    cancelAnimationFrame(_radarRaf);
+    _radarRaf = 0;
+    if (_radarRo) { _radarRo.disconnect(); _radarRo = null; }
+  }
+
+  function _initRadar(cvs) {
+    if (!cvs) return;
+    _stopRadar();
+
+    const ctx = cvs.getContext('2d');
+    const body = cvs.parentElement;
+    let W = 0, H = 0;
+
+    function resize() {
+      const r = body.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) return;
+      W = cvs.width  = Math.round(r.width);
+      H = cvs.height = Math.round(r.height);
+    }
+    requestAnimationFrame(() => { resize(); });
+
+    function hexToRgb(h) {
+      h = h.replace('#', '');
+      if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      const n = parseInt(h, 16);
+      return isNaN(n) ? [126, 184, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    let ar = 126, ag = 184, ab = 255;
+    let _lastAccent = '';
+    function refreshAccent() {
+      const raw = (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#7eb8ff').trim();
+      if (raw !== _lastAccent) { _lastAccent = raw; [ar, ag, ab] = hexToRgb(raw); }
+    }
+    refreshAccent();
+
+    const STAR_N = 40;
+    let stars = [];
+    function makeStars() {
+      stars = [];
+      for (let i = 0; i < STAR_N; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.2 + 0.3,
+          a: Math.random() * 0.5 + 0.1,
+          speed: Math.random() * 0.12 + 0.02,
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+    makeStars();
+
+    const cx = () => W / 2;
+    const cy = () => H / 2;
+
+    let pings = [];
+    let nextPing = 0;
+
+    let _accentFrame = 0;
+    function draw(t) {
+      if (W < 1 || H < 1) { resize(); _radarRaf = requestAnimationFrame(draw); return; }
+      if (++_accentFrame % 60 === 0) refreshAccent();
+      ctx.clearRect(0, 0, W, H);
+      const CX = cx(), CY = cy();
+      const maxR = Math.max(W, H) * 0.6;
+
+      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.04)`;
+      ctx.lineWidth = 0.5;
+      const gridSize = 20;
+      for (let x = gridSize; x < W; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = gridSize; y < H; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+
+      const ringCount = 5;
+      for (let i = 1; i <= ringCount; i++) {
+        const r = (maxR / ringCount) * i;
+        const pulse = 0.03 + 0.02 * Math.sin(t * 0.001 + i * 1.2);
+        ctx.beginPath();
+        ctx.arc(CX, CY, r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${ar},${ag},${ab},${pulse})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+
+      if (t > nextPing) {
+        pings.push({
+          x: CX + (Math.random() - 0.5) * W * 0.6,
+          y: CY + (Math.random() - 0.5) * H * 0.6,
+          r: 0, maxR: 30 + Math.random() * 25,
+          life: 1,
+        });
+        nextPing = t + 2000 + Math.random() * 3000;
+      }
+      for (let i = pings.length - 1; i >= 0; i--) {
+        const p = pings[i];
+        p.r += 0.3;
+        p.life = 1 - p.r / p.maxR;
+        if (p.life <= 0) { pings.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${ar},${ag},${ab},${p.life * 0.15})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        if (p.life > 0.8) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${ar},${ag},${ab},${p.life * 0.5})`;
+          ctx.fill();
+        }
+      }
+
+      for (const s of stars) {
+        s.phase += 0.015;
+        const twinkle = 0.5 + 0.5 * Math.sin(s.phase);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${ar},${ag},${ab},${s.a * twinkle})`;
+        ctx.fill();
+        s.y += s.speed;
+        if (s.y > H + 2) { s.y = -2; s.x = Math.random() * W; }
+      }
+
+      const chLen = 8;
+      ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.08)`;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(CX - chLen, CY); ctx.lineTo(CX + chLen, CY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(CX, CY - chLen); ctx.lineTo(CX, CY + chLen); ctx.stroke();
+
+      _radarRaf = requestAnimationFrame(draw);
+    }
+
+    _radarRaf = requestAnimationFrame(draw);
+
+    _radarRo = new ResizeObserver(() => { resize(); makeStars(); });
+    _radarRo.observe(body);
+  }
+
   function _isMobile() {
     try { return window.matchMedia('(max-width:600px)').matches; }
     catch (e) { return false; }
@@ -118,9 +262,7 @@ const SchematicView = (() => {
           _observeWired();
         }
         const cvs = el.querySelector('.sch-radar-canvas');
-        if (cvs && typeof DockView !== 'undefined' && DockView._initRadar) {
-          DockView._initRadar(cvs);
-        }
+        if (cvs) _initRadar(cvs);
         // Core click → open prompt panel + start dictation. The Schematic
         // route auto-scopes the prompt panel to the active ship (see
         // PromptPanel._updateRouteContext), so we don't need to prefill
@@ -1093,9 +1235,7 @@ const SchematicView = (() => {
     _unmountFixedShipPicker();
     _unmountSwapSheet();
     // Clean up radar canvas
-    if (typeof DockView !== 'undefined' && DockView._stopRadar) {
-      DockView._stopRadar();
-    }
+    _stopRadar();
     // Release the core-reactor anchor so other views get viewport-centered.
     // Skip the clear when destroy fires as part of an in-place re-render
     // (e.g. Theme.set → Router.refresh while still on the Schematic route)

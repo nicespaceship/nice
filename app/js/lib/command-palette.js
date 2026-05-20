@@ -26,7 +26,6 @@ const CommandPalette = (() => {
       { label: 'Vault',        skinKey: 'nav.vault', path: '/vault',        keywords: 'vault secrets keys api tokens',      icon: '#icon-key' },
       { label: 'Security',     path: '/security',     keywords: 'security agent permissions threat audit compliance access policies', icon: '#icon-lock' },
       { label: "Log", skinKey: 'nav.log', path: '/log',          keywords: `log audit captain history events ${missionPluralLower} operations`,  icon: '#icon-monitor' },
-      { label: 'Dock', skinKey: 'nav.dock', path: '/dock',        keywords: 'dock fleet ships schematic agents progression', icon: '#icon-spaceship' },
       { label: 'Profile',      skinKey: 'nav.profile', path: '/profile',      keywords: 'profile account user avatar',        icon: '#icon-profile' },
       { label: 'Settings',     skinKey: 'nav.settings', path: '/settings',     keywords: 'settings preferences config',        icon: '#icon-settings' },
       { label: 'Theme Editor', skinKey: 'nav.theme-creator', path: '/theme-editor', keywords: 'theme editor creator custom colors builder', icon: '#icon-settings' },
