@@ -204,15 +204,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-radius:4px; white-space:nowrap;
 }
 
-.app-bell { position:relative; }
-.app-bell-badge {
-  position:absolute; top:-4px; right:-4px;
-  background:var(--color-error); color:#fff; font-size:.5rem;
-  font-family:var(--font-b); min-width:14px; height:14px;
-  border-radius:7px; display:flex; align-items:center; justify-content:center;
-  padding:0 3px;
-}
-
 .hud-alert-badge {
   background:var(--color-error); color:#fff; font-size:.5rem;
   font-family:var(--font-b); min-width:14px; height:14px;
@@ -256,48 +247,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 @media (max-width:768px) {
   .hud-alert-dropdown { left:12px !important; right:12px; width:auto; }
 }
-
-/* ── Bell Dropdown ── */
-.bell-dropdown {
-  position:absolute; top:100%; right:0; z-index:220;
-  width:320px; max-height:420px; overflow:hidden;
-  background:var(--panel-bg); border:1px solid var(--border);
-  border-radius:var(--radius); box-shadow:0 8px 24px rgba(0,0,0,.4);
-  display:flex; flex-direction:column;
-  opacity:0; pointer-events:none; transform:translateY(-8px);
-  transition:opacity .2s ease, transform .2s ease;
-}
-.bell-dropdown.open { opacity:1; pointer-events:auto; transform:translateY(0); }
-.bell-dropdown-hdr {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px 14px; border-bottom:1px solid var(--border);
-}
-.bell-dropdown-title { font-family:var(--font-b); font-size:.82rem; font-weight:var(--fw-bold); color:var(--text); }
-.bell-dropdown-mark {
-  background:none; border:none; color:var(--accent); cursor:pointer;
-  font-size:.68rem; font-family:var(--font-b); padding:0;
-}
-.bell-dropdown-mark:hover { text-decoration:underline; }
-.bell-dropdown-list { flex:1; overflow-y:auto; }
-.bell-dropdown-item {
-  display:flex; align-items:flex-start; gap:10px; padding:10px 14px;
-  border-bottom:1px solid var(--border); cursor:pointer;
-  transition:background .15s;
-}
-.bell-dropdown-item:last-child { border-bottom:none; }
-.bell-dropdown-item:hover { background:var(--bg-alt); }
-.bell-dropdown-item.unread { background:rgba(99,102,241,.06); }
-.bell-item-icon { flex-shrink:0; margin-top:2px; }
-.bell-item-body { flex:1; min-width:0; }
-.bell-item-title { display:block; font-size:.75rem; font-weight:var(--fw-medium); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.bell-item-msg { display:block; font-size:.68rem; color:var(--text-muted); margin-top:1px; line-height:1.3; }
-.bell-item-time { flex-shrink:0; font-size:.6rem; color:var(--text-dim, var(--text-muted)); font-family:var(--font-b); margin-top:2px; }
-.bell-dropdown-empty { padding:24px 14px; text-align:center; color:var(--text-muted); font-size:.78rem; }
-.bell-dropdown-footer {
-  display:block; text-align:center; padding:10px; border-top:1px solid var(--border);
-  font-size:.72rem; color:var(--accent); text-decoration:none; font-family:var(--font-b);
-}
-.bell-dropdown-footer:hover { background:var(--bg-alt); }
 
 /* ─────────────────────────────────────────────────────────────────
    HUD PANEL (inline sidebar, slides open pushing nav down)
@@ -1799,14 +1748,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .tab.active { color:var(--accent); border-top-color:var(--accent); }
 .tab.active svg { color:var(--accent); }
 .tab:active { transform:scale(0.95); }
-.tab-icon-wrap { position:relative; display:inline-flex; }
-.tab-alert-badge {
-  position:absolute; top:-4px; right:-6px;
-  background:var(--color-error); color:#fff; font-size:.45rem;
-  font-family:var(--font-b); min-width:12px; height:12px;
-  border-radius:6px; display:flex; align-items:center; justify-content:center;
-  padding:0 2px;
-}
 
 /* ─────────────────────────────────────────────────────────────────
    EMPTY STATE
@@ -4969,7 +4910,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .acad-progress-row { grid-template-columns:1fr; }
   .acad-track-hdr { flex-wrap:wrap; }
   .settings-row { flex-direction:column; align-items:flex-start; gap:8px; }
-  .bell-dropdown { width:calc(100vw - 24px); right:-50px; }
 }
 
 /* ─────────────────────────────────────────────────────────────────

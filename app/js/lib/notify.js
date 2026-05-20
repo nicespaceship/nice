@@ -143,20 +143,10 @@ const Notify = (() => {
   function _updateBadge() {
     const notifs = State.get('notifications') || [];
     const unread = notifs.filter(n => !n.read).length + 1; // +1 for the new one
-    const badge = document.getElementById('bell-badge');
-    if (badge) {
-      badge.textContent = unread;
-      badge.style.display = unread > 0 ? '' : 'none';
-    }
     const hudBadge = document.getElementById('hud-alert-badge');
     if (hudBadge) {
       hudBadge.textContent = unread;
       hudBadge.style.display = unread > 0 ? '' : 'none';
-    }
-    const tabBadge = document.getElementById('tab-alert-badge');
-    if (tabBadge) {
-      tabBadge.textContent = unread;
-      tabBadge.style.display = unread > 0 ? '' : 'none';
     }
     // App Badge API (PWA installed)
     if ('setAppBadge' in navigator) {
