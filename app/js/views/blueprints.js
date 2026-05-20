@@ -194,7 +194,6 @@ const BlueprintsView = (() => {
       else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'active' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
-      else if (_hash === '#/log') _activeTab = 'missions';
       else _activeTab = 'schematic';
       // Sub-tab routing for the consolidated Missions / Operations hubs.
       if (_activeTab === 'missions' && subParam && ['templates', 'outbox'].includes(subParam)) _missionsSub = subParam;

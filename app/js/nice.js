@@ -1850,7 +1850,7 @@ const NICE = (() => {
     Router.on('/spaceships', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=spaceship'; } });
     Router.on('/spaceships/new', SpaceshipBuilderView);
     Router.on('/spaceships/:id', SpaceshipDetailView);
-    Router.on('/log', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
+    Router.on('/log', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=operations&sub=log'; } });
     Router.on('/missions', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=missions'; } });
     // `/missions/new` must register BEFORE `/missions/:id` — Router iterates
     // in order and the :id pattern would otherwise swallow the literal.
