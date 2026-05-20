@@ -900,6 +900,24 @@ describe('WorkflowEngine — _resolveAgent', () => {
     expect(a.name).toBe('BPYagent');
     expect(a.blueprint_id).toBe('bp-y');
   });
+  it('preserves description, category, and capability_tags from the catalog blueprint', () => {
+    globalThis.State.set('agents', []);
+    globalThis.Blueprints = {
+      getAgent: (id) => id === 'bp-z' ? {
+        id,
+        name: 'Engineering Lead',
+        description: 'Code, PRs, releases',
+        category: 'Engineering',
+        capability_tags: ['github', 'code'],
+        config: { role: 'engineering', tools: ['github_open_pr'] },
+      } : null,
+    };
+    const a = WorkflowEngine._resolveAgent('bp-z');
+    expect(a.description).toBe('Code, PRs, releases');
+    expect(a.category).toBe('Engineering');
+    expect(a.capability_tags).toEqual(['github', 'code']);
+    expect(a.config.role).toBe('engineering');
+  });
   it('returns null for missing id', () => {
     globalThis.State.set('agents', []);
     globalThis.Blueprints = { getAgent: () => null };
