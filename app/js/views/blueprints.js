@@ -303,7 +303,7 @@ const BlueprintsView = (() => {
         <!-- Log tab content (rendered by LogView sub-modules) -->
         <div id="bp-log-content" style="display:none"></div>
 
-        <!-- Schematic content (rendered by DockView when active) -->
+        <!-- Schematic content (rendered by SchematicView when active) -->
         <div id="bp-schematic-content" style="display:none"></div>
 
         <div class="bp-sheet-backdrop" id="bp-filter-sheet-backdrop" hidden></div>

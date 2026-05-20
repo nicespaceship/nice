@@ -31,7 +31,6 @@ const SCRIPTS = [
   'app/js/views/spaceship-builder.js',
   'app/js/views/missions.js',
   'app/js/views/spaceships.js',
-  'app/js/views/dock-view.js',
   'app/js/views/schematic.js',
   'app/js/views/blueprints.js',
   'app/js/views/analytics.js',
