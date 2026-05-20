@@ -1364,108 +1364,13 @@ const NICE = (() => {
     });
   }
 
-  /* ── Bell dropdown ── */
-  function _initBellDropdown() {
-    const btn   = document.getElementById('btn-notifications');
-    const panel = document.getElementById('bell-dropdown');
-    if (!btn || !panel) return;
-
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      panel.classList.toggle('open');
-      if (panel.classList.contains('open')) _renderBellDropdown();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!panel.contains(e.target) && !e.target.closest('#btn-notifications')) {
-        panel.classList.remove('open');
-      }
-    });
-
-    document.getElementById('bell-mark-all')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const notifs = State.get('notifications') || [];
-      notifs.forEach(n => { n.read = true; });
-      State.set('notifications', notifs);
-      _renderBellDropdown();
-      _updateBellBadge(notifs);
-    });
-
-    document.getElementById('bell-dropdown-footer')?.addEventListener('click', () => {
-      panel.classList.remove('open');
-    });
-
-    // Re-render when notifications change
-    State.on('notifications', _renderBellDropdown);
-  }
-
-  function _renderBellDropdown() {
-    const list = document.getElementById('bell-dropdown-list');
-    if (!list) return;
-
-    const notifs = (State.get('notifications') || []).slice(0, 5);
-    if (!notifs.length) {
-      list.innerHTML = '<p class="bell-dropdown-empty">No notifications yet.</p>';
-      return;
-    }
-
-    const TYPES = {
-      'agent_error':    { icon: '#icon-alert',   color: '#ef4444' },
-      'task_complete':  { icon: '#icon-check',   color: '#22c55e' },
-      'task_failed':    { icon: '#icon-x',       color: '#ef4444' },
-      'fleet_deployed': { icon: '#icon-spaceship', color: '#6366f1' },
-      'budget_alert':   { icon: '#icon-dollar',  color: '#f59e0b' },
-      'system':         { icon: '#icon-settings', color: 'var(--accent)' },
-      'broadcast':      { icon: '#icon-comms',    color: '#06b6d4' },
-    };
-
-    list.innerHTML = notifs.map(n => {
-      const t = TYPES[n.type] || TYPES.system;
-      const title = n.title || '';
-      const msg = (n.message || '').length > 60 ? n.message.slice(0, 60) + '...' : (n.message || '');
-      return `
-        <div class="bell-dropdown-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
-          <div class="bell-item-icon" style="color:${t.color}">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${t.icon}"/></svg>
-          </div>
-          <div class="bell-item-body">
-            <span class="bell-item-title">${title}</span>
-            <span class="bell-item-msg">${msg}</span>
-          </div>
-          <span class="bell-item-time">${_bellTimeAgo(n.created_at)}</span>
-        </div>
-      `;
-    }).join('');
-
-    // Click to mark read
-    list.querySelectorAll('.bell-dropdown-item.unread').forEach(item => {
-      item.addEventListener('click', () => {
-        const notifs = State.get('notifications') || [];
-        const n = notifs.find(x => x.id === item.dataset.id);
-        if (n) { n.read = true; _renderBellDropdown(); _updateBellBadge(notifs); }
-      });
-    });
-
-    _updateBellBadge(State.get('notifications') || []);
-  }
-
   function _updateBellBadge(notifs) {
     const unread = notifs.filter(n => !n.read).length;
     const empty = unread === 0;
-    const badge = document.getElementById('bell-badge');
-    if (badge) {
-      badge.textContent = unread || '';
-      badge.classList.toggle('hidden', empty);
-    }
     const hudBadge = document.getElementById('hud-alert-badge');
     if (hudBadge) {
       hudBadge.textContent = unread || '';
       hudBadge.classList.toggle('hidden', empty);
-    }
-    const tabBadge = document.getElementById('tab-alert-badge');
-    if (tabBadge) {
-      tabBadge.textContent = unread || '';
-      tabBadge.classList.toggle('hidden', empty);
     }
   }
 
@@ -1819,8 +1724,6 @@ const NICE = (() => {
   }
 
   function _updateAuthUI(user) {
-    const badge = document.getElementById('bell-badge');
-    if (badge) badge.classList.toggle('hidden', !user);
     const hudBadge = document.getElementById('hud-alert-badge');
     if (hudBadge && !user) hudBadge.classList.add('hidden');
   }
@@ -2494,7 +2397,6 @@ const NICE = (() => {
     _initModeTabs();
     _initScrollToTop();
     _initHUD();
-    _initBellDropdown();
     _initAuth();
     _initAdminSurfaces();
     _initRoutes();
