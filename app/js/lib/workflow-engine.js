@@ -234,7 +234,7 @@ const WorkflowEngine = (() => {
     if (agent) return agent;
     if (typeof Blueprints !== 'undefined') {
       const bp = Blueprints.getAgent?.(id);
-      if (bp) return { id: bp.id, name: bp.name, blueprint_id: bp.id, config: bp.config || {} };
+      if (bp) return { ...bp, blueprint_id: bp.id, config: bp.config || {} };
     }
     return null;
   }
