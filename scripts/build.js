@@ -45,7 +45,6 @@ const SCRIPTS = [
   'app/js/views/theme-creator.js',
   'app/js/lib/preview-panel.js',
   'app/js/views/prompt-panel.js',
-  'app/js/views/log-view.js',
   'app/js/views/ship-log-view.js',
   'app/js/lib/audit-log.js',
   'app/js/lib/data-io.js',

@@ -1128,7 +1128,7 @@ const PromptPanel = (() => {
     { keywords: ['vault', 'secret', 'credential', 'password'], route: '#/vault', label: 'Vault' },
     { keywords: ['security', 'audit', 'access control'], route: '#/security', label: 'Security' },
     // Log
-    { keywords: ['ship log', 'ship\'s log', 'captain\'s log', 'log', 'activity log'], route: '#/log', label: 'Log' },
+    { keywords: ['ship log', 'ship\'s log', 'captain\'s log', 'log', 'activity log'], route: '#/bridge?tab=operations&sub=log', label: 'Log' },
     // Theme Creator
     { keywords: ['theme editor', 'theme creator', 'create theme', 'custom theme', 'build theme'], route: '#/theme-editor', label: 'Theme Editor' },
     // Settings & Profile
@@ -1509,7 +1509,7 @@ const PromptPanel = (() => {
     '#/profile':    ['What\'s my rank?', '/rank', 'Show achievements', 'Open settings'],
     '#/agents':     ['What can you do?', 'Run a mission', 'Show recent tasks', 'What\'s your status?'],
     '#/dock':       ['Show fleet status', 'Deploy a ship', 'Switch ship', 'Browse blueprints'],
-    '#/log':        ['Show active missions', 'How many completed today?', 'Export log'],
+    '#/bridge?tab=operations&sub=log': ['Show active missions', 'How many completed today?', 'Export log'],
   };
 
   function _updateSuggestionChips() {

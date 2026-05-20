@@ -13,7 +13,8 @@ import AxeBuilder from '@axe-core/playwright';
  *
  * Redirects:
  *   #/dock, #/blueprints → #/bridge
- *   #/missions, #/log → #/bridge?tab=missions
+ *   #/missions → #/bridge?tab=missions
+ *   #/log → #/bridge?tab=operations&sub=log
  *   #/integrations, #/vault → #/security?tab=integrations
  */
 

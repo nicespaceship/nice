@@ -64,7 +64,7 @@ const MessageBar = (() => {
         msgs.push({
           text: desc,
           icon: TYPE_ICONS[entry.action] || '#icon-log',
-          route: '#/log',
+          route: '#/bridge?tab=operations&sub=log',
           type: entry.action,
           priority: 2,
           timestamp: entry.timestamp,
