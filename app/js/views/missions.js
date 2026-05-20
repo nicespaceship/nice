@@ -55,7 +55,7 @@ const MissionsView = (() => {
           <div class="view-topbar-l">
             <div class="search-box">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-              <input type="text" id="task-search" class="search-input" placeholder="Search ${_Nlp()}..." />
+              <input type="text" id="task-search" class="search-input" placeholder="Search ${_Nlp()}..." data-allow-zoom />
             </div>
           </div>
           <div class="mc-toolbar-actions">
