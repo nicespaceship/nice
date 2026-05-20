@@ -24,14 +24,20 @@ const SchematicView = (() => {
   }
   function render(el) {
     _el = el;
-    // Schematic converges the crew ring on the core reactor — opt in.
-    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(true);
     const shipId = _getShipId();
     let activatedShips = (typeof Blueprints !== 'undefined') ? Blueprints.getActivatedShips() : [];
     // Include custom ships from State (created by Crew Designer)
     const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
     customShips.forEach(cs => { if (!activatedShips.find(s => s.id === cs.id)) activatedShips.push(cs); });
     const activeShip = activatedShips.find(s => s.id === shipId) || activatedShips[0];
+    const isAuthed = typeof Utils !== 'undefined' && Utils.hasAuthSession();
+
+    // Schematic centerpiece is the core reactor — opt in only when there
+    // is something to schematize. Skeleton state still shows the reactor
+    // (slots line up around it while Supabase hydrates). The unauthed
+    // empty state hides it so the CTAs sit on a clean background instead
+    // of overlapping the visualization.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(!!activeShip || isAuthed);
 
     if (!activeShip) {
       // If the user is authenticated, Supabase may not have finished syncing
@@ -41,7 +47,6 @@ const SchematicView = (() => {
       // "loading", not "frozen"). Once activated-ships fires again
       // (Blueprints._fireShipState after the user_spaceships query returns),
       // we re-render with real data.
-      const isAuthed = typeof Utils !== 'undefined' && Utils.hasAuthSession();
       if (isAuthed) {
         el.innerHTML = '<div class="bridge-hero-wrap"><div class="bridge-hero-content">' + _renderSkeleton() + '</div></div>';
       } else {
@@ -285,29 +290,34 @@ const SchematicView = (() => {
     const shipName = activeShip?.name || 'Unnamed Ship';
 
     if (_isMobile()) {
-      // Pill button + bottom sheet — sits next to .bp-tab-picker so the
-      // user gets two pills sharing one row.
+      // Pill button sits next to .bp-tab-picker inside #app-fixed-tabs so
+      // the two pills share one row. The sheet + backdrop, however, are
+      // appended to document.body: .app-main has z-index:1 which traps
+      // any descendants under the fixed prompt panel at z:200. Promoting
+      // the sheet to the root stacking context lets its z:10000 win.
       const optionsHTML = activatedShips.map(s =>
         '<button class="bp-sheet-option' + (s.id === activeShip.id ? ' active' : '') +
         '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || 'Unnamed Ship') + '</button>'
       ).join('');
-      const html =
+      const pickerHTML =
         '<button class="sch-ship-picker" id="sch-ship-picker" aria-haspopup="dialog" aria-expanded="false">' +
           '<span class="sch-ship-picker-label">' + _esc(shipName) + '</span>' +
           '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
-        '</button>' +
+        '</button>';
+      const sheetHTML =
         '<div class="bp-sheet-backdrop sch-ship-sheet-backdrop" id="sch-ship-sheet-backdrop" hidden></div>' +
         '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ship" aria-modal="true" hidden>' +
           '<div class="bp-sheet-handle"></div>' +
           '<div class="bp-sheet-header"><h3 class="bp-sheet-title">Ships</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
           '<div class="bp-sheet-body">' + optionsHTML + '</div>' +
         '</div>';
-      tabs.insertAdjacentHTML('beforeend', html);
+      tabs.insertAdjacentHTML('beforeend', pickerHTML);
+      document.body.insertAdjacentHTML('beforeend', sheetHTML);
 
       const picker = tabs.querySelector('#sch-ship-picker');
-      const sheet = tabs.querySelector('#sch-ship-sheet');
-      const backdrop = tabs.querySelector('#sch-ship-sheet-backdrop');
-      const close = tabs.querySelector('#sch-ship-sheet-close');
+      const sheet = document.querySelector('#sch-ship-sheet');
+      const backdrop = document.querySelector('#sch-ship-sheet-backdrop');
+      const close = sheet.querySelector('#sch-ship-sheet-close');
       const open = () => {
         sheet.hidden = false;
         backdrop.hidden = false;
@@ -337,29 +347,104 @@ const SchematicView = (() => {
       return;
     }
 
-    // Desktop: native <select> appended to the bridge tabs row, sized
-    // wide enough to show the full ship name without truncation. Lets
-    // us drop the schematic-local title since the picker label is the
-    // title.
+    // Desktop: button + anchored popover. We can't use a native <select>
+    // here — macOS Chrome ignores the CSS option font-size and renders the
+    // popup at the system default (~16-18px), which dwarfs the rest of
+    // the chrome. The picker is a sibling of #bp-type-tabs (not a child)
+    // so the bridge tabs can scroll horizontally on tablet without
+    // dragging the picker off-screen.
     const typeTabs = tabs.querySelector('#bp-type-tabs');
     if (!typeTabs) return;
     const optionsHTML = activatedShips.map(s =>
-      '<option value="' + _esc(s.id) + '"' + (s.id === activeShip.id ? ' selected' : '') + '>' + _esc(s.name || 'Unnamed Ship') + '</option>'
+      '<button class="sch-ship-menu-option' + (s.id === activeShip.id ? ' active' : '') +
+      '" role="option" aria-selected="' + (s.id === activeShip.id ? 'true' : 'false') +
+      '" data-ship-id="' + _esc(s.id) + '">' + _esc(s.name || 'Unnamed Ship') + '</button>'
     ).join('');
-    const html = '<select class="sch-fixed-ship-select" id="sch-fixed-ship-select" aria-label="Active ship">' + optionsHTML + '</select>';
-    typeTabs.insertAdjacentHTML('beforeend', html);
-    const select = typeTabs.querySelector('#sch-fixed-ship-select');
-    select.addEventListener('change', () => {
-      localStorage.setItem(Utils.KEYS.mcShip, select.value);
-      window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: select.value }));
-      if (viewEl) render(viewEl);
+    const html =
+      '<div class="sch-fixed-ship-picker">' +
+        '<button class="sch-fixed-ship-trigger" id="sch-fixed-ship-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">' +
+          '<span class="sch-fixed-ship-label">' + _esc(shipName) + '</span>' +
+          '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
+        '</button>' +
+        '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ship" hidden>' + optionsHTML + '</div>' +
+      '</div>';
+    typeTabs.insertAdjacentHTML('afterend', html);
+
+    const trigger = tabs.querySelector('#sch-fixed-ship-trigger');
+    const menu = tabs.querySelector('#sch-fixed-ship-menu');
+    const hide = () => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
+    const reposition = () => {
+      // Anchor the fixed-position menu to the trigger's current rect so
+      // the popover sits flush under it across resizes + scroll. If
+      // left-anchoring would overflow the right edge of the viewport
+      // (e.g. trigger sits at the end of the bridge tabs row on tablet),
+      // flip to right-edge alignment matched to the trigger's own right
+      // edge so the menu reads as anchored to the button.
+      const r = trigger.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const menuW = Math.max(r.width, menu.offsetWidth || r.width);
+      menu.style.top = (r.bottom + 4) + 'px';
+      menu.style.minWidth = r.width + 'px';
+      const wouldOverflowRight = r.left + menuW > vw - 8;
+      if (wouldOverflowRight) {
+        menu.style.left = 'auto';
+        menu.style.right = Math.max(8, vw - r.right) + 'px';
+      } else {
+        menu.style.right = 'auto';
+        menu.style.left = r.left + 'px';
+      }
+    };
+    const show = () => {
+      reposition();
+      menu.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+    };
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (menu.hidden) show(); else hide();
+    });
+    // Dismiss on outside click + Escape so the popover doesn't trap focus.
+    // Keep the menu anchored on scroll + resize while it's open.
+    const onDocClick = (e) => { if (!menu.hidden && !trigger.contains(e.target) && !menu.contains(e.target)) hide(); };
+    const onKey = (e) => { if (e.key === 'Escape' && !menu.hidden) { hide(); trigger.focus(); } };
+    const onReflow = () => { if (!menu.hidden) reposition(); };
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onReflow, true);
+    window.addEventListener('resize', onReflow);
+    // Stash cleanup hooks on the element so _unmountFixedShipPicker can
+    // tear them down without leaking listeners on every render.
+    menu._cleanup = () => {
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onReflow, true);
+      window.removeEventListener('resize', onReflow);
+    };
+    menu.querySelectorAll('.sch-ship-menu-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const id = opt.dataset.shipId;
+        if (id) {
+          localStorage.setItem(Utils.KEYS.mcShip, id);
+          window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: id }));
+        }
+        hide();
+        if (viewEl) render(viewEl);
+      });
     });
   }
 
   function _unmountFixedShipPicker() {
     const tabs = document.getElementById('app-fixed-tabs');
     if (!tabs) return;
-    tabs.querySelectorAll('.sch-ship-picker, .sch-ship-sheet, .sch-ship-sheet-backdrop, .sch-fixed-ship-select').forEach(n => n.remove());
+    // Tear down document-level listeners stashed by the desktop popover
+    // before we remove its nodes — otherwise a re-render leaks one
+    // outside-click + Escape + scroll/resize pair per cycle.
+    const menu = tabs.querySelector('#sch-fixed-ship-menu');
+    if (menu && typeof menu._cleanup === 'function') menu._cleanup();
+    tabs.querySelectorAll('.sch-ship-picker, .sch-fixed-ship-picker').forEach(n => n.remove());
+    // The mobile bottom-sheet + backdrop are portaled to document.body so
+    // they escape .app-main's stacking context — clean them up from there.
+    document.querySelectorAll('.sch-ship-sheet, .sch-ship-sheet-backdrop').forEach(n => n.remove());
   }
 
   function _mountSwapSheet(viewEl, activeShip) {
