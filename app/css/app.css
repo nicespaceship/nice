@@ -8915,13 +8915,16 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .bp-drawer-serial-label {
   font-family:var(--font-m);
-  letter-spacing:.08em;
+  letter-spacing:var(--tracking-caps);
   text-transform:uppercase;
-  font-weight:600;
+  font-weight:var(--fw-medium);
   opacity:.7;
 }
 .bp-drawer-serial-code {
   font-family:var(--font-m);
+  /* Mono serial codes (SHIP-LOFT-0001) need a touch of kerning between
+     the alphanumerics — sub-caps and above normal. No token at this
+     midpoint; raw .05em is intentional. */
   letter-spacing:.05em;
   color:var(--text);
   background:rgba(255,255,255,.04);
@@ -9005,7 +9008,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-size:.68rem; color:var(--text-muted);
 }
 .bp-drawer-crew-role {
-  text-transform:uppercase; letter-spacing:.06em; font-weight:var(--fw-medium);
+  text-transform:uppercase; letter-spacing:var(--tracking-caps); font-weight:var(--fw-medium);
 }
 .bp-drawer-crew-role::after { content:"·"; padding:0 0 0 8px; opacity:.5; }
 .bp-drawer-crew-agent { font-family:var(--font-m); font-size:.7rem; }
