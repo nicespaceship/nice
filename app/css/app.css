@@ -10678,14 +10678,31 @@ body.preview-active .nice-ai {
      block-level parent instead. The trailing flex:1 spacer (from
      blueprints.js render) was for the old TRON-tab-on-the-right
      pattern — kill it so the tab cluster reads as a single chip. */
-  #app-fixed-tabs { display:flex; justify-content:center; }
+  #app-fixed-tabs {
+    display:flex; align-items:center; justify-content:center;
+    gap:12px;
+  }
+  /* When the schematic ship picker is mounted, the tabs row grows to
+     consume available space (tab buttons stay centered inside) so the
+     picker can be pinned to the right edge of the visible viewport even
+     when the tabs would otherwise overflow horizontally on tablet. The
+     16px right-padding on the container leaves visible breathing room
+     between the trigger and the viewport edge. */
+  #app-fixed-tabs:has(.sch-fixed-ship-picker) {
+    justify-content:flex-start;
+    padding-right:16px;
+  }
+  #app-fixed-tabs:has(.sch-fixed-ship-picker) #bp-type-tabs {
+    flex:1 1 0; min-width:0;
+    justify-content:center;
+  }
   #bp-type-tabs { border:none; }
   #bp-type-tabs > span { display:none; }
-  .sch-fixed-ship-select {
-    display:inline-flex; align-items:center;
-    margin-left:12px;
-    padding:6px 30px 6px 12px;
-    background-color:var(--bg-alt);
+  .sch-fixed-ship-picker { position:relative; flex:0 0 auto; }
+  .sch-fixed-ship-trigger {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 12px;
+    background:var(--bg-alt);
     color:var(--text);
     border:var(--border-width, 1px) solid var(--border);
     border-radius:var(--radius);
@@ -10695,14 +10712,52 @@ body.preview-active .nice-ai {
     cursor:pointer;
     min-width:240px;
     max-width:320px;
-    appearance:none;
-    -webkit-appearance:none;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23888' stroke-width='1.5'><path d='M3 4.5l3 3 3-3'/></svg>");
-    background-repeat:no-repeat;
-    background-position:right 10px center;
   }
-  .sch-fixed-ship-select:hover { border-color:var(--border-hi, var(--accent)); }
-  .sch-fixed-ship-select:focus { outline:none; border-color:var(--accent); }
+  .sch-fixed-ship-trigger:hover { border-color:var(--border-hi, var(--accent)); }
+  .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:var(--accent); }
+  .sch-fixed-ship-label { flex:1 1 auto; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sch-fixed-ship-trigger svg { flex-shrink:0; color:var(--text-muted); }
+  /* Fixed-position so the popover escapes the bridge tabs row's
+     overflow:auto clipping; JS sets `top` and `left` from the trigger
+     rect on open. */
+  .sch-fixed-ship-menu {
+    position:fixed; top:0; left:0;
+    min-width:240px;
+    display:flex; flex-direction:column; gap:2px;
+    padding:4px;
+    background:var(--bg-alt);
+    border:var(--border-width, 1px) solid var(--border);
+    border-radius:var(--radius);
+    z-index:50;
+    max-height:320px; overflow-y:auto;
+  }
+  .sch-fixed-ship-menu[hidden] { display:none; }
+  .sch-ship-menu-option {
+    display:flex; align-items:center;
+    padding:8px 12px; width:100%;
+    background:transparent;
+    color:var(--text);
+    border:none;
+    border-radius:calc(var(--radius) - 2px);
+    font-family:var(--font-b);
+    font-size:var(--text-sm);
+    font-weight:var(--fw-medium);
+    text-align:left;
+    cursor:pointer;
+  }
+  .sch-ship-menu-option:hover { background:var(--surface, rgba(0,0,0,0.04)); }
+  .sch-ship-menu-option.active { color:var(--accent); }
+  .sch-ship-menu-option.active::before {
+    content:""; display:inline-block;
+    width:6px; height:6px; margin-right:8px;
+    border-radius:50%; background:var(--accent);
+    flex-shrink:0;
+  }
+  .sch-ship-menu-option:not(.active)::before {
+    content:""; display:inline-block;
+    width:6px; height:6px; margin-right:8px;
+    flex-shrink:0;
+  }
 }
 
 /* ── Slot grids: tighter on 375px ── */
@@ -10811,9 +10866,10 @@ body.preview-active .nice-ai {
   }
   .sch-ship-picker svg { flex-shrink:0; }
 
-  /* The desktop ship picker (native <select>) is hidden on mobile —
-     this breakpoint renders the pill-button variant above instead. */
-  .sch-fixed-ship-select { display:none; }
+  /* The desktop ship picker (button + popover) is hidden on mobile —
+     this breakpoint renders the pill-button + bottom-sheet variant above
+     instead. */
+  .sch-fixed-ship-picker { display:none; }
 
   .bp-filter-toggle {
     display:inline-flex; align-items:center; justify-content:center; gap:4px;
