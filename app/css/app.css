@@ -7507,19 +7507,19 @@ html[data-theme] .nice-ai-input:focus-visible {
    PHASE F: Analytics & Intelligence Styles
 ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Step 39: Agent performance stats row ── */
+/* ── Agent performance stats ── */
 .agent-perf-stats { font-size:.7rem; color:var(--text-muted); padding:4px 0 2px; border-top:1px solid var(--border); margin-top:6px; }
 .agent-compare-label { position:absolute; top:6px; right:6px; z-index:2; cursor:pointer; }
 .agent-compare-label input { cursor:pointer; }
 .agent-card { position:relative; }
 
-/* ── Step 43: Weekly Summary ── */
+/* ── Weekly Summary ── */
 .weekly-summary-grid { display:flex; gap:1rem; flex-wrap:wrap; }
 .weekly-stat { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 14px; background:var(--bg-alt, #1a1a2e); border:1px solid var(--border); border-radius:var(--radius, 6px); min-width:60px; }
 .weekly-stat-val { font-size:1.2rem; font-weight:var(--fw-bold); color:var(--text); font-family:var(--font-b); }
 .weekly-stat-label { font-size:.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:var(--tracking-caps); }
 
-/* ── Step 45: Mission Board heatmap ── */
+/* ── Mission Board heatmap ── */
 .mission-fresh { border-left:3px solid #22c55e; }
 .mission-stale { border-left:3px solid #f59e0b; }
 .mission-overdue { border-left:3px solid #ef4444; }
@@ -7548,9 +7548,7 @@ html[data-theme] .nice-ai-input:focus-visible {
    PHASE G: Mobile & Accessibility Styles
 ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Step 49: Mobile layout ── */
-
-/* ── Step 50: Pull-to-refresh indicator ── */
+/* ── Pull-to-refresh indicator ── */
 .pull-refresh-indicator {
   position:absolute; top:-50px; left:50%; transform:translateX(-50%);
   width:36px; height:36px; border-radius:50%;
@@ -7564,7 +7562,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .pull-refresh-indicator.refreshing { animation:spin .6s linear infinite; }
 @keyframes spin { from { transform:translateX(-50%) rotate(0); } to { transform:translateX(-50%) rotate(360deg); } }
 
-/* ── Step 51: Swipe gesture utilities ── */
+/* ── Swipe gesture utilities ── */
 /* Ready for JS integration — apply .swipeable to cards that support swipe actions */
 .swipeable { position:relative; overflow:hidden; transition:transform .2s ease; touch-action:pan-y; }
 .swipe-action-left, .swipe-action-right {
@@ -7575,7 +7573,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .swipe-action-left { left:0; background:var(--color-error); }
 .swipe-action-right { right:0; background:var(--color-success); }
 
-/* ── Step 54: High contrast mode ── */
+/* ── High contrast mode ── */
 [data-contrast="high"] {
   --bg:#000 !important; --bg-alt:#111 !important;
   --text:#fff !important; --text-muted:#ccc !important;
@@ -7588,7 +7586,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 [data-contrast="high"] .btn { border-width:2px; }
 [data-contrast="high"] .side-link.active { outline:2px solid #ffff00; }
 
-/* ── Step 55: Reduce motion mode ── */
+/* ── Reduce motion mode ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
