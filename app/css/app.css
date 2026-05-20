@@ -1783,7 +1783,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .dot-g { background:var(--color-success); }
 .dot-r { background:var(--color-error); }
 .dot-a { background:var(--color-warning); }
-.dot-pulse { }
 
 
 /* ─────────────────────────────────────────────────────────────────
@@ -2844,7 +2843,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .detail-section-title { font-family:var(--font-b); font-size:.62rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-muted); margin:0 0 12px 0; }
 
 /* ── Ship Dashboard ── */
-.ship-dashboard { }
 .ship-dash-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
 .ship-dash-stat { text-align:center; padding:12px 8px; background:var(--bg-alt); border:1px solid var(--border); border-radius:var(--radius); }
 .ship-dash-stat-value { font-family:var(--font-m); font-size:1.4rem; font-weight:var(--fw-bold); color:var(--accent); line-height:1.2; }
@@ -2861,7 +2859,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 
 /* ── Ship Behaviors Panel ── */
-.ship-behaviors-panel { }
 .behavior-group { margin-bottom:20px; }
 .behavior-group-label { font-family:var(--font-b); font-size:.7rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
 .behavior-hint { font-size:.65rem; color:var(--text-muted); opacity:.6; text-transform:none; letter-spacing:var(--tracking-normal); }
@@ -3159,7 +3156,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   font-size:var(--text-md); line-height:var(--lh-base);
   color:var(--text-muted); margin:0;
 }
-.mc-composer-body { }
 .mc-composer-form { display:flex; flex-direction:column; gap:12px; }
 .mc-composer-label {
   font-size:var(--text-sm); font-weight:var(--fw-medium);
@@ -7325,7 +7321,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .intg-list-cat { font-size:.55rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--accent2, var(--accent)); min-width:60px; }
 .intg-list-transport { font-size:.5rem; color:var(--text-muted); min-width:80px; }
 .integrations-section { display:flex; flex-direction:column; gap:12px; }
-.integrations-section-header {}
 .integrations-section-title { font-family:var(--font-b); font-size:.95rem; font-weight:var(--fw-bold); margin:0; display:flex; align-items:center; gap:6px; }
 .integrations-section-desc { font-family:var(--font-b); font-size:.62rem; letter-spacing:var(--tracking-caps); color:var(--text-muted); margin:4px 0 0; }
 

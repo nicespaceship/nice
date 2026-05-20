@@ -158,7 +158,6 @@ const Utils = (() => {
     tronHighScore: 'nice-tron-hi',
     voiceOff: 'nice-voice-off',
     voiceSample: 'nice-voice-sample',
-    checklistDismissed: 'nice-checklist-dismissed',
     vaultAdvanced: 'nice-vault-advanced',
 
     /* ── Per-resource key factories ──
