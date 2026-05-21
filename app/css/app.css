@@ -1565,6 +1565,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    the earlier animated nebula and supersedes the multi-orb stack
    declared in theme.css so the chrome reads quiet and motionless. */
 [data-theme="nice"] .app-main { background-color:#f5f8fc; }
+[data-theme="nice"] .app-sidebar { border-right:none; }
 [data-theme="nice"] body::before,
 [data-theme="nice"] body::after,
 [data-theme="nice"] .app-main::before,
