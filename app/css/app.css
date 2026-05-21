@@ -2696,13 +2696,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 /* Mobile top bar — base styles moved before media queries */
 
-/* ─────────────────────────────────────────────────────────────────
-   MOBILE RESPONSIVE
-───────────────────────────────────────────────────────────────── */
-@media (max-width:768px) {
-  .app-main { padding:0; }
-}
-
 /* Mobile top bar — base styles defined above media query so display:flex wins */
 
 @media (max-width:768px) {
@@ -4737,7 +4730,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 @media (max-width:768px) {
   /* username and badge always visible in sidebar drawer */
   .nice-ai { max-width:100%; padding:0 8px 12px; left:0; right:0; width:auto; transform:none; }
-  .nice-ai-input-area { border-radius:var(--radius); }
   .nice-monitor-inner { padding:16px 12px 120px; }
 }
 
@@ -4781,7 +4773,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   /* Bridge toolbar — compact spacing on mobile */
   .bp-type-tabs { margin-bottom:6px !important; }
   .bp-sub-tabs { gap:4px; margin-bottom:4px; }
-  .bp-search-row { gap:3px; margin-bottom:2px; }
+  .bp-search-row { gap:6px; margin-bottom:2px; }
   .bp-search-row .search-input { font-size:var(--text-xs); padding:4px 8px; }
   .bp-search-row select { font-size:var(--text-xs); padding:4px 4px; }
   .bp-rarity-filters { gap:2px; }
@@ -5055,17 +5047,16 @@ html[data-theme] .nice-ai-input:focus-visible {
 
 /* ═══════════════════════════════════════════════════════════════════
    PHASE 6: Responsive Fixes for New Features
+   .cmd-palette + .cmd-palette-box mobile sizing now lives in the
+   "Full-screen command palette on mobile" block below; .cmd-result
+   min-height tracks the 48px hit target set in that block too.
 ═══════════════════════════════════════════════════════════════════ */
 @media (max-width:768px) {
-  .cmd-palette { padding-top:10vh; }
-  .cmd-palette-box { max-width:calc(100vw - 24px); margin:0 12px; }
   .kb-shortcut-grid { font-size:var(--text-xs); }
   .builder-template-row { flex-wrap:wrap; }
 }
 
 @media (max-width:480px) {
-  .cmd-palette { padding-top:5vh; }
-  .cmd-result { min-height:44px; }
   .kb-row kbd { min-height:28px; display:inline-flex; align-items:center; }
 }
 
@@ -7983,10 +7974,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   margin: 0 0 12px;
 }
 
-/* Top-up grid */
-.wallet-topup-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;
-}
 .wallet-topup-btn {
   display: flex; flex-direction: column; align-items: center;
   gap: 6px; padding: 16px 12px;
@@ -8095,7 +8082,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .wallet-balance-breakdown { gap:16px; }
   .wallet-cards { grid-template-columns: 1fr; }
   .wallet-packages { grid-template-columns: 1fr; }
-  .wallet-topup-grid { grid-template-columns: repeat(2, 1fr); }
   .wallet-tiers { grid-template-columns: 1fr 1fr; }
   .wallet-info-grid { grid-template-columns: 1fr 1fr; }
   .wallet-txn-table { font-size:var(--text-xs); }
@@ -8103,7 +8089,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 @media (max-width: 480px) {
   .wallet-tiers { grid-template-columns: 1fr; }
-  .wallet-topup-grid { grid-template-columns: 1fr 1fr; }
   .wallet-info-grid { grid-template-columns: 1fr; }
 }
 
@@ -8976,7 +8961,6 @@ body.preview-active .nice-ai {
 
 /* ── Mobile: default compact, better list view ── */
 @media (max-width:768px) {
-  .bp-search-row { gap:6px; }
   .bp-rarity-filters { overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
   .bp-rarity-btn { white-space:nowrap; flex-shrink:0; }
   /* Tablet: 2 cards per row. Cards default to the desktop auto-fill
