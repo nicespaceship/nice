@@ -1235,12 +1235,15 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar {
   position:fixed; top:var(--guest-banner-height, 0px); left:0; bottom:0; width:56px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
-  border-right:var(--border-width) solid var(--border);
   color:var(--nav-text, var(--text));
   display:flex; flex-direction:column;
   overflow:hidden; z-index:200;
   transition:width .3s ease;
 }
+/* Universal: drop the sidebar→main separator across all themes.
+   Equal specificity to per-theme rules; appears after them in source
+   so it wins via cascade order. */
+[data-theme] .app-sidebar { border-right:none; }
 .app-sidebar.open { width:280px; }
 /* Sidebar backdrop — visibility is derived from the sidebar's own state
    so the two can never desync. Previously had its own .open class that
@@ -1560,6 +1563,79 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   display:flex; flex-direction:column;
 }
 .app-sidebar.open ~ .app-main { margin-left:280px; }
+
+/* CORE theme — darker canvas + zero hairline borders so white panels
+   (sidebar, prompt bar, cards, dropdowns, drawers) float on the
+   surface via contrast alone. Modern borderless look. Supersedes the
+   multi-orb stack declared in theme.css so the chrome stays still. */
+[data-theme="nice"] { --border:transparent; }
+[data-theme="nice"] .app-main { background-color:#e8eef5; }
+[data-theme="nice"] body::before,
+[data-theme="nice"] body::after,
+[data-theme="nice"] .app-main::before,
+[data-theme="nice"] .app-main::after { display:none; }
+/* CTAs: filled chips on the canvas, no resting or hover hairlines.
+   .btn-primary keeps its accent fill from the base rule; secondary
+   .btn and the smaller .c-btn (Deploy/Remove on cards) switch from
+   transparent + bordered to a white pill with a subtle bg shift on
+   hover. --glow is a 1px-spread shadow that reads as a border on
+   hover under the base .btn:hover rule — neutralise it. The
+   activated/destructive state (.c-btn.bp-activated) tints with the
+   accent/destructive color via bg + text instead of via border. */
+[data-theme="nice"] .btn:not(.btn-primary),
+[data-theme="nice"] .c-btn:not(.bp-activated) {
+  background:var(--surface);
+  border-color:transparent;
+}
+[data-theme="nice"] .btn:not(.btn-primary):hover,
+[data-theme="nice"] .c-btn:not(.bp-activated):hover {
+  background:var(--surface2);
+  border-color:transparent;
+  box-shadow:none;
+}
+[data-theme="nice"] .c-btn.bp-activated {
+  background:color-mix(in srgb, var(--color-success) 12%, var(--surface));
+  color:var(--color-success);
+  border-color:transparent;
+}
+[data-theme="nice"] .c-btn.bp-activated:hover {
+  background:color-mix(in srgb, var(--color-error, #dc2626) 14%, var(--surface));
+  color:var(--color-error, #dc2626);
+  border-color:transparent;
+  box-shadow:none;
+}
+/* Selected state: light accent-blue chip + branded blue text/icon,
+   modeled after .side-link.active. Applied uniformly to every "active
+   tab / chip / filter pill" so the selection language reads the same
+   wherever the user lands. Solid-accent buttons (outbox CTAs, primary
+   buttons) keep their fill — this only overrides the tinted/bordered
+   variants. */
+[data-theme="nice"] :is(
+  .bp-type-tab.active,
+  .bp-sub-tab.active,
+  .bp-cat-btn.active,
+  .bp-rarity-btn.active,
+  .app-hdr-btn.active,
+  .behavior-radio.active,
+  .preview-tab.active,
+  .docs-nav-btn.active,
+  .bp-view-btn.active
+) {
+  background:rgba(15, 82, 186, 0.08);
+  color:var(--accent);
+  border-color:transparent;
+  box-shadow:none;
+}
+[data-theme="nice"] :is(
+  .bp-type-tab.active,
+  .bp-sub-tab.active,
+  .bp-cat-btn.active,
+  .bp-rarity-btn.active,
+  .app-hdr-btn.active,
+  .preview-tab.active,
+  .docs-nav-btn.active,
+  .bp-view-btn.active
+) svg { color:var(--accent); }
 
 
 /* ── Sidebar collapsed state ── */
@@ -10268,7 +10344,7 @@ body.preview-active .nice-ai {
     min-width:240px;
     max-width:320px;
   }
-  .sch-fixed-ship-trigger:hover { border-color:var(--border-hi, var(--accent)); }
+  .sch-fixed-ship-trigger:hover { background:var(--surface2, var(--bg-alt)); border-color:transparent; }
   .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:var(--accent); }
   /* Pad-left equals chevron width (12px) + gap (8px) so the label's
      flex slot is symmetric around the trigger's centerline — keeps the
