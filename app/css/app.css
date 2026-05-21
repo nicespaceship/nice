@@ -1561,6 +1561,36 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-sidebar.open ~ .app-main { margin-left:280px; }
 
+/* CORE theme nebula — soft animated blue radial gradients drifting
+   behind the main viewport. Five layers compose into an organic wash
+   thanks to a strong blur; the slow alternating drift gives the
+   chrome a faint sense of motion without being distracting. Scoped
+   to the default 'nice' theme so other themes keep their own bg.
+   z-index:-1 keeps the pseudo behind the in-flow children inside
+   .app-main's stacking context — no need to touch child z-indices. */
+[data-theme="nice"] .app-main::before {
+  content:"";
+  position:absolute; inset:-10%;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(38% 32% at 22% 28%, rgba(24, 98, 206, 0.22), transparent 65%),
+    radial-gradient(34% 28% at 78% 22%, rgba(15, 82, 186, 0.18), transparent 65%),
+    radial-gradient(48% 38% at 50% 72%, rgba(74, 144, 194, 0.20), transparent 65%),
+    radial-gradient(28% 24% at 86% 80%, rgba(122, 169, 232, 0.18), transparent 65%),
+    radial-gradient(24% 20% at 14% 84%, rgba(24, 98, 206, 0.15), transparent 65%);
+  filter:blur(40px);
+  animation:nebula-drift 60s ease-in-out infinite alternate;
+}
+@keyframes nebula-drift {
+  0%   { transform:translate(0%, 0%) scale(1); }
+  50%  { transform:translate(2%, -1.5%) scale(1.04); }
+  100% { transform:translate(-1.5%, 2%) scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="nice"] .app-main::before { animation:none; }
+}
+
 
 /* ── Sidebar collapsed state ── */
 .app-sidebar:not(.open) .side-link span,
