@@ -10254,32 +10254,18 @@ body.preview-active .nice-ai {
    schematic-local title can be retired. The mobile breakpoint hides
    this and uses a pill-button + bottom sheet instead. */
 @media (min-width:641px) {
-  /* Center the top tab row as a group. `.bp-type-tabs` is inline-flex
-     (theme.css), so it's content-sized — we have to center its
-     block-level parent instead. The trailing flex:1 spacer (from
-     blueprints.js render) was for the old TRON-tab-on-the-right
-     pattern — kill it so the tab cluster reads as a single chip. */
+  /* Stack the bridge tab row and (when present) the schematic ship
+     picker as two centered rows. Keeping them in separate rows means
+     the tab cluster stays on the viewport's optical axis regardless of
+     whether the picker is mounted — previously the picker was a flex
+     sibling in the same row and shifted the tabs left of center. */
   #app-fixed-tabs {
-    display:flex; align-items:center; justify-content:center;
-    gap:12px;
-  }
-  /* When the schematic ship picker is mounted, the tabs row grows to
-     consume available space (tab buttons stay centered inside) so the
-     picker can be pinned to the right edge of the visible viewport even
-     when the tabs would otherwise overflow horizontally on tablet. The
-     16px right-padding on the container leaves visible breathing room
-     between the trigger and the viewport edge. */
-  #app-fixed-tabs:has(.sch-fixed-ship-picker) {
-    justify-content:flex-start;
-    padding-right:16px;
-  }
-  #app-fixed-tabs:has(.sch-fixed-ship-picker) #bp-type-tabs {
-    flex:1 1 0; min-width:0;
-    justify-content:center;
+    display:flex; flex-direction:column; align-items:center;
+    gap:8px;
   }
   #bp-type-tabs { border:none; }
   #bp-type-tabs > span { display:none; }
-  .sch-fixed-ship-picker { position:relative; flex:0 0 auto; }
+  .sch-fixed-ship-picker { position:relative; }
   .sch-fixed-ship-trigger {
     display:inline-flex; align-items:center; gap:8px;
     padding:6px 12px;
