@@ -156,6 +156,115 @@ const BlueprintsView = (() => {
     });
   }
 
+  // ── Custom dropdown (replaces native <select>) ───────────────────────
+  // Native <select> popups can't be styled on macOS/iOS — the OS draws the
+  // option list at the system font size and ignores CSS, dwarfing the rest
+  // of the chrome. The filter dropdowns render instead as a button + a
+  // listbox we own. Mirrors the Schematic ship picker: a fixed-position
+  // menu anchored to the trigger so it escapes the filter bar's clipping
+  // and stacking context. Value lives on the root's data-value.
+  const _SORT_OPTIONS = [
+    { value: 'name',        label: 'A — Z' },
+    { value: 'name-desc',   label: 'Z — A' },
+    { value: 'popular',     label: 'Most Popular' },
+    { value: 'rating',      label: 'Highest Rated' },
+    { value: 'rarity-desc', label: 'Rarity: High → Low' },
+    { value: 'rarity-asc',  label: 'Rarity: Low → High' },
+  ];
+
+  function _cselectHTML(id, ariaLabel, options, value) {
+    const current = options.find(o => o.value === value) || options[0];
+    const opts = options.map(o =>
+      `<button type="button" class="bp-cselect-option" role="option" data-value="${Utils.esc(o.value)}" aria-selected="${o.value === value}">${Utils.esc(o.label)}</button>`
+    ).join('');
+    return `<div id="${id}" class="bp-cselect" data-value="${Utils.esc(value)}">
+      <button type="button" class="bp-cselect-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${Utils.esc(ariaLabel)}">
+        <span class="bp-cselect-label">${Utils.esc(current.label)}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+      </button>
+      <div class="bp-cselect-menu" role="listbox" aria-label="${Utils.esc(ariaLabel)}" hidden>${opts}</div>
+    </div>`;
+  }
+
+  // Set a dropdown's value + visible label + option state without a click
+  // (used by Clear Filters, which resets programmatically).
+  function _setCselect(id, value) {
+    const root = document.getElementById(id);
+    if (!root) return;
+    root.dataset.value = value;
+    const opt = root.querySelector(`.bp-cselect-option[data-value="${CSS.escape(value)}"]`);
+    root.querySelectorAll('.bp-cselect-option').forEach(o => o.setAttribute('aria-selected', String(o === opt)));
+    const label = root.querySelector('.bp-cselect-label');
+    if (label && opt) label.textContent = opt.textContent;
+  }
+
+  function _mountCselect(id, onChange) {
+    const root = document.getElementById(id);
+    if (!root || root._cselectBound) return;
+    root._cselectBound = true;
+    const trigger = root.querySelector('.bp-cselect-trigger');
+    const menu = root.querySelector('.bp-cselect-menu');
+    const labelEl = root.querySelector('.bp-cselect-label');
+    const opts = () => [...menu.querySelectorAll('.bp-cselect-option')];
+
+    const reposition = () => {
+      const r = trigger.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const menuW = Math.max(r.width, menu.offsetWidth || r.width);
+      menu.style.top = (r.bottom + 4) + 'px';
+      menu.style.minWidth = r.width + 'px';
+      // Flip to right-edge alignment if a left anchor would overflow.
+      if (r.left + menuW > vw - 8) { menu.style.left = 'auto'; menu.style.right = Math.max(8, vw - r.right) + 'px'; }
+      else { menu.style.right = 'auto'; menu.style.left = r.left + 'px'; }
+    };
+    const hide = () => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
+    const show = () => {
+      reposition();
+      menu.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+      (opts().find(o => o.getAttribute('aria-selected') === 'true') || opts()[0])?.focus();
+    };
+
+    trigger.addEventListener('click', (e) => { e.stopPropagation(); menu.hidden ? show() : hide(); });
+    trigger.addEventListener('keydown', (e) => { if (['ArrowDown', 'Enter', ' '].includes(e.key)) { e.preventDefault(); show(); } });
+
+    // Document/window listeners self-remove once the root leaves the DOM
+    // (the view re-renders via innerHTML), so re-renders never stack leaks.
+    const onDocClick = (e) => { if (!root.isConnected) return document.removeEventListener('click', onDocClick); if (!menu.hidden && !root.contains(e.target)) hide(); };
+    const onKey = (e) => {
+      if (!root.isConnected) return document.removeEventListener('keydown', onKey);
+      if (menu.hidden) return;
+      if (e.key === 'Escape') { hide(); trigger.focus(); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const list = opts(); const i = list.indexOf(document.activeElement);
+        list[e.key === 'ArrowDown' ? Math.min(list.length - 1, i + 1) : Math.max(0, i - 1)]?.focus();
+      }
+    };
+    const onReflow = () => {
+      if (!root.isConnected) { window.removeEventListener('scroll', onReflow, true); window.removeEventListener('resize', onReflow); return; }
+      if (!menu.hidden) reposition();
+    };
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onReflow, true);
+    window.addEventListener('resize', onReflow);
+
+    opts().forEach(opt => {
+      opt.addEventListener('click', () => {
+        const v = opt.dataset.value;
+        if (root.dataset.value !== v) {
+          root.dataset.value = v;
+          labelEl.textContent = opt.textContent;
+          opts().forEach(o => o.setAttribute('aria-selected', String(o === opt)));
+          onChange(v);
+        }
+        hide();
+        trigger.focus();
+      });
+    });
+  }
+
   function render(el, opts) {
     const embedded = opts && opts.embedded;
     const user = State.get('user');
@@ -314,24 +423,14 @@ const BlueprintsView = (() => {
             <button class="bp-sheet-close" id="bp-filter-sheet-close" aria-label="Close filters">&times;</button>
           </div>
           <div class="bp-sheet-body">
-            <label class="bp-filter-field">
+            <div class="bp-filter-field">
               <span class="bp-filter-label">Sort</span>
-              <select id="bp-sort" class="filter-select" aria-label="Sort blueprints">
-                <option value="name">A — Z</option>
-                <option value="name-desc">Z — A</option>
-                <option value="popular">Most Popular</option>
-                <option value="rating">Highest Rated</option>
-                <option value="rarity-desc">Rarity: High → Low</option>
-                <option value="rarity-asc">Rarity: Low → High</option>
-              </select>
-            </label>
-            <label class="bp-filter-field">
+              ${_cselectHTML('bp-sort', 'Sort blueprints', _SORT_OPTIONS, 'name')}
+            </div>
+            <div class="bp-filter-field">
               <span class="bp-filter-label">Category</span>
-              <select id="bp-category" class="filter-select" aria-label="Filter by category">
-                <option value="">All Categories</option>
-                ${Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => `<option value="${c}">${c}</option>`).join('')}
-              </select>
-            </label>
+              ${_cselectHTML('bp-category', 'Filter by category', [{ value: '', label: 'All Categories' }, ...Object.keys(BlueprintUtils.CATEGORY_COLORS).map(c => ({ value: c, label: c }))], '')}
+            </div>
             <div class="bp-filter-field">
               <span class="bp-filter-label">Source</span>
               <div class="bp-source-filter" id="bp-source-filter" role="group" aria-label="Filter by source">
@@ -445,7 +544,7 @@ const BlueprintsView = (() => {
       // rarity ship — the card must keep showing Remove so they can still
       // uninstall, even if they couldn't re-deploy it from scratch.
       if (isShipActivated) {
-        deployBtn = `<button class="c-btn bp-deploy-ship-btn bp-activated" data-id="${bp.id}">Remove</button>`;
+        deployBtn = `<button class="c-btn bp-deploy-ship-btn bp-activated" data-id="${bp.id}" aria-label="Remove"><span class="bp-act-rest">Active</span><span class="bp-act-hover">Remove</span></button>`;
       } else if (isLocked) {
         deployBtn = `<button class="c-btn bp-deploy-ship-btn bp-locked" data-id="${bp.id}" disabled title="Reach ${shipRarity} rank to deploy">🔒 ${shipRarity}</button>`;
       } else {
@@ -513,8 +612,14 @@ const BlueprintsView = (() => {
     if (!isActivated && typeof Blueprints !== 'undefined') {
       if (type === 'spaceship') isActivated = Blueprints.isShipActivated(bp.id);
     }
-    const actLabel = isActivated ? 'Remove' : 'Deploy';
+    // Activated ships show their state ("Active", solid green) at rest and the
+    // action ("Remove", red) on hover. aria-label keeps the action clear to
+    // assistive tech regardless of the visible state label.
+    const actInner = isActivated
+      ? '<span class="bp-act-rest">Active</span><span class="bp-act-hover">Remove</span>'
+      : 'Deploy';
     const actClass = isActivated ? ' bpl-activated' : '';
+    const actAria = isActivated ? ' aria-label="Remove"' : '';
     const showAction = type !== 'agent';
 
     return `<div class="bpl-row blueprint-clickable" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}">
@@ -529,7 +634,7 @@ const BlueprintsView = (() => {
       <span class="bpl-dl">${dl}</span>
       <span></span>
       ${showAction
-        ? `<span class="bpl-action"><button class="bpl-action-btn${actClass}" data-id="${bp.id}" data-type="${type}">${actLabel}</button></span>`
+        ? `<span class="bpl-action"><button class="bpl-action-btn${actClass}"${actAria} data-id="${bp.id}" data-type="${type}">${actInner}</button></span>`
         : '<span></span>'}
     </div>`;
   }
@@ -1147,8 +1252,8 @@ const BlueprintsView = (() => {
     }
 
     const q = (document.getElementById('bp-search')?.value || '').trim();
-    const sort = document.getElementById('bp-sort')?.value || 'name';
-    const category = document.getElementById('bp-category')?.value || '';
+    const sort = document.getElementById('bp-sort')?.dataset.value || 'name';
+    const category = document.getElementById('bp-category')?.dataset.value || '';
     const rarityBtn = document.querySelector('.bp-rarity-btn.active');
     const rarity = rarityBtn?.dataset.rarity || 'all';
 
@@ -1211,8 +1316,8 @@ const BlueprintsView = (() => {
   /** Offline / fallback: filter in-memory seeds (original logic) */
   function _applyFiltersLocal() {
     const q = (document.getElementById('bp-search')?.value || '').toLowerCase().trim();
-    const sort = document.getElementById('bp-sort')?.value || 'name';
-    const category = document.getElementById('bp-category')?.value || '';
+    const sort = document.getElementById('bp-sort')?.dataset.value || 'name';
+    const category = document.getElementById('bp-category')?.dataset.value || '';
 
     let list = _getAllBlueprints();
 
@@ -2109,7 +2214,7 @@ const BlueprintsView = (() => {
     const badge = document.getElementById('bp-filter-count');
     if (!badge) return;
     let n = 0;
-    if (document.getElementById('bp-category')?.value) n++;
+    if (document.getElementById('bp-category')?.dataset.value) n++;
     if (_sourceFilter && _sourceFilter !== 'all') n++;
     const activeRarity = document.querySelector('.bp-rarity-btn.active')?.dataset.rarity;
     if (activeRarity && activeRarity !== 'all') n++;
@@ -2153,10 +2258,20 @@ const BlueprintsView = (() => {
       if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
       _applyFilters();
     };
-    document.getElementById('bp-type-tabs')?.addEventListener('click', (e) => {
-      const tab = e.target.closest('.bp-type-tab');
-      if (tab) _switchTab(tab.dataset.tab);
-    });
+    // Delegate the tab click to the persistent #app-fixed-tabs host. The
+    // inner #bp-type-tabs is rebuilt via innerHTML on every render, and the
+    // Router clears #app-fixed-tabs on each navigation, so a listener bound
+    // straight to #bp-type-tabs goes stale and tab clicks (and the active
+    // highlight they drive) silently die until a full reload. The host
+    // element outlives those swaps — bind once and let clicks bubble up.
+    const _fixedTabsHost = document.getElementById('app-fixed-tabs');
+    if (_fixedTabsHost && !_fixedTabsHost.dataset.tabClickBound) {
+      _fixedTabsHost.dataset.tabClickBound = '1';
+      _fixedTabsHost.addEventListener('click', (e) => {
+        const tab = e.target.closest('.bp-type-tab');
+        if (tab) _switchTab(tab.dataset.tab);
+      });
+    }
 
     // Mobile tab picker — opens the bottom sheet with the same tab list.
     const tabPicker = document.getElementById('bp-tab-picker');
@@ -2192,8 +2307,8 @@ const BlueprintsView = (() => {
       clearTimeout(_searchTimer);
       _searchTimer = setTimeout(() => _applyFilters(), 300);
     });
-    document.getElementById('bp-sort')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
-    document.getElementById('bp-category')?.addEventListener('change', () => { _applyFilters(); _updateFilterCount(); });
+    _mountCselect('bp-sort', () => { _applyFilters(); _updateFilterCount(); });
+    _mountCselect('bp-category', () => { _applyFilters(); _updateFilterCount(); });
 
     // Mobile filters sheet — same controls, rendered as a bottom drawer
     // on narrow viewports. Desktop CSS overrides display so the sheet is
@@ -2208,8 +2323,8 @@ const BlueprintsView = (() => {
     document.getElementById('bp-filter-sheet-close')?.addEventListener('click', _closeFilterSheet);
     document.getElementById('bp-filter-apply')?.addEventListener('click', _closeFilterSheet);
     document.getElementById('bp-filter-clear')?.addEventListener('click', () => {
-      const sort = document.getElementById('bp-sort'); if (sort) sort.value = 'name';
-      const cat = document.getElementById('bp-category'); if (cat) cat.value = '';
+      _setCselect('bp-sort', 'name');
+      _setCselect('bp-category', '');
       _sourceFilter = 'all';
       document.querySelectorAll('.bp-source-btn').forEach(b => { const on = b.dataset.source === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
       document.querySelectorAll('.bp-rarity-btn').forEach(b => { const on = b.dataset.rarity === 'all'; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
