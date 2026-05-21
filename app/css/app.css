@@ -1573,6 +1573,12 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   position:absolute; inset:-10%;
   z-index:-1;
   pointer-events:none;
+  /* Explicit overrides — theme.css declares a smaller circular orb on
+     the same pseudo and would otherwise leak its width/height/opacity
+     into our full-bleed nebula. */
+  width:auto; height:auto;
+  border-radius:0;
+  opacity:1;
   background:
     radial-gradient(38% 32% at 22% 28%, rgba(24, 98, 206, 0.45), transparent 65%),
     radial-gradient(34% 28% at 78% 22%, rgba(15, 82, 186, 0.40), transparent 65%),
@@ -1582,6 +1588,9 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   filter:blur(40px);
   animation:nebula-drift 60s ease-in-out infinite alternate;
 }
+/* Hide the second CORE-theme orb on .app-main::after — the nebula on
+   ::before already covers the same role. */
+[data-theme="nice"] .app-main::after { display:none; }
 @keyframes nebula-drift {
   0%   { transform:translate(0%, 0%) scale(1); }
   50%  { transform:translate(2%, -1.5%) scale(1.04); }
