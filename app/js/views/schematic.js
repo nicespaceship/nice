@@ -885,7 +885,12 @@ const SchematicView = (() => {
       const cardCx = cardRect.left - cRect.left + cardRect.width / 2;
       const cardCy = cardRect.top - cRect.top + cardRect.height / 2;
 
-      const filled = !card.classList.contains('schematic-card-empty');
+      // Treat locked slots as not-filled for wire/dot styling — some
+      // ships seed their locked slots with a default blueprint so the
+      // card has data, but the user can't access them and the wire
+      // should read as dormant (faint dashed line, no traveling dot).
+      const filled = !card.classList.contains('schematic-card-empty')
+        && !card.classList.contains('schematic-card-locked');
       const pathId = 'sch-p-' + i;
       const opacity = filled ? '.25' : '.06';
       const dash = filled ? '' : ' stroke-dasharray="3 5"';
