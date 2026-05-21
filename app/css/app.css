@@ -1589,7 +1589,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 [data-theme="nice"] .btn:not(.btn-primary):hover,
 [data-theme="nice"] .c-btn:not(.bp-activated):hover {
-  background:var(--surface2);
+  background:rgba(15, 82, 186, 0.08);
+  color:var(--accent);
   border-color:transparent;
   box-shadow:none;
 }
@@ -1604,22 +1605,37 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-color:transparent;
   box-shadow:none;
 }
-/* Selected state: light accent-blue chip + branded blue text/icon,
-   modeled after .side-link.active. Applied uniformly to every "active
-   tab / chip / filter pill" so the selection language reads the same
-   wherever the user lands. Solid-accent buttons (outbox CTAs, primary
-   buttons) keep their fill — this only overrides the tinted/bordered
-   variants. */
+/* Selected + hover share the same language: light accent-blue chip
+   with branded blue text/icon, modeled after .side-link.active. Hover
+   gives a non-selected element a preview of selection; the active
+   element already looks selected so the hover state is a no-op for
+   it. Solid-accent buttons (outbox CTAs, primary buttons) keep their
+   fill — this only overrides the tinted/bordered variants. The
+   open-sidebar's .side-mode-tab[aria-selected="true"] joins the same
+   selected language so collapsed and expanded chrome read alike. */
 [data-theme="nice"] :is(
   .bp-type-tab.active,
+  .bp-type-tab:hover,
   .bp-sub-tab.active,
+  .bp-sub-tab:hover,
   .bp-cat-btn.active,
+  .bp-cat-btn:hover,
   .bp-rarity-btn.active,
+  .bp-rarity-btn:hover,
   .app-hdr-btn.active,
+  .app-hdr-btn:hover,
   .behavior-radio.active,
+  .behavior-radio:hover,
   .preview-tab.active,
+  .preview-tab:hover,
   .docs-nav-btn.active,
-  .bp-view-btn.active
+  .docs-nav-btn:hover,
+  .bp-view-btn.active,
+  .bp-view-btn:hover,
+  .side-mode-tab[aria-selected="true"],
+  .side-mode-tab:hover,
+  .side-link.active,
+  .side-link:hover
 ) {
   background:rgba(15, 82, 186, 0.08);
   color:var(--accent);
@@ -1628,13 +1644,25 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 [data-theme="nice"] :is(
   .bp-type-tab.active,
+  .bp-type-tab:hover,
   .bp-sub-tab.active,
+  .bp-sub-tab:hover,
   .bp-cat-btn.active,
+  .bp-cat-btn:hover,
   .bp-rarity-btn.active,
+  .bp-rarity-btn:hover,
   .app-hdr-btn.active,
+  .app-hdr-btn:hover,
   .preview-tab.active,
+  .preview-tab:hover,
   .docs-nav-btn.active,
-  .bp-view-btn.active
+  .docs-nav-btn:hover,
+  .bp-view-btn.active,
+  .bp-view-btn:hover,
+  .side-mode-tab[aria-selected="true"],
+  .side-mode-tab:hover,
+  .side-link.active,
+  .side-link:hover
 ) svg { color:var(--accent); }
 
 
