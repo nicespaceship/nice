@@ -1235,12 +1235,15 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar {
   position:fixed; top:var(--guest-banner-height, 0px); left:0; bottom:0; width:56px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
-  border-right:var(--border-width) solid var(--border);
   color:var(--nav-text, var(--text));
   display:flex; flex-direction:column;
   overflow:hidden; z-index:200;
   transition:width .3s ease;
 }
+/* Universal: drop the sidebar→main separator across all themes.
+   Equal specificity to per-theme rules; appears after them in source
+   so it wins via cascade order. */
+[data-theme] .app-sidebar { border-right:none; }
 .app-sidebar.open { width:280px; }
 /* Sidebar backdrop — visibility is derived from the sidebar's own state
    so the two can never desync. Previously had its own .open class that
@@ -1565,7 +1568,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    the earlier animated nebula and supersedes the multi-orb stack
    declared in theme.css so the chrome reads quiet and motionless. */
 [data-theme="nice"] .app-main { background-color:#f5f8fc; }
-[data-theme="nice"] .app-sidebar { border-right:none; }
 [data-theme="nice"] body::before,
 [data-theme="nice"] body::after,
 [data-theme="nice"] .app-main::before,
