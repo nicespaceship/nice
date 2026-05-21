@@ -1604,6 +1604,38 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-color:transparent;
   box-shadow:none;
 }
+/* Selected state: light accent-blue chip + branded blue text/icon,
+   modeled after .side-link.active. Applied uniformly to every "active
+   tab / chip / filter pill" so the selection language reads the same
+   wherever the user lands. Solid-accent buttons (outbox CTAs, primary
+   buttons) keep their fill — this only overrides the tinted/bordered
+   variants. */
+[data-theme="nice"] :is(
+  .bp-type-tab.active,
+  .bp-sub-tab.active,
+  .bp-cat-btn.active,
+  .bp-rarity-btn.active,
+  .app-hdr-btn.active,
+  .behavior-radio.active,
+  .preview-tab.active,
+  .docs-nav-btn.active,
+  .bp-view-btn.active
+) {
+  background:rgba(15, 82, 186, 0.08);
+  color:var(--accent);
+  border-color:transparent;
+  box-shadow:none;
+}
+[data-theme="nice"] :is(
+  .bp-type-tab.active,
+  .bp-sub-tab.active,
+  .bp-cat-btn.active,
+  .bp-rarity-btn.active,
+  .app-hdr-btn.active,
+  .preview-tab.active,
+  .docs-nav-btn.active,
+  .bp-view-btn.active
+) svg { color:var(--accent); }
 
 
 /* ── Sidebar collapsed state ── */
