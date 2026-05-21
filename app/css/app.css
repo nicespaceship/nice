@@ -1594,6 +1594,23 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-color:transparent;
   box-shadow:none;
 }
+/* Deploy CTAs (cards on Blueprints) read as primary action — solid
+   accent fill + bg-coloured text, matching the active source filter
+   "All" pill. .bp-activated swaps to the green→red Remove treatment
+   above; here we only style the deploy state. */
+[data-theme="nice"] .c-btn.bp-deploy-ship-btn:not(.bp-activated),
+[data-theme="nice"] .c-btn.bp-deploy-btn:not(.bp-activated) {
+  background:var(--accent);
+  color:var(--bg);
+  border-color:transparent;
+}
+[data-theme="nice"] .c-btn.bp-deploy-ship-btn:not(.bp-activated):hover,
+[data-theme="nice"] .c-btn.bp-deploy-btn:not(.bp-activated):hover {
+  background:var(--accent2, var(--accent));
+  color:var(--bg);
+  border-color:transparent;
+  box-shadow:none;
+}
 [data-theme="nice"] .c-btn.bp-activated {
   background:color-mix(in srgb, var(--color-success) 12%, var(--surface));
   color:var(--color-success);
