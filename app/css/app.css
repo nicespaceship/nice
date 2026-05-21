@@ -1564,10 +1564,12 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-sidebar.open ~ .app-main { margin-left:280px; }
 
-/* CORE theme — solid light-blue tint in the main viewport. Replaces
-   the earlier animated nebula and supersedes the multi-orb stack
-   declared in theme.css so the chrome reads quiet and motionless. */
-[data-theme="nice"] .app-main { background-color:#f5f8fc; }
+/* CORE theme — darker canvas + zero hairline borders so white panels
+   (sidebar, prompt bar, cards, dropdowns, drawers) float on the
+   surface via contrast alone. Modern borderless look. Supersedes the
+   multi-orb stack declared in theme.css so the chrome stays still. */
+[data-theme="nice"] { --border:transparent; }
+[data-theme="nice"] .app-main { background-color:#e8eef5; }
 [data-theme="nice"] body::before,
 [data-theme="nice"] body::after,
 [data-theme="nice"] .app-main::before,
