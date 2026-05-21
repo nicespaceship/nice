@@ -179,18 +179,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   fill:none; stroke:currentColor; stroke-width:1.5;
   stroke-linecap:round; stroke-linejoin:round;
 }
-/* Help icon — deep-links to the marketing-site docs. Same chromeless
-   treatment as the theme-logo button so the two icons read as a pair. */
-.app-hdr-btn-help {
-  display:inline-flex; align-items:center; justify-content:center;
-  padding:5px 8px;
-  border:none; background:none;
-  color:var(--text-muted);
-  text-decoration:none;
-  transition:color .15s;
-}
-.app-hdr-btn-help:hover { color:var(--text); border:none; background:none; }
-.app-hdr-btn-help svg { width:22px; height:22px; display:block; }
 .app-hdr-menu { display:none; background:none; border:none; color:var(--text-muted); cursor:pointer; padding:6px; }
 
 /* User info (now in sidebar footer) */
