@@ -1580,11 +1580,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-radius:0;
   opacity:1;
   background:
-    radial-gradient(38% 32% at 22% 28%, rgba(24, 98, 206, 0.10), transparent 65%),
-    radial-gradient(34% 28% at 78% 22%, rgba(15, 82, 186, 0.10), transparent 65%),
-    radial-gradient(48% 38% at 50% 72%, rgba(74, 144, 194, 0.10), transparent 65%),
-    radial-gradient(28% 24% at 86% 80%, rgba(122, 169, 232, 0.10), transparent 65%),
-    radial-gradient(24% 20% at 14% 84%, rgba(24, 98, 206, 0.10), transparent 65%);
+    radial-gradient(38% 32% at 22% 28%, rgba(24, 98, 206, 0.20), transparent 65%),
+    radial-gradient(34% 28% at 78% 22%, rgba(15, 82, 186, 0.20), transparent 65%),
+    radial-gradient(48% 38% at 50% 72%, rgba(74, 144, 194, 0.20), transparent 65%),
+    radial-gradient(28% 24% at 86% 80%, rgba(122, 169, 232, 0.20), transparent 65%),
+    radial-gradient(24% 20% at 14% 84%, rgba(24, 98, 206, 0.20), transparent 65%);
   filter:blur(40px);
   animation:nebula-drift 60s ease-in-out infinite alternate;
 }
