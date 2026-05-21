@@ -10312,7 +10312,7 @@ body.preview-active .nice-ai {
     min-width:240px;
     max-width:320px;
   }
-  .sch-fixed-ship-trigger:hover { border-color:var(--border-hi, var(--accent)); }
+  .sch-fixed-ship-trigger:hover { background:var(--surface2, var(--bg-alt)); border-color:transparent; }
   .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:var(--accent); }
   .sch-fixed-ship-label { flex:1 1 auto; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sch-fixed-ship-trigger svg { flex-shrink:0; color:var(--text-muted); }
