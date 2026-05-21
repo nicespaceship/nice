@@ -238,11 +238,13 @@
 /* Sub-tabs & filters */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-sub-tab {
   border: 1px solid var(--border);
-  background: transparent; color: var(--text-muted);
+  background: var(--surface); color: var(--text-muted);
   font-family: var(--font-h); font-weight: var(--fw-regular);
   font-size: var(--text-sm);
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-sub-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(15,82,186,0.06); }
+/* On the solid-blue active sub-tab, the count reads as light grey against the white label. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-sub-tab.active .bp-tab-count { color: #d1d5db; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn {
   border: 1px solid var(--border);
   background: transparent; color: var(--text-dim);
@@ -302,15 +304,22 @@
 :is([data-theme="nice"],[data-theme="nice-dark"]) .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(15,82,186,0.08); outline: none; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) select:not(.nice-ai-model-select):not(.nice-ai-mode-select) {
   border: 1px solid var(--border); color: var(--text);
-  background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .filter-select {
   border: 1px solid var(--border); color: var(--text);
-  background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
 }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .search-box { background: var(--surface2); border-color: var(--border); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .search-box { background: var(--surface); border-color: var(--border); }
+/* CORE chrome (tab bar + view toggle) reads as white panels on the canvas,
+   matching the sidebar surface. Uses --surface so nice-dark stays dark. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tabs { background: var(--surface); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-view-toggle { background: var(--surface); }
+/* Theme button (logo variant) gets a white panel like the other chrome; the
+   base .app-hdr-btn-logo zeroes its background, so re-assert it here. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-hdr-btn-logo { background: var(--surface); }
 
 /* Prompt panel */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .nice-ai-input-area {
