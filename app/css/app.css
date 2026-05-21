@@ -10270,7 +10270,10 @@ body.preview-active .nice-ai {
   }
   .sch-fixed-ship-trigger:hover { border-color:var(--border-hi, var(--accent)); }
   .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:var(--accent); }
-  .sch-fixed-ship-label { flex:1 1 auto; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* Pad-left equals chevron width (12px) + gap (8px) so the label's
+     flex slot is symmetric around the trigger's centerline — keeps the
+     name visually centered despite the chevron's right-side offset. */
+  .sch-fixed-ship-label { flex:1 1 auto; padding-left:20px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sch-fixed-ship-trigger svg { flex-shrink:0; color:var(--text-muted); }
   /* Fixed-position so the popover escapes the bridge tabs row's
      overflow:auto clipping; JS sets `top` and `left` from the trigger
