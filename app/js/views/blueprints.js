@@ -1456,6 +1456,12 @@ const BlueprintsView = (() => {
       html = _blueprintsSubnavHTML();
     } else if (_activeTab === 'missions' && typeof MissionsView !== 'undefined' && MissionsView.getToolbarActions) {
       html = MissionsView.getToolbarActions();
+    } else if (_activeTab === 'outbox') {
+      html = _outboxSubnavHTML();
+    } else if (_activeTab === 'operations' && typeof AnalyticsView !== 'undefined' && AnalyticsView.getToolbarActions) {
+      html = AnalyticsView.getToolbarActions();
+    } else if (_activeTab === 'log' && typeof AuditLogView !== 'undefined' && AuditLogView.getToolbarActions) {
+      html = AuditLogView.getToolbarActions();
     }
     bar.innerHTML = html;
     bar.hidden = !html;
@@ -1616,6 +1622,38 @@ const BlueprintsView = (() => {
     return filtered;
   }
 
+  // Outbox toolbar (status + type filters + view toggle + export) for the
+  // shared #bridge-subnav. Clicks are delegated off #bridge-subnav (see the
+  // bind section), which re-renders both this bar and the Outbox body.
+  function _outboxSubnavHTML() {
+    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
+    const pending = items.filter(i => i.approval_status === 'draft');
+    const approved = items.filter(i => i.approval_status === 'approved');
+    const rejected = items.filter(i => i.approval_status === 'rejected');
+    return `
+      <div class="outbox-toolbar">
+        <div class="outbox-filters">
+          <button class="outbox-filter${_outboxStatusFilter === 'all' ? ' active' : ''}" data-status="all">All <span class="outbox-badge">${items.length}</span></button>
+          <button class="outbox-filter${_outboxStatusFilter === 'draft' ? ' active' : ''}" data-status="draft">Pending <span class="outbox-badge">${pending.length}</span></button>
+          <button class="outbox-filter${_outboxStatusFilter === 'approved' ? ' active' : ''}" data-status="approved">Approved <span class="outbox-badge">${approved.length}</span></button>
+          <button class="outbox-filter${_outboxStatusFilter === 'rejected' ? ' active' : ''}" data-status="rejected">Rejected <span class="outbox-badge">${rejected.length}</span></button>
+        </div>
+        <div class="outbox-type-filters">
+          <button class="outbox-type-btn${_outboxTypeFilter === 'all' ? ' active' : ''}" data-type="all">All Types</button>
+          <button class="outbox-type-btn${_outboxTypeFilter === 'social' ? ' active' : ''}" data-type="social" style="--type-color:#c084fc">Social</button>
+          <button class="outbox-type-btn${_outboxTypeFilter === 'email' ? ' active' : ''}" data-type="email" style="--type-color:#60a5fa">Email</button>
+          <button class="outbox-type-btn${_outboxTypeFilter === 'report' ? ' active' : ''}" data-type="report" style="--type-color:#34d399">Report</button>
+        </div>
+        <div class="outbox-view-toggle">
+          <div class="outbox-view-seg">
+            <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view" aria-label="Calendar view"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2.5" width="12" height="10.5" rx="1"/><path d="M1 5.5h12M4 1v3M10 1v3"/></svg></button>
+            <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view" aria-label="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
+          </div>
+          ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
+        </div>
+      </div>`;
+  }
+
   function _renderOutbox(el) {
     const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
@@ -1652,30 +1690,8 @@ const BlueprintsView = (() => {
 
     el.innerHTML = `
       <div class="outbox-container">
-        <div class="outbox-header">
-          <div class="outbox-toolbar">
-            <div class="outbox-filters">
-              <button class="outbox-filter${_outboxStatusFilter === 'all' ? ' active' : ''}" data-status="all">All <span class="outbox-badge">${items.length}</span></button>
-              <button class="outbox-filter${_outboxStatusFilter === 'draft' ? ' active' : ''}" data-status="draft">Pending <span class="outbox-badge">${pending.length}</span></button>
-              <button class="outbox-filter${_outboxStatusFilter === 'approved' ? ' active' : ''}" data-status="approved">Approved <span class="outbox-badge">${approved.length}</span></button>
-              <button class="outbox-filter${_outboxStatusFilter === 'rejected' ? ' active' : ''}" data-status="rejected">Rejected <span class="outbox-badge">${rejected.length}</span></button>
-            </div>
-            <div class="outbox-type-filters">
-              <button class="outbox-type-btn${_outboxTypeFilter === 'all' ? ' active' : ''}" data-type="all">All Types</button>
-              <button class="outbox-type-btn${_outboxTypeFilter === 'social' ? ' active' : ''}" data-type="social" style="--type-color:#c084fc">Social</button>
-              <button class="outbox-type-btn${_outboxTypeFilter === 'email' ? ' active' : ''}" data-type="email" style="--type-color:#60a5fa">Email</button>
-              <button class="outbox-type-btn${_outboxTypeFilter === 'report' ? ' active' : ''}" data-type="report" style="--type-color:#34d399">Report</button>
-            </div>
-            <div class="outbox-view-toggle">
-              <div class="outbox-view-seg">
-                <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view" aria-label="Calendar view"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2.5" width="12" height="10.5" rx="1"/><path d="M1 5.5h12M4 1v3M10 1v3"/></svg></button>
-                <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view" aria-label="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
-              </div>
-              ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
-            </div>
-          </div>
-        </div>
-
+        <!-- Status/type filters + view toggle render in the shared
+             #bridge-subnav (see _outboxSubnavHTML / _renderSubnav). -->
         ${_outboxViewMode === 'calendar' ? `
         <div class="outbox-calendar">
           <div class="outbox-cal-nav">
@@ -1806,29 +1822,8 @@ const BlueprintsView = (() => {
   function _bindOutboxEvents(el) {
     const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
 
-    // Status filter clicks
-    el.querySelectorAll('.outbox-filter').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _outboxStatusFilter = btn.dataset.status || 'all';
-        _renderOutbox(el);
-      });
-    });
-
-    // Type filter clicks
-    el.querySelectorAll('.outbox-type-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _outboxTypeFilter = btn.dataset.type || 'all';
-        _renderOutbox(el);
-      });
-    });
-
-    // View toggle (calendar / list)
-    el.querySelectorAll('.outbox-view-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _outboxViewMode = btn.dataset.view || 'calendar';
-        _renderOutbox(el);
-      });
-    });
+    // Status/type filters, view toggle, and export live in #bridge-subnav now
+    // and are handled by its click delegation (see the bind section).
 
     // Week navigation
     el.querySelector('#outbox-prev-week')?.addEventListener('click', () => {
@@ -1934,11 +1929,6 @@ const BlueprintsView = (() => {
       if (e.target.closest('.outbox-schedule-btn')) {
         _showPlatformPicker(el, id, 'schedule');
       }
-    });
-
-    // Export button
-    el.querySelector('#outbox-export')?.addEventListener('click', () => {
-      if (typeof ContentQueue !== 'undefined') ContentQueue.exportApproved();
     });
   }
 
@@ -2259,7 +2249,17 @@ const BlueprintsView = (() => {
         _applyFilters();
         return;
       }
-      if (e.target.closest('#bp-filter-toggle')) _openFilterSheet();
+      if (e.target.closest('#bp-filter-toggle')) { _openFilterSheet(); return; }
+      // Outbox toolbar (status / type / view / export). Re-render the subnav
+      // (active state + counts) and the Outbox body in #bp-log-content.
+      const _outboxBody = () => document.getElementById('bp-log-content');
+      const ofBtn = e.target.closest('.outbox-filter');
+      if (ofBtn) { _outboxStatusFilter = ofBtn.dataset.status || 'all'; _renderSubnav(); _renderOutbox(_outboxBody()); return; }
+      const otBtn = e.target.closest('.outbox-type-btn');
+      if (otBtn) { _outboxTypeFilter = otBtn.dataset.type || 'all'; _renderSubnav(); _renderOutbox(_outboxBody()); return; }
+      const ovBtn = e.target.closest('.outbox-view-btn');
+      if (ovBtn) { _outboxViewMode = ovBtn.dataset.view || 'calendar'; _renderSubnav(); _renderOutbox(_outboxBody()); return; }
+      if (e.target.closest('#outbox-export') && typeof ContentQueue !== 'undefined') { ContentQueue.exportApproved(); return; }
     });
     _bpSubnav?.addEventListener('input', (e) => {
       if (e.target.id !== 'bp-search') return;

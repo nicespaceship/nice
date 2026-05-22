@@ -31,6 +31,18 @@ const AuditLogView = (() => {
     return CATEGORIES.find(c => c.value === action) || CATEGORIES[0];
   }
 
+  // Search + count + Clear for the shared #bridge-subnav. Events bind in
+  // render() via global ids, so living outside the view body works.
+  function getToolbarActions() {
+    return `
+      <div class="search-box">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+        <input type="text" id="log-filter-search" class="search-input" placeholder="Search events..." />
+      </div>
+      <span class="log-count" id="log-count"></span>
+      <button class="btn btn-sm" id="log-clear" title="Clear log">Clear</button>`;
+  }
+
   function render(el) {
     const user = State.get('user');
     if (!user) return _authPrompt(el, "the captain's log");
@@ -41,15 +53,8 @@ const AuditLogView = (() => {
         <!-- Category Gauge Strip -->
         <div class="log-gauge-strip" id="log-gauges"></div>
 
-        <!-- Toolbar -->
-        <div class="log-toolbar">
-          <div class="search-box">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-            <input type="text" id="log-filter-search" class="search-input" placeholder="Search events..." />
-          </div>
-          <span class="log-count" id="log-count"></span>
-          <button class="btn btn-sm" id="log-clear" title="Clear log">Clear</button>
-        </div>
+        <!-- Search + count + Clear render in the shared #bridge-subnav
+             (see getToolbarActions). -->
 
         <!-- Timeline -->
         <div class="log-timeline" id="log-timeline">
@@ -174,5 +179,5 @@ const AuditLogView = (() => {
     return () => { clearTimeout(t); t = setTimeout(fn, ms); };
   }
 
-  return { title, render };
+  return { title, render, getToolbarActions };
 })();
