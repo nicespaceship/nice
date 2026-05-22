@@ -129,8 +129,7 @@ describe('MissionsView', () => {
 
   it('renders pipeline visualizer', () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'p@test.com' });
-    MissionsView.render(el);
+    el.innerHTML = MissionsView.getToolbarActions();
     const pipeline = el.querySelector('#mc-pipeline');
     expect(pipeline).toBeTruthy();
   });

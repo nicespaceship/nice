@@ -343,6 +343,7 @@ const BlueprintsView = (() => {
         <div class="bp-type-tabs" id="bp-type-tabs">
           ${tabDefs.map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
         </div>
+        <div class="bridge-subnav" id="bridge-subnav" hidden></div>
         <button class="bp-tab-picker" id="bp-tab-picker" aria-haspopup="dialog" aria-expanded="false">
           <span class="bp-tab-picker-label">${activeLabel}</span>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
@@ -363,45 +364,8 @@ const BlueprintsView = (() => {
         <!-- Header row: sub-tabs left, search + view-toggle right.
              Desktop + tablet render on one row (search/toggle aligned
              to the right of the Workshop tab); mobile stacks them. -->
-        <div class="bp-header-row">
-          <!-- Blueprints sub-tabs (Spaceships / Agents are catalogs;
-               Active is the user's deployed ships + agents; Workshop is
-               custom builds + imports) -->
-          <div class="bp-sub-tabs" id="bp-sub-tabs">
-            <button class="bp-sub-tab active" data-sub="spaceship">Spaceships <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length}</span></button>
-            <button class="bp-sub-tab" data-sub="agent">Agents <span class="bp-tab-count">${(typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length}</span></button>
-            <button class="bp-sub-tab" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
-            <button class="bp-sub-tab" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
-          </div>
-
-          <!-- Search row: always contains search + view-toggle; on
-               mobile also renders a Filters button (see
-               .bp-filter-toggle). The filter controls themselves live
-               in .bp-filter-controls which is an inline flex row on
-               desktop and a bottom sheet on mobile. -->
-          <div class="bp-search-row">
-            <div class="search-box">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-              <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" data-allow-zoom />
-            </div>
-            <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
-              <span>Filters</span>
-              <span class="bp-filter-count" id="bp-filter-count" hidden></span>
-            </button>
-            <div class="bp-view-toggle" id="bp-view-toggle">
-              <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>
-              </button>
-              <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg>
-              </button>
-              <button class="bp-view-btn${_viewMode==='list'?' active':''}" data-view="list" title="List view">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
+        <!-- Blueprints sub-tabs + search + view toggle render in the shared
+             #bridge-subnav (see _blueprintsSubnavHTML / _renderSubnav). -->
 
         <!-- Log tab content (rendered by LogView sub-modules) -->
         <div id="bp-log-content" style="display:none"></div>
@@ -1481,7 +1445,57 @@ const BlueprintsView = (() => {
   }
 
   /* ── Toggle between schematic and catalog views ── */
+  // Shared sub-toolbar directly under the main tabs. One persistent row;
+  // each page fills it with its own CTAs so the controls stop scattering
+  // across pages. Wired page-by-page — Missions first.
+  function _renderSubnav() {
+    const bar = document.getElementById('bridge-subnav');
+    if (!bar) return;
+    let html = '';
+    if (_activeTab === 'blueprints') {
+      html = _blueprintsSubnavHTML();
+    } else if (_activeTab === 'missions' && typeof MissionsView !== 'undefined' && MissionsView.getToolbarActions) {
+      html = MissionsView.getToolbarActions();
+    }
+    bar.innerHTML = html;
+    bar.hidden = !html;
+    bar.setAttribute('data-tab', _activeTab);
+  }
+
+  function _blueprintsSubnavHTML() {
+    const shipN = (typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length;
+    const agentN = (typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length;
+    const a = (id) => _subTab === id ? ' active' : '';
+    const v = (mode) => _viewMode === mode ? ' active' : '';
+    return `
+      <div class="bp-header-row">
+        <div class="bp-sub-tabs" id="bp-sub-tabs">
+          <button class="bp-sub-tab${a('spaceship')}" data-sub="spaceship">Spaceships <span class="bp-tab-count">${shipN}</span></button>
+          <button class="bp-sub-tab${a('agent')}" data-sub="agent">Agents <span class="bp-tab-count">${agentN}</span></button>
+          <button class="bp-sub-tab${a('active')}" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
+          <button class="bp-sub-tab${a('workshop')}" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
+        </div>
+        <div class="bp-search-row">
+          <div class="search-box">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+            <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" data-allow-zoom />
+          </div>
+          <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
+            <span>Filters</span>
+            <span class="bp-filter-count" id="bp-filter-count" hidden></span>
+          </button>
+          <div class="bp-view-toggle" id="bp-view-toggle">
+            <button class="bp-view-btn${v('card')}" data-view="card" title="Card view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg></button>
+            <button class="bp-view-btn${v('compact')}" data-view="compact" title="Compact view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg></button>
+            <button class="bp-view-btn${v('list')}" data-view="list" title="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function _toggleSchematicView() {
+    _renderSubnav();
     const schematicEl = document.getElementById('bp-schematic-content');
     const logEl = document.getElementById('bp-log-content');
     const searchRow = document.querySelector('.bp-search-row');
@@ -1541,18 +1555,10 @@ const BlueprintsView = (() => {
   function _renderLogTab(el) {
     const _missing = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
     if (_activeTab === 'missions') {
-      // Standalone Missions tab: search + New Mission toolbar (right-aligned)
-      // above the mission list. No sub-tabs — Outbox is its own top-level tab.
-      const actions = (typeof MissionsView !== 'undefined' && MissionsView.getToolbarActions)
-        ? MissionsView.getToolbarActions() : '';
-      el.innerHTML =
-        '<div class="log-view-wrap">' +
-          (actions ? '<div class="bridge-hub-header"><div class="bridge-hub-actions">' + actions + '</div></div>' : '') +
-          '<div class="log-view-content" id="bridge-hub-content"></div>' +
-        '</div>';
-      const container = el.querySelector('#bridge-hub-content');
-      if (typeof MissionsView !== 'undefined') MissionsView.render(container);
-      else container.innerHTML = _missing;
+      // Search + New Mission render in the shared #bridge-subnav (see
+      // _renderSubnav); the view just renders the pipeline + mission list.
+      if (typeof MissionsView !== 'undefined') MissionsView.render(el);
+      else el.innerHTML = _missing;
     } else if (_activeTab === 'operations') {
       if (typeof AnalyticsView !== 'undefined') AnalyticsView.render(el);
       else el.innerHTML = _missing;
@@ -1661,8 +1667,10 @@ const BlueprintsView = (() => {
               <button class="outbox-type-btn${_outboxTypeFilter === 'report' ? ' active' : ''}" data-type="report" style="--type-color:#34d399">Report</button>
             </div>
             <div class="outbox-view-toggle">
-              <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view">&#9634;</button>
-              <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view">&#9776;</button>
+              <div class="outbox-view-seg">
+                <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view" aria-label="Calendar view"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2.5" width="12" height="10.5" rx="1"/><path d="M1 5.5h12M4 1v3M10 1v3"/></svg></button>
+                <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view" aria-label="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
+              </div>
               ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
             </div>
           </div>
@@ -2225,20 +2233,36 @@ const BlueprintsView = (() => {
     });
 
     // Sub-tabs (Spaceships / Agents within Blueprints)
-    document.getElementById('bp-sub-tabs')?.addEventListener('click', (e) => {
+    // Blueprints sub-tabs, view toggle, and filter button live in the shared
+    // #bridge-subnav (re-rendered per tab), so delegate from the persistent
+    // bar rather than binding the re-created controls directly.
+    const _bpSubnav = document.getElementById('bridge-subnav');
+    _bpSubnav?.addEventListener('click', (e) => {
       const tab = e.target.closest('.bp-sub-tab');
-      if (!tab) return;
-      document.querySelectorAll('.bp-sub-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      _subTab = tab.dataset.sub;
-      _colSort = { key: null, dir: 'asc' };
-      _updateRarityFilters();
-      _updateToolbarVisibility();
-      if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
-      _applyFilters();
+      if (tab) {
+        document.querySelectorAll('.bp-sub-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        _subTab = tab.dataset.sub;
+        _colSort = { key: null, dir: 'asc' };
+        _updateRarityFilters();
+        _updateToolbarVisibility();
+        if (document.getElementById('bp-search')) document.getElementById('bp-search').value = '';
+        _applyFilters();
+        return;
+      }
+      const vbtn = e.target.closest('.bp-view-btn');
+      if (vbtn) {
+        _viewMode = vbtn.dataset.view;
+        localStorage.setItem(Utils.KEYS.bpView, _viewMode);
+        document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
+        vbtn.classList.add('active');
+        _applyFilters();
+        return;
+      }
+      if (e.target.closest('#bp-filter-toggle')) _openFilterSheet();
     });
-
-    document.getElementById('bp-search')?.addEventListener('input', () => {
+    _bpSubnav?.addEventListener('input', (e) => {
+      if (e.target.id !== 'bp-search') return;
       clearTimeout(_searchTimer);
       _searchTimer = setTimeout(() => _applyFilters(), 300);
     });
@@ -2248,12 +2272,12 @@ const BlueprintsView = (() => {
     // Mobile filters sheet — same controls, rendered as a bottom drawer
     // on narrow viewports. Desktop CSS overrides display so the sheet is
     // just an inline flex row.
-    const filterToggle = document.getElementById('bp-filter-toggle');
     const filterSheet = document.getElementById('bp-filter-sheet');
     const filterBackdrop = document.getElementById('bp-filter-sheet-backdrop');
-    const _openFilterSheet = () => { if (filterSheet && filterBackdrop) { filterBackdrop.hidden = false; requestAnimationFrame(() => { filterSheet.classList.add('open'); filterBackdrop.classList.add('open'); filterToggle?.setAttribute('aria-expanded', 'true'); }); } };
-    const _closeFilterSheet = () => { if (filterSheet && filterBackdrop) { filterSheet.classList.remove('open'); filterBackdrop.classList.remove('open'); filterToggle?.setAttribute('aria-expanded', 'false'); setTimeout(() => { filterBackdrop.hidden = true; }, 200); } };
-    filterToggle?.addEventListener('click', _openFilterSheet);
+    // The filter toggle lives in the re-rendered subnav; query it fresh for the
+    // aria state. The click itself is handled by the #bridge-subnav delegation.
+    const _openFilterSheet = () => { if (filterSheet && filterBackdrop) { filterBackdrop.hidden = false; requestAnimationFrame(() => { filterSheet.classList.add('open'); filterBackdrop.classList.add('open'); document.getElementById('bp-filter-toggle')?.setAttribute('aria-expanded', 'true'); }); } };
+    const _closeFilterSheet = () => { if (filterSheet && filterBackdrop) { filterSheet.classList.remove('open'); filterBackdrop.classList.remove('open'); document.getElementById('bp-filter-toggle')?.setAttribute('aria-expanded', 'false'); setTimeout(() => { filterBackdrop.hidden = true; }, 200); } };
     filterBackdrop?.addEventListener('click', _closeFilterSheet);
     document.getElementById('bp-filter-sheet-close')?.addEventListener('click', _closeFilterSheet);
     document.getElementById('bp-filter-apply')?.addEventListener('click', _closeFilterSheet);
@@ -2273,16 +2297,7 @@ const BlueprintsView = (() => {
       if (document.getElementById('bp-tab-sheet')?.classList.contains('open')) _closeTabSheet();
     });
 
-    // View toggle buttons
-    document.getElementById('bp-view-toggle')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.bp-view-btn');
-      if (!btn) return;
-      _viewMode = btn.dataset.view;
-      localStorage.setItem(Utils.KEYS.bpView, _viewMode);
-      document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      _applyFilters();
-    });
+    // View toggle is handled by the #bridge-subnav click delegation above.
 
     // Rarity filter buttons
     document.getElementById('bp-rarity-filters')?.addEventListener('click', (e) => {

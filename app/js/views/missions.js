@@ -48,6 +48,7 @@ const MissionsView = (() => {
      fine. */
   function getToolbarActions() {
     return `
+      <div class="mc-pipeline" id="mc-pipeline"></div>
       <div class="search-box">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
         <input type="text" id="task-search" class="search-input" placeholder="Search ${_Nlp()}..." data-allow-zoom />
@@ -67,11 +68,8 @@ const MissionsView = (() => {
 
     el.innerHTML = `
       <div class="mc-missions">
-        <!-- Search + New Mission render in the Missions hub tab row
-             (see MissionsView.getToolbarActions / blueprints.js hub shell). -->
-
-        <!-- Pipeline -->
-        <div class="mc-pipeline" id="mc-pipeline"></div>
+        <!-- Pipeline + search + New Mission render in the shared #bridge-subnav
+             (see MissionsView.getToolbarActions). -->
 
         <!-- Mission Feed -->
         <div class="mc-feed" id="mc-feed">${_skeletonRows(6)}</div>
@@ -136,11 +134,9 @@ const MissionsView = (() => {
       const active = _filterStatus === s ? 'mc-pipe-active' : '';
       const isRunning = s === 'running' && counts.running > 0;
       return `
-        ${i > 0 ? '<div class="mc-pipe-line"><div class="mc-pipe-flow"></div></div>' : ''}
         <button class="mc-pipe-node ${active} ${isRunning ? 'mc-pipe-running' : ''}" data-status="${s}" style="--pipe-color:${meta.color}">
-          <span class="mc-pipe-icon">${_statusIcon(meta.icon)}</span>
-          <span class="mc-pipe-count">${counts[s]}</span>
           <span class="mc-pipe-label">${meta.label}</span>
+          <span class="mc-pipe-count">${counts[s]}</span>
         </button>`;
     }).join('');
 
