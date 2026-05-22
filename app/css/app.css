@@ -3835,9 +3835,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .bridge-subnav[hidden] { display:none; }
 .bridge-subnav .search-box { min-width:0; }
-/* Blueprints header fills the bar so its sub-tabs sit left and the
-   search + view toggles sit right (its original, approved layout). */
-.bridge-subnav .bp-header-row { flex:1 1 100%; margin-bottom:0; }
+/* On mobile the sub-tabs take the full bar width so the four equal-width
+   tabs don't truncate; any sibling (e.g. the Filters button) wraps below. */
+@media (max-width:640px) {
+  .bridge-subnav .bp-sub-tabs { flex:1 1 100%; }
+}
 .bp-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .bp-title { font-family:var(--font-b); font-size:1.2rem; font-weight:var(--fw-bold); margin:0; }
 .bp-sub { font-family:var(--font-b); font-size:.62rem; letter-spacing:var(--tracking-normal); color:var(--text-muted); margin:4px 0 0 0; }
@@ -10660,9 +10662,10 @@ body.preview-active .nice-ai {
    chrome (handle/header/footer/labels) is hidden; sheet-body uses
    display:contents so the field elements flow as direct children. */
 .bp-filter-controls {
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
   margin-bottom:12px;
 }
+.bp-filter-controls .bp-filter-search { flex:0 1 260px; }
 .bp-filter-controls > .bp-sheet-handle,
 .bp-filter-controls > .bp-sheet-header,
 .bp-filter-controls > .bp-sheet-footer { display:none; }

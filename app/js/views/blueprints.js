@@ -381,6 +381,15 @@ const BlueprintsView = (() => {
             <button class="bp-sheet-close" id="bp-filter-sheet-close" aria-label="Close filters">&times;</button>
           </div>
           <div class="bp-sheet-body">
+            <div class="search-box bp-filter-search">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+              <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" data-allow-zoom />
+            </div>
+            <div class="bp-view-toggle" id="bp-view-toggle">
+              <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg></button>
+              <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg></button>
+              <button class="bp-view-btn${_viewMode==='list'?' active':''}" data-view="list" title="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
+            </div>
             <div class="bp-filter-field">
               <span class="bp-filter-label">Sort</span>
               ${_cselectHTML('bp-sort', 'Sort blueprints', _SORT_OPTIONS, 'name')}
@@ -1476,32 +1485,21 @@ const BlueprintsView = (() => {
     const shipN = (typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length;
     const agentN = (typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length;
     const a = (id) => _subTab === id ? ' active' : '';
-    const v = (mode) => _viewMode === mode ? ' active' : '';
+    // Sub-tabs only — centered. Search + view toggle moved down into the
+    // filter row (see the .bp-sheet-body in render). The Filters button stays
+    // here for mobile (it opens the filter sheet; hidden on desktop via CSS).
     return `
-      <div class="bp-header-row">
-        <div class="bp-sub-tabs" id="bp-sub-tabs">
-          <button class="bp-sub-tab${a('spaceship')}" data-sub="spaceship">Spaceships <span class="bp-tab-count">${shipN}</span></button>
-          <button class="bp-sub-tab${a('agent')}" data-sub="agent">Agents <span class="bp-tab-count">${agentN}</span></button>
-          <button class="bp-sub-tab${a('active')}" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
-          <button class="bp-sub-tab${a('workshop')}" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
-        </div>
-        <div class="bp-search-row">
-          <div class="search-box">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-            <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" data-allow-zoom />
-          </div>
-          <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
-            <span>Filters</span>
-            <span class="bp-filter-count" id="bp-filter-count" hidden></span>
-          </button>
-          <div class="bp-view-toggle" id="bp-view-toggle">
-            <button class="bp-view-btn${v('card')}" data-view="card" title="Card view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg></button>
-            <button class="bp-view-btn${v('compact')}" data-view="compact" title="Compact view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg></button>
-            <button class="bp-view-btn${v('list')}" data-view="list" title="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
-          </div>
-        </div>
-      </div>`;
+      <div class="bp-sub-tabs" id="bp-sub-tabs">
+        <button class="bp-sub-tab${a('spaceship')}" data-sub="spaceship">Spaceships <span class="bp-tab-count">${shipN}</span></button>
+        <button class="bp-sub-tab${a('agent')}" data-sub="agent">Agents <span class="bp-tab-count">${agentN}</span></button>
+        <button class="bp-sub-tab${a('active')}" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
+        <button class="bp-sub-tab${a('workshop')}" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
+      </div>
+      <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
+        <span>Filters</span>
+        <span class="bp-filter-count" id="bp-filter-count" hidden></span>
+      </button>`;
   }
 
   function _toggleSchematicView() {
@@ -2244,15 +2242,6 @@ const BlueprintsView = (() => {
         _applyFilters();
         return;
       }
-      const vbtn = e.target.closest('.bp-view-btn');
-      if (vbtn) {
-        _viewMode = vbtn.dataset.view;
-        localStorage.setItem(Utils.KEYS.bpView, _viewMode);
-        document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
-        vbtn.classList.add('active');
-        _applyFilters();
-        return;
-      }
       if (e.target.closest('#bp-filter-toggle')) { _openFilterSheet(); return; }
       // Outbox toolbar (status / type / view / export). Re-render the subnav
       // (active state + counts) and the Outbox body in #bp-log-content.
@@ -2265,7 +2254,19 @@ const BlueprintsView = (() => {
       if (ovBtn) { _outboxViewMode = ovBtn.dataset.view || 'calendar'; _renderSubnav(); _renderOutbox(_outboxBody()); return; }
       if (e.target.closest('#outbox-export') && typeof ContentQueue !== 'undefined') { ContentQueue.exportApproved(); return; }
     });
-    _bpSubnav?.addEventListener('input', (e) => {
+    // Search + view toggle now live in the filter row (#bp-filter-sheet, which
+    // is persistent in the content) — delegate their events off it.
+    const _bpFilters = document.getElementById('bp-filter-sheet');
+    _bpFilters?.addEventListener('click', (e) => {
+      const vbtn = e.target.closest('.bp-view-btn');
+      if (!vbtn) return;
+      _viewMode = vbtn.dataset.view;
+      localStorage.setItem(Utils.KEYS.bpView, _viewMode);
+      document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
+      vbtn.classList.add('active');
+      _applyFilters();
+    });
+    _bpFilters?.addEventListener('input', (e) => {
       if (e.target.id !== 'bp-search') return;
       clearTimeout(_searchTimer);
       _searchTimer = setTimeout(() => _applyFilters(), 300);
