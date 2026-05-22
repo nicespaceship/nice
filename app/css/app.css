@@ -1717,6 +1717,16 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    --accent-rgb fallback), so override all three here. */
 [data-theme="nice"] .bp-rarity-btn.active[data-rarity] { background:var(--accent); color:var(--bg); border-color:transparent; }
 
+/* Blueprint card frame carries its rarity colour (same hexes as RARITY_COLORS
+   and the rarity pills above). The base card border is var(--border)=transparent
+   in CORE, so without this the 15px frame is invisible. Mythic is intentionally
+   omitted: .blueprint-card[data-rarity="mythic"] already runs the mythic-rgb-border
+   rainbow animation in every theme. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity="common"]    { border-color:#94a3b8; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity="rare"]      { border-color:#b6dff9; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity="epic"]      { border-color:#a855f7; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity="legendary"] { border-color:#f59e0b; }
+
 
 /* ── Sidebar collapsed state ── */
 .app-sidebar:not(.open) .side-link span,
@@ -2636,6 +2646,23 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .log-view-tab { padding:10px 20px; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); font-family:var(--font-b); font-size:.72rem; letter-spacing:var(--tracking-normal); cursor:pointer; transition:color .2s,border-color .2s; }
 .log-view-tab:hover { color:var(--text); }
 .log-view-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* Missions / Operations hub header — .bp-sub-tab pills on the left, an
+   optional right-aligned actions slot on the same row (Missions feeds it
+   search + New Mission). Mirrors the Blueprints .bp-header-row pattern. */
+.bridge-hub-header { display:flex; align-items:center; gap:16px; margin-bottom:8px; flex-wrap:wrap; }
+.bridge-hub-header .bp-sub-tabs { margin-bottom:0; flex:0 0 auto; }
+.bridge-hub-actions { flex:1 1 auto; display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:0; }
+.bridge-hub-actions .search-box { min-width:0; }
+@media (max-width:640px) {
+  /* Collapse the header like .bp-header-row so .bp-sub-tabs becomes a
+     direct child of the scroll container — the sticky full-width bar +
+     equal-width tab rule then apply (no label truncation), and the
+     actions fall to their own line beneath. */
+  .bridge-hub-header { display:contents; }
+  .bridge-hub-actions { justify-content:stretch; margin-bottom:8px; }
+  .bridge-hub-actions .search-box { flex:1 1 auto; }
+}
 
 /* ─────────────────────────────────────────────────────────────────
    AUTH / PROFILE VIEW
@@ -5512,7 +5539,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-grid-art svg { width:100%; height:100%; }
 .blueprint-card-grid-info { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; }
 .blueprint-card-grid-name { font-family:var(--font-b); font-size:var(--card-text-body); font-weight:var(--fw-bold); color:var(--text); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-.blueprint-card-grid-badge { font-size:var(--card-text-micro); padding:1px 6px; border:1px solid; border-radius:var(--radius); text-transform:uppercase; letter-spacing:var(--tracking-caps); font-family:var(--font-b); }
+.blueprint-card-grid-badge,
+.blueprint-card-compact-badge { font-size:var(--card-text-micro); padding:1px 6px; border:1px solid; border-radius:var(--radius); text-transform:uppercase; letter-spacing:var(--tracking-caps); font-family:var(--font-b); }
 .blueprint-card-grid-stats { display:flex; gap:6px; justify-content:center; font-size:var(--card-text-micro); color:var(--text-muted); font-family:var(--font-b); }
 .blueprint-card-grid-stats b { color:var(--text); }
 
@@ -6456,8 +6484,10 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 /* Mythic badge — applied directly via class (no inline style conflict) */
 .mythic-badge-animated {
-  animation: mythic-badge-glow 6s linear infinite;
-  border:1px solid #ff2d55;
+  animation: mythic-rgb-bg 6s linear infinite;
+  background:#ff2d55;
+  color:#fff;
+  border:1px solid transparent;
 }
 
 /* Card tier borders — spaceship cards (data-tier) */
@@ -6601,13 +6631,12 @@ html[data-theme] .nice-ai-input:focus-visible {
   margin:0;
   padding:0;
   display:grid;
-  grid-template-columns:1fr 1fr;
-  column-gap:10px;
-  row-gap:3px;
+  grid-template-columns:1fr;
+  row-gap:2px;
 }
 .blueprint-card-crew-item {
   display:flex;
-  align-items:flex-start;
+  align-items:center;
   gap:6px;
   font-size:var(--card-text-meta);
   line-height:1.3;
@@ -6622,7 +6651,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   height:6px;
   border-radius:50%;
   background:#94a3b8;
-  margin-top:4px;
 }
 .blueprint-card-crew-item.bp-crew-c1 .blueprint-card-crew-dot { background:#94a3b8; }
 .blueprint-card-crew-item.bp-crew-c2 .blueprint-card-crew-dot { background:#b6dff9; }
@@ -6631,12 +6659,30 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-crew-label {
   flex:1;
   min-width:0;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
+  white-space:nowrap;
   overflow:hidden;
-  word-break:break-word;
+  text-overflow:ellipsis;
 }
+/* Right-aligned rarity pill per crew row — solid fill in the rarity
+   colour with white text, mirroring the dot colours and the drawer's
+   crew class chips. Rows are sorted highest rarity first. */
+.blueprint-card-crew-rarity {
+  flex:0 0 auto;
+  margin-left:auto;
+  font-family:var(--font-b);
+  font-size:var(--card-text-micro);
+  font-weight:var(--fw-bold);
+  line-height:1;
+  padding:2px 6px;
+  border-radius:999px;
+  color:#fff;
+  background:#94a3b8;
+  white-space:nowrap;
+}
+.blueprint-card-crew-item.bp-crew-c1 .blueprint-card-crew-rarity { background:#94a3b8; }
+.blueprint-card-crew-item.bp-crew-c2 .blueprint-card-crew-rarity { background:#b6dff9; }
+.blueprint-card-crew-item.bp-crew-c3 .blueprint-card-crew-rarity { background:#a855f7; }
+.blueprint-card-crew-item.bp-crew-c4 .blueprint-card-crew-rarity { background:#f59e0b; }
 
 /* ═══════════════════════════════════════════════════════════════════
    Sub-header row — sits directly under the name bar, surfaces the
@@ -6732,13 +6778,18 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-front-panel { display:none; }
 .blueprint-card-front-panel.active { display:block; }
 
-/* Ship cards need a deeper text-box than the default 75px so tab
-   panels with rich content (12-row crew roster, multi-step workflows,
-   long protocol list) have meaningful viewing area before the user
-   needs to scroll. Agent cards keep the original 75px since their
-   flavor + caps are typically 2-3 short lines. */
+/* Ship cards split the area below the header evenly between the
+   art/schematic and the text-box (~130px each on a standard card).
+   The 12-row single-column crew roster is taller than the text-box,
+   so it scrolls within it (accent scrollbar below). Agent cards keep
+   the default proportions since their flavor + caps are 2-3 lines. */
+.blueprint-card[data-type="spaceship"] .blueprint-card-art {
+  flex:1 1 0;
+  min-height:0;
+}
 .blueprint-card[data-type="spaceship"] .blueprint-card-text-box {
-  min-height:140px;
+  flex:1 1 0;
+  min-height:0;
   scrollbar-color:var(--accent) transparent;
 }
 .blueprint-card[data-type="spaceship"] .blueprint-card-text-box::-webkit-scrollbar { width:6px; }
@@ -8806,12 +8857,13 @@ html[data-theme] .nice-ai-input:focus-visible {
 .bp-drawer-crew-class {
   font-family:var(--font-m); font-size:.65rem; font-weight:var(--fw-bold);
   padding:2px 6px; border-radius:3px; line-height:1;
-  border:1px solid currentColor;
+  border:1px solid transparent;
+  background:var(--crew-class-color, var(--text-muted)); color:#fff;
 }
-.bp-drawer-crew-class-1 { color:#94a3b8; }
-.bp-drawer-crew-class-2 { color:#b6dff9; }
-.bp-drawer-crew-class-3 { color:#a855f7; }
-.bp-drawer-crew-class-4 { color:#f59e0b; }
+.bp-drawer-crew-class-1 { --crew-class-color:#94a3b8; }
+.bp-drawer-crew-class-2 { --crew-class-color:#b6dff9; }
+.bp-drawer-crew-class-3 { --crew-class-color:#a855f7; }
+.bp-drawer-crew-class-4 { --crew-class-color:#f59e0b; }
 .bp-drawer-crew-legend {
   display:flex; flex-wrap:wrap; gap:10px; padding:4px 4px 0;
   font-size:.65rem; color:var(--text-muted);
@@ -8819,7 +8871,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .bp-drawer-crew-legend span { display:inline-flex; align-items:center; gap:4px; }
 .bp-drawer-crew-swatch {
   display:inline-block; width:8px; height:8px; border-radius:2px;
-  background:currentColor;
+  background:var(--crew-class-color, currentColor);
 }
 
 /* Card selected highlight (for drawer + compare) */

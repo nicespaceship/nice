@@ -492,12 +492,17 @@ const CardRenderer = (() => {
   function _renderCrewList(bp) {
     const crew = bp.crew || bp.config?.crew_roles || bp.metadata?.crew || [];
     if (!crew.length) return '';
-    return `<ul class="blueprint-card-crew-list">${crew.map(slot => {
+    const RARITY_BY_CLASS = { 1: 'Common', 2: 'Rare', 3: 'Epic', 4: 'Legendary' };
+    // Highest rarity first; stable sort keeps slot order within a tier.
+    const rows = crew.map(slot => {
       const label = slot.label || slot.role || 'Slot';
       const minClass = slot.min_class || 'class-1';
       const classNum = parseInt((minClass.match(/(\d+)/) || [])[1] || '1', 10);
-      return `<li class="blueprint-card-crew-item bp-crew-c${classNum}" title="${_esc(label)} — Class ${classNum}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span></li>`;
-    }).join('')}</ul>`;
+      return { label, classNum, rarity: RARITY_BY_CLASS[Math.min(classNum, 4)] || 'Common' };
+    }).sort((a, b) => b.classNum - a.classNum);
+    return `<ul class="blueprint-card-crew-list">${rows.map(({ label, classNum, rarity }) =>
+      `<li class="blueprint-card-crew-item bp-crew-c${classNum}" title="${_esc(label)} — ${rarity}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span><span class="blueprint-card-crew-rarity">${rarity}</span></li>`
+    ).join('')}</ul>`;
   }
 
   /* ── Back-face content ──
@@ -660,7 +665,7 @@ const CardRenderer = (() => {
 
     // ── Rarity badge — same treatment for ALL rarities ──
     const badgeClass = rarity === 'mythic' ? ' mythic-badge-animated' : '';
-    const badgeStyle = `style="color:${rarityColor};border:1px solid ${rarityColor}"`;
+    const badgeStyle = `style="background:${rarityColor};color:#fff;border:1px solid transparent"`;
 
     // ── Art ──
     // Ship cards on the front use the ported marketing inside-stage
@@ -735,7 +740,7 @@ const CardRenderer = (() => {
       art = avatarArt(data.name, data.category || data.role, serial);
       badgeHTML = rarity === 'Mythic'
         ? `<span class="blueprint-card-grid-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
-        : `<span class="blueprint-card-grid-badge" style="color:${rarityColor};border-color:${rarityColor}">${rarity.toUpperCase()}</span>`;
+        : `<span class="blueprint-card-grid-badge" style="background:${rarityColor};color:#fff;border-color:transparent">${rarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}"`;
       if (data.stats) {
         const lbls = ['SPD','ACC','CAP','PWR'], keys = ['spd','acc','cap','pwr'];
@@ -749,7 +754,7 @@ const CardRenderer = (() => {
       const shipSlots = BlueprintUtils.getCrewDefs(data);
       const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
       art = slotDiagramArt(artClassId, serial, slotOpts);
-      badgeHTML = `<span class="blueprint-card-grid-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
+      badgeHTML = `<span class="blueprint-card-grid-badge" style="background:${shipRarityColor};color:#fff;border-color:transparent">${shipRarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-bp-id="${data.id}"`;
     }
 
@@ -786,7 +791,7 @@ const CardRenderer = (() => {
       art = avatarArt(data.name, data.category || data.role, serial);
       badgeHTML = rarity === 'Mythic'
         ? `<span class="blueprint-card-compact-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
-        : `<span class="blueprint-card-compact-badge" style="color:${rarityColor};border-color:${rarityColor}">${rarity.toUpperCase()}</span>`;
+        : `<span class="blueprint-card-compact-badge" style="background:${rarityColor};color:#fff;border-color:transparent">${rarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}" data-status="${data.status || ''}"`;
 
       const config = data.config || {};
@@ -813,7 +818,7 @@ const CardRenderer = (() => {
       const shipSlots = BlueprintUtils.getCrewDefs(data);
       const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
       art = slotDiagramArt(artClassId, serial, slotOpts);
-      badgeHTML = `<span class="blueprint-card-compact-badge" style="color:${shipRarityColor};border-color:${shipRarityColor}">${shipRarity.toUpperCase()}</span>`;
+      badgeHTML = `<span class="blueprint-card-compact-badge" style="background:${shipRarityColor};color:#fff;border-color:transparent">${shipRarity.toUpperCase()}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-status="${data.status || ''}"`;
 
       const members = data._members || [];
