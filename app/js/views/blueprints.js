@@ -87,8 +87,6 @@ const BlueprintsView = (() => {
 
   let _activeTab = 'schematic';
   let _subTab = 'spaceship'; // sub-tab within Blueprints: 'spaceship', 'agent', or 'workshop' (custom builds + imports)
-  let _missionsSub = 'templates'; // sub-tab within Missions: 'templates' | 'outbox'
-  let _operationsSub = 'analytics'; // sub-tab within Operations: 'analytics' | 'log'
   // Source filter: 'all' mixes catalog + community blueprints; 'official'
   // narrows to the seeded NICE library; 'community' narrows to user-
   // published content. Replaces the old standalone Marketplace sub-tab.
@@ -288,25 +286,22 @@ const BlueprintsView = (() => {
       // current theme's nav.
       const _themeId = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : 'nice';
       const _tronAvailable = _themeId === 'grid';
-      const validTabs = ['schematic', 'blueprints', 'missions', 'operations'];
+      const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'outbox', 'log'];
       if (_tronAvailable) validTabs.push('tron');
-      // Legacy redirects — Outbox is now a sub-tab under Missions, Log is
-      // now a sub-tab under Operations, and Documentation moved to the
-      // marketing site (linked from the global ? icon). Old `?tab=...`
-      // links rewrite onto the new sub-tab structure so deep links keep
+      // Outbox and Log are top-level tabs (after Operations). Documentation
+      // moved to the marketing site (linked from the global ? icon). Old
+      // sub-tab deep links rewrite onto the flat tabs below so they keep
       // resolving.
       const subParam = _hashParams.get('sub');
       if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
-      else if (_tabParam === 'outbox') { _activeTab = 'missions'; _missionsSub = 'outbox'; }
-      else if (_tabParam === 'log') { _activeTab = 'operations'; _operationsSub = 'log'; }
       else if (_tabParam === 'documentation') { _activeTab = 'schematic'; }
       else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'active' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
       else _activeTab = 'schematic';
-      // Sub-tab routing for the consolidated Missions / Operations hubs.
-      if (_activeTab === 'missions' && subParam && ['templates', 'outbox'].includes(subParam)) _missionsSub = subParam;
-      if (_activeTab === 'operations' && subParam && ['analytics', 'log'].includes(subParam)) _operationsSub = subParam;
+      // Legacy sub-tab deep links → the now top-level Outbox / Log tabs.
+      if (_activeTab === 'missions' && subParam === 'outbox') _activeTab = 'outbox';
+      if (_activeTab === 'operations' && subParam === 'log') _activeTab = 'log';
       if (_sourceParam === 'official' || _sourceParam === 'community' || _sourceParam === 'all') {
         _sourceFilter = _sourceParam;
       }
@@ -332,16 +327,15 @@ const BlueprintsView = (() => {
       // every other theme so the tab list doesn't expose a view that
       // doesn't fit the current visual language.
       const _themeForTabs = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : 'nice';
-      // Missions tab carries the Outbox draft count as a badge — Outbox
-      // is now a sub-tab of Missions, but new content waiting for review
-      // still surfaces in the primary nav so users see the queue without
-      // drilling in.
-      const missionsBadge = outboxBadge.replace('bp-tab-count--alert', 'bp-tab-count--alert');
+      // Outbox carries the draft-count badge so pending content waiting for
+      // review surfaces in the primary nav.
       const tabDefs = [
         { id: 'schematic', label: 'Schematic' },
         { id: 'blueprints', label: 'Blueprints' },
-        { id: 'missions', label: Terminology.label('mission', { plural: true }) + missionsBadge },
+        { id: 'missions', label: Terminology.label('mission', { plural: true }) },
         { id: 'operations', label: 'Operations' },
+        { id: 'outbox', label: 'Outbox' + outboxBadge },
+        { id: 'log', label: 'Log' },
         ...(_themeForTabs === 'grid' ? [{ id: 'tron', label: 'TRON', cls: 'bp-tab-tron' }] : []),
       ];
       const activeLabel = (tabDefs.find(t => t.id === _activeTab) || tabDefs[1]).label.replace(/<[^>]*>/g, '').trim();
@@ -1497,7 +1491,7 @@ const BlueprintsView = (() => {
     const loadMore = document.getElementById('bp-load-more');
 
     const subTabs = document.getElementById('bp-sub-tabs');
-    const isLogTab = ['missions', 'operations', 'tron'].includes(_activeTab);
+    const isLogTab = ['missions', 'operations', 'outbox', 'log', 'tron'].includes(_activeTab);
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
@@ -1545,91 +1539,32 @@ const BlueprintsView = (() => {
   }
 
   function _renderLogTab(el) {
+    const _missing = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
     if (_activeTab === 'missions') {
-      _renderMissionsHub(el);
+      // Standalone Missions tab: search + New Mission toolbar (right-aligned)
+      // above the mission list. No sub-tabs — Outbox is its own top-level tab.
+      const actions = (typeof MissionsView !== 'undefined' && MissionsView.getToolbarActions)
+        ? MissionsView.getToolbarActions() : '';
+      el.innerHTML =
+        '<div class="log-view-wrap">' +
+          (actions ? '<div class="bridge-hub-header"><div class="bridge-hub-actions">' + actions + '</div></div>' : '') +
+          '<div class="log-view-content" id="bridge-hub-content"></div>' +
+        '</div>';
+      const container = el.querySelector('#bridge-hub-content');
+      if (typeof MissionsView !== 'undefined') MissionsView.render(container);
+      else container.innerHTML = _missing;
     } else if (_activeTab === 'operations') {
-      _renderOperationsHub(el);
+      if (typeof AnalyticsView !== 'undefined') AnalyticsView.render(el);
+      else el.innerHTML = _missing;
+    } else if (_activeTab === 'outbox') {
+      _renderOutbox(el);
+    } else if (_activeTab === 'log') {
+      if (typeof AuditLogView !== 'undefined') AuditLogView.render(el);
+      else el.innerHTML = _missing;
     } else if (_activeTab === 'tron' && typeof TronView !== 'undefined') {
       TronView.render(el);
     } else {
-      el.innerHTML = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
-    }
-  }
-
-  function _renderHubShell(el, tabs, activeSub, onSwitch) {
-    // Shared sub-tab shell for the Missions + Operations hubs. Tabs are
-    // styled with the existing .log-view-tab / .log-view-tabs classes so
-    // the consolidation reads as one design language with the standalone
-    // #/log view.
-    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
-    el.innerHTML =
-      '<div class="log-view-wrap">' +
-        '<div class="log-view-tabs">' +
-          tabs.map(t =>
-            '<button class="log-view-tab' + (t.id === activeSub ? ' active' : '') + '" data-sub="' + _e(t.id) + '">' + _e(t.label) + (t.badge || '') + '</button>'
-          ).join('') +
-        '</div>' +
-        '<div class="log-view-content" id="bridge-hub-content"></div>' +
-      '</div>';
-    const container = el.querySelector('#bridge-hub-content');
-    el.querySelectorAll('.log-view-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const sub = btn.dataset.sub;
-        if (!sub) return;
-        onSwitch(sub, container);
-      });
-    });
-    return container;
-  }
-
-  function _renderMissionsHub(el) {
-    const draftCount = (typeof ContentQueue !== 'undefined' && ContentQueue.getCounts)
-      ? (ContentQueue.getCounts().draft || 0)
-      : 0;
-    const outboxBadge = draftCount > 0 ? ' <span class="bp-tab-count bp-tab-count--alert">' + draftCount + '</span>' : '';
-    const tabs = [
-      { id: 'templates', label: Terminology.label('mission', { plural: true }) },
-      { id: 'outbox', label: 'Outbox', badge: outboxBadge }
-    ];
-    const dispatch = (sub, container) => {
-      _missionsSub = sub;
-      history.replaceState(null, '', '#/bridge?tab=missions&sub=' + sub);
-      _renderMissionsHubBody(container, sub);
-      // Sync visible active state without re-rendering the shell.
-      el.querySelectorAll('.log-view-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === sub));
-    };
-    const container = _renderHubShell(el, tabs, _missionsSub, dispatch);
-    _renderMissionsHubBody(container, _missionsSub);
-  }
-
-  function _renderMissionsHubBody(container, sub) {
-    if (sub === 'outbox') _renderOutbox(container);
-    else if (typeof MissionsView !== 'undefined') MissionsView.render(container);
-    else container.innerHTML = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
-  }
-
-  function _renderOperationsHub(el) {
-    const tabs = [
-      { id: 'analytics', label: 'Analytics' },
-      { id: 'log', label: 'Log' }
-    ];
-    const dispatch = (sub, container) => {
-      _operationsSub = sub;
-      history.replaceState(null, '', '#/bridge?tab=operations&sub=' + sub);
-      _renderOperationsHubBody(container, sub);
-      el.querySelectorAll('.log-view-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === sub));
-    };
-    const container = _renderHubShell(el, tabs, _operationsSub, dispatch);
-    _renderOperationsHubBody(container, _operationsSub);
-  }
-
-  function _renderOperationsHubBody(container, sub) {
-    if (sub === 'log') {
-      if (typeof AuditLogView !== 'undefined') AuditLogView.render(container);
-      else container.innerHTML = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
-    } else {
-      if (typeof AnalyticsView !== 'undefined') AnalyticsView.render(container);
-      else container.innerHTML = '<p class="text-muted" style="padding:20px">Module not loaded.</p>';
+      el.innerHTML = _missing;
     }
   }
 

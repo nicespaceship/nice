@@ -101,10 +101,9 @@ describe('MissionsView', () => {
     expect(feed).toBeTruthy();
   });
 
-  it('renders the new mission button', () => {
+  it('renders the new mission button (hub toolbar actions)', () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'p@test.com' });
-    MissionsView.render(el);
+    el.innerHTML = MissionsView.getToolbarActions();
     const btn = el.querySelector('#btn-new-task');
     expect(btn).toBeTruthy();
   });
@@ -136,10 +135,9 @@ describe('MissionsView', () => {
     expect(pipeline).toBeTruthy();
   });
 
-  it('renders search input', () => {
+  it('renders search input (hub toolbar actions)', () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'p@test.com' });
-    MissionsView.render(el);
+    el.innerHTML = MissionsView.getToolbarActions();
     const search = el.querySelector('#task-search');
     expect(search).toBeTruthy();
   });

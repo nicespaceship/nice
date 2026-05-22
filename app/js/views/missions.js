@@ -41,6 +41,23 @@ const MissionsView = (() => {
     return `<div class="skeleton-list">${r.repeat(n || 5)}</div>`;
   }
 
+  /* Toolbar actions for the Missions hub tab row — search + New Mission.
+     The hub shell (blueprints.js) renders this into .bridge-hub-actions so
+     they sit on the same row as the Missions/Outbox sub-tabs. Events bind in
+     _bindEvents() via global ids, so living outside this body container is
+     fine. */
+  function getToolbarActions() {
+    return `
+      <div class="search-box">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
+        <input type="text" id="task-search" class="search-input" placeholder="Search ${_Nlp()}..." data-allow-zoom />
+      </div>
+      <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New ${_N()}" title="New ${_N()}">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
+        <span class="mc-toolbar-label">New ${_N()}</span>
+      </button>`;
+  }
+
   /* ═══════════════════════════════════════════════════════════════════
      RENDER
   ═══════════════════════════════════════════════════════════════════ */
@@ -50,21 +67,8 @@ const MissionsView = (() => {
 
     el.innerHTML = `
       <div class="mc-missions">
-        <!-- Toolbar -->
-        <div class="view-topbar">
-          <div class="view-topbar-l">
-            <div class="search-box">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-              <input type="text" id="task-search" class="search-input" placeholder="Search ${_Nlp()}..." data-allow-zoom />
-            </div>
-          </div>
-          <div class="mc-toolbar-actions">
-            <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New ${_N()}" title="New ${_N()}">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-              <span class="mc-toolbar-label">New ${_N()}</span>
-            </button>
-          </div>
-        </div>
+        <!-- Search + New Mission render in the Missions hub tab row
+             (see MissionsView.getToolbarActions / blueprints.js hub shell). -->
 
         <!-- Pipeline -->
         <div class="mc-pipeline" id="mc-pipeline"></div>
@@ -616,7 +620,7 @@ const MissionsView = (() => {
     _prevStatuses = {};
   }
 
-  return { get title() { return _Np(); }, render, destroy };
+  return { get title() { return _Np(); }, render, getToolbarActions, destroy };
 })();
 
 /* ── Mission Detail View ── */
