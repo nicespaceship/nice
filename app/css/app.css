@@ -3499,22 +3499,23 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    TASKS VIEW
 ───────────────────────────────────────────────────────────────── */
 /* ═══ MISSION CONTROL — Pipeline ═══ */
-.mc-pipeline { margin-bottom:16px; }
-.mc-pipe-row { display:flex; align-items:center; gap:0; justify-content:center; }
-.mc-pipe-node {
-  display:flex; flex-direction:column; align-items:center; gap:2px;
-  padding:10px 18px; border:1px solid var(--border); border-radius:var(--radius);
-  background:var(--panel-bg); cursor:pointer; transition:all .2s; min-width:80px;
+/* Pipeline lives in the shared sub-toolbar, styled like the Blueprints
+   sub-tab pills: horizontal "Label 0" segments (count stays colored per
+   status) in one white segmented bar — no icons, no connector lines. */
+.mc-pipeline { margin:0; }
+.mc-pipe-row {
+  display:flex; align-items:center; gap:2px; justify-content:center;
+  background:var(--surface); border:var(--border-width) solid var(--border); border-radius:var(--radius); padding:2px;
 }
-.mc-pipe-node:hover { border-color:var(--pipe-color,var(--accent)); }
-.mc-pipe-active { border-color:var(--pipe-color,var(--accent)) !important; box-shadow:0 0 12px color-mix(in srgb, var(--pipe-color) 30%, transparent); background:color-mix(in srgb, var(--pipe-color) 6%, var(--panel-bg)); }
-.mc-pipe-running { animation:mc-pipe-pulse 2.5s ease-in-out infinite; }
-@keyframes mc-pipe-pulse { 0%,100% { box-shadow:0 0 0 rgba(99,102,241,0); } 50% { box-shadow:0 0 16px rgba(99,102,241,.2); } }
-.mc-pipe-icon { font-size:var(--text-md); }
-.mc-pipe-count { font-family:var(--font-b); font-size:var(--text-base); font-weight:var(--fw-bold); color:var(--pipe-color,var(--text)); }
-.mc-pipe-label { font-family:var(--font-b); font-size:var(--text-xs); letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-muted); }
-.mc-pipe-line { width:40px; height:2px; background:var(--border); position:relative; overflow:hidden; }
-.mc-pipe-flow { position:absolute; width:12px; height:100%; background:var(--accent); animation:mc-flow 1.5s linear infinite; border-radius:1px; }
+.mc-pipe-node {
+  display:flex; flex-direction:row; align-items:center; gap:6px;
+  padding:5px 14px; border:none; border-radius:var(--radius);
+  background:none; cursor:pointer; transition:background .15s; line-height:1; white-space:nowrap;
+}
+.mc-pipe-node:hover { background:rgba(0,0,0,.05); }
+.mc-pipe-active { background:color-mix(in srgb, var(--pipe-color) 14%, transparent) !important; }
+.mc-pipe-label { font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-regular); letter-spacing:var(--tracking-normal); text-transform:none; color:var(--text); }
+.mc-pipe-count { font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--pipe-color,var(--text)); }
 @keyframes mc-flow { 0% { left:-12px; } 100% { left:100%; } }
 
 /* ═══ MISSION CONTROL — Card Grid ═══ */
@@ -3824,6 +3825,19 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 /* Fixed tab container — outside scroll area, part of .app-main flex layout */
 #app-fixed-tabs { flex-shrink:0; z-index:20; }
 #app-fixed-tabs:empty { display:none; }
+
+/* Shared sub-toolbar under the main Bridge tabs — one persistent row whose
+   contents swap per active tab (see _renderSubnav), so each page's CTAs stop
+   scattering. Centered to sit under the centered tab pills. */
+.bridge-subnav {
+  display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+  gap:8px; margin:8px auto 0; padding:0 24px; width:100%; max-width:var(--width-full);
+}
+.bridge-subnav[hidden] { display:none; }
+.bridge-subnav .search-box { min-width:0; }
+/* Blueprints header fills the bar so its sub-tabs sit left and the
+   search + view toggles sit right (its original, approved layout). */
+.bridge-subnav .bp-header-row { flex:1 1 100%; margin-bottom:0; }
 .bp-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .bp-title { font-family:var(--font-b); font-size:1.2rem; font-weight:var(--fw-bold); margin:0; }
 .bp-sub { font-family:var(--font-b); font-size:.62rem; letter-spacing:var(--tracking-normal); color:var(--text-muted); margin:4px 0 0 0; }
@@ -5560,43 +5574,36 @@ html[data-theme] .nice-ai-input:focus-visible {
 .outbox-header { margin-bottom:16px; }
 .outbox-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .outbox-filters { display:flex; gap:6px; flex-wrap:wrap; }
-/* Status filters (All / Pending / Approved / Rejected) — match the
-   Blueprints filter pill shape + typography (.bp-rarity-btn / .bp-source-btn). */
-.outbox-filter {
-  padding:4px 10px; border:var(--border-width,1px) solid var(--border);
-  background:transparent; color:var(--text-muted);
-  font-family:var(--font-b); font-size:var(--text-xs);
+.outbox-type-filters { display:flex; gap:6px; flex-wrap:wrap; }
+/* Status (All / Pending / Approved / Rejected) + type (All Types / Social /
+   Email / Report) filters match the Blueprints sub-tab pills: white surface,
+   heading font, count in a bordered chip, solid-fill active state. */
+.outbox-filter, .outbox-type-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 12px; border:var(--border-width,1px) solid var(--border);
+  background:var(--surface); color:var(--text-muted);
+  font-family:var(--font-h); font-weight:var(--fw-regular); font-size:var(--text-sm);
   border-radius:var(--radius);
   cursor:pointer; transition:color .15s, border-color .15s, background-color .15s;
 }
 .outbox-filter.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
-.outbox-filter:hover:not(.active) { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-.outbox-badge { font-size:var(--text-xs); opacity:.7; margin-left:2px; }
-
-/* Type filters (All Types / Social / Email / Report) */
-.outbox-type-filters { display:flex; gap:4px; flex-wrap:wrap; }
-.outbox-type-btn {
-  padding:4px 10px; border:var(--border-width,1px) solid var(--border);
-  background:transparent; color:var(--text-muted);
-  font-family:var(--font-b); font-size:var(--text-xs);
-  border-radius:var(--radius);
-  cursor:pointer; transition:color .15s, border-color .15s, background-color .15s;
-}
 .outbox-type-btn.active { background:var(--type-color,var(--accent)); color:var(--bg); border-color:var(--type-color,var(--accent)); }
-.outbox-type-btn:hover:not(.active) { border-color:var(--type-color,var(--accent)); color:var(--text); }
+.outbox-filter:hover:not(.active), .outbox-type-btn:hover:not(.active) { border-color:var(--border-hi,var(--accent)); color:var(--text); }
+.outbox-badge { font-size:var(--text-xs); padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); }
+.outbox-filter.active .outbox-badge { color:#d1d5db; border-color:rgba(255,255,255,.35); }
 
 /* View toggle + export */
-.outbox-view-toggle { display:flex; gap:4px; margin-left:auto; align-items:center; }
+.outbox-view-toggle { display:flex; gap:8px; margin-left:auto; align-items:center; }
+/* View segment matches the Blueprints .bp-view-toggle: segmented --bg-alt
+   container with 28x28 borderless icon buttons, solid-blue active. */
+.outbox-view-seg { display:flex; gap:2px; background:var(--bg-alt); border-radius:var(--radius); padding:2px; }
 .outbox-view-btn {
-  width:28px; height:28px; border-radius:var(--radius);
-  border:var(--border-width,1px) solid var(--border);
-  background:transparent; color:var(--text-muted);
-  font-size:var(--text-sm);
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  transition:color .15s, border-color .15s, background-color .15s;
+  display:flex; align-items:center; justify-content:center; width:28px; height:28px;
+  border:none; background:transparent; color:var(--text-muted);
+  border-radius:calc(var(--radius) - 2px); cursor:pointer; transition:all .15s;
 }
-.outbox-view-btn.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
-.outbox-view-btn:hover:not(.active) { border-color:var(--border-hi,var(--accent)); color:var(--text); }
+.outbox-view-btn:hover:not(.active) { color:var(--text); background:var(--panel-bg); }
+.outbox-view-btn.active { background:var(--accent); color:var(--bg); }
 .outbox-export-btn {
   padding:4px 10px; border-radius:var(--radius);
   border:var(--border-width,1px) solid var(--border); background:transparent;
