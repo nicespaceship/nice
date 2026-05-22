@@ -6306,6 +6306,16 @@ html[data-theme] .nice-ai-input:focus-visible {
   }
   .bp-sub-tab { padding: 4px 10px; font-size: var(--text-xs); }
   .app-view-content { padding: 4px; }
+  /* Picker row matches the chat box's ≤380 inset: app-view-content 4px +
+     .bridge-hero-content 12px = 16px. Paired with the 381–640 rule below;
+     non-overlapping so source order is irrelevant. */
+  #app-fixed-tabs:has(.sch-ship-picker) { padding-left:16px; padding-right:16px; }
+}
+
+/* 381–640: app-view-content uses its base 24px padding here, so the chat-box
+   inset is 24 + 12 = 36px. Matches the picker row to it. */
+@media (min-width:381px) and (max-width:640px) {
+  #app-fixed-tabs:has(.sch-ship-picker) { padding-left:36px; padding-right:36px; }
 }
 
 /* Better widget layout on tablet */
@@ -10535,18 +10545,10 @@ body.preview-active .nice-ai {
        row lines up with the rest of the header chrome. app-main already sits
        below the guest banner, so only the 12px offset is needed here. */
     padding-top:12px;
-    position:relative; /* anchor the Schematic ship picker to the top-right */
   }
   #bp-type-tabs { border:none; }
   #bp-type-tabs > span { display:none; }
-  /* Schematic ship picker sits at the right end of the tab row (not a
-     stacked second row) so the centered tabs keep the optical axis and the
-     picker reads as a context selector beside them. Vertically centered
-     against the ~40px tab pill row. */
-  .sch-fixed-ship-picker { position:absolute; top:17px; right:16px; z-index:2; }
-  /* Sapphire-blue fill + white label so the active-ship selector reads as a
-     selected control, matching the solid-blue active tab. Uses --accent
-     (theme-aware) which is a sapphire blue in the default theme. */
+  .sch-fixed-ship-picker { position:relative; }
   .sch-fixed-ship-trigger {
     display:inline-flex; align-items:center; gap:8px;
     padding:6px 12px;
@@ -10562,7 +10564,7 @@ body.preview-active .nice-ai {
     max-width:320px;
   }
   .sch-fixed-ship-trigger:hover { filter:brightness(0.94); border-color:transparent; }
-  .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:var(--accent); }
+  .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:#fff; }
   /* Pad-left equals chevron width (12px) + gap (8px) so the label's
      flex slot is symmetric around the trigger's centerline — keeps the
      name visually centered despite the chevron's right-side offset. */
@@ -10691,7 +10693,10 @@ body.preview-active .nice-ai {
 @media (max-width:640px) {
   #bp-type-tabs { display:none; }
   /* When the schematic ship picker is mounted alongside the Bridge tab
-     pill, lay them out as a flex row so they share width. */
+     pill, lay them out as a flex row so they share width. The "Standing by"
+     chat box below is inset symmetrically by app-view-content's padding +
+     .bridge-hero-content's 12px; the picker row matches via the two
+     non-overlapping breakpoint rules near the ≤380 block. */
   #app-fixed-tabs:has(.sch-ship-picker) { display:flex; gap:8px; align-items:stretch; margin-bottom:8px; }
   #app-fixed-tabs:has(.sch-ship-picker) .bp-tab-picker { flex:1 1 0; min-width:0; width:auto; margin-bottom:0; }
   .bp-tab-picker {
@@ -10711,13 +10716,13 @@ body.preview-active .nice-ai {
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
     flex:1 1 0; min-width:0;
     padding:8px 14px;
-    background:var(--bg-alt); color:var(--text);
-    border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius, 10px);
+    background:var(--accent); color:#fff;
+    border:var(--border-width, 1px) solid transparent; border-radius:var(--radius, 10px);
     font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
     cursor:pointer;
     overflow:hidden;
   }
-  .sch-ship-picker:hover { border-color:var(--border-hi, var(--accent)); }
+  .sch-ship-picker:hover { filter:brightness(0.94); border-color:transparent; }
   .sch-ship-picker-label {
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     min-width:0;
