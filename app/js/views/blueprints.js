@@ -1451,6 +1451,10 @@ const BlueprintsView = (() => {
   function _renderSubnav() {
     const bar = document.getElementById('bridge-subnav');
     if (!bar) return;
+    // Tear down listeners the previous occupant registered (e.g. the Schematic
+    // ship picker's document/window popover handlers) before replacing the
+    // bar's contents, so they don't leak across tab switches.
+    if (typeof bar._subnavCleanup === 'function') { try { bar._subnavCleanup(); } catch (e) { /* noop */ } bar._subnavCleanup = null; }
     let html = '';
     if (_activeTab === 'blueprints') {
       html = _blueprintsSubnavHTML();
