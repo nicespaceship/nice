@@ -1582,7 +1582,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   margin-top:var(--guest-banner-height, 0px); margin-left:56px;
   position:relative; z-index:1;
   transition:margin-left .3s ease;
+  /* dvh tracks the visible viewport on iOS/iPadOS Safari, where the URL bar
+     is excluded from 100vh. With 100vh the shell ran taller than the visible
+     area in landscape, pushing the tab row up under the toolbar with no way
+     to scroll it back (overflow is hidden). 100vh stays as the fallback for
+     browsers without dvh support. */
   height:calc(100vh - var(--guest-banner-height, 0px));
+  height:calc(100dvh - var(--guest-banner-height, 0px));
   overflow:hidden; overflow-x:hidden;
   display:flex; flex-direction:column;
 }
