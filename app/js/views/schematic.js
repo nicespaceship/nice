@@ -752,15 +752,14 @@ const SchematicView = (() => {
       if (locked) cls += ' schematic-stack-row-locked';
       else if (filled) cls += ' schematic-stack-row-filled';
       else cls += ' schematic-stack-row-empty';
-      const lockGlyph = '<svg viewBox="0 0 12 14" width="11" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="6" width="9" height="7" rx="1"/><path d="M3.5 6V4a2.5 2.5 0 0 1 5 0v2"/></svg>';
-      const avatarContent = locked ? lockGlyph : _esc(filled ? (bp.name || '?').charAt(0).toUpperCase() : '+');
       return '<li class="' + cls + '" data-slot-idx="' + i + '" data-slot-id="' + _esc(slot.id) + '" data-status="' + status + '"' + dataBp + dataLocked + ' style="--row-tint:' + rarityColor + '">' +
         '<span class="schematic-row-node" aria-hidden="true"></span>' +
-        '<span class="schematic-row-avatar">' + avatarContent + '</span>' +
         '<div class="schematic-row-info">' +
-          '<div class="schematic-row-role">' + _esc(roleLabel) + '</div>' +
           '<div class="schematic-row-name">' + _esc(name) + '</div>' +
-          (cap ? '<div class="schematic-row-cap">' + _esc(cap) + '</div>' : '') +
+          '<div class="schematic-row-meta">' +
+            '<span class="schematic-row-role">' + _esc(roleLabel) + '</span>' +
+            (cap ? '<span class="schematic-row-cap">' + _esc(cap) + '</span>' : '') +
+          '</div>' +
         '</div>' +
         (locked
           ? ''
@@ -797,10 +796,9 @@ const SchematicView = (() => {
       for (let i = 0; i < SLOTS; i++) {
         rows += '<li class="schematic-stack-row">' +
           '<span class="schematic-row-node" aria-hidden="true"></span>' +
-          '<span class="sch-sk sch-sk-avatar" aria-hidden="true"></span>' +
           '<div class="schematic-row-info">' +
-            '<span class="sch-sk sch-sk-line sch-sk-role" aria-hidden="true"></span>' +
             '<span class="sch-sk sch-sk-line sch-sk-name" aria-hidden="true"></span>' +
+            '<span class="sch-sk sch-sk-line sch-sk-role" aria-hidden="true"></span>' +
           '</div>' +
         '</li>';
       }

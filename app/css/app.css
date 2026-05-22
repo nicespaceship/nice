@@ -1986,6 +1986,12 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-main:has(.bp-type-tab.active[data-tab="schematic"]) #bp-schematic-content { flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
 .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-wrap { flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
 .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-content { flex:1 1 0; min-height:0; }
+/* The always-visible search row + Filters button is a Blueprints catalog
+   control (filters the catalog grid), but it lives inside .bp-wrap which
+   also wraps the schematic content -- so on the Schematic tab it bled in
+   with no useful target to filter. Hide it on Schematic; the row stays as
+   intended on the Blueprints tab. */
+.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bp-mobile-search-row { display:none; }
 .schematic-col-right { align-items:flex-start; }
 .schematic-col-left { align-items:flex-end; }
 /* Staircase offsets split symmetrically — odd cards down 27px, even
@@ -2271,11 +2277,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   cursor:default;
   pointer-events:none;
 }
-.schematic-stack-row-locked .schematic-row-avatar {
-  background:transparent;
-  border:1px dashed var(--text-muted);
-  color:var(--text-muted);
-}
 .schematic-stack-row-locked .schematic-row-name {
   font-style:italic;
   color:var(--text-muted);
@@ -2299,20 +2300,32 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .sch-sk-role { width:58%; height:5px; }
 .sch-sk-name { width:84%; height:9px; }
 .sch-sk-cap  { width:46%; height:5px; }
-.sch-sk-avatar { grid-column:2; width:36px; height:36px; border-radius:50%; }
 @keyframes sch-sk-pulse { 0%, 100% { opacity:.3; } 50% { opacity:.65; } }
 @media (prefers-reduced-motion:reduce) { .sch-sk { animation:none; opacity:.45; } }
 
-/* Mobile three-layer row: capability line below role + name */
+/* Mobile compact row: role + tool share row 2. The tool reads as a
+   connected-capability chip pushed to the right edge. */
+.schematic-row-meta {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
 .schematic-row-cap {
+  margin-left:auto;
+  flex-shrink:0;
+  max-width:62%;
   font-family:var(--font-b);
   font-size:var(--text-xs);
+  font-weight:var(--fw-medium);
   color:var(--accent2, var(--text-muted));
-  opacity:.75;
+  background:color-mix(in srgb, var(--accent2, var(--text-muted)) 14%, transparent);
+  padding:1px 7px;
+  border-radius:999px;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  line-height:var(--lh-snug);
+  line-height:1.5;
 }
 /* Desktop card status pip — same state machine as the mobile row node:
    idle   → solid muted dot
@@ -2428,7 +2441,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     position:relative;
     display:flex;
     flex-direction:column;
-    gap:8px;
+    gap:6px;
   }
   /* Spine — vertical line through the row nodes. Fades at the ends so
      it reads as a continuous wire that plugs into the reactor below. */
@@ -2446,10 +2459,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .schematic-stack-row {
     position:relative;
     display:grid;
-    grid-template-columns:24px 36px 1fr 32px;
+    grid-template-columns:24px 1fr 32px;
     align-items:center;
     gap:10px;
-    padding:10px 12px 10px 10px;
+    padding:7px 10px;
     border:1px solid var(--row-tint, var(--border));
     border-radius:var(--radius);
     /* Layered background: opaque page bg behind a panel-bg overlay. The
@@ -2460,7 +2473,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     background-image:linear-gradient(var(--panel-bg, var(--bg-alt, #181818)), var(--panel-bg, var(--bg-alt, #181818)));
     cursor:pointer;
     transition:background-color .15s, border-color .15s;
-    min-height:56px;
+    min-height:44px;
     /* z-index:1 paints rows above the global reactor (.jv-pp-reactor at
        z:0). Without it, document order puts the late-mounted reactor on
        top and it shows through the row's text. */
@@ -2512,31 +2525,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     0%, 100% { transform:scale(1); }
     50% { transform:scale(1.25); }
   }
-  .schematic-row-avatar {
-    grid-column:2;
-    width:36px; height:36px;
-    border-radius:50%;
-    border:2px solid var(--row-tint, var(--accent));
-    background:color-mix(in srgb, var(--row-tint, var(--accent)) 18%, var(--bg));
-    color:var(--text);
-    display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-h);
-    font-size:var(--text-base);
-    font-weight:var(--fw-bold);
-    flex-shrink:0;
-  }
-  .schematic-stack-row-empty .schematic-row-avatar {
-    background:transparent;
-    border-color:var(--text-muted);
-    border-style:dashed;
-    color:var(--text-muted);
-  }
+  /* Avatar removed on mobile for a compact two-row card (name + role/tool). */
   .schematic-row-info {
-    grid-column:3;
+    grid-column:2;
     min-width:0;
     display:flex;
     flex-direction:column;
-    gap:2px;
+    gap:1px;
   }
   .schematic-row-name {
     font-family:var(--font-b);
@@ -2554,9 +2549,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     color:var(--text-muted);
     text-transform:uppercase;
     letter-spacing:var(--tracking-caps);
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
   }
   .schematic-row-action {
-    grid-column:4;
+    grid-column:3;
     width:32px; height:32px;
     background:transparent;
     border:1px solid var(--border);
