@@ -36,6 +36,24 @@ const BlueprintUtils = (() => {
   }
 
   /**
+   * Pick a readable text color for a solid background via WCAG relative
+   * luminance. White stays unless its contrast on the fill drops below 3:1
+   * (the large/bold-text floor), where near-black is returned instead. Keeps
+   * every rarity/category hue while fixing pale fills (Rare #b6dff9,
+   * Legendary #f59e0b) where white text reads too soft.
+   * @param {string} bgHex - solid background as #rrggbb
+   * @returns {string} '#fff' or '#0a0a0a'
+   */
+  function contrastText(bgHex) {
+    if (typeof bgHex !== 'string' || bgHex[0] !== '#' || bgHex.length < 7) return '#fff';
+    const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const L = 0.2126 * lin(parseInt(bgHex.slice(1, 3), 16))
+            + 0.7152 * lin(parseInt(bgHex.slice(3, 5), 16))
+            + 0.0722 * lin(parseInt(bgHex.slice(5, 7), 16));
+    return (1.05 / (L + 0.05)) >= 3 ? '#fff' : '#0a0a0a';
+  }
+
+  /**
    * Get the crew definition array from a blueprint.
    * Priority: metadata.crew → crew → nodes → []
    * @param {object} bp - blueprint or ship object
@@ -236,5 +254,5 @@ const BlueprintUtils = (() => {
     return _MODEL_SHORT_NAMES[id] || humanizeModel(id);
   }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, buildSlots, humanizeModel, humanizeModelShort, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, contrastText, buildSlots, humanizeModel, humanizeModelShort, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
 })();

@@ -153,6 +153,22 @@ const BlueprintsView = (() => {
       if (n && n.parentElement !== document.body) document.body.appendChild(n);
     });
   }
+  // The search box is a single element shared across breakpoints. On mobile
+  // it lives in the always-visible .bp-mobile-search-row; on desktop it sits
+  // first in the filter row (.bp-sheet-body). Reparent to match the viewport.
+  // Runs after _mountPortals (which moves the sheet itself to <body> on mobile).
+  function _placeMobileSearch() {
+    const search = document.querySelector('.bp-filter-search');
+    if (!search) return;
+    if (_portalMedia.matches) {
+      const row = document.getElementById('bp-mobile-search-row');
+      const funnel = document.getElementById('bp-filter-toggle');
+      if (row && search.parentElement !== row) row.insertBefore(search, funnel || null);
+    } else {
+      const body = document.querySelector('#bp-filter-sheet .bp-sheet-body');
+      if (body && search.parentElement !== body) body.insertBefore(search, body.firstChild);
+    }
+  }
 
   // ── Custom dropdown (replaces native <select>) ───────────────────────
   // Native <select> popups can't be styled on macOS/iOS — the OS draws the
@@ -343,11 +359,14 @@ const BlueprintsView = (() => {
         <div class="bp-type-tabs" id="bp-type-tabs">
           ${tabDefs.map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
         </div>
-        <div class="bridge-subnav" id="bridge-subnav" hidden></div>
+        <!-- Mobile view picker renders before the subnav so the higher-level
+             "Blueprints ▾" picker sits ABOVE the sub-tabs. Hidden on desktop
+             (the full .bp-type-tabs row shows instead), so order is moot there. -->
         <button class="bp-tab-picker" id="bp-tab-picker" aria-haspopup="dialog" aria-expanded="false">
           <span class="bp-tab-picker-label">${activeLabel}</span>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
         </button>
+        <div class="bridge-subnav" id="bridge-subnav" hidden></div>
         <div class="bp-sheet-backdrop" id="bp-tab-sheet-backdrop" hidden></div>
         <div class="bp-sheet" id="bp-tab-sheet" role="dialog" aria-label="Choose view" aria-modal="true" hidden>
           <div class="bp-sheet-handle"></div>
@@ -424,6 +443,19 @@ const BlueprintsView = (() => {
           </div>
         </div>
 
+        <!-- Mobile-only search row: the single #bp-search input is reparented
+             here on mobile (see _placeMobileSearch) so search stays visible
+             without opening the sheet; the Filters button opens the sheet for
+             the remaining filters. Hidden on desktop (search lives in the
+             filter row there). -->
+        <div class="bp-mobile-search-row" id="bp-mobile-search-row">
+          <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
+            <span>Filters</span>
+            <span class="bp-filter-count" id="bp-filter-count" hidden></span>
+          </button>
+        </div>
+
         <div class="bp-toolbar-actions" id="bp-toolbar-actions">
           <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create">+ Create</a>
           <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
@@ -444,6 +476,7 @@ const BlueprintsView = (() => {
     // written them in. Escaping the parent stacking contexts lets the
     // sheet z:10000 actually win over the prompt panel z:200.
     _mountPortals();
+    _placeMobileSearch();
 
     // Highlight the correct tab + sub-tab buttons
     document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
@@ -1485,21 +1518,17 @@ const BlueprintsView = (() => {
     const shipN = (typeof Blueprints !== 'undefined' ? Blueprints.listSpaceships() : SPACESHIP_SEED).length;
     const agentN = (typeof Blueprints !== 'undefined' ? Blueprints.listAgents() : SEED).length;
     const a = (id) => _subTab === id ? ' active' : '';
-    // Sub-tabs only — centered. Search + view toggle moved down into the
-    // filter row (see the .bp-sheet-body in render). The Filters button stays
-    // here for mobile (it opens the filter sheet; hidden on desktop via CSS).
+    // Sub-tabs only — centered. Search + view toggle live in the filter
+    // row (see the .bp-sheet-body in render). On mobile the search input +
+    // Filters button render in .bp-mobile-search-row (in the view body),
+    // so the subnav carries just the sub-tabs.
     return `
       <div class="bp-sub-tabs" id="bp-sub-tabs">
         <button class="bp-sub-tab${a('spaceship')}" data-sub="spaceship">Spaceships <span class="bp-tab-count">${shipN}</span></button>
         <button class="bp-sub-tab${a('agent')}" data-sub="agent">Agents <span class="bp-tab-count">${agentN}</span></button>
         <button class="bp-sub-tab${a('active')}" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
         <button class="bp-sub-tab${a('workshop')}" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
-      </div>
-      <button class="bp-filter-toggle" id="bp-filter-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="bp-filter-sheet">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h12M3 7h8M5 11h4"/></svg>
-        <span>Filters</span>
-        <span class="bp-filter-count" id="bp-filter-count" hidden></span>
-      </button>`;
+      </div>`;
   }
 
   function _toggleSchematicView() {
@@ -2242,7 +2271,6 @@ const BlueprintsView = (() => {
         _applyFilters();
         return;
       }
-      if (e.target.closest('#bp-filter-toggle')) { _openFilterSheet(); return; }
       // Outbox toolbar (status / type / view / export). Re-render the subnav
       // (active state + counts) and the Outbox body in #bp-log-content.
       const _outboxBody = () => document.getElementById('bp-log-content');
@@ -2266,8 +2294,10 @@ const BlueprintsView = (() => {
       vbtn.classList.add('active');
       _applyFilters();
     });
-    _bpFilters?.addEventListener('input', (e) => {
-      if (e.target.id !== 'bp-search') return;
+    // Search input is reparented between the filter row (desktop) and the
+    // mobile search row, so bind it directly rather than delegating off the
+    // filter sheet (which it no longer always lives in).
+    document.getElementById('bp-search')?.addEventListener('input', () => {
       clearTimeout(_searchTimer);
       _searchTimer = setTimeout(() => _applyFilters(), 300);
     });
@@ -2284,6 +2314,9 @@ const BlueprintsView = (() => {
     const _openFilterSheet = () => { if (filterSheet && filterBackdrop) { filterBackdrop.hidden = false; requestAnimationFrame(() => { filterSheet.classList.add('open'); filterBackdrop.classList.add('open'); document.getElementById('bp-filter-toggle')?.setAttribute('aria-expanded', 'true'); }); } };
     const _closeFilterSheet = () => { if (filterSheet && filterBackdrop) { filterSheet.classList.remove('open'); filterBackdrop.classList.remove('open'); document.getElementById('bp-filter-toggle')?.setAttribute('aria-expanded', 'false'); setTimeout(() => { filterBackdrop.hidden = true; }, 200); } };
     filterBackdrop?.addEventListener('click', _closeFilterSheet);
+    // The Filters button lives in the mobile search row (in the view body),
+    // so bind its click directly here rather than via subnav delegation.
+    document.getElementById('bp-filter-toggle')?.addEventListener('click', _openFilterSheet);
     document.getElementById('bp-filter-sheet-close')?.addEventListener('click', _closeFilterSheet);
     document.getElementById('bp-filter-apply')?.addEventListener('click', _closeFilterSheet);
     document.getElementById('bp-filter-clear')?.addEventListener('click', () => {

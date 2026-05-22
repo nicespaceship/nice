@@ -231,6 +231,40 @@
     <button type="button" class="side-rail-hamburger" id="side-rail-hamburger" aria-label="Toggle menu" title="Toggle menu">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-menu"/></svg>
     </button>
+    <!-- Brand lockup that doubles as the theme-HUD CTA. Replaces the
+         hamburger once the sidebar is open. Clicking it slides the HUD
+         panel (below) down, pushing the mode tabs down. -->
+    <button type="button" class="side-hud-cta" id="btn-hud" aria-label="Theme" title="Theme" aria-expanded="false">
+      <svg class="side-hud-cta-logo" viewBox="0 0 3904 3379.96" aria-hidden="true"><use href="#icon-spaceship"/></svg>
+      <span class="side-hud-cta-text">SPACESHIP</span>
+    </button>
+  </div>
+
+  <!-- Theme HUD panel — in-flow inside the sidebar, directly under the
+       header CTA. Opening it slides the panel down and pushes the mode
+       tabs + sub-nav below it. -->
+  <div class="app-hud-panel" id="app-hud-panel">
+    <div class="hud-row" style="justify-content:space-between">
+      <span class="dock-lbl"><span id="active-theme-name" class="dock-lbl-val" style="text-transform:uppercase"></span></span>
+      <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-sun"/></svg>
+      </button>
+    </div>
+    <div class="hud-row" id="theme-dock-btns">
+      <!-- Rendered dynamically by Theme.renderDock() -->
+    </div>
+    <div class="hud-row-sep"></div>
+    <div class="hud-row">
+      <span class="dock-lbl">FONT</span>
+      <button class="fb fb-auto"  data-fid="auto"  data-tip="Auto"    aria-label="Auto">A</button>
+      <button class="fb fb-clean" data-fid="clean" data-tip="Inter"   aria-label="Inter">A</button>
+      <button class="fb fb-space" data-fid="space" data-tip="Orbitron" aria-label="Orbitron">A</button>
+      <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani" aria-label="Rajdhani">A</button>
+      <button class="fb fb-code"  data-fid="code"  data-tip="Fira"    aria-label="Fira Code">A</button>
+      <button class="fb fb-serif" data-fid="serif" data-tip="Playfair" aria-label="Playfair">A</button>
+      <button class="fb fb-mono"  data-fid="mono"  data-tip="Share"   aria-label="Share Tech">A</button>
+      <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"   aria-label="Pixel">A</button>
+    </div>
   </div>
 
   <!-- Mode tabs: three distinct ways to use NICE. Spaceship (agentic
@@ -240,9 +274,9 @@
        uses the NICE constellation icon (#icon-nice) — the visual ↔
        schematic pattern is exactly the orchestrator-with-crew layout. -->
   <div class="side-mode-tabs" role="tablist" aria-label="App mode">
-    <button type="button" class="side-mode-tab" data-mode="spaceship" role="tab" aria-selected="true" aria-controls="side-nav-spaceship" aria-label="Spaceship">
+    <button type="button" class="side-mode-tab" data-mode="spaceship" role="tab" aria-selected="true" aria-controls="side-nav-spaceship" aria-label="NICE">
       <svg class="icon icon-sm" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
-      <span>Spaceship</span>
+      <span>NICE</span>
     </button>
     <button type="button" class="side-mode-tab" data-mode="chat" role="tab" aria-selected="false" aria-controls="side-nav-chat" aria-label="Chat">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
@@ -358,37 +392,6 @@
   </div>
 </div>
 
-<!-- HUD PANEL — lives at body level (not inside .app-sidebar) so it
-     can anchor to the viewport on mobile. The sidebar gets `transform`
-     on mobile to slide as a drawer, which creates a new containing
-     block for fixed descendants — so an in-sidebar panel can't
-     dropdown from the top of the viewport. CSS handles both modes:
-     desktop slides it in the sidebar's visual slot; mobile floats it
-     under the top bar. -->
-<div class="app-hud-panel" id="app-hud-panel">
-  <div class="hud-row" style="justify-content:space-between">
-    <span class="dock-lbl"><span id="active-theme-name" class="dock-lbl-val" style="text-transform:uppercase"></span></span>
-    <button class="app-hdr-btn" id="btn-darklight" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-sun"/></svg>
-    </button>
-  </div>
-  <div class="hud-row" id="theme-dock-btns">
-    <!-- Rendered dynamically by Theme.renderDock() -->
-  </div>
-  <div class="hud-row-sep"></div>
-  <div class="hud-row">
-    <span class="dock-lbl">FONT</span>
-    <button class="fb fb-auto"  data-fid="auto"  data-tip="Auto"    aria-label="Auto">A</button>
-    <button class="fb fb-clean" data-fid="clean" data-tip="Inter"   aria-label="Inter">A</button>
-    <button class="fb fb-space" data-fid="space" data-tip="Orbitron" aria-label="Orbitron">A</button>
-    <button class="fb fb-tac"   data-fid="tac"   data-tip="Rajdhani" aria-label="Rajdhani">A</button>
-    <button class="fb fb-code"  data-fid="code"  data-tip="Fira"    aria-label="Fira Code">A</button>
-    <button class="fb fb-serif" data-fid="serif" data-tip="Playfair" aria-label="Playfair">A</button>
-    <button class="fb fb-mono"  data-fid="mono"  data-tip="Share"   aria-label="Share Tech">A</button>
-    <button class="fb fb-pixel" data-fid="pixel" data-tip="Pixel"   aria-label="Pixel">A</button>
-  </div>
-</div>
-
 <!-- Sidebar overlay for mobile -->
 <div class="app-sidebar-overlay" id="sidebar-overlay"></div>
 
@@ -399,14 +402,13 @@
     <button class="mobile-bar-btn" id="mobile-sidebar-toggle" aria-label="Toggle menu">
       <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-menu"/></svg>
     </button>
-    <a href="#/bridge?chat=1" class="mobile-bar-btn mobile-bar-btn-nice" id="mobile-bar-nice" aria-label="Schematic chat" title="Schematic chat">
-      <svg class="mobile-bar-nice-logo" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
-    </a>
   </div>
   <span class="app-brand-text">NICE</span>
   <a class="mobile-bar-theme" id="mobile-bar-theme" href="#/" aria-label="Home"></a>
   <div class="mobile-bar-right">
-    <button class="mobile-bar-btn mobile-bar-btn-hud mobile-bar-btn-hud-logo" id="btn-hud-mobile" aria-label="Theme" title="Theme"><svg class="app-hdr-logo" viewBox="0 0 3904 3379.96" aria-hidden="true"><use href="#icon-spaceship"/></svg></button>
+    <a href="#/bridge?chat=1" class="mobile-bar-btn mobile-bar-btn-nice" id="mobile-bar-nice" aria-label="Schematic chat" title="Schematic chat">
+      <svg class="mobile-bar-nice-logo" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
+    </a>
   </div>
 </div>
 
@@ -414,7 +416,6 @@
 <main class="app-main" role="main">
   <div class="app-topbar-actions" id="app-topbar-actions">
     <span class="hud-alert-badge" id="hud-alert-badge" role="status" style="display:none"></span>
-    <button class="app-hdr-btn app-hdr-btn-logo" id="btn-hud" aria-label="Theme" title="Theme"><svg class="app-hdr-logo" aria-hidden="true"><use href="#icon-spaceship"/></svg></button>
   </div>
   <div id="app-fixed-tabs"></div>
   <div class="app-view-content" id="app-view" aria-live="polite">

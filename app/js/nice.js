@@ -1430,17 +1430,23 @@ const NICE = (() => {
     const panel = document.getElementById('app-hud-panel');
 
     if (btn && panel) {
-      const mobileBtn = document.getElementById('btn-hud-mobile');
-      const _isMobile = () => window.matchMedia('(max-width:768px)').matches;
+      const sidebarEl = document.getElementById('app-sidebar');
       const toggleHUD = () => {
         panel.classList.toggle('open');
         btn.classList.toggle('active');
-        if (mobileBtn) mobileBtn.classList.toggle('active');
       };
       btn.addEventListener('click', toggleHUD);
-      // Mobile mirror — same toggle, hooked from the mobile top bar so
-      // users don't need to open the sidebar drawer first.
-      if (mobileBtn) mobileBtn.addEventListener('click', toggleHUD);
+      // The sidebar collapses by many paths (overlay, outside-click, nav,
+      // swipe). When it does, reset the panel so it doesn't reopen
+      // pre-expanded and shove the mode tabs down on the next open.
+      if (sidebarEl) {
+        new MutationObserver(() => {
+          if (!sidebarEl.classList.contains('open') && panel.classList.contains('open')) {
+            panel.classList.remove('open');
+            btn.classList.remove('active');
+          }
+        }).observe(sidebarEl, { attributes:true, attributeFilter:['class'] });
+      }
 
       // Close on outside click
       // Alert badge dropdown
@@ -1471,17 +1477,11 @@ const NICE = (() => {
       }
 
       document.addEventListener('click', e => {
-        // Keep the mobile HUD trigger in the exclusion list — otherwise
-        // its toggle-open immediately trips this outside-click handler
-        // (mobileBtn isn't inside `panel`) and closes the panel.
-        // Use `contains()` for both triggers so inner SVG/USE targets
-        // (the logo inside the button) still register as the trigger.
-        const clickedTrigger = btn.contains(e.target) ||
-          (mobileBtn && mobileBtn.contains(e.target));
-        if (!panel.contains(e.target) && !clickedTrigger) {
+        // Use contains() so inner SVG/USE targets (the logo inside the
+        // button) still register as the trigger rather than an outside click.
+        if (!panel.contains(e.target) && !btn.contains(e.target)) {
           panel.classList.remove('open');
           btn.classList.remove('active');
-          if (mobileBtn) mobileBtn.classList.remove('active');
         }
         if (alertDropdown && !alertDropdown.contains(e.target) && e.target !== alertBadge) {
           alertDropdown.classList.remove('open');

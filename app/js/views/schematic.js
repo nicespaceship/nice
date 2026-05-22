@@ -510,17 +510,13 @@ const SchematicView = (() => {
         '</button>' +
         '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ship" hidden>' + optionsHTML + '</div>' +
       '</div>';
-    // Mount into the shared sub-toolbar so the ship picker lines up with the
-    // other pages' controls (centered). Falls back to a sibling of the tabs
-    // if the bar isn't present.
-    const subnav = document.getElementById('bridge-subnav');
-    if (subnav) {
-      subnav.innerHTML = html;
-      subnav.hidden = false;
-      subnav.setAttribute('data-tab', 'schematic');
-    } else {
-      typeTabs.insertAdjacentHTML('afterend', html);
-    }
+    // Mount at the right end of the bridge tab row — the picker reads as a
+    // context selector beside the tabs (absolute-positioned to the top-right
+    // via CSS on desktop). Cleanup runs through SchematicView.destroy() →
+    // _unmountFixedShipPicker on tab switch / route change, so it doesn't
+    // need the #bridge-subnav teardown hook (that bar now carries the
+    // "Standing by" mini-chat instead).
+    tabs.insertAdjacentHTML('beforeend', html);
 
     const trigger = tabs.querySelector('#sch-fixed-ship-trigger');
     const menu = tabs.querySelector('#sch-fixed-ship-menu');
@@ -572,10 +568,6 @@ const SchematicView = (() => {
       window.removeEventListener('scroll', onReflow, true);
       window.removeEventListener('resize', onReflow);
     };
-    // When the picker lives in #bridge-subnav, that bar is re-rendered on tab
-    // switch (innerHTML replace) — which would orphan the listeners above.
-    // Register the teardown so _renderSubnav runs it before clearing the bar.
-    if (subnav) subnav._subnavCleanup = menu._cleanup;
     menu.querySelectorAll('.sch-ship-menu-option').forEach(opt => {
       opt.addEventListener('click', () => {
         const id = opt.dataset.shipId;
