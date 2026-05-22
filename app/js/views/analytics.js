@@ -23,6 +23,18 @@ const AnalyticsView = (() => {
 
   let _el = null;
 
+  // Range select + Export Report for the shared #bridge-subnav. Events bind in
+  // _bindEvents() via global ids, so living outside the view body works.
+  function getToolbarActions() {
+    return `
+      <select id="ana-range" class="filter-select">
+        <option value="7">Last 7 Days</option>
+        <option value="30">Last 30 Days</option>
+        <option value="90">Last 90 Days</option>
+      </select>
+      <button class="btn btn-sm" id="ana-export-pdf">Export Report</button>`;
+  }
+
   function render(el) {
     _el = el;
     const user = State.get('user');
@@ -30,15 +42,8 @@ const AnalyticsView = (() => {
 
     el.innerHTML = `
       <div class="ana-wrap">
-        <div class="ana-top-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <select id="ana-range" class="filter-select">
-            <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
-            <option value="90">Last 90 Days</option>
-          </select>
-          <button class="btn btn-sm" id="ana-export-pdf" style="margin-left:auto">Export Report</button>
-        </div>
-
+        <!-- Range select + Export Report render in the shared #bridge-subnav
+             (see getToolbarActions). -->
         <!-- ═══ 1. Mission Operations ═══ -->
         <div class="ana-section">
           <h3 class="ana-section-title">Mission Operations</h3>
@@ -890,5 +895,5 @@ const AnalyticsView = (() => {
     URL.revokeObjectURL(url);
   }
 
-  return { title, render };
+  return { title, render, getToolbarActions };
 })();
