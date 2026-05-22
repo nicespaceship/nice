@@ -1658,7 +1658,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    in line. .side-mode-tab[aria-selected="true"] keeps collapsed + expanded
    chrome consistent. */
 [data-theme="nice"] :is(
-  .bp-type-tab:hover,
   .bp-sub-tab:hover,
   .bp-cat-btn:hover,
   .bp-rarity-btn:hover,
@@ -1676,7 +1675,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   box-shadow:none;
 }
 [data-theme="nice"] :is(
-  .bp-type-tab:hover,
   .bp-sub-tab:hover,
   .bp-cat-btn:hover,
   .bp-rarity-btn:hover,
@@ -1688,7 +1686,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .side-link:hover
 ) svg { color:var(--accent); }
 [data-theme="nice"] :is(
-  .bp-type-tab.active,
   .bp-sub-tab.active,
   .bp-cat-btn.active,
   .bp-rarity-btn.active,
@@ -1706,7 +1703,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   box-shadow:none;
 }
 [data-theme="nice"] :is(
-  .bp-type-tab.active,
   .bp-sub-tab.active,
   .bp-cat-btn.active,
   .bp-rarity-btn.active,

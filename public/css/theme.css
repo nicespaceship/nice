@@ -313,9 +313,29 @@
   appearance: none; -webkit-appearance: none;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .search-box { background: var(--surface); border-color: var(--border); }
-/* CORE chrome (tab bar + view toggle) reads as white panels on the canvas,
-   matching the sidebar surface. Uses --surface so nice-dark stays dark. */
-:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tabs { background: var(--surface); }
+/* Bridge tab bar reads as one flat bar of text labels, not separated pills.
+   The active tab is marked by a blue underline, not a fill. 12px labels,
+   1px gaps. Sub-tabs / filter buttons keep the solid-accent selection
+   language (handled by the shared :is() groups in app.css). */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tabs {
+  background: transparent; border-radius: 0; padding: 0; gap: 1px;
+}
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab {
+  font-size: 12px; border-radius: 0; background: none;
+  padding: 8px 11px; position: relative;
+}
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab:hover { color: var(--accent); background: none; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab.active {
+  color: var(--accent); background: none; font-weight: var(--fw-medium);
+}
+/* Underline spans only the label, not the tab's padding. The inset must
+   match the horizontal padding (11px) on .bp-type-tab above. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab.active::after {
+  content: ""; position: absolute; left: 11px; right: 11px; bottom: 0; height: 2px;
+  background: var(--accent);
+}
+/* View toggle stays a white panel on the canvas, matching the sidebar
+   surface. Uses --surface so nice-dark stays dark. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-view-toggle { background: var(--surface); }
 /* Theme button (logo variant) gets a white panel like the other chrome; the
    base .app-hdr-btn-logo zeroes its background, so re-assert it here. */
