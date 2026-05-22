@@ -95,10 +95,12 @@
   --tracking-display: -0.01em; /* hero, display */
   --tracking-normal:  0;
   --tracking-caps:    0.08em;  /* ALL CAPS overline only */
+  --tracking-wordmark: 0.4em;  /* in-app brand wordmark lockup (e.g. sidebar SPACESHIP) */
 
   --fw-regular: 400;
   --fw-medium:  600;
   --fw-bold:    700;
+  --fw-black:   900;  /* brand wordmark only (Orbitron Black) — not for prose/UI */
 
   /* ─── Card-scoped typography (visual artifacts, not prose) ──────
      Cards are TCG-style collectibles; the 11px prose floor does not
@@ -251,25 +253,28 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   z-index:301;
 }
 
+/* In-flow inside the sidebar, directly under the header CTA. Collapsed
+   to zero height so it adds no space; opening it slides down and pushes
+   the mode tabs + sub-nav below. Only expands while the sidebar is open
+   (the CTA that toggles it only shows when open). */
 .app-hud-panel {
-  position:fixed;
-  top:calc(var(--guest-banner-height, 0px) + 56px);
-  right:16px; width:264px;
+  flex-shrink:0;
+  margin:0 12px;
   max-height:0; overflow:hidden; opacity:0;
   padding:0 12px;
   display:flex; flex-direction:column; gap:10px;
-  transition:max-height .3s ease, opacity .25s ease, padding .3s ease;
+  transition:max-height .3s ease, opacity .25s ease, padding .3s ease, margin .3s ease;
   background:var(--bg2, #18181b);
   color:var(--text);
-  border:var(--border-width, 1px) solid var(--border);
+  border:0;
   border-radius:var(--radius, 10px);
-  z-index:303;
   pointer-events:none;
 }
-.app-hud-panel.open {
-  max-height:280px; opacity:1;
+.app-sidebar.open .app-hud-panel.open {
+  max-height:340px; opacity:1;
+  margin:0 12px 8px;
   padding:14px 12px;
-  border-bottom:var(--border-width, 1px) solid var(--border);
+  border:var(--border-width, 1px) solid var(--border);
   pointer-events:auto;
 }
 
@@ -371,7 +376,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="office"] .side-header #btn-hud:hover *,
 [data-theme="office"] .side-header #sidebar-toggle:hover * { color:var(--nav-bg-dk); }
 [data-theme="office"] .app-mobile-bar .mobile-bar-btn,
-[data-theme="office"] .app-mobile-bar #btn-hud-mobile,
 [data-theme="office"] .app-mobile-bar .mobile-bar-btn-nice,
 [data-theme="office"] .app-mobile-bar .mobile-bar-theme { color:#fff; }
 
@@ -544,7 +548,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   opacity: 0.8;
 }
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn,
-[data-theme="rx-78-2"] .app-mobile-bar #btn-hud-mobile,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-btn-nice,
 [data-theme="rx-78-2"] .app-mobile-bar .mobile-bar-theme { color: #d4a017; }
 [data-theme="rx-78-2"] #btn-hud {
@@ -1285,6 +1288,27 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar.open .side-header { padding:6px 0; }
 .side-header .app-hdr-menu { display:none; }
 
+/* Header CTA: NICE SPACESHIP brand lockup that toggles the theme HUD.
+   Hidden on the collapsed rail (the hamburger shows instead); swaps in
+   as the header once the sidebar is open. Glyph + wordmark share
+   currentColor so they stay monochrome and matched across themes. */
+.side-hud-cta { display:none; }
+.app-sidebar.open .side-rail-hamburger { display:none; }
+.app-sidebar.open .side-hud-cta {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  height:48px; padding:0 12px;
+  background:transparent; border:0; border-radius:8px;
+  color:var(--nav-text, var(--text)); cursor:pointer;
+  transition:color .15s;
+}
+.app-sidebar.open .side-hud-cta:hover,
+.app-sidebar.open .side-hud-cta.active { color:var(--accent, var(--nav-text, var(--text))); }
+.side-hud-cta-logo { width:30px; height:30px; display:block; flex-shrink:0; }
+.side-hud-cta-text {
+  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-md); font-weight:var(--fw-black);
+  letter-spacing:var(--tracking-wordmark); text-transform:uppercase; line-height:1;
+}
+
 /* Mode tabs — Spaceship vs Standalone Chat. Top of sidebar nav, full
    width, segmented-control style. Active state is the source of truth
    for which mode-section renders below. */
@@ -1710,6 +1734,12 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="nice"] .bp-rarity-btn[data-rarity="Epic"]:not(.active)      { background:#a855f7; }
 [data-theme="nice"] .bp-rarity-btn[data-rarity="Legendary"]:not(.active) { background:#f59e0b; }
 [data-theme="nice"] .bp-rarity-btn[data-rarity="Mythic"]:not(.active)    { background:#ff2d55; animation:mythic-rgb-bg 6s linear infinite; }
+/* Dark text on the light fills so the labels stay legible (the base inactive
+   rule sets white). Specificity matches that rule and wins by source order.
+   Epic/Mythic keep white. Mirrors BlueprintUtils.contrastText. */
+[data-theme="nice"] .bp-rarity-btn[data-rarity="Common"]:not([data-rarity="all"]):not(.active),
+[data-theme="nice"] .bp-rarity-btn[data-rarity="Rare"]:not([data-rarity="all"]):not(.active),
+[data-theme="nice"] .bp-rarity-btn[data-rarity="Legendary"]:not([data-rarity="all"]):not(.active) { color:#0a0a0a; }
 [data-theme="nice"] .bp-rarity-btn[data-rarity]:not(.active):hover { filter:brightness(0.94); }
 /* Active pill matches the selected tabs: solid branded-blue fill, white text,
    no border. The cross-theme base .active rule ties on specificity and wins by
@@ -1772,21 +1802,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-sidebar:not(.open) .side-mode-section { display:none; }
 
-/* Mobile: the panel drops down from under the mobile top bar as a
-   full-width header dropdown. Base rule already sets position:fixed;
-   here we override only the anchor + dimensions for the mobile layout. */
-@media (max-width:768px) {
-  .app-hud-panel {
-    top:calc(48px + var(--guest-banner-height, 0px)); left:0; width:auto; right:0;
-    border-radius:0;
-    background:var(--nav-bg, var(--bg2, #18181b));
-    backdrop-filter:blur(18px);
-  }
-  .app-hud-panel.open {
-    max-height:360px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.35);
-  }
-}
 .app-sidebar:not(.open) .side-header { justify-content:center; padding:8px; }
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
 .app-sidebar:not(.open) .side-link svg { margin:0; }
@@ -1825,23 +1840,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .mobile-bar-theme:hover { opacity:.8; }
 @media (max-width:768px) {
   .mobile-bar-theme { display:inline-block; }
-}
-.mobile-bar-btn-hud {
-  font-family:var(--font-b); font-size:.65rem; font-weight:var(--fw-bold);
-  letter-spacing:var(--tracking-caps); text-transform:uppercase;
-  padding:6px 8px; border:1px solid var(--border); border-radius:4px;
-  color:var(--text-muted);
-}
-.mobile-bar-btn-hud.active,
-.mobile-bar-btn-hud:hover { color:var(--accent); border-color:var(--accent); }
-.mobile-bar-btn-hud-logo {
-  display:inline-flex; align-items:center; justify-content:center;
-  padding:5px 8px;
-  border:none;
-}
-.mobile-bar-btn-hud-logo:hover { border:none; }
-.mobile-bar-btn-hud-logo .app-hdr-logo {
-  width:28px; height:28px; fill:currentColor; display:block;
 }
 .mobile-bar-btn-nice {
   display:inline-flex; align-items:center; justify-content:center;
@@ -6688,10 +6686,13 @@ html[data-theme] .nice-ai-input:focus-visible {
   background:#94a3b8;
   white-space:nowrap;
 }
-.blueprint-card-crew-item.bp-crew-c1 .blueprint-card-crew-rarity { background:#94a3b8; }
-.blueprint-card-crew-item.bp-crew-c2 .blueprint-card-crew-rarity { background:#b6dff9; }
+/* Dark text on the light fills (Common slate, Rare pale-blue, Legendary amber)
+   where white drops below the 3:1 floor; Epic purple keeps white. Mirrors
+   BlueprintUtils.contrastText so JS- and CSS-rendered pills agree. */
+.blueprint-card-crew-item.bp-crew-c1 .blueprint-card-crew-rarity { background:#94a3b8; color:#0a0a0a; }
+.blueprint-card-crew-item.bp-crew-c2 .blueprint-card-crew-rarity { background:#b6dff9; color:#0a0a0a; }
 .blueprint-card-crew-item.bp-crew-c3 .blueprint-card-crew-rarity { background:#a855f7; }
-.blueprint-card-crew-item.bp-crew-c4 .blueprint-card-crew-rarity { background:#f59e0b; }
+.blueprint-card-crew-item.bp-crew-c4 .blueprint-card-crew-rarity { background:#f59e0b; color:#0a0a0a; }
 
 /* ═══════════════════════════════════════════════════════════════════
    Sub-header row — sits directly under the name bar, surfaces the
@@ -10535,19 +10536,27 @@ body.preview-active .nice-ai {
     display:flex; flex-direction:column; align-items:center;
     gap:8px;
     /* Match the topbar actions' 12px drop (.app-topbar-actions) so the tab
-       row lines up with the Theme button. app-main already sits below the
-       guest banner, so only the 12px offset is needed here. */
+       row lines up with the rest of the header chrome. app-main already sits
+       below the guest banner, so only the 12px offset is needed here. */
     padding-top:12px;
+    position:relative; /* anchor the Schematic ship picker to the top-right */
   }
   #bp-type-tabs { border:none; }
   #bp-type-tabs > span { display:none; }
-  .sch-fixed-ship-picker { position:relative; }
+  /* Schematic ship picker sits at the right end of the tab row (not a
+     stacked second row) so the centered tabs keep the optical axis and the
+     picker reads as a context selector beside them. Vertically centered
+     against the ~40px tab pill row. */
+  .sch-fixed-ship-picker { position:absolute; top:17px; right:16px; z-index:2; }
+  /* Sapphire-blue fill + white label so the active-ship selector reads as a
+     selected control, matching the solid-blue active tab. Uses --accent
+     (theme-aware) which is a sapphire blue in the default theme. */
   .sch-fixed-ship-trigger {
     display:inline-flex; align-items:center; gap:8px;
     padding:6px 12px;
-    background:var(--bg-alt);
-    color:var(--text);
-    border:var(--border-width, 1px) solid var(--border);
+    background:var(--accent);
+    color:#fff;
+    border:var(--border-width, 1px) solid transparent;
     border-radius:var(--radius);
     font-family:var(--font-b);
     font-size:var(--text-sm);
@@ -10556,13 +10565,13 @@ body.preview-active .nice-ai {
     min-width:240px;
     max-width:320px;
   }
-  .sch-fixed-ship-trigger:hover { background:var(--surface2, var(--bg-alt)); border-color:transparent; }
+  .sch-fixed-ship-trigger:hover { filter:brightness(0.94); border-color:transparent; }
   .sch-fixed-ship-trigger:focus-visible { outline:none; border-color:var(--accent); }
   /* Pad-left equals chevron width (12px) + gap (8px) so the label's
      flex slot is symmetric around the trigger's centerline — keeps the
      name visually centered despite the chevron's right-side offset. */
   .sch-fixed-ship-label { flex:1 1 auto; padding-left:20px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sch-fixed-ship-trigger svg { flex-shrink:0; color:var(--text-muted); }
+  .sch-fixed-ship-trigger svg { flex-shrink:0; color:#fff; }
   /* Fixed-position so the popover escapes the bridge tabs row's
      overflow:auto clipping; JS sets `top` and `left` from the trigger
      rect on open. */
@@ -10650,6 +10659,9 @@ body.preview-active .nice-ai {
 ───────────────────────────────────────────────────────────────── */
 .bp-tab-picker { display:none; }
 .bp-filter-toggle { display:none; }
+/* Mobile-only always-visible search row (search input + Filters button).
+   Desktop keeps search in the inline filter row, so this is hidden. */
+.bp-mobile-search-row { display:none; }
 .bp-filter-count {
   display:inline-flex; align-items:center; justify-content:center;
   min-width:16px; height:16px; padding:0 5px; margin-left:4px;
@@ -10665,7 +10677,10 @@ body.preview-active .nice-ai {
   display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
   margin-bottom:12px;
 }
-.bp-filter-controls .bp-filter-search { flex:0 1 260px; }
+.bp-filter-controls .bp-filter-search { flex:0 1 340px; }
+/* Let the input fill the wider search box — the base .search-input is a
+   fixed 200px, which clips the long placeholder. */
+.bp-filter-controls .bp-filter-search .search-input { flex:1 1 auto; width:auto; min-width:0; }
 .bp-filter-controls > .bp-sheet-handle,
 .bp-filter-controls > .bp-sheet-header,
 .bp-filter-controls > .bp-sheet-footer { display:none; }
@@ -10728,6 +10743,11 @@ body.preview-active .nice-ai {
   }
   .bp-filter-toggle:hover { color:var(--text); border-color:var(--border-hi); }
   .bp-filter-toggle[aria-expanded="true"] { color:var(--accent); border-color:var(--accent); }
+
+  /* Always-visible mobile search: input fills the row, Filters button beside it. */
+  .bp-mobile-search-row { display:flex; align-items:center; gap:8px; flex-wrap:nowrap; margin-bottom:10px; }
+  .bp-mobile-search-row .bp-filter-search { flex:1 1 auto; min-width:0; }
+  .bp-mobile-search-row .bp-filter-search .search-input { flex:1 1 auto; width:auto; min-width:0; font-size:var(--text-sm); }
 
   /* Single row: search input + filter toggle + view toggles */
   .bp-search-row { flex-wrap:nowrap; gap:6px; }
