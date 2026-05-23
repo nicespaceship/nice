@@ -106,32 +106,32 @@ const CodeView = (() => {
     el.innerHTML = `
       <div class="ide-new-project">
         <h2>Code</h2>
-        <p style="color:var(--text-muted);font-size:.85rem;margin-top:-12px;">Create or open a project</p>
+        <p class="ide-new-project-subtitle">Create or open a project</p>
         ${list.length ? `
-          <div style="width:100%;max-width:600px;">
-            <h3 style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;font-family:var(--font-b)">RECENT PROJECTS</h3>
-            <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="ide-recent-projects">
+            <h3 class="ide-section-overline">Recent projects</h3>
+            <div class="ide-recent-list">
               ${list.map(([id, p]) => `
-                <button class="ide-template-card" data-open-project="${_esc(id)}" style="text-align:left;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;">
+                <button class="ide-template-card ide-recent-card" data-open-project="${_esc(id)}">
                   <div>
-                    <h3 style="margin:0">${_esc(p.name)}</h3>
-                    <p style="margin:0">${p.fileCount} file${p.fileCount !== 1 ? 's' : ''}</p>
+                    <h3>${_esc(p.name)}</h3>
+                    <p>${p.fileCount} file${p.fileCount !== 1 ? 's' : ''}</p>
                   </div>
-                  <span style="font-size:.65rem;color:var(--text-muted)">${new Date(p.modified).toLocaleDateString()}</span>
+                  <span class="ide-recent-card-date">${new Date(p.modified).toLocaleDateString()}</span>
                 </button>
               `).join('')}
             </div>
           </div>
         ` : ''}
         <div>
-          <h3 style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;font-family:var(--font-b)">NEW PROJECT</h3>
+          <h3 class="ide-section-overline">New project</h3>
           <div class="ide-template-grid">
             <button class="ide-template-card" data-template="blank">
               <h3>Blank</h3>
               <p>Empty HTML file</p>
             </button>
             <button class="ide-template-card" data-template="landing-page">
-              <h3>Landing Page</h3>
+              <h3>Landing page</h3>
               <p>HTML + CSS + JS</p>
             </button>
             <button class="ide-template-card" data-template="dashboard">
@@ -139,7 +139,7 @@ const CodeView = (() => {
               <p>Cards + grid layout</p>
             </button>
             <button class="ide-template-card" data-template="edge-function">
-              <h3>Edge Function</h3>
+              <h3>Edge function</h3>
               <p>Deno / Supabase</p>
             </button>
           </div>
