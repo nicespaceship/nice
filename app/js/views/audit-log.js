@@ -31,15 +31,30 @@ const AuditLogView = (() => {
     return CATEGORIES.find(c => c.value === action) || CATEGORIES[0];
   }
 
-  // Search + count + Clear for the shared #bridge-subnav. Events bind in
+  // Category filter pills + search + count + Clear for the shared
+  // #bridge-subnav. Pills follow the Outbox status-filter pattern (26px,
+  // count chip, solid-fill active in the category color). Events bind in
   // render() via global ids, so living outside the view body works.
   function getToolbarActions() {
+    const allEntries = (typeof AuditLog !== 'undefined')
+      ? AuditLog.getEntries({ action: 'all', search: '', limit: 500 })
+      : [];
+    const counts = { all: allEntries.length };
+    CATEGORIES.forEach(c => { if (c.value !== 'all') counts[c.value] = 0; });
+    allEntries.forEach(e => { if (counts[e.action] !== undefined) counts[e.action]++; });
+
+    const pills = CATEGORIES.map(c => {
+      const active = _activeCat === c.value ? ' active' : '';
+      const styleAttr = c.value === 'all' ? '' : ` style="--log-cat-color:${c.color}"`;
+      return `<button class="log-filter-pill${active}" data-cat="${c.value}"${styleAttr}>${_esc(c.label)} <span class="log-pill-count">${counts[c.value] || 0}</span></button>`;
+    }).join('');
+
     return `
+      <div class="log-filters">${pills}</div>
       <div class="search-box">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
         <input type="text" id="log-filter-search" class="search-input" placeholder="Search events..." />
       </div>
-      <span class="log-count" id="log-count"></span>
       <button class="btn btn-sm" id="log-clear" title="Clear log">Clear</button>`;
   }
 
@@ -50,11 +65,8 @@ const AuditLogView = (() => {
 
     el.innerHTML = `
       <div class="log-wrap">
-        <!-- Category Gauge Strip -->
-        <div class="log-gauge-strip" id="log-gauges"></div>
-
-        <!-- Search + count + Clear render in the shared #bridge-subnav
-             (see getToolbarActions). -->
+        <!-- Category pills, search, count + Clear render in the shared
+             #bridge-subnav (see getToolbarActions). -->
 
         <!-- Timeline -->
         <div class="log-timeline" id="log-timeline">
@@ -65,60 +77,43 @@ const AuditLogView = (() => {
 
     _loadEntries();
 
-    // Category gauge clicks
-    document.getElementById('log-gauges')?.addEventListener('click', (e) => {
-      const gauge = e.target.closest('.log-gauge');
-      if (!gauge) return;
-      const cat = gauge.dataset.cat;
+    // Category pill clicks (delegated off #bridge-subnav so they survive any
+    // pill re-render and don't fight with the central subnav teardown hook).
+    const subnav = document.getElementById('bridge-subnav');
+    const onSubnavClick = (e) => {
+      const pill = e.target.closest('.log-filter-pill');
+      if (!pill) return;
+      const cat = pill.dataset.cat;
       _activeCat = (_activeCat === cat && cat !== 'all') ? 'all' : cat;
+      subnav.querySelectorAll('.log-filter-pill').forEach(b => b.classList.toggle('active', b.dataset.cat === _activeCat));
       _loadEntries();
-    });
+    };
+    subnav?.addEventListener('click', onSubnavClick);
+    // Hook into the central subnav cleanup so we don't leak across tab swaps.
+    if (subnav) subnav._subnavCleanup = () => subnav.removeEventListener('click', onSubnavClick);
 
     document.getElementById('log-filter-search')?.addEventListener('input', _debounce(_loadEntries, 200));
     document.getElementById('log-clear')?.addEventListener('click', () => {
       if (!confirm('Clear the entire Captain\'s Log? This cannot be undone.')) return;
       AuditLog.clearEntries();
+      _activeCat = 'all';
+      // Reset all pill counts + active state inline (no full subnav re-render
+      // since the pills live outside this view's render output).
+      subnav?.querySelectorAll('.log-filter-pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.cat === 'all');
+        const c = b.querySelector('.log-pill-count');
+        if (c) c.textContent = '0';
+      });
       _loadEntries();
     });
   }
 
-  function _renderGauges(allEntries) {
-    const strip = document.getElementById('log-gauges');
-    if (!strip) return;
-
-    // Count per category
-    const counts = {};
-    CATEGORIES.forEach(c => { counts[c.value] = 0; });
-    counts.all = allEntries.length;
-    allEntries.forEach(e => { if (counts[e.action] !== undefined) counts[e.action]++; });
-
-    strip.innerHTML = CATEGORIES.filter(c => c.value !== 'all').map(c => {
-      const count = counts[c.value] || 0;
-      const active = _activeCat === c.value ? 'log-gauge-active' : '';
-      const pct = allEntries.length ? Math.round((count / allEntries.length) * 100) : 0;
-      return `
-        <button class="log-gauge ${active}" data-cat="${c.value}" style="--log-cat-color:${c.color}">
-          <span class="log-gauge-icon">${c.icon}</span>
-          <span class="log-gauge-num">${count}</span>
-          <span class="log-gauge-label">${c.label}</span>
-          <div class="log-gauge-bar"><div class="log-gauge-fill" style="width:${pct}%"></div></div>
-        </button>`;
-    }).join('');
-  }
-
   function _loadEntries() {
     const search = document.getElementById('log-filter-search')?.value || '';
-    const allEntries = AuditLog.getEntries({ action: 'all', search: '', limit: 500 });
-
-    // Render gauges from unfiltered data
-    _renderGauges(allEntries);
 
     // Apply filters
     const cat = _activeCat;
     const entries = AuditLog.getEntries({ action: cat, search, limit: 200 });
-
-    const countEl = document.getElementById('log-count');
-    if (countEl) countEl.textContent = entries.length + ' entries';
 
     const timeline = document.getElementById('log-timeline');
     if (!timeline) return;
