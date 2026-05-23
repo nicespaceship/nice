@@ -4035,14 +4035,35 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 ───────────────────────────────────────────────────────────────── */
 .ana-wrap { max-width:var(--width-large); margin:0 auto; display:flex; flex-direction:column; gap:20px; }
 
-.ana-stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; }
-.ana-stat-card {
-  display:flex; flex-direction:column; align-items:center; gap:4px;
-  padding:16px 10px; border:var(--border-width) solid var(--border);
-  background:var(--panel-bg); border-radius:var(--radius); text-align:center;
+/* Inline KPI chips that live in #bridge-subnav for Operations. Same
+   pill chrome as .outbox-filter / .log-filter-pill — white surface,
+   bordered, 26px height, --radius — so the row reads as one continuous
+   sub-toolbar rhythm. Internal layout stays label + value (data readout,
+   not a clickable filter), with the value bold and the label muted-caps. */
+.ana-kpi {
+  display:inline-flex; align-items:center; gap:6px;
+  height:26px; box-sizing:border-box;
+  padding:0 12px; border:var(--border-width,1px) solid var(--border);
+  background:var(--surface); color:var(--text);
+  font-family:var(--font-h); font-weight:var(--fw-regular); font-size:var(--text-sm);
+  border-radius:var(--radius);
+  white-space:nowrap;
 }
-.ana-stat-num { font-family:var(--font-b); font-size:1.3rem; font-weight:var(--fw-bold); }
-.ana-stat-label { font-family:var(--font-b); font-size:.48rem; letter-spacing:var(--tracking-caps); text-transform:uppercase; color:var(--text-muted); }
+.ana-kpi-label { color:var(--text-muted); font-size:var(--text-xs); letter-spacing:var(--tracking-caps); text-transform:uppercase; }
+.ana-kpi-val { font-weight:var(--fw-bold); }
+.ana-kpi-val--hl { color:var(--accent); }
+.ana-kpi-val--bad { color:var(--color-error,#ef4444); }
+.ana-kpi-fail { color:var(--color-error,#ef4444); font-weight:var(--fw-regular); font-size:var(--text-xs); }
+
+/* Export Report pill matches the Outbox Export pattern. */
+.ana-export-btn {
+  padding:0 12px; border-radius:var(--radius);
+  border:var(--border-width,1px) solid var(--border); background:var(--surface);
+  color:var(--text); cursor:pointer;
+  font-family:var(--font-h); font-weight:var(--fw-regular); font-size:var(--text-sm);
+  display:inline-flex; align-items:center; transition:color .15s, border-color .15s, background-color .15s;
+}
+.ana-export-btn:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
 
 .ana-charts { display:grid; grid-template-columns:1.4fr 1fr; gap:14px; }
 .ana-chart-panel {
@@ -5042,7 +5063,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .blueprint-card:hover, .blueprint-card-grid:hover, .blueprint-card-compact:hover { transform:none !important; }
   /* .bp-view-card / .bp-view-compact grid-template-columns + .bpl-row
      rules are set in the later @media block at line 9301 (SSOT). */
-  .ana-stats { grid-template-columns:repeat(2, 1fr); }
   .ana-charts { grid-template-columns:1fr; }
   .cost-overview { grid-template-columns:repeat(2, 1fr); }
   .cost-log-row { font-size:var(--text-xs); }
@@ -5604,6 +5624,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 #bridge-subnav .outbox-type-btn,
 #bridge-subnav .outbox-export-btn,
 #bridge-subnav .log-filter-pill,
+#bridge-subnav .ana-kpi,
+#bridge-subnav .ana-export-btn,
 #bridge-subnav .sch-fixed-ship-trigger,
 #bridge-subnav .search-box,
 #bridge-subnav .search-input,

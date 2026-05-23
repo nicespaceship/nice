@@ -26,13 +26,21 @@ const AnalyticsView = (() => {
   // Range select + Export Report for the shared #bridge-subnav. Events bind in
   // _bindEvents() via global ids, so living outside the view body works.
   function getToolbarActions() {
+    // Range picker + inline KPI chips + pill-style export, all locked to
+    // the universal 26px Bridge subnav height. The chips start with em-dash
+    // placeholders; _updateMissionStats fills them once data loads.
+    const rangeSelect = CSelect.html('ana-range', 'Date range', [
+      { value: '7',  label: 'Last 7 Days' },
+      { value: '30', label: 'Last 30 Days' },
+      { value: '90', label: 'Last 90 Days' },
+    ], '7');
     return `
-      <select id="ana-range" class="filter-select">
-        <option value="7">Last 7 Days</option>
-        <option value="30">Last 30 Days</option>
-        <option value="90">Last 90 Days</option>
-      </select>
-      <button class="btn btn-sm" id="ana-export-pdf">Export Report</button>`;
+      ${rangeSelect}
+      <span class="ana-kpi"><span class="ana-kpi-label">Total</span><span class="ana-kpi-val" id="ana-kpi-total">—</span></span>
+      <span class="ana-kpi"><span class="ana-kpi-label">Success</span><span class="ana-kpi-val ana-kpi-val--hl" id="ana-kpi-success">—</span></span>
+      <span class="ana-kpi"><span class="ana-kpi-label">Avg</span><span class="ana-kpi-val" id="ana-kpi-avg">—</span></span>
+      <span class="ana-kpi"><span class="ana-kpi-label">Running</span><span class="ana-kpi-val" id="ana-kpi-running">—</span></span>
+      <button class="btn ana-export-btn" id="ana-export-pdf">Export Report</button>`;
   }
 
   function render(el) {
@@ -42,12 +50,12 @@ const AnalyticsView = (() => {
 
     el.innerHTML = `
       <div class="ana-wrap">
-        <!-- Range select + Export Report render in the shared #bridge-subnav
-             (see getToolbarActions). -->
+        <!-- Range picker, KPI chips (Total / Success / Avg / Running), and
+             Export Report all render in the shared #bridge-subnav (see
+             getToolbarActions). The Mission Operations section therefore
+             opens directly to the charts — no redundant title + KPI grid. -->
         <!-- ═══ 1. Mission Operations ═══ -->
         <div class="ana-section">
-          <h3 class="ana-section-title">Mission Operations</h3>
-          <div class="ana-stats" id="ana-mission-stats"></div>
           <div class="ana-charts">
             <div class="ana-chart-panel">
               <h3 class="ana-chart-title">Missions Per Day</h3>
@@ -122,7 +130,9 @@ const AnalyticsView = (() => {
   }
 
   function _bindEvents() {
-    document.getElementById('ana-range')?.addEventListener('change', _loadMissions);
+    // Range selector is the custom .bp-cselect (CSS-styleable, unlike native
+    // <select> which the OS draws at system font size and clips at our height).
+    CSelect.mount('ana-range', _loadMissions);
     document.getElementById('ana-export-pdf')?.addEventListener('click', _exportReport);
 
     // Budget modal
@@ -159,7 +169,9 @@ const AnalyticsView = (() => {
   ════════════════════════════════════════════════════════════════ */
 
   function _loadMissions() {
-    const range = parseInt(document.getElementById('ana-range')?.value || '7', 10);
+    // .bp-cselect stores its current value in data-value (not .value, since
+    // it's a styled <div>, not a native <select>).
+    const range = parseInt(document.getElementById('ana-range')?.dataset.value || '7', 10);
     const agents = State.get('agents') || [];
     const tasks = State.get('missions') || [];
 
@@ -175,8 +187,14 @@ const AnalyticsView = (() => {
   }
 
   function _updateMissionStats(tasks) {
-    const statsEl = document.getElementById('ana-mission-stats');
-    if (!statsEl) return;
+    // Patches the inline KPI chips that getToolbarActions emitted into the
+    // shared #bridge-subnav. Bail if the subnav hasn't rendered (e.g. an
+    // auth-gated render of an empty view).
+    const totalEl   = document.getElementById('ana-kpi-total');
+    const successEl = document.getElementById('ana-kpi-success');
+    const avgEl     = document.getElementById('ana-kpi-avg');
+    const runningEl = document.getElementById('ana-kpi-running');
+    if (!totalEl) return;
 
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === 'completed').length;
@@ -200,24 +218,17 @@ const AnalyticsView = (() => {
       }
     }
 
-    statsEl.innerHTML = `
-      <div class="ana-stat-card">
-        <span class="ana-stat-num">${total}</span>
-        <span class="ana-stat-label">Total Missions</span>
-      </div>
-      <div class="ana-stat-card">
-        <span class="ana-stat-num hl">${successRate}%</span>
-        <span class="ana-stat-label">Success Rate</span>
-      </div>
-      <div class="ana-stat-card">
-        <span class="ana-stat-num">${avgTime}</span>
-        <span class="ana-stat-label">Avg Completion</span>
-      </div>
-      <div class="ana-stat-card">
-        <span class="ana-stat-num ${failed > 0 ? 'rate-bad' : ''}">${running}</span>
-        <span class="ana-stat-label">Running${failed > 0 ? ' \u00b7 <span style="color:#ef4444">' + failed + ' failed</span>' : ''}</span>
-      </div>
-    `;
+    totalEl.textContent = total;
+    successEl.textContent = successRate + '%';
+    avgEl.textContent = avgTime;
+    // Running gets a "\u00b7 N failed" tail when there are failures so the failure
+    // count doesn't lose its own slot. Kept tight; the chip stays one line.
+    if (failed > 0) {
+      runningEl.innerHTML = `${running} <span class="ana-kpi-fail">\u00b7 ${failed} failed</span>`;
+    } else {
+      runningEl.textContent = running;
+    }
+    runningEl.classList.toggle('ana-kpi-val--bad', failed > 0);
   }
 
   /* ════════════════════════════════════════════════════════════════

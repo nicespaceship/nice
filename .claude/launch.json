@@ -5,8 +5,7 @@
       "name": "Dev Server (Live Reload)",
       "runtimeExecutable": "node",
       "runtimeArgs": ["scripts/dev-server.js"],
-      "port": 3000,
-      "autoPort": true
+      "port": 3000
     },
     {
       "name": "Marketing Site",
