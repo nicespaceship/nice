@@ -40,7 +40,7 @@ const AnalyticsView = (() => {
       <span class="ana-kpi"><span class="ana-kpi-label">Success</span><span class="ana-kpi-val ana-kpi-val--hl" id="ana-kpi-success">—</span></span>
       <span class="ana-kpi"><span class="ana-kpi-label">Avg</span><span class="ana-kpi-val" id="ana-kpi-avg">—</span></span>
       <span class="ana-kpi"><span class="ana-kpi-label">Running</span><span class="ana-kpi-val" id="ana-kpi-running">—</span></span>
-      <button class="btn ana-export-btn" id="ana-export-pdf">Export Report</button>`;
+      <button class="btn ana-export-btn" id="ana-export-pdf">Export report</button>`;
   }
 
   function render(el) {

@@ -55,7 +55,7 @@ const MissionsView = (() => {
       </div>
       <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New ${_N()}" title="New ${_N()}">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-        <span class="mc-toolbar-label">New ${_N()}</span>
+        <span class="mc-toolbar-label">New ${_Nl()}</span>
       </button>`;
   }
 

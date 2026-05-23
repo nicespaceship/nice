@@ -186,16 +186,18 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
-/* Buttons — soft command */
+/* Buttons — soft command. Sentence case + tokens per CLAUDE.md.
+   Action buttons aren't overlines, so they drop the uppercase + caps
+   tracking the eyebrow labels use. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .btn {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
   font-family: var(--font-b);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  font-size: .6rem;
+  font-weight: var(--fw-medium);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-normal);
+  text-transform: none;
   transition: all .15s;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .btn:hover {
