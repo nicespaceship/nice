@@ -216,7 +216,7 @@ const BlueprintsView = (() => {
       // current theme's nav.
       const _themeId = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : 'nice';
       const _tronAvailable = _themeId === 'grid';
-      const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'outbox', 'log'];
+      const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log'];
       if (_tronAvailable) validTabs.push('tron');
       // Outbox and Log are top-level tabs (after Operations). Documentation
       // moved to the marketing site (linked from the global ? icon). Old
@@ -263,8 +263,8 @@ const BlueprintsView = (() => {
         { id: 'schematic', label: 'Schematic' },
         { id: 'blueprints', label: 'Blueprints' },
         { id: 'missions', label: Terminology.label('mission', { plural: true }) },
-        { id: 'operations', label: 'Operations' },
         { id: 'outbox', label: 'Outbox' + outboxBadge },
+        { id: 'operations', label: 'Operations' },
         { id: 'log', label: 'Log' },
         ...(_themeForTabs === 'grid' ? [{ id: 'tron', label: 'TRON', cls: 'bp-tab-tron' }] : []),
       ];
