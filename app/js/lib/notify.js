@@ -143,10 +143,10 @@ const Notify = (() => {
   function _updateBadge() {
     const notifs = State.get('notifications') || [];
     const unread = notifs.filter(n => !n.read).length + 1; // +1 for the new one
-    const hudBadge = document.getElementById('hud-alert-badge');
-    if (hudBadge) {
-      hudBadge.textContent = unread;
-      hudBadge.style.display = unread > 0 ? '' : 'none';
+    const dot = document.getElementById('side-bell-dot');
+    if (dot) {
+      dot.textContent = unread > 9 ? '9+' : unread;
+      dot.hidden = unread === 0;
     }
     // App Badge API (PWA installed)
     if ('setAppBadge' in navigator) {

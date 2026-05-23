@@ -862,7 +862,7 @@ const NICE = (() => {
     document.addEventListener('click', (e) => {
       if (!sidebar.classList.contains('open')) return;
       if (sidebar.contains(e.target)) return;
-      if (e.target.closest('#mobile-sidebar-toggle, .preview-panel, .nice-monitor, .hud-alert-dropdown, .app-topbar-actions, .app-hud-panel')) return;
+      if (e.target.closest('#mobile-sidebar-toggle, .preview-panel, .nice-monitor, .app-hud-panel')) return;
       sidebar.classList.remove('open');
     });
 
@@ -1366,11 +1366,10 @@ const NICE = (() => {
 
   function _updateBellBadge(notifs) {
     const unread = notifs.filter(n => !n.read).length;
-    const empty = unread === 0;
-    const hudBadge = document.getElementById('hud-alert-badge');
-    if (hudBadge) {
-      hudBadge.textContent = unread || '';
-      hudBadge.classList.toggle('hidden', empty);
+    const dot = document.getElementById('side-bell-dot');
+    if (dot) {
+      dot.textContent = unread > 9 ? '9+' : (unread || '');
+      dot.hidden = unread === 0;
     }
   }
 
@@ -1448,26 +1447,40 @@ const NICE = (() => {
         }).observe(sidebarEl, { attributes:true, attributeFilter:['class'] });
       }
 
-      // Close on outside click
-      // Alert badge dropdown
-      const alertBadge = document.getElementById('hud-alert-badge');
+      // Bell button → dropdown. Body-level dropdown is positioned off the
+      // bell's bounding rect each open so it tracks layout changes.
+      const sideBell = document.getElementById('side-bell');
       const alertDropdown = document.getElementById('hud-alert-dropdown');
-      if (alertBadge && alertDropdown) {
-        alertBadge.addEventListener('click', (e) => {
+      const positionAlertDropdown = () => {
+        if (!sideBell || !alertDropdown) return;
+        const rect = sideBell.getBoundingClientRect();
+        const gap = 8;
+        // Open to the right of the bell, aligned to its top. If the
+        // dropdown would overflow the viewport bottom, anchor to its
+        // bottom edge instead so it stays on-screen.
+        const top = Math.max(8, Math.min(rect.top, window.innerHeight - 380));
+        alertDropdown.style.top = top + 'px';
+        alertDropdown.style.left = (rect.right + gap) + 'px';
+      };
+      if (sideBell && alertDropdown) {
+        sideBell.addEventListener('click', (e) => {
           e.stopPropagation();
           const isOpen = alertDropdown.classList.toggle('open');
+          sideBell.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
           if (isOpen) {
-            const rect = alertBadge.getBoundingClientRect();
-            alertDropdown.style.top = (rect.bottom + 8) + 'px';
-            alertDropdown.style.left = rect.left + 'px';
+            positionAlertDropdown();
             _renderAlertDropdown();
           }
+        });
+        window.addEventListener('resize', () => {
+          if (alertDropdown.classList.contains('open')) positionAlertDropdown();
         });
       }
 
       const markAllBtn = document.getElementById('hud-alert-mark-all');
       if (markAllBtn) {
-        markAllBtn.addEventListener('click', () => {
+        markAllBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const notifs = State.get('notifications') || [];
           notifs.forEach(n => n.read = true);
           State.set('notifications', notifs);
@@ -1483,8 +1496,9 @@ const NICE = (() => {
           panel.classList.remove('open');
           btn.classList.remove('active');
         }
-        if (alertDropdown && !alertDropdown.contains(e.target) && e.target !== alertBadge) {
+        if (alertDropdown && !alertDropdown.contains(e.target) && sideBell && !sideBell.contains(e.target)) {
           alertDropdown.classList.remove('open');
+          sideBell?.setAttribute('aria-expanded', 'false');
         }
       });
     }
@@ -1724,8 +1738,8 @@ const NICE = (() => {
   }
 
   function _updateAuthUI(user) {
-    const hudBadge = document.getElementById('hud-alert-badge');
-    if (hudBadge && !user) hudBadge.classList.add('hidden');
+    const dot = document.getElementById('side-bell-dot');
+    if (dot && !user) dot.hidden = true;
   }
 
   /* ── Register routes ── */
@@ -2487,11 +2501,16 @@ const NICE = (() => {
       if (title) _announce('Navigated to ' + title.textContent);
     });
 
-    // Announce notification count changes (Step 56)
+    // Keep the profile-icon dot in sync with the notifications list, and
+    // announce count changes (Step 56). Without this the dot only updated
+    // when Notify.show() fired or the user clicked into a notification,
+    // missing initial loads and any State.set from elsewhere.
     State.on('notifications', (notifs) => {
+      _updateBellBadge(notifs || []);
       const unread = (notifs || []).filter(n => !n.read).length;
       if (unread > 0) _announce(unread + ' new notification' + (unread !== 1 ? 's' : ''));
     });
+    _updateBellBadge(State.get('notifications') || []);
 
     // Guest/demo mode (after auth init has set user)
     setTimeout(_initGuestMode, 500);

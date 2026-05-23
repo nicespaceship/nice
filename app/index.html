@@ -340,6 +340,13 @@
   <div id="sidebar-favorites" class="sidebar-favorites"></div>
   <div class="side-footer">
     <div id="sidebar-presence"></div>
+    <button type="button" class="side-bell" id="side-bell" aria-label="Alerts" title="Alerts" aria-haspopup="dialog" aria-expanded="false">
+      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
+      </svg>
+      <span class="side-bell-label">Alerts</span>
+      <span class="side-bell-dot" id="side-bell-dot" hidden></span>
+    </button>
     <div class="side-footer-row">
       <a href="#/profile" class="side-user-card" id="hdr-user">
         <span class="side-user-top">
@@ -381,8 +388,9 @@
   </div>
 </aside>
 
-<!-- Alert dropdown (body-level for z-index) -->
-<div class="hud-alert-dropdown" id="hud-alert-dropdown">
+<!-- Alert dropdown (body-level so it can escape the sidebar's z-index/clip
+     and anchor to the rail bell). Positioned by JS off the bell's rect. -->
+<div class="hud-alert-dropdown" id="hud-alert-dropdown" role="dialog" aria-label="Alerts">
   <div class="hud-alert-hdr">
     <span class="hud-alert-title">Alerts</span>
     <button class="hud-alert-mark" id="hud-alert-mark-all">Mark all read</button>
@@ -414,9 +422,6 @@
 
 <!-- ═══ MAIN CONTENT ═══ -->
 <main class="app-main" role="main">
-  <div class="app-topbar-actions" id="app-topbar-actions">
-    <span class="hud-alert-badge" id="hud-alert-badge" role="status" style="display:none"></span>
-  </div>
   <div id="app-fixed-tabs"></div>
   <div class="app-view-content" id="app-view" aria-live="polite">
     <!-- Views rendered here by router -->

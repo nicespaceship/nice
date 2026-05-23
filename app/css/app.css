@@ -194,23 +194,47 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-radius:4px; white-space:nowrap;
 }
 
-.hud-alert-badge {
-  background:var(--color-error); color:#fff; font-size:.5rem;
-  font-family:var(--font-b); min-width:14px; height:14px;
-  border-radius:7px; display:inline-flex; align-items:center; justify-content:center;
-  padding:0 3px; margin-right:4px; vertical-align:middle;
-  cursor:pointer;
+/* Sidebar rail bell — dedicated notifications button. Matches the
+   .side-link rhythm so it slots cleanly into the rail above the user
+   card. Stays visible in both expanded and collapsed sidebar states. */
+.side-bell {
+  position:relative;
+  display:flex; align-items:center; gap:10px;
+  width:100%; padding:10px 12px; margin:0 0 4px 0;
+  background:transparent; border:none; border-radius:var(--radius);
+  color:var(--nav-text-muted, var(--text-muted));
+  font-family:var(--font-b); font-size:var(--text-sm);
+  text-align:left; cursor:pointer;
+  transition:background .15s, color .15s;
 }
+.side-bell:hover { background:var(--surface, var(--bg-alt)); color:var(--text); }
+.side-bell .icon { flex-shrink:0; }
+.side-bell-label { flex:1; min-width:0; }
+.side-bell-dot {
+  position:absolute; top:6px; left:24px;
+  min-width:14px; height:14px; padding:0 3px;
+  background:var(--color-error); color:#fff;
+  font-family:var(--font-b); font-size:.5rem; font-weight:var(--fw-bold);
+  border-radius:7px; display:inline-flex; align-items:center; justify-content:center;
+  pointer-events:none;
+}
+.side-bell-dot[hidden] { display:none; }
+/* Collapsed rail: hide the label, center the icon, keep the dot. */
+.app-sidebar:not(.open) .side-bell { justify-content:center; padding:10px 0; }
+.app-sidebar:not(.open) .side-bell-label { display:none; }
+.app-sidebar:not(.open) .side-bell-dot { left:auto; right:6px; top:4px; }
+
+/* Body-level dropdown anchored to the bell by JS (position:fixed). */
 .hud-alert-dropdown {
   position:fixed; z-index:9999;
   width:280px; max-height:360px; overflow:hidden;
   background:var(--panel-bg); border:1px solid var(--border);
   border-radius:var(--radius); display:flex; flex-direction:column;
-  opacity:0; pointer-events:none; transform:translateY(-8px);
+  opacity:0; pointer-events:none; transform:translateX(-8px);
   transition:opacity .2s ease, transform .2s ease;
 }
 .hud-alert-dropdown.open {
-  opacity:1; pointer-events:auto; transform:translateY(0);
+  opacity:1; pointer-events:auto; transform:translateX(0);
 }
 .hud-alert-hdr {
   display:flex; justify-content:space-between; align-items:center;
@@ -245,14 +269,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    sidebar's visual slot (just below the sidebar header). Previously
    lived inside the sidebar and flexed it open; now fixed to the same
    viewport coordinates with a slide-in via max-height + opacity. */
-.app-topbar-actions {
-  position:fixed;
-  top:calc(var(--guest-banner-height, 0px) + 12px);
-  right:16px;
-  display:flex; align-items:center; gap:8px;
-  z-index:301;
-}
-
 /* In-flow inside the sidebar, directly under the header CTA. Collapsed
    to zero height so it adds no space; opening it slides down and pushes
    the mode tabs + sub-nav below. Only expands while the sidebar is open
@@ -10588,9 +10604,9 @@ body.preview-active .nice-ai {
   #app-fixed-tabs {
     display:flex; flex-direction:column; align-items:center;
     gap:8px;
-    /* Match the topbar actions' 12px drop (.app-topbar-actions) so the tab
-       row lines up with the rest of the header chrome. app-main already sits
-       below the guest banner, so only the 12px offset is needed here. */
+    /* 12px drop so the tab row lines up with the rest of the header
+       chrome. app-main already sits below the guest banner, so only the
+       12px offset is needed here. */
     padding-top:12px;
   }
   #bp-type-tabs { border:none; }
