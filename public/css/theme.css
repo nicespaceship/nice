@@ -291,7 +291,7 @@
 :is([data-theme="nice"],[data-theme="nice-dark"]) .search-input {
   border: 1px solid var(--border);
   background: var(--surface2); color: var(--text);
-  font-family: var(--font-b); font-size: .75rem;
+  font-family: var(--font-b); font-size: var(--text-sm);
   transition: border-color .15s, box-shadow .15s;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) input::placeholder,
@@ -314,14 +314,14 @@
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .search-box { background: var(--surface); border-color: var(--border); }
 /* Bridge tab bar reads as one flat bar of text labels, not separated pills.
-   The active tab is marked by a blue underline, not a fill. 12px labels,
-   1px gaps. Sub-tabs / filter buttons keep the solid-accent selection
-   language (handled by the shared :is() groups in app.css). */
+   The active tab is marked by a blue underline, not a fill. Token-sized
+   labels, 1px gaps. Sub-tabs / filter buttons keep the solid-accent
+   selection language (handled by the shared :is() groups in app.css). */
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tabs {
   background: transparent; border-radius: 0; padding: 0; gap: 1px;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab {
-  font-size: 12px; border-radius: 0; background: none;
+  font-size: var(--text-sm); border-radius: 0; background: none;
   padding: 8px 11px; position: relative;
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab:hover { color: var(--accent); background: none; }
