@@ -1716,7 +1716,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .preview-tab.active,
   .docs-nav-btn.active,
   .bp-view-btn.active,
-  .side-mode-tab[aria-selected="true"],
   .side-link.active
 ) {
   background:var(--accent);
@@ -1732,9 +1731,20 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .preview-tab.active,
   .docs-nav-btn.active,
   .bp-view-btn.active,
-  .side-mode-tab[aria-selected="true"],
   .side-link.active
 ) svg { color:var(--bg); }
+
+/* Mode tab selected state: icon-only sapphire — no fill background. The
+   sidebar rail mode tabs (NICE / Chat / Code) are global navigation, not
+   in-content controls, so they don't take the solid-fill active treatment
+   the in-content pills above use. The icon goes accent; bg stays transparent. */
+[data-theme="nice"] .side-mode-tab[aria-selected="true"] {
+  background:transparent;
+  color:var(--accent);
+  border-color:transparent;
+  box-shadow:none;
+}
+[data-theme="nice"] .side-mode-tab[aria-selected="true"] svg { color:var(--accent); }
 
 /* Rarity filter pills carry their own rarity colour as a solid fill with
    white text when not selected (fills mirror BlueprintUtils.RARITY_COLORS;
@@ -1809,14 +1819,15 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 .app-sidebar:not(.open) .side-mode-tab span { display:none; }
 .app-sidebar:not(.open) .side-mode-tab .icon { width:24px; height:24px; }
+/* Other themes keep a tinted background to mark the selected mode tab on
+   the rail; the nice theme is icon-only sapphire (see the rule near the
+   unified-active block above). */
 .app-sidebar:not(.open) .side-mode-tab[aria-selected="true"] {
   background:color-mix(in srgb, var(--accent, var(--nav-text, var(--text))) 14%, transparent);
   box-shadow:none;
 }
-/* CORE: collapsed selected mode-tab uses the solid-blue selected fill (white
-   icon comes from the unified selected rule), beating the 14% tint above. */
 [data-theme="nice"] .app-sidebar:not(.open) .side-mode-tab[aria-selected="true"] {
-  background:var(--accent);
+  background:transparent;
 }
 .app-sidebar:not(.open) .side-mode-section { display:none; }
 
