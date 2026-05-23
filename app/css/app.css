@@ -2015,10 +2015,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bridge-hero-content { flex:1 1 0; min-height:0; }
 /* The always-visible search row + Filters button is a Blueprints catalog
    control (filters the catalog grid), but it lives inside .bp-wrap which
-   also wraps the schematic content -- so on the Schematic tab it bled in
-   with no useful target to filter. Hide it on Schematic; the row stays as
-   intended on the Blueprints tab. */
-.app-main:has(.bp-type-tab.active[data-tab="schematic"]) .bp-mobile-search-row { display:none; }
+   also wraps every other Bridge tab's content -- so it bled into Missions /
+   Operations / Outbox / Log / Documentation / Schematic with no useful
+   target to filter. Show only on Blueprints; Missions and Log render
+   their own purpose-specific search in #bridge-subnav, the rest have none. */
+.app-main:has(.bp-type-tab.active:not([data-tab="blueprints"])) .bp-mobile-search-row { display:none; }
 .schematic-col-right { align-items:flex-start; }
 .schematic-col-left { align-items:flex-end; }
 /* Staircase offsets split symmetrically — odd cards down 27px, even
