@@ -10525,6 +10525,15 @@ body.preview-active .nice-ai {
   .outbox-cal-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 }
 
+/* Period (←  May 18 — May 24, 2026  →) takes row 1; the calendar/list
+   view-seg toggle and Today button share row 2. Otherwise Today clips
+   off the right edge at 375px. */
+@media (max-width:480px) {
+  .outbox-cal-nav { flex-wrap:wrap; row-gap:8px; }
+  .outbox-cal-period { order:-1; flex-basis:100%; justify-content:center; }
+  .outbox-week-label { min-width:0; }
+}
+
 /* ── Detail views: reduce padding on mobile ── */
 @media (max-width:480px) {
   .detail-wrap { padding:0 12px; }
