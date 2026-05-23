@@ -320,17 +320,21 @@
 :is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tabs {
   background: transparent; border-radius: 0; padding: 0; gap: 1px;
 }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .code-tab {
   font-size: var(--text-sm); border-radius: 0; background: none;
   padding: 8px 11px; position: relative;
 }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab:hover { color: var(--accent); background: none; }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab.active {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab:hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .code-tab:hover { color: var(--accent); background: none; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab.active,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .code-tab.active {
   color: var(--accent); background: none; font-weight: var(--fw-medium);
 }
 /* Underline spans only the label, not the tab's padding. The inset must
-   match the horizontal padding (11px) on .bp-type-tab above. */
-:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab.active::after {
+   match the horizontal padding (11px) on the tab rule above. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-type-tab.active::after,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .code-tab.active::after {
   content: ""; position: absolute; left: 11px; right: 11px; bottom: 0; height: 2px;
   background: var(--accent);
 }

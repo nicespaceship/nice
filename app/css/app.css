@@ -9692,12 +9692,17 @@ body.preview-active .nice-ai {
   padding:0 16px; background:var(--bg);
 }
 .code-tab {
-  padding:10px 20px; font-size:.8rem; font-family:var(--font-b);
+  padding:8px 18px; font-size:var(--text-sm); font-family:var(--font-b);
+  font-weight:var(--fw-regular); position:relative;
   background:none; border:none; color:var(--text-muted); cursor:pointer;
-  border-bottom:2px solid transparent; transition:color .15s, border-color .15s;
+  transition:color .15s;
 }
 .code-tab:hover { color:var(--text); }
-.code-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.code-tab.active { color:var(--accent); font-weight:var(--fw-medium); }
+.code-tab.active::after {
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px;
+  background:var(--accent);
+}
 .code-tab-body { flex:1; overflow:auto; }
 
 /* ── Error Dashboard ── */
