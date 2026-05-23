@@ -5648,10 +5648,14 @@ html[data-theme] .nice-ai-input:focus-visible {
   height: 26px;
   box-sizing: border-box;
 }
-/* Status (All / Pending / Approved / Rejected) + type (All Types / Social /
-   Email / Report) filters match the Blueprints sub-tab pills: white surface,
-   heading font, count in a bordered chip, solid-fill active state. */
-.outbox-filter, .outbox-type-btn {
+/* Bridge sub-toolbar pills — ONE chrome rule for every filter/segment
+   button that lives in #bridge-subnav (or an equivalent hub header).
+   Blueprints sub-tabs (Spaceships/Agents/Active/Workshop), Outbox status
+   + type filters, and any future tab's pill controls all share this.
+   Active + hover states are added below per-class so each can opt into
+   the category-color treatment (Outbox type buttons use --type-color,
+   Log pills use --log-cat-color). */
+.bp-sub-tab, .outbox-filter, .outbox-type-btn {
   display:inline-flex; align-items:center; gap:6px;
   height:26px; box-sizing:border-box;
   padding:0 12px; border:var(--border-width,1px) solid var(--border);
@@ -5660,11 +5664,20 @@ html[data-theme] .nice-ai-input:focus-visible {
   border-radius:var(--radius);
   cursor:pointer; transition:color .15s, border-color .15s, background-color .15s;
 }
+.bp-sub-tab.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
 .outbox-filter.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
 .outbox-type-btn.active { background:var(--type-color,var(--accent)); color:var(--bg); border-color:var(--type-color,var(--accent)); }
-.outbox-filter:hover:not(.active), .outbox-type-btn:hover:not(.active) { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-.outbox-badge { font-size:var(--text-xs); padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); }
-.outbox-filter.active .outbox-badge { color:#d1d5db; border-color:rgba(255,255,255,.35); }
+.bp-sub-tab:hover:not(.active),
+.outbox-filter:hover:not(.active),
+.outbox-type-btn:hover:not(.active) { border-color:var(--border-hi,var(--accent)); color:var(--text); }
+/* Count chip shared across every Bridge sub-toolbar pill (Outbox,
+   Blueprints sub-tabs, Log). Squared 3px to stay distinct from the
+   main Bridge tab badge (`.bp-type-tab .bp-tab-count`, fully rounded
+   pill at 9999px — that lives in the top tab row, different layer). */
+.outbox-badge,
+.bp-sub-tab .bp-tab-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); font-weight:var(--fw-regular); }
+.outbox-filter.active .outbox-badge,
+.bp-sub-tab.active .bp-tab-count { color:#d1d5db; border-color:rgba(255,255,255,.35); }
 
 /* View toggle + export */
 .outbox-view-toggle { display:flex; gap:8px; margin-left:auto; align-items:center; }
