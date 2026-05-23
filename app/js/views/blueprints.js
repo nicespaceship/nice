@@ -1676,13 +1676,19 @@ const BlueprintsView = (() => {
           <button class="outbox-type-btn${_outboxTypeFilter === 'report' ? ' active' : ''}" data-type="report" style="--type-color:#34d399">Report</button>
         </div>
         <div class="outbox-view-toggle">
-          <div class="outbox-view-seg">
-            <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view" aria-label="Calendar view"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2.5" width="12" height="10.5" rx="1"/><path d="M1 5.5h12M4 1v3M10 1v3"/></svg></button>
-            <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view" aria-label="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
-          </div>
           ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
         </div>
       </div>`;
+  }
+
+  // Calendar / list view-mode toggle. Lives next to the date selector in
+  // calendar mode and at the top of the feed in list mode (not in the
+  // subnav) so it sits beside view-specific chrome rather than the filters.
+  function _outboxViewSegHTML() {
+    return `<div class="outbox-view-seg">
+      <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view" aria-label="Calendar view"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2.5" width="12" height="10.5" rx="1"/><path d="M1 5.5h12M4 1v3M10 1v3"/></svg></button>
+      <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view" aria-label="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
+    </div>`;
   }
 
   function _renderOutbox(el) {
@@ -1726,9 +1732,12 @@ const BlueprintsView = (() => {
         ${_outboxViewMode === 'calendar' ? `
         <div class="outbox-calendar">
           <div class="outbox-cal-nav">
-            <button class="btn outbox-week-btn" id="outbox-prev-week">&larr;</button>
-            <span class="outbox-week-label">${_e(weekLabel)}</span>
-            <button class="btn outbox-week-btn" id="outbox-next-week">&rarr;</button>
+            ${_outboxViewSegHTML()}
+            <div class="outbox-cal-period">
+              <button class="btn outbox-week-btn" id="outbox-prev-week">&larr;</button>
+              <span class="outbox-week-label">${_e(weekLabel)}</span>
+              <button class="btn outbox-week-btn" id="outbox-next-week">&rarr;</button>
+            </div>
             <button class="btn outbox-today-btn" id="outbox-today">Today</button>
           </div>
           <div class="outbox-cal-grid">
@@ -1767,6 +1776,7 @@ const BlueprintsView = (() => {
           </div>` : ''}
         </div>
         ` : `
+        <div class="outbox-list-nav">${_outboxViewSegHTML()}</div>
         <div class="outbox-feed" id="outbox-feed">
           ${filtered.length === 0 ? `
             <div class="outbox-empty">

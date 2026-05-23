@@ -3830,7 +3830,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    scattering. Centered to sit under the centered tab pills. */
 .bridge-subnav {
   display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
-  gap:8px; margin:8px auto 0; padding:0 24px; width:100%; max-width:var(--width-full);
+  gap:8px; margin:8px auto 4px; padding:0 24px; width:100%; max-width:var(--width-full);
 }
 .bridge-subnav[hidden] { display:none; }
 .bridge-subnav .search-box { min-width:0; }
@@ -5576,12 +5576,38 @@ html[data-theme] .nice-ai-input:focus-visible {
 .outbox-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .outbox-filters { display:flex; gap:6px; flex-wrap:wrap; }
 .outbox-type-filters { display:flex; gap:6px; flex-wrap:wrap; }
+
+/* ─────────────────────────────────────────────────────────────────
+   Universal Bridge sub-toolbar pill height
+   ─────────────────────────────────────────────────────────────────
+   Every pill-like interactive control rendered into #bridge-subnav reads
+   at a uniform 26px height so the row sits at one rhythm across all six
+   Bridge tabs: Schematic (ship picker), Blueprints (sub-tabs), Missions
+   (search + New Mission), Operations (range select + Export), Outbox
+   (filters + Export), and Log (search). Inline badges/counts and the
+   .mc-pipeline visualization are not pills and stay untouched. */
+#bridge-subnav .bp-sub-tab,
+#bridge-subnav .outbox-filter,
+#bridge-subnav .outbox-type-btn,
+#bridge-subnav .outbox-export-btn,
+#bridge-subnav .sch-fixed-ship-trigger,
+#bridge-subnav .search-box,
+#bridge-subnav .search-input,
+#bridge-subnav .filter-select,
+#bridge-subnav select,
+#bridge-subnav .btn,
+#bridge-subnav .bp-cselect,
+#bridge-subnav .bp-cselect-trigger {
+  height: 26px;
+  box-sizing: border-box;
+}
 /* Status (All / Pending / Approved / Rejected) + type (All Types / Social /
    Email / Report) filters match the Blueprints sub-tab pills: white surface,
    heading font, count in a bordered chip, solid-fill active state. */
 .outbox-filter, .outbox-type-btn {
   display:inline-flex; align-items:center; gap:6px;
-  padding:5px 12px; border:var(--border-width,1px) solid var(--border);
+  height:26px; box-sizing:border-box;
+  padding:0 12px; border:var(--border-width,1px) solid var(--border);
   background:var(--surface); color:var(--text-muted);
   font-family:var(--font-h); font-weight:var(--fw-regular); font-size:var(--text-sm);
   border-radius:var(--radius);
@@ -5597,9 +5623,9 @@ html[data-theme] .nice-ai-input:focus-visible {
 .outbox-view-toggle { display:flex; gap:8px; margin-left:auto; align-items:center; }
 /* View segment matches the Blueprints .bp-view-toggle: segmented --bg-alt
    container with 28x28 borderless icon buttons, solid-blue active. */
-.outbox-view-seg { display:flex; gap:2px; background:var(--bg-alt); border-radius:var(--radius); padding:2px; }
+.outbox-view-seg { display:flex; align-items:center; gap:2px; height:26px; box-sizing:border-box; background:var(--bg-alt); border-radius:var(--radius); padding:2px; }
 .outbox-view-btn {
-  display:flex; align-items:center; justify-content:center; width:28px; height:28px;
+  display:flex; align-items:center; justify-content:center; width:22px; height:22px;
   border:none; background:transparent; color:var(--text-muted);
   border-radius:calc(var(--radius) - 2px); cursor:pointer; transition:all .15s;
 }
@@ -5614,13 +5640,29 @@ html[data-theme] .nice-ai-input:focus-visible {
 .outbox-export-btn:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
 
 /* Calendar view */
-.outbox-calendar { margin-top:8px; }
+.outbox-calendar { margin-top:0; }
 .outbox-cal-nav {
-  display:flex; align-items:center; gap:10px; margin-bottom:12px;
+  display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:12px;
   font-family:var(--font-b);
 }
+/* The arrows + week label group inside a single white pill (matching the
+   filter-pill chrome above); the view-seg toggle and Today button stay
+   separate on the canvas to keep their own affordance. All pills in this
+   row share the same 28px height as the filter pills above. */
+.outbox-cal-period {
+  display:flex; align-items:center; gap:10px;
+  height:26px; box-sizing:border-box;
+  background:var(--surface, #fff);
+  padding:0 10px;
+  border-radius:var(--radius, 10px);
+}
+/* List-mode counterpart of .outbox-cal-nav: a centered top row that only
+   carries the calendar/list toggle (list mode has no date selector). */
+.outbox-list-nav {
+  display:flex; justify-content:center; margin-bottom:12px;
+}
 .outbox-week-btn {
-  width:28px; height:28px; border-radius:var(--radius);
+  width:22px; height:22px; border-radius:var(--radius);
   border:var(--border-width,1px) solid var(--border);
   background:transparent; color:var(--text-muted);
   font-size:var(--text-sm); cursor:pointer;
@@ -5633,7 +5675,9 @@ html[data-theme] .nice-ai-input:focus-visible {
   color:var(--text); min-width:180px; text-align:center;
 }
 .outbox-today-btn {
-  padding:4px 10px; border-radius:var(--radius);
+  display:inline-flex; align-items:center; justify-content:center;
+  height:26px; box-sizing:border-box;
+  padding:0 12px; border-radius:var(--radius);
   border:var(--border-width,1px) solid var(--border); background:transparent;
   color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-xs);
   cursor:pointer; transition:color .15s, border-color .15s;
