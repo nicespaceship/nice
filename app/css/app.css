@@ -1261,6 +1261,28 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-color: #c0392b;
 }
 
+/* Ship picker — default rule uses --accent which is the bright
+   gold `#e2b714`, making the trigger overpower the gold reactor
+   on the Schematic. Match 16-BIT's existing `.bp-sub-tab.active`
+   RPG-button pattern (navy gradient + gold border + gold text +
+   gold drop-shadow) so the picker reads as a selected RPG menu
+   item, not a glowing button. */
+[data-theme="16bit"] .sch-fixed-ship-trigger {
+  background: linear-gradient(180deg, #2e4068, #1f2b47);
+  color: #e2b714;
+  border: 2px solid #e2b714;
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,200,0.15),
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    0 3px 0 #e2b714;
+}
+[data-theme="16bit"] .sch-fixed-ship-trigger:hover {
+  background: linear-gradient(180deg, #3a4f80, #253352);
+  filter: none;
+}
+[data-theme="16bit"] .sch-fixed-ship-trigger svg { color: #e2b714; }
+
 /* ─────────────────────────────────────────────────────────────────
    SIDEBAR (Desktop always visible, mobile drawer)
 ───────────────────────────────────────────────────────────────── */
