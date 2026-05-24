@@ -1594,7 +1594,7 @@ const BlueprintsView = (() => {
           <button class="outbox-type-btn${_outboxTypeFilter === 'report' ? ' active' : ''}" data-type="report" style="--type-color:#34d399">Report</button>
         </div>
         <div class="outbox-view-toggle">
-          ${approved.length ? `<button class="btn outbox-export-btn" id="outbox-export">Export Approved</button>` : ''}
+          ${approved.length ? `<button class="btn btn-primary btn-sm" id="outbox-export">Export approved</button>` : ''}
         </div>
       </div>`;
   }

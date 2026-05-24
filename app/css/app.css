@@ -4144,15 +4144,8 @@ html:not([data-theme]) .app-main,
 .ana-kpi-val--bad { color:var(--color-error,#ef4444); }
 .ana-kpi-fail { color:var(--color-error,#ef4444); font-weight:var(--fw-regular); font-size:var(--text-xs); }
 
-/* Export Report pill matches the Outbox Export pattern. */
-.ana-export-btn {
-  padding:0 12px; border-radius:var(--radius);
-  border:var(--border-width,1px) solid var(--border); background:var(--surface);
-  color:var(--text); cursor:pointer;
-  font-family:var(--font-h); font-weight:var(--fw-regular); font-size:var(--text-sm);
-  display:inline-flex; align-items:center; transition:color .15s, border-color .15s, background-color .15s;
-}
-.ana-export-btn:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
+/* Export Report and Outbox Export Approved use the standard .btn .btn-primary
+   .btn-sm trio, no per-button rule needed. */
 
 .ana-charts { display:grid; grid-template-columns:1.4fr 1fr; gap:14px; }
 .ana-chart-panel {
@@ -5759,10 +5752,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 #bridge-subnav .bp-sub-tab,
 #bridge-subnav .outbox-filter,
 #bridge-subnav .outbox-type-btn,
-#bridge-subnav .outbox-export-btn,
 #bridge-subnav .log-filter-pill,
 #bridge-subnav .ana-kpi,
-#bridge-subnav .ana-export-btn,
 #bridge-subnav .sch-fixed-ship-trigger,
 #bridge-subnav .search-box,
 #bridge-subnav .search-input,
@@ -5817,14 +5808,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .outbox-view-btn:hover:not(.active) { color:var(--text); background:var(--panel-bg); }
 .outbox-view-btn.active { background:var(--accent); color:var(--bg); }
-.outbox-export-btn {
-  padding:4px 10px; border-radius:var(--radius);
-  border:var(--border-width,1px) solid var(--border); background:transparent;
-  color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-xs);
-  cursor:pointer; transition:color .15s, border-color .15s;
-}
-.outbox-export-btn:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-
 /* Calendar view */
 .outbox-calendar { margin-top:0; }
 .outbox-cal-nav {
