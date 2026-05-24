@@ -4327,6 +4327,20 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 [data-theme="cyberpunk"] select:not(.nice-ai-model-select):not(.nice-ai-mode-select):focus,
 [data-theme="cyberpunk"] .filter-select:focus { border-color:#ff2d6f; box-shadow:0 0 8px rgba(255,45,111,0.2); }
 
+/* Ship picker — default rule uses --accent which is pure neon
+   pink `#ff2d6f`. Match cyberpunk's existing `.bp-sub-tab.active`
+   / `.bp-rarity-btn.active` pattern (translucent pink + pink
+   border + pink text) so the picker reads as a HUD selection,
+   not a glowing slab. */
+[data-theme="cyberpunk"] .sch-fixed-ship-trigger {
+  background:rgba(255,45,111,0.12); color:#ff2d6f;
+  border:1px solid #ff2d6f; border-radius:2px;
+}
+[data-theme="cyberpunk"] .sch-fixed-ship-trigger:hover {
+  background:rgba(255,45,111,0.2); filter:none;
+}
+[data-theme="cyberpunk"] .sch-fixed-ship-trigger svg { color:#ff2d6f; }
+
 /* ── Reduced motion — disable all animations ── */
 @media (prefers-reduced-motion:reduce) {
   [data-theme="cyberpunk"] .app-main::after { animation:none; }
