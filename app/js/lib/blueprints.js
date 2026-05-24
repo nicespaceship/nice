@@ -79,6 +79,7 @@ const Blueprints = (() => {
     // Only fetch activated blueprints on init (lazy catalog).
     // Connected counts come from blueprints.activation_count on each row;
     // mock seeds fill in for dev when the DB isn't reachable.
+    if (typeof State !== 'undefined') State.set('ships-loading', true);
     try {
       if (typeof SB !== 'undefined' && SB.isReady() && SB.isOnline()) {
         await Promise.all([
@@ -89,6 +90,7 @@ const Blueprints = (() => {
     } catch (e) {
       console.warn('[Blueprints] DB load failed, using seeds:', e.message);
     }
+    if (typeof State !== 'undefined') State.set('ships-loading', false);
 
     // Single mock-count pass after all loading is done
     _seedMockCounts();
@@ -3083,6 +3085,7 @@ const Blueprints = (() => {
     // in mid-session would otherwise see an empty schematic until they
     // hard-refreshed. Fires activated-ships when complete so the
     // Schematic view re-renders out of its skeleton state.
+    if (typeof State !== 'undefined') State.set('ships-loading', true);
     try {
       await Promise.all([
         _loadActivatedFromDB(),
@@ -3095,5 +3098,6 @@ const Blueprints = (() => {
     } catch (e) {
       console.warn('[Blueprints] post-signin reload failed:', e.message);
     }
+    if (typeof State !== 'undefined') State.set('ships-loading', false);
   }
 })();
