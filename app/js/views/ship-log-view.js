@@ -137,7 +137,7 @@ const ShipLogView = (() => {
       const time = _formatTime(e.created_at);
       const meta = e.metadata || {};
       const modelBadge = meta.model && meta.model !== 'mock' ? `<span class="slog-model">${_esc(meta.model)}</span>` : '';
-      const sourceBadge = meta.source === 'llm' ? '<span class="slog-source slog-source-live">LIVE</span>' : meta.source === 'mock' ? '<span class="slog-source slog-source-mock">MOCK</span>' : '';
+      const sourceBadge = meta.source === 'llm' ? '<span class="slog-source slog-source-live">Live</span>' : meta.source === 'mock' ? '<span class="slog-source slog-source-mock">Mock</span>' : '';
       const tokenInfo = meta.tokens_used ? `<span class="slog-tokens">${meta.tokens_used} tok</span>` : '';
       const durationInfo = meta.duration_ms ? `<span class="slog-duration">${meta.duration_ms}ms</span>` : '';
 
