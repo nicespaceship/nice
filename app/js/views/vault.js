@@ -19,7 +19,7 @@ const VaultView = (() => {
      for legacy callers (agent-builder, settings, docs). */
   const MODEL_CATALOG = ModelCatalog.MODEL_CATALOG;
 
-  const POOL_LABELS = { standard: 'STANDARD', claude: 'CLAUDE', premium: 'PREMIUM' };
+  const POOL_LABELS = { standard: 'Standard', claude: 'Claude', premium: 'Premium' };
   const POOL_BADGES = {
     standard: { label: 'Included in Pro',          cls: 'tier-standard' },
     claude:   { label: 'Claude add-on +$9.99/mo',  cls: 'tier-claude'   },
