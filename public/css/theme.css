@@ -2237,6 +2237,20 @@
   text-shadow: 0 0 6px rgba(0,255,65,0.4), 0 0 12px rgba(0,255,65,0.15);
 }
 
+/* Ship picker — default rule uses --accent which is pure Matrix
+   green and fights the reactor on the Schematic. Match Matrix's
+   existing .bp-sub-tab.active / .bp-rarity-btn.active pattern
+   (translucent green + green border + green text) so the trigger
+   reads as a console highlight instead of a glowing bar. */
+[data-theme="matrix"] .sch-fixed-ship-trigger {
+  background: rgba(0,255,65,0.1); color: #00ff41;
+  border: 1px solid #00ff41; border-radius: 0;
+}
+[data-theme="matrix"] .sch-fixed-ship-trigger:hover {
+  background: rgba(0,255,65,0.18); filter: none;
+}
+[data-theme="matrix"] .sch-fixed-ship-trigger svg { color: #00ff41; }
+
 /* LCARS — Star Trek */
 [data-theme="lcars"] {
   --bg:           #000000;
