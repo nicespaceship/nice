@@ -793,7 +793,7 @@ const SchematicView = (() => {
     const SLOTS = 6;
     const loadingLabel = '<div class="schematic-loading-label" aria-hidden="true">' +
       '<span class="schematic-loading-spinner"></span>' +
-      '<span>Loading crew…</span>' +
+      '<span>Loading…</span>' +
     '</div>';
     if (_isMobile()) {
       let rows = '';
