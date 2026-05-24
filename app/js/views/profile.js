@@ -144,7 +144,7 @@ const ProfileView = (() => {
           </div>
           <h2 class="profile-name">${_esc(name)}</h2>
           <p class="profile-email">${_esc(user.email || '')}</p>
-          <div class="profile-badge">PILOT</div>
+          <div class="profile-badge">Pilot</div>
         </div>
 
         <div class="profile-section">
