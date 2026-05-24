@@ -2030,6 +2030,20 @@
   background:rgba(0,229,255,0.05); border-radius:2px;
 }
 
+/* Ship picker — default rule uses --accent which is pure TRON
+   electric blue and overpowers the reactor on the Schematic.
+   Match Grid's existing .bp-sub-tab.active pattern (translucent
+   blue + blue border + blue text + faint glow). */
+[data-theme="grid"] .sch-fixed-ship-trigger {
+  background: rgba(24,160,251,0.12); color: #18a0fb;
+  border: 1px solid #18a0fb; border-radius: 2px;
+  box-shadow: 0 0 10px rgba(24,160,251,0.2);
+}
+[data-theme="grid"] .sch-fixed-ship-trigger:hover {
+  background: rgba(24,160,251,0.2); filter: none;
+}
+[data-theme="grid"] .sch-fixed-ship-trigger svg { color: #18a0fb; }
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion:reduce) {
   [data-theme="grid"] .bg-grid::before,
