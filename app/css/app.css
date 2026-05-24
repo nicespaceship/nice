@@ -8923,6 +8923,40 @@ html[data-theme] .nice-ai-input:focus-visible {
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }
+
+/* office-dark's --accent (#e0e7ff) is a pale text color, not a fill color
+   — at 7%/14% on the dark canvas it disappears. Use --accent2 (saturated
+   lavender) which matches the indigo Subscribe button. */
+[data-theme="office-dark"] .upgrade-compare th:nth-child(3),
+[data-theme="office-dark"] .upgrade-compare td:nth-child(3) {
+  background: color-mix(in srgb, var(--accent2) 8%, transparent);
+}
+[data-theme="office-dark"] .upgrade-compare-pro {
+  background: color-mix(in srgb, var(--accent2) 18%, transparent);
+  color: var(--accent2);
+}
+
+/* LCARS peach (#ff9966) is the signature LCARS color but tints weakly on
+   its dark canvas — bump opacity so the peach band reads. */
+[data-theme="lcars"] .upgrade-compare th:nth-child(3),
+[data-theme="lcars"] .upgrade-compare td:nth-child(3) {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+[data-theme="lcars"] .upgrade-compare-pro {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* RX-78-2 navy (#2b4e8c) reads weakly on its navy canvas. Use --accent2
+   (Gundam red #c0392b) — the canonical red trim against the navy chassis,
+   visually striking and on-brand. */
+[data-theme="rx-78-2"] .upgrade-compare th:nth-child(3),
+[data-theme="rx-78-2"] .upgrade-compare td:nth-child(3) {
+  background: color-mix(in srgb, var(--accent2) 10%, transparent);
+}
+[data-theme="rx-78-2"] .upgrade-compare-pro {
+  background: color-mix(in srgb, var(--accent2) 22%, transparent);
+  color: var(--accent2);
+}
 .upgrade-compare td small { color: var(--text-muted); }
 .upgrade-modal-actions {
   display: flex;
