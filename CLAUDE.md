@@ -395,6 +395,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `JarvisHUD` | `jarvis-hud.js` | SSOT for JARVIS arc reactor + HUD ring markup, shared by the prompt panel and Schematic center column |
 | `HalCore` | `hal-core.js` | HAL-9000 camera-eye centerpiece reactor — mountable core markup, sibling of `DefaultCore`/`JarvisHUD` |
 | `AgentActivity` | `agent-activity.js` | In-memory pub/sub for "is this agent working?" signals — drives the schematic status node (idle/recent/active) |
+| `LLMActivity` | `llm-activity.js` | In-memory pub/sub for "an LLM call is in flight" signals. Handle-pairing only (no polled flag) — drives the elapsed-seconds chip above the prompt panel |
 | `CrewMatcher` | `crew-matcher.js` | Resolves a spaceship's `crew_roles` + `crew_overrides` spec into a `slot_assignments` map at activation |
 | `ShipSlots` | `ship-slots.js` | SSOT for slot assignments via `public.user_ship_slots` after Phase C.1 (`fetchForShips` / `setForShip` replace-all / `setSlot` upsert / `clearSlot` / `deleteForShip`) |
 | `ModelCatalog` | `model-catalog.js` | SSOT for the AI-model presentation layer — display name, provider, speed/quality bars, marketing copy |

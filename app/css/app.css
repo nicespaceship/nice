@@ -4782,6 +4782,50 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .nice-ai-input-area:focus-within { border-color:var(--accent); }
 
+/* LLM activity chip — floats above the input while a request is in flight.
+   Shows live elapsed seconds, settles to "Ns · T tokens" for ~1.5s after
+   the last call ends, then fades out. Hidden by default. */
+.nice-llm-status {
+  position:absolute;
+  bottom:calc(100% + 6px);
+  left:12px;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 10px;
+  font-family:var(--font-m, monospace);
+  font-size:var(--text-xs);
+  font-weight:var(--fw-medium);
+  color:var(--text-muted);
+  background:var(--panel-bg, var(--bg-alt));
+  border:1px solid var(--border);
+  border-radius:999px;
+  opacity:0;
+  transform:translateY(4px);
+  transition:opacity .2s ease, transform .2s ease, color .2s ease;
+  pointer-events:none;
+  white-space:nowrap;
+  z-index:2;
+}
+.nice-llm-status.visible {
+  opacity:1;
+  transform:translateY(0);
+}
+.nice-llm-status.settling {
+  color:var(--text);
+}
+.nice-llm-status-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--accent);
+  animation:nice-llm-pulse 1s ease-in-out infinite;
+}
+.nice-llm-status.settling .nice-llm-status-dot {
+  animation:none;
+  background:var(--text-muted);
+}
+@keyframes nice-llm-pulse {
+  0%, 100% { opacity:1; }
+  50%      { opacity:.35; }
+}
+
 /* Input container — borderless inner wrapper (border lives on .nice-ai-input-area) */
 .nice-ai-input-container {
   display:flex; flex-direction:column;

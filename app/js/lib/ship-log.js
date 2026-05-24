@@ -350,39 +350,51 @@ const ShipLog = (() => {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
     const params = _buildLLMParams(blueprint, prompt, context, config);
-    let { data, error } = await SB.functions.invoke('nice-ai', { body: params });
+    const _activity = (typeof LLMActivity !== 'undefined')
+      ? LLMActivity.start(params.model, blueprint?.id || blueprint?.name || null)
+      : null;
+    let _activityTokens = 0;
 
-    const fallbackChain = Array.isArray(config?.fallbackChain) ? config.fallbackChain : [];
-    const MAX_FALLBACKS = 3;
-    let tried = 0;
-    let prevModel = params.model;
-    for (const fb of fallbackChain) {
-      if (tried >= MAX_FALLBACKS) break;
-      if (!((error || data?.error) && _isRetryableError(error, data))) break;
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
+    try {
+      let { data, error } = await SB.functions.invoke('nice-ai', { body: params });
+
+      const fallbackChain = Array.isArray(config?.fallbackChain) ? config.fallbackChain : [];
+      const MAX_FALLBACKS = 3;
+      let tried = 0;
+      let prevModel = params.model;
+      for (const fb of fallbackChain) {
+        if (tried >= MAX_FALLBACKS) break;
+        if (!((error || data?.error) && _isRetryableError(error, data))) break;
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
+        }
+        params.model = fb.id;
+        const fbRes = await SB.functions.invoke('nice-ai', { body: params });
+        data  = fbRes.data;
+        error = fbRes.error;
+        prevModel = fb.id;
+        tried++;
       }
-      params.model = fb.id;
-      const fbRes = await SB.functions.invoke('nice-ai', { body: params });
-      data  = fbRes.data;
-      error = fbRes.error;
-      prevModel = fb.id;
-      tried++;
+
+      if (error) {
+        let body = null;
+        if (error.context && typeof error.context.json === 'function') {
+          try { body = await error.context.json(); } catch { /* not JSON */ }
+        }
+        if (body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+          Subscription.handleBillingError(body);
+        }
+        throw new Error((body && body.error) || (typeof error === 'string' ? error : error.message) || 'Edge function error');
+      }
+      if (!data || data.error) throw new Error(data?.error || 'Empty response from edge function');
+
+      if (data.usage) {
+        _activityTokens = (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0);
+      }
+      return data;
+    } finally {
+      if (_activity) _activity.end({ totalTokens: _activityTokens });
     }
-
-    if (error) {
-      let body = null;
-      if (error.context && typeof error.context.json === 'function') {
-        try { body = await error.context.json(); } catch { /* not JSON */ }
-      }
-      if (body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
-        Subscription.handleBillingError(body);
-      }
-      throw new Error((body && body.error) || (typeof error === 'string' ? error : error.message) || 'Edge function error');
-    }
-    if (!data || data.error) throw new Error(data?.error || 'Empty response from edge function');
-
-    return data;
   }
 
   /* ── Streaming LLM call via nice-ai Edge Function ──
@@ -395,6 +407,12 @@ const ShipLog = (() => {
 
     const params = _buildLLMParams(blueprint, prompt, context, config);
     params.stream = true;
+
+    const _activity = (typeof LLMActivity !== 'undefined')
+      ? LLMActivity.start(params.model, blueprint?.id || blueprint?.name || null)
+      : null;
+    let _activityTokens = 0;
+    try {
 
     // Use fetch directly for streaming (SB.functions.invoke doesn't support streams)
     const supabaseUrl = SB.client?.supabaseUrl || SB._url || '';
@@ -474,11 +492,23 @@ const ShipLog = (() => {
             if (onChunk) onChunk(delta);
           }
           if (parsed.model) model = parsed.model;
+          if (parsed.usage) {
+            const inT  = parsed.usage.input_tokens  || 0;
+            const outT = parsed.usage.output_tokens || 0;
+            if (inT + outT > 0) _activityTokens = inT + outT;
+          }
         } catch { /* skip unparseable lines */ }
       }
     }
 
+    // No end-of-stream usage event: fall back to a rough char-based estimate so
+    // the chip shows *some* number rather than 0.
+    if (_activityTokens === 0) _activityTokens = Math.floor(fullContent.length / 4);
+
     return { content: fullContent, model, usage: { input_tokens: 0, output_tokens: Math.floor(fullContent.length / 4) } };
+    } finally {
+      if (_activity) _activity.end({ totalTokens: _activityTokens });
+    }
   }
 
   /**
