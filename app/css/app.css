@@ -2906,8 +2906,8 @@ html:not([data-theme]) .app-main,
   padding:18px; border-radius:var(--radius);
 }
 .profile-section-title {
-  font-family:var(--font-b); font-size:var(--text-xs); letter-spacing:var(--tracking-caps);
-  color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;
+  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-bold);
+  color:var(--text); margin-bottom:4px;
 }
 .profile-row {
   display:flex; justify-content:space-between; align-items:center;
@@ -4368,8 +4368,8 @@ html:not([data-theme]) .app-main,
   transition:border-color .2s, box-shadow .2s, transform .15s;
 }
 .settings-section-title {
-  font-family:var(--font-b); font-size:var(--text-xs); letter-spacing:var(--tracking-caps);
-  text-transform:uppercase; color:var(--text-muted); margin:0 0 8px 0;
+  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-bold);
+  color:var(--text); margin:0 0 8px 0;
 }
 .settings-danger { border-color:var(--color-error); }
 .settings-danger .settings-section-title { color:var(--color-error); }
@@ -4604,7 +4604,7 @@ html:not([data-theme]) .app-main,
 }
 .monitor-code-block[data-lang]::before {
   content:attr(data-lang); position:absolute; top:4px; right:8px;
-  font-size:.6rem; color:var(--text-muted); text-transform:uppercase;
+  font-size:.6rem; color:var(--text-muted);
   letter-spacing:var(--tracking-caps);
 }
 .monitor-code-block code {
@@ -5218,7 +5218,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* Rank Badge (sidebar compact) */
 .rank-badge-compact { display:flex; align-items:center; gap:6px; padding:6px 10px; font-size:var(--text-xs); color:var(--text-muted); border-top:1px solid var(--border); margin-top:auto; }
 .rank-icon { font-size:.9rem; }
-.rank-name { font-family:var(--font-b); letter-spacing:var(--tracking-caps); text-transform:uppercase; }
+.rank-name { font-family:var(--font-b); letter-spacing:var(--tracking-caps); }
 
 /* Rank Card (home dashboard) */
 .rank-card { background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
@@ -5234,7 +5234,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* Health Bars (spaceship cards) */
 .health-bars { display:flex; flex-direction:column; gap:4px; margin-top:8px; }
 .health-bar-row { display:flex; align-items:center; gap:6px; }
-.health-label { font-size:.62rem; font-family:var(--font-b); text-transform:uppercase; letter-spacing:var(--tracking-caps); color:var(--text-muted); width:36px; }
+.health-label { font-size:.62rem; font-family:var(--font-b); letter-spacing:var(--tracking-caps); color:var(--text-muted); width:36px; }
 .health-bar { flex:1; height:5px; background:var(--bg-alt); border-radius:3px; overflow:hidden; }
 .health-fill { height:100%; border-radius:3px; transition:width .4s ease; }
 .health-fill.hull { background:var(--color-success); }
@@ -5919,7 +5919,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .outbox-cal-card-badge {
   font-size:var(--text-xs); font-weight:var(--fw-bold);
   padding:1px 6px; border-radius:var(--radius);
-  color:var(--bg); text-transform:uppercase;
+  color:var(--bg);
   letter-spacing:var(--tracking-caps); line-height:var(--lh-snug);
 }
 .outbox-cal-card-title {
@@ -5932,7 +5932,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .outbox-unscheduled-label {
   font-family:var(--font-b); font-size:var(--text-xs);
   font-weight:var(--fw-bold); color:var(--text-muted);
-  margin-bottom:8px; text-transform:uppercase;
+  margin-bottom:8px;
   letter-spacing:var(--tracking-caps);
 }
 .outbox-unscheduled-items { display:flex; gap:8px; flex-wrap:wrap; }
@@ -6208,13 +6208,13 @@ html[data-theme] .nice-ai-input:focus-visible {
 
 .tc-section { border:1px solid var(--border); border-radius:var(--radius); padding:18px; background:var(--panel-bg,var(--surface)); }
 .tc-panel { border:1px solid var(--border); border-radius:var(--radius); padding:18px; background:var(--panel-bg,var(--surface)); }
-.tc-panel-title { font-family:var(--font-b); font-size:.85rem; color:var(--text); margin:0 0 16px; text-transform:uppercase; letter-spacing:var(--tracking-caps); }
+.tc-panel-title { font-family:var(--font-b); font-size:.85rem; font-weight:var(--fw-bold); color:var(--text); margin:0 0 16px; }
 
 .tc-grid { display:grid; gap:14px; }
 .tc-grid--colors { grid-template-columns:1fr 1fr 1fr; }
 .tc-grid--typo { grid-template-columns:1fr 1fr; }
 .tc-field { display:flex; flex-direction:column; gap:5px; }
-.tc-label { font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:var(--tracking-caps); font-family:var(--font-b); }
+.tc-label { font-size:.72rem; color:var(--text-muted); letter-spacing:var(--tracking-caps); font-family:var(--font-b); }
 
 .tc-color-row { display:flex; gap:6px; align-items:center; }
 .tc-color {

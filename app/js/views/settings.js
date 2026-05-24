@@ -439,7 +439,7 @@ const SettingsView = (() => {
     const planBadgeEl = document.getElementById('set-plan-badge');
     if (planNameEl) planNameEl.textContent = tierLabels[plan] || 'Free';
     if (planBadgeEl) {
-      planBadgeEl.textContent = plan === 'starpass' ? 'STAR PASS' : 'FREE';
+      planBadgeEl.textContent = plan === 'starpass' ? 'Star Pass' : 'Free';
       const tierColors = { free:'#94a3b8', starpass:'#f59e0b' };
       const c = tierColors[plan] || '#94a3b8';
       planBadgeEl.style.color = c;
