@@ -9425,7 +9425,12 @@ body.preview-active .nice-ai {
      view kills the gutter bleed without affecting other views. */
   .bpl-row,
   .bp-view-list { background:var(--surface); }
-  .app-view-content:has(.bp-view-list) { background:var(--surface); }
+  /* Scope the gutter mask to the active Blueprints tab. The previous
+     `:has(.bp-view-list)` matched whenever the list-view element existed
+     in the DOM, but BlueprintsView keeps its markup mounted across all
+     Bridge tabs, so this rule painted .app-view-content white on every
+     tab and hid the .app-main lavender canvas. */
+  .app-main:has(.bp-type-tab.active[data-tab="blueprints"]) .app-view-content { background:var(--surface); }
 }
 
 /* Phone-only: rating is squished into ~50px alongside name + cat +
