@@ -1614,19 +1614,26 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    (sidebar, prompt bar, cards, dropdowns, drawers) float on the
    surface via contrast alone. Modern borderless look. Supersedes the
    multi-orb stack declared in theme.css so the chrome stays still. */
+/* The CORE theme pair (`nice` light + `nice-dark`) share the same chrome
+   language — borderless surfaces, sapphire CTAs, fills over hairlines.
+   Every rule below targets both via `:is(...)` so the dark variant inherits
+   the polish that landed in light mode without per-rule duplication. Rules
+   that are genuinely light-only (the lavender `.app-main` canvas) keep the
+   single `[data-theme="nice"]` selector. */
 [data-theme="nice"] { --border:transparent; }
 /* `:not([data-theme])` covers the brief paint window before nice.js
    re-applies the attribute (nice.js:189 removes it, :206 re-adds it),
    and any failure path where Theme.set bails before re-setting it
    (e.g. localStorage throws in Safari Private). Without this, the
    .app-main canvas falls back to transparent and the page reads as
-   pure white. */
+   pure white. Light-only: the dark variant gets `#0a0a0a` from the
+   JS-injected `--bg` token. */
 html:not([data-theme]) .app-main,
 [data-theme="nice"] .app-main { background-color:#e8eef5; }
-[data-theme="nice"] body::before,
-[data-theme="nice"] body::after,
-[data-theme="nice"] .app-main::before,
-[data-theme="nice"] .app-main::after { display:none; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) body::before,
+:is([data-theme="nice"],[data-theme="nice-dark"]) body::after,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-main::before,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-main::after { display:none; }
 /* CTAs: filled chips on the canvas, no resting or hover hairlines.
    .btn-primary keeps its accent fill from the base rule; secondary
    .btn and the smaller .c-btn (Deploy/Remove on cards) switch from
@@ -1635,13 +1642,13 @@ html:not([data-theme]) .app-main,
    hover under the base .btn:hover rule — neutralise it. The
    activated/destructive state (.c-btn.bp-activated) tints with the
    accent/destructive color via bg + text instead of via border. */
-[data-theme="nice"] .btn:not(.btn-primary),
-[data-theme="nice"] .c-btn:not(.bp-activated) {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn:not(.btn-primary),
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn:not(.bp-activated) {
   background:var(--surface);
   border-color:transparent;
 }
-[data-theme="nice"] .btn:not(.btn-primary):hover,
-[data-theme="nice"] .c-btn:not(.bp-activated):hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .btn:not(.btn-primary):hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn:not(.bp-activated):hover {
   background:rgba(15, 82, 186, 0.08);
   color:var(--accent);
   border-color:transparent;
@@ -1652,27 +1659,27 @@ html:not([data-theme]) .app-main,
    "All" pill. The activated state swaps to the green→red Remove treatment
    (.bp-activated for cards above, .bpl-activated for list rows); here we
    only style the deploy state. */
-[data-theme="nice"] .c-btn.bp-deploy-ship-btn:not(.bp-activated),
-[data-theme="nice"] .c-btn.bp-deploy-btn:not(.bp-activated),
-[data-theme="nice"] .bpl-action-btn:not(.bpl-activated) {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn.bp-deploy-ship-btn:not(.bp-activated),
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn.bp-deploy-btn:not(.bp-activated),
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bpl-action-btn:not(.bpl-activated) {
   background:var(--accent);
   color:var(--bg);
   border-color:transparent;
 }
-[data-theme="nice"] .c-btn.bp-deploy-ship-btn:not(.bp-activated):hover,
-[data-theme="nice"] .c-btn.bp-deploy-btn:not(.bp-activated):hover,
-[data-theme="nice"] .bpl-action-btn:not(.bpl-activated):hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn.bp-deploy-ship-btn:not(.bp-activated):hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn.bp-deploy-btn:not(.bp-activated):hover,
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bpl-action-btn:not(.bpl-activated):hover {
   background:var(--accent2, var(--accent));
   color:var(--bg);
   border-color:transparent;
   box-shadow:none;
 }
-[data-theme="nice"] .c-btn.bp-activated {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn.bp-activated {
   background:var(--color-success);
   color:#fff;
   border-color:transparent;
 }
-[data-theme="nice"] .c-btn.bp-activated:hover {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn.bp-activated:hover {
   background:var(--color-error, #dc2626);
   color:#fff;
   border-color:transparent;
@@ -1686,7 +1693,7 @@ html:not([data-theme]) .app-main,
    wins). Solid-accent CTAs already match; this brings the tinted variants
    in line. .side-mode-tab[aria-selected="true"] keeps collapsed + expanded
    chrome consistent. */
-[data-theme="nice"] :is(
+:is([data-theme="nice"],[data-theme="nice-dark"]) :is(
   .bp-sub-tab:hover,
   .bp-cat-btn:hover,
   .bp-rarity-btn:hover,
@@ -1703,7 +1710,7 @@ html:not([data-theme]) .app-main,
   border-color:transparent;
   box-shadow:none;
 }
-[data-theme="nice"] :is(
+:is([data-theme="nice"],[data-theme="nice-dark"]) :is(
   .bp-sub-tab:hover,
   .bp-cat-btn:hover,
   .bp-rarity-btn:hover,
@@ -1714,7 +1721,7 @@ html:not([data-theme]) .app-main,
   .side-mode-tab:hover,
   .side-link:hover
 ) svg { color:var(--accent); }
-[data-theme="nice"] :is(
+:is([data-theme="nice"],[data-theme="nice-dark"]) :is(
   .bp-sub-tab.active,
   .bp-cat-btn.active,
   .bp-rarity-btn.active,
@@ -1730,7 +1737,7 @@ html:not([data-theme]) .app-main,
   border-color:transparent;
   box-shadow:none;
 }
-[data-theme="nice"] :is(
+:is([data-theme="nice"],[data-theme="nice-dark"]) :is(
   .bp-sub-tab.active,
   .bp-cat-btn.active,
   .bp-rarity-btn.active,
@@ -1745,42 +1752,42 @@ html:not([data-theme]) .app-main,
    sidebar rail mode tabs (NICE / Chat / Code) are global navigation, not
    in-content controls, so they don't take the solid-fill active treatment
    the in-content pills above use. The icon goes accent; bg stays transparent. */
-[data-theme="nice"] .side-mode-tab[aria-selected="true"] {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mode-tab[aria-selected="true"] {
   background:transparent;
   color:var(--accent);
   border-color:transparent;
   box-shadow:none;
 }
-[data-theme="nice"] .side-mode-tab[aria-selected="true"] svg { color:var(--accent); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mode-tab[aria-selected="true"] svg { color:var(--accent); }
 
 /* Rarity filter pills carry their own rarity colour as a solid fill with
    white text when not selected (fills mirror BlueprintUtils.RARITY_COLORS;
    Mythic cycles the shared RGB animation). "All" has no rarity, so it reads
    as a neutral light-grey chip with muted text, like an unselected tab. The
    active pill drops the fill for the shared selected language. */
-[data-theme="nice"] .bp-rarity-btn[data-rarity]:not([data-rarity="all"]):not(.active) {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity]:not([data-rarity="all"]):not(.active) {
   border-color:transparent; color:#fff; font-weight:var(--fw-medium);
 }
-[data-theme="nice"] .bp-rarity-btn[data-rarity="all"]:not(.active) {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="all"]:not(.active) {
   background:#d1d5db; color:var(--text-muted); border-color:transparent;
 }
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Common"]:not(.active)    { background:#94a3b8; }
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Rare"]:not(.active)      { background:#b6dff9; }
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Epic"]:not(.active)      { background:#a855f7; }
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Legendary"]:not(.active) { background:#f59e0b; }
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Mythic"]:not(.active)    { background:#ff2d55; animation:mythic-rgb-bg 6s linear infinite; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Common"]:not(.active)    { background:#94a3b8; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Rare"]:not(.active)      { background:#b6dff9; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Epic"]:not(.active)      { background:#a855f7; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Legendary"]:not(.active) { background:#f59e0b; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Mythic"]:not(.active)    { background:#ff2d55; animation:mythic-rgb-bg 6s linear infinite; }
 /* Dark text on the light fills so the labels stay legible (the base inactive
    rule sets white). Specificity matches that rule and wins by source order.
    Epic/Mythic keep white. Mirrors BlueprintUtils.contrastText. */
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Common"]:not([data-rarity="all"]):not(.active),
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Rare"]:not([data-rarity="all"]):not(.active),
-[data-theme="nice"] .bp-rarity-btn[data-rarity="Legendary"]:not([data-rarity="all"]):not(.active) { color:#0a0a0a; }
-[data-theme="nice"] .bp-rarity-btn[data-rarity]:not(.active):hover { filter:brightness(0.94); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Common"]:not([data-rarity="all"]):not(.active),
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Rare"]:not([data-rarity="all"]):not(.active),
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity="Legendary"]:not([data-rarity="all"]):not(.active) { color:#0a0a0a; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn[data-rarity]:not(.active):hover { filter:brightness(0.94); }
 /* Active pill matches the selected tabs: solid branded-blue fill, white text,
    no border. The cross-theme base .active rule ties on specificity and wins by
    source order (accent border + accent text + grey bg from its undefined
    --accent-rgb fallback), so override all three here. */
-[data-theme="nice"] .bp-rarity-btn.active[data-rarity] { background:var(--accent); color:var(--bg); border-color:transparent; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .bp-rarity-btn.active[data-rarity] { background:var(--accent); color:var(--bg); border-color:transparent; }
 
 /* Blueprint card frame carries its rarity colour (same hexes as RARITY_COLORS
    and the rarity pills above). The base card border is var(--border)=transparent
@@ -1833,7 +1840,7 @@ html:not([data-theme]) .app-main,
   background:color-mix(in srgb, var(--accent, var(--nav-text, var(--text))) 14%, transparent);
   box-shadow:none;
 }
-[data-theme="nice"] .app-sidebar:not(.open) .side-mode-tab[aria-selected="true"] {
+:is([data-theme="nice"],[data-theme="nice-dark"]) .app-sidebar:not(.open) .side-mode-tab[aria-selected="true"] {
   background:transparent;
 }
 .app-sidebar:not(.open) .side-mode-section { display:none; }
