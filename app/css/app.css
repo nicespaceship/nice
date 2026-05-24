@@ -1615,6 +1615,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    surface via contrast alone. Modern borderless look. Supersedes the
    multi-orb stack declared in theme.css so the chrome stays still. */
 [data-theme="nice"] { --border:transparent; }
+/* `:not([data-theme])` covers the brief paint window before nice.js
+   re-applies the attribute (nice.js:189 removes it, :206 re-adds it),
+   and any failure path where Theme.set bails before re-setting it
+   (e.g. localStorage throws in Safari Private). Without this, the
+   .app-main canvas falls back to transparent and the page reads as
+   pure white. */
+html:not([data-theme]) .app-main,
 [data-theme="nice"] .app-main { background-color:#e8eef5; }
 [data-theme="nice"] body::before,
 [data-theme="nice"] body::after,
