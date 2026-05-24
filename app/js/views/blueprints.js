@@ -441,11 +441,11 @@ const BlueprintsView = (() => {
       const previewBtn = !isActive ? `<button class="c-btn bp-skin-preview-btn" data-id="${bp.id}">Preview</button>` : '';
       const copyPreview = bp.copy?.nav ? Object.entries(bp.copy.nav).slice(0, 4).map(([k,v]) => `<p class="blueprint-card-cap" style="font-size:10px;opacity:0.7">${k} → ${_esc(v)}</p>`).join('') : '';
       return `<div class="blueprint-card blueprint-clickable skin-card" data-id="${bp.id}" data-type="skin" data-tags="${(bp.tags||[]).join(',')}">
-        <div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(bp.name)}</span><span class="blueprint-card-rarity" style="color:#f59e0b">LEGENDARY</span></div>
-        <div class="blueprint-card-art"><div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div><div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:#f59e0b;border:1px solid #f59e0b">SKIN</span></div>${_pa(bp.name, bp.preview_colors || ['#080808','#ffffff','#888'], serial)}</div>
+        <div class="blueprint-card-name-bar"><span class="blueprint-card-name">${_esc(bp.name)}</span><span class="blueprint-card-rarity" style="color:#f59e0b">Legendary</span></div>
+        <div class="blueprint-card-art"><div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div><div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:#f59e0b;border:1px solid #f59e0b">Skin</span></div>${_pa(bp.name, bp.preview_colors || ['#080808','#ffffff','#888'], serial)}</div>
         <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
         <div class="blueprint-card-text-box"><p class="blueprint-card-flavor">"${_esc(bp.flavor)}"</p>${copyPreview}</div>
-        <div class="blueprint-card-stats"><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${Object.keys(bp.copy?.nav || {}).length}</span><span class="blueprint-card-stat-lbl">LABELS</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${(bp.copy?.ranks || []).length}</span><span class="blueprint-card-stat-lbl">RANKS</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${bp.effect ? '1' : '0'}</span><span class="blueprint-card-stat-lbl">FX</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${priceFmt}</span><span class="blueprint-card-stat-lbl">COST</span></div></div>
+        <div class="blueprint-card-stats"><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${Object.keys(bp.copy?.nav || {}).length}</span><span class="blueprint-card-stat-lbl">Labels</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${(bp.copy?.ranks || []).length}</span><span class="blueprint-card-stat-lbl">Ranks</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${bp.effect ? '1' : '0'}</span><span class="blueprint-card-stat-lbl">FX</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${priceFmt}</span><span class="blueprint-card-stat-lbl">Cost</span></div></div>
         <div class="blueprint-card-actions">${previewBtn}${actionBtn}</div>
       </div>`;
     }
@@ -469,7 +469,7 @@ const BlueprintsView = (() => {
         deployBtn = `<button class="c-btn bp-deploy-ship-btn" data-id="${bp.id}">Deploy</button>`;
       }
       const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'blueprint-clickable' });
-      const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">COMMUNITY</span>' : '';
+      const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">Community</span>' : '';
       return `<div class="blueprint-card-wrap">${scopeBadge}${rendered}<div class="blueprint-card-buttons">${deployBtn}</div></div>`;
     }
 
@@ -488,7 +488,7 @@ const BlueprintsView = (() => {
     }
 
     const rendered = CR.render('agent', 'full', bp, { clickClass: 'blueprint-clickable' });
-    const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">COMMUNITY</span>' : '';
+    const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">Community</span>' : '';
     return `<div class="blueprint-card-wrap">${scopeBadge}${rendered}${connectBtn ? `<div class="blueprint-card-buttons">${connectBtn}</div>` : ''}</div>`;
   }
 
@@ -1046,7 +1046,7 @@ const BlueprintsView = (() => {
       </div>`;
     };
 
-    wrap.innerHTML = renderSection('SPACESHIPS', ships, 'spaceship') + renderSection('AGENTS', agents, 'agent');
+    wrap.innerHTML = renderSection('Spaceships', ships, 'spaceship') + renderSection('Agents', agents, 'agent');
     wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
   }
 
@@ -1135,7 +1135,7 @@ const BlueprintsView = (() => {
       </div>`;
     };
 
-    wrap.innerHTML = renderSection('SPACESHIPS', ships, 'spaceship') + renderSection('AGENTS', agents, 'agent');
+    wrap.innerHTML = renderSection('Spaceships', ships, 'spaceship') + renderSection('Agents', agents, 'agent');
     wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
   }
 
@@ -3317,7 +3317,7 @@ const BlueprintsView = (() => {
     }).join('');
 
     return `<div class="bp-drawer-related">
-      <h4 style="margin:0 0 8px;font-size:.8rem;opacity:.6">RELATED</h4>
+      <h4 style="margin:0 0 8px;font-size:.8rem;opacity:.6">Related</h4>
       <div class="bp-drawer-related-scroll">${cards}</div>
     </div>`;
   }

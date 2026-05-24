@@ -3955,7 +3955,7 @@ html:not([data-theme]) .app-main,
 .bp-sub { font-family:var(--font-b); font-size:.62rem; letter-spacing:var(--tracking-normal); color:var(--text-muted); margin:4px 0 0 0; }
 
 .bp-activated-section { margin-bottom:16px; }
-.bp-activated-title { font-family:var(--font-b); font-size:.75rem; letter-spacing:var(--tracking-caps); color:var(--text-muted); text-transform:uppercase; margin-bottom:12px; }
+.bp-activated-title { font-family:var(--font-b); font-size:.75rem; letter-spacing:var(--tracking-caps); color:var(--text-muted); margin-bottom:12px; }
 .bp-activated-count { color:var(--accent); margin-left:6px; }
 .bp-activated-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:16px; }
 .bp-activated-empty { font-size:.82rem; color:var(--text-muted); padding:16px; }
@@ -6944,7 +6944,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-size:var(--card-text-meta);
   font-family:var(--font-m);
   letter-spacing:var(--tracking-caps);
-  text-transform:uppercase;
   color:var(--text-muted);
   font-weight:var(--fw-medium);
   overflow:hidden;
@@ -6956,7 +6955,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-size:var(--card-text-micro);
   font-family:var(--font-m);
   letter-spacing:var(--tracking-caps);
-  text-transform:uppercase;
   font-weight:var(--fw-bold);
   padding:2px 8px;
   border-radius:10px;
@@ -7337,7 +7335,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   font-size:var(--card-text-micro);
   font-weight:var(--fw-bold);
   letter-spacing:var(--tracking-caps);
-  text-transform:uppercase;
   color:var(--text-muted);
 }
 

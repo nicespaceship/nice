@@ -166,7 +166,7 @@ describe('CardRenderer — flip + back face', () => {
     it('renders the sub-header row with category + rarity (serial no longer on the front)', () => {
       expect(html).toContain('class="blueprint-card-sub-header"');
       expect(html).toContain('class="blueprint-card-sub-category"');
-      expect(html).toMatch(/blueprint-card-sub-rarity[^"]*"[^>]*>COMMON</);
+      expect(html).toMatch(/blueprint-card-sub-rarity[^"]*"[^>]*>Common</);
       expect(html).not.toContain('blueprint-card-art-role');
       expect(html).not.toContain('blueprint-card-art-class');
       expect(html).not.toContain('blueprint-card-art-serial');

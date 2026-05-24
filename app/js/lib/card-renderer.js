@@ -609,7 +609,7 @@ const CardRenderer = (() => {
 
     // ── Rarity (unified) ──
     const rarity = isShip ? (bp.rarity || 'Common').toLowerCase() : _getAgentRarity(bp).toLowerCase();
-    const rarityLabel = { common:'COMMON', rare:'RARE', epic:'EPIC', legendary:'LEGENDARY', mythic:'MYTHIC' }[rarity] || 'COMMON';
+    const rarityLabel = { common:'Common', rare:'Rare', epic:'Epic', legendary:'Legendary', mythic:'Mythic' }[rarity] || 'Common';
     const rarityColor = (isShip ? SLOT_COLORS : RARITY_COLORS)[bp.rarity || 'Common'] || '#94a3b8';
 
     // ── Serial ──
@@ -641,11 +641,11 @@ const CardRenderer = (() => {
       const slotCount = _bu ? _bu.getSlotCount(bp) : (cls.slots.length);
       const crewCount = _bu ? _bu.getFilledCount(bp) || slotCount : (bp.stats?.crew || memberCount);
       const deployCount = bp.activation_count || bp.stats?.deployments || 0;
-      statLbls = ['AGENTS','SLOTS','DEPLOYS'];
+      statLbls = ['Agents','Slots','Deploys'];
       statVals = [crewCount.toString(), slotCount.toString(), deployCount.toLocaleString()];
     } else {
       const statKeys = ['spd','acc','cap','pwr'];
-      statLbls = ['SPD','ACC','CAP','PWR'];
+      statLbls = ['Spd','Acc','Cap','Pwr'];
       statVals = statKeys.map(k => bp.stats?.[k] || '&#8212;');
     }
 
@@ -740,11 +740,11 @@ const CardRenderer = (() => {
       const serial = serialHash(data.id || data.name);
       art = avatarArt(data.name, data.category || data.role, serial);
       badgeHTML = rarity === 'Mythic'
-        ? `<span class="blueprint-card-grid-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
-        : `<span class="blueprint-card-grid-badge" style="background:${rarityColor};color:${contrastText(rarityColor)};border-color:transparent">${rarity.toUpperCase()}</span>`;
+        ? `<span class="blueprint-card-grid-badge mythic-badge-animated">${rarity}</span>`
+        : `<span class="blueprint-card-grid-badge" style="background:${rarityColor};color:${contrastText(rarityColor)};border-color:transparent">${rarity}</span>`;
       dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}"`;
       if (data.stats) {
-        const lbls = ['SPD','ACC','CAP','PWR'], keys = ['spd','acc','cap','pwr'];
+        const lbls = ['Spd','Acc','Cap','Pwr'], keys = ['spd','acc','cap','pwr'];
         statsHTML = `<div class="blueprint-card-grid-stats">${lbls.map((l,i) => `<span><b>${data.stats[keys[i]] || '—'}</b> ${l}</span>`).join('')}</div>`;
       }
     } else if (type === 'spaceship') {
@@ -808,7 +808,7 @@ const CardRenderer = (() => {
       // Stats bar
       const statKeys = data.stats ? ['spd','acc','cap','pwr'] : [];
       if (statKeys.length && data.stats) {
-        const lbls = ['SPD','ACC','CAP','PWR'];
+        const lbls = ['Spd','Acc','Cap','Pwr'];
         statsHTML = `<div class="blueprint-card-compact-stats">${lbls.map((l,i) => `<span class="blueprint-card-compact-stat"><b>${data.stats[statKeys[i]] || '—'}</b> ${l}</span>`).join('')}</div>`;
       }
     } else if (type === 'spaceship') {
@@ -819,7 +819,7 @@ const CardRenderer = (() => {
       const shipSlots = BlueprintUtils.getCrewDefs(data);
       const slotOpts = shipSlots.length ? { slots: shipSlots } : undefined;
       art = slotDiagramArt(artClassId, serial, slotOpts);
-      badgeHTML = `<span class="blueprint-card-compact-badge" style="background:${shipRarityColor};color:${contrastText(shipRarityColor)};border-color:transparent">${shipRarity.toUpperCase()}</span>`;
+      badgeHTML = `<span class="blueprint-card-compact-badge" style="background:${shipRarityColor};color:${contrastText(shipRarityColor)};border-color:transparent">${shipRarity}</span>`;
       dataAttrs += ` data-rarity="${shipRarity.toLowerCase()}" data-status="${data.status || ''}"`;
 
       const members = data._members || [];
@@ -833,7 +833,7 @@ const CardRenderer = (() => {
       if (data.stats) {
         const isAct = !!data.class_id;
         const deployCount = data.activation_count || data.stats?.deployments || 0;
-        const lbls = isAct ? ['AGENTS','SLOTS','DEPLOYS'] : ['AGENTS'];
+        const lbls = isAct ? ['Agents','Slots','Deploys'] : ['Agents'];
         const vals = isAct
           ? [data.stats.crew || '—', data.stats.slots || '—', deployCount.toLocaleString()]
           : [data.stats.crew || '—'];
