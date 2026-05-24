@@ -2623,15 +2623,28 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
      last row + reactor are both on-screen when scrolled to the bottom;
      the hit overlay itself is `position:fixed` and tracks the global
      core-reactor centerpiece exactly. Stack uses CSS-only anchoring —
-     no JS measurement, no scroll listener. */
+     no JS measurement, no scroll listener.
+     `dvh` (dynamic viewport) keeps the anchor consistent between
+     Safari and Chrome iOS — Safari measures `100vh` as the full device
+     height, Chrome measures it as the visible viewport (URL bar
+     visible). The 32px delta was pushing the reactor up into the
+     agent stack on Chrome. */
   html:has(.schematic-stack) {
     --reactor-x:50%;
-    --reactor-y:calc(100vh - 240px);
+    --reactor-y:calc(100dvh - 240px);
   }
   html:has(.schematic-stack) .jv-pp-reactor {
     width:220px;
     height:220px;
   }
+  /* Hide the fixed reactor on mobile schematic — the 12-slot ship lists
+     leave no clear zone between the agent stack and the prompt panel,
+     so the 220px reactor always overlapped the agent rows (visible
+     through their 6px row gaps and rounded-corner cutouts). The reactor
+     stays a desktop/tablet feature; tap-to-talk is handled by the mic
+     button on the prompt panel. */
+  html:has(.schematic-stack) .jv-pp-reactor,
+  html:has(.schematic-stack) .sch-core-hit-overlay { display:none; }
   /* When the chat overlay is up on mobile, anchor the reactor near the
      top so the conversation streams up toward it from the prompt input
      at the bottom (familiar chat layout). Override the schematic-stack
