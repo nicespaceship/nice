@@ -791,6 +791,10 @@ const SchematicView = (() => {
   // floor; real cards replace the whole tree when render() runs again.
   function _renderSkeleton() {
     const SLOTS = 6;
+    const loadingLabel = '<div class="schematic-loading-label" aria-hidden="true">' +
+      '<span class="schematic-loading-spinner"></span>' +
+      '<span>Loading crew…</span>' +
+    '</div>';
     if (_isMobile()) {
       let rows = '';
       for (let i = 0; i < SLOTS; i++) {
@@ -803,6 +807,7 @@ const SchematicView = (() => {
         '</li>';
       }
       return '<div class="schematic-stack schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
+        loadingLabel +
         '<ol class="schematic-stack-rows">' + rows + '</ol>' +
       '</div>';
     }
@@ -817,7 +822,7 @@ const SchematicView = (() => {
     for (let i = 0; i < SLOTS / 2; i++) col += card;
     return '<div class="schematic-wired schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
       '<div class="schematic-col schematic-col-left">' + col + '</div>' +
-      '<div class="schematic-center"></div>' +
+      '<div class="schematic-center">' + loadingLabel + '</div>' +
       '<div class="schematic-col schematic-col-right">' + col + '</div>' +
     '</div>';
   }

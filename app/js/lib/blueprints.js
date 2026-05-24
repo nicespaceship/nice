@@ -3077,5 +3077,23 @@ const Blueprints = (() => {
       localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(guestShips));
       _persistShips();
     } catch {}
+
+    // After migration, reload the user's existing ships + agents from
+    // Supabase. init() only runs at app boot; a returning user signing
+    // in mid-session would otherwise see an empty schematic until they
+    // hard-refreshed. Fires activated-ships when complete so the
+    // Schematic view re-renders out of its skeleton state.
+    try {
+      await Promise.all([
+        _loadActivatedFromDB(),
+        _loadUserCreations(),
+      ]);
+      _resolveNewAgents();
+      _purgeStaleIds();
+      _fireShipState();
+      _fireAgentState();
+    } catch (e) {
+      console.warn('[Blueprints] post-signin reload failed:', e.message);
+    }
   }
 })();

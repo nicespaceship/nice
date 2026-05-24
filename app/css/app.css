@@ -2325,6 +2325,24 @@ html:not([data-theme]) .app-main,
 
 /* ── Schematic skeleton — post-reset hydration placeholder ── */
 .schematic-skeleton { pointer-events:none; }
+/* Loading label sits in the schematic center (desktop) or above the row
+   stack (mobile) so the wait time reads as "fetching" instead of "blank". */
+.schematic-loading-label {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; padding:12px 0; margin:0 0 12px;
+  font-family:var(--font-b); font-size:var(--text-sm);
+  color:var(--text-muted); letter-spacing:0;
+}
+.schematic-loading-spinner {
+  width:14px; height:14px; border-radius:50%;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  animation:schematic-loading-spin .8s linear infinite;
+}
+@keyframes schematic-loading-spin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) {
+  .schematic-loading-spinner { animation:none; border-top-color:var(--accent); }
+}
 /* Skeleton slot card keeps the .sch-slot-card footprint + border but
    drops the float so the state reads as "filling in", not "alive". */
 .sch-slot-card-skeleton { animation:none; gap:5px; }
