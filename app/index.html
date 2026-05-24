@@ -520,6 +520,16 @@
 </div>
 
 <!-- ═══ SCRIPTS ═══ -->
+<script>
+  // Disable browser scroll restoration so reloads start at the top of the
+  // SPA shell. Otherwise Chrome Regular (and Safari with prior session
+  // state) restores the previous scrollTop on the schematic-stack-rows
+  // OL's internal scroller, which leaves the agent list mid-scroll and
+  // pushes the Bridge tabs off-screen. Safari Regular and Chrome
+  // Incognito have no stored scrollTop so they paint correctly.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.addEventListener('load', () => { window.scrollTo(0, 0); });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script defer src="./js/lib/state.js?v=41"></script>
 <script defer src="./js/lib/utils.js?v=41"></script>
