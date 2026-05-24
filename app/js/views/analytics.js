@@ -369,7 +369,7 @@ const AnalyticsView = (() => {
     const dimColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
     ctx.fillStyle = dimColor;
     ctx.font = '9px monospace';
-    ctx.fillText('MISSIONS', cx, cy + 12);
+    ctx.fillText('Missions', cx, cy + 12);
 
     const legend = document.getElementById('donut-legend');
     if (legend) {

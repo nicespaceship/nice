@@ -432,7 +432,7 @@ const BlueprintsView = (() => {
       const isActive = typeof Skin !== 'undefined' && Skin.activeSkin()?.id === bp.id;
       const _pa = CR ? CR.paletteArt : null;
       const marqueeText = _esc(bp.description || bp.flavor);
-      const priceFmt = bp.price ? '$' + (bp.price / 100).toFixed(2) : 'FREE';
+      const priceFmt = bp.price ? '$' + (bp.price / 100).toFixed(2) : 'Free';
       const isFree = !bp.price;
       const _toggleHTML = (on, id, cls) => `<button class="bp-toggle-switch ${cls}${on ? ' on' : ''}" data-id="${id}"><span class="toggle-track"><span class="toggle-knob"></span></span></button>`;
       const actionBtn = (owned || isFree)
