@@ -5053,6 +5053,26 @@ footer {
   transition: background 0.4s, border-color 0.4s;
 }
 [data-theme="lcars"] footer { border-top: 3px solid var(--accent2); }
+
+/* Outbox calendar — LCARS sets --border-width:0 (the theme's pill
+   aesthetic doesn't use borders), which strips the column dividers
+   inside the calendar grid and makes day cells unreadable. Restore
+   1px LCARS-colored separators just for the calendar so each day
+   reads as its own cell. */
+[data-theme="lcars"] .outbox-cal-grid,
+[data-theme="lcars"] .outbox-cal-header,
+[data-theme="lcars"] .outbox-cal-col-head:not(:last-child),
+[data-theme="lcars"] .outbox-cal-col:not(:last-child) {
+  border-width:1px;
+}
+[data-theme="lcars"] .outbox-cal-header { border-bottom-style:solid; }
+[data-theme="lcars"] .outbox-cal-col-head:not(:last-child),
+[data-theme="lcars"] .outbox-cal-col:not(:last-child) {
+  border-right-style:solid; border-right-color:var(--border);
+}
+[data-theme="lcars"] .outbox-cal-grid {
+  border:1px solid var(--border);
+}
 .footer-inner { max-width: 1280px; margin: 0 auto; }
 .ft-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 36px; }
 @media (max-width: 900px) { .ft-grid { grid-template-columns: 1fr 1fr; } }
