@@ -761,59 +761,69 @@ const AgentExecutor = (() => {
       requestBody.tools = _capToolsForModel(requestBody.model, toolsSchema);
     }
 
-    let { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
+    const _activity = (typeof LLMActivity !== 'undefined')
+      ? LLMActivity.start(requestBody.model, blueprint?.id || blueprint?.name || null)
+      : null;
+    let _activityTokens = 0;
 
-    // Walk LLMConfig.fallbackChain on retryable errors (503/429/404 — see
-    // _isRetryableError). Stops on success, non-retryable error, or cap.
-    const fallbackChain = llmConfig.fallbackChain || [];
-    const MAX_FALLBACKS = 3;
-    let tried = 0;
-    let prevModel = requestBody.model;
-    for (const fb of fallbackChain) {
-      if (tried >= MAX_FALLBACKS) break;
-      if (!((error || data?.error) && _isRetryableError(error, data))) break;
-      if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
+    try {
+      let { data, error } = await SB.functions.invoke('nice-ai', { body: requestBody });
+
+      // Walk LLMConfig.fallbackChain on retryable errors (503/429/404 — see
+      // _isRetryableError). Stops on success, non-retryable error, or cap.
+      const fallbackChain = llmConfig.fallbackChain || [];
+      const MAX_FALLBACKS = 3;
+      let tried = 0;
+      let prevModel = requestBody.model;
+      for (const fb of fallbackChain) {
+        if (tried >= MAX_FALLBACKS) break;
+        if (!((error || data?.error) && _isRetryableError(error, data))) break;
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
+        }
+        const fbBody = fb.noTools
+          ? { ...requestBody, model: fb.id, tools: undefined }
+          : { ...requestBody, model: fb.id, tools: _capToolsForModel(fb.id, toolsSchema) };
+        const fbRes = await SB.functions.invoke('nice-ai', { body: fbBody });
+        data  = fbRes.data;
+        error = fbRes.error;
+        prevModel = fb.id;
+        tried++;
       }
-      const fbBody = fb.noTools
-        ? { ...requestBody, model: fb.id, tools: undefined }
-        : { ...requestBody, model: fb.id, tools: _capToolsForModel(fb.id, toolsSchema) };
-      const fbRes = await SB.functions.invoke('nice-ai', { body: fbBody });
-      data  = fbRes.data;
-      error = fbRes.error;
-      prevModel = fb.id;
-      tried++;
+
+      if (error) {
+        let body = null;
+        if (error.context && typeof error.context.json === 'function') {
+          try { body = await error.context.json(); } catch { /* not JSON */ }
+        }
+        if (body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+          Subscription.handleBillingError(body);
+        }
+        // body.error can be a nested object ({message, code, details}) when an
+        // upstream provider error gets forwarded as-is. `new Error(obj)` would
+        // coerce that to literal '[object Object]' — flatten it first.
+        throw new Error(_coerceErrorMessage(body && body.error)
+          || (typeof error === 'string' ? error : null)
+          || _coerceErrorMessage(error && error.message)
+          || 'Edge function error');
+      }
+      if (!data || data.error) throw new Error(data?.error || 'Empty response');
+
+      const rawContent = data.content ?? '';
+      const tokensUsed = data.usage
+        ? ((data.usage.input_tokens || 0) + (data.usage.output_tokens || 0))
+        : Math.floor(JSON.stringify(rawContent).length / 4);
+      _activityTokens = tokensUsed;
+
+      return {
+        content:    rawContent,
+        stopReason: data.stop_reason || 'end_turn',
+        model:      data.model || llmConfig.model,
+        tokensUsed,
+      };
+    } finally {
+      if (_activity) _activity.end({ totalTokens: _activityTokens });
     }
-
-    if (error) {
-      let body = null;
-      if (error.context && typeof error.context.json === 'function') {
-        try { body = await error.context.json(); } catch { /* not JSON */ }
-      }
-      if (body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
-        Subscription.handleBillingError(body);
-      }
-      // body.error can be a nested object ({message, code, details}) when an
-      // upstream provider error gets forwarded as-is. `new Error(obj)` would
-      // coerce that to literal '[object Object]' — flatten it first.
-      throw new Error(_coerceErrorMessage(body && body.error)
-        || (typeof error === 'string' ? error : null)
-        || _coerceErrorMessage(error && error.message)
-        || 'Edge function error');
-    }
-    if (!data || data.error) throw new Error(data?.error || 'Empty response');
-
-    const rawContent = data.content ?? '';
-    const tokensUsed = data.usage
-      ? ((data.usage.input_tokens || 0) + (data.usage.output_tokens || 0))
-      : Math.floor(JSON.stringify(rawContent).length / 4);
-
-    return {
-      content:    rawContent,
-      stopReason: data.stop_reason || 'end_turn',
-      model:      data.model || llmConfig.model,
-      tokensUsed,
-    };
   }
 
   /* Returns true for errors that warrant a model swap.

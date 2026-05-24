@@ -1523,6 +1523,82 @@ const PromptPanel = (() => {
     ).join('');
   }
 
+  /* ── LLM activity status chip ──
+     Subscribes to LLMActivity (lib/llm-activity.js). Shows "{Ns}" while one
+     or more LLM calls are in flight, then settles to "{Ns} · {T} tokens"
+     for ~1.5s after the last call ends before fading out. The handle-pairing
+     pattern in LLMActivity means we cannot stick "on" if an end event is
+     missed — the only stuck-on failure mode is a leaked handle, which is
+     visually obvious. */
+  let _llmStatusEl   = null;
+  let _llmStatusText = null;
+  let _llmTicker     = null;
+  let _llmFadeTimer  = null;
+  let _llmRunStart   = 0;
+  let _llmRunModel   = '';
+  let _llmRunTokens  = 0;
+
+  function _initLLMStatusChip() {
+    if (typeof LLMActivity === 'undefined') return;
+    _llmStatusEl   = _panel?.querySelector('#nice-llm-status');
+    _llmStatusText = _llmStatusEl?.querySelector('.nice-llm-status-text');
+    if (!_llmStatusEl || !_llmStatusText) return;
+
+    LLMActivity.subscribe((event, payload) => {
+      if (event === 'start') {
+        if (_llmFadeTimer) { clearTimeout(_llmFadeTimer); _llmFadeTimer = null; }
+        _llmStatusEl.classList.remove('settling');
+        if (!_llmTicker) {
+          _llmRunStart  = payload.startedAt;
+          _llmRunModel  = payload.model || '';
+          _llmRunTokens = 0;
+          _llmTicker = setInterval(_renderLLMStatus, 1000);
+        }
+        _showLLMStatus();
+        _renderLLMStatus();
+        return;
+      }
+      if (event === 'end') {
+        // Other calls still in flight? Keep showing.
+        if (LLMActivity.isActive()) return;
+        _llmRunTokens = payload.totalTokens || 0;
+        _llmRunModel  = payload.model || _llmRunModel;
+        if (_llmTicker) { clearInterval(_llmTicker); _llmTicker = null; }
+        _llmStatusEl.classList.add('settling');
+        _renderLLMStatus(payload.duration);
+        _llmFadeTimer = setTimeout(() => {
+          _hideLLMStatus();
+          _llmStatusEl.classList.remove('settling');
+          _llmFadeTimer = null;
+        }, 1500);
+      }
+    });
+  }
+
+  function _showLLMStatus() {
+    if (!_llmStatusEl) return;
+    _llmStatusEl.hidden = false;
+    // Force a reflow so the fade-in transition lands after `hidden` flips.
+    void _llmStatusEl.offsetWidth;
+    _llmStatusEl.classList.add('visible');
+  }
+
+  function _hideLLMStatus() {
+    if (!_llmStatusEl) return;
+    _llmStatusEl.classList.remove('visible');
+    // Wait for the CSS transition before flipping `hidden` back on.
+    setTimeout(() => { if (!_llmStatusEl.classList.contains('visible')) _llmStatusEl.hidden = true; }, 250);
+  }
+
+  function _renderLLMStatus(finalDurationMs) {
+    if (!_llmStatusText) return;
+    const elapsedMs = finalDurationMs != null ? finalDurationMs : (Date.now() - _llmRunStart);
+    const seconds   = Math.max(1, Math.round(elapsedMs / 1000));
+    let txt = seconds + 's';
+    if (_llmRunTokens > 0) txt += ' · ' + _llmRunTokens.toLocaleString() + ' tokens';
+    _llmStatusText.textContent = txt;
+  }
+
   /* ── Direct LLM call (no Supabase needed) ── */
 
   /**
@@ -1919,6 +1995,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       : sel.label;
     const wantStream = !!opts.onChunk;
 
+    const _activity = (typeof LLMActivity !== 'undefined') ? LLMActivity.start(model) : null;
+    const _activityTokens = { total: 0 };
+
     // Request shape (Phase B of #221): chat mode delegates system-prompt
     // assembly to the edge function by sending theme_id + callsign +
     // app_context. IDE mode and explicit `systemOverride` callers keep
@@ -1955,37 +2034,46 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const headers = { 'Content-Type': 'application/json', 'apikey': SB._key };
     if (authHeader) headers['Authorization'] = authHeader;
 
-    const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
-      method: 'POST',
-      headers,
-      signal,
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch(`${supabaseUrl}/functions/v1/nice-ai`, {
+        method: 'POST',
+        headers,
+        signal,
+        body: JSON.stringify(body),
+      });
 
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.warn('[NICE] nice-ai error:', errBody);
-      let detail = '';
-      try { detail = JSON.parse(errBody)?.error || errBody; } catch { detail = errBody; }
-      throw new Error(detail);
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.warn('[NICE] nice-ai error:', errBody);
+        let detail = '';
+        try { detail = JSON.parse(errBody)?.error || errBody; } catch { detail = errBody; }
+        throw new Error(detail);
+      }
+
+      // Stream: parse SSE chunks as they arrive
+      if (wantStream && res.headers.get('content-type')?.includes('text/event-stream')) {
+        return await _parseSSEStream(res, opts, modelLabel, _activityTokens);
+      }
+
+      // Non-stream fallback
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (data.usage) {
+        _activityTokens.total = (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0);
+      }
+      if (opts.onChunk && data.content) opts.onChunk(data.content);
+      return { text: data.content || '', model: modelLabel };
+    } finally {
+      if (_activity) _activity.end({ totalTokens: _activityTokens.total });
     }
-
-    // Stream: parse SSE chunks as they arrive
-    if (wantStream && res.headers.get('content-type')?.includes('text/event-stream')) {
-      return _parseSSEStream(res, opts, modelLabel);
-    }
-
-    // Non-stream fallback
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    if (opts.onChunk && data.content) opts.onChunk(data.content);
-    return { text: data.content || '', model: modelLabel };
   }
 
   /**
    * Parse an SSE stream from either direct or edge function call.
+   * `usageOut` (optional) is a { total } box the caller passes in so the
+   * stream can hand token totals back without changing the return shape.
    */
-  async function _parseSSEStream(res, opts, modelLabel) {
+  async function _parseSSEStream(res, opts, modelLabel, usageOut) {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let full = '';
@@ -2008,6 +2096,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           if (evt.type === 'content_block_delta' && evt.delta?.text) {
             full += evt.delta.text;
             if (opts.onChunk) opts.onChunk(evt.delta.text);
+          }
+          // Capture token totals from nice-ai's end-of-stream usage event.
+          // Anthropic emits `message_delta` with cumulative output tokens;
+          // a normalized `{ type: 'usage', usage: {...} }` event also lands
+          // here if nice-ai injects one. Either way, last-write-wins.
+          if (usageOut && evt.usage) {
+            const inT  = evt.usage.input_tokens  || 0;
+            const outT = evt.usage.output_tokens || 0;
+            if (inT + outT > 0) usageOut.total = inT + outT;
           }
         } catch { /* skip malformed SSE */ }
       }
@@ -2646,6 +2743,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _panel.innerHTML = `
       <div class="nice-ai-input-area">
         <div class="nice-ai-mention-popup" id="nice-ai-mention-popup"></div>
+        <div class="nice-llm-status" id="nice-llm-status" hidden>
+          <span class="nice-llm-status-dot"></span>
+          <span class="nice-llm-status-text"></span>
+        </div>
         <div class="nice-ai-input-container">
           <div class="nice-ai-attachments" id="nice-ai-attachments" hidden></div>
           <div class="nice-ai-input-row">
@@ -3256,6 +3357,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _populateLLMDropdown();
     _populateModelDropdown();
     _updateSuggestionChips();
+    _initLLMStatusChip();
     // Re-populate the model dropdown whenever entitlements change —
     // subscription.js auto-enables Pro/add-on models on sign-in, which
     // often lands after this panel's init() has already built the
