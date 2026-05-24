@@ -3837,6 +3837,20 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   box-shadow:0 0 10px rgba(0,229,255,0.15);
 }
 
+/* Ship picker — default rule uses --accent which is JARVIS pure cyan,
+   making the trigger fight the arc reactor on the Schematic. Mirror
+   the existing .bp-sub-tab.active pattern (translucent cyan + cyan
+   border + light cyan text) so the picker reads as the same kind of
+   highlighted element without competing with the reactor. */
+[data-theme="jarvis"] .sch-fixed-ship-trigger {
+  background:rgba(0,229,255,0.1); color:#e0f7fa;
+  border:1px solid rgba(0,229,255,0.5);
+}
+[data-theme="jarvis"] .sch-fixed-ship-trigger:hover {
+  background:rgba(0,229,255,0.18); filter:none;
+}
+[data-theme="jarvis"] .sch-fixed-ship-trigger svg { color:#00e5ff; }
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion:reduce) {
   [data-theme="jarvis"] .jv-hud-r { animation:none !important; }
