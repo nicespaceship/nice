@@ -10520,9 +10520,9 @@ body.preview-active .nice-ai {
   .search-box { flex:1; min-width:0; }
 }
 
-/* ── Prompt panel: tighter padding on mobile ── */
+/* ── Prompt panel: keep horizontal breathing room on tablet + mobile ── */
 @media (max-width:768px) {
-  .nice-ai { padding:0 4px env(safe-area-inset-bottom, 12px); }
+  .nice-ai { padding:0 24px env(safe-area-inset-bottom, 12px); }
   .nice-ai-input-area { border-radius:8px; }
   .nice-ai-toolbar { flex-wrap:wrap; gap:4px; }
   .nice-ai-toolbar-right { gap:4px; }
