@@ -1902,7 +1902,9 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar:not(.open) .side-header { justify-content:space-between; padding:16px 16px 12px; }
   .app-sidebar:not(.open) .side-link { justify-content:initial; padding:10px 16px; }
   .app-main { padding:0; }
-  .app-view-content { padding:8px; padding-bottom:120px; }
+  /* padding-bottom clears the floating prompt panel (~99px + 10px offset +
+     24px breathing) so content stops above it instead of scrolling behind. */
+  .app-view-content { padding:8px; padding-bottom:140px; scroll-padding-bottom:140px; }
 }
 
 
@@ -4387,8 +4389,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 ───────────────────────────────────────────────────────────────── */
 
 /* ── App layout: flex column for monitor + prompt (consolidated in .app-main above) ── */
+/* padding-bottom and scroll-padding-bottom clear the floating prompt
+   panel so content stops above it instead of scrolling behind. */
 .app-view-content {
   flex:1; overflow-y:auto; padding:24px; padding-bottom:140px;
+  scroll-padding-bottom:140px;
   transition:opacity .3s ease;
   scrollbar-width:thin; scrollbar-color:transparent transparent;
 }
