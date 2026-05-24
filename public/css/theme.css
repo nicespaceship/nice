@@ -1174,6 +1174,20 @@
    workaround for the older 0.5 default that muted HAL's red lens;
    that default is gone, so HAL inherits the universal rule. */
 
+/* Ship picker — default rule uses --accent which is HAL's pure red,
+   making the trigger fight the camera-eye on the Schematic. Match
+   HAL's established "active highlight" pattern (subtle red tint +
+   red border on dark surface) used by .db.active / .fb.active /
+   .ship-wizard-mode-card.selected. */
+[data-theme="hal-9000"] .sch-fixed-ship-trigger {
+  background:rgba(239,68,68,0.08); color:#f5f5f5;
+  border:1px solid #ef4444;
+}
+[data-theme="hal-9000"] .sch-fixed-ship-trigger:hover {
+  background:rgba(239,68,68,0.14); filter:none;
+}
+[data-theme="hal-9000"] .sch-fixed-ship-trigger svg { color:#ef4444; }
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion:reduce) {
   [data-theme="hal-9000"] .hal-core-lens { animation:none; }
