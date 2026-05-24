@@ -8882,7 +8882,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .upgrade-compare {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: .82rem;
   margin-bottom: 1.5rem;
 }
@@ -8904,9 +8905,23 @@ html[data-theme] .nice-ai-input:focus-visible {
   color: var(--text-muted);
   width: 30%;
 }
+/* Pro column highlight — accent tint runs the full column to draw the eye
+   to the upsell side. Header carries a slightly stronger tint so it reads
+   as a tab. Theme-aware via color-mix so each skin uses its own accent. */
+.upgrade-compare th:nth-child(3),
+.upgrade-compare td:nth-child(3) {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
 .upgrade-compare-pro {
-  background: rgba(99,102,241,.04);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+.upgrade-compare tbody tr:last-child td:nth-child(3) {
+  border-bottom: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 .upgrade-compare td small { color: var(--text-muted); }
 .upgrade-modal-actions {
