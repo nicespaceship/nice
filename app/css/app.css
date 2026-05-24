@@ -373,54 +373,67 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 ───────────────────────────────────────────────────────────────── */
 
 /* ── Office theme — structural overrides only.
-   Colors handled by --nav-* CSS variables in theme data. ── */
-[data-theme="office"] h1, [data-theme="office"] h2, [data-theme="office"] h3 {
+   Colors handled by --nav-* CSS variables in theme data.
+   Shared across office (light) and office-dark; per-theme palette
+   lives in nice.js. ── */
+:is([data-theme="office"], [data-theme="office-dark"]) h1,
+:is([data-theme="office"], [data-theme="office-dark"]) h2,
+:is([data-theme="office"], [data-theme="office-dark"]) h3 {
   font-weight:var(--fw-medium); letter-spacing: var(--tracking-display);
 }
-[data-theme="office"] .blueprint-card::before { display: none; }
-[data-theme="office"] .blueprint-card-serial-code { background: transparent; color: var(--nav-bg-dk); backdrop-filter: none; }
-[data-theme="office"] .blueprint-card-art-role .blueprint-card-serial-code { color: var(--nav-bg-dk); }
+:is([data-theme="office"], [data-theme="office-dark"]) .blueprint-card::before { display: none; }
+:is([data-theme="office"], [data-theme="office-dark"]) .blueprint-card-serial-code { background: transparent; color: var(--nav-bg-dk); backdrop-filter: none; }
+:is([data-theme="office"], [data-theme="office-dark"]) .blueprint-card-art-role .blueprint-card-serial-code { color: var(--nav-bg-dk); }
 
-/* Header button hovers — invert to white bg on dark header */
-/* Header controls sit on the navy --nav-bg-dk band — read as white by default */
-[data-theme="office"] .side-header #btn-hud,
-[data-theme="office"] .side-header #sidebar-toggle {
+/* Header button hovers — invert to light bg on dark header band */
+:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud,
+:is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle {
   color:var(--nav-text); border-color:rgba(255,255,255,0.35);
 }
-[data-theme="office"] .side-header #btn-hud:hover,
-[data-theme="office"] .side-header #sidebar-toggle:hover { color:var(--nav-bg-dk); background:#fff; }
-[data-theme="office"] .side-header #btn-hud:hover *,
-[data-theme="office"] .side-header #sidebar-toggle:hover * { color:var(--nav-bg-dk); }
-[data-theme="office"] .app-mobile-bar .mobile-bar-btn,
-[data-theme="office"] .app-mobile-bar .mobile-bar-btn-nice,
-[data-theme="office"] .app-mobile-bar .mobile-bar-theme { color:#fff; }
+:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud:hover,
+:is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle:hover { color:var(--nav-bg-dk); background:#fff; }
+:is([data-theme="office"], [data-theme="office-dark"]) .side-header #btn-hud:hover *,
+:is([data-theme="office"], [data-theme="office-dark"]) .side-header #sidebar-toggle:hover * { color:var(--nav-bg-dk); }
+:is([data-theme="office"], [data-theme="office-dark"]) .app-mobile-bar .mobile-bar-btn,
+:is([data-theme="office"], [data-theme="office-dark"]) .app-mobile-bar .mobile-bar-btn-nice,
+:is([data-theme="office"], [data-theme="office-dark"]) .app-mobile-bar .mobile-bar-theme { color:#fff; }
 
 /* CTAs — pill shaped, solid filled */
-[data-theme="office"] .btn-primary,
-[data-theme="office"] .cd-btn-primary {
+:is([data-theme="office"], [data-theme="office-dark"]) .btn-primary,
+:is([data-theme="office"], [data-theme="office-dark"]) .cd-btn-primary {
   background:var(--nav-bg-dk); color:#fff; border:none; border-radius:9999px;
   padding:10px 24px; font-weight:var(--fw-medium);
 }
-[data-theme="office"] .btn-primary:hover,
-[data-theme="office"] .cd-btn-primary:hover {
-  background:#0a3d78;
+:is([data-theme="office"], [data-theme="office-dark"]) .btn-primary:hover,
+:is([data-theme="office"], [data-theme="office-dark"]) .cd-btn-primary:hover {
+  background:var(--nav-bg-hover);
 }
-[data-theme="office"] .btn { border-radius:9999px; }
+:is([data-theme="office"], [data-theme="office-dark"]) .btn { border-radius:9999px; }
 
 /* Bridge tabs — filled inactive, white active */
-[data-theme="office"] .bp-type-tab {
+:is([data-theme="office"], [data-theme="office-dark"]) .bp-type-tab {
   background:var(--nav-bg-dk); color:#fff; border:none; border-radius:9999px;
 }
-[data-theme="office"] .bp-type-tab:hover { background:#0a3d78; color:#fff; }
-[data-theme="office"] .bp-type-tab.active {
+:is([data-theme="office"], [data-theme="office-dark"]) .bp-type-tab:hover { background:var(--nav-bg-hover); color:#fff; }
+:is([data-theme="office"], [data-theme="office-dark"]) .bp-type-tab.active {
   background:#fff; color:var(--nav-bg-dk); border:1px solid var(--border);
 }
-[data-theme="office"] .bp-sub-tab {
+:is([data-theme="office"], [data-theme="office-dark"]) .bp-sub-tab {
   background:var(--nav-bg-dk); color:#fff; border:none; border-radius:9999px;
 }
-[data-theme="office"] .bp-sub-tab:hover { background:#0a3d78; color:#fff; }
-[data-theme="office"] .bp-sub-tab.active {
+:is([data-theme="office"], [data-theme="office-dark"]) .bp-sub-tab:hover { background:var(--nav-bg-hover); color:#fff; }
+:is([data-theme="office"], [data-theme="office-dark"]) .bp-sub-tab.active {
   background:#fff; color:var(--nav-bg-dk); border:1px solid var(--border);
+}
+
+/* Ship picker trigger — matches Bridge tab visual language across both
+   office variants (default rule uses --accent, which is too pale on
+   office-dark). */
+:is([data-theme="office"], [data-theme="office-dark"]) .sch-fixed-ship-trigger {
+  background:var(--nav-bg-dk);
+}
+:is([data-theme="office"], [data-theme="office-dark"]) .sch-fixed-ship-trigger:hover {
+  background:var(--nav-bg-hover); filter:none;
 }
 
 /* ─────────────────────────────────────────────────────────────────
