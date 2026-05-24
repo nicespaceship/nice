@@ -175,7 +175,6 @@ const SchematicView = (() => {
     customShips.forEach(cs => { if (!activatedShips.find(s => s.id === cs.id)) activatedShips.push(cs); });
     const activeShip = activatedShips.find(s => s.id === shipId) || activatedShips[0];
     const isAuthed = typeof Utils !== 'undefined' && Utils.hasAuthSession();
-    const shipsLoading = typeof State !== 'undefined' && State.get('ships-loading') === true;
 
     // Schematic centerpiece is the core reactor — opt in only when there
     // is something to schematize. Skeleton state still shows the reactor
@@ -183,15 +182,6 @@ const SchematicView = (() => {
     // empty state hides it so the CTAs sit on a clean background instead
     // of overlapping the visualization.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(!!activeShip || isAuthed);
-
-    // While Blueprints is actively fetching ships (init() at boot or
-    // migrateGuestState() after sign-in), always render the skeleton with
-    // the loading indicator — even if we have cached activeShip data —
-    // so the user sees obvious feedback that data is refreshing.
-    if (shipsLoading) {
-      el.innerHTML = '<div class="bridge-hero-wrap"><div class="bridge-hero-content">' + _renderSkeleton() + '</div></div>';
-      return;
-    }
 
     if (!activeShip) {
       // If the user is authenticated, Supabase may not have finished syncing
@@ -320,13 +310,7 @@ const SchematicView = (() => {
       // has data after init, so a synchronous State.on would recurse into
       // render() before this call returns. Microtask lets render() finish first.
       Promise.resolve().then(() => {
-        if (_unsubShips && typeof State !== 'undefined') {
-          State.on('activated-ships', _unsubShips);
-          // Also react to the in-flight loading flag so the schematic
-          // shows the spinner whenever Blueprints starts a fetch and
-          // swaps back to real data when the fetch completes.
-          State.on('ships-loading', _unsubShips);
-        }
+        if (_unsubShips && typeof State !== 'undefined') State.on('activated-ships', _unsubShips);
       });
     }
 
@@ -807,10 +791,6 @@ const SchematicView = (() => {
   // floor; real cards replace the whole tree when render() runs again.
   function _renderSkeleton() {
     const SLOTS = 6;
-    const loadingLabel = '<div class="schematic-loading-label" aria-hidden="true">' +
-      '<span class="schematic-loading-spinner"></span>' +
-      '<span>Loading…</span>' +
-    '</div>';
     if (_isMobile()) {
       let rows = '';
       for (let i = 0; i < SLOTS; i++) {
@@ -823,7 +803,6 @@ const SchematicView = (() => {
         '</li>';
       }
       return '<div class="schematic-stack schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
-        loadingLabel +
         '<ol class="schematic-stack-rows">' + rows + '</ol>' +
       '</div>';
     }
@@ -838,7 +817,7 @@ const SchematicView = (() => {
     for (let i = 0; i < SLOTS / 2; i++) col += card;
     return '<div class="schematic-wired schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
       '<div class="schematic-col schematic-col-left">' + col + '</div>' +
-      '<div class="schematic-center">' + loadingLabel + '</div>' +
+      '<div class="schematic-center"></div>' +
       '<div class="schematic-col schematic-col-right">' + col + '</div>' +
     '</div>';
   }
