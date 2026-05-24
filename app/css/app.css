@@ -1834,6 +1834,12 @@ html:not([data-theme]) .app-main,
 :is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity="epic"]      { border-color:#a855f7; }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .blueprint-card[data-rarity="legendary"] { border-color:#f59e0b; }
 
+/* nice-dark only: warmer panel grey for sidebar + prompt panel so the
+   left rail and the input strip read as one matched surface against the
+   near-black canvas. */
+[data-theme="nice-dark"] .app-sidebar,
+[data-theme="nice-dark"] .nice-ai-input-area { background:#28282B; }
+
 
 /* ── Sidebar collapsed state ── */
 .app-sidebar:not(.open) .side-link span,
