@@ -2472,6 +2472,14 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     display:flex;
     flex-direction:column;
     gap:6px;
+    /* Cap the list at the viewport above the prompt panel and scroll
+       internally; without this, ships with 11+ crew slots (e.g. The Loft)
+       render their last rows BEHIND the panel and the agents' light blue
+       borders bleed around the panel's 24px side margins, making the
+       panel look like two stacked cards. */
+    max-height:calc(100dvh - 260px);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
   }
   /* Spine — vertical line through the row nodes. Fades at the ends so
      it reads as a continuous wire that plugs into the reactor below. */
