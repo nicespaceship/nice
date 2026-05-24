@@ -2078,6 +2078,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const decoder = new TextDecoder();
     let full = '';
     let buffer = '';
+    // Track input + output separately. Anthropic emits `message_start` with
+    // input_tokens nested under `message.usage`, then `message_delta` with
+    // output_tokens at the top level — last-write-wins would drop input.
+    // nice-ai's normalized `{ type: 'usage', usage: { input_tokens, output_tokens } }`
+    // event (Gemini/OpenAI streams) lands in the same buckets.
+    let inToks = 0, outToks = 0;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -2097,15 +2103,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             full += evt.delta.text;
             if (opts.onChunk) opts.onChunk(evt.delta.text);
           }
-          // Capture token totals from nice-ai's end-of-stream usage event.
-          // Anthropic emits `message_delta` with cumulative output tokens;
-          // a normalized `{ type: 'usage', usage: {...} }` event also lands
-          // here if nice-ai injects one. Either way, last-write-wins.
-          if (usageOut && evt.usage) {
-            const inT  = evt.usage.input_tokens  || 0;
-            const outT = evt.usage.output_tokens || 0;
-            if (inT + outT > 0) usageOut.total = inT + outT;
+          const nested = evt.message?.usage;
+          if (nested) {
+            if (nested.input_tokens)  inToks  = nested.input_tokens;
+            if (nested.output_tokens) outToks = nested.output_tokens;
           }
+          if (evt.usage) {
+            if (evt.usage.input_tokens)  inToks  = evt.usage.input_tokens;
+            if (evt.usage.output_tokens) outToks = evt.usage.output_tokens;
+          }
+          if (usageOut) usageOut.total = inToks + outToks;
         } catch { /* skip malformed SSE */ }
       }
     }
