@@ -3879,8 +3879,13 @@ html:not([data-theme]) .app-main,
    BLUEPRINTS VIEW
 ───────────────────────────────────────────────────────────────── */
 .bp-wrap { max-width:var(--width-full); margin:0 auto; display:flex; flex-direction:column; gap:20px; overflow:visible; }
-/* Fixed tab container — outside scroll area, part of .app-main flex layout */
-#app-fixed-tabs { flex-shrink:0; z-index:20; }
+/* Fixed tab container — outside scroll area, part of .app-main flex layout.
+   `position:sticky; top:0` pins the tab row at the top of .app-main even
+   when something below (e.g. iOS Safari Private's scroll restoration or
+   touch-overscroll bubbling out of the OL's internal scroller) shifts
+   the page. Without this, the tabs / picker / standing-by all scrolled
+   off the top in Safari Private. */
+#app-fixed-tabs { flex-shrink:0; z-index:20; position:sticky; top:0; background:var(--bg, transparent); }
 #app-fixed-tabs:empty { display:none; }
 
 /* Shared sub-toolbar under the main Bridge tabs — one persistent row whose
