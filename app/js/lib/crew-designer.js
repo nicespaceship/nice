@@ -559,25 +559,27 @@ Rules:
         const agent = _data.editedAgents[i];
         setStatus(`Creating agent ${i + 1}/${_data.editedAgents.length}: ${agent.name}...`);
 
-        const agentData = {
-          name: agent.name,
-          status: 'idle',
-          config: {
-            role: agent.role || 'Ops',
-            type: 'Specialist',
-            description: agent.description || '',
-            llm_engine: agent.model || 'gemini-2.5-flash',
-            tools: agent.tools || [],
-            temperature: agent.temperature || 0.3,
-            memory: true,
-            source: 'crew_designer',
-          },
-        };
-
         if (userId && typeof SB !== 'undefined' && SB.isReady()) {
           try {
-            const { data: created } = await SB.db('user_agents').create({ ...agentData, user_id: userId });
-            if (created?.id) {
+            // Blueprints.createPrivateAgent writes agent_blueprints first
+            // then links the user_agents row via blueprint_id. The previous
+            // `{ data: created }` destructure was a bug — SB.db().create()
+            // returns the inserted row directly, not a {data, error}
+            // envelope, so created was always undefined and crew landed
+            // with placeholder `local-<ts>-<i>` ids.
+            const result = await Blueprints.createPrivateAgent({
+              name: agent.name,
+              role: agent.role || 'Ops',
+              type: 'Specialist',
+              description: agent.description || '',
+              model: agent.model || 'gemini-2.5-flash',
+              tools: agent.tools || [],
+              temperature: agent.temperature || 0.3,
+              memory: true,
+              source: 'crew_designer',
+            }, { id: userId });
+            const created = result && result.agent;
+            if (created && created.id) {
               createdAgentIds.push(created.id);
             } else {
               createdAgentIds.push(`local-${Date.now()}-${i}`);

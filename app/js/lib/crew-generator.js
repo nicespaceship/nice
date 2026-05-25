@@ -87,21 +87,23 @@ Rules:
     for (var i = 0; i < agents.length; i++) {
       var agent = agents[i];
       try {
-        var row = {
-          user_id: user.id,
+        // Blueprints.createPrivateAgent writes the agent_blueprints row
+        // first so user_agents.blueprint_id is set at creation. Before
+        // this, the generated crew landed with NULL blueprint_id and the
+        // edit/fork path had no template to hydrate from.
+        var result = await Blueprints.createPrivateAgent({
           name: agent.name,
-          status: 'idle',
-          config: {
-            role: agent.role || 'Custom',
-            type: 'Specialist',
-            tools: agent.tools || [],
-            memory: false,
-            temperature: 0.7,
-          },
-        };
-
-        var created = await SB.db('user_agents').create(row);
+          role: agent.role || 'Custom',
+          type: 'Specialist',
+          tools: agent.tools || [],
+          description: agent.description || '',
+          memory: false,
+          temperature: 0.7,
+          source: 'crew_generator',
+        }, user);
+        var created = (result && result.agent) || null;
         if (!created || !created.id) continue;
+        var row = { config: created.config };
 
         savedAgents.push(created);
         slotAssignments[String(i)] = created.id;
@@ -196,6 +198,17 @@ Rules:
     // activated copy starts in lockstep with the catalog, plus a synthetic
     // blueprint_id of the form "<shipBlueprintId>-crew-<i>" so the live
     // resolver can rehydrate edits to the ship's crew_overrides on read.
+    //
+    // NOTE: top-level user_agents.blueprint_id INTENTIONALLY stays NULL on
+    // this path — these are slot characters tied to a ship's crew_overrides,
+    // not standalone agents with their own agent_blueprints row. The
+    // synthetic crewBpId is stored only inside config.blueprint_id (jsonb)
+    // and the resolver uses it to look up the per-slot config on the parent
+    // ship. Don't "fix" this by adding a blueprint_id at the column level —
+    // it would either FK-error (synthetic id isn't a UUID) or invent an
+    // agent_blueprints row that duplicates ship-side state. Different from
+    // setup-wizard / crew-generator's saveAgents / crew-designer which DO
+    // create real agent_blueprints rows via Blueprints.createPrivateAgent.
     for (var i = 0; i < catalogCrew.length; i++) {
       var c = catalogCrew[i];
       var agentName = c.label || c.name || 'Agent ' + (i + 1);

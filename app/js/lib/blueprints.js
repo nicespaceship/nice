@@ -1367,6 +1367,69 @@ const Blueprints = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     CREATE a private agent — blueprint row + activation row
+     Used by Setup Wizard, Crew Generator, Crew Designer, and any
+     future flow that produces a new standalone agent from a custom
+     spec (vs. activating an existing catalog blueprint). Mirrors the
+     agent-builder pattern: insert into agent_blueprints first so the
+     user_agents activation row can link via blueprint_id. Before this
+     helper existed, those callers wrote user_agents with NULL
+     blueprint_id, leaving the edit/fork path with no template to
+     hydrate from on first save.
+  ═══════════════════════════════════════════════════════════════ */
+
+  async function createPrivateAgent(spec, user) {
+    if (!spec || !spec.name) return null;
+    if (!user || typeof SB === 'undefined' || !SB.isReady()) return null;
+    const slug = (spec.name || 'agent').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '-' + Math.random().toString(36).slice(2, 8);
+    const serial = 'USER-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    const config = Object.assign({
+      role: spec.role || 'Custom',
+      type: spec.type || 'Specialist',
+      tools: spec.tools || [],
+      memory: spec.memory == null ? false : !!spec.memory,
+      temperature: spec.temperature == null ? 0.7 : spec.temperature,
+      llm_engine: spec.model || spec.llm_engine || 'gemini-2.5-flash',
+      description: spec.description || '',
+    }, spec.system_prompt ? { system_prompt: spec.system_prompt } : {},
+       spec.source ? { source: spec.source } : {},
+       spec.extraConfig || {});
+    const blueprintRow = {
+      slug,
+      name: spec.name,
+      description: spec.description || '',
+      flavor: spec.flavor || '',
+      category: spec.role || '',
+      rarity: spec.rarity || 'Common',
+      scope: 'community',
+      creator_id: user.id,
+      visibility: 'private',
+      role_type: spec.role_type || 'operations',
+      capability_id: null,
+      config,
+      card: { caps: spec.caps || [] },
+      serial_key: serial,
+      tags: spec.tags || [],
+    };
+    try {
+      const blueprint = await SB.db('agent_blueprints').create(blueprintRow);
+      if (!blueprint || !blueprint.id) return null;
+      const agent = await SB.db('user_agents').create({
+        user_id: user.id,
+        name: spec.name,
+        status: spec.status || 'idle',
+        rarity: spec.rarity || 'Common',
+        blueprint_id: blueprint.id,
+        config,
+      });
+      return { agent, blueprint };
+    } catch (err) {
+      console.warn('[Blueprints.createPrivateAgent] failed for', spec.name, '—', err.message);
+      return null;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      AGENT activation
   ═══════════════════════════════════════════════════════════════ */
 
@@ -2972,6 +3035,9 @@ const Blueprints = (() => {
     listCapabilities, listCharacters, getCapability,
     listMyBlueprints,
     get,
+
+    // Private agent creation (blueprint + activation)
+    createPrivateAgent,
 
     // Agent activation
     activateAgent, deactivateAgent, isAgentActivated,

@@ -522,21 +522,22 @@ Needs help with: ${needLabels.join(', ')}`;
       let agentId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       if (userId && hasSB) {
         try {
-          // SB.db(table).create returns the inserted row DIRECTLY — not a
-          // {data, error} envelope (that's the raw supabase-js client).
-          // The previous `{ data: created }` destructure pulled .data
-          // from a row that had no such property, so created was always
-          // undefined and slot_assignments persisted the placeholder
-          // `agent-<ts>-<rand>` id forever. Real fix in PR #282 wired
-          // the schema correctly, but slot_assignments still pointed at
-          // dead client-side ids until this destructure bug was lifted.
-          const created = await SB.db('user_agents').create({
-            user_id: userId,
+          // Blueprints.createPrivateAgent writes agent_blueprints first
+          // then links the user_agents row via blueprint_id. Before this
+          // refactor, only user_agents was written and blueprint_id stayed
+          // NULL, leaving the edit/fork path with no template to hydrate.
+          const result = await Blueprints.createPrivateAgent({
             name: a.name,
+            role: a.role,
+            type: 'Specialist',
+            tools: a.tools || ['summarize'],
+            description: a.description,
+            model: a.model,
+            temperature: a.temperature,
             status: 'active',
-            config: { role: a.role, type: 'Specialist', tools: a.tools || ['summarize'], description: a.description, model: a.model, temperature: a.temperature, source: 'setup_wizard' },
-          });
-          if (created?.id) agentId = created.id;
+            source: 'setup_wizard',
+          }, { id: userId });
+          if (result && result.agent && result.agent.id) agentId = result.agent.id;
         } catch (err) {
           console.warn('[SetupWizard] Agent create fallback:', a.name, err.message);
         }
