@@ -3420,6 +3420,12 @@ html:not([data-theme]) .app-main,
 .builder-actions-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .builder-header-actions { margin-left:auto; display:flex; gap:6px; flex-shrink:0; }
 .bp-toolbar-actions { display:flex; gap:8px; margin-bottom:8px; }
+/* When _placeMobileActions reparents the toolbar into the rarity field on
+   desktop/tablet, the buttons sit alongside .bp-rarity-btn pills — match
+   their padding + font size so the row reads as one continuous strip
+   instead of two heights. */
+.bp-filter-field-rarity .bp-toolbar-actions { margin-bottom:0; }
+.bp-filter-field-rarity .bp-toolbar-actions .btn { padding:4px 10px; font-size:var(--text-xs); }
 
 /* Markdown Editor */
 .builder-md-editor { margin-top:16px; }
