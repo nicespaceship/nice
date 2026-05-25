@@ -9,6 +9,89 @@ const SpaceshipBuilderView = (() => {
 
   const CATEGORIES = ['Research','Analytics','Content','Engineering','Ops','Sales','Support','Legal','Marketing','Automation','Custom'];
 
+  /* Map BlueprintUtils.SLOT_LABELS onto `roles.slug` values (FK target
+     for `ship_slots.role_type`, NOT NULL). The slot vocabulary is
+     starship-themed (Bridge / Tactical / Intel / …) and doesn't 1:1
+     match the roles table; this is the closest functional mapping. A
+     follow-up PR can let users pick the role per slot in the builder
+     UI and retire this default. */
+  const SLOT_ROLE_MAP = {
+    Bridge: 'captain',
+    Command: 'operations',
+    Tactical: 'operations',
+    Intel: 'research',
+    Analytics: 'analytics',
+    Operations: 'operations',
+    Comms: 'communications',
+    Science: 'research',
+    Engineering: 'engineering',
+    Support: 'support',
+    Logistics: 'operations',
+    Creative: 'design',
+  };
+
+  function _randomSerial(prefix) {
+    return prefix + '-' + Math.random().toString(36).slice(2, 10).toUpperCase();
+  }
+  function _kebab(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'spaceship';
+  }
+
+  /* Build the spaceship_blueprints row from the canonical form shape.
+     Used for both INSERT (new ship) and UPDATE (edit of own private
+     blueprint). User-authored ships are scope='community' +
+     visibility='private' until they publish via the marketplace flow. */
+  function _buildShipBlueprintRow(form, user, existingBlueprint) {
+    return {
+      ...(existingBlueprint?.slug ? { slug: existingBlueprint.slug } : { slug: _kebab(form.name) + '-' + Math.random().toString(36).slice(2, 8) }),
+      name: form.name,
+      description: form.description || '',
+      flavor: form.flavor || '',
+      category: form.category,
+      rarity: form.rarity,
+      scope: 'community',
+      creator_id: user.id,
+      visibility: 'private',
+      config: {
+        stats: form.stats,
+        caps: form.caps,
+      },
+      card: { caps: form.caps },
+      ...(existingBlueprint?.serial_key ? { serial_key: existingBlueprint.serial_key } : { serial_key: _randomSerial('USER') }),
+      tags: form.tags,
+    };
+  }
+
+  /* Insert one ship_slots row per slot. slot_position is 1-indexed
+     (DB CHECK). role_type defaults via SLOT_ROLE_MAP; the form has no
+     per-slot role picker today so every slot uses the label-derived
+     default. */
+  async function _insertShipSlots(blueprintId, slotCount) {
+    if (!blueprintId || !slotCount || typeof SB === 'undefined' || !SB.client) return;
+    const labels = (typeof BlueprintUtils !== 'undefined' && BlueprintUtils.SLOT_LABELS) || [];
+    const rows = [];
+    for (let i = 0; i < slotCount; i++) {
+      const label = labels[i] || ('Agent ' + (i + 1));
+      rows.push({
+        spaceship_id: blueprintId,
+        slot_position: i + 1,
+        role_type: SLOT_ROLE_MAP[label] || 'operations',
+        label,
+        min_class: 'class-1',
+      });
+    }
+    await SB.client.from('ship_slots').insert(rows);
+  }
+
+  /* Replace-all on ship_slots: delete + insert. UNIQUE
+     (spaceship_id, slot_position) makes upsert clumsy when slot count
+     changes between edits. */
+  async function _replaceShipSlots(blueprintId, slotCount) {
+    if (!blueprintId || typeof SB === 'undefined' || !SB.client) return;
+    await SB.client.from('ship_slots').delete().eq('spaceship_id', blueprintId);
+    await _insertShipSlots(blueprintId, slotCount);
+  }
+
   /** Slots are determined by XP rank via Gamification.getSlotTemplate() */
   function _getSlotConfig() {
     if (typeof Gamification !== 'undefined' && Gamification.getSlotTemplate) {
@@ -347,13 +430,9 @@ const SpaceshipBuilderView = (() => {
     // Ship rarity mirrors the class capacity (Scout=Common, Frigate=Rare, …).
     // Assigned crew can only be ≤ this rarity, so the class cap is the ceiling.
     const rarity = cls.slots[0]?.max || 'Common';
-    const configBody = {
-      description: desc,
-      flavor,
-      tags,
-      stats: { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) },
-      caps: [category + ' operations', cls.slots.length + ' agent slots'],
-    };
+    const stats = { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) };
+    const caps  = [category + ' operations', cls.slots.length + ' agent slots'];
+    const configBody = { description: desc, flavor, tags, stats, caps };
     const row = {
       name,
       status: existingShip?.status || 'standby',
@@ -362,16 +441,60 @@ const SpaceshipBuilderView = (() => {
       config: configBody,
     };
 
+    // Canonical form snapshot — passed to _buildShipBlueprintRow.
+    const form = {
+      name, description: desc, flavor, category, rarity, tags, stats, caps,
+    };
+
     try {
       let shipId;
       if (user && typeof SB !== 'undefined' && SB.isReady()) {
-        // Authenticated: save to Supabase
+        // Authenticated path — writes both spaceship_blueprints (the
+        // template, with ship_slots child rows) AND user_spaceships
+        // (the activation, with user_ship_slots child rows via
+        // ShipSlots.setForShip). User-authored ships are
+        // scope='community' + visibility='private' until publish.
+        //
+        // Edit path: if the existing user_spaceships row points at a
+        // catalog blueprint (creator_id != user.id), we *fork* — insert
+        // a new private blueprint and repoint user_spaceships.blueprint_id.
+        // Mutating the catalog row would silently no-op under RLS and
+        // also corrupt a shared template. Only blueprints the user
+        // already owns can be updated in place.
         if (existingShip) {
+          let blueprintId = existingShip.blueprint_id || null;
+          let existingBlueprint = null;
+          if (blueprintId) {
+            try { existingBlueprint = await SB.db('spaceship_blueprints').get(blueprintId); } catch (_) { existingBlueprint = null; blueprintId = null; }
+          }
+          const ownedByMe = !!(existingBlueprint && existingBlueprint.creator_id === user.id);
+          const blueprintRow = _buildShipBlueprintRow(form, user, ownedByMe ? existingBlueprint : null);
+          if (ownedByMe && blueprintId) {
+            await SB.db('spaceship_blueprints').update(blueprintId, blueprintRow);
+            await _replaceShipSlots(blueprintId, cls.slots.length);
+          } else {
+            const inserted = await SB.db('spaceship_blueprints').create(blueprintRow);
+            const forkedId = inserted?.id || null;
+            if (forkedId) {
+              await _insertShipSlots(forkedId, cls.slots.length);
+              row.blueprint_id = forkedId;
+            }
+          }
           await SB.db('user_spaceships').update(existingShip.id, row);
           shipId = existingShip.id;
         } else {
+          // Create path — insert the blueprint first so we have an id
+          // to link from user_spaceships.blueprint_id, then ship_slots,
+          // then the user_spaceships activation.
+          const blueprintRow = _buildShipBlueprintRow(form, user, null);
+          const inserted = await SB.db('spaceship_blueprints').create(blueprintRow);
+          const blueprintId = inserted?.id || null;
+          if (blueprintId) {
+            await _insertShipSlots(blueprintId, cls.slots.length);
+            row.blueprint_id = blueprintId;
+          }
           row.user_id = user.id;
-          const { ship: created } = await Blueprints.findOrCreateActiveShip(null, () => row);
+          const { ship: created } = await Blueprints.findOrCreateActiveShip(blueprintId, () => row);
           shipId = created?.id;
         }
         if (shipId && typeof ShipSlots !== 'undefined') {
