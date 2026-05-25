@@ -883,6 +883,13 @@ const ShipSetupWizard = (() => {
   // generates synthetic ids like `the-loft-crew-1` that aren't UUIDs and
   // would error the INSERT; the captain path passes the specialist UUID
   // and must be forwarded.
+  //
+  // The worker-slot NULL is intentional — those rows are slot characters
+  // resolved through the parent ship's crew_overrides, not standalone
+  // agents that warrant their own agent_blueprints row. Same pattern as
+  // crew-generator.deployFromCatalog. The user-built standalone paths
+  // (setup wizard, crew generator's saveAgents, crew designer) call
+  // Blueprints.createPrivateAgent which writes the blueprint first.
   const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   function _isUuid(s) { return typeof s === 'string' && _UUID_RE.test(s); }
 
