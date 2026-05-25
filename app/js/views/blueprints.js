@@ -148,6 +148,10 @@ const BlueprintsView = (() => {
   // leave them stranded at the bottom of <body>, making them invisible.
   const _PORTAL_IDS = ['bp-tab-sheet', 'bp-tab-sheet-backdrop', 'bp-filter-sheet', 'bp-filter-sheet-backdrop'];
   const _portalMedia = window.matchMedia('(max-width:640px)');
+  // Desktop is wide enough for rarity pills + create/import to share a
+  // single inline row. On tablet (641-1023px) the actions wrap to their
+  // own row so the pills can fit next to the search bar instead.
+  const _inlineActionsMedia = window.matchMedia('(min-width:1024px)');
   function _clearPortals() {
     _PORTAL_IDS.forEach(id => {
       const n = document.getElementById(id);
@@ -180,20 +184,21 @@ const BlueprintsView = (() => {
     }
   }
 
-  // Workshop-only create + import actions live outside the filter sheet
-  // by default (one-tap access on mobile). On desktop, append them into
-  // the rarity field so they flow inline after the Mythic pill instead
-  // of claiming their own row.
+  // Workshop-only create + import actions. Default DOM home is outside
+  // the filter sheet so mobile (and tablet) users reach them in one tap.
+  // On desktop only, reparent into the rarity field so the buttons flow
+  // inline after the Mythic pill. Tablet keeps them standalone — pills
+  // alone fit next to the search bar there; pills + actions overflow.
   function _placeMobileActions() {
     const actions = document.getElementById('bp-toolbar-actions');
     if (!actions) return;
-    if (_portalMedia.matches) {
+    if (_inlineActionsMedia.matches) {
+      const rarityField = document.querySelector('#bp-filter-sheet .bp-filter-field-rarity');
+      if (rarityField && actions.parentElement !== rarityField) rarityField.appendChild(actions);
+    } else {
       const wrap = document.querySelector('.bp-wrap');
       const anchor = document.getElementById('bp-result-bar');
       if (wrap && actions.parentElement !== wrap) wrap.insertBefore(actions, anchor || null);
-    } else {
-      const rarityField = document.querySelector('#bp-filter-sheet .bp-filter-field-rarity');
-      if (rarityField && actions.parentElement !== rarityField) rarityField.appendChild(actions);
     }
   }
 
