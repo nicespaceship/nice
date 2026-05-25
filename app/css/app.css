@@ -3421,11 +3421,16 @@ html:not([data-theme]) .app-main,
 .builder-header-actions { margin-left:auto; display:flex; gap:6px; flex-shrink:0; }
 .bp-toolbar-actions { display:flex; gap:8px; margin-bottom:8px; }
 /* When _placeMobileActions reparents the toolbar into the rarity field on
-   desktop/tablet, the buttons sit alongside .bp-rarity-btn pills — match
-   their padding + font size so the row reads as one continuous strip
-   instead of two heights. */
+   desktop, the buttons sit alongside .bp-rarity-btn pills — match their
+   padding + font size so the row reads as one continuous strip instead
+   of two heights. */
 .bp-filter-field-rarity .bp-toolbar-actions { margin-bottom:0; }
 .bp-filter-field-rarity .bp-toolbar-actions .btn { padding:4px 10px; font-size:var(--text-xs); }
+/* Tablet: actions live in their own row under search+pills. Center them
+   so the standalone row reads as intentional rather than orphaned. */
+@media (min-width:641px) and (max-width:1023px) {
+  .bp-wrap > .bp-toolbar-actions { justify-content:center; }
+}
 
 /* Markdown Editor */
 .builder-md-editor { margin-top:16px; }
