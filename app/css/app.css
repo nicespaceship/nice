@@ -2623,7 +2623,7 @@ html:not([data-theme]) .app-main,
     grid-template-columns:24px 1fr 32px;
     align-items:center;
     gap:10px;
-    padding:7px 10px;
+    padding:10px 10px 12px;
     border:1px solid var(--row-tint, var(--border));
     border-radius:var(--radius);
     /* Layered background: opaque page bg behind a panel-bg overlay. The
@@ -2634,7 +2634,7 @@ html:not([data-theme]) .app-main,
     background-image:linear-gradient(var(--panel-bg, var(--bg-alt, #181818)), var(--panel-bg, var(--bg-alt, #181818)));
     cursor:pointer;
     transition:background-color .15s, border-color .15s;
-    min-height:44px;
+    min-height:56px;
     /* z-index:1 paints rows above the global reactor (.jv-pp-reactor at
        z:0). Without it, document order puts the late-mounted reactor on
        top and it shows through the row's text. */
