@@ -6266,14 +6266,19 @@ html[data-theme] .nice-ai-input:focus-visible {
   .outbox-container { padding:0 8px; }
   /* Tighter cluster: pills get equal-width within their row, tighter
      padding + gap so all four status filters fit one row, no more
-     "Rejected" wrapping to its own line. */
-  .outbox-toolbar { flex-direction:column; align-items:stretch; gap:6px; }
+     "Rejected" wrapping to its own line. Toolbar width matches the
+     calendar container below (12px inset each side) so the pill rows
+     read as one cohesive band with the date nav. */
+  .outbox-toolbar { flex-direction:column; align-items:stretch; gap:6px; width:100%; padding:0 12px; box-sizing:border-box; }
   .outbox-filters,
   .outbox-type-filters { gap:4px; flex-wrap:nowrap; }
   .outbox-filters .outbox-filter,
-  .outbox-type-filters .outbox-type-btn { flex:1 1 0; min-width:0; padding:0 6px; height:24px; font-size:var(--text-xs); }
+  .outbox-type-filters .outbox-type-btn { flex:1 1 0; min-width:0; padding:0 4px; height:26px; font-size:var(--text-xs); gap:4px; }
+  /* Tighter badge so the chip border doesn't touch the pill edge once
+     pills are equal-width and labels (Pending/Approved/Rejected) fill
+     most of the cell. */
   .outbox-filter .outbox-badge,
-  .outbox-type-btn .outbox-badge { font-size:.55rem; padding:0 4px; }
+  .outbox-type-btn .outbox-badge { font-size:.5rem; padding:0 3px; flex-shrink:0; }
   .outbox-card-header { flex-wrap:wrap; gap:6px; }
   .outbox-card-actions { flex-wrap:wrap; }
   .outbox-cal-grid { overflow-x:auto; }
