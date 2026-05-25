@@ -4142,7 +4142,7 @@ html:not([data-theme]) .app-main,
 .bpl-sortable:hover { color:var(--accent); }
 .bpl-rarity { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.5rem; font-weight:var(--fw-bold); color:#fff; font-family:var(--font-b); flex-shrink:0; }
 .bpl-name { font-family:var(--font-b); font-weight:var(--fw-bold); color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.bpl-cat { color:var(--text-muted); font-family:var(--font-b); font-size:.65rem; white-space:nowrap; }
+.bpl-cat { color:var(--text-muted); font-family:var(--font-b); font-size:.65rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .bpl-desc { color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bpl-stat1, .bpl-stat2, .bpl-stat3 { font-family:var(--font-b); font-size:.65rem; color:var(--text); text-align:right; white-space:nowrap; }
 .bpl-dl { color:var(--text-muted); font-family:var(--font-b); text-align:right; }
