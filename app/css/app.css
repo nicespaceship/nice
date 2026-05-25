@@ -5593,14 +5593,11 @@ html[data-theme] .nice-ai-input:focus-visible {
 .log-pill-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid currentColor; border-radius:3px; color:currentColor; opacity:0.65; font-weight:var(--fw-regular); }
 .log-filter-pill.active .log-pill-count { color:currentColor; border-color:currentColor; opacity:1; }
 
-/* Tablet: shrink Log pill padding + font so all 7 category pills
-   (All / Navigation / Agent / Mission / Ship / System / Auth) fit
-   one row inside .bridge-subnav. Same compaction pattern as the
-   Outbox tablet rule. */
+/* Tablet: tighter container gap so the 7 category pills fit one row
+   inside .bridge-subnav. Pill + count chip chrome lives in the shared
+   #bridge-subnav SSOT tablet rule. */
 @media (min-width:641px) and (max-width:1024px) {
   .log-filters { gap:4px; }
-  .log-filter-pill { padding:0 8px; font-size:var(--text-xs); height:24px; }
-  .log-pill-count { font-size:.55rem; padding:0 4px; }
 }
 
 /* Mobile: 7 category pills won't fit one row at 375px even tight, so
@@ -5955,6 +5952,19 @@ html[data-theme] .nice-ai-input:focus-visible {
 .bp-sub-tab .bp-tab-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid currentColor; border-radius:3px; color:currentColor; opacity:0.75; font-weight:var(--fw-regular); }
 .outbox-filter.active .outbox-badge,
 .bp-sub-tab.active .bp-tab-count { color:currentColor; border-color:currentColor; opacity:1; }
+
+/* Tablet: shrink Bridge sub-toolbar pills + count chips so each tab's
+   filter row stays single-line at 641-1024px. Shared SSOT across Log,
+   Outbox status, and Outbox type families. Page-specific container gap
+   tightening (`.log-filters`, `.outbox-toolbar`, `.outbox-filters`,
+   `.outbox-type-filters`) lives in each page's section. */
+@media (min-width:641px) and (max-width:1024px) {
+  #bridge-subnav .outbox-filter,
+  #bridge-subnav .outbox-type-btn,
+  #bridge-subnav .log-filter-pill { padding:0 8px; font-size:var(--text-xs); height:24px; }
+  #bridge-subnav .outbox-badge,
+  #bridge-subnav .log-pill-count { font-size:.55rem; padding:0 4px; }
+}
 
 /* View toggle + export */
 .outbox-view-toggle { display:flex; gap:8px; margin-left:auto; align-items:center; }
@@ -6340,22 +6350,13 @@ html[data-theme] .nice-ai-input:focus-visible {
   color:var(--text-muted); margin:0;
 }
 
-/* Tablet: shrink pill padding so all 8 status + type pills fit a single
-   row inside .outbox-toolbar. JARVIS already does this naturally because
-   the Exo 2 font is condensed; the rule applies universally so every
-   theme reads as one cohesive band. */
+/* Tablet: tighter container gaps so all 8 status + type pills fit a
+   single row inside .outbox-toolbar. Pill + badge chrome lives in the
+   shared #bridge-subnav SSOT tablet rule. */
 @media (min-width:641px) and (max-width:1024px) {
   .outbox-toolbar { gap:8px; }
   .outbox-filters,
   .outbox-type-filters { gap:4px; }
-  .outbox-filters .outbox-filter,
-  .outbox-type-filters .outbox-type-btn {
-    padding:0 8px;
-    font-size:var(--text-xs);
-    height:24px;
-  }
-  .outbox-filter .outbox-badge,
-  .outbox-type-btn .outbox-badge { font-size:.55rem; padding:0 4px; }
 }
 
 /* Mobile */
