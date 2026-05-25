@@ -5593,6 +5593,16 @@ html[data-theme] .nice-ai-input:focus-visible {
 .log-pill-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid currentColor; border-radius:3px; color:currentColor; opacity:0.65; font-weight:var(--fw-regular); }
 .log-filter-pill.active .log-pill-count { color:currentColor; border-color:currentColor; opacity:1; }
 
+/* Tablet: shrink Log pill padding + font so all 7 category pills
+   (All / Navigation / Agent / Mission / Ship / System / Auth) fit
+   one row inside .bridge-subnav. Same compaction pattern as the
+   Outbox tablet rule. */
+@media (min-width:641px) and (max-width:1024px) {
+  .log-filters { gap:4px; }
+  .log-filter-pill { padding:0 8px; font-size:var(--text-xs); height:24px; }
+  .log-pill-count { font-size:.55rem; padding:0 4px; }
+}
+
 /* Mobile: 7 category pills won't fit one row at 375px even tight, so
    make .log-filters horizontally scrollable (same pattern as
    .bp-type-tabs). Tighter padding + smaller font so most pills are
