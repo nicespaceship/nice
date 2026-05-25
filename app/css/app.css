@@ -1435,6 +1435,13 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-mode-tab .icon { width:18px; height:18px; }
 .side-mode-section[hidden] { display:none; }
 
+/* Code mode is desktop-only — editing source on touch is friction even with
+   the best mobile keyboard. Mirrors the eventual native-app split where the
+   mobile/tablet app focuses on orchestration + chat. */
+@media (max-width:1023px) {
+  .side-mode-tab[data-mode="code"] { display:none; }
+}
+
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }
 .side-chats-body { flex:1; min-height:0; }
