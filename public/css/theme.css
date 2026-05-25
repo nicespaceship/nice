@@ -314,7 +314,14 @@
   background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none; -webkit-appearance: none;
 }
-:is([data-theme="nice"],[data-theme="nice-dark"]) .search-box { background: var(--surface); border-color: var(--border); }
+:is([data-theme="nice"],[data-theme="nice-dark"]) .search-box {
+  background: var(--surface);
+  /* --border is `transparent` on nice (borderless aesthetic). The search
+     pill needs a defined edge to stand out against the lavender canvas
+     on Bridge tabs (Missions, Log, Outbox). border-hi gives a visible
+     hairline without breaking the rest of the theme. */
+  border-color: var(--border-hi);
+}
 /* Bridge tab bar reads as one flat bar of text labels, not separated pills.
    The active tab is marked by a blue underline, not a fill. Token-sized
    labels, 1px gaps. Sub-tabs / filter buttons keep the solid-accent
