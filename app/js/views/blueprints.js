@@ -94,9 +94,19 @@ const BlueprintsView = (() => {
   // Desktop + tablet default to the rich card grid (the artifact view).
   // Phones get the dense list — three columns of TCG cards never read
   // well at <=640px and the row layout is the natural mobile shape.
-  const _viewportDefault = window.innerWidth <= 640 ? 'list' : 'card';
-  let _viewMode = localStorage.getItem(Utils.KEYS.bpView) || _viewportDefault;
-  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _viewportDefault;
+  // Persistence is split per viewport class so a desktop "card" choice
+  // doesn't leak into mobile (and vice versa) — each surface remembers
+  // its own preference, defaulting to its viewport-native shape on a
+  // fresh visit. Recompute the key on each read/write so a mid-session
+  // resize lands the toggle in the right bucket.
+  function _viewModeKey() {
+    return Utils.KEYS.bpView + (window.innerWidth <= 640 ? ':mobile' : '');
+  }
+  function _viewportDefaultMode() {
+    return window.innerWidth <= 640 ? 'list' : 'card';
+  }
+  let _viewMode = localStorage.getItem(_viewModeKey()) || _viewportDefaultMode();
+  if (!['card', 'list', 'compact'].includes(_viewMode)) _viewMode = _viewportDefaultMode();
   let _colSort = { key: null, dir: 'asc' }; // column header sort state
 
   /* ── Paginated catalog search state ── */
@@ -2217,7 +2227,7 @@ const BlueprintsView = (() => {
       const vbtn = e.target.closest('.bp-view-btn');
       if (!vbtn) return;
       _viewMode = vbtn.dataset.view;
-      localStorage.setItem(Utils.KEYS.bpView, _viewMode);
+      localStorage.setItem(_viewModeKey(), _viewMode);
       document.querySelectorAll('.bp-view-btn').forEach(b => b.classList.remove('active'));
       vbtn.classList.add('active');
       _applyFilters();
