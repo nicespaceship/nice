@@ -6330,6 +6330,24 @@ html[data-theme] .nice-ai-input:focus-visible {
   color:var(--text-muted); margin:0;
 }
 
+/* Tablet: shrink pill padding so all 8 status + type pills fit a single
+   row inside .outbox-toolbar. JARVIS already does this naturally because
+   the Exo 2 font is condensed; the rule applies universally so every
+   theme reads as one cohesive band. */
+@media (min-width:641px) and (max-width:1024px) {
+  .outbox-toolbar { gap:8px; }
+  .outbox-filters,
+  .outbox-type-filters { gap:4px; }
+  .outbox-filters .outbox-filter,
+  .outbox-type-filters .outbox-type-btn {
+    padding:0 8px;
+    font-size:var(--text-xs);
+    height:24px;
+  }
+  .outbox-filter .outbox-badge,
+  .outbox-type-btn .outbox-badge { font-size:.55rem; padding:0 4px; }
+}
+
 /* Mobile */
 @media (max-width:640px) {
   .outbox-container { padding:0 8px; }
