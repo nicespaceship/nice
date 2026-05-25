@@ -56,6 +56,62 @@ const AgentBuilderView = (() => {
   const ROLES  = ['Research','Code','Data','Content','Ops','Custom'];
   const TYPES  = ['Specialist','General','Hybrid'];
 
+  /* Map the 6-item UI role select onto `roles.slug` values (FK target for
+     `agent_blueprints.role_type`, NOT NULL). The UI list predates the
+     18-row roles vocabulary; a follow-up PR can replace the dropdown with
+     the full set and retire this map. `Custom` falls back to `operations`
+     — the most generic functional role — until then. */
+  const ROLE_SLUG_MAP = {
+    Research: 'research',
+    Code: 'engineering',
+    Data: 'analytics',
+    Content: 'marketing',
+    Ops: 'operations',
+    Custom: 'operations',
+  };
+
+  function _randomSerial(prefix) {
+    return prefix + '-' + Math.random().toString(36).slice(2, 10).toUpperCase();
+  }
+  function _kebab(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'agent';
+  }
+
+  /* Build the agent_blueprints row from the canonical form shape. Used
+     for both INSERT (new agent) and UPDATE (edit). User-authored agents
+     are `scope='community', visibility='private'` — private until the
+     user publishes via the marketplace flow. */
+  function _buildBlueprintRow(form, user, existingBlueprint) {
+    return {
+      ...(existingBlueprint?.slug ? { slug: existingBlueprint.slug } : { slug: _kebab(form.name) + '-' + Math.random().toString(36).slice(2, 8) }),
+      name: form.name,
+      description: form.description || '',
+      flavor: form.instructions || '',
+      category: form.role,
+      rarity: form.rarity,
+      scope: 'community',
+      creator_id: user.id,
+      visibility: 'private',
+      role_type: ROLE_SLUG_MAP[form.role] || 'operations',
+      capability_id: existingBlueprint?.capability_id || null,
+      config: {
+        type: form.type,
+        tools: form.tools,
+        memory: form.memory,
+        temperature: form.temperature,
+        llm_engine: form.llm_engine,
+        ...(form.persona ? { persona: form.persona } : {}),
+        ...(form.model_profile ? { model_profile: form.model_profile } : {}),
+        ...(form.output_schema ? { output_schema: form.output_schema } : {}),
+        ...(form.example_io?.length ? { example_io: form.example_io } : {}),
+        ...(form.eval_criteria?.length ? { eval_criteria: form.eval_criteria } : {}),
+      },
+      card: { caps: form.skills },
+      ...(existingBlueprint?.serial_key ? { serial_key: existingBlueprint.serial_key } : { serial_key: _randomSerial('USER') }),
+      tags: form.tags,
+    };
+  }
+
   function render(el, params) {
     // Guest mode: allow building agents without sign-in (saves to localStorage)
 
@@ -627,11 +683,27 @@ const AgentBuilderView = (() => {
     const modelProfile = {};
     if (maxTokens && maxTokens > 0) modelProfile.max_output_tokens = maxTokens;
 
-    // user_agents has no top-level columns for role, type, llm_engine,
-    // description, flavor, caps, tags, persona, model_profile,
-    // output_schema, example_io, or eval_criteria — they all live inside
-    // the config JSONB. Matches setup-wizard / crew-designer inserts.
-    // Loader surfaces them back to top-level on State.agents items.
+    const rarity = BlueprintUtils.getRarity({ config: { tools, memory, temperature: temp }, llm_engine: model, type });
+
+    // Canonical form snapshot — passed to _buildBlueprintRow + mirrored
+    // into user_agents.config below.
+    const form = {
+      name, description, instructions,
+      role, type, tools, memory,
+      temperature: temp, llm_engine: model,
+      skills, tags, rarity,
+      persona: Object.keys(persona).length ? persona : null,
+      model_profile: Object.keys(modelProfile).length ? modelProfile : null,
+      output_schema: outputSchema || null,
+      example_io: exampleIO,
+      eval_criteria: evalCriteria,
+    };
+
+    // user_agents row (the activation). Carries the full config jsonb
+    // so existing readers (Blueprints loader, agent-executor, prompt
+    // builder) keep working unchanged. The same data is mirrored into
+    // agent_blueprints below — future PRs can migrate readers to the
+    // joined shape and dedupe.
     const row = {
       name,
       status: existingAgent?.status || 'idle',
@@ -650,21 +722,44 @@ const AgentBuilderView = (() => {
         ...(Object.keys(persona).length ? { persona } : {}),
         ...(Object.keys(modelProfile).length ? { model_profile: modelProfile } : {}),
       },
-      rarity: BlueprintUtils.getRarity({ config: { tools, memory, temperature: temp }, llm_engine: model, type }),
+      rarity,
     };
 
     try {
       if (user && typeof SB !== 'undefined' && SB.isReady()) {
-        // Authenticated: save to Supabase. Capture the returned row so
-        // we can push it into State.agents and activate it client-side
-        // — without this the new agent didn't appear in the Bridge view
-        // until the next full page refetch hydrated State, making the
-        // UI feel like the submit silently failed.
+        // Authenticated path — writes both agent_blueprints (the
+        // template) AND user_agents (the activation). User-authored
+        // agents are scope='community' + visibility='private' until
+        // the user publishes via the marketplace flow.
+        //
+        // For legacy user_agents (created before this PR, blueprint_id
+        // IS NULL), the edit path lazily creates an agent_blueprints
+        // row and links it — backfills on first edit.
         let saved;
         if (existingAgent) {
+          // Edit path — update (or lazy-create) the linked blueprint,
+          // then update the activation row.
+          let blueprintId = existingAgent.blueprint_id || null;
+          let existingBlueprint = null;
+          if (blueprintId) {
+            try { existingBlueprint = await SB.db('agent_blueprints').get(blueprintId); } catch (_) { existingBlueprint = null; blueprintId = null; }
+          }
+          const blueprintRow = _buildBlueprintRow(form, user, existingBlueprint);
+          if (blueprintId) {
+            await SB.db('agent_blueprints').update(blueprintId, blueprintRow);
+          } else {
+            const inserted = await SB.db('agent_blueprints').create(blueprintRow);
+            blueprintId = inserted?.id || null;
+            if (blueprintId) row.blueprint_id = blueprintId;
+          }
           saved = await SB.db('user_agents').update(existingAgent.id, row);
         } else {
+          // Create path — insert the blueprint first so we have an id
+          // to link from user_agents.blueprint_id.
+          const blueprintRow = _buildBlueprintRow(form, user, null);
+          const blueprintInserted = await SB.db('agent_blueprints').create(blueprintRow);
           row.user_id = user.id;
+          if (blueprintInserted?.id) row.blueprint_id = blueprintInserted.id;
           saved = await SB.db('user_agents').create(row);
         }
         // Surface saved row back to State.agents (loader normalises
