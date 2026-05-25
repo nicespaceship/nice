@@ -5591,18 +5591,61 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* Mobile: 7 category pills won't fit one row at 375px even tight, so
    make .log-filters horizontally scrollable (same pattern as
    .bp-type-tabs). Tighter padding + smaller font so most pills are
-   visible at rest; .search-box + Clear wrap to row 2. */
+   visible at rest; .search-box + Clear wrap to row 2.
+   Scroll affordance — fade mask on the right edge signals there's
+   more content beyond, plus a chevron pseudo-element pinned via
+   position:sticky as an explicit arrow indicator. JS toggles
+   .scroll-end on the last pill being visible to hide the affordance
+   once the row is fully scrolled. */
 @media (max-width:640px) {
   .log-filters {
     flex:1 1 100%; flex-wrap:nowrap; gap:4px;
     overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
     justify-content:flex-start;
     padding-bottom:2px;
+    position:relative;
+    -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+            mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+  }
+  .log-filters.scroll-start {
+    -webkit-mask-image:linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+            mask-image:linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+  }
+  .log-filters.scroll-end {
+    -webkit-mask-image:linear-gradient(to right, transparent 0, #000 28px);
+            mask-image:linear-gradient(to right, transparent 0, #000 28px);
   }
   .log-filters::-webkit-scrollbar { display:none; }
   .log-filter-pill { flex-shrink:0; height:24px; padding:0 8px; font-size:var(--text-xs); gap:4px; }
   .log-pill-count { font-size:.55rem; padding:0 4px; }
   .bridge-subnav .search-box { flex:1 1 0; min-width:0; }
+  /* Chevron arrow indicators — sticky inside the scrolling flex
+     container so they stay anchored at the visible edges as the user
+     scrolls. pointer-events:none keeps clicks landing on pills. */
+  .log-filters::before,
+  .log-filters::after {
+    content:'';
+    position:sticky;
+    flex-shrink:0;
+    align-self:center;
+    width:14px; height:14px;
+    background:no-repeat center / contain;
+    pointer-events:none;
+    z-index:1;
+  }
+  .log-filters::before {
+    left:0; margin-right:-14px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='15 18 9 12 15 6'/%3E%3C/svg%3E");
+    opacity:0;
+    transition:opacity .15s;
+  }
+  .log-filters::after {
+    right:0; margin-left:-14px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E");
+    transition:opacity .15s;
+  }
+  .log-filters.scroll-start::before { opacity:1; }
+  .log-filters.scroll-end::after { opacity:0; }
 }
 
 /* ── Toolbar ── */

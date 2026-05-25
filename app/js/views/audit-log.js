@@ -89,8 +89,25 @@ const AuditLogView = (() => {
       _loadEntries();
     };
     subnav?.addEventListener('click', onSubnavClick);
+
+    // Scroll affordance — toggle .scroll-start / .scroll-end on .log-filters
+    // so the fade mask + chevron pseudo-elements update with scroll position.
+    const filters = subnav?.querySelector('.log-filters');
+    const updateScrollEdges = () => {
+      if (!filters) return;
+      const atStart = filters.scrollLeft <= 1;
+      const atEnd = filters.scrollLeft + filters.clientWidth >= filters.scrollWidth - 1;
+      filters.classList.toggle('scroll-start', !atStart);
+      filters.classList.toggle('scroll-end', atEnd);
+    };
+    filters?.addEventListener('scroll', updateScrollEdges, { passive: true });
+    updateScrollEdges();
+
     // Hook into the central subnav cleanup so we don't leak across tab swaps.
-    if (subnav) subnav._subnavCleanup = () => subnav.removeEventListener('click', onSubnavClick);
+    if (subnav) subnav._subnavCleanup = () => {
+      subnav.removeEventListener('click', onSubnavClick);
+      filters?.removeEventListener('scroll', updateScrollEdges);
+    };
 
     document.getElementById('log-filter-search')?.addEventListener('input', _debounce(_loadEntries, 200));
     document.getElementById('log-clear')?.addEventListener('click', () => {
