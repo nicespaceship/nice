@@ -4021,6 +4021,10 @@ html:not([data-theme]) .app-main,
    ellipsis on Orbitron themes). */
 @media (max-width:640px) {
   .bridge-subnav .bp-sub-tabs { flex:1 1 100%; }
+  /* Missions: pipeline (4 status pills) takes row 1 alone; search +
+     New CTA wrap to row 2 below it. */
+  .bridge-subnav .mc-pipeline { flex:1 1 100%; }
+  .bridge-subnav .search-box { flex:1 1 0; min-width:0; }
 }
 @media (max-width:480px) {
   .bridge-subnav { padding:0; }
