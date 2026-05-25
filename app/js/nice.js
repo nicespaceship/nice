@@ -1531,6 +1531,15 @@ const NICE = (() => {
       State.set('user', user);
       _updateAuthUI(user);
       if (user) {
+        // Send the user back to where they were before signing in, if a
+        // stashed return path is present. Only on a fresh sign-in event —
+        // INITIAL_SESSION on page load should leave the current route
+        // alone (otherwise a refresh on #/bridge would yank back to a
+        // stale stash from a prior session).
+        if (event === 'SIGNED_IN') {
+          const ret = _authPopReturn();
+          if (ret && location.hash !== ret) location.hash = ret;
+        }
         _migrateLocalSpaceships(user);
         if (typeof Blueprints !== 'undefined' && Blueprints.migrateGuestState) Blueprints.migrateGuestState();
         _loadTokenBalance(user);
@@ -2358,6 +2367,12 @@ const NICE = (() => {
     banner.className = 'guest-banner';
     banner.innerHTML = _guestBannerHTML();
     document.body.prepend(banner);
+    // Capture the user's current route before navigating to #/profile so the
+    // post-sign-in flow can drop them back where they were. Stashes in
+    // sessionStorage so the value survives the OAuth round-trip too.
+    banner.addEventListener('click', (e) => {
+      if (e.target.closest('.guest-banner-link')) _authStashReturn();
+    });
     _updateGuestBannerHeight();
     if (window.ResizeObserver) {
       banner._resizeObserver = new ResizeObserver(_updateGuestBannerHeight);
@@ -2366,6 +2381,36 @@ const NICE = (() => {
       window.addEventListener('resize', _updateGuestBannerHeight);
     }
   }
+
+  /* ── Auth return-path stash ──
+     After sign-in (any method) we want to send the user back to the route
+     they were browsing, not to the default #/ chat view. Stash captures the
+     current hash on every sign-in entry point (guest banner click, OAuth
+     button click in either AuthModal or ProfileView). Pop runs in the
+     SIGNED_IN handler and restores the stashed route. Skip stashing if
+     the user is already on #/ or #/profile so we don't loop. */
+  function _authStashReturn() {
+    try {
+      const h = location.hash;
+      if (h && h !== '#/' && !h.startsWith('#/profile')) {
+        sessionStorage.setItem('nice-auth-return', h);
+      } else {
+        sessionStorage.removeItem('nice-auth-return');
+      }
+    } catch {}
+  }
+  function _authPopReturn() {
+    try {
+      const h = sessionStorage.getItem('nice-auth-return');
+      if (h) sessionStorage.removeItem('nice-auth-return');
+      return h;
+    } catch { return null; }
+  }
+  // Expose to AuthModal + ProfileView so OAuth handlers can stash before
+  // signInWithOAuth kicks off the redirect, and so the inline profile form
+  // can pop the stash directly after a synchronous email/password success.
+  window._authStashReturn = _authStashReturn;
+  window._authPopReturn = _authPopReturn;
 
   function _hideGuestBanner() {
     const banner = document.getElementById('guest-banner');

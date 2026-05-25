@@ -339,8 +339,17 @@ const ProfileView = (() => {
         localStorage.removeItem(Utils.KEYS.ephemeralSession);
         sessionStorage.removeItem(Utils.KEYS.ephemeralSession);
       }
+      // Restore the user's pre-sign-in route in this priority:
+      //   1. ?redirect=... query param (explicit deep-link contract)
+      //   2. sessionStorage stash set by the guest banner click
+      //   3. stay on #/profile (now re-renders as the logged-in view)
+      // Popping the stash here is racy with the SIGNED_IN handler in
+      // nice.js — whichever pops first navigates, the other gets null
+      // and skips. Both code paths are idempotent.
       const hq = Router.hashQuery();
-      Router.navigate(hq.redirect ? '#' + hq.redirect : '#/');
+      const stashed = (typeof window._authPopReturn === 'function') ? window._authPopReturn() : null;
+      const target = hq.redirect ? '#' + hq.redirect : stashed;
+      if (target) Router.navigate(target);
     } catch (err) {
       errEl.textContent = err.message || 'Sign in failed';
     } finally {
@@ -378,6 +387,10 @@ const ProfileView = (() => {
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
+      // Stash before the OAuth redirect leaves the page so onAuthChange
+      // can restore on the way back. Skipped if the user is already at
+      // home/profile (handled inside the helper).
+      if (typeof window._authStashReturn === 'function') window._authStashReturn();
       const opts = { redirectTo: location.origin + '/app/#/' };
       if (provider === 'google') {
         opts.scopes = 'email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.file';

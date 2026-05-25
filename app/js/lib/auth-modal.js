@@ -201,6 +201,7 @@ const AuthModal = (() => {
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
+      if (typeof window._authStashReturn === 'function') window._authStashReturn();
       const { error } = await c.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -221,6 +222,7 @@ const AuthModal = (() => {
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
+      if (typeof window._authStashReturn === 'function') window._authStashReturn();
       const { error } = await c.auth.signInWithOAuth({
         provider: 'apple',
         options: { redirectTo: location.origin + '/app/#/' },
@@ -237,6 +239,7 @@ const AuthModal = (() => {
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
+      if (typeof window._authStashReturn === 'function') window._authStashReturn();
       const { error } = await c.auth.signInWithOAuth({
         provider: 'twitter',
         options: { redirectTo: location.origin + '/app/#/' },
@@ -253,6 +256,7 @@ const AuthModal = (() => {
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
+      if (typeof window._authStashReturn === 'function') window._authStashReturn();
       const { error } = await c.auth.signInWithOAuth({
         provider: 'github',
         options: { redirectTo: location.origin + '/app/#/' },
