@@ -2612,6 +2612,31 @@
 }
 [data-theme="lcars"] .c-btn.bp-activated:hover { background:#cc4444; color:#000; border-color:#cc4444; }
 
+/* RX-78-2: Active state in Gundam-palette green (military green vs the
+   stock red, which is for the Deploy "danger" CTA). !important required to
+   beat the .bp-deploy-ship-btn red gradient rule that uses !important. */
+[data-theme="rx-78-2"] .c-btn.bp-activated {
+  background:#27ae60 !important; color:#fff !important;
+  border-color:#27ae60 !important;
+}
+[data-theme="rx-78-2"] .c-btn.bp-activated:hover {
+  background:#c0392b !important; color:#fff !important;
+  border-color:#c0392b !important;
+  box-shadow:none !important;
+}
+
+/* 16-Bit: Active state in saturated retro green, preserves pixel bevel. */
+[data-theme="16bit"] .c-btn.bp-activated {
+  background:linear-gradient(180deg, #2ed670 0%, #1e9c4f 30%, #0d6b34 100%) !important;
+  color:#fff !important;
+  border-color:#9cffb6 !important;
+}
+[data-theme="16bit"] .c-btn.bp-activated:hover {
+  background:linear-gradient(180deg, #cc4444 0%, #aa3535 30%, #882020 100%) !important;
+  color:#fff !important;
+  border-color:#ffaaaa !important;
+}
+
 [data-theme="lcars"] .filter-select {
   border-radius:24px; border:2px solid #666688; color:#ff9966;
   font-weight:700; text-transform:uppercase;
