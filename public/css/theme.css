@@ -2608,6 +2608,24 @@
 }
 [data-theme="lcars"] .c-btn.bp-activated:hover { background:#cc4444; color:#000; border-color:#cc4444; }
 
+/* LCARS list-view CTAs mirror the card-view swap: Deploy = lavender (resting),
+   Active = peach (engaged), red on hover. Universal .bpl-action-btn defaults
+   read --accent for Deploy (peach on LCARS — collides with Active) and
+   --color-success for Active (green — wrong palette). Subtle list treatment
+   keeps Deploy transparent-with-border (vs the bolder card-view fill). */
+[data-theme="lcars"] .bpl-action-btn:not(.bpl-activated) {
+  background:transparent; color:#cc99ff; border-color:#cc99ff;
+}
+[data-theme="lcars"] .bpl-action-btn:not(.bpl-activated):hover {
+  background:#cc99ff; color:#000; border-color:#cc99ff;
+}
+[data-theme="lcars"] .bpl-action-btn.bpl-activated {
+  background:#ff9966; color:#000; border-color:#ff9966;
+}
+[data-theme="lcars"] .bpl-action-btn.bpl-activated:hover {
+  background:#cc4444; color:#000; border-color:#cc4444;
+}
+
 /* RX-78-2: Active state in Gundam-palette green (military green vs the
    stock red, which is for the Deploy "danger" CTA). !important required to
    beat the .bp-deploy-ship-btn red gradient rule that uses !important. */

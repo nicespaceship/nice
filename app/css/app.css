@@ -10351,7 +10351,7 @@ body.preview-active .nice-ai {
   .bp-tab-picker {
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
     padding:8px 14px; width:100%;
-    background:var(--bg-alt); color:var(--text);
+    background:var(--surface); color:var(--text);
     border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius, 10px);
     font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
     cursor:pointer; margin-bottom:8px;
@@ -10386,7 +10386,7 @@ body.preview-active .nice-ai {
   .bp-filter-toggle {
     display:inline-flex; align-items:center; justify-content:center; gap:4px;
     padding:6px 10px;
-    background:var(--bg-alt); color:var(--text-muted);
+    background:var(--surface); color:var(--text-muted);
     border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius, 10px);
     font-family:var(--font-b); font-size:var(--text-xs);
     cursor:pointer; white-space:nowrap; flex-shrink:0;
@@ -10413,7 +10413,10 @@ body.preview-active .nice-ai {
   .bp-filter-toggle span:not(.bp-filter-count) { display:none; }
   .bp-view-toggle { flex-shrink:0; margin-left:0; }
 
-  /* Bottom-sheet scaffolding — shared by .bp-sheet and .bp-filter-controls */
+  /* Bottom-sheet scaffolding — shared by .bp-sheet and .bp-filter-controls.
+     Background must be opaque (modal over content) — matches .bp-drawer's
+     use of --bg. The previous --bg-alt fell back to #fafafa universally,
+     producing a white sheet on every dark theme. */
   .bp-sheet,
   .bp-filter-controls.bp-filter-controls {
     position:fixed; bottom:0; left:0; right:0;
@@ -10423,7 +10426,7 @@ body.preview-active .nice-ai {
        inset, so we set bottom explicitly after the shorthand resets. */
     display:flex; flex-direction:column; gap:0; margin:0; padding:0;
     padding-bottom:env(safe-area-inset-bottom);
-    background:var(--bg-alt); color:var(--text);
+    background:var(--bg); color:var(--text);
     border-top:var(--border-width, 1px) solid var(--border);
     border-radius:var(--radius, 10px) var(--radius, 10px) 0 0;
     z-index:10000; overflow:hidden;
