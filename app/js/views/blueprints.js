@@ -407,7 +407,7 @@ const BlueprintsView = (() => {
              field on desktop so they flow inline after the Mythic pill. -->
         <div class="bp-toolbar-actions" id="bp-toolbar-actions">
           <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create-agent">+ Create agent</a>
-          <a href="#/bridge/spaceships/new" class="btn btn-sm" id="btn-bp-create-ship">+ Create ship</a>
+          <a href="#/bridge/spaceships/new" class="btn btn-sm" id="btn-bp-create-ship">+ Create spaceship</a>
           <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
         </div>
 
