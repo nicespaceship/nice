@@ -80,21 +80,43 @@ const AgentBuilderView = (() => {
   /* Build the agent_blueprints row from the canonical form shape. Used
      for both INSERT (new agent) and UPDATE (edit). User-authored agents
      are `scope='community', visibility='private'` — private until the
-     user publishes via the marketplace flow. */
+     user publishes via the marketplace flow.
+
+     `existingBlueprint` is passed for both UPDATE (owned) and FORK
+     (catalog) paths and acts as a content backstop: the form exposes
+     only a subset of the blueprint's fields (no system_prompt, no
+     `card.art|stats|card_num`, no full role vocabulary), so on save we
+     overlay form values on top of the blueprint's full shape rather
+     than discarding everything the form can't represent. */
   function _buildBlueprintRow(form, user, existingBlueprint) {
+    const existingConfig = existingBlueprint?.config || {};
+    const existingCard = existingBlueprint?.card || {};
+    // A fork is when we're cloning someone else's (catalog or another
+    // user's) blueprint into the current user's private library. Forks
+    // need fresh slug + serial_key (the catalog's would collide); updates
+    // to a blueprint the user already owns keep theirs.
+    const isFork = !!(existingBlueprint && existingBlueprint.creator_id !== user.id);
+    const inheritIdentity = !!existingBlueprint && !isFork;
     return {
-      ...(existingBlueprint?.slug ? { slug: existingBlueprint.slug } : { slug: _kebab(form.name) + '-' + Math.random().toString(36).slice(2, 8) }),
+      ...(inheritIdentity && existingBlueprint.slug ? { slug: existingBlueprint.slug } : { slug: _kebab(form.name) + '-' + Math.random().toString(36).slice(2, 8) }),
       name: form.name,
       description: form.description || '',
       flavor: form.instructions || '',
-      category: form.role,
+      category: form.role || existingBlueprint?.category || '',
       rarity: form.rarity,
       scope: 'community',
       creator_id: user.id,
       visibility: 'private',
-      role_type: ROLE_SLUG_MAP[form.role] || 'operations',
+      // Preserve the source blueprint's role_type. The form's 6-item
+      // role dropdown can't represent the full 18-role vocabulary, so
+      // re-deriving via ROLE_SLUG_MAP would silently downgrade a
+      // "captain" fork to "operations".
+      role_type: existingBlueprint?.role_type || ROLE_SLUG_MAP[form.role] || 'operations',
       capability_id: existingBlueprint?.capability_id || null,
       config: {
+        // Carry catalog's full config first (system_prompt, role,
+        // maxSteps, role-specific config), then overlay form fields.
+        ...existingConfig,
         type: form.type,
         tools: form.tools,
         memory: form.memory,
@@ -106,9 +128,12 @@ const AgentBuilderView = (() => {
         ...(form.example_io?.length ? { example_io: form.example_io } : {}),
         ...(form.eval_criteria?.length ? { eval_criteria: form.eval_criteria } : {}),
       },
-      card: { caps: form.skills },
-      ...(existingBlueprint?.serial_key ? { serial_key: existingBlueprint.serial_key } : { serial_key: _randomSerial('USER') }),
-      tags: form.tags,
+      card: {
+        ...existingCard,
+        caps: form.skills?.length ? form.skills : (existingCard.caps || []),
+      },
+      ...(inheritIdentity && existingBlueprint.serial_key ? { serial_key: existingBlueprint.serial_key } : { serial_key: _randomSerial('USER') }),
+      tags: form.tags?.length ? form.tags : (existingBlueprint?.tags || []),
     };
   }
 
@@ -135,7 +160,17 @@ const AgentBuilderView = (() => {
   async function _loadForEdit(el, id) {
     try {
       const agent = await SB.db('user_agents').get(id);
-      _renderForm(el, agent);
+      // Activation rows are thin denormalized projections — for
+      // catalog-derived agents the `config` carries form defaults
+      // (role=Research, type=Specialist, empty caps) rather than the
+      // blueprint's real content. Hydrate from agent_blueprints so the
+      // edit form renders with the catalog's persona, role, caps, and
+      // system_prompt, and so save preserves them under the fork path.
+      let blueprint = null;
+      if (agent?.blueprint_id) {
+        try { blueprint = await SB.db('agent_blueprints').get(agent.blueprint_id); } catch (_) { blueprint = null; }
+      }
+      _renderForm(el, _mergeAgentWithBlueprint(agent, blueprint));
     } catch (err) {
       el.innerHTML = `
         <div class="app-empty">
@@ -145,6 +180,42 @@ const AgentBuilderView = (() => {
         </div>
       `;
     }
+  }
+
+  /* Hoist blueprint content onto the agent object the form renders
+     from. The activation row's config can carry form-default values
+     (role: "Research", type: "Specialist", memory: false, temperature:
+     0.7, llm_engine: "nice-auto") that aren't meaningful customizations
+     and shouldn't shadow the catalog's real values. Treat the blueprint
+     as the source of truth whenever it exists — for owned blueprints
+     the builder writes both rows in sync, and for catalog/community
+     blueprints the activation is just a linkage row that doesn't carry
+     persona at all. Carry `_sourceBlueprint` so `_submitAgent` can pass
+     it to `_buildBlueprintRow` as a content backstop. */
+  function _mergeAgentWithBlueprint(agent, blueprint) {
+    if (!blueprint) return agent;
+    const bpConfig = blueprint.config || {};
+    const merged = { ...agent };
+    merged._sourceBlueprint = blueprint;
+    merged.description = blueprint.description || '';
+    merged.flavor = blueprint.flavor || '';
+    merged.category = blueprint.category || '';
+    merged.role = blueprint.category || '';
+    merged.type = bpConfig.type || '';
+    merged.llm_engine = bpConfig.llm_engine || 'nice-auto';
+    merged.role_type = blueprint.role_type || '';
+    if (Array.isArray(blueprint.tags) && blueprint.tags.length) {
+      merged.tags = [...blueprint.tags];
+    }
+    // Config: spread blueprint's full config (preserves system_prompt,
+    // role-specific config, maxSteps), then re-attach caps from the
+    // blueprint's card.caps where the blueprint's config didn't include
+    // them inline.
+    merged.config = { ...bpConfig };
+    if (!(Array.isArray(merged.config.caps) && merged.config.caps.length) && Array.isArray(blueprint.card?.caps) && blueprint.card.caps.length) {
+      merged.config.caps = [...blueprint.card.caps];
+    }
+    return merged;
   }
 
   /* ── Helpers for schema/examples editors ── */
@@ -201,6 +272,15 @@ const AgentBuilderView = (() => {
     const isEdit = !!agent;
     const config = agent?.config || {};
     const selectedTools = config.tools || [];
+    // The form's role/type dropdowns are intentionally short, but the
+    // catalog uses a broader vocabulary (e.g. category="Marketing",
+    // config.type="Agent"). If we don't extend the option list, the
+    // browser silently selects the first option and the user sees the
+    // wrong value pre-filled — then saves the wrong value.
+    const selectedRole = agent?.role || agent?.category || '';
+    const selectedType = agent?.type || config.type || '';
+    const allRoles = Array.from(new Set([...ROLES, ...(selectedRole ? [selectedRole] : [])]));
+    const allTypes = Array.from(new Set([...TYPES, ...(selectedType ? [selectedType] : [])]));
 
     el.innerHTML = `
       <div class="builder-wrap">
@@ -249,13 +329,13 @@ const AgentBuilderView = (() => {
               <div class="auth-field">
                 <label for="b-role">Role</label>
                 <select id="b-role" class="filter-select builder-select">
-                  ${ROLES.map(r => `<option value="${r}" ${agent?.role === r ? 'selected' : ''}>${r}</option>`).join('')}
+                  ${allRoles.map(r => `<option value="${_esc(r)}" ${selectedRole === r ? 'selected' : ''}>${_esc(r)}</option>`).join('')}
                 </select>
               </div>
               <div class="auth-field">
                 <label for="b-type">Type</label>
                 <select id="b-type" class="filter-select builder-select">
-                  ${TYPES.map(t => `<option value="${t}" ${agent?.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+                  ${allTypes.map(t => `<option value="${_esc(t)}" ${selectedType === t ? 'selected' : ''}>${_esc(t)}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -744,13 +824,21 @@ const AgentBuilderView = (() => {
         // already owns can be updated in place.
         let saved;
         if (existingAgent) {
+          // Prefer the blueprint hydrated during _loadForEdit (carries
+          // catalog content the activation row doesn't); fall back to
+          // a fresh fetch when the user lands here via an unusual
+          // surface (e.g. State agent without _sourceBlueprint).
           let blueprintId = existingAgent.blueprint_id || null;
-          let existingBlueprint = null;
-          if (blueprintId) {
+          let existingBlueprint = existingAgent._sourceBlueprint || null;
+          if (!existingBlueprint && blueprintId) {
             try { existingBlueprint = await SB.db('agent_blueprints').get(blueprintId); } catch (_) { existingBlueprint = null; blueprintId = null; }
           }
           const ownedByMe = !!(existingBlueprint && existingBlueprint.creator_id === user.id);
-          const blueprintRow = _buildBlueprintRow(form, user, ownedByMe ? existingBlueprint : null);
+          // Always pass existingBlueprint — _buildBlueprintRow uses it
+          // as a content backstop for fields the form can't represent
+          // (system_prompt, capability_id, card art/stats) and detects
+          // fork-vs-update internally via creator_id.
+          const blueprintRow = _buildBlueprintRow(form, user, existingBlueprint);
           if (ownedByMe && blueprintId) {
             await SB.db('agent_blueprints').update(blueprintId, blueprintRow);
           } else {
