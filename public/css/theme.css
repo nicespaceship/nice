@@ -4679,7 +4679,7 @@ body {
 /* Type tabs — segmented button bar */
 .bp-type-tabs { display:inline-flex; gap:4px; margin-bottom:1.2rem; padding:4px; background:var(--bg2, #18181b); border-radius:var(--radius, 10px); border:1px solid var(--border); overflow-x:auto; max-width:100%; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
 .bp-type-tabs::-webkit-scrollbar { display:none; }
-.bp-type-tab { padding:8px 18px; font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--text-muted); background:none; border:none; border-radius:calc(var(--radius, 10px) - 2px); cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:8px; white-space:nowrap; flex-shrink:0; }
+.bp-type-tab { padding:8px 18px; font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--text-muted); background:none; border:none; border-radius:calc(var(--radius, 10px) - 2px); cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; white-space:nowrap; flex-shrink:0; }
 .bp-type-tab:hover { color:var(--text); background:rgba(255,255,255,.04); }
 .bp-type-tab.active { color:var(--text, #fafafa); background:var(--surface2, #27272a); box-shadow:0 1px 3px rgba(0,0,0,.2); }
 .bp-tab-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); }

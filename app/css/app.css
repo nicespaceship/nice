@@ -5854,7 +5854,7 @@ html[data-theme] .nice-ai-input:focus-visible {
    the category-color treatment (Outbox type buttons use --type-color,
    Log pills use --log-cat-color). */
 .bp-sub-tab, .outbox-filter, .outbox-type-btn {
-  display:inline-flex; align-items:center; gap:6px;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
   height:26px; box-sizing:border-box;
   padding:0 12px; border:var(--border-width,1px) solid var(--border);
   background:var(--surface); color:var(--text-muted);
