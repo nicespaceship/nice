@@ -3990,9 +3990,15 @@ html:not([data-theme]) .app-main,
 .bridge-subnav[hidden] { display:none; }
 .bridge-subnav .search-box { min-width:0; }
 /* On mobile the sub-tabs take the full bar width so the four equal-width
-   tabs don't truncate; any sibling (e.g. the Filters button) wraps below. */
+   tabs don't truncate; any sibling (e.g. the Filters button) wraps below.
+   Zero side padding at <=480 so the four pills get the full row (24px
+   side padding eats 48px = the difference between fit and "Spaceship[s]"
+   ellipsis on Orbitron themes). */
 @media (max-width:640px) {
   .bridge-subnav .bp-sub-tabs { flex:1 1 100%; }
+}
+@media (max-width:480px) {
+  .bridge-subnav { padding:0; }
 }
 .bp-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .bp-title { font-family:var(--font-b); font-size:1.2rem; font-weight:var(--fw-bold); margin:0; }
@@ -10345,9 +10351,13 @@ body.preview-active .nice-ai {
      pill, lay them out as a flex row so they share width. The "Standing by"
      chat box below is inset symmetrically by app-view-content's padding +
      .bridge-hero-content's 12px; the picker row matches via the two
-     non-overlapping breakpoint rules near the ≤380 block. */
-  #app-fixed-tabs:has(.sch-ship-picker) { display:flex; gap:8px; align-items:stretch; margin-bottom:8px; }
+     non-overlapping breakpoint rules near the ≤380 block.
+     flex-wrap + order push .bridge-subnav (DOM-ordered between the two
+     pickers) onto its own row below, so the picker pair stays on top
+     without the subnav squashing them to 30px. */
+  #app-fixed-tabs:has(.sch-ship-picker) { display:flex; flex-wrap:wrap; gap:8px; align-items:stretch; margin-bottom:8px; }
   #app-fixed-tabs:has(.sch-ship-picker) .bp-tab-picker { flex:1 1 0; min-width:0; width:auto; margin-bottom:0; }
+  #app-fixed-tabs:has(.sch-ship-picker) .bridge-subnav { order:99; flex:1 0 100%; }
   .bp-tab-picker {
     display:inline-flex; align-items:center; justify-content:center; gap:6px;
     padding:8px 14px; width:100%;
