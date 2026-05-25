@@ -10759,9 +10759,11 @@ body.preview-active .nice-ai {
   .bp-sheet-backdrop.open { opacity:1; pointer-events:auto; }
   .bp-sheet-backdrop[hidden] { display:none; }
 
-  /* Compact toolbar actions — "+ Create" + Import on a tight row */
-  .bp-toolbar-actions { gap:6px; }
-  .bp-toolbar-actions .btn { padding:6px 10px; font-size:var(--text-xs); flex:1 1 0; text-align:center; }
+  /* Workshop actions — match the centered, natural-width row used on
+     desktop/tablet. flex:1 stretching forced "+ Create spaceship" to
+     wrap onto two lines at 375px. */
+  .bp-toolbar-actions { gap:6px; justify-content:center; }
+  .bp-toolbar-actions .btn { padding:6px 10px; font-size:var(--text-xs); }
 }
 
 /* ─────────────────────────────────────────────────────────────────
