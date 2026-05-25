@@ -9654,8 +9654,11 @@ body.preview-active .nice-ai {
      `:has(.bp-view-list)` matched whenever the list-view element existed
      in the DOM, but BlueprintsView keeps its markup mounted across all
      Bridge tabs, so this rule painted .app-view-content white on every
-     tab and hid the .app-main lavender canvas. */
-  .app-main:has(.bp-type-tab.active[data-tab="blueprints"]) .app-view-content { background:var(--surface); }
+     tab and hid the .app-main lavender canvas.
+     Skip nice (Core) light theme — its --surface (#fff) equals --bg, so
+     painting view-content with --surface erases the .app-main lavender
+     canvas (#e8eef5) that defines the page's visual ground on light. */
+  html:not([data-theme="nice"]) .app-main:has(.bp-type-tab.active[data-tab="blueprints"]) .app-view-content { background:var(--surface); }
 }
 
 /* Phone-only: rating is squished into ~50px alongside name + cat +
