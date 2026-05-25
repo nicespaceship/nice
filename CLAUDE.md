@@ -403,7 +403,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 
-### View Modules (`app/js/views/`) — 28 views
+### View Modules (`app/js/views/`) — 25 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
@@ -416,11 +416,10 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `SpaceshipBuilderView` | `spaceship-builder.js` | `#/bridge/spaceships/new` | Ship Builder |
 | `SchematicView` | `schematic.js` | (embedded in BlueprintsView) | Schematic |
 | `MissionsView` | `missions.js` | (embedded in BlueprintsView) | Missions |
+| `MissionComposerView` | `mission-composer.js` | `#/missions/new` | Mission Composer (prompt-driven authoring; emits to `missions` table + enqueues a `mission_runs` row) |
 | `AnalyticsView` | `analytics.js` | (embedded in BlueprintsView) | Operations |
-| `LogView` | `log-view.js` | (embedded in BlueprintsView) | Log |
-| `AuditLogView` | `audit-log.js` | (embedded in BlueprintsView) | Captain's Log |
+| `AuditLogView` | `audit-log.js` | (embedded in BlueprintsView; serves Bridge "Log" tab) | Captain's Log |
 | `ShipLogView` | `ship-log-view.js` | (embedded in SchematicView) | Ship's Log |
-| `DockView` | `dock-view.js` | `#/dock` → redirects to `#/` | — |
 | `SecurityView` | `security.js` | `#/security` | Security |
 | `IntegrationsView` | `integrations.js` | (tab in SecurityView) | Integrations |
 | `VaultView` | `vault.js` | (section in IntegrationsView) | AI Models |
@@ -430,7 +429,6 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `CostView` | `cost.js` | (embedded) | Cost Tracker |
 | `AlertsView` | `alerts.js` | (embedded) | Alerts |
 | `ThemeCreatorView` | `theme-creator.js` | `#/theme-editor` | Theme Editor |
-| `EngineeringView` | `engineering.js` | `#/engineering` | Engineering |
 | `ModerationView` | `moderation.js` | `#/moderation` | Moderation — admin-only queue for `pending_review` community submissions; gated server-side via `admin_*` RPCs and client-side by `State.user.is_admin` |
 | `PromptPanel` | `prompt-panel.js` | (global overlay) | Prompt Panel — multimodal attachments (images/PDFs/audio/video/text) via `+` button or drag-and-drop, up to 4 files/message, soft-fallback to Gemini Flash if current model lacks the needed capability |
 
