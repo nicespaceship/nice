@@ -3427,9 +3427,13 @@ html:not([data-theme]) .app-main,
 .bp-filter-field-rarity .bp-toolbar-actions { margin-bottom:0; }
 .bp-filter-field-rarity .bp-toolbar-actions .btn { padding:4px 10px; font-size:var(--text-xs); }
 /* Tablet: actions live in their own row under search+pills. Center them
-   so the standalone row reads as intentional rather than orphaned. */
+   so the standalone row reads as intentional rather than orphaned, and
+   zero the filter-controls' margin-bottom — bp-wrap's flex gap already
+   spaces the row; the redundant margin pushed the actions ~32px below
+   the search/pill line. */
 @media (min-width:641px) and (max-width:1023px) {
   .bp-wrap > .bp-toolbar-actions { justify-content:center; }
+  .bp-wrap > .bp-filter-controls { margin-bottom:0; }
 }
 
 /* Markdown Editor */
