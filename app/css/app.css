@@ -5590,8 +5590,8 @@ html[data-theme] .nice-ai-input:focus-visible {
   color:var(--bg);
   border-color:var(--log-cat-color,var(--accent));
 }
-.log-pill-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); }
-.log-filter-pill.active .log-pill-count { color:#d1d5db; border-color:rgba(255,255,255,.35); }
+.log-pill-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid currentColor; border-radius:3px; color:currentColor; opacity:0.65; font-weight:var(--fw-regular); }
+.log-filter-pill.active .log-pill-count { color:currentColor; border-color:currentColor; opacity:1; }
 
 /* Mobile: 7 category pills won't fit one row at 375px even tight, so
    make .log-filters horizontally scrollable (same pattern as
