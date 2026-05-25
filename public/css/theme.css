@@ -2639,6 +2639,23 @@
   box-shadow:none !important;
 }
 
+/* RX-78-2 list-view CTAs mirror the card-view spec: Deploy = Federation red
+   (subtle outline at rest, bold fill on hover), Active = military green,
+   red on hover. Universal .bpl-action-btn defaults read --accent (Federation
+   blue) for Deploy which doesn't match the card-view Federation red. */
+[data-theme="rx-78-2"] .bpl-action-btn:not(.bpl-activated) {
+  background:transparent; color:#c0392b; border-color:#c0392b;
+}
+[data-theme="rx-78-2"] .bpl-action-btn:not(.bpl-activated):hover {
+  background:#c0392b; color:#fff; border-color:#c0392b;
+}
+[data-theme="rx-78-2"] .bpl-action-btn.bpl-activated {
+  background:#27ae60; color:#fff; border-color:#27ae60;
+}
+[data-theme="rx-78-2"] .bpl-action-btn.bpl-activated:hover {
+  background:#c0392b; color:#fff; border-color:#c0392b;
+}
+
 /* 16-Bit: Active state in saturated retro green, preserves pixel bevel. */
 [data-theme="16bit"] .c-btn.bp-activated {
   background:linear-gradient(180deg, #2ed670 0%, #1e9c4f 30%, #0d6b34 100%) !important;
@@ -2649,6 +2666,22 @@
   background:linear-gradient(180deg, #cc4444 0%, #aa3535 30%, #882020 100%) !important;
   color:#fff !important;
   border-color:#ffaaaa !important;
+}
+
+/* 16-Bit list-view CTAs mirror the "PLAY" gold treatment from card view:
+   Deploy = gold outline at rest (filled gold on hover), Active = retro green,
+   red on hover. Subtle list treatment vs the card-view fill. */
+[data-theme="16bit"] .bpl-action-btn:not(.bpl-activated) {
+  background:transparent; color:#e2b714; border-color:#e2b714;
+}
+[data-theme="16bit"] .bpl-action-btn:not(.bpl-activated):hover {
+  background:#e2b714; color:#0d1526; border-color:#fff3b0;
+}
+[data-theme="16bit"] .bpl-action-btn.bpl-activated {
+  background:#1e9c4f; color:#fff; border-color:#9cffb6;
+}
+[data-theme="16bit"] .bpl-action-btn.bpl-activated:hover {
+  background:#aa3535; color:#fff; border-color:#ffaaaa;
 }
 
 [data-theme="lcars"] .filter-select {
