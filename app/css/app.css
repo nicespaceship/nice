@@ -5569,9 +5569,9 @@ html[data-theme] .nice-ai-input:focus-visible {
 .log-wrap { max-width:var(--width-large); margin:0 auto; }
 
 /* ── Category Filter Pills (live in #bridge-subnav, mirror .outbox-filter) ── */
-.log-filters { display:flex; gap:6px; flex-wrap:wrap; }
+.log-filters { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
 .log-filter-pill {
-  display:inline-flex; align-items:center; gap:6px;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
   height:26px; box-sizing:border-box;
   padding:0 12px; border:var(--border-width,1px) solid var(--border);
   background:var(--surface); color:var(--text-muted);
@@ -5587,6 +5587,23 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .log-pill-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); }
 .log-filter-pill.active .log-pill-count { color:#d1d5db; border-color:rgba(255,255,255,.35); }
+
+/* Mobile: 7 category pills won't fit one row at 375px even tight, so
+   make .log-filters horizontally scrollable (same pattern as
+   .bp-type-tabs). Tighter padding + smaller font so most pills are
+   visible at rest; .search-box + Clear wrap to row 2. */
+@media (max-width:640px) {
+  .log-filters {
+    flex:1 1 100%; flex-wrap:nowrap; gap:4px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    justify-content:flex-start;
+    padding-bottom:2px;
+  }
+  .log-filters::-webkit-scrollbar { display:none; }
+  .log-filter-pill { flex-shrink:0; height:24px; padding:0 8px; font-size:var(--text-xs); gap:4px; }
+  .log-pill-count { font-size:.55rem; padding:0 4px; }
+  .bridge-subnav .search-box { flex:1 1 0; min-width:0; }
+}
 
 /* ── Toolbar ── */
 .log-toolbar { display:flex; gap:8px; margin-bottom:14px; align-items:center; }
