@@ -180,6 +180,23 @@ const BlueprintsView = (() => {
     }
   }
 
+  // Workshop-only create + import actions live outside the filter sheet
+  // by default (one-tap access on mobile). On desktop, append them into
+  // the rarity field so they flow inline after the Mythic pill instead
+  // of claiming their own row.
+  function _placeMobileActions() {
+    const actions = document.getElementById('bp-toolbar-actions');
+    if (!actions) return;
+    if (_portalMedia.matches) {
+      const wrap = document.querySelector('.bp-wrap');
+      const anchor = document.getElementById('bp-result-bar');
+      if (wrap && actions.parentElement !== wrap) wrap.insertBefore(actions, anchor || null);
+    } else {
+      const rarityField = document.querySelector('#bp-filter-sheet .bp-filter-field-rarity');
+      if (rarityField && actions.parentElement !== rarityField) rarityField.appendChild(actions);
+    }
+  }
+
   // ── Custom dropdown (replaces native <select>) ───────────────────────
   // Native <select> popups can't be styled on macOS/iOS — the OS draws the
   // option list at the system font size and ignores CSS, dwarfing the rest
@@ -353,7 +370,7 @@ const BlueprintsView = (() => {
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
               <input type="text" id="bp-search" class="search-input" placeholder="Search by name, description, or tags..." aria-label="Search blueprints" data-allow-zoom />
             </div>
-            <div class="bp-filter-field">
+            <div class="bp-filter-field bp-filter-field-rarity">
               <span class="bp-filter-label">Rarity</span>
               <div class="bp-rarity-filters" id="bp-rarity-filters" role="group" aria-label="Filter by rarity">
                 <button class="bp-rarity-btn active" data-rarity="all" aria-pressed="true">All</button>
@@ -384,6 +401,10 @@ const BlueprintsView = (() => {
           </button>
         </div>
 
+        <!-- Workshop-only create + import actions. Initially rendered here
+             (outside the filter sheet) so they stay reachable on mobile in
+             a single tap. _placeMobileActions reparents into the rarity
+             field on desktop so they flow inline after the Mythic pill. -->
         <div class="bp-toolbar-actions" id="bp-toolbar-actions">
           <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create-agent">+ Create agent</a>
           <a href="#/bridge/spaceships/new" class="btn btn-sm" id="btn-bp-create-ship">+ Create ship</a>
@@ -406,6 +427,7 @@ const BlueprintsView = (() => {
     // sheet z:10000 actually win over the prompt panel z:200.
     _mountPortals();
     _placeMobileSearch();
+    _placeMobileActions();
 
     // Highlight the correct tab + sub-tab buttons
     document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
