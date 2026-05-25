@@ -78,7 +78,6 @@ const SCRIPTS = [
   'app/js/lib/content-queue.js',
   'app/js/lib/media-tools.js',
   'app/js/lib/virtual-fs.js',
-  'app/js/views/code.js',
   'app/js/lib/auth-modal.js',
   'app/js/nice.js',
 ];

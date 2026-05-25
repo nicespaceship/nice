@@ -1797,9 +1797,6 @@ const NICE = (() => {
     if (typeof SharedReportView !== 'undefined') Router.on('/share/:id', SharedReportView);
     // Legacy #/docs route → redirect into Bridge's Documentation tab
     Router.on('/docs', { render: () => { location.hash = '#/bridge?tab=documentation'; }, title: 'Documentation' });
-    if (typeof CodeView !== 'undefined') Router.on('/code', CodeView);
-    // Legacy #/engineering route → redirect to #/code (renamed 2026-05-05).
-    Router.on('/engineering', { title: 'Code', render: () => { location.hash = '#/code'; } });
     // Legacy #/marketplace route → unified Blueprints browse, Community-filtered.
     // Marketplace is no longer a separate surface — community blueprints live
     // alongside the seeded catalog in the Agents sub-tab, discriminated by a
@@ -2267,10 +2264,8 @@ const NICE = (() => {
   const _MODE_DEFAULT_ROUTES = {
     spaceship: '#/bridge',
     chat: '#/',
-    code: '#/code',
   };
   function _modeFromPath(path) {
-    if (/^\/(code|engineering)(\/|$|\?)/.test(path)) return 'code';
     if (/^\/(bridge|missions)(\/|$|\?)/.test(path)) return 'spaceship';
     return 'chat';
   }
