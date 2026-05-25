@@ -735,22 +735,28 @@ const AgentBuilderView = (() => {
         // For legacy user_agents (created before this PR, blueprint_id
         // IS NULL), the edit path lazily creates an agent_blueprints
         // row and links it — backfills on first edit.
+        //
+        // Edit path: if the existing user_agents row points at a catalog
+        // blueprint (creator_id != user.id), we *fork* — insert a new
+        // private blueprint and repoint user_agents.blueprint_id.
+        // Mutating the catalog row would silently no-op under RLS and
+        // also corrupt a shared template. Only blueprints the user
+        // already owns can be updated in place.
         let saved;
         if (existingAgent) {
-          // Edit path — update (or lazy-create) the linked blueprint,
-          // then update the activation row.
           let blueprintId = existingAgent.blueprint_id || null;
           let existingBlueprint = null;
           if (blueprintId) {
             try { existingBlueprint = await SB.db('agent_blueprints').get(blueprintId); } catch (_) { existingBlueprint = null; blueprintId = null; }
           }
-          const blueprintRow = _buildBlueprintRow(form, user, existingBlueprint);
-          if (blueprintId) {
+          const ownedByMe = !!(existingBlueprint && existingBlueprint.creator_id === user.id);
+          const blueprintRow = _buildBlueprintRow(form, user, ownedByMe ? existingBlueprint : null);
+          if (ownedByMe && blueprintId) {
             await SB.db('agent_blueprints').update(blueprintId, blueprintRow);
           } else {
             const inserted = await SB.db('agent_blueprints').create(blueprintRow);
-            blueprintId = inserted?.id || null;
-            if (blueprintId) row.blueprint_id = blueprintId;
+            const forkedId = inserted?.id || null;
+            if (forkedId) row.blueprint_id = forkedId;
           }
           saved = await SB.db('user_agents').update(existingAgent.id, row);
         } else {
