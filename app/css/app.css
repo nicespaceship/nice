@@ -1327,6 +1327,31 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 }
 [data-theme="16bit"] .sch-fixed-ship-trigger svg { color: #e2b714; }
 
+/* 16-Bit mobile scale-down — Press Start 2P is wider per character than
+   any sans, so the 10px desktop body scale reads as ~14-16px equivalent
+   on a 375px viewport. Drop to 8px (the pixel-font floor before bitmaps
+   mash) and tighten line-height from 2 → 1.5 so crew rows, list rows,
+   and the Schematic stack stop hogging vertical space. Headings scale
+   one tier down too. */
+@media (max-width:640px) {
+  [data-theme="16bit"] :is(p, li, span, label, td, th):not(:is(.blueprint-card, .blueprint-card-grid, .blueprint-card-mini, .blueprint-card-compact, .agent-card, .spaceship-card, .blueprint-tile) *) {
+    font-size: 8px;
+    line-height: 1.5;
+  }
+  [data-theme="16bit"] h1 { font-size: var(--text-xl); line-height: 1.6; }
+  [data-theme="16bit"] h2 { font-size: var(--text-lg); line-height: 1.55; }
+  [data-theme="16bit"] h3 { font-size: var(--text-md); line-height: 1.5; }
+  [data-theme="16bit"] .schematic-row-name { font-size: 9px; }
+  [data-theme="16bit"] .schematic-row-role,
+  [data-theme="16bit"] .schematic-row-meta,
+  [data-theme="16bit"] .schematic-row-action { font-size: 8px; }
+  [data-theme="16bit"] .sch-ship-picker-label { font-size: 8px; line-height: 1.4; }
+  [data-theme="16bit"] .bpl-name { font-size: 9px; }
+  [data-theme="16bit"] .bpl-cat,
+  [data-theme="16bit"] .bpl-header { font-size: 8px; }
+  [data-theme="16bit"] .bp-sub-tab { font-size: 8px; }
+}
+
 /* ─────────────────────────────────────────────────────────────────
    SIDEBAR (Desktop always visible, mobile drawer)
 ───────────────────────────────────────────────────────────────── */
