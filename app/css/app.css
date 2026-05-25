@@ -453,7 +453,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 /* ── Mecha panel cards — armor plate segmentation ── */
 [data-theme="rx-78-2"] .blueprint-card {
-  border: 25px solid #3a3f55;
+  border: 13px solid #3a3f55;
   background: linear-gradient(160deg, #1e2030 0%, #252838 100%);
   box-shadow:
     inset 1px 1px 0 rgba(255,255,255,0.06),
@@ -470,12 +470,22 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   background: linear-gradient(90deg, #2b4e8c 0%, #2b4e8c 40%, #c0392b 40%, #c0392b 60%, #d4a017 60%, #d4a017 100%);
   z-index: 1;
 }
-/* Rarity border colors */
-[data-theme="rx-78-2"] .blueprint-card[data-rarity="common"]    { border-color: #e8e8e8; }
-[data-theme="rx-78-2"] .blueprint-card[data-rarity="rare"]      { border-color: #2b4e8c; }
-[data-theme="rx-78-2"] .blueprint-card[data-rarity="epic"]      { border-color: #7b3fa0; }
-[data-theme="rx-78-2"] .blueprint-card[data-rarity="legendary"] { border-color: #d4a017; }
-[data-theme="rx-78-2"] .blueprint-card[data-rarity="mythic"]    { border-color: #c0392b; }
+/* Rarity border colors — cards, compact tiles, and list rows */
+[data-theme="rx-78-2"] .blueprint-card[data-rarity="common"],
+[data-theme="rx-78-2"] .blueprint-card-compact[data-rarity="common"],
+[data-theme="rx-78-2"] .bpl-row[data-rarity="common"]    { border-color: #e8e8e8; }
+[data-theme="rx-78-2"] .blueprint-card[data-rarity="rare"],
+[data-theme="rx-78-2"] .blueprint-card-compact[data-rarity="rare"],
+[data-theme="rx-78-2"] .bpl-row[data-rarity="rare"]      { border-color: #2b4e8c; }
+[data-theme="rx-78-2"] .blueprint-card[data-rarity="epic"],
+[data-theme="rx-78-2"] .blueprint-card-compact[data-rarity="epic"],
+[data-theme="rx-78-2"] .bpl-row[data-rarity="epic"]      { border-color: #7b3fa0; }
+[data-theme="rx-78-2"] .blueprint-card[data-rarity="legendary"],
+[data-theme="rx-78-2"] .blueprint-card-compact[data-rarity="legendary"],
+[data-theme="rx-78-2"] .bpl-row[data-rarity="legendary"] { border-color: #d4a017; }
+[data-theme="rx-78-2"] .blueprint-card[data-rarity="mythic"],
+[data-theme="rx-78-2"] .blueprint-card-compact[data-rarity="mythic"],
+[data-theme="rx-78-2"] .bpl-row[data-rarity="mythic"]    { border-color: #c0392b; }
 
 /* Mini cards — angular cut corners */
 [data-theme="rx-78-2"] .blueprint-card-mini {
@@ -582,6 +592,31 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   color: #d4a017;
   border: none;
 }
+/* Sidebar utility icons — boost contrast against Federation blue background */
+[data-theme="rx-78-2"] .app-sidebar #btn-darklight,
+[data-theme="rx-78-2"] .app-sidebar .side-chat-new,
+[data-theme="rx-78-2"] .app-sidebar .side-rail-hamburger { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar #btn-darklight svg,
+[data-theme="rx-78-2"] .app-sidebar .side-chat-new svg,
+[data-theme="rx-78-2"] .app-sidebar .side-rail-hamburger svg { color: #d4a017; }
+/* Active state for header buttons + font-picker — Gundam gold for contrast */
+[data-theme="rx-78-2"] .app-hdr-btn.active { color: #d4a017; border-color: #d4a017; background: rgba(212,160,23,0.1); }
+[data-theme="rx-78-2"] .fb.active { color: #d4a017; border-color: #d4a017; }
+/* Sidebar body text — white/gold for readability on Federation blue */
+[data-theme="rx-78-2"] .app-sidebar .side-mode-tab { color: #fff; }
+[data-theme="rx-78-2"] .app-sidebar .side-mode-tab.active { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar .side-folder-toggle { color: #fff; }
+[data-theme="rx-78-2"] .app-sidebar .side-folder-body,
+[data-theme="rx-78-2"] .app-sidebar .side-mode-section { color: #fff; }
+[data-theme="rx-78-2"] .app-sidebar .side-folder-item,
+[data-theme="rx-78-2"] .app-sidebar .side-folder-empty { color: #fff; opacity: 1; }
+/* Ship-picker dropdown — light panel surface needs dark text for readability */
+[data-theme="rx-78-2"] .sch-ship-menu-option { color: #1a1a2a; }
+[data-theme="rx-78-2"] .sch-ship-menu-option.active { color: #2b4e8c; }
+/* LCARS: dark menu panel for continuity with rest of UI; black trigger text
+   to match LCARS CTAs (black-on-orange convention). */
+[data-theme="lcars"] .sch-fixed-ship-menu { background: #000; border-color: #ff9966; }
+[data-theme="lcars"] .sch-fixed-ship-trigger { color: #000; }
 [data-theme="rx-78-2"] #app-hud-panel .dock-lbl,
 [data-theme="rx-78-2"] #app-hud-panel .dock-lbl-val { color: #d4a017; }
 [data-theme="rx-78-2"] .side-footer,
@@ -631,6 +666,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   border-color: #2b4e8c;
   background: rgba(43,78,140,0.15);
   box-shadow: 0 2px 0 #2b4e8c;
+  color: #d4a017;
+}
+[data-theme="rx-78-2"] .bp-sub-tab.active .bp-tab-count {
+  color: #d4a017;
+  border-color: rgba(212,160,23,0.5);
 }
 
 /* ── Inputs — cockpit HUD style ── */
@@ -687,10 +727,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   pointer-events: none;
   z-index: 9998;
   background:
-    /* Vertical crosshair */
-    linear-gradient(rgba(43,78,140,0.08), rgba(43,78,140,0.08)) no-repeat 50% 0 / 1px 100%,
-    /* Horizontal crosshair */
-    linear-gradient(rgba(43,78,140,0.08), rgba(43,78,140,0.08)) no-repeat 0 50% / 100% 1px,
     /* Corner brackets — top left */
     linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 3% / 30px 1px,
     linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 3% 3% / 1px 30px,
@@ -851,12 +887,25 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     5px 5px 0 rgba(0,0,0,0.6);
   background: #16213e;
 }
-/* Rarity border colors on full cards */
-[data-theme="16bit"] .blueprint-card[data-rarity="common"]    { border-color: #94a3b8 !important; }
-[data-theme="16bit"] .blueprint-card[data-rarity="rare"]      { border-color: #6366f1 !important; }
-[data-theme="16bit"] .blueprint-card[data-rarity="epic"]      { border-color: #a855f7 !important; }
-[data-theme="16bit"] .blueprint-card[data-rarity="legendary"] { border-color: #f59e0b !important; }
-[data-theme="16bit"] .blueprint-card[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
+/* Rarity border colors on full cards, compact tiles, and list rows */
+[data-theme="16bit"] .blueprint-card[data-rarity="common"],
+[data-theme="16bit"] .blueprint-card-compact[data-rarity="common"],
+[data-theme="16bit"] .bpl-row[data-rarity="common"]    { border-color: #94a3b8 !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="rare"],
+[data-theme="16bit"] .blueprint-card-compact[data-rarity="rare"],
+[data-theme="16bit"] .bpl-row[data-rarity="rare"]      { border-color: #6366f1 !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="epic"],
+[data-theme="16bit"] .blueprint-card-compact[data-rarity="epic"],
+[data-theme="16bit"] .bpl-row[data-rarity="epic"]      { border-color: #a855f7 !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="legendary"],
+[data-theme="16bit"] .blueprint-card-compact[data-rarity="legendary"],
+[data-theme="16bit"] .bpl-row[data-rarity="legendary"] { border-color: #f59e0b !important; }
+[data-theme="16bit"] .blueprint-card[data-rarity="mythic"],
+[data-theme="16bit"] .blueprint-card-compact[data-rarity="mythic"],
+[data-theme="16bit"] .bpl-row[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
+/* Press Start 2P is wider per em than other fonts; shrink card titles so they
+   don't crowd the flip button or wrap to a second line. */
+[data-theme="16bit"] .blueprint-card-name { font-size: var(--card-text-body); }
 [data-theme="16bit"] .blueprint-card .name-bar {
   background: linear-gradient(180deg, #2e4068, #1f2b47);
   border-bottom: 3px solid #e2b714;
@@ -2988,7 +3037,7 @@ html:not([data-theme]) .app-main,
 .view-topbar-l { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .search-box {
   display:flex; align-items:center; gap:8px;
-  height:30px; padding:0 12px; border:var(--border-width) solid var(--border);
+  height:30px; padding:0 12px; border:1px solid var(--border);
   background:var(--surface); border-radius:var(--radius);
 }
 .search-input {
@@ -3042,12 +3091,14 @@ html:not([data-theme]) .app-main,
   display:flex; flex-direction:column; gap:1px;
   min-width:160px; max-height:320px; overflow-y:auto;
   padding:4px;
-  background:var(--surface);
-  border:var(--border-width, 1px) solid var(--border-hi);
+  background:var(--panel-bg);
+  border:1px solid var(--border-hi);
   border-radius:var(--radius);
   z-index:50;
 }
 .bp-cselect-menu[hidden] { display:none; }
+/* Office Dark: --panel-bg is 75% opaque, content bleeds through. Use solid --bg-alt. */
+[data-theme="office-dark"] .bp-cselect-menu { background: var(--bg-alt); }
 .bp-cselect-option {
   display:block; width:100%;
   padding:6px 10px;
@@ -3999,7 +4050,7 @@ html:not([data-theme]) .app-main,
 #bp-deactivate-all { margin-left:auto; white-space:nowrap; }
 
 /* ── View Toggle Buttons ── */
-.bp-view-toggle { display:flex; gap:2px; background:var(--bg-alt); border-radius:var(--radius); padding:2px; }
+.bp-view-toggle { display:flex; gap:2px; background:var(--surface); border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius); padding:2px; }
 .bp-view-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border:none; background:transparent; color:var(--text-muted); border-radius:calc(var(--radius) - 2px); cursor:pointer; transition:all .15s; }
 .bp-view-btn:hover { color:var(--text); background:var(--panel-bg); }
 .bp-view-btn.active { color:var(--accent); background:var(--panel-bg); box-shadow:0 0 4px var(--glow, rgba(255,255,255,.05)); }
@@ -4035,7 +4086,7 @@ html:not([data-theme]) .app-main,
   padding:3px;
   background:var(--panel-bg, var(--bg-alt));
   border:1px solid var(--border);
-  border-radius:8px;
+  border-radius:var(--radius);
 }
 .bp-source-btn {
   background:transparent;
@@ -4084,7 +4135,7 @@ html:not([data-theme]) .app-main,
 .bpl-row .bpl-stat2,
 .bpl-row .bpl-stat3,
 .bpl-row .bpl-dl { display:none; }
-.bpl-row:hover { border-color:var(--border-hi); background:var(--bg-alt); }
+.bpl-row:hover { background:var(--bg-alt); }
 .bpl-header { font-family:var(--font-b); font-size:.6rem; letter-spacing:var(--tracking-caps); color:var(--text-muted); cursor:default; border-color:transparent; background:transparent; }
 .bpl-header:hover { border-color:transparent; background:transparent; }
 .bpl-sortable { cursor:pointer; user-select:none; }
@@ -5791,15 +5842,15 @@ html[data-theme] .nice-ai-input:focus-visible {
    main Bridge tab badge (`.bp-type-tab .bp-tab-count`, fully rounded
    pill at 9999px — that lives in the top tab row, different layer). */
 .outbox-badge,
-.bp-sub-tab .bp-tab-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid var(--border); border-radius:3px; color:var(--text-muted); font-weight:var(--fw-regular); }
+.bp-sub-tab .bp-tab-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid currentColor; border-radius:3px; color:currentColor; opacity:0.75; font-weight:var(--fw-regular); }
 .outbox-filter.active .outbox-badge,
-.bp-sub-tab.active .bp-tab-count { color:#d1d5db; border-color:rgba(255,255,255,.35); }
+.bp-sub-tab.active .bp-tab-count { color:currentColor; border-color:currentColor; opacity:1; }
 
 /* View toggle + export */
 .outbox-view-toggle { display:flex; gap:8px; margin-left:auto; align-items:center; }
 /* View segment matches the Blueprints .bp-view-toggle: segmented --bg-alt
    container with 28x28 borderless icon buttons, solid-blue active. */
-.outbox-view-seg { display:flex; align-items:center; gap:2px; height:26px; box-sizing:border-box; background:var(--bg-alt); border-radius:var(--radius); padding:2px; }
+.outbox-view-seg { display:flex; align-items:center; gap:2px; height:26px; box-sizing:border-box; background:var(--surface); border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius); padding:2px; }
 .outbox-view-btn {
   display:flex; align-items:center; justify-content:center; width:22px; height:22px;
   border:none; background:transparent; color:var(--text-muted);
@@ -6712,6 +6763,14 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-compact[data-rarity="mythic"] {
   animation: mythic-rgb-border 6s linear infinite;
 }
+
+/* List view rarity borders — solid color only; skip the box-shadow glow and
+   legendary/mythic animation that cards use, since stacked rows would flicker. */
+.bpl-row[data-rarity="rare"]      { border-color:#b6dff9; }
+.bpl-row[data-rarity="epic"]      { border-color:#a855f7; }
+.bpl-row[data-rarity="legendary"] { border-color:var(--color-warning); }
+.bpl-row[data-rarity="mythic"]    { border-color:#ff2d55; }
+
 /* Mythic badge — applied directly via class (no inline style conflict) */
 .mythic-badge-animated {
   animation: mythic-rgb-bg 6s linear infinite;
@@ -7307,7 +7366,8 @@ html[data-theme] .nice-ai-input:focus-visible {
   display:flex;
   flex-direction:column;
   padding:14px;
-  background:var(--bg-alt, var(--bg));
+  background:var(--panel-bg, var(--bg));
+  color:var(--text);
   border-radius:inherit;
   overflow:hidden;
 }
@@ -7414,7 +7474,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   display:flex;
   align-items:center;
   justify-content:center;
-  background:var(--bg-alt, var(--bg));
+  background:transparent;
   border:1px solid var(--border);
   border-radius:50%;
   color:var(--text-muted);
@@ -8957,7 +9017,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* ── Detail Drawer (right-side panel) ── */
 .bp-drawer {
   position:fixed; right:0; top:0; bottom:0; width:420px; z-index:250;
-  background:var(--panel-bg); border-left:var(--border-width,1px) solid var(--border);
+  background:var(--bg); border-left:1px solid var(--border);
   transform:translateX(100%); transition:transform .3s ease;
   display:flex; flex-direction:column; overflow:hidden;
 }
@@ -9098,7 +9158,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .bp-drawer-crew-list {
   display:flex; flex-direction:column; gap:6px;
   border:1px solid var(--border); border-radius:var(--radius);
-  background:color-mix(in srgb, var(--bg-alt) 50%, transparent);
+  background:var(--surface);
   padding:8px;
 }
 .bp-drawer-crew-row {

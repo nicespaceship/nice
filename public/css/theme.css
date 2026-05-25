@@ -716,8 +716,6 @@
 [data-theme="hal-9000"] .bp-rarity-btn.active { color:#f5f5f5; border-color:#8a8a90; background:rgba(255,255,255,0.03); }
 [data-theme="hal-9000"] .bp-view-btn { border-radius:4px; border:1px solid #2a2a2a; background:transparent; }
 [data-theme="hal-9000"] .bp-view-btn.active { border-color:#8a8a90; background:rgba(255,255,255,0.03); }
-[data-theme="hal-9000"] .bp-view-btn svg { stroke:#555; }
-[data-theme="hal-9000"] .bp-view-btn.active svg { stroke:#f5f5f5; }
 
 /* ── Mission Cards ── */
 [data-theme="hal-9000"] .mc-card {
@@ -1659,8 +1657,6 @@
   background: rgba(24,160,251,0.1); border-color: rgba(24,160,251,0.5);
   box-shadow: 0 0 8px rgba(24,160,251,0.15);
 }
-[data-theme="grid"] .bp-view-btn svg { stroke: rgba(24,160,251,0.5); }
-[data-theme="grid"] .bp-view-btn.active svg { stroke: #18a0fb; }
 
 /* Mission cards — circuit trace edge */
 [data-theme="grid"] .mc-card {
@@ -2366,6 +2362,16 @@
   border-radius:0 0 40px 0;
   z-index:1;
 }
+/* Closed-state: hide the elbow's bottom curve — without the open-state mode
+   tabs to absorb the overlap zone, it slumps over the NICE rail icon below. */
+[data-theme="lcars"] .app-sidebar:not(.open) .side-header::after { display:none; }
+/* Brand lockup on the lavender header — orange-on-violet pastel mush. Force
+   black for clean contrast, same as the closed-state hamburger above. */
+[data-theme="lcars"] .side-hud-cta-logo,
+[data-theme="lcars"] .side-hud-cta-text { color:#000; fill:#000; }
+/* Active mode tab pill is black; text must not also be black. Use the LCARS
+   orange so the active "NICE" label reads on its black background. */
+[data-theme="lcars"] .app-sidebar.open .side-mode-tab[aria-selected="true"] { color:#ff9966; }
 
 /* Sidebar nav links — pill buttons */
 [data-theme="lcars"] .app-side-nav {
@@ -2594,12 +2600,13 @@
 }
 [data-theme="lcars"] .bp-view-btn.active { background:#99ccff; color:#000; }
 [data-theme="lcars"] .bp-view-btn:hover { background:#ffcc99; color:#000; }
-[data-theme="lcars"] .bp-view-btn svg { stroke:#000; }
 
-/* Card action buttons */
+/* Card action buttons — Deploy = lavender (rest), Active = peach (engaged) */
 [data-theme="lcars"] .c-btn {
   border-radius:24px; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+  background:#cc99ff; color:#000; border-color:#cc99ff;
 }
+[data-theme="lcars"] .c-btn:hover { background:#ddb3ff; color:#000; border-color:#ddb3ff; }
 [data-theme="lcars"] .c-btn.bp-activated {
   background:#ff9966; color:#000; border-color:#ff9966;
 }
