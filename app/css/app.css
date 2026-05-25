@@ -4025,6 +4025,11 @@ html:not([data-theme]) .app-main,
      New CTA wrap to row 2 below it. */
   .bridge-subnav .mc-pipeline { flex:1 1 100%; }
   .bridge-subnav .search-box { flex:1 1 0; min-width:0; }
+  /* Operations: 4 KPIs share row 1 (Total / Success / Avg / Running),
+     date range dropdown + Export wrap to row 2. order:99/100 pushes
+     them to the end of the flex flow so the natural wrap happens. */
+  .bridge-subnav #ana-range { order:99; }
+  .bridge-subnav #ana-export-pdf { order:100; }
 }
 @media (max-width:480px) {
   .bridge-subnav { padding:0; }
