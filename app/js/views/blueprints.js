@@ -385,7 +385,8 @@ const BlueprintsView = (() => {
         </div>
 
         <div class="bp-toolbar-actions" id="bp-toolbar-actions">
-          <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create">+ Create</a>
+          <a href="#/bridge/agents/new" class="btn btn-sm" id="btn-bp-create-agent">+ Create agent</a>
+          <a href="#/bridge/spaceships/new" class="btn btn-sm" id="btn-bp-create-ship">+ Create ship</a>
           <button class="btn btn-sm" id="btn-bp-import">Import Blueprint</button>
         </div>
 
@@ -2364,14 +2365,6 @@ const BlueprintsView = (() => {
       document.getElementById('bp-import-textarea').value = '';
       document.getElementById('bp-import-status').textContent = '';
       document.getElementById('bp-import-modal').style.display = '';
-    });
-
-    // Create button — context-sensitive (agent vs spaceship sub-tab)
-    document.getElementById('btn-bp-create')?.addEventListener('click', (e) => {
-      if (_subTab === 'spaceship') {
-        e.preventDefault();
-        Router.navigate('#/bridge/spaceships/new');
-      }
     });
 
     // Deactivate All button
