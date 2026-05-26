@@ -2667,8 +2667,7 @@ const Blueprints = (() => {
     }
 
     if (rarity) {
-      if (type === 'spaceship') list = list.filter(b => b.recommended_class === rarity);
-      else list = list.filter(b => (b.rarity || 'Common') === rarity);
+      list = list.filter(b => (b.rarity || 'Common') === rarity);
     }
 
     if (category) list = list.filter(b => b.category === category);
