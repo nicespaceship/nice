@@ -643,6 +643,7 @@ const ShipSetupWizard = (() => {
               crewMemberCfg: crewMember?.config,
               agentName,
               defaultUmbrellaId,
+              slotRoleType: crewMember?.role,
             });
             // Promote the umbrella UUID to the top-level FK whenever it's a
             // real UUID. Pre-2026-05-25 this was captain-only; specialists
@@ -718,6 +719,7 @@ const ShipSetupWizard = (() => {
           crewMemberCfg: crewMember?.config,
           agentName: slot.label,
           defaultUmbrellaId,
+          slotRoleType: crewMember?.role,
         });
         // Promote the umbrella UUID uniformly — see the __new__ branch for the
         // pre-2026-05-25 captain-only gate this replaces.
@@ -923,23 +925,32 @@ const ShipSetupWizard = (() => {
     } catch { return null; }
   }
 
-  function _buildSlotConfig({ umbrellaCfg, crewMemberCfg, agentName, defaultUmbrellaId }) {
+  function _buildSlotConfig({ umbrellaCfg, crewMemberCfg, agentName, defaultUmbrellaId, slotRoleType }) {
     // Sparse fallback when neither umbrella nor per-slot config is available.
     // Hits the guest/early-boot path before Blueprints finishes loading; the
     // capability_id branch preserves runtime tool resolution via Path 2 in
     // agent-executor._buildExecContext when the umbrella resolves later.
     if (!umbrellaCfg && !crewMemberCfg) {
-      return defaultUmbrellaId
+      const base = defaultUmbrellaId
         ? { role: agentName, type: 'Agent', llm_engine: 'gemini-2-5-flash', capability_id: defaultUmbrellaId }
         : { role: agentName, type: 'Agent', llm_engine: 'gemini-2-5-flash', tools: [] };
+      if (slotRoleType) base.role_type = slotRoleType;
+      return base;
     }
     const baseUmbrella = umbrellaCfg || {};
     const baseCrew = crewMemberCfg || {};
+    // The slot's role_type (from ship_slots.role_type, mapped to crewMember.role
+    // in _translateSpaceshipBlueprintRow) drives captain dispatch routing — the
+    // captain's `[DISPATCH: <role>]` token resolves via role_type match. Stamp
+    // it explicitly so it wins over the umbrella's role_type (e.g., the Slack
+    // umbrella's `marketing` would otherwise overwrite a FOH Lead slot's
+    // `communications`).
     return {
       ...baseUmbrella,
       ...baseCrew,
       role: agentName,
       type: 'Agent',
+      role_type: slotRoleType || baseCrew.role_type || baseUmbrella.role_type || null,
       capability_id: defaultUmbrellaId || baseCrew.capability_id || baseUmbrella.capability_id || null,
       llm_engine: baseCrew.llm_engine || baseUmbrella.llm_engine || 'gemini-2-5-flash',
     };
@@ -970,5 +981,5 @@ const ShipSetupWizard = (() => {
     return agent;
   }
 
-  return { open, close, _persistSlotAgent, _isSlotLocked, _unlockRankName };
+  return { open, close, _persistSlotAgent, _isSlotLocked, _unlockRankName, _buildSlotConfig };
 })();

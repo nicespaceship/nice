@@ -236,3 +236,96 @@ describe('ShipSetupWizard._isSlotLocked / _unlockRankName', () => {
     expect(ShipSetupWizard._unlockRankName('class-5')).toBe('NICE Pro');
   });
 });
+
+describe('ShipSetupWizard._buildSlotConfig', () => {
+  // The slot's role_type (from ship_slots.role_type, mapped to crewMember.role
+  // in _translateSpaceshipBlueprintRow) drives captain dispatch routing.
+  // Without explicit handling, the umbrella's role_type spreads in first and
+  // overwrites the slot's intent — e.g., a FOH Lead slot defined as
+  // `communications` would inherit `marketing` from the Slack umbrella.
+
+  it('stamps the slot role_type explicitly so it wins over the umbrella spread', () => {
+    // Slack umbrella declares role_type='marketing'; FOH Lead slot declares
+    // role_type='communications'. Slot wins — dispatch routing needs it.
+    const cfg = ShipSetupWizard._buildSlotConfig({
+      umbrellaCfg: { role_type: 'marketing', tools: ['slack_post'], system_prompt: 'Slack umbrella prompt' },
+      crewMemberCfg: null,
+      agentName: 'FOH Lead',
+      defaultUmbrellaId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      slotRoleType: 'communications',
+    });
+    expect(cfg.role_type).toBe('communications');
+    expect(cfg.tools).toEqual(['slack_post']);
+    expect(cfg.system_prompt).toBe('Slack umbrella prompt');
+  });
+
+  it('falls back to the umbrella role_type when the slot does not define one', () => {
+    // Pre-three-layer ships seeded without per-slot role_type still get the
+    // umbrella's role_type so triage continues to resolve them.
+    const cfg = ShipSetupWizard._buildSlotConfig({
+      umbrellaCfg: { role_type: 'sales', tools: ['hubspot_search'] },
+      crewMemberCfg: null,
+      agentName: 'Sales Rep',
+      defaultUmbrellaId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      slotRoleType: null,
+    });
+    expect(cfg.role_type).toBe('sales');
+  });
+
+  it('captain slot role_type=captain propagates so mission-runner._isCaptainAgent matches', () => {
+    // Captain dispatch detection in mission-runner relies on config.role_type
+    // === 'captain'. The captain slot's ship_slots row carries that value and
+    // it must reach the user_agents.config column unchanged.
+    const cfg = ShipSetupWizard._buildSlotConfig({
+      umbrellaCfg: { role_type: 'specialist', system_prompt: 'You are the captain.' },
+      crewMemberCfg: null,
+      agentName: 'Captain Janeway',
+      defaultUmbrellaId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+      slotRoleType: 'captain',
+    });
+    expect(cfg.role_type).toBe('captain');
+    expect(cfg.system_prompt).toBe('You are the captain.');
+  });
+
+  it('crew member config role_type is used when neither slot nor umbrella defines one', () => {
+    // Pre-Phase-C.2 catalog ships still ship the legacy per-slot config object
+    // via crew_overrides. Honor it as the middle-of-three fallback.
+    const cfg = ShipSetupWizard._buildSlotConfig({
+      umbrellaCfg: { tools: ['x'] },
+      crewMemberCfg: { role_type: 'engineering' },
+      agentName: 'Geordi',
+      defaultUmbrellaId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+      slotRoleType: null,
+    });
+    expect(cfg.role_type).toBe('engineering');
+  });
+
+  it('sparse fallback path (no umbrella, no crewMemberCfg) still stamps the slot role_type', () => {
+    // Guest / early-boot path before Blueprints finishes loading. The function
+    // returns a minimal stub config; the slot's role_type should still ride
+    // along so a later umbrella resolve doesn't erase routing info.
+    const cfg = ShipSetupWizard._buildSlotConfig({
+      umbrellaCfg: null,
+      crewMemberCfg: null,
+      agentName: 'Anon Slot',
+      defaultUmbrellaId: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+      slotRoleType: 'operations',
+    });
+    expect(cfg.role_type).toBe('operations');
+    expect(cfg.capability_id).toBe('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');
+  });
+
+  it('sparse fallback with no slotRoleType returns a config without role_type', () => {
+    // Defensive: when no source has a role_type, don't fabricate one — leave
+    // role_type absent so downstream resolvers can match by other signals
+    // (capability_tags, agentRole, etc.) without a spurious null entry.
+    const cfg = ShipSetupWizard._buildSlotConfig({
+      umbrellaCfg: null,
+      crewMemberCfg: null,
+      agentName: 'Anon Slot',
+      defaultUmbrellaId: null,
+      slotRoleType: null,
+    });
+    expect('role_type' in cfg).toBe(false);
+  });
+});
