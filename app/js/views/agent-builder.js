@@ -241,6 +241,39 @@ const AgentBuilderView = (() => {
       return _exampleRowHTML(inStr, outStr);
     }).join('');
   }
+  function _capChipHTML(value) {
+    const v = String(value || '').trim();
+    if (!v) return '';
+    return `<span class="builder-cap-chip" data-value="${_esc(v)}"><span class="builder-cap-chip-text">${_esc(v)}</span><button type="button" class="builder-cap-remove" aria-label="Remove ${_esc(v)}">×</button></span>`;
+  }
+  function _readCaps() {
+    return [...document.querySelectorAll('#b-caps .builder-cap-chip')]
+      .map(el => el.dataset.value || '')
+      .filter(Boolean);
+  }
+  function _rebuildCapChips(caps) {
+    const wrap = document.getElementById('b-caps');
+    const input = document.getElementById('b-cap-input');
+    if (!wrap || !input) return;
+    wrap.querySelectorAll('.builder-cap-chip').forEach(el => el.remove());
+    (caps || []).forEach(c => {
+      const html = _capChipHTML(c);
+      if (html) input.insertAdjacentHTML('beforebegin', html);
+    });
+  }
+  function _addCapFromInput() {
+    const input = document.getElementById('b-cap-input');
+    if (!input) return;
+    const v = (input.value || '').trim();
+    if (!v) return;
+    const existing = _readCaps().map(s => s.toLowerCase());
+    if (!existing.includes(v.toLowerCase())) {
+      const html = _capChipHTML(v);
+      if (html) input.insertAdjacentHTML('beforebegin', html);
+    }
+    input.value = '';
+  }
+
   function _readExamplesFromForm() {
     const rows = document.querySelectorAll('#b-examples .b-example-pair');
     const out = [];
@@ -355,9 +388,12 @@ const AgentBuilderView = (() => {
               <p class="builder-hint">Free-form behavior guidance. Appended last in the system prompt to color tone.</p>
             </div>
             <div class="auth-field">
-              <label for="b-skills">Skills</label>
-              <input type="text" id="b-skills" maxlength="500" placeholder="e.g. competitive analysis, SQL, technical writing" value="${_esc((config.caps || agent?.metadata?.caps || agent?.caps || []).join(', '))}" />
-              <p class="builder-hint">Comma-separated capabilities. Distinct from tools — these describe what the agent can do.</p>
+              <label for="b-cap-input">Skills</label>
+              <div class="builder-caps-input" id="b-caps">
+                ${(config.caps || agent?.metadata?.caps || agent?.caps || []).map(_capChipHTML).join('')}
+                <input type="text" id="b-cap-input" class="builder-cap-add" maxlength="120" placeholder="Add a capability, press Enter" />
+              </div>
+              <p class="builder-hint">Press Enter to add. Each entry is one capability, commas inside the text are preserved. Distinct from tools.</p>
             </div>
           </fieldset>
 
@@ -530,6 +566,33 @@ const AgentBuilderView = (() => {
         _updateRarityPreview();
       });
     });
+
+    // Skills chip editor — Enter to commit, Backspace on empty to pop last,
+    // click X to remove. Comma is a literal character; chips preserve commas.
+    const capsWrap = document.getElementById('b-caps');
+    const capInput = document.getElementById('b-cap-input');
+    if (capsWrap && capInput) {
+      capInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          _addCapFromInput();
+        } else if (e.key === 'Backspace' && !capInput.value) {
+          const chips = capsWrap.querySelectorAll('.builder-cap-chip');
+          const last = chips[chips.length - 1];
+          if (last) last.remove();
+        }
+      });
+      capInput.addEventListener('blur', _addCapFromInput);
+      capsWrap.addEventListener('click', (e) => {
+        const btn = e.target.closest('.builder-cap-remove');
+        if (!btn) {
+          if (e.target === capsWrap) capInput.focus();
+          return;
+        }
+        btn.closest('.builder-cap-chip')?.remove();
+        capInput.focus();
+      });
+    }
 
     // Example I/O — add / remove rows (cap at 3, matching prompt cap)
     document.getElementById('b-example-add')?.addEventListener('click', () => {
@@ -711,8 +774,7 @@ const AgentBuilderView = (() => {
     const tools = [...document.querySelectorAll('#b-tools input:checked')].map(cb => cb.value);
     const description  = (document.getElementById('b-description')?.value || '').trim();
     const instructions = (document.getElementById('b-instructions')?.value || '').trim();
-    const skills = (document.getElementById('b-skills')?.value || '')
-      .split(',').map(s => s.trim()).filter(Boolean);
+    const skills = _readCaps();
     const tone = (document.getElementById('b-tone')?.value || '').trim();
     const constraints = (document.getElementById('b-constraints')?.value || '')
       .split('\n').map(s => s.trim()).filter(Boolean);
@@ -926,8 +988,7 @@ const AgentBuilderView = (() => {
     const tools = [...document.querySelectorAll('#b-tools input:checked')].map(cb => cb.value);
     const description  = (document.getElementById('b-description')?.value || '').trim();
     const instructions = (document.getElementById('b-instructions')?.value || '').trim();
-    const skills = (document.getElementById('b-skills')?.value || '')
-      .split(',').map(s => s.trim()).filter(Boolean);
+    const skills = _readCaps();
     const tone = (document.getElementById('b-tone')?.value || '').trim();
     const constraints = (document.getElementById('b-constraints')?.value || '')
       .split('\n').map(s => s.trim()).filter(Boolean);
@@ -1004,9 +1065,9 @@ const AgentBuilderView = (() => {
     });
     if (el('b-description')) el('b-description').value = bp.description || cfg.description || '';
     if (el('b-instructions')) el('b-instructions').value = bp.flavor || cfg.flavor || '';
-    if (el('b-skills')) {
+    if (el('b-caps')) {
       const caps = cfg.caps || (bp.metadata && bp.metadata.caps) || bp.caps || [];
-      el('b-skills').value = caps.join(', ');
+      _rebuildCapChips(caps);
     }
     const persona = cfg.persona || bp.persona || {};
     if (el('b-tone')) el('b-tone').value = persona.tone || '';

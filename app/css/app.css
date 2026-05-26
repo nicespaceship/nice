@@ -3543,6 +3543,39 @@ html:not([data-theme]) .app-main,
 .builder-tool-chip:hover { border-color:var(--border-hi); color:var(--text); }
 .builder-tool-chip.selected { border-color:var(--accent); color:var(--accent); background:rgba(var(--accent-rgb, 100,100,100),0.08); }
 
+/* Skills chip editor */
+.builder-caps-input {
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  padding:6px; border:var(--border-width) solid var(--border);
+  border-radius:var(--radius); background:var(--bg);
+  min-height:38px; cursor:text;
+}
+.builder-caps-input:focus-within { border-color:var(--accent); }
+.builder-cap-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 4px 4px 10px;
+  border:var(--border-width) solid var(--border);
+  border-radius:var(--radius);
+  font-family:var(--font-b); font-size:var(--text-xs);
+  color:var(--text); background:var(--bg-alt);
+}
+.builder-cap-chip-text { white-space:nowrap; }
+.builder-cap-remove {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; padding:0; line-height:1;
+  border:none; background:transparent;
+  color:var(--text-muted); cursor:pointer;
+  font-size:var(--text-sm);
+}
+.builder-cap-remove:hover { color:var(--accent); }
+.builder-cap-add {
+  flex:1 1 140px; min-width:140px;
+  border:none; outline:none; background:transparent;
+  padding:4px 6px; font-family:var(--font-b); font-size:var(--text-sm);
+  color:var(--text);
+}
+.builder-cap-add::placeholder { color:var(--text-dim); }
+
 /* ─────────────────────────────────────────────────────────────────
    MISSION COMPOSER — prompt-driven mission authoring
 ───────────────────────────────────────────────────────────────── */
