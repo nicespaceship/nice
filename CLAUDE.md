@@ -183,7 +183,11 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 | 5 | 12 | Legendary | Pro        | —    | subscription-granted |
 
 - **Mythic is milestone-only**, never directly granted by class or subscription. Even subscribers earn it. The primary unlock milestone is reaching Admiral rank (1.5M XP); Fleet Admiral inherits Mythic access.
-- **Mythic ship standard** (locked 2026-05-26): A ship qualifies for the Mythic tier only if it (a) is apex-tier — meant to feel earned through real XP grind, (b) ships **bespoke crew** with their own `agent_blueprints` rows, voices, LLMs, and rarities — no umbrella reskins, and (c) tags crew with `<slug>-exclusive` so each member is filtered out of every other ship's slot dropdown. The Matrix is the reference implementation; The Founder's Office was demoted to Legendary because it uses umbrella reskins. Apply this gate before promoting any future ship to Mythic.
+- **Ship rarity tier model** (locked 2026-05-26): Each tier has a distinct *voice* and *purpose*. Apply this gate before assigning a rarity to any new ship.
+  - **Common + Rare**: real-business starters. Reachable from day one so users can immediately run actual businesses. Single-operator (Common) and small-team (Rare) verticals. Examples: The Galley, The Salon, The Studio (Common); The Loft, The Practice, The Brokerage, The Chambers (Rare).
+  - **Epic**: real-world company examples (NVIDIA, SpaceX, Stripe, etc.) plus the multi-line **Founder's Office** archetype. The "learn from the best" tier. Reached at Commander rank (100K XP).
+  - **Legendary**: sci-fi IP for marketing and aspiration (Enterprise, Serenity, Galactica, etc.). Not a real-business utility tier. Reached at Captain rank (200K XP) or instantly via Pro subscription. Crew can be bespoke or umbrella reskins; characters are NOT required to be ship-exclusive.
+  - **Mythic**: apex sci-fi IP. Qualifies only if it (a) is apex-tier — meant to feel earned through real XP grind to Admiral rank (1.5M XP), (b) ships **bespoke crew** with their own `agent_blueprints` rows, voices, LLMs, and rarities — no umbrella reskins, and (c) tags crew with `<slug>-exclusive` so each member is filtered out of every other ship's slot dropdown. Reference implementations: The Matrix, The Heart of Gold.
 - **Fleet Admiral (2.5M XP)** unlocks Mythic + 1 year of NICE Pro free.
 - Pro subscription grants Class 5: same 12 slots as Captain, Legendary cap. The perk is the instant unlock.
 - All cards visible to browse; activation gated by XP rank
