@@ -46,11 +46,16 @@ const Blueprints = (() => {
     //   v6→v7 — Phase D translator surfaces top-level serial_key/tags/
     //           activation_count from new columns + dedupes capability
     //           rows whose agent_blueprints mirror exists.
+    //   v7→v8 — Catalog default llm_engine flipped from claude-4-6-sonnet
+    //           to gemini-2-5-flash (free tier). Wizard activations
+    //           inherit from cached blueprints, so existing v7 caches
+    //           would keep stamping new user_agents with the premium
+    //           default until the cache TTL expired.
     // The diff-sync path can only add/update rows, not detect deletes,
     // so any shape or content cut requires a key bump to mass-invalidate
     // stale caches.
-    catalogCache: 'nice-bp-catalog-v7',
-    catalogCacheTs: 'nice-bp-catalog-v7-ts',
+    catalogCache: 'nice-bp-catalog-v8',
+    catalogCacheTs: 'nice-bp-catalog-v8-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -72,6 +77,8 @@ const Blueprints = (() => {
     try { localStorage.removeItem('nice-bp-catalog-v5-ts'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v6'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v6-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v7'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v7-ts'); } catch {}
 
     _loadSeeds();
     _loadActivationState();
