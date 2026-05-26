@@ -2865,14 +2865,14 @@ html:not([data-theme]) .app-main,
 .auth-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 
 .auth-form { display:flex; flex-direction:column; gap:14px; width:100%; }
-.auth-field { display:flex; flex-direction:column; gap:4px; }
+.auth-field { display:flex; flex-direction:column; gap:6px; }
 .auth-field label {
-  font-family:var(--font-b); font-size:.58rem; letter-spacing:var(--tracking-caps);
-  color:var(--text-muted);
+  font-family:var(--font-b); font-size:var(--text-xs); letter-spacing:var(--tracking-caps);
+  font-weight:var(--fw-medium); color:var(--text-muted);
 }
 .auth-field input, .auth-field textarea {
-  padding:10px 12px; background:var(--surface); border:var(--border-width) solid var(--border);
-  color:var(--text); font-family:var(--font-b); font-size:.82rem;
+  padding:8px 12px; background:var(--surface); border:var(--border-width) solid var(--border);
+  color:var(--text); font-family:var(--font-b); font-size:var(--text-sm);
   border-radius:var(--radius); transition:border-color .2s;
 }
 .auth-field textarea { resize:vertical; }
