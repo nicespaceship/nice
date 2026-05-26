@@ -37,6 +37,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
 - Region: `us-west-1`
 - Blueprints partitioned via the `scope` column: `catalog` (seed library: 509 agents + 24 spaceships as of 2026-05-14), `community` (user-published: 8 agents), `system` (internal/reviewer: 5 agents + 1 spaceship). Counts drift — verify with `SELECT scope, type, COUNT(*) FROM blueprints GROUP BY scope, type;`
+- **Migrations flow through CI only.** Write `supabase/migrations/<timestamp>_name.sql`, commit, push. The `supabase-migrate` GitHub Action applies it on push to main. Do NOT use the Supabase MCP `apply_migration` for committed migrations — it stamps `schema_migrations.version` with wall-clock time instead of the filename's timestamp, which desyncs local vs remote and the CI fails on the next push with "Remote migration versions not found in local migrations directory". MCP `execute_sql` is fine for ad-hoc reads and one-off non-migration writes; reserve `apply_migration` for emergency only, and always edit the schema_migrations row to use the local filename's timestamp afterwards.
 
 ### Edge Functions (34)
 Verify the live list with `npx supabase functions list` — it drifts as integrations land.
