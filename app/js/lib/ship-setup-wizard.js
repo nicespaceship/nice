@@ -628,25 +628,29 @@ const ShipSetupWizard = (() => {
             // back at the right node inside _blueprint.metadata.crew on read.
             const crewSlotIdx = Object.entries(_data.slotAssignments).find(([, v]) => v === aid)?.[0];
             const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${crewSlotIdx}` : null;
-            // New-schema slots expose `agent_id` (the wired umbrella from
-            // ship_slots.default_agent_id). Wire it as `capability_id` so the
-            // runtime tool resolver inherits the umbrella's tools via Path 2
-            // in agent-executor._buildExecContext. Without this, auto-created
-            // slot agents ship with config.tools = [] and Path 1 short-circuits
-            // to "no tools available" regardless of seed wiring.
+            // ship_slots.default_agent_id holds the umbrella's agent_blueprints
+            // UUID — for captains it's the-<ship>-specialist, for wired
+            // specialists it's the shared capability agent (google-workspace,
+            // hubspot, etc.). Inline that umbrella's full config (tools,
+            // system_prompt, role_type, llm_engine) into the user_agent so
+            // WorkflowEngine triage + the schematic UI can read them without
+            // an umbrella-resolve hop, AND so the top-level FK column
+            // populates uniformly across captain and specialist slots.
             const defaultUmbrellaId = crewMember?.agent_id || null;
-            const baseCfg = crewMember?.config
-              || (defaultUmbrellaId
-                    ? { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
-                    : { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] });
-            // For captain slots, ship_slots.default_agent_id IS a real
-            // agent_blueprints UUID (the-<ship>-specialist). Override the
-            // synthetic crewBpId so the top-level user_agents.blueprint_id
-            // FK column resolves to the specialist row. Worker slots stay
-            // on the synthetic id (tracked in config.blueprint_id only).
-            const topBpId = (crewMember?.role === 'captain' && _isUuid(defaultUmbrellaId))
-              ? defaultUmbrellaId
-              : crewBpId;
+            const umbrellaCfg = _resolveUmbrellaConfig(defaultUmbrellaId);
+            const baseCfg = _buildSlotConfig({
+              umbrellaCfg,
+              crewMemberCfg: crewMember?.config,
+              agentName,
+              defaultUmbrellaId,
+            });
+            // Promote the umbrella UUID to the top-level FK whenever it's a
+            // real UUID. Pre-2026-05-25 this was captain-only; specialists
+            // fell through to the synthetic crewBpId which failed _isUuid
+            // in _persistSlotAgent and left blueprint_id NULL — yesterday's
+            // Option E backfill patched the data but the write path kept
+            // emitting the same broken shape on every fresh activation.
+            const topBpId = _isUuid(defaultUmbrellaId) ? defaultUmbrellaId : crewBpId;
             let newAgent = {
               id: `agent-${Date.now()}-${i}`,
               name: agentName,
@@ -704,19 +708,20 @@ const ShipSetupWizard = (() => {
         const crewMember = crew[i];
         const agentName = crewMember?.label || `${slot.label} Agent`;
         const crewBpId = _blueprint?.id ? `${_blueprint.id}-crew-${i}` : null;
-        // See the __new__ branch above — slot.default_agent_id surfaces here
-        // as crewMember.agent_id and must wire to capability_id so the runtime
-        // tool resolver inherits the umbrella's tools.
+        // See the __new__ branch above — inline the umbrella's full config so
+        // triage + the schematic UI see real tools / role_type / system_prompt
+        // and the top-level FK populates uniformly across all slot kinds.
         const defaultUmbrellaId = crewMember?.agent_id || null;
-        const baseCfg = crewMember?.config
-          || (defaultUmbrellaId
-                ? { role: slot.label, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
-                : { role: slot.label, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] });
-        // Captain-slot override: top-level FK gets the specialist UUID.
-        // See the __new__ branch above for the rationale.
-        const topBpId = (crewMember?.role === 'captain' && _isUuid(defaultUmbrellaId))
-          ? defaultUmbrellaId
-          : crewBpId;
+        const umbrellaCfg = _resolveUmbrellaConfig(defaultUmbrellaId);
+        const baseCfg = _buildSlotConfig({
+          umbrellaCfg,
+          crewMemberCfg: crewMember?.config,
+          agentName: slot.label,
+          defaultUmbrellaId,
+        });
+        // Promote the umbrella UUID uniformly — see the __new__ branch for the
+        // pre-2026-05-25 captain-only gate this replaces.
+        const topBpId = _isUuid(defaultUmbrellaId) ? defaultUmbrellaId : crewBpId;
         let newAgent = {
           id: `agent-${Date.now()}-auto-${i}`,
           name: agentName,
@@ -891,19 +896,54 @@ const ShipSetupWizard = (() => {
      row from the start; guests fall through to local-only. */
   // UUID v4 (and other RFC-4122 variants the DB uses for primary keys).
   // Used to decide whether agent.blueprint_id is safe to forward into the
-  // user_agents.blueprint_id FK column. The wizard's worker-slot path
-  // generates synthetic ids like `the-loft-crew-1` that aren't UUIDs and
-  // would error the INSERT; the captain path passes the specialist UUID
-  // and must be forwarded.
-  //
-  // The worker-slot NULL is intentional — those rows are slot characters
-  // resolved through the parent ship's crew_overrides, not standalone
-  // agents that warrant their own agent_blueprints row. Same pattern as
-  // crew-generator.deployFromCatalog. The user-built standalone paths
-  // (setup wizard, crew generator's saveAgents, crew designer) call
-  // Blueprints.createPrivateAgent which writes the blueprint first.
+  // user_agents.blueprint_id FK column. Both captain and specialist slots
+  // pass the umbrella's real UUID via ship_slots.default_agent_id, so both
+  // populate the FK; the only path that still falls through to NULL is
+  // when umbrella resolution fails (legacy localStorage hydrate, missing
+  // catalog row), and that's deliberate — the synthetic `<ship>-crew-N`
+  // string would error the INSERT under the FK constraint.
   const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   function _isUuid(s) { return typeof s === 'string' && _UUID_RE.test(s); }
+
+  /* ── Slot config builders ──
+     Pull the umbrella's full config (tools, system_prompt, role_type,
+     llm_engine) into the user_agents.config so the WorkflowEngine
+     triage layer and the schematic UI can read them without an extra
+     blueprint lookup. The merge order is umbrella → crewMember overrides
+     → wizard-injected fields (role / type / capability_id / llm_engine),
+     so per-slot persona customizations from the catalog win over the
+     umbrella's defaults, and the wizard's injected fields stay last. */
+  function _resolveUmbrellaConfig(umbrellaId) {
+    if (!umbrellaId || typeof Blueprints === 'undefined') return null;
+    const getter = (typeof Blueprints.getAgent === 'function') ? Blueprints.getAgent : null;
+    if (!getter) return null;
+    try {
+      const bp = getter(umbrellaId);
+      return (bp && bp.config) ? bp.config : null;
+    } catch { return null; }
+  }
+
+  function _buildSlotConfig({ umbrellaCfg, crewMemberCfg, agentName, defaultUmbrellaId }) {
+    // Sparse fallback when neither umbrella nor per-slot config is available.
+    // Hits the guest/early-boot path before Blueprints finishes loading; the
+    // capability_id branch preserves runtime tool resolution via Path 2 in
+    // agent-executor._buildExecContext when the umbrella resolves later.
+    if (!umbrellaCfg && !crewMemberCfg) {
+      return defaultUmbrellaId
+        ? { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
+        : { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] };
+    }
+    const baseUmbrella = umbrellaCfg || {};
+    const baseCrew = crewMemberCfg || {};
+    return {
+      ...baseUmbrella,
+      ...baseCrew,
+      role: agentName,
+      type: 'Agent',
+      capability_id: defaultUmbrellaId || baseCrew.capability_id || baseUmbrella.capability_id || null,
+      llm_engine: baseCrew.llm_engine || baseUmbrella.llm_engine || 'claude-4-6-sonnet',
+    };
+  }
 
   async function _persistSlotAgent(agent) {
     const userId = (typeof State !== 'undefined' && State.get('user') && State.get('user').id) || null;

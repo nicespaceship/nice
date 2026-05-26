@@ -148,12 +148,37 @@ describe('ShipSetupWizard._persistSlotAgent', () => {
     expect(_capturedRows[0].row.blueprint_id).toBe('8a8e3ffc-47e0-4ce9-8e2d-b6b3b3ff5d9a');
   });
 
-  it('omits blueprint_id from the INSERT when it is a synthetic non-UUID id (worker slot)', async () => {
-    // Worker slots carry a synthetic id like `the-loft-crew-9` so the
+  it('forwards blueprint_id to the INSERT when a worker slot carries the umbrella UUID', async () => {
+    // Post-2026-05-25 fix: worker (specialist) slots also receive a real
+    // agent_blueprints UUID from ship_slots.default_agent_id — the wired
+    // umbrella's id (google-workspace, hubspot, etc.). _persistSlotAgent
+    // forwards it the same way it forwards the captain UUID; the FK
+    // resolves to the shared umbrella row and the runtime inherits its
+    // tools / system_prompt via blueprint_id + the agent-executor
+    // capability_id fallback.
+    globalThis.State.set('user', { id: 'user-worker-fixed' });
+    const agent = {
+      id: 'agent-worker-fixed-1',
+      name: 'Front Desk Coordinator',
+      rarity: 'Common',
+      blueprint_id: '78e51819-e9dc-4109-9d50-24fd2c1ac6e8', // google-workspace
+      config: {
+        role: 'Front Desk Coordinator',
+        type: 'Agent',
+        capability_id: '78e51819-e9dc-4109-9d50-24fd2c1ac6e8',
+      },
+    };
+    await ShipSetupWizard._persistSlotAgent(agent);
+    expect(_capturedRows[0].row.blueprint_id).toBe('78e51819-e9dc-4109-9d50-24fd2c1ac6e8');
+    expect(_capturedRows[0].row.config.capability_id).toBe('78e51819-e9dc-4109-9d50-24fd2c1ac6e8');
+  });
+
+  it('omits blueprint_id from the INSERT when it is a synthetic non-UUID id (legacy fallback)', async () => {
+    // Defensive gate for the path where umbrella resolution fails — the
+    // wizard then falls back to a synthetic `<ship>-crew-N` string so the
     // legacy config.blueprint_id readers still resolve back to the right
-    // crew node. The user_agents.blueprint_id FK column rejects non-UUID
-    // strings, so the persist path must drop them on the floor and let
-    // the column stay NULL.
+    // crew node. The FK column rejects non-UUID strings, so the persist
+    // path must drop them and let the column stay NULL.
     globalThis.State.set('user', { id: 'user-worker' });
     const agent = {
       id: 'agent-worker-1',
