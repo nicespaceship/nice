@@ -130,6 +130,79 @@ describe('Blueprints', () => {
     expect(agents1).not.toBe(agents2);
   });
 
+  // Repro for the 2026-05-26 "blueprints don't come up until refresh" bug.
+  // The catalog loader used to set `_catalogLoaded = true` in every failure
+  // path (SB not ready, empty fetch, exception). With empty seeds post-rebuild,
+  // a single transient failure during boot locked in an empty grid forever —
+  // even after SB came online — because `ensureCatalogLoaded` short-circuits
+  // on the flag.
+  describe('catalog load retry — fails open instead of locking empty', () => {
+    let _origSB;
+    let _origCache;
+    let _origCacheTs;
+
+    beforeEach(() => {
+      _origSB = globalThis.SB;
+      _origCache = globalThis.localStorage.getItem('nice-bp-catalog-v18');
+      _origCacheTs = globalThis.localStorage.getItem('nice-bp-catalog-v18-ts');
+      globalThis.localStorage.removeItem('nice-bp-catalog-v18');
+      globalThis.localStorage.removeItem('nice-bp-catalog-v18-ts');
+    });
+
+    afterEach(() => {
+      globalThis.SB = _origSB;
+      if (_origCache != null) globalThis.localStorage.setItem('nice-bp-catalog-v18', _origCache);
+      if (_origCacheTs != null) globalThis.localStorage.setItem('nice-bp-catalog-v18-ts', _origCacheTs);
+    });
+
+    it('retries via the cache merge once SB transitions from not-ready to ready', async () => {
+      // First attempt: SB hasn't initialized yet — mirrors the boot race
+      // where the catalog reader fires before the Supabase client is fully
+      // constructed. With the pre-fix code, this would set _catalogLoaded
+      // permanently and lock the grid empty.
+      globalThis.SB = { isReady: () => false, isOnline: () => false };
+      await Blueprints.ensureCatalogLoaded();
+
+      // SB still not "ready" by the second call, but we plant a fresh cache
+      // that the cache-merge branch should pick up. The throttle has to be
+      // honored, so wait past the interval first.
+      const cacheRows = [
+        { id: 'late-agent', slug: 'late', name: 'Late Loaded', type: 'agent', kind: 'character',
+          category: 'Test', rarity: 'Common', tags: [], metadata: {}, config: {},
+          scope: 'catalog', visibility: 'public', is_public: true, activation_count: 0,
+          serial_key: 'X', description: '', flavor: '' },
+      ];
+      globalThis.localStorage.setItem('nice-bp-catalog-v18', JSON.stringify(cacheRows));
+      globalThis.localStorage.setItem('nice-bp-catalog-v18-ts', String(Date.now()));
+
+      await new Promise(r => setTimeout(r, 1600));
+      await Blueprints.ensureCatalogLoaded();
+
+      const names = Blueprints.listAgents().map(a => a.name);
+      expect(names).toContain('Late Loaded');
+    });
+
+    it('does not stampede the network when the load fails repeatedly within the throttle window', async () => {
+      // Same failure setup, but call ensureCatalogLoaded many times in
+      // succession before the retry interval elapses. The throttle should
+      // collapse the burst into a single attempt — otherwise a guest viewing
+      // a slow page would spawn one fetch per reader per render frame.
+      let calls = 0;
+      globalThis.SB = {
+        isReady: () => { calls++; return false; },
+        isOnline: () => false,
+      };
+      // Drive ten readers in tight succession.
+      await Blueprints.ensureCatalogLoaded();
+      const callsAfterFirst = calls;
+      for (let i = 0; i < 10; i++) await Blueprints.ensureCatalogLoaded();
+      const callsAfterBurst = calls;
+      // The first attempt enters the loader (some isReady calls). The next
+      // ten are dropped at the throttle gate before isReady is consulted.
+      expect(callsAfterBurst).toBe(callsAfterFirst);
+    });
+  });
+
   describe('listCapabilities / listCharacters / getCapability', () => {
     it('listCapabilities returns kind=capability blueprints', () => {
       const caps = Blueprints.listCapabilities();

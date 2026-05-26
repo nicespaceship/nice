@@ -925,12 +925,30 @@ const BlueprintsView = (() => {
     State.on('agents', _refreshSubTabCounts);
     State.on('spaceships', _refreshSubTabCounts);
     // Blueprints fires this once the full catalog finishes loading.
+    // Refresh the catalog grid too — the lazy load can finish after the
+    // first _applyFilters call returned an empty page, and the grid would
+    // otherwise sit blank until the user clicks a tab.
     State.on('catalog-loaded', _refreshSubTabCounts);
+    State.on('catalog-loaded', _refreshGridIfCatalogActive);
     // Re-render the Schematic when ships hydrate from Supabase. On a
     // hard refresh the BlueprintsView render runs before the async
     // _loadActivatedFromDB completes, so the Schematic's first paint
     // hits the empty-state branch and never recovers without this.
     State.on('spaceships', _rerenderSchematicIfActive);
+    // Sign-in mid-session: the auth listener doesn't reload the catalog,
+    // and BlueprintsView's first _applyFilters may have run while the user
+    // was a guest. Re-run it on auth transition so the grid reflects the
+    // new state (and a fresh load lands if the prior attempt didn't).
+    State.on('user', _refreshOnAuthChange);
+  }
+  function _refreshGridIfCatalogActive() {
+    if (_activeTab !== 'blueprints') return;
+    if (_subTab !== 'spaceship' && _subTab !== 'agent') return;
+    _applyFilters();
+  }
+  function _refreshOnAuthChange() {
+    if (_activeTab !== 'blueprints') return;
+    _applyFilters();
   }
   function _rerenderSchematicIfActive() {
     if (_activeTab !== 'schematic') return;

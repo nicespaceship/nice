@@ -27,7 +27,9 @@ const Blueprints = (() => {
   let _uuidMap = {};  // { 'bp-agent-01': 'a1b2c3d4-...', ... }
 
   /* ── Catalog loading state ── */
-  let _catalogLoaded = false;  // true once full catalog fetched or cache used
+  let _catalogLoaded = false;  // true only after a real merge — failure paths leave it false so retries can land data
+  let _lastLoadAttemptTs = 0;  // throttle retries when no data is reaching the in-memory arrays
+  const _LOAD_RETRY_INTERVAL = 1500; // ms between failed attempts
 
   /* ── localStorage keys ── */
   const _KEYS = {
@@ -1023,6 +1025,12 @@ const Blueprints = (() => {
     if (_catalogLoaded) return;
     // Deduplicate concurrent calls
     if (_catalogLoadPromise) return _catalogLoadPromise;
+    // Throttle retries when prior attempts couldn't reach data — without this,
+    // every catalog reader (listAgents / listSpaceships / searchCatalog) would
+    // restart the fetch on every call and stampede the network during a
+    // sustained outage.
+    if (Date.now() - _lastLoadAttemptTs < _LOAD_RETRY_INTERVAL) return;
+    _lastLoadAttemptTs = Date.now();
     _catalogLoadPromise = _loadCatalogFromDBInner();
     try { await _catalogLoadPromise; } finally { _catalogLoadPromise = null; }
   }
@@ -1049,16 +1057,18 @@ const Blueprints = (() => {
       }
     } catch { /* cache miss, fall through to full fetch */ }
 
-    // 2. No cache or expired — full fetch from Supabase
+    // 2. No cache or expired — full fetch from Supabase. Seeds are empty
+    // post-rebuild, so a "seeds-only mode" bail would leave the catalog grid
+    // permanently empty until refresh. Leave `_catalogLoaded` false so a
+    // subsequent call (throttled by `_lastLoadAttemptTs`) retries once SB
+    // initializes.
     if (typeof SB === 'undefined' || typeof SB.isReady !== 'function' || !SB.isReady() || !SB.isOnline()) {
-      _catalogLoaded = true; // seeds-only mode
-      _finalizeCatalogLoad();
       return;
     }
 
     try {
       const c = SB.client;
-      if (!c || typeof c.from !== 'function') { _catalogLoaded = true; _finalizeCatalogLoad(); return; }
+      if (!c || typeof c.from !== 'function') return;
 
       // Phase B2 rewire: pull from the normalized three-layer schema.
       // - `capabilities` — the umbrella functions (HubSpot Agent, GitHub
@@ -1080,14 +1090,17 @@ const Blueprints = (() => {
           localStorage.setItem(_KEYS.catalogCache, JSON.stringify(rowsTranslated));
           localStorage.setItem(_KEYS.catalogCacheTs, String(Date.now()));
         } catch { /* storage full — still works without cache */ }
+        _catalogLoaded = true;
+        _finalizeCatalogLoad();
+        return;
       }
     } catch (e) {
       console.warn('[Blueprints] catalog fetch failed:', e?.message);
-      /* seed fallback */
     }
 
-    _catalogLoaded = true;
-    _finalizeCatalogLoad();
+    // Empty fetch or exception — don't flip `_catalogLoaded` so the next
+    // reader retries (throttled). Prior failure paths set the flag and
+    // locked in an empty grid until a hard refresh.
   }
 
   /** Fetch only blueprints updated since lastSync and merge them.
