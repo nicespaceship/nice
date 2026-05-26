@@ -7132,10 +7132,11 @@ html[data-theme] .nice-ai-input:focus-visible {
   border-radius:50%;
   background:#94a3b8;
 }
-.blueprint-card-crew-item.bp-crew-c1 .blueprint-card-crew-dot { background:#94a3b8; }
-.blueprint-card-crew-item.bp-crew-c2 .blueprint-card-crew-dot { background:#b6dff9; }
-.blueprint-card-crew-item.bp-crew-c3 .blueprint-card-crew-dot { background:#a855f7; }
-.blueprint-card-crew-item.bp-crew-c4 .blueprint-card-crew-dot { background:#f59e0b; }
+.blueprint-card-crew-item.bp-crew-common    .blueprint-card-crew-dot { background:#94a3b8; }
+.blueprint-card-crew-item.bp-crew-rare      .blueprint-card-crew-dot { background:#b6dff9; }
+.blueprint-card-crew-item.bp-crew-epic      .blueprint-card-crew-dot { background:#a855f7; }
+.blueprint-card-crew-item.bp-crew-legendary .blueprint-card-crew-dot { background:#f59e0b; }
+.blueprint-card-crew-item.bp-crew-mythic    .blueprint-card-crew-dot { background:#ff2d55; }
 .blueprint-card-crew-label {
   flex:1;
   min-width:0;
@@ -7162,10 +7163,11 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* Dark text on the light fills (Common slate, Rare pale-blue, Legendary amber)
    where white drops below the 3:1 floor; Epic purple keeps white. Mirrors
    BlueprintUtils.contrastText so JS- and CSS-rendered pills agree. */
-.blueprint-card-crew-item.bp-crew-c1 .blueprint-card-crew-rarity { background:#94a3b8; color:#0a0a0a; }
-.blueprint-card-crew-item.bp-crew-c2 .blueprint-card-crew-rarity { background:#b6dff9; color:#0a0a0a; }
-.blueprint-card-crew-item.bp-crew-c3 .blueprint-card-crew-rarity { background:#a855f7; }
-.blueprint-card-crew-item.bp-crew-c4 .blueprint-card-crew-rarity { background:#f59e0b; color:#0a0a0a; }
+.blueprint-card-crew-item.bp-crew-common    .blueprint-card-crew-rarity { background:#94a3b8; color:#0a0a0a; }
+.blueprint-card-crew-item.bp-crew-rare      .blueprint-card-crew-rarity { background:#b6dff9; color:#0a0a0a; }
+.blueprint-card-crew-item.bp-crew-epic      .blueprint-card-crew-rarity { background:#a855f7; }
+.blueprint-card-crew-item.bp-crew-legendary .blueprint-card-crew-rarity { background:#f59e0b; color:#0a0a0a; }
+.blueprint-card-crew-item.bp-crew-mythic    .blueprint-card-crew-rarity { background:#ff2d55; }
 
 /* ═══════════════════════════════════════════════════════════════════
    Sub-header row — sits directly under the name bar, surfaces the

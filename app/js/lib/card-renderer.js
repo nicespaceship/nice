@@ -494,15 +494,28 @@ const CardRenderer = (() => {
     const crew = bp.crew || bp.config?.crew_roles || bp.metadata?.crew || [];
     if (!crew.length) return '';
     const RARITY_BY_CLASS = { 1: 'Common', 2: 'Rare', 3: 'Epic', 4: 'Legendary' };
+    const RARITY_RANK    = { Common: 1, Rare: 2, Epic: 3, Legendary: 4, Mythic: 5 };
     // Highest rarity first; stable sort keeps slot order within a tier.
     const rows = crew.map(slot => {
       const label = slot.label || slot.role || 'Slot';
       const minClass = slot.min_class || 'class-1';
       const classNum = parseInt((minClass.match(/(\d+)/) || [])[1] || '1', 10);
-      return { label, classNum, rarity: RARITY_BY_CLASS[Math.min(classNum, 4)] || 'Common' };
-    }).sort((a, b) => b.classNum - a.classNum);
-    return `<ul class="blueprint-card-crew-list">${rows.map(({ label, classNum, rarity }) =>
-      `<li class="blueprint-card-crew-item bp-crew-c${classNum}" title="${_esc(label)} — ${rarity}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span><span class="blueprint-card-crew-rarity">${rarity}</span></li>`
+      const slotRarity = RARITY_BY_CLASS[Math.min(classNum, 4)] || 'Common';
+      // When the slot points at a bespoke agent (Mythic ships, Matrix-
+      // style crews), surface that agent's own rarity instead of the
+      // slot ladder's max. Without this, a Legendary Morpheus in a
+      // class-1 captain seat displays as "Common".
+      let rarity = slotRarity;
+      if (slot.agent_id && typeof Blueprints !== 'undefined' && typeof BlueprintUtils !== 'undefined') {
+        try {
+          const agent = Blueprints.getAgent(slot.agent_id);
+          if (agent) rarity = BlueprintUtils.getRarity(agent) || slotRarity;
+        } catch (_) { /* getAgent missing during bootstrap; keep slotRarity */ }
+      }
+      return { label, rarity, slug: rarity.toLowerCase() };
+    }).sort((a, b) => (RARITY_RANK[b.rarity] || 0) - (RARITY_RANK[a.rarity] || 0));
+    return `<ul class="blueprint-card-crew-list">${rows.map(({ label, rarity, slug }) =>
+      `<li class="blueprint-card-crew-item bp-crew-${slug}" title="${_esc(label)} — ${rarity}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span><span class="blueprint-card-crew-rarity">${rarity}</span></li>`
     ).join('')}</ul>`;
   }
 

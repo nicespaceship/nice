@@ -190,10 +190,47 @@ describe('CardRenderer — flip + back face', () => {
       expect(html).toContain('Insurance Lead');
     });
 
-    it('tags each crew item with its class number', () => {
-      expect(html).toMatch(/bp-crew-c1[^"]*"[^>]*title="Captain/);
-      expect(html).toMatch(/bp-crew-c2[^"]*"[^>]*title="Medical Asst/);
-      expect(html).toMatch(/bp-crew-c4[^"]*"[^>]*title="Insurance Lead/);
+    it('tags each crew item with its rarity (derived from slot min_class when no agent is slotted)', () => {
+      expect(html).toMatch(/bp-crew-common[^"]*"[^>]*title="Captain — Common/);
+      expect(html).toMatch(/bp-crew-rare[^"]*"[^>]*title="Medical Asst — Rare/);
+      expect(html).toMatch(/bp-crew-legendary[^"]*"[^>]*title="Insurance Lead — Legendary/);
+    });
+
+    it('honors agent_id rarity (Mythic crew on a class-1 slot reads Mythic, not Common)', () => {
+      const prevBlueprints = globalThis.Blueprints;
+      globalThis.Blueprints = {
+        getAgent: (id) => id === 'agent-morpheus'
+          ? { id: 'agent-morpheus', rarity: 'Legendary' }
+          : id === 'agent-architect'
+            ? { id: 'agent-architect', rarity: 'Mythic' }
+            : null,
+      };
+      try {
+        const mythicShip = {
+          ...SHIP_WITH_CREW,
+          id: 'bp-mythic-ship',
+          crew: [
+            { slot: 0, label: 'Morpheus',     min_class: 'class-1', agent_id: 'agent-morpheus' },
+            { slot: 1, label: 'The Architect', min_class: 'class-1', agent_id: 'agent-architect' },
+            { slot: 2, label: 'Unfilled Seat', min_class: 'class-1' },
+          ],
+        };
+        const mythicHTML = CardRenderer.render('spaceship', 'full', mythicShip);
+        // Agent's rarity overrides the slot's class-derived rarity.
+        expect(mythicHTML).toMatch(/bp-crew-mythic[^"]*"[^>]*title="The Architect — Mythic/);
+        expect(mythicHTML).toMatch(/bp-crew-legendary[^"]*"[^>]*title="Morpheus — Legendary/);
+        // Slots with no agent still fall back to the slot ladder.
+        expect(mythicHTML).toMatch(/bp-crew-common[^"]*"[^>]*title="Unfilled Seat — Common/);
+        // Mythic sorts above Legendary, which sorts above Common — surface
+        // the heaviest crew first regardless of slot order.
+        const architectIdx = mythicHTML.indexOf('The Architect');
+        const morpheusIdx  = mythicHTML.indexOf('Morpheus');
+        const unfilledIdx  = mythicHTML.indexOf('Unfilled Seat');
+        expect(architectIdx).toBeLessThan(morpheusIdx);
+        expect(morpheusIdx).toBeLessThan(unfilledIdx);
+      } finally {
+        globalThis.Blueprints = prevBlueprints;
+      }
     });
 
     it('renders Coming-soon stub for Workflows (still pending data)', () => {
