@@ -23,9 +23,11 @@ const Gamification = (() => {
      unlock Common → Rare → Epic → Legendary. Pro users skip the
      grind by getting Legendary instantly via Subscription.isPro().
 
-     Mythic is intentionally NOT a rank-granted rarity — it's
-     milestone-only prestige earned by both Free and Pro users
-     through achievements (handled outside the rank ladder). */
+     Mythic unlocks at Admiral rank (1.5M XP) and is inherited by
+     Fleet Admiral. Per-agent Mythic progression (gamification.js
+     getAgentProgression) is achievement-based and runs in parallel —
+     a Captain-rank user can still earn Mythic per-agent badges, but
+     can't activate Mythic-tier ships until they reach Admiral. */
   const RANKS = [
     { name: 'Ensign',            xp: 0,       badge: '⬡',     slots: 6, classId: 'class-1', maxRarity: 'Common' },
     { name: 'Lieutenant JG',     xp: 10000,   badge: '⬡⬡',    slots: 6, classId: 'class-1', maxRarity: 'Common' },
@@ -37,8 +39,8 @@ const Gamification = (() => {
     { name: 'Commodore',         xp: 500000,  badge: '✦',      slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
     { name: 'Rear Admiral',      xp: 750000,  badge: '✦✦',     slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
     { name: 'Vice Admiral',      xp: 1000000, badge: '✦✦✦',    slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Admiral',           xp: 1500000, badge: '✦✦✦✦',   slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
-    { name: 'Fleet Admiral',     xp: 2500000, badge: '✦✦✦✦✦',  slots: 6, classId: 'class-4', maxRarity: 'Legendary' },
+    { name: 'Admiral',           xp: 1500000, badge: '✦✦✦✦',   slots: 6, classId: 'class-4', maxRarity: 'Mythic' },
+    { name: 'Fleet Admiral',     xp: 2500000, badge: '✦✦✦✦✦',  slots: 6, classId: 'class-4', maxRarity: 'Mythic' },
   ];
 
   /* ── XP Rewards ── */

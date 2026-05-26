@@ -145,13 +145,14 @@ describe('Gamification', () => {
       }
     });
 
-    it('RANKS still have maxRarity progression (Common → Legendary)', () => {
+    it('RANKS have maxRarity progression (Common → Legendary → Mythic at Admiral)', () => {
       expect(Gamification.RANKS[0].maxRarity).toBe('Common');
       expect(Gamification.RANKS[5].maxRarity).toBe('Legendary'); // Captain
-      // Fleet Admiral caps at Legendary — Mythic is milestone-only
+      const admiral = Gamification.RANKS.find(r => r.name === 'Admiral');
+      expect(admiral.maxRarity).toBe('Mythic');
       const fleetAdmiral = Gamification.RANKS[Gamification.RANKS.length - 1];
       expect(fleetAdmiral.name).toBe('Fleet Admiral');
-      expect(fleetAdmiral.maxRarity).toBe('Legendary');
+      expect(fleetAdmiral.maxRarity).toBe('Mythic');
     });
 
     it('getMaxSlots returns 6 for free user (no Subscription)', () => {
@@ -565,12 +566,20 @@ describe('Gamification', () => {
       expect(Gamification.isRarityUnlocked('Legendary')).toBe(true);
     });
 
-    it('should never unlock Mythic via rank — Mythic is milestone-only', () => {
-      // Even at the highest rank (Fleet Admiral, 2.5M XP), Mythic is
-      // not granted by rank or subscription. It's earned through
-      // milestone achievements outside the rank ladder.
-      localStorage.setItem('nice-xp', '2500000');
+    it('should block Mythic below Admiral rank', () => {
+      // Mythic unlocks at Admiral (1.5M XP). Vice Admiral caps at Legendary.
+      localStorage.setItem('nice-xp', '1000000');
       expect(Gamification.isRarityUnlocked('Mythic')).toBe(false);
+    });
+
+    it('should unlock Mythic at Admiral rank (1.5M XP)', () => {
+      localStorage.setItem('nice-xp', '1500000');
+      expect(Gamification.isRarityUnlocked('Mythic')).toBe(true);
+    });
+
+    it('Fleet Admiral inherits Mythic access', () => {
+      localStorage.setItem('nice-xp', '2500000');
+      expect(Gamification.isRarityUnlocked('Mythic')).toBe(true);
     });
   });
 
