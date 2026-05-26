@@ -54,8 +54,8 @@ const Blueprints = (() => {
     // The diff-sync path can only add/update rows, not detect deletes,
     // so any shape or content cut requires a key bump to mass-invalidate
     // stale caches.
-    catalogCache: 'nice-bp-catalog-v16',
-    catalogCacheTs: 'nice-bp-catalog-v16-ts',
+    catalogCache: 'nice-bp-catalog-v17',
+    catalogCacheTs: 'nice-bp-catalog-v17-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -95,6 +95,8 @@ const Blueprints = (() => {
     try { localStorage.removeItem('nice-bp-catalog-v14-ts'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v15'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v15-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v16'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v16-ts'); } catch {}
 
     _loadSeeds();
     _loadActivationState();
