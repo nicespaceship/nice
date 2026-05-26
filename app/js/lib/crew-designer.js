@@ -672,23 +672,25 @@ Rules:
         }));
         State.set('agents', [...existingAgents, ...newAgentObjects]);
 
-        // Persist custom agents to localStorage
-        try {
-          const storedAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-          storedAgents.push(...newAgentObjects);
-          localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(storedAgents));
-        } catch {}
-
         const newShip = { id: shipId, ...shipData };
         const existingShips = State.get('spaceships') || [];
         State.set('spaceships', [...existingShips, newShip]);
 
-        // Persist custom ship to localStorage so it survives reloads
-        try {
-          const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
-          stored.push(newShip);
-          localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(stored));
-        } catch {}
+        // Guest sessions only — for signed-in users createPrivateAgent +
+        // findOrCreateActiveShip above wrote durable Supabase rows that
+        // _loadUserCreations rehydrates State from on next boot.
+        if (!userId) {
+          try {
+            const storedAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+            storedAgents.push(...newAgentObjects);
+            localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(storedAgents));
+          } catch {}
+          try {
+            const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
+            stored.push(newShip);
+            localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(stored));
+          } catch {}
+        }
       }
 
       // 5. XP + Audit
@@ -769,6 +771,11 @@ Rules:
   /* ══════════════════════════════════════════════════════════════ */
 
   function _restoreCustomData() {
+    // Guest sessions only — signed-in users get State.spaceships /
+    // State.agents from _loadUserCreations (mirrored from Supabase).
+    // Merging localStorage on top would resurrect stale guest-era ghosts
+    // alongside the canonical Supabase rows.
+    if (typeof State !== 'undefined' && State.get('user') && State.get('user').id) return;
     try {
       const ships = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
       const agents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');

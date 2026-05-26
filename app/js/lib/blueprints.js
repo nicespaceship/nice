@@ -94,7 +94,7 @@ const Blueprints = (() => {
     _seedMockCounts();
 
     // Resolve any __new__ agent IDs in ship states into real agents
-    _resolveNewAgents();
+    await _resolveNewAgents();
 
     // Purge stale IDs that no longer exist in catalog
     _purgeStaleIds();
@@ -261,10 +261,84 @@ const Blueprints = (() => {
    * For __new__ IDs: create real agents and update slot assignments.
    * For real IDs: just ensure they're in the activated list.
    */
-  function _resolveNewAgents() {
+  const _RESOLVER_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  /**
+   * Persist synthetic slot-character rows queued by `_resolveNewAgents` into
+   * Supabase user_agents + user_ship_slots. Mirrors the wizard's
+   * `_persistSlotAgent` pattern so a localStorage wipe doesn't strand the
+   * slot reference. Mutates each queued agent's `id` to the returned UUID
+   * and rewrites every in-memory reference (_activatedAgentIds, _shipState
+   * slot_assignments + agent_ids) so the rest of init sees the canonical
+   * id. `user_agents.blueprint_id` stays NULL by design — slot characters
+   * resolve through the parent ship's crew_overrides, not their own
+   * agent_blueprints row (see commit 7b61a88).
+   *
+   * Returns true when at least one row was created.
+   */
+  async function _persistResolvedSlotAgents(pending) {
+    if (!_canSync()) return false;
+    const userId = _getUserId();
+    if (!userId) return false;
+    let changed = false;
+    for (const { shipId, slotIdx, agent } of pending) {
+      try {
+        const row = {
+          user_id: userId,
+          name: agent.name,
+          rarity: agent.rarity || 'Common',
+          status: agent.status || 'idle',
+          config: agent.config || {},
+        };
+        const created = await SB.db('user_agents').create(row);
+        if (!created || !created.id) continue;
+        const oldId = agent.id;
+        const newId = created.id;
+        agent.id = newId;
+        const aIdx = _activatedAgentIds.indexOf(oldId);
+        if (aIdx !== -1) _activatedAgentIds[aIdx] = newId;
+        const shipState = _shipState[shipId];
+        if (shipState && shipState.slot_assignments && shipState.slot_assignments[slotIdx] === oldId) {
+          shipState.slot_assignments[slotIdx] = newId;
+        }
+        if (shipState && Array.isArray(shipState.agent_ids)) {
+          const idIdx = shipState.agent_ids.indexOf(oldId);
+          if (idIdx !== -1) shipState.agent_ids[idIdx] = newId;
+        }
+        // bp-prefixed catalog ids don't have a user_spaceships row, so the
+        // setSlot FK would 23503. UUID-keyed ships are wizard-deployed and
+        // safe; _reconcileShipState eventually migrates any bp-prefixed
+        // legacy keys to plain UUIDs.
+        if (typeof ShipSlots !== 'undefined' && _RESOLVER_UUID_RE.test(shipId)) {
+          try {
+            await ShipSlots.setSlot(shipId, parseInt(slotIdx, 10), newId);
+          } catch (e) {
+            console.warn('[Blueprints] ShipSlots.setSlot failed for', shipId, slotIdx, ':', e.message);
+          }
+        }
+        changed = true;
+      } catch (err) {
+        console.warn('[Blueprints] _resolveNewAgents user_agents create failed for', agent.name, ':', err.message);
+      }
+    }
+    return changed;
+  }
+
+  async function _resolveNewAgents() {
     let dirty = false;
-    const customAgents = _readLocalAgents();
+    // Signed-in users: State.agents (mirrored from user_agents) is SSOT.
+    // Reading + writing nice-custom-agents for them creates a local-only
+    // ghost layer that disappears on a localStorage wipe. Guests still
+    // use the cache; migrateGuestState promotes on sign-in.
+    const isGuest = _isGuestSession();
+    const customAgents = isGuest
+      ? _readLocalAgents()
+      : (((typeof State !== 'undefined' ? State.get('agents') : null) || []).slice());
     const customById = new Map(customAgents.map(a => [a.id, a]));
+    // {shipId, slotIdx, agent} tuples queued by the __new__ branch for
+    // signed-in users — promoted to real user_agents rows after the main
+    // loop so the synchronous in-memory work stays straightforward.
+    const pendingPersists = [];
 
     for (const [shipId, state] of Object.entries(_shipState)) {
       if (!state?.slot_assignments) continue;
@@ -290,6 +364,10 @@ const Blueprints = (() => {
               }
             }
             state.slot_assignments[slotIdx] = existing.id;
+            if (Array.isArray(state.agent_ids)) {
+              const aIdx = state.agent_ids.indexOf(agentId);
+              if (aIdx !== -1) state.agent_ids[aIdx] = existing.id;
+            }
             if (!_activatedAgentIds.includes(existing.id)) _activatedAgentIds.push(existing.id);
             dirty = true;
             continue;
@@ -312,7 +390,15 @@ const Blueprints = (() => {
           customById.set(newId, newAgent);
           if (!_activatedAgentIds.includes(newId)) _activatedAgentIds.push(newId);
           state.slot_assignments[slotIdx] = newId;
+          if (Array.isArray(state.agent_ids)) {
+            const aIdx = state.agent_ids.indexOf(agentId);
+            if (aIdx !== -1) state.agent_ids[aIdx] = newId;
+          }
           dirty = true;
+          // Signed-in users get a real user_agents row + user_ship_slots
+          // pointer so the slot survives a localStorage wipe and
+          // _loadUserCreations stops synthesising __new__ next boot.
+          if (!isGuest) pendingPersists.push({ shipId, slotIdx, agent: newAgent });
         } else {
           // Real ID — ensure it's activated and has agent data
           if (!_activatedAgentIds.includes(agentId)) {
@@ -373,9 +459,27 @@ const Blueprints = (() => {
     }
 
     if (dirty) {
-      localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(customAgents));
+      if (isGuest) {
+        localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(customAgents));
+      } else if (typeof State !== 'undefined') {
+        State.set('agents', customAgents);
+      }
       _persistAgents();
       _persistShipState();
+    }
+
+    if (pendingPersists.length) {
+      const promoted = await _persistResolvedSlotAgents(pendingPersists);
+      if (promoted) {
+        // Re-fire State.agents so subscribers see the canonical UUIDs
+        // (the synthetic ids on the agent objects above were mutated in
+        // place by the helper). _persistAgents picks up the patched
+        // _activatedAgentIds and _persistShipState picks up the patched
+        // slot_assignments / agent_ids references.
+        if (typeof State !== 'undefined') State.set('agents', customAgents);
+        _persistAgents();
+        _persistShipState();
+      }
     }
   }
 
@@ -1346,11 +1450,11 @@ const Blueprints = (() => {
     const agents = ((typeof State !== 'undefined' ? State.get('agents') : null) || [])
       .filter(a => a && !a.blueprint_id);
     const seen = new Set([...ships.map(s => s.id), ...agents.map(a => a.id)]);
-    try {
-      const guestShips = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
-      guestShips.forEach(s => { if (s && s.id && !seen.has(s.id)) { ships.push(s); seen.add(s.id); } });
-    } catch {}
     if (_isGuestSession()) {
+      try {
+        const guestShips = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
+        guestShips.forEach(s => { if (s && s.id && !seen.has(s.id)) { ships.push(s); seen.add(s.id); } });
+      } catch {}
       _readLocalAgents().forEach(a => {
         if (a && a.id && !seen.has(a.id)) { agents.push(a); seen.add(a.id); }
       });
@@ -2284,8 +2388,9 @@ const Blueprints = (() => {
         const stateShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
         bp = stateShips.find(s => s.id === bpId || s.id === shipId);
       }
-      // Also check localStorage for persisted custom ships
-      if (!bp) {
+      // Also check localStorage for persisted custom ships — guest-only.
+      // Signed-in users have user_spaceships rows mirrored into State above.
+      if (!bp && _isGuestSession()) {
         try {
           const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
           bp = stored.find(s => s.id === bpId || s.id === shipId);
@@ -3154,7 +3259,7 @@ const Blueprints = (() => {
         _loadActivatedFromDB(),
         _loadUserCreations(),
       ]);
-      _resolveNewAgents();
+      await _resolveNewAgents();
       _purgeStaleIds();
       _fireShipState();
       _fireAgentState();

@@ -668,11 +668,19 @@ const ShipSetupWizard = (() => {
               agents.push(newAgent);
               State.set('agents', agents);
             }
-            try {
-              const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-              stored.push(newAgent);
-              localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
-            } catch {}
+            // Guest sessions only — signed-in users already have the
+            // user_agents row from _persistSlotAgent + State.agents from
+            // State.set above. The localStorage cache would just shadow
+            // user_agents, and a wipe would not strand anything because
+            // the next _loadUserCreations rehydrates State.agents from
+            // Supabase.
+            if (!(State.get('user') && State.get('user').id)) {
+              try {
+                const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+                stored.push(newAgent);
+                localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
+              } catch {}
+            }
           }
 
           resolvedAgentIds.push(resolvedId);
@@ -728,11 +736,15 @@ const ShipSetupWizard = (() => {
           agents.push(newAgent);
           State.set('agents', agents);
         }
-        try {
-          const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-          stored.push(newAgent);
-          localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
-        } catch {}
+        // See the gate above — guest-only write. Signed-in path is
+        // covered by _persistSlotAgent + the State.set above.
+        if (!(State.get('user') && State.get('user').id)) {
+          try {
+            const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+            stored.push(newAgent);
+            localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(stored));
+          } catch {}
+        }
         _data.slotAssignments[i] = newAgent.id;
         resolvedAgentIds.push(newAgent.id);
       }

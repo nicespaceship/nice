@@ -1117,4 +1117,138 @@ describe('Blueprints', () => {
     });
 
   });
+
+  // The init-time __new__ resolver promotes synthetic slot-character ids
+  // (`agent-<ship>-<slot>`) into real Supabase user_agents UUIDs + a
+  // user_ship_slots pointer for signed-in users. Without this, slot
+  // characters auto-filled from catalog crew when _loadUserCreations sees
+  // catalogCrew > slot rows lived only in localStorage and disappeared on
+  // a wipe. Guest sessions still use the localStorage cache.
+  describe('_resolveNewAgents — slot-character persistence on signed-in init', () => {
+    let createCalls;
+    let setSlotCalls;
+    let _origSB;
+    let _origShipSlots;
+    let mockCreateResult;
+
+    beforeEach(() => {
+      createCalls = [];
+      setSlotCalls = [];
+      _origSB = globalThis.SB;
+      _origShipSlots = globalThis.ShipSlots;
+      mockCreateResult = () => ({ id: '99999999-aaaa-4bbb-8ccc-dddddddddddd' });
+      globalThis.SB = {
+        isReady: () => true,
+        isOnline: () => true,
+        auth: () => ({ user: () => ({ id: 'user-1' }) }),
+        db: (table) => ({
+          create: async (row) => {
+            createCalls.push({ table, row });
+            return mockCreateResult(row);
+          },
+          list: async () => [],
+          remove: async () => ({}),
+          update: async () => ({}),
+        }),
+      };
+      globalThis.ShipSlots = {
+        fetchForShips: async () => ({}),
+        setSlot: async (shipId, slotIdx, agentId) => {
+          setSlotCalls.push({ shipId, slotIdx, agentId });
+          return true;
+        },
+      };
+      globalThis.State.set('user', { id: 'user-1' });
+      // Clear any persisted activation state from prior tests so the
+      // pre-seeded _shipState for each case is the only thing init sees.
+      globalThis.localStorage.removeItem('nice-bp-activated');
+      globalThis.localStorage.removeItem('nice-bp-activated-ships');
+      globalThis.localStorage.removeItem('nice-ship-state');
+      globalThis.localStorage.removeItem(globalThis.Utils.KEYS.customAgents);
+    });
+
+    afterEach(() => {
+      globalThis.SB = _origSB;
+      globalThis.ShipSlots = _origShipSlots;
+    });
+
+    // Seed a fully-active ship so _purgeStaleIds + cleanupOrphans leave the
+    // pre-seeded _shipState entry alone. Mirrors what _loadUserCreations +
+    // _reconcileShipState would set up in production.
+    function seedActiveShip(shipId, slotAssignments) {
+      const agentIds = Object.values(slotAssignments).filter(Boolean);
+      globalThis.localStorage.setItem('nice-ship-state', JSON.stringify({
+        [shipId]: { slot_assignments: slotAssignments, status: 'deployed', agent_ids: agentIds },
+      }));
+      globalThis.localStorage.setItem('nice-bp-activated-ships', JSON.stringify([shipId]));
+      globalThis.State.set('spaceships', [{ id: shipId, name: 'Test Ship', status: 'deployed' }]);
+    }
+
+    it('promotes a __new__ placeholder into a real user_agents row + ShipSlots pointer for a UUID-keyed ship', async () => {
+      const shipUuid = 'aaaaaaaa-1111-4222-8333-444444444444';
+      seedActiveShip(shipUuid, { 0: '__new__Pilot' });
+
+      await Blueprints.init();
+
+      // user_agents create fired with the slot character name + blueprint_id NULL
+      expect(createCalls.length).toBe(1);
+      expect(createCalls[0].table).toBe('user_agents');
+      expect(createCalls[0].row.name).toBe('Pilot');
+      expect(createCalls[0].row.user_id).toBe('user-1');
+      expect(createCalls[0].row.blueprint_id).toBeUndefined();
+
+      // user_ship_slots row persisted with the canonical UUID
+      expect(setSlotCalls.length).toBe(1);
+      expect(setSlotCalls[0].shipId).toBe(shipUuid);
+      expect(setSlotCalls[0].slotIdx).toBe(0);
+      expect(setSlotCalls[0].agentId).toBe('99999999-aaaa-4bbb-8ccc-dddddddddddd');
+
+      // In-memory references patched: slot_assignments + agent_ids + activated list
+      const finalState = Blueprints.getShipState(shipUuid);
+      expect(finalState.slot_assignments[0]).toBe('99999999-aaaa-4bbb-8ccc-dddddddddddd');
+      expect(finalState.agent_ids).toContain('99999999-aaaa-4bbb-8ccc-dddddddddddd');
+      expect(finalState.agent_ids).not.toContain('__new__Pilot');
+      expect(finalState.agent_ids).not.toContain(`agent-${shipUuid}-0`);
+      expect(Blueprints.isAgentActivated('99999999-aaaa-4bbb-8ccc-dddddddddddd')).toBe(true);
+      // Synthetic id swept out — no leak
+      expect(Blueprints.isAgentActivated(`agent-${shipUuid}-0`)).toBe(false);
+    });
+
+    it('skips ShipSlots.setSlot when shipId is not a UUID — no user_spaceships row to FK', async () => {
+      seedActiveShip('bp-the-loft', { 0: '__new__Engineer' });
+
+      await Blueprints.init();
+
+      // The user_agents row still gets created (durable agent)
+      expect(createCalls.length).toBe(1);
+      expect(createCalls[0].row.name).toBe('Engineer');
+      // But the slot pointer skips — bp-prefixed id has no user_spaceships row
+      expect(setSlotCalls).toEqual([]);
+    });
+
+    it('falls back to the synthetic id when user_agents.create returns null (retried next boot)', async () => {
+      mockCreateResult = () => null;
+      const shipUuid = 'bbbbbbbb-2222-4333-8444-555555555555';
+      seedActiveShip(shipUuid, { 0: '__new__Medic' });
+
+      await Blueprints.init();
+
+      expect(createCalls.length).toBe(1);
+      expect(setSlotCalls).toEqual([]);
+      const finalState = Blueprints.getShipState(shipUuid);
+      expect(finalState.slot_assignments[0]).toBe(`agent-${shipUuid}-0`);
+    });
+
+    it('guest path writes to nice-custom-agents and never calls Supabase', async () => {
+      globalThis.State.set('user', null);
+      seedActiveShip('guest-ship-1', { 0: '__new__GuestPilot' });
+
+      await Blueprints.init();
+
+      expect(createCalls).toEqual([]);
+      expect(setSlotCalls).toEqual([]);
+      const stored = JSON.parse(globalThis.localStorage.getItem(globalThis.Utils.KEYS.customAgents) || '[]');
+      expect(stored.some(a => a.name === 'GuestPilot')).toBe(true);
+    });
+  });
 });

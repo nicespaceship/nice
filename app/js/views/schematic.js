@@ -1187,8 +1187,10 @@ const SchematicView = (() => {
       const agent = (typeof State !== 'undefined' && State.get('agents') || []).find(r => r.id === bpId);
       if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || agent.category, rarity: agent.rarity || 'Common' };
     }
-    // Check localStorage for custom agents (Crew Designer, survives reload)
-    if (!bp) {
+    // Guest-only localStorage fallback. Signed-in users' agents are all
+    // in State.agents (mirrored from user_agents); reading the cache
+    // would just return stale ghosts.
+    if (!bp && !(typeof State !== 'undefined' && State.get('user') && State.get('user').id)) {
       try {
         const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
         const agent = stored.find(a => a.id === bpId);

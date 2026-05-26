@@ -624,23 +624,27 @@ Needs help with: ${needLabels.join(', ')}`;
       const existingAgents = State.get('agents') || [];
       State.set('agents', [...existingAgents, ...newAgentObjects]);
 
-      // Persist custom agents to localStorage
-      try {
-        const storedAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-        storedAgents.push(...newAgentObjects);
-        localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(storedAgents));
-      } catch {}
-
       const newShip = { id: shipId, ...shipData };
       const existingShips = State.get('spaceships') || [];
       State.set('spaceships', [...existingShips, newShip]);
 
-      // Persist custom ship to localStorage
-      try {
-        const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
-        stored.push(newShip);
-        localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(stored));
-      } catch {}
+      // Guest sessions only — for signed-in users createPrivateAgent +
+      // findOrCreateActiveShip above wrote the durable user_agents /
+      // user_spaceships rows, and _loadUserCreations rehydrates State
+      // from them on next boot. A parallel localStorage cache just
+      // shadows the SSOT.
+      if (!userId) {
+        try {
+          const storedAgents = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+          storedAgents.push(...newAgentObjects);
+          localStorage.setItem(Utils.KEYS.customAgents, JSON.stringify(storedAgents));
+        } catch {}
+        try {
+          const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
+          stored.push(newShip);
+          localStorage.setItem(Utils.KEYS.customShips, JSON.stringify(stored));
+        } catch {}
+      }
     }
 
     // 5. XP + Audit
