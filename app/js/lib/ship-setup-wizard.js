@@ -930,8 +930,8 @@ const ShipSetupWizard = (() => {
     // agent-executor._buildExecContext when the umbrella resolves later.
     if (!umbrellaCfg && !crewMemberCfg) {
       return defaultUmbrellaId
-        ? { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', capability_id: defaultUmbrellaId }
-        : { role: agentName, type: 'Agent', llm_engine: 'claude-4-6-sonnet', tools: [] };
+        ? { role: agentName, type: 'Agent', llm_engine: 'gemini-2-5-flash', capability_id: defaultUmbrellaId }
+        : { role: agentName, type: 'Agent', llm_engine: 'gemini-2-5-flash', tools: [] };
     }
     const baseUmbrella = umbrellaCfg || {};
     const baseCrew = crewMemberCfg || {};
@@ -941,7 +941,7 @@ const ShipSetupWizard = (() => {
       role: agentName,
       type: 'Agent',
       capability_id: defaultUmbrellaId || baseCrew.capability_id || baseUmbrella.capability_id || null,
-      llm_engine: baseCrew.llm_engine || baseUmbrella.llm_engine || 'claude-4-6-sonnet',
+      llm_engine: baseCrew.llm_engine || baseUmbrella.llm_engine || 'gemini-2-5-flash',
     };
   }
 
