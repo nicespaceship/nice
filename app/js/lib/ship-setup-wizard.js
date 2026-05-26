@@ -650,7 +650,8 @@ const ShipSetupWizard = (() => {
             // an umbrella-resolve hop, AND so the top-level FK column
             // populates uniformly across captain and specialist slots.
             const defaultUmbrellaId = crewMember?.agent_id || null;
-            const umbrellaCfg = _resolveUmbrellaConfig(defaultUmbrellaId);
+            const umbrellaBp = _resolveUmbrellaBp(defaultUmbrellaId);
+            const umbrellaCfg = umbrellaBp?.config || null;
             const baseCfg = _buildSlotConfig({
               umbrellaCfg,
               crewMemberCfg: crewMember?.config,
@@ -669,7 +670,7 @@ const ShipSetupWizard = (() => {
               id: `agent-${Date.now()}-${i}`,
               name: agentName,
               category: crewMember?.config?.agentRole || 'Ops',
-              rarity: crewMember?.rarity || 'Common',
+              rarity: crewMember?.rarity || umbrellaBp?.rarity || 'Common',
               blueprint_id: topBpId,
               config: crewBpId ? { ...baseCfg, blueprint_id: crewBpId } : baseCfg,
               stats: { spd: '3.0s', acc: '92%', cap: '5K', pwr: '75' },
@@ -726,7 +727,8 @@ const ShipSetupWizard = (() => {
         // triage + the schematic UI see real tools / role_type / system_prompt
         // and the top-level FK populates uniformly across all slot kinds.
         const defaultUmbrellaId = crewMember?.agent_id || null;
-        const umbrellaCfg = _resolveUmbrellaConfig(defaultUmbrellaId);
+        const umbrellaBp = _resolveUmbrellaBp(defaultUmbrellaId);
+        const umbrellaCfg = umbrellaBp?.config || null;
         const baseCfg = _buildSlotConfig({
           umbrellaCfg,
           crewMemberCfg: crewMember?.config,
@@ -741,7 +743,7 @@ const ShipSetupWizard = (() => {
           id: `agent-${Date.now()}-auto-${i}`,
           name: agentName,
           category: crewMember?.config?.agentRole || slot.label,
-          rarity: crewMember?.rarity || 'Common',
+          rarity: crewMember?.rarity || umbrellaBp?.rarity || 'Common',
           blueprint_id: topBpId,
           config: crewBpId ? { ...baseCfg, blueprint_id: crewBpId } : baseCfg,
           stats: { spd: '3.0s', acc: '90%', cap: '3K', pwr: '70' },
@@ -816,8 +818,14 @@ const ShipSetupWizard = (() => {
         // Slot assignments persist to user_ship_slots (Phase C.1 cut).
         // By this point all `__new__` placeholders have been resolved to
         // real user_agents UUIDs above, so the FK constraint is satisfied.
+        // Pass roleMap so user_ship_slots.role_type mirrors the catalog's
+        // ship_slots.role_type — role-based dispatch + UI filtering need it.
         if (created && created.id && typeof ShipSlots !== 'undefined') {
-          await ShipSlots.setForShip(created.id, _data.slotAssignments);
+          const roleMap = {};
+          for (let i = 0; i < crew.length; i++) {
+            if (crew[i] && crew[i].role) roleMap[i] = crew[i].role;
+          }
+          await ShipSlots.setForShip(created.id, _data.slotAssignments, { roleMap });
         }
       } catch (e) {
         // Fall through with the local-only id. Wizard still completes on
@@ -928,13 +936,12 @@ const ShipSetupWizard = (() => {
      → wizard-injected fields (role / type / capability_id / llm_engine),
      so per-slot persona customizations from the catalog win over the
      umbrella's defaults, and the wizard's injected fields stay last. */
-  function _resolveUmbrellaConfig(umbrellaId) {
+  function _resolveUmbrellaBp(umbrellaId) {
     if (!umbrellaId || typeof Blueprints === 'undefined') return null;
     const getter = (typeof Blueprints.getAgent === 'function') ? Blueprints.getAgent : null;
     if (!getter) return null;
     try {
-      const bp = getter(umbrellaId);
-      return (bp && bp.config) ? bp.config : null;
+      return getter(umbrellaId) || null;
     } catch { return null; }
   }
 
@@ -994,7 +1001,7 @@ const ShipSetupWizard = (() => {
     return agent;
   }
 
-  return { open, close, _persistSlotAgent, _isSlotLocked, _unlockRankName, _buildSlotConfig, _getAgentCatalog,
+  return { open, close, _persistSlotAgent, _isSlotLocked, _unlockRankName, _buildSlotConfig, _resolveUmbrellaBp, _getAgentCatalog,
     /** Test helper: set the current blueprint context the catalog filter consults. */
     _setBlueprintForTest(bp) { _blueprint = bp; } };
 })();

@@ -385,3 +385,43 @@ describe('ShipSetupWizard._buildSlotConfig', () => {
     expect('role_type' in cfg).toBe(false);
   });
 });
+
+describe('ShipSetupWizard._resolveUmbrellaBp', () => {
+  // The wizard reads the umbrella blueprint (default_agent_id on ship_slots)
+  // to inherit both config (tools, prompt) and rarity onto the new user_agent.
+  // Before this returned bp.config only; the rarity branch fell back to
+  // 'Common' for every bespoke crew slot (Kirk=Legendary, Spock=Epic, etc.).
+  let _origBlueprints;
+
+  beforeEach(() => { _origBlueprints = globalThis.Blueprints; });
+  it.afterEach?.(() => { globalThis.Blueprints = _origBlueprints; });
+
+  it('returns the full blueprint including rarity so the wizard can propagate it', () => {
+    globalThis.Blueprints = {
+      getAgent: (id) => id === 'kirk-uuid' ? {
+        id: 'kirk-uuid', name: 'Captain James T. Kirk', rarity: 'Legendary',
+        config: { role: 'Captain', tools: [], llm_engine: 'claude-sonnet-4-6' },
+      } : null,
+    };
+    const bp = ShipSetupWizard._resolveUmbrellaBp('kirk-uuid');
+    expect(bp.rarity).toBe('Legendary');
+    expect(bp.config.role).toBe('Captain');
+  });
+
+  it('returns null when the umbrella id is missing or Blueprints is unavailable', () => {
+    expect(ShipSetupWizard._resolveUmbrellaBp(null)).toBeNull();
+    expect(ShipSetupWizard._resolveUmbrellaBp('')).toBeNull();
+    globalThis.Blueprints = undefined;
+    expect(ShipSetupWizard._resolveUmbrellaBp('any-id')).toBeNull();
+  });
+
+  it('returns null when Blueprints.getAgent throws (early-boot race)', () => {
+    globalThis.Blueprints = { getAgent: () => { throw new Error('not ready'); } };
+    expect(ShipSetupWizard._resolveUmbrellaBp('any-id')).toBeNull();
+  });
+
+  it('returns null when the lookup misses (synthetic crew id, custom ship)', () => {
+    globalThis.Blueprints = { getAgent: () => null };
+    expect(ShipSetupWizard._resolveUmbrellaBp('the-loft-crew-9')).toBeNull();
+  });
+});
