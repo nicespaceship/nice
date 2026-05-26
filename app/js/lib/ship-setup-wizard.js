@@ -128,6 +128,19 @@ const ShipSetupWizard = (() => {
     if (opts && opts.recommendable) {
       pool = pool.filter(a => !(a && a.metadata && a.metadata.power_user_only));
     }
+    // Ship-exclusive crew: agents tagged `<ship-slug>-exclusive` are bespoke
+    // crew bound to one Mythic ship and should not appear in any other ship's
+    // slot dropdown (Agent Smith should never slot into The Salon). Filter
+    // by exact match against the current blueprint's slug; if the current
+    // ship IS the exclusive owner, keep its crew.
+    const currentSlug = _blueprint && _blueprint.slug;
+    pool = pool.filter(a => {
+      const tags = Array.isArray(a && a.tags) ? a.tags : [];
+      const exclusiveTag = tags.find(t => typeof t === 'string' && t.endsWith('-exclusive'));
+      if (!exclusiveTag) return true;
+      const ownerSlug = exclusiveTag.replace(/-exclusive$/, '');
+      return ownerSlug === currentSlug;
+    });
     return pool;
   }
 
@@ -981,5 +994,7 @@ const ShipSetupWizard = (() => {
     return agent;
   }
 
-  return { open, close, _persistSlotAgent, _isSlotLocked, _unlockRankName, _buildSlotConfig };
+  return { open, close, _persistSlotAgent, _isSlotLocked, _unlockRankName, _buildSlotConfig, _getAgentCatalog,
+    /** Test helper: set the current blueprint context the catalog filter consults. */
+    _setBlueprintForTest(bp) { _blueprint = bp; } };
 })();

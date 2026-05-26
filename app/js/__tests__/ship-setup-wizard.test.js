@@ -237,6 +237,62 @@ describe('ShipSetupWizard._isSlotLocked / _unlockRankName', () => {
   });
 });
 
+describe('ShipSetupWizard._getAgentCatalog ship-exclusive filter', () => {
+  // Mythic ships seed bespoke crew tagged `<ship-slug>-exclusive`. Those
+  // crew must never appear in another ship's slot dropdown — Agent Smith
+  // does not belong on The Salon. The filter inside _getAgentCatalog
+  // strips any agent whose `<x>-exclusive` tag does not match the current
+  // blueprint's slug.
+  let _origBlueprints;
+
+  beforeEach(() => {
+    _origBlueprints = globalThis.Blueprints;
+    const pool = [
+      { id: 'a1', name: 'Generic HubSpot Agent', tags: ['sales','hubspot'] },
+      { id: 'a2', name: 'Morpheus',     tags: ['the-matrix-exclusive','captain','the-matrix'] },
+      { id: 'a3', name: 'Neo',          tags: ['the-matrix-exclusive','product','the-matrix'] },
+      { id: 'a4', name: 'Generic Notion Agent', tags: ['documentation','notion'] },
+      { id: 'a5', name: 'Founder Slot', tags: ['the-founders-office-exclusive','captain'] },
+    ];
+    globalThis.Blueprints = { listAgents: () => pool };
+  });
+
+  it.afterEach?.(() => {
+    globalThis.Blueprints = _origBlueprints;
+  });
+
+  it('hides matrix-exclusive agents when activating a non-Matrix ship', () => {
+    ShipSetupWizard._setBlueprintForTest({ slug: 'the-galley', name: 'The Galley' });
+    const pool = ShipSetupWizard._getAgentCatalog();
+    const names = pool.map(a => a.name);
+    expect(names).toContain('Generic HubSpot Agent');
+    expect(names).toContain('Generic Notion Agent');
+    expect(names).not.toContain('Morpheus');
+    expect(names).not.toContain('Neo');
+    expect(names).not.toContain('Founder Slot');
+  });
+
+  it('shows matrix-exclusive agents when activating The Matrix itself', () => {
+    ShipSetupWizard._setBlueprintForTest({ slug: 'the-matrix', name: 'The Matrix' });
+    const pool = ShipSetupWizard._getAgentCatalog();
+    const names = pool.map(a => a.name);
+    expect(names).toContain('Morpheus');
+    expect(names).toContain('Neo');
+    expect(names).toContain('Generic HubSpot Agent'); // generic umbrellas still visible
+    expect(names).not.toContain('Founder Slot');      // foreign exclusive still hidden
+  });
+
+  it('treats agents with no tags as universal (not exclusive)', () => {
+    globalThis.Blueprints = { listAgents: () => [
+      { id: 'a1', name: 'Untagged Agent' },
+      { id: 'a2', name: 'Empty Tags', tags: [] },
+    ] };
+    ShipSetupWizard._setBlueprintForTest({ slug: 'the-galley' });
+    const pool = ShipSetupWizard._getAgentCatalog();
+    expect(pool.map(a => a.name)).toEqual(['Untagged Agent', 'Empty Tags']);
+  });
+});
+
 describe('ShipSetupWizard._buildSlotConfig', () => {
   // The slot's role_type (from ship_slots.role_type, mapped to crewMember.role
   // in _translateSpaceshipBlueprintRow) drives captain dispatch routing.
