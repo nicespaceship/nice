@@ -53,22 +53,27 @@ const AgentBuilderView = (() => {
     }).join('');
   }
 
-  const ROLES  = ['Research','Code','Data','Content','Ops','Custom'];
   const TYPES  = ['Specialist','General','Hybrid'];
 
-  /* Map the 6-item UI role select onto `roles.slug` values (FK target for
-     `agent_blueprints.role_type`, NOT NULL). The UI list predates the
-     18-row roles vocabulary; a follow-up PR can replace the dropdown with
-     the full set and retire this map. `Custom` falls back to `operations`
-     — the most generic functional role — until then. */
-  const ROLE_SLUG_MAP = {
-    Research: 'research',
-    Code: 'engineering',
-    Data: 'analytics',
-    Content: 'marketing',
-    Ops: 'operations',
-    Custom: 'operations',
-  };
+  /* Role dropdown sources from `Roles.list()` (17-row SSOT backed by
+     public.roles). Dropdown value = slug, display = role.label. The
+     slug becomes `agent_blueprints.role_type` (FK) and its label seeds
+     `config.role` + `category` for display-string consumers (system
+     prompt rendering, card category chip). Falls back to the input
+     string when not found in the catalog — preserves legacy values on
+     edit without silently downgrading them. */
+  function _roleLabel(slug) {
+    if (!slug) return '';
+    return (typeof Roles !== 'undefined' && Roles.get && Roles.get(slug)?.label) || slug;
+  }
+  function _resolveRoleSlug(val) {
+    if (!val) return null;
+    if (typeof Roles === 'undefined' || !Roles.list) return null;
+    if (Roles.get && Roles.get(val)) return val; // already a slug
+    const lower = String(val).toLowerCase();
+    const match = Roles.list().find(r => r.label === val || (r.label || '').toLowerCase() === lower);
+    return match?.slug || null;
+  }
 
   function _randomSerial(prefix) {
     return prefix + '-' + Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -97,21 +102,25 @@ const AgentBuilderView = (() => {
     // to a blueprint the user already owns keep theirs.
     const isFork = !!(existingBlueprint && existingBlueprint.creator_id !== user.id);
     const inheritIdentity = !!existingBlueprint && !isFork;
+    // form.role is the dropdown value — a slug from the Roles SSOT, OR
+    // a legacy raw value preserved as a synthetic option for non-standard
+    // pre-existing agents (see _renderForm). Validate against the catalog
+    // before writing to role_type — the FK to public.roles rejects unknown
+    // slugs. Falling back to the existing blueprint's role_type preserves
+    // the original on edits where the user didn't touch the dropdown.
+    const formRoleIsKnown = (typeof Roles !== 'undefined' && Roles.get && Roles.get(form.role));
+    const formRoleLabel = formRoleIsKnown ? Roles.get(form.role).label : (form.role || '');
     return {
       ...(inheritIdentity && existingBlueprint.slug ? { slug: existingBlueprint.slug } : { slug: _kebab(form.name) + '-' + Math.random().toString(36).slice(2, 8) }),
       name: form.name,
       description: form.description || '',
       flavor: form.instructions || '',
-      category: form.role || existingBlueprint?.category || '',
+      category: formRoleLabel || existingBlueprint?.category || '',
       rarity: form.rarity,
       scope: 'community',
       creator_id: user.id,
       visibility: 'private',
-      // Preserve the source blueprint's role_type. The form's 6-item
-      // role dropdown can't represent the full 18-role vocabulary, so
-      // re-deriving via ROLE_SLUG_MAP would silently downgrade a
-      // "captain" fork to "operations".
-      role_type: existingBlueprint?.role_type || ROLE_SLUG_MAP[form.role] || 'operations',
+      role_type: (formRoleIsKnown ? form.role : null) || existingBlueprint?.role_type || 'operations',
       capability_id: existingBlueprint?.capability_id || null,
       config: {
         // Carry catalog's full config first (system_prompt, role,
@@ -305,14 +314,23 @@ const AgentBuilderView = (() => {
     const isEdit = !!agent;
     const config = agent?.config || {};
     const selectedTools = config.tools || [];
-    // The form's role/type dropdowns are intentionally short, but the
-    // catalog uses a broader vocabulary (e.g. category="Marketing",
-    // config.type="Agent"). If we don't extend the option list, the
-    // browser silently selects the first option and the user sees the
-    // wrong value pre-filled — then saves the wrong value.
-    const selectedRole = agent?.role || agent?.category || '';
+    // Roles dropdown sources from the SSOT (Roles.list()). For the
+    // selected value, prefer the canonical role_type slug; fall back to
+    // matching role/category against the Roles catalog by label. If
+    // nothing matches (legacy non-standard value like "Performance Lead"),
+    // preserve the raw value as a synthetic option so the user sees the
+    // original instead of a silent downgrade to the first option.
+    // _buildBlueprintRow validates against the FK before saving.
+    const resolvedSlug = _resolveRoleSlug(agent?.role_type)
+                      || _resolveRoleSlug(agent?.role)
+                      || _resolveRoleSlug(agent?.category);
+    const rawRoleValue = agent?.role_type || agent?.role || agent?.category || '';
+    const selectedRole = resolvedSlug || rawRoleValue;
     const selectedType = agent?.type || config.type || '';
-    const allRoles = Array.from(new Set([...ROLES, ...(selectedRole ? [selectedRole] : [])]));
+    const roleCatalog = (typeof Roles !== 'undefined' && Roles.list) ? Roles.list() : [];
+    const allRoles = selectedRole && !roleCatalog.some(r => r.slug === selectedRole)
+      ? [...roleCatalog, { slug: selectedRole, label: selectedRole }]
+      : roleCatalog;
     const allTypes = Array.from(new Set([...TYPES, ...(selectedType ? [selectedType] : [])]));
 
     el.innerHTML = `
@@ -343,7 +361,7 @@ const AgentBuilderView = (() => {
               <label class="builder-template-label">Load Template</label>
               <select id="b-template" class="filter-select builder-select">
                 <option value="">Start from scratch</option>
-                ${tmpls.map(t => '<option value="' + t.id + '">' + _esc(t.name) + ' (' + _esc(t.role || 'Agent') + ')</option>').join('')}
+                ${tmpls.map(t => '<option value="' + t.id + '">' + _esc(t.name) + ' (' + _esc(_roleLabel(t.role) || 'Agent') + ')</option>').join('')}
               </select>
               <button class="btn btn-sm" id="btn-delete-template" type="button">Delete</button>
             </div>
@@ -362,7 +380,7 @@ const AgentBuilderView = (() => {
               <div class="auth-field">
                 <label for="b-role">Role</label>
                 <select id="b-role" class="filter-select builder-select">
-                  ${allRoles.map(r => `<option value="${_esc(r)}" ${selectedRole === r ? 'selected' : ''}>${_esc(r)}</option>`).join('')}
+                  ${allRoles.map(r => `<option value="${_esc(r.slug)}" ${selectedRole === r.slug ? 'selected' : ''}>${_esc(r.label || r.slug)}</option>`).join('')}
                 </select>
               </div>
               <div class="auth-field">
@@ -632,7 +650,7 @@ const AgentBuilderView = (() => {
       const tmpl = templates.find(t => t.id === e.target.value);
       if (!tmpl) return;
       document.getElementById('b-name').value = '';
-      document.getElementById('b-role').value = tmpl.role || 'Research';
+      document.getElementById('b-role').value = _resolveRoleSlug(tmpl.role) || 'research';
       document.getElementById('b-type').value = tmpl.type || 'Specialist';
       document.getElementById('b-model').value = tmpl.llm_engine || 'claude-4-6-sonnet';
       document.getElementById('b-temp').value = tmpl.config?.temperature ?? 0.7;
@@ -841,16 +859,16 @@ const AgentBuilderView = (() => {
       eval_criteria: evalCriteria,
     };
 
-    // user_agents row (the activation). Carries the full config jsonb
-    // so existing readers (Blueprints loader, agent-executor, prompt
-    // builder) keep working unchanged. The same data is mirrored into
-    // agent_blueprints below — future PRs can migrate readers to the
-    // joined shape and dedupe.
+    // user_agents row (the activation). config.role is the human label
+    // (consumed as a display string by agent-executor / prompt-builder /
+    // ship-log); role_type-style slug-keyed access goes through the
+    // top-level agent_blueprints.role_type FK column.
+    const roleLabel = _roleLabel(role);
     const row = {
       name,
       status: existingAgent?.status || 'idle',
       config: {
-        role,
+        role: roleLabel,
         type,
         tools, memory, temperature: temp,
         llm_engine: model,
@@ -980,7 +998,7 @@ const AgentBuilderView = (() => {
   /** Build a blueprint object from the current form state */
   function _formToBlueprint(agent) {
     const name  = document.getElementById('b-name')?.value?.trim() || '';
-    const role  = document.getElementById('b-role')?.value || 'Research';
+    const role  = document.getElementById('b-role')?.value || 'research';
     const type  = document.getElementById('b-type')?.value || 'Specialist';
     const model = document.getElementById('b-model')?.value || 'nice-auto';
     const temp  = parseFloat(document.getElementById('b-temp')?.value ?? 0.7);
@@ -1007,12 +1025,13 @@ const AgentBuilderView = (() => {
     const modelProfile = {};
     if (maxTokens && maxTokens > 0) modelProfile.max_output_tokens = maxTokens;
 
+    const roleLabel = _roleLabel(role);
     return {
       type: 'agent',
       name: name,
-      category: role,
+      category: roleLabel,
       config: {
-        role: role,
+        role: roleLabel,
         type: type,
         llm_engine: model,
         temperature: temp,
@@ -1043,7 +1062,10 @@ const AgentBuilderView = (() => {
     const cfg = bp.config || {};
     const el = (id) => document.getElementById(id);
     if (el('b-name')) el('b-name').value = bp.name || '';
-    if (el('b-role')) el('b-role').value = cfg.role || bp.category || 'Research';
+    // The dropdown is now slug-valued. Resolve the imported blueprint's
+    // role/category (likely a human label like "Research") to a slug;
+    // fall back to 'research' if it doesn't match the Roles catalog.
+    if (el('b-role')) el('b-role').value = _resolveRoleSlug(bp.role_type) || _resolveRoleSlug(cfg.role) || _resolveRoleSlug(bp.category) || 'research';
     if (el('b-type')) el('b-type').value = cfg.type || 'Specialist';
     if (el('b-model')) el('b-model').value = cfg.llm_engine || 'nice-auto';
     if (el('b-temp')) {
