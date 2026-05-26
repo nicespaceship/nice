@@ -167,6 +167,22 @@ const MissionRunner = (() => {
       }
     } catch { /* proceed without spaceship */ }
 
+    // Phase C.1 moved slot_assignments out of user_spaceships.config into the
+    // user_ship_slots table. Rehydrate the legacy shape here so downstream
+    // readers (the captain-with-crew gate at L286 and runWithDispatch at
+    // L954) see the same {slotIndex: userAgentId} map they used to. Without
+    // this, ships activated post-Phase-C.1 had _crewSlots=0 and the captain
+    // skipped the dispatch loop entirely, single-shotting every prompt and
+    // fabricating answers — the failure mode that surfaced 2026-05-25 in
+    // the post-Option-M Galley test.
+    if (_ship && typeof ShipSlots !== 'undefined') {
+      try {
+        const slotMap = await ShipSlots.getForShip(_ship.id);
+        _ship.config = _ship.config || {};
+        _ship.config.slot_assignments = slotMap;
+      } catch { /* fall through with empty assignments */ }
+    }
+
     // If no spaceship, create a temporary context ID
     if (!spaceshipId) spaceshipId = 'mission-' + missionId;
 
