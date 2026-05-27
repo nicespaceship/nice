@@ -752,10 +752,14 @@ const AgentExecutor = (() => {
 
     const apiMessages = [{ role: 'system', content: systemPrompt }, ...messages];
     const requestBody = {
-      model:       llmConfig.model || 'gemini-2-5-flash',
-      messages:    apiMessages,
-      temperature: llmConfig.temperature || 0.3,
-      max_tokens:  llmConfig.max_tokens || 2048,
+      model:          llmConfig.model || 'gemini-2-5-flash',
+      messages:       apiMessages,
+      temperature:    llmConfig.temperature || 0.3,
+      max_tokens:     llmConfig.max_tokens || 2048,
+      // Blueprint-assigned model: if the user can't pay for it, fall back to
+      // Gemini Flash inside nice-ai and surface a toast. Without this, the
+      // catalog's llm_engine would 402 every dispatch for non-subscribers.
+      auto_downgrade: true,
     };
     if (Array.isArray(toolsSchema) && toolsSchema.length > 0) {
       requestBody.tools = _capToolsForModel(requestBody.model, toolsSchema);
@@ -808,6 +812,13 @@ const AgentExecutor = (() => {
           || 'Edge function error');
       }
       if (!data || data.error) throw new Error(data?.error || 'Empty response');
+
+      // v85 auto_downgrade: nice-ai fell back to Gemini Flash because the
+      // user can't pay for the catalog-assigned model. Surface a one-shot
+      // toast (deduped per from-model in Subscription.handleDowngrade).
+      if (data.downgraded && typeof Subscription !== 'undefined' && Subscription.handleDowngrade) {
+        Subscription.handleDowngrade(data.downgraded);
+      }
 
       const rawContent = data.content ?? '';
       const tokensUsed = data.usage

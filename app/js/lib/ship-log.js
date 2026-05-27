@@ -314,11 +314,15 @@ const ShipLog = (() => {
     messages.push({ role: 'user', content: prompt });
 
     return {
-      model:       config.model || 'gemini-2.5-flash',
-      system:      systemPrompt,
+      model:          config.model || 'gemini-2.5-flash',
+      system:         systemPrompt,
       messages,
-      temperature: config.temperature || 0.7,
-      max_tokens:  config.max_tokens || 1024,
+      temperature:    config.temperature || 0.7,
+      max_tokens:     config.max_tokens || 1024,
+      // Blueprint-assigned model: if the user can't pay for it, fall back to
+      // Gemini Flash inside nice-ai and surface a toast. Without this, the
+      // catalog's llm_engine would 402 every dispatch for non-subscribers.
+      auto_downgrade: true,
     };
   }
 
@@ -387,6 +391,13 @@ const ShipLog = (() => {
         throw new Error((body && body.error) || (typeof error === 'string' ? error : error.message) || 'Edge function error');
       }
       if (!data || data.error) throw new Error(data?.error || 'Empty response from edge function');
+
+      // v85 auto_downgrade: nice-ai fell back to Gemini Flash because the
+      // user can't pay for the catalog-assigned model. Surface a one-shot
+      // toast (deduped per from-model in Subscription.handleDowngrade).
+      if (data.downgraded && typeof Subscription !== 'undefined' && Subscription.handleDowngrade) {
+        Subscription.handleDowngrade(data.downgraded);
+      }
 
       if (data.usage) {
         _activityTokens = (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0);

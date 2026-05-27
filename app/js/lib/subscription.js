@@ -290,6 +290,45 @@ const Subscription = (() => {
     return true;
   }
 
+  /** Track which from-models we've already warned about so the
+      auto_downgrade toast doesn't fire on every step of a long mission. */
+  const _downgradeNotified = new Set();
+
+  /** Surface a single toast per (from) model when nice-ai's auto_downgrade
+      kicked in. Body shape from nice-ai v85:
+        { from, to, reason, message }
+      Reason mirrors BillingErrorCode (subscription_required | addon_required |
+      insufficient_tokens | past_due). */
+  function handleDowngrade(downgraded) {
+    if (!downgraded || typeof downgraded.from !== 'string') return false;
+    if (typeof Notify === 'undefined') return false;
+    if (_downgradeNotified.has(downgraded.from)) return false;
+    _downgradeNotified.add(downgraded.from);
+
+    let title = 'Switched to Gemini Flash';
+    switch (downgraded.reason) {
+      case 'subscription_required':
+        title = downgraded.from.startsWith('claude')
+          ? 'Claude add-on required'
+          : 'NICE Pro required';
+        break;
+      case 'addon_required':
+        title = 'Add-on required';
+        break;
+      case 'insufficient_tokens':
+        title = 'Out of tokens';
+        break;
+      case 'past_due':
+        title = 'Payment failed';
+        break;
+    }
+    const fromShort = downgraded.from.replace(/-/g, ' ');
+    const message = (downgraded.message || 'Running on free Gemini Flash for this session.')
+      + ' Subscribe to use ' + fromShort + '.';
+    Notify.send({ title, message, type: 'budget_alert' });
+    return true;
+  }
+
   async function subscribe(planId) {
     const user = typeof State !== 'undefined' ? State.get('user') : null;
     if (!user) {
@@ -528,6 +567,7 @@ const Subscription = (() => {
     upgradeSpaceship,
     openBillingPortal,
     handleBillingError,
+    handleDowngrade,
     paywallEnabled: _paywallEnabled,
   };
 })();
