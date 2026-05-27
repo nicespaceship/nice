@@ -200,6 +200,11 @@ const IntegrationsView = (() => {
             <span class="intg-stat-num">${mcps.filter(m => m.status === 'connected').length}</span>
             <span class="intg-stat-label">Online</span>
           </div>
+          ${mcps.some(m => m.status === 'error') ? `<div class="intg-stat" title="Connections whose OAuth token was rejected by the provider — click Reconnect on the card to re-authorize">
+            <span class="status-dot dot-r"></span>
+            <span class="intg-stat-num">${mcps.filter(m => m.status === 'error').length}</span>
+            <span class="intg-stat-label">Reconnect</span>
+          </div>` : ''}
         </div>
 
         <!-- ═══ MCP Servers Section ═══ -->
@@ -292,6 +297,9 @@ const IntegrationsView = (() => {
     if (mcp.comingSoon) {
       return `<button class="btn ${sizeCls}" disabled>Coming soon</button>`;
     }
+    if (conn && conn.status === 'error') {
+      return `<button class="btn ${sizeCls} btn-danger mcp-reconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}" title="The OAuth token for this connection was rejected by the provider. Click to re-authorize."><span class="status-dot dot-r"></span> Reconnect</button>`;
+    }
     if (conn) {
       return `<button class="btn ${sizeCls} mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`;
     }
@@ -302,10 +310,18 @@ const IntegrationsView = (() => {
     return catalog.map(mcp => {
       const conn = _matchConnection(mcp.id, mcps);
       const connected = !!conn;
+      const errored = connected && conn.status === 'error';
+      // OAuth tokens that the provider rejected — see _renderActionButton
+      // for the Reconnect CTA. We add a card-level modifier so the visual
+      // signal isn't button-only.
+      const stateMod = errored ? 'mcp-catalog-card--error'
+                       : connected ? 'mcp-catalog-card--connected' : '';
+      const listMod  = errored ? 'intg-list-row--error'
+                       : connected ? 'intg-list-row--connected' : '';
       if (viewMode === 'list') {
-        return `<div class="intg-list-row ${connected ? 'intg-list-row--connected' : ''}" data-cat="${mcp.cat}">
+        return `<div class="intg-list-row ${listMod}" data-cat="${mcp.cat}">
           <div class="intg-list-icon"><svg class="intg-list-icon-svg"><use href="#icon-${mcp.icon}"/></svg></div>
-          <span class="intg-list-name">${mcp.name}</span>
+          <span class="intg-list-name">${mcp.name}${errored ? ' <span class="mcp-error-badge" title="OAuth token rejected — click Reconnect to re-authorize">Reconnect</span>' : ''}</span>
           <span class="intg-list-desc">${mcp.desc}</span>
           <span class="intg-list-cat mono">${mcp.cat}</span>
           <span class="intg-list-transport mono">${mcp.transport}</span>
@@ -321,12 +337,15 @@ const IntegrationsView = (() => {
         : mcp.tools.map(t => `<span class="mcp-tool-pill">${t}</span>`).join('');
 
       const scopeBadge = connected ? _renderScopeBadge(realTools) : '';
+      const errorBadge = errored
+        ? ' <span class="mcp-error-badge" title="OAuth token rejected by the provider — click Reconnect to re-authorize">Reconnect</span>'
+        : '';
 
-      return `<div class="mcp-catalog-card ${connected ? 'mcp-catalog-card--connected' : ''}" data-cat="${mcp.cat}">
+      return `<div class="mcp-catalog-card ${stateMod}" data-cat="${mcp.cat}">
         <div class="mcp-catalog-top">
           <div class="mcp-catalog-icon"><svg class="mcp-catalog-icon-svg"><use href="#icon-${mcp.icon}"/></svg></div>
           <div class="mcp-catalog-info">
-            <span class="mcp-catalog-name">${mcp.name}${scopeBadge}</span>
+            <span class="mcp-catalog-name">${mcp.name}${errorBadge || scopeBadge}</span>
             <span class="mcp-catalog-desc">${mcp.desc}</span>
           </div>
         </div>
@@ -410,10 +429,14 @@ const IntegrationsView = (() => {
 
   /* ── Events ───────────────────────────────────────────────────── */
   function _bindEvents(el, _unused, mcps) {
-    // Delegate connect/disconnect clicks
+    // Delegate connect/disconnect/reconnect clicks
     el.addEventListener('click', (e) => {
       const mcpConn = e.target.closest('.mcp-connect-btn');
       if (mcpConn) return _connectMcp(mcpConn.dataset.catalogId, el);
+      const mcpReconn = e.target.closest('.mcp-reconnect-btn');
+      // Reconnect re-uses the same OAuth flow as Connect — the callback
+      // upserts the existing row by user_id+catalog_id and resets status.
+      if (mcpReconn) return _connectMcp(mcpReconn.dataset.catalogId, el, { reconnect: true });
       const mcpDisc = e.target.closest('.mcp-disconnect-btn');
       if (mcpDisc) return _disconnectMcp(mcpDisc.dataset.connId, el);
     });
@@ -484,7 +507,7 @@ const IntegrationsView = (() => {
   const MIRO_OAUTH_URL      = `${NICE_API_BASE}/functions/v1/miro-oauth`;
   const REPLICATE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/replicate-oauth`;
 
-  function _connectMcp(catalogId, el) {
+  function _connectMcp(catalogId, el, opts) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
     if (catalog.comingSoon) {
@@ -492,7 +515,13 @@ const IntegrationsView = (() => {
       return;
     }
     const conns = State.get('mcp_connections') || [];
-    if (_matchConnection(catalogId, conns) || conns.find(c => c.name === catalog.name)) return;
+    // Allow re-OAuth when an existing row is in error state (token rejected
+    // by provider). The OAuth callbacks upsert by user_id+catalog_id and
+    // reset status to 'connected', so re-running the same flow recovers
+    // the row in place.
+    const existing = _matchConnection(catalogId, conns) || conns.find(c => c.name === catalog.name);
+    const isReconnect = !!(opts && opts.reconnect);
+    if (existing && !isReconnect && existing.status !== 'error') return;
 
     // OAuth-based connections: redirect to OAuth flow
     if (catalog.auth === 'oauth' && catalogId === 'google') {
