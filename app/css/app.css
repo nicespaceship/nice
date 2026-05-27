@@ -2573,7 +2573,9 @@ html:not([data-theme]) .app-main,
     width:100%;
     max-height:64px;
     margin:0;
-    padding:7px 34px 7px 10px;
+    /* Match the new theme.css padding rebalance — bigger left gutter so
+       prose doesn't hug the rounded edge of the mini-chat card. */
+    padding:10px 38px 10px 16px;
     font-size:var(--text-xs);
     line-height:var(--lh-base);
     background:var(--panel-bg, rgba(24,24,27,0.82));

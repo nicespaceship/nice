@@ -3424,14 +3424,18 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
   top:0; left:50%; transform:translateX(-50%);
   width:min(820px, 94%);
   max-height:124px;
-  padding:10px 44px 10px 14px;
+  /* Left padding matches the visual weight of the right side (which carries
+     the 26px expand button + 6px inset + breathing room). 14px against the
+     left edge reads cramped — bumped to 22px so prose has the same gutter
+     as the expand button does on the right. */
+  padding:14px 52px 14px 22px;
   background:var(--panel-bg, rgba(24,24,27,0.82));
   border:1px solid var(--border);
   border-radius:var(--radius, 10px);
   color:var(--text);
   font-family:var(--font-b);
   font-size:.82rem;
-  line-height:1.45;
+  line-height:1.55;
   overflow-y:auto;
   z-index:4;
   backdrop-filter:blur(6px);
@@ -3445,8 +3449,15 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
 }
 .app-main.monitor-active .sch-mini-chat { display:none; }
 .sch-mini-chat-content { word-wrap:break-word; }
-.sch-mini-chat-content p { margin:0 0 6px; }
+.sch-mini-chat-content p { margin:0 0 8px; }
 .sch-mini-chat-content p:last-child { margin-bottom:0; }
+/* Ordered/unordered lists in the mini-chat read cramped against the left
+   edge without breathing room — the numbers / bullets sat right at the
+   container padding. Pull them in slightly and add row spacing. */
+.sch-mini-chat-content ol,
+.sch-mini-chat-content ul { margin:6px 0 8px; padding-left:22px; }
+.sch-mini-chat-content li { margin-bottom:4px; }
+.sch-mini-chat-content li:last-child { margin-bottom:0; }
 .sch-mini-chat-idle { opacity:.55; font-style:italic; }
 .sch-mini-expand {
   position:absolute; top:6px; right:6px;
@@ -3485,9 +3496,11 @@ html.nice-call-mode .hud-alert-container { visibility:hidden; }
     width:94%;
     margin:0 auto 8px;
     max-height:64px;
-    padding:7px 34px 7px 10px;
+    /* Mobile mirror of the desktop padding rebalance — give prose a real
+       left gutter so the first character isn't hugging the rounded edge. */
+    padding:10px 38px 10px 16px;
     font-size:.72rem;
-    line-height:1.35;
+    line-height:1.5;
   }
   .sch-mini-expand { width:22px; height:22px; top:4px; right:4px; }
 }
