@@ -56,8 +56,8 @@ const Blueprints = (() => {
     // The diff-sync path can only add/update rows, not detect deletes,
     // so any shape or content cut requires a key bump to mass-invalidate
     // stale caches.
-    catalogCache: 'nice-bp-catalog-v18',
-    catalogCacheTs: 'nice-bp-catalog-v18-ts',
+    catalogCache: 'nice-bp-catalog-v19',
+    catalogCacheTs: 'nice-bp-catalog-v19-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -101,6 +101,8 @@ const Blueprints = (() => {
     try { localStorage.removeItem('nice-bp-catalog-v16-ts'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v17'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v17-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v18'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v18-ts'); } catch {}
 
     _loadSeeds();
     _loadActivationState();
@@ -579,7 +581,16 @@ const Blueprints = (() => {
     if (!cap) return null;
     const card = cap.card || {};
     const cfg = cap.config || {};
-    const llm = cfg.llm_defaults || {};
+    // Flat config.llm_engine / temperature / memory / maxSteps wins over the
+    // legacy nested config.llm_defaults shape — see _translateAgentBlueprintRow
+    // for the full rationale.
+    const llmDefaults = cfg.llm_defaults || {};
+    const llm = {
+      engine:      cfg.llm_engine !== undefined ? cfg.llm_engine : llmDefaults.engine,
+      temperature: cfg.temperature !== undefined ? cfg.temperature : llmDefaults.temperature,
+      memory:      cfg.memory !== undefined ? cfg.memory : llmDefaults.memory,
+      max_steps:   cfg.maxSteps !== undefined ? cfg.maxSteps : (cfg.max_steps !== undefined ? cfg.max_steps : llmDefaults.max_steps),
+    };
     return {
       id: cap.id,
       slug: cap.slug,
@@ -628,7 +639,21 @@ const Blueprints = (() => {
     if (!ag) return null;
     const card = ag.card || {};
     const agCfg = ag.config || {};
-    const llm = agCfg.llm_defaults || {};
+    // Seeds write flat fields on `config` (llm_engine, temperature, memory,
+    // maxSteps); older paths nested them under `config.llm_defaults`. Read
+    // the flat shape first and fall back to the nested one so both work.
+    // Pre-fix, the nested-only read silently returned undefined for every
+    // bespoke crew row — every Mythic/Legendary character ran on the system
+    // default (gemini-2.5-flash) regardless of the catalog's choice, which
+    // is why dispatch tests on the Death Star fabricated answers instead of
+    // invoking GitHub tools (Flash's tool-use is weak; Sonnet's is reliable).
+    const llmDefaults = agCfg.llm_defaults || {};
+    const llm = {
+      engine:      agCfg.llm_engine !== undefined ? agCfg.llm_engine : llmDefaults.engine,
+      temperature: agCfg.temperature !== undefined ? agCfg.temperature : llmDefaults.temperature,
+      memory:      agCfg.memory !== undefined ? agCfg.memory : llmDefaults.memory,
+      max_steps:   agCfg.maxSteps !== undefined ? agCfg.maxSteps : (agCfg.max_steps !== undefined ? agCfg.max_steps : llmDefaults.max_steps),
+    };
     // Joined rows (PostgREST embed): `capability` from capabilities, `role` from roles.
     const cap = ag.capability || null;
     const role = ag.role || null;
