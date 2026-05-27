@@ -83,6 +83,20 @@ const MissionRunner = (() => {
     // captain_blueprint_id in metadata is set by _runShipChat so captain agents
     // that live only in localStorage (no user_agents row) still get their
     // up-to-date catalog config (model, tools, system_prompt).
+    //
+    // The catalog loads lazily — without this await, a chat fired right after
+    // navigating to a ship would see Blueprints.listAgents() === [] and fall
+    // through to the synthetic-stub branch below, which has no role_type and
+    // therefore makes _isCaptainAgent return false. The captain-with-crew gate
+    // at L302 then skips runWithDispatch entirely and the captain single-shots
+    // every prompt without ever emitting [DISPATCH:] tokens. Surfaced
+    // 2026-05-26 in the Death Star dispatch tests: first three prompts ran
+    // single-shot, the fourth (after the catalog warmed up) dispatched
+    // correctly.
+    if (typeof Blueprints !== 'undefined' && Blueprints.ensureCatalogLoaded) {
+      try { await Blueprints.ensureCatalogLoaded(); }
+      catch { /* fall through — synthetic-stub path still works */ }
+    }
     let agentBp = null;
     if (agent) {
       const catalogId = agent.blueprint_id || mission.metadata?.captain_blueprint_id;
