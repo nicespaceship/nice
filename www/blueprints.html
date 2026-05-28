@@ -311,17 +311,73 @@
         render();
       }
 
+      // Sci-fi IP categories — hidden from the spaceship pill bar because
+      // they're single-ship IP-recognition filters, not buyer-intent keywords.
+      // The ships themselves still render under the default "All" view and
+      // respond to text search — only the filter pill is suppressed.
+      const FICTIONAL_SPACESHIP_CATS = new Set([
+        'Browncoat', 'Colonial', 'EDF', 'Encom', 'Federation', 'Imperial',
+        'Improbability', 'Matrix', 'Smuggler', 'Spectre', 'UN Spacy',
+      ]);
+      const MOBILE_PILL_CAP = 10;
+
       function _buildCatFilters() {
-        const cats = [...new Set(allData.filter(b => b.type === currentType).map(b => b.category).filter(Boolean))].sort();
+        // Count blueprints per category so we can rank for the mobile cap.
+        const counts = {};
+        allData
+          .filter(b => b.type === currentType)
+          .map(b => b.category)
+          .filter(Boolean)
+          .forEach(c => { counts[c] = (counts[c] || 0) + 1; });
+
+        let cats = Object.keys(counts);
+        if (currentType === 'spaceship') {
+          cats = cats.filter(c => !FICTIONAL_SPACESHIP_CATS.has(c));
+        }
+        cats.sort();
+
         const el = document.getElementById('bp-cat-filters');
         el.querySelectorAll('.catalog-filter:not([data-cat="all"])').forEach(b => b.remove());
-        cats.forEach(cat => {
+
+        // On phones (≤ 640px) the full list wraps to 6+ rows. Cap to the
+        // top N by blueprint count and gate the rest behind a More chip;
+        // desktop keeps the full grid (good scanning real-estate).
+        const isMobile = window.matchMedia('(max-width: 640px)').matches;
+        const primary = isMobile
+          ? [...cats]
+              .sort((a, b) => counts[b] - counts[a] || a.localeCompare(b))
+              .slice(0, MOBILE_PILL_CAP)
+              .sort()
+          : cats;
+        const overflow = isMobile ? cats.filter(c => !primary.includes(c)) : [];
+
+        primary.forEach(cat => {
           const btn = document.createElement('button');
           btn.className = 'catalog-filter';
           btn.dataset.cat = cat;
           btn.textContent = cat;
           el.appendChild(btn);
         });
+
+        if (overflow.length) {
+          const moreBtn = document.createElement('button');
+          // No data-cat — the delegated filter handler ignores it (see
+          // _bindEvents). stopPropagation is belt-and-suspenders.
+          moreBtn.className = 'catalog-filter';
+          moreBtn.textContent = '+ ' + overflow.length + ' more';
+          moreBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            moreBtn.remove();
+            overflow.sort().forEach(cat => {
+              const btn = document.createElement('button');
+              btn.className = 'catalog-filter';
+              btn.dataset.cat = cat;
+              btn.textContent = cat;
+              el.appendChild(btn);
+            });
+          });
+          el.appendChild(moreBtn);
+        }
       }
 
       function _bindEvents() {
@@ -350,7 +406,9 @@
 
         document.getElementById('bp-cat-filters').addEventListener('click', e => {
           const btn = e.target.closest('.catalog-filter');
-          if (!btn) return;
+          // Skip the "+ N more" chip — it has no data-cat and handles its own
+          // click to expand the overflow categories.
+          if (!btn || !btn.dataset.cat) return;
           document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentCat = btn.dataset.cat;
