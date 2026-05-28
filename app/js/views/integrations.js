@@ -298,7 +298,9 @@ const IntegrationsView = (() => {
       return `<button class="btn ${sizeCls}" disabled>Coming soon</button>`;
     }
     if (conn && conn.status === 'error') {
-      return `<button class="btn ${sizeCls} btn-danger mcp-reconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}" title="The OAuth token for this connection was rejected by the provider. Click to re-authorize."><span class="status-dot dot-r"></span> Reconnect</button>`;
+      const baseTip = 'The OAuth token for this connection was rejected by the provider. Click to re-authorize.';
+      const tip = conn.last_error ? `${baseTip}\n\nGateway: ${conn.last_error}` : baseTip;
+      return `<button class="btn ${sizeCls} btn-danger mcp-reconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}" title="${_esc(tip)}"><span class="status-dot dot-r"></span> Reconnect</button>`;
     }
     if (conn) {
       return `<button class="btn ${sizeCls} mcp-disconnect-btn" data-catalog-id="${mcp.id}" data-conn-id="${conn.id}"><span class="status-dot dot-g"></span> Connected</button>`;
@@ -318,10 +320,13 @@ const IntegrationsView = (() => {
                        : connected ? 'mcp-catalog-card--connected' : '';
       const listMod  = errored ? 'intg-list-row--error'
                        : connected ? 'intg-list-row--connected' : '';
+      const errorBadgeTip = errored && conn.last_error
+        ? `OAuth token rejected — click Reconnect to re-authorize.\n\nGateway: ${conn.last_error}`
+        : 'OAuth token rejected — click Reconnect to re-authorize';
       if (viewMode === 'list') {
         return `<div class="intg-list-row ${listMod}" data-cat="${mcp.cat}">
           <div class="intg-list-icon"><svg class="intg-list-icon-svg"><use href="#icon-${mcp.icon}"/></svg></div>
-          <span class="intg-list-name">${mcp.name}${errored ? ' <span class="mcp-error-badge" title="OAuth token rejected — click Reconnect to re-authorize">Reconnect</span>' : ''}</span>
+          <span class="intg-list-name">${mcp.name}${errored ? ` <span class="mcp-error-badge" title="${_esc(errorBadgeTip)}">Reconnect</span>` : ''}</span>
           <span class="intg-list-desc">${mcp.desc}</span>
           <span class="intg-list-cat mono">${mcp.cat}</span>
           <span class="intg-list-transport mono">${mcp.transport}</span>
@@ -337,8 +342,11 @@ const IntegrationsView = (() => {
         : mcp.tools.map(t => `<span class="mcp-tool-pill">${t}</span>`).join('');
 
       const scopeBadge = connected ? _renderScopeBadge(realTools) : '';
+      const cardBadgeTip = errored && conn.last_error
+        ? `OAuth token rejected by the provider — click Reconnect to re-authorize.\n\nGateway: ${conn.last_error}`
+        : 'OAuth token rejected by the provider — click Reconnect to re-authorize';
       const errorBadge = errored
-        ? ' <span class="mcp-error-badge" title="OAuth token rejected by the provider — click Reconnect to re-authorize">Reconnect</span>'
+        ? ` <span class="mcp-error-badge" title="${_esc(cardBadgeTip)}">Reconnect</span>`
         : '';
 
       return `<div class="mcp-catalog-card ${stateMod}" data-cat="${mcp.cat}">
