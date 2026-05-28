@@ -1483,10 +1483,11 @@
     (async () => {
       if (typeof SBLite === 'undefined' || typeof CardRenderer === 'undefined') return;
 
-      const sel = 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags';
+      // Legacy `blueprints` table dropped 2026-05-24; SBLite.queryBlueprints
+      // hits agent_blueprints + spaceship_blueprints and returns legacy-shape rows.
       const [allShips, allAgents] = await Promise.all([
-        SBLite.query('blueprints', { select: sel, filters: ['type=eq.spaceship'], limit: 200 }),
-        SBLite.query('blueprints', { select: sel, filters: ['type=eq.agent'], limit: 200 }),
+        SBLite.queryBlueprints({ type: 'spaceship', limit: 200 }),
+        SBLite.queryBlueprints({ type: 'agent',     limit: 200 }),
       ]);
       const pick = arr => arr[Math.floor(Math.random() * arr.length)];
       const ships = allShips.length ? [pick(allShips)] : [];

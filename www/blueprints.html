@@ -296,11 +296,10 @@
       function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
       async function init() {
-        allData = await SBLite.query('blueprints', {
-          select: 'id,name,type,category,rarity,description,flavor,serial_key,stats,config,tags,rating_avg,activation_count',
-          order: 'name.asc',
-          limit: 1000,
-        }) || [];
+        // Legacy `blueprints` table dropped 2026-05-24 (Phase D.7 of the
+        // catalog rebuild). SBLite.queryBlueprints reads both new tables in
+        // parallel and translates to the legacy shape this page still expects.
+        allData = await SBLite.queryBlueprints({ order: 'name.asc', limit: 1000 });
 
         // Sync the toggle's active state with viewMode (HTML hardcodes card).
         document.querySelectorAll('.bp-view-btn').forEach(b => {

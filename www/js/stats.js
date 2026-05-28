@@ -36,13 +36,18 @@ const Stats = (() => {
     let blueprints = 500;
     let missions = 0;
 
-    // Try live Supabase fetch
+    // Try live Supabase fetch.
+    // Legacy `blueprints` table dropped 2026-05-24 — sum the two new tables.
     if (typeof SBLite !== 'undefined') {
       try {
-        const rows = await SBLite.query('blueprints', { select: 'id', limit: 2000 });
-        if (rows.length > 0) blueprints = rows.length;
-        const runs = await SBLite.query('mission_runs', { select: 'id', filters: ['status=eq.completed'], limit: 2000 });
-        if (runs.length > 0) missions = runs.length;
+        const [agents, ships, runs] = await Promise.all([
+          SBLite.query('agent_blueprints',     { select: 'id', limit: 2000 }),
+          SBLite.query('spaceship_blueprints', { select: 'id', limit: 2000 }),
+          SBLite.query('mission_runs', { select: 'id', filters: ['status=eq.completed'], limit: 2000 }),
+        ]);
+        const total = (agents?.length || 0) + (ships?.length || 0);
+        if (total > 0) blueprints = total;
+        if (runs?.length > 0) missions = runs.length;
       } catch {}
     }
 
