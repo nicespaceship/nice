@@ -6,10 +6,6 @@
 const SettingsView = (() => {
   const title = 'Settings';
 
-  // Bump when the training-data consent copy / ToS materially changes, so a
-  // policy update can re-prompt users whose grant predates it.
-  const CONSENT_VERSION = '2026-05-v1';
-
   const DEFAULTS = {
     notifications: true,
     sound: false,
@@ -408,11 +404,8 @@ const SettingsView = (() => {
       if (!user || typeof SB === 'undefined' || !SB.isReady()) return;
       const on = e.target.checked;
       try {
-        await SB.db('profiles').update(user.id, {
-          training_consent: on,
-          training_consent_at: new Date().toISOString(),
-          training_consent_version: on ? CONSENT_VERSION : null,
-        });
+        const ok = (typeof ConsentPrompt !== 'undefined') ? await ConsentPrompt.setConsent(on) : false;
+        if (!ok) throw new Error('consent-write-unavailable');
         if (typeof Notify !== 'undefined') {
           Notify.send({
             title: on ? 'Thanks for helping improve NICE' : 'Data sharing off',

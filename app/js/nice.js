@@ -1587,6 +1587,11 @@ const NICE = (() => {
     // 'missions') and emits once-per-user events into audit_log.
     if (typeof Onboarding !== 'undefined') Onboarding.init();
 
+    // One-time training-data consent ask (NICE-1 Phase 0). Subscribes to
+    // State.on('user') and shows an affirmative opt-in after the user settles,
+    // self-guarding against stacking on the first-run setup wizard.
+    if (typeof ConsentPrompt !== 'undefined') ConsentPrompt.init();
+
     // Check initial session
     SB.auth.getUser().then(user => {
       State.set('user', user);
