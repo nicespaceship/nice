@@ -1,6 +1,6 @@
 # NICE‑1 Roadmap — a cost-efficient, task-specialized model behind `nice-ai`
 
-**Status:** Proposed — design SSOT. No code written yet.
+**Status:** Phase 0 shipped to prod 2026-05-29 (R2 capture + consent + router seam live; R2 object-landing pending a final eyeball). Phases 1–5 proposed. Design SSOT.
 **Goal:** Build a small, NICE-owned model (NICE‑1) that matches frontier quality *on NICE's own task distribution* — agentic tool-calling, blueprint missions, workflow steps — at a fraction of the per-token cost, and serve it behind a router so users get cheaper fuel with no quality regression.
 **Non-goal:** A general-purpose frontier competitor. NICE‑1 is a task specialist, not a GPT/Claude replacement. The frontier models stay in the library for hard work.
 
@@ -37,8 +37,8 @@ That single refactor delivers both foundations at once. Nothing user-facing chan
 
 ## Phases (each with an exit gate)
 
-### Phase 0 — The `nice-ai` refactor: capture + router seam + consent
-*Every interaction becomes a clean, consented training asset, and the routing seam exists — with zero user-visible change.* Detailed in [`nice-1-phase0-spec.md`](nice-1-phase0-spec.md).
+### Phase 0 — The `nice-ai` refactor: capture + router seam + consent ✅ SHIPPED 2026-05-29
+*Every interaction becomes a clean, consented training asset, and the routing seam exists — with zero user-visible change.* Detailed in [`nice-1-phase0-spec.md`](nice-1-phase0-spec.md). Shipped via PRs #628–#635: `training_consent` on `profiles`, Settings toggle + one-time `ConsentPrompt`, and `nice-ai` consent-gated PII-redacted capture to R2 bucket `nice-training` (`v1/dt=YYYY-MM-DD/<uuid>.jsonl`) plus the `pickModel()` seam.
 
 - Consent: `profiles.training_consent` + visible toggle + ToS/privacy update, opt-in, global.
 - Capture: `nice-ai` writes a **versioned** training event per call to **Cloudflare R2** (Parquet/JSONL, date-partitioned) with join keys to `mission_runs` and `persona_judgments`. PII redacted at capture. Not Supabase Postgres.
@@ -46,7 +46,7 @@ That single refactor delivers both foundations at once. Nothing user-facing chan
 - Funnel lock: close any path reaching a provider without going through `nice-ai`.
 - ⚠️ `nice-ai` source is proprietary/gitignored. Execution step one: `npx supabase functions download nice-ai`.
 
-**Exit gate:** consented calls across web + Electron land in R2 in the versioned schema; router shell routes 100% to frontier; zero behavior change.
+**Exit gate:** consented calls across web + Electron land in R2 in the versioned schema; router shell routes 100% to frontier; zero behavior change. *Status: deployed and serving; consent + 100%-frontier routing confirmed live; R2 object-landing awaiting a final dashboard eyeball.*
 
 ### Phase 1 — Standalone apps inherit the funnel
 *iOS/Windows are thin clients to `nice-ai`, never direct provider callers.*
