@@ -1367,7 +1367,19 @@ const PromptPanel = (() => {
 
     if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower)) return { type: 'action', action: 'create-mission' };
     if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower)) return { type: 'navigate', route: '#/bridge/agents/new', label: 'Agent Builder' };
-    if (/^(create|new|add|build|make)\s+(a\s+)?(spaceship|ship)/i.test(lower)) return { type: 'navigate', route: '#/bridge/spaceships', label: 'Shipyard' };
+    // "build me a spaceship for my business" → launch the Crew Designer (describe →
+    // design → deploy), seeded with any business context already typed. Authoring
+    // verbs open the builder; browse intents ("show me spaceships") still reach the
+    // Shipyard catalog via the nav map above.
+    const shipBuild = lower.match(/^(?:create|new|add|build|make|design|assemble|launch|set\s?up|spin\s+up|put\s+together)\s+(?:me\s+|us\s+)?(?:a\s+|an\s+|my\s+|the\s+|our\s+)?(?:new\s+)?(?:spaceship|space\s?ship|ship|crew|team|fleet)\b(.*)$/i);
+    if (shipBuild) {
+      let seed = shipBuild[1].trim()
+        .replace(/^(?:for|to|around)\s+/i, '')
+        .replace(/^(?:my|a|an|the|our)\s+/i, '')
+        .trim();
+      if (seed.length < 3 || /^(?:business|company|work|startup|me|us|it)\.?$/i.test(seed)) seed = '';
+      return { type: 'crew-designer', prompt: seed };
+    }
     if (/^(setup|guided setup|wizard)/i.test(lower)) return { type: 'action', action: 'setup-wizard' };
     if (/^(export|download)\s+(data|backup)/i.test(lower)) return { type: 'action', action: 'export-data' };
 
@@ -1438,6 +1450,18 @@ const PromptPanel = (() => {
         setTimeout(() => { if (typeof DataIO !== 'undefined') DataIO.exportData(); }, 300);
         return { text: 'Exporting your data now.', agent: null };
       }
+    }
+    if (intent.type === 'crew-designer') {
+      setTimeout(() => {
+        _hideMonitor();
+        if (typeof CrewDesigner !== 'undefined') CrewDesigner.open({ prompt: intent.prompt || '' });
+        else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
+        else window.location.hash = '#/bridge/spaceships';
+      }, 800);
+      const text = intent.prompt
+        ? `Opening the Crew Designer to design a crew for "${intent.prompt}".`
+        : 'Opening the Crew Designer. Describe your business and NICE designs the crew.';
+      return { text, agent: null, isNav: true, navLabel: 'Crew Designer' };
     }
     if (intent.type === 'auto-mission') {
       return { text: null, autoMission: true, title: intent.title };
