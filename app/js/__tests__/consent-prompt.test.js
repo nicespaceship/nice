@@ -108,4 +108,16 @@ describe('ConsentPrompt.maybeShow', () => {
     await ConsentPrompt.maybeShow();
     expect(createdEls.length).toBe(0);
   });
+
+  it('does not render when SB is not ready (cannot persist)', async () => {
+    globalThis.SB = { isReady: () => false, db: () => ({ get: () => Promise.resolve(profileMock) }) };
+    await ConsentPrompt.maybeShow();
+    expect(createdEls.length).toBe(0);
+  });
+
+  it('does not render when the profile read fails (no valid session)', async () => {
+    globalThis.SB = { isReady: () => true, db: () => ({ get: () => Promise.reject(new Error('rls')) }) };
+    await ConsentPrompt.maybeShow();
+    expect(createdEls.length).toBe(0);
+  });
 });

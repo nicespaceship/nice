@@ -55,16 +55,23 @@ const ConsentPrompt = (() => {
     if (_alreadyPrompted()) return;
     if (document.querySelector('.wizard-overlay')) return; // never stack on the wizard
 
-    // Skip if the user already decided at this version (e.g. via Settings).
+    // Only ask if we can actually persist the answer. A successful profile read
+    // confirms a real authenticated session (a stale user object with no valid
+    // token fails RLS here), so we never show on the signed-out / sign-in screen.
+    if (typeof SB === 'undefined' || !SB.isReady()) return;
+    let profile;
     try {
-      if (typeof SB !== 'undefined' && SB.isReady()) {
-        const profile = await SB.db('profiles').get(user.id);
-        if (profile && (profile.training_consent || profile.training_consent_version === VERSION)) {
-          _markPrompted();
-          return;
-        }
-      }
-    } catch { /* fall through and ask */ }
+      profile = await SB.db('profiles').get(user.id);
+    } catch {
+      return; // no working session — ask on a later load
+    }
+    if (!profile) return;
+
+    // Already decided at this version (e.g. via the Settings toggle).
+    if (profile.training_consent || profile.training_consent_version === VERSION) {
+      _markPrompted();
+      return;
+    }
 
     _render();
   }
@@ -107,24 +114,32 @@ const ConsentPrompt = (() => {
   }
 
   async function _decide(accepted) {
-    _markPrompted();
-    if (accepted) {
-      try {
-        const ok = await setConsent(true);
-        if (!ok) throw new Error('not-ready');
-        if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Thanks for helping improve NICE', message: 'NICE will learn from your missions. Turn it off anytime in Settings.', type: 'system' });
-        }
-        if (typeof AuditLog !== 'undefined') AuditLog.log('training_consent_granted', { source: 'onboarding' });
-      } catch {
-        if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Could not save', message: 'Try again from Settings, Privacy and Data.', type: 'agent_error' });
-        }
-      }
-    } else if (typeof AuditLog !== 'undefined') {
-      AuditLog.log('training_consent_declined', { source: 'onboarding' });
-    }
+    // Dismiss first so the UI is never stuck, then persist in the background.
     close();
+    _markPrompted();
+
+    if (!accepted) {
+      if (typeof AuditLog !== 'undefined') AuditLog.log('training_consent_declined', { source: 'onboarding' });
+      return;
+    }
+
+    try {
+      const ok = await setConsent(true);
+      if (!ok) {
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Sign in to enable', message: 'Sign in, then turn this on in Settings, Privacy and Data.', type: 'agent_error' });
+        }
+        return;
+      }
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Thanks for helping improve NICE', message: 'NICE will learn from your missions. Turn it off anytime in Settings.', type: 'system' });
+      }
+      if (typeof AuditLog !== 'undefined') AuditLog.log('training_consent_granted', { source: 'onboarding' });
+    } catch {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Could not save', message: 'Try again from Settings, Privacy and Data.', type: 'agent_error' });
+      }
+    }
   }
 
   function close() {
