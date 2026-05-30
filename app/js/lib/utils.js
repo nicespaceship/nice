@@ -116,6 +116,7 @@ const Utils = (() => {
     customShips: 'nice-custom-ships',
     contentQueue: 'nice-content-queue',
     onboarded: 'nice-onboarded',
+    consentPrompted: 'nice-consent-prompted',
     plan: 'nice-plan',
     settings: 'nice-settings',
     streak: 'nice-streak',
