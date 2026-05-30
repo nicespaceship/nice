@@ -75,7 +75,7 @@ That single refactor delivers both foundations at once. Nothing user-facing chan
 **Exit gate:** NICE‑1 v0 scored against the scoreboard; pipeline reproducible.
 
 ### Phase 4 — Cascade in shadow mode
-*NICE‑1 runs on real traffic, scored, but never serves users.*
+*NICE‑1 runs on real traffic, scored, but never serves users.* Detailed in [`nice-1-cascade-confidence.md`](nice-1-cascade-confidence.md).
 
 - Router tries NICE‑1 in shadow alongside the real frontier response; log both + confidence score; never return NICE‑1 to the user.
 - Confidence/escalation: task-type allowlist + judge-score threshold first → learned routing via `ModelIntel` later.
