@@ -141,9 +141,10 @@ self.addEventListener('fetch', e => {
   const isNavigation = e.request.mode === 'navigate';
 
   if (isNavigation) {
-    // Navigation requests: network-first with offline fallback
+    // Navigation requests: network-first with offline fallback. `cache:'reload'`
+    // keeps the HTML shell fresh past any intermediary HTTP cache.
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: 'reload' })
         .then(resp => {
           if (resp && resp.status === 200) {
             const clone = resp.clone();
@@ -157,9 +158,11 @@ self.addEventListener('fetch', e => {
         )
     );
   } else if (isCodeAsset) {
-    // Network-first for JS/CSS — always get fresh code
+    // Network-first for JS/CSS. `cache:'reload'` bypasses the browser HTTP
+    // cache so a post-deploy reload fetches fresh code instead of the copy
+    // the 4h max-age would otherwise pin. Offline still falls back to cache.
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: 'reload' })
         .then(resp => {
           if (resp && resp.status === 200) {
             const clone = resp.clone();
