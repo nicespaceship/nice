@@ -14,13 +14,18 @@ const ConsentPrompt = (() => {
   let _overlay = null;
 
   /* ── SSOT consent write (shared with SettingsView) ── */
+  // `training_consent_version` records the version at which the user last
+  // *answered*, regardless of yes/no. That lets maybeShow() suppress the prompt
+  // across devices once a decision exists (we don't re-ask after a "no"), while
+  // a version bump re-asks everyone. `training_consent` carries the actual
+  // boolean.
   async function setConsent(on) {
     const user = (typeof State !== 'undefined') ? State.get('user') : null;
     if (!user || typeof SB === 'undefined' || !SB.isReady()) return false;
     await SB.db('profiles').update(user.id, {
       training_consent: on,
       training_consent_at: new Date().toISOString(),
-      training_consent_version: on ? VERSION : null,
+      training_consent_version: VERSION,
     });
     return true;
   }
@@ -119,6 +124,10 @@ const ConsentPrompt = (() => {
     _markPrompted();
 
     if (!accepted) {
+      // Record the "no" in the DB so we don't re-ask on the user's other
+      // devices. Fire-and-forget — the local prompted flag already suppresses
+      // here, and a failed write just means they may be asked once elsewhere.
+      setConsent(false).catch(() => {});
       if (typeof AuditLog !== 'undefined') AuditLog.log('training_consent_declined', { source: 'onboarding' });
       return;
     }

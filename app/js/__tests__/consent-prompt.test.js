@@ -68,11 +68,13 @@ describe('ConsentPrompt.setConsent', () => {
     expect(typeof changes.training_consent_at).toBe('string');
   });
 
-  it('nulls the version when turning consent off', async () => {
+  it('records the answer version even when turning consent off', async () => {
     await ConsentPrompt.setConsent(false);
     const [, changes] = updateSpy.mock.calls[0];
     expect(changes.training_consent).toBe(false);
-    expect(changes.training_consent_version).toBeNull();
+    // Version marks "answered at this version" regardless of yes/no, so the
+    // prompt is not re-shown on other devices after a decline.
+    expect(changes.training_consent_version).toBe(ConsentPrompt.VERSION);
   });
 
   it('returns false (no write) when there is no signed-in user', async () => {

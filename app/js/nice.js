@@ -1537,8 +1537,17 @@ const NICE = (() => {
         // alone (otherwise a refresh on #/bridge would yank back to a
         // stale stash from a prior session).
         if (event === 'SIGNED_IN') {
+          // Fresh sign-in lands on the chat home (#/) by default. Only honor a
+          // stashed return when it's a real content destination worth deep-
+          // linking back to (a shared blueprint, a ship). Utility pages
+          // (Settings / Security / Profile / Wallet / Moderation / Theme editor)
+          // are a poor place to land right after signing in, so they fall back
+          // to chat. (This branch only fires on an actual sign-in event;
+          // INITIAL_SESSION on refresh leaves the current route alone.)
           const ret = _authPopReturn();
-          if (ret && location.hash !== ret) location.hash = ret;
+          const utility = /^#\/(settings|security|profile|wallet|moderation|theme-editor)\b/;
+          const dest = (ret && !utility.test(ret)) ? ret : '#/';
+          if (location.hash !== dest) location.hash = dest;
         }
         _migrateLocalSpaceships(user);
         if (typeof Blueprints !== 'undefined' && Blueprints.migrateGuestState) Blueprints.migrateGuestState();
