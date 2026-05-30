@@ -99,6 +99,7 @@ const PromptPanel = (() => {
   let _miniExpanded = false; // User clicked the expand button → route to full monitor once
   let _themeObserver = null;  // MutationObserver for theme changes
   let _onHashChange = null;  // hashchange listener ref for cleanup
+  let _suppressMonitorAutoHide = false; // armed when opening a chat that also navigates to #/
   let _onEscKey = null;      // keydown listener ref for cleanup
   let _onCapsLockKey = null; // global keydown listener for Caps Lock toggle-to-talk
 
@@ -356,6 +357,9 @@ const PromptPanel = (() => {
         };
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+      // Let the sidebar Chats list lazily adopt an in-flight top-level chat
+      // (nice.js debounces and persists it into a conversation entry).
+      document.dispatchEvent(new CustomEvent('nice:chat-saved'));
     } catch {}
   }
 
@@ -363,12 +367,14 @@ const PromptPanel = (() => {
      MONITOR — Full-screen response rendering
   ════════════════════════════════════════════════════════════ */
 
-  function _showMonitor() {
+  function _showMonitor(force) {
     if (!_appMain) return;
     // On the Schematic, keep the user in-view — responses render into the
     // mini-chat panel above the reactor. The expand button opts in to the
-    // full monitor overlay by setting `_miniExpanded`.
-    if (_isOnSchematicInView() && !_miniExpanded) {
+    // full monitor overlay by setting `_miniExpanded`. `force` is the
+    // explicit "open this conversation" path (sidebar Chats) which always
+    // wants the full monitor, never the schematic mini-chat.
+    if (!force && _isOnSchematicInView() && !_miniExpanded) {
       _ensureMiniObserver();
       _updateMiniChat();
       return;
@@ -378,7 +384,7 @@ const PromptPanel = (() => {
     // drop the solid bg and let the core reactor show through as the
     // visual backdrop. The schematic crew rows are already faded out
     // (.app-main.monitor-active .app-view-content { opacity:0 }).
-    if (_isOnSchematicInView() || _miniExpanded) {
+    if (!force && (_isOnSchematicInView() || _miniExpanded)) {
       _appMain.classList.add('monitor-on-schematic');
     }
   }
@@ -2985,8 +2991,14 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       setTimeout(() => {
         if (_isOnSchematicInView()) { _ensureMiniObserver(); _updateMiniChat(); }
       }, 150);
-      // Auto-hide monitor when user navigates via sidebar
-      if (_isMonitorActive()) _hideMonitor();
+      // Auto-hide monitor when user navigates via sidebar — unless this
+      // hashchange is the one _showConversation() triggered to land on #/
+      // before revealing the chat's full monitor.
+      if (_suppressMonitorAutoHide) {
+        _suppressMonitorAutoHide = false;
+      } else if (_isMonitorActive()) {
+        _hideMonitor();
+      }
     };
     window.addEventListener('hashchange', _onHashChange);
 
@@ -3666,5 +3678,26 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     }
   }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext };
+  /* Open a stored conversation in the full-screen monitor. Called by the
+     sidebar Chats list. Loads the messages already written to STORAGE_KEY,
+     lands on Home (the monitor's home base), and reveals the full monitor.
+     When navigation is needed, arms _suppressMonitorAutoHide so the
+     resulting hashchange doesn't immediately close what we just opened. */
+  function _showConversation() {
+    const onHome = window.location.hash === '#/' || window.location.hash === '';
+    if (onHome) {
+      // Already home: refresh the feed underneath so it's consistent once the
+      // monitor closes (Router won't re-render for the same hash).
+      _reload();
+    } else {
+      _loadMessages();
+      if (_messages.length) _suppressMonitorAutoHide = true;
+      window.location.hash = '#/'; // Router renders Home fresh from STORAGE_KEY
+    }
+    _renderMonitor();
+    if (_messages.length) _showMonitor(true);
+    else _hideMonitor();
+  }
+
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext };
 })();

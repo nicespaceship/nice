@@ -1009,7 +1009,7 @@ const NICE = (() => {
     window.location.hash = '#/';
   }
 
-  function _loadConversation(id) {
+  function _loadConversation(id, openMonitor) {
     // Save current conversation first
     _saveActiveConversation();
     const convs = _getConversations();
@@ -1017,27 +1017,62 @@ const NICE = (() => {
     if (!conv) return;
     _setActiveConvId(id);
     localStorage.setItem(Utils.KEYS.aiMessages, JSON.stringify(conv.messages || []));
-    if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     _renderChatsList();
+    // Opened from the sidebar Chats list: reveal the conversation in the
+    // full-screen monitor (handles landing on #/ and the reveal ordering).
+    if (openMonitor && typeof PromptPanel !== 'undefined' && PromptPanel._showConversation) {
+      PromptPanel._showConversation();
+      return;
+    }
+    if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     window.location.hash = '#/';
   }
 
   function _saveActiveConversation() {
+    let msgs;
+    try { msgs = JSON.parse(localStorage.getItem(Utils.KEYS.aiMessages) || '[]'); } catch { return false; }
     const id = _getActiveConvId();
-    if (!id) return;
+
+    // No active conversation yet: lazily adopt an in-flight top-level NICE
+    // chat the moment it has messages, so it appears in the Chats list
+    // without waiting for a reload to trigger _migrateMessages.
+    if (!id) {
+      if (!msgs.length) return false;
+      const convs = _getConversations();
+      const firstUser = msgs.find(m => m.role === 'user');
+      const conv = {
+        id: 'conv-' + Date.now(),
+        title: firstUser ? firstUser.text.slice(0, 40) : 'New Chat',
+        createdAt: (msgs[0] && msgs[0].ts) || Date.now(),
+        updatedAt: Date.now(),
+        pinned: false,
+        messages: msgs,
+      };
+      convs.unshift(conv);
+      _saveConversations(convs);
+      _setActiveConvId(conv.id);
+      return true;
+    }
+
     const convs = _getConversations();
     const conv = convs.find(c => c.id === id);
-    if (!conv) return;
-    try {
-      const msgs = JSON.parse(localStorage.getItem(Utils.KEYS.aiMessages) || '[]');
-      conv.messages = msgs;
-      conv.updatedAt = Date.now();
-      if (msgs.length > 0 && conv.title === 'New Chat') {
-        const firstUser = msgs.find(m => m.role === 'user');
-        if (firstUser) conv.title = firstUser.text.slice(0, 40);
-      }
-      _saveConversations(convs);
-    } catch {}
+    if (!conv) return false;
+    conv.messages = msgs;
+    conv.updatedAt = Date.now();
+    if (msgs.length > 0 && conv.title === 'New Chat') {
+      const firstUser = msgs.find(m => m.role === 'user');
+      if (firstUser) conv.title = firstUser.text.slice(0, 40);
+    }
+    _saveConversations(convs);
+    return true;
+  }
+
+  let _chatSavedTimer = null;
+  function _onChatSaved() {
+    clearTimeout(_chatSavedTimer);
+    _chatSavedTimer = setTimeout(() => {
+      if (_saveActiveConversation()) _renderChatsList();
+    }, 600);
   }
 
   function _deleteConversation(id) {
@@ -1183,6 +1218,10 @@ const NICE = (() => {
     setInterval(_saveActiveConversation, 30000);
     window.addEventListener('beforeunload', _saveActiveConversation);
 
+    // A top-level NICE chat just persisted messages — adopt/refresh its entry
+    // in the Chats list. Debounced so a burst of saves coalesces into one.
+    document.addEventListener('nice:chat-saved', _onChatSaved);
+
     // Re-render on theme change so the empty-state copy picks up the
     // active persona's rewrite (Theme.rewrite is consulted at render).
     document.addEventListener('nice:theme-change', _renderChatsList);
@@ -1224,7 +1263,7 @@ const NICE = (() => {
       .slice(0, 100);
 
     if (!sorted.length) {
-      const base = 'Deploy a ship to start one.';
+      const base = 'Start a chat to see it here.';
       const msg = (typeof Theme !== 'undefined' && Theme.rewrite) ? Theme.rewrite(base) : base;
       list.innerHTML = `<div class="side-folder-item" style="opacity:.4;cursor:default">${Utils.esc(msg)}</div>`;
       return;
@@ -1254,7 +1293,7 @@ const NICE = (() => {
       const id = item.dataset.convId;
       item.addEventListener('click', (e) => {
         if (e.target.closest('.side-chat-dots')) return; // don't load when clicking dots
-        _loadConversation(id);
+        _loadConversation(id, true);
       });
       // 3-dot menu button
       item.querySelector('.side-chat-dots')?.addEventListener('click', (e) => {
