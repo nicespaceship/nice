@@ -6,6 +6,10 @@
 const SettingsView = (() => {
   const title = 'Settings';
 
+  // Bump when the training-data consent copy / ToS materially changes, so a
+  // policy update can re-prompt users whose grant predates it.
+  const CONSENT_VERSION = '2026-05-v1';
+
   const DEFAULTS = {
     notifications: true,
     sound: false,
@@ -237,6 +241,21 @@ const SettingsView = (() => {
           </div>
         </div>
 
+        <!-- Privacy & Data -->
+        <div class="settings-section">
+          <h3 class="settings-section-title">Privacy & Data</h3>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <span class="settings-row-name">Help improve NICE</span>
+              <span class="settings-row-desc">Let NICE learn from your missions to build faster, cheaper models. Off by default. Turn off anytime.</span>
+            </div>
+            <label class="settings-switch">
+              <input type="checkbox" id="set-training-consent" />
+              <span class="settings-slider"></span>
+            </label>
+          </div>
+        </div>
+
         <!-- Data Management -->
         <div class="settings-section">
           <h3 class="settings-section-title">Data Management</h3>
@@ -280,6 +299,7 @@ const SettingsView = (() => {
 
     _bindEvents(el);
     _loadSubscriptionData();
+    _loadConsent();
 
     // Collapsible Appearance section — render Theme Creator on first expand
     let _tcRendered = false;
@@ -382,6 +402,32 @@ const SettingsView = (() => {
       localStorage.setItem(Utils.KEYS.budget, JSON.stringify(budget));
     });
 
+    // Training-data consent — write straight to the profiles row.
+    document.getElementById('set-training-consent')?.addEventListener('change', async (e) => {
+      const user = State.get('user');
+      if (!user || typeof SB === 'undefined' || !SB.isReady()) return;
+      const on = e.target.checked;
+      try {
+        await SB.db('profiles').update(user.id, {
+          training_consent: on,
+          training_consent_at: new Date().toISOString(),
+          training_consent_version: on ? CONSENT_VERSION : null,
+        });
+        if (typeof Notify !== 'undefined') {
+          Notify.send({
+            title: on ? 'Thanks for helping improve NICE' : 'Data sharing off',
+            message: on ? 'NICE will learn from your missions.' : 'NICE will no longer learn from your missions.',
+            type: 'system',
+          });
+        }
+      } catch (err) {
+        e.target.checked = !on; // revert on failure
+        if (typeof Notify !== 'undefined') {
+          Notify.send({ title: 'Update failed', message: 'Could not save preference. Try again.', type: 'agent_error' });
+        }
+      }
+    });
+
     // Reset
     document.getElementById('btn-reset-settings')?.addEventListener('click', () => {
       if (!confirm('Reset all settings to defaults?')) return;
@@ -420,6 +466,18 @@ const SettingsView = (() => {
       State.set('spaceships', []);
       render(el);
     });
+  }
+
+  // Training-data consent is persisted on the profiles row, not localStorage —
+  // it is a server-enforced grant, so the DB is the source of truth.
+  async function _loadConsent() {
+    const cb = document.getElementById('set-training-consent');
+    const user = State.get('user');
+    if (!cb || !user || typeof SB === 'undefined' || !SB.isReady()) return;
+    try {
+      const profile = await SB.db('profiles').get(user.id);
+      cb.checked = !!(profile && profile.training_consent);
+    } catch (e) { /* leave unchecked (opt-in default) on read failure */ }
   }
 
   async function _loadSubscriptionData() {
