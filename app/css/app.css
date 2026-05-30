@@ -4655,6 +4655,17 @@ html:not([data-theme]) .app-main,
   min-height:80px;
 }
 
+/* Frame the top-level NICE chat so the conversation reads as a defined panel
+   instead of text floating on the page background. Flat per the design system
+   (border + panel surface, no shadow). The Schematic overlay variant keeps its
+   transparent, reactor-backed look and is excluded. */
+.app-main.monitor-active:not(.monitor-on-schematic) .nice-monitor-content {
+  background:var(--panel-bg);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:8px 24px;
+}
+
 /* Monitor response card */
 .monitor-card {
   background:transparent;
