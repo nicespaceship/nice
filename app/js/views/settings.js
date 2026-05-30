@@ -17,10 +17,13 @@ const SettingsView = (() => {
   };
 
   function render(el) {
-    // Settings never shows the centerpiece reactor. Assert it off on every
-    // render (not just on the router's route-change hide), so a post-sign-in
-    // re-render that skips the router can't leave it visible behind the cards.
+    // Settings never shows the reactor and is always scrollable. Assert both on
+    // every render (not just the router's route-change cleanup), so a post-sign-in
+    // re-render that skips the router can't leave the reactor visible or the
+    // scroll locked. `view-no-scroll` leaks in from a transient Home render
+    // (home.js sets it when there are no chat messages) during the login flow.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(false);
+    el.classList.remove('view-no-scroll');
 
     const user = State.get('user');
     if (!user) return _authPrompt(el, 'settings');
