@@ -17,6 +17,11 @@ const SettingsView = (() => {
   };
 
   function render(el) {
+    // Settings never shows the centerpiece reactor. Assert it off on every
+    // render (not just on the router's route-change hide), so a post-sign-in
+    // re-render that skips the router can't leave it visible behind the cards.
+    if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(false);
+
     const user = State.get('user');
     if (!user) return _authPrompt(el, 'settings');
 
