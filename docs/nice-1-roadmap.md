@@ -1,6 +1,6 @@
 # NICE‑1 Roadmap — a cost-efficient, task-specialized model behind `nice-ai`
 
-**Status:** Phase 0 shipped to prod 2026-05-29 (R2 capture + consent + router seam live; R2 object-landing pending a final eyeball). Phases 1–5 proposed. Design SSOT.
+**Status:** Phase 0 shipped to prod 2026-05-29, exit gate confirmed 2026-05-30 (consent + 100%-frontier routing live; consented PII-redacted events landing in R2 `nice-training` as `v1/dt=*/*.jsonl`). Phases 1–5 proposed. Design SSOT.
 **Goal:** Build a small, NICE-owned model (NICE‑1) that matches frontier quality *on NICE's own task distribution* — agentic tool-calling, blueprint missions, workflow steps — at a fraction of the per-token cost, and serve it behind a router so users get cheaper fuel with no quality regression.
 **Non-goal:** A general-purpose frontier competitor. NICE‑1 is a task specialist, not a GPT/Claude replacement. The frontier models stay in the library for hard work.
 
@@ -46,7 +46,7 @@ That single refactor delivers both foundations at once. Nothing user-facing chan
 - Funnel lock: close any path reaching a provider without going through `nice-ai`.
 - ⚠️ `nice-ai` source is proprietary/gitignored. Execution step one: `npx supabase functions download nice-ai`.
 
-**Exit gate:** consented calls across web + Electron land in R2 in the versioned schema; router shell routes 100% to frontier; zero behavior change. *Status: deployed and serving; consent + 100%-frontier routing confirmed live; R2 object-landing awaiting a final dashboard eyeball.*
+**Exit gate:** consented calls across web + Electron land in R2 in the versioned schema; router shell routes 100% to frontier; zero behavior change. *Status: ✅ met 2026-05-30 — deployed and serving; consent + 100%-frontier routing live; multiple consented `v1/dt=2026-05-30/<uuid>.jsonl` events confirmed in the `nice-training` bucket.*
 
 ### Phase 1 — Standalone apps inherit the funnel
 *iOS/Windows are thin clients to `nice-ai`, never direct provider callers.*
