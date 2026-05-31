@@ -143,12 +143,8 @@ const Notify = (() => {
   function _updateBadge() {
     const notifs = State.get('notifications') || [];
     const unread = notifs.filter(n => !n.read).length + 1; // +1 for the new one
-    const dot = document.getElementById('side-bell-dot');
-    if (dot) {
-      dot.textContent = unread > 9 ? '9+' : unread;
-      dot.hidden = unread === 0;
-    }
-    // App Badge API (PWA installed)
+    // The in-app bell is gone; new notifications surface as toasts (above)
+    // and on the PWA app badge below. History lives in the Log tab.
     if ('setAppBadge' in navigator) {
       if (unread > 0) {
         navigator.setAppBadge(unread).catch(() => {});

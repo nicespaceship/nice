@@ -920,11 +920,14 @@ const NICE = (() => {
         }
         const open = popover.classList.toggle('open');
         moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        // Gear aggregate shows only while the popover is closed.
+        _updateAlertIndicators();
       });
       document.addEventListener('click', (e) => {
-        if (!popover.contains(e.target) && e.target !== moreBtn) {
+        if (popover.classList.contains('open') && !popover.contains(e.target) && e.target !== moreBtn) {
           popover.classList.remove('open');
           moreBtn.setAttribute('aria-expanded', 'false');
+          _updateAlertIndicators();
         }
       });
       // Close popover when a link inside is clicked
@@ -932,6 +935,7 @@ const NICE = (() => {
         a.addEventListener('click', () => {
           popover.classList.remove('open');
           moreBtn.setAttribute('aria-expanded', 'false');
+          _updateAlertIndicators();
         });
       });
       // Export data button
@@ -1431,65 +1435,6 @@ const NICE = (() => {
     });
   }
 
-  function _updateBellBadge(notifs) {
-    const unread = notifs.filter(n => !n.read).length;
-    const dot = document.getElementById('side-bell-dot');
-    if (dot) {
-      dot.textContent = unread > 9 ? '9+' : (unread || '');
-      dot.hidden = unread === 0;
-    }
-  }
-
-  function _renderAlertDropdown() {
-    const list = document.getElementById('hud-alert-list');
-    if (!list) return;
-    const notifs = State.get('notifications') || [];
-    if (!notifs.length) {
-      list.innerHTML = '<p class="hud-alert-empty">No alerts.</p>';
-      return;
-    }
-
-    const TYPES = {
-      'mission_complete': { icon: '#icon-check',    color: '#22c55e' },
-      'mission_failed':   { icon: '#icon-alert',    color: '#ef4444' },
-      'agent_ready':      { icon: '#icon-agent',    color: '#3b82f6' },
-      'fleet_deployed':   { icon: '#icon-spaceship', color: '#6366f1' },
-      'budget_alert':     { icon: '#icon-alert',    color: '#f59e0b' },
-      'system':           { icon: '#icon-settings', color: 'var(--accent)' },
-      'broadcast':        { icon: '#icon-comms',    color: '#06b6d4' },
-    };
-
-    list.innerHTML = notifs.map(n => {
-      const t = TYPES[n.type] || TYPES.system;
-      const msg = (n.message || '').length > 50 ? n.message.slice(0, 50) + '...' : (n.message || '');
-      return `
-        <div class="hud-alert-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
-          <div class="hud-alert-item-icon" style="color:${t.color}">
-            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="${t.icon}"/></svg>
-          </div>
-          <div class="hud-alert-item-body">
-            <span class="hud-alert-item-title">${n.title || ''}</span>
-            <span class="hud-alert-item-msg">${msg}</span>
-          </div>
-          <span class="hud-alert-item-time">${_bellTimeAgo(n.created_at)}</span>
-        </div>
-      `;
-    }).join('');
-
-    list.querySelectorAll('.hud-alert-item.unread').forEach(item => {
-      item.addEventListener('click', () => {
-        const notifs = State.get('notifications') || [];
-        const n = notifs.find(x => x.id === item.dataset.id);
-        if (n) { n.read = true; _renderAlertDropdown(); _updateBellBadge(notifs); }
-      });
-    });
-  }
-
-  function _bellTimeAgo(ts) {
-    if (!ts) return '';
-    return (typeof Utils !== 'undefined' && Utils.timeAgo) ? Utils.timeAgo(ts) : '';
-  }
-
   /* ── HUD panel toggle ── */
   function _initHUD() {
     const btn   = document.getElementById('btn-hud');
@@ -1514,58 +1459,12 @@ const NICE = (() => {
         }).observe(sidebarEl, { attributes:true, attributeFilter:['class'] });
       }
 
-      // Bell button → dropdown. Body-level dropdown is positioned off the
-      // bell's bounding rect each open so it tracks layout changes.
-      const sideBell = document.getElementById('side-bell');
-      const alertDropdown = document.getElementById('hud-alert-dropdown');
-      const positionAlertDropdown = () => {
-        if (!sideBell || !alertDropdown) return;
-        const rect = sideBell.getBoundingClientRect();
-        const gap = 8;
-        // Open to the right of the bell, aligned to its top. If the
-        // dropdown would overflow the viewport bottom, anchor to its
-        // bottom edge instead so it stays on-screen.
-        const top = Math.max(8, Math.min(rect.top, window.innerHeight - 380));
-        alertDropdown.style.top = top + 'px';
-        alertDropdown.style.left = (rect.right + gap) + 'px';
-      };
-      if (sideBell && alertDropdown) {
-        sideBell.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const isOpen = alertDropdown.classList.toggle('open');
-          sideBell.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-          if (isOpen) {
-            positionAlertDropdown();
-            _renderAlertDropdown();
-          }
-        });
-        window.addEventListener('resize', () => {
-          if (alertDropdown.classList.contains('open')) positionAlertDropdown();
-        });
-      }
-
-      const markAllBtn = document.getElementById('hud-alert-mark-all');
-      if (markAllBtn) {
-        markAllBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const notifs = State.get('notifications') || [];
-          notifs.forEach(n => n.read = true);
-          State.set('notifications', notifs);
-          _renderAlertDropdown();
-          _updateBellBadge(notifs);
-        });
-      }
-
       document.addEventListener('click', e => {
         // Use contains() so inner SVG/USE targets (the logo inside the
         // button) still register as the trigger rather than an outside click.
         if (!panel.contains(e.target) && !btn.contains(e.target)) {
           panel.classList.remove('open');
           btn.classList.remove('active');
-        }
-        if (alertDropdown && !alertDropdown.contains(e.target) && sideBell && !sideBell.contains(e.target)) {
-          alertDropdown.classList.remove('open');
-          sideBell?.setAttribute('aria-expanded', 'false');
         }
       });
     }
@@ -1596,7 +1495,6 @@ const NICE = (() => {
 
     SB.auth.onAuthChange((user, _session, event) => {
       State.set('user', user);
-      _updateAuthUI(user);
       if (user) {
         // Send the user back to where they were before signing in, if a
         // stashed return path is present. Only on a fresh sign-in event —
@@ -1671,11 +1569,9 @@ const NICE = (() => {
     // Check initial session
     SB.auth.getUser().then(user => {
       State.set('user', user);
-      _updateAuthUI(user);
       if (user) { _migrateLocalSpaceships(user); _loadTokenBalance(user); _loadAdminFlag(user); }
     }).catch(() => {
       State.set('user', null);
-      _updateAuthUI(null);
     });
   }
 
@@ -1693,11 +1589,25 @@ const NICE = (() => {
       if (current && current.id === user.id) {
         State.set('user', Object.assign({}, current, { is_admin: flag }));
       }
+      // Admin-only: seed the Moderation alert count so the gear dot reflects
+      // the pending-review queue. Non-admins never fire this, so the count
+      // stays 0 and the dot never shows.
+      if (flag) _loadModerationCount();
     } catch (err) {
       // RPC missing (pre-C3.5 DBs) should not block the app — flag stays
       // undefined, admin surfaces stay hidden, non-admin UX is the default.
       console.warn('[NICE] Admin flag lookup failed:', err?.message);
     }
+  }
+
+  /* Fetch the count of community submissions awaiting moderation and stash it
+     in State for the alert dot (see AlertCounts.moderation). Admin-gated by
+     the caller; the RPC also rejects non-admins server-side. */
+  async function _loadModerationCount() {
+    try {
+      const { data, error } = await SB.client.rpc('admin_list_pending_reviews');
+      if (!error) State.set('moderation_pending', Array.isArray(data) ? data.length : 0);
+    } catch { /* leave the count at 0 on failure */ }
   }
 
   /* ── Admin-only sidebar links ──
@@ -1825,11 +1735,6 @@ const NICE = (() => {
       localStorage.setItem(migratedKey, '1');
       console.warn('[NICE] Spaceship migration failed:', err.message);
     }
-  }
-
-  function _updateAuthUI(user) {
-    const dot = document.getElementById('side-bell-dot');
-    if (dot && !user) dot.hidden = true;
   }
 
   /* ── Register routes ── */
@@ -2547,11 +2452,11 @@ const NICE = (() => {
     // Idle session timeout
     _initIdleTimeout();
 
-    // Sidebar badges — live counts
-    _updateSidebarBadges();
-    State.on('agents', _updateSidebarBadges);
-    State.on('missions', _updateSidebarBadges);
-    State.on('spaceships', _updateSidebarBadges);
+    // Sidebar alert indicators — live aggregate of the Bridge + Settings dots
+    _updateAlertIndicators();
+    ['agents', 'missions', 'spaceships', 'mcp_connections',
+     'token_balance', 'moderation_pending', 'compliance_open']
+      .forEach(k => State.on(k, _updateAlertIndicators));
 
     // Re-render current view when skin changes
     State.on('skin', () => {
@@ -2574,16 +2479,13 @@ const NICE = (() => {
       if (title) _announce('Navigated to ' + title.textContent);
     });
 
-    // Keep the profile-icon dot in sync with the notifications list, and
-    // announce count changes (Step 56). Without this the dot only updated
-    // when Notify.show() fired or the user clicked into a notification,
-    // missing initial loads and any State.set from elsewhere.
+    // Announce notification count changes for screen readers (Step 56). The
+    // visual bell is gone (history lives in the Log tab now); Notify toasts +
+    // the PWA app badge still surface new notifications.
     State.on('notifications', (notifs) => {
-      _updateBellBadge(notifs || []);
       const unread = (notifs || []).filter(n => !n.read).length;
       if (unread > 0) _announce(unread + ' new notification' + (unread !== 1 ? 's' : ''));
     });
-    _updateBellBadge(State.get('notifications') || []);
 
     // Guest/demo mode (after auth init has set user)
     setTimeout(_initGuestMode, 500);
@@ -2595,41 +2497,33 @@ const NICE = (() => {
     });
   }
 
-  function _updateSidebarBadges() {
-    const agents = State.get('agents') || [];
-    const missions = State.get('missions') || [];
-    const spaceships = State.get('spaceships') || [];
+  // Two aggregating parents, one rule (item dot when count > 0; parent shows
+  // the sum), all sourced from the AlertCounts SSOT:
+  //   • The NICE brand (header) + collapsed-rail NICE icon are the one Bridge
+  //     CTA, so both aggregate every Bridge-tab alert (schematic/missions/
+  //     outbox) — visible whether the menu is open or collapsed. The Bridge
+  //     tabs render their own per-tab dots (see blueprints.js).
+  //   • The Settings popover items (integrations/wallet/security/moderation)
+  //     each show their own dot; the gear aggregates them, but only while the
+  //     popover is closed — once open, the per-item dots are visible and the
+  //     gear dot would be redundant.
+  function _updateAlertIndicators() {
+    if (typeof AlertCounts === 'undefined') return;
+    const bridge = AlertCounts.sum('bridge');
+    _setDot('brand-alert-dot', bridge);
+    _setDot('rail-bridge-alert-dot', bridge);
 
-    // Agents: alert when any agent is in error or offline
-    const agentAlerts = agents.filter(a => a.status === 'error' || a.status === 'offline').length;
-    _setBadge('sb-agents', agentAlerts, 'badge-warn');
-
-    // Missions: alert when missions have failed
-    const failedMissions = missions.filter(m => m.status === 'failed').length;
-    _setBadge('sb-running', failedMissions, 'badge-warn');
-
-    // Spaceships: alert when a deployed ship has agents in error state
-    const shipAlerts = spaceships.filter(s => {
-      if (s.status !== 'deployed') return false;
-      const crew = Array.isArray(s.agents) ? s.agents : (Array.isArray(s.agent_ids) ? s.agent_ids : []);
-      return crew.some(id => {
-        const agent = agents.find(a => a.id === id);
-        return agent && (agent.status === 'error' || agent.status === 'offline');
-      });
-    }).length;
-    _setBadge('sb-ships', shipAlerts, 'badge-warn');
+    _setDot('alert-dot-integrations', AlertCounts.count('integrations'));
+    _setDot('alert-dot-wallet',       AlertCounts.count('wallet'));
+    _setDot('alert-dot-security',     AlertCounts.count('security'));
+    _setDot('alert-dot-moderation',   AlertCounts.count('moderation'));
+    const popoverOpen = document.getElementById('side-popover')?.classList.contains('open');
+    _setDot('gear-alert-dot', popoverOpen ? 0 : AlertCounts.sum('settings'));
   }
 
-  function _setBadge(id, count, extraClass) {
+  function _setDot(id, count) {
     const el = document.getElementById(id);
-    if (!el) return;
-    if (count > 0) {
-      el.textContent = count;
-      el.className = 'side-badge' + (extraClass ? ' ' + extraClass : '');
-      el.classList.remove('hidden');
-    } else {
-      el.classList.add('hidden');
-    }
+    if (el) el.hidden = !(count > 0);
   }
 
   return { init, openModal, closeModal, guardWrite, _trapFocus };

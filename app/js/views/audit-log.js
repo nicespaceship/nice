@@ -31,17 +31,64 @@ const AuditLogView = (() => {
     return CATEGORIES.find(c => c.value === action) || CATEGORIES[0];
   }
 
+  // Notifications share this timeline now that the bell is gone. Map each
+  // notification type onto a Log category so it shows under "All" and its
+  // bucket, then normalize to the audit-entry shape.
+  const NOTIF_CAT = {
+    mission_complete: 'mission', mission_failed: 'mission',
+    task_complete: 'mission',    task_failed: 'mission',
+    agent_ready: 'agent',        agent_error: 'agent',
+    fleet_deployed: 'spaceship',
+    budget_alert: 'system',      system: 'system', broadcast: 'system',
+  };
+
+  function _notifEntries() {
+    const notifs = (typeof State !== 'undefined' && State.get('notifications')) || [];
+    return notifs.map(n => ({
+      id: 'notif-' + (n.id || n.created_at || ''),
+      action: NOTIF_CAT[n.type] || 'system',
+      timestamp: n.created_at || 0,
+      details: { description: n.title ? (n.message ? `${n.title}: ${n.message}` : n.title) : (n.message || '') },
+    }));
+  }
+
+  // Audit events + notification history, most-recent first. Both sources share
+  // the entry shape; re-sort the union so they interleave by time.
+  function _allEntries() {
+    const audit = (typeof AuditLog !== 'undefined')
+      ? AuditLog.getEntries({ action: 'all', search: '', limit: 500 })
+      : [];
+    return audit.concat(_notifEntries())
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }
+
+  function _filter(entries, { action, search, limit }) {
+    let out = entries;
+    if (action && action !== 'all') out = out.filter(e => e.action === action);
+    if (search) {
+      const q = search.toLowerCase();
+      out = out.filter(e => {
+        const desc = (e.details?.description || e.details?.name || e.details?.path || '').toLowerCase();
+        return desc.includes(q) || e.action.includes(q);
+      });
+    }
+    return limit ? out.slice(0, limit) : out;
+  }
+
+  function _countsByCategory() {
+    const all = _allEntries();
+    const counts = { all: all.length };
+    CATEGORIES.forEach(c => { if (c.value !== 'all') counts[c.value] = 0; });
+    all.forEach(e => { if (counts[e.action] !== undefined) counts[e.action]++; });
+    return counts;
+  }
+
   // Category filter pills + search + count + Clear for the shared
   // #bridge-subnav. Pills follow the Outbox status-filter pattern (26px,
   // count chip, solid-fill active in the category color). Events bind in
   // render() via global ids, so living outside the view body works.
   function getToolbarActions() {
-    const allEntries = (typeof AuditLog !== 'undefined')
-      ? AuditLog.getEntries({ action: 'all', search: '', limit: 500 })
-      : [];
-    const counts = { all: allEntries.length };
-    CATEGORIES.forEach(c => { if (c.value !== 'all') counts[c.value] = 0; });
-    allEntries.forEach(e => { if (counts[e.action] !== undefined) counts[e.action]++; });
+    const counts = _countsByCategory();
 
     const pills = CATEGORIES.map(c => {
       const active = _activeCat === c.value ? ' active' : '';
@@ -114,12 +161,14 @@ const AuditLogView = (() => {
       if (!confirm('Clear the entire Captain\'s Log? This cannot be undone.')) return;
       AuditLog.clearEntries();
       _activeCat = 'all';
-      // Reset all pill counts + active state inline (no full subnav re-render
-      // since the pills live outside this view's render output).
+      // Recompute pill counts inline (the pills live outside this view's
+      // render output). Notification history isn't cleared by this — it's
+      // server-backed — so counts come from the merged source, not zero.
+      const counts = _countsByCategory();
       subnav?.querySelectorAll('.log-filter-pill').forEach(b => {
         b.classList.toggle('active', b.dataset.cat === 'all');
         const c = b.querySelector('.log-pill-count');
-        if (c) c.textContent = '0';
+        if (c) c.textContent = counts[b.dataset.cat] || 0;
       });
       _loadEntries();
     });
@@ -128,9 +177,9 @@ const AuditLogView = (() => {
   function _loadEntries() {
     const search = document.getElementById('log-filter-search')?.value || '';
 
-    // Apply filters
+    // Apply filters over the merged audit + notification timeline
     const cat = _activeCat;
-    const entries = AuditLog.getEntries({ action: cat, search, limit: 200 });
+    const entries = _filter(_allEntries(), { action: cat, search, limit: 200 });
 
     const timeline = document.getElementById('log-timeline');
     if (!timeline) return;

@@ -276,12 +276,13 @@ const BlueprintsView = (() => {
     // Render tabs into fixed container (outside scroll area)
     const fixedTabs = document.getElementById('app-fixed-tabs');
     if (fixedTabs) {
-      const draftCount = (typeof ContentQueue !== 'undefined' && ContentQueue.getCounts)
-        ? (ContentQueue.getCounts().draft || 0)
-        : 0;
-      const outboxBadge = draftCount > 0
-        ? ` <span class="bp-tab-count bp-tab-count--alert">${draftCount}</span>`
-        : '';
+      // Per-tab alert dot (top-right) when a tab needs attention — driven by
+      // the AlertCounts SSOT (schematic / missions / outbox). The aggregate
+      // shows on the mobile picker pill, plus the Bridge sidebar link + rail
+      // icon (wired in nice.js).
+      const alertFor = (id) => (typeof AlertCounts !== 'undefined' && AlertCounts.count(id) > 0)
+        ? '<span class="bp-tab-alert" aria-hidden="true"></span>' : '';
+      const bridgeAlert = (typeof AlertCounts !== 'undefined' && AlertCounts.sum('bridge') > 0);
       // Full tab row is desktop; mobile shows a single picker pill instead
       // (see .bp-tab-picker in CSS). Both trigger the same _switchTab()
       // logic so the underlying tab state stays unified.
@@ -295,7 +296,7 @@ const BlueprintsView = (() => {
         { id: 'schematic', label: 'Schematic' },
         { id: 'blueprints', label: 'Blueprints' },
         { id: 'missions', label: Terminology.label('mission', { plural: true }) },
-        { id: 'outbox', label: 'Outbox' + outboxBadge },
+        { id: 'outbox', label: 'Outbox' },
         { id: 'operations', label: 'Operations' },
         { id: 'log', label: 'Log' },
         ...(_themeForTabs === 'grid' ? [{ id: 'tron', label: 'TRON', cls: 'bp-tab-tron' }] : []),
@@ -303,7 +304,7 @@ const BlueprintsView = (() => {
       const activeLabel = (tabDefs.find(t => t.id === _activeTab) || tabDefs[1]).label.replace(/<[^>]*>/g, '').trim();
       fixedTabs.innerHTML = `
         <div class="bp-type-tabs" id="bp-type-tabs">
-          ${tabDefs.map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+          ${tabDefs.map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}${alertFor(t.id)}</button>`).join('')}
         </div>
         <!-- Mobile view picker renders before the subnav so the higher-level
              "Blueprints ▾" picker sits ABOVE the sub-tabs. Hidden on desktop
@@ -311,6 +312,7 @@ const BlueprintsView = (() => {
         <button class="bp-tab-picker" id="bp-tab-picker" aria-haspopup="dialog" aria-expanded="false">
           <span class="bp-tab-picker-label">${activeLabel}</span>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+          ${bridgeAlert ? '<span class="bp-tab-alert" aria-hidden="true"></span>' : ''}
         </button>
         <div class="bridge-subnav" id="bridge-subnav" hidden></div>
         <div class="bp-sheet-backdrop" id="bp-tab-sheet-backdrop" hidden></div>
