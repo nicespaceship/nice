@@ -1834,27 +1834,72 @@ const NICE = (() => {
     });
   }
 
+  // SW update prompt state. A new SW now WAITS instead of stealing control
+  // (see sw.js) — we surface a sticky "Reload" toast and only reload once the
+  // user accepts, so a deploy never swaps assets under a running session.
+  let _updatePrompted = false;
+  let _updateAccepted = false;
+
+  function _promptSWUpdate(worker) {
+    if (!worker || _updatePrompted || typeof Notify === 'undefined') return;
+    _updatePrompted = true;
+    Notify.send({
+      title: 'Update available',
+      message: 'A new version of NICE is ready.',
+      type: 'system',
+      persistent: true,
+      actionLabel: 'Reload',
+      undo: () => {
+        _updateAccepted = true;
+        worker.postMessage({ type: 'SKIP_WAITING' });
+      },
+    });
+  }
+
   function _registerSW() {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js')
-        .then(async (reg) => {
-          // Register periodic sync (12h interval)
-          if ('periodicSync' in reg) {
-            try {
-              await reg.periodicSync.register('nice-sync', { minInterval: 12 * 60 * 60 * 1000 });
-            } catch (e) { /* periodic sync not supported or permission denied */ }
-          }
-          // Listen for SW messages
-          navigator.serviceWorker.addEventListener('message', (e) => {
-            if (e.data?.type === 'SYNC_READY' && typeof Notify !== 'undefined') {
-              Notify.send({ title: 'Back Online', message: 'Connection restored. Data synced.', type: 'system' });
+    if (!('serviceWorker' in navigator)) return;
+
+    // Reload exactly once, and only for a user-accepted update — never on the
+    // first-install controller claim (which also fires controllerchange).
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!_updateAccepted) return;
+      _updateAccepted = false; // guard against a reload loop
+      window.location.reload();
+    });
+
+    navigator.serviceWorker.register('./sw.js')
+      .then(async (reg) => {
+        // Register periodic sync (12h interval)
+        if ('periodicSync' in reg) {
+          try {
+            await reg.periodicSync.register('nice-sync', { minInterval: 12 * 60 * 60 * 1000 });
+          } catch (e) { /* periodic sync not supported or permission denied */ }
+        }
+
+        // An update may already be waiting from a previous visit.
+        if (reg.waiting && navigator.serviceWorker.controller) _promptSWUpdate(reg.waiting);
+
+        // A new SW finishing install while a controller is active = an update.
+        reg.addEventListener('updatefound', () => {
+          const installing = reg.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              _promptSWUpdate(installing);
             }
           });
-        })
-        .catch(err => {
-          console.warn('SW registration failed:', err);
         });
-    }
+
+        // Listen for SW messages
+        navigator.serviceWorker.addEventListener('message', (e) => {
+          if (e.data?.type === 'SYNC_READY' && typeof Notify !== 'undefined') {
+            Notify.send({ title: 'Back Online', message: 'Connection restored. Data synced.', type: 'system' });
+          }
+        });
+      })
+      .catch(err => {
+        console.warn('SW registration failed:', err);
+      });
   }
 
   /* ── localStorage migration (ATM → NICE) ── */

@@ -87,7 +87,13 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// Install — precache all app assets + offline page
+// Install — precache all app assets + offline page.
+// NOTE: no skipWaiting() here. A new SW deployed over an open tab must WAIT
+// (not steal control mid-session) — otherwise it serves fresh assets to a
+// page still running the old in-memory code, the exact stale-state mismatch
+// that surfaced phantom "X is not defined" errors. The client prompts the
+// user, and only on "Reload" do we post SKIP_WAITING (below) to activate.
+// First installs (no existing controller) activate immediately regardless.
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME)
@@ -98,8 +104,13 @@ self.addEventListener('install', e => {
         }));
         return cache.addAll(PRECACHE_ASSETS);
       })
-      .then(() => self.skipWaiting())
   );
+});
+
+// The client posts this when the user accepts the update prompt — activate
+// the waiting worker now, which fires controllerchange and triggers one reload.
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Activate — purge ALL old caches
