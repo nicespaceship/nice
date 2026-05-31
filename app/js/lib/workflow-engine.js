@@ -188,6 +188,9 @@ const WorkflowEngine = (() => {
       case 'webhook':
         return await _executeWebhook(node, input);
 
+      case 'command':
+        return await _executeCommand(node, input);
+
       default:
         return input;
     }
@@ -730,6 +733,49 @@ const WorkflowEngine = (() => {
   }
 
   /**
+   * `command` node — dispatch a registered ToolRegistry command, so a
+   * workflow can sequence bus capabilities (create-mission, activate-blueprint,
+   * …) alongside agent nodes (command bus, Phase 5). This is how a blueprint
+   * drives multi-step work through the same bus chat / Cmd+K / the LLM use.
+   *
+   * Params come from node.config.params; any string value of exactly
+   * "{{input}}" is replaced with the upstream node output, so a Drafter →
+   * command chain can feed a generated title or body straight in. Like every
+   * node here it is forgiving — a missing command id or a throw returns an
+   * error string rather than failing the whole run.
+   *
+   * No interactive approval ctx is passed: workflows gate side effects with an
+   * explicit approval_gate node (which pauses the run for async review), not
+   * the inline per-tool prompt AgentExecutor shows in live chat — mirroring
+   * _runAgent, which likewise omits onApprovalNeeded. Authors wire an
+   * approval_gate ahead of a side-effecting command when they want a checkpoint.
+   */
+  async function _executeCommand(node, input) {
+    const cfg = node?.config || {};
+    const id = cfg.commandId;
+    if (!id) return 'Error: command node missing commandId';
+    if (typeof ToolRegistry === 'undefined' || typeof ToolRegistry.execute !== 'function') {
+      return 'Error: ToolRegistry unavailable';
+    }
+
+    // Bind upstream output into any "{{input}}" param slot.
+    const src = cfg.params || {};
+    const params = {};
+    Object.keys(src).forEach(k => { params[k] = (src[k] === '{{input}}') ? input : src[k]; });
+
+    try {
+      const result = await ToolRegistry.execute(id, params);
+      if (result == null) return `Ran ${id}`;
+      if (typeof result === 'string') return result;
+      if (result.msg) return result.msg;
+      return JSON.stringify(result);
+    } catch (err) {
+      if (err && err.declined) return `Cancelled: ${id} approval declined.`;
+      return 'Error: ' + (err?.message || `command ${id} failed`);
+    }
+  }
+
+  /**
    * Produce the gate pause sentinel. The parent runner (MissionRunner
    * for mission DAGs) is responsible for persisting the partial
    * nodeResults and flipping task.status to 'review'.
@@ -920,6 +966,7 @@ const WorkflowEngine = (() => {
     _resolvePersonaContext,
     _executePersonaDispatch,
     _executeNotify,
+    _executeCommand,
     _executeAgent,
     _agentHasTools,
     _resolveSpaceshipId,

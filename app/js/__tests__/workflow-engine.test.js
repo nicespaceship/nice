@@ -955,3 +955,66 @@ describe('WorkflowEngine — baseline regressions', () => {
     expect(res.finalOutput).toMatch(/ran:/);
   });
 });
+
+describe('WorkflowEngine — command node (command bus, Phase 5)', () => {
+  let calls;
+  beforeEach(() => {
+    calls = [];
+    globalThis.ToolRegistry = {
+      execute: async (id, params) => { calls.push({ id, params }); return { ok: true, msg: `did ${id}` }; },
+    };
+  });
+
+  it('dispatches the registered command with its params and returns the result msg', async () => {
+    const out = await WorkflowEngine._executeCommand(
+      { type: 'command', config: { commandId: 'create-mission', params: { title: 'Ship it', priority: 'high' } } },
+      ''
+    );
+    expect(calls).toEqual([{ id: 'create-mission', params: { title: 'Ship it', priority: 'high' } }]);
+    expect(out).toBe('did create-mission');
+  });
+
+  it('binds upstream output into a {{input}} param slot', async () => {
+    const out = await WorkflowEngine._executeCommand(
+      { type: 'command', config: { commandId: 'create-mission', params: { title: '{{input}}', priority: 'low' } } },
+      'Draft the Q3 report'
+    );
+    expect(calls[0].params).toEqual({ title: 'Draft the Q3 report', priority: 'low' });
+    expect(out).toBe('did create-mission');
+  });
+
+  it('is forgiving — missing id, no registry, and throws all return error strings (never throw)', async () => {
+    expect(await WorkflowEngine._executeCommand({ type: 'command', config: {} }, '')).toMatch(/missing commandId/);
+
+    const saved = globalThis.ToolRegistry;
+    delete globalThis.ToolRegistry;
+    expect(await WorkflowEngine._executeCommand({ type: 'command', config: { commandId: 'x' } }, '')).toMatch(/unavailable/);
+    globalThis.ToolRegistry = saved;
+
+    globalThis.ToolRegistry = { execute: async () => { throw new Error('boom'); } };
+    expect(await WorkflowEngine._executeCommand({ type: 'command', config: { commandId: 'x' } }, '')).toMatch(/Error: boom/);
+  });
+
+  it('surfaces a declined approval distinctly from a failure', async () => {
+    globalThis.ToolRegistry = { execute: async () => { const e = new Error('declined'); e.declined = true; throw e; } };
+    const out = await WorkflowEngine._executeCommand({ type: 'command', config: { commandId: 'create-mission' } }, '');
+    expect(out).toMatch(/approval declined/);
+  });
+
+  it('composes end to end: agent → command, the command sees the agent output via {{input}}', async () => {
+    const workflow = {
+      id: 'wf-cmd',
+      nodes: [
+        { id: 'a', type: 'agent', config: { prompt: 'draft a title' } },
+        { id: 'c', type: 'command', config: { commandId: 'create-mission', params: { title: '{{input}}' } } },
+      ],
+      connections: [{ from: 'a', to: 'c' }],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(calls).toHaveLength(1);
+    expect(calls[0].id).toBe('create-mission');
+    // The agent node's output (ShipLog stub → "ran:…") flows into the title param.
+    expect(calls[0].params.title).toMatch(/^ran:/);
+  });
+});
