@@ -912,6 +912,12 @@ const NICE = (() => {
     if (moreBtn && popover) {
       moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        // On the collapsed rail the popover menu has no room, so the gear is a
+        // quick Settings shortcut instead. Expanded, it opens the full menu.
+        if (!sidebar.classList.contains('open')) {
+          window.location.hash = '#/settings';
+          return;
+        }
         const open = popover.classList.toggle('open');
         moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });

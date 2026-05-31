@@ -1888,7 +1888,6 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .app-brand-text,
 .app-sidebar:not(.open) .side-footer .hdr-username,
 .app-sidebar:not(.open) .side-footer .hdr-user-badge,
-.app-sidebar:not(.open) .side-footer .side-more-btn,
 .app-sidebar:not(.open) .side-footer .side-popover,
 .app-sidebar:not(.open) .side-footer #sidebar-presence,
 .app-sidebar:not(.open) .sidebar-favorites,
@@ -1901,7 +1900,11 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
 .app-sidebar:not(.open) .side-link svg { margin:0; }
 .app-sidebar:not(.open) .side-footer { padding:8px; border-top:none; }
-.app-sidebar:not(.open) .side-footer-row { justify-content:center; }
+/* Collapsed footer: stack the settings gear above the profile icon as a
+   vertical icon column (column-reverse keeps DOM order profile→gear but
+   paints gear on top). Collapsed, the gear is a quick Settings shortcut —
+   the full popover menu needs the expanded width (see nice.js). */
+.app-sidebar:not(.open) .side-footer-row { flex-direction:column-reverse; align-items:center; gap:8px; }
 .app-sidebar:not(.open) .side-user-card { padding:0; justify-content:center; align-items:center; }
 
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
