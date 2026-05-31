@@ -123,6 +123,7 @@ loadScriptGlobal('lib/command-palette.js');
 loadScriptGlobal('lib/blueprint-markdown.js');
 loadScriptGlobal('lib/prompt-builder.js');
 loadScriptGlobal('lib/tool-registry.js');
+loadScriptGlobal('lib/nav-commands.js');  // bus Phase 2 nav/UI verbs; registers on init()
 loadScriptGlobal('lib/virtual-fs.js');
 loadScriptGlobal('lib/browser-tools.js');
 loadScriptGlobal('lib/blueprint-utils.js');

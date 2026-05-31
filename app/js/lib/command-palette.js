@@ -9,49 +9,13 @@ const CommandPalette = (() => {
   let _selectedIdx = 0;
   let _el = null;
 
-  // Built as a function so theme-aware labels (Terminology) resolve on every
-  // palette open rather than being frozen at module load.
-  function _baseRoutes() {
-    const missionPlural = Terminology.label('mission', { plural: true });
-    const missionPluralLower = Terminology.label('mission', { plural: true, lowercase: true });
-    return [
-      { label: 'Bridge', skinKey: 'titles.home', path: '/',             keywords: 'home dashboard bridge',     icon: '#icon-home' },
-      { label: 'Agents',       skinKey: 'nav.agents', path: '/blueprints/agents',       keywords: 'agents list manage',          icon: '#icon-agent' },
-      { label: 'New Agent',    skinKey: 'newAgent', path: '/blueprints/agents/new',   keywords: 'create new agent builder',           icon: '#icon-plus' },
-      { label: 'Shipyard',     skinKey: 'nav.spaceships', path: '/blueprints/spaceships',   keywords: 'spaceships shipyard fleet ships',    icon: '#icon-spaceship' },
-      { label: missionPlural, skinKey: 'nav.missions', path: '/missions', keywords: `missions tasks assignments queue jobs ${missionPluralLower}`, icon: '#icon-task' },
-      { label: 'Blueprint Catalog', skinKey: 'nav.blueprints', path: '/blueprints', keywords: 'blueprints catalog agents orchestrator templates', icon: '#icon-blueprint' },
-      { label: 'Operations',   skinKey: 'nav.analytics', path: '/analytics',    keywords: 'operations analytics charts stats performance', icon: '#icon-analytics' },
-      { label: 'Cost Tracker', skinKey: 'nav.cost', path: '/cost',         keywords: 'cost budget spending money',         icon: '#icon-dollar' },
-      { label: 'Vault',        skinKey: 'nav.vault', path: '/vault',        keywords: 'vault secrets keys api tokens',      icon: '#icon-key' },
-      { label: 'Security',     path: '/security',     keywords: 'security agent permissions threat audit compliance access policies', icon: '#icon-lock' },
-      { label: "Log", skinKey: 'nav.log', path: '/log',          keywords: `log audit captain history events ${missionPluralLower} operations`,  icon: '#icon-monitor' },
-      { label: 'Profile',      skinKey: 'nav.profile', path: '/profile',      keywords: 'profile account user avatar',        icon: '#icon-profile' },
-      { label: 'Settings',     skinKey: 'nav.settings', path: '/settings',     keywords: 'settings preferences config',        icon: '#icon-settings' },
-      { label: 'Theme Editor', skinKey: 'nav.theme-creator', path: '/theme-editor', keywords: 'theme editor creator custom colors builder', icon: '#icon-settings' },
-      { label: 'Workflows',     skinKey: 'nav.workflows', path: '/workflows',      keywords: 'workflows pipelines automation nodes', icon: '#icon-build' },
-    ];
-  }
-
-  function _getRoutes() {
-    const base = _baseRoutes();
-    if (typeof Skin === 'undefined' || !Skin.isActive()) return base;
-    return base.map(r => r.skinKey ? { ...r, label: Skin.text(r.skinKey, r.label) } : r);
-  }
-
-  const ACTIONS = [
-    { label: 'Create Agent',    action: () => Router.navigate('#/bridge/agents/new'),  keywords: 'new create agent build',         icon: '#icon-plus' },
-    { label: 'New Spaceship',   action: () => Router.navigate('#/bridge/spaceships'),  keywords: 'new create spaceship fleet',     icon: '#icon-spaceship' },
-    { label: 'Toggle Theme',    action: _cycleTheme,                            keywords: 'theme dark light switch hud',    icon: '#icon-settings' },
-    { label: 'Keyboard Shortcuts', action: () => { if (typeof Keyboard !== 'undefined') Keyboard.showHelp(); }, keywords: 'keyboard shortcuts help keys', icon: '#icon-build' },
-    { label: 'Setup Wizard',       action: () => { if (typeof SetupWizard !== 'undefined') SetupWizard.open(); }, keywords: 'setup wizard guided questionnaire new spaceship', icon: '#icon-zap' },
-  ];
-
-  function _cycleTheme() {
-    const themes = ['nice','hal-9000','grid','solar','matrix','retro','lcars','pixel'];
-    const current = document.documentElement.getAttribute('data-theme');
-    const idx = themes.indexOf(current);
-    Theme.set(themes[(idx + 1) % themes.length]);
+  // Static commands (nav + UI actions) are defined once on the command bus
+  // via NavCommands (command bus Phase 2); the palette projects them and
+  // dispatches by id through ToolRegistry.execute() in _execute(). Theme-aware
+  // labels re-resolve on every open because NavCommands.list() re-resolves
+  // Terminology + Skin per call.
+  function _staticCommands() {
+    return (typeof NavCommands !== 'undefined') ? NavCommands.list() : [];
   }
 
   const _esc = Utils.esc;
@@ -122,14 +86,9 @@ const CommandPalette = (() => {
     const q = query.toLowerCase().trim();
     let items = [];
 
-    _getRoutes().forEach(r => {
-      const score = _fuzzyScore(q, r.label + ' ' + r.keywords);
-      if (score > 0 || !q) items.push({ ...r, score, type: 'nav' });
-    });
-
-    ACTIONS.forEach(a => {
-      const score = _fuzzyScore(q, a.label + ' ' + a.keywords);
-      if (score > 0 || !q) items.push({ ...a, score, type: 'action' });
+    _staticCommands().forEach(c => {
+      const score = _fuzzyScore(q, c.label + ' ' + c.keywords);
+      if (score > 0 || !q) items.push({ id: c.id, label: c.label, icon: c.icon, score, type: c.kind });
     });
 
     // Live data search — only when there's a query
@@ -218,10 +177,14 @@ const CommandPalette = (() => {
     const item = _results[idx];
     if (!item) return;
     close();
-    if (item.type === 'nav' || item.type === 'data') {
+    // Bus commands (nav + action) dispatch by id through the registry — one
+    // definition, shared with chat and the LLM. Live data results still
+    // navigate by their path.
+    if (item.id && typeof ToolRegistry !== 'undefined') {
+      Promise.resolve(ToolRegistry.execute(item.id)).catch(err =>
+        console.warn('[CommandPalette] command "' + item.id + '" failed:', err));
+    } else if (item.path) {
       Router.navigate('#' + item.path);
-    } else if (item.action) {
-      item.action();
     }
   }
 
