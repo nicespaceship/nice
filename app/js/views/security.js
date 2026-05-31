@@ -75,6 +75,16 @@ const SecurityView = (() => {
   }
   function _saveChecklist(data) {
     localStorage.setItem(LS_KEY, JSON.stringify(data));
+    _publishComplianceOpen(data);
+  }
+  // Publish the count of open (unchecked) compliance items to State so the
+  // sidebar + gear alert dots can project it (see AlertCounts.security). Runs
+  // on every save and once at load, so the dot is accurate from boot — this
+  // view owns CHECKLIST_ITEMS, the alert layer just reads the number.
+  function _publishComplianceOpen(checklist) {
+    const data = checklist || _getChecklist();
+    const open = CHECKLIST_ITEMS.filter(c => !data[c.id]).length;
+    if (typeof State !== 'undefined') State.set('compliance_open', open);
   }
   function _computeScore(checklist) {
     const total = CHECKLIST_ITEMS.length;
@@ -456,6 +466,10 @@ const SecurityView = (() => {
       tags[3].style.color = score < 70 ? '#fff' : 'var(--text)';
     }
   }
+
+  // Seed the alert count from persisted state at load, before the Security
+  // view is ever rendered.
+  _publishComplianceOpen();
 
   return { title, render };
 })();

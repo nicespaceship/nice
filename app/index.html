@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="dns-prefetch" href="https://zacllshbgmnwsmliteqx.supabase.co" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Fira+Code:wght@300;400;500&family=Share+Tech+Mono&family=Antonio:wght@400;700&family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&family=Press+Start+2P&family=Exo+2:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=EB+Garamond:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../public/css/theme.css?v=53" />
-  <link rel="stylesheet" href="./css/app.css?v=53" />
+  <link rel="stylesheet" href="../public/css/theme.css?v=54" />
+  <link rel="stylesheet" href="./css/app.css?v=54" />
 </head>
 <body>
 
@@ -292,13 +292,6 @@
   <div id="sidebar-favorites" class="sidebar-favorites"></div>
   <div class="side-footer">
     <div id="sidebar-presence"></div>
-    <button type="button" class="side-bell" id="side-bell" aria-label="Alerts" title="Alerts" aria-haspopup="dialog" aria-expanded="false">
-      <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
-      </svg>
-      <span class="side-bell-label">Alerts</span>
-      <span class="side-bell-dot" id="side-bell-dot" hidden></span>
-    </button>
     <div class="side-footer-row">
       <a href="#/profile" class="side-user-card" id="hdr-user">
         <span class="side-user-top">
@@ -309,6 +302,7 @@
       </a>
       <button class="side-more-btn" id="side-more-btn" aria-label="Settings" title="Settings" aria-expanded="false">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-settings"/></svg>
+        <span class="nav-alert-dot nav-alert-dot--corner" id="gear-alert-dot" hidden></span>
       </button>
     </div>
     <div class="side-popover" id="side-popover">
@@ -319,18 +313,22 @@
       <a href="#/integrations" class="side-popover-item" data-view="integrations">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-integrations"/></svg>
         <span>Integrations</span>
+        <span class="nav-alert-dot" id="alert-dot-integrations" hidden></span>
       </a>
-<a href="#/wallet" class="side-popover-item" data-view="wallet">
+      <a href="#/wallet" class="side-popover-item" data-view="wallet">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-wallet"/></svg>
         <span>Wallet</span>
+        <span class="nav-alert-dot" id="alert-dot-wallet" hidden></span>
       </a>
       <a href="#/security" class="side-popover-item" data-view="security">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
         <span>Security</span>
+        <span class="nav-alert-dot" id="alert-dot-security" hidden></span>
       </a>
       <a href="#/moderation" class="side-popover-item admin-only" data-view="moderation" hidden>
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-alert"/></svg>
         <span>Moderation</span>
+        <span class="nav-alert-dot" id="alert-dot-moderation" hidden></span>
       </a>
       <button class="side-popover-item" id="btn-logout">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -339,18 +337,6 @@
     </div>
   </div>
 </aside>
-
-<!-- Alert dropdown (body-level so it can escape the sidebar's z-index/clip
-     and anchor to the rail bell). Positioned by JS off the bell's rect. -->
-<div class="hud-alert-dropdown" id="hud-alert-dropdown" role="dialog" aria-label="Alerts">
-  <div class="hud-alert-hdr">
-    <span class="hud-alert-title">Alerts</span>
-    <button class="hud-alert-mark" id="hud-alert-mark-all">Mark all read</button>
-  </div>
-  <div class="hud-alert-list" id="hud-alert-list">
-    <p class="hud-alert-empty">No alerts.</p>
-  </div>
-</div>
 
 <!-- Sidebar overlay for mobile -->
 <div class="app-sidebar-overlay" id="sidebar-overlay"></div>
@@ -483,107 +469,107 @@
   window.addEventListener('load', () => { window.scrollTo(0, 0); });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script defer src="./js/lib/state.js?v=53"></script>
-<script defer src="./js/lib/utils.js?v=53"></script>
-<script defer src="./js/lib/cselect.js?v=53"></script>
-<script defer src="./js/lib/attachment-utils.js?v=53"></script>
-<script defer src="./js/lib/terminology.js?v=53"></script>
-<script defer src="./js/lib/skin.js?v=53"></script>
-<script defer src="./js/lib/rate-limiter.js?v=53"></script>
-<script defer src="./js/lib/supabase.js?v=53"></script>
-<script defer src="./js/lib/offline-queue.js?v=53"></script>
-<script defer src="./js/lib/router.js?v=53"></script>
-<script defer src="./js/lib/blueprint-utils.js?v=53"></script>
-<script defer src="./js/lib/roles.js?v=53"></script>
-<script defer src="./js/lib/docs-content.js?v=53"></script>
-<script defer src="./js/lib/model-catalog.js?v=53"></script>
-<script defer src="./js/lib/crew-matcher.js?v=53"></script>
-<script defer src="./js/lib/card-renderer.js?v=53"></script>
-<script defer src="./js/lib/jarvis-hud.js?v=53"></script>
-<script defer src="./js/lib/hal-core.js?v=53"></script>
-<script defer src="./js/lib/default-core.js?v=53"></script>
-<script defer src="./js/lib/nice-core.js?v=53"></script>
-<script defer src="./js/lib/core-reactor.js?v=53"></script>
-<script defer src="./js/lib/core-voice.js?v=53"></script>
-<script defer src="./js/views/home.js?v=53"></script>
-<script defer src="./js/views/profile.js?v=53"></script>
-<script defer src="./js/views/alerts.js?v=53"></script>
-<script defer src="./js/views/agents.js?v=53"></script>
+<script defer src="./js/lib/state.js?v=54"></script>
+<script defer src="./js/lib/utils.js?v=54"></script>
+<script defer src="./js/lib/cselect.js?v=54"></script>
+<script defer src="./js/lib/attachment-utils.js?v=54"></script>
+<script defer src="./js/lib/terminology.js?v=54"></script>
+<script defer src="./js/lib/skin.js?v=54"></script>
+<script defer src="./js/lib/rate-limiter.js?v=54"></script>
+<script defer src="./js/lib/supabase.js?v=54"></script>
+<script defer src="./js/lib/offline-queue.js?v=54"></script>
+<script defer src="./js/lib/router.js?v=54"></script>
+<script defer src="./js/lib/blueprint-utils.js?v=54"></script>
+<script defer src="./js/lib/roles.js?v=54"></script>
+<script defer src="./js/lib/docs-content.js?v=54"></script>
+<script defer src="./js/lib/model-catalog.js?v=54"></script>
+<script defer src="./js/lib/crew-matcher.js?v=54"></script>
+<script defer src="./js/lib/card-renderer.js?v=54"></script>
+<script defer src="./js/lib/jarvis-hud.js?v=54"></script>
+<script defer src="./js/lib/hal-core.js?v=54"></script>
+<script defer src="./js/lib/default-core.js?v=54"></script>
+<script defer src="./js/lib/nice-core.js?v=54"></script>
+<script defer src="./js/lib/core-reactor.js?v=54"></script>
+<script defer src="./js/lib/core-voice.js?v=54"></script>
+<script defer src="./js/views/home.js?v=54"></script>
+<script defer src="./js/views/profile.js?v=54"></script>
+<script defer src="./js/views/alerts.js?v=54"></script>
+<script defer src="./js/views/agents.js?v=54"></script>
 <!-- vault.js must load BEFORE agent-builder.js — agent-builder captures
      ModelCatalog.MODEL_CATALOG into `LLM_MODELS` as a const at
      script-execute time, and that capture goes through VaultView's
      re-export. model-catalog.js loads earlier in the lib block and
      defines the data; this block just preserves consumer ordering. -->
-<script defer src="./js/views/vault.js?v=53"></script>
-<script defer src="./js/views/agent-builder.js?v=53"></script>
-<script defer src="./js/views/spaceship-builder.js?v=53"></script>
-<script defer src="./js/views/missions.js?v=53"></script>
-<script defer src="./js/views/mission-composer.js?v=53"></script>
-<script defer src="./js/views/spaceships.js?v=53"></script>
-<script defer src="./js/views/schematic.js?v=53"></script>
-<script defer src="./js/views/blueprints.js?v=53"></script>
-<script defer src="./js/views/analytics.js?v=53"></script>
-<script defer src="./js/views/cost.js?v=53"></script>
-<script defer src="./js/views/integrations.js?v=53"></script>
-<script defer src="./js/views/security.js?v=53"></script>
-<script defer src="./js/views/moderation.js?v=53"></script>
-<script defer src="./js/views/settings.js?v=53"></script>
-<script defer src="./js/views/wallet.js?v=53"></script>
-<script defer src="./js/views/audit-log.js?v=53"></script>
-<script defer src="./js/views/tron.js?v=53"></script>
-<script defer src="./js/views/theme-creator.js?v=53"></script>
-<script defer src="./js/lib/preview-panel.js?v=53"></script>
-<script defer src="./js/views/prompt-panel.js?v=53"></script>
-<script defer src="./js/views/ship-log-view.js?v=53"></script>
-<script defer src="./js/lib/audit-log.js?v=53"></script>
-<script defer src="./js/lib/onboarding.js?v=53"></script>
-<script defer src="./js/lib/consent-prompt.js?v=53"></script>
-<script defer src="./js/lib/data-io.js?v=53"></script>
-<script defer src="./js/lib/activity-feed.js?v=53"></script>
-<script defer src="./js/lib/quick-notes.js?v=53"></script>
-<script defer src="./js/lib/favorites.js?v=53"></script>
-<script defer src="./js/lib/notify.js?v=53"></script>
-<script defer src="./js/lib/message-bar.js?v=53"></script>
-<script defer src="./js/lib/gamification.js?v=53"></script>
-<script defer src="./js/lib/command-palette.js?v=53"></script>
-<script defer src="./js/lib/keyboard.js?v=53"></script>
-<script defer src="./js/lib/blueprint-markdown.js?v=53"></script>
-<script defer src="./js/lib/crew-generator.js?v=53"></script>
-<script defer src="./js/lib/ship-slots.js?v=53"></script>
-<script defer src="./js/lib/blueprints.js?v=53"></script>
-<script defer src="./js/lib/community-publish.js?v=53"></script>
-<script defer src="./js/lib/token-config.js?v=53"></script>
-<script defer src="./js/lib/stripe-config.js?v=53"></script>
-<script defer src="./js/lib/stacks.js?v=53"></script>
-<script defer src="./js/lib/llm-config.js?v=53"></script>
-<script defer src="./js/lib/model-intel.js?v=53"></script>
-<script defer src="./js/lib/prompt-builder.js?v=53"></script>
-<script defer src="./js/lib/agent-memory.js?v=53"></script>
-<script defer src="./js/lib/quality-gate.js?v=53"></script>
-<script defer src="./js/lib/ship-templates.js?v=53"></script>
-<script defer src="./js/lib/tool-registry.js?v=53"></script>
-<script defer src="./js/lib/nav-commands.js?v=53"></script>
-<script defer src="./js/lib/browser-tools.js?v=53"></script>
-<script defer src="./js/lib/mcp-bridge.js?v=53"></script>
-<script defer src="./js/lib/agent-activity.js?v=53"></script>
-<script defer src="./js/lib/llm-activity.js?v=53"></script>
-<script defer src="./js/lib/agent-executor.js?v=53"></script>
-<script defer src="./js/lib/ship-log.js?v=53"></script>
-<script defer src="./js/lib/ship-behaviors.js?v=53"></script>
-<script defer src="./js/lib/mission-runner.js?v=53"></script>
-<script defer src="./js/lib/workflow-engine.js?v=53"></script>
-<script defer src="./js/lib/subscription.js?v=53"></script>
-<script defer src="./js/lib/upgrade-modal.js?v=53"></script>
-<script defer src="./js/lib/setup-wizard.js?v=53"></script>
-<script defer src="./js/lib/ship-setup-wizard.js?v=53"></script>
-<script defer src="./js/lib/crew-designer.js?v=53"></script>
-<script defer src="./js/lib/content-queue.js?v=53"></script>
-<script defer src="./js/lib/alert-counts.js?v=53"></script>
-<script defer src="./js/lib/media-tools.js?v=53"></script>
-<script defer src="./js/lib/virtual-fs.js?v=53"></script>
-<script defer src="./js/views/docs.js?v=53"></script>
-<script defer src="./js/lib/auth-modal.js?v=53"></script>
-<script defer src="./js/nice.js?v=53"></script>
+<script defer src="./js/views/vault.js?v=54"></script>
+<script defer src="./js/views/agent-builder.js?v=54"></script>
+<script defer src="./js/views/spaceship-builder.js?v=54"></script>
+<script defer src="./js/views/missions.js?v=54"></script>
+<script defer src="./js/views/mission-composer.js?v=54"></script>
+<script defer src="./js/views/spaceships.js?v=54"></script>
+<script defer src="./js/views/schematic.js?v=54"></script>
+<script defer src="./js/views/blueprints.js?v=54"></script>
+<script defer src="./js/views/analytics.js?v=54"></script>
+<script defer src="./js/views/cost.js?v=54"></script>
+<script defer src="./js/views/integrations.js?v=54"></script>
+<script defer src="./js/views/security.js?v=54"></script>
+<script defer src="./js/views/moderation.js?v=54"></script>
+<script defer src="./js/views/settings.js?v=54"></script>
+<script defer src="./js/views/wallet.js?v=54"></script>
+<script defer src="./js/views/audit-log.js?v=54"></script>
+<script defer src="./js/views/tron.js?v=54"></script>
+<script defer src="./js/views/theme-creator.js?v=54"></script>
+<script defer src="./js/lib/preview-panel.js?v=54"></script>
+<script defer src="./js/views/prompt-panel.js?v=54"></script>
+<script defer src="./js/views/ship-log-view.js?v=54"></script>
+<script defer src="./js/lib/audit-log.js?v=54"></script>
+<script defer src="./js/lib/onboarding.js?v=54"></script>
+<script defer src="./js/lib/consent-prompt.js?v=54"></script>
+<script defer src="./js/lib/data-io.js?v=54"></script>
+<script defer src="./js/lib/activity-feed.js?v=54"></script>
+<script defer src="./js/lib/quick-notes.js?v=54"></script>
+<script defer src="./js/lib/favorites.js?v=54"></script>
+<script defer src="./js/lib/notify.js?v=54"></script>
+<script defer src="./js/lib/message-bar.js?v=54"></script>
+<script defer src="./js/lib/gamification.js?v=54"></script>
+<script defer src="./js/lib/command-palette.js?v=54"></script>
+<script defer src="./js/lib/keyboard.js?v=54"></script>
+<script defer src="./js/lib/blueprint-markdown.js?v=54"></script>
+<script defer src="./js/lib/crew-generator.js?v=54"></script>
+<script defer src="./js/lib/ship-slots.js?v=54"></script>
+<script defer src="./js/lib/blueprints.js?v=54"></script>
+<script defer src="./js/lib/community-publish.js?v=54"></script>
+<script defer src="./js/lib/token-config.js?v=54"></script>
+<script defer src="./js/lib/stripe-config.js?v=54"></script>
+<script defer src="./js/lib/stacks.js?v=54"></script>
+<script defer src="./js/lib/llm-config.js?v=54"></script>
+<script defer src="./js/lib/model-intel.js?v=54"></script>
+<script defer src="./js/lib/prompt-builder.js?v=54"></script>
+<script defer src="./js/lib/agent-memory.js?v=54"></script>
+<script defer src="./js/lib/quality-gate.js?v=54"></script>
+<script defer src="./js/lib/ship-templates.js?v=54"></script>
+<script defer src="./js/lib/tool-registry.js?v=54"></script>
+<script defer src="./js/lib/nav-commands.js?v=54"></script>
+<script defer src="./js/lib/browser-tools.js?v=54"></script>
+<script defer src="./js/lib/mcp-bridge.js?v=54"></script>
+<script defer src="./js/lib/agent-activity.js?v=54"></script>
+<script defer src="./js/lib/llm-activity.js?v=54"></script>
+<script defer src="./js/lib/agent-executor.js?v=54"></script>
+<script defer src="./js/lib/ship-log.js?v=54"></script>
+<script defer src="./js/lib/ship-behaviors.js?v=54"></script>
+<script defer src="./js/lib/mission-runner.js?v=54"></script>
+<script defer src="./js/lib/workflow-engine.js?v=54"></script>
+<script defer src="./js/lib/subscription.js?v=54"></script>
+<script defer src="./js/lib/upgrade-modal.js?v=54"></script>
+<script defer src="./js/lib/setup-wizard.js?v=54"></script>
+<script defer src="./js/lib/ship-setup-wizard.js?v=54"></script>
+<script defer src="./js/lib/crew-designer.js?v=54"></script>
+<script defer src="./js/lib/content-queue.js?v=54"></script>
+<script defer src="./js/lib/alert-counts.js?v=54"></script>
+<script defer src="./js/lib/media-tools.js?v=54"></script>
+<script defer src="./js/lib/virtual-fs.js?v=54"></script>
+<script defer src="./js/views/docs.js?v=54"></script>
+<script defer src="./js/lib/auth-modal.js?v=54"></script>
+<script defer src="./js/nice.js?v=54"></script>
 
 <!-- Screen reader announcer (a11y) -->
 <div id="sr-announcer" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
