@@ -59,6 +59,7 @@ const NavCommands = (() => {
     { id: 'open-blueprint-catalog', name: 'Blueprint Catalog', kind: 'nav', route: '/blueprints',            icon: '#icon-blueprint', skinKey: 'nav.blueprints',    keywords: 'blueprints catalog agents orchestrator templates',       desc: 'Open the Blueprint catalog.' },
     { id: 'open-operations',        name: 'Operations',        kind: 'nav', route: '/analytics',             icon: '#icon-analytics', skinKey: 'nav.analytics',     keywords: 'operations analytics charts stats performance',          desc: 'Open Operations analytics.' },
     { id: 'open-cost',              name: 'Cost Tracker',      kind: 'nav', route: '/cost',                  icon: '#icon-dollar',    skinKey: 'nav.cost',          keywords: 'cost budget spending money',                             desc: 'Open the Cost Tracker.' },
+    { id: 'open-wallet',            name: 'Wallet',            kind: 'nav', route: '/wallet',                icon: '#icon-dollar',    skinKey: null,                keywords: 'wallet balance credits payment billing purchase',        desc: 'Open your Wallet.' },
     { id: 'open-vault',             name: 'Vault',             kind: 'nav', route: '/vault',                 icon: '#icon-key',       skinKey: 'nav.vault',         keywords: 'vault secrets keys api tokens',                          desc: 'Open the Vault.' },
     { id: 'open-security',          name: 'Security',          kind: 'nav', route: '/security',              icon: '#icon-lock',      skinKey: null,                keywords: 'security agent permissions threat audit compliance access policies', desc: 'Open Security.' },
     { id: 'open-log',               name: 'Log',               kind: 'nav', route: '/log',                   icon: '#icon-monitor',   skinKey: 'nav.log',           keywords: 'log audit captain history events operations',            desc: "Open the Captain's Log." },
@@ -72,6 +73,14 @@ const NavCommands = (() => {
     { id: 'cycle-theme',       name: 'Toggle Theme',       kind: 'action', icon: '#icon-settings',  keywords: 'theme dark light switch hud',                     desc: 'Cycle to the next theme.',          run: _cycleTheme },
     { id: 'show-shortcuts',    name: 'Keyboard Shortcuts', kind: 'action', icon: '#icon-build',     keywords: 'keyboard shortcuts help keys',                    desc: 'Show keyboard shortcuts.',          run: () => { if (typeof Keyboard !== 'undefined') Keyboard.showHelp(); } },
     { id: 'open-setup-wizard', name: 'Setup Wizard',       kind: 'action', icon: '#icon-zap',       keywords: 'setup wizard guided questionnaire new spaceship', desc: 'Launch the guided Setup Wizard.',   run: () => { if (typeof SetupWizard !== 'undefined') SetupWizard.open(); } },
+    { id: 'open-crew-designer', name: 'Crew Designer',     kind: 'action', icon: '#icon-spaceship', keywords: 'crew designer build team spaceship describe deploy',
+      desc: 'Open the Crew Designer to design a crew from a business description.',
+      schema: { type: 'object', properties: { prompt: { type: 'string', description: 'Business description to seed the design (optional)' } } },
+      run: (p) => {
+        if (typeof CrewDesigner !== 'undefined') CrewDesigner.open({ prompt: (p && p.prompt) || '' });
+        else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
+      } },
+    { id: 'export-data',       name: 'Export Data',        kind: 'action', icon: '#icon-build',     keywords: 'export download backup data json',                desc: 'Export all your NICE data as JSON.', run: () => { if (typeof DataIO !== 'undefined') DataIO.exportData(); } },
   ];
 
   let _registered = false;
@@ -83,10 +92,10 @@ const NavCommands = (() => {
         id:          c.id,
         name:        c.name,
         description: c.desc || '',
-        schema:      { type: 'object', properties: {} },
+        schema:      c.schema || { type: 'object', properties: {} },
         surfaces:    ['human'],
         sideEffect:  false,
-        execute:     c.kind === 'nav' ? _navExecute(c.route) : async () => { c.run(); return { ok: true }; },
+        execute:     c.kind === 'nav' ? _navExecute(c.route) : async (input) => { c.run(input); return { ok: true }; },
       });
     });
   }
@@ -117,5 +126,49 @@ const NavCommands = (() => {
     });
   }
 
-  return { init, list, COMMANDS };
+  // Function words that carry no destination — stripped before scoring so a
+  // stray "the" / "a" doesn't fuzzy-match half the catalog. The nav verbs
+  // ("open", "show", "view") live here too: they signal a nav request but are
+  // never keywords, so they must not contribute to the match score.
+  const _STOP = new Set([
+    'the', 'a', 'an', 'to', 'my', 'our', 'me', 'us', 'i', 'of', 'for', 'and', 'on', 'in',
+    'go', 'open', 'show', 'view', 'navigate', 'take', 'switch', 'jump', 'bring', 'up', 'please',
+  ]);
+
+  /* Resolve free text to the best-matching navigation command, by keyword
+     token overlap. ONLY kind:'nav' commands are considered — UI actions
+     (cycle-theme, export-data, open-crew-designer, …) have their own dedicated
+     triggers and must not be reachable by fuzzy "show me …" phrasing (e.g.
+     "switch to cyberpunk" is a theme verb, not a request to toggle the theme).
+
+     Scoring: a command earns a point per keyword that a content token matches.
+     Tokens ≥ 4 chars match by substring (so "agents" ↔ "agent",
+     "spaceships" ↔ "spaceship"); shorter tokens require exact equality to
+     avoid noise. Ties resolve to declaration order (COMMANDS is ordered
+     specific-before-generic where it matters).
+
+     Returns { id, label } of the top command, or null when nothing matches.
+     The CALLER decides whether the surrounding phrasing actually warrants a
+     navigation (a nav verb, or a one-word command) — resolve() is pure. */
+  function resolve(text) {
+    const lower = String(text || '').toLowerCase().trim();
+    if (!lower) return null;
+    const tokens = lower.split(/\s+/).filter(t => t && !_STOP.has(t));
+    if (!tokens.length) return null;
+    let best = null, bestScore = 0;
+    list().forEach(c => {
+      if (c.kind !== 'nav') return;
+      let score = 0;
+      String(c.keywords || '').split(/\s+/).filter(Boolean).forEach(kw => {
+        const hit = tokens.some(t =>
+          t === kw || (t.length >= 4 && kw.length >= 4 && (t.includes(kw) || kw.includes(t)))
+        );
+        if (hit) score++;
+      });
+      if (score > bestScore) { bestScore = score; best = c; }
+    });
+    return best ? { id: best.id, label: best.label } : null;
+  }
+
+  return { init, list, resolve, COMMANDS };
 })();
