@@ -2547,11 +2547,11 @@ const NICE = (() => {
     // Idle session timeout
     _initIdleTimeout();
 
-    // Sidebar badges — live counts
-    _updateSidebarBadges();
-    State.on('agents', _updateSidebarBadges);
-    State.on('missions', _updateSidebarBadges);
-    State.on('spaceships', _updateSidebarBadges);
+    // Sidebar alert indicators — live aggregate of the Bridge-tab dots
+    _updateAlertIndicators();
+    State.on('agents', _updateAlertIndicators);
+    State.on('missions', _updateAlertIndicators);
+    State.on('spaceships', _updateAlertIndicators);
 
     // Re-render current view when skin changes
     State.on('skin', () => {
@@ -2595,41 +2595,20 @@ const NICE = (() => {
     });
   }
 
-  function _updateSidebarBadges() {
-    const agents = State.get('agents') || [];
-    const missions = State.get('missions') || [];
-    const spaceships = State.get('spaceships') || [];
-
-    // Agents: alert when any agent is in error or offline
-    const agentAlerts = agents.filter(a => a.status === 'error' || a.status === 'offline').length;
-    _setBadge('sb-agents', agentAlerts, 'badge-warn');
-
-    // Missions: alert when missions have failed
-    const failedMissions = missions.filter(m => m.status === 'failed').length;
-    _setBadge('sb-running', failedMissions, 'badge-warn');
-
-    // Spaceships: alert when a deployed ship has agents in error state
-    const shipAlerts = spaceships.filter(s => {
-      if (s.status !== 'deployed') return false;
-      const crew = Array.isArray(s.agents) ? s.agents : (Array.isArray(s.agent_ids) ? s.agent_ids : []);
-      return crew.some(id => {
-        const agent = agents.find(a => a.id === id);
-        return agent && (agent.status === 'error' || agent.status === 'offline');
-      });
-    }).length;
-    _setBadge('sb-ships', shipAlerts, 'badge-warn');
+  // The NICE brand (header, open) + the collapsed-rail NICE icon are the one
+  // Bridge CTA, so both aggregate every Bridge-tab alert (schematic / missions
+  // / outbox) from the AlertCounts SSOT — a Bridge alert is visible whether the
+  // menu is open or collapsed. The Bridge tabs render their own per-tab dots
+  // (see blueprints.js). Settings-menu + gear aggregation lands in slice 2.
+  function _updateAlertIndicators() {
+    const bridge = (typeof AlertCounts !== 'undefined') ? AlertCounts.sum('bridge') : 0;
+    _setDot('brand-alert-dot', bridge);
+    _setDot('rail-bridge-alert-dot', bridge);
   }
 
-  function _setBadge(id, count, extraClass) {
+  function _setDot(id, count) {
     const el = document.getElementById(id);
-    if (!el) return;
-    if (count > 0) {
-      el.textContent = count;
-      el.className = 'side-badge' + (extraClass ? ' ' + extraClass : '');
-      el.classList.remove('hidden');
-    } else {
-      el.classList.add('hidden');
-    }
+    if (el) el.hidden = !(count > 0);
   }
 
   return { init, openModal, closeModal, guardWrite, _trapFocus };

@@ -6263,6 +6263,20 @@ html[data-theme] .nice-ai-input:focus-visible {
   color:#09090b;
 }
 
+/* Alert indicators — one dot marking "needs attention", shared across the
+   Bridge sidebar link + gear (inline, right-aligned), the collapsed rail /
+   tab corners (absolute), and the settings menu. One look everywhere; the
+   counts come from AlertCounts. */
+.nav-alert-dot, .bp-tab-alert {
+  width:7px; height:7px; border-radius:50%; background:#f97316; flex-shrink:0;
+}
+.nav-alert-dot { margin-left:auto; }
+.nav-alert-dot[hidden], .bp-tab-alert[hidden] { display:none; }
+/* Corner variant — pinned to the top-right of a square control (rail icon, tab). */
+.side-rail-btn, .bp-type-tab, .bp-tab-picker { position:relative; }
+.nav-alert-dot--corner { position:absolute; top:7px; right:7px; margin-left:0; }
+.bp-tab-alert { position:absolute; top:5px; right:6px; }
+
 @media (max-width:640px) {
   .outbox-picker-panel { width:96%; max-height:92vh; }
   .outbox-picker-head, .outbox-picker-body, .outbox-picker-actions {
