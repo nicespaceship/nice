@@ -199,4 +199,101 @@ describe('ToolRegistry', () => {
         .rejects.toThrow(/Tool not found/);
     });
   });
+
+  describe('command shape — surfaces + sideEffect', () => {
+    it('exposes the isSideEffect predicate', () => {
+      expect(typeof ToolRegistry.isSideEffect).toBe('function');
+      expect(ToolRegistry.isSideEffect('gmail_send_message')).toBe(true);
+      expect(ToolRegistry.isSideEffect('gmail_search_messages')).toBe(false);
+      expect(ToolRegistry.isSideEffect('')).toBe(false);
+      expect(ToolRegistry.isSideEffect(null)).toBe(false);
+    });
+
+    it('defaults surfaces to agent-only when omitted', () => {
+      ToolRegistry.register({ id: 'surf-default', name: 'Surf Default', execute: async () => 'ok' });
+      expect(ToolRegistry.get('surf-default').surfaces).toEqual(['agent']);
+      ToolRegistry.deregister('surf-default');
+    });
+
+    it('honors an explicit surfaces list', () => {
+      ToolRegistry.register({ id: 'surf-human', name: 'Surf Human', surfaces: ['human', 'agent'], execute: async () => 'ok' });
+      expect(ToolRegistry.get('surf-human').surfaces).toEqual(['human', 'agent']);
+      ToolRegistry.deregister('surf-human');
+    });
+
+    it('infers sideEffect from the command name', () => {
+      ToolRegistry.register({ id: 'infer-write', name: 'create something', execute: async () => 'ok' });
+      ToolRegistry.register({ id: 'infer-read', name: 'lookup something', execute: async () => 'ok' });
+      expect(ToolRegistry.get('infer-write').sideEffect).toBe(true);
+      expect(ToolRegistry.get('infer-read').sideEffect).toBe(false);
+      ToolRegistry.deregister('infer-write');
+      ToolRegistry.deregister('infer-read');
+    });
+
+    it('lets an explicit sideEffect flag override the inference', () => {
+      ToolRegistry.register({ id: 'infer-override', name: 'create something', sideEffect: false, execute: async () => 'ok' });
+      expect(ToolRegistry.get('infer-override').sideEffect).toBe(false);
+      ToolRegistry.deregister('infer-override');
+    });
+  });
+
+  describe('approval gate in dispatch', () => {
+    // The Phase 0 exit gate: a side-effecting command invoked OUTSIDE
+    // AgentExecutor (i.e. straight through the bus) triggers the same approval
+    // prompt the agent path shows.
+    it('prompts for approval and blocks a declined side-effect command', async () => {
+      const calls = [];
+      ToolRegistry.register({
+        id: 'gate-send', name: 'send-thing',
+        execute: async () => { calls.push(1); return { ok: true }; },
+      });
+      const seen = [];
+      await expect(
+        ToolRegistry.execute('gate-send', { to: 'x' }, {
+          approvalMode: 'review',
+          onApprovalNeeded: (a) => { seen.push(a.tool); return Promise.resolve(false); },
+        }),
+      ).rejects.toMatchObject({ declined: true });
+      expect(seen).toEqual(['send-thing']);
+      expect(calls.length).toBe(0); // never executed
+      ToolRegistry.deregister('gate-send');
+    });
+
+    it('executes a side-effect command once approved', async () => {
+      const calls = [];
+      ToolRegistry.register({
+        id: 'gate-send-ok', name: 'send-thing-ok',
+        execute: async () => { calls.push(1); return { ok: true }; },
+      });
+      const result = await ToolRegistry.execute('gate-send-ok', { to: 'x' }, {
+        approvalMode: 'review',
+        onApprovalNeeded: () => Promise.resolve(true),
+      });
+      expect(result).toEqual({ ok: true });
+      expect(calls.length).toBe(1);
+      ToolRegistry.deregister('gate-send-ok');
+    });
+
+    it('does not gate when no review context is passed (2-arg form)', async () => {
+      const calls = [];
+      ToolRegistry.register({
+        id: 'gate-noprompt', name: 'send-thing-noprompt',
+        execute: async () => { calls.push(1); return { ok: true }; },
+      });
+      const result = await ToolRegistry.execute('gate-noprompt', { to: 'x' });
+      expect(result).toEqual({ ok: true });
+      expect(calls.length).toBe(1);
+      ToolRegistry.deregister('gate-noprompt');
+    });
+
+    it('does not gate a read-only command even in review mode', async () => {
+      let prompted = false;
+      const result = await ToolRegistry.execute('calculator', { expression: '6 * 7' }, {
+        approvalMode: 'review',
+        onApprovalNeeded: () => { prompted = true; return Promise.resolve(false); },
+      });
+      expect(result.result).toBe(42);
+      expect(prompted).toBe(false);
+    });
+  });
 });
