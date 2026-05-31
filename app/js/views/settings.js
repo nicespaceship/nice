@@ -6,6 +6,11 @@
 const SettingsView = (() => {
   const title = 'Settings';
 
+  // Fire a registered bus command from a UI handler (command bus, Phase 4).
+  function _dispatch(id, params) {
+    if (typeof ToolRegistry !== 'undefined') ToolRegistry.execute(id, params || {}).catch(() => {});
+  }
+
   const DEFAULTS = {
     notifications: true,
     sound: false,
@@ -436,20 +441,11 @@ const SettingsView = (() => {
       render(el);
     });
 
-    // Buy Tokens — navigate to wallet
-    document.getElementById('btn-buy-tokens-settings')?.addEventListener('click', () => {
-      window.location.hash = '#/wallet';
-    });
-
-    // Show keyboard shortcuts
-    document.getElementById('btn-show-shortcuts')?.addEventListener('click', () => {
-      if (typeof Keyboard !== 'undefined') Keyboard.showHelp();
-    });
-
-    // Export data
-    document.getElementById('btn-export-data')?.addEventListener('click', () => {
-      if (typeof DataIO !== 'undefined') DataIO.exportData();
-    });
+    // Buy Tokens, shortcuts, export — dispatch the registered bus command so
+    // chat, Cmd+K, and these buttons share one definition (command bus, Phase 4).
+    document.getElementById('btn-buy-tokens-settings')?.addEventListener('click', () => _dispatch('open-wallet'));
+    document.getElementById('btn-show-shortcuts')?.addEventListener('click', () => _dispatch('show-shortcuts'));
+    document.getElementById('btn-export-data')?.addEventListener('click', () => _dispatch('export-data'));
 
     // Import data
     document.getElementById('btn-import-file')?.addEventListener('change', (e) => {
