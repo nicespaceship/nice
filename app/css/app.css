@@ -1420,11 +1420,12 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .app-sidebar.open .side-header { padding:12px; }
 .side-header .app-hdr-menu { display:none; }
 .side-brand {
-  display:inline-flex; align-items:center; height:40px;
+  display:inline-flex; align-items:center; gap:9px; height:40px;
   color:var(--nav-text, var(--text)); text-decoration:none;
   transition:color .15s;
 }
 .side-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
+.side-brand-logo { width:26px; height:26px; display:block; flex-shrink:0; }
 .side-brand-text {
   font-family:var(--font-brand, var(--font-h)); font-size:var(--text-lg); font-weight:var(--fw-black);
   letter-spacing:var(--tracking-wordmark); text-transform:uppercase; line-height:1;
@@ -1442,10 +1443,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 /* Collapsed: hide the open-state nav — the rail replaces it. */
 .app-sidebar:not(.open) .app-side-nav { display:none; }
-
-/* Bridge link — top-level nav item above Chats (reuses .side-folder-toggle
-   layout + .side-link active/hover). */
-.side-bridge-link { text-decoration:none; }
 
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }

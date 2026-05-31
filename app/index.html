@@ -238,6 +238,7 @@
        button (#btn-hud) slides the HUD panel below down. -->
   <div class="side-header">
     <a href="#/bridge" class="side-brand" id="side-brand" aria-label="Bridge">
+      <svg class="side-brand-logo" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
       <span class="side-brand-text">NICE</span>
     </a>
     <button type="button" class="side-theme-btn" id="btn-hud" aria-label="Theme" title="Theme" aria-expanded="false">
@@ -273,13 +274,8 @@
   </div>
 
   <nav class="app-side-nav">
-    <!-- Bridge — entry to the command center (Schematic / Blueprints /
-         Missions / Operations / Log). Uses the NICE constellation icon. -->
-    <a href="#/bridge" class="side-folder-toggle side-link side-bridge-link" aria-label="Bridge">
-      <svg class="icon icon-sm" viewBox="0 0 5000 5000" aria-hidden="true"><use href="#icon-nice"/></svg>
-      <span>Bridge</span>
-    </a>
-    <!-- Chats: standalone-chat sessions. -->
+    <!-- Chats: standalone-chat sessions. The Bridge CTA is the NICE
+         icon + wordmark in the header above. -->
     <div class="side-folder open" id="side-chats-folder">
       <div class="side-folder-toggle" id="side-chats-toggle" role="button" tabindex="0" aria-label="Chats">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
