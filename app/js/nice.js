@@ -833,16 +833,38 @@ const NICE = (() => {
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    // Collapsed-rail hamburger — toggles the sidebar open/closed.
-    // Stays visible in both states so the same control closes the
-    // menu the user just opened. Mode-tab icons render below the
-    // hamburger in collapsed state for one-click mode switching.
-    const railHamburger = document.getElementById('side-rail-hamburger');
-    if (railHamburger) {
-      railHamburger.addEventListener('click', (e) => {
+    // Collapsed rail — the NICE icon is the opener: a single click expands
+    // the menu, a double-click jumps straight to the Bridge. A short timer
+    // disambiguates the two: the open is deferred so a double-click can
+    // cancel it before the rail icon is hidden by the expand.
+    const railNice = document.getElementById('side-rail-nice');
+    if (railNice) {
+      let niceClickTimer = null;
+      railNice.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        sidebar.classList.toggle('open');
+        if (niceClickTimer) return; // second click of a double — dblclick handles it
+        niceClickTimer = setTimeout(() => {
+          niceClickTimer = null;
+          sidebar.classList.add('open');
+        }, 250);
+      });
+      railNice.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (niceClickTimer) { clearTimeout(niceClickTimer); niceClickTimer = null; }
+        window.location.hash = '#/bridge';
+      });
+    }
+
+    // Collapsed rail — the Chat icon starts a new chat (mirrors the in-menu
+    // "+" on the Chats folder).
+    const railChat = document.getElementById('side-rail-chat');
+    if (railChat) {
+      railChat.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        _newConversation();
       });
     }
 
@@ -867,7 +889,7 @@ const NICE = (() => {
     });
 
     // Close sidebar on nav
-    document.querySelectorAll('.side-link, .side-user-card, .side-popover-item, .mobile-bar-btn[href]').forEach(link => {
+    document.querySelectorAll('.side-link, .side-brand, .side-user-card, .side-popover-item, .mobile-bar-btn[href]').forEach(link => {
       link.addEventListener('click', () => {
         sidebar.classList.remove('open');
       });
@@ -890,6 +912,12 @@ const NICE = (() => {
     if (moreBtn && popover) {
       moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        // On the collapsed rail the popover menu has no room, so the gear is a
+        // quick Settings shortcut instead. Expanded, it opens the full menu.
+        if (!sidebar.classList.contains('open')) {
+          window.location.hash = '#/settings';
+          return;
+        }
         const open = popover.classList.toggle('open');
         moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
@@ -2313,58 +2341,6 @@ const NICE = (() => {
         link.classList.remove('active');
       }
     });
-    _updateActiveModeTab();
-  }
-
-  /* ── Sidebar mode tabs — Spaceship / Chat / Code ──
-     Three architecturally-distinct modes. Spaceship is the agentic
-     orchestrator (Bridge / Schematic / missions). Chat is the
-     standalone LLM picker. Code is the IDE / coding surface.
-     Each mode has its own sub-nav rendered below the tabs. Active
-     mode is derived from the current route, not persisted, so the
-     URL stays the source of truth. */
-  const _MODE_DEFAULT_ROUTES = {
-    spaceship: '#/bridge',
-    chat: '#/',
-  };
-  function _modeFromPath(path) {
-    if (/^\/(bridge|missions)(\/|$|\?)/.test(path)) return 'spaceship';
-    return 'chat';
-  }
-  function _homeRouteForCurrentMode() {
-    const path = location.hash.replace(/^#/, '') || '/';
-    return _MODE_DEFAULT_ROUTES[_modeFromPath(path)];
-  }
-  function _updateActiveModeTab() {
-    const path = location.hash.replace(/^#/, '') || '/';
-    const mode = _modeFromPath(path);
-    document.querySelectorAll('.side-mode-tab').forEach(btn => {
-      const isActive = btn.dataset.mode === mode;
-      btn.setAttribute('aria-selected', String(isActive));
-    });
-    document.querySelectorAll('.side-mode-section').forEach(section => {
-      const isActive = section.dataset.modeSection === mode;
-      if (isActive) section.removeAttribute('hidden');
-      else section.setAttribute('hidden', '');
-    });
-    // Mobile-bar "home" link (which doubles as the theme name label) is
-    // a real <a href="…"> for accessibility — keep it that way and just
-    // re-point the href at the current mode's default route. Clicking
-    // from a Spaceship surface lands on the Schematic; from Chat lands
-    // on Home.
-    const mobileHome = document.getElementById('mobile-bar-theme');
-    if (mobileHome) mobileHome.setAttribute('href', _MODE_DEFAULT_ROUTES[mode]);
-  }
-  function _initModeTabs() {
-    document.querySelectorAll('.side-mode-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode;
-        const target = _MODE_DEFAULT_ROUTES[mode];
-        if (target && location.hash !== target) location.hash = target;
-        else _updateActiveModeTab();
-      });
-    });
-    _updateActiveModeTab();
   }
 
   /* ── Step 56: Screen reader announcements ── */
@@ -2501,7 +2477,6 @@ const NICE = (() => {
     _initSidebar();
     _initSidebarDnD();
     _initSidebarKeyboard();
-    _initModeTabs();
     _initScrollToTop();
     _initHUD();
     _initAuth();

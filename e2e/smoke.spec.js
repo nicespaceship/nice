@@ -59,11 +59,14 @@ test.describe('Smoke Tests', () => {
     await waitForApp(page);
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
-    // The sidebar exposes mode tabs (Spaceship / Chat / Code) as the
-    // primary nav surface; older `.side-link` items used to live here
-    // but were replaced when the mode tabs became the header (#382).
-    const tabs = page.locator('.side-mode-tab');
-    expect(await tabs.count()).toBeGreaterThan(0);
+    // Collapsed rail exposes the NICE opener + new-chat icons as the primary
+    // nav surface; the NICE brand (Bridge CTA) becomes the header when the
+    // sidebar is expanded.
+    const railButtons = page.locator('.side-rail-btn');
+    expect(await railButtons.count()).toBeGreaterThan(0);
+    await page.evaluate(() => document.getElementById('app-sidebar')?.classList.add('open'));
+    await page.waitForTimeout(150);
+    await expect(page.locator('.side-brand')).toBeVisible();
   });
 
   test('main views render without error', async ({ page }) => {
@@ -150,13 +153,12 @@ test.describe('Accessibility', () => {
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await waitForApp(page);
-    // Mode tabs are the primary sidebar nav since #382. The sidebar
-    // is collapsed by default, so the tabs are display:none — open
-    // the sidebar first so the tab is focusable.
+    // The sidebar is collapsed by default, so the header (brand + nav) is
+    // display:none — open it first so the NICE brand (Bridge CTA) is focusable.
     await page.evaluate(() => document.getElementById('app-sidebar')?.classList.add('open'));
     await page.waitForTimeout(150);
-    const firstTab = page.locator('.side-mode-tab').first();
-    await firstTab.focus();
+    const brand = page.locator('.side-brand').first();
+    await brand.focus();
     await page.keyboard.press('Tab');
     const focused = await page.evaluate(() => document.activeElement?.tagName);
     expect(focused).toBeTruthy();

@@ -595,19 +595,16 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 /* Sidebar utility icons — boost contrast against Federation blue background */
 [data-theme="rx-78-2"] .app-sidebar #btn-darklight,
 [data-theme="rx-78-2"] .app-sidebar .side-chat-new,
-[data-theme="rx-78-2"] .app-sidebar .side-rail-hamburger { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar .side-rail-btn { color: #d4a017; }
 [data-theme="rx-78-2"] .app-sidebar #btn-darklight svg,
 [data-theme="rx-78-2"] .app-sidebar .side-chat-new svg,
-[data-theme="rx-78-2"] .app-sidebar .side-rail-hamburger svg { color: #d4a017; }
+[data-theme="rx-78-2"] .app-sidebar .side-rail-btn svg { color: #d4a017; }
 /* Active state for header buttons + font-picker — Gundam gold for contrast */
 [data-theme="rx-78-2"] .app-hdr-btn.active { color: #d4a017; border-color: #d4a017; background: rgba(212,160,23,0.1); }
 [data-theme="rx-78-2"] .fb.active { color: #d4a017; border-color: #d4a017; }
 /* Sidebar body text — white/gold for readability on Federation blue */
-[data-theme="rx-78-2"] .app-sidebar .side-mode-tab { color: #fff; }
-[data-theme="rx-78-2"] .app-sidebar .side-mode-tab.active { color: #d4a017; }
 [data-theme="rx-78-2"] .app-sidebar .side-folder-toggle { color: #fff; }
-[data-theme="rx-78-2"] .app-sidebar .side-folder-body,
-[data-theme="rx-78-2"] .app-sidebar .side-mode-section { color: #fff; }
+[data-theme="rx-78-2"] .app-sidebar .side-folder-body { color: #fff; }
 [data-theme="rx-78-2"] .app-sidebar .side-folder-item,
 [data-theme="rx-78-2"] .app-sidebar .side-folder-empty { color: #fff; opacity: 1; }
 /* Ship-picker dropdown — light panel surface needs dark text for readability */
@@ -1385,80 +1382,67 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   .app-sidebar.open ~ .app-sidebar-overlay { display:block; }
 }
 
-/* Sidebar header — holds the NICE rail-brand icon, the only thing
-   visible at the top of the sidebar when collapsed. When the sidebar
-   is open, the brand hides and the mode tabs (rendered just below)
-   become the visual header. Per-theme decorations (LCARS overlay,
-   JARVIS reactor pulse, Cyberpunk light strip — see theme.css)
-   anchor on .side-header. */
-.side-header {
+/* Sidebar top — two states share the top of the sidebar:
+   - Collapsed: the .side-rail icon stack (NICE opener + new-chat).
+   - Open: the .side-header — NICE wordmark (Bridge CTA) + theme toggle.
+   Per-theme decorations (LCARS overlay, JARVIS reactor pulse, Cyberpunk
+   light strip — see theme.css) anchor on .side-header. */
+
+/* Collapsed rail — vertical icon stack, shown only when the sidebar is
+   closed. The NICE icon opens the menu (double-click → Bridge); the chat
+   icon starts a new chat. */
+.side-rail { display:none; }
+.app-sidebar:not(.open) .side-rail {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
   flex-shrink:0; padding:14px 0 8px;
-  display:flex; align-items:center; justify-content:center;
   background:var(--nav-bg-dk, transparent);
 }
-.side-rail-hamburger {
+.side-rail-btn {
   display:flex; align-items:center; justify-content:center;
   width:48px; height:48px; padding:0;
   background:transparent; border:0; border-radius:8px;
   color:var(--nav-text, var(--text));
   cursor:pointer; transition:background .15s, color .15s;
 }
-.side-rail-hamburger svg { width:24px; height:24px; display:block; }
-.side-rail-hamburger:hover { color:var(--accent, var(--nav-text, var(--text))); }
-.app-sidebar.open .side-header { padding:6px 0; }
-.side-header .app-hdr-menu { display:none; }
+.side-rail-btn:hover { color:var(--accent, var(--nav-text, var(--text))); }
+.side-rail-btn .icon { width:24px; height:24px; }
+.side-rail-nice-logo { width:30px; height:30px; display:block; }
 
-/* Header CTA: NICE SPACESHIP brand lockup that toggles the theme HUD.
-   Hidden on the collapsed rail (the hamburger shows instead); swaps in
-   as the header once the sidebar is open. Glyph + wordmark share
-   currentColor so they stay monochrome and matched across themes. */
-.side-hud-cta { display:none; }
-.app-sidebar.open .side-rail-hamburger { display:none; }
-.app-sidebar.open .side-hud-cta {
-  display:flex; align-items:center; justify-content:center; gap:10px;
-  height:48px; padding:0 12px;
-  background:transparent; border:0; border-radius:8px;
-  color:var(--nav-text, var(--text)); cursor:pointer;
+/* Open header — NICE wordmark (Bridge CTA) on the left, theme toggle on
+   the right. Hidden on the collapsed rail. The wordmark stays monochrome
+   via currentColor so it matches across themes. */
+.side-header {
+  flex-shrink:0; padding:14px 12px 8px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:var(--nav-bg-dk, transparent);
+}
+.app-sidebar:not(.open) .side-header { display:none; }
+.app-sidebar.open .side-header { padding:12px; }
+.side-header .app-hdr-menu { display:none; }
+.side-brand {
+  display:inline-flex; align-items:center; gap:9px; height:40px;
+  color:var(--nav-text, var(--text)); text-decoration:none;
   transition:color .15s;
 }
-.app-sidebar.open .side-hud-cta:hover,
-.app-sidebar.open .side-hud-cta.active { color:var(--accent, var(--nav-text, var(--text))); }
-.side-hud-cta-logo { width:30px; height:30px; display:block; flex-shrink:0; }
-.side-hud-cta-text {
-  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-md); font-weight:var(--fw-black);
+.side-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
+.side-brand-logo { width:26px; height:26px; display:block; flex-shrink:0; }
+.side-brand-text {
+  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-lg); font-weight:var(--fw-black);
   letter-spacing:var(--tracking-wordmark); text-transform:uppercase; line-height:1;
 }
-
-/* Mode tabs — Spaceship vs Standalone Chat. Top of sidebar nav, full
-   width, segmented-control style. Active state is the source of truth
-   for which mode-section renders below. */
-.side-mode-tabs {
-  display:flex; gap:2px; flex-shrink:0;
-  margin:0 12px 8px; padding:2px;
-  background:var(--nav-border, var(--border));
-  border-radius:var(--radius, 8px);
-}
-.side-mode-tab {
-  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-  padding:8px 4px;
-  background:transparent; border:0;
+.side-theme-btn {
+  display:flex; align-items:center; justify-content:center;
+  width:36px; height:36px; padding:0; flex-shrink:0;
+  background:transparent; border:0; border-radius:8px;
   color:var(--nav-text-muted, var(--text-muted));
-  font-family:inherit; font-size:var(--text-xs); font-weight:var(--fw-medium);
-  border-radius:calc(var(--radius, 8px) - 2px);
   cursor:pointer; transition:background .15s, color .15s;
-  min-width:0;
 }
-.side-mode-tab span {
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;
-}
-.side-mode-tab:hover { color:var(--nav-text, var(--text)); }
-.side-mode-tab[aria-selected="true"] {
-  background:var(--bg, var(--nav-bg));
-  color:var(--accent, var(--nav-text, var(--text)));
-  box-shadow:0 1px 2px rgba(0,0,0,0.18);
-}
-.side-mode-tab .icon { width:18px; height:18px; }
-.side-mode-section[hidden] { display:none; }
+.side-theme-btn:hover,
+.side-theme-btn.active { color:var(--accent, var(--nav-text, var(--text))); }
+.side-theme-btn .icon { width:20px; height:20px; }
+
+/* Collapsed: hide the open-state nav — the rail replaces it. */
+.app-sidebar:not(.open) .app-side-nav { display:none; }
 
 /* Chats folder — always open, no chevron needed */
 #side-chats-folder .side-folder-body { display:flex; }
@@ -1630,6 +1614,10 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 
 .side-footer {
   flex-shrink:0;
+  /* Pin to the bottom in both states. When open, .app-side-nav (flex:1)
+     already pushes it down; when collapsed that nav is hidden, so the auto
+     margin keeps the footer on the floor instead of floating up under the rail. */
+  margin-top:auto;
   padding:12px 16px;
   background:var(--nav-bg-dk, transparent);
 }
@@ -1795,8 +1783,7 @@ html:not([data-theme]) .app-main,
    source-filter "All" pill. The selected rule follows the hover rule so a
    hovered-selected element stays solid (equal specificity, source order
    wins). Solid-accent CTAs already match; this brings the tinted variants
-   in line. .side-mode-tab[aria-selected="true"] keeps collapsed + expanded
-   chrome consistent. */
+   in line. */
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(
   .bp-sub-tab:hover,
   .bp-cat-btn:hover,
@@ -1806,7 +1793,6 @@ html:not([data-theme]) .app-main,
   .preview-tab:hover,
   .docs-nav-btn:hover,
   .bp-view-btn:hover,
-  .side-mode-tab:hover,
   .side-link:hover
 ) {
   background:rgba(15, 82, 186, 0.08);
@@ -1822,7 +1808,6 @@ html:not([data-theme]) .app-main,
   .preview-tab:hover,
   .docs-nav-btn:hover,
   .bp-view-btn:hover,
-  .side-mode-tab:hover,
   .side-link:hover
 ) svg { color:var(--accent); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) :is(
@@ -1851,18 +1836,6 @@ html:not([data-theme]) .app-main,
   .bp-view-btn.active,
   .side-link.active
 ) svg { color:var(--bg); }
-
-/* Mode tab selected state: icon-only sapphire — no fill background. The
-   sidebar rail mode tabs (NICE / Chat / Code) are global navigation, not
-   in-content controls, so they don't take the solid-fill active treatment
-   the in-content pills above use. The icon goes accent; bg stays transparent. */
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mode-tab[aria-selected="true"] {
-  background:transparent;
-  color:var(--accent);
-  border-color:transparent;
-  box-shadow:none;
-}
-:is([data-theme="nice"],[data-theme="nice-dark"]) .side-mode-tab[aria-selected="true"] svg { color:var(--accent); }
 
 /* Rarity filter pills carry their own rarity colour as a solid fill with
    white text when not selected (fills mirror BlueprintUtils.RARITY_COLORS;
@@ -1915,7 +1888,6 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .app-brand-text,
 .app-sidebar:not(.open) .side-footer .hdr-username,
 .app-sidebar:not(.open) .side-footer .hdr-user-badge,
-.app-sidebar:not(.open) .side-footer .side-more-btn,
 .app-sidebar:not(.open) .side-footer .side-popover,
 .app-sidebar:not(.open) .side-footer #sidebar-presence,
 .app-sidebar:not(.open) .sidebar-favorites,
@@ -1923,43 +1895,16 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .side-divider,
 .app-sidebar:not(.open) #side-chats-folder .side-folder-body { display:none; }
 
-/* Collapsed sidebar: the hamburger at the top opens the menu, and
-   the mode tabs render below it as a vertical icon stack so each
-   mode (Spaceship / Chat / Code) is one click away from the rail.
-   The per-mode sub-nav (mission list, chat history, file tree) still
-   only appears when the sidebar is expanded. */
-.app-sidebar:not(.open) .side-mode-tabs {
-  flex-direction:column;
-  background:transparent;
-  margin:0; padding:0;
-  gap:4px;
-}
-.app-sidebar:not(.open) .side-mode-tab {
-  flex:0 0 auto;
-  width:48px; height:48px;
-  margin:0 auto;
-  padding:0; gap:0;
-  border-radius:8px;
-}
-.app-sidebar:not(.open) .side-mode-tab span { display:none; }
-.app-sidebar:not(.open) .side-mode-tab .icon { width:24px; height:24px; }
-/* Other themes keep a tinted background to mark the selected mode tab on
-   the rail; the nice theme is icon-only sapphire (see the rule near the
-   unified-active block above). */
-.app-sidebar:not(.open) .side-mode-tab[aria-selected="true"] {
-  background:color-mix(in srgb, var(--accent, var(--nav-text, var(--text))) 14%, transparent);
-  box-shadow:none;
-}
-:is([data-theme="nice"],[data-theme="nice-dark"]) .app-sidebar:not(.open) .side-mode-tab[aria-selected="true"] {
-  background:transparent;
-}
-.app-sidebar:not(.open) .side-mode-section { display:none; }
-
-.app-sidebar:not(.open) .side-header { justify-content:center; padding:8px; }
+/* Collapsed sidebar: the rail (.side-rail) replaces the open-state header
+   + nav; only icon-level controls (favorites, footer) center on the rail. */
 .app-sidebar:not(.open) .side-link { justify-content:center; padding:10px 0; }
 .app-sidebar:not(.open) .side-link svg { margin:0; }
 .app-sidebar:not(.open) .side-footer { padding:8px; border-top:none; }
-.app-sidebar:not(.open) .side-footer-row { justify-content:center; }
+/* Collapsed footer: stack the settings gear above the profile icon as a
+   vertical icon column (column-reverse keeps DOM order profile→gear but
+   paints gear on top). Collapsed, the gear is a quick Settings shortcut —
+   the full popover menu needs the expanded width (see nice.js). */
+.app-sidebar:not(.open) .side-footer-row { flex-direction:column-reverse; align-items:center; gap:8px; }
 .app-sidebar:not(.open) .side-user-card { padding:0; justify-content:center; align-items:center; }
 
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
