@@ -499,20 +499,93 @@ const PromptPanel = (() => {
     return { clean, actions, execs };
   }
 
-  /* ── Execute EXEC actions from LLM responses ── */
+  /* ── EXEC actions → bus commands ──
+     The LLM emits [EXEC: action | a | b] markers in the top-level NICE chat.
+     Each action is a real ToolRegistry command (registered in
+     _registerBusCommands below); _executeExec maps the legacy positional
+     params onto named input and dispatches through the bus, so a
+     side-effecting command (create-mission) inherits the same approval gate
+     the agent path enforces. Phase 2 relocates these registrations into
+     their owning subsystems. */
   // Mirrors ship-log.js / workflow-engine.js. Slot-character user_agents
   // carry synthetic `agent-<ts>-<idx>` ids that are local-only — passing
   // one to a UUID column triggers Postgres "invalid input syntax for type
   // uuid" and the user sees `**Failed:** invalid input syntax for type uuid`.
   const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  async function _executeExec(action, params) {
-    const user = State.get('user');
-    if (!user) return { ok: false, msg: 'Not signed in' };
+  /* Shared inline approval prompt — used by the agent-with-tools chat AND by
+     EXEC commands dispatched through the bus. Resolves true (approve) /
+     false (deny). */
+  function _monitorApproval(action) {
+    return new Promise((resolve) => {
+      _removeMonitorThinking();
+      const approvalEl = document.createElement('div');
+      approvalEl.className = 'monitor-approval';
+      approvalEl.innerHTML =
+        '<div class="monitor-approval-title">⚠️ Action requires approval</div>' +
+        '<div class="monitor-approval-detail">' +
+          '<strong>Tool:</strong> ' + _esc(action.tool) + '<br>' +
+          '<strong>Input:</strong> <code>' + _esc(JSON.stringify(action.input).substring(0, 200)) + '</code>' +
+        '</div>' +
+        '<div class="monitor-approval-btns">' +
+          '<button class="btn btn-sm btn-primary" id="monitor-approve">Approve</button>' +
+          '<button class="btn btn-sm" id="monitor-deny">Deny</button>' +
+        '</div>';
+      _monitorContent?.appendChild(approvalEl);
+      const monitorEl = document.getElementById('nice-monitor');
+      if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
+      document.getElementById('monitor-approve')?.addEventListener('click', () => {
+        approvalEl.remove();
+        _addMonitorThinking('Executing approved action…');
+        resolve(true);
+      });
+      document.getElementById('monitor-deny')?.addEventListener('click', () => {
+        approvalEl.remove();
+        _addMonitorThinking('Finding an alternative…');
+        resolve(false);
+      });
+    });
+  }
 
-    switch (action) {
-      case 'create_mission': {
-        const [title, agentHint, priority] = params;
+  /* Approval context for EXEC dispatch: review mode comes from the active
+     ship's behaviors (Missions always run on a Ship); the prompt reuses the
+     shared monitor approval UI. */
+  function _execApprovalCtx() {
+    const ships = State.get('spaceships') || [];
+    const spaceshipId = ships[0]?.id;
+    let approvalMode = null;
+    if (spaceshipId && typeof ShipBehaviors !== 'undefined') {
+      approvalMode = ShipBehaviors.getBehaviors(spaceshipId).approvalMode;
+    }
+    return { approvalMode, onApprovalNeeded: _monitorApproval };
+  }
+
+  /* Register the EXEC actions as real bus commands. Called once from init()
+     (prompt-panel loads before tool-registry, so this can't run at module
+     load). Handlers return { ok, msg, data? } — the EXEC reply shape. */
+  let _busCommandsRegistered = false;
+  function _registerBusCommands() {
+    if (_busCommandsRegistered || typeof ToolRegistry === 'undefined') return;
+    _busCommandsRegistered = true;
+
+    ToolRegistry.register({
+      id: 'create-mission',
+      name: 'Create Mission',
+      description: 'Queue a mission run on the active spaceship, optionally assigned to an agent.',
+      surfaces: ['human', 'agent'],
+      schema: {
+        type: 'object',
+        properties: {
+          title:    { type: 'string', description: 'Mission title / objective' },
+          agent:    { type: 'string', description: 'Name hint of the agent to assign (optional)' },
+          priority: { type: 'string', enum: ['low', 'medium', 'high'], description: 'Priority (default medium)' },
+        },
+        required: ['title'],
+      },
+      execute: async (input) => {
+        const { title, agent: agentHint, priority } = input || {};
+        const user = State.get('user');
+        if (!user) return { ok: false, msg: 'Not signed in' };
         // Find best agent if a hint was given
         let agentId = null;
         let agentName = agentHint || null;
@@ -567,9 +640,21 @@ const PromptPanel = (() => {
         } catch (e) {
           return { ok: false, msg: e.message || `Failed to create ${Terminology.label('mission', { lowercase: true })}` };
         }
-      }
-      case 'activate_blueprint': {
-        const [bpId] = params;
+      },
+    });
+
+    ToolRegistry.register({
+      id: 'activate-blueprint',
+      name: 'Activate Blueprint',
+      description: 'Add an agent blueprint to the active roster.',
+      surfaces: ['human', 'agent'],
+      schema: {
+        type: 'object',
+        properties: { blueprintId: { type: 'string', description: 'Blueprint id to activate' } },
+        required: ['blueprintId'],
+      },
+      execute: async (input) => {
+        const bpId = input && input.blueprintId;
         if (typeof Blueprints !== 'undefined' && typeof BlueprintsView !== 'undefined') {
           if (!Blueprints.isAgentActivated(bpId)) {
             Blueprints.activateAgent(bpId);
@@ -587,17 +672,51 @@ const PromptPanel = (() => {
           return { ok: true, msg: `Blueprint ${bpId} added.` };
         }
         return { ok: false, msg: 'Blueprints not available' };
-      }
-      case 'run_mission': {
-        const [missionId] = params;
+      },
+    });
+
+    ToolRegistry.register({
+      id: 'run-mission',
+      name: 'Run Mission',
+      description: 'Start execution of an existing mission run by id.',
+      surfaces: ['human', 'agent'],
+      schema: {
+        type: 'object',
+        properties: { missionId: { type: 'string', description: 'mission_runs id to execute' } },
+        required: ['missionId'],
+      },
+      execute: async (input) => {
+        const missionId = input && input.missionId;
         if (typeof MissionRunner !== 'undefined' && missionId) {
           MissionRunner.run(missionId);
           return { ok: true, msg: 'Mission execution started.' };
         }
         return { ok: false, msg: 'MissionRunner not available' };
-      }
-      default:
-        return { ok: false, msg: `Unknown action: ${action}` };
+      },
+    });
+  }
+
+  /* EXEC text protocol → bus command id + positional→named param map. */
+  const _EXEC_COMMANDS = {
+    create_mission:     { id: 'create-mission',     params: ['title', 'agent', 'priority'] },
+    activate_blueprint: { id: 'activate-blueprint', params: ['blueprintId'] },
+    run_mission:        { id: 'run-mission',        params: ['missionId'] },
+  };
+
+  /* ── Execute EXEC actions from LLM responses (thin adapter over the bus) ── */
+  async function _executeExec(action, params) {
+    if (!State.get('user')) return { ok: false, msg: 'Not signed in' };
+    const spec = _EXEC_COMMANDS[action];
+    if (!spec || typeof ToolRegistry === 'undefined') return { ok: false, msg: `Unknown action: ${action}` };
+    const input = {};
+    spec.params.forEach((name, i) => {
+      if (params[i] !== undefined && params[i] !== '') input[name] = params[i];
+    });
+    try {
+      return await ToolRegistry.execute(spec.id, input, _execApprovalCtx());
+    } catch (e) {
+      if (e && e.declined) return { ok: false, msg: 'Cancelled: approval declined.' };
+      return { ok: false, msg: e.message || 'Action failed' };
     }
   }
 
@@ -2394,36 +2513,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             spaceshipId,
             onStep,
             approvalMode: _approvalMode,
-            onApprovalNeeded: (action) => {
-              return new Promise((resolve) => {
-                _removeMonitorThinking();
-                const approvalEl = document.createElement('div');
-                approvalEl.className = 'monitor-approval';
-                approvalEl.innerHTML =
-                  '<div class="monitor-approval-title">⚠️ Action requires approval</div>' +
-                  '<div class="monitor-approval-detail">' +
-                    '<strong>Tool:</strong> ' + _esc(action.tool) + '<br>' +
-                    '<strong>Input:</strong> <code>' + _esc(JSON.stringify(action.input).substring(0, 200)) + '</code>' +
-                  '</div>' +
-                  '<div class="monitor-approval-btns">' +
-                    '<button class="btn btn-sm btn-primary" id="monitor-approve">Approve</button>' +
-                    '<button class="btn btn-sm" id="monitor-deny">Deny</button>' +
-                  '</div>';
-                _monitorContent?.appendChild(approvalEl);
-                const monitorEl = document.getElementById('nice-monitor');
-                if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
-                document.getElementById('monitor-approve')?.addEventListener('click', () => {
-                  approvalEl.remove();
-                  _addMonitorThinking('Executing approved action…');
-                  resolve(true);
-                });
-                document.getElementById('monitor-deny')?.addEventListener('click', () => {
-                  approvalEl.remove();
-                  _addMonitorThinking('Finding an alternative…');
-                  resolve(false);
-                });
-              });
-            },
+            onApprovalNeeded: _monitorApproval,
           });
           _activeConversation = { controller, agentBp, agentLabel };
 
@@ -3392,6 +3482,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   /* ── Init / Destroy ── */
   function init() {
+    _registerBusCommands();
     _loadMessages();
     _buildDOM();
     _bindEvents();
