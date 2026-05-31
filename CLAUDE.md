@@ -124,7 +124,7 @@ Locked 2026-04-23 after the mission/workflow audit. Four primitives, no overlap.
 
 **Workflow** — The DAG of steps a Mission executes. Always present; single-agent missions are 1-node workflows. Not a standalone primitive — lives inside a Mission.
 - Stored inline as `missions.plan` JSONB
-- Node types: `agent`, `approval_gate`, `pipeline`, `parallel`, `quality_loop`, `triage`, `condition`, `branch`, `loop`, `delay`, `webhook`, `notify`, `output`
+- Node types: `agent`, `approval_gate`, `pipeline`, `parallel`, `quality_loop`, `triage`, `condition`, `branch`, `loop`, `delay`, `webhook`, `notify`, `output`, `command` (dispatches a registered command-bus command via `ToolRegistry.execute`; `config.params` with `{{input}}` upstream binding)
 - Executed by `WorkflowEngine` (sole executor)
 
 **Run** — One execution instance of a Mission. Owns the lifecycle state machine.
