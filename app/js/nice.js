@@ -19,22 +19,22 @@ const Theme = (() => {
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
-    { id:'nice', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
+    { id:'nice', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
       data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'transparent','--border-hi':'#d4d4d4','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'0 0 0 1px rgba(15,82,186,0.06)','--glow-hi':'0 0 12px rgba(15,82,186,0.08)','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'transparent' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
       // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
-      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'CORE',
+      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
-    // Dark variant of CORE. Same persona, same voice, same Sapphire CTA;
+    // Dark variant of NICE. Same persona, same voice, same Sapphire CTA;
     // surfaces flip to near-black. Pairs with the moon/sun toggle in the HUD
     // dock — `Theme.toggleDarkLight` swaps nice ↔ nice-dark, same pattern as
     // office ↔ office-dark. builtin:false keeps it out of the main dock row.
-    { id:'nice-dark', name:'CORE', persona:{ name:'CORE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
+    { id:'nice-dark', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
       data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'rgba(255,255,255,0.08)','--border-hi':'#404040','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'0 0 0 1px rgba(15,82,186,0.12)','--glow-hi':'0 0 12px rgba(15,82,186,0.18)','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'rgba(255,255,255,0.08)','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
-      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'CORE',
+      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
     { id:'hal-9000', name:'HAL-9000', persona:{ name:'HAL', callsign:'Dave' }, chatsLabel:'Mission Logs', chips:['Run a full system diagnostic',"What's our mission status?",'Open the pod bay doors'], builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
@@ -450,7 +450,7 @@ const Theme = (() => {
     btn.style.display = showToggle ? '' : 'none';
     if (showToggle) {
       const isLight = current === 'office' || current === 'nice';
-      // CORE uses the marketing site's FontAwesome solid moon/sun (inlined as
+      // NICE uses the marketing site's FontAwesome solid moon/sun (inlined as
       // #icon-*-fa); Office keeps the Feather-style outline icons.
       const iconSuffix = isCore ? '-fa' : '';
       const icon = (isLight ? '#icon-moon' : '#icon-sun') + iconSuffix;

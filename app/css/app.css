@@ -1852,7 +1852,6 @@ html:not([data-theme]) .app-main,
 }
 .mobile-bar-btn:hover { color:var(--accent); }
 .mobile-bar-left { display:flex; align-items:center; gap:2px; }
-.mobile-bar-right { display:flex; align-items:center; gap:2px; }
 /* Theme name label — centered in the mobile top bar, same anchoring
    pattern the hidden NICE brand uses. Takes priority over the brand
    (brand is display:none on mobile). Long names get an ellipsis so
