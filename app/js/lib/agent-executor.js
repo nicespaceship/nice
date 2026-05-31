@@ -290,36 +290,32 @@ const AgentExecutor = (() => {
       // all three provider families, but relying on block presence is the
       // robust invariant.
       if (toolUseBlocks.length > 0) {
-        // Approval gate: side-effect tools in review mode require per-call OK
+        // The approval gate lives in ToolRegistry.execute (the shared dispatch
+        // point) — we pass the review-mode context per call and treat a thrown
+        // `declined` error as the user rejecting that tool. `declined` tracks
+        // which blocks were rejected so the all-declined nudge below still fires.
         const declined = new Set();
-        if (opts && opts.approvalMode === 'review' && typeof opts.onApprovalNeeded === 'function') {
-          for (const block of toolUseBlocks) {
-            if (!_isSideEffectTool(block.name)) continue;
-            const approved = await opts.onApprovalNeeded({
-              tool: block.name,
-              input: block.input,
-              thought: combinedText,
-              stepIndex: stepIdx + 1,
-            });
-            if (!approved) declined.add(block.id);
-          }
-        }
-
         const toolResultParts = [];
         for (const block of toolUseBlocks) {
           let observation;
           let isError = false;
-          if (declined.has(block.id)) {
-            observation = 'Action blocked — user declined approval.';
-            isError = true;
-          } else {
-            try {
-              const result = await ToolRegistry.execute(block.name, block.input || {});
-              observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-            } catch (err) {
+          try {
+            const result = await ToolRegistry.execute(block.name, block.input || {}, {
+              approvalMode:     opts && opts.approvalMode,
+              onApprovalNeeded: opts && opts.onApprovalNeeded,
+              toolLabel:        block.name,
+              thought:          combinedText,
+              stepIndex:        stepIdx + 1,
+            });
+            observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+          } catch (err) {
+            if (err && err.declined) {
+              declined.add(block.id);
+              observation = 'Action blocked — user declined approval.';
+            } else {
               observation = 'Error: ' + (err.message || 'Tool execution failed');
-              isError = true;
             }
+            isError = true;
           }
 
           toolResultParts.push({
@@ -386,39 +382,29 @@ const AgentExecutor = (() => {
       const parsed = _parseReActResponse(combinedText || '');
 
       if (parsed.action && !parsed.finalAnswer) {
-        if (opts && opts.approvalMode === 'review' && _isSideEffectTool(parsed.action) && typeof opts.onApprovalNeeded === 'function') {
-          const approved = await opts.onApprovalNeeded({
-            tool: parsed.action, input: parsed.actionInput,
-            thought: parsed.thought, stepIndex: stepIdx + 1,
-          });
-          if (!approved) {
-            stepIdx++;
-            const step = {
-              index: stepIdx, thought: parsed.thought, action: parsed.action,
-              actionInput: parsed.actionInput, observation: 'Action blocked — user declined approval.',
-              finalAnswer: null,
-            };
-            steps.push(step);
-            if (onStep) onStep(step);
-            _logToShipLog(spaceshipId, agentId, 'agent', parsed.thought || `(tool call: ${parsed.action})`, {
-              event: 'tool_use', tool_name: parsed.action, input: parsed.actionInput || {}, step: stepIdx,
-            });
-            _logToShipLog(spaceshipId, agentId, 'system', 'Action blocked — user declined approval.', {
-              event: 'tool_result', tool_name: parsed.action, is_error: true, step: stepIdx,
-            });
-            conversationMessages.push({ role: 'assistant', content: combinedText });
-            conversationMessages.push({ role: 'user', content: 'Observation: Action was declined by the user. Try a different approach or provide a Final Answer.' });
-            continue;
-          }
-        }
-
+        // Same shared gate as the native path: route through ToolRegistry.execute
+        // with review-mode context. A declined action throws `declined`, which we
+        // surface with the dedicated "try a different approach" nudge so the model
+        // doesn't just re-emit the rejected call.
         let observation;
         let toolFailed = false;
+        let wasDeclined = false;
         try {
-          const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {});
+          const result = await ToolRegistry.execute(parsed.action, parsed.actionInput || {}, {
+            approvalMode:     opts && opts.approvalMode,
+            onApprovalNeeded: opts && opts.onApprovalNeeded,
+            toolLabel:        parsed.action,
+            thought:          parsed.thought,
+            stepIndex:        stepIdx + 1,
+          });
           observation = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
         } catch (err) {
-          observation = 'Error: ' + (err.message || 'Tool execution failed');
+          if (err && err.declined) {
+            wasDeclined = true;
+            observation = 'Action blocked — user declined approval.';
+          } else {
+            observation = 'Error: ' + (err.message || 'Tool execution failed');
+          }
           toolFailed = true;
         }
         stepIdx++;
@@ -439,7 +425,12 @@ const AgentExecutor = (() => {
           event: 'tool_result', tool_name: parsed.action, is_error: toolFailed, step: stepIdx,
         });
         conversationMessages.push({ role: 'assistant', content: combinedText });
-        conversationMessages.push({ role: 'user', content: 'Observation: ' + observation });
+        conversationMessages.push({
+          role: 'user',
+          content: wasDeclined
+            ? 'Observation: Action was declined by the user. Try a different approach or provide a Final Answer.'
+            : 'Observation: ' + observation,
+        });
         continue;
       }
 
@@ -876,33 +867,15 @@ const AgentExecutor = (() => {
   }
 
   /* ── Detect tools with external side effects ──
-     The list below catches anything that mutates state on a remote
-     system — mail sends, calendar writes, file uploads, social posts,
-     payments, etc. Keep it intentionally broad: a false positive just
-     means one extra approval click when `approvalMode === 'review'`;
-     a false negative means a destructive action slips through silently.
-
-     Every pattern here is tested against the full tool catalog in
-     agent-executor.test.js. When you add a new MCP write tool, either
-     pick a name that contains one of these substrings or add a new
-     pattern to the list. */
-  const SIDE_EFFECT_PATTERNS = [
-    // Generic mutation verbs
-    'send', 'publish', 'post', 'create', 'delete', 'update', 'write',
-    'upload', 'reply', 'archive', 'move', 'rename', 'remove', 'drop',
-    'put', 'patch', 'insert', 'destroy', 'revoke', 'cancel', 'schedule',
-    // Tool-prefix fast paths for common destructive surfaces
-    'gmail_send', 'gmail_reply', 'gmail_draft',
-    'calendar_create', 'calendar_update', 'calendar_delete',
-    'drive_create', 'drive_update', 'drive_upload',
-    'social_create', 'social_publish', 'social_schedule',
-    'slack_send', 'slack_post', 'stripe_charge', 'stripe_refund',
-  ];
-
+     The heuristic (SIDE_EFFECT_PATTERNS) is the registry's SSOT now — the
+     shared dispatch point that enforces the approval gate. This delegates so
+     the agent loop, the Integrations pill labels, and the bus all agree on
+     what counts as a write. ToolRegistry loads before AgentExecutor (script
+     order + hard dependency), so it is always present at call time. */
   function _isSideEffectTool(toolId) {
-    if (!toolId || typeof toolId !== 'string') return false;
-    const normalized = toolId.toLowerCase();
-    return SIDE_EFFECT_PATTERNS.some(p => normalized.includes(p));
+    return typeof ToolRegistry !== 'undefined' && typeof ToolRegistry.isSideEffect === 'function'
+      ? ToolRegistry.isSideEffect(toolId)
+      : false;
   }
 
   /* ── Coerce an unknown error value into a useful string ──

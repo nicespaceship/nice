@@ -17,6 +17,39 @@ const ToolRegistry = (() => {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
 
+  /* ── Side-effect classification (SSOT) ──
+     The list below catches anything that mutates state on a remote system —
+     mail sends, calendar writes, file uploads, social posts, payments, etc.
+     A command flagged here routes through the approval gate in execute() when
+     a caller dispatches it in review mode. Keep it intentionally broad: a
+     false positive is one extra approval click; a false negative lets a
+     destructive action slip through silently.
+
+     This lives in the registry (the shared dispatch point) so the agent loop,
+     the Integrations pill labels, EXEC, the palette, and UI buttons all agree
+     on what counts as a write. AgentExecutor.classifyTool / _isSideEffectTool
+     delegate here. Every pattern is tested against the full tool catalog in
+     agent-executor.test.js — when you add a write tool, give it a name
+     containing one of these substrings or add a new pattern. */
+  const SIDE_EFFECT_PATTERNS = [
+    // Generic mutation verbs
+    'send', 'publish', 'post', 'create', 'delete', 'update', 'write',
+    'upload', 'reply', 'archive', 'move', 'rename', 'remove', 'drop',
+    'put', 'patch', 'insert', 'destroy', 'revoke', 'cancel', 'schedule',
+    // Tool-prefix fast paths for common destructive surfaces
+    'gmail_send', 'gmail_reply', 'gmail_draft',
+    'calendar_create', 'calendar_update', 'calendar_delete',
+    'drive_create', 'drive_update', 'drive_upload',
+    'social_create', 'social_publish', 'social_schedule',
+    'slack_send', 'slack_post', 'stripe_charge', 'stripe_refund',
+  ];
+
+  function isSideEffect(nameOrId) {
+    if (!nameOrId || typeof nameOrId !== 'string') return false;
+    const normalized = nameOrId.toLowerCase();
+    return SIDE_EFFECT_PATTERNS.some(p => normalized.includes(p));
+  }
+
   /* ── Register a tool ── */
   function register(tool) {
     if (!tool || !tool.id || !tool.name || typeof tool.execute !== 'function') {
@@ -28,6 +61,13 @@ const ToolRegistry = (() => {
       name:        tool.name,
       description: tool.description || '',
       schema:      tool.schema || {},
+      // Which front-ends may dispatch this command. Defaults to agent-only so
+      // every existing tool keeps its current reach and the LLM stays the only
+      // caller until a command opts a human surface in (Phase 2+).
+      surfaces:    Array.isArray(tool.surfaces) && tool.surfaces.length ? tool.surfaces.slice() : ['agent'],
+      // Routes through the approval gate in execute(). Explicit value wins;
+      // otherwise inferred from the command name/id via SIDE_EFFECT_PATTERNS.
+      sideEffect:  typeof tool.sideEffect === 'boolean' ? tool.sideEffect : (isSideEffect(tool.name) || isSideEffect(tool.id)),
       execute:     tool.execute,
     });
     // Auto-alias on the display name so "Web Search" resolves to "web-search".
@@ -87,13 +127,36 @@ const ToolRegistry = (() => {
     return Array.from(_tools.values());
   }
 
-  /* ── Execute a tool by id, alias, or display name ── */
-  async function execute(toolId, input) {
+  /* ── Execute a tool by id, alias, or display name ──
+     `ctx` (optional) carries the dispatch context shared by every front-end:
+       { approvalMode, onApprovalNeeded, toolLabel, thought, stepIndex, surface, user }
+     A side-effecting command dispatched in review mode routes through the
+     approval gate HERE, so every caller (the agent loop, EXEC, the palette, a
+     UI button) inherits the same prompt — not just AgentExecutor. A declined
+     action throws an Error tagged `declined` so callers can distinguish a
+     user rejection from a genuine tool failure. The 2-arg form
+     execute(id, input) stays valid — ctx defaults to no gate. */
+  async function execute(toolId, input, ctx) {
     const tool = resolve(toolId);
     if (!tool) throw new Error('Tool not found: ' + toolId);
+    ctx = ctx || {};
+    if (tool.sideEffect && ctx.approvalMode === 'review' && typeof ctx.onApprovalNeeded === 'function') {
+      const approved = await ctx.onApprovalNeeded({
+        tool:      ctx.toolLabel || tool.name || tool.id,
+        input:     input,
+        thought:   ctx.thought,
+        stepIndex: ctx.stepIndex,
+      });
+      if (!approved) {
+        const declined = new Error('Action blocked — user declined approval.');
+        declined.declined = true;
+        throw declined;
+      }
+    }
     try {
-      return await tool.execute(input);
+      return await tool.execute(input, ctx);
     } catch (err) {
+      if (err && err.declined) throw err;
       throw new Error('Tool "' + toolId + '" failed: ' + (err.message || err));
     }
   }
@@ -642,5 +705,5 @@ const ToolRegistry = (() => {
   registerAlias('assign',           'delegate');
   registerAlias('ask agent',        'delegate');
 
-  return { register, registerAlias, deregister, get, resolve, list, execute, getSchemas };
+  return { register, registerAlias, deregister, get, resolve, list, execute, getSchemas, isSideEffect };
 })();
