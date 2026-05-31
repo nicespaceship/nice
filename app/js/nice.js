@@ -943,7 +943,9 @@ const NICE = (() => {
       if (exportBtn) {
         exportBtn.addEventListener('click', () => {
           popover.classList.remove('open');
-          if (typeof DataIO !== 'undefined') DataIO.exportData();
+          // Dispatch the registered command so chat, Cmd+K, and this button
+          // share one definition (command bus, Phase 4).
+          if (typeof ToolRegistry !== 'undefined') ToolRegistry.execute('export-data').catch(() => {});
         });
       }
       // Log out button

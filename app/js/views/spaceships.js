@@ -344,9 +344,10 @@ const SpaceshipsView = (() => {
   }
 
   function _openWizard() {
-    if (typeof CrewDesigner !== 'undefined') CrewDesigner.open();
-    else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
-    else console.warn('[Spaceships] No wizard available');
+    // Dispatch the registered command so this button shares the chat/Cmd+K
+    // handler (command bus, Phase 4). open-crew-designer carries the
+    // CrewDesigner → SetupWizard fallback itself.
+    if (typeof ToolRegistry !== 'undefined') ToolRegistry.execute('open-crew-designer').catch(() => {});
   }
 
   function _bindEvents() {
