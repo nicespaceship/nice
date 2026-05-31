@@ -2511,6 +2511,11 @@ const NICE = (() => {
     _initPWAInstall();
     Notify.init();
 
+    // Register navigation/UI verbs on the command bus before the palette
+    // projects them (command bus Phase 2). Runs at bootstrap because
+    // tool-registry.js loads after nav-commands.js.
+    if (typeof NavCommands !== 'undefined') NavCommands.init();
+
     // Initialize command palette and keyboard shortcuts
     if (typeof CommandPalette !== 'undefined') CommandPalette.init();
     if (typeof Keyboard !== 'undefined') Keyboard.init();
