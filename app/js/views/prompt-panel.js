@@ -1222,45 +1222,6 @@ const PromptPanel = (() => {
     return ships.find(s => (s?.name || '').toLowerCase().includes(query)) || null;
   }
 
-  /* ── Navigation & action intent map ── */
-  // Order matters — more specific keywords must come before generic ones
-  const _NAV_INTENTS = [
-    // Blueprint tabs (specific before generic)
-    { keywords: ['spaceship blueprint', 'ship blueprint', 'browse spaceship', 'saas blueprint'], route: '#/bridge?tab=spaceship', label: 'Spaceship Blueprints' },
-    { keywords: ['agent blueprint', 'browse agent'], route: '#/bridge?tab=agent', label: 'Agent Blueprints' },
-    { keywords: ['blueprint', 'terminal', 'catalog', 'browse blueprint', 'add agent'], route: '#/bridge', label: 'Blueprints' },
-    // Home
-    { keywords: ['bridge', 'home', 'dashboard', 'main', 'go home'], route: '#/', label: 'Bridge' },
-    // Agents (specific before generic)
-    { keywords: ['create agent', 'new agent', 'build agent', 'add agent'], route: '#/bridge/agents/new', label: 'Agent Builder' },
-    { keywords: ['agent', 'my agent', 'view agent', 'manage agent', 'show agent'], route: '#/bridge/agents', label: 'Agents' },
-    // Spaceships & Fleets
-    { keywords: ['shipyard', 'spaceship', 'my ship', 'show ship', 'view ship'], route: '#/bridge/spaceships', label: 'Shipyard' },
-    // Missions
-    { keywords: ['mission board', 'board'], route: '#/missions', label: 'Missions' },
-    { keywords: ['new mission', 'create mission', 'start mission'], route: '#/missions', label: 'Missions' },
-    { keywords: ['mission', 'my mission', 'task', 'show mission'], route: '#/missions', label: 'Missions' },
-    // Operations
-    { keywords: ['operations', 'analytics', 'performance', 'stats', 'metrics', 'report'], route: '#/analytics', label: 'Operations' },
-    { keywords: ['cost', 'spending', 'budget', 'token cost', 'token tracker'], route: '#/cost', label: 'Cost Tracker' },
-    // MCP Connectors (blueprints with mcp config)
-    { keywords: ['connector', 'mcp', 'connect', 'api key', 'tool', 'service'], route: '#/bridge', label: 'Blueprints' },
-    // Comms
-    { keywords: ['comms', 'communication', 'message', 'notification', 'broadcast'], route: '#/comms', label: 'Comms Hub' },
-    // Wallet & Tokens
-    { keywords: ['wallet', 'balance', 'tokens', 'credits', 'payment', 'purchase tokens'], route: '#/wallet', label: 'Wallet' },
-    // Vault & Security
-    { keywords: ['vault', 'secret', 'credential', 'password'], route: '#/vault', label: 'Vault' },
-    { keywords: ['security', 'audit', 'access control'], route: '#/security', label: 'Security' },
-    // Log
-    { keywords: ['ship log', 'ship\'s log', 'captain\'s log', 'log', 'activity log'], route: '#/bridge?tab=operations&sub=log', label: 'Log' },
-    // Theme Creator
-    { keywords: ['theme editor', 'theme creator', 'create theme', 'custom theme', 'build theme'], route: '#/theme-editor', label: 'Theme Editor' },
-    // Settings & Profile
-    { keywords: ['setting', 'preferences', 'config', 'options'], route: '#/settings', label: 'Settings' },
-    { keywords: ['profile', 'account', 'my profile', 'my account'], route: '#/profile', label: 'Profile' },
-  ];
-
   /* ── Status query handlers ── */
   function _detectStatusQuery(text) {
     const lower = text.toLowerCase();
@@ -1455,7 +1416,27 @@ const PromptPanel = (() => {
     return { text: `Search results for "${query}":\n${results.map(r => '• ' + r).join('\n')}`, handled: true };
   }
 
-  /* ── Detect intent from user text ── */
+  /* Build a command-dispatch intent. _executeIntent fires
+     ToolRegistry.execute(commandId, params) through the bus, so chat shares the
+     exact handler the palette and the LLM use. `isNav:true` short-circuits the
+     LLM in the top-level chat (the user's intent is already known);
+     `delay`/`hideMonitor` keep the "read the reply, then act" cadence. */
+  function _cmd(commandId, opts) {
+    return Object.assign(
+      { commandId, params: {}, reply: '', isNav: false, navLabel: null, delay: 800, hideMonitor: true },
+      opts || {}
+    );
+  }
+
+  /* ── Detect intent from user text ──
+     A thin resolver over the command bus (docs/command-bus.md, Phase 3):
+     recognised verbs return a { commandId, params } dispatched via
+     ToolRegistry, and navigation resolves against NavCommands — the registry
+     IS the nav SSOT, so adding a nav command there exposes it here for free,
+     with no new branch. The handlers that stay bespoke are the ones that
+     produce COMPUTED TEXT or run a FUZZY match rather than dispatch a fixed
+     command: status counts, catalog search, theme-name resolution, the help
+     card, and the imperative auto-mission. */
   function _detectIntent(text) {
     const lower = text.toLowerCase();
 
@@ -1463,39 +1444,23 @@ const PromptPanel = (() => {
     if (statusResult) return { type: 'status', response: statusResult };
 
     const searchMatch = lower.match(/(?:find|search|look for|locate)\s+(?:agent|blueprint|workflow|spaceship|ship)s?\s+(?:named?\s+|for\s+|called?\s+)?(.+)/i);
-    if (searchMatch) {
-      const result = _handleSearch(searchMatch[1].trim());
-      return { type: 'search', response: result };
-    }
+    if (searchMatch) return { type: 'search', response: _handleSearch(searchMatch[1].trim()) };
     const genericSearch = lower.match(/^(?:find|search|search for|look for|look up)\s+(.+)/i);
-    if (genericSearch && !lower.match(/^find\s+(me\s+)?a\s/)) {
-      const result = _handleSearch(genericSearch[1].trim());
-      return { type: 'search', response: result };
-    }
+    if (genericSearch && !lower.match(/^find\s+(me\s+)?a\s/)) return { type: 'search', response: _handleSearch(genericSearch[1].trim()) };
 
     const navPrefixes = ['go to', 'take me to', 'open', 'show', 'show me', 'navigate to', 'switch to', 'view'];
     const isNavRequest = navPrefixes.some(p => lower.startsWith(p) || lower.includes(p));
 
-    if (isNavRequest) {
-      for (const intent of _NAV_INTENTS) {
-        if (intent.keywords.some(kw => lower.includes(kw))) {
-          return { type: 'navigate', route: intent.route, label: intent.label };
-        }
-      }
-    }
-
-    for (const intent of _NAV_INTENTS) {
-      if (intent.keywords.some(kw => lower === kw || lower === kw + 's')) {
-        return { type: 'navigate', route: intent.route, label: intent.label };
-      }
-    }
-
-    if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower)) return { type: 'action', action: 'create-mission' };
-    if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower)) return { type: 'navigate', route: '#/bridge/agents/new', label: 'Agent Builder' };
-    // "build me a spaceship for my business" → launch the Crew Designer (describe →
-    // design → deploy), seeded with any business context already typed. Authoring
-    // verbs open the builder; browse intents ("show me spaceships") still reach the
-    // Shipyard catalog via the nav map above.
+    // Authoring verbs → the specific builder/board command. These run BEFORE
+    // the fuzzy nav resolve so "build an agent" opens the Builder rather than
+    // resolving to the Agents roster; "show me agents" (no authoring verb)
+    // still falls through to the nav resolver below.
+    if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower))
+      return _cmd('open-missions', { reply: 'Opening Missions so you can create a new one.', isNav: true, navLabel: 'Missions' });
+    if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower))
+      return _cmd('open-agent-builder', { reply: 'Opening the Agent Builder.', isNav: true, navLabel: 'Agent Builder' });
+    // "build me a spaceship for my bakery" → Crew Designer (describe → design →
+    // deploy), seeded with any business context already typed.
     const shipBuild = lower.match(/^(?:create|new|add|build|make|design|assemble|launch|set\s?up|spin\s+up|put\s+together)\s+(?:me\s+|us\s+)?(?:a\s+|an\s+|my\s+|the\s+|our\s+)?(?:new\s+)?(?:spaceship|space\s?ship|ship|crew|team|fleet)\b(.*)$/i);
     if (shipBuild) {
       let seed = shipBuild[1].trim()
@@ -1503,23 +1468,39 @@ const PromptPanel = (() => {
         .replace(/^(?:my|a|an|the|our)\s+/i, '')
         .trim();
       if (seed.length < 3 || /^(?:business|company|work|startup|me|us|it)\.?$/i.test(seed)) seed = '';
-      return { type: 'crew-designer', prompt: seed };
+      return _cmd('open-crew-designer', {
+        params: { prompt: seed },
+        reply: seed
+          ? `Opening the Crew Designer to design a crew for "${seed}".`
+          : 'Opening the Crew Designer. Describe your business and NICE designs the crew.',
+        isNav: true, navLabel: 'Crew Designer',
+      });
     }
-    if (/^(setup|guided setup|wizard)/i.test(lower)) return { type: 'action', action: 'setup-wizard' };
-    if (/^(export|download)\s+(data|backup)/i.test(lower)) return { type: 'action', action: 'export-data' };
+    if (/^(setup|guided setup|wizard)/i.test(lower))
+      return _cmd('open-setup-wizard', { reply: 'Launching the Guided Setup Wizard.' });
+    if (/^(export|download)\s+(data|backup)/i.test(lower))
+      return _cmd('export-data', { reply: 'Exporting your data now.', delay: 300, hideMonitor: false });
 
     if (/^(pause|stop|disable)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: 'Spaceship paused. All agents on standby.' };
     if (/^(resume|start|enable|activate)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: 'Spaceship resumed. Agents resuming operations.' };
-    if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower)) {
-      setTimeout(() => { window.location.hash = '#/missions'; }, 300);
-      return { type: 'agent-op', op: 'run-mission', text: 'Opening Missions to start a new run.' };
-    }
-    if (/^(deploy|launch)\s+agent\s*/i.test(lower)) {
-      setTimeout(() => { window.location.hash = '#/bridge/agents'; }, 300);
-      return { type: 'agent-op', op: 'deploy-agent', text: 'Opening Agents view. Select an agent to deploy.' };
+    if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower))
+      return _cmd('open-missions', { reply: 'Opening Missions to start a new run.', isNav: true, navLabel: 'Missions', delay: 300 });
+    if (/^(deploy|launch)\s+agent\s*/i.test(lower))
+      return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to deploy.', isNav: true, navLabel: 'Agents', delay: 300 });
+
+    // Navigation — resolve against the registry. Only act when the phrasing
+    // signals navigation (a nav verb) or the whole input is one word, so
+    // conversational text ("what do my agents think?") still reaches the LLM.
+    if (typeof NavCommands !== 'undefined' && NavCommands.resolve) {
+      const oneWord = lower.trim().split(/\s+/).filter(Boolean).length === 1;
+      if (isNavRequest || oneWord) {
+        const m = NavCommands.resolve(lower);
+        if (m) return _cmd(m.id, { reply: `Navigating to ${m.label}.`, isNav: true, navLabel: m.label });
+      }
     }
 
-    // Theme switching: "change theme to matrix", "switch to cyberpunk neon", "use ocean depths theme"
+    // Theme switching (fuzzy name match — stays bespoke): "change theme to
+    // matrix", "switch to cyberpunk neon", "use ocean depths theme"
     const themeMatch = lower.match(/(?:change|switch|set|use|try|activate|enable|apply)\s+(?:the\s+)?(?:theme\s+(?:to\s+)?|to\s+(?:the\s+)?)?(.+?)(?:\s+theme)?$/i)
       || lower.match(/(?:theme)\s+(.+)/i)
       || lower.match(/(?:go|switch)\s+(?:to\s+)?(.+?)\s+theme/i);
@@ -1530,12 +1511,11 @@ const PromptPanel = (() => {
 
     if (/^(help|what can you do|commands|how do i)/i.test(lower)) return { type: 'help' };
 
-    // Detect imperative task requests — "write me a tagline", "draft a description", etc.
-    // Only auto-mission for short, direct tasks (under 80 chars) without API key context.
-    // Longer prompts are conversational and should go to the LLM (which can use EXEC markers).
+    // Imperative task requests — "write me a tagline", "draft a description".
+    // Short, direct tasks auto-create + run a mission; longer prompts are
+    // conversational and go to the LLM (which can use EXEC markers).
     const taskVerbs = /^(write|draft|generate|analyze|summarize|research|list|outline|compose|review|evaluate|audit|produce)\s+(me\s+|a\s+|an\s+|the\s+|my\s+|\d+\s+)/i;
-    const hasLLM = true; // NICE provides free Gemini to all users
-    if (taskVerbs.test(lower) && !isNavRequest && (!hasLLM || text.length < 80)) {
+    if (taskVerbs.test(lower) && !isNavRequest && text.length < 80) {
       return { type: 'auto-mission', title: text };
     }
 
@@ -1546,10 +1526,6 @@ const PromptPanel = (() => {
   function _executeIntent(intent) {
     if (intent.type === 'status') return { text: intent.response.text, agent: null };
     if (intent.type === 'search') return { text: intent.response.text, agent: null };
-    if (intent.type === 'navigate') {
-      setTimeout(() => { window.location.hash = intent.route; _hideMonitor(); }, 800);
-      return { text: 'Navigating to ' + intent.label + '.', agent: null, isNav: true, navLabel: intent.label };
-    }
     if (intent.type === 'theme') {
       if (typeof Theme !== 'undefined') Theme.set(intent.theme);
       else { document.documentElement.setAttribute('data-theme', intent.theme); localStorage.setItem(Utils.KEYS.theme, intent.theme); }
@@ -1558,36 +1534,6 @@ const PromptPanel = (() => {
       return { text: `Theme switched to ${displayName}. Looking good, Commander.`, agent: null };
     }
     if (intent.type === 'agent-op') return { text: intent.text, agent: null };
-    if (intent.type === 'action') {
-      if (intent.action === 'create-mission') {
-        setTimeout(() => { window.location.hash = '#/missions'; _hideMonitor(); }, 800);
-        return { text: 'Opening Missions so you can create a new one.', agent: null, isNav: true, navLabel: 'Missions' };
-      }
-      if (intent.action === 'setup-wizard') {
-        setTimeout(() => {
-          _hideMonitor();
-          if (typeof SetupWizard !== 'undefined') SetupWizard.open();
-          else window.location.hash = '#/bridge/spaceships';
-        }, 800);
-        return { text: 'Launching the Guided Setup Wizard.', agent: null };
-      }
-      if (intent.action === 'export-data') {
-        setTimeout(() => { if (typeof DataIO !== 'undefined') DataIO.exportData(); }, 300);
-        return { text: 'Exporting your data now.', agent: null };
-      }
-    }
-    if (intent.type === 'crew-designer') {
-      setTimeout(() => {
-        _hideMonitor();
-        if (typeof CrewDesigner !== 'undefined') CrewDesigner.open({ prompt: intent.prompt || '' });
-        else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
-        else window.location.hash = '#/bridge/spaceships';
-      }, 800);
-      const text = intent.prompt
-        ? `Opening the Crew Designer to design a crew for "${intent.prompt}".`
-        : 'Opening the Crew Designer. Describe your business and NICE designs the crew.';
-      return { text, agent: null, isNav: true, navLabel: 'Crew Designer' };
-    }
     if (intent.type === 'auto-mission') {
       return { text: null, autoMission: true, title: intent.title };
     }
@@ -1602,6 +1548,21 @@ const PromptPanel = (() => {
           '• @AgentName — message a specific agent',
         agent: null,
       };
+    }
+
+    // Command-bus dispatch: a recognised verb resolved to a registered command.
+    // Fire it through ToolRegistry so chat shares the exact handler the palette
+    // and the LLM use; the reply text renders immediately, the action runs
+    // after a short beat so the user can read it.
+    if (intent.commandId) {
+      const fire = () => {
+        if (typeof ToolRegistry !== 'undefined') {
+          Promise.resolve(ToolRegistry.execute(intent.commandId, intent.params || {})).catch(() => {});
+        }
+        if (intent.hideMonitor) _hideMonitor();
+      };
+      if (intent.delay) setTimeout(fire, intent.delay); else fire();
+      return { text: intent.reply, agent: null, isNav: !!intent.isNav, navLabel: intent.navLabel };
     }
     return null;
   }

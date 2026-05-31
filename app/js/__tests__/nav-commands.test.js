@@ -21,9 +21,10 @@ describe('NavCommands', () => {
       const ids = ToolRegistry.list().map(t => t.id);
       ['open-bridge', 'open-agents', 'open-agent-builder', 'open-shipyard',
        'open-missions', 'open-blueprint-catalog', 'open-operations', 'open-cost',
-       'open-vault', 'open-security', 'open-log', 'open-profile', 'open-settings',
+       'open-wallet', 'open-vault', 'open-security', 'open-log', 'open-profile', 'open-settings',
        'open-theme-editor', 'open-workflows',
        'create-agent', 'new-spaceship', 'cycle-theme', 'show-shortcuts', 'open-setup-wizard',
+       'open-crew-designer', 'export-data',
       ].forEach(id => expect(ids).toContain(id));
     });
 
@@ -102,6 +103,68 @@ describe('NavCommands', () => {
     it('preserves canonical labels for non-mission commands', () => {
       const bridge = NavCommands.list().find(c => c.id === 'open-bridge');
       expect(bridge.label).toBe('Bridge');
+    });
+  });
+
+  describe('resolve() — keyword → command id (chat NL resolver, Phase 3)', () => {
+    it('maps a bare noun to its nav command', () => {
+      expect(NavCommands.resolve('missions').id).toBe('open-missions');
+      expect(NavCommands.resolve('settings').id).toBe('open-settings');
+      expect(NavCommands.resolve('wallet').id).toBe('open-wallet');
+      expect(NavCommands.resolve('profile').id).toBe('open-profile');
+    });
+
+    it('matches singular/plural via substring (agents ↔ agent, ships ↔ spaceship)', () => {
+      expect(NavCommands.resolve('agent').id).toBe('open-agents');
+      expect(NavCommands.resolve('spaceships').id).toBe('open-shipyard');
+    });
+
+    it('ignores nav verbs and function words, scoring only content tokens', () => {
+      expect(NavCommands.resolve('show me the operations').id).toBe('open-operations');
+      expect(NavCommands.resolve('open my vault').id).toBe('open-vault');
+    });
+
+    it('returns null when no nav command matches (so chat falls through to the LLM)', () => {
+      expect(NavCommands.resolve('what do my agents think of the plan')).not.toBeNull(); // 'agents' still matches — caller gates on phrasing
+      expect(NavCommands.resolve('cyberpunk neon')).toBeNull();
+      expect(NavCommands.resolve('write a tagline for my bakery')).toBeNull();
+      expect(NavCommands.resolve('')).toBeNull();
+    });
+
+    it('never resolves a UI action (theme/export/crew) — only kind:nav commands', () => {
+      // "switch to cyberpunk" must reach the theme handler, not toggle the theme.
+      expect(NavCommands.resolve('cyberpunk')).toBeNull();
+      // export/crew verbs have dedicated triggers, not fuzzy nav.
+      const ids = NavCommands.COMMANDS.filter(c => c.kind === 'action').map(c => c.id);
+      ids.forEach(id => {
+        const hit = NavCommands.resolve(id.replace(/-/g, ' '));
+        if (hit) expect(NavCommands.COMMANDS.find(c => c.id === hit.id).kind).toBe('nav');
+      });
+    });
+  });
+
+  describe('param-carrying action commands', () => {
+    it('open-crew-designer forwards its prompt param to CrewDesigner.open', async () => {
+      const open = vi.fn();
+      globalThis.CrewDesigner = { open };
+      await ToolRegistry.execute('open-crew-designer', { prompt: 'a bakery in Austin' });
+      expect(open).toHaveBeenCalledWith({ prompt: 'a bakery in Austin' });
+      delete globalThis.CrewDesigner;
+    });
+
+    it('open-crew-designer opens with an empty prompt when dispatched param-less (palette)', async () => {
+      const open = vi.fn();
+      globalThis.CrewDesigner = { open };
+      await ToolRegistry.execute('open-crew-designer');
+      expect(open).toHaveBeenCalledWith({ prompt: '' });
+      delete globalThis.CrewDesigner;
+    });
+
+    it('export-data invokes DataIO.exportData', async () => {
+      const spy = vi.spyOn(globalThis.DataIO, 'exportData').mockImplementation(() => {});
+      await ToolRegistry.execute('export-data');
+      expect(spy).toHaveBeenCalled();
+      spy.mockRestore();
     });
   });
 });
