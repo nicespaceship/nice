@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Subscription Management
    Two-plan model: Free → Pro ($9.99/mo) with optional add-ons.
-     - Pro = 12 slots, instant Legendary, 1,000 standard tokens/month
+     - Pro = run a fleet (Free is one active spaceship), instant
+       Legendary + every crew slot, 1,000 standard tokens/month
      - Claude add-on = +500 claude tokens/mo, unlocks Sonnet 4.6 / Opus 4.7
      - Premium add-on = +500 premium tokens/mo, unlocks GPT-5.4 Pro,
        GPT-5.3 Codex, OpenAI o3, Gemini 2.5 Pro
@@ -18,20 +19,20 @@ const Subscription = (() => {
     free: {
       id: 'free',
       price: 0,
-      slots: 6,
+      ships: '1 spaceship',
       label: 'Free',
       icon: '',
       color: '#94a3b8',
-      desc: 'Gemini 2.5 Flash. 6 slots. XP progression to Legendary.',
+      desc: 'Gemini 2.5 Flash. One active spaceship. Crew slots and rarities unlock as you rank up to Legendary.',
     },
     pro: {
       id: 'pro',
       price: 9.99,
-      slots: 12,
+      ships: 'Unlimited spaceships',
       label: 'Pro',
       icon: '',
       color: '#f59e0b',
-      desc: '12 slots. Legendary instantly. 1,000 standard tokens/month. All non-flagship models.',
+      desc: 'Run a fleet of spaceships. Every crew slot and Legendary unlocked instantly. 1,000 standard tokens a month. All non-flagship models.',
     },
   };
 
@@ -211,15 +212,6 @@ const Subscription = (() => {
   function hasAddon(addonId) {
     if (!_paywallEnabled()) return true;
     return getAddons().includes(addonId);
-  }
-
-  /** Returns the slot count this user can deploy.
-      Pro = 12, Free = 6. No XP scaling — slot count is purely
-      a subscription perk. Rank still gates rarity, not capacity.
-      NOTE: crew capacity is now governed by rank/min_class via the
-      activation wizard; this is retained for backward-compat only. */
-  function getSlotLimit() {
-    return isPro() ? PLANS.pro.slots : PLANS.free.slots;
   }
 
   /** Number of spaceships a user can run active at once. Free = 1,
@@ -566,7 +558,6 @@ const Subscription = (() => {
     getCurrentPlan,
     getPlanTier,
     getAddons,
-    getSlotLimit,
     getActiveShipLimit,
     isPro,
     isActive,
