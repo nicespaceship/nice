@@ -26,7 +26,7 @@ const ModuleName = (() => {
 ### 2. Theme CSS Variables
 No hardcoded colors in `app/css/app.css`. All colors must use CSS custom properties:
 - `var(--bg)`, `var(--text)`, `var(--accent)`, `var(--border)`, etc.
-- Exceptions: rarity colors (`#f59e0b`, `#a855f7`, `#ef4444`, `#6366f1`) which are consistent across themes
+- Exceptions: the rarity/category/status palettes in `BlueprintUtils` (`RARITY_COLORS`, `CATEGORY_COLORS`, `STATUS_COLORS`) are theme-independent by design; blueprint cards are also color-exempt (see CLAUDE.md)
 - Check with: `grep -n '#[0-9a-fA-F]\{3,6\}' app/css/app.css` and verify each is a rarity/brand color or inside a `[data-theme]` block
 
 ### 3. localStorage Namespacing
