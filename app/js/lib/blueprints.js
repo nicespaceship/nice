@@ -56,8 +56,8 @@ const Blueprints = (() => {
     // The diff-sync path can only add/update rows, not detect deletes,
     // so any shape or content cut requires a key bump to mass-invalidate
     // stale caches.
-    catalogCache: 'nice-bp-catalog-v19',
-    catalogCacheTs: 'nice-bp-catalog-v19-ts',
+    catalogCache: 'nice-bp-catalog-v20',
+    catalogCacheTs: 'nice-bp-catalog-v20-ts',
   };
 
   const _CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -103,6 +103,8 @@ const Blueprints = (() => {
     try { localStorage.removeItem('nice-bp-catalog-v17-ts'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v18'); } catch {}
     try { localStorage.removeItem('nice-bp-catalog-v18-ts'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v19'); } catch {}
+    try { localStorage.removeItem('nice-bp-catalog-v19-ts'); } catch {}
 
     _loadSeeds();
     _loadActivationState();
@@ -727,6 +729,9 @@ const Blueprints = (() => {
           slot: zeroIndexed,
           agent_id: s.default_agent_id || null,
           min_class: s.min_class || 'class-1',
+          // Per-slot rarity override (Legendary/Epic crew floor + marquee).
+          // Null falls through to the agent's own rarity at render time.
+          rarity: s.rarity || null,
         };
       });
     return {
@@ -830,7 +835,7 @@ const Blueprints = (() => {
           .select('*, capability:capabilities(*), role:roles(*)')
           .in('id', uuidIds),
         c.from('spaceship_blueprints')
-          .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label, title, min_class)')
+          .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label, title, min_class, rarity)')
           .in('id', uuidIds),
       ]);
 
@@ -1016,7 +1021,7 @@ const Blueprints = (() => {
     );
     const shCall = applySince(
       c.from('spaceship_blueprints')
-        .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label, title, min_class)')
+        .select('*, slots:ship_slots(slot_position, role_type, default_agent_id, label, title, min_class, rarity)')
         .eq('visibility', 'public')
         .order('name', { ascending: true })
     );

@@ -459,3 +459,27 @@ describe('CardRenderer — flip + back face', () => {
     });
   });
 });
+
+describe('CardRenderer._renderCrewList — per-slot rarity override', () => {
+  const render = CardRenderer._renderCrewList;
+
+  it('lets slot.rarity raise a crew member above the slot-class ladder', () => {
+    // A class-1 slot floors to Common on the ladder; the override wins.
+    const html = render({ crew: [{ label: 'Poe Dameron', min_class: 'class-1', rarity: 'Rare', agent_id: null }] });
+    expect(html).toContain('bp-crew-rare');
+    expect(html).toContain('>Rare<');
+    expect(html).not.toContain('bp-crew-common');
+  });
+
+  it('slot.rarity wins even when the slot points at an agent', () => {
+    // Mirrors a Legendary ship promoting an umbrella-backed (Common) crew
+    // member: the per-slot override beats the shared agent's own rarity.
+    const html = render({ crew: [{ label: 'Crew', min_class: 'class-1', rarity: 'Epic', agent_id: 'umbrella-x' }] });
+    expect(html).toContain('bp-crew-epic');
+  });
+
+  it('falls back to the slot-class ladder when no override is set', () => {
+    const html = render({ crew: [{ label: 'Ensign', min_class: 'class-1', rarity: null, agent_id: null }] });
+    expect(html).toContain('bp-crew-common');
+  });
+});

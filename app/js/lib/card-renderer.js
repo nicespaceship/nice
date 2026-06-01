@@ -505,8 +505,14 @@ const CardRenderer = (() => {
       // style crews), surface that agent's own rarity instead of the
       // slot ladder's max. Without this, a Legendary Morpheus in a
       // class-1 captain seat displays as "Common".
+      // A per-slot rarity override (catalog `ship_slots.rarity`) wins: it lets a
+      // Legendary/Epic ship raise an umbrella-backed crew member above the
+      // shared agent's own (Common) rarity without touching that agent. Falls
+      // through to the bespoke agent's rarity, then the slot-class ladder.
       let rarity = slotRarity;
-      if (slot.agent_id && typeof Blueprints !== 'undefined' && typeof BlueprintUtils !== 'undefined') {
+      if (slot.rarity) {
+        rarity = slot.rarity;
+      } else if (slot.agent_id && typeof Blueprints !== 'undefined' && typeof BlueprintUtils !== 'undefined') {
         try {
           const agent = Blueprints.getAgent(slot.agent_id);
           if (agent) rarity = BlueprintUtils.getRarity(agent) || slotRarity;
@@ -1056,6 +1062,7 @@ const CardRenderer = (() => {
     bindFrontTabs,
     bindFrontInteractive,
     _extractDisciplines,
+    _renderCrewList,
     RARITY_COLORS,
     ROLE_COLORS,
     CATEGORY_COLORS,

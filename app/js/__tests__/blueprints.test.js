@@ -143,16 +143,16 @@ describe('Blueprints', () => {
 
     beforeEach(() => {
       _origSB = globalThis.SB;
-      _origCache = globalThis.localStorage.getItem('nice-bp-catalog-v19');
-      _origCacheTs = globalThis.localStorage.getItem('nice-bp-catalog-v19-ts');
-      globalThis.localStorage.removeItem('nice-bp-catalog-v19');
-      globalThis.localStorage.removeItem('nice-bp-catalog-v19-ts');
+      _origCache = globalThis.localStorage.getItem('nice-bp-catalog-v20');
+      _origCacheTs = globalThis.localStorage.getItem('nice-bp-catalog-v20-ts');
+      globalThis.localStorage.removeItem('nice-bp-catalog-v20');
+      globalThis.localStorage.removeItem('nice-bp-catalog-v20-ts');
     });
 
     afterEach(() => {
       globalThis.SB = _origSB;
-      if (_origCache != null) globalThis.localStorage.setItem('nice-bp-catalog-v19', _origCache);
-      if (_origCacheTs != null) globalThis.localStorage.setItem('nice-bp-catalog-v19-ts', _origCacheTs);
+      if (_origCache != null) globalThis.localStorage.setItem('nice-bp-catalog-v20', _origCache);
+      if (_origCacheTs != null) globalThis.localStorage.setItem('nice-bp-catalog-v20-ts', _origCacheTs);
     });
 
     it('retries via the cache merge once SB transitions from not-ready to ready', async () => {
@@ -172,8 +172,8 @@ describe('Blueprints', () => {
           scope: 'catalog', visibility: 'public', is_public: true, activation_count: 0,
           serial_key: 'X', description: '', flavor: '' },
       ];
-      globalThis.localStorage.setItem('nice-bp-catalog-v19', JSON.stringify(cacheRows));
-      globalThis.localStorage.setItem('nice-bp-catalog-v19-ts', String(Date.now()));
+      globalThis.localStorage.setItem('nice-bp-catalog-v20', JSON.stringify(cacheRows));
+      globalThis.localStorage.setItem('nice-bp-catalog-v20-ts', String(Date.now()));
 
       await new Promise(r => setTimeout(r, 1600));
       await Blueprints.ensureCatalogLoaded();
