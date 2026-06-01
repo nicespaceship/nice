@@ -175,13 +175,15 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 | Cancel button for running Runs | ✅ Shipped [#271](https://github.com/nicespaceship/nice/pull/271) |
 
 ## XP Progression System (SSOT: `app/js/lib/gamification.js`)
-| Class | Slots | Max Rarity | Rank | XP | Note |
-|-------|-------|------------|------|-----|------|
-| 1 | 6  | Common    | Ensign     | 0    | default |
-| 2 | 8  | Rare      | Lieutenant | 25,000  | |
-| 3 | 10 | Epic      | Commander  | 100,000 | |
-| 4 | 12 | Legendary | Captain    | 200,000 | |
-| 5 | 12 | Legendary | Pro        | —    | subscription-granted |
+| Class | Slots unlocked | Max Rarity | Rank | XP | Note |
+|-------|----------------|------------|------|-----|------|
+| 1 | min_class ≤ class-1 | Common    | Ensign     | 0    | default |
+| 2 | ≤ class-2           | Rare      | Lieutenant | 25,000  | |
+| 3 | ≤ class-3           | Epic      | Commander  | 100,000 | |
+| 4 | ≤ class-4 (all)     | Legendary | Captain    | 200,000 | |
+| 5 | all (instant)       | Legendary | Pro        | —    | subscription-granted |
+
+- **Crew capacity is rank/min_class-gated, not subscription-capped.** A spaceship's `crew_roles` define up to 12 slots; each slot carries a `min_class` and unlocks when the user reaches that class, enforced at activation by `ShipSetupWizard` via `BlueprintUtils.getSlotTemplate` (the real per-ship authority). `Gamification.getMaxSlots()` returns the 12-slot ceiling, NOT a per-tier cap; the old "Free 6 / Pro 12" slot cap is dropped. Pro (class-5) unlocks every slot regardless of rank.
 
 - **Mythic is milestone-only**, never directly granted by class or subscription. Even subscribers earn it. The primary unlock milestone is reaching Admiral rank (1.5M XP); Fleet Admiral inherits Mythic access.
 - **Ship rarity tier model** (locked 2026-05-26): Each tier has a distinct *voice* and *purpose*. Apply this gate before assigning a rarity to any new ship.
@@ -195,7 +197,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
   - **Epic spread**: each Epic company ship is one Epic lead plus its senior operating circle at Epic (COO / CFO / CSO, or the Founder's Office equivalents), the rest of the C-suite Rare. Shape ≈ 4 Epic / 8 Rare.
   - **Mechanism**: a per-slot `ship_slots.rarity` override; the client reads `slot.rarity ?? agent.rarity`. Needed because most Common crew are backed by **shared umbrella agents** reused across the business ships, so their rarity can't be raised on the agent itself. Bespoke crew carry rarity on their own `agent_blueprints` row, so marquee promotions edit the agent directly.
 - **Fleet Admiral (2.5M XP)** unlocks Mythic + 1 year of NICE Pro free.
-- Pro subscription grants Class 5: same 12 slots as Captain, Legendary cap. The perk is the instant unlock.
+- Pro subscription grants Class 5: every crew slot unlocked regardless of rank, Legendary cap, instant. **Pro's tangible capacity perk is running more than one active spaceship at once (Free = 1 active spaceship).**
 - All cards visible to browse; activation gated by XP rank
 - Custom blueprints start Common, evolve through usage milestones
 - Owned ships always load regardless of current rank; rarity gate only blocks NEW catalog activations

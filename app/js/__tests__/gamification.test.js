@@ -137,9 +137,10 @@ describe('Gamification', () => {
   });
 
   describe('Slot Progression', () => {
-    it('RANKS all have 6 slots — slot count is sub-based, not rank-based', () => {
-      // Every rank now grants 6 slots — Pro subscription (handled in
-      // Subscription.getSlotLimit) is the only thing that bumps it to 12.
+    it('RANKS expose the legacy `slots` backward-compat field (all 6)', () => {
+      // `slots` on RANKS is a legacy backward-compat field. Capacity is no
+      // longer rank- or subscription-based: a ship's crew_roles + per-slot
+      // min_class define real capacity, and getMaxSlots() returns the ceiling.
       for (const rank of Gamification.RANKS) {
         expect(rank.slots).toBe(6);
       }
@@ -155,9 +156,10 @@ describe('Gamification', () => {
       expect(fleetAdmiral.maxRarity).toBe('Mythic');
     });
 
-    it('getMaxSlots returns 6 for free user (no Subscription)', () => {
-      // setup.js does not load Subscription, so getMaxSlots falls back to 6
-      expect(Gamification.getMaxSlots()).toBe(6);
+    it('getMaxSlots returns the 12-slot ship ceiling (not subscription-gated)', () => {
+      // Capacity is rank/min_class gated per-slot by the wizard, not by a
+      // Free=6/Pro=12 subscription cap. getMaxSlots is just the upper bound.
+      expect(Gamification.getMaxSlots()).toBe(12);
     });
 
     it('getSlotTemplate generates correct slot count with Common rarity (free tier)', () => {

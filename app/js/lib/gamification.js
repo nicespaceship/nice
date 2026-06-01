@@ -13,15 +13,16 @@ const Gamification = (() => {
   }
 
   /* ── Crew Ranks ──
-     Slots are no longer tied to rank — every rank gives 6 slots
-     because slot count is purely a subscription perk now (Free = 6,
-     Pro = 12, see Subscription.getSlotLimit). The `slots` field is
-     retained for backward compatibility with views that read it
-     directly, but `getMaxSlots()` is the authoritative source.
+     Slots are not tied to rank or subscription. A spaceship's crew_roles
+     define its slots (up to MAX_SHIP_SLOTS), and each slot's `min_class`
+     rank-gates whether the user can fill it — enforced at activation by the
+     wizard via BlueprintUtils.getSlotTemplate. The `slots` field below is a
+     legacy backward-compat value; `getMaxSlots()` returns the ceiling.
 
-     Rank still gates rarity via maxRarity. Free users grind XP to
-     unlock Common → Rare → Epic → Legendary. Pro users skip the
-     grind by getting Legendary instantly via Subscription.isPro().
+     Rank gates rarity via maxRarity. Free users grind XP to unlock
+     Common → Rare → Epic → Legendary. Pro users skip the grind by getting
+     Legendary instantly via Subscription.isPro(); Pro's tangible capacity
+     perk is running more than one spaceship at once (Subscription ship limit).
 
      Mythic unlocks at Admiral rank (1.5M XP) and is inherited by
      Fleet Admiral. Per-agent Mythic progression (gamification.js
@@ -261,14 +262,16 @@ const Gamification = (() => {
     return RANKS.find(function(r) { return r.classId === classId; }) || null;
   }
 
-  /** Slot count is purely subscription-based: Free = 6, Pro = 12.
-      Rank no longer scales slots — that's only a rarity gate now. */
+  /** The ceiling on crew slots a spaceship can hold. Capacity is NOT
+      subscription-gated. A ship's crew_roles (up to MAX_SHIP_SLOTS) define its
+      slots, and each slot's `min_class` rank-gates whether the current user
+      can fill it — enforced at activation by ShipSetupWizard via
+      BlueprintUtils.getSlotTemplate, which is the real per-ship authority.
+      This returns the ceiling so callers needing an upper bound (crew
+      designer, dynamic templates) have one. */
+  const MAX_SHIP_SLOTS = 12;
   function getMaxSlots() {
-    if (typeof Subscription !== 'undefined' && Subscription.getSlotLimit) {
-      return Subscription.getSlotLimit();
-    }
-    // Fallback for environments where Subscription isn't loaded
-    return 6;
+    return MAX_SHIP_SLOTS;
   }
 
   /** Generate a slot template for N slots (dynamic, no class dependency).
