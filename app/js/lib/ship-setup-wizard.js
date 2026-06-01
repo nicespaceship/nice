@@ -28,6 +28,19 @@ const ShipSetupWizard = (() => {
   function open(blueprint, opts) {
     if (_overlay) return;
     if (!blueprint) return;
+    // Free accounts run one active spaceship. Block opening the wizard for a
+    // NEW ship when at the cap; reconfiguring an already-owned ship is exempt.
+    const _isReconfigure = !!(opts && opts.startStep);
+    if (!_isReconfigure
+        && typeof Blueprints !== 'undefined'
+        && !Blueprints.isShipActivated(blueprint.id)
+        && Blueprints.canActivateNewShip && !Blueprints.canActivateNewShip()) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Spaceship limit reached', message: 'Free accounts run one active spaceship at a time. Upgrade to NICE Pro to run a fleet.', type: 'warning' });
+      }
+      if (typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
+      return;
+    }
     _blueprint = blueprint;
     _startStep = opts?.startStep || 0;
     _step = _startStep;

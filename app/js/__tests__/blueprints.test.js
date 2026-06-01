@@ -429,6 +429,49 @@ describe('Blueprints', () => {
     });
   });
 
+  describe('active-spaceship cap (Free = 1, Pro = unlimited)', () => {
+    let _origSub;
+    beforeEach(async () => {
+      globalThis.SB = undefined;
+      await Blueprints.deactivateAllShips();
+      _origSub = globalThis.Subscription;
+    });
+    afterEach(() => { globalThis.Subscription = _origSub; });
+
+    it('blocks a second NEW activation for a free user (limit 1)', () => {
+      globalThis.Subscription = { getActiveShipLimit: () => 1 };
+      expect(Blueprints.canActivateNewShip()).toBe(true);
+      expect(Blueprints.activateShip('ship-01')).toBe(true);
+      // At the cap now — a different ship is refused.
+      expect(Blueprints.canActivateNewShip()).toBe(false);
+      expect(Blueprints.activateShip('ship-02')).toBe(false);
+      expect(Blueprints.isShipActivated('ship-02')).toBe(false);
+      // Re-activating the SAME owned ship still succeeds (fast path).
+      expect(Blueprints.activateShip('ship-01')).toBe(true);
+    });
+
+    it('force:true bypasses the rarity gate but NOT the ship cap', () => {
+      globalThis.Subscription = { getActiveShipLimit: () => 1 };
+      expect(Blueprints.activateShip('ship-01', { force: true })).toBe(true);
+      expect(Blueprints.activateShip('ship-02', { force: true })).toBe(false);
+    });
+
+    it('lets a Pro user activate multiple ships (unlimited)', () => {
+      globalThis.Subscription = { getActiveShipLimit: () => Infinity };
+      expect(Blueprints.activateShip('ship-01')).toBe(true);
+      expect(Blueprints.activateShip('ship-02')).toBe(true);
+      expect(Blueprints.activateShip('ship-03')).toBe(true);
+      expect(Blueprints.isShipActivated('ship-02')).toBe(true);
+    });
+
+    it('falls back to unlimited when Subscription is absent', () => {
+      globalThis.Subscription = undefined;
+      expect(Blueprints.canActivateNewShip()).toBe(true);
+      expect(Blueprints.activateShip('ship-01')).toBe(true);
+      expect(Blueprints.activateShip('ship-02')).toBe(true);
+    });
+  });
+
   describe('cleanupOrphans', () => {
     beforeEach(() => {
       // DB gated out so we only test local cleanup

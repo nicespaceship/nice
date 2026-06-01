@@ -2012,6 +2012,17 @@ const Blueprints = (() => {
    * @returns {boolean} true if the ship is now activated (or was already),
    *                    false only when the rarity gate rejects a non-force push.
    */
+  /** True when the user may activate ANOTHER spaceship. Free accounts run one
+      active spaceship; Pro is unlimited (Subscription.getActiveShipLimit).
+      Owned ships hydrated from user_spaceships bypass activateShip, so this
+      only gates new catalog/builder activations. UI entry points pre-check
+      this to show an upgrade prompt; activateShip enforces it as the backstop. */
+  function canActivateNewShip() {
+    const limit = (typeof Subscription !== 'undefined' && Subscription.getActiveShipLimit)
+      ? Subscription.getActiveShipLimit() : Infinity;
+    return getActivatedShipIds().length < limit;
+  }
+
   function activateShip(bpId, options) {
     if (!bpId) return false;
     // Fast path: already activated under any id form the resolver recognizes.
@@ -2045,6 +2056,17 @@ const Blueprints = (() => {
         }
         return false;
       }
+    }
+
+    // Active-spaceship cap (Free = 1, Pro = unlimited). Independent of `force` —
+    // that flag only bypasses the rarity gate. The fast path above already
+    // returned for re-activations, so reaching here means a NEW ship. Owned
+    // ships hydrated from user_spaceships never call this, so they always load.
+    if (!canActivateNewShip()) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'Spaceship limit reached', message: 'Free accounts run one active spaceship at a time. Upgrade to NICE Pro to run a fleet.', type: 'warning' });
+      }
+      return false;
     }
 
     // 1. Legacy cache — stay in lockstep with State.spaceships
@@ -3222,6 +3244,7 @@ const Blueprints = (() => {
 
     // Ship activation
     activateShip, deactivateShip, isShipActivated, cleanupOrphans,
+    canActivateNewShip,
     getActivatedShipIds, getActivatedShips, findOrCreateActiveShip,
 
     // Ship state persistence

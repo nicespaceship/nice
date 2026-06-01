@@ -127,6 +127,29 @@ describe('Subscription.handleBillingError', () => {
   });
 });
 
+describe('Subscription.getActiveShipLimit (Free = 1, Pro = unlimited)', () => {
+  beforeEach(() => {
+    globalThis.Notify = { send: vi.fn() };
+    // Plain store — the file's localStorage Proxy recurses on a real getItem,
+    // and the free path reads localStorage.getItem(plan). Mirrors the
+    // auto-enable suite's reset.
+    globalThis.localStorage._s = {};
+    delete window.NICE_CONFIG;
+  });
+
+  it('returns 1 for a free user (paywall on, no Pro subscription)', () => {
+    expect(Subscription.isPro()).toBe(false);
+    expect(Subscription.getActiveShipLimit()).toBe(1);
+  });
+
+  it('returns Infinity for a Pro user', () => {
+    window.NICE_CONFIG = { paywallEnabled: false };
+    expect(Subscription.isPro()).toBe(true);
+    expect(Subscription.getActiveShipLimit()).toBe(Infinity);
+    delete window.NICE_CONFIG;
+  });
+});
+
 describe('Subscription paywall-disabled bypass (self-hosters)', () => {
   beforeEach(() => {
     globalThis.Notify = { send: vi.fn() };
