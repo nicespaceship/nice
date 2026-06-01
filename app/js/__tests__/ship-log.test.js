@@ -506,8 +506,25 @@ describe('ShipLog', () => {
         expect(r.content).toBe('ok from sonnet');
       });
 
-      it('walks the chain on 503 (overload)', async () => {
+      it('retries the SAME model on a transient 503 and recovers without swapping', async () => {
         const scripted = [
+          { data: null, error: { context: { status: 503 }, message: 'high demand' } },
+          { data: { content: 'recovered', model: 'claude-4-7-opus', usage: { input_tokens: 1, output_tokens: 1 } }, error: null },
+        ];
+        SB.functions.invoke = async (_n, opts) => {
+          _invokeCalls.push(opts.body.model);
+          return scripted.shift();
+        };
+        const r = await ShipLog.execute('ship-503-retry', { id: 'a', name: 'A', config: {} }, 'hi');
+        // same model retried in place — no swap to the fallback chain
+        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-7-opus']);
+        expect(r.content).toBe('recovered');
+      });
+
+      it('exhausts same-model retries on persistent 503, then walks the chain', async () => {
+        const scripted = [
+          { data: null, error: { context: { status: 503 }, message: 'service unavailable' } },
+          { data: null, error: { context: { status: 503 }, message: 'service unavailable' } },
           { data: null, error: { context: { status: 503 }, message: 'service unavailable' } },
           { data: { content: 'fallback ok', model: 'claude-4-6-sonnet', usage: { input_tokens: 1, output_tokens: 1 } }, error: null },
         ];
@@ -516,12 +533,15 @@ describe('ShipLog', () => {
           return scripted.shift();
         };
         const r = await ShipLog.execute('ship-503', { id: 'a', name: 'A', config: {} }, 'hi');
-        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-6-sonnet']);
+        // primary retried 3x (1 + 2 backoff) before swapping to the fallback
+        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-7-opus', 'claude-4-7-opus', 'claude-4-6-sonnet']);
         expect(r.content).toBe('fallback ok');
       });
 
-      it('walks the chain on 429 (rate limit)', async () => {
+      it('exhausts same-model retries on persistent 429, then walks the chain', async () => {
         const scripted = [
+          { data: null, error: { context: { status: 429 }, message: 'rate limit' } },
+          { data: null, error: { context: { status: 429 }, message: 'rate limit' } },
           { data: null, error: { context: { status: 429 }, message: 'rate limit' } },
           { data: { content: 'rl fallback', model: 'claude-4-6-sonnet', usage: { input_tokens: 1, output_tokens: 1 } }, error: null },
         ];
@@ -530,7 +550,7 @@ describe('ShipLog', () => {
           return scripted.shift();
         };
         const r = await ShipLog.execute('ship-429', { id: 'a', name: 'A', config: {} }, 'hi');
-        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-6-sonnet']);
+        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-7-opus', 'claude-4-7-opus', 'claude-4-6-sonnet']);
         expect(r.content).toBe('rl fallback');
       });
 
@@ -577,11 +597,12 @@ describe('ShipLog', () => {
           return { data: null, error: { context: { status: 503 }, message: 'down' } };
         };
         await expect(ShipLog.execute('ship-cap', { id: 'a', name: 'A', config: {} }, 'hi')).rejects.toThrow();
-        // primary + 3 fallback attempts = 4 total calls
-        expect(_invokeCalls.length).toBe(4);
+        // primary + 3 fallback models = 4 distinct models, each retried 3x = 12 calls
+        expect(new Set(_invokeCalls).size).toBe(4);
+        expect(_invokeCalls.length).toBe(12);
       });
 
-      it('empty fallback chain → throws on primary failure (no retry)', async () => {
+      it('empty fallback chain → retries the same model, then throws', async () => {
         globalThis.LLMConfig.forBlueprint = () => ({
           model: 'claude-4-7-opus',
           temperature: 0.7, max_tokens: 1024,
@@ -592,7 +613,8 @@ describe('ShipLog', () => {
           return { data: null, error: { context: { status: 503 }, message: 'down' } };
         };
         await expect(ShipLog.execute('ship-empty', { id: 'a', name: 'A', config: {} }, 'hi')).rejects.toThrow();
-        expect(_invokeCalls).toEqual(['claude-4-7-opus']);
+        // no fallback to swap to, but the transient error still gets same-model retries
+        expect(_invokeCalls).toEqual(['claude-4-7-opus', 'claude-4-7-opus', 'claude-4-7-opus']);
       });
 
       describe('streaming pre-stream fallback', () => {

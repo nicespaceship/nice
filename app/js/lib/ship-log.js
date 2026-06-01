@@ -342,6 +342,39 @@ const ShipLog = (() => {
     return /\b(404|429|503)\b|overload|unavailable|high.?demand|rate.?limit|capacity|not.?found|unknown.?model/i.test(msg);
   }
 
+  /* Backoff base (ms) for same-model retries. Zeroed under Vitest so retry
+     tests stay fast; real browsers (where `process` is undefined) get the
+     full backoff. */
+  const _RETRY_BASE_MS = (typeof process !== 'undefined' && process.env && process.env.VITEST) ? 0 : 600;
+
+  /* True only for TRANSIENT overload (503/429, "high demand", rate-limit).
+     The SAME model usually succeeds on a short retry, so we back off and retry
+     in place before walking the fallbackChain — which can't help when the user
+     has only one model enabled (e.g. free-tier Gemini Flash). 404/unknown-model
+     is NOT transient (only a model swap helps), so it skips straight to
+     fallback. Keep in sync with agent-executor.js's copy. */
+  function _isTransientOverload(error, data) {
+    const httpStatus = error?.context?.status;
+    if (httpStatus === 503 || httpStatus === 429) return true;
+    if (httpStatus === 404) return false;
+    const dataErr = data && data.error;
+    const msg = String((typeof dataErr === 'string' ? dataErr : dataErr?.message) || error?.message || '');
+    if (/\b404\b|not.?found|unknown.?model/i.test(msg)) return false;
+    return /\b(429|503)\b|overload|unavailable|high.?demand|rate.?limit|capacity/i.test(msg);
+  }
+
+  /* Invoke nice-ai with bounded same-model exponential backoff on transient
+     overload (up to 3 attempts: immediate, +600ms, +1200ms). */
+  async function _invokeWithBackoff(params) {
+    let res = await SB.functions.invoke('nice-ai', { body: params });
+    for (let i = 1; i <= 2; i++) {
+      if (!((res.error || res.data?.error) && _isTransientOverload(res.error, res.data))) break;
+      await new Promise(r => setTimeout(r, _RETRY_BASE_MS * Math.pow(2, i - 1)));
+      res = await SB.functions.invoke('nice-ai', { body: params });
+    }
+    return res;
+  }
+
   /* ── Real LLM call via nice-ai Edge Function ──
      On HTTP 402 the body carries `{ error, code, ... }` identifying a
      billing gap (subscription_required | addon_required |
@@ -360,7 +393,7 @@ const ShipLog = (() => {
     let _activityTokens = 0;
 
     try {
-      let { data, error } = await SB.functions.invoke('nice-ai', { body: params });
+      let { data, error } = await _invokeWithBackoff(params);
 
       const fallbackChain = Array.isArray(config?.fallbackChain) ? config.fallbackChain : [];
       const MAX_FALLBACKS = 3;
@@ -373,7 +406,7 @@ const ShipLog = (() => {
           Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
         }
         params.model = fb.id;
-        const fbRes = await SB.functions.invoke('nice-ai', { body: params });
+        const fbRes = await _invokeWithBackoff(params);
         data  = fbRes.data;
         error = fbRes.error;
         prevModel = fb.id;
@@ -446,7 +479,19 @@ const ShipLog = (() => {
       });
     }
 
-    let res = await _doFetch(params);
+    /* Same-model backoff on transient overload (503/429) before any
+       model swap — mirrors _invokeWithBackoff for the streaming fetch path. */
+    async function _doFetchWithBackoff(reqParams) {
+      let r = await _doFetch(reqParams);
+      for (let i = 1; i <= 2; i++) {
+        if (r.ok || (r.status !== 503 && r.status !== 429)) break;
+        await new Promise(res => setTimeout(res, _RETRY_BASE_MS * Math.pow(2, i - 1)));
+        r = await _doFetch(reqParams);
+      }
+      return r;
+    }
+
+    let res = await _doFetchWithBackoff(params);
 
     const fallbackChain = Array.isArray(config?.fallbackChain) ? config.fallbackChain : [];
     const MAX_FALLBACKS = 3;
@@ -461,7 +506,7 @@ const ShipLog = (() => {
         Notify.send({ title: 'Switching model', message: prevModel + ' unavailable — retrying with ' + fb.id, type: 'info' });
       }
       params.model = fb.id;
-      res = await _doFetch(params);
+      res = await _doFetchWithBackoff(params);
       prevModel = fb.id;
       tried++;
     }
