@@ -116,6 +116,8 @@ const BlueprintUtils = (() => {
           id: i,
           maxRarity: member?.rarity || 'Legendary',
           label: member?.label || member?.name || ('Agent ' + (i + 1)),
+          role: member?.role || member?.role_type || null,
+          title: member?.title || null,
           min_class: member?.min_class || 'class-1',
         };
       }),
