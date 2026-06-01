@@ -197,7 +197,7 @@ const SchematicView = (() => {
         el.innerHTML = `
           <div class="schematic-empty app-empty">
             <h2>No spaceships deployed</h2>
-            <p>Activate a ship from the catalog or build one from scratch to put a crew on the schematic.</p>
+            <p>Activate a spaceship from the catalog or build one from scratch to put a crew on the schematic.</p>
             <div class="app-empty-acts">
               <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
               <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
