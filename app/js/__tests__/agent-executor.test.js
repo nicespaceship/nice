@@ -1218,8 +1218,9 @@ describe('AgentExecutor — _callLLM fallback', () => {
       { spaceshipId: 'ship-fb-3' },
     );
     const result = await controller.send('hello');
-    // primary + 3 fallback attempts = 4 total
-    expect(_invokeCalls.length).toBe(4);
+    // primary + 3 fallback models = 4 distinct models, each retried 3x = 12 calls
+    expect(new Set(_invokeCalls).size).toBe(4);
+    expect(_invokeCalls.length).toBe(12);
     expect(result.error).toBe(true);
   });
 });
@@ -1355,6 +1356,8 @@ describe('AgentExecutor — provider tool cap', () => {
     };
     const scripted = [
       { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
+      { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
+      { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
       { data: _stubFinalAnswer(), error: null },
     ];
     globalThis.SB = {
@@ -1367,11 +1370,12 @@ describe('AgentExecutor — provider tool cap', () => {
       { tools: names, spaceshipId: 'ship-cap-5' },
     );
     await controller.send('hi');
-    expect(_capturedRequests.length).toBe(2);
+    // primary retried 3x (same-model backoff) then the provider-crossing fallback
+    expect(_capturedRequests.length).toBe(4);
     expect(_capturedRequests[0].model).toBe('claude-4-6-sonnet');
     expect(_capturedRequests[0].tools.length).toBe(200);
-    expect(_capturedRequests[1].model).toBe('gpt-5-mini');
-    expect(_capturedRequests[1].tools.length).toBe(128);
+    expect(_capturedRequests[3].model).toBe('gpt-5-mini');
+    expect(_capturedRequests[3].tools.length).toBe(128);
   });
 
   it('still drops tools entirely when fallback entry sets noTools (Grok/Llama path)', async () => {
@@ -1385,6 +1389,8 @@ describe('AgentExecutor — provider tool cap', () => {
     };
     const scripted = [
       { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
+      { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
+      { data: null, error: { context: { status: 503 }, message: 'overloaded' } },
       { data: _stubFinalAnswer(), error: null },
     ];
     globalThis.SB = {
@@ -1397,8 +1403,9 @@ describe('AgentExecutor — provider tool cap', () => {
       { tools: names, spaceshipId: 'ship-cap-6' },
     );
     await controller.send('hi');
-    expect(_capturedRequests[1].model).toBe('grok-4-1-fast');
-    expect(_capturedRequests[1].tools).toBeUndefined();
+    // primary retried 3x (same-model backoff) then the noTools fallback
+    expect(_capturedRequests[3].model).toBe('grok-4-1-fast');
+    expect(_capturedRequests[3].tools).toBeUndefined();
   });
 });
 
