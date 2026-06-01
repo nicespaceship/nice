@@ -668,7 +668,7 @@ const CardRenderer = (() => {
     const displayName = _cl.name || bp.name;
     const roleLabel = isShip
       ? (_cl.role || bp.category || (bp.desc || bp.description || '').split(/[—–.]/)[0]?.trim() || '')
-      : (_cl.role || bp.category || bp.role || '');
+      : (_cl.role || (bp.config && bp.config.title) || bp.category || bp.role || '');
     const nameEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="name"' : '';
     const roleEditable = isActivated ? ' contenteditable="true" spellcheck="false" data-field="role"' : '';
 

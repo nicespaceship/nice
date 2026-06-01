@@ -689,6 +689,7 @@ const Blueprints = (() => {
         llm_engine: llm.engine,
         temperature: llm.temperature,
         system_prompt: agCfg.system_prompt || '',
+        title: agCfg.title || null,
       },
       metadata: {
         art: card.art || null,
