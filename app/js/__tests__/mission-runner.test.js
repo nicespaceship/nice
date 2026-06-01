@@ -756,6 +756,21 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       // The original captain system_prompt is preserved underneath.
       expect(sp).toContain('You are Han.');
     });
+
+    it('tells the captain to answer directly and dispatch only for tool-backed work', () => {
+      // Forward-fix for the over-delegation seen on Galley + Enterprise during
+      // the 5-class test: the captain dispatched simple drafting/advice tasks to
+      // tool-bound crew, who refused. The protocol now defaults to answering
+      // directly and reserves dispatch for tools / live data.
+      const ship = { slot_assignments: { 'slot-0': 'cap-1' } };
+      const crew = [{ id: 'a-eng', name: 'R2-D2', config: { role_type: 'engineering' } }];
+      const captainBp = { id: 'cap-1', name: 'Han', config: { role_type: 'captain', system_prompt: 'You are Han.' } };
+      const sp = MissionRunner._injectCaptainContext(captainBp, ship, crew).config.system_prompt;
+      expect(sp).toMatch(/answer the user directly/i);
+      expect(sp).toMatch(/dispatch.*only when/i);
+      // Names a concrete tool-backed trigger so "dispatch" reads as tool work.
+      expect(sp).toMatch(/searching email|reading the repo|querying the crm/i);
+    });
   });
 
   describe('runWithDispatch', () => {
@@ -876,7 +891,9 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
       // 1 captain first turn + 1 crew call + 1 captain synthesis = 3
       expect(calls).toHaveLength(3);
       // Crew call had the sub-prompt, not the user's original prompt
-      expect(calls[1].prompt).toBe('What deals are stalling?');
+      expect(calls[1].prompt).toContain('What deals are stalling?');
+      // ...plus the in-role guidance that stops tool-bound reskins from refusing
+      expect(calls[1].prompt).toMatch(/Complete this request directly when you can/i);
       // Synthesis prompt contains the crew report
       expect(calls[2].prompt).toContain('[CREW REPORT: sales]');
       expect(calls[2].prompt).toContain('Deals Alpha and Beta are stalling.');

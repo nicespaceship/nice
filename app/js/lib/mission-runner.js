@@ -716,6 +716,20 @@ const MissionRunner = (() => {
 
   const MAX_DISPATCH_ROUNDS = 3;
 
+  /* Appended to every crew sub-prompt. Crew agents are often personas
+     reskinned over a narrowly-scoped umbrella (e.g. a read-only Workspace or
+     GitHub agent), so a bare drafting/advice sub-prompt made them refuse with
+     "I'm a read-only agent" instead of just answering. This nudges them to do
+     the work in-role and only report an inability when a real tool/data gap
+     blocks them — surfaced on Galley + Enterprise during the 5-class test. */
+  const _CREW_DISPATCH_GUIDANCE =
+    '\n\n---\n' +
+    'Complete this request directly when you can do it from your own knowledge, ' +
+    'expertise, and reasoning — drafting, writing, advice, analysis, planning. ' +
+    'Only report that you cannot when it specifically requires a tool or ' +
+    'live/private data you do not have access to, and then say exactly what you ' +
+    'would need. Do not refuse a task you can reasonably do in your role.';
+
   /* Parse all [DISPATCH: slot] sub-prompt pairs from a captain response. */
   function _extractDispatches(text) {
     const results = [];
@@ -939,9 +953,20 @@ const MissionRunner = (() => {
 
     const protocol =
       'DISPATCH PROTOCOL\n' +
-      'When a user request requires specialist knowledge, dispatch to a crew member:\n' +
+      'Answer the user directly yourself whenever you can. Writing, drafting, ' +
+      'summarizing, planning, brainstorming, advice, and general reasoning need ' +
+      'no dispatch — most requests are like this, so just respond in your own ' +
+      'voice.\n' +
+      'Dispatch to a crew member ONLY when the task genuinely needs their ' +
+      'specialized tools or live/private data — searching email, reading the ' +
+      'repo, querying the CRM, fetching a file, sending a message. Do not ' +
+      'dispatch work you can do yourself, and do not dispatch just to route a ' +
+      'request by topic:\n' +
       '  [DISPATCH: <role>] <sub-prompt for that crew member>\n' +
       'You may dispatch to multiple crew members in a single response.\n' +
+      'If no crew member has a real tool for the request, answer it yourself ' +
+      'from your own role and knowledge — never dispatch just to collect ' +
+      '"I can\'t" reports and relay them back as the answer.\n' +
       'Wait for crew reports, then synthesize them into one clear final answer.\n' +
       'Never include [DISPATCH:] tokens in your synthesized final answer.\n\n' +
       'CREW ERROR REPORTS\n' +
@@ -1071,7 +1096,7 @@ const MissionRunner = (() => {
         if (!crewBp) crewBp = crewAgent;
 
         try {
-          const crewResult = await AgentExecutor.execute(crewBp, subPrompt, {
+          const crewResult = await AgentExecutor.execute(crewBp, subPrompt + _CREW_DISPATCH_GUIDANCE, {
             tools: crewBp.config?.tools,
             spaceshipId: opts.spaceshipId,
             approvalMode: opts.approvalMode,
