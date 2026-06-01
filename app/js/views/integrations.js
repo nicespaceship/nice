@@ -27,7 +27,7 @@ const IntegrationsView = (() => {
     { id:'cf-observability', name:'Cloudflare Observability', desc:'Workers logs, metrics, field discovery — read-only debugging for production Workers', icon:'brand-cloudflare', tools:['accounts_list','set_active_account','query_worker_observability','observability_keys','observability_values'], transport:'streamable-http', auth:'oauth', cat:'dev' },
     { id:'cf-builds',  name:'Cloudflare Builds',        desc:'Workers Builds CI/CD — list builds, fetch details, pull logs — read-only',          icon:'brand-cloudflare', tools:['accounts_list','set_active_account','workers_builds_set_active_worker','workers_builds_list_builds','workers_builds_get_build','workers_builds_get_build_logs'], transport:'streamable-http', auth:'oauth', cat:'dev' },
     { id:'sentry',    name:'Sentry',            desc:'Issues, events, projects, releases, Seer analysis — read-only',     icon:'brand-sentry', tools:['find_organizations','find_projects','find_teams','find_releases','find_dsns','get_issue_details','get_event_details','get_trace_details','get_doc_url','search_issues','search_events','analyze_issue_with_seer','get_seer_run_state','whoami'], transport:'streamable-http', auth:'oauth', cat:'dev' },
-    { id:'zapier',    name:'Zapier',            desc:'Discover and run any of 9,000+ Zapier-connected apps — actions you enable surface as tools', icon:'brand-zapier', tools:['discover_zapier_actions','enable_zapier_action','list_enabled_zapier_actions','execute_zapier_read_action'], transport:'streamable-http', auth:'oauth', cat:'automation' },
+    { id:'zapier',    name:'Zapier',            desc:'Discover and run any of 9,000+ Zapier-connected apps — actions you enable surface as tools', icon:'brand-zapier', tools:['discover_zapier_actions','enable_zapier_action','list_enabled_zapier_actions','execute_zapier_read_action'], transport:'streamable-http', auth:'none', cat:'automation' },
     { id:'airtable',  name:'Airtable',          desc:'Workspaces, bases, tables, records, comments — read-only',           icon:'brand-airtable', tools:['list_workspaces','list_bases','get_base_schema','list_tables','list_records','search_records','get_record','list_record_comments'], transport:'streamable-http', auth:'oauth', cat:'docs' },
     { id:'monday',    name:'monday.com',        desc:'Boards, items, sub-items, updates, documents — pending monday.com public-app review',           icon:'brand-monday', tools:['monday-list-boards','monday-get-board-groups','monday-list-items-in-groups','monday-list-subitems-in-items','monday-get-board-by-id','monday-get-item-by-id','monday-get-update','monday-list-documents','monday-get-document-content'], transport:'streamable-http', auth:'oauth', cat:'pm', comingSoon:true },
     { id:'klaviyo',   name:'Klaviyo',           desc:'Profiles, lists, segments, campaigns, flows, events, metrics — read-only', icon:'brand-klaviyo', tools:['get_profiles','get_profile','get_lists','get_list','get_segments','get_segment','get_campaigns','get_campaign','get_events','get_metrics','get_metric','get_flows','get_flow'], transport:'streamable-http', auth:'oauth', cat:'marketing' },
@@ -284,6 +284,29 @@ const IntegrationsView = (() => {
           </div>
         </div>
       </div>
+
+      <!-- Zapier Connect Modal -->
+      <div class="modal-overlay" id="modal-zapier">
+        <div class="modal-box">
+          <div class="modal-hdr">
+            <h3 class="modal-title">Connect Zapier</h3>
+            <button class="modal-close" id="close-zapier-modal" aria-label="Close">
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="zapier-form" class="auth-form">
+              <p class="auth-sub">Zapier gives each account its own MCP server URL. Visit <a href="https://mcp.zapier.com" target="_blank" rel="noopener">mcp.zapier.com</a>, create or open your MCP server, then copy its Server URL (it contains a private access token) and paste it below.</p>
+              <div class="auth-field">
+                <label for="zapier-url">MCP Server URL</label>
+                <input type="url" id="zapier-url" required placeholder="https://mcp.zapier.com/api/v1/connect?token=..." />
+              </div>
+              <div class="auth-error" id="zapier-error"></div>
+              <button type="submit" class="auth-submit">Connect Zapier</button>
+            </form>
+          </div>
+        </div>
+      </div>
     `;
 
     _bindEvents(el, null, mcps);
@@ -480,6 +503,16 @@ const IntegrationsView = (() => {
     });
     document.getElementById('mcp-custom-form')?.addEventListener('submit', (e) => _addCustomMcp(e, el));
 
+    // Zapier connect modal (paste-URL flow, not OAuth)
+    document.getElementById('close-zapier-modal')?.addEventListener('click', () => {
+      document.getElementById('modal-zapier')?.classList.remove('open');
+      document.getElementById('zapier-form')?.reset();
+    });
+    document.getElementById('modal-zapier')?.addEventListener('click', (e) => {
+      if (e.target.id === 'modal-zapier') { e.target.classList.remove('open'); document.getElementById('zapier-form')?.reset(); }
+    });
+    document.getElementById('zapier-form')?.addEventListener('submit', (e) => _connectZapier(e, el));
+
   }
 
   function _toggleViewBtns(section, el) {
@@ -508,7 +541,6 @@ const IntegrationsView = (() => {
   const CF_OBSERVABILITY_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cf-observability-oauth`;
   const CF_BUILDS_OAUTH_URL = `${NICE_API_BASE}/functions/v1/cf-builds-oauth`;
   const SENTRY_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/sentry-oauth`;
-  const ZAPIER_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/zapier-oauth`;
   const AIRTABLE_OAUTH_URL  = `${NICE_API_BASE}/functions/v1/airtable-oauth`;
   const MONDAY_OAUTH_URL    = `${NICE_API_BASE}/functions/v1/monday-oauth`;
   const KLAVIYO_OAUTH_URL   = `${NICE_API_BASE}/functions/v1/klaviyo-oauth`;
@@ -574,8 +606,8 @@ const IntegrationsView = (() => {
     if (catalog.auth === 'oauth' && catalogId === 'sentry') {
       return _initiateSentryOAuth();
     }
-    if (catalog.auth === 'oauth' && catalogId === 'zapier') {
-      return _initiateZapierOAuth();
+    if (catalogId === 'zapier') {
+      return _openZapierConnect();
     }
     if (catalog.auth === 'oauth' && catalogId === 'airtable') {
       return _initiateAirtableOAuth();
@@ -793,7 +825,6 @@ const IntegrationsView = (() => {
   }
 
   function _initiateSentryOAuth()   { _initiateOAuthGeneric('Sentry',     SENTRY_OAUTH_URL); }
-  function _initiateZapierOAuth()   { _initiateOAuthGeneric('Zapier',     ZAPIER_OAUTH_URL); }
   function _initiateAirtableOAuth() { _initiateOAuthGeneric('Airtable',   AIRTABLE_OAUTH_URL); }
   function _initiateMondayOAuth()   { _initiateOAuthGeneric('monday.com', MONDAY_OAUTH_URL); }
   function _initiateKlaviyoOAuth()  { _initiateOAuthGeneric('Klaviyo',    KLAVIYO_OAUTH_URL); }
@@ -836,6 +867,69 @@ const IntegrationsView = (() => {
     document.getElementById('mcp-custom-form')?.reset();
     render(el);
     if (typeof Notify !== 'undefined') Notify.send({ title: 'Custom MCP Connected', message: `${name} is now available to all your agents.`, type: 'system' });
+  }
+
+  function _openZapierConnect() {
+    const user = State.get('user');
+    if (!user) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Zapier.', type: 'error' });
+      return;
+    }
+    document.getElementById('zapier-form')?.reset();
+    const errEl = document.getElementById('zapier-error');
+    if (errEl) errEl.textContent = '';
+    document.getElementById('modal-zapier')?.classList.add('open');
+    setTimeout(() => document.getElementById('zapier-url')?.focus(), 50);
+  }
+
+  // Zapier issues each account a per-user MCP URL with the access token
+  // embedded as a query param, not a standard OAuth grant. So the connection
+  // is built from a pasted URL rather than the OAuth redirect every other
+  // provider uses. auth_type is 'none' because the URL token is the
+  // credential: the gateway sends no Authorization header and Zapier
+  // authenticates the query param.
+  function _connectZapier(e, el) {
+    e.preventDefault();
+    const errEl = document.getElementById('zapier-error');
+    const url = (document.getElementById('zapier-url')?.value || '').trim();
+    let parsed;
+    try { parsed = new URL(url); } catch (_) { if (errEl) errEl.textContent = 'Enter a valid URL.'; return; }
+    if (parsed.protocol !== 'https:' || parsed.hostname !== 'mcp.zapier.com') {
+      if (errEl) errEl.textContent = 'Paste the MCP Server URL from mcp.zapier.com. It should start with https://mcp.zapier.com/.';
+      return;
+    }
+
+    const catalog = MCP_CATALOG.find(m => m.id === 'zapier');
+    const conns = State.get('mcp_connections') || [];
+    const existing = _matchConnection('zapier', conns);
+    const user = State.get('user');
+    const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const row = {
+      user_id: user && user.id, spaceship_id: 'account', name: 'Zapier',
+      server_url: url, transport: catalog.transport, auth_type: 'none',
+      available_tools: catalog.tools, status: 'connected', catalog_id: 'zapier',
+    };
+
+    if (existing) {
+      // Reconnect in place so the card stays one row. status:'connected'
+      // fires the DB trigger that clears any stale last_error breadcrumb.
+      const updated = { ...existing, server_url: url, auth_type: 'none', status: 'connected', last_error: null, last_error_at: null };
+      State.set('mcp_connections', conns.map(c => (c === existing ? updated : c)));
+      if (user && isUuid(existing.id)) {
+        SB.db('mcp_connections').update(existing.id, { server_url: url, auth_type: 'none', status: 'connected' }).catch(() => {});
+      } else if (user) {
+        SB.db('mcp_connections').create(row).catch(() => {});
+      }
+    } else {
+      const conn = { id: 'mc-' + Date.now(), name: 'Zapier', server_url: url, transport: catalog.transport, auth_type: 'none', available_tools: catalog.tools, status: 'connected', catalog_id: 'zapier', created_at: new Date().toISOString() };
+      State.set('mcp_connections', [...conns, conn]);
+      if (user) SB.db('mcp_connections').create(row).catch(() => {});
+    }
+
+    document.getElementById('modal-zapier')?.classList.remove('open');
+    document.getElementById('zapier-form')?.reset();
+    render(el);
+    if (typeof Notify !== 'undefined') Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Enable specific actions at mcp.zapier.com.', type: 'system' });
   }
 
   return { title, render, MCP_CATALOG };
