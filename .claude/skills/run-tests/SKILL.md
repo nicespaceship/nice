@@ -6,36 +6,22 @@ user-invocable: true
 
 # Run Tests
 
-## Unit Tests (Vitest — 254 tests)
+## Unit Tests (Vitest)
 ```bash
 npm test                    # Run all
 npm run test:watch          # Watch mode
 npx vitest run path/to/file # Single file
 ```
 
-Test files: `app/js/__tests__/*.test.js`
-- state.test.js (9) — State pub/sub
-- gamification.test.js (21) — XP, ranks, achievements, streaks
-- audit-log.test.js (11) — CRUD, filtering, FIFO
-- data-io.test.js (5) — Export/import
-- command-palette.test.js (10) — Fuzzy search
-- router.test.js (8) — Route matching, params
-- blueprints.test.js — Activation, lookups
-- ship-log.test.js — Agent execution
-- home-view.test.js — Tab rendering
+Test files: `app/js/__tests__/**/*.test.js` (+ `tools/**/*.test.js`). Coverage spans core infra (state, router, supabase, keyboard, notify, command-palette), blueprints + community, agents + missions (agent-executor, mission-runner, workflow-engine), models + billing, views, and gamification + onboarding. File/test counts drift with every feature — see the Testing section in CLAUDE.md, or just run the suite.
 
-## E2E Tests (Playwright — 32 tests)
+## E2E Tests (Playwright)
 ```bash
 npm run test:e2e            # Run all (headless)
 npx playwright test --ui    # Debug with UI
 ```
 
-Test file: `e2e/smoke.spec.js`
-- App loads, sidebar nav, all views render
-- Blueprints Terminal, card drawer
-- Theme switching, keyboard shortcuts
-- Responsive layout, accessibility
-- Token purchase modal, auth flow
+Test file: `e2e/smoke.spec.js` — app load, sidebar nav, view rendering, command palette, theme switching, responsive layout, hash routing, accessibility (axe-core / WCAG AA), unauthenticated auth flow, performance.
 
 ## Test Pattern (IIFE modules in jsdom)
 ```javascript
@@ -48,7 +34,9 @@ function loadScriptGlobal(path) {
 ```
 
 ## After Making Changes
-1. Run `npx vitest run` — all 254 must pass
-2. Run `npx playwright test` — all 32 must pass
-3. Check preview for console errors
-4. Verify visually with preview screenshot
+1. Run `npm test` — all unit tests must pass.
+2. Run `npm run test:e2e` — all Playwright tests must pass.
+3. Check the preview for console errors.
+4. Verify visually with a preview screenshot.
+
+CI (`.github/workflows/ci.yml`) runs both and blocks merges on failure.
