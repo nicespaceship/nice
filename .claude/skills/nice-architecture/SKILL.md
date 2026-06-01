@@ -6,6 +6,8 @@ user-invocable: true
 
 # NICE Architecture
 
+> Module APIs and the file map are indexed in **CLAUDE.md** (the SSOT loaded every turn). This skill is the quick-reference for the patterns; when counts, routes, or view lists matter, trust CLAUDE.md over any number written here.
+
 ## Module Pattern
 All JS uses IIFE (Immediately-Invoked Function Expression) — no build step, no bundler:
 ```javascript
@@ -18,13 +20,7 @@ const ModuleName = (() => {
   return { init, getData, setData };
 })();
 ```
-
-## Script Load Order (app/index.html)
-```
-state.js → supabase.js → router.js → [19 view scripts] →
-audit-log.js → data-io.js → activity-feed.js → notify.js → gamification.js →
-command-palette.js → keyboard.js → onboarding.js → nice.js
-```
+Modules load via `<script defer>` tags in `app/index.html` in dependency order. Invariant: **`state.js → supabase.js → router.js → [view scripts] → [lib scripts] → nice.js`**, with `nice.js` always last.
 
 ## Core Modules
 
@@ -32,9 +28,9 @@ command-palette.js → keyboard.js → onboarding.js → nice.js
 ```javascript
 State.set('key', value);          // Set + notify
 State.get('key');                 // Read
-State.on('key', callback);       // Subscribe (fires immediately if value exists)
-State.off('key', callback);      // Unsubscribe
-State.setBatched({ k1: v1 });    // Coalesced update via rAF
+State.on('key', callback);        // Subscribe (fires immediately if value exists)
+State.off('key', callback);       // Unsubscribe
+State.setBatched({ k1: v1 });     // Coalesced update via rAF
 ```
 
 ### Router (hash-based SPA)
@@ -47,14 +43,17 @@ Router.current();                       // Get current route info
 
 ### Blueprints (data layer)
 ```javascript
-Blueprints.getAgent(id);            // Get agent blueprint
-Blueprints.getSpaceship(id);        // Get spaceship blueprint
-Blueprints.getActivatedAgents();    // All activated agents
-Blueprints.getActivatedShips();     // All activated ships
+Blueprints.getAgent(id);            // Get one agent blueprint
+Blueprints.listAgents(filter);      // List agent blueprints
+Blueprints.getSpaceship(id);        // Get one spaceship blueprint
+Blueprints.listSpaceships();        // List spaceship blueprints
+Blueprints.getActivatedAgents();    // User's activated agents
+Blueprints.getActivatedShips();     // User's activated ships
 Blueprints.activateAgent(bpId);     // Activate a blueprint
 Blueprints.deactivateAgent(bpId);   // Deactivate
-Blueprints.saveShipState(id, state); // Save slot assignments
+Blueprints.saveShipState(id, state); // Persist a ship's slot state
 ```
+Catalog data lives in the normalized Supabase tables (`spaceship_blueprints` / `agent_blueprints` / `ship_slots` / `roles` / `capabilities`). Schema SSOT: `docs/three-layer-schema.md`.
 
 ### Gamification
 ```javascript
@@ -63,44 +62,15 @@ Gamification.addMissionXP(mission);     // XP with priority scaling
 Gamification.getRank();                 // Current rank object
 Gamification.getXP();                   // Total XP
 Gamification.checkAchievements();       // Evaluate unlock criteria
-Gamification.getStreakMultiplier();     // 1.0x–2.0x
-Gamification.recordAgentMission(id, opts); // Track agent stats
 ```
 
-## App Structure
-```
-Mission Control (#/) — 6 tabs:
-  Schematic + Available Agents
-  Missions (→ MissionsView)
-  Analytics (→ AnalyticsView)
-  Workflows (→ WorkflowsView)
-  Cost Tracker (→ CostView)
-  Ship's Log (→ AuditLogView)
+## Routes & structure
 
-Blueprints Terminal (#/blueprints) — 3 tabs:
-  Agents (274 blueprints + YOUR AGENTS activated section)
-  Spaceships (587 blueprints + YOUR SPACESHIPS)
-  Themes (19 blueprints + YOUR THEMES)
-```
+**Bridge (`#/bridge`) is the hub.** Its tabs: Schematic, Blueprints, Missions, Outbox, Operations, Log, Documentation, TRON. The Blueprints tab has Spaceships / Agents / Active / Workshop sub-tabs. Home is `#/`.
 
-## Sidebar
-- Mission Control — main dashboard
-- Blueprints — terminal for all blueprints
-- Popover menu: Settings, Integrations, Wallet, Security, Log Out
+Detail and builder routes hang off Bridge: `#/bridge/agents/:id`, `#/bridge/spaceships/:id`, `#/bridge/agents/new`, `#/bridge/spaceships/new`. Standalone routes: `#/missions/new`, `#/security`, `#/settings`, `#/profile`, `#/theme-editor`, `#/moderation`, `#/tron`.
 
-## Key localStorage Keys
-| Key | Purpose |
-|-----|---------|
-| `ns-theme` | Active theme name |
-| `nice-xp` | Gamification XP |
-| `nice-achievements` | Unlocked achievement IDs |
-| `nice-tokens` | Token balance |
-| `nice-audit-log` | Audit log (max 500 FIFO) |
-| `nice-workflows` | Workflow definitions |
-| `nice-bp-activated-agents` | Activated agent IDs |
-| `nice-bp-activated-ships` | Activated ship IDs |
-| `nice-ship-state` | Spaceship slot assignments |
-| `nice-agent-stats` | Per-agent progression stats |
+> The authoritative view → route table is in CLAUDE.md. Don't hardcode view counts or blueprint counts here — they drift.
 
 ## View Lifecycle
 ```javascript
@@ -127,3 +97,6 @@ SB.db('table').update(id, row);                    // Update
 SB.db('table').get(id);                            // Single row
 SB.auth().user;                                    // Current user
 ```
+
+## localStorage
+All keys live in **`Utils.KEYS`** (the SSOT — never use raw string keys). Prefixes are `ns-` and `nice-`.
