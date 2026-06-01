@@ -215,9 +215,19 @@ const Subscription = (() => {
 
   /** Returns the slot count this user can deploy.
       Pro = 12, Free = 6. No XP scaling — slot count is purely
-      a subscription perk. Rank still gates rarity, not capacity. */
+      a subscription perk. Rank still gates rarity, not capacity.
+      NOTE: crew capacity is now governed by rank/min_class via the
+      activation wizard; this is retained for backward-compat only. */
   function getSlotLimit() {
     return isPro() ? PLANS.pro.slots : PLANS.free.slots;
+  }
+
+  /** Number of spaceships a user can run active at once. Free = 1,
+      Pro = unlimited. This is Pro's tangible capacity perk. Owned ships
+      hydrated from user_spaceships always load (Blueprints._loadUserCreations
+      bypasses activateShip) — this only caps NEW activations. */
+  function getActiveShipLimit() {
+    return isPro() ? Infinity : 1;
   }
 
   /** Backward-compat — slot count was previously an override, now
@@ -557,6 +567,7 @@ const Subscription = (() => {
     getPlanTier,
     getAddons,
     getSlotLimit,
+    getActiveShipLimit,
     isPro,
     isActive,
     hasAddon,
