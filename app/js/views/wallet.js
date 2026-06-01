@@ -163,7 +163,7 @@ const WalletView = (() => {
     const plan = Subscription?.PLANS?.[planId] || {};
     const isCurrent = (planId === 'pro' && isPro) || (planId === 'free' && !isPro);
     const price = plan.price === 0 ? 'Free' : `$${plan.price}/mo`;
-    const slots = `${plan.slots} slots`;
+    const capacity = plan.ships || '';
     // Free card is purely informational — no button. Current plan is
     // indicated by the highlighted border (wallet-plan-current).
     // Pro card shows either Cancel (for Pro users) or Upgrade (for Free).
@@ -180,7 +180,7 @@ const WalletView = (() => {
         ${plan.icon ? `<div class="wallet-plan-icon">${plan.icon}</div>` : ''}
         <div class="wallet-plan-name">${_esc(plan.label || planId)}</div>
         <div class="wallet-plan-price">${price}</div>
-        <div class="wallet-plan-slots">${_esc(slots)}</div>
+        <div class="wallet-plan-slots">${_esc(capacity)}</div>
         <p class="wallet-plan-desc">${_esc(plan.desc || '')}</p>
         ${button}
       </div>
