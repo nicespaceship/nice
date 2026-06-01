@@ -2413,10 +2413,36 @@ const NICE = (() => {
     return true;
   }
 
+  /* Seed State.enabled_models synchronously at boot so consumers that
+     resolve models early (llm-config's capability-downgrade guard,
+     mission-runner, the prompt-panel dropdown) never observe `undefined`
+     during the async window before Subscription.init() lands. Reads the
+     user's saved toggles from localStorage; if absent, falls back to the
+     free-only default via the TokenConfig SSOT. Subscription.init() still
+     runs later and *widens* this additively as entitlements resolve, so a
+     paid user's premium models light up once their subscription loads.
+     Decouples first-paint model access from the subscription module. */
+  function _hydrateEnabledModels() {
+    if (typeof State === 'undefined') return;
+    if (State.get('enabled_models')) return; // already seeded this session
+    let enabled = null;
+    try {
+      const saved = localStorage.getItem(Utils.KEYS.enabledModels);
+      if (saved) enabled = JSON.parse(saved);
+    } catch { /* ignore corrupt JSON — fall through to default */ }
+    if (!enabled || typeof enabled !== 'object') {
+      enabled = (typeof TokenConfig !== 'undefined' && TokenConfig.defaultEnabledModels)
+        ? TokenConfig.defaultEnabledModels()
+        : {};
+    }
+    State.set('enabled_models', enabled);
+  }
+
   /* ── Init ── */
   function init() {
     _initErrorHandlers();
     _migrateStorage();
+    _hydrateEnabledModels();
     _captureUTM();
     Theme.init();
     Font.init();

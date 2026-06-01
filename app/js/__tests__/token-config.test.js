@@ -302,3 +302,62 @@ describe('TokenConfig — pricing', () => {
     }
   });
 });
+
+describe('TokenConfig — defaultEnabledModels (SSOT for boot + Vault default)', () => {
+  it('no args (anonymous / pre-auth) enables only free models', () => {
+    const d = TokenConfig.defaultEnabledModels();
+    expect(d['gemini-2-5-flash']).toBe(true);
+    expect(d['gpt-5-mini']).toBe(false);
+    expect(d['claude-4-6-sonnet']).toBe(false);
+    expect(d['gpt-5-4-pro']).toBe(false);
+  });
+
+  it('every model in the catalog gets an explicit boolean (no undefined keys)', () => {
+    const d = TokenConfig.defaultEnabledModels({ pro: true, addons: ['claude', 'premium'] });
+    for (const id of Object.keys(TokenConfig.MODELS)) {
+      expect(typeof d[id], `${id} should have a boolean default`).toBe('boolean');
+    }
+  });
+
+  it('free models are always on regardless of entitlement', () => {
+    for (const args of [undefined, { pro: false }, { pro: true, addons: [] }, { pro: true, addons: ['claude', 'premium'] }]) {
+      const d = TokenConfig.defaultEnabledModels(args);
+      for (const [id, m] of Object.entries(TokenConfig.MODELS)) {
+        if (m.pool === null || m.weight === 0) {
+          expect(d[id], `free model ${id} should be on`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('Pro without add-ons enables standard-pool models, not claude/premium', () => {
+    const d = TokenConfig.defaultEnabledModels({ pro: true, addons: [] });
+    expect(d['gpt-5-mini']).toBe(true);
+    expect(d['llama-4-scout']).toBe(true);
+    expect(d['grok-4-1-fast']).toBe(true);
+    expect(d['claude-4-6-sonnet']).toBe(false);
+    expect(d['gpt-5-4-pro']).toBe(false);
+  });
+
+  it('Claude add-on enables the claude pool only (still no premium)', () => {
+    const d = TokenConfig.defaultEnabledModels({ pro: true, addons: ['claude'] });
+    expect(d['claude-4-6-sonnet']).toBe(true);
+    expect(d['claude-4-7-opus']).toBe(true);
+    expect(d['gpt-5-4-pro']).toBe(false);
+    expect(d['openai-o3']).toBe(false);
+  });
+
+  it('both add-ons enable every model', () => {
+    const d = TokenConfig.defaultEnabledModels({ pro: true, addons: ['claude', 'premium'] });
+    for (const id of Object.keys(TokenConfig.MODELS)) {
+      expect(d[id], `${id} should be on with full entitlement`).toBe(true);
+    }
+  });
+
+  it('add-on without Pro does NOT unlock paid models (Pro is the gate)', () => {
+    const d = TokenConfig.defaultEnabledModels({ pro: false, addons: ['claude', 'premium'] });
+    expect(d['claude-4-6-sonnet']).toBe(false);
+    expect(d['gpt-5-4-pro']).toBe(false);
+    expect(d['gemini-2-5-flash']).toBe(true); // free still on
+  });
+});
