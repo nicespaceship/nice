@@ -738,13 +738,16 @@ const SchematicView = (() => {
       const bp = bpId ? _resolveBp(bpId) : null;
       const filled = !!bp;
       const locked = _isSlotLocked(slot);
-      const name = locked ? 'Locked' : (filled ? (bp.name || 'Agent') : 'Empty');
+      const name = locked ? 'Locked' : (filled ? _slotIdentity(slot, bp) : 'Empty');
       const rarity = filled ? _getBpRarity(bp) : (slot.maxRarity || 'Common');
       const rarityColor = locked ? 'var(--text-muted)' : (RC[rarity] || 'var(--text-muted)');
-      const roleLabel = _roleLabel(slot.label || ('Slot ' + (i + 1)));
+      const fullTitle = slot.title || '';
+      const roleLabel = _positionLabel(fullTitle) || _roleLabel(slot.role || slot.label || ('Slot ' + (i + 1)));
+      const roleAttr = fullTitle ? ' title="' + _esc(fullTitle) + '"' : '';
+      const rawCap = filled ? _capabilityLabel(bp) : null;
       const cap = locked
         ? 'Unlocks at ' + _unlockRankName(slot.min_class)
-        : (filled ? _capabilityLabel(bp) : null);
+        : ((rawCap && rawCap !== name) ? rawCap : null);
       const dataBp = filled && !locked ? ' data-bp-id="' + _esc(bp.id) + '"' : '';
       const dataLocked = locked ? ' data-locked="true"' : '';
       const status = _agentStatus(filled ? bp.id : null);
@@ -757,7 +760,7 @@ const SchematicView = (() => {
         '<div class="schematic-row-info">' +
           '<div class="schematic-row-name">' + _esc(name) + '</div>' +
           '<div class="schematic-row-meta">' +
-            '<span class="schematic-row-role">' + _esc(roleLabel) + '</span>' +
+            '<span class="schematic-row-role"' + roleAttr + '>' + _esc(roleLabel) + '</span>' +
             (cap ? '<span class="schematic-row-cap">' + _esc(cap) + '</span>' : '') +
           '</div>' +
         '</div>' +
@@ -1035,17 +1038,54 @@ const SchematicView = (() => {
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
+  // Executive title → position. "Navigator · USS Enterprise" → "Navigator".
+  // The ship name is redundant in the schematic (you're viewing that ship),
+  // so the overline shows just the position; the full title rides along as a
+  // hover tooltip. Passthrough when there's no separator.
+  function _positionLabel(title) {
+    if (!title) return '';
+    return String(title).split('·')[0].trim();
+  }
+
+  // True for the synthetic "Agent N" / "Slot N" labels getSlotTemplate emits
+  // for dynamic ships with no crew defs. Themed + business ships always carry
+  // a real crew label (a persona or job title) and must win over the assigned
+  // umbrella agent's name; generic ships fall back to the assignee.
+  function _isGenericSlotLabel(l) {
+    return !l || /^(agent|slot)\s*\d+$/i.test(String(l).trim());
+  }
+
+  // The crew identity a slot displays: its designated label (persona / job
+  // title) when meaningful, else the assigned agent's name.
+  function _slotIdentity(slot, bp) {
+    if (slot && !_isGenericSlotLabel(slot.label)) return slot.label;
+    return bp ? (bp.name || 'Agent') : null;
+  }
+
   // Renders the three-layer slot card used on the desktop schematic.
   // Character / Role / Capability — one panel per slot, replacing the TCG mini-card.
   function _renderSlotCard(bp, slot) {
-    const role  = _roleLabel(slot.label || '');
-    const cap   = _capabilityLabel(bp);
-    const name  = bp ? (bp.name || 'Agent') : null;
+    // Overline: the executive position parsed from the slot title
+    // ("Navigator · USS Enterprise" → "Navigator") when migrated, else the
+    // SaaS-function label of the slot's role. The full title rides along as a
+    // hover tooltip so the trimmed ship name stays recoverable.
+    const fullTitle = (slot && slot.title) || '';
+    const role  = _positionLabel(fullTitle) || _roleLabel((slot && (slot.role || slot.label)) || '');
+    const roleAttr = fullTitle ? ' title="' + _esc(fullTitle) + '"' : '';
+    // Name: the slot's designated crew identity (persona / job title) wins
+    // over the assigned umbrella agent's name, so reskins read "Pavel Chekov"
+    // not "Linear Agent".
+    const name  = _slotIdentity(slot, bp);
+    // Tool-less bespoke crew resolve their capability_id back to themselves,
+    // so _capabilityLabel echoes the persona. Suppress it so the capability
+    // line never just repeats the name above it.
+    const rawCap = _capabilityLabel(bp);
+    const cap   = (rawCap && rawCap !== name) ? rawCap : null;
     const isStub = bp && !cap; // agent assigned but no live MCP tools
     if (_isSlotLocked(slot)) {
       const rankName = _unlockRankName(slot.min_class);
       return '<div class="sch-slot-card sch-slot-card-locked" title="Unlocks at ' + _esc(rankName) + '">' +
-        '<div class="sch-slot-role">' + _esc(role) + '</div>' +
+        '<div class="sch-slot-role"' + roleAttr + '>' + _esc(role) + '</div>' +
         '<div class="sch-slot-name sch-slot-name-locked"><span class="sch-slot-lock-glyph" aria-hidden="true">' +
           '<svg viewBox="0 0 12 14" width="11" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
             '<rect x="1.5" y="6" width="9" height="7" rx="1"/>' +
@@ -1057,7 +1097,7 @@ const SchematicView = (() => {
     }
     if (bp) {
       return '<div class="sch-slot-card' + (isStub ? ' sch-slot-card-stub' : '') + '">' +
-        '<div class="sch-slot-role">' + _esc(role) + '</div>' +
+        '<div class="sch-slot-role"' + roleAttr + '>' + _esc(role) + '</div>' +
         '<div class="sch-slot-name">' + _esc(name) + '</div>' +
         (cap
           ? '<div class="sch-slot-cap">' + _esc(cap) + '</div>'
@@ -1065,7 +1105,7 @@ const SchematicView = (() => {
       '</div>';
     }
     return '<div class="sch-slot-card sch-slot-card-empty">' +
-      '<div class="sch-slot-role">' + _esc(role) + '</div>' +
+      '<div class="sch-slot-role"' + roleAttr + '>' + _esc(role) + '</div>' +
       '<div class="sch-slot-name sch-slot-name-empty">Empty</div>' +
       '<div class="sch-slot-cap">Assign agent</div>' +
     '</div>';
