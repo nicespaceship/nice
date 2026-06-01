@@ -177,6 +177,26 @@ const TokenConfig = (() => {
     return { pool: poolFor(modelId), amount: weightFor(modelId) };
   }
 
+  /** SSOT for the default `enabled_models` map: which models are toggled
+      on for a user at a given entitlement. Free models are always on;
+      paid models are on iff the user is entitled (Pro + any required
+      add-on). With no args (anonymous / pre-auth) this yields the
+      free-only map. Both the boot hydration (nice.js) and the Vault
+      default (vault.js) consume this so there is ONE definition of
+      "which models default on", not two divergent ones. */
+  function defaultEnabledModels({ pro = false, addons = [] } = {}) {
+    const out = {};
+    for (const [modelId, meta] of Object.entries(MODELS)) {
+      if (!meta || meta.pool === null || meta.weight === 0) {
+        out[modelId] = true; // free model — always on
+        continue;
+      }
+      const addon = POOLS[meta.pool]?.requiresAddon || null;
+      out[modelId] = pro && (addon === null || addons.includes(addon));
+    }
+    return out;
+  }
+
   /** Return a fresh empty pools object with allowances filled in
       for whichever pools the user currently has access to. Called
       on signup and on billing-cycle rollover. */
@@ -199,7 +219,7 @@ const TokenConfig = (() => {
     getModel, poolFor, weightFor, isFreeModel, modelsInPool, pricingFor,
     monthlyAllowance, requiredAddon,
     remainingInPool, messagesRemainingFor, canRunModel, previewDebit,
-    initialPools,
+    initialPools, defaultEnabledModels,
   };
 })();
 

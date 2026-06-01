@@ -378,10 +378,10 @@ const VaultView = (() => {
       if (saved) return saved;
     } catch { /* ignore */ }
 
-    // Default: free models on, everything else off
-    const defaults = {};
-    MODEL_CATALOG.forEach(m => { defaults[m.id] = TokenConfig.isFreeModel(m.id); });
-    return defaults;
+    // No saved toggles — defer to the TokenConfig SSOT (free models on,
+    // everything else off). Single source of truth shared with the boot
+    // hydration in nice.js so the two never diverge.
+    return TokenConfig.defaultEnabledModels();
   }
 
   return { title, render, MODEL_CATALOG };
