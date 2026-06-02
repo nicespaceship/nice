@@ -1504,16 +1504,16 @@ const NICE = (() => {
         // alone (otherwise a refresh on #/bridge would yank back to a
         // stale stash from a prior session).
         if (event === 'SIGNED_IN') {
-          // Fresh sign-in lands on the chat home (#/) by default. Only honor a
-          // stashed return when it's a real content destination worth deep-
+          // Fresh sign-in lands on the Bridge Schematic by default. Only honor
+          // a stashed return when it's a real content destination worth deep-
           // linking back to (a shared blueprint, a ship). Utility pages
           // (Settings / Security / Profile / Wallet / Moderation / Theme editor)
           // are a poor place to land right after signing in, so they fall back
-          // to chat. (This branch only fires on an actual sign-in event;
-          // INITIAL_SESSION on refresh leaves the current route alone.)
+          // to the schematic. (This branch only fires on an actual sign-in
+          // event; INITIAL_SESSION on refresh leaves the current route alone.)
           const ret = _authPopReturn();
           const utility = /^#\/(settings|security|profile|wallet|moderation|theme-editor)\b/;
-          const dest = (ret && !utility.test(ret)) ? ret : '#/';
+          const dest = (ret && !utility.test(ret)) ? ret : '#/bridge?tab=schematic';
           if (location.hash !== dest) location.hash = dest;
         }
         _migrateLocalSpaceships(user);
@@ -2500,6 +2500,24 @@ const NICE = (() => {
       });
     }
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.init();
+
+    // Default landing: open on the Bridge Schematic. A fresh launch lands
+    // here; a browser reload or back/forward preserves wherever the user was
+    // (so a refresh on #/bridge stays put, not yanked to schematic), and an
+    // explicit deep link (any non-root hash) is honored so shared links keep
+    // working. First-login landing is handled separately in onAuthChange.
+    try {
+      const navEntry = (typeof performance !== 'undefined' && performance.getEntriesByType)
+        ? performance.getEntriesByType('navigation')[0] : null;
+      const navType = navEntry ? navEntry.type
+        : ((typeof performance !== 'undefined' && performance.navigation) ? performance.navigation.type : 0);
+      const isReplay = navType === 'reload' || navType === 'back_forward' || navType === 1 || navType === 2;
+      const rawHash = (location.hash || '').replace(/^#/, '');
+      if (!isReplay && (rawHash === '' || rawHash === '/')) {
+        // replaceState avoids a redundant hashchange render + keeps history clean
+        history.replaceState(null, '', '#/bridge?tab=schematic');
+      }
+    } catch { /* non-fatal — fall back to the default route */ }
 
     // Start router
     const appView = document.getElementById('app-view');
