@@ -51,7 +51,20 @@ const CSelect = (() => {
     const labelEl = root.querySelector('.bp-cselect-label');
     const opts = () => [...menu.querySelectorAll('.bp-cselect-option')];
 
+    // Inside the mobile filter bottom-sheet the menu renders inline via CSS
+    // (position:static). The sheet animates with a transform, which becomes the
+    // containing block for the menu's position:fixed and breaks the viewport
+    // math below — leaving it mispositioned and twitching on the focus-scroll.
+    const _sheetMQ = window.matchMedia('(max-width:640px)');
+    const _inSheet = !!trigger.closest('.bp-filter-controls');
+
     const reposition = () => {
+      if (_inSheet && _sheetMQ.matches) {
+        // Let CSS place it; drop any inline coords a prior desktop layout set,
+        // since the stale min-width forced the sheet body to overflow.
+        menu.style.top = menu.style.left = menu.style.right = menu.style.minWidth = '';
+        return;
+      }
       const r = trigger.getBoundingClientRect();
       const vw = window.innerWidth;
       const menuW = Math.max(r.width, menu.offsetWidth || r.width);

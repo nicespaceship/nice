@@ -10605,7 +10605,15 @@ body.preview-active .nice-ai {
     max-height:min(80dvh, 560px);
     /* `padding:0` shorthand below would otherwise override the safe-area
        inset, so we set bottom explicitly after the shorthand resets. */
-    display:flex; flex-direction:column; gap:0; margin:0; padding:0;
+    /* align-items:stretch resets the desktop base rule's align-items:center,
+       which would otherwise center the header/body/footer at content width —
+       leaving "Filters ✕" floating mid-row and the fields hugging the centre
+       instead of filling the sheet. flex-wrap:nowrap resets the base rule's
+       flex-wrap:wrap: in a fixed-height column, wrap makes tall content (e.g.
+       an open Category dropdown) spill into a SECOND column, throwing the
+       header to the left and the body off the right edge. nowrap keeps one
+       column and lets the body scroll. */
+    display:flex; flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:0; margin:0; padding:0;
     padding-bottom:env(safe-area-inset-bottom);
     background:var(--bg); color:var(--text);
     border-top:var(--border-width, 1px) solid var(--border);
@@ -10614,6 +10622,10 @@ body.preview-active .nice-ai {
     transform:translateY(100%);
     transition:transform .2s ease, box-shadow .2s ease;
   }
+  /* Match the filter panel to the catalog's main-screen surface: the cards sit
+     on .app-main's #e8eef5 in the nice theme (var(--bg) is white), so the sheet
+     should read as the same surface, not a white overlay. */
+  [data-theme="nice"] .bp-filter-controls.bp-filter-controls { background:#e8eef5; }
   /* Shadow only when the sheet is open. When closed the sheet sits
      at translateY(100%) with its top edge flush against the viewport
      bottom — an unconditional `box-shadow: 0 -4px 20px` would cast
@@ -10661,6 +10673,19 @@ body.preview-active .nice-ai {
     overflow-y:auto;
     flex:1 1 auto;
   }
+  /* Filter sheet: pair fields into two columns — View | Sort and
+     Category | Source — to keep the sheet compact, with Rarity spanning the
+     full width below. DOM order (View, Sort, Category, Source, Rarity) already
+     matches row-major auto-placement. The right column is wider so the
+     3-segment Source row fits — "Community" is too long for an even half. */
+  .bp-filter-controls > .bp-sheet-body {
+    display:grid;
+    grid-template-columns:5fr 7fr;
+    gap:16px 12px;
+    align-items:start;
+  }
+  .bp-filter-controls > .bp-sheet-body > .bp-filter-field { min-width:0; }
+  .bp-filter-controls .bp-filter-field-rarity { grid-column:1 / -1; }
 
   /* Tab sheet option list */
   .bp-sheet-option {
@@ -10677,9 +10702,13 @@ body.preview-active .nice-ai {
     background:rgba(var(--accent-rgb, 100,100,100), 0.08);
   }
 
-  /* Filter sheet fields — stacked with top labels */
+  /* Filter sheet fields — label stacked above a full-width control.
+     align-items:stretch resets the desktop base rule (.bp-filter-field
+     align-items:center), which was centering the label + control inside
+     each field. Stretch left-aligns the label and lets the select / source
+     row / rarity grid fill the sheet width. */
   .bp-filter-controls .bp-filter-field {
-    display:flex; flex-direction:column; gap:6px;
+    display:flex; flex-direction:column; align-items:stretch; gap:6px;
   }
   /* Eyebrow labels: per CLAUDE.md, overline role = --text-xs + bold
      + uppercase + tracking-caps. Was rendering fw-regular which read
@@ -10700,20 +10729,38 @@ body.preview-active .nice-ai {
     font-size:var(--text-sm);
     font-weight:var(--fw-regular);
   }
-  .bp-filter-controls .bp-source-filter,
-  .bp-filter-controls .bp-rarity-filters {
-    display:flex; flex-wrap:wrap; gap:4px;
+  /* Custom dropdown (Sort / Category): fill the field width with the value on
+     the left and the chevron on the right, so it matches the Source / Rarity
+     rows below instead of floating at content width. */
+  .bp-filter-controls .bp-cselect { width:100%; }
+  .bp-filter-controls .bp-cselect-trigger { width:100%; justify-content:space-between; }
+  /* The open sheet animates via transform, which becomes the containing block
+     for the menu's position:fixed — so the JS viewport-anchored top/left landed
+     it below the footer and the focus-scroll → reflow loop made it twitch.
+     Inside the sheet, drop the menu into normal flow: it expands inline under
+     the trigger (the body scrolls), so there is nothing to (mis)position. */
+  .bp-filter-controls .bp-cselect-menu {
+    position:static; width:100%;
+    margin-top:4px;
+    max-height:240px; min-width:0;
+    box-shadow:none;
   }
-  /* Buttons: unified at --text-sm + fw-medium. Previously source was
-     fw-medium and rarity fell through to fw-regular, so the two pill
-     rows read at different weights despite identical roles. */
+  /* Source (3) and Rarity (6) each sit on ONE compact row. flex:1 1 auto keeps
+     every pill at least its label width (no clipping) while sharing the spare
+     space, so all six rarity tiers fit a single line — the 2-row grid made the
+     buttons far too chunky. */
+  .bp-filter-controls .bp-source-filter { display:flex; gap:6px; }
+  .bp-filter-controls .bp-rarity-filters { display:flex; gap:5px; }
   .bp-filter-controls .bp-source-btn,
   .bp-filter-controls .bp-rarity-btn {
-    flex:1 1 auto; padding:8px 10px;
-    font-size:var(--text-sm);
+    flex:1 1 auto; min-width:0;
+    padding:7px 6px;
+    font-size:var(--text-xs);
     font-weight:var(--fw-medium);
     text-transform:none;
     letter-spacing:var(--tracking-normal);
+    text-align:center;
+    white-space:nowrap;
   }
 
   .bp-filter-controls > .bp-sheet-footer {
