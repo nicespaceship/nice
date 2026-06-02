@@ -10605,7 +10605,11 @@ body.preview-active .nice-ai {
     max-height:min(80dvh, 560px);
     /* `padding:0` shorthand below would otherwise override the safe-area
        inset, so we set bottom explicitly after the shorthand resets. */
-    display:flex; flex-direction:column; gap:0; margin:0; padding:0;
+    /* align-items:stretch resets the desktop base rule's align-items:center,
+       which would otherwise center the header/body/footer at content width —
+       leaving "Filters ✕" floating mid-row and the fields hugging the centre
+       instead of filling the sheet. */
+    display:flex; flex-direction:column; align-items:stretch; gap:0; margin:0; padding:0;
     padding-bottom:env(safe-area-inset-bottom);
     background:var(--bg); color:var(--text);
     border-top:var(--border-width, 1px) solid var(--border);
@@ -10677,9 +10681,13 @@ body.preview-active .nice-ai {
     background:rgba(var(--accent-rgb, 100,100,100), 0.08);
   }
 
-  /* Filter sheet fields — stacked with top labels */
+  /* Filter sheet fields — label stacked above a full-width control.
+     align-items:stretch resets the desktop base rule (.bp-filter-field
+     align-items:center), which was centering the label + control inside
+     each field. Stretch left-aligns the label and lets the select / source
+     row / rarity grid fill the sheet width. */
   .bp-filter-controls .bp-filter-field {
-    display:flex; flex-direction:column; gap:6px;
+    display:flex; flex-direction:column; align-items:stretch; gap:6px;
   }
   /* Eyebrow labels: per CLAUDE.md, overline role = --text-xs + bold
      + uppercase + tracking-caps. Was rendering fw-regular which read
@@ -10700,20 +10708,31 @@ body.preview-active .nice-ai {
     font-size:var(--text-sm);
     font-weight:var(--fw-regular);
   }
-  .bp-filter-controls .bp-source-filter,
+  /* Custom dropdown (Sort / Category): fill the field width with the value on
+     the left and the chevron on the right, so it matches the full-width Source
+     row and Rarity grid below instead of floating at content width. */
+  .bp-filter-controls .bp-cselect { width:100%; }
+  .bp-filter-controls .bp-cselect-trigger { width:100%; justify-content:space-between; }
+  /* Source: three equal segments on one row. Rarity: an even 3-column grid
+     so the six tiers form two tidy rows — flex:1 1 auto used to stretch the
+     lone wrapped sixth pill (Mythic) across the full width. */
+  .bp-filter-controls .bp-source-filter {
+    display:flex; gap:6px;
+  }
   .bp-filter-controls .bp-rarity-filters {
-    display:flex; flex-wrap:wrap; gap:4px;
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;
   }
   /* Buttons: unified at --text-sm + fw-medium. Previously source was
      fw-medium and rarity fell through to fw-regular, so the two pill
      rows read at different weights despite identical roles. */
   .bp-filter-controls .bp-source-btn,
   .bp-filter-controls .bp-rarity-btn {
-    flex:1 1 auto; padding:8px 10px;
+    flex:1 1 0; padding:8px 10px;
     font-size:var(--text-sm);
     font-weight:var(--fw-medium);
     text-transform:none;
     letter-spacing:var(--tracking-normal);
+    text-align:center;
   }
 
   .bp-filter-controls > .bp-sheet-footer {
