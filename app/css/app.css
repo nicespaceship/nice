@@ -10669,6 +10669,19 @@ body.preview-active .nice-ai {
     overflow-y:auto;
     flex:1 1 auto;
   }
+  /* Filter sheet: pair fields into two columns — View | Sort and
+     Category | Source — to keep the sheet compact, with Rarity spanning the
+     full width below. DOM order (View, Sort, Category, Source, Rarity) already
+     matches row-major auto-placement. The right column is wider so the
+     3-segment Source row fits — "Community" is too long for an even half. */
+  .bp-filter-controls > .bp-sheet-body {
+    display:grid;
+    grid-template-columns:5fr 7fr;
+    gap:16px 12px;
+    align-items:start;
+  }
+  .bp-filter-controls > .bp-sheet-body > .bp-filter-field { min-width:0; }
+  .bp-filter-controls .bp-filter-field-rarity { grid-column:1 / -1; }
 
   /* Tab sheet option list */
   .bp-sheet-option {

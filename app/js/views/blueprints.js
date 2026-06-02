@@ -348,10 +348,13 @@ const BlueprintsView = (() => {
             <button class="bp-sheet-close" id="bp-filter-sheet-close" aria-label="Close filters">&times;</button>
           </div>
           <div class="bp-sheet-body">
+            <div class="bp-filter-field bp-filter-field-view">
+            <span class="bp-filter-label">View</span>
             <div class="bp-view-toggle" id="bp-view-toggle">
               <button class="bp-view-btn${_viewMode==='card'?' active':''}" data-view="card" title="Card view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg></button>
               <button class="bp-view-btn${_viewMode==='compact'?' active':''}" data-view="compact" title="Compact view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="5" y="0" width="4" height="4" rx="1"/><rect x="10" y="0" width="4" height="4" rx="1"/><rect x="0" y="5" width="4" height="4" rx="1"/><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="0" y="10" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/></svg></button>
               <button class="bp-view-btn${_viewMode==='list'?' active':''}" data-view="list" title="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
+            </div>
             </div>
             <div class="bp-filter-field">
               <span class="bp-filter-label">Sort</span>
