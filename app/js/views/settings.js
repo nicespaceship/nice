@@ -303,6 +303,10 @@ const SettingsView = (() => {
             <button class="btn btn-sm btn-danger" id="btn-clear-cache">Clear</button>
           </div>
         </div>
+
+        <div class="settings-actions">
+          <button class="btn btn-primary" id="btn-settings-done">Done</button>
+        </div>
       </div>
     `;
 
@@ -341,6 +345,13 @@ const SettingsView = (() => {
   }
 
   function _bindEvents(el) {
+    // Done — settings auto-save on change, so this just returns the user to
+    // the Bridge schematic (the app's home surface) rather than committing.
+    document.getElementById('btn-settings-done')?.addEventListener('click', () => {
+      if (typeof Router !== 'undefined') Router.navigate('#/bridge?tab=schematic');
+      else location.hash = '#/bridge?tab=schematic';
+    });
+
     // Toggles
     ['set-notif', 'set-sound', 'set-refresh', 'set-compact'].forEach(id => {
       document.getElementById(id)?.addEventListener('change', (e) => {
