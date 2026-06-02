@@ -4500,11 +4500,15 @@ html:not([data-theme]) .app-main,
 .app-main.monitor-active .nice-monitor {
   opacity:1; pointer-events:auto;
 }
-/* When the full chat opens from the Schematic, keep the monitor's solid
-   bg (var(--bg) from the base rule) and hide the core reactor behind it.
-   Using the reactor as a live backdrop competed with the conversation
-   text and hurt readability, so the chat now reads on a clean solid
-   background and the reactor is hidden until the chat closes. */
+/* When the full chat opens from the Schematic, hide the core reactor (it
+   competed with the conversation text) and let the chat sit on the Schematic
+   surface. The monitor is transparent so the .app-main background shows
+   through — matching the Schematic instead of a white panel that blends into
+   the page. The crew rows are already faded (.app-view-content opacity:0) and
+   the reactor is display:none, so only the surface colour shows behind text. */
+.app-main.monitor-active.monitor-on-schematic .nice-monitor {
+  background:transparent;
+}
 .app-main.monitor-active.monitor-on-schematic .jv-pp-reactor {
   display:none;
 }
