@@ -4500,12 +4500,13 @@ html:not([data-theme]) .app-main,
 .app-main.monitor-active .nice-monitor {
   opacity:1; pointer-events:auto;
 }
-/* When the monitor opens from the Schematic, drop the solid bg so the
-   core reactor (which lives in .app-main, behind .nice-monitor) shows
-   through as the visual backdrop. Crew rows are already invisible
-   (.app-view-content opacity:0) so the reactor reads cleanly. */
-.app-main.monitor-active.monitor-on-schematic .nice-monitor {
-  background:transparent;
+/* When the full chat opens from the Schematic, keep the monitor's solid
+   bg (var(--bg) from the base rule) and hide the core reactor behind it.
+   Using the reactor as a live backdrop competed with the conversation
+   text and hurt readability, so the chat now reads on a clean solid
+   background and the reactor is hidden until the chat closes. */
+.app-main.monitor-active.monitor-on-schematic .jv-pp-reactor {
+  display:none;
 }
 /* Hide the fixed tabs (Schematic / ship picker) while the chat overlay
    is up — they sit underneath at z:20 and overlap the "Back" button at

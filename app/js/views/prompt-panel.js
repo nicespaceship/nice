@@ -381,9 +381,10 @@ const PromptPanel = (() => {
     }
     _appMain.classList.add('monitor-active');
     // When the overlay opens from the Schematic, mark it so the CSS can
-    // drop the solid bg and let the core reactor show through as the
-    // visual backdrop. The schematic crew rows are already faded out
-    // (.app-main.monitor-active .app-view-content { opacity:0 }).
+    // hide the core reactor behind the chat (it competed with the
+    // conversation text) and anchor the mobile layout. The schematic crew
+    // rows are already faded out (.app-main.monitor-active
+    // .app-view-content { opacity:0 }).
     if (!force && (_isOnSchematicInView() || _miniExpanded)) {
       _appMain.classList.add('monitor-on-schematic');
     }
