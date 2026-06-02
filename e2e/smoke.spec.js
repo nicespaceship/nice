@@ -190,6 +190,9 @@ test.describe('Auth Flow', () => {
 test.describe('Dashboard', () => {
   test('home view renders greeting for new users', async ({ page }) => {
     await waitForApp(page);
+    // Default landing is now the Bridge schematic; the greeting is a chat-home
+    // artifact, so navigate there explicitly before asserting it.
+    await navigateTo(page, '#/', 'NICE');
     // New user (no spaceships) should see greeting
     const greeting = page.locator('.chat-home-greeting');
     await expect(greeting).toBeVisible();
