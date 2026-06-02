@@ -10479,14 +10479,13 @@ body.preview-active .nice-ai {
    is #ffffff there), so match the surface the cards actually sit on rather
    than the white base. */
 [data-theme="nice"] .bp-filter-controls { background:#e8eef5; }
-/* Drop the scroller's top inset on the catalog so the sticky filter row pins
-   flush under the fixed Bridge sub-tabs — the 24px gap would otherwise leave a
-   strip above the pinned bar where scrolling cards peek through. The inset is
-   recreated as the bar's own padding-top (above). Scoped to >640px: at ≤640px
-   the filter controls are a fixed bottom-sheet, not the inline sticky row. */
-@media (min-width:641px) {
-  .app-main:has(.bp-type-tab.active[data-tab="blueprints"]) .app-view-content { padding-top:0; }
-}
+/* Drop the scroller's top inset on the catalog so the sticky header pins flush
+   under the fixed Bridge sub-tabs — the gap would otherwise leave a strip above
+   the pinned bar where scrolling cards peek through. The inset is recreated as
+   the sticky element's own padding-top. Applies at every width: >640px the
+   inline .bp-filter-controls row sticks, ≤640px the .bp-mobile-search-row does
+   (the filter controls are a bottom-sheet there, not the inline row). */
+.app-main:has(.bp-type-tab.active[data-tab="blueprints"]) .app-view-content { padding-top:0; }
 .bp-filter-controls .bp-filter-search { flex:0 1 340px; }
 /* Let the input fill the wider search box — the base .search-input is a
    fixed 200px, which clips the long placeholder. */
@@ -10561,8 +10560,18 @@ body.preview-active .nice-ai {
   .bp-filter-toggle:hover { color:var(--text); border-color:var(--border-hi); }
   .bp-filter-toggle[aria-expanded="true"] { color:var(--accent); border-color:var(--accent); }
 
-  /* Always-visible mobile search: input fills the row, Filters button beside it. */
-  .bp-mobile-search-row { display:flex; align-items:center; gap:8px; flex-wrap:nowrap; margin-bottom:10px; }
+  /* Always-visible mobile search: input fills the row, Filters button beside
+     it. Sticky under the fixed Bridge sub-tabs (mobile's equivalent of the
+     desktop sticky filter row) so search + Filters stay reachable while the
+     catalog scrolls. Opaque background + z-index above the cards; padding (not
+     margin) so the gap below stays part of the sticky box — no card peek. */
+  .bp-mobile-search-row {
+    display:flex; align-items:center; gap:8px; flex-wrap:nowrap;
+    position:sticky; top:0; z-index:15;
+    padding:10px 0; margin-bottom:0;
+    background:var(--bg);
+  }
+  [data-theme="nice"] .bp-mobile-search-row { background:#e8eef5; }
   .bp-mobile-search-row .bp-filter-search { flex:1 1 auto; min-width:0; }
   .bp-mobile-search-row .bp-filter-search .search-input { flex:1 1 auto; width:auto; min-width:0; font-size:var(--text-sm); }
 
@@ -10586,7 +10595,12 @@ body.preview-active .nice-ai {
      producing a white sheet on every dark theme. */
   .bp-sheet,
   .bp-filter-controls.bp-filter-controls {
-    position:fixed; bottom:0; left:0; right:0;
+    /* top:auto is load-bearing: the desktop .bp-filter-controls sticky rule
+       sets top:0, which would otherwise pin this bottom-sheet to the top of
+       the viewport. With both top:0 and bottom:0 the sheet anchors to the top
+       and translateY(100%) only shifts it down by its own height, leaving it
+       stuck half on-screen instead of fully hidden below the fold. */
+    position:fixed; top:auto; bottom:0; left:0; right:0;
     max-height:min(80vh, 560px);
     max-height:min(80dvh, 560px);
     /* `padding:0` shorthand below would otherwise override the safe-area
