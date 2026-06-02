@@ -10622,6 +10622,10 @@ body.preview-active .nice-ai {
     transform:translateY(100%);
     transition:transform .2s ease, box-shadow .2s ease;
   }
+  /* Match the filter panel to the catalog's main-screen surface: the cards sit
+     on .app-main's #e8eef5 in the nice theme (var(--bg) is white), so the sheet
+     should read as the same surface, not a white overlay. */
+  [data-theme="nice"] .bp-filter-controls.bp-filter-controls { background:#e8eef5; }
   /* Shadow only when the sheet is open. When closed the sheet sits
      at translateY(100%) with its top edge flush against the viewport
      bottom — an unconditional `box-shadow: 0 -4px 20px` would cast
