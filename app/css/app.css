@@ -4500,16 +4500,16 @@ html:not([data-theme]) .app-main,
 .app-main.monitor-active .nice-monitor {
   opacity:1; pointer-events:auto;
 }
-/* When the full chat opens from the Schematic, hide the core reactor (it
-   competed with the conversation text) and let the chat sit on the Schematic
-   surface. The monitor is transparent so the .app-main background shows
-   through — matching the Schematic instead of a white panel that blends into
-   the page. The crew rows are already faded (.app-view-content opacity:0) and
-   the reactor is display:none, so only the surface colour shows behind text. */
-.app-main.monitor-active.monitor-on-schematic .nice-monitor {
+/* Every full chat (the top-level NICE chat and the Schematic ship chat) sits on
+   the app surface, not a white panel that blends into the page. The monitor is
+   transparent so the .app-main background shows through, and the core reactor
+   is hidden while chatting (it competed with the conversation text). Behind the
+   text are only the faded view (.app-view-content opacity:0) and the hidden
+   reactor, so just the surface colour shows. */
+.app-main.monitor-active .nice-monitor {
   background:transparent;
 }
-.app-main.monitor-active.monitor-on-schematic .jv-pp-reactor {
+.app-main.monitor-active .jv-pp-reactor {
   display:none;
 }
 /* Hide the fixed tabs (Schematic / ship picker) while the chat overlay
@@ -4541,16 +4541,10 @@ html:not([data-theme]) .app-main,
   min-height:80px;
 }
 
-/* Frame the top-level NICE chat so the conversation reads as a defined panel
-   instead of text floating on the page background. Flat per the design system
-   (border + panel surface, no shadow). The Schematic overlay variant keeps its
-   transparent, reactor-backed look and is excluded. */
-.app-main.monitor-active:not(.monitor-on-schematic) .nice-monitor-content {
-  background:var(--panel-bg);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:8px 24px;
-}
+/* The top-level NICE chat used to be a framed panel (panel surface + border)
+   while the Schematic chat was transparent. Both now share the same
+   transparent-on-surface look (see .app-main.monitor-active .nice-monitor
+   above), so the conversation reads on the app surface with no frame here. */
 
 /* Monitor response card */
 .monitor-card {
