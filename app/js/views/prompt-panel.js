@@ -41,6 +41,7 @@ const PromptPanel = (() => {
   let _monitor = null;
   let _monitorContent = null;
   let _appMain = null;
+  let _panelResizeObserver = null;
   let _messages = [];
   let _sending = /*init:*/false;
   let _abortCtrl = null; // AbortController for in-flight LLM requests
@@ -2823,6 +2824,23 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _hideMentionPopup();
   }
 
+  /* Publish --chat-bottom-inset: the distance from the bottom of the chat
+     scroll area up to the prompt panel's top edge. Chat surfaces pad their
+     bottom by this plus a small gap so the last line stops above the panel
+     instead of scrolling behind it. Measured against .app-main (which the
+     monitor fills via inset:0), NOT window.innerHeight, because on mobile
+     .app-main extends below the viewport bottom — measuring against the
+     viewport there left content under the panel. Skips while hidden. */
+  function _updateChatBottomInset() {
+    if (!_panel) return;
+    const pr = _panel.getBoundingClientRect();
+    if (pr.height === 0) return; // hidden on this route — keep the last value
+    const main = document.querySelector('.app-main');
+    const scrollBottom = main ? main.getBoundingClientRect().bottom : window.innerHeight;
+    const inset = Math.max(0, Math.round(scrollBottom - pr.top));
+    document.documentElement.style.setProperty('--chat-bottom-inset', inset + 'px');
+  }
+
   /* ── Build DOM ── */
   function _buildDOM() {
     // Floating prompt bar — no messages area, responses go to monitor
@@ -2867,6 +2885,18 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
     document.body.appendChild(_panel);
     _mentionPopup = _panel.querySelector('#nice-ai-mention-popup');
+
+    // Publish the chat bottom inset as a CSS var (mirrors --guest-banner-height).
+    // Observe the panel (grows when attachments stack / controls wrap) and
+    // app-main (shifts with the guest banner / viewport), plus window resize.
+    _updateChatBottomInset();
+    if (window.ResizeObserver) {
+      _panelResizeObserver = new ResizeObserver(_updateChatBottomInset);
+      _panelResizeObserver.observe(_panel);
+      const main = document.querySelector('.app-main');
+      if (main) _panelResizeObserver.observe(main);
+    }
+    window.addEventListener('resize', _updateChatBottomInset);
 
     // Reactor mount + paint is owned by CoreReactor — single source of truth
     // for the centerpiece across every theme. The element lives on <body> so
@@ -3505,6 +3535,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (_onHashChange) { window.removeEventListener('hashchange', _onHashChange); _onHashChange = null; }
     if (_onEscKey) { document.removeEventListener('keydown', _onEscKey); _onEscKey = null; }
     if (_onCapsLockKey) { document.removeEventListener('keydown', _onCapsLockKey); _onCapsLockKey = null; }
+    if (_panelResizeObserver) { _panelResizeObserver.disconnect(); _panelResizeObserver = null; }
+    window.removeEventListener('resize', _updateChatBottomInset);
+    document.documentElement.style.removeProperty('--chat-bottom-inset');
     // Reset conversation state
     _activeFlow = null;
     _activeConversation = null;
