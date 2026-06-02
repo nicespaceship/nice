@@ -1511,24 +1511,30 @@ const Blueprints = (() => {
    * in two sections.
    *
    * Source of truth:
-   * - State.spaceships / State.agents — entries WITHOUT `blueprint_id`
-   *   are user-built (catalog activations carry the blueprint_id link).
+   * - State.spaceships / State.agents — entries with NO blueprint link are
+   *   user-built. A blueprint link can live in either the top-level
+   *   `blueprint_id` (catalog activations) OR `config.blueprint_id`.
+   *   Activated crew / slot characters keep the top-level column NULL by
+   *   design but always carry `config.blueprint_id` (a `<ship>-crew-<slot>`
+   *   id), so the top-level check alone leaks every deployed crew member
+   *   into the Workshop. Check both.
    * - localStorage `customShips` / `customAgents` — the guest/offline
    *   path before sign-in syncs to user_spaceships / user_agents.
    */
   function listMyBlueprints() {
+    const _linked = (x) => !!(x.blueprint_id || (x.config && x.config.blueprint_id));
     const ships = ((typeof State !== 'undefined' ? State.get('spaceships') : null) || [])
-      .filter(s => s && !s.blueprint_id);
+      .filter(s => s && !_linked(s));
     const agents = ((typeof State !== 'undefined' ? State.get('agents') : null) || [])
-      .filter(a => a && !a.blueprint_id);
+      .filter(a => a && !_linked(a));
     const seen = new Set([...ships.map(s => s.id), ...agents.map(a => a.id)]);
     if (_isGuestSession()) {
       try {
         const guestShips = JSON.parse(localStorage.getItem(Utils.KEYS.customShips) || '[]');
-        guestShips.forEach(s => { if (s && s.id && !seen.has(s.id)) { ships.push(s); seen.add(s.id); } });
+        guestShips.forEach(s => { if (s && s.id && !seen.has(s.id) && !_linked(s)) { ships.push(s); seen.add(s.id); } });
       } catch {}
       _readLocalAgents().forEach(a => {
-        if (a && a.id && !seen.has(a.id)) { agents.push(a); seen.add(a.id); }
+        if (a && a.id && !seen.has(a.id) && !_linked(a)) { agents.push(a); seen.add(a.id); }
       });
     }
     return { spaceships: ships, agents: agents };

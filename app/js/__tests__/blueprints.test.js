@@ -71,6 +71,38 @@ describe('Blueprints', () => {
     expect(agents.length).toBe(5);
   });
 
+  describe('listMyBlueprints — Workshop shows only from-scratch builds', () => {
+    beforeEach(() => {
+      globalThis.State.set('user', { id: 'user-1' }); // signed-in: State is SSOT
+      globalThis.State.set('spaceships', []);
+      globalThis.State.set('agents', []);
+    });
+
+    it('excludes catalog activations (top-level blueprint_id link)', () => {
+      globalThis.State.set('agents', [
+        { id: 'mine', name: 'My Agent', config: {} },
+        { id: 'act', name: 'Activated', blueprint_id: 'sa1', config: {} },
+      ]);
+      expect(Blueprints.listMyBlueprints().agents.map(a => a.id)).toEqual(['mine']);
+    });
+
+    it('excludes deployed crew / slot characters (config.blueprint_id, NULL column)', () => {
+      globalThis.State.set('agents', [
+        { id: 'mine', name: 'My Agent', config: {} },
+        { id: 'crew', name: 'Sous Chef', blueprint_id: null, config: { blueprint_id: 'ship-01-crew-11' } },
+      ]);
+      expect(Blueprints.listMyBlueprints().agents.map(a => a.id)).toEqual(['mine']);
+    });
+
+    it('keeps genuine from-scratch builds with no blueprint link anywhere', () => {
+      globalThis.State.set('agents', [{ id: 'a1', name: 'Custom', config: { role: 'X' } }]);
+      globalThis.State.set('spaceships', [{ id: 's1', name: 'Custom Ship', config: {} }]);
+      const my = Blueprints.listMyBlueprints();
+      expect(my.agents.map(a => a.id)).toEqual(['a1']);
+      expect(my.spaceships.map(s => s.id)).toEqual(['s1']);
+    });
+  });
+
   it('should filter agents by rarity', () => {
     const common = Blueprints.listAgents({ rarity: 'Common' });
     expect(common.length).toBe(2);
