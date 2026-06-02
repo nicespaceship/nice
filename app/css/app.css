@@ -10457,11 +10457,17 @@ body.preview-active .nice-ai {
      overrides position, so the sticky governs only the inline row.
      z-index lifts it above the later-painted cards; opaque background so
      cards pass cleanly underneath (transparent would let them show through). */
-  position:sticky; top:0; z-index:5;
+  position:sticky; top:0;
+  /* Above the catalog cards (which lift via transform on :hover and would
+     otherwise paint over the pinned bar), below #app-fixed-tabs (z:20). */
+  z-index:15;
   /* The breathing inset that used to come from .app-view-content's 24px
      top padding now lives ON the bar (opaque) so the pinned header covers
-     the full strip — see the padding-top:0 rule below. */
-  padding-top:16px;
+     the full strip — see the padding-top:0 rule below. padding-bottom gives
+     a little opaque separation under the rarity pills so cards don't butt
+     against them when the bar is stuck (it stays part of the sticky box, so
+     no card peeks into it). */
+  padding-top:16px; padding-bottom:14px;
   /* MUST be opaque (sticky over scrolling cards). Match #app-fixed-tabs
      (var(--bg)) so the pinned filter row reads as one band with the Bridge
      sub-tabs above it. var(--surface) is wrong here: several themes define it
