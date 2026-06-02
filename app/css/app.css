@@ -10608,8 +10608,12 @@ body.preview-active .nice-ai {
     /* align-items:stretch resets the desktop base rule's align-items:center,
        which would otherwise center the header/body/footer at content width —
        leaving "Filters ✕" floating mid-row and the fields hugging the centre
-       instead of filling the sheet. */
-    display:flex; flex-direction:column; align-items:stretch; gap:0; margin:0; padding:0;
+       instead of filling the sheet. flex-wrap:nowrap resets the base rule's
+       flex-wrap:wrap: in a fixed-height column, wrap makes tall content (e.g.
+       an open Category dropdown) spill into a SECOND column, throwing the
+       header to the left and the body off the right edge. nowrap keeps one
+       column and lets the body scroll. */
+    display:flex; flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:0; margin:0; padding:0;
     padding-bottom:env(safe-area-inset-bottom);
     background:var(--bg); color:var(--text);
     border-top:var(--border-width, 1px) solid var(--border);
@@ -10709,30 +10713,37 @@ body.preview-active .nice-ai {
     font-weight:var(--fw-regular);
   }
   /* Custom dropdown (Sort / Category): fill the field width with the value on
-     the left and the chevron on the right, so it matches the full-width Source
-     row and Rarity grid below instead of floating at content width. */
+     the left and the chevron on the right, so it matches the Source / Rarity
+     rows below instead of floating at content width. */
   .bp-filter-controls .bp-cselect { width:100%; }
   .bp-filter-controls .bp-cselect-trigger { width:100%; justify-content:space-between; }
-  /* Source: three equal segments on one row. Rarity: an even 3-column grid
-     so the six tiers form two tidy rows — flex:1 1 auto used to stretch the
-     lone wrapped sixth pill (Mythic) across the full width. */
-  .bp-filter-controls .bp-source-filter {
-    display:flex; gap:6px;
+  /* The open sheet animates via transform, which becomes the containing block
+     for the menu's position:fixed — so the JS viewport-anchored top/left landed
+     it below the footer and the focus-scroll → reflow loop made it twitch.
+     Inside the sheet, drop the menu into normal flow: it expands inline under
+     the trigger (the body scrolls), so there is nothing to (mis)position. */
+  .bp-filter-controls .bp-cselect-menu {
+    position:static; width:100%;
+    margin-top:4px;
+    max-height:240px; min-width:0;
+    box-shadow:none;
   }
-  .bp-filter-controls .bp-rarity-filters {
-    display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;
-  }
-  /* Buttons: unified at --text-sm + fw-medium. Previously source was
-     fw-medium and rarity fell through to fw-regular, so the two pill
-     rows read at different weights despite identical roles. */
+  /* Source (3) and Rarity (6) each sit on ONE compact row. flex:1 1 auto keeps
+     every pill at least its label width (no clipping) while sharing the spare
+     space, so all six rarity tiers fit a single line — the 2-row grid made the
+     buttons far too chunky. */
+  .bp-filter-controls .bp-source-filter { display:flex; gap:6px; }
+  .bp-filter-controls .bp-rarity-filters { display:flex; gap:5px; }
   .bp-filter-controls .bp-source-btn,
   .bp-filter-controls .bp-rarity-btn {
-    flex:1 1 0; padding:8px 10px;
-    font-size:var(--text-sm);
+    flex:1 1 auto; min-width:0;
+    padding:7px 6px;
+    font-size:var(--text-xs);
     font-weight:var(--fw-medium);
     text-transform:none;
     letter-spacing:var(--tracking-normal);
     text-align:center;
+    white-space:nowrap;
   }
 
   .bp-filter-controls > .bp-sheet-footer {
