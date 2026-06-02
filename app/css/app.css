@@ -10449,6 +10449,37 @@ body.preview-active .nice-ai {
 .bp-filter-controls {
   display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
   margin-bottom:12px;
+  /* Pin the filter + rarity row under the Bridge sub-tabs so it stays in
+     the header while the catalog grid scrolls (the Missions / Outbox /
+     Log toolbars get this for free by living in the fixed #app-fixed-tabs;
+     the catalog filters sit inside the scroller, so they need sticky). At
+     ≤640px this element becomes a fixed bottom-sheet (rule below) which
+     overrides position, so the sticky governs only the inline row.
+     z-index lifts it above the later-painted cards; opaque background so
+     cards pass cleanly underneath (transparent would let them show through). */
+  position:sticky; top:0; z-index:5;
+  /* The breathing inset that used to come from .app-view-content's 24px
+     top padding now lives ON the bar (opaque) so the pinned header covers
+     the full strip — see the padding-top:0 rule below. */
+  padding-top:16px;
+  /* MUST be opaque (sticky over scrolling cards). Match #app-fixed-tabs
+     (var(--bg)) so the pinned filter row reads as one band with the Bridge
+     sub-tabs above it. var(--surface) is wrong here: several themes define it
+     as a translucent rgba (e.g. JARVIS rgba(0,229,255,0.04)), which would let
+     cards bleed through the bar. */
+  background:var(--bg);
+}
+/* The nice theme keeps its catalog on .app-main's #e8eef5 surface (var(--bg)
+   is #ffffff there), so match the surface the cards actually sit on rather
+   than the white base. */
+[data-theme="nice"] .bp-filter-controls { background:#e8eef5; }
+/* Drop the scroller's top inset on the catalog so the sticky filter row pins
+   flush under the fixed Bridge sub-tabs — the 24px gap would otherwise leave a
+   strip above the pinned bar where scrolling cards peek through. The inset is
+   recreated as the bar's own padding-top (above). Scoped to >640px: at ≤640px
+   the filter controls are a fixed bottom-sheet, not the inline sticky row. */
+@media (min-width:641px) {
+  .app-main:has(.bp-type-tab.active[data-tab="blueprints"]) .app-view-content { padding-top:0; }
 }
 .bp-filter-controls .bp-filter-search { flex:0 1 340px; }
 /* Let the input fill the wider search box — the base .search-input is a
