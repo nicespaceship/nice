@@ -18,6 +18,13 @@ const SchematicView = (() => {
   let _unsubActivity = null;
   let _unsubShips = null;
   let _rerendering = false;
+  // Monotonic render token. Each render() bumps it; the deferred ship-picker
+  // mount rAF captures its value and bails if a newer render() or destroy()
+  // has superseded it. Without this, a render() scheduled just before the
+  // user leaves the Schematic (e.g. the late activated-ships hydration fire)
+  // lets its queued rAF run _mountFixedShipPicker after the switch, clobbering
+  // #bridge-subnav — which the next Bridge tab now owns — with the ship picker.
+  let _renderGen = 0;
   let _radarRaf = 0;
   let _radarRo = null;
 
@@ -168,6 +175,7 @@ const SchematicView = (() => {
   }
   function render(el) {
     _el = el;
+    const _gen = ++_renderGen;
     const shipId = _getShipId();
     let activatedShips = (typeof Blueprints !== 'undefined') ? Blueprints.getActivatedShips() : [];
     // Include custom ships from State (created by Crew Designer)
@@ -238,6 +246,10 @@ const SchematicView = (() => {
 
     {
       requestAnimationFrame(() => {
+        // Bail if a newer render() or destroy() superseded this one: its mount
+        // must not write the ship picker into a #bridge-subnav another Bridge
+        // tab now owns (see _renderGen).
+        if (_gen !== _renderGen) return;
         // Ship picker mounts on both breakpoints — mobile gets a pill +
         // bottom sheet next to the Bridge tab pill; desktop gets a wide
         // native <select> appended to the bridge tabs row.
@@ -1283,6 +1295,7 @@ const SchematicView = (() => {
   }
 
   function destroy() {
+    _renderGen++; // invalidate any rAF still queued by the last render()
     if (_resizeTimer) { cancelAnimationFrame(_resizeTimer); _resizeTimer = null; }
     window.removeEventListener('resize', _onResize);
     if (_wiredRO) { _wiredRO.disconnect(); _wiredRO = null; }
