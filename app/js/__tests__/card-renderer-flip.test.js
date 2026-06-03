@@ -136,6 +136,30 @@ describe('CardRenderer — flip + back face', () => {
     });
   });
 
+  describe('full agent card — badge color matches computed rarity', () => {
+    // Agent with NO stored `rarity` → tier is computed via getRarity →
+    // calcAgentRarity. The badge label/frame already used the computed tier,
+    // but the color was keyed off raw bp.rarity (→ Common grey), so a
+    // computed "Rare"/"Epic" agent showed a non-matching grey swatch.
+    const LOADED = {
+      id: 'bp-computed', name: 'Loaded Agent', type: 'agent', category: 'Research',
+      llm_engine: 'claude-4-7-opus',
+      config: { system_prompt: 'x', tools: ['a','b','c','d','e','f','g','h'], memory: true, temperature: 0.3 },
+    };
+    const computed = BlueprintUtils.getRarity(LOADED);
+    const html = CardRenderer.render('agent', 'full', LOADED);
+
+    it('computes a non-Common tier for the fixture', () => {
+      expect(computed).not.toBe('Common');
+    });
+
+    it('colors the rarity badge by the computed tier, not the Common fallback', () => {
+      const expected = BlueprintUtils.RARITY_COLORS[computed];
+      expect(html).toContain(`data-rarity="${computed.toLowerCase()}"`);
+      expect(html).toContain(`style="background:${expected};color:`);
+    });
+  });
+
   describe('ship front — tab strip with crew as default panel', () => {
     const SHIP_WITH_CREW = {
       id: 'bp-crew-ship',
