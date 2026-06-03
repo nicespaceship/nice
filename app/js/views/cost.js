@@ -378,25 +378,45 @@ const CostView = (() => {
     const agentMap = {};
     agents.forEach(a => { agentMap[a.id] = a; });
 
-    // Group cost logs by agent, cross-reference with tasks
-    const rows = tasks
-      .filter(t => t.status === 'completed' || t.status === 'running')
-      .map(t => {
-        const agent = agentMap[t.agent_id];
-        const agentName = agent ? agent.name : 'Unassigned';
-        const missionLogs = logs.filter(l => l.agent_id === t.agent_id && Math.abs(new Date(l.created_at).getTime() - new Date(t.created_at).getTime()) < 86400000);
-        const tokens = missionLogs.reduce((s, l) => s + (l.tokens_used || 0), 0);
-        const cost = missionLogs.reduce((s, l) => s + (l.amount || 0), 0);
-        return { title: t.title, agentName, tokens, cost };
+    // Attribute each cost log to exactly ONE mission — the same-agent mission
+    // whose created_at is nearest. The old ±24h window matched a log against
+    // every mission that agent ran that day, so N missions each showed the
+    // full day's spend (a 3-mission day tripled it) and the per-agent footer
+    // summed the duplicates. fuel_usage has no mission FK, so nearest-by-time
+    // is the best correlation available, and it keeps the per-agent total
+    // equal to real spend.
+    const missions = tasks.filter(t => t.status === 'completed' || t.status === 'running');
+    const acc = {};
+    missions.forEach(m => { acc[m.id] = { tokens: 0, cost: 0 }; });
+    logs.forEach(l => {
+      const lt = new Date(l.created_at).getTime();
+      let best = null, bestDelta = Infinity;
+      missions.forEach(m => {
+        if (m.agent_id !== l.agent_id) return;
+        const d = Math.abs(lt - new Date(m.created_at).getTime());
+        if (d < bestDelta) { bestDelta = d; best = m; }
+      });
+      if (best) {
+        acc[best.id].tokens += (l.tokens_used || 0);
+        acc[best.id].cost   += (l.amount || 0);
+      }
+    });
+
+    const rows = missions
+      .map(m => {
+        const agent = agentMap[m.agent_id];
+        return { title: m.title, agentName: agent ? agent.name : 'Unassigned', tokens: acc[m.id].tokens, cost: acc[m.id].cost };
       })
       .sort((a, b) => b.cost - a.cost)
       .slice(0, 20);
 
-    // Calculate per-agent totals
+    // Per-agent totals from the full attributed set (not the sliced rows) so
+    // the footer reflects each agent's real spend with no double-counting.
     const agentTotals = {};
-    rows.forEach(r => {
-      if (!agentTotals[r.agentName]) agentTotals[r.agentName] = 0;
-      agentTotals[r.agentName] += r.cost;
+    missions.forEach(m => {
+      const agent = agentMap[m.agent_id];
+      const name = agent ? agent.name : 'Unassigned';
+      agentTotals[name] = (agentTotals[name] || 0) + acc[m.id].cost;
     });
 
     wrap.innerHTML = `
@@ -524,5 +544,5 @@ const CostView = (() => {
     });
   }
 
-  return { title, render };
+  return { title, render, _renderCostByMission };
 })();
