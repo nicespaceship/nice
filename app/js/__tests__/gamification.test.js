@@ -500,6 +500,21 @@ describe('Gamification', () => {
     it('should award XP for install_blueprint', () => {
       expect(Gamification.XP_ACTIONS.install_blueprint).toBe(15);
     });
+
+    // These three are called by content-queue.js, tron.js, and nice.js but
+    // were never defined in XP_ACTIONS, so addXP returned 0 every time.
+    it('awards XP for approve_content (was a dead action string)', () => {
+      expect(Gamification.XP_ACTIONS.approve_content).toBeGreaterThan(0);
+      expect(Gamification.addXP('approve_content')).toBe(Gamification.XP_ACTIONS.approve_content);
+    });
+
+    it('awards XP for play_tron (was a dead action string)', () => {
+      expect(Gamification.XP_ACTIONS.play_tron).toBeGreaterThan(0);
+    });
+
+    it('awards XP for install_pwa (was a dead action string)', () => {
+      expect(Gamification.XP_ACTIONS.install_pwa).toBeGreaterThan(0);
+    });
   });
 
   describe('Streak Achievements', () => {
