@@ -158,13 +158,31 @@ const BlueprintsView = (() => {
       if (n && n.parentElement === document.body) n.remove();
     });
   }
+  // Records each portaled element's inline home (parent + next sibling) so a
+  // mobile→desktop transition can put it back exactly where the template had it.
+  const _portalHomes = {};
   function _mountPortals() {
     // Only portal on mobile. On desktop the sheets must stay inline so
     // the filter toolbar renders between the search row and the grid.
     if (!_portalMedia.matches) return;
     _PORTAL_IDS.forEach(id => {
       const n = document.getElementById(id);
-      if (n && n.parentElement !== document.body) document.body.appendChild(n);
+      if (n && n.parentElement !== document.body) {
+        _portalHomes[id] = { parent: n.parentElement, next: n.nextElementSibling };
+        document.body.appendChild(n);
+      }
+    });
+  }
+  // Reverse of _mountPortals: restore body-portaled sheets to their inline home
+  // when the viewport widens past 640px without a full route re-render.
+  function _unmountPortals() {
+    _PORTAL_IDS.forEach(id => {
+      const n = document.getElementById(id);
+      const home = _portalHomes[id];
+      if (n && n.parentElement === document.body && home && home.parent && home.parent.isConnected) {
+        home.parent.insertBefore(n, home.next && home.next.isConnected ? home.next : null);
+        delete _portalHomes[id];
+      }
     });
   }
   // The search box is a single element shared across breakpoints. On mobile
@@ -200,6 +218,30 @@ const BlueprintsView = (() => {
       const anchor = document.getElementById('bp-result-bar');
       if (wrap && actions.parentElement !== wrap) wrap.insertBefore(actions, anchor || null);
     }
+  }
+
+  // Crossing 640px / 1024px without a route re-render (desktop resize, device
+  // rotation) must re-home the portaled sheets, mobile search, and inline
+  // actions — render() only does this on entry. Attached once per mount,
+  // removed in destroy() so stale handlers don't fire against a torn-down view.
+  let _mediaListenersAttached = false;
+  function _onBreakpointChange() {
+    if (_portalMedia.matches) _mountPortals();
+    else _unmountPortals();
+    _placeMobileSearch();
+    _placeMobileActions();
+  }
+  function _attachBreakpointListeners() {
+    if (_mediaListenersAttached) return;
+    _portalMedia.addEventListener('change', _onBreakpointChange);
+    _inlineActionsMedia.addEventListener('change', _onBreakpointChange);
+    _mediaListenersAttached = true;
+  }
+  function _detachBreakpointListeners() {
+    if (!_mediaListenersAttached) return;
+    _portalMedia.removeEventListener('change', _onBreakpointChange);
+    _inlineActionsMedia.removeEventListener('change', _onBreakpointChange);
+    _mediaListenersAttached = false;
   }
 
   // ── Custom dropdown (replaces native <select>) ───────────────────────
@@ -438,6 +480,7 @@ const BlueprintsView = (() => {
     _mountPortals();
     _placeMobileSearch();
     _placeMobileActions();
+    _attachBreakpointListeners();
 
     // Highlight the correct tab + sub-tab buttons
     document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
@@ -3520,6 +3563,7 @@ const BlueprintsView = (() => {
   function destroy() {
     if (typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
     if (typeof TronView !== 'undefined' && TronView.destroy) TronView.destroy();
+    _detachBreakpointListeners();
     _clearPortals();
   }
 
