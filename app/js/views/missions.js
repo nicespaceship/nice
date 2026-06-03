@@ -873,34 +873,47 @@ const MissionDetailView = (() => {
     // Approve mission (review → completed)
     document.getElementById('md-approve')?.addEventListener('click', async () => {
       const now = new Date().toISOString();
+      // Award XP at most once per mission, and only if the approval actually
+      // persisted. The runner resets approval_status to 'draft' on every
+      // re-run, so a metadata flag (which the runner merges forward, never
+      // clears) is what makes approve→retry→approve idempotent rather than
+      // an XP farm; the persist gate stops XP on a transient write failure.
+      const alreadyAwarded = !!(mission.metadata && mission.metadata.xp_awarded);
+      let persisted = false;
       try {
         if (typeof SB !== 'undefined' && SB.client) {
-          await SB.client.from('mission_runs').update({ status: 'completed', approval_status: 'approved', reviewed_at: now }).eq('id', id);
+          await SB.client.from('mission_runs').update({
+            status: 'completed', approval_status: 'approved', reviewed_at: now,
+            metadata: Object.assign({}, mission.metadata || {}, { xp_awarded: true }),
+          }).eq('id', id);
+          persisted = true;
         }
       } catch {}
-      // Award user XP on approval
-      if (typeof Gamification !== 'undefined') {
-        Gamification.addXP('complete_mission');
-        Gamification.addXP('approve_content');
-      }
-      // Award per-agent XP (agent levels up)
-      if (typeof MissionRunner !== 'undefined' && MissionRunner.awardAgentXP) {
-        const agentId = mission.agent_id;
-        const agentName = mission.agent_name;
-        // Find agent ID from name if not set
-        let resolvedId = agentId;
-        if (!resolvedId && agentName) {
-          const agents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
-          const found = agents.find(a => a.name === agentName);
-          if (found) resolvedId = found.id;
+      if (!alreadyAwarded && persisted) {
+        // Award user XP on approval
+        if (typeof Gamification !== 'undefined') {
+          Gamification.addXP('complete_mission');
+          Gamification.addXP('approve_content');
         }
-        if (resolvedId) MissionRunner.awardAgentXP(resolvedId, 50);
-      }
-      // Feedback loop — agent learns from approval
-      if (typeof AgentMemory !== 'undefined') {
-        const agentKey = mission.agent_id || mission.agent_name || 'unknown';
-        AgentMemory.learn(agentKey, mission.result, 'approved');
-        AgentMemory.addSuccess(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200) });
+        // Award per-agent XP (agent levels up)
+        if (typeof MissionRunner !== 'undefined' && MissionRunner.awardAgentXP) {
+          const agentId = mission.agent_id;
+          const agentName = mission.agent_name;
+          // Find agent ID from name if not set
+          let resolvedId = agentId;
+          if (!resolvedId && agentName) {
+            const agents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
+            const found = agents.find(a => a.name === agentName);
+            if (found) resolvedId = found.id;
+          }
+          if (resolvedId) MissionRunner.awardAgentXP(resolvedId, 50);
+        }
+        // Feedback loop — agent learns from approval
+        if (typeof AgentMemory !== 'undefined') {
+          const agentKey = mission.agent_id || mission.agent_name || 'unknown';
+          AgentMemory.learn(agentKey, mission.result, 'approved');
+          AgentMemory.addSuccess(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200) });
+        }
       }
       if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Approved`, message: `Content approved and ${_Nl()} completed!`, type: 'success' });
       _loadMission(el, id);
