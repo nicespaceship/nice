@@ -501,16 +501,22 @@ const AnalyticsView = (() => {
     const overBudget = projectedMonth > budget.limit;
     const barClass = pct >= 90 ? ' bar-danger' : pct >= 70 ? ' bar-warn' : '';
 
-    // Token forecast
-    const tokens = State.get('tokens') || {};
-    const tokenBalance = tokens.remaining || tokens.balance || parseInt(localStorage.getItem(Utils.KEYS.tokens) || '0', 10);
+    // Token forecast — real Standard-pool balance (TokenConfig SSOT). The old
+    // code read State.get('tokens'), a key nothing ever writes (the balance
+    // lives under State.token_balance.pools), so this always showed —/∞.
+    // Free-tier users have no pool and run unlimited Gemini Flash, so their
+    // runway is genuinely ∞.
+    const pools = (State.get('token_balance') || {}).pools || {};
+    const std = pools.standard;
+    const hasPool = !!(std && ((std.allowance || 0) + (std.purchased || 0)) > 0);
+    const tokenBalance = (typeof TokenConfig !== 'undefined') ? TokenConfig.remainingInPool(pools, 'standard') : 0;
     const missions = State.get('missions') || [];
     const sevenDaysAgo = Date.now() - 7 * 86400000;
     const recentMissions = missions.filter(m => new Date(m.created_at).getTime() >= sevenDaysAgo && (m.status === 'completed' || m.status === 'running'));
-    const tokensPerMission = 5;
+    const tokensPerMission = 5;   // rough burn estimate; the real per-call debit lives in nice-ai
     const dailyTokenAvg = (recentMissions.length * tokensPerMission) / 7;
-    const daysLeft = dailyTokenAvg > 0 ? Math.round(tokenBalance / dailyTokenAvg) : Infinity;
-    const tokenWarning = daysLeft < 7 && daysLeft !== Infinity;
+    const daysLeft = !hasPool ? Infinity : (dailyTokenAvg > 0 ? Math.round(tokenBalance / dailyTokenAvg) : Infinity);
+    const tokenWarning = hasPool && daysLeft < 7 && daysLeft !== Infinity;
 
     el.innerHTML = `
       <div class="ana-stat-card">
@@ -873,5 +879,5 @@ const AnalyticsView = (() => {
     URL.revokeObjectURL(url);
   }
 
-  return { title, render, getToolbarActions };
+  return { title, render, getToolbarActions, _renderCostOverview };
 })();
