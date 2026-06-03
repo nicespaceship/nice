@@ -332,3 +332,29 @@ describe('IntegrationsView._connectZapier', () => {
     expect(document.getElementById('zapier-error').textContent).toMatch(/could not save/i);
   });
 });
+
+describe('IntegrationsView MCP grid/list toggle', () => {
+  it('switches view without throwing (handlers referenced an undefined `apis`)', () => {
+    seed([]);
+    IntegrationsView.render(el());
+    const listBtn = document.getElementById('mcp-view-list');
+    const gridBtn = document.getElementById('mcp-view-grid');
+    const grid = el().querySelector('#intg-mcp-grid');
+    expect(listBtn && gridBtn && grid).toBeTruthy();
+    // Before the fix these handlers threw ReferenceError: apis is not defined.
+    expect(() => listBtn.click()).not.toThrow();
+    expect(grid.className).toContain('intg-list-container');
+    expect(() => gridBtn.click()).not.toThrow();
+    expect(grid.className).toContain('mcp-catalog-grid');
+  });
+
+  it('binds the delegated click listener once across re-renders', () => {
+    seed([]);
+    const node = el();
+    IntegrationsView.render(node);
+    IntegrationsView.render(node);
+    IntegrationsView.render(node);
+    // The once-guard sets a marker the first time only.
+    expect(node.dataset.intgDelegated).toBe('1');
+  });
+});

@@ -62,7 +62,7 @@ const IntegrationsView = (() => {
 
   /* ── Demo seed data ───────────────────────────────────────────── */
   function _seedMcpConnections() {
-    const sbUrl = typeof SB !== 'undefined' ? SB.url : 'https://zacllshbgmnwsmliteqx.supabase.co';
+    const sbUrl = (typeof SB !== 'undefined' && SB._url) ? SB._url : 'https://zacllshbgmnwsmliteqx.supabase.co';
     return [
       {
         id: 'mc-gmail', name: 'Gmail', catalog_id: 'google-gmail',
@@ -473,17 +473,26 @@ const IntegrationsView = (() => {
 
   /* ── Events ───────────────────────────────────────────────────── */
   function _bindEvents(el, _unused, mcps) {
-    // Delegate connect/disconnect/reconnect clicks
-    el.addEventListener('click', (e) => {
-      const mcpConn = e.target.closest('.mcp-connect-btn');
-      if (mcpConn) return _connectMcp(mcpConn.dataset.catalogId, el);
-      const mcpReconn = e.target.closest('.mcp-reconnect-btn');
-      // Reconnect re-uses the same OAuth flow as Connect — the callback
-      // upserts the existing row by user_id+catalog_id and resets status.
-      if (mcpReconn) return _connectMcp(mcpReconn.dataset.catalogId, el, { reconnect: true });
-      const mcpDisc = e.target.closest('.mcp-disconnect-btn');
-      if (mcpDisc) return _disconnectMcp(mcpDisc.dataset.connId, el);
-    });
+    // Delegate connect/disconnect/reconnect clicks. Bind ONCE: render(el)
+    // re-runs _bindEvents on the same el on every re-render (OAuth return,
+    // connect, disconnect, custom/Zapier add) and el persists across them
+    // (only its innerHTML is replaced), so re-adding the delegate each time
+    // would stack listeners and fire the handler N times on a single click.
+    // The handler reads ids off the clicked node and calls module fns, so a
+    // once-bound delegate stays correct across re-renders.
+    if (!el.dataset.intgDelegated) {
+      el.dataset.intgDelegated = '1';
+      el.addEventListener('click', (e) => {
+        const mcpConn = e.target.closest('.mcp-connect-btn');
+        if (mcpConn) return _connectMcp(mcpConn.dataset.catalogId, el);
+        const mcpReconn = e.target.closest('.mcp-reconnect-btn');
+        // Reconnect re-uses the same OAuth flow as Connect — the callback
+        // upserts the existing row by user_id+catalog_id and resets status.
+        if (mcpReconn) return _connectMcp(mcpReconn.dataset.catalogId, el, { reconnect: true });
+        const mcpDisc = e.target.closest('.mcp-disconnect-btn');
+        if (mcpDisc) return _disconnectMcp(mcpDisc.dataset.connId, el);
+      });
+    }
 
     // MCP search
     document.getElementById('intg-mcp-search')?.addEventListener('input', (e) => {
@@ -501,8 +510,8 @@ const IntegrationsView = (() => {
     });
 
     // View toggle (grid/list)
-    document.getElementById('mcp-view-grid')?.addEventListener('click', () => { _mcpView = 'grid'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, apis, mcps); });
-    document.getElementById('mcp-view-list')?.addEventListener('click', () => { _mcpView = 'list'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, apis, mcps); });
+    document.getElementById('mcp-view-grid')?.addEventListener('click', () => { _mcpView = 'grid'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, [], mcps); });
+    document.getElementById('mcp-view-list')?.addEventListener('click', () => { _mcpView = 'list'; _toggleViewBtns('mcp', el); _applyFilters('mcp', el, [], mcps); });
     // Custom MCP modal
     document.getElementById('btn-add-custom-mcp')?.addEventListener('click', () => {
       document.getElementById('modal-add-mcp')?.classList.add('open');
