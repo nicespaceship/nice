@@ -202,13 +202,39 @@ describe('Gamification', () => {
   });
 
   describe('Resources', () => {
-    it('should calculate resources from state', () => {
+    beforeEach(() => {
       State.set('agents', []);
       State.set('missions', []);
+      State.set('token_balance', undefined);
+    });
+
+    it('should calculate resources from state', () => {
       const res = Gamification.getResources();
       expect(res).toHaveProperty('tokens');
       expect(res).toHaveProperty('power');
       expect(res).toHaveProperty('credits');
+    });
+
+    it('reads full token fuel on the free tier (no Pro pool)', () => {
+      expect(Gamification.getResources().tokens).toBe(100);
+      expect(Gamification.getSpaceshipHealth({ agent_ids: [] }, [], []).tokens).toBe(100);
+    });
+
+    it('reflects real Standard-pool remaining for Pro users', () => {
+      State.set('token_balance', { pools: { standard: { allowance: 1000, used: 250, purchased: 0 } } });
+      expect(Gamification.getResources().tokens).toBe(75);
+      expect(Gamification.getSpaceshipHealth({ agent_ids: [] }, [], []).tokens).toBe(75);
+    });
+
+    it('does not move when the cost-alert threshold changes (regression)', () => {
+      // Old formula was 100 - alert + 20, so the gauge tracked the alert slider.
+      State.set('token_balance', { pools: { standard: { allowance: 1000, used: 100, purchased: 0 } } });
+      localStorage.setItem(Utils.KEYS.budget, JSON.stringify({ limit: 50, alert: 10 }));
+      const a = Gamification.getResources().tokens;
+      localStorage.setItem(Utils.KEYS.budget, JSON.stringify({ limit: 50, alert: 95 }));
+      const b = Gamification.getResources().tokens;
+      expect(a).toBe(90);
+      expect(b).toBe(90);
     });
   });
 

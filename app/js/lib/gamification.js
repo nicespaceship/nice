@@ -489,6 +489,22 @@ const Gamification = (() => {
 
   /* ─── Spaceship Health ─── */
 
+  /* Standard-pool token fuel as a 0-100 gauge. The real balance lives in
+     State.token_balance.pools (TokenConfig SSOT). Free-tier users have no
+     pool and run unlimited Gemini Flash, so they read full. Replaces the old
+     `100 - alert + 20`, which derived ship "fuel" from the cost-alert slider
+     (a config value), not real usage — so changing the alert threshold moved
+     the gauge and the default always read a flat 40%. */
+  function _tokenFuelPct() {
+    if (typeof State === 'undefined' || typeof TokenConfig === 'undefined') return 100;
+    const pools = (State.get('token_balance') || {}).pools || {};
+    const p = pools.standard;
+    const capacity = p ? (p.allowance || 0) + (p.purchased || 0) : 0;
+    if (capacity <= 0) return 100; // free tier / no Pro pool — unlimited free model
+    const remaining = TokenConfig.remainingInPool(pools, 'standard');
+    return Math.max(0, Math.min(100, Math.round((remaining / capacity) * 100)));
+  }
+
   function getSpaceshipHealth(spaceship, agents, missions) {
     agents = agents || [];
     missions = missions || [];
@@ -502,9 +518,8 @@ const Gamification = (() => {
       ? Math.round(((members.length - errorAgents) / members.length) * 100)
       : 100;
 
-    // Tokens: derived from remaining budget (simplified)
-    const budget = JSON.parse(localStorage.getItem(Utils.KEYS.budget) || '{"limit":50,"alert":80}');
-    const tokens = Math.max(0, Math.min(100, 100 - (budget.alert || 80) + 20));
+    // Tokens: real Standard-pool fuel remaining (free tier reads full).
+    const tokens = _tokenFuelPct();
 
     // Shield: % of completed missions
     const completed = shipMissions.filter(m => m.status === 'completed').length;
@@ -667,10 +682,9 @@ const Gamification = (() => {
   function getResources() {
     const agents = State.get('agents') || [];
     const missions = State.get('missions') || [];
-    const budget = JSON.parse(localStorage.getItem(Utils.KEYS.budget) || '{"limit":50,"alert":80}');
 
-    // Tokens — derived from remaining budget (100 = fully funded)
-    const tokens = Math.max(0, Math.min(100, 100 - (budget.alert || 80) + 20));
+    // Tokens — real Standard-pool fuel remaining (free tier reads full).
+    const tokens = _tokenFuelPct();
 
     // Power — derived from active agent count (each active agent = 20 power, max 100)
     const activeAgents = agents.filter(r => r.status === 'active').length;
