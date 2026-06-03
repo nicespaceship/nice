@@ -8,18 +8,6 @@ const CostView = (() => {
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
-  // Per-million-token rates live on TokenConfig.MODELS (the SSOT for
-  // pool + weight + pricing). Legacy llm_engine ids canonicalize via
-  // LLMConfig.canonicalize before lookup so a stored `'claude-4'`
-  // agent bills at the same rate as the canonical `'claude-4-6-sonnet'`
-  // it aliases to. Sonnet is the fallback when an id resolves to nothing.
-  function _ratesFor(modelId) {
-    const canonical = (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize)
-      ? LLMConfig.canonicalize(modelId)
-      : modelId;
-    return TokenConfig.pricingFor(canonical) || TokenConfig.pricingFor('claude-4-6-sonnet');
-  }
-
   function render(el) {
     const user = State.get('user');
     if (!user) return _authPrompt(el, 'the cost tracker');
@@ -185,37 +173,14 @@ const CostView = (() => {
       created_at:  u.created_at,
     }));
 
-    // If no real logs, generate estimates from tasks + agent models
-    if (!costLogs.length && tasks.length) {
-      costLogs = _estimateCosts(tasks, agents);
-    }
-
+    // No fabricated estimates: when fuel_usage has no rows the view shows an
+    // honest empty state ($0 spend, "No cost data yet") rather than random
+    // numbers dressed up as real spend.
     _updateOverview(costLogs);
     _drawCostChart(costLogs);
     _renderAgentBreakdown(agents, costLogs);
     _renderCostByMission(agents, tasks, costLogs);
     _renderLog(costLogs, agents);
-  }
-
-  function _estimateCosts(tasks, agents) {
-    const agentMap = {};
-    agents.forEach(a => { agentMap[a.id] = a; });
-
-    return tasks.filter(t => t.status === 'completed' || t.status === 'running').map(t => {
-      const agent = agentMap[t.agent_id];
-      const model = agent?.llm_engine || 'claude-4-6-sonnet';
-      const rates = _ratesFor(model);
-      const tokens = 800 + Math.floor(Math.random() * 3200); // Simulated
-      const cost = ((tokens / 1000000) * rates.input) + ((tokens * 0.3 / 1000000) * rates.output);
-      return {
-        id: 'est-' + t.id,
-        agent_id: t.agent_id,
-        model,
-        tokens_used: tokens,
-        amount: Math.round(cost * 10000) / 10000,
-        created_at: t.created_at,
-      };
-    });
   }
 
   function _updateOverview(logs) {

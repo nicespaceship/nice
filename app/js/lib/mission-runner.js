@@ -316,6 +316,7 @@ const MissionRunner = (() => {
       };
 
       // Captain with crew → dispatch orchestration loop
+      const _execStart = Date.now();
       const _crewSlots = _ship && Object.keys(
         _ship.config?.slot_assignments || _ship.slots?.slot_assignments || _ship.slot_assignments || {}
       ).length;
@@ -364,10 +365,15 @@ const MissionRunner = (() => {
 
       if (!result || !result.content) throw new Error('Empty response from agent');
 
-      // 6. Transition to completed — log model performance
+      // 6. Transition to completed — log REAL model performance: measured
+      // wall-clock and provider-reported tokens (the same field deductBudget
+      // uses below). ModelIntel's model recommendations then learn from actual
+      // runs instead of random noise; 0 tokens when the provider reported none.
       const now = new Date().toISOString();
       if (blueprintId && typeof ModelIntel !== 'undefined') {
-        ModelIntel.log(blueprintId, modelUsed, { success: true, speedMs: _simSpeed(modelUsed), costTokens: _simCost(modelUsed) });
+        const speedMs = Date.now() - _execStart;
+        const costTokens = result.metadata?.totalTokens || result.metadata?.tokens_used || 0;
+        ModelIntel.log(blueprintId, modelUsed, { success: true, speedMs, costTokens });
       }
       const isChatRun = mission.metadata?.source === 'prompt_panel';
       const finalStatus = isChatRun ? 'completed' : 'review';
@@ -776,19 +782,6 @@ const MissionRunner = (() => {
 
     // Unknown kind — stash the parsed JSON in items so no signal is lost
     return { kind, items: [parsed], summary: null };
-  }
-
-  /* ── Estimated performance metrics (cost/speed approximation per model) ── */
-  function _simSpeed(modelId) {
-    const tiers = { 'claude-4-opus': 4500, 'gpt-4o': 3500, 'gemini-2': 3000, 'grok-3': 3800, 'claude-4-sonnet': 2500, 'gpt-4o-mini': 1800, 'gemini-2-flash': 1500, 'grok-3-mini': 2000 };
-    const base = tiers[modelId] || 2500;
-    return base + Math.round(Math.random() * 2000 - 1000);
-  }
-
-  function _simCost(modelId) {
-    const tiers = { 'claude-4-opus': 0.15, 'gpt-4o': 0.12, 'gemini-2': 0.08, 'grok-3': 0.10, 'claude-4-sonnet': 0.06, 'gpt-4o-mini': 0.02, 'gemini-2-flash': 0.01, 'grok-3-mini': 0.03 };
-    const base = tiers[modelId] || 0.05;
-    return +(base + Math.random() * 0.05).toFixed(4);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
