@@ -93,6 +93,61 @@ describe('WorkflowEngine — approval_gate', () => {
   });
 });
 
+describe('WorkflowEngine — resume', () => {
+  const linear = () => ({
+    id: 'wf-resume',
+    nodes: [
+      { id: 'a', type: 'agent', config: { prompt: 'a' } },
+      { id: 'gate', type: 'approval_gate', config: { reason: 'r' } },
+      { id: 'b', type: 'output', config: {} },
+    ],
+    connections: [{ from: 'a', to: 'gate' }, { from: 'gate', to: 'b' }],
+  });
+
+  it('seeds priorResults and runs only the not-yet-done nodes', async () => {
+    const ran = [];
+    const res = await WorkflowEngine.execute(linear(), {
+      skipSave: true,
+      priorResults: { a: 'ran: a', gate: 'approved draft' },
+      onNodeComplete: (node) => ran.push(node.id),
+    });
+    expect(res.status).toBe('completed');
+    // a and gate were seeded → skipped; only b ran, with the gate output as input.
+    expect(ran).toEqual(['b']);
+    expect(res.nodeResults.get('b')).toBe('approved draft');
+    expect(res.nodeResults.get('a')).toBe('ran: a'); // seeded value preserved
+  });
+
+  it('a fresh paused linear run returns an empty resumePrune', async () => {
+    const res = await WorkflowEngine.execute(linear(), { skipSave: true });
+    expect(res.status).toBe('paused');
+    expect(res.pausedAt).toBe('gate');
+    expect(res.resumePrune).toEqual([]);
+  });
+
+  it('prunedSeed keeps a branch-excluded node from running on resume', async () => {
+    const workflow = {
+      id: 'wf-ps',
+      nodes: [
+        { id: 'gate', type: 'approval_gate', config: { reason: 'r' } },
+        { id: 'x', type: 'output', config: {} },
+        { id: 'y', type: 'output', config: {} },
+      ],
+      connections: [{ from: 'gate', to: 'x' }, { from: 'gate', to: 'y' }],
+    };
+    const ran = [];
+    const res = await WorkflowEngine.execute(workflow, {
+      skipSave: true,
+      priorResults: { gate: 'approved' },
+      prunedSeed: ['y'],
+      onNodeComplete: (node) => ran.push(node.id),
+    });
+    expect(res.status).toBe('completed');
+    expect(ran).toContain('x');
+    expect(ran).not.toContain('y');
+  });
+});
+
 describe('WorkflowEngine — cooperative cancel', () => {
   it('breaks out of the node loop when isCancelled returns true', async () => {
     const workflow = {

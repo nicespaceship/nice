@@ -73,6 +73,26 @@ describe('MissionDetailView._isDagPlan', () => {
   });
 });
 
+describe('MissionDetailView._isResumableGate', () => {
+  it('true for a paused gate that has a downstream edge', () => {
+    const m = { metadata: { dag_status: 'paused', paused_at: 'g' }, plan_snapshot: { edges: [{ from: 'g', to: 'send' }] } };
+    expect(MissionDetailView._isResumableGate(m)).toBe(true);
+  });
+  it('false for a terminal gate (no downstream edge)', () => {
+    const m = { metadata: { dag_status: 'paused', paused_at: 'g' }, plan_snapshot: { edges: [{ from: 'a', to: 'g' }] } };
+    expect(MissionDetailView._isResumableGate(m)).toBe(false);
+  });
+  it('false when the run is not paused', () => {
+    const m = { metadata: { dag_status: 'completed', paused_at: 'g' }, plan_snapshot: { edges: [{ from: 'g', to: 'x' }] } };
+    expect(MissionDetailView._isResumableGate(m)).toBe(false);
+  });
+  it('false when metadata or plan_snapshot is missing', () => {
+    expect(MissionDetailView._isResumableGate({})).toBe(false);
+    expect(MissionDetailView._isResumableGate(null)).toBe(false);
+    expect(MissionDetailView._isResumableGate({ metadata: { dag_status: 'paused', paused_at: 'g' } })).toBe(false);
+  });
+});
+
 describe('MissionDetailView._nodeStatus', () => {
   const node = { id: 'n', type: 'agent' };
   it('returns pending when nodeResults has no entry', () => {

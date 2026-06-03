@@ -381,34 +381,116 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     expect(Object.keys(row.node_results)).toContain('review');
   });
 
-  it('warns when an approval_gate has downstream nodes (resume unsupported)', async () => {
-    // Guard for the latent DAG-resume gap: approve = complete only holds while
-    // the gate is terminal. A non-terminal gate must fail loud, not silently
-    // drop the post-gate nodes.
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      const planSnapshot = {
-        shape: 'dag',
-        nodes: [
-          { id: 'triage', type: 'agent',         config: { prompt: 'triage' } },
-          { id: 'review', type: 'approval_gate',  config: { reason: 'check' } },
-          { id: 'send',   type: 'notify',         config: { message: 'sent' } },
-        ],
-        edges: [
-          { from: 'triage', to: 'review' },
-          { from: 'review', to: 'send' }, // node AFTER the gate — pruned on pause
-        ],
-      };
-      await SB.db('mission_runs').create({
-        id: 'm-dag-postgate', user_id: userId, title: 'Post-gate plan',
-        status: 'queued', progress: 0, plan_snapshot: planSnapshot,
-      });
-      const res = await MissionRunner.run('m-dag-postgate');
-      expect(res.status).toBe('paused');
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('DAG resume is not implemented'));
-    } finally {
-      warnSpy.mockRestore();
-    }
+  it('pauses at a non-terminal gate, persisting resume state without running downstream', async () => {
+    const planSnapshot = {
+      shape: 'dag',
+      nodes: [
+        { id: 'triage', type: 'agent',         config: { prompt: 'triage' } },
+        { id: 'review', type: 'approval_gate',  config: { reason: 'check' } },
+        { id: 'send',   type: 'notify',         config: { message: 'sent' } },
+      ],
+      edges: [
+        { from: 'triage', to: 'review' },
+        { from: 'review', to: 'send' }, // node AFTER the gate
+      ],
+    };
+    await SB.db('mission_runs').create({
+      id: 'm-dag-postgate', user_id: userId, title: 'Post-gate plan',
+      status: 'queued', progress: 0, plan_snapshot: planSnapshot,
+    });
+    const res = await MissionRunner.run('m-dag-postgate');
+    expect(res.status).toBe('paused');
+
+    const row = _db.mission_runs['m-dag-postgate'];
+    expect(row.status).toBe('review');
+    expect(row.metadata.dag_status).toBe('paused');
+    expect(row.metadata.paused_at).toBe('review');
+    expect(row.metadata.branch_pruned).toEqual([]);
+    // The downstream node has NOT run yet — it waits for approval.
+    expect(Object.keys(row.node_results)).toContain('review');
+    expect(Object.keys(row.node_results)).not.toContain('send');
+  });
+
+  it('resumeDag runs the post-gate node on approval and completes the DAG', async () => {
+    const planSnapshot = {
+      shape: 'dag',
+      nodes: [
+        { id: 'triage', type: 'agent',         config: { prompt: 'triage' } },
+        { id: 'review', type: 'approval_gate',  config: { reason: 'check' } },
+        { id: 'send',   type: 'notify',         config: { message: 'sent' } },
+      ],
+      edges: [
+        { from: 'triage', to: 'review' },
+        { from: 'review', to: 'send' },
+      ],
+    };
+    await SB.db('mission_runs').create({
+      id: 'm-dag-resume', user_id: userId, title: 'Resume plan',
+      status: 'queued', progress: 0, plan_snapshot: planSnapshot,
+    });
+    await MissionRunner.run('m-dag-resume'); // pauses at the gate
+
+    const res = await MissionRunner.resumeDag('m-dag-resume');
+    expect(res.status).toBe('completed'); // engine ran the remaining node
+
+    const row = _db.mission_runs['m-dag-resume'];
+    expect(row.metadata.dag_status).toBe('completed');
+    expect(row.status).toBe('review'); // final sign-off before terminal complete
+    // The post-gate node ran on resume, and prior results were preserved.
+    expect(Object.keys(row.node_results)).toContain('send');
+    expect(Object.keys(row.node_results)).toContain('triage');
+  });
+
+  it('resumeDag re-pauses at a second gate, then completes on the next approval', async () => {
+    const planSnapshot = {
+      shape: 'dag',
+      nodes: [
+        { id: 'a',  type: 'agent',         config: { prompt: 'a' } },
+        { id: 'g1', type: 'approval_gate',  config: { reason: 'gate 1' } },
+        { id: 'b',  type: 'notify',         config: { message: 'b' } },
+        { id: 'g2', type: 'approval_gate',  config: { reason: 'gate 2' } },
+        { id: 'c',  type: 'notify',         config: { message: 'c' } },
+      ],
+      edges: [
+        { from: 'a',  to: 'g1' },
+        { from: 'g1', to: 'b' },
+        { from: 'b',  to: 'g2' },
+        { from: 'g2', to: 'c' },
+      ],
+    };
+    await SB.db('mission_runs').create({
+      id: 'm-dag-2gate', user_id: userId, title: 'Two gates',
+      status: 'queued', progress: 0, plan_snapshot: planSnapshot,
+    });
+
+    await MissionRunner.run('m-dag-2gate'); // pause at g1
+    expect(_db.mission_runs['m-dag-2gate'].metadata.paused_at).toBe('g1');
+
+    const r1 = await MissionRunner.resumeDag('m-dag-2gate'); // run b, pause at g2
+    expect(r1.status).toBe('paused');
+    const row1 = _db.mission_runs['m-dag-2gate'];
+    expect(row1.metadata.dag_status).toBe('paused');
+    expect(row1.metadata.paused_at).toBe('g2');
+    expect(Object.keys(row1.node_results)).toContain('b');
+    expect(Object.keys(row1.node_results)).not.toContain('c');
+
+    const r2 = await MissionRunner.resumeDag('m-dag-2gate'); // run c, complete
+    expect(r2.status).toBe('completed');
+    const row2 = _db.mission_runs['m-dag-2gate'];
+    expect(row2.metadata.dag_status).toBe('completed');
+    expect(Object.keys(row2.node_results)).toContain('c');
+  });
+
+  it('resumeDag is a no-op on a run that is not paused at a gate', async () => {
+    await SB.db('mission_runs').create({
+      id: 'm-dag-done', user_id: userId, title: 'Done', status: 'completed',
+      plan_snapshot: { shape: 'dag', nodes: [{ id: 'a', type: 'agent' }, { id: 'b', type: 'agent' }], edges: [{ from: 'a', to: 'b' }] },
+      metadata: { dag_status: 'completed' },
+      node_results: { a: 'x', b: 'y' },
+    });
+    const res = await MissionRunner.resumeDag('m-dag-done');
+    expect(res).toBeNull();
+    expect(_db.mission_runs['m-dag-done'].status).toBe('completed'); // untouched
   });
 
   it('DAG with no gate still lands in review (awaits captain sign-off)', async () => {
