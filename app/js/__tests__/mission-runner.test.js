@@ -101,6 +101,25 @@ describe('MissionRunner', () => {
     expect(result.content).toBeTruthy();
   });
 
+  it('returns the video result object on direct-video success (not undefined)', async () => {
+    // Regression: the direct-video branch used a bare `return`, so the chat
+    // surface saw `undefined` and told the user "no output was returned"
+    // even though the video link was generated and saved.
+    globalThis.MediaTools = { generate: async () => ({ url: 'https://x/v.mp4', model: 'veo-2', duration: 5, size: '9:16' }) };
+    State.set('agents', [{ id: 'a-vid', name: 'VideoBot', config: { tools: ['generate-video'] } }]);
+    await SB.db('mission_runs').create({
+      id: 'm-vid', user_id: userId, title: 'Make a launch video reel',
+      agent_id: 'a-vid', status: 'queued', progress: 0,
+    });
+
+    const result = await MissionRunner.run('m-vid');
+
+    expect(result).not.toBeNull();
+    expect(result.content).toContain('Watch Video');
+    expect(result.metadata.url).toBe('https://x/v.mp4');
+    delete globalThis.MediaTools;
+  });
+
   it('should not award XP until approval (Draft & Approve flow)', async () => {
     State.set('agents', [{ id: 'a2', name: 'XPBot', config: {} }]);
     await SB.db('mission_runs').create({
