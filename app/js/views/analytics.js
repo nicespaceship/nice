@@ -9,17 +9,6 @@ const AnalyticsView = (() => {
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
-  // Per-million-token rates live on TokenConfig.MODELS (the SSOT for
-  // pool + weight + pricing). Legacy llm_engine ids canonicalize via
-  // LLMConfig.canonicalize before lookup so a stored `'claude-4'`
-  // agent bills at the same rate as the canonical `'claude-4-6-sonnet'`
-  // it aliases to. Sonnet is the fallback when an id resolves to nothing.
-  function _ratesFor(modelId) {
-    const canonical = (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize)
-      ? LLMConfig.canonicalize(modelId)
-      : modelId;
-    return TokenConfig.pricingFor(canonical) || TokenConfig.pricingFor('claude-4-6-sonnet');
-  }
 
   let _el = null;
 
@@ -475,9 +464,8 @@ const AnalyticsView = (() => {
       created_at:  u.created_at,
     }));
 
-    if (!costLogs.length && tasks.length) {
-      costLogs = _estimateCosts(tasks, agents);
-    }
+    // No fabricated estimates: an empty fuel_usage set renders an honest
+    // empty state, not random spend.
 
     // Load budget form values
     const budget = _getBudget();
@@ -492,27 +480,6 @@ const AnalyticsView = (() => {
     _renderCostMissions(agents, tasks, costLogs);
     _renderCostLog(costLogs, agents);
     _loadPurchaseHistory();
-  }
-
-  function _estimateCosts(tasks, agents) {
-    const agentMap = {};
-    agents.forEach(a => { agentMap[a.id] = a; });
-
-    return tasks.filter(t => t.status === 'completed' || t.status === 'running').map(t => {
-      const agent = agentMap[t.agent_id];
-      const model = agent?.llm_engine || 'claude-4-6-sonnet';
-      const rates = _ratesFor(model);
-      const tokens = 800 + Math.floor(Math.random() * 3200);
-      const cost = ((tokens / 1000000) * rates.input) + ((tokens * 0.3 / 1000000) * rates.output);
-      return {
-        id: 'est-' + t.id,
-        agent_id: t.agent_id,
-        model,
-        tokens_used: tokens,
-        amount: Math.round(cost * 10000) / 10000,
-        created_at: t.created_at,
-      };
-    });
   }
 
   function _renderCostOverview(logs) {
@@ -768,7 +735,7 @@ const AnalyticsView = (() => {
     const recent = logs.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
 
     if (!recent.length) {
-      wrap.innerHTML = '';
+      wrap.innerHTML = '<p class="text-muted" style="font-size:.82rem;padding:12px">No cost data yet. Complete a mission to see costs.</p>';
       return;
     }
 
