@@ -765,7 +765,7 @@ const CardRenderer = (() => {
       badgeHTML = rarity === 'Mythic'
         ? `<span class="blueprint-card-grid-badge mythic-badge-animated">${rarity}</span>`
         : `<span class="blueprint-card-grid-badge" style="background:${rarityColor};color:${contrastText(rarityColor)};border-color:transparent">${rarity}</span>`;
-      dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}"`;
+      dataAttrs += ` data-rarity="${rarity.toLowerCase()}" data-bp-id="${data.id}"`;
       if (data.stats) {
         const lbls = ['Spd','Acc','Cap','Pwr'], keys = ['spd','acc','cap','pwr'];
         statsHTML = `<div class="blueprint-card-grid-stats">${lbls.map((l,i) => `<span><b>${data.stats[keys[i]] || '—'}</b> ${l}</span>`).join('')}</div>`;
@@ -816,7 +816,7 @@ const CardRenderer = (() => {
       badgeHTML = rarity === 'Mythic'
         ? `<span class="blueprint-card-compact-badge mythic-badge-animated">${rarity.toUpperCase()}</span>`
         : `<span class="blueprint-card-compact-badge" style="background:${rarityColor};color:${contrastText(rarityColor)};border-color:transparent">${rarity.toUpperCase()}</span>`;
-      dataAttrs += ` data-rarity="${rarity}" data-bp-id="${data.id}" data-status="${data.status || ''}"`;
+      dataAttrs += ` data-rarity="${rarityLower}" data-bp-id="${data.id}" data-status="${data.status || ''}"`;
 
       const config = data.config || {};
       const roleTags = [data.llm_engine || 'gemini-2-5-flash', data.type || 'Specialist'].filter(Boolean);
@@ -899,7 +899,7 @@ const CardRenderer = (() => {
       badgeLabel = rarity;
       const serial = serialHash(data.id || data.name);
       art = avatarArt(data.name, data.category || data.role, serial);
-      dataAttrs += ` data-bp-id="${data.id}" data-rarity="${rarity}"`;
+      dataAttrs += ` data-bp-id="${data.id}" data-rarity="${rarity.toLowerCase()}"`;
     } else if (type === 'spaceship') {
       const shipRarity = data.rarity || 'Common';
       badgeColor = SLOT_COLORS[shipRarity] || '#94a3b8';
