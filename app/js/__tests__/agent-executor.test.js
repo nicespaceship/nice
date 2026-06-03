@@ -454,6 +454,42 @@ describe('AgentExecutor', () => {
       expect(req.tools[0].parameters).toEqual({ type: 'object', properties: { query: { type: 'string' } } });
     });
 
+    it('injects agent memory exactly once (system prompt only, not the user turn)', async () => {
+      // Regression: memory was folded into the system prompt by PromptBuilder
+      // AND prepended to the first user message by the executor, so any
+      // tool-using agent with accumulated memory double-sent the whole block.
+      const MARKER = 'ZEBRA_MEMORY_MARKER_4242';
+      const agentId = 'agent-mem-once-' + Date.now();
+      AgentMemory.clear(agentId);
+      AgentMemory.addFact(agentId, MARKER);
+      expect(AgentMemory.buildPromptContext(agentId)).toContain(MARKER);
+
+      _scriptedResponses.push({
+        content: 'Final Answer: done.',
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 8, output_tokens: 3 },
+      });
+
+      const controller = AgentExecutor.converse(
+        { id: agentId, name: 'Memo', config: { role: 'Assistant', tools: ['outlook_search_messages'] } },
+        { tools: ['outlook_search_messages'], spaceshipId: 'ship-1' },
+      );
+      await controller.send('do the thing');
+
+      const req = _capturedRequests[0];
+      const system = req.messages.find((m) => m.role === 'system');
+      const userMsgs = req.messages.filter((m) => m.role === 'user');
+      const occurrences = req.messages.reduce(
+        (n, m) => n + (typeof m.content === 'string' ? m.content.split(MARKER).length - 1 : 0), 0);
+
+      expect(occurrences).toBe(1);                  // exactly once across the request
+      expect(system.content).toContain(MARKER);     // preserved in the system prompt
+      expect(userMsgs.some((m) => m.content.includes(MARKER))).toBe(false); // not in the user turn
+      expect(userMsgs[0].content).toBe('do the thing');
+
+      AgentMemory.clear(agentId);
+    });
+
     it('dedupes tools by bare name so Gemini does not reject duplicate function declarations', async () => {
       // Two MCPs both expose a tool literally named "search" — Replicate
       // and Atlassian on prod. The IDs are unique (mcp:replicate:search vs
