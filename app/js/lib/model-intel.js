@@ -50,15 +50,22 @@ const ModelIntel = (() => {
     if (m.runs % 10 === 0) syncToServer();
   }
 
-  /* ── Auto-select best model ── */
-  function bestModel(bpId, connectedProviderIds) {
+  /* ── Auto-select best model ──
+     `enabledModelIds` is the list of model ids the user has toggled on
+     (Object.keys(enabled_models) — see llm-config/mission-runner/agents).
+     The filter MUST match on model id, not provider name: every caller
+     passes ids like 'claude-4-6-sonnet', while LLM_MODELS[].provider is a
+     provider name ('anthropic'). Matching against `m.provider` never hit,
+     so `available` was always empty and bestModel always returned null —
+     NICE Auto silently fell back to Gemini Flash on every call. */
+  function bestModel(bpId, enabledModelIds) {
     if (!bpId) return null;
     const profile = _data[bpId];
-    const providers = connectedProviderIds || [];
+    const enabled = enabledModelIds || [];
 
-    // Get available models (from connected providers)
+    // Available = the models the user has enabled.
     const available = (typeof LLM_MODELS !== 'undefined' ? LLM_MODELS : [])
-      .filter(m => providers.includes(m.provider));
+      .filter(m => enabled.includes(m.id));
 
     if (!available.length) return null;
 
