@@ -92,9 +92,6 @@ globalThis.State = (() => {
       _data[key] = val;
       (_listeners[key] || []).forEach(fn => fn(val));
     },
-    setBatched: (obj) => {
-      Object.entries(obj).forEach(([k, v]) => globalThis.State.set(k, v));
-    },
     on: (key, fn) => {
       _listeners[key] = _listeners[key] || [];
       _listeners[key].push(fn);

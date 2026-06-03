@@ -47,13 +47,6 @@ describe('State', () => {
     expect(fn).not.toHaveBeenCalled();
   });
 
-  it('should batch set multiple values', () => {
-    State.setBatched({ a: 1, b: 2, c: 3 });
-    expect(State.get('a')).toBe(1);
-    expect(State.get('b')).toBe(2);
-    expect(State.get('c')).toBe(3);
-  });
-
   it('should handle null and false values', () => {
     State.set('nil', null);
     State.set('zero', 0);
