@@ -36,6 +36,18 @@ const MissionsView = (() => {
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
+  /* Whether a mission's Run/Retry control should show. Delegates to
+     MissionRunner.isRunnable (the SSOT — it decides what run(id) dispatches)
+     so the card buttons and Run All agree with the runner. Gating on
+     agent_id alone hid the Run button from catalog-blueprint missions
+     (agent_name only) and from DAG missions (neither id nor name). The
+     fallback covers early boot / tests before MissionRunner loads. */
+  function _isRunnable(m) {
+    if (!m) return false;
+    if (typeof MissionRunner !== 'undefined' && MissionRunner.isRunnable) return MissionRunner.isRunnable(m);
+    return !!(m.agent_id || m.agent_name || m.plan_snapshot?.shape === 'dag');
+  }
+
   function _skeletonRows(n) {
     const r = `<div class="skeleton-list-row"><div class="skeleton-line sk-badge"></div><div style="flex:1"><div class="skeleton-line sk-title"></div></div></div>`;
     return `<div class="skeleton-list">${r.repeat(n || 5)}</div>`;
@@ -182,7 +194,7 @@ const MissionsView = (() => {
     const sorted = [...missions].sort((a, b) => (order[a.status] ?? 4) - (order[b.status] ?? 4) || new Date(b.created_at) - new Date(a.created_at));
 
     // Run All button for queued missions
-    const queuedCount = missions.filter(m => m.status === 'queued' && m.agent_id).length;
+    const queuedCount = missions.filter(m => m.status === 'queued' && _isRunnable(m)).length;
     const runAllHTML = queuedCount > 1 ? `<button class="btn btn-primary btn-sm" id="run-all-btn" style="margin-bottom:12px">⚡ Run All (${queuedCount})</button>` : '';
 
     feed.innerHTML = `${runAllHTML}<div class="mc-card-grid">${sorted.map(m => _renderCard(m, agentMap)).join('')}</div>`;
@@ -238,7 +250,7 @@ const MissionsView = (() => {
     if (runAllBtn) {
       runAllBtn.addEventListener('click', async () => {
         runAllBtn.disabled = true; runAllBtn.textContent = 'Running...';
-        const queued = missions.filter(m => m.status === 'queued' && m.agent_id);
+        const queued = missions.filter(m => m.status === 'queued' && _isRunnable(m));
         for (const m of queued) {
           try { await MissionRunner.run(m.id); } catch (err) { console.error('[Missions] Run All failed for', m.id, err); }
         }
@@ -268,9 +280,9 @@ const MissionsView = (() => {
     const eta = isRunning ? _estimateETA(m) : '';
 
     let actionsHTML = '';
-    if (m.status === 'queued' && (m.agent_id || m.agent_name)) {
+    if (m.status === 'queued' && _isRunnable(m)) {
       actionsHTML = `<button class="btn btn-primary btn-xs task-run-btn" data-id="${m.id}">⚡ Run</button>`;
-    } else if ((m.status === 'failed' || m.status === 'completed' || m.status === 'cancelled') && (m.agent_id || m.agent_name)) {
+    } else if ((m.status === 'failed' || m.status === 'completed' || m.status === 'cancelled') && _isRunnable(m)) {
       actionsHTML = `<button class="btn btn-xs task-retry-btn" data-id="${m.id}">↻ Retry</button>`;
     }
     // Cancel shows only for in-flight states. Soft cancel: flips status to
@@ -627,6 +639,14 @@ const MissionDetailView = (() => {
   const _esc = Utils.esc;
   let _detailChannel = null;
 
+  /* Mirrors MissionsView._isRunnable — delegates to the MissionRunner SSOT
+     so the detail Run/Retry buttons match the card grid and the runner. */
+  function _isRunnable(m) {
+    if (!m) return false;
+    if (typeof MissionRunner !== 'undefined' && MissionRunner.isRunnable) return MissionRunner.isRunnable(m);
+    return !!(m.agent_id || m.agent_name || m.plan_snapshot?.shape === 'dag');
+  }
+
   function render(el, params) {
     const user = State.get('user');
     el.innerHTML = `<div class="loading-state"><p>Loading ${_Nl()}...</p></div>`;
@@ -705,14 +725,14 @@ const MissionDetailView = (() => {
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
               Back to ${_Np()}
             </a>
-            ${mission.status === 'queued' && (mission.agent_id || mission.agent_name) ? `
+            ${mission.status === 'queued' && _isRunnable(mission) ? `
               <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run ${_N()}</button>
             ` : ''}
             ${mission.status === 'review' ? `
               <button class="btn btn-sm btn-primary" id="md-approve" data-id="${id}" style="background:#22c55e;border-color:#22c55e">✓ Approve</button>
               <button class="btn btn-sm" id="md-reject" data-id="${id}" style="color:#f87171">✕ Reject</button>
             ` : ''}
-            ${mission.status === 'failed' && (mission.agent_id || mission.agent_name) ? `
+            ${mission.status === 'failed' && _isRunnable(mission) ? `
               <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry ${_N()}</button>
             ` : ''}
             ${mission.status === 'completed' ? `

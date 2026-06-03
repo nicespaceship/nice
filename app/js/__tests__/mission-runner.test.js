@@ -350,6 +350,23 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     expect(MissionRunner._isDagMission({ plan_snapshot: snap })).toBe(true);
   });
 
+  it('isRunnable accepts simple missions by agent_id OR agent_name', () => {
+    expect(MissionRunner.isRunnable({ agent_id: 'a-uuid' })).toBe(true);
+    // Catalog-blueprint missions carry only agent_name (agent_id is null
+    // because the column is a UUID and a blueprint slug can't be stored).
+    expect(MissionRunner.isRunnable({ agent_id: null, agent_name: 'ResearchBot' })).toBe(true);
+  });
+
+  it('isRunnable accepts DAG missions with no agent_id/agent_name', () => {
+    expect(MissionRunner.isRunnable({ plan_snapshot: { shape: 'dag', nodes: [{}, {}] } })).toBe(true);
+  });
+
+  it('isRunnable rejects missions with nothing to dispatch', () => {
+    expect(MissionRunner.isRunnable({ agent_id: null, agent_name: null })).toBe(false);
+    expect(MissionRunner.isRunnable(null)).toBe(false);
+    expect(MissionRunner.isRunnable({ plan_snapshot: { shape: 'simple', nodes: [{}] } })).toBe(false);
+  });
+
   it('routes Inbox-Captain-shaped mission to review status via gate pause', async () => {
     const planSnapshot = {
       shape: 'dag',

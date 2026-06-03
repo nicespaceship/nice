@@ -491,6 +491,17 @@ const MissionRunner = (() => {
     return nodes.some(n => n && (n.type === 'approval_gate' || n.type === 'persona_dispatch'));
   }
 
+  /* True when run(mission.id) will actually dispatch something: a DAG
+     mission runs through WorkflowEngine; a simple mission resolves an agent
+     by id OR name. SSOT for the views' Run/Retry affordances — gating those
+     on agent_id alone hid the controls from catalog-blueprint missions
+     (agent_name only) and from DAG missions (neither id nor name). */
+  function isRunnable(mission) {
+    if (!mission) return false;
+    if (_isDagMission(mission)) return true;
+    return !!(mission.agent_id || mission.agent_name);
+  }
+
   async function _runDag(mission, user) {
     const missionId = mission.id;
     const snap = mission.plan_snapshot || {};
@@ -1274,6 +1285,7 @@ const MissionRunner = (() => {
     runWithDispatch,
     awardAgentXP,
     getAgentStats,
+    isRunnable,
     _isDagMission,
     _finishDagRun,
     // Exported for unit tests
