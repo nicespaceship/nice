@@ -47,6 +47,16 @@ const IntegrationsView = (() => {
     return mcps.find(c => c.catalog_id && c.catalog_id.startsWith(catalogId + '-'));
   }
 
+  // A persisted connection carries its Supabase row UUID as its id. Rows
+  // created in-session before the next DB hydration keep a synthetic 'mc-…'
+  // id, so a UUID is the signal that there is a server-side row to delete.
+  function _isPersistedId(id) {
+    return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  }
+
+  // connIds with a delete in flight, so a double-click can't re-confirm.
+  const _disconnecting = new Set();
+
   /* ── Demo seed data ───────────────────────────────────────────── */
   function _seedMcpConnections() {
     const sbUrl = typeof SB !== 'undefined' ? SB.url : 'https://zacllshbgmnwsmliteqx.supabase.co';
@@ -834,14 +844,42 @@ const IntegrationsView = (() => {
   function _initiateCfObservabilityOAuth() { _initiateOAuthGeneric('Cloudflare Observability', CF_OBSERVABILITY_OAUTH_URL); }
   function _initiateCfBuildsOAuth()        { _initiateOAuthGeneric('Cloudflare Builds',        CF_BUILDS_OAUTH_URL); }
 
-  function _disconnectMcp(connId, el) {
+  async function _disconnectMcp(connId, el) {
+    if (_disconnecting.has(connId)) return;
     if (!confirm('Disconnect this MCP? All agents will lose access to its tools.')) return;
-    let conns = State.get('mcp_connections') || [];
-    conns = conns.filter(c => c.id !== connId);
-    State.set('mcp_connections', conns);
-    if (connId.includes('-')) SB.db('mcp_connections').remove(connId).catch(() => {});
-    render(el);
-    if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Disconnected', message: 'Connection removed.', type: 'system' });
+    const conns = State.get('mcp_connections') || [];
+    if (!conns.some(c => c.id === connId)) return;
+
+    const drop = () => {
+      State.set('mcp_connections', (State.get('mcp_connections') || []).filter(c => c.id !== connId));
+      render(el);
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Disconnected', message: 'Connection removed.', type: 'system' });
+    };
+
+    // Local-only row (created in-session, never assigned a DB id): there is
+    // nothing server-side to delete, so drop it from State directly.
+    if (!_isPersistedId(connId)) { drop(); return; }
+
+    // Persisted row: mcp-gateway loads this row's OAuth tokens server-side and
+    // keeps invoking the provider until the row is gone. Await the delete and
+    // claim "Disconnected" only once the DB confirms — a silently-failed write
+    // must not leave a revoked-looking integration live for the agents.
+    _disconnecting.add(connId);
+    let ok = false;
+    try {
+      await SB.db('mcp_connections').remove(connId);
+      ok = true;
+    } catch (_) {
+      // Leave the row in State so the card still reads "Connected" — the
+      // truth server-side.
+    } finally {
+      _disconnecting.delete(connId);
+    }
+    if (!ok) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Disconnect failed', message: 'Could not disconnect. The integration is still active, please try again.', type: 'error' });
+      return;
+    }
+    drop();
   }
 
   function _addCustomMcp(e, el) {
@@ -903,7 +941,6 @@ const IntegrationsView = (() => {
     const conns = State.get('mcp_connections') || [];
     const existing = _matchConnection('zapier', conns);
     const user = State.get('user');
-    const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const row = {
       user_id: user && user.id, spaceship_id: 'account', name: 'Zapier',
       server_url: url, transport: catalog.transport, auth_type: 'none',
@@ -915,7 +952,7 @@ const IntegrationsView = (() => {
       // fires the DB trigger that clears any stale last_error breadcrumb.
       const updated = { ...existing, server_url: url, auth_type: 'none', status: 'connected', last_error: null, last_error_at: null };
       State.set('mcp_connections', conns.map(c => (c === existing ? updated : c)));
-      if (user && isUuid(existing.id)) {
+      if (user && _isPersistedId(existing.id)) {
         SB.db('mcp_connections').update(existing.id, { server_url: url, auth_type: 'none', status: 'connected' }).catch(() => {});
       } else if (user) {
         SB.db('mcp_connections').create(row).catch(() => {});
@@ -932,5 +969,5 @@ const IntegrationsView = (() => {
     if (typeof Notify !== 'undefined') Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Enable specific actions at mcp.zapier.com.', type: 'system' });
   }
 
-  return { title, render, MCP_CATALOG };
+  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp };
 })();
