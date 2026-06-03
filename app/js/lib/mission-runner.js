@@ -555,6 +555,16 @@ const MissionRunner = (() => {
     const nodes = Array.isArray(snap.nodes) ? snap.nodes : [];
     const now = new Date().toISOString();
 
+    // Charge the ship's daily budget for the real tokens this execution
+    // consumed, regardless of outcome. The non-DAG path deducts only on
+    // success; DAG runs (completed, failed, paused, cancelled) never reached a
+    // deduction before, so any work they did went uncounted. resumeDag calls
+    // this too, and each execution reports only the tokens its own nodes used,
+    // so multi-step gated runs accumulate without double-counting.
+    if (mission.spaceship_id && typeof ShipBehaviors !== 'undefined' && result.tokensUsed) {
+      ShipBehaviors.deductBudget(mission.spaceship_id, result.tokensUsed);
+    }
+
     if (result.status === 'cancelled') {
       // The UI already flipped status to 'cancelled' when the user clicked
       // Cancel. WorkflowEngine broke out of its loop on the next

@@ -481,6 +481,50 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     expect(Object.keys(row2.node_results)).toContain('c');
   });
 
+  it('deducts the real tokens a completed DAG consumed against the ship budget', async () => {
+    const deductBudget = vi.fn();
+    globalThis.ShipBehaviors = { deductBudget };
+    const origExec = globalThis.ShipLog.execute;
+    globalThis.ShipLog.execute = async () => ({ content: 'ok', metadata: { tokens_used: 25 } });
+    try {
+      await SB.db('mission_runs').create({
+        id: 'm-dag-budget', user_id: userId, spaceship_id: 'ship-1', title: 'Budgeted',
+        status: 'queued', plan_snapshot: { shape: 'dag', nodes: [
+          { id: 'a', type: 'agent', config: { prompt: 'a' } },
+          { id: 'b', type: 'agent', config: { prompt: 'b' } },
+        ], edges: [{ from: 'a', to: 'b' }] },
+      });
+      await MissionRunner.run('m-dag-budget');
+      expect(deductBudget).toHaveBeenCalledTimes(1);
+      expect(deductBudget).toHaveBeenCalledWith('ship-1', 50); // 25 per agent node, real
+    } finally {
+      globalThis.ShipLog.execute = origExec;
+      delete globalThis.ShipBehaviors;
+    }
+  });
+
+  it('deducts tokens when a gated DAG pauses (the path that never charged before)', async () => {
+    const deductBudget = vi.fn();
+    globalThis.ShipBehaviors = { deductBudget };
+    const origExec = globalThis.ShipLog.execute;
+    globalThis.ShipLog.execute = async () => ({ content: 'ok', metadata: { tokens_used: 25 } });
+    try {
+      await SB.db('mission_runs').create({
+        id: 'm-dag-budget-gate', user_id: userId, spaceship_id: 'ship-2', title: 'Gated budget',
+        status: 'queued', plan_snapshot: { shape: 'dag', nodes: [
+          { id: 'triage', type: 'agent', config: { prompt: 'triage' } },
+          { id: 'review', type: 'approval_gate', config: { reason: 'check' } },
+        ], edges: [{ from: 'triage', to: 'review' }] },
+      });
+      const res = await MissionRunner.run('m-dag-budget-gate');
+      expect(res.status).toBe('paused');
+      expect(deductBudget).toHaveBeenCalledWith('ship-2', 25); // only the agent node billed
+    } finally {
+      globalThis.ShipLog.execute = origExec;
+      delete globalThis.ShipBehaviors;
+    }
+  });
+
   it('resumeDag is a no-op on a run that is not paused at a gate', async () => {
     await SB.db('mission_runs').create({
       id: 'm-dag-done', user_id: userId, title: 'Done', status: 'completed',
