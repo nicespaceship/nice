@@ -251,7 +251,8 @@ const MissionRunner = (() => {
             '**Aspect Ratio:** ' + (videoResult.size || '9:16');
           _updateLocalMission(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' });
           SB.db('mission_runs').update(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' }).catch(() => {});
-          if (typeof Gamification !== 'undefined') Gamification.addXP('complete_mission');
+          // No XP here — the run goes to 'review' and XP is awarded once on
+          // approval (see missions.js). Awarding here double-counted the video.
           // Return the result so the chat surface renders the video link.
           // A bare return left callers with `undefined` → "no output" message.
           return { content: resultText, agent: agentBp.name, agentId: agentBp.id, metadata: { type: 'video', model: videoResult.model || 'veo-2', url: videoResult.url } };
