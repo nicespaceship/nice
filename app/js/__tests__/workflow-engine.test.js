@@ -79,6 +79,30 @@ describe('WorkflowEngine — approval_gate', () => {
     expect(res.finalOutput).toMatch(/ran:/);
   });
 
+  it('a node failure is not masked by a later approval gate', async () => {
+    // A node throw sets status=failed but does not break the loop. A gate
+    // reached afterward used to overwrite status to 'paused', so a failed
+    // run was reported as "ready for review". It must stay failed.
+    globalThis.Blueprints = { getAgent: () => null }; // force the unwrapped ShipLog path
+    globalThis.ShipLog = { execute: async () => { throw new Error('LLM down'); } };
+    const workflow = {
+      id: 'wf-fail-gate',
+      nodes: [
+        { id: 'a', type: 'agent', config: { prompt: 'do thing' } },
+        { id: 'gate', type: 'approval_gate', config: { reason: 'Review' } },
+      ],
+      connections: [{ from: 'a', to: 'gate' }],
+    };
+    let gated = false;
+    const res = await WorkflowEngine.execute(workflow, {
+      skipSave: true,
+      onGatePause: () => { gated = true; },
+    });
+    expect(res.status).toBe('failed');
+    expect(res.pausedAt).toBeNull();
+    expect(gated).toBe(false);
+  });
+
   it('_executeApprovalGate falls back to reason when there is no upstream', () => {
     const out = WorkflowEngine._executeApprovalGate({ config: { reason: 'Awaiting captain.' } }, '');
     expect(out.__nice_workflow_pause).toBe(true);
