@@ -146,11 +146,14 @@ const Subscription = (() => {
       if ((r.plan || 'free') === 'pro') plan = 'pro';
       if (Array.isArray(r.addons)) for (const a of r.addons) addonsSet.add(a);
     }
-    // Status priority: past_due surfaces if any row is past_due; otherwise
-    // active if any live row exists; else canceled/first-row status.
+    // Status priority: a live (active/trialing) row means the user is active,
+    // even if a SEPARATE row is in dunning — a past_due add-on must not
+    // downgrade a paid, active Pro user. Surface past_due only when no row is
+    // live; else fall back to the first row's status.
     let status = 'active';
-    if (rows.some((r) => r.status === 'past_due')) status = 'past_due';
-    else if (liveRows.length === 0) status = rows[0].status || 'canceled';
+    if (liveRows.length === 0) {
+      status = rows.some((r) => r.status === 'past_due') ? 'past_due' : (rows[0].status || 'canceled');
+    }
     // Earliest current_period_end across live rows — conservative.
     let currentPeriodEnd = null;
     for (const r of liveRows) {
@@ -571,5 +574,6 @@ const Subscription = (() => {
     handleBillingError,
     handleDowngrade,
     paywallEnabled: _paywallEnabled,
+    _aggregate,
   };
 })();

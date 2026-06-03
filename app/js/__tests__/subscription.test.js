@@ -127,6 +127,44 @@ describe('Subscription.handleBillingError', () => {
   });
 });
 
+describe('Subscription._aggregate (multi-row status)', () => {
+  it('keeps an active Pro user active when a SEPARATE add-on row is past_due', () => {
+    // Regression: subscriptions are multi-row (one Stripe sub per Payment
+    // Link). A past_due Claude add-on must not downgrade a paid, active Pro.
+    const agg = Subscription._aggregate([
+      { plan: 'pro', status: 'active', addons: [] },
+      { plan: 'free', status: 'past_due', addons: ['claude'] },
+    ]);
+    expect(agg.plan).toBe('pro');
+    expect(agg.status).toBe('active');
+    expect(agg.addons).toEqual([]); // the dunning add-on is not a live entitlement
+  });
+
+  it('surfaces past_due only when no row is live', () => {
+    const agg = Subscription._aggregate([
+      { plan: 'free', status: 'past_due', addons: ['claude'] },
+    ]);
+    expect(agg.status).toBe('past_due');
+  });
+
+  it('is active when every entitlement-bearing row is active', () => {
+    const agg = Subscription._aggregate([
+      { plan: 'pro', status: 'active', addons: [] },
+      { plan: 'free', status: 'active', addons: ['claude'] },
+    ]);
+    expect(agg.plan).toBe('pro');
+    expect(agg.status).toBe('active');
+    expect(agg.addons).toEqual(['claude']);
+  });
+
+  it('falls back to the first row status when nothing is live or past_due', () => {
+    const agg = Subscription._aggregate([
+      { plan: 'pro', status: 'canceled', addons: [] },
+    ]);
+    expect(agg.status).toBe('canceled');
+  });
+});
+
 describe('Subscription.getActiveShipLimit (Free = 1, Pro = unlimited)', () => {
   beforeEach(() => {
     globalThis.Notify = { send: vi.fn() };
