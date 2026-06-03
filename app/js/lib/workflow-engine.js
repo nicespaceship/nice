@@ -53,6 +53,10 @@ const WorkflowEngine = (() => {
     // so the un-taken branches stay pruned across a resume.
     workflow._prunedNodes = new Set(Array.isArray(opts.prunedSeed) ? opts.prunedSeed : []);
 
+    // Accumulate real provider-reported tokens across every LLM node, so the
+    // runner can deduct the run's true usage against the ship's daily budget.
+    workflow._tokensUsed = 0;
+
     for (const nodeId of order) {
       const node = workflow.nodes.find(n => n.id === nodeId);
       if (!node) continue;
@@ -154,7 +158,9 @@ const WorkflowEngine = (() => {
 
     // resumePrune = branch/loop decisions to carry into a resume so un-taken
     // paths stay pruned. Empty for linear DAGs (the common gate shape).
-    return { nodeResults, finalOutput, duration, status, pausedAt, resumePrune: [...workflow._prunedNodes] };
+    // tokensUsed = real provider tokens this execution consumed (0 if none
+    // reported), for the runner's budget deduction.
+    return { nodeResults, finalOutput, duration, status, pausedAt, resumePrune: [...workflow._prunedNodes], tokensUsed: workflow._tokensUsed };
   }
 
   function _isGatePause(result) {
@@ -236,6 +242,7 @@ const WorkflowEngine = (() => {
     if (!agent) {
       if (typeof ShipLog !== 'undefined') {
         const r = await ShipLog.execute(_resolveSpaceshipId(workflow), null, finalPrompt);
+        _addTokens(workflow, r && r.metadata);
         return r ? r.content : 'No response';
       }
       return 'ShipLog not available';
@@ -272,6 +279,14 @@ const WorkflowEngine = (() => {
    * (explicit list or any active MCP connection); otherwise falls back to
    * a one-shot ShipLog.execute call.
    */
+  // Add a real executor result's provider tokens to the workflow total. No
+  // estimate: a result without usage metadata contributes 0.
+  function _addTokens(workflow, meta) {
+    if (!workflow || !meta) return;
+    const t = meta.totalTokens || meta.tokens_used || 0;
+    if (t > 0) workflow._tokensUsed = (workflow._tokensUsed || 0) + t;
+  }
+
   async function _runAgent(agent, prompt, workflow) {
     if (!agent) return 'Error: Agent not found';
     if (_agentHasTools(agent) && typeof AgentExecutor !== 'undefined') {
@@ -285,6 +300,7 @@ const WorkflowEngine = (() => {
           spaceshipId: _resolveSpaceshipId(workflow),
           maxSteps: agent?.config?.maxSteps,
         });
+        _addTokens(workflow, r && r.metadata);
         return r?.finalAnswer || 'No response';
       } catch (err) {
         return 'Error: ' + (err?.message || 'Agent execution failed');
@@ -292,6 +308,7 @@ const WorkflowEngine = (() => {
     }
     if (typeof ShipLog !== 'undefined') {
       const r = await ShipLog.execute(_resolveSpaceshipId(workflow), agent, prompt);
+      _addTokens(workflow, r && r.metadata);
       return r ? r.content : 'No response';
     }
     return 'ShipLog not available';

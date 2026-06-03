@@ -368,6 +368,30 @@ describe('WorkflowEngine — tool dispatch via AgentExecutor', () => {
     expect(String(res.nodeResults.get('n'))).toBe('executor:Inbox Captain');
   });
 
+  it('accumulates real provider tokens from agent nodes into tokensUsed', async () => {
+    globalThis.AgentExecutor.execute = async () => ({ finalAnswer: 'ok', steps: [], metadata: { totalTokens: 120 } });
+    globalThis.State.set('agents', [{ id: 'u1', name: 'A', blueprint_id: 'bp-a', config: { tools: ['t'] } }]);
+    const workflow = {
+      id: 'wf-tok',
+      nodes: [
+        { id: 'n1', type: 'agent', config: { blueprintId: 'bp-a', prompt: 'one' } },
+        { id: 'n2', type: 'agent', config: { blueprintId: 'bp-a', prompt: 'two' } },
+      ],
+      connections: [{ from: 'n1', to: 'n2' }],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(res.status).toBe('completed');
+    expect(res.tokensUsed).toBe(240); // 120 per agent node, summed
+  });
+
+  it('reports tokensUsed 0 when the executor gives no usage (no fabricated estimate)', async () => {
+    globalThis.AgentExecutor.execute = async () => ({ finalAnswer: 'ok', steps: [], metadata: {} });
+    globalThis.State.set('agents', [{ id: 'u1', name: 'A', blueprint_id: 'bp-a', config: { tools: ['t'] } }]);
+    const workflow = { id: 'wf-tok0', nodes: [{ id: 'n1', type: 'agent', config: { blueprintId: 'bp-a', prompt: 'x' } }], connections: [] };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(res.tokensUsed).toBe(0);
+  });
+
   it('routes through AgentExecutor when any MCP connection is active, even with no explicit tool list', async () => {
     globalThis.State.set('agents', [{ id: 'u1', name: 'Bare', blueprint_id: 'bp-x', config: {} }]);
     globalThis.State.set('mcp_connections', [{ id: 'mc1', name: 'Gmail', status: 'connected' }]);
