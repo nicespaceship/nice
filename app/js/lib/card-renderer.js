@@ -629,7 +629,11 @@ const CardRenderer = (() => {
     // ── Rarity (unified) ──
     const rarity = isShip ? (bp.rarity || 'Common').toLowerCase() : _getAgentRarity(bp).toLowerCase();
     const rarityLabel = { common:'Common', rare:'Rare', epic:'Epic', legendary:'Legendary', mythic:'Mythic' }[rarity] || 'Common';
-    const rarityColor = (isShip ? SLOT_COLORS : RARITY_COLORS)[bp.rarity || 'Common'] || '#94a3b8';
+    // Color from the resolved rarityLabel, not raw bp.rarity: an agent with no
+    // stored rarity computes a tier via _getAgentRarity, so keying the color
+    // off bp.rarity gave it the grey Common swatch under a "Rare"/"Epic" badge.
+    // For ships rarityLabel === title-cased bp.rarity, so ships are unchanged.
+    const rarityColor = (isShip ? SLOT_COLORS : RARITY_COLORS)[rarityLabel] || '#94a3b8';
 
     // ── Serial ──
     const serial = serialHash(bp.id || bp.name, isShip ? 12 : undefined);
