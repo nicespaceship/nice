@@ -271,6 +271,14 @@ describe('Gamification', () => {
       expect(rarity.color).toBe('#f59e0b');
     });
 
+    it('rarity threshold colors match the BlueprintUtils SSOT', () => {
+      // Guards against the Rare-color drift fixed in this pass — every
+      // gamification rarity color must equal BlueprintUtils.RARITY_COLORS.
+      Gamification.RARITY_THRESHOLDS.forEach(t => {
+        expect(t.color).toBe(BlueprintUtils.RARITY_COLORS[t.name]);
+      });
+    });
+
     // Tier-lookup behaviour after the MODEL_TIERS cleanup. Pre-cleanup
     // the table held 11 stale legacy entries; now lookups canonicalize
     // via LLMConfig and the table holds only the 10 canonical ids +

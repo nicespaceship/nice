@@ -129,7 +129,7 @@ const Gamification = (() => {
     { name: 'Mythic',    min: 14, color: '#ff2d55' },
     { name: 'Legendary', min: 10, color: '#f59e0b' },
     { name: 'Epic',      min: 7,  color: '#a855f7' },
-    { name: 'Rare',      min: 4,  color: '#6366f1' },
+    { name: 'Rare',      min: 4,  color: '#b6dff9' },
     { name: 'Common',    min: 0,  color: '#94a3b8' },
   ];
 
