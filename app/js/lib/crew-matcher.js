@@ -118,12 +118,19 @@ const CrewMatcher = (() => {
     const shipMaxRarity = opts.shipMaxRarity || 'Legendary';
     const canSlot = typeof opts.canSlot === 'function' ? opts.canSlot : null;
     const preassigned = opts.preassigned || {};
+    // Slot indices the caller can't use yet (rank-locked). Never assign them
+    // and never let them consume an agent: the caller discards locked-slot
+    // picks, so a locked slot that grabs the best candidate starves a real
+    // unlocked slot, which then gets padded with a freshly-created agent.
+    const skipSlots = opts.skipSlots instanceof Set ? opts.skipSlots : null;
+    const skip = (i) => !!skipSlots && (skipSlots.has(i) || skipSlots.has(String(i)));
 
     const assignments = {};
     const used = new Set();
 
     // Carry over any pre-assigned slots (e.g. from blueprint legacy crew defs)
     for (let i = 0; i < slotCount; i++) {
+      if (skip(i)) continue;
       const pre = preassigned[i] ?? preassigned[String(i)];
       if (pre) {
         assignments[i] = pre;
@@ -133,7 +140,7 @@ const CrewMatcher = (() => {
 
     // 1. Apply overrides
     for (let i = 0; i < slotCount; i++) {
-      if (assignments[i]) continue;
+      if (skip(i) || assignments[i]) continue;
       const ov = overrides[i] ?? overrides[String(i)];
       if (ov) {
         assignments[i] = ov;
@@ -143,7 +150,7 @@ const CrewMatcher = (() => {
 
     // 2. Match roles for remaining empty slots
     for (let i = 0; i < slotCount; i++) {
-      if (assignments[i]) continue;
+      if (skip(i) || assignments[i]) continue;
       const role = roles[i];
       if (!role) continue;
       const pick = pickAgentForRole(role, agents, { used, shipMaxRarity, canSlot });
@@ -155,7 +162,7 @@ const CrewMatcher = (() => {
 
     // 3. Fill any leftover empty slots with highest-rarity unused agent
     for (let i = 0; i < slotCount; i++) {
-      if (assignments[i]) continue;
+      if (skip(i) || assignments[i]) continue;
       const pick = pickBestUnused(agents, { used, shipMaxRarity, canSlot });
       if (pick) {
         assignments[i] = pick.id;
