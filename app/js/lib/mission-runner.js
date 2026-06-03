@@ -205,7 +205,10 @@ const MissionRunner = (() => {
       const behaviors = ShipBehaviors.getBehaviors(spaceshipId);
       if (behaviors.maxConcurrent > 0) {
         const missions = State.get('missions') || [];
-        const runningCount = missions.filter(m => m.status === 'running').length;
+        // maxConcurrent is a per-ship behavior, so count only this ship's
+        // running missions — a global count let a busy ship wrongly queue
+        // another ship's runs.
+        const runningCount = missions.filter(m => m.status === 'running' && m.spaceship_id === spaceshipId).length;
         if (runningCount >= behaviors.maxConcurrent) {
           const msg = 'Max concurrent missions reached (' + runningCount + '/' + behaviors.maxConcurrent + '). Mission queued — will run when a slot opens.';
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Queued', message: msg, type: 'info' });
