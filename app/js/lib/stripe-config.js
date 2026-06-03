@@ -74,7 +74,7 @@ const StripeConfig = (() => {
       priceId:   'price_1TMN43BTNqh90rCu7dpKyXBI',
       paymentLinkUrl: 'https://buy.stripe.com/6oUcN48ha4Jy6sdbDW33W0a',
       badge: 'Best Value',
-      desc: '+2,500 standard tokens. Best value (17% off).',
+      desc: '+2,500 standard tokens. Best value.',
     },
     'claude-boost': {
       id: 'claude-boost',
@@ -98,7 +98,7 @@ const StripeConfig = (() => {
       priceId:   'price_1TMN4HBTNqh90rCu7L5ZxXaf',
       paymentLinkUrl: 'https://buy.stripe.com/5kQ5kCcxq8ZOaIt7nG33W0c',
       badge: 'Best Value',
-      desc: '+1,250 Claude tokens. Best value (17% off).',
+      desc: '+1,250 Claude tokens. Best value.',
     },
     'premium-boost': {
       id: 'premium-boost',
@@ -122,7 +122,7 @@ const StripeConfig = (() => {
       priceId:   'price_1TMN4WBTNqh90rCuikUw2KLN',
       paymentLinkUrl: 'https://buy.stripe.com/7sY6oG40Ua3SaIteQ833W0e',
       badge: 'Best Value',
-      desc: '+1,250 Premium tokens. Best value (17% off).',
+      desc: '+1,250 Premium tokens. Best value.',
     },
   };
 

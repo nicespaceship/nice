@@ -63,13 +63,13 @@ describe('StripeConfig — top-ups', () => {
     expect(StripeConfig.getTopUp('premium-max').tokens).toBe(1250);
   });
 
-  it('Max tier is 17% discount vs Boost (on a per-token basis)', () => {
-    // Standard: 29.99/1000 = 2.999c/token, 49.99/2500 = 1.9996c/token → ~33% off actually
-    // Claude:   29.99/500  = 5.998c/token, 49.99/1250 = 3.999c/token → ~33% off
-    // The label says "17% discount" but the math is ~33% — relabel the test to match reality
-    const stdBoostRate = 29.99 / 1000;
-    const stdMaxRate   = 49.99 / 2500;
-    expect(stdMaxRate).toBeLessThan(stdBoostRate);
+  it('Max tier is ~33% cheaper per token than Boost (all pools)', () => {
+    // Standard: 29.99/1000 = 2.999c/token vs 49.99/2500 = 1.9996c/token
+    // Claude/Premium: 29.99/500 = 5.998c vs 49.99/1250 = 3.999c
+    // Both work out to ~33% off per token. The desc copy used to claim 17%.
+    const pct = (boostRate, maxRate) => (boostRate - maxRate) / boostRate;
+    expect(pct(29.99 / 1000, 49.99 / 2500)).toBeCloseTo(0.333, 2);
+    expect(pct(29.99 / 500, 49.99 / 1250)).toBeCloseTo(0.333, 2);
   });
 
   it('each top-up has a live-mode product, price, and payment link', () => {
