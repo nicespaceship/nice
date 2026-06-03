@@ -289,6 +289,29 @@ describe('ShipLog', () => {
     it('should not throw on unsubscribe', () => {
       expect(() => ShipLog.unsubscribe()).not.toThrow();
     });
+
+    it('subscribe(null, cb) opens an all-ships channel and fans out across ships', () => {
+      // Regression: the old `if (!spaceshipId ...) return` rejected the null
+      // ("all ships") subscription the Ship's Log view uses, and the channel
+      // closure filtered to the first captured id. Both are fixed here.
+      const origReady = SB.isReady;
+      const origRealtime = SB.realtime;
+      let channelCb = null;
+      SB.isReady = () => true;
+      SB.realtime = { subscribe: (_table, cb) => { channelCb = cb; return { _table }; }, unsubscribe: () => {} };
+      const received = [];
+      try {
+        ShipLog.subscribe(null, (entry) => received.push(entry));
+        expect(typeof channelCb).toBe('function'); // channel created despite null id
+        channelCb({ new: { spaceship_id: 'ship-42', content: 'hi' } });
+        channelCb({ new: { spaceship_id: 'ship-99', content: 'yo' } });
+        expect(received.map(e => e.spaceship_id)).toEqual(['ship-42', 'ship-99']);
+      } finally {
+        ShipLog.unsubscribe();
+        SB.isReady = origReady;
+        SB.realtime = origRealtime;
+      }
+    });
   });
 
   describe('execute', () => {

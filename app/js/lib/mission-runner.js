@@ -252,7 +252,9 @@ const MissionRunner = (() => {
           _updateLocalMission(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' });
           SB.db('mission_runs').update(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' }).catch(() => {});
           if (typeof Gamification !== 'undefined') Gamification.addXP('complete_mission');
-          return;
+          // Return the result so the chat surface renders the video link.
+          // A bare return left callers with `undefined` → "no output" message.
+          return { content: resultText, agent: agentBp.name, agentId: agentBp.id, metadata: { type: 'video', model: videoResult.model || 'veo-2', url: videoResult.url } };
         }
       } catch (videoErr) {
         console.warn('[MissionRunner] Direct video generation failed:', videoErr.message, '— falling back to LLM');
