@@ -2249,11 +2249,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   async function _callDirectLLM(userText, opts = {}) {
     try {
       const edgeResult = await _callEdgeLLM(userText, opts);
-      if (edgeResult) return edgeResult;
+      return edgeResult || null; // null = no edge function configured
     } catch (e) {
-      console.warn('[NICE] Edge LLM call failed:', e.message);
+      // A cancelled in-flight call (a newer send aborted this one) isn't worth
+      // surfacing — swallow it. Real failures (HTTP 5xx, network, provider
+      // error) re-throw so the caller's .catch shows the actual message + a
+      // retry, instead of the misleading "no response / sign in" fallback a
+      // swallowed throw produced for users who were already signed in.
+      if (e && (e.name === 'AbortError' || /abort/i.test(e.message || ''))) return null;
+      throw e;
     }
-    return null; // no edge function → fall back to mock
   }
 
   /* ── Send message ── */
