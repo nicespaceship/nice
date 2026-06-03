@@ -1060,7 +1060,14 @@ const SpaceshipDetailView = (() => {
 
       // Build dashboard HTML (async for ShipLog)
       const dashboardHtml = await _renderDashboard(fleet.id, memberIds, allMissions);
-      const spaceshipClass = typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate() : { id:'dynamic', name:'Ship', slots:[{id:0,maxRarity:'Mythic',label:'Bridge'},{id:1,maxRarity:'Legendary',label:'Ops'}] };
+      // Slots come from the ship's OWN crew defs (real labels, per-slot
+      // rarity, min_class), not the rank-based generic template — matches
+      // schematic.js and the activation wizard. Gamification.getSlotTemplate()
+      // would render 12 generic "Bridge/Ops" slots capped at the viewer's
+      // rank rarity, ignoring what the ship actually defines.
+      const _bu = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
+      const spaceshipClass = _bu ? _bu.getSlotTemplate(fleet)
+        : (typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate() : { id:'dynamic', name:'Ship', slots:[{id:0,maxRarity:'Mythic',label:'Bridge'},{id:1,maxRarity:'Legendary',label:'Ops'}] });
       const assignedIds = new Set(Object.values(fleet.slot_assignments || {}).filter(Boolean));
 
       // Community publish is only offered for user-built ships owned by
