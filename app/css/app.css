@@ -868,12 +868,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 [data-theme="16bit"] .blueprint-card-mini[data-rarity="epic"]      { border-color: #a855f7 !important; }
 [data-theme="16bit"] .blueprint-card-mini[data-rarity="legendary"] { border-color: #f59e0b !important; }
 [data-theme="16bit"] .blueprint-card-mini[data-rarity="mythic"]    { border-color: #ff2d55 !important; }
-/* Case-insensitive fallback (some paths use title case) */
-[data-theme="16bit"] .blueprint-card-mini[data-rarity="Common"]    { border-color: #94a3b8 !important; }
-[data-theme="16bit"] .blueprint-card-mini[data-rarity="Rare"]      { border-color: #6366f1 !important; }
-[data-theme="16bit"] .blueprint-card-mini[data-rarity="Epic"]      { border-color: #a855f7 !important; }
-[data-theme="16bit"] .blueprint-card-mini[data-rarity="Legendary"] { border-color: #f59e0b !important; }
-[data-theme="16bit"] .blueprint-card-mini[data-rarity="Mythic"]    { border-color: #ff2d55 !important; }
 [data-theme="16bit"] .blueprint-card-mini-name {
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
