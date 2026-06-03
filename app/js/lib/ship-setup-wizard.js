@@ -442,6 +442,13 @@ const ShipSetupWizard = (() => {
     const hasSpec = roles.length > 0 || Object.keys(overrides).length > 0;
 
     if (hasSpec && typeof CrewMatcher !== 'undefined') {
+      // Locked slots are discarded below, so tell the matcher to skip them —
+      // otherwise a locked slot consumes the best candidate and the unlocked
+      // slot it would have filled gets starved (then padded on deploy).
+      const lockedSlots = new Set();
+      for (let i = 0; i < sc.slots.length; i++) {
+        if (_isSlotLocked(sc.slots[i])) lockedSlots.add(i);
+      }
       const next = CrewMatcher.assignCrew(
         { roles, overrides },
         {
@@ -450,6 +457,7 @@ const ShipSetupWizard = (() => {
           shipMaxRarity: shipRarity,
           canSlot: _canSlot,
           preassigned: _data.slotAssignments,
+          skipSlots: lockedSlots,
         }
       );
       for (let i = 0; i < sc.slots.length; i++) {

@@ -175,6 +175,29 @@ describe('CrewMatcher.assignCrew', () => {
     expect(out[1]).toBe('eng1');         // engineer match for slot 1
   });
 
+  it('skips locked slot indices: never assigned, never consume an agent', () => {
+    // Two Engineer slots; eng1 (Legendary) and eng2 (Epic) match. With slot 0
+    // locked, slot 1 must get eng1 (the BEST) — not the leftover eng2 — and
+    // slot 0 stays empty. Without skipSlots a locked slot 0 would grab eng1
+    // and the real slot 1 would be starved down to eng2.
+    const out = C.assignCrew(
+      { roles: ['Engineer', 'Engineer'] },
+      { agents, slotCount: 2, canSlot: allowAll, skipSlots: new Set([0]) }
+    );
+    expect(out[0]).toBeUndefined();
+    expect(out[1]).toBe('eng1');
+  });
+
+  it('skipSlots accepts string keys and still fills unlocked slots', () => {
+    const out = C.assignCrew(
+      { roles: ['Captain', 'Engineer', 'Medical'] },
+      { agents, slotCount: 3, canSlot: allowAll, skipSlots: new Set(['1']) }
+    );
+    expect(out[0]).toBe('cap1');
+    expect(out[1]).toBeUndefined();
+    expect(out[2]).toBe('med1');
+  });
+
   it('handles slotCount > roles.length by filling with best unused', () => {
     const out = C.assignCrew(
       { roles: ['Captain'] },
