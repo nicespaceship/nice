@@ -871,7 +871,19 @@ const MissionDetailView = (() => {
     });
 
     // Approve mission (review → completed)
-    document.getElementById('md-approve')?.addEventListener('click', async () => {
+    document.getElementById('md-approve')?.addEventListener('click', async (e) => {
+      // Non-terminal gate: approving advances the DAG instead of completing
+      // it. Resume runs the post-gate nodes (and may pause again at a later
+      // gate). XP waits for the final approval, when no gate remains.
+      if (_isResumableGate(mission) && typeof MissionRunner !== 'undefined' && MissionRunner.resumeDag) {
+        const btn = e.currentTarget;
+        if (btn) btn.disabled = true;
+        try { await MissionRunner.resumeDag(id); }
+        catch (err) { if (typeof Notify !== 'undefined') Notify.send({ title: 'Resume failed', message: err?.message || 'Could not continue the mission.', type: 'error' }); }
+        finally { if (btn) btn.disabled = false; }
+        _loadMission(el, id);
+        return;
+      }
       const now = new Date().toISOString();
       // Award XP at most once per mission, and only if the approval actually
       // persisted. The runner resets approval_status to 'draft' on every
@@ -1129,6 +1141,16 @@ const MissionDetailView = (() => {
     return nodes.some(n => n && (n.type === 'approval_gate' || n.type === 'persona_dispatch'));
   }
 
+  // A mission paused at a NON-terminal gate: approving it should resume the
+  // DAG (run the post-gate nodes) rather than complete the run. A terminal
+  // gate (no downstream edge) returns false, so approval completes as before.
+  function _isResumableGate(m) {
+    if (!m || !m.metadata || m.metadata.dag_status !== 'paused') return false;
+    const pausedAt = m.metadata.paused_at;
+    const edges = (m.plan_snapshot && m.plan_snapshot.edges) || [];
+    return !!pausedAt && edges.some(e => e.from === pausedAt);
+  }
+
   function _nodeStatus(node, nodeResults, missionStatus) {
     if (!node) return 'pending';
     const key = node.id;
@@ -1339,6 +1361,7 @@ const MissionDetailView = (() => {
     destroy,
     // Exposed for unit tests only — DAG inspector pure functions.
     _isDagPlan,
+    _isResumableGate,
     _nodeStatus,
     _renderDagPanel,
   };

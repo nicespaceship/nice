@@ -7,10 +7,11 @@
    Returned `status` values:
      'completed' — all nodes ran, no errors
      'failed'    — at least one node threw
-     'paused'    — an approval_gate suspended the run. The caller is
-                   responsible for persisting the `nodeResults` so far
-                   and re-invoking execute() with the remaining nodes
-                   after the user approves/rejects.
+     'paused'    — an approval_gate suspended the run. The caller persists
+                   `nodeResults` + `resumePrune`, and on approval re-invokes
+                   execute() with `priorResults`/`prunedSeed` seeded; the
+                   approved gate is then skipped as already-done and its
+                   descendants run. Reject terminates the run instead.
 ═══════════════════════════════════════════════════════════════════ */
 
 const WorkflowEngine = (() => {
@@ -22,8 +23,13 @@ const WorkflowEngine = (() => {
   /**
    * Execute a workflow DAG.
    * @param {Object} workflow - { id, name, nodes, connections }
-   * @param {Object} opts - { onNodeStart(node), onNodeComplete(node, result), onError(node, err), onGatePause(node, payload), isCancelled(), skipSave }
-   * @returns {Promise<{ nodeResults: Map, finalOutput: string, duration: number, status: string, pausedAt?: string }>}
+   * @param {Object} opts - { onNodeStart(node), onNodeComplete(node, result), onError(node, err), onGatePause(node, payload), isCancelled(), skipSave, priorResults, prunedSeed }
+   *   priorResults — { nodeId: output } (or Map) from a prior paused run; those
+   *     nodes are treated as done and skipped, so a resume re-runs only what's
+   *     left after an approved gate.
+   *   prunedSeed — node ids pruned by branch/loop decisions in the prior run,
+   *     restored so un-taken paths stay pruned across the resume.
+   * @returns {Promise<{ nodeResults: Map, finalOutput: string, duration: number, status: string, pausedAt?: string, resumePrune: string[] }>}
    */
   async function execute(workflow, opts) {
     opts = opts || {};
@@ -32,15 +38,30 @@ const WorkflowEngine = (() => {
     let status = 'completed';
     let pausedAt = null;
 
+    // Resume support: seed already-computed outputs from a prior paused run.
+    // Both seeds are empty on a fresh run, so behavior is unchanged. Seeded
+    // nodes are skipped below — including the approved gate, so its
+    // descendants run without the gate re-pausing, and pre-gate work is reused.
+    if (opts.priorResults) {
+      const entries = opts.priorResults instanceof Map ? opts.priorResults.entries() : Object.entries(opts.priorResults);
+      for (const [k, v] of entries) nodeResults.set(k, v);
+    }
+
     const order = _topoSort(workflow.nodes, workflow.connections);
 
-    // Track pruned nodes from branch decisions + gate pauses.
-    workflow._prunedNodes = new Set();
+    // Track nodes pruned by branch/loop decisions, seeded from the prior run
+    // so the un-taken branches stay pruned across a resume.
+    workflow._prunedNodes = new Set(Array.isArray(opts.prunedSeed) ? opts.prunedSeed : []);
 
     for (const nodeId of order) {
       const node = workflow.nodes.find(n => n.id === nodeId);
       if (!node) continue;
       if (workflow._prunedNodes.has(nodeId)) continue;
+
+      // Already computed on a prior run (resume): skip without re-running.
+      // This is what lets an approved gate's descendants execute while the
+      // gate itself and all pre-gate work are reused as-is.
+      if (nodeResults.has(nodeId)) continue;
 
       // Cooperative cancel check between nodes. MissionRunner passes
       // isCancelled() that re-reads the DB status; a click on the UI
@@ -78,9 +99,9 @@ const WorkflowEngine = (() => {
           pausedAt = nodeId;
           status = 'paused';
           nodeResults.set(nodeId, result.summary || 'Awaiting approval.');
-          // Prune everything downstream so a later resume can pick up.
-          const descendants = _collectDescendants([nodeId], workflow.connections, null);
-          descendants.forEach(id => { if (id !== nodeId) workflow._prunedNodes.add(id); });
+          // No downstream pruning needed: the loop breaks now, and a resume
+          // re-enters execute() with priorResults seeded — the gate is then
+          // skipped as already-done, so its descendants run.
 
           if (typeof opts.onGatePause === 'function') {
             try { opts.onGatePause(node, result); } catch (e) { /* ignore */ }
@@ -131,7 +152,9 @@ const WorkflowEngine = (() => {
 
     if (!opts.skipSave) _saveRun(workflow, status, startTime, duration, nodeResults);
 
-    return { nodeResults, finalOutput, duration, status, pausedAt };
+    // resumePrune = branch/loop decisions to carry into a resume so un-taken
+    // paths stay pruned. Empty for linear DAGs (the common gate shape).
+    return { nodeResults, finalOutput, duration, status, pausedAt, resumePrune: [...workflow._prunedNodes] };
   }
 
   function _isGatePause(result) {

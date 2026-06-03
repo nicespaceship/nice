@@ -537,7 +537,18 @@ const MissionRunner = (() => {
       return null;
     }
 
+    return _finishDagRun(mission, user, result, nodeResults);
+  }
+
+  /* Persist the terminal/paused outcome of a DAG execution. Shared by the
+     initial run (_runDag) and the post-approval resume (resumeDag), so both
+     converge on one set of status transitions. */
+  async function _finishDagRun(mission, user, result, nodeResults) {
+    const missionId = mission.id;
+    const snap = mission.plan_snapshot || {};
+    const nodes = Array.isArray(snap.nodes) ? snap.nodes : [];
     const now = new Date().toISOString();
+
     if (result.status === 'cancelled') {
       // The UI already flipped status to 'cancelled' when the user clicked
       // Cancel. WorkflowEngine broke out of its loop on the next
@@ -555,26 +566,23 @@ const MissionRunner = (() => {
     }
 
     if (result.status === 'paused') {
-      // Gate fired: pause at status='review' so the existing Missions
-      // review UI takes over. Approval semantics (approve → resume
-      // remaining nodes, reject → terminate) land alongside the S5
-      // node-type pass when we have more than one gate per plan to
-      // worry about. For S3 the gate is the final node, so approve =
-      // complete and reject = cancel.
-      // Safeguard: approve = complete only holds while the gate is terminal.
-      // If a future plan puts nodes AFTER the gate, the engine prunes them and
-      // approval would silently drop them. Fail loud so the resume path gets
-      // built rather than data vanishing without a trace.
-      if (edges.some(e => e.from === result.pausedAt)) {
-        console.warn('[MissionRunner] approval_gate "' + result.pausedAt + '" has downstream nodes that will NOT run on approval — DAG resume is not implemented yet.');
-      }
+      // Gate fired: pause at status='review' so the existing Missions review
+      // UI takes over. node_results + branch_pruned are persisted so approval
+      // can resume the DAG from the gate (MissionRunner.resumeDag), running
+      // the downstream nodes. A terminal gate has no downstream, so approval
+      // there just completes the run.
       await SB.db('mission_runs').update(missionId, {
         status: 'review',
         progress: 100,
         result: result.finalOutput || 'Awaiting captain approval.',
         approval_status: 'draft',
         node_results: nodeResults,
-        metadata: Object.assign({}, mission.metadata || {}, { dag_status: 'paused', paused_at: result.pausedAt, completed_at: now }),
+        metadata: Object.assign({}, mission.metadata || {}, {
+          dag_status: 'paused',
+          paused_at: result.pausedAt,
+          branch_pruned: result.resumePrune || [],
+          completed_at: now,
+        }),
         updated_at: now,
       }).catch(() => {});
       _updateLocalMission(missionId, {
@@ -599,7 +607,7 @@ const MissionRunner = (() => {
       return result;
     }
 
-    // Fully completed DAG with no gate. Two terminal states:
+    // Fully completed DAG. Two terminal states:
     //   - 'completed' for chat-sourced ephemeral runs (user already
     //     saw the answer in the chat monitor — review approval would be
     //     redundant and noisy in the Missions view).
@@ -629,6 +637,72 @@ const MissionRunner = (() => {
       _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
     }
     return result;
+  }
+
+  /* Resume a DAG that paused at an approval gate, after the user approves it.
+     Seeds the persisted node_results so the gate and all prior work are reused
+     (the engine skips already-done nodes), then runs the post-gate nodes. The
+     resume may pause again at a later gate, complete, or fail — _finishDagRun
+     handles each. Reject does NOT come here; it terminates the run. */
+  async function resumeDag(missionId) {
+    if (!missionId) return null;
+    const user = State.get('user');
+    if (!user) return null;
+
+    let mission;
+    try { mission = await SB.db('mission_runs').get(missionId); } catch { return null; }
+    if (!mission) return null;
+    if (mission.status === 'cancelled') return null;
+    // Only a paused gate is resumable; anything else is a no-op so a stray
+    // call can't re-run a completed or failed mission.
+    if (!mission.metadata || mission.metadata.dag_status !== 'paused') return null;
+
+    const snap = mission.plan_snapshot || {};
+    const nodes = Array.isArray(snap.nodes) ? snap.nodes : [];
+    const edges = Array.isArray(snap.edges) ? snap.edges : [];
+    if (!nodes.length) return null;
+
+    const prior = (mission.node_results && typeof mission.node_results === 'object') ? mission.node_results : {};
+    const prunedSeed = Array.isArray(mission.metadata.branch_pruned) ? mission.metadata.branch_pruned : [];
+
+    try {
+      await SB.db('mission_runs').update(missionId, { status: 'running', updated_at: new Date().toISOString() });
+      _updateLocalMission(missionId, { status: 'running' });
+    } catch (err) {
+      console.warn('[MissionRunner] DAG resume status update failed:', err.message);
+    }
+
+    const workflow = { id: missionId, name: mission.title, nodes, connections: edges };
+    const nodeResults = Object.assign({}, prior); // seed for persistence + progress
+    let result;
+    try {
+      result = await WorkflowEngine.execute(workflow, {
+        skipSave: true,
+        priorResults: prior,
+        prunedSeed,
+        isCancelled: () => _isCancelled(missionId),
+        onNodeComplete: (node, output) => {
+          nodeResults[node.id] = output;
+          const nonGate = nodes.filter(n => n.type !== 'approval_gate').length || 1;
+          const done = Object.keys(nodeResults).filter(id => {
+            const n = nodes.find(x => x.id === id);
+            return n && n.type !== 'approval_gate';
+          }).length;
+          const pct = Math.min(10 + Math.round((done / nonGate) * 70), 80);
+          _updateLocalMission(missionId, { progress: pct });
+          SB.db('mission_runs').update(missionId, { progress: pct }).catch(() => {});
+        },
+      });
+    } catch (err) {
+      console.error('[MissionRunner] DAG resume failed:', err.message);
+      const now = new Date().toISOString();
+      await SB.db('mission_runs').update(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure'), updated_at: now }).catch(() => {});
+      _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure') });
+      _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + (err.message || 'Unknown error'));
+      return null;
+    }
+
+    return _finishDagRun(mission, user, result, nodeResults);
   }
 
   /* ── Update local State for immediate UI refresh ── */
@@ -1193,10 +1267,12 @@ const MissionRunner = (() => {
 
   return {
     run,
+    resumeDag,
     runWithDispatch,
     awardAgentXP,
     getAgentStats,
     _isDagMission,
+    _finishDagRun,
     // Exported for unit tests
     _extractDispatches,
     _resolveSlotAgent,
