@@ -663,6 +663,26 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     });
   });
 
+  describe('_stripDispatches', () => {
+    it('leaves a clean synthesized answer unchanged', () => {
+      expect(MissionRunner._stripDispatches('Here is the final summary.')).toBe('Here is the final summary.');
+    });
+
+    it('strips a trailing dispatch token but keeps the prose before it', () => {
+      const text = 'Here is the summary so far. [DISPATCH: sales] Check the pipeline.';
+      expect(MissionRunner._stripDispatches(text)).toBe('Here is the summary so far.');
+    });
+
+    it('strips every dispatch block when the answer is all tokens', () => {
+      expect(MissionRunner._stripDispatches('[DISPATCH: sales] a [DISPATCH: comms] b')).toBe('');
+    });
+
+    it('returns non-string inputs unchanged', () => {
+      expect(MissionRunner._stripDispatches(null)).toBe(null);
+      expect(MissionRunner._stripDispatches(undefined)).toBe(undefined);
+    });
+  });
+
   describe('_isCaptainAgent', () => {
     it('returns false for null', () => {
       expect(MissionRunner._isCaptainAgent(null)).toBe(false);

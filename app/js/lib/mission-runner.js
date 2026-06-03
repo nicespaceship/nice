@@ -845,6 +845,16 @@ const MissionRunner = (() => {
     return results;
   }
 
+  /* Remove [DISPATCH: slot] sub-prompt blocks from a captain response.
+     Safety net for the final synthesis round: if the captain emits a dispatch
+     there (ignoring the "do not dispatch" instruction), the loop exits on the
+     round cap and would otherwise return the raw protocol token to the user.
+     A no-op on an already-synthesized answer (no tokens to strip). */
+  function _stripDispatches(text) {
+    if (!text || typeof text !== 'string') return text;
+    return text.replace(/\[DISPATCH:\s*[^\]]+\][\s\S]*?(?=\[DISPATCH:|$)/gi, '').trim();
+  }
+
   /* Find the crew agent filling a given slot name/role on a ship.
      Resolution order:
        1. role_type match within slotted agents
@@ -1233,6 +1243,18 @@ const MissionRunner = (() => {
       crewContext += (crewContext ? '\n\n' : '') + reports.join('\n\n');
     }
 
+    // The captain can emit a [DISPATCH:] on the final round; the loop has no
+    // round left to absorb it, so strip the raw token before it reaches the
+    // user. No-op when the answer was synthesized cleanly.
+    if (lastResult && typeof lastResult.finalAnswer === 'string') {
+      const cleaned = _stripDispatches(lastResult.finalAnswer);
+      if (cleaned !== lastResult.finalAnswer) {
+        lastResult = {
+          ...lastResult,
+          finalAnswer: cleaned || 'The crew completed their tasks, but the captain did not return a final summary.',
+        };
+      }
+    }
     return lastResult;
   }
 
@@ -1290,6 +1312,7 @@ const MissionRunner = (() => {
     _finishDagRun,
     // Exported for unit tests
     _extractDispatches,
+    _stripDispatches,
     _resolveSlotAgent,
     _resolveByCapability,
     _getAgentCapabilityTags,
