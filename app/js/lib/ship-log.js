@@ -132,15 +132,16 @@ const ShipLog = (() => {
 
   /* ── Subscribe to realtime updates ── */
   function subscribe(spaceshipId, callback) {
-    if (!spaceshipId || !callback) return;
-    _listeners.push({ spaceshipId, callback });
+    if (!callback) return;
+    // A null spaceshipId is a valid "all ships" subscription (the Ship's Log
+    // view uses it). _notifyListeners filters per-listener, so the channel
+    // stays ship-agnostic instead of binding to the first id forever.
+    _listeners.push({ spaceshipId: spaceshipId || null, callback });
 
-    // Supabase realtime
+    // Supabase realtime — one table-wide channel fans out to every listener.
     if (typeof SB !== 'undefined' && SB.isReady() && !_channel) {
       _channel = SB.realtime.subscribe('ship_log', payload => {
-        if (payload.new && payload.new.spaceship_id === spaceshipId) {
-          _notifyListeners(payload.new);
-        }
+        if (payload.new) _notifyListeners(payload.new);
       });
     }
   }
