@@ -336,6 +336,11 @@ const CoreVoice = (() => {
     if (_audio) { _audio.pause(); _audio.src = ''; }
     if (typeof CoreReactor !== 'undefined') CoreReactor.detachAnalyser();
     _cleanup();
+    // Honor the documented contract: onEnd fires on explicit stop() too, so
+    // the caller restores the centerpiece state. Without this a theme swap
+    // mid-clip (nice.js) left jvState stuck on 'speaking' (frozen core).
+    const hook = _endHook; _endHook = null;
+    if (hook) { try { hook(); } catch {} }
   }
 
   function _cleanup() {

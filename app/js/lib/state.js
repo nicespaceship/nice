@@ -7,7 +7,6 @@
  * @typedef {Object} StateStore
  * @property {function(string): *} get — Retrieve a value by key
  * @property {function(string, *): void} set — Set a value and notify subscribers synchronously
- * @property {function(string, *): void} setBatched — Set a value and batch notifications per animation frame
  * @property {function(string, function(*): void): void} on — Subscribe to changes for a key; fires immediately if data exists
  * @property {function(string, function(*): void): void} off — Unsubscribe a listener from a key
  */
@@ -15,8 +14,6 @@
 const State = (() => {
   const _data = {};
   const _subs = {};
-  let _pendingFlush = null;
-  const _pendingKeys = new Set();
 
   /* Scoped subscriptions — auto-cleaned when destroyScoped() is called */
   let _scopedSubs = [];
@@ -26,21 +23,6 @@ const State = (() => {
   function set(key, val) {
     _data[key] = val;
     (_subs[key] || []).forEach(fn => fn(val));
-  }
-
-  /* Batch multiple rapid sets and fire listeners once per frame */
-  function setBatched(key, val) {
-    _data[key] = val;
-    _pendingKeys.add(key);
-    if (!_pendingFlush) {
-      _pendingFlush = requestAnimationFrame(() => {
-        _pendingKeys.forEach(k => {
-          (_subs[k] || []).forEach(fn => fn(_data[k]));
-        });
-        _pendingKeys.clear();
-        _pendingFlush = null;
-      });
-    }
   }
 
   function on(key, fn) {
@@ -86,5 +68,5 @@ const State = (() => {
     tokenBalance: 'token_balance',
   };
 
-  return { get, set, setBatched, on, off, onScoped, destroyScoped, KEYS };
+  return { get, set, on, off, onScoped, destroyScoped, KEYS };
 })();
