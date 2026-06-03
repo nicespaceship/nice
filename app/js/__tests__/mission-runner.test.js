@@ -381,6 +381,36 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     expect(Object.keys(row.node_results)).toContain('review');
   });
 
+  it('warns when an approval_gate has downstream nodes (resume unsupported)', async () => {
+    // Guard for the latent DAG-resume gap: approve = complete only holds while
+    // the gate is terminal. A non-terminal gate must fail loud, not silently
+    // drop the post-gate nodes.
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const planSnapshot = {
+        shape: 'dag',
+        nodes: [
+          { id: 'triage', type: 'agent',         config: { prompt: 'triage' } },
+          { id: 'review', type: 'approval_gate',  config: { reason: 'check' } },
+          { id: 'send',   type: 'notify',         config: { message: 'sent' } },
+        ],
+        edges: [
+          { from: 'triage', to: 'review' },
+          { from: 'review', to: 'send' }, // node AFTER the gate — pruned on pause
+        ],
+      };
+      await SB.db('mission_runs').create({
+        id: 'm-dag-postgate', user_id: userId, title: 'Post-gate plan',
+        status: 'queued', progress: 0, plan_snapshot: planSnapshot,
+      });
+      const res = await MissionRunner.run('m-dag-postgate');
+      expect(res.status).toBe('paused');
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('DAG resume is not implemented'));
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
   it('DAG with no gate still lands in review (awaits captain sign-off)', async () => {
     const planSnapshot = {
       shape: 'dag',

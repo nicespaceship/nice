@@ -561,6 +561,13 @@ const MissionRunner = (() => {
       // node-type pass when we have more than one gate per plan to
       // worry about. For S3 the gate is the final node, so approve =
       // complete and reject = cancel.
+      // Safeguard: approve = complete only holds while the gate is terminal.
+      // If a future plan puts nodes AFTER the gate, the engine prunes them and
+      // approval would silently drop them. Fail loud so the resume path gets
+      // built rather than data vanishing without a trace.
+      if (edges.some(e => e.from === result.pausedAt)) {
+        console.warn('[MissionRunner] approval_gate "' + result.pausedAt + '" has downstream nodes that will NOT run on approval — DAG resume is not implemented yet.');
+      }
       await SB.db('mission_runs').update(missionId, {
         status: 'review',
         progress: 100,
