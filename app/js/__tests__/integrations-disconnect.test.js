@@ -51,12 +51,14 @@ let removeCalls = [];
 let removeImpl = async () => {};
 let createCalls = [];
 let createImpl = async (row) => ({ ...row, id: DB_UUID });
+let updateCalls = [];
+let updateImpl = async (id, changes) => ({ id, name: 'Zapier', catalog_id: 'zapier', available_tools: [], ...changes });
 globalThis.SB = {
   url: 'https://x.supabase.co', client: null, isReady: () => false, isOnline: () => true,
   db: () => ({
     list: async () => [],
     create: async (row) => { createCalls.push(row); return createImpl(row); },
-    update: async () => ({}),
+    update: async (id, changes) => { updateCalls.push({ id, changes }); return updateImpl(id, changes); },
     get: async () => null,
     remove: async (id) => { removeCalls.push(id); return removeImpl(id); },
   }),
@@ -105,6 +107,15 @@ function setupCustomForm(name, url, auth = 'none', transport = 'json-rpc') {
   document.getElementById('mcp-url').value = url;
 }
 
+function setupZapierForm(url) {
+  document.body.innerHTML += `
+    <div id="modal-zapier" class="open"></div>
+    <form id="zapier-form"></form>
+    <div id="zapier-error"></div>
+    <input id="zapier-url">`;
+  document.getElementById('zapier-url').value = url;
+}
+
 beforeEach(() => {
   mockLocalStorage.clear();
   State._reset();
@@ -113,6 +124,8 @@ beforeEach(() => {
   removeImpl = async () => {};
   createCalls = [];
   createImpl = async (row) => ({ ...row, id: DB_UUID });
+  updateCalls = [];
+  updateImpl = async (id, changes) => ({ id, name: 'Zapier', catalog_id: 'zapier', available_tools: [], ...changes });
   confirmReturn = true;
   confirmCalls = 0;
   Notify.send.mockClear();
@@ -257,5 +270,65 @@ describe('IntegrationsView._addCustomMcp', () => {
     await IntegrationsView._addCustomMcp(ev, el());
     expect(createCalls).toHaveLength(0);
     expect(document.getElementById('mcp-error').textContent).toMatch(/required/i);
+  });
+});
+
+describe('IntegrationsView._connectZapier', () => {
+  const ev = { preventDefault() {} };
+  const ZURL = 'https://mcp.zapier.com/api/mcp/s/abc/sse';
+
+  it('has a zapier catalog entry to build the connection from', () => {
+    expect(IntegrationsView.MCP_CATALOG.find((m) => m.id === 'zapier')).toBeTruthy();
+  });
+
+  it('rejects a non-zapier url with no DB write', async () => {
+    State.set('user', { id: 'u1' });
+    setupZapierForm('https://evil.example.com/');
+    await IntegrationsView._connectZapier(ev, el());
+    expect(createCalls).toHaveLength(0);
+    expect(document.getElementById('zapier-error').textContent).toMatch(/mcp\.zapier\.com/);
+  });
+
+  it('seeds State from the returned row (real UUID) on a fresh connect', async () => {
+    State.set('user', { id: 'u1' });
+    setupZapierForm(ZURL);
+    await IntegrationsView._connectZapier(ev, el());
+    const conns = State.get('mcp_connections');
+    expect(conns).toHaveLength(1);
+    expect(conns[0].id).toBe(DB_UUID);
+    expect(createCalls[0]).toMatchObject({ catalog_id: 'zapier', server_url: ZURL });
+  });
+
+  it('reconciles an in-session mc- row to the persisted UUID on reconnect (no duplicate)', async () => {
+    State.set('user', { id: 'u1' });
+    seed([{ id: 'mc-9', name: 'Zapier', catalog_id: 'zapier', server_url: 'https://mcp.zapier.com/old', status: 'connected' }]);
+    setupZapierForm(ZURL);
+    await IntegrationsView._connectZapier(ev, el());
+    const conns = State.get('mcp_connections');
+    expect(conns).toHaveLength(1);
+    expect(conns[0].id).toBe(DB_UUID);
+    expect(createCalls).toHaveLength(1);
+  });
+
+  it('updates an existing persisted row in place on reconnect', async () => {
+    State.set('user', { id: 'u1' });
+    seed([{ id: UUID, name: 'Zapier', catalog_id: 'zapier', server_url: 'https://mcp.zapier.com/old', status: 'connected' }]);
+    setupZapierForm(ZURL);
+    await IntegrationsView._connectZapier(ev, el());
+    const conns = State.get('mcp_connections');
+    expect(conns).toHaveLength(1);
+    expect(conns[0].id).toBe(UUID);
+    expect(conns[0].server_url).toBe(ZURL);
+    expect(updateCalls[0].id).toBe(UUID);
+    expect(createCalls).toHaveLength(0);
+  });
+
+  it('leaves State unchanged and warns when the save fails', async () => {
+    createImpl = async () => { throw new Error('insert failed'); };
+    State.set('user', { id: 'u1' });
+    setupZapierForm(ZURL);
+    await IntegrationsView._connectZapier(ev, el());
+    expect(State.get('mcp_connections') || []).toHaveLength(0);
+    expect(document.getElementById('zapier-error').textContent).toMatch(/could not save/i);
   });
 });
