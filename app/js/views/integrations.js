@@ -969,7 +969,7 @@ const IntegrationsView = (() => {
   // provider uses. auth_type is 'none' because the URL token is the
   // credential: the gateway sends no Authorization header and Zapier
   // authenticates the query param.
-  function _connectZapier(e, el) {
+  async function _connectZapier(e, el) {
     e.preventDefault();
     const errEl = document.getElementById('zapier-error');
     const url = (document.getElementById('zapier-url')?.value || '').trim();
@@ -981,36 +981,56 @@ const IntegrationsView = (() => {
     }
 
     const catalog = MCP_CATALOG.find(m => m.id === 'zapier');
-    const conns = State.get('mcp_connections') || [];
-    const existing = _matchConnection('zapier', conns);
+    const existing = _matchConnection('zapier', State.get('mcp_connections') || []);
     const user = State.get('user');
-    const row = {
-      user_id: user && user.id, spaceship_id: 'account', name: 'Zapier',
-      server_url: url, transport: catalog.transport, auth_type: 'none',
-      available_tools: catalog.tools, status: 'connected', catalog_id: 'zapier',
+
+    // Commit a connection object into State, replacing the existing Zapier row
+    // in place (so the card stays one row) or appending a fresh one.
+    const commit = (conn) => {
+      const cur = State.get('mcp_connections') || [];
+      State.set('mcp_connections', existing ? cur.map(c => (c.id === existing.id ? conn : c)) : [...cur, conn]);
+      document.getElementById('modal-zapier')?.classList.remove('open');
+      document.getElementById('zapier-form')?.reset();
+      render(el);
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Enable specific actions at mcp.zapier.com.', type: 'system' });
     };
 
-    if (existing) {
-      // Reconnect in place so the card stays one row. status:'connected'
-      // fires the DB trigger that clears any stale last_error breadcrumb.
-      const updated = { ...existing, server_url: url, auth_type: 'none', status: 'connected', last_error: null, last_error_at: null };
-      State.set('mcp_connections', conns.map(c => (c === existing ? updated : c)));
-      if (user && _isPersistedId(existing.id)) {
-        SB.db('mcp_connections').update(existing.id, { server_url: url, auth_type: 'none', status: 'connected' }).catch(() => {});
-      } else if (user) {
-        SB.db('mcp_connections').create(row).catch(() => {});
-      }
-    } else {
-      const conn = { id: 'mc-' + Date.now(), name: 'Zapier', server_url: url, transport: catalog.transport, auth_type: 'none', available_tools: catalog.tools, status: 'connected', catalog_id: 'zapier', created_at: new Date().toISOString() };
-      State.set('mcp_connections', [...conns, conn]);
-      if (user) SB.db('mcp_connections').create(row).catch(() => {});
+    // Signed out: local-only row, no DB row to reconcile or orphan.
+    if (!user) {
+      commit(existing
+        ? { ...existing, server_url: url, auth_type: 'none', status: 'connected', last_error: null, last_error_at: null }
+        : { id: 'mc-' + Date.now(), name: 'Zapier', server_url: url, transport: catalog.transport, auth_type: 'none', available_tools: catalog.tools, status: 'connected', catalog_id: 'zapier', created_at: new Date().toISOString() });
+      return;
     }
 
-    document.getElementById('modal-zapier')?.classList.remove('open');
-    document.getElementById('zapier-form')?.reset();
-    render(el);
-    if (typeof Notify !== 'undefined') Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Enable specific actions at mcp.zapier.com.', type: 'system' });
+    // Await the write and seed State from the returned row so its id is the
+    // real Supabase UUID. Updating in place only works when the existing row
+    // is already persisted; an in-session mc- row has no DB counterpart yet,
+    // so it must be created (and then replaces the mc- row, not duplicated).
+    if (_connecting.has('zapier')) return;
+    _connecting.add('zapier');
+    let saved;
+    try {
+      if (existing && _isPersistedId(existing.id)) {
+        saved = await SB.db('mcp_connections').update(existing.id, { server_url: url, auth_type: 'none', status: 'connected' });
+      } else {
+        saved = await SB.db('mcp_connections').create({
+          user_id: user.id, spaceship_id: 'account', name: 'Zapier',
+          server_url: url, transport: catalog.transport, auth_type: 'none',
+          available_tools: catalog.tools, status: 'connected', catalog_id: 'zapier',
+        });
+      }
+    } catch (_) {
+      // fall through to the inline error below
+    } finally {
+      _connecting.delete('zapier');
+    }
+    if (!saved) {
+      if (errEl) errEl.textContent = 'Could not save the connection. Please try again.';
+      return;
+    }
+    commit(saved);
   }
 
-  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp, _connectMcp, _addCustomMcp };
+  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp, _connectMcp, _addCustomMcp, _connectZapier };
 })();
