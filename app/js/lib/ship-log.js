@@ -105,10 +105,17 @@ const ShipLog = (() => {
     if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
         const scope = _resolveScope(spaceshipId);
-        const filters = { orderBy: 'created_at', asc: true, limit };
+        // Fetch the most recent N (newest-first + limit), then restore
+        // chronological order so callers get oldest→newest. The previous
+        // asc:true+limit fetched the OLDEST N, which froze the agent's
+        // context window at the start of the conversation and starved the
+        // "recent activity" previews — and disagreed with the local
+        // fallback below (`slice(-limit)` = most recent N).
+        const filters = { orderBy: 'created_at', asc: false, limit };
         if (scope.mission_id)   filters.mission_id   = scope.mission_id;
         if (scope.spaceship_id) filters.spaceship_id = scope.spaceship_id;
-        return await SB.db('ship_log').list(filters);
+        const rows = await SB.db('ship_log').list(filters);
+        return Array.isArray(rows) ? rows.reverse() : (rows || []);
       } catch (err) {
         console.warn('[ShipLog] DB read failed, using local fallback:', err.message);
       }
@@ -171,16 +178,20 @@ const ShipLog = (() => {
     const agentId = agentBlueprint ? agentBlueprint.id : null;
     const agentName = agentBlueprint ? agentBlueprint.name : 'NICE';
 
-    // 1. Log the user message
+    // 1. Read prior context BEFORE logging the new user message. The
+    //    current prompt is appended as the final turn by _buildLLMParams,
+    //    so including the freshly-logged user row in `context` here would
+    //    send it to the model twice.
+    const entries = await getEntries(spaceshipId, 20);
+    const context = buildContext(entries, agentId);
+
+    // 2. Log the user message (after context is captured, before the LLM
+    //    call so a failed call still leaves the turn in the log).
     await append(spaceshipId, {
       agentId: null,
       role:    'user',
       content: prompt,
     });
-
-    // 2. Get prior context
-    const entries = await getEntries(spaceshipId, 20);
-    const context = buildContext(entries, agentId);
 
     // 3. Compute LLM config
     let llmConfig = {};
