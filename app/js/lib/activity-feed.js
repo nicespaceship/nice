@@ -17,7 +17,11 @@ const ActivityFeed = (() => {
     if (typeof SB !== 'undefined' && SB.client) {
       try {
         _subscribeTable('agents', 'agent');
-        _subscribeTable('tasks', 'mission');
+        // `tasks` was renamed to `mission_runs` (20260424020717). Subscribing
+        // to the old name silently delivered nothing, so mission INSERT/UPDATE
+        // events never reached the live feed. mission_runs carries title +
+        // status, which _payloadToEvent reads.
+        _subscribeTable('mission_runs', 'mission');
       } catch (e) {
         console.warn('[ActivityFeed] Realtime subscription failed:', e);
       }
