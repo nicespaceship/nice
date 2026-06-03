@@ -6796,9 +6796,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .rarity-legendary{ color:var(--color-warning); border-color:var(--color-warning)40; }
 .rarity-mythic   { color:#ff2d55; border-color:#ff2d5540; animation: mythic-badge-glow 6s linear infinite; }
 
-/* Agent Progression Badge */
-.agent-prog-badge { font-family:var(--font-b); font-size:var(--text-xs); padding:1px 6px; border-radius:var(--radius); background:var(--accent2,#6366f1); color:#fff; opacity:.85; margin-left:auto; }
-
 /* Card rarity borders — applied via data-rarity attribute */
 .blueprint-card[data-rarity="common"],
 .blueprint-card-grid[data-rarity="common"],
@@ -9643,7 +9640,6 @@ body.preview-active .nice-ai {
 /* ─────────────────────────────────────────────────────────────────
    AGENT PROGRESSION
 ───────────────────────────────────────────────────────────────── */
-.agent-prog-badge { font-size:var(--text-xs); padding: 1px 6px; border-radius:var(--radius); background: var(--accent); color: var(--bg); margin-left: 4px; font-weight:var(--fw-medium); opacity: .85; }
 .agent-prog-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 8px 0; }
 .agent-prog-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
 .agent-milestone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
