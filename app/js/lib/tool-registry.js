@@ -387,7 +387,10 @@ const ToolRegistry = (() => {
     const sanitized = expr
       .replace(/\^/g, '**')                          // caret to exponent
       .replace(/PI/gi, String(Math.PI))
-      .replace(/E(?![a-z])/gi, String(Math.E))
+      // Only a STANDALONE e/E is Euler's number. The old /E(?![a-z])/gi
+      // also matched the e in scientific notation (5e3 → 5·Math.E·3), so
+      // word-bound it: 5e3 / 1.5e-2 / ceil are left untouched.
+      .replace(/\b[eE]\b/g, String(Math.E))
       .replace(/sqrt/gi, 'Math.sqrt')
       .replace(/abs/gi, 'Math.abs')
       .replace(/ceil/gi, 'Math.ceil')
