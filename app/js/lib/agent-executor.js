@@ -48,12 +48,7 @@ const AgentExecutor = (() => {
       return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
     }
 
-    // Inject agent memory context into conversation if available
-    const initialText = ctx.memoryContext
-      ? ctx.memoryContext + '\n\n---\n\n' + prompt
-      : prompt;
-
-    const conversationMessages = [{ role: 'user', content: initialText }];
+    const conversationMessages = [{ role: 'user', content: prompt }];
     const steps = [];
     const tokensRef = { value: 0 };
 
@@ -237,14 +232,13 @@ const AgentExecutor = (() => {
     const toolDescriptions = dedupedTools.map(t =>
       t.name + ': ' + (t.description || '')
     ).join('\n');
+    // Agent memory is folded into the system prompt by PromptBuilder.build
+    // (see _buildSystemPrompt). Do NOT also prepend it to the first user
+    // message — that double-sent the entire memory block on every
+    // tool-using turn for any agent with accumulated memory.
     const systemPrompt = _buildSystemPrompt(agentBlueprint, toolDescriptions);
 
-    let memoryContext = '';
-    if (typeof AgentMemory !== 'undefined' && agentBlueprint && agentBlueprint.id) {
-      memoryContext = AgentMemory.buildPromptContext(agentBlueprint.id);
-    }
-
-    return { availableTools, toolsSchema, systemPrompt, memoryContext };
+    return { availableTools, toolsSchema, systemPrompt };
   }
 
   /* ── Shared ReAct loop body ──
@@ -994,12 +988,7 @@ const AgentExecutor = (() => {
         event: isFirstTurn ? 'mission_start' : 'turn_start',
       });
 
-      // Inject memory context only on the very first turn — subsequent
-      // turns rely on the accumulated `history` for continuity.
-      const userText = (isFirstTurn && ctx.memoryContext)
-        ? ctx.memoryContext + '\n\n---\n\n' + userMessage
-        : userMessage;
-      history.push({ role: 'user', content: userText });
+      history.push({ role: 'user', content: userMessage });
 
       const maxSteps = opts.maxSteps || 5;
       const conversationMessages = [...history];
