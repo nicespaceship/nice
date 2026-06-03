@@ -100,15 +100,22 @@ const WorkflowEngine = (() => {
         // Gate pause: stop iteration, mark downstream pruned, return
         // status='paused'. The caller persists state and resumes later.
         if (_isGatePause(result)) {
-          pausedAt = nodeId;
-          status = 'paused';
           nodeResults.set(nodeId, result.summary || 'Awaiting approval.');
-          // No downstream pruning needed: the loop breaks now, and a resume
-          // re-enters execute() with priorResults seeded — the gate is then
-          // skipped as already-done, so its descendants run.
-
-          if (typeof opts.onGatePause === 'function') {
-            try { opts.onGatePause(node, result); } catch (e) { /* ignore */ }
+          // A gate pause must NOT mask an earlier node failure. A node throw
+          // sets status='failed' but does not break the loop, so a gate
+          // reached afterward used to overwrite status to 'paused' — and
+          // _finishDagRun then reported the failed run as "ready for review".
+          // If we already failed, record the gate summary for the inspector
+          // and stop, leaving the run failed (no approval gate to offer).
+          if (status !== 'failed') {
+            pausedAt = nodeId;
+            status = 'paused';
+            // No downstream pruning needed: the loop breaks now, and a resume
+            // re-enters execute() with priorResults seeded — the gate is then
+            // skipped as already-done, so its descendants run.
+            if (typeof opts.onGatePause === 'function') {
+              try { opts.onGatePause(node, result); } catch (e) { /* ignore */ }
+            }
           }
           if (typeof opts.onNodeComplete === 'function') {
             try { opts.onNodeComplete(node, nodeResults.get(nodeId)); } catch (e) { /* ignore */ }
