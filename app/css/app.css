@@ -1645,6 +1645,11 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    that are genuinely light-only (the lavender `.app-main` canvas) keep the
    single `[data-theme="nice"]` selector. */
 [data-theme="nice"] { --border:transparent; }
+/* SSOT for the nice theme's light catalog ground — the lavender canvas on
+   .app-main reused by the sticky filter row and the mobile search/filter
+   sheets. Defined on both nice roots so it resolves during the paint window. */
+html:not([data-theme]),
+[data-theme="nice"] { --app-surface:#e8eef5; }
 /* `:not([data-theme])` covers the brief paint window before nice.js
    re-applies the attribute (nice.js:189 removes it, :206 re-adds it),
    and any failure path where Theme.set bails before re-setting it
@@ -1653,7 +1658,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    pure white. Light-only: the dark variant gets `#0a0a0a` from the
    JS-injected `--bg` token. */
 html:not([data-theme]) .app-main,
-[data-theme="nice"] .app-main { background-color:#e8eef5; }
+[data-theme="nice"] .app-main { background-color:var(--app-surface); }
 :is([data-theme="nice"],[data-theme="nice-dark"]) body::before,
 :is([data-theme="nice"],[data-theme="nice-dark"]) body::after,
 :is([data-theme="nice"],[data-theme="nice-dark"]) .app-main::before,
@@ -10478,7 +10483,7 @@ body.preview-active .nice-ai {
 /* The nice theme keeps its catalog on .app-main's #e8eef5 surface (var(--bg)
    is #ffffff there), so match the surface the cards actually sit on rather
    than the white base. */
-[data-theme="nice"] .bp-filter-controls { background:#e8eef5; }
+[data-theme="nice"] .bp-filter-controls { background:var(--app-surface); }
 /* Drop the scroller's top inset on the catalog so the sticky header pins flush
    under the fixed Bridge sub-tabs — the gap would otherwise leave a strip above
    the pinned bar where scrolling cards peek through. The inset is recreated as
@@ -10571,7 +10576,7 @@ body.preview-active .nice-ai {
     padding:10px 0; margin-bottom:0;
     background:var(--bg);
   }
-  [data-theme="nice"] .bp-mobile-search-row { background:#e8eef5; }
+  [data-theme="nice"] .bp-mobile-search-row { background:var(--app-surface); }
   .bp-mobile-search-row .bp-filter-search { flex:1 1 auto; min-width:0; }
   .bp-mobile-search-row .bp-filter-search .search-input { flex:1 1 auto; width:auto; min-width:0; font-size:var(--text-sm); }
 
@@ -10625,7 +10630,7 @@ body.preview-active .nice-ai {
   /* Match the filter panel to the catalog's main-screen surface: the cards sit
      on .app-main's #e8eef5 in the nice theme (var(--bg) is white), so the sheet
      should read as the same surface, not a white overlay. */
-  [data-theme="nice"] .bp-filter-controls.bp-filter-controls { background:#e8eef5; }
+  [data-theme="nice"] .bp-filter-controls.bp-filter-controls { background:var(--app-surface); }
   /* Shadow only when the sheet is open. When closed the sheet sits
      at translateY(100%) with its top edge flush against the viewport
      bottom — an unconditional `box-shadow: 0 -4px 20px` would cast
