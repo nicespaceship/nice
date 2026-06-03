@@ -243,6 +243,37 @@ describe('ShipLog', () => {
       const entries = await ShipLog.getEntries('ship-empty');
       expect(entries).toEqual([]);
     });
+
+    it('DB path returns the most recent N in chronological order, not the oldest N', async () => {
+      // Regression: getEntries fetched asc:true + limit = the OLDEST N rows,
+      // freezing the agent's context window at the start of the conversation.
+      // It must fetch the most recent N and return them oldest→newest.
+      const origReady = SB.isReady;
+      const origDb = SB.db;
+      const uuid = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+      const rows = [];
+      for (let i = 0; i < 5; i++) {
+        rows.push({ id: 'r' + i, spaceship_id: uuid, content: 'm' + i,
+          created_at: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString() });
+      }
+      SB.isReady = () => true;
+      SB.db = () => ({
+        list: async (filters) => {
+          let r = rows.filter(x => x.spaceship_id === filters.spaceship_id);
+          r = r.slice().sort((a, b) => filters.asc
+            ? new Date(a.created_at) - new Date(b.created_at)
+            : new Date(b.created_at) - new Date(a.created_at));
+          return filters.limit ? r.slice(0, filters.limit) : r;
+        },
+      });
+      try {
+        const entries = await ShipLog.getEntries(uuid, 2);
+        expect(entries.map(e => e.content)).toEqual(['m3', 'm4']);
+      } finally {
+        SB.isReady = origReady;
+        SB.db = origDb;
+      }
+    });
   });
 
   describe('buildContext', () => {
@@ -349,6 +380,45 @@ describe('ShipLog', () => {
       const result = await ShipLog.execute('ship-1', null, 'Hi');
       expect(result.agent).toBe('NICE');
       expect(result.agentId).toBeNull();
+    });
+
+    it('does not send the current prompt to the LLM twice', async () => {
+      // Regression: execute() logged the user turn, then re-read it into the
+      // context window; _buildLLMParams appends the prompt again as the final
+      // turn — so the model saw the current message duplicated. Context must
+      // be read BEFORE the turn is logged.
+      let captured = null;
+      const orig = SB.functions.invoke;
+      SB.functions.invoke = async (_fn, opts) => {
+        captured = opts.body;
+        return { data: { content: 'ok', model: 'mock', usage: { input_tokens: 1, output_tokens: 1 } }, error: null };
+      };
+      try {
+        await ShipLog.execute('ship-dup', { id: 'a1', name: 'Tester', config: {} }, 'Hello there');
+        const userTurns = captured.messages.filter(m => m.role === 'user' && m.content === 'Hello there');
+        expect(userTurns.length).toBe(1);
+      } finally {
+        SB.functions.invoke = orig;
+      }
+    });
+
+    it('includes prior turns once and the current prompt once on a follow-up', async () => {
+      const orig = SB.functions.invoke;
+      let captured = null;
+      // Seed one prior exchange in the local log.
+      await ShipLog.append('ship-followup', { agentId: null, role: 'user', content: 'first question' });
+      await ShipLog.append('ship-followup', { agentId: 'a1', role: 'agent', content: 'first answer' });
+      SB.functions.invoke = async (_fn, opts) => {
+        captured = opts.body;
+        return { data: { content: 'ok', model: 'mock', usage: { input_tokens: 1, output_tokens: 1 } }, error: null };
+      };
+      try {
+        await ShipLog.execute('ship-followup', { id: 'a1', name: 'Tester', config: {} }, 'second question');
+        const contents = captured.messages.map(m => m.content);
+        expect(contents).toEqual(['first question', 'first answer', 'second question']);
+      } finally {
+        SB.functions.invoke = orig;
+      }
     });
 
     it('should include metadata with timing and context info', async () => {
