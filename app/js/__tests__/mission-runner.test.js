@@ -117,6 +117,9 @@ describe('MissionRunner', () => {
     expect(result).not.toBeNull();
     expect(result.content).toContain('Watch Video');
     expect(result.metadata.url).toBe('https://x/v.mp4');
+    // XP is approval-only — the video path must NOT award complete_mission on
+    // generation, or it double-counts when the review is later approved.
+    expect(Gamification.addXP).not.toHaveBeenCalledWith('complete_mission');
     delete globalThis.MediaTools;
   });
 
