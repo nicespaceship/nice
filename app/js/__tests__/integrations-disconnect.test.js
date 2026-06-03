@@ -44,15 +44,18 @@ globalThis.State = (() => {
 
 globalThis.Utils = { esc: (s) => String(s == null ? '' : s) };
 
-// Mock SB — `remove` is controllable per test via `removeImpl`, and every
-// delete id is recorded in `removeCalls`.
+// Mock SB — `create`/`remove` are controllable per test, and every call is
+// recorded so tests can assert what hit the DB.
+const DB_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 let removeCalls = [];
 let removeImpl = async () => {};
+let createCalls = [];
+let createImpl = async (row) => ({ ...row, id: DB_UUID });
 globalThis.SB = {
   url: 'https://x.supabase.co', client: null, isReady: () => false, isOnline: () => true,
   db: () => ({
     list: async () => [],
-    create: async (row) => ({ ...row, id: 'new' }),
+    create: async (row) => { createCalls.push(row); return createImpl(row); },
     update: async () => ({}),
     get: async () => null,
     remove: async (id) => { removeCalls.push(id); return removeImpl(id); },
@@ -78,9 +81,29 @@ function loadScriptGlobal(relativePath) {
 
 loadScriptGlobal('views/integrations.js');
 
+// Every shipped catalog entry is OAuth (redirects away) or Zapier, so the
+// standard non-OAuth create branch is unreachable from the live catalog.
+// Inject a synthetic api-key entry to exercise it.
+IntegrationsView.MCP_CATALOG.push({
+  id: 'teststd', name: 'Test Std', cat: 'other', auth: 'apikey',
+  transport: 'json-rpc', tools: ['t1', 't2'], desc: 'Test standard connection',
+});
+
 const UUID = '3f1aa8c0-1234-4abc-89ab-0123456789ab';
 const el = () => document.getElementById('test-el');
 const seed = (rows) => State.set('mcp_connections', rows);
+
+function setupCustomForm(name, url, auth = 'none', transport = 'json-rpc') {
+  document.body.innerHTML += `
+    <div id="modal-add-mcp" class="open"></div>
+    <form id="mcp-custom-form"></form>
+    <div id="mcp-error"></div>
+    <input id="mcp-name"><input id="mcp-url">
+    <select id="mcp-transport"><option value="${transport}">${transport}</option></select>
+    <select id="mcp-auth"><option value="${auth}">${auth}</option></select>`;
+  document.getElementById('mcp-name').value = name;
+  document.getElementById('mcp-url').value = url;
+}
 
 beforeEach(() => {
   mockLocalStorage.clear();
@@ -88,6 +111,8 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="test-el"></div>';
   removeCalls = [];
   removeImpl = async () => {};
+  createCalls = [];
+  createImpl = async (row) => ({ ...row, id: DB_UUID });
   confirmReturn = true;
   confirmCalls = 0;
   Notify.send.mockClear();
@@ -157,5 +182,80 @@ describe('IntegrationsView._disconnectMcp', () => {
     release();
     await p1;
     expect(State.get('mcp_connections')).toEqual([]);
+  });
+});
+
+describe('IntegrationsView._connectMcp (standard / persisted)', () => {
+  it('seeds State from the returned DB row so the id is the real UUID', async () => {
+    State.set('user', { id: 'u1' });
+    await IntegrationsView._connectMcp('teststd', el());
+    const conns = State.get('mcp_connections');
+    expect(conns).toHaveLength(1);
+    expect(conns[0].id).toBe(DB_UUID);
+    expect(IntegrationsView._isPersistedId(conns[0].id)).toBe(true);
+    expect(createCalls[0]).toMatchObject({ catalog_id: 'teststd', name: 'Test Std', status: 'connected' });
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'MCP Connected' }));
+  });
+
+  it('adds nothing and warns when the insert fails', async () => {
+    createImpl = async () => { throw new Error('insert failed'); };
+    State.set('user', { id: 'u1' });
+    await IntegrationsView._connectMcp('teststd', el());
+    expect(State.get('mcp_connections') || []).toHaveLength(0);
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Connection failed', type: 'error' }));
+  });
+
+  it('keeps a local-only mc- row when signed out (no DB to persist to)', async () => {
+    await IntegrationsView._connectMcp('teststd', el());
+    const conns = State.get('mcp_connections');
+    expect(conns).toHaveLength(1);
+    expect(conns[0].id.startsWith('mc-')).toBe(true);
+    expect(createCalls).toHaveLength(0);
+  });
+
+  it('ignores a re-entrant click while an insert is in flight', async () => {
+    State.set('user', { id: 'u1' });
+    let release;
+    createImpl = () => new Promise((res) => { release = res; });
+    const p1 = IntegrationsView._connectMcp('teststd', el());
+    const p2 = IntegrationsView._connectMcp('teststd', el());
+    await p2;
+    expect(createCalls).toHaveLength(1);
+    release({ id: DB_UUID, name: 'Test Std', catalog_id: 'teststd', status: 'connected', available_tools: ['t1'] });
+    await p1;
+    expect(State.get('mcp_connections')).toHaveLength(1);
+    expect(State.get('mcp_connections')[0].id).toBe(DB_UUID);
+  });
+});
+
+describe('IntegrationsView._addCustomMcp', () => {
+  const ev = { preventDefault() {} };
+
+  it('seeds State from the returned DB row (real UUID, reconciled)', async () => {
+    State.set('user', { id: 'u1' });
+    setupCustomForm('My MCP', 'https://x.example.com');
+    await IntegrationsView._addCustomMcp(ev, el());
+    const conns = State.get('mcp_connections');
+    expect(conns).toHaveLength(1);
+    expect(conns[0].id).toBe(DB_UUID);
+    expect(IntegrationsView._isPersistedId(conns[0].id)).toBe(true);
+    expect(createCalls[0]).toMatchObject({ name: 'My MCP', server_url: 'https://x.example.com', status: 'connected' });
+  });
+
+  it('keeps the modal open with an error when the insert fails', async () => {
+    createImpl = async () => { throw new Error('insert failed'); };
+    State.set('user', { id: 'u1' });
+    setupCustomForm('My MCP', 'https://x.example.com');
+    await IntegrationsView._addCustomMcp(ev, el());
+    expect(State.get('mcp_connections') || []).toHaveLength(0);
+    expect(document.getElementById('mcp-error').textContent).toMatch(/could not save/i);
+  });
+
+  it('validates name and url before any DB write', async () => {
+    State.set('user', { id: 'u1' });
+    setupCustomForm('', '');
+    await IntegrationsView._addCustomMcp(ev, el());
+    expect(createCalls).toHaveLength(0);
+    expect(document.getElementById('mcp-error').textContent).toMatch(/required/i);
   });
 });

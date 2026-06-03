@@ -56,6 +56,9 @@ const IntegrationsView = (() => {
 
   // connIds with a delete in flight, so a double-click can't re-confirm.
   const _disconnecting = new Set();
+  // catalog ids / custom-url keys with a create in flight, so a double-click
+  // can't open a second insert while the first is unconfirmed.
+  const _connecting = new Set();
 
   /* ── Demo seed data ───────────────────────────────────────────── */
   function _seedMcpConnections() {
@@ -557,7 +560,7 @@ const IntegrationsView = (() => {
   const MIRO_OAUTH_URL      = `${NICE_API_BASE}/functions/v1/miro-oauth`;
   const REPLICATE_OAUTH_URL = `${NICE_API_BASE}/functions/v1/replicate-oauth`;
 
-  function _connectMcp(catalogId, el, opts) {
+  async function _connectMcp(catalogId, el, opts) {
     const catalog = MCP_CATALOG.find(m => m.id === catalogId);
     if (!catalog) return;
     if (catalog.comingSoon) {
@@ -636,31 +639,52 @@ const IntegrationsView = (() => {
     }
 
     // Standard connections (API key / bearer / none)
-    const conn = {
-      id: 'mc-' + Date.now(), name: catalog.name,
-      server_url: `https://mcp.${catalogId}.com`, transport: catalog.transport,
-      auth_type: catalog.auth, available_tools: catalog.tools,
-      status: 'connected', catalog_id: catalogId, created_at: new Date().toISOString(),
-    };
-    State.set('mcp_connections', [...conns, conn]);
-
+    const serverUrl = `https://mcp.${catalogId}.com`;
     const user = State.get('user');
-    if (user) {
-      // catalog_id is the SSOT key for matching DB rows against the
-      // front-end catalog. Without it the card grid can't tell which
-      // rows are already connected, and MissionComposer's per-template
-      // gates (e.g. Inbox Captain needs google-gmail) look for a match
-      // that never comes. Persist it on every create going forward;
-      // legacy rows are backfilled in migration 20260423000007.
-      SB.db('mcp_connections').create({
+
+    const announce = (conn) => {
+      State.set('mcp_connections', [...(State.get('mcp_connections') || []), conn]);
+      render(el);
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Connected', message: `${catalog.name} is now available to all your agents.`, type: 'system' });
+    };
+
+    // No account to persist against: keep a local-only row. There is no DB
+    // row, so no orphan is possible.
+    if (!user) {
+      announce({
+        id: 'mc-' + Date.now(), name: catalog.name, server_url: serverUrl,
+        transport: catalog.transport, auth_type: catalog.auth, available_tools: catalog.tools,
+        status: 'connected', catalog_id: catalogId, created_at: new Date().toISOString(),
+      });
+      return;
+    }
+
+    // Persisted connection: await the insert and seed State from the returned
+    // row so its id is the real Supabase UUID, not a synthetic 'mc-…'. State
+    // and DB stay reconciled, so a later disconnect can target the row instead
+    // of orphaning it server-side. catalog_id is the SSOT key matching DB rows
+    // to catalog cards and to MissionComposer's per-template gates (e.g. Inbox
+    // Captain needs google-gmail), so persist it on every create.
+    if (_connecting.has(catalogId)) return;
+    _connecting.add(catalogId);
+    let row;
+    try {
+      row = await SB.db('mcp_connections').create({
         user_id: user.id, spaceship_id: 'account', name: catalog.name,
-        server_url: conn.server_url, transport: catalog.transport,
+        server_url: serverUrl, transport: catalog.transport,
         auth_type: catalog.auth, available_tools: catalog.tools, status: 'connected',
         catalog_id: catalogId,
-      }).catch(() => {});
+      });
+    } catch (_) {
+      // fall through to the failure toast below
+    } finally {
+      _connecting.delete(catalogId);
     }
-    render(el);
-    if (typeof Notify !== 'undefined') Notify.send({ title: 'MCP Connected', message: `${catalog.name} is now available to all your agents.`, type: 'system' });
+    if (!row) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Connection failed', message: `Could not connect ${catalog.name}, please try again.`, type: 'error' });
+      return;
+    }
+    announce(row);
   }
 
   /** Initiate Google OAuth flow — redirects to Google consent screen */
@@ -882,7 +906,7 @@ const IntegrationsView = (() => {
     drop();
   }
 
-  function _addCustomMcp(e, el) {
+  async function _addCustomMcp(e, el) {
     e.preventDefault();
     const errEl = document.getElementById('mcp-error');
     const name = document.getElementById('mcp-name').value.trim();
@@ -891,20 +915,39 @@ const IntegrationsView = (() => {
     const auth = document.getElementById('mcp-auth').value;
     if (!name || !url) { errEl.textContent = 'Name and URL are required.'; return; }
 
-    const conn = {
-      id: 'mc-' + Date.now(), name, server_url: url, transport, auth_type: auth,
-      available_tools: [], status: 'connected', catalog_id: null, created_at: new Date().toISOString(),
+    const finish = (conn) => {
+      State.set('mcp_connections', [...(State.get('mcp_connections') || []), conn]);
+      document.getElementById('modal-add-mcp')?.classList.remove('open');
+      document.getElementById('mcp-custom-form')?.reset();
+      render(el);
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Custom MCP Connected', message: `${name} is now available to all your agents.`, type: 'system' });
     };
-    const conns = State.get('mcp_connections') || [];
-    State.set('mcp_connections', [...conns, conn]);
+
     const user = State.get('user');
-    if (user) {
-      SB.db('mcp_connections').create({ user_id: user.id, spaceship_id: 'account', name, server_url: url, transport, auth_type: auth, available_tools: [], status: 'connected' }).catch(() => {});
+    if (!user) {
+      finish({ id: 'mc-' + Date.now(), name, server_url: url, transport, auth_type: auth, available_tools: [], status: 'connected', catalog_id: null, created_at: new Date().toISOString() });
+      return;
     }
-    document.getElementById('modal-add-mcp')?.classList.remove('open');
-    document.getElementById('mcp-custom-form')?.reset();
-    render(el);
-    if (typeof Notify !== 'undefined') Notify.send({ title: 'Custom MCP Connected', message: `${name} is now available to all your agents.`, type: 'system' });
+
+    // Await the insert so the row enters State with its real Supabase UUID,
+    // reconciled with the DB. A synthetic 'mc-…' id can't be matched back to
+    // the row, so a same-session disconnect would orphan it server-side.
+    const key = 'custom:' + url;
+    if (_connecting.has(key)) return;
+    _connecting.add(key);
+    let row;
+    try {
+      row = await SB.db('mcp_connections').create({ user_id: user.id, spaceship_id: 'account', name, server_url: url, transport, auth_type: auth, available_tools: [], status: 'connected' });
+    } catch (_) {
+      // fall through to the inline error below
+    } finally {
+      _connecting.delete(key);
+    }
+    if (!row) {
+      if (errEl) errEl.textContent = 'Could not save this connection. Please try again.';
+      return;
+    }
+    finish(row);
   }
 
   function _openZapierConnect() {
@@ -969,5 +1012,5 @@ const IntegrationsView = (() => {
     if (typeof Notify !== 'undefined') Notify.send({ title: 'Zapier Connected', message: 'Your Zapier MCP server is now linked. Enable specific actions at mcp.zapier.com.', type: 'system' });
   }
 
-  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp };
+  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp, _connectMcp, _addCustomMcp };
 })();
