@@ -889,20 +889,30 @@ const WorkflowEngine = (() => {
     downstreamIds.forEach(id => workflow._prunedNodes.add(id));
 
     const results = [];
+    const perDownstream = {};
+    downstreamIds.forEach(id => { perDownstream[id] = []; });
     for (const item of items) {
       const itemStr = typeof item === 'string' ? item : JSON.stringify(item);
       for (const downId of downstreamIds) {
         const downNode = workflow.nodes.find(n => n.id === downId);
         if (downNode) {
+          let r;
           try {
-            const r = await _executeNode(downNode, itemStr, nodeResults, workflow);
-            results.push(r);
+            r = await _executeNode(downNode, itemStr, nodeResults, workflow);
           } catch (e) {
-            results.push('Error: ' + (e.message || 'Unknown'));
+            r = 'Error: ' + (e.message || 'Unknown');
           }
+          perDownstream[downId].push(r);
+          results.push(r);
         }
       }
     }
+
+    // Record each direct-downstream child's aggregated per-item output. These
+    // children are pruned from the main loop (above), so without this a node
+    // two hops below the loop reads an empty result from its parent and runs
+    // on no input. Grandchildren execute once on the child's joined output.
+    downstreamIds.forEach(id => { nodeResults.set(id, perDownstream[id].join('\n')); });
 
     return results.join('\n');
   }
