@@ -194,7 +194,11 @@ const McpBridge = (() => {
         throw new Error(data.error + (data.detail ? ': ' + JSON.stringify(data.detail) : ''));
       }
 
-      return data?.result || data;
+      // Return the gateway's `result` even when it is legitimately falsy
+      // (empty string, 0, false). `data?.result || data` fell through to
+      // the whole envelope for those, so the agent's observation became
+      // {result:""} / the metadata object instead of the real empty value.
+      return (data && typeof data === 'object' && 'result' in data) ? data.result : data;
     };
   }
 

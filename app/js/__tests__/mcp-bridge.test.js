@@ -105,6 +105,25 @@ describe('McpBridge.loadTools — short-name resolution for agents', () => {
     expect(ToolRegistry.resolve('gmail_create_draft')).toBeNull();
   });
 
+  describe('executor result unwrapping', () => {
+    it('returns a legitimately falsy result instead of the whole envelope', async () => {
+      McpBridge.loadTools();
+      const tool = ToolRegistry.resolve('gmail_search_messages');
+      // A search that finds nothing returns an empty-string result.
+      SB.functions.invoke = vi.fn(() => Promise.resolve({ data: { result: '' }, error: null }));
+      expect(await tool.execute({ query: 'x' })).toBe('');
+      SB.functions.invoke = vi.fn(() => Promise.resolve({ data: { result: 0 }, error: null }));
+      expect(await tool.execute({ query: 'x' })).toBe(0);
+    });
+
+    it('still returns the whole payload when there is no result field', async () => {
+      McpBridge.loadTools();
+      const tool = ToolRegistry.resolve('gmail_search_messages');
+      SB.functions.invoke = vi.fn(() => Promise.resolve({ data: { messages: [] }, error: null }));
+      expect(await tool.execute({ query: 'x' })).toEqual({ messages: [] });
+    });
+  });
+
   // OAuth callbacks (microsoft-oauth, google-oauth) write the
   // mcp_connections row with available_tools but NO tool_definitions.
   // Without auto-discovery the agent would register every tool with the
