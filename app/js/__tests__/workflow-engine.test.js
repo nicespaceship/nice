@@ -1121,3 +1121,33 @@ describe('WorkflowEngine — command node (command bus, Phase 5)', () => {
     expect(calls[0].params.title).toMatch(/^ran:/);
   });
 });
+
+describe('WorkflowEngine — loop downstream results', () => {
+  it('records each loop child result so a node two hops below the loop is not starved', async () => {
+    // loop prunes + runs its direct child per item, but used to never write
+    // the child's result to nodeResults — so the grandchild (gc), which runs
+    // in the main loop, gathered empty input from its parent.
+    const workflow = {
+      id: 'wf-loop',
+      nodes: [
+        { id: 'src',   type: 'agent',  config: { prompt: 'one\ntwo' } },
+        { id: 'loop',  type: 'loop',   config: { iterateOver: 'lines', maxIterations: 5 } },
+        { id: 'child', type: 'agent',  config: { prompt: 'process' } },
+        { id: 'gc',    type: 'output', config: {} },
+      ],
+      connections: [
+        { from: 'src',  to: 'loop' },
+        { from: 'loop', to: 'child' },
+        { from: 'child', to: 'gc' },
+      ],
+    };
+    const res = await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(res.status).toBe('completed');
+    // The pruned child's aggregated output is recorded...
+    expect(res.nodeResults.get('child')).toBeTruthy();
+    expect(String(res.nodeResults.get('child'))).toMatch(/ran:/);
+    // ...so the grandchild receives it instead of an empty string.
+    expect(res.nodeResults.get('gc')).toBeTruthy();
+    expect(String(res.nodeResults.get('gc'))).toMatch(/ran:/);
+  });
+});
