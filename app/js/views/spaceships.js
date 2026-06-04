@@ -1205,7 +1205,9 @@ const SpaceshipDetailView = (() => {
         });
       }
 
-      _channel = SB.realtime.subscribe('fleets', (payload) => {
+      // Repointed from the dropped `fleets` table to user_spaceships (its
+      // rename) so the detail view live-updates when this ship's row changes.
+      _channel = SB.realtime.subscribe('user_spaceships', (payload) => {
         if (payload.new?.id === id || payload.old?.id === id) _loadSpaceship(el, id);
       });
     } catch (err) {
