@@ -127,7 +127,11 @@ const PromptBuilder = (() => {
      work without further plumbing. */
   function _todayLine() {
     var d = new Date();
-    var iso = d.toISOString().slice(0, 10);
+    // Build the ISO date from LOCAL components so it agrees with the local
+    // weekday below. toISOString() is UTC: near midnight in a non-UTC zone it
+    // returned a date and weekday that contradicted each other (e.g. the UTC
+    // date already on Monday while the local weekday still read Sunday).
+    var iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     var weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
     return 'Today is ' + iso + ' (' + weekday + '). Use this as the current date when reasoning about times, schedules, deadlines, or relative dates like "today", "this week", "yesterday".';
   }

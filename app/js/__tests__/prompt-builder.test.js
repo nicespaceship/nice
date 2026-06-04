@@ -242,7 +242,9 @@ describe('PromptBuilder', () => {
     it('includes today as the first line in ISO + weekday form', () => {
       const result = PromptBuilder.build({ name: 'X', config: { role: 'Ops' } });
       const today = new Date();
-      const iso = today.toISOString().slice(0, 10);
+      // Local components, matching _todayLine (UTC toISOString would diverge
+      // from the local weekday near midnight in non-UTC zones).
+      const iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
       const weekday = today.toLocaleDateString('en-US', { weekday: 'long' });
       expect(result.startsWith('Today is ' + iso + ' (' + weekday + ').')).toBe(true);
     });
