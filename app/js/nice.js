@@ -1526,6 +1526,9 @@ const NICE = (() => {
         // models the moment they land on any view.
         if (typeof Subscription !== 'undefined' && Subscription.init) Subscription.init().catch(() => {});
         if (typeof Notify !== 'undefined') Notify.subscribePush().catch(() => {});
+        // Hydrate the notification store from Supabase so the Alerts page and
+        // PWA badge survive a reload (the store was previously session-only).
+        if (typeof Notify !== 'undefined' && Notify.load) Notify.load(user);
         // Hydrate mcp_connections from DB at boot, not lazily on the
         // Integrations view. Previously State.mcp_connections was only
         // populated when the user visited #/security?tab=integrations,
