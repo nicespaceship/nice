@@ -179,7 +179,7 @@ const MissionsView = (() => {
           <h2>No ${_Np()} Yet</h2>
           <p>Create ${Terminology.article('mission', { lowercase: true })} ${_Nl()} and assign it to an agent.</p>
           <div class="app-empty-acts">
-            <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-new-task').classList.add('open')">
+            <button class="btn btn-primary btn-sm" onclick="location.hash='#/missions/new'">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg> Create ${_N()}
             </button>
           </div>
