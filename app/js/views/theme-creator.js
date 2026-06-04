@@ -419,8 +419,10 @@ const ThemeCreatorView = (() => {
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Settings Saved', message: 'Your GUI settings have been saved.', type: 'system' });
     });
 
-    // Reset
+    // Reset — also clear the persisted settings so the reset survives a reload
+    // (restoreSaved() reads LIVE_KEY on boot and would otherwise resurrect them)
     document.getElementById('tc-reset')?.addEventListener('click', () => {
+      localStorage.removeItem(LIVE_KEY);
       _clearInlineVars();
       _liveValues = {};
       _selectedTheme = null;
