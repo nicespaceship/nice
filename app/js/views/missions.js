@@ -210,40 +210,47 @@ const MissionsView = (() => {
       });
     });
 
-    // Run/Retry
-    feed.addEventListener('click', async (e) => {
-      const runBtn = e.target.closest('.task-run-btn');
-      const retryBtn = e.target.closest('.task-retry-btn');
-      const btn = runBtn || retryBtn;
-      if (!btn || typeof MissionRunner === 'undefined') return;
-      const missionId = btn.dataset.id;
-      btn.disabled = true; btn.textContent = '...';
-      if (retryBtn) { try { await SB.db('mission_runs').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {} }
-      await MissionRunner.run(missionId);
-      _loadMissions();
-    });
+    // Delegated row actions — bind once on the persistent #mc-feed node.
+    // _renderFeed only swaps innerHTML, so binding here every render would
+    // stack a listener per render and fire Run/Cancel/Delete N times.
+    if (!feed.dataset.rowActionsBound) {
+      feed.dataset.rowActionsBound = '1';
 
-    // Per-row Cancel (queued/running only; soft — running loops re-check status)
-    feed.addEventListener('click', async (e) => {
-      const cancelBtn = e.target.closest('.mc-card-cancel');
-      if (!cancelBtn) return;
-      const missionId = cancelBtn.dataset.id;
-      cancelBtn.disabled = true;
-      await _cancelMission(missionId);
-      _loadMissions();
-    });
+      // Run/Retry
+      feed.addEventListener('click', async (e) => {
+        const runBtn = e.target.closest('.task-run-btn');
+        const retryBtn = e.target.closest('.task-retry-btn');
+        const btn = runBtn || retryBtn;
+        if (!btn || typeof MissionRunner === 'undefined') return;
+        const missionId = btn.dataset.id;
+        btn.disabled = true; btn.textContent = '...';
+        if (retryBtn) { try { await SB.db('mission_runs').update(missionId, { status: 'queued', progress: 0, result: null }); } catch {} }
+        await MissionRunner.run(missionId);
+        _loadMissions();
+      });
 
-    // Per-row Delete (confirm-gated, cascades ship_log via FK)
-    feed.addEventListener('click', async (e) => {
-      const delBtn = e.target.closest('.mc-card-delete');
-      if (!delBtn) return;
-      const missionId = delBtn.dataset.id;
-      if (!confirm(`Delete this ${_Nl()}? This also removes all associated ship-log entries and cannot be undone.`)) return;
-      delBtn.disabled = true;
-      _selected.delete(missionId);
-      _renderBatchBar();
-      await _deleteMission(missionId);
-    });
+      // Per-row Cancel (queued/running only; soft — running loops re-check status)
+      feed.addEventListener('click', async (e) => {
+        const cancelBtn = e.target.closest('.mc-card-cancel');
+        if (!cancelBtn) return;
+        const missionId = cancelBtn.dataset.id;
+        cancelBtn.disabled = true;
+        await _cancelMission(missionId);
+        _loadMissions();
+      });
+
+      // Per-row Delete (confirm-gated, cascades ship_log via FK)
+      feed.addEventListener('click', async (e) => {
+        const delBtn = e.target.closest('.mc-card-delete');
+        if (!delBtn) return;
+        const missionId = delBtn.dataset.id;
+        if (!confirm(`Delete this ${_Nl()}? This also removes all associated ship-log entries and cannot be undone.`)) return;
+        delBtn.disabled = true;
+        _selected.delete(missionId);
+        _renderBatchBar();
+        await _deleteMission(missionId);
+      });
+    }
 
     // Run All button
     const runAllBtn = document.getElementById('run-all-btn');
