@@ -204,7 +204,7 @@ const ContentQueue = (() => {
     // Call social MCP via mcp-gateway
     if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
-        const sbUrl = SB.url || 'https://zacllshbgmnwsmliteqx.supabase.co';
+        const sbUrl = SB._url || 'https://zacllshbgmnwsmliteqx.supabase.co';
         const session = await SB.auth().getSession();
         const token = session?.data?.session?.access_token;
         if (!token) {
@@ -259,7 +259,7 @@ const ContentQueue = (() => {
 
     if (typeof SB !== 'undefined' && SB.isReady()) {
       try {
-        const sbUrl = SB.url || 'https://zacllshbgmnwsmliteqx.supabase.co';
+        const sbUrl = SB._url || 'https://zacllshbgmnwsmliteqx.supabase.co';
         const session = await SB.auth().getSession();
         const token = session?.data?.session?.access_token;
         if (!token) return { success: false, error: 'Not authenticated' };
