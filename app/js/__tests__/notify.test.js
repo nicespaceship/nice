@@ -120,3 +120,52 @@ describe('Notify', () => {
     expect(undoBtn).toBeNull();
   });
 });
+
+describe('Notify — notification store + PWA badge', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.getElementById('notify-container')?.remove();
+    State.set('notifications', []);
+  });
+
+  it('send() records the notification in State so Alerts/MessageBar/badge can read it', () => {
+    Notify.send({ title: 'Hi', message: 'there', type: 'system' });
+    const notifs = State.get('notifications');
+    expect(notifs.length).toBe(1);
+    expect(notifs[0]).toMatchObject({ title: 'Hi', message: 'there', type: 'system', read: false });
+    expect(notifs[0].id).toBeTruthy();
+  });
+
+  it('prepends newest-first and marks unread by default', () => {
+    Notify.send({ title: 'First', message: '1', type: 'system' });
+    Notify.send({ title: 'Second', message: '2', type: 'system' });
+    const notifs = State.get('notifications');
+    expect(notifs[0].title).toBe('Second');
+    expect(notifs.filter(n => !n.read).length).toBe(2);
+  });
+
+  it('does not record a notification that settings suppress', () => {
+    localStorage.setItem('nice-settings', JSON.stringify({ notifications: false }));
+    Notify.send({ title: 'Nope', message: 'x', type: 'system' });
+    expect((State.get('notifications') || []).length).toBe(0);
+  });
+
+  it('updateBadge sets the badge to the true unread count and clears at zero (no phantom +1)', () => {
+    const setBadge = vi.fn(() => Promise.resolve());
+    const clearBadge = vi.fn(() => Promise.resolve());
+    navigator.setAppBadge = setBadge;
+    navigator.clearAppBadge = clearBadge;
+    try {
+      State.set('notifications', [{ read: false }, { read: false }, { read: true }]);
+      Notify.updateBadge();
+      expect(setBadge).toHaveBeenLastCalledWith(2);
+
+      State.set('notifications', [{ read: true }, { read: true }]);
+      Notify.updateBadge();
+      expect(clearBadge).toHaveBeenCalled();
+    } finally {
+      delete navigator.setAppBadge;
+      delete navigator.clearAppBadge;
+    }
+  });
+});
