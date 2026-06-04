@@ -5,6 +5,7 @@
 
 const Notify = (() => {
   let _permission = 'default';
+  let _rtChannel = null;
   const VAPID_PUBLIC = 'BFdbPvnALg_WEzURfuiqMbt5bjww9PpxqkHAZgo3t96UCHkiGJts9E--oz5vOfes7htXQwpq-JeW_1fq0qDRLL0';
 
   function init() {
@@ -196,6 +197,60 @@ const Notify = (() => {
         _updateBadge();
       }
     } catch (e) { /* best-effort; the session-only store still works */ }
+    // Go live: stream inserts/updates so the badge and Alerts stay current
+    // across tabs and devices without a reload. Runs even if the hydrate
+    // above failed.
+    _subscribeRealtime(user);
+  }
+
+  // Subscribe to realtime changes on the notifications table for this user.
+  // RLS scopes delivery server-side; the user_id check is defense-in-depth.
+  // Tears down any prior channel first so re-auth never leaks a subscription.
+  function _subscribeRealtime(user) {
+    if (typeof SB === 'undefined' || !SB.realtime || !SB.realtime.subscribe) return;
+    _teardownRealtime();
+    const uid = user && user.id;
+    _rtChannel = SB.realtime.subscribe('notifications', (payload) => {
+      const row = payload && payload.new;
+      if (!row || !row.id) return;
+      if (uid && row.user_id && row.user_id !== uid) return;
+      const evt = payload.eventType || payload.type;
+      if (evt === 'UPDATE') _applyRemoteUpdate(row);
+      else _applyRemoteInsert(row);
+    });
+  }
+
+  // A new row arrived. Skip if we already have it (reconciled in send() or a
+  // prior event). If it echoes our own optimistic insert whose client id has
+  // not reconciled yet, adopt the server id in place instead of duplicating.
+  function _applyRemoteInsert(row) {
+    const list = State.get('notifications') || [];
+    if (list.some(n => n.id === row.id)) return;
+    const rowT = new Date(row.created_at || Date.now()).getTime();
+    const echo = list.find(n =>
+      n.type === row.type && n.title === row.title && n.message === row.message &&
+      Math.abs(new Date(n.created_at).getTime() - rowT) < 15000);
+    if (echo) { echo.id = row.id; State.set('notifications', list); _updateBadge(); return; }
+    State.set('notifications', [row, ...list].slice(0, 50));
+    _updateBadge();
+  }
+
+  // A row changed elsewhere (e.g. marked read in another tab). Sync read-state
+  // for rows we already hold; ignore updates to rows outside our window.
+  function _applyRemoteUpdate(row) {
+    const list = State.get('notifications') || [];
+    const n = list.find(x => x.id === row.id);
+    if (!n || n.read === row.read) return;
+    n.read = row.read;
+    State.set('notifications', list);
+    _updateBadge();
+  }
+
+  function _teardownRealtime() {
+    if (_rtChannel && typeof SB !== 'undefined' && SB.realtime && SB.realtime.unsubscribe) {
+      SB.realtime.unsubscribe(_rtChannel);
+    }
+    _rtChannel = null;
   }
 
   /** Mark one notification read in State + Supabase and refresh the badge. */
@@ -273,5 +328,5 @@ const Notify = (() => {
     return arr;
   }
 
-  return { init, requestPermission, send, load, markRead, markAllRead, subscribePush, updateBadge: _updateBadge };
+  return { init, requestPermission, send, load, markRead, markAllRead, teardownRealtime: _teardownRealtime, subscribePush, updateBadge: _updateBadge };
 })();

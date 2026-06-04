@@ -1546,6 +1546,10 @@ const NICE = (() => {
         if (typeof ModelIntel !== 'undefined' && ModelIntel.syncFromServer) ModelIntel.syncFromServer().catch(() => {});
         // First-run check: show setup wizard for new users with no spaceships
         _checkFirstRun(user);
+      } else {
+        // Tear down the notifications realtime channel on sign-out so we stop
+        // streaming a signed-out session's rows.
+        if (typeof Notify !== 'undefined' && Notify.teardownRealtime) Notify.teardownRealtime();
       }
       // Handle session expiry — prompt re-login
       if (event === 'TOKEN_REFRESHED' && !user) {
