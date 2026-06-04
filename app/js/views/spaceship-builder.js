@@ -361,7 +361,9 @@ const SpaceshipBuilderView = (() => {
     const agents = (typeof Blueprints !== 'undefined' && Blueprints.getActivatedAgents)
       ? Blueprints.getActivatedAgents() : [];
 
-    const rarityOrder = { Common: 0, Rare: 1, Epic: 2, Legendary: 3 };
+    // Use the Gamification SSOT so Mythic agents are ranked (4), not treated
+    // as Common (0) and made eligible for every slot.
+    const rarityOrder = (typeof Gamification !== 'undefined' && Gamification.RARITY_ORDER) || { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
 
     let assigned = 0;
     grid.innerHTML = cls.slots.map((slot, i) => {

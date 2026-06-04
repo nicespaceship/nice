@@ -1222,7 +1222,12 @@ const SpaceshipDetailView = (() => {
   function _renderInventory(allAgents, assignedIds, spaceshipClass) {
     // Only show terminal-activated agents and custom-built agents
     const activatedBpIds = typeof Blueprints !== 'undefined' ? new Set(Blueprints.getActivatedAgentIds()) : new Set();
-    const rarityOrder = ['Common', 'Rare', 'Epic', 'Legendary'];
+    // Ordered low→high from the Gamification SSOT so Mythic crew (and
+    // Mythic-capped slots) are represented — a local list that stopped at
+    // Legendary filtered every Mythic agent out of the dock, and made an
+    // all-Mythic ship's inventory empty.
+    const _ro = (typeof Gamification !== 'undefined' && Gamification.RARITY_ORDER) || { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
+    const rarityOrder = Object.keys(_ro).sort((a, b) => _ro[a] - _ro[b]);
     // Determine max allowed rarity from ship slots
     const maxSlotRarityIdx = spaceshipClass
       ? Math.max(...spaceshipClass.slots.map(s => rarityOrder.indexOf(s.maxRarity)))
