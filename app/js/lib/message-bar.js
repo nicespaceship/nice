@@ -50,7 +50,7 @@ const MessageBar = (() => {
       msgs.push({
         text: n.title ? `${n.title} — ${n.message || ''}` : (n.message || 'Notification'),
         icon: TYPE_ICONS[n.type] || '#icon-bell',
-        route: '#/comms',
+        route: '#/alerts',
         type: n.type || 'system',
         priority: 1,
         timestamp: n.created_at,
@@ -78,7 +78,7 @@ const MessageBar = (() => {
         msgs.push({
           text: evt.description,
           icon: TYPE_ICONS[evt.type] || '#icon-comms',
-          route: '#/comms',
+          route: '#/alerts',
           type: evt.type,
           priority: 1,
           timestamp: evt.timestamp,
@@ -167,7 +167,7 @@ const MessageBar = (() => {
     _messages.unshift({
       text: msg.text,
       icon: msg.icon || '#icon-comms',
-      route: msg.route || '#/comms',
+      route: msg.route || '#/alerts',
       type: msg.type || 'system',
       priority: msg.priority || 0,
       timestamp: msg.timestamp || new Date().toISOString(),
