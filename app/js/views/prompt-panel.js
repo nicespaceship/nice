@@ -2216,9 +2216,18 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         if (payload === '[DONE]') continue;
         try {
           const evt = JSON.parse(payload);
-          if (evt.type === 'content_block_delta' && evt.delta?.text) {
-            full += evt.delta.text;
-            if (opts.onChunk) opts.onChunk(evt.delta.text);
+          // nice-ai streams provider-native SSE: Anthropic content_block_delta,
+          // OpenAI/Gemini choices[].delta.content, or a normalized top-level
+          // content. Match all three (the same shapes ship-log.js reads from
+          // this endpoint) so non-Anthropic models — including the default
+          // free Gemini Flash — don't stream into an empty reply.
+          let deltaText = '';
+          if (evt.type === 'content_block_delta' && typeof evt.delta?.text === 'string') deltaText = evt.delta.text;
+          else if (typeof evt.choices?.[0]?.delta?.content === 'string') deltaText = evt.choices[0].delta.content;
+          else if (typeof evt.content === 'string') deltaText = evt.content;
+          if (deltaText) {
+            full += deltaText;
+            if (opts.onChunk) opts.onChunk(deltaText);
           }
           const nested = evt.message?.usage;
           if (nested) {
