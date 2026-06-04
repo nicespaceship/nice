@@ -256,3 +256,74 @@ describe('Notify — persistence (DB load + durable mark-read)', () => {
     expect(State.get('notifications')[0].id).toBe('server-uuid');
   });
 });
+
+describe('Notify — realtime sync', () => {
+  let origDb, origRealtime, captured, unsubArg;
+  beforeEach(() => {
+    localStorage.clear();
+    document.getElementById('notify-container')?.remove();
+    State.set('notifications', []);
+    State.set('user', { id: 'u1' });
+    origDb = SB.db;
+    origRealtime = SB.realtime;
+    captured = null; unsubArg = undefined;
+    SB.db = () => ({ list: async () => [], create: async () => ({}), update: async () => ({}) });
+    SB.realtime = {
+      subscribe: (table, cb) => { captured = cb; return { __chan: table }; },
+      unsubscribe: (ch) => { unsubArg = ch; },
+    };
+  });
+  afterEach(() => { Notify.teardownRealtime(); SB.db = origDb; SB.realtime = origRealtime; });
+
+  it('load() subscribes to the notifications channel', async () => {
+    await Notify.load({ id: 'u1' });
+    expect(typeof captured).toBe('function');
+  });
+
+  it('a realtime INSERT adds a new notification and bumps the badge', async () => {
+    await Notify.load({ id: 'u1' });
+    captured({ eventType: 'INSERT', new: { id: 's1', user_id: 'u1', type: 'system', title: 'Live', message: 'm', read: false, created_at: new Date().toISOString() } });
+    const notifs = State.get('notifications');
+    expect(notifs.length).toBe(1);
+    expect(notifs[0].id).toBe('s1');
+  });
+
+  it('a realtime INSERT for a row already held is deduped', async () => {
+    const row = { id: 's1', type: 'system', title: 'X', message: 'y', read: false, created_at: new Date().toISOString() };
+    SB.db = () => ({ list: async () => [row], create: async () => ({}), update: async () => ({}) });
+    await Notify.load({ id: 'u1' });
+    captured({ eventType: 'INSERT', new: { ...row, user_id: 'u1' } });
+    expect(State.get('notifications').length).toBe(1);
+  });
+
+  it('a realtime INSERT echoing an optimistic send adopts the server id instead of duplicating', async () => {
+    const now = new Date().toISOString();
+    const optimistic = { id: 'client-uuid', type: 'system', title: 'Hi', message: 'there', read: false, created_at: now };
+    SB.db = () => ({ list: async () => [optimistic], create: async () => ({}), update: async () => ({}) });
+    await Notify.load({ id: 'u1' });
+    captured({ eventType: 'INSERT', new: { id: 'server-uuid', user_id: 'u1', type: 'system', title: 'Hi', message: 'there', read: false, created_at: now } });
+    const notifs = State.get('notifications');
+    expect(notifs.length).toBe(1);
+    expect(notifs[0].id).toBe('server-uuid');
+  });
+
+  it('a realtime row for another user is ignored', async () => {
+    await Notify.load({ id: 'u1' });
+    captured({ eventType: 'INSERT', new: { id: 'x', user_id: 'OTHER', type: 'system', title: 'Nope', message: '', read: false, created_at: new Date().toISOString() } });
+    expect(State.get('notifications').length).toBe(0);
+  });
+
+  it('a realtime UPDATE syncs read-state for a held row (cross-tab)', async () => {
+    const row = { id: 's1', user_id: 'u1', type: 'system', title: 'X', message: '', read: false, created_at: new Date().toISOString() };
+    SB.db = () => ({ list: async () => [row], create: async () => ({}), update: async () => ({}) });
+    await Notify.load({ id: 'u1' });
+    captured({ eventType: 'UPDATE', new: { ...row, read: true } });
+    expect(State.get('notifications')[0].read).toBe(true);
+  });
+
+  it('teardownRealtime unsubscribes the active channel', async () => {
+    await Notify.load({ id: 'u1' });
+    Notify.teardownRealtime();
+    expect(unsubArg).toEqual({ __chan: 'notifications' });
+  });
+});
