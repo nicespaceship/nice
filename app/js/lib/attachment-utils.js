@@ -93,7 +93,56 @@ const AttachmentUtils = (() => {
     return null;
   }
 
-  return { classify, maxBytes, requiredCapability, MAX_COUNT, CAPS, FALLBACK_MODEL };
+  /**
+   * Turn a user turn's typed text + staged attachments into the canonical
+   * content payload for nice-ai. Returns a plain STRING when there is no
+   * media (pure prose, with any text-file attachments inlined as fenced
+   * blocks so even non-vision models can read them), or a PARTS ARRAY
+   * ([{type:'text'}, {type:'image_url'|'document'|'media'}]) when images,
+   * PDFs, audio, or video are attached.
+   *
+   * `wrap` lets the caller envelope the user prose (the prompt panel passes
+   * its prompt-injection guard). It defaults to identity so callers without
+   * an envelope (the agent/ship chat paths) keep their current text behavior
+   * and only gain the media parts. Persist the raw text separately — this is
+   * the LLM payload, not what goes in ship_log.
+   *
+   * @param {string} text
+   * @param {Array<{kind?:string,name?:string,text?:string,dataUrl?:string}>} attachments
+   * @param {function(string):string} [wrap]
+   * @returns {string|Array<object>}
+   */
+  function buildUserContent(text, attachments, wrap) {
+    const w = typeof wrap === 'function' ? wrap : (t) => t;
+    if (!attachments || attachments.length === 0) return w(text);
+    const textPieces = [];
+    const mediaParts = [];
+    for (const a of attachments) {
+      // Legacy attachments (pre-multi-type) had no `kind`; infer from shape.
+      const kind = a.kind || (a.dataUrl ? 'image' : (a.text != null ? 'text' : null));
+      if (kind === 'text') {
+        textPieces.push('Attached file `' + a.name + '`:\n```\n' + a.text + '\n```');
+      } else if (kind === 'pdf') {
+        mediaParts.push({ type: 'document', document: { url: a.dataUrl, name: a.name } });
+      } else if (kind === 'audio' || kind === 'video') {
+        mediaParts.push({ type: 'media', media: { url: a.dataUrl, name: a.name } });
+      } else if (kind === 'image') {
+        mediaParts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
+      }
+    }
+    // Envelope wraps the user's prose AND any inlined text-file contents,
+    // since pasted code/CSV is a known injection vector. Media parts stay as
+    // structured payloads.
+    const merged = [...textPieces, text].filter(Boolean).join('\n\n');
+    const wrapped = merged ? w(merged) : '';
+    if (mediaParts.length === 0) return wrapped; // pure text: keep string form
+    const parts = [];
+    if (wrapped) parts.push({ type: 'text', text: wrapped });
+    parts.push(...mediaParts);
+    return parts;
+  }
+
+  return { classify, maxBytes, requiredCapability, buildUserContent, MAX_COUNT, CAPS, FALLBACK_MODEL };
 })();
 
 if (typeof window !== 'undefined') window.AttachmentUtils = AttachmentUtils;
