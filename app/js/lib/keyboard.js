@@ -100,6 +100,7 @@ const Keyboard = (() => {
     const navRows = SHORTCUTS.filter(s => s.chord[0] === 'g').map(s => _shortcutRow(s)).join('');
     const actionRows = SHORTCUTS.filter(s => s.chord[0] === 'n').map(s => _shortcutRow(s)).join('');
     const globalRows = '<div class="kb-row"><kbd>Cmd</kbd>+<kbd>K</kbd><span>Command Palette</span></div>' +
+      SHORTCUTS.filter(s => s.chord[0] === '⌘').map(s => _shortcutRow(s)).join('') +
       SHORTCUTS.filter(s => s.chord[0] === '?').map(s => _shortcutRow(s)).join('');
 
     el.innerHTML = `
@@ -128,7 +129,10 @@ const Keyboard = (() => {
   }
 
   function _shortcutRow(s) {
-    const keys = s.chord.map(k => '<kbd>' + k.toUpperCase() + '</kbd>').join(' then ');
+    // Modifier shortcuts (⌘/⇧/⌥/⌃) are held together — join with '+'. Sequential
+    // chords (g then h) keep the ' then ' separator.
+    const isModifier = s.chord.some(k => ['⌘', '⇧', '⌥', '⌃'].includes(k));
+    const keys = s.chord.map(k => '<kbd>' + k.toUpperCase() + '</kbd>').join(isModifier ? '+' : ' then ');
     const label = typeof s.label === 'function' ? s.label() : s.label;
     return '<div class="kb-row">' + keys + '<span>' + label + '</span></div>';
   }
@@ -143,6 +147,7 @@ const Keyboard = (() => {
       const navRows = SHORTCUTS.filter(s => s.chord[0] === 'g').map(s => _shortcutRow(s)).join('');
       const actionRows = SHORTCUTS.filter(s => s.chord[0] === 'n').map(s => _shortcutRow(s)).join('');
       const globalRows = '<div class="kb-row"><kbd>Cmd</kbd>+<kbd>K</kbd><span>Command Palette</span></div>' +
+        SHORTCUTS.filter(s => s.chord[0] === '⌘').map(s => _shortcutRow(s)).join('') +
         SHORTCUTS.filter(s => s.chord[0] === '?').map(s => _shortcutRow(s)).join('');
       grid.innerHTML = `
         <div class="kb-section-title">Navigation</div>${navRows}
