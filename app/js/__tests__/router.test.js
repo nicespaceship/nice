@@ -134,7 +134,7 @@ describe('Router query parsing', () => {
     if (!qs) return params;
     qs.split('&').forEach(pair => {
       const [k, v] = pair.split('=');
-      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+      if (k) params[decodeURIComponent(k.replace(/\+/g, ' '))] = decodeURIComponent((v || '').replace(/\+/g, ' '));
     });
     return params;
   }
@@ -167,6 +167,10 @@ describe('Router query parsing', () => {
     expect(parseQuery('?debug')).toEqual({ debug: '' });
     expect(parseQuery('?debug&ref=home')).toEqual({ debug: '', ref: 'home' });
   });
+
+  it('should decode + as a space (form-encoded query)', () => {
+    expect(parseQuery('?utm_campaign=spring+launch')).toEqual({ utm_campaign: 'spring launch' });
+  });
 });
 
 describe('Router hashQuery parsing', () => {
@@ -179,7 +183,7 @@ describe('Router hashQuery parsing', () => {
     const qs = raw.slice(idx + 1);
     qs.split('&').forEach(pair => {
       const [k, v] = pair.split('=');
-      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+      if (k) params[decodeURIComponent(k.replace(/\+/g, ' '))] = decodeURIComponent((v || '').replace(/\+/g, ' '));
     });
     return params;
   }
@@ -200,5 +204,9 @@ describe('Router hashQuery parsing', () => {
 
   it('should handle redirect param', () => {
     expect(parseHashQuery('#/?redirect=/agents/new')).toEqual({ redirect: '/agents/new' });
+  });
+
+  it('should decode + as a space (form-encoded query)', () => {
+    expect(parseHashQuery('#/bridge?q=front+desk')).toEqual({ q: 'front desk' });
   });
 });
