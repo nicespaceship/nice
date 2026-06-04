@@ -2378,7 +2378,7 @@ const BlueprintsView = (() => {
           }
           // Store parsed data for the builder to pick up
           sessionStorage.setItem(Utils.KEYS.importBp, JSON.stringify(bp));
-          if (typeof Notify !== 'undefined') Notify.send('Blueprint parsed — fill in the builder form', 'success');
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Blueprint parsed', message: 'Fill in the builder form to finish.', type: 'success' });
         });
       }
       document.getElementById('bp-import-textarea').value = '';
@@ -3011,7 +3011,7 @@ const BlueprintsView = (() => {
         const bpObj = Object.assign({}, bp, { type: btn.dataset.type || type });
         const md = BlueprintMarkdown.serialize(bpObj);
         navigator.clipboard.writeText(md).then(() => {
-          if (typeof Notify !== 'undefined') Notify.send('Blueprint copied to clipboard', 'success');
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Blueprint copied to clipboard', type: 'success' });
         });
       });
     });

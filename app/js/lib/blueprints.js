@@ -1628,7 +1628,7 @@ const Blueprints = (() => {
     if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
       if (typeof Notify !== 'undefined') {
         var rank = Gamification.getRank();
-        Notify.send('Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), 'warning');
+        Notify.send({ title: 'Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), type: 'warning' });
       }
       return false;
     }
@@ -2058,7 +2058,7 @@ const Blueprints = (() => {
       if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
         if (typeof Notify !== 'undefined') {
           const rank = Gamification.getRank();
-          Notify.send('Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), 'warning');
+          Notify.send({ title: 'Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), type: 'warning' });
         }
         return false;
       }
@@ -2219,7 +2219,7 @@ const Blueprints = (() => {
         catch (e) {
           console.warn('[Blueprints] user_spaceships delete failed:', e.message);
           if (typeof Notify !== 'undefined') {
-            Notify.send('Ship removal didn’t fully sync — reload to reconcile.', 'warning');
+            Notify.send({ title: 'Ship removal didn’t fully sync — reload to reconcile.', type: 'warning' });
           }
         }
       }
@@ -2229,7 +2229,7 @@ const Blueprints = (() => {
           catch (e) {
             console.warn('[Blueprints] user_agents delete failed:', e.message);
             if (typeof Notify !== 'undefined') {
-              Notify.send('Agent removal didn’t fully sync — reload to reconcile.', 'warning');
+              Notify.send({ title: 'Agent removal didn’t fully sync — reload to reconcile.', type: 'warning' });
             }
           }
         }
