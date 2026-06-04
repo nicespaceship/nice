@@ -655,9 +655,16 @@ const CardRenderer = (() => {
 
     // ── Capabilities (same derivation for both types) ──
     const crewDefs = _bu ? _bu.getCrewDefs(bp) : (bp.metadata?.crew || bp._members || []);
-    const caps = bp.caps || bp.metadata?.caps
-      || (isShip && crewDefs.length ? crewDefs.map(m => '⚙ ' + (m.name || m.label || 'Agent')) : [])
-      || (!isShip ? (bp.config?.tools || []).map(t => '⚙ ' + t) : []);
+    // The ship-crew branch returns [] for agents, and [] is truthy, so a
+    // bare || chain short-circuits there and never reaches the agent-tools
+    // branch — agents built with tools but no caps showed no chips. Pick the
+    // type-appropriate fallback explicitly.
+    let caps = bp.caps || bp.metadata?.caps || [];
+    if (!caps.length) {
+      caps = isShip
+        ? (crewDefs.length ? crewDefs.map(m => '⚙ ' + (m.name || m.label || 'Agent')) : [])
+        : (bp.config?.tools || []).map(t => '⚙ ' + t);
+    }
 
     // ── Stats (type-specific data, same 3-4 column layout) ──
     let statLbls, statVals;
