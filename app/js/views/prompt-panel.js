@@ -175,6 +175,7 @@ const PromptPanel = (() => {
   };
 
   const _esc = Utils.esc;
+  const _escAttr = Utils.escAttr;
 
   /* ── Markdown → HTML (runs on raw text, escapes non-code content) ── */
   function _md(text) {
@@ -200,7 +201,11 @@ const PromptPanel = (() => {
     // Italic: *text* or _text_ (but not inside words)
     s = s.replace(/(?<!\w)\*([^*]+?)\*(?!\w)/g, '<em>$1</em>');
     // URLs → clickable links (after escaping so &amp; etc. are already in place)
-    s = s.replace(/(?<![="'])(https?:\/\/[^\s<)]+)/g, '<a href="$1" target="_blank" rel="noopener" class="monitor-link">$1</a>');
+    // s is already HTML-escaped here, but esc() doesn't touch quotes, so a
+    // model-emitted URL with a " would break out of href and inject a handler.
+    // Escape quotes for the attribute; the link text keeps the already-escaped url.
+    s = s.replace(/(?<![="'])(https?:\/\/[^\s<)]+)/g, (m, url) =>
+      `<a href="${url.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}" target="_blank" rel="noopener" class="monitor-link">${url}</a>`);
     // Headers: ### text, ## text, # text
     s = s.replace(/^###\s+(.+)$/gm, '<h4 class="monitor-h">$1</h4>');
     s = s.replace(/^##\s+(.+)$/gm, '<h3 class="monitor-h">$1</h3>');
@@ -1038,9 +1043,9 @@ const PromptPanel = (() => {
             // do carry `dataUrl` — treat them as images.
             const kind = a.kind || (a.dataUrl ? 'image' : 'text');
             if (kind === 'image') {
-              return `<img class="monitor-user-thumb" alt="${_esc(a.name || '')}" src="${_esc(a.dataUrl)}">`;
+              return `<img class="monitor-user-thumb" alt="${_escAttr(a.name || '')}" src="${_esc(a.dataUrl)}">`;
             }
-            return `<div class="monitor-user-thumb monitor-user-thumb-file" title="${_esc(a.name || '')}">
+            return `<div class="monitor-user-thumb monitor-user-thumb-file" title="${_escAttr(a.name || '')}">
               <span class="monitor-user-thumb-icon">${monitorIconFor(kind)}</span>
               <span class="monitor-user-thumb-name">${_esc(a.name || '')}</span>
             </div>`;
@@ -1048,7 +1053,7 @@ const PromptPanel = (() => {
         } else if (m.attachmentPlaceholders && m.attachmentPlaceholders.length) {
           // Reload: full attachment payload was dropped from localStorage; show a ghost chip.
           attachHtml = '<div class="monitor-user-attachments">' + m.attachmentPlaceholders.map(a =>
-            `<div class="monitor-user-thumb monitor-user-thumb-placeholder" title="${_esc(a.name || 'file')}">${monitorIconFor(a.kind)}</div>`
+            `<div class="monitor-user-thumb monitor-user-thumb-placeholder" title="${_escAttr(a.name || 'file')}">${monitorIconFor(a.kind)}</div>`
           ).join('') + '</div>';
         }
         const bubble = m.text ? `<div class="monitor-user-bubble">${_esc(m.text)}</div>` : '';
@@ -1080,7 +1085,7 @@ const PromptPanel = (() => {
         let actionsHtml = '';
         if (actions.length) {
           actionsHtml = '<div class="monitor-actions">' + actions.map(a =>
-            `<button class="monitor-action-btn" data-route="${_esc(a.route)}">${_esc(a.label)}</button>`
+            `<button class="monitor-action-btn" data-route="${_escAttr(a.route)}">${_esc(a.label)}</button>`
           ).join('') + '</div>';
         }
 
@@ -1090,7 +1095,7 @@ const PromptPanel = (() => {
         // Error message with retry button
         let retryHtml = '';
         if (m.error && m.retryText) {
-          retryHtml = `<button class="monitor-retry-btn" data-retry="${_esc(m.retryText)}">Retry</button>`;
+          retryHtml = `<button class="monitor-retry-btn" data-retry="${_escAttr(m.retryText)}">Retry</button>`;
         }
 
         const cardClass = m.error ? 'monitor-card monitor-card-error' : 'monitor-card';
@@ -1987,11 +1992,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     row.innerHTML = _pendingAttachments.map(a => {
       const remove = `<button class="nice-ai-attach-remove" data-attach-id="${_esc(a.id)}" aria-label="Remove attachment" title="Remove">×</button>`;
       if (a.kind === 'image') {
-        return `<div class="nice-ai-attach-chip" data-attach-id="${_esc(a.id)}" title="${_esc(a.name)}">
+        return `<div class="nice-ai-attach-chip" data-attach-id="${_esc(a.id)}" title="${_escAttr(a.name)}">
           <img class="nice-ai-attach-thumb" alt="" src="${_esc(a.dataUrl)}">${remove}
         </div>`;
       }
-      return `<div class="nice-ai-attach-chip nice-ai-attach-chip-file" data-attach-id="${_esc(a.id)}" title="${_esc(a.name)}">
+      return `<div class="nice-ai-attach-chip nice-ai-attach-chip-file" data-attach-id="${_esc(a.id)}" title="${_escAttr(a.name)}">
         <div class="nice-ai-attach-file-icon">${iconFor(a.kind)}</div>
         <div class="nice-ai-attach-file-name">${_esc(a.name)}</div>${remove}
       </div>`;
