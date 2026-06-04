@@ -1151,3 +1151,26 @@ describe('WorkflowEngine — loop downstream results', () => {
     expect(String(res.nodeResults.get('gc'))).toMatch(/ran:/);
   });
 });
+
+describe('WorkflowEngine — attachments', () => {
+  it('threads opts.attachments to the agent dispatch via workflow._attachments', async () => {
+    let capturedOpts = null;
+    globalThis.ShipLog = {
+      execute: async (_shipId, _agent, _prompt, opts) => { capturedOpts = opts; return { content: 'ok' }; },
+    };
+    const workflow = { id: 'wf-att', nodes: [{ id: 'a', type: 'agent', config: { prompt: 'describe' } }], connections: [] };
+    const attachments = [{ kind: 'image', name: 'a.png', dataUrl: 'data:image/png;base64,AAA' }];
+    await WorkflowEngine.execute(workflow, { skipSave: true, attachments });
+    expect(capturedOpts?.attachments).toEqual(attachments);
+  });
+
+  it('passes null attachments when none are provided (templated runs unaffected)', async () => {
+    let capturedOpts = null;
+    globalThis.ShipLog = {
+      execute: async (_shipId, _agent, _prompt, opts) => { capturedOpts = opts; return { content: 'ok' }; },
+    };
+    const workflow = { id: 'wf-noatt', nodes: [{ id: 'a', type: 'agent', config: { prompt: 'describe' } }], connections: [] };
+    await WorkflowEngine.execute(workflow, { skipSave: true });
+    expect(capturedOpts.attachments == null).toBe(true);
+  });
+});
