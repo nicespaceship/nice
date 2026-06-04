@@ -568,8 +568,9 @@ const ThemeCreatorView = (() => {
       const saved = JSON.parse(localStorage.getItem(DOCK_STORAGE_KEY));
       if (Array.isArray(saved) && saved.length) return saved;
     } catch {}
-    // Default 11
-    return ['nice','hal-9000','grid','solar','matrix','retro','lcars','pixel','cyberpunk','ocean','sunset'];
+    // Default: the built-in themes — same set Theme.renderDock shows with no
+    // filter. Derived from the THEMES SSOT so it can't drift to dead theme ids.
+    return [...Theme.BUILTIN];
   }
 
   function _saveDockSelection(ids) {
