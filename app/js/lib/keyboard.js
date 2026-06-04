@@ -21,7 +21,7 @@ const Keyboard = (() => {
     { chord: ['g', 'm'], label: _goMissions,       action: () => Router.navigate('#/missions') },
     { chord: ['g', 'b'], label: 'Go Blueprints',   action: () => Router.navigate('#/bridge') },
     { chord: ['g', 'n'], label: 'Go Analytics',    action: () => Router.navigate('#/analytics') },
-    { chord: ['g', 'c'], label: 'Go Comms',        action: () => Router.navigate('#/comms') },
+    { chord: ['g', 'c'], label: 'Go Comms',        action: () => Router.navigate('#/alerts') },
     { chord: ['g', 'v'], label: 'Go Vault',        action: () => Router.navigate('#/vault') },
     { chord: ['g', 'p'], label: 'Go Profile',      action: () => Router.navigate('#/profile') },
     { chord: ['g', 't'], label: 'Go Settings',     action: () => Router.navigate('#/settings') },
