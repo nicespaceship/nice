@@ -51,7 +51,10 @@ const BrowserTools = (() => {
     if (data.error) throw new Error(data.error);
 
     data._ts = Date.now();
-    _pageCache[url] = data;
+    // Don't write selector-filtered / forced refetches into the cache — a
+    // partial page (e.g. browser-extract with a selector) would otherwise
+    // overwrite the full-page entry and poison a later browser-read hit.
+    if (!opts.noCache) _pageCache[url] = data;
     return data;
   }
 
