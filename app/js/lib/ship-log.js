@@ -223,9 +223,9 @@ const ShipLog = (() => {
 
     try {
       if (opts.onChunk && typeof SB !== 'undefined' && SB.functions && SB.functions.invokeStream) {
-        response = await _callLLMStream(agentBlueprint, prompt, context, llmConfig, opts.onChunk);
+        response = await _callLLMStream(agentBlueprint, prompt, context, llmConfig, opts.onChunk, opts.attachments);
       } else {
-        response = await _callLLM(agentBlueprint, prompt, context, llmConfig);
+        response = await _callLLM(agentBlueprint, prompt, context, llmConfig, opts.attachments);
       }
       // Normalize content: Gemini returns string, Anthropic returns [{type:"text",text:"..."}]
       // Unknown shapes (object content, missing fields) fall through to JSON
@@ -307,7 +307,7 @@ const ShipLog = (() => {
   }
 
   /* ── Build LLM request params (shared between stream/non-stream) ── */
-  function _buildLLMParams(blueprint, prompt, context, config) {
+  function _buildLLMParams(blueprint, prompt, context, config, attachments) {
     const role = (blueprint && blueprint.config && blueprint.config.role) || 'General';
     const systemPrompt = typeof PromptBuilder !== 'undefined'
       ? PromptBuilder.build(blueprint)
@@ -323,7 +323,9 @@ const ShipLog = (() => {
         });
       });
     }
-    messages.push({ role: 'user', content: prompt });
+    // Attachments become multimodal parts on the final user turn; the plain
+    // text was already persisted to ship_log by execute().
+    messages.push({ role: 'user', content: AttachmentUtils.buildUserContent(prompt, attachments) });
 
     return {
       model:          config.model || 'gemini-2.5-flash',
@@ -395,10 +397,10 @@ const ShipLog = (() => {
      call failed.
      Auto-fallback: on 503/429/404 walks config.fallbackChain in capability
      order, capped at MAX_FALLBACKS. */
-  async function _callLLM(blueprint, prompt, context, config) {
+  async function _callLLM(blueprint, prompt, context, config, attachments) {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
-    const params = _buildLLMParams(blueprint, prompt, context, config);
+    const params = _buildLLMParams(blueprint, prompt, context, config, attachments);
     const _activity = (typeof LLMActivity !== 'undefined')
       ? LLMActivity.start(params.model, blueprint?.id || blueprint?.name || null)
       : null;
@@ -458,10 +460,10 @@ const ShipLog = (() => {
      chunks have arrived, walks config.fallbackChain (404/429/503, capped
      at MAX_FALLBACKS). Mid-stream errors cannot fall back — partial
      chunks would interleave from two providers. */
-  async function _callLLMStream(blueprint, prompt, context, config, onChunk) {
+  async function _callLLMStream(blueprint, prompt, context, config, onChunk, attachments) {
     if (typeof SB === 'undefined' || !SB.functions) throw new Error('SB.functions not available');
 
-    const params = _buildLLMParams(blueprint, prompt, context, config);
+    const params = _buildLLMParams(blueprint, prompt, context, config, attachments);
     params.stream = true;
 
     const _activity = (typeof LLMActivity !== 'undefined')

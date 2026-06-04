@@ -421,6 +421,41 @@ describe('ShipLog', () => {
       }
     });
 
+    it('sends attachments as multimodal parts on the final user turn', async () => {
+      const orig = SB.functions.invoke;
+      let captured = null;
+      SB.functions.invoke = async (_fn, opts) => {
+        captured = opts.body;
+        return { data: { content: 'ok', model: 'mock', usage: { input_tokens: 1, output_tokens: 1 } }, error: null };
+      };
+      try {
+        const attachments = [{ kind: 'image', name: 'a.png', dataUrl: 'data:image/png;base64,AAA' }];
+        await ShipLog.execute('ship-attach', { id: 'a1', name: 'Tester', config: {} }, 'describe this', { attachments });
+        const lastUser = captured.messages[captured.messages.length - 1];
+        expect(Array.isArray(lastUser.content)).toBe(true);
+        expect(lastUser.content).toContainEqual({ type: 'image_url', image_url: { url: 'data:image/png;base64,AAA' } });
+        expect(lastUser.content.find(p => p.type === 'text').text).toContain('describe this');
+      } finally {
+        SB.functions.invoke = orig;
+      }
+    });
+
+    it('keeps a plain-text user turn when there are no attachments', async () => {
+      const orig = SB.functions.invoke;
+      let captured = null;
+      SB.functions.invoke = async (_fn, opts) => {
+        captured = opts.body;
+        return { data: { content: 'ok', model: 'mock', usage: { input_tokens: 1, output_tokens: 1 } }, error: null };
+      };
+      try {
+        await ShipLog.execute('ship-noattach', { id: 'a1', name: 'Tester', config: {} }, 'just text');
+        const lastUser = captured.messages[captured.messages.length - 1];
+        expect(lastUser.content).toBe('just text');
+      } finally {
+        SB.functions.invoke = orig;
+      }
+    });
+
     it('should include metadata with timing and context info', async () => {
       const result = await ShipLog.execute('ship-meta', null, 'Test');
       expect(result.metadata.duration_ms).toBeGreaterThanOrEqual(0);
