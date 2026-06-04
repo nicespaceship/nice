@@ -412,8 +412,10 @@ const ContentQueue = (() => {
     // Lists
     html = html.replace(/^[-•] (.+)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Links — url is already esc()'d above, so quote-escape only (escAttr would
+    // double-escape &); safeUrl() gates the scheme (blocks javascript: etc.).
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) =>
+      `<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${label}</a>`);
     // Paragraphs
     html = html.replace(/\n{2,}/g, '</p><p>');
     html = html.replace(/\n/g, '<br>');
