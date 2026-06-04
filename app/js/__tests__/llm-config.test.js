@@ -349,6 +349,21 @@ describe('LLMConfig', () => {
       expect(ids).not.toContain('claude-opus-4-7');
       expect(ids).not.toContain('grok');
     });
+
+    it('CAPABILITY_CHAIN covers every model in the TokenConfig cost SSOT', () => {
+      // A model absent from the chain has findIndex === -1, so an overload
+      // slices from index 0 and "falls back" UP to the most expensive model
+      // instead of degrading. Keep the chain in parity with TokenConfig.MODELS.
+      const chainIds = LLMConfig.CAPABILITY_CHAIN.map(m => m.id);
+      const catalogIds = Object.keys(TokenConfig.MODELS);
+      const missing = catalogIds.filter(id => !chainIds.includes(id));
+      expect(missing).toEqual([]);
+      // openai-o3 and gpt-5-3-codex were the two that were missing.
+      expect(chainIds).toContain('openai-o3');
+      expect(chainIds).toContain('gpt-5-3-codex');
+      // No duplicates.
+      expect(new Set(chainIds).size).toBe(chainIds.length);
+    });
   });
 
   describe('_num (via fromStats)', () => {

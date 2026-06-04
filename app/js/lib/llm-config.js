@@ -42,8 +42,10 @@ const LLMConfig = (() => {
   // we walk down to the next model the user has enabled.
   // noTools: true — provider tool-use schema not compatible; strip tools on fallback.
   const CAPABILITY_CHAIN = [
+    { id: 'openai-o3',         tier: 'premium',  noTools: false },
     { id: 'claude-4-7-opus',   tier: 'premium',  noTools: false },
     { id: 'gpt-5-4-pro',       tier: 'premium',  noTools: false },
+    { id: 'gpt-5-3-codex',     tier: 'premium',  noTools: false },
     { id: 'gemini-2-5-pro',    tier: 'premium',  noTools: false },
     { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
     { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
