@@ -179,14 +179,16 @@ const VirtualFS = (() => {
   function renameFile(projectId, oldPath, newPath) {
     const p = _projects[projectId];
     if (!p || p.files[oldPath] === undefined) return false;
+    // Snapshot nested keys before mutating. If newPath is nested under oldPath
+    // (e.g. a → a/x), the freshly-inserted newPath key would otherwise match
+    // `startsWith(oldPath + '/')` and be shifted a second time, corrupting it.
+    const nested = Object.keys(p.files).filter(key => key.startsWith(oldPath + '/'));
     p.files[newPath] = p.files[oldPath];
     delete p.files[oldPath];
     // Rename nested files if folder
-    for (const key of Object.keys(p.files)) {
-      if (key.startsWith(oldPath + '/')) {
-        p.files[newPath + key.slice(oldPath.length)] = p.files[key];
-        delete p.files[key];
-      }
+    for (const key of nested) {
+      p.files[newPath + key.slice(oldPath.length)] = p.files[key];
+      delete p.files[key];
     }
     p.modified = _now();
     _save();
