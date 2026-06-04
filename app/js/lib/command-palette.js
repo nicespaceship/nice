@@ -96,7 +96,7 @@ const CommandPalette = (() => {
       (State.get('agents') || []).forEach(agent => {
         const score = _fuzzyScore(q, (agent.name || '') + ' ' + (agent.role || ''));
         if (score > 0) items.push({
-          label: agent.name || 'Unnamed Agent', path: '/blueprints/agents/' + agent.id,
+          label: agent.name || 'Unnamed Agent', path: '/bridge/agents/' + agent.id,
           icon: '#icon-agent', score: score - 1, type: 'data', meta: agent.role || 'Agent'
         });
       });
@@ -110,7 +110,7 @@ const CommandPalette = (() => {
       (State.get('spaceships') || []).forEach(s => {
         const score = _fuzzyScore(q, s.name || '');
         if (score > 0) items.push({
-          label: s.name || 'Unnamed Ship', path: '/blueprints/spaceships/' + s.id,
+          label: s.name || 'Unnamed Ship', path: '/bridge/spaceships/' + s.id,
           icon: '#icon-spaceship', score: score - 1, type: 'data', meta: 'Spaceship'
         });
       });
@@ -120,6 +120,7 @@ const CommandPalette = (() => {
     _results = items.slice(0, 12);
     _selectedIdx = 0;
     _renderResults();
+    return _results;
   }
 
   function _fuzzyScore(query, text) {
@@ -135,6 +136,7 @@ const CommandPalette = (() => {
 
   function _renderResults() {
     const container = document.getElementById('cmd-results');
+    if (!container) return;
     if (!_results.length) {
       container.innerHTML = '<div class="cmd-no-results">No results found</div>';
       return;
@@ -188,5 +190,5 @@ const CommandPalette = (() => {
     }
   }
 
-  return { init, open, close };
+  return { init, open, close, _search };
 })();
