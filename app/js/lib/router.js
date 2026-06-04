@@ -41,6 +41,15 @@ const Router = (() => {
     return raw.split('?')[0] || '/';
   }
 
+  /* Decode a query token. In query strings '+' means a space (form-encoding;
+     URLSearchParams does the same) — plain decodeURIComponent leaves it
+     literal, corrupting e.g. utm_campaign=spring+launch. Tolerate a malformed
+     '%' rather than throwing and losing the whole param set. */
+  function _dec(s) {
+    try { return decodeURIComponent((s || '').replace(/\+/g, ' ')); }
+    catch { return (s || '').replace(/\+/g, ' '); }
+  }
+
   /* Parse query string from window.location.search (e.g. ?ref=dashboard&utm_source=twitter) */
   function query() {
     const params = {};
@@ -48,7 +57,7 @@ const Router = (() => {
     if (!qs) return params;
     qs.split('&').forEach(pair => {
       const [k, v] = pair.split('=');
-      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+      if (k) params[_dec(k)] = _dec(v);
     });
     return params;
   }
@@ -62,7 +71,7 @@ const Router = (() => {
     const qs = hash.slice(idx + 1);
     qs.split('&').forEach(pair => {
       const [k, v] = pair.split('=');
-      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+      if (k) params[_dec(k)] = _dec(v);
     });
     return params;
   }
