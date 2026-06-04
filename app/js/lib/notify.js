@@ -59,6 +59,18 @@ const Notify = (() => {
     const duration = (settings.toastDuration || 5) * 1000;
     _showToast(title, message, type, duration, undo, actionLabel, persistent);
 
+    // Record in the in-memory store the Alerts page, MessageBar, and the PWA
+    // badge all read. send() is the producer; without it that store stays empty
+    // and those surfaces never light up. Durable history still goes to Supabase.
+    const notif = {
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'n-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+      type, title, message, read: false,
+      created_at: new Date().toISOString(),
+    };
+    State.set('notifications', [notif, ...(State.get('notifications') || [])].slice(0, 50));
+
     // Store to Supabase
     const user = State.get('user');
     if (user && typeof SB !== 'undefined' && SB.db) {
@@ -142,9 +154,10 @@ const Notify = (() => {
 
   function _updateBadge() {
     const notifs = State.get('notifications') || [];
-    const unread = notifs.filter(n => !n.read).length + 1; // +1 for the new one
-    // The in-app bell is gone; new notifications surface as toasts (above)
-    // and on the PWA app badge below. History lives in the Log tab.
+    const unread = notifs.filter(n => !n.read).length;
+    // New notifications surface as toasts (above) and on the PWA app badge.
+    // The count tracks State 'notifications', kept current by send() and by the
+    // Alerts page's mark-read, and clears when nothing is unread.
     if ('setAppBadge' in navigator) {
       if (unread > 0) {
         navigator.setAppBadge(unread).catch(() => {});
@@ -198,5 +211,5 @@ const Notify = (() => {
     return arr;
   }
 
-  return { init, requestPermission, send, subscribePush };
+  return { init, requestPermission, send, subscribePush, updateBadge: _updateBadge };
 })();

@@ -35,6 +35,7 @@ const AlertsView = (() => {
     document.getElementById('alerts-mark-all')?.addEventListener('click', () => {
       notifs.forEach(n => n.read = true);
       State.set('notifications', notifs);
+      if (typeof Notify !== 'undefined') Notify.updateBadge();
       render(el);
     });
 
@@ -42,7 +43,7 @@ const AlertsView = (() => {
     el.querySelectorAll('.alerts-item.unread').forEach(item => {
       item.addEventListener('click', () => {
         const n = notifs.find(x => x.id === item.dataset.id);
-        if (n) { n.read = true; State.set('notifications', notifs); render(el); }
+        if (n) { n.read = true; State.set('notifications', notifs); if (typeof Notify !== 'undefined') Notify.updateBadge(); render(el); }
       });
     });
   }
