@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -162,6 +162,35 @@ describe('Subscription._aggregate (multi-row status)', () => {
       { plan: 'pro', status: 'canceled', addons: [] },
     ]);
     expect(agg.status).toBe('canceled');
+  });
+});
+
+describe('Subscription._tryStripeSubscribe (fallback-safe edge fn call)', () => {
+  afterEach(() => { delete globalThis.SB; });
+
+  it('returns null when SB is not ready (caller falls back to the Payment Link)', async () => {
+    globalThis.SB = { isReady: () => false, client: {} };
+    expect(await Subscription._tryStripeSubscribe({ planId: 'pro' })).toBeNull();
+  });
+
+  it('returns the checkout url when the function responds with one', async () => {
+    globalThis.SB = { isReady: () => true, client: { functions: { invoke: async () => ({ data: { url: 'https://checkout.x' }, error: null }) } } };
+    expect(await Subscription._tryStripeSubscribe({ planId: 'pro' })).toBe('https://checkout.x');
+  });
+
+  it('returns null when the function errors (missing / undeployed)', async () => {
+    globalThis.SB = { isReady: () => true, client: { functions: { invoke: async () => ({ data: null, error: { message: 'Function not found' } }) } } };
+    expect(await Subscription._tryStripeSubscribe({ planId: 'pro' })).toBeNull();
+  });
+
+  it('returns null when the response carries no url', async () => {
+    globalThis.SB = { isReady: () => true, client: { functions: { invoke: async () => ({ data: {}, error: null }) } } };
+    expect(await Subscription._tryStripeSubscribe({ action: 'addon_add', addonId: 'claude' })).toBeNull();
+  });
+
+  it('swallows a thrown invoke (network failure) and returns null', async () => {
+    globalThis.SB = { isReady: () => true, client: { functions: { invoke: async () => { throw new Error('network down'); } } } };
+    expect(await Subscription._tryStripeSubscribe({ planId: 'pro' })).toBeNull();
   });
 });
 
