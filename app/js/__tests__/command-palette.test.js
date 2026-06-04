@@ -76,3 +76,28 @@ describe('CommandPalette fuzzyScore', () => {
     expect(score).toBe(0);
   });
 });
+
+describe('CommandPalette data-result routing', () => {
+  beforeEach(() => State._reset());
+
+  it('routes agent results to the registered /bridge/agents/:id detail route', () => {
+    State.set('agents', [{ id: 'a1', name: 'Marketing Agent', role: 'Marketing' }]);
+    const hit = CommandPalette._search('marketing').find(r => r.label === 'Marketing Agent');
+    expect(hit).toBeDefined();
+    expect(hit.path).toBe('/bridge/agents/a1');
+  });
+
+  it('routes spaceship results to the registered /bridge/spaceships/:id detail route', () => {
+    State.set('spaceships', [{ id: 's1', name: 'Galley' }]);
+    const hit = CommandPalette._search('galley').find(r => r.label === 'Galley');
+    expect(hit).toBeDefined();
+    expect(hit.path).toBe('/bridge/spaceships/s1');
+  });
+
+  it('never emits unregistered /blueprints/*/:id paths that resolve to Page Not Found', () => {
+    State.set('agents', [{ id: 'a1', name: 'Ops Agent', role: 'Ops' }]);
+    State.set('spaceships', [{ id: 's1', name: 'Ops Ship' }]);
+    const results = CommandPalette._search('ops');
+    expect(results.every(r => !/^\/blueprints\/(agents|spaceships)\/[^/]+$/.test(r.path || ''))).toBe(true);
+  });
+});
