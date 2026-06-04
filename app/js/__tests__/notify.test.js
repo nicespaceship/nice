@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Notify is loaded globally by setup.js
 
@@ -167,5 +167,92 @@ describe('Notify — notification store + PWA badge', () => {
       delete navigator.setAppBadge;
       delete navigator.clearAppBadge;
     }
+  });
+});
+
+describe('Notify — persistence (DB load + durable mark-read)', () => {
+  let origDb;
+  beforeEach(() => {
+    localStorage.clear();
+    document.getElementById('notify-container')?.remove();
+    State.set('notifications', []);
+    State.set('user', null);
+    origDb = SB.db;
+  });
+  afterEach(() => { SB.db = origDb; });
+
+  it('load() hydrates the store from Supabase and sets the badge to the unread count', async () => {
+    const rows = [
+      { id: 'r1', type: 'system', title: 'A', message: '1', read: false, created_at: '2026-06-04T00:00:00Z' },
+      { id: 'r2', type: 'system', title: 'B', message: '2', read: true,  created_at: '2026-06-03T00:00:00Z' },
+    ];
+    SB.db = () => ({ list: async () => rows, create: async () => ({}), update: async () => ({}) });
+    const setBadge = vi.fn(() => Promise.resolve());
+    navigator.setAppBadge = setBadge;
+    try {
+      await Notify.load({ id: 'u1' });
+      expect(State.get('notifications')).toEqual(rows);
+      expect(setBadge).toHaveBeenLastCalledWith(1);
+    } finally { delete navigator.setAppBadge; }
+  });
+
+  it('load() no-ops without a user and does not clobber the store', async () => {
+    State.set('notifications', [{ id: 'x', read: false }]);
+    await Notify.load(null);
+    expect(State.get('notifications')).toEqual([{ id: 'x', read: false }]);
+  });
+
+  it('markRead() marks one read in State and persists that row to Supabase', () => {
+    State.set('user', { id: 'u1' });
+    State.set('notifications', [
+      { id: 'r1', read: false, title: 'a', message: '', type: 'system', created_at: '' },
+      { id: 'r2', read: false, title: 'b', message: '', type: 'system', created_at: '' },
+    ]);
+    const update = vi.fn(async () => ({}));
+    SB.db = () => ({ list: async () => [], create: async () => ({}), update });
+    Notify.markRead('r1');
+    const notifs = State.get('notifications');
+    expect(notifs.find(n => n.id === 'r1').read).toBe(true);
+    expect(notifs.find(n => n.id === 'r2').read).toBe(false);
+    expect(update).toHaveBeenCalledWith('r1', { read: true });
+  });
+
+  it('markAllRead() marks every unread row and persists only those that changed', () => {
+    State.set('user', { id: 'u1' });
+    State.set('notifications', [
+      { id: 'r1', read: false }, { id: 'r2', read: true }, { id: 'r3', read: false },
+    ]);
+    const update = vi.fn(async () => ({}));
+    SB.db = () => ({ list: async () => [], create: async () => ({}), update });
+    Notify.markAllRead();
+    expect(State.get('notifications').every(n => n.read)).toBe(true);
+    expect(update).toHaveBeenCalledTimes(2);
+    expect(update).toHaveBeenCalledWith('r1', { read: true });
+    expect(update).toHaveBeenCalledWith('r3', { read: true });
+  });
+
+  it('mark-read without a user updates State + badge but skips the DB call', () => {
+    State.set('notifications', [{ id: 'r1', read: false }]);
+    let called = false;
+    SB.db = () => ({ list: async () => [], create: async () => ({}), update: async () => { called = true; return {}; } });
+    Notify.markRead('r1');
+    expect(State.get('notifications')[0].read).toBe(true);
+    expect(called).toBe(false);
+  });
+
+  it('send() reconciles the optimistic client id with the server row id', async () => {
+    State.set('user', { id: 'u1' });
+    SB.db = () => ({
+      list: async () => [],
+      create: async () => ({ id: 'server-uuid', type: 'system', title: 'Hi', message: 'there', read: false }),
+      update: async () => ({}),
+    });
+    Notify.send({ title: 'Hi', message: 'there', type: 'system' });
+    const before = State.get('notifications')[0];
+    expect(before.id).toBeTruthy();
+    expect(before.id).not.toBe('server-uuid');
+    // let the create() promise + its .then reconciliation flush
+    await Promise.resolve(); await Promise.resolve();
+    expect(State.get('notifications')[0].id).toBe('server-uuid');
   });
 });

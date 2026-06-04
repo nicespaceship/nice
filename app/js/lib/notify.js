@@ -62,16 +62,20 @@ const Notify = (() => {
     // Record in the in-memory store the Alerts page, MessageBar, and the PWA
     // badge all read. send() is the producer; without it that store stays empty
     // and those surfaces never light up. Durable history still goes to Supabase.
+    const clientId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'n-' + Date.now() + '-' + Math.random().toString(36).slice(2);
     const notif = {
-      id: (typeof crypto !== 'undefined' && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : 'n-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+      id: clientId,
       type, title, message, read: false,
       created_at: new Date().toISOString(),
     };
     State.set('notifications', [notif, ...(State.get('notifications') || [])].slice(0, 50));
 
-    // Store to Supabase
+    // Store to Supabase, then reconcile the optimistic client id with the
+    // server row id. Without this, a later mark-read can't target the row
+    // (the client id matches nothing), so read-state for notifications created
+    // this session would never persist and the badge would re-light on reload.
     const user = State.get('user');
     if (user && typeof SB !== 'undefined' && SB.db) {
       SB.db('notifications').create({
@@ -80,6 +84,12 @@ const Notify = (() => {
         title,
         message,
         read: false,
+      }).then(row => {
+        if (row && row.id && row.id !== clientId) {
+          const list = State.get('notifications') || [];
+          const m = list.find(x => x.id === clientId);
+          if (m) { m.id = row.id; State.set('notifications', list); }
+        }
       }).catch(() => {});
     }
 
@@ -167,6 +177,58 @@ const Notify = (() => {
     }
   }
 
+  /**
+   * Hydrate the in-app notification store from Supabase at sign-in so the
+   * Alerts page and the PWA app badge survive a reload. Without this, State
+   * 'notifications' only ever held what send() produced during the current
+   * session — the badge reset to zero and Alerts went empty on every refresh.
+   * @param {Object} [user] - the signed-in user; falls back to State.user
+   */
+  async function load(user) {
+    user = user || (typeof State !== 'undefined' && State.get('user'));
+    if (!user || typeof SB === 'undefined' || !SB.db) return;
+    try {
+      const rows = await SB.db('notifications').list({
+        userId: user.id, orderBy: 'created_at', asc: false, limit: 50,
+      });
+      if (Array.isArray(rows)) {
+        State.set('notifications', rows);
+        _updateBadge();
+      }
+    } catch (e) { /* best-effort; the session-only store still works */ }
+  }
+
+  /** Mark one notification read in State + Supabase and refresh the badge. */
+  function markRead(id) {
+    const notifs = State.get('notifications') || [];
+    const n = notifs.find(x => x.id === id);
+    if (!n || n.read) return;
+    n.read = true;
+    State.set('notifications', notifs);
+    _updateBadge();
+    _persistRead([id]);
+  }
+
+  /** Mark every notification read in State + Supabase and refresh the badge. */
+  function markAllRead() {
+    const notifs = State.get('notifications') || [];
+    const ids = notifs.filter(n => !n.read).map(n => n.id);
+    if (!ids.length) return;
+    notifs.forEach(n => { n.read = true; });
+    State.set('notifications', notifs);
+    _updateBadge();
+    _persistRead(ids);
+  }
+
+  // Best-effort persist of read-state. Rows created this session reconcile
+  // their id in send(); an id that never reconciled (offline insert) simply
+  // matches no row and the update no-ops. Bounded by the 50-row store cap.
+  function _persistRead(ids) {
+    const user = State.get('user');
+    if (!user || typeof SB === 'undefined' || !SB.db) return;
+    ids.forEach(id => SB.db('notifications').update(id, { read: true }).catch(() => {}));
+  }
+
   const _esc = Utils.esc;
 
   /**
@@ -211,5 +273,5 @@ const Notify = (() => {
     return arr;
   }
 
-  return { init, requestPermission, send, subscribePush, updateBadge: _updateBadge };
+  return { init, requestPermission, send, load, markRead, markAllRead, subscribePush, updateBadge: _updateBadge };
 })();
