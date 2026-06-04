@@ -6,6 +6,7 @@
 
 const CardRenderer = (() => {
   const _esc = Utils.esc;
+  const _escAttr = Utils.escAttr;
 
   /* ── Constants ── */
   const RARITY_COLORS = BlueprintUtils.RARITY_COLORS;
@@ -521,7 +522,7 @@ const CardRenderer = (() => {
       return { label, rarity, slug: rarity.toLowerCase() };
     }).sort((a, b) => (RARITY_RANK[b.rarity] || 0) - (RARITY_RANK[a.rarity] || 0));
     return `<ul class="blueprint-card-crew-list">${rows.map(({ label, rarity, slug }) =>
-      `<li class="blueprint-card-crew-item bp-crew-${slug}" title="${_esc(label)} — ${rarity}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span><span class="blueprint-card-crew-rarity">${rarity}</span></li>`
+      `<li class="blueprint-card-crew-item bp-crew-${slug}" title="${_escAttr(label)} — ${_escAttr(rarity)}"><span class="blueprint-card-crew-dot"></span><span class="blueprint-card-crew-label">${_esc(label)}</span><span class="blueprint-card-crew-rarity">${_esc(rarity)}</span></li>`
     ).join('')}</ul>`;
   }
 
@@ -707,7 +708,7 @@ const CardRenderer = (() => {
     // Front face wraps the existing card content. Back face holds the
     // rules text. Flip button lives in the perspective container outside
     // the rotating inner so it stays in place across the flip.
-    return `<div class="blueprint-card ${clickClass}" data-id="${bp.id}" data-type="${type}" data-rarity="${rarity}" data-tags="${(bp.tags||[]).join(',')}"${statusAttr}${draggable}>
+    return `<div class="blueprint-card ${clickClass}" data-id="${_escAttr(bp.id)}" data-type="${type}" data-rarity="${rarity}" data-tags="${_escAttr((bp.tags||[]).join(','))}"${statusAttr}${draggable}>
       <button class="blueprint-card-flip-btn" type="button" data-action="flip-card" aria-label="Flip card" title="Flip card">${FLIP_ICON_BTN}</button>
       <div class="blueprint-card-inner">
         <div class="blueprint-card-front">
