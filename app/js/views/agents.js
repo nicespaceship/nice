@@ -274,7 +274,7 @@ const AgentDetailView = (() => {
         if (bp.role) bp.config = Object.assign({ role: bp.role }, bp.config || {});
         const md = BlueprintMarkdown.serialize(bp);
         navigator.clipboard.writeText(md).then(() => {
-          if (typeof Notify !== 'undefined') Notify.send('Blueprint copied to clipboard', 'success');
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Blueprint copied to clipboard', type: 'success' });
         });
       });
 

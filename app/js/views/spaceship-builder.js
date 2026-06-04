@@ -427,7 +427,7 @@ const SpaceshipBuilderView = (() => {
 
     document.getElementById('btn-md-copy')?.addEventListener('click', () => {
       navigator.clipboard.writeText(document.getElementById('builder-md-textarea').value).then(() => {
-        if (typeof Notify !== 'undefined') Notify.send('Copied to clipboard', 'success');
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Copied to clipboard', type: 'success' });
       });
     });
 
@@ -471,7 +471,7 @@ const SpaceshipBuilderView = (() => {
       const bp = BlueprintMarkdown.parse(md);
       _populateForm(bp);
       document.getElementById('builder-import-modal').style.display = 'none';
-      if (typeof Notify !== 'undefined') Notify.send('Blueprint imported', 'success');
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Blueprint imported', type: 'success' });
     });
   }
 
@@ -712,7 +712,7 @@ const SpaceshipBuilderView = (() => {
 
         msgEl.textContent = saved.savedAgents.length + ' agents deployed!';
         if (typeof Notify !== 'undefined') {
-          Notify.send(saved.savedAgents.length + ' agents created for ' + shipData.name, 'success');
+          Notify.send({ title: saved.savedAgents.length + ' agents created for ' + shipData.name, type: 'success' });
         }
 
         setTimeout(() => {

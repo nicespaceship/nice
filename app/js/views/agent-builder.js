@@ -709,7 +709,7 @@ const AgentBuilderView = (() => {
     document.getElementById('btn-md-copy')?.addEventListener('click', () => {
       const ta = document.getElementById('builder-md-textarea');
       navigator.clipboard.writeText(ta.value).then(() => {
-        if (typeof Notify !== 'undefined') Notify.send('Copied to clipboard', 'success');
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Copied to clipboard', type: 'success' });
       });
     });
 
@@ -754,7 +754,7 @@ const AgentBuilderView = (() => {
       const bp = BlueprintMarkdown.parse(md);
       _populateForm(bp);
       document.getElementById('builder-import-modal').style.display = 'none';
-      if (typeof Notify !== 'undefined') Notify.send('Blueprint imported', 'success');
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Blueprint imported', type: 'success' });
     });
   }
 
