@@ -334,6 +334,27 @@ const Subscription = (() => {
     return true;
   }
 
+  /** Try the consolidated `stripe-subscribe` edge function. Resolves to a
+      Stripe Checkout/Portal URL on success, or null to signal "fall back to
+      the per-product Payment Link". Times out after 6s and swallows every
+      error so a missing, slow, or failing function never blocks the user —
+      the Payment-Link fallback always works. One subscription with items
+      (vs one Stripe sub per Payment Link) is the root-cause fix for the
+      multi-row past_due bug class. See docs/stripe-subscribe-spec.md. */
+  async function _tryStripeSubscribe(body) {
+    if (typeof SB === 'undefined' || !SB.isReady || !SB.isReady()) return null;
+    try {
+      const { data, error } = await Promise.race([
+        SB.client.functions.invoke('stripe-subscribe', { body }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
+      ]);
+      if (error) throw error;
+      return (data && data.url) || null;
+    } catch {
+      return null;
+    }
+  }
+
   async function subscribe(planId) {
     const user = typeof State !== 'undefined' ? State.get('user') : null;
     if (!user) {
@@ -341,28 +362,11 @@ const Subscription = (() => {
       return;
     }
 
-    // Prefer the edge function (single subscription with items). Fall
-    // back to the payment link if it errors or isn't deployed.
-    if (typeof SB !== 'undefined' && SB.isReady && SB.isReady()) {
-      try {
-        const result = await Promise.race([
-          SB.client.functions.invoke('stripe-subscribe', {
-            body: { planId, userId: user.id, email: user.email },
-          }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
-        ]);
-        const { data, error } = result;
-        if (error) throw error;
-        if (data?.url) {
-          _openPaymentLink(data.url);
-          return;
-        }
-      } catch {
-        // fall through to payment link
-      }
-    }
+    // Prefer the edge function (one subscription with items); fall back to the
+    // per-product Payment Link if it errors or isn't deployed yet.
+    const url = await _tryStripeSubscribe({ planId, userId: user.id, email: user.email });
+    if (url) { _openPaymentLink(url); return; }
 
-    // Fallback: open the StripeConfig payment link for the requested plan
     const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(planId) : null;
     if (cfg?.paymentLinkUrl) {
       _openPaymentLink(_withUserRef(cfg.paymentLinkUrl, user));
@@ -384,21 +388,10 @@ const Subscription = (() => {
       return openBillingPortal();
     }
 
-    // Add: try the edge function first, fall back to payment link
-    if (typeof SB !== 'undefined' && SB.isReady && SB.isReady()) {
-      try {
-        const { data, error } = await SB.client.functions.invoke('stripe-subscribe', {
-          body: { action: 'addon_add', addonId, userId: user.id, email: user.email },
-        });
-        if (error) throw error;
-        if (data?.url) {
-          _openPaymentLink(data.url);
-          return;
-        }
-      } catch {
-        // fall through to payment link
-      }
-    }
+    // Add: prefer the edge function (adds an item to the existing
+    // subscription), same 6s-timeout-then-Payment-Link fallback as subscribe().
+    const url = await _tryStripeSubscribe({ action: 'addon_add', addonId, userId: user.id, email: user.email });
+    if (url) { _openPaymentLink(url); return; }
 
     const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(addonId) : null;
     if (cfg?.paymentLinkUrl) {
@@ -575,5 +568,6 @@ const Subscription = (() => {
     handleDowngrade,
     paywallEnabled: _paywallEnabled,
     _aggregate,
+    _tryStripeSubscribe,
   };
 })();
