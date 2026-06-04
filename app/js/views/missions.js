@@ -1352,26 +1352,27 @@ const MissionDetailView = (() => {
     // Restore images
     images.forEach((img, i) => {
       processed = processed.replace(`%%IMG_${i}%%`,
-        `<div class="mission-image-wrap"><img src="${img.url}" alt="${_esc(img.alt)}" class="mission-generated-image" loading="lazy"/><a href="${img.url}" target="_blank" rel="noopener" class="mission-image-download" title="Open full size">⬇ Download</a></div>`
+        `<div class="mission-image-wrap"><img src="${Utils.escAttr(Utils.safeUrl(img.url, true))}" alt="${Utils.escAttr(img.alt)}" class="mission-generated-image" loading="lazy"/><a href="${Utils.escAttr(Utils.safeUrl(img.url, true))}" target="_blank" rel="noopener" class="mission-image-download" title="Open full size">⬇ Download</a></div>`
       );
     });
 
     // Restore videos (check if URL is actually an image)
     videos.forEach((vid, i) => {
       const isImage = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(vid.url);
+      const safe = Utils.escAttr(Utils.safeUrl(vid.url, true));
       const mediaHtml = isImage
-        ? `<img src="${vid.url}" alt="Generated content" class="mission-generated-image" loading="lazy"/>`
-        : `<video src="${vid.url}" controls class="mission-generated-image" style="max-height:400px"></video>`;
+        ? `<img src="${safe}" alt="Generated content" class="mission-generated-image" loading="lazy"/>`
+        : `<video src="${safe}" controls class="mission-generated-image" style="max-height:400px"></video>`;
       const dlLabel = isImage ? '⬇ Download Image' : '⬇ Download Video';
       processed = processed.replace(`%%VID_${i}%%`,
-        `<div class="mission-image-wrap">${mediaHtml}<a href="${vid.url}" target="_blank" rel="noopener" class="mission-image-download" title="${dlLabel}">${dlLabel}</a></div>`
+        `<div class="mission-image-wrap">${mediaHtml}<a href="${safe}" target="_blank" rel="noopener" class="mission-image-download" title="${dlLabel}">${dlLabel}</a></div>`
       );
     });
 
     // Restore links
     links.forEach((link, i) => {
       processed = processed.replace(`%%LINK_${i}%%`,
-        `<a href="${link.url}" target="_blank" rel="noopener">${_esc(link.label)}</a>`
+        `<a href="${Utils.escAttr(Utils.safeUrl(link.url))}" target="_blank" rel="noopener">${_esc(link.label)}</a>`
       );
     });
 

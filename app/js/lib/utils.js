@@ -19,6 +19,29 @@ const Utils = (() => {
     return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // safeUrl() gates the SCHEME of a URL bound for an href/src. Under the app's
+  // 'unsafe-inline' CSP a javascript: (or data:text/html) URL executes on click,
+  // so esc()/escAttr() alone are not enough — they stop attribute breakout but
+  // leave the scheme intact. Returns the url for http(s)/mailto/tel and relative
+  // URLs; returns data:image/* only when allowData is set (safe for <img src>,
+  // never a navigation target); returns '' for everything else. Pair with
+  // escAttr() (or a quote-escape) when the result lands in a quoted attribute —
+  // safeUrl gates the scheme, escAttr prevents breakout.
+  function safeUrl(url, allowData) {
+    if (url == null) return '';
+    const raw = String(url).trim();
+    if (!raw) return '';
+    // Strip C0/C1 controls + spaces before scheme detection: browsers parse
+    // "java\tscript:" and "java\nscript:" as the javascript: scheme.
+    const probe = raw.replace(/[\s\x00-\x1F\x7F]/g, '');
+    const m = probe.match(/^([a-z][a-z0-9+.-]*):/i);
+    if (!m) return raw;                       // relative path / query / fragment
+    const scheme = m[1].toLowerCase();
+    if (scheme === 'http' || scheme === 'https' || scheme === 'mailto' || scheme === 'tel') return raw;
+    if (allowData && /^data:image\//i.test(probe)) return raw;
+    return '';
+  }
+
   function timeAgo(ts) {
     if (!ts) return '';
     const diff = Date.now() - new Date(ts).getTime();
@@ -177,5 +200,5 @@ const Utils = (() => {
     onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
-  return { esc, escAttr, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
+  return { esc, escAttr, safeUrl, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
 })();
