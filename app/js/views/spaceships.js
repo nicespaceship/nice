@@ -210,8 +210,8 @@ const SpaceshipsView = (() => {
 
     // Reconcile status: auto-dock ships that are deployed but not fully crewed
     fleets.forEach(f => {
-      if (f.status === 'deployed' && typeof Gamification !== 'undefined') {
-        const sc = Gamification.getSlotTemplate();
+      if (f.status === 'deployed' && typeof BlueprintUtils !== 'undefined') {
+        const sc = BlueprintUtils.getSlotTemplate(f);
         const allFilled = sc && sc.slots.every(s => (f.slot_assignments || {})[s.id]);
         if (!allFilled) f.status = 'docked';
       }
@@ -985,8 +985,8 @@ const SpaceshipDetailView = (() => {
       if (!fleet.agent_ids) fleet.agent_ids = Object.values(fleet.slot_assignments).filter(Boolean);
 
       // Reconcile status: auto-dock if deployed but not all slots filled
-      if (fleet.status === 'deployed' && typeof Gamification !== 'undefined') {
-        const sc = Gamification.getSlotTemplate();
+      if (fleet.status === 'deployed' && typeof BlueprintUtils !== 'undefined') {
+        const sc = BlueprintUtils.getSlotTemplate(fleet);
         const allFilled = sc && sc.slots.every(s => fleet.slot_assignments[s.id]);
         if (!allFilled) {
           fleet.status = 'docked';
