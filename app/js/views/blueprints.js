@@ -3348,15 +3348,11 @@ const BlueprintsView = (() => {
   function _handleDeepLink() {
     const hq = typeof Router !== 'undefined' ? Router.hashQuery() : {};
 
-    // Handle ?tab= param
-    const tabParam = hq.tab;
-    if (tabParam && ['agent','spaceship'].includes(tabParam) && _activeTab !== tabParam) {
-      _activeTab = tabParam;
-      document.querySelectorAll('.bp-type-tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.bp-type-tab[data-tab="${tabParam}"]`)?.classList.add('active');
-      _updateRarityFilters();
-      _applyFilters();
-    }
+    // ?tab=agent|spaceship is resolved in render() — it maps to
+    // _activeTab='blueprints' + _subTab. Re-handling it here set _activeTab
+    // to an invalid top-level tab id (no .bp-type-tab matched, so nothing
+    // highlighted) and made _refreshGridIfCatalogActive bail, leaving the
+    // grid blank when the catalog hydrated after first paint. Not handled here.
 
     // Handle ?search= param — populate search box and filter
     const searchParam = hq.search;
