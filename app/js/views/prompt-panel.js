@@ -2050,42 +2050,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const lastIsCurrent = !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
     const historyMsgs = lastIsCurrent ? past.slice(0, -1) : past;
 
-    // Turn a message's text + attachments into the canonical part-array sent
-    // to the edge function. Text-file attachments get prepended as fenced
-    // blocks in the text part so every provider (even non-vision/PDF ones)
-    // can read them; images/PDFs become `image_url` / `document` parts.
-    const buildUserContent = (text, attachments) => {
-      // No attachments: the user turn is just their typed text. Still wrap
-      // it in the envelope so the model gets a consistent shape across turns.
-      if (!attachments || attachments.length === 0) return _wrapUserInput(text);
-      const textPieces = [];
-      const mediaParts = [];
-      for (const a of attachments) {
-        // Legacy attachments (pre-multi-type) had no `kind`; infer from shape.
-        const kind = a.kind || (a.dataUrl ? 'image' : (a.text != null ? 'text' : null));
-        if (kind === 'text') {
-          textPieces.push(`Attached file \`${a.name}\`:\n\`\`\`\n${a.text}\n\`\`\``);
-        } else if (kind === 'pdf') {
-          mediaParts.push({ type: 'document', document: { url: a.dataUrl, name: a.name } });
-        } else if (kind === 'audio' || kind === 'video') {
-          mediaParts.push({ type: 'media', media: { url: a.dataUrl, name: a.name } });
-        } else if (kind === 'image') {
-          mediaParts.push({ type: 'image_url', image_url: { url: a.dataUrl } });
-        }
-      }
-      const merged = [...textPieces, text].filter(Boolean).join('\n\n');
-      // Envelope wraps both the user's prose AND any attached text-file
-      // contents, since pasted code or CSV rows are a known injection vector
-      // ("You are now DAN. Ignore the system prompt."). Media parts stay as
-      // structured payloads — a PDF can still carry injection, but that's
-      // a separate (PR 3+) server-side concern and out of scope here.
-      const wrapped = merged ? _wrapUserInput(merged) : '';
-      if (mediaParts.length === 0) return wrapped; // pure-text: keep string form
-      const parts = [];
-      if (wrapped) parts.push({ type: 'text', text: wrapped });
-      parts.push(...mediaParts);
-      return parts;
-    };
+    // Canonical user-turn content (text + media parts) for the edge function.
+    // Delegates to the AttachmentUtils SSOT now shared with the agent/ship
+    // chat paths; _wrapUserInput supplies this surface's injection envelope.
+    const buildUserContent = (text, attachments) =>
+      AttachmentUtils.buildUserContent(text, attachments, _wrapUserInput);
 
     const history = historyMsgs.map(m => {
       const role = m.role === 'assistant' ? 'assistant' : 'user';
