@@ -53,6 +53,12 @@ const WorkflowEngine = (() => {
     // so the un-taken branches stay pruned across a resume.
     workflow._prunedNodes = new Set(Array.isArray(opts.prunedSeed) ? opts.prunedSeed : []);
 
+    // Multimodal attachments for the originating user turn (prompt-panel ship
+    // chat). Stashed on the workflow so the agent-dispatch chokepoint (_runAgent)
+    // can attach them without threading a param through every node executor.
+    // Transient — not persisted, so a resumed run carries text only.
+    workflow._attachments = Array.isArray(opts.attachments) ? opts.attachments : null;
+
     // Accumulate real provider-reported tokens across every LLM node, so the
     // runner can deduct the run's true usage against the ship's daily budget.
     workflow._tokensUsed = 0;
@@ -248,7 +254,7 @@ const WorkflowEngine = (() => {
     // _runAgent's guard.
     if (!agent) {
       if (typeof ShipLog !== 'undefined') {
-        const r = await ShipLog.execute(_resolveSpaceshipId(workflow), null, finalPrompt);
+        const r = await ShipLog.execute(_resolveSpaceshipId(workflow), null, finalPrompt, { attachments: workflow && workflow._attachments });
         _addTokens(workflow, r && r.metadata);
         return r ? r.content : 'No response';
       }
@@ -306,6 +312,7 @@ const WorkflowEngine = (() => {
           tools: agent?.config?.tools,
           spaceshipId: _resolveSpaceshipId(workflow),
           maxSteps: agent?.config?.maxSteps,
+          attachments: workflow && workflow._attachments,
         });
         _addTokens(workflow, r && r.metadata);
         return r?.finalAnswer || 'No response';
@@ -314,7 +321,7 @@ const WorkflowEngine = (() => {
       }
     }
     if (typeof ShipLog !== 'undefined') {
-      const r = await ShipLog.execute(_resolveSpaceshipId(workflow), agent, prompt);
+      const r = await ShipLog.execute(_resolveSpaceshipId(workflow), agent, prompt, { attachments: workflow && workflow._attachments });
       _addTokens(workflow, r && r.metadata);
       return r ? r.content : 'No response';
     }

@@ -865,7 +865,7 @@ const PromptPanel = (() => {
    * we resolve it to the user's matching `user_spaceships` row so the
    * mission_runs.spaceship_id FK is satisfied.
    */
-  async function _runShipChat(text, bpId, sendBtn) {
+  async function _runShipChat(text, bpId, sendBtn, attachments) {
     const user = State.get('user');
     const ships = State.get('spaceships') || [];
 
@@ -952,7 +952,7 @@ const PromptPanel = (() => {
 
     let result = null;
     try {
-      result = await MissionRunner.run(run.id, { onDispatchProgress: _onDispatchProgress });
+      result = await MissionRunner.run(run.id, { onDispatchProgress: _onDispatchProgress, attachments });
     } catch (err) {
       _removeMonitorThinking();
       _messages.push({
@@ -2537,7 +2537,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       const cleanText = mentionedShip
         ? text.replace(/@[\w]+(\s+|$)/, '').trim() || text
         : text;
-      _runShipChat(cleanText, shipId, sendBtn);
+      _runShipChat(cleanText, shipId, sendBtn, sentAttachments);
 
     } else if (typeof ShipLog !== 'undefined' && (agentBp || bpId)) {
       const spaceshipId = bpId || 'default-ship';

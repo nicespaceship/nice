@@ -31,7 +31,7 @@ const MissionRunner = (() => {
     // frozen at enqueue time (mission-composer.js activateMission), so
     // replays stay deterministic even if the template changes later.
     if (_isDagMission(mission)) {
-      return await _runDag(mission, user);
+      return await _runDag(mission, user, opts);
     }
 
     // 2. Find the assigned agent
@@ -336,6 +336,7 @@ const MissionRunner = (() => {
           maxSteps: agentBp.config.maxSteps,
           onStep: _stepCallback,
           onDispatchProgress: opts && opts.onDispatchProgress,
+          attachments: opts && opts.attachments,
         });
         result = {
           content: execResult.finalAnswer,
@@ -502,7 +503,7 @@ const MissionRunner = (() => {
     return !!(mission.agent_id || mission.agent_name);
   }
 
-  async function _runDag(mission, user) {
+  async function _runDag(mission, user, opts) {
     const missionId = mission.id;
     const snap = mission.plan_snapshot || {};
     const nodes = Array.isArray(snap.nodes) ? snap.nodes : [];
@@ -531,6 +532,7 @@ const MissionRunner = (() => {
     try {
       result = await WorkflowEngine.execute(workflow, {
         skipSave: true,
+        attachments: opts && opts.attachments,
         isCancelled: () => _isCancelled(missionId),
         onNodeComplete: (node, output) => {
           nodeResults[node.id] = output;
@@ -1164,6 +1166,9 @@ const MissionRunner = (() => {
         approvalMode: opts.approvalMode,
         maxSteps: opts.maxSteps || captainBp.config?.maxSteps || 5,
         onStep: opts.onStep,
+        // Only the first round carries the user's attachments (round = userPrompt);
+        // synthesis rounds operate on crew reports, so no media is re-sent.
+        attachments: round === 0 ? (opts && opts.attachments) : undefined,
       });
       lastResult = execResult;
 
