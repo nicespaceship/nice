@@ -54,6 +54,29 @@ describe('VirtualFS', () => {
     expect(VirtualFS.getFile(id, 'new.txt')).toBe('content');
   });
 
+  it('renames nested files when a file path is also a folder prefix', () => {
+    const id = VirtualFS.createProject('Test', 'blank');
+    VirtualFS.setFile(id, 'docs', 'index');
+    VirtualFS.setFile(id, 'docs/intro.md', 'intro');
+    expect(VirtualFS.renameFile(id, 'docs', 'guide')).toBe(true);
+    expect(VirtualFS.getFile(id, 'guide')).toBe('index');
+    expect(VirtualFS.getFile(id, 'guide/intro.md')).toBe('intro');
+    expect(VirtualFS.getFile(id, 'docs')).toBeNull();
+    expect(VirtualFS.getFile(id, 'docs/intro.md')).toBeNull();
+  });
+
+  it('renames into its own subtree without corrupting keys (newPath nested under oldPath)', () => {
+    const id = VirtualFS.createProject('Test', 'blank');
+    VirtualFS.setFile(id, 'a', 'root');
+    VirtualFS.setFile(id, 'a/b', 'child');
+    expect(VirtualFS.renameFile(id, 'a', 'a/x')).toBe(true);
+    expect(VirtualFS.getFile(id, 'a/x')).toBe('root');
+    expect(VirtualFS.getFile(id, 'a/x/b')).toBe('child');
+    // The old loop re-matched the freshly-inserted key and produced 'a/x/x'.
+    expect(VirtualFS.getFile(id, 'a/x/x')).toBeNull();
+    expect(VirtualFS.getFile(id, 'a')).toBeNull();
+  });
+
   it('should delete projects', () => {
     const id = VirtualFS.createProject('Test', 'blank');
     expect(VirtualFS.deleteProject(id)).toBe(true);
