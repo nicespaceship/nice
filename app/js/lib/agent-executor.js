@@ -45,10 +45,12 @@ const AgentExecutor = (() => {
 
     // If no tools available, fall back to single-shot
     if (!ctx.availableTools.length) {
-      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
+      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs, opts.attachments);
     }
 
-    const conversationMessages = [{ role: 'user', content: prompt }];
+    // First user turn carries any attachments as multimodal parts; ship_log
+    // still records the plain `prompt` text (logged above).
+    const conversationMessages = [{ role: 'user', content: AttachmentUtils.buildUserContent(prompt, opts.attachments) }];
     const steps = [];
     const tokensRef = { value: 0 };
 
@@ -71,7 +73,7 @@ const AgentExecutor = (() => {
       // LLM call failed mid-loop — fall back to single-shot like the
       // original execute() did, so callers always get a finalAnswer.
       console.warn('[AgentExecutor] LLM call failed, falling back to single-shot:', loop.error);
-      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs);
+      return _singleShot(agentBlueprint, prompt, spaceshipId, startMs, opts.attachments);
     }
 
     if (loop.finalAnswer != null) {
@@ -872,9 +874,9 @@ const AgentExecutor = (() => {
   }
 
   /* ── Single-shot fallback (no tools, just call ShipLog directly) ── */
-  async function _singleShot(blueprint, prompt, spaceshipId, startMs) {
+  async function _singleShot(blueprint, prompt, spaceshipId, startMs, attachments) {
     if (typeof ShipLog !== 'undefined') {
-      const result = await ShipLog.execute(spaceshipId, blueprint, prompt);
+      const result = await ShipLog.execute(spaceshipId, blueprint, prompt, { attachments });
       return {
         steps: [],
         finalAnswer: result ? result.content : 'No response from agent.',
@@ -977,7 +979,7 @@ const AgentExecutor = (() => {
      * Returns the agent's text (final answer or — if max steps reached —
      * the last observation as a best-effort fallback).
      */
-    async function send(userMessage) {
+    async function send(userMessage, attachments) {
       const startMs = Date.now();
       const isFirstTurn = history.length === 0;
 
@@ -988,7 +990,9 @@ const AgentExecutor = (() => {
         event: isFirstTurn ? 'mission_start' : 'turn_start',
       });
 
-      history.push({ role: 'user', content: userMessage });
+      // Attachments ride the user turn as multimodal parts; the plain text
+      // was logged to ship_log above.
+      history.push({ role: 'user', content: AttachmentUtils.buildUserContent(userMessage, attachments) });
 
       const maxSteps = opts.maxSteps || 5;
       const conversationMessages = [...history];

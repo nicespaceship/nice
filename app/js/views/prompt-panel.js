@@ -2428,7 +2428,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
       if (_isSameAgent && _activeConversation.controller) {
         // Continue existing conversation
-        _activeConversation.controller.send(text).then(result => {
+        _activeConversation.controller.send(text, sentAttachments).then(result => {
           _removeMonitorThinking();
           document.getElementById('monitor-step-indicator')?.remove();
           _messages.push({
@@ -2468,7 +2468,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           });
           _activeConversation = { controller, agentBp, agentLabel };
 
-          controller.send(text).then(result => {
+          controller.send(text, sentAttachments).then(result => {
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
             _messages.push({
@@ -2498,6 +2498,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             spaceshipId,
             maxSteps: agentBp.config.maxSteps,
             onStep,
+            attachments: sentAttachments,
           }).then(result => {
             _removeMonitorThinking();
             document.getElementById('monitor-step-indicator')?.remove();
@@ -2562,7 +2563,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         if (monitorEl) monitorEl.scrollTop = monitorEl.scrollHeight;
       };
 
-      ShipLog.execute(spaceshipId, agentBp, text, { onChunk }).then(result => {
+      ShipLog.execute(spaceshipId, agentBp, text, { onChunk, attachments: sentAttachments }).then(result => {
         _removeMonitorThinking();
         document.getElementById('monitor-stream')?.remove();
         const agentName = result.agent || (mentioned ? mentioned.name : null);
