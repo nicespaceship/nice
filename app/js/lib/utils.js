@@ -11,6 +11,14 @@ const Utils = (() => {
     return d.innerHTML;
   }
 
+  // esc() escapes <, >, & but NOT quotes, so it is unsafe inside a quoted HTML
+  // attribute — a " in user/model text breaks out and can inject an event
+  // handler. escAttr() also escapes " and '. Use it for every interpolation
+  // that lands inside a "..." or '...' attribute value.
+  function escAttr(s) {
+    return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   function timeAgo(ts) {
     if (!ts) return '';
     const diff = Date.now() - new Date(ts).getTime();
@@ -169,5 +177,5 @@ const Utils = (() => {
     onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
-  return { esc, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
+  return { esc, escAttr, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
 })();
