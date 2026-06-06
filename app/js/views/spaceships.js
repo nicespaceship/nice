@@ -1110,7 +1110,7 @@ const SpaceshipDetailView = (() => {
 
           <div class="fleet-detail-actions">
             <div class="bridge-launch-wrap">
-              <span class="agent-tag">${spaceshipClass.slots.length} slots (${typeof Gamification !== 'undefined' ? Gamification.getRank().title : 'Ensign'} rank)</span>
+              <span class="agent-tag">${spaceshipClass.slots.length} slots (${typeof Gamification !== 'undefined' ? Gamification.getRank().name : 'Ensign'} rank)</span>
             </div>
           </div>
 
@@ -1261,6 +1261,24 @@ const SpaceshipDetailView = (() => {
     }).join('');
   }
 
+  // Whether a crew slot is gated behind a class the viewer hasn't reached.
+  // Mirrors ShipSetupWizard._isSlotLocked so the dock honors the same gate
+  // the wizard and schematic already enforce.
+  function _isSlotLocked(slot) {
+    if (!slot || !slot.min_class) return false;
+    if (typeof Gamification === 'undefined' || !Gamification.isClassUnlocked) return false;
+    return !Gamification.isClassUnlocked(slot.min_class);
+  }
+
+  function _slotUnlockLabel(minClass) {
+    if (minClass === 'class-5') return 'NICE Pro';
+    if (typeof Gamification !== 'undefined' && Gamification.getFirstRankForClass) {
+      const r = Gamification.getFirstRankForClass(minClass);
+      if (r && r.name) return r.name;
+    }
+    return minClass || '';
+  }
+
   function _renderSlot(slot, agentId, agentMap, spaceshipClass) {
     const maxRarity = slot.maxRarity || 'Rare';
     const agent = agentId ? agentMap[agentId] : null;
@@ -1277,6 +1295,20 @@ const SpaceshipDetailView = (() => {
             <div class="slot-agent-name">${_esc(agent.name)}</div>
             <span class="rarity-badge rarity-${rarity.name.toLowerCase()}">${rarity.name}</span>
           </div>
+          <div class="ship-slot-label">${_esc(slot.label)}</div>
+        </div>
+      `;
+    }
+
+    // Empty + class-gated beyond the viewer's rank: render locked. The
+    // .ship-slot-locked CSS dims it, sets pointer-events:none (so it can't
+    // receive a drop), and overlays the unlock label. Already-filled locked
+    // slots fall through above, so existing crew stay visible ("owned loads").
+    if (_isSlotLocked(slot)) {
+      const lockLabel = 'Unlocks at ' + _slotUnlockLabel(slot.min_class);
+      return `
+        <div class="ship-slot ${rarityClass} ship-slot-locked" data-slot-id="${slot.id}" data-lock-label="${Utils.escAttr(lockLabel)}">
+          <div class="ship-slot-empty-icon">+</div>
           <div class="ship-slot-label">${_esc(slot.label)}</div>
         </div>
       `;
@@ -1474,15 +1506,20 @@ const SpaceshipDetailView = (() => {
         const rarity = Gamification.calcAgentRarity(agent);
         if (rarity.name === 'Legendary') Gamification.unlockAchievement('legendary-captain');
       }
-      const allFilled = spaceshipClass.slots.every(s => assignments[s.id]);
+      // Only unlocked slots count — a class-gated empty slot can never be
+      // filled at this rank, so it must not block the "all filled" reward.
+      const _unlockedForFill = spaceshipClass.slots.filter(s => !_isSlotLocked(s));
+      const allFilled = _unlockedForFill.length > 0 && _unlockedForFill.every(s => assignments[s.id]);
       if (allFilled) {
         Gamification.addXP('fill_all_slots');
         Gamification.unlockAchievement('full-ship');
       }
     }
 
-    // Auto-deploy when all slots are filled
-    const allSlotsFilled = spaceshipClass.slots.every(s => assignments[s.id]);
+    // Auto-deploy when all UNLOCKED slots are filled (locked slots can't be
+    // filled at this rank, so they must not gate auto-deploy).
+    const _unlockedForDeploy = spaceshipClass.slots.filter(s => !_isSlotLocked(s));
+    const allSlotsFilled = _unlockedForDeploy.length > 0 && _unlockedForDeploy.every(s => assignments[s.id]);
     if (allSlotsFilled && fleet.status !== 'deployed') {
       fleet.status = 'deployed';
       const spaceships2 = State.get('spaceships') || [];
