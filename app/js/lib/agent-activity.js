@@ -38,14 +38,23 @@ const AgentActivity = (() => {
     _decayTimer = setInterval(() => {
       const now = Date.now();
       const toEmit = [];
+      let recentRemaining = 0;
       for (const [id, e] of _entries.entries()) {
-        if (e.state === 'recent' && (now - e.endedAt) >= RECENT_WINDOW_MS) {
+        if (e.state !== 'recent') continue;
+        if ((now - e.endedAt) >= RECENT_WINDOW_MS) {
           _entries.delete(id);
           toEmit.push(id);
+        } else {
+          recentRemaining++;
         }
       }
       toEmit.forEach(_emit);
-      if (_entries.size === 0) {
+      // Stop once nothing is left to decay. Only 'recent' entries age out;
+      // 'active' entries never do, so they must not pin this interval. A run
+      // that's cancelled or crashes before emitting a terminal event leaves a
+      // stuck 'active' entry — keying the stop on _entries.size would spin
+      // this timer forever. markIdle restarts it when a new 'recent' lands.
+      if (recentRemaining === 0) {
         clearInterval(_decayTimer);
         _decayTimer = null;
       }
@@ -56,7 +65,8 @@ const AgentActivity = (() => {
     if (!agentId) return;
     _entries.set(agentId, { state: 'active', startedAt: Date.now(), endedAt: null });
     _emit(agentId);
-    _scheduleDecay();
+    // No decay scheduling here — an 'active' entry never ages out on its own.
+    // markIdle starts the timer once the entry becomes 'recent'.
   }
 
   function markIdle(agentId) {

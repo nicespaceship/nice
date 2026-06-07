@@ -43,6 +43,26 @@ describe('AgentActivity', () => {
     expect(AgentActivity.getState('bp-1')).toBe('idle');
   });
 
+  it('does not pin the decay interval when an active agent never goes idle', () => {
+    AgentActivity.markActive('bp-stuck');
+    // An orphaned active entry (run cancelled / crashed before a terminal
+    // event) must not leak a forever-spinning 5s decay interval.
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('stops the decay interval after the last recent entry decays, even with an active one left', () => {
+    AgentActivity.markActive('bp-long');   // stays active — schedules no timer
+    AgentActivity.markActive('bp-short');
+    AgentActivity.markIdle('bp-short');    // recent → starts the decay timer
+    expect(vi.getTimerCount()).toBe(1);
+
+    vi.advanceTimersByTime(AgentActivity.RECENT_WINDOW_MS + 5_500);
+    expect(AgentActivity.getState('bp-short')).toBe('idle');
+    expect(AgentActivity.getState('bp-long')).toBe('active');
+    // bp-long is still active but must not keep the interval alive.
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('markIdle on an unknown agent is a no-op', () => {
     AgentActivity.markIdle('bp-never-active');
     expect(AgentActivity.getState('bp-never-active')).toBe('idle');
