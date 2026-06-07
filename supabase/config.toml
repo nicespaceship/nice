@@ -393,6 +393,14 @@ verify_jwt = false
 [functions.browser-proxy]
 verify_jwt = false
 
+# Stripe sends webhook POSTs with a `stripe-signature` HMAC header and NO
+# Authorization JWT, so the gateway must not demand one (it would reject every
+# event). The function authenticates the payload itself via the HMAC secret.
+# Not part of the ES256 sweep — it never validates a user JWT — but it still
+# requires verify_jwt=false. Pin it here so a plain deploy can't flip it true.
+[functions.stripe-webhook]
+verify_jwt = false
+
 [functions.microsoft-oauth]
 verify_jwt = false
 [functions.hubspot-oauth]
