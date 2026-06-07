@@ -515,8 +515,11 @@ const AnalyticsView = (() => {
     const recentMissions = missions.filter(m => new Date(m.created_at).getTime() >= sevenDaysAgo && (m.status === 'completed' || m.status === 'running'));
     const tokensPerMission = 5;   // rough burn estimate; the real per-call debit lives in nice-ai
     const dailyTokenAvg = (recentMissions.length * tokensPerMission) / 7;
-    const daysLeft = !hasPool ? Infinity : (dailyTokenAvg > 0 ? Math.round(tokenBalance / dailyTokenAvg) : Infinity);
-    const tokenWarning = hasPool && daysLeft < 7 && daysLeft !== Infinity;
+    // Free tier (no pool) is genuinely infinite. A funded pool with no recent
+    // burn is *unknown*, not infinite — null renders as "—" so a finite,
+    // depletable balance isn't mislabeled as unlimited.
+    const daysLeft = !hasPool ? Infinity : (dailyTokenAvg > 0 ? Math.round(tokenBalance / dailyTokenAvg) : null);
+    const tokenWarning = hasPool && Number.isFinite(daysLeft) && daysLeft < 7;
 
     el.innerHTML = `
       <div class="ana-stat-card">
@@ -539,7 +542,7 @@ const AnalyticsView = (() => {
         <span class="ana-stat-label">Tokens</span>
       </div>
       <div class="ana-stat-card">
-        <span class="ana-stat-num ${tokenWarning ? 'token-warning' : ''}">${daysLeft === Infinity ? '\u221E' : daysLeft + 'd'}</span>
+        <span class="ana-stat-num ${tokenWarning ? 'token-warning' : ''}">${daysLeft === Infinity ? '\u221E' : (daysLeft == null ? '\u2014' : daysLeft + 'd')}</span>
         <span class="ana-stat-label">Token Runway</span>
       </div>
     `;
