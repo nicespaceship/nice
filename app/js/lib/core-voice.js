@@ -128,6 +128,12 @@ const CoreVoice = (() => {
 
   function _wireAudioLifecycle(audio, abortCtrl, opts) {
     audio.onplay = () => {
+      // Generation guard — same token speak()'s async steps use. The play
+      // event is queued by play() and can fire AFTER a newer speak() or a
+      // stop() (theme switch / mute) has superseded this clip. Without the
+      // guard, a dead clip's onplay re-enters 'speaking' and re-attaches the
+      // analyser, leaking an rAF loop against silence and freezing the core.
+      if (_abort !== abortCtrl) return;
       if (typeof CoreReactor !== 'undefined') {
         CoreReactor.setState('speaking');
         CoreReactor.attachAnalyser(audio);

@@ -430,6 +430,33 @@ describe('CoreVoice.speak — playback path', () => {
     expect(errorToasts).toHaveLength(0);
   });
 
+  it('onplay is a no-op once the clip has been stopped (generation guard)', async () => {
+    const { audios } = installMediaSourceMock();
+    const savedCR = globalThis.CoreReactor;
+    globalThis.CoreReactor = { setState: vi.fn(), attachAnalyser: vi.fn(), detachAnalyser: vi.fn() };
+    try {
+      const res = makeChunkedResponse([new Uint8Array([1, 2])]);
+      globalThis.fetch = vi.fn(async () => res);
+      await CoreVoice.speak('hello');
+      // Let play()'s queued onplay fire for the live clip — it should wire once.
+      await new Promise(r => setTimeout(r, 0));
+      expect(audios).toHaveLength(1);
+      expect(CoreReactor.attachAnalyser).toHaveBeenCalledTimes(1);
+
+      // Stop the clip — _abort is cleared. A late onplay from the now-dead
+      // element must NOT re-enter 'speaking' or re-attach the analyser
+      // (that path leaks an rAF loop and freezes the core on 'speaking').
+      CoreReactor.attachAnalyser.mockClear();
+      CoreReactor.setState.mockClear();
+      CoreVoice.stop();
+      audios[0].onplay();
+      expect(CoreReactor.attachAnalyser).not.toHaveBeenCalled();
+      expect(CoreReactor.setState).not.toHaveBeenCalledWith('speaking');
+    } finally {
+      globalThis.CoreReactor = savedCR;
+    }
+  });
+
   it('superseded speak() does not clobber the newer call (race)', async () => {
     installMediaSourceMock();
     let firstResolve;
