@@ -726,6 +726,24 @@ describe('CoreVoice.maybePlayThemeIntro', () => {
     expect(body.text).toBe('All systems online, sir.');
   });
 
+  it('switching between two intro themes before gesture plays the latest one', async () => {
+    Object.defineProperty(navigator, 'userActivation', {
+      value: { hasBeenActive: false, isActive: false },
+      configurable: true,
+    });
+    // Arrive at jarvis with no gesture yet — intro is deferred.
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    // Switch to cyberpunk (also an intro theme) before any interaction.
+    Theme.current = () => 'cyberpunk';
+    expect(CoreVoice.maybePlayThemeIntro()).toBe(true);
+    // First gesture should play CYBERPUNK's intro (the latest arrival), not
+    // drop both greetings (the old early-return bug).
+    window.dispatchEvent(new Event('pointerdown'));
+    await new Promise(r => setTimeout(r, 0));
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(globalThis.fetch.mock.calls[0][1].body).text).toBe('Welcome to Night City.');
+  });
+
   it('deferred intro is dropped when user switched themes before gesture', async () => {
     Object.defineProperty(navigator, 'userActivation', {
       value: { hasBeenActive: false, isActive: false },
