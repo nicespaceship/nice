@@ -2131,9 +2131,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (!res.ok) {
         const errBody = await res.text();
         console.warn('[NICE] nice-ai error:', errBody);
-        let detail = '';
-        try { detail = JSON.parse(errBody)?.error || errBody; } catch { detail = errBody; }
-        throw new Error(detail);
+        let body = null;
+        try { body = JSON.parse(errBody); } catch { /* not JSON */ }
+        // 402 = insufficient credit / missing entitlement. Route it through the
+        // actionable billing toast (with its Wallet CTA), the same as the
+        // ship-log and agent-executor surfaces, instead of rendering it as a
+        // generic "Connection Error" the user can't act on.
+        if (res.status === 402 && body && body.code && typeof Subscription !== 'undefined' && Subscription.handleBillingError) {
+          Subscription.handleBillingError(body);
+        }
+        throw new Error(body?.error || errBody || ('HTTP ' + res.status));
       }
 
       // Stream: parse SSE chunks as they arrive
