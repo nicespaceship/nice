@@ -333,3 +333,29 @@ describe('Subscription auto-enable hydrates State on repeat init', () => {
     delete window.NICE_CONFIG;
   });
 });
+
+describe('Subscription.setAddon (Pro gate)', () => {
+  beforeEach(() => { globalThis.Notify = { send: vi.fn() }; });
+  afterEach(() => { delete globalThis.SB; });
+
+  it('blocks adding an add-on when the user is signed in but not Pro', async () => {
+    delete globalThis.window.NICE_CONFIG; // paywall on
+    State.set('user', { id: 'u1', email: 'a@b.c' });
+    // Establish a deterministic FREE state: getSubscription with no rows sets
+    // the module's _subscription to the free fallback (a prior init test may
+    // have left it Pro — module state persists across tests in a file).
+    globalThis.SB = {
+      isReady: () => true,
+      client: {
+        auth: { getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }) },
+        from: () => ({ select: () => ({ eq: async () => ({ data: [] }) }) }),
+      },
+    };
+    await Subscription.getSubscription();
+    // Add-ons require base Pro, so setAddon must refuse to start a checkout
+    // that would orphan the add-on on a free account.
+    await Subscription.setAddon('claude', true);
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    expect(Notify.send.mock.calls[0][0].title).toMatch(/Pro/i);
+  });
+});
