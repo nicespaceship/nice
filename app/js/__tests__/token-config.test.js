@@ -81,9 +81,13 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('claude-4-7-opus')).toBe(10);
   });
 
-  it('GPT-5.4 Pro and GPT-5.3 Codex are premium pool weight 5', () => {
+  it('GPT-5.4 Pro is the priciest premium model — weight 20 (>= o3)', () => {
     expect(TokenConfig.poolFor('gpt-5-4-pro')).toBe('premium');
-    expect(TokenConfig.weightFor('gpt-5-4-pro')).toBe(5);
+    expect(TokenConfig.weightFor('gpt-5-4-pro')).toBe(20);
+    expect(TokenConfig.weightFor('gpt-5-4-pro')).toBeGreaterThanOrEqual(TokenConfig.weightFor('openai-o3'));
+  });
+
+  it('GPT-5.3 Codex is premium pool weight 5', () => {
     expect(TokenConfig.poolFor('gpt-5-3-codex')).toBe('premium');
     expect(TokenConfig.weightFor('gpt-5-3-codex')).toBe(5);
   });
@@ -157,8 +161,8 @@ describe('TokenConfig — balance math', () => {
     // 500 premium tokens / 15 per o3 message = 33
     const pools = { premium: { allowance: 500, used: 0, purchased: 0 } };
     expect(TokenConfig.messagesRemainingFor(pools, 'openai-o3')).toBe(33);
-    // GPT-5.4 Pro at weight 5 = 100 messages
-    expect(TokenConfig.messagesRemainingFor(pools, 'gpt-5-4-pro')).toBe(100);
+    // GPT-5.4 Pro at weight 20 (priciest model) = 25 messages
+    expect(TokenConfig.messagesRemainingFor(pools, 'gpt-5-4-pro')).toBe(25);
   });
 
   it('messagesRemainingFor reports Infinity for free models', () => {
