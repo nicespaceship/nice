@@ -144,7 +144,17 @@ const Subscription = (() => {
     const addonsSet = new Set();
     for (const r of liveRows) {
       if ((r.plan || 'free') === 'pro') plan = 'pro';
-      if (Array.isArray(r.addons)) for (const a of r.addons) addonsSet.add(a);
+      // Normalize add-on identity on read. The entitlement check matches
+      // against lowercase pool keys from TokenConfig, so a webhook that
+      // writes 'Claude' or ' claude ' would otherwise silently revoke a
+      // paying customer's models.
+      if (Array.isArray(r.addons)) {
+        for (const a of r.addons) {
+          if (typeof a !== 'string') continue;
+          const norm = a.trim().toLowerCase();
+          if (norm) addonsSet.add(norm);
+        }
+      }
     }
     // Status priority: a live (active/trialing) row means the user is active,
     // even if a SEPARATE row is in dunning — a past_due add-on must not
@@ -214,7 +224,8 @@ const Subscription = (() => {
   /** True when the user has a specific add-on enabled. */
   function hasAddon(addonId) {
     if (!_paywallEnabled()) return true;
-    return getAddons().includes(addonId);
+    if (typeof addonId !== 'string') return false;
+    return getAddons().includes(addonId.trim().toLowerCase());
   }
 
   /** Number of spaceships a user can run active at once. Free = 1,
