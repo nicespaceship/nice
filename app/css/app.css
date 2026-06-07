@@ -8624,7 +8624,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* Transaction history */
 .wallet-tx-list { display:flex; flex-direction:column; gap:1px; }
 .wallet-tx-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
-.wallet-tx-icon { font-size:1rem; flex-shrink:0; }
+.wallet-tx-icon { flex-shrink:0; display:inline-flex; align-items:center; color:var(--text-muted); }
+.wallet-tx-icon svg { width:16px; height:16px; }
 .wallet-tx-info { flex:1; min-width:0; }
 .wallet-tx-label { display:block; font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-sm); }
 .wallet-tx-date { font-family:var(--font-b, Inter, sans-serif); font-size:var(--text-xs); color:var(--text-muted); }

@@ -367,7 +367,7 @@ const WalletView = (() => {
             const display = isCredit ? '+' + tx.amount.toLocaleString() : '-' + tx.amount.toLocaleString();
             return `
               <div class="wallet-tx-row">
-                <span class="wallet-tx-icon">${icon}</span>
+                <span class="wallet-tx-icon"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><use href="#icon-${icon}"/></svg></span>
                 <div class="wallet-tx-info">
                   <span class="wallet-tx-label">${_esc(label)}</span>
                   <span class="wallet-tx-date">${date} · ${_esc(poolName)}</span>
