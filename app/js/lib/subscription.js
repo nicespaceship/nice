@@ -248,6 +248,13 @@ const Subscription = (() => {
     }
   }
 
+  // Set when a Stripe checkout opens in a NEW tab (subscribe / setAddon /
+  // buyTopUp). The opener SPA tab keeps a stale isPro()/balance until it
+  // refreshes; nice.js read-and-clears this on tab return to re-fetch billing
+  // state. Not set by openBillingPortal — that full-navigates, so the SPA
+  // reloads on return and refreshes itself.
+  let _checkoutPending = false;
+
   /** Open a Stripe payment link in a new tab. */
   function _openPaymentLink(url) {
     if (!url) return;
@@ -257,6 +264,7 @@ const Subscription = (() => {
         throw new Error('Unexpected redirect domain: ' + h);
       }
       window.open(url, '_blank', 'noopener');
+      _checkoutPending = true;
     } catch (e) {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Invalid checkout URL', message: e.message || 'Could not open Stripe', type: 'error' });
@@ -567,12 +575,33 @@ const Subscription = (() => {
     _autoEnableEntitled();
   }
 
+  /** Re-fetch the subscription from the server and re-apply entitled-model
+      enablement. Used when the SPA tab returns from a new-tab Stripe
+      checkout, so isPro()/add-ons reflect the purchase without a full
+      page reload. */
+  async function refresh() {
+    await getSubscription();
+    _autoEnableEntitled();
+    return _subscription;
+  }
+
+  /** Read-and-clear the "a Stripe checkout opened in a new tab" flag.
+      nice.js calls this when the SPA tab regains focus so it only re-fetches
+      billing state after an actual checkout, not on every tab switch. */
+  function consumeCheckoutPending() {
+    const pending = _checkoutPending;
+    _checkoutPending = false;
+    return pending;
+  }
+
   return {
     PLANS,
     PLAN_TIERS,
     PLAN_ALIASES,
     ADDONS,
     init,
+    refresh,
+    consumeCheckoutPending,
     getSubscription,
     getSubscriptionRows,
     getCurrentPlan,
