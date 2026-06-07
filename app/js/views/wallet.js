@@ -64,8 +64,9 @@ const WalletView = (() => {
     // wallet used to paint zeros before the fetch landed. Same story for
     // subscription — without the await, isPro() returned false on reload
     // and everything rendered as "Pro required".
+    let sub = null;
     if (typeof Subscription !== 'undefined' && Subscription.getSubscription) {
-      try { await Subscription.getSubscription(); } catch { /* ignore */ }
+      try { sub = await Subscription.getSubscription(); } catch { /* ignore */ }
     }
     try { await _awaitBalance(); } catch { /* ignore */ }
 
@@ -75,6 +76,10 @@ const WalletView = (() => {
     const isPro = typeof Subscription !== 'undefined' && Subscription.isPro && Subscription.isPro();
     const userAddons = typeof Subscription !== 'undefined' && Subscription.getAddons ? Subscription.getAddons() : [];
     const paywallEnabled = typeof Subscription !== 'undefined' && Subscription.paywallEnabled ? Subscription.paywallEnabled() : true;
+    // A past_due subscriber aggregates to plan='free', so isPro() is false and
+    // the only billing-portal control (Cancel Pro) would never render — leaving
+    // them no way to fix their card. Surface a dedicated recovery banner.
+    const pastDue = !!(sub && sub.status === 'past_due');
 
     el.innerHTML = `
       <div class="wallet-wrap">
@@ -83,6 +88,13 @@ const WalletView = (() => {
         <div class="wallet-self-host-banner">
           <strong>Self-hosted:</strong> Billing is disabled via <code>window.NICE_CONFIG.paywallEnabled = false</code>.
           Every user has full Pro access with both add-ons. Stripe checkout buttons are decorative.
+        </div>
+        ` : ''}
+
+        ${pastDue ? `
+        <div class="wallet-past-due-banner">
+          <span><strong>Payment failed.</strong> Your last NICE Pro payment didn't go through, so Pro features are paused. Update your card to restore them.</span>
+          <button class="btn btn-sm btn-primary" data-action="fix-billing">Update payment method</button>
         </div>
         ` : ''}
 
@@ -275,7 +287,7 @@ const WalletView = (() => {
         if (!action) return;
         if (action === 'subscribe-pro' && Subscription?.subscribe) {
           Subscription.subscribe('pro');
-        } else if (action === 'cancel-pro' && Subscription?.openBillingPortal) {
+        } else if ((action === 'cancel-pro' || action === 'fix-billing') && Subscription?.openBillingPortal) {
           Subscription.openBillingPortal('pro');
         } else if (action === 'cancel-claude' && Subscription?.openBillingPortal) {
           Subscription.openBillingPortal('claude');
