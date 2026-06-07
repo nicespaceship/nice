@@ -272,26 +272,38 @@ const Subscription = (() => {
 
     let title   = 'Payment required';
     let message = body.error || 'Something went wrong.';
+    let action  = 'Open Wallet';
     switch (body.code) {
       case 'subscription_required':
         title   = 'NICE Pro required';
         message = body.error || 'Upgrade to NICE Pro to use this model.';
+        action  = 'Upgrade to Pro';
         break;
       case 'addon_required':
         title   = ((body.required_addon || 'Add-on') + ' add-on required')
                     .replace(/^\w/, (c) => c.toUpperCase());
         message = body.error || 'Enable the add-on to use this model.';
+        action  = 'Get add-on';
         break;
       case 'insufficient_tokens':
         title   = 'Out of ' + (body.pool || '') + ' tokens';
         message = body.error || 'Top up your balance or switch to the free Gemini model.';
+        action  = 'Buy tokens';
         break;
       case 'past_due':
         title   = 'Payment failed';
         message = body.error || 'Update your card in Wallet to continue.';
+        action  = 'Update card';
         break;
     }
-    Notify.send({ title, message, type: 'budget_alert' });
+    // Persistent + a Wallet CTA. A billing block the user can't act on is the
+    // bug this fixes: the toast routes to the Wallet, where every pool's
+    // top-ups, the add-on cards, and (when past_due) the update-card path live.
+    Notify.send({
+      title, message, type: 'budget_alert', persistent: true,
+      actionLabel: action,
+      undo: () => { if (typeof Router !== 'undefined') Router.navigate('/security?tab=wallet'); },
+    });
     return true;
   }
 

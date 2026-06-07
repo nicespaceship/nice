@@ -99,6 +99,17 @@ describe('Subscription.handleBillingError', () => {
     expect(arg.title).toMatch(/Payment/i);
   });
 
+  it('attaches a persistent Wallet CTA the user can act on', () => {
+    globalThis.Router = { navigate: vi.fn() };
+    Subscription.handleBillingError({ code: 'insufficient_tokens', pool: 'standard' });
+    const arg = Notify.send.mock.calls[0][0];
+    expect(arg.persistent).toBe(true);
+    expect(arg.actionLabel).toBe('Buy tokens');
+    expect(typeof arg.undo).toBe('function');
+    arg.undo();
+    expect(Router.navigate).toHaveBeenCalledWith('/security?tab=wallet');
+  });
+
   it('passes an explicit error message through as the toast body when provided', () => {
     Subscription.handleBillingError({
       code: 'insufficient_tokens',
