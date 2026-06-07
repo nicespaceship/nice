@@ -108,6 +108,7 @@ globalThis.State = (() => {
 
 // Load real IIFE modules into global scope (order matters for dependencies)
 loadScriptGlobal('lib/utils.js');
+loadScriptGlobal('lib/cost-utils.js'); // pure leaf; cost.js + analytics.js call CostUtils.attributeLogsToMissions
 loadScriptGlobal('lib/attachment-utils.js'); // pure leaf; agent-executor + ship-log call AttachmentUtils.buildUserContent
 loadScriptGlobal('lib/terminology.js');   // noun SSOT; command-palette + views read this
 loadScriptGlobal('lib/audit-log.js');

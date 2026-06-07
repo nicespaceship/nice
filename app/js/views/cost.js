@@ -378,29 +378,13 @@ const CostView = (() => {
     const agentMap = {};
     agents.forEach(a => { agentMap[a.id] = a; });
 
-    // Attribute each cost log to exactly ONE mission — the same-agent mission
-    // whose created_at is nearest. The old ±24h window matched a log against
-    // every mission that agent ran that day, so N missions each showed the
-    // full day's spend (a 3-mission day tripled it) and the per-agent footer
-    // summed the duplicates. fuel_usage has no mission FK, so nearest-by-time
-    // is the best correlation available, and it keeps the per-agent total
-    // equal to real spend.
+    // Attribute each cost log to exactly ONE mission — nearest same-agent
+    // mission by time — via the shared SSOT so this view and Operations
+    // analytics can't diverge (see app/js/lib/cost-utils.js). fuel_usage has
+    // no mission FK, so nearest-by-time is the best correlation available and
+    // it keeps the per-agent total equal to real spend.
     const missions = tasks.filter(t => t.status === 'completed' || t.status === 'running');
-    const acc = {};
-    missions.forEach(m => { acc[m.id] = { tokens: 0, cost: 0 }; });
-    logs.forEach(l => {
-      const lt = new Date(l.created_at).getTime();
-      let best = null, bestDelta = Infinity;
-      missions.forEach(m => {
-        if (m.agent_id !== l.agent_id) return;
-        const d = Math.abs(lt - new Date(m.created_at).getTime());
-        if (d < bestDelta) { bestDelta = d; best = m; }
-      });
-      if (best) {
-        acc[best.id].tokens += (l.tokens_used || 0);
-        acc[best.id].cost   += (l.amount || 0);
-      }
-    });
+    const acc = CostUtils.attributeLogsToMissions(missions, logs);
 
     const rows = missions
       .map(m => {

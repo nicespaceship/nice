@@ -696,15 +696,17 @@ const AnalyticsView = (() => {
     const agentMap = {};
     agents.forEach(a => { agentMap[a.id] = a; });
 
-    const rows = tasks
-      .filter(t => t.status === 'completed' || t.status === 'running')
-      .map(t => {
-        const agent = agentMap[t.agent_id];
-        const agentName = agent ? agent.name : 'Unassigned';
-        const missionLogs = logs.filter(l => l.agent_id === t.agent_id && Math.abs(new Date(l.created_at).getTime() - new Date(t.created_at).getTime()) < 86400000);
-        const tokens = missionLogs.reduce((s, l) => s + (l.tokens_used || 0), 0);
-        const cost = missionLogs.reduce((s, l) => s + (l.amount || 0), 0);
-        return { title: t.title, agentName, tokens, cost };
+    // Attribute each cost log to exactly ONE mission — nearest same-agent
+    // mission by time — via the shared SSOT (CostUtils), the same helper the
+    // Cost Tracker uses. The old ±24h window matched a log against every
+    // same-agent mission that day, so a multi-mission day showed N× the real
+    // spend here and disagreed with the Cost Tracker.
+    const missions = tasks.filter(t => t.status === 'completed' || t.status === 'running');
+    const acc = CostUtils.attributeLogsToMissions(missions, logs);
+    const rows = missions
+      .map(m => {
+        const agent = agentMap[m.agent_id];
+        return { title: m.title, agentName: agent ? agent.name : 'Unassigned', tokens: acc[m.id].tokens, cost: acc[m.id].cost };
       })
       .sort((a, b) => b.cost - a.cost)
       .slice(0, 10);
