@@ -60,4 +60,17 @@ describe('AnalyticsView token runway', () => {
     expect(html).toContain('∞');          // ∞ runway
     expect(html).not.toContain('token-warning'); // no false "running out" warning
   });
+
+  it('shows an unknown runway (—) for a funded pool with no recent burn', () => {
+    // Pro user with a real Standard balance but no missions in the last 7 days:
+    // burn rate is 0. The old code rendered ∞ here, mislabeling a depletable
+    // balance as unlimited.
+    State.set('token_balance', { pools: { standard: { allowance: 1000, used: 0, purchased: 0 } } });
+    State.set('missions', []);
+    AnalyticsView._renderCostOverview([]);
+    const html = document.getElementById('ana-cost-overview').innerHTML;
+    expect(html).toContain('—');                 // unknown, em dash
+    expect(html).not.toContain('∞');             // not infinite
+    expect(html).not.toContain('token-warning'); // and not a false low-runway warning
+  });
 });
