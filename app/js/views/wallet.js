@@ -281,28 +281,40 @@ const WalletView = (() => {
 
   /* ── Events ───────────────────────────────────────────────────── */
   function _bindEvents(el) {
+    // Each billing button opens a Stripe checkout/portal (a new tab or a full
+    // navigation). A fast double-click would fire two — two checkout tabs, a
+    // double-charge risk. Disable the clicked button for the action plus a short
+    // grace beat so one intent maps to one checkout.
+    const _guard = (btn, fn) => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      Promise.resolve(fn()).catch(() => {}).finally(() => setTimeout(() => { btn.disabled = false; }, 1200));
+    };
+
     el.querySelectorAll('button[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.dataset.action;
         if (!action) return;
-        if (action === 'subscribe-pro' && Subscription?.subscribe) {
-          Subscription.subscribe('pro');
-        } else if ((action === 'cancel-pro' || action === 'fix-billing') && Subscription?.openBillingPortal) {
-          Subscription.openBillingPortal('pro');
-        } else if (action === 'cancel-claude' && Subscription?.openBillingPortal) {
-          Subscription.openBillingPortal('claude');
-        } else if (action === 'cancel-premium' && Subscription?.openBillingPortal) {
-          Subscription.openBillingPortal('premium');
-        } else if (action.startsWith('add-') && Subscription?.setAddon) {
-          Subscription.setAddon(action.slice(4), true);
-        }
+        _guard(btn, () => {
+          if (action === 'subscribe-pro' && Subscription?.subscribe) {
+            return Subscription.subscribe('pro');
+          } else if ((action === 'cancel-pro' || action === 'fix-billing') && Subscription?.openBillingPortal) {
+            return Subscription.openBillingPortal('pro');
+          } else if (action === 'cancel-claude' && Subscription?.openBillingPortal) {
+            return Subscription.openBillingPortal('claude');
+          } else if (action === 'cancel-premium' && Subscription?.openBillingPortal) {
+            return Subscription.openBillingPortal('premium');
+          } else if (action.startsWith('add-') && Subscription?.setAddon) {
+            return Subscription.setAddon(action.slice(4), true);
+          }
+        });
       });
     });
 
     el.querySelectorAll('button[data-topup-id]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.topupId;
-        if (id && Subscription?.buyTopUp) Subscription.buyTopUp(id);
+        if (id && Subscription?.buyTopUp) _guard(btn, () => Subscription.buyTopUp(id));
       });
     });
   }
