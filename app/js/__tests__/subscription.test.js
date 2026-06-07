@@ -174,6 +174,23 @@ describe('Subscription._aggregate (multi-row status)', () => {
     ]);
     expect(agg.status).toBe('canceled');
   });
+
+  it('normalizes add-on identity casing/whitespace so the entitlement check matches', () => {
+    // Regression: the entitlement check matches against lowercase pool keys
+    // from TokenConfig. A webhook row writing 'Claude' or ' premium ' must not
+    // silently revoke a paying customer's models.
+    const agg = Subscription._aggregate([
+      { plan: 'pro', status: 'active', addons: ['Claude', ' PREMIUM '] },
+    ]);
+    expect(agg.addons).toEqual(['claude', 'premium']);
+  });
+
+  it('ignores non-string and empty add-on entries', () => {
+    const agg = Subscription._aggregate([
+      { plan: 'pro', status: 'active', addons: ['claude', '', null, 42, '  '] },
+    ]);
+    expect(agg.addons).toEqual(['claude']);
+  });
 });
 
 describe('Subscription._tryStripeSubscribe (fallback-safe edge fn call)', () => {
