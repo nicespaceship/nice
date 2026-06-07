@@ -400,6 +400,18 @@ const Subscription = (() => {
       return openBillingPortal();
     }
 
+    // Add-ons sit on top of Pro — you can't buy one without the base plan.
+    // The Wallet hides the Add button for non-Pro, but setAddon is exported and
+    // reachable (command palette, deep link, a stale render), and a standalone
+    // add-on subscription would orphan on a free account. Guard the add path.
+    // (The server must enforce this too; this is the client half.)
+    if (!isPro()) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({ title: 'NICE Pro required', message: 'Subscribe to NICE Pro before adding ' + addonId + ' models.', type: 'warning' });
+      }
+      return;
+    }
+
     // Add: prefer the edge function (adds an item to the existing
     // subscription), same 6s-timeout-then-Payment-Link fallback as subscribe().
     const url = await _tryStripeSubscribe({ action: 'addon_add', addonId, userId: user.id, email: user.email });
