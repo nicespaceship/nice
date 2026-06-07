@@ -20,6 +20,7 @@ function loadModule(rel) {
   eval(code);
 }
 
+loadModule('lib/cost-utils.js'); // SSOT attribution helper cost.js now calls
 loadModule('views/cost.js');
 
 describe('CostView._renderCostByMission', () => {

@@ -16,6 +16,7 @@ const ROOT = resolve(__dirname, '..');
 const SCRIPTS = [
   'app/js/lib/state.js',
   'app/js/lib/utils.js',
+  'app/js/lib/cost-utils.js',
   'app/js/lib/skin.js',
   'app/js/lib/rate-limiter.js',
   'app/js/lib/supabase.js',
