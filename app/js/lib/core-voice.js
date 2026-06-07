@@ -474,7 +474,13 @@ const CoreVoice = (() => {
   let _lastThemeSet = null;
 
   function _scheduleIntroOnGesture(intro, id) {
-    if (_pendingIntroCleanup) return;
+    // Last arrival wins. If an earlier theme's intro is still waiting for
+    // the first gesture and the user switched to a different intro theme
+    // before interacting, cancel the stale deferral and schedule this one.
+    // The old early-return dropped the new theme's intro AND then no-op'd
+    // the stale one on gesture (its id no longer matches the active theme),
+    // so neither greeting played.
+    if (_pendingIntroCleanup) _pendingIntroCleanup();
     const events = ['pointerdown', 'keydown', 'touchstart'];
     const opts = { once: true, capture: true };
     const playOnce = () => {
