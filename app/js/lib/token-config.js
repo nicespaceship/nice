@@ -83,7 +83,9 @@ const TokenConfig = (() => {
     'claude-4-7-opus':    { pool: 'claude',   weight: 10, tier: 'claude',   pricing: { input: 5.00,  output: 25.00  } },
 
     // ── Premium pool (Premium add-on)
-    'gpt-5-4-pro':        { pool: 'premium',  weight: 5,  tier: 'premium',  pricing: { input: 30.00, output: 180.00 } },
+    // Priciest model in the catalog (~$142/MTok blended) — weight reflects that
+    // so the 500 premium allowance can't be drained at a loss. Must stay >= o3.
+    'gpt-5-4-pro':        { pool: 'premium',  weight: 20, tier: 'premium',  pricing: { input: 30.00, output: 180.00 } },
     'gpt-5-3-codex':      { pool: 'premium',  weight: 5,  tier: 'premium',  pricing: { input: 1.25,  output: 10.00  } },
     'openai-o3':          { pool: 'premium',  weight: 15, tier: 'premium',  pricing: { input: 2.00,  output: 8.00   } },
     'gemini-2-5-pro':     { pool: 'premium',  weight: 3,  tier: 'premium',  pricing: { input: 1.25,  output: 10.00  } },
