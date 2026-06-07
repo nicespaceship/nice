@@ -8916,6 +8916,21 @@ html[data-theme] .nice-ai-input:focus-visible {
   border-radius: 4px;
   font-size: .72rem;
 }
+.wallet-past-due-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  background: rgba(245,158,11,.10);
+  border: 1px solid rgba(245,158,11,.35);
+  border-radius: var(--radius, 10px);
+  padding: 12px 16px;
+  font-size: .82rem;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.wallet-past-due-banner span { flex: 1 1 260px; }
+.wallet-past-due-banner .btn { margin-left: auto; flex-shrink: 0; }
 
 /* ── Plan card grid (Free, Pro, Claude add-on, Premium add-on) */
 .wallet-plan-grid {
