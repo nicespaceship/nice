@@ -1,15 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Cost Utilities (SSOT)
-   Shared spend/usage attribution for the Cost Tracker (cost.js) and the
-   Operations analytics view (analytics.js). `fuel_usage` logs carry no
-   mission FK, so spend is correlated to missions by nearest timestamp.
+   Shared spend/usage plumbing for the Cost Tracker (cost.js) and the
+   Operations analytics view (analytics.js): mission attribution, the
+   fuel_usage data load, the budget read, and token formatting. Both
+   views render differently but pull their data through here, so the
+   numbers can't drift apart.
 
-   Keeping this in ONE place is the fix for a real divergence: the
-   nearest-by-time attribution originally landed only in cost.js, so the
-   Operations "Cost by Mission" table kept an old ±24h window that matched
-   each log against every same-agent mission that day — an N-mission day
-   showed N× the real spend, and the two views disagreed. Both now call
-   this helper, so they can't drift again.
+   Mission attribution lives here because `fuel_usage` logs carry no
+   mission FK, so spend is correlated to missions by nearest timestamp.
+   That logic originally landed only in cost.js, so the Operations "Cost
+   by Mission" table kept an old ±24h window that matched each log against
+   every same-agent mission that day — an N-mission day showed N× the real
+   spend, and the two views disagreed. Both now call this helper.
 ═══════════════════════════════════════════════════════════════════ */
 
 const CostUtils = (() => {
@@ -41,7 +43,58 @@ const CostUtils = (() => {
     return acc;
   }
 
-  return { attributeLogsToMissions };
+  /** Read the spend budget from localStorage, falling back to the default
+      ceiling/alert. Shared so both views agree on the same default. */
+  function getBudget() {
+    const saved = localStorage.getItem(Utils.KEYS.budget);
+    if (saved) { try { return JSON.parse(saved); } catch (e) {} }
+    return { limit: 50, alert: 80 };
+  }
+
+  /** Compact token count: 1.2M / 3.4k / 850. */
+  function formatTokens(n) {
+    if (!n) return '0';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+    return String(n);
+  }
+
+  /** Fetch + normalize the data both cost views render. Prefers the cached
+      agents/missions in State, falls back to Supabase, then maps raw
+      fuel_usage rows into the cost-log shape the views expect. Writes the
+      refreshed agents/missions back to State. Returns { agents, tasks,
+      costLogs }; never throws — a failed fetch yields empty cost logs and
+      an honest empty state rather than fabricated spend. */
+  async function loadCostData(user) {
+    let agents = State.get('agents') || [];
+    let tasks = State.get('missions') || [];
+    let costLogs = [];
+    try {
+      const [a, t, logs] = await Promise.all([
+        agents.length ? agents : SB.db('user_agents').list({ userId: user.id }).catch(() => []),
+        tasks.length ? tasks : SB.db('mission_runs').list({ userId: user.id }).catch(() => []),
+        SB.db('fuel_usage').list({ userId: user.id, orderBy: 'created_at' }).catch(() => []),
+      ]);
+      agents = Array.isArray(a) ? a : agents;
+      tasks = Array.isArray(t) ? t : tasks;
+      costLogs = Array.isArray(logs) ? logs : [];
+      State.set('agents', agents);
+      State.set('missions', tasks);
+    } catch (e) {}
+
+    costLogs = costLogs.map((u) => ({
+      id:          u.id,
+      agent_id:    u.agent_id,
+      model:       u.model || 'unknown',
+      tokens_used: (u.input_tokens || 0) + (u.output_tokens || 0),
+      amount:      parseFloat(u.fuel_cost) || 0,
+      created_at:  u.created_at,
+    }));
+
+    return { agents, tasks, costLogs };
+  }
+
+  return { attributeLogsToMissions, getBudget, formatTokens, loadCostData };
 })();
 
 // Expose for tests / Node consumers

@@ -135,47 +135,11 @@ const CostView = (() => {
     }
   }
 
-  function _getBudget() {
-    const saved = localStorage.getItem(Utils.KEYS.budget);
-    if (saved) {
-      try { return JSON.parse(saved); } catch(e) {}
-    }
-    return { limit: 50, alert: 80 };
-  }
-
   async function _loadCosts() {
-    const user = State.get('user');
-    let agents = State.get('agents') || [];
-    let tasks = State.get('missions') || [];
-    let costLogs = [];
-
-    // Fetch fresh data
-    try {
-      const [a, t, logs] = await Promise.all([
-        agents.length ? agents : SB.db('user_agents').list({ userId: user.id }).catch(() => []),
-        tasks.length ? tasks : SB.db('mission_runs').list({ userId: user.id }).catch(() => []),
-        SB.db('fuel_usage').list({ userId: user.id, orderBy: 'created_at' }).catch(() => []),
-      ]);
-      agents = Array.isArray(a) ? a : agents;
-      tasks = Array.isArray(t) ? t : tasks;
-      costLogs = Array.isArray(logs) ? logs : [];
-      State.set('agents', agents);
-      State.set('missions', tasks);
-    } catch(e) {}
-
-    // Map fuel_usage rows to cost log format
-    costLogs = costLogs.map(u => ({
-      id:          u.id,
-      agent_id:    u.agent_id,
-      model:       u.model || 'unknown',
-      tokens_used: (u.input_tokens || 0) + (u.output_tokens || 0),
-      amount:      parseFloat(u.fuel_cost) || 0,
-      created_at:  u.created_at,
-    }));
-
-    // No fabricated estimates: when fuel_usage has no rows the view shows an
-    // honest empty state ($0 spend, "No cost data yet") rather than random
-    // numbers dressed up as real spend.
+    // Fetch + normalize is shared with analytics.js via CostUtils; this view
+    // owns only its render dispatch. No fabricated estimates: an empty
+    // fuel_usage set renders an honest empty state, not random spend.
+    const { agents, tasks, costLogs } = await CostUtils.loadCostData(State.get('user'));
     _updateOverview(costLogs);
     _drawCostChart(costLogs);
     _renderAgentBreakdown(agents, costLogs);
@@ -184,7 +148,7 @@ const CostView = (() => {
   }
 
   function _updateOverview(logs) {
-    const budget = _getBudget();
+    const budget = CostUtils.getBudget();
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const monthLogs = logs.filter(l => new Date(l.created_at).getTime() >= monthStart);
@@ -357,7 +321,7 @@ const CostView = (() => {
               </td>
               <td class="mono" style="font-size:.68rem">${_esc(r.model)}</td>
               <td>${r.count}</td>
-              <td>${_formatTokens(r.tokens)}</td>
+              <td>${CostUtils.formatTokens(r.tokens)}</td>
               <td class="hl">$${r.total.toFixed(2)}</td>
             </tr>
           `).join('')}
@@ -413,7 +377,7 @@ const CostView = (() => {
             <tr>
               <td>${_esc(r.title)}</td>
               <td>${_esc(r.agentName)}</td>
-              <td>${_formatTokens(r.tokens)}</td>
+              <td>${CostUtils.formatTokens(r.tokens)}</td>
               <td class="hl">$${r.cost.toFixed(4)}</td>
             </tr>
           `).join('')}
@@ -446,19 +410,12 @@ const CostView = (() => {
         <div class="cost-log-row">
           <span class="cost-log-agent">${_esc(agent?.name || 'Unknown')}</span>
           <span class="cost-log-model mono">${_esc(l.model)}</span>
-          <span class="cost-log-tokens">${_formatTokens(l.tokens_used)} tokens</span>
+          <span class="cost-log-tokens">${CostUtils.formatTokens(l.tokens_used)} tokens</span>
           <span class="cost-log-amount">$${(l.amount || 0).toFixed(4)}</span>
           <span class="cost-log-time">${_timeAgo(l.created_at)}</span>
         </div>
       `;
     }).join('');
-  }
-
-  function _formatTokens(n) {
-    if (!n) return '0';
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-    return String(n);
   }
 
   async function _loadPurchaseHistory() {
