@@ -697,18 +697,26 @@ const SpaceshipBuilderView = (() => {
         // Generate agents via AI
         const result = await CrewGenerator.generate(shipData);
         if (result.error || !result.agents.length) {
-          msgEl.textContent = result.error || 'Failed to generate agents. Try manual setup.';
-          setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2000);
+          console.warn('[CrewSetup] generation failed:', result.error);
+          msgEl.textContent = 'Crew generation failed. Your spaceship is saved, so use Manual Setup or Skip.';
+          setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
           return;
         }
 
         msgEl.textContent = 'Creating ' + result.agents.length + ' agents...';
 
-        // Save and assign
-        const saved = await CrewGenerator.saveAndAssign(shipId, result.agents, { slots: shipData.slots || {} });
+        // Save and assign. Pass the business context so the generator can
+        // synthesize a fallback prompt for any agent the model left without one.
+        const saved = await CrewGenerator.saveAndAssign(shipId, result.agents, {
+          slots: shipData.slots || {},
+          name: shipData.name,
+          category: shipData.category,
+          description: shipData.description,
+        });
         if (!saved.savedAgents.length) {
-          msgEl.textContent = 'Failed to save agents. Try manual setup.';
-          setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2000);
+          console.warn('[CrewSetup] save failed:', saved.error);
+          msgEl.textContent = 'Saving the crew failed. Your spaceship is saved, so use Manual Setup or Skip.';
+          setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
           return;
         }
 
@@ -722,8 +730,9 @@ const SpaceshipBuilderView = (() => {
           Router.navigate('#/bridge');
         }, 1200);
       } catch (e) {
-        msgEl.textContent = 'Error: ' + (e.message || 'Unknown error');
-        setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2000);
+        console.warn('[CrewSetup] error:', e);
+        msgEl.textContent = 'Crew setup hit an error. Your spaceship is saved, so use Manual Setup or Skip.';
+        setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
       }
     });
 
