@@ -3555,8 +3555,11 @@ const BlueprintsView = (() => {
 
   // Tear down any Bridge sub-views that register their own lifecycle so their
   // side effects (Schematic sets --reactor-x/y on <html>; Tron owns a canvas
-  // loop) don't leak into the next route.
+  // loop) don't leak into the next route. The detail drawer is appended to
+  // document.body, outside the view container the Router swaps, so close it
+  // here or it stays visible on top of the next route.
   function destroy() {
+    _closeDrawer();
     if (typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
     if (typeof TronView !== 'undefined' && TronView.destroy) TronView.destroy();
     _detachBreakpointListeners();
