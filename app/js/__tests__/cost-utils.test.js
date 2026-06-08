@@ -6,7 +6,7 @@
  * both views at once.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -74,5 +74,76 @@ describe('CostUtils.attributeLogsToMissions', () => {
     expect(CostUtils.attributeLogsToMissions(missions, [])).toEqual({ m1: { tokens: 0, cost: 0 } });
     expect(CostUtils.attributeLogsToMissions([], [])).toEqual({});
     expect(CostUtils.attributeLogsToMissions(undefined, undefined)).toEqual({});
+  });
+});
+
+describe('CostUtils.formatTokens', () => {
+  it('uses M/k suffixes above the thresholds and a zero floor below', () => {
+    expect(CostUtils.formatTokens(0)).toBe('0');
+    expect(CostUtils.formatTokens(undefined)).toBe('0');
+    expect(CostUtils.formatTokens(850)).toBe('850');
+    expect(CostUtils.formatTokens(3400)).toBe('3.4k');
+    expect(CostUtils.formatTokens(1200000)).toBe('1.2M');
+  });
+});
+
+describe('CostUtils.getBudget', () => {
+  // Uses the shared Utils + localStorage mocks from setup.js (cleared each beforeEach).
+  it('returns the saved budget when present', () => {
+    localStorage.setItem(Utils.KEYS.budget, JSON.stringify({ limit: 120, alert: 90 }));
+    expect(CostUtils.getBudget()).toEqual({ limit: 120, alert: 90 });
+  });
+
+  it('falls back to the default ceiling on missing or corrupt data', () => {
+    expect(CostUtils.getBudget()).toEqual({ limit: 50, alert: 80 });
+    localStorage.setItem(Utils.KEYS.budget, '{not json');
+    expect(CostUtils.getBudget()).toEqual({ limit: 50, alert: 80 });
+  });
+});
+
+describe('CostUtils.loadCostData', () => {
+  // Uses the shared State mock from setup.js (reset each beforeEach); only SB
+  // is swapped per-test, then restored.
+  const realSB = globalThis.SB;
+  afterEach(() => { globalThis.SB = realSB; });
+
+  it('normalizes fuel_usage rows into cost logs and writes agents/missions to State', async () => {
+    const agents = [{ id: 'a1', name: 'Agent One' }];
+    const missions = [{ id: 'm1', agent_id: 'a1' }];
+    const fuel = [
+      { id: 'f1', agent_id: 'a1', model: 'claude-4-6-sonnet', input_tokens: 100, output_tokens: 50, fuel_cost: '0.42', created_at: '2026-06-01T10:00:00Z' },
+      { id: 'f2', agent_id: 'a1', input_tokens: 10, output_tokens: 0, fuel_cost: null, created_at: '2026-06-01T11:00:00Z' },
+    ];
+    const tables = { user_agents: agents, mission_runs: missions, fuel_usage: fuel };
+    globalThis.SB = { db: (t) => ({ list: async () => tables[t] }) };
+
+    const out = await CostUtils.loadCostData({ id: 'u1' });
+
+    expect(out.agents).toEqual(agents);
+    expect(out.tasks).toEqual(missions);
+    expect(out.costLogs).toEqual([
+      { id: 'f1', agent_id: 'a1', model: 'claude-4-6-sonnet', tokens_used: 150, amount: 0.42, created_at: '2026-06-01T10:00:00Z' },
+      { id: 'f2', agent_id: 'a1', model: 'unknown', tokens_used: 10, amount: 0, created_at: '2026-06-01T11:00:00Z' },
+    ]);
+    expect(State.get('agents')).toEqual(agents);
+    expect(State.get('missions')).toEqual(missions);
+  });
+
+  it('prefers cached agents/missions from State over a fetch', async () => {
+    State.set('agents', [{ id: 'cached-a' }]);
+    State.set('missions', [{ id: 'cached-m' }]);
+    let entityFetches = 0;
+    globalThis.SB = { db: (t) => ({ list: async () => { if (t !== 'fuel_usage') entityFetches++; return []; } }) };
+
+    const out = await CostUtils.loadCostData({ id: 'u1' });
+
+    expect(entityFetches).toBe(0);
+    expect(out.agents).toEqual([{ id: 'cached-a' }]);
+    expect(out.tasks).toEqual([{ id: 'cached-m' }]);
+  });
+
+  it('yields an honest empty state (no throw) when the user is null or a fetch fails', async () => {
+    globalThis.SB = { db: () => ({ list: async () => { throw new Error('network'); } }) };
+    await expect(CostUtils.loadCostData(null)).resolves.toEqual({ agents: [], tasks: [], costLogs: [] });
   });
 });
