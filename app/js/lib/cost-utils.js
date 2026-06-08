@@ -61,11 +61,13 @@ const CostUtils = (() => {
 
   /** Month-to-date spend summary shared by both cost views. Filters logs to
       the current calendar month, totals spend, and derives budget
-      remaining/percentage plus a naive linear month-end projection
-      (average daily spend so far × days in month). Returns the budget too so
-      callers don't re-read it. `now` is injectable for tests; it defaults to
-      the current date. Both views render these numbers differently but must
-      compute them identically — hence the SSOT. */
+      remaining/percentage plus a smoothed month-end projection. Returns the
+      budget too so callers don't re-read it. `now` is injectable for tests; it
+      defaults to the current date. Both views render these numbers differently
+      but must compute them identically — hence the SSOT.
+
+      `avgDaily` stays the honest MTD daily average (spend ÷ days elapsed); only
+      `projectedMonth` is smoothed. See the projection block for the method. */
   function computeSpendSummary(logs, now) {
     const budget = getBudget();
     now = now || new Date();
@@ -77,8 +79,30 @@ const CostUtils = (() => {
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const dayOfMonth = now.getDate();
     const avgDaily = dayOfMonth > 0 ? totalSpend / dayOfMonth : 0;
-    const projectedMonth = avgDaily * daysInMonth;
-    return { budget, monthStart, totalSpend, remaining, pct, daysInMonth, dayOfMonth, avgDaily, projectedMonth };
+
+    // Month-end projection. A flat linear extrapolation (avgDaily × daysInMonth)
+    // is wildly noisy in the first days of the month: one $10 day on the 2nd
+    // projects a $150 month and trips the "over budget pace" flag. Shrink this
+    // month's run rate toward the prior calendar month's daily rate, weighted by
+    // how much of the month we've actually observed (confidence = elapsed
+    // fraction). Early days lean on the stable prior; the estimate converges to
+    // the true run rate as the month fills in — confidence reaches 1 on the last
+    // day, so the figure that gates the budget alarm at month-end is the honest
+    // linear one. With no prior-month spend to anchor to (new account), the prior
+    // falls back to avgDaily, degrading to the plain linear projection rather
+    // than inventing a number.
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    const prevMonthDays = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    const prevMonthSpend = (logs || []).reduce((s, l) => {
+      const t = new Date(l.created_at).getTime();
+      return (t >= prevMonthStart && t < monthStart) ? s + (l.amount || 0) : s;
+    }, 0);
+    const priorDailyRate = prevMonthSpend > 0 ? prevMonthSpend / prevMonthDays : avgDaily;
+    const confidence = daysInMonth > 0 ? Math.min(1, dayOfMonth / daysInMonth) : 1;
+    const smoothedDaily = confidence * avgDaily + (1 - confidence) * priorDailyRate;
+    const projectedMonth = smoothedDaily * daysInMonth;
+
+    return { budget, monthStart, totalSpend, remaining, pct, daysInMonth, dayOfMonth, avgDaily, projectedMonth, priorDailyRate, smoothedDaily };
   }
 
   /** Token runway for a prepaid pool, from the REAL per-message debit rather
