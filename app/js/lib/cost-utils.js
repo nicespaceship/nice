@@ -59,6 +59,28 @@ const CostUtils = (() => {
     return String(n);
   }
 
+  /** Month-to-date spend summary shared by both cost views. Filters logs to
+      the current calendar month, totals spend, and derives budget
+      remaining/percentage plus a naive linear month-end projection
+      (average daily spend so far × days in month). Returns the budget too so
+      callers don't re-read it. `now` is injectable for tests; it defaults to
+      the current date. Both views render these numbers differently but must
+      compute them identically — hence the SSOT. */
+  function computeSpendSummary(logs, now) {
+    const budget = getBudget();
+    now = now || new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const monthLogs = (logs || []).filter((l) => new Date(l.created_at).getTime() >= monthStart);
+    const totalSpend = monthLogs.reduce((s, l) => s + (l.amount || 0), 0);
+    const remaining = Math.max(0, budget.limit - totalSpend);
+    const pct = budget.limit > 0 ? Math.min(100, (totalSpend / budget.limit) * 100) : 0;
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dayOfMonth = now.getDate();
+    const avgDaily = dayOfMonth > 0 ? totalSpend / dayOfMonth : 0;
+    const projectedMonth = avgDaily * daysInMonth;
+    return { budget, monthStart, totalSpend, remaining, pct, daysInMonth, dayOfMonth, avgDaily, projectedMonth };
+  }
+
   /** Fetch + normalize the data both cost views render. Prefers the cached
       agents/missions in State, falls back to Supabase, then maps raw
       fuel_usage rows into the cost-log shape the views expect. Writes the
@@ -94,7 +116,7 @@ const CostUtils = (() => {
     return { agents, tasks, costLogs };
   }
 
-  return { attributeLogsToMissions, getBudget, formatTokens, loadCostData };
+  return { attributeLogsToMissions, getBudget, formatTokens, computeSpendSummary, loadCostData };
 })();
 
 // Expose for tests / Node consumers

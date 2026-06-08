@@ -101,6 +101,56 @@ describe('CostUtils.getBudget', () => {
   });
 });
 
+describe('CostUtils.computeSpendSummary', () => {
+  // `now` is injected so the month math is deterministic. June 2026 has 30 days.
+  const june15 = new Date(2026, 5, 15);
+
+  it('totals only the current calendar month and derives budget + projection', () => {
+    const logs = [
+      { amount: 20, created_at: '2026-06-10T10:00:00Z' },
+      { amount: 10, created_at: '2026-06-12T10:00:00Z' },
+      { amount: 99, created_at: '2026-05-30T10:00:00Z' }, // prior month — excluded
+    ];
+    const s = CostUtils.computeSpendSummary(logs, june15);
+    expect(s.totalSpend).toBe(30);
+    expect(s.budget).toEqual({ limit: 50, alert: 80 }); // default
+    expect(s.remaining).toBe(20);
+    expect(s.pct).toBe(60);
+    expect(s.daysInMonth).toBe(30);
+    expect(s.dayOfMonth).toBe(15);
+    expect(s.avgDaily).toBe(2);          // 30 spent / 15 days elapsed
+    expect(s.projectedMonth).toBe(60);   // 2/day × 30 days
+  });
+
+  it('honors the saved budget and caps pct at 100 when over the limit', () => {
+    localStorage.setItem(Utils.KEYS.budget, JSON.stringify({ limit: 10, alert: 80 }));
+    const s = CostUtils.computeSpendSummary([{ amount: 25, created_at: '2026-06-05T10:00:00Z' }], june15);
+    expect(s.totalSpend).toBe(25);
+    expect(s.remaining).toBe(0);  // clamped, never negative
+    expect(s.pct).toBe(100);      // clamped, never > 100
+  });
+
+  it('yields a zeroed summary on empty or missing logs', () => {
+    const empty = CostUtils.computeSpendSummary([], june15);
+    expect(empty.totalSpend).toBe(0);
+    expect(empty.remaining).toBe(50);
+    expect(empty.pct).toBe(0);
+    expect(empty.avgDaily).toBe(0);
+    expect(empty.projectedMonth).toBe(0);
+    expect(CostUtils.computeSpendSummary(undefined, june15).totalSpend).toBe(0);
+  });
+
+  it('scales the month-end projection by elapsed days, not flat spend', () => {
+    // Same $30 spend as the first case, but read on day 10 instead of day 15:
+    // fewer elapsed days ⇒ a higher daily average ⇒ a more aggressive forecast.
+    const logs = [{ amount: 30, created_at: '2026-06-05T12:00:00Z' }];
+    const s = CostUtils.computeSpendSummary(logs, new Date(2026, 5, 10));
+    expect(s.dayOfMonth).toBe(10);
+    expect(s.avgDaily).toBe(3);          // 30 / 10 days
+    expect(s.projectedMonth).toBe(90);   // 3/day × 30, vs 60 projected from day 15
+  });
+});
+
 describe('CostUtils.loadCostData', () => {
   // Uses the shared State mock from setup.js (reset each beforeEach); only SB
   // is swapped per-test, then restored.
