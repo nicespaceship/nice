@@ -521,9 +521,11 @@ const SpaceshipBuilderView = (() => {
     }
 
     const cls = _getSlotConfig();
-    // Ship rarity mirrors the class capacity (Scout=Common, Frigate=Rare, …).
-    // Assigned crew can only be ≤ this rarity, so the class cap is the ceiling.
-    const rarity = cls.slots[0]?.max || 'Common';
+    // Custom ships start Common and evolve through usage milestones (XP rule).
+    // Editing preserves the ship's current rarity. The per-slot `max` from the
+    // class template gates which crew can be assigned, not the ship's own rarity,
+    // so a Pro user's class-5 slot ceiling no longer forces every build Legendary.
+    const rarity = existingShip?.rarity || 'Common';
     const stats = { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) };
     const caps  = [category + ' operations', cls.slots.length + ' agent slots'];
     const configBody = { description: desc, flavor, tags, stats, caps };
