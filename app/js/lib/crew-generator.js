@@ -18,17 +18,18 @@ const CrewGenerator = (() => {
   const SYSTEM_PROMPT = `You are NICE, an AI crew architect. Your job is to design a team of AI agents that will run a business autonomously.
 
 Rules:
-- Return ONLY a valid JSON array — no markdown, no explanation, no code fences.
-- Each agent must have: "name" (string), "role" (one of: Research, Code, Data, Content, Ops, Sales, Support, Custom), "description" (1-2 sentences about what this agent does), "tools" (array of tool names).
+- Return ONLY a valid JSON array. No markdown, no explanation, no code fences.
+- Each agent must have: "name" (string), "role" (one of: Research, Code, Data, Content, Ops, Sales, Support, Custom), "description" (1-2 sentences about what this agent does), "tools" (array of tool names), "system_prompt" (string).
 - Valid tools: Web Search, Email, Calendar, Spreadsheet, Database, API Call, File Read, File Write, Code Exec, Slack, GitHub, Image Gen, PDF Parse, Web Scrape, Shell, Memory Store.
-- Each agent must have a distinct responsibility — no overlap.
+- Each agent must have a distinct responsibility, with no overlap.
 - Names should be professional, specific to the business, and memorable.
-- Descriptions should explain what the agent automates for THIS specific business.`;
+- Descriptions should explain what the agent automates for THIS specific business.
+- The "system_prompt" is the agent's operating instructions, written in the second person ("You are..."), 3 to 6 sentences. State who the agent is, exactly what it does for THIS business, how it works, and what it prioritizes. This prompt drives the agent at run time, so make it concrete and specific to the business, never generic.`;
 
   /**
    * Generate a crew of agents for a spaceship.
    * @param {Object} spaceship - { name, category, description, tags, slotCount }
-   * @returns {Promise<Object>} { agents: Array<{name, role, description, tools}>, error?: string }
+   * @returns {Promise<Object>} { agents: Array<{name, role, description, tools, system_prompt}>, error?: string }
    */
   async function generate(spaceship) {
     const slotCount = spaceship.slotCount || 6;
@@ -41,32 +42,43 @@ Rules:
       'Generate exactly ' + slotCount + ' specialized AI agents for this business.',
     ].filter(Boolean).join('\n');
 
-    try {
-      const { data, error } = await SB.functions.invoke('nice-ai', {
-        body: {
-          model: 'gemini-2.5-flash',
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: userPrompt }],
-          max_tokens: 2048,
-          temperature: 0.7,
-        },
-      });
+    // Scale the token ceiling with the crew size. Each agent now carries a full
+    // system_prompt, so a 12-slot ship needs far more than the old flat 2048 or
+    // the JSON array truncates mid-agent and fails to parse.
+    const maxTokens = Math.min(8192, Math.max(4096, slotCount * 400));
 
-      if (error) return { agents: [], error: error.message || 'LLM call failed' };
+    // Gemini Flash occasionally wraps the array in prose or truncates on the
+    // first pass. One retry turns most transient parse failures into a success
+    // instead of surfacing an error over an already-created ship.
+    let lastErr = '';
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data, error } = await SB.functions.invoke('nice-ai', {
+          body: {
+            model: 'gemini-2.5-flash',
+            system: SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: userPrompt }],
+            max_tokens: maxTokens,
+            temperature: 0.7,
+          },
+        });
 
-      // Extract text from response (handles both string and array formats)
-      let text = '';
-      if (typeof data.content === 'string') text = data.content;
-      else if (Array.isArray(data.content)) text = data.content.map(c => c.text || '').join('');
-      else if (data.text) text = data.text;
+        if (error) { lastErr = error.message || 'LLM call failed'; continue; }
 
-      const agents = _parseAgents(text, slotCount);
-      if (!agents.length) return { agents: [], error: 'Failed to parse agent response' };
+        // Extract text from response (handles both string and array formats)
+        let text = '';
+        if (typeof data.content === 'string') text = data.content;
+        else if (Array.isArray(data.content)) text = data.content.map(c => c.text || '').join('');
+        else if (data.text) text = data.text;
 
-      return { agents };
-    } catch (e) {
-      return { agents: [], error: e.message || 'Network error' };
+        const agents = _parseAgents(text, slotCount);
+        if (agents.length) return { agents };
+        lastErr = 'Failed to parse agent response';
+      } catch (e) {
+        lastErr = e.message || 'Network error';
+      }
     }
+    return { agents: [], error: lastErr || 'Failed to generate crew' };
   }
 
   /**
@@ -97,6 +109,10 @@ Rules:
           type: 'Specialist',
           tools: agent.tools || [],
           description: agent.description || '',
+          // The model now returns a per-agent system_prompt; fall back to a
+          // synthesized one so an agent is never saved as a behaviorless shell
+          // (the cause of the empty crew rows from earlier auto-setup runs).
+          system_prompt: agent.system_prompt || _fallbackPrompt(agent, spaceship),
           memory: false,
           temperature: 0.7,
           source: 'crew_generator',
@@ -351,8 +367,21 @@ Rules:
           role: VALID_ROLES.includes(a.role) ? a.role : 'Custom',
           description: (a.description || '').slice(0, 200),
           tools: (a.tools || []).filter(function(t) { return VALID_TOOLS.includes(t); }),
+          system_prompt: (a.system_prompt || a.systemPrompt || a.instructions || '').toString().slice(0, 2000),
         };
       });
+  }
+
+  /** Synthesize a minimal operating prompt when the model omits system_prompt,
+      so an auto-generated agent is never saved as a behaviorless shell. */
+  function _fallbackPrompt(agent, spaceship) {
+    var biz = (spaceship && spaceship.name) ? spaceship.name : 'this business';
+    var who = (agent && agent.name) ? agent.name : 'an agent';
+    var role = (agent && agent.role) ? agent.role : 'operations';
+    var what = (agent && agent.description) ? (' ' + agent.description) : '';
+    return 'You are ' + who + ', the ' + role + ' specialist for ' + biz + '.' + what
+      + ' Work autonomously within this responsibility, stay specific to ' + biz
+      + ', and ask for input only when a real decision needs the operator.';
   }
 
   return { generate, saveAndAssign, deployFromCatalog };
