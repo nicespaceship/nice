@@ -463,19 +463,10 @@ const AnalyticsView = (() => {
     // Free-tier users have no pool and run unlimited Gemini Flash, so their
     // runway is genuinely ∞.
     const pools = (State.get('token_balance') || {}).pools || {};
-    const std = pools.standard;
-    const hasPool = !!(std && ((std.allowance || 0) + (std.purchased || 0)) > 0);
-    const tokenBalance = (typeof TokenConfig !== 'undefined') ? TokenConfig.remainingInPool(pools, 'standard') : 0;
-    const missions = State.get('missions') || [];
-    const sevenDaysAgo = Date.now() - 7 * 86400000;
-    const recentMissions = missions.filter(m => new Date(m.created_at).getTime() >= sevenDaysAgo && (m.status === 'completed' || m.status === 'running'));
-    const tokensPerMission = 5;   // rough burn estimate; the real per-call debit lives in nice-ai
-    const dailyTokenAvg = (recentMissions.length * tokensPerMission) / 7;
-    // Free tier (no pool) is genuinely infinite. A funded pool with no recent
-    // burn is *unknown*, not infinite — null renders as "—" so a finite,
-    // depletable balance isn't mislabeled as unlimited.
-    const daysLeft = !hasPool ? Infinity : (dailyTokenAvg > 0 ? Math.round(tokenBalance / dailyTokenAvg) : null);
-    const tokenWarning = hasPool && Number.isFinite(daysLeft) && daysLeft < 7;
+    // Runway from the REAL per-message pool-token debit (TokenConfig weights
+    // over actual fuel_usage logs), not a flat per-mission guess. SSOT in
+    // CostUtils so it's unit-tested and stays consistent with the cost math.
+    const { balance: tokenBalance, daysLeft, warning: tokenWarning } = CostUtils.computeRunway(logs, pools, { pool: 'standard' });
 
     el.innerHTML = `
       <div class="ana-stat-card">

@@ -81,6 +81,50 @@ const CostUtils = (() => {
     return { budget, monthStart, totalSpend, remaining, pct, daysInMonth, dayOfMonth, avgDaily, projectedMonth };
   }
 
+  /** Token runway for a prepaid pool, from the REAL per-message debit rather
+      than a flat per-mission guess. Standard method: runway = balance /
+      average daily burn, where daily burn is the trailing `windowDays`
+      (default 7) average of actual consumption. Each fuel_usage log debits
+      `TokenConfig.weightFor(model)` from the pool that model belongs to, so we
+      sum the weights of THIS pool's logs in the window and divide by the
+      window length. Only models that debit `poolId` count — free-tier Gemini
+      Flash and other-pool usage don't deplete it.
+
+      Returns { hasPool, balance, dailyBurn, daysLeft, warning }:
+      - no funded pool → daysLeft Infinity (free tier runs unlimited Gemini
+        Flash; there is genuinely no runway limit).
+      - funded pool, no burn in the window → daysLeft null (unknown, not
+        infinite — so a depletable balance isn't mislabeled "∞").
+      - otherwise daysLeft = round(balance / dailyBurn).
+      `opts.now` (ms), `opts.windowDays`, `opts.warnDays`, `opts.pool` are
+      injectable. TokenConfig is read lazily because it loads after this
+      module; without it (e.g. early boot) burn reads 0 and runway is unknown. */
+  function computeRunway(logs, pools, opts) {
+    opts = opts || {};
+    const poolId = opts.pool || 'standard';
+    const windowDays = opts.windowDays || 7;
+    const warnDays = opts.warnDays || 7;
+    const now = opts.now || Date.now();
+    const TC = (typeof TokenConfig !== 'undefined') ? TokenConfig
+             : (typeof globalThis !== 'undefined' ? globalThis.TokenConfig : null);
+    pools = pools || {};
+    const p = pools[poolId];
+    const hasPool = !!(p && ((p.allowance || 0) + (p.purchased || 0)) > 0);
+    const balance = (TC && TC.remainingInPool) ? TC.remainingInPool(pools, poolId) : 0;
+
+    const windowStart = now - windowDays * 86400000;
+    let burned = 0;
+    (logs || []).forEach((l) => {
+      if (new Date(l.created_at).getTime() < windowStart) return;
+      if (!TC || TC.poolFor(l.model) !== poolId) return;
+      burned += TC.weightFor(l.model);
+    });
+    const dailyBurn = burned / windowDays;
+    const daysLeft = !hasPool ? Infinity : (dailyBurn > 0 ? Math.round(balance / dailyBurn) : null);
+    const warning = hasPool && Number.isFinite(daysLeft) && daysLeft < warnDays;
+    return { hasPool, balance, dailyBurn, daysLeft, warning };
+  }
+
   /** Fetch + normalize the data both cost views render. Prefers the cached
       agents/missions in State, falls back to Supabase, then maps raw
       fuel_usage rows into the cost-log shape the views expect. Writes the
@@ -116,7 +160,7 @@ const CostUtils = (() => {
     return { agents, tasks, costLogs };
   }
 
-  return { attributeLogsToMissions, getBudget, formatTokens, computeSpendSummary, loadCostData };
+  return { attributeLogsToMissions, getBudget, formatTokens, computeSpendSummary, computeRunway, loadCostData };
 })();
 
 // Expose for tests / Node consumers
