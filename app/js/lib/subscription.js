@@ -392,6 +392,11 @@ const Subscription = (() => {
   }
 
   async function subscribe(planId) {
+    // Normalize legacy plan names (cruiser, flagship, captain, …) down to
+    // free | pro before any Stripe lookup, matching getCurrentPlan/getPlanTier.
+    // Without this an upgrade path passing a legacy class name dies with
+    // "No Stripe product for <legacy>".
+    planId = PLAN_ALIASES[planId] || planId;
     const user = typeof State !== 'undefined' ? State.get('user') : null;
     if (!user) {
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Sign in to subscribe.', type: 'warning' });

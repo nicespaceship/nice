@@ -396,6 +396,22 @@ describe('Subscription.setAddon (Pro gate)', () => {
   });
 });
 
+describe('Subscription.subscribe (legacy plan-alias resolution)', () => {
+  beforeEach(() => { globalThis.Notify = { send: vi.fn() }; });
+  afterEach(() => { delete globalThis.SB; delete globalThis.StripeConfig; });
+
+  it('maps a legacy plan name down to its modern plan before the Stripe lookup', async () => {
+    State.set('user', { id: 'u1', email: 'a@b.c' });
+    // SB not ready -> _tryStripeSubscribe returns null -> Payment Link fallback,
+    // which calls StripeConfig.getSubscription(planId). Spy on that planId.
+    globalThis.SB = { isReady: () => false, client: {} };
+    globalThis.StripeConfig = { getSubscription: vi.fn(() => null) };
+    await Subscription.subscribe('cruiser'); // legacy alias for 'pro'
+    expect(StripeConfig.getSubscription).toHaveBeenCalledWith('pro');
+    expect(StripeConfig.getSubscription).not.toHaveBeenCalledWith('cruiser');
+  });
+});
+
 // A new-tab Stripe checkout leaves the opener SPA tab with a stale
 // isPro()/balance until reload. _openPaymentLink arms a checkout-pending
 // flag that nice.js read-and-clears on tab return to re-fetch billing state.

@@ -23,6 +23,7 @@ const StripeConfig = (() => {
   const SUBSCRIPTIONS = {
     pro: {
       id: 'pro',
+      pool: 'standard',
       label: 'NICE Pro',
       price: 9.99,
       productId: 'prod_UL38gdmKTQT2h6',
@@ -31,6 +32,7 @@ const StripeConfig = (() => {
     },
     claude: {
       id: 'claude',
+      pool: 'claude',
       label: 'NICE — Claude Add-on',
       price: 9.99,
       productId: 'prod_UL38WEXvAbyGn9',
@@ -39,6 +41,7 @@ const StripeConfig = (() => {
     },
     premium: {
       id: 'premium',
+      pool: 'premium',
       label: 'NICE — Premium Add-on',
       price: 9.99,
       productId: 'prod_UL395Qim6neXkJ',
