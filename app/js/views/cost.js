@@ -148,18 +148,7 @@ const CostView = (() => {
   }
 
   function _updateOverview(logs) {
-    const budget = CostUtils.getBudget();
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const monthLogs = logs.filter(l => new Date(l.created_at).getTime() >= monthStart);
-    const totalSpend = monthLogs.reduce((s, l) => s + (l.amount || 0), 0);
-    const remaining = Math.max(0, budget.limit - totalSpend);
-    const pct = budget.limit > 0 ? Math.min(100, (totalSpend / budget.limit) * 100) : 0;
-
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const dayOfMonth = now.getDate();
-    const avgDaily = dayOfMonth > 0 ? totalSpend / dayOfMonth : 0;
-    const projectedMonth = avgDaily * daysInMonth;
+    const { budget, totalSpend, remaining, pct, avgDaily, projectedMonth } = CostUtils.computeSpendSummary(logs);
 
     const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
     el('co-spend', '$' + totalSpend.toFixed(2));
