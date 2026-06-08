@@ -110,7 +110,7 @@ describe('CostUtils.computeSpendSummary', () => {
     const logs = [
       { amount: 20, created_at: '2026-06-10T10:00:00Z' },
       { amount: 10, created_at: '2026-06-12T10:00:00Z' },
-      { amount: 99, created_at: '2026-05-30T10:00:00Z' }, // prior month — excluded
+      { amount: 99, created_at: '2026-04-30T10:00:00Z' }, // earlier month — excluded from MTD, and not the prior month, so no effect on the smoothed projection
     ];
     const s = CostUtils.computeSpendSummary(logs, june15);
     expect(s.totalSpend).toBe(30);
@@ -120,7 +120,9 @@ describe('CostUtils.computeSpendSummary', () => {
     expect(s.daysInMonth).toBe(30);
     expect(s.dayOfMonth).toBe(15);
     expect(s.avgDaily).toBe(2);          // 30 spent / 15 days elapsed
-    expect(s.projectedMonth).toBe(60);   // 2/day × 30 days
+    // May (the prior month) has no spend, so the prior falls back to avgDaily
+    // and the projection is the plain linear one: 2/day × 30 days.
+    expect(s.projectedMonth).toBe(60);
   });
 
   it('honors the saved budget and caps pct at 100 when over the limit', () => {
@@ -149,6 +151,46 @@ describe('CostUtils.computeSpendSummary', () => {
     expect(s.dayOfMonth).toBe(10);
     expect(s.avgDaily).toBe(3);          // 30 / 10 days
     expect(s.projectedMonth).toBe(90);   // 3/day × 30, vs 60 projected from day 15
+  });
+
+  it('smooths an early-month projection toward the prior month, defusing a false over-budget alarm', () => {
+    localStorage.setItem(Utils.KEYS.budget, JSON.stringify({ limit: 50, alert: 80 }));
+    // June 2: a single $20 day. The naive linear forecast is 20/2 × 30 = $300,
+    // tripping the $50 over-budget flag on day two. May spent $31 over its 31
+    // days = $1/day, a calm prior. The smoothed forecast locks in the $20 spent
+    // and projects the 28 remaining days at the prior $1/day → $48, under budget.
+    const logs = [
+      { amount: 20, created_at: '2026-06-01T10:00:00Z' }, // this month
+      { amount: 31, created_at: '2026-05-20T10:00:00Z' }, // prior month (May, 31 days)
+    ];
+    const s = CostUtils.computeSpendSummary(logs, new Date(2026, 5, 2));
+    expect(s.avgDaily).toBe(10);                  // honest MTD average: 20 / 2 days
+    expect(s.priorDailyRate).toBeCloseTo(1, 10);  // 31 / 31 days
+    expect(s.projectedMonth).toBeCloseTo(48, 10); // 20 spent + 28 remaining days × $1
+    expect(s.avgDaily * s.daysInMonth).toBe(300); // the naive linear forecast would have been $300
+    expect(s.projectedMonth).toBeLessThan(s.budget.limit); // no false "over budget pace"
+  });
+
+  it('converges to actual spend by month-end, fully discounting the prior month', () => {
+    // On the last day confidence is 1, so even a huge prior month cannot distort
+    // the figure that gates the budget alarm — it equals real spend.
+    const logs = [
+      { amount: 60, created_at: '2026-06-15T10:00:00Z' },  // this month
+      { amount: 310, created_at: '2026-05-15T10:00:00Z' }, // huge prior — ignored on day 30
+    ];
+    const s = CostUtils.computeSpendSummary(logs, new Date(2026, 5, 30)); // June 30, last day
+    expect(s.dayOfMonth).toBe(30);
+    expect(s.daysInMonth).toBe(30);
+    expect(s.projectedMonth).toBe(60); // == totalSpend; prior fully discounted
+  });
+
+  it('degrades to the plain linear projection when there is no prior-month spend', () => {
+    // New account, day 3, $9 spent, nothing last month. With no prior to anchor
+    // to, the prior falls back to avgDaily and the projection stays linear.
+    const s = CostUtils.computeSpendSummary([{ amount: 9, created_at: '2026-06-01T10:00:00Z' }], new Date(2026, 5, 3));
+    expect(s.priorDailyRate).toBe(s.avgDaily);                  // fell back to avgDaily
+    expect(s.projectedMonth).toBe(s.avgDaily * s.daysInMonth);  // 3/day × 30
+    expect(s.projectedMonth).toBe(90);
   });
 });
 
