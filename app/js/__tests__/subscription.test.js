@@ -191,6 +191,25 @@ describe('Subscription._aggregate (multi-row status)', () => {
     ]);
     expect(agg.addons).toEqual(['claude']);
   });
+
+  it('surfaces trialing as its real status, not a synthetic active', () => {
+    // A trial grants no paid access (isPro gates on 'active'). The plan still
+    // reflects the subscription they hold, but the status must stay 'trialing'
+    // so isPro() can deny premium access until the trial converts.
+    const agg = Subscription._aggregate([
+      { plan: 'pro', status: 'trialing', addons: ['claude'] },
+    ]);
+    expect(agg.status).toBe('trialing');
+    expect(agg.plan).toBe('pro');
+  });
+
+  it('lets an active row outrank a separate trialing row', () => {
+    const agg = Subscription._aggregate([
+      { plan: 'pro', status: 'active', addons: [] },
+      { plan: 'free', status: 'trialing', addons: ['premium'] },
+    ]);
+    expect(agg.status).toBe('active');
+  });
 });
 
 describe('Subscription._tryStripeSubscribe (fallback-safe edge fn call)', () => {
@@ -429,6 +448,34 @@ describe('Subscription checkout-return refresh', () => {
     // Webhook has since written a live Pro row — refresh() must pick it up.
     globalThis.SB.client.from = () => ({ select: () => ({ eq: async () => ({ data: [{ plan: 'pro', status: 'active', addons: [] }] }) }) });
     await Subscription.refresh();
+    expect(Subscription.isPro()).toBe(true);
+  });
+});
+
+// End-to-end gate for the product decision: a trialing subscription grants no
+// paid access (free Gemini only) until it converts to an active status.
+describe('Subscription.isPro — trialing grants no paid access', () => {
+  beforeEach(() => { delete globalThis.window.NICE_CONFIG; }); // paywall on
+  afterEach(() => { delete globalThis.SB; });
+
+  async function hydrate(rows) {
+    globalThis.SB = {
+      isReady: () => true,
+      client: {
+        auth: { getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }) },
+        from: () => ({ select: () => ({ eq: async () => ({ data: rows }) }) }),
+      },
+    };
+    await Subscription.getSubscription();
+  }
+
+  it('denies Pro while a subscription is only trialing', async () => {
+    await hydrate([{ plan: 'pro', status: 'trialing', addons: ['claude'] }]);
+    expect(Subscription.isPro()).toBe(false);
+  });
+
+  it('grants Pro once the trial converts to an active status', async () => {
+    await hydrate([{ plan: 'pro', status: 'active', addons: [] }]);
     expect(Subscription.isPro()).toBe(true);
   });
 });

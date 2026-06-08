@@ -156,14 +156,16 @@ const Subscription = (() => {
         }
       }
     }
-    // Status priority: a live (active/trialing) row means the user is active,
-    // even if a SEPARATE row is in dunning — a past_due add-on must not
-    // downgrade a paid, active Pro user. Surface past_due only when no row is
-    // live; else fall back to the first row's status.
-    let status = 'active';
-    if (liveRows.length === 0) {
-      status = rows.some((r) => r.status === 'past_due') ? 'past_due' : (rows[0].status || 'canceled');
-    }
+    // Surface the REAL dominant status, most-permissive first. A trialing row
+    // must NOT be relabeled 'active': isPro() grants paid access only on an
+    // 'active' status, so a trial stays on the free tier until it converts.
+    // An active row still outranks a separate past_due (dunning) row, so a
+    // past_due add-on can't downgrade a paid, active Pro.
+    let status;
+    if (rows.some((r) => r.status === 'active')) status = 'active';
+    else if (rows.some((r) => r.status === 'trialing')) status = 'trialing';
+    else if (rows.some((r) => r.status === 'past_due')) status = 'past_due';
+    else status = rows[0].status || 'canceled';
     // Earliest current_period_end across live rows — conservative.
     let currentPeriodEnd = null;
     for (const r of liveRows) {
@@ -212,7 +214,10 @@ const Subscription = (() => {
     return [];
   }
 
-  /** True when the user is on Pro (paid plan, active status). */
+  /** True when the user is on Pro: a paid plan AND an active status.
+      Trialing subscriptions are intentionally excluded — a trial grants no
+      paid access until it converts to 'active' (see _aggregate, which now
+      surfaces the real status instead of a synthetic 'active'). */
   function isPro() {
     if (!_paywallEnabled()) return true;
     return getCurrentPlan() === 'pro' && (_subscription?.status || 'active') === 'active';
