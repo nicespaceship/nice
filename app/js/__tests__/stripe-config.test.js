@@ -30,6 +30,12 @@ describe('StripeConfig — subscriptions', () => {
       expect(s.paymentLinkUrl).toMatch(/^https:\/\/buy\.stripe\.com\//);
     }
   });
+
+  it('each subscription declares the pool it credits', () => {
+    expect(StripeConfig.SUBSCRIPTIONS.pro.pool).toBe('standard');
+    expect(StripeConfig.SUBSCRIPTIONS.claude.pool).toBe('claude');
+    expect(StripeConfig.SUBSCRIPTIONS.premium.pool).toBe('premium');
+  });
 });
 
 describe('StripeConfig — top-ups', () => {
@@ -93,6 +99,7 @@ describe('StripeConfig — findByPriceId (reverse lookup for webhook)', () => {
     expect(p.kind).toBe('subscription');
     expect(p.id).toBe('pro');
     expect(p.price).toBe(9.99);
+    expect(p.pool).toBe('standard');
   });
 
   it('resolves a top-up price id to its top-up config', () => {
