@@ -20,6 +20,7 @@ function loadModule(rel) {
 }
 
 loadModule('lib/cost-utils.js');
+loadModule('lib/token-config.js'); // computeRunway reads TokenConfig weights/pools at call time
 
 describe('CostUtils.attributeLogsToMissions', () => {
   it('bills each log to exactly one mission, so a multi-mission day is not multiplied', () => {
@@ -195,5 +196,61 @@ describe('CostUtils.loadCostData', () => {
   it('yields an honest empty state (no throw) when the user is null or a fetch fails', async () => {
     globalThis.SB = { db: () => ({ list: async () => { throw new Error('network'); } }) };
     await expect(CostUtils.loadCostData(null)).resolves.toEqual({ agents: [], tasks: [], costLogs: [] });
+  });
+});
+
+describe('CostUtils.computeRunway', () => {
+  const NOW = new Date('2026-06-15T12:00:00Z').getTime();
+  const ago = (days) => new Date(NOW - days * 86400000).toISOString();
+  // allowance 140, none used, no top-up -> balance 140 standard-pool tokens
+  const standardPool = { standard: { allowance: 140, used: 0, purchased: 0 } };
+
+  it('derives daily burn from real per-message weights, not a flat per-mission guess', () => {
+    // 7 grok messages (weight 2 each) across the 7-day window = 14 burned -> 2/day
+    const logs = Array.from({ length: 7 }, (_, i) => ({ model: 'grok-4-1-fast', created_at: ago(i) }));
+    const r = CostUtils.computeRunway(logs, standardPool, { now: NOW });
+    expect(r.balance).toBe(140);
+    expect(r.dailyBurn).toBe(2);
+    expect(r.daysLeft).toBe(70); // 140 / 2
+  });
+
+  it('counts only models that debit this pool — free + other-pool usage is ignored', () => {
+    const logs = [
+      { model: 'grok-4-1-fast',    created_at: ago(1) }, // standard, weight 2
+      { model: 'claude-4-7-opus',  created_at: ago(1) }, // claude pool — must not count
+      { model: 'gemini-2-5-flash', created_at: ago(1) }, // free — must not count
+    ];
+    const r = CostUtils.computeRunway(logs, standardPool, { now: NOW });
+    expect(r.dailyBurn).toBeCloseTo(2 / 7, 10); // only the grok message burns standard tokens
+  });
+
+  it('ignores usage older than the trailing window', () => {
+    const logs = [
+      { model: 'grok-4-1-fast', created_at: ago(2) },  // inside the 7-day window
+      { model: 'grok-4-1-fast', created_at: ago(20) }, // outside — dropped
+    ];
+    const r = CostUtils.computeRunway(logs, standardPool, { now: NOW });
+    expect(r.dailyBurn).toBeCloseTo(2 / 7, 10);
+  });
+
+  it('treats a funded pool with no recent burn as unknown (null), not infinite', () => {
+    const r = CostUtils.computeRunway([], standardPool, { now: NOW });
+    expect(r.hasPool).toBe(true);
+    expect(r.daysLeft).toBeNull();
+  });
+
+  it('reports infinite runway for a free-tier user with no funded pool', () => {
+    const logs = [{ model: 'grok-4-1-fast', created_at: ago(1) }];
+    const r = CostUtils.computeRunway(logs, {}, { now: NOW });
+    expect(r.hasPool).toBe(false);
+    expect(r.daysLeft).toBe(Infinity);
+  });
+
+  it('flags a warning when the runway falls below the warn threshold', () => {
+    const lowPool = { standard: { allowance: 10, used: 0, purchased: 0 } }; // balance 10
+    const logs = Array.from({ length: 7 }, (_, i) => ({ model: 'grok-4-1-fast', created_at: ago(i) })); // 2/day
+    const r = CostUtils.computeRunway(logs, lowPool, { now: NOW });
+    expect(r.daysLeft).toBe(5); // 10 / 2
+    expect(r.warning).toBe(true);
   });
 });
