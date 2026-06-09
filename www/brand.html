@@ -72,7 +72,7 @@
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
   .theme-toggle .label {
-    font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+    font-size: var(--text-xs); letter-spacing: var(--tracking-caps-wide); text-transform: uppercase;
     color: var(--text-muted); font-weight: 600;
   }
   .theme-toggle .opts { display: flex; gap: 8px; }
@@ -98,15 +98,24 @@
   }
 
   :root {
-    /* Type scale */
-    --text-xs:   0.75rem;
-    --text-sm:   0.875rem;
-    --text-base: 1rem;
-    --text-md:   1.125rem;
-    --text-lg:   1.5rem;
-    --text-xl:   2rem;
-    --text-2xl:  3rem;
-    --text-3xl:  clamp(2.5rem, 6vw, 4.5rem);
+    /* Type scale — matches app/css/app.css + public/css/site.css (canonical) */
+    --text-3xs:  0.5rem;     /* 8px */
+    --text-2xs:  0.625rem;   /* 10px */
+    --text-xs:   0.6875rem;  /* 11px */
+    --text-sm:   0.8125rem;  /* 13px */
+    --text-base: 0.9375rem;  /* 15px */
+    --text-md:   1.0625rem;  /* 17px */
+    --text-lg:   1.25rem;    /* 20px */
+    --text-xl:   1.5rem;     /* 24px */
+    --text-2xl:  2rem;       /* 32px */
+    --text-3xl:  clamp(2.25rem, 4vw, 3rem);
+
+    /* Tracking — canonical */
+    --tracking-display:    -0.01em;
+    --tracking-caps:       0.08em;
+    --tracking-caps-wide:  0.12em;
+    --tracking-caps-wider: 0.2em;
+    --tracking-wordmark:   0.4em;
   }
 
   * { box-sizing: border-box; }
@@ -115,12 +124,12 @@
     background: var(--bg);
     color: var(--text);
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 16px;
+    font-size: var(--text-base);
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; text-decoration: none; }
-  h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: var(--tracking-display); line-height: 1.15; }
   p { margin: 0; }
   code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
 
@@ -137,7 +146,7 @@
   .nav-brand {
     display: flex; align-items: center; gap: 12px;
     font-family: 'Orbitron', sans-serif; font-weight: 900;
-    letter-spacing: 0.35em; font-size: 0.85rem;
+    letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm);
     color: var(--text-strong);
   }
   /* Inline NICE mark — colored by parent's `color:` value via fill:currentColor */
@@ -159,7 +168,7 @@
   .footer-lockup .glyph { width: 32px; height: 32px; color: #fff; }
   .footer-lockup .word {
     font-family: 'Orbitron', sans-serif; font-weight: 900;
-    letter-spacing: 0.4em; font-size: 1rem; color: #fff;
+    letter-spacing: var(--tracking-wordmark); font-size: var(--text-md); color: #fff;
   }
   .footer-tagline {
     font-size: var(--text-sm); color: rgba(255,255,255,0.6);
@@ -175,7 +184,7 @@
   .footer-col h4 {
     font-family: 'Inter', sans-serif; font-weight: 600;
     font-size: var(--text-xs); text-transform: uppercase;
-    letter-spacing: 0.12em; color: rgba(255,255,255,0.5);
+    letter-spacing: var(--tracking-caps-wide); color: rgba(255,255,255,0.5);
     margin-bottom: 16px;
   }
   .footer-col a {
@@ -240,7 +249,7 @@
   .eyebrow {
     font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: 0.16em;
+    letter-spacing: var(--tracking-caps-wide);
     font-weight: 600;
     color: var(--text-muted);
     margin-bottom: 16px;
@@ -248,7 +257,7 @@
   .section-title {
     font-size: var(--text-2xl);
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: var(--tracking-display);
     margin-bottom: 16px;
   }
   .section-sub {
@@ -267,7 +276,7 @@
   .hero h1 {
     font-size: var(--text-3xl);
     font-weight: 700;
-    letter-spacing: -0.035em;
+    letter-spacing: var(--tracking-display);
     line-height: 1.05;
     margin-bottom: 24px;
     max-width: 18ch;
@@ -304,7 +313,7 @@
   .lockup-glyph.is-white { color: #fff; }
   .lockup-wordmark {
     font-family: 'Orbitron', sans-serif; font-weight: 900;
-    letter-spacing: 0.4em; font-size: 1.5rem;
+    letter-spacing: var(--tracking-wordmark); font-size: var(--text-xl);
   }
   .lockup-wordmark.is-black { color: #000; }
   .lockup-wordmark.is-white { color: #fff; }
@@ -339,7 +348,7 @@
 
   .group-head {
     font-size: var(--text-sm); font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.08em;
+    text-transform: uppercase; letter-spacing: var(--tracking-caps);
     color: var(--text-muted);
     margin: 32px 0 16px;
   }
@@ -364,19 +373,19 @@
   }
   .type-meta strong { display: block; color: var(--text); font-weight: 600; }
   .type-sample-display {
-    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-size: var(--text-3xl);
     font-weight: 700;
-    letter-spacing: -0.03em;
+    letter-spacing: var(--tracking-display);
     line-height: 1.05;
   }
-  .type-sample-h2 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.025em; }
-  .type-sample-h3 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -0.015em; }
+  .type-sample-h2 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: var(--tracking-display); }
+  .type-sample-h3 { font-size: var(--text-lg); font-weight: 600; letter-spacing: var(--tracking-display); }
   .type-sample-body { font-size: var(--text-md); color: var(--text); line-height: 1.6; max-width: 60ch; }
   .type-sample-small { font-size: var(--text-sm); color: var(--text-muted); }
   .type-sample-mono { font-family: 'JetBrains Mono', monospace; font-size: var(--text-sm); }
   .type-sample-wordmark {
     font-family: 'Orbitron', sans-serif; font-weight: 900;
-    letter-spacing: 0.4em; font-size: 1.25rem;
+    letter-spacing: var(--tracking-wordmark); font-size: var(--text-lg);
   }
 
   /* ── BUTTONS GALLERY ──────────────────────────── */
@@ -399,19 +408,19 @@
   .card-meta {
     font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--tracking-caps-wide);
     color: var(--text-muted);
     margin-bottom: 12px;
     font-weight: 600;
   }
-  .card-title { font-size: var(--text-md); font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .card-title { font-size: var(--text-md); font-weight: 700; margin-bottom: 8px; letter-spacing: var(--tracking-display); }
   .card-body { font-size: var(--text-sm); color: var(--text-muted); line-height: 1.55; }
   .card-stats {
     margin-top: 20px; padding-top: 16px;
     border-top: 1px solid var(--border);
     display: flex; gap: 20px;
   }
-  .card-stat span { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .card-stat span { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
   .card-stat strong { display: block; font-family: 'JetBrains Mono', monospace; color: var(--text); font-size: var(--text-sm); margin-top: 2px; }
 
   .badge {
@@ -443,22 +452,22 @@
   .bp-card:hover { transform: translateY(-2px); }
   .bp-card .bp-eyebrow {
     color: var(--bp-rarity);
-    font-size: 0.7rem;
+    font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--tracking-caps-wide);
     font-weight: 700;
     margin-bottom: 10px;
   }
   .bp-card .bp-title {
     color: #fff;
-    font-size: 1.05rem;
+    font-size: var(--text-md);
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-display);
     margin-bottom: 6px;
   }
   .bp-card .bp-body {
     color: #94a3b8;
-    font-size: 0.8125rem;
+    font-size: var(--text-sm);
     line-height: 1.5;
   }
   .bp-card .bp-stats {
@@ -470,16 +479,16 @@
   }
   .bp-card .bp-stat span {
     color: #94a3b8;
-    font-size: 0.65rem;
+    font-size: var(--text-2xs);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--tracking-caps-wide);
     font-weight: 600;
   }
   .bp-card .bp-stat strong {
     display: block;
     font-family: 'JetBrains Mono', monospace;
     color: #fff;
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     margin-top: 2px;
     font-weight: 600;
   }
@@ -504,9 +513,9 @@
     display: inline-block;
     padding: 2px 7px;
     border-radius: 4px;
-    font-size: 0.6rem;
+    font-size: var(--text-2xs);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     margin-left: 6px;
     vertical-align: middle;
@@ -529,7 +538,7 @@
     font-size: var(--text-xs);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--tracking-caps-wide);
     color: var(--text-muted);
   }
   .mkt-frame .frame-label strong { color: var(--text); }
@@ -544,13 +553,13 @@
   .mkt-band.is-black .mkt-feature-dot { background: #fff; }
   .mkt-band-lockup { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
   .mkt-band-lockup .glyph { width: 36px; height: 36px; }
-  .mkt-band-lockup .word { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 0.35em; font-size: 0.85rem; }
+  .mkt-band-lockup .word { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); }
   .mkt-band.is-black .mkt-band-lockup .glyph { color: #fff; }
   .mkt-band.is-black .mkt-band-lockup .word { color: #fff; }
   .mkt-band h3 {
     font-size: var(--text-xl);
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: var(--tracking-display);
     margin-bottom: 8px;
   }
   .mkt-band p {
@@ -601,7 +610,7 @@
     margin-bottom: 24px;
   }
   .dash-brand .dot { width: 26px; height: 26px; color: var(--text-strong); }
-  .dash-brand .name { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 0.3em; font-size: 0.78rem; }
+  .dash-brand .name { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); }
   .dash-nav { display: flex; flex-direction: column; gap: 2px; }
   .dash-nav-item {
     padding: 8px 12px; border-radius: 6px;
@@ -637,7 +646,7 @@
   .dash-section-title h3 {
     font-size: var(--text-md);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-display);
   }
 
   /* ── INFO BOX (decided / open) ────────────────── */
@@ -794,23 +803,23 @@
         <div class="type-sample-wordmark">SPACESHIP</div>
       </div>
       <div class="type-row">
-        <div class="type-meta"><strong>Display / hero</strong>Inter 700<br/>-0.035em tracking<br/>clamp(2.5rem, 6vw, 4.5rem)</div>
+        <div class="type-meta"><strong>Display / hero</strong>Inter 700<br/>-0.01em tracking<br/>clamp(2.25rem, 4vw, 3rem)</div>
         <div class="type-sample-display">The command engine for your AI fleet.</div>
       </div>
       <div class="type-row">
-        <div class="type-meta"><strong>Section title (H2)</strong>Inter 700<br/>-0.025em tracking<br/>3rem / 48px</div>
+        <div class="type-meta"><strong>Section title (H2)</strong>Inter 700<br/>-0.01em tracking<br/>2rem / 32px</div>
         <div class="type-sample-h2">Build, deploy, command.</div>
       </div>
       <div class="type-row">
-        <div class="type-meta"><strong>Subhead (H3)</strong>Inter 600<br/>-0.015em tracking<br/>1.5rem / 24px</div>
+        <div class="type-meta"><strong>Subhead (H3)</strong>Inter 600<br/>-0.01em tracking<br/>1.25rem / 20px</div>
         <div class="type-sample-h3">Toggle every major AI model like TV channels.</div>
       </div>
       <div class="type-row">
-        <div class="type-meta"><strong>Body lead</strong>Inter 400<br/>1.125rem / 18px<br/>1.6 line height</div>
+        <div class="type-meta"><strong>Body lead</strong>Inter 400<br/>1.0625rem / 17px<br/>1.6 line height</div>
         <div class="type-sample-body">NICE is a Neural Intelligence Command Engine. Describe what you want your business to do, and NICE designs the spaceship (captain, crew, tools) and dispatches it. No API keys. No scaffolding. No devops.</div>
       </div>
       <div class="type-row">
-        <div class="type-meta"><strong>Small / meta</strong>Inter 400<br/>0.875rem / 14px<br/>--text-muted</div>
+        <div class="type-meta"><strong>Small / meta</strong>Inter 400<br/>0.8125rem / 13px<br/>--text-muted</div>
         <div class="type-sample-small">Free tier forever, no card required.</div>
       </div>
       <div class="type-row">
