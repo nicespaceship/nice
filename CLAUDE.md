@@ -324,17 +324,31 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 
 **Rules:**
 - Use card tokens **only inside card selectors** (`.blueprint-card*`, `.blueprint-tile*`, `.agent-card*`, `.spaceship-card*`). Never use them for prose, sidebars, modals, forms.
-- Never introduce raw card font-sizes — use the token. In review, if you see a sub-`--text-xs` literal *outside* a card selector, flag it.
+- Never introduce raw card font-sizes — use the token. In review, if you see a sub-`--text-xs` literal *outside* a card selector or the micro-chrome exemption (below), flag it.
 - Floor is **0.5rem (8px)**. Do not add values below it. If a card element doesn't fit at micro, shrink the element or the container — don't shrink the type.
 - Themes may change `font-family`, `color`, `border`, `background`, `glow/shadow` on cards. Themes must **not** change `font-size`, `font-weight`, `letter-spacing`, or `text-transform`.
 - `text-transform: capitalize` is banned on cards same as prose — fix source strings.
+
+### Micro-chrome exemption (dense UI artifacts, not prose)
+A small, **enumerated** set of dense-layout chrome elements sit below the `--text-xs` (11px) prose floor by design: the type is a packed UI artifact (a count pill, a diagram node label), not prose, and snapping it to 11px would break the component's layout. Like cards, these are exempt from the floor. Confirmed 2026-06-08.
+
+**Exempt selectors:**
+- Count / notification badges — `.log-pill-count`, `.outbox-badge`, `.bp-tab-count` (0.5–0.55rem)
+- Schematic slot micro-labels — `.sch-slot-role`, `.sch-slot-name`, `.sch-slot-cap` (0.36–0.5rem)
+- Hangar item name — `.bp-hangar-item-name` (0.5rem)
+
+**Rules:**
+- This is a **closed set**, not a blanket license. A sub-`--text-xs` literal outside this list, the card selectors, or a glyph/icon is still a bug — flag it in review. Add a genuinely-new dense-chrome case to this list rather than sprinkling sub-floor values around.
+- These keep **raw values** — no `--chrome-micro` token. The set is too small and ad-hoc to justify scaling a token over; a token would also read as an invitation to use it freely, which is the opposite of the intent.
+- Themes must **not** change their `font-size`, `font-weight`, `letter-spacing`, or `text-transform` (same constraint as cards).
+- Separate from this exemption but also legitimately raw: glyph/emoji icon font-sizes, glyph control buttons (`.bp-hangar-item-x`, `.bp-hangar-add-btn`, `.slot-undock-btn`, `.mc-slot-undock`), and form-control inputs governed by the iOS-zoom 16px guard (`:is(input, textarea):not([data-allow-zoom])`).
 
 ### Rollout status
 - **Phase 1:** tokens defined in both CSS roots, documented here. Zero visual change. ✅ shipped (#195)
 - **Phase 2a–2e:** sidebar, Bridge tabs, Home, prompt panel, Security/Settings/Profile migrated to prose tokens. ✅ shipped (#196–#200)
 - **Phase 3a–3e:** card tokens + rename (tcg → blueprint-card, fleet-card → spaceship-card) + base/variants/secondary cards + exemption doc. ✅ shipped (#201–#206 + this PR)
 - **Phase 4:** long-tail app surfaces migrated to prose tokens — wallet + pricing (#780), setup/ship wizards (#781), remaining app chrome (docs, monitor, activity feed, status bar, auth tabs, security perm rows, crew designer, blueprint drawer) (#782). Missions (`.mc-`) and agent-builder (`.builder-*`) were found already tokenized. ✅
-- **Decision still open (sub-floor micro chrome):** count badges (`.log-pill-count`, `.outbox-badge`, `.bp-tab-count`), schematic slot labels (`.sch-slot-*` 0.36–0.5rem), and `.bp-hangar-item-name` sit below the 11px prose floor for dense-layout reasons. They need a design call analogous to the card exemption: a `--chrome-micro` token vs a formal exemption vs snap-to-`--text-xs`-and-relayout. Left raw until decided. Glyph/icon font-sizes and form-control inputs (iOS-zoom 16px guard) stay raw by design.
+- **Sub-floor micro chrome:** ✅ resolved as a formal **visual-artifact exemption** (see Micro-chrome exemption above) — count badges, schematic slot labels, and `.bp-hangar-item-name` keep raw sub-floor values; no `--chrome-micro` token. Glyph/icon font-sizes and form-control inputs (iOS-zoom 16px guard) also stay raw by design.
 - **Next:** marketing site (`public/css/theme.css` marketing sections + `www/`); brand wordmark + badge passes.
 
 ## NICE™ SPA Architecture
