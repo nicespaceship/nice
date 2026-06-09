@@ -291,7 +291,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 ### Role tokens
 - **Weights:** `--fw-regular` (400), `--fw-medium` (600), `--fw-bold` (700). Drop 500 and 800.
 - **Line heights:** `--lh-tight` (1.15, display), `--lh-snug` (1.35, titles/buttons), `--lh-base` (1.55, body).
-- **Tracking:** `--tracking-display` (-0.01em, hero), `--tracking-normal` (0), `--tracking-caps` (0.08em, overline only).
+- **Tracking:** `--tracking-display` (-0.01em, hero), `--tracking-normal` (0), `--tracking-caps` (0.08em, tight chrome caps). Marketing-display eyebrow scale (`theme.css` only): `--tracking-caps-wide` (0.12em, standard eyebrows + telemetry labels), `--tracking-caps-wider` (0.2em, display eyebrows: section labels, hero eyebrows, footer headings, wordmarks). App chrome uses `--tracking-caps`; the wide tiers are for the marketing surface.
 - **Font families (theme-driven):** `--font-h` (display/titles), `--font-b` (body/UI), `--font-m` (monospace, code/telemetry only). `--font-brand` is the brand wordmark.
 
 ### Case rules (follow modern SaaS — Linear/Stripe/Notion/Figma)

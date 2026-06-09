@@ -27,7 +27,9 @@
 
   --tracking-display: -0.01em;
   --tracking-normal:  0;
-  --tracking-caps:    0.08em;
+  --tracking-caps:       0.08em;  /* tight chrome caps: buttons, pills, table headers, log tags */
+  --tracking-caps-wide:  0.12em;  /* standard eyebrows, telemetry/mono micro-labels */
+  --tracking-caps-wider: 0.2em;   /* display eyebrows: section labels, hero eyebrows, footer headings, wordmarks */
 
   --fw-regular: 400;
   --fw-medium:  600;
