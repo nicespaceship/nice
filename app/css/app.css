@@ -79,6 +79,8 @@
      See CLAUDE.md → Typography System for full rules.
      Minor-third ratio (1.2×). Use tokens, never raw font-size.
   */
+  --text-3xs:  0.5rem;     /* 8px, dense chrome micro only (stat label, count badge), not prose */
+  --text-2xs:  0.625rem;   /* 10px, dense chrome only (meta, type line, role/scope chip), not prose */
   --text-xs:   0.6875rem;  /* 11px — overline, caption, meta */
   --text-sm:   0.8125rem;  /* 13px — secondary, UI chrome */
   --text-base: 0.9375rem;  /* 15px — body default */
@@ -272,6 +274,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    correctly-sized pixel-art text. The per-selector overrides further down
    are tuned to specific bitmap-pixel-grid alignment and are kept intentional. */
 [data-font="pixel"] {
+  --text-3xs: 5px;
+  --text-2xs: 6px;
   --text-xs: 7px;
   --text-sm: 8px;
   --text-base: 9px;
@@ -759,6 +763,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
   letter-spacing: 0.5px; /* bitmap pixel grid — see comment above */
 
   /* Compressed prose scale for the bitmap font */
+  --text-3xs: 5px;
+  --text-2xs: 6px;
   --text-xs: 7px;
   --text-sm: 8px;
   --text-base: 10px;
