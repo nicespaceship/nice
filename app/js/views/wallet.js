@@ -206,10 +206,13 @@ const WalletView = (() => {
     // is a separate Stripe subscription. Inactive add-on shows Add.
     let action = '';
     let label  = 'Pro required';
-    if (!isPro) {
-      action = ''; label = 'Pro required';
-    } else if (isActive) {
+    // Check isActive first: an active add-on is its own Stripe subscription, so
+    // it stays cancelable even after Pro lapses (the orphan state). Gating it
+    // behind isPro trapped the user, billed for an add-on with no in-app cancel.
+    if (isActive) {
       action = 'cancel-' + addonId; label = 'Cancel add-on';
+    } else if (!isPro) {
+      action = ''; label = 'Pro required';
     } else {
       action = 'add-' + addonId; label = 'Add ($' + addon.price + '/mo)';
     }
