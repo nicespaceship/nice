@@ -32,6 +32,8 @@
   --hero-grad: radial-gradient(ellipse 100% 60% at 50% 0%, rgba(15,82,186,0.04) 0%, transparent 70%);
 
   /* Typography scale — matches app/css/app.css + public/css/theme.css */
+  --text-3xs:  0.5rem;     /* 8px, dense chrome micro only, not prose */
+  --text-2xs:  0.625rem;   /* 10px, dense chrome only, not prose */
   --text-xs:   0.6875rem;  /* 11px — overline, caption, meta */
   --text-sm:   0.8125rem;  /* 13px — secondary, UI chrome */
   --text-base: 0.9375rem;  /* 15px — body default */
@@ -51,7 +53,9 @@
 
   --tracking-display: -0.01em;
   --tracking-normal:  0;
-  --tracking-caps:    0.08em;
+  --tracking-caps:       0.08em;  /* tight chrome caps */
+  --tracking-caps-wide:  0.12em;  /* standard eyebrows, telemetry labels */
+  --tracking-caps-wider: 0.2em;   /* display eyebrows, footer headings */
 
   /* Hover overlay — flips per theme (dark surfaces need a light overlay,
      light surfaces need a dark overlay, for the same "lift" effect). */
