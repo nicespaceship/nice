@@ -512,7 +512,12 @@ const Subscription = (() => {
       const url = payload?.url;
       if (!url) throw new Error('No portal URL returned.');
       const h = new URL(url).hostname;
-      if (!h.endsWith('.stripe.com')) throw new Error('Unexpected redirect domain: ' + h);
+      // Stripe serves the billing portal from a custom domain
+      // (billing.nicespaceship.ai) when one is configured, so trust it
+      // alongside Stripe's own hosts. Without this the portal never opens.
+      if (!(h.endsWith('.stripe.com') || h === 'billing.nicespaceship.ai')) {
+        throw new Error('Unexpected redirect domain: ' + h);
+      }
       window.location.href = url;
     } catch (err) {
       if (typeof Notify !== 'undefined') {
