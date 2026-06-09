@@ -16,7 +16,11 @@ const ActivityFeed = (() => {
     // Subscribe to Supabase realtime if available
     if (typeof SB !== 'undefined' && SB.client) {
       try {
-        _subscribeTable('agents', 'agent');
+        // `user_agents` is the per-user activation table; a bare `agents` table
+        // never existed, so the old name silently delivered nothing (same class
+        // as the tasks rename below). `_payloadToEvent` reads `record.name`,
+        // which user_agents carries.
+        _subscribeTable('user_agents', 'agent');
         // `tasks` was renamed to `mission_runs` (20260424020717). Subscribing
         // to the old name silently delivered nothing, so mission INSERT/UPDATE
         // events never reached the live feed. mission_runs carries title +
