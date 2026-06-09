@@ -275,6 +275,8 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 ### Type scale (minor third, 1.2×)
 | Token | Size | Use for |
 |-------|------|---------|
+| `--text-3xs` | 0.5rem / 8px | Dense chrome micro only (stat label, count badge); not prose |
+| `--text-2xs` | 0.625rem / 10px | Dense chrome only (meta, type line, role/scope chip); not prose |
 | `--text-xs` | 0.6875rem / 11px | Overline, caption, meta, stat chip |
 | `--text-sm` | 0.8125rem / 13px | Secondary UI chrome, sidebar labels, buttons |
 | `--text-base` | 0.9375rem / 15px | Body default, form inputs, list items |
@@ -283,6 +285,8 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 | `--text-xl` | 1.5rem / 24px | Page title |
 | `--text-2xl` | 2rem / 32px | Hero, in-app |
 | `--text-3xl` | `clamp(2.25rem, 4vw, 3rem)` | Marketing display only |
+
+**Micro-chrome tier (`--text-2xs` / `--text-3xs`):** dense UI chrome only: stat labels, count/notification badges, role/scope/type chips, timestamps, overlines. **Not for prose;** prose still floors at `--text-xs` (11px). These tokens ratify the ~92 sub-11px values the app already shipped (the original "11px floor for everything, sub-11px only in cards" stance was never honored in non-card chrome). In review, a sub-`--text-xs` literal outside a card selector, this micro tier, or a glyph/icon is still a bug. The very small schematic diagram labels (`.sch-slot-*`, `.schematic-*` under 8px) stay raw as a dense-diagram exemption.
 
 ### Role tokens
 - **Weights:** `--fw-regular` (400), `--fw-medium` (600), `--fw-bold` (700). Drop 500 and 800.
@@ -334,7 +338,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - **Phase 2a–2e:** sidebar, Bridge tabs, Home, prompt panel, Security/Settings/Profile migrated to prose tokens. ✅ shipped (#196–#200)
 - **Phase 3a–3e:** card tokens + rename (tcg → blueprint-card, fleet-card → spaceship-card) + base/variants/secondary cards + exemption doc. ✅ shipped (#201–#206 + this PR)
 - **Phase 4:** long-tail app surfaces migrated to prose tokens — wallet + pricing (#780), setup/ship wizards (#781), remaining app chrome (docs, monitor, activity feed, status bar, auth tabs, security perm rows, crew designer, blueprint drawer) (#782). Missions (`.mc-`) and agent-builder (`.builder-*`) were found already tokenized. ✅
-- **Decision still open (sub-floor micro chrome):** count badges (`.log-pill-count`, `.outbox-badge`, `.bp-tab-count`), schematic slot labels (`.sch-slot-*` 0.36–0.5rem), and `.bp-hangar-item-name` sit below the 11px prose floor for dense-layout reasons. They need a design call analogous to the card exemption: a `--chrome-micro` token vs a formal exemption vs snap-to-`--text-xs`-and-relayout. Left raw until decided. Glyph/icon font-sizes and form-control inputs (iOS-zoom 16px guard) stay raw by design.
+- **Sub-floor micro chrome:** ✅ resolved by adding a micro tier to the scale: `--text-2xs` (10px) + `--text-3xs` (8px) for dense chrome (stat labels, badges, role/scope/type chips, timestamps, overlines). Tokens defined in [#784](https://github.com/nicespaceship/nice/pull/784); the ~92-value sweep follows. Sub-8px schematic diagram labels (`.sch-slot-*`, `.schematic-*`) stay raw (dense-diagram exemption); glyph/icon sizes and form-control inputs (iOS-zoom 16px guard) stay raw by design.
 - **Next:** marketing site (`public/css/theme.css` marketing sections + `www/`); brand wordmark + badge passes.
 
 ## NICE™ SPA Architecture

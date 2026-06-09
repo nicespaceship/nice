@@ -10,6 +10,8 @@
    Minor-third ratio (1.2×). Use tokens, never raw font-size.
 ───────────────────────────────────────────────────────────────── */
 :root {
+  --text-3xs:  0.5rem;     /* 8px, dense chrome micro only (stat label, count badge), not prose */
+  --text-2xs:  0.625rem;   /* 10px, dense chrome only (meta, type line, role/scope chip), not prose */
   --text-xs:   0.6875rem;  /* 11px — overline, caption, meta */
   --text-sm:   0.8125rem;  /* 13px — secondary, UI chrome */
   --text-base: 0.9375rem;  /* 15px — body default */
