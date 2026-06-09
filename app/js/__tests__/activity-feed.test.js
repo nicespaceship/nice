@@ -35,12 +35,15 @@ describe('ActivityFeed realtime subscriptions', () => {
     globalThis.SB = makeSB();
   });
 
-  it('subscribes to mission_runs (renamed from tasks), never the dropped tasks table', () => {
-    // `tasks` was renamed to `mission_runs` in 20260424020717. Subscribing to
-    // the old name delivered nothing, so mission events never reached the feed.
+  it('subscribes to the live tables (user_agents, mission_runs), never the dropped agents/tasks names', () => {
+    // Both names were stale: `tasks` was renamed to `mission_runs`
+    // (20260424020717), and there was never a bare `agents` table; it is
+    // `user_agents`. Subscribing to a dropped name silently delivers nothing,
+    // so those events never reached the feed.
     ActivityFeed.init();
-    expect(subscribedTables).toContain('agents');
+    expect(subscribedTables).toContain('user_agents');
     expect(subscribedTables).toContain('mission_runs');
+    expect(subscribedTables).not.toContain('agents');
     expect(subscribedTables).not.toContain('tasks');
   });
 });
