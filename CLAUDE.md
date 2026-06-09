@@ -333,7 +333,9 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - **Phase 1:** tokens defined in both CSS roots, documented here. Zero visual change. ✅ shipped (#195)
 - **Phase 2a–2e:** sidebar, Bridge tabs, Home, prompt panel, Security/Settings/Profile migrated to prose tokens. ✅ shipped (#196–#200)
 - **Phase 3a–3e:** card tokens + rename (tcg → blueprint-card, fleet-card → spaceship-card) + base/variants/secondary cards + exemption doc. ✅ shipped (#201–#206 + this PR)
-- **Next:** marketing site (`public/css/theme.css` marketing sections + `www/`); long-tail app surfaces (missions, wallet body, agent-builder, modals, mobile rules); brand wordmark + badge passes.
+- **Phase 4:** long-tail app surfaces migrated to prose tokens — wallet + pricing (#780), setup/ship wizards (#781), remaining app chrome (docs, monitor, activity feed, status bar, auth tabs, security perm rows, crew designer, blueprint drawer) (#782). Missions (`.mc-`) and agent-builder (`.builder-*`) were found already tokenized. ✅
+- **Decision still open (sub-floor micro chrome):** count badges (`.log-pill-count`, `.outbox-badge`, `.bp-tab-count`), schematic slot labels (`.sch-slot-*` 0.36–0.5rem), and `.bp-hangar-item-name` sit below the 11px prose floor for dense-layout reasons. They need a design call analogous to the card exemption: a `--chrome-micro` token vs a formal exemption vs snap-to-`--text-xs`-and-relayout. Left raw until decided. Glyph/icon font-sizes and form-control inputs (iOS-zoom 16px guard) stay raw by design.
+- **Next:** marketing site (`public/css/theme.css` marketing sections + `www/`); brand wordmark + badge passes.
 
 ## NICE™ SPA Architecture
 
