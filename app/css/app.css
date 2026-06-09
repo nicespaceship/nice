@@ -8287,7 +8287,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   width: 28px; height: 28px; border-radius: 50%;
   border: 2px solid var(--border, #444);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.7rem; color: var(--text-muted, #888);
+  font-size: var(--text-xs); color: var(--text-muted, #888);
   transition: all 0.2s;
 }
 .wizard-step-wrap.active .wizard-dot {
@@ -8312,15 +8312,15 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .wizard-title {
   font-family: var(--font-h, inherit);
-  font-size: 1.25rem; margin: 0 0 4px;
+  font-size: var(--text-lg); margin: 0 0 4px;
 }
 .wizard-subtitle {
   color: var(--text-muted, #999);
-  font-size: 0.85rem; margin: 0 0 20px;
+  font-size: var(--text-sm); margin: 0 0 20px;
 }
 .wizard-field { margin-bottom: 16px; }
 .wizard-field label {
-  display: block; font-size: 0.8rem; font-weight:var(--fw-medium);
+  display: block; font-size: var(--text-sm); font-weight:var(--fw-medium);
   margin-bottom: 6px; color: var(--text, #eee);
 }
 .wizard-input {
@@ -8336,7 +8336,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
 }
 .wizard-hint {
-  display: block; font-size: 0.75rem;
+  display: block; font-size: var(--text-xs);
   color: var(--text-muted, #666); margin-top: 4px;
 }
 .wizard-goals {
@@ -8355,7 +8355,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .wizard-goal input { display: none; }
 .wizard-goal-icon { font-size: 1.3rem; }
-.wizard-goal-label { font-size: 0.8rem; }
+.wizard-goal-label { font-size: var(--text-sm); }
 .wizard-loading {
   text-align: center; padding: 40px 0;
 }
@@ -8378,13 +8378,13 @@ html[data-theme] .nice-ai-input:focus-visible {
   border-bottom: 1px solid var(--border, #333);
 }
 .wizard-rec-class {
-  font-size: 0.7rem; font-weight:var(--fw-bold);
+  font-size: var(--text-xs); font-weight:var(--fw-bold);
   padding: 3px 10px; border-radius: 20px;
   background: var(--accent, #6366f1); color: #fff;
 }
 .wizard-rec-section { padding: 12px 16px; }
 .wizard-rec-section h4 {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted, #888); margin: 0 0 8px;
   letter-spacing: var(--tracking-caps);
 }
@@ -8394,32 +8394,32 @@ html[data-theme] .nice-ai-input:focus-visible {
 .wizard-success-icon { font-size: 3rem; margin-bottom: 12px; }
 .wizard-xp {
   color: var(--accent, #6366f1);
-  font-weight:var(--fw-bold); font-size: 0.9rem;
+  font-weight:var(--fw-bold); font-size: var(--text-base);
 }
 /* ── Setup Wizard: agent rows, flow badge, integration badges ── */
 .wizard-rec-flow {
-  font-size: 0.7rem; font-weight:var(--fw-medium);
+  font-size: var(--text-xs); font-weight:var(--fw-medium);
   padding: 3px 10px; border-radius: 20px;
   background: rgba(99,102,241,0.15); color: var(--accent, #6366f1);
 }
 .wizard-agent-row {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
-  padding: 8px 0; font-size: 0.85rem;
+  padding: 8px 0; font-size: var(--text-sm);
   border-bottom: 1px solid var(--border, #333);
 }
 .wizard-agent-row:last-child { border-bottom: none; }
 .wizard-agent-role {
-  font-size: 0.7rem; font-weight:var(--fw-medium);
+  font-size: var(--text-xs); font-weight:var(--fw-medium);
   padding: 2px 8px; border-radius: 12px;
   background: rgba(99,102,241,0.12); color: var(--accent, #6366f1);
 }
 .wizard-agent-desc {
-  width: 100%; font-size: 0.78rem;
+  width: 100%; font-size: var(--text-sm);
   color: var(--text-muted, #888);
 }
 .wizard-integrations { display: flex; flex-wrap: wrap; gap: 6px; }
 .wizard-integration-badge {
-  font-size: 0.75rem; font-weight:var(--fw-medium);
+  font-size: var(--text-xs); font-weight:var(--fw-medium);
   padding: 3px 10px; border-radius: 12px;
   background: rgba(34,197,94,0.12); color: var(--accent2, #22c55e);
 }
@@ -8446,11 +8446,11 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .ship-wizard-bp-class {
   font-family: var(--font-h, sans-serif);
-  font-weight:var(--fw-bold); font-size: 0.95rem;
+  font-weight:var(--fw-bold); font-size: var(--text-base);
   color: var(--accent, #00e5ff);
 }
 .ship-wizard-bp-slots {
-  font-size: 0.8rem; color: var(--text-muted, #888);
+  font-size: var(--text-sm); color: var(--text-muted, #888);
   margin-top: 2px;
 }
 .ship-wizard-mode-cards {
@@ -8478,11 +8478,11 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .ship-wizard-mode-label {
   font-family: var(--font-h, sans-serif);
-  font-weight:var(--fw-bold); font-size: 0.95rem;
+  font-weight:var(--fw-bold); font-size: var(--text-base);
   color: var(--text, #eee);
 }
 .ship-wizard-mode-hint {
-  font-size: 0.78rem; color: var(--text-muted, #888);
+  font-size: var(--text-sm); color: var(--text-muted, #888);
   margin-top: 4px;
 }
 .ship-wizard-slots {
@@ -8501,11 +8501,11 @@ html[data-theme] .nice-ai-input:focus-visible {
   min-width: 120px;
 }
 .ship-wizard-slot-label {
-  font-weight:var(--fw-medium); font-size: 0.85rem;
+  font-weight:var(--fw-medium); font-size: var(--text-sm);
   color: var(--text, #eee);
 }
 .ship-wizard-slot-rarity {
-  font-size: 0.7rem; font-weight:var(--fw-bold);
+  font-size: var(--text-xs); font-weight:var(--fw-bold);
  letter-spacing: var(--tracking-caps);
 }
 .ship-wizard-slot-select { flex: 1; }
@@ -8525,7 +8525,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   background: color-mix(in srgb, var(--accent, #00e5ff) 8%, transparent);
   border-left: 3px solid var(--accent, #00e5ff);
   border-radius: var(--radius, 8px);
-  font-size: 0.85rem; color: var(--text, #eee);
+  font-size: var(--text-sm); color: var(--text, #eee);
   line-height: 1.5;
 }
 .ship-wizard-slot-agent {
@@ -8534,7 +8534,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   border:1px solid var(--border, #333); border-radius:var(--radius, 8px);
 }
 .ship-wizard-agent-name { font-weight:var(--fw-medium); color:var(--text); }
-.ship-wizard-agent-role { font-size:.75rem; color:var(--text-muted); }
+.ship-wizard-agent-role { font-size:var(--text-xs); color:var(--text-muted); }
 .ship-wizard-slot-empty { color:var(--text-muted); font-style:italic; }
 .ship-wizard-slot-locked {
   border-style:dashed;
@@ -8545,7 +8545,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .ship-wizard-slot-lock {
   display:inline-block;
   padding:6px 10px;
-  font-size:.78rem;
+  font-size:var(--text-sm);
   color:var(--text-muted);
   font-style:italic;
   width:100%;
@@ -8560,7 +8560,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 /* ── Spaceship Workflows Tab ── */
 .ship-workflows { margin-top: 24px; }
 .ship-workflows h3 {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-muted, #888); margin: 0 0 12px;
   letter-spacing: var(--tracking-caps);
 }
@@ -8572,8 +8572,8 @@ html[data-theme] .nice-ai-input:focus-visible {
   margin-bottom: 8px;
 }
 .ship-wf-card:hover { border-color: var(--accent, #6366f1); }
-.ship-wf-name { font-weight: var(--fw-medium); font-size: 0.9rem; }
-.ship-wf-meta { font-size: 0.75rem; color: var(--text-muted, #888); }
+.ship-wf-name { font-weight: var(--fw-medium); font-size: var(--text-base); }
+.ship-wf-meta { font-size: var(--text-xs); color: var(--text-muted, #888); }
 
 /* ─────────────────────────────────────────────────────────────────
    WALLET VIEW
