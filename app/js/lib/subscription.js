@@ -500,6 +500,11 @@ const Subscription = (() => {
     if (prefer === 'pro' || prefer === 'claude' || prefer === 'premium') {
       body.prefer = prefer;
     }
+    // Route the portal session to the same Stripe mode the rest of billing
+    // runs in (test coexists with live). Without this an admin in test mode
+    // opens a live portal for a customer that doesn't exist in live, and it
+    // fails. The function falls back to live when the field is absent.
+    body.mode = (typeof StripeConfig !== 'undefined' && StripeConfig.activeMode) ? StripeConfig.activeMode() : 'live';
     try {
       const res = await fetch('https://zacllshbgmnwsmliteqx.supabase.co/functions/v1/stripe-portal', {
         method: 'POST',
