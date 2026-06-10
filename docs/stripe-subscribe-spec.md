@@ -1,6 +1,11 @@
 # `stripe-subscribe` edge function — spec + reference implementation
 
-Status: **designed, not yet deployed.** The client (`subscription.js`) already calls this function and falls back to Stripe Payment Links until it ships. This doc is the deploy-ready spec; the function body lives in the proprietary functions repo (per CLAUDE.md, edge-function source is not tracked here). Add a row to [`edge-functions-ledger.md`](edge-functions-ledger.md) on first deploy.
+Status: **deployed 2026-06-09, test-mode validated.** The client (`subscription.js`) calls this function and falls back to Stripe Payment Links on any error (6s timeout). The function body lives in the proprietary functions repo (per CLAUDE.md, edge-function source is not tracked here); this doc is the record. (The `edge-functions-ledger.md` tracks only the C-series + `nice-ai` functions, not billing functions, so the deploy is recorded here instead.)
+
+**Deployed implementation notes** (deviations from the reference skeleton below):
+- **Mode-aware** — the client sends `mode` from `StripeConfig.activeMode()`; the function picks `STRIPE_SECRET_KEY` / `STRIPE_TEST_SECRET_KEY` plus the matching inlined price ids (live + test mirror `StripeConfig.MODE_IDS`), so test mode coexists with live (see [`stripe-test-mode-spec.md`](stripe-test-mode-spec.md)). No new secrets required.
+- **Add-ons grant immediately** — after `subscription_items.create` with `create_prorations`, the function creates + finalizes + pays an invoice for the proration so `invoice.paid` fires now and the webhook grants the add-on pool at once (matching the old per-Payment-Link timing). Best-effort: defers to the next cycle on failure rather than breaking the add.
+- **Validated on test@ 2026-06-09**: `subscribe(pro)` → Checkout Session; `addon_add(claude)` then `addon_add(premium)` → one customer / one subscription / **3 items** / **one** `subscriptions` row (`plan=pro, addons={claude,premium}`) / all three pools granted. Browser automation of Stripe is blocked, so the Checkout *completion* step is the one path not auto-tested (standard hosted Stripe Checkout); covered by a manual live smoke test.
 
 ## Why
 
