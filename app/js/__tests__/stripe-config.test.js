@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 
 // Load StripeConfig as a global
 const { readFileSync } = await import('fs');
@@ -112,5 +112,54 @@ describe('StripeConfig — findByPriceId (reverse lookup for webhook)', () => {
 
   it('returns null for unknown price ids', () => {
     expect(StripeConfig.findByPriceId('price_nothing')).toBeNull();
+  });
+});
+
+describe('StripeConfig — mode switching', () => {
+  const PRO_TEST_PRICE = 'price_1TgaAmBTNqh90rCubWKRiQAA';
+
+  // setup.js's global beforeEach resets State + clears localStorage; only
+  // window.NICE_CONFIG needs explicit cleanup (it is not reset there).
+  afterEach(() => {
+    if (typeof window !== 'undefined') delete window.NICE_CONFIG;
+  });
+
+  it('defaults to live mode', () => {
+    expect(StripeConfig.activeMode()).toBe('live');
+    expect(StripeConfig.SUBSCRIPTIONS.pro.paymentLinkUrl).toMatch(/^https:\/\/buy\.stripe\.com\//);
+  });
+
+  it('window.NICE_CONFIG.stripeMode = "test" flips the catalog to test ids', () => {
+    window.NICE_CONFIG = { stripeMode: 'test' };
+    expect(StripeConfig.activeMode()).toBe('test');
+    expect(StripeConfig.SUBSCRIPTIONS.pro.priceId).toBe(PRO_TEST_PRICE);
+    expect(StripeConfig.SUBSCRIPTIONS.pro.paymentLinkUrl).toMatch(/^https:\/\/billing\.nicespaceship\.ai\/b\/test_/);
+    expect(StripeConfig.getTopUp('claude-max').paymentLinkUrl).toMatch(/billing\.nicespaceship\.ai/);
+  });
+
+  it('keeps copy/price/pool identical across modes (only ids differ)', () => {
+    const live = StripeConfig.SUBSCRIPTIONS.pro;
+    window.NICE_CONFIG = { stripeMode: 'test' };
+    const test = StripeConfig.SUBSCRIPTIONS.pro;
+    expect(test.price).toBe(live.price);
+    expect(test.pool).toBe(live.pool);
+    expect(test.label).toBe(live.label);
+    expect(test.priceId).not.toBe(live.priceId);
+  });
+
+  it('admin localStorage override enables test mode; non-admins are ignored', () => {
+    localStorage.setItem('nice-stripe-mode', 'test');
+    State.set('user', { is_admin: false });
+    expect(StripeConfig.activeMode()).toBe('live');
+    State.set('user', { is_admin: true });
+    expect(StripeConfig.activeMode()).toBe('test');
+  });
+
+  it('findByPriceId resolves a test-mode price id regardless of active mode', () => {
+    expect(StripeConfig.activeMode()).toBe('live');
+    const p = StripeConfig.findByPriceId(PRO_TEST_PRICE);
+    expect(p.kind).toBe('subscription');
+    expect(p.id).toBe('pro');
+    expect(p.pool).toBe('standard');
   });
 });

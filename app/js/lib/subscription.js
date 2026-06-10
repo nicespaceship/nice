@@ -276,7 +276,9 @@ const Subscription = (() => {
     if (!url) return;
     try {
       const h = new URL(url).hostname;
-      if (!(h.endsWith('.stripe.com') || h === 'buy.stripe.com' || h === 'checkout.stripe.com' || h === 'billing.stripe.com')) {
+      // Test-mode Payment Links resolve on the account's custom billing
+      // domain (billing.nicespaceship.ai), same as the billing portal.
+      if (!(h.endsWith('.stripe.com') || h === 'buy.stripe.com' || h === 'checkout.stripe.com' || h === 'billing.stripe.com' || h === 'billing.nicespaceship.ai')) {
         throw new Error('Unexpected redirect domain: ' + h);
       }
       window.open(url, '_blank', 'noopener');
