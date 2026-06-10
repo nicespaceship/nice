@@ -381,9 +381,11 @@ const Subscription = (() => {
       multi-row past_due bug class. See docs/stripe-subscribe-spec.md. */
   async function _tryStripeSubscribe(body) {
     if (typeof SB === 'undefined' || !SB.isReady || !SB.isReady()) return null;
+    // Tell the function which Stripe mode to run in (test coexists with live).
+    const mode = (typeof StripeConfig !== 'undefined' && StripeConfig.activeMode) ? StripeConfig.activeMode() : 'live';
     try {
       const { data, error } = await Promise.race([
-        SB.client.functions.invoke('stripe-subscribe', { body }),
+        SB.client.functions.invoke('stripe-subscribe', { body: { ...body, mode } }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
       ]);
       if (error) throw error;
