@@ -412,41 +412,36 @@ describe('Subscription.subscribe (legacy plan-alias resolution)', () => {
   });
 });
 
-// A new-tab Stripe checkout leaves the opener SPA tab with a stale
-// isPro()/balance until reload. _openPaymentLink arms a checkout-pending
-// flag that nice.js read-and-clears on tab return to re-fetch billing state.
-describe('Subscription checkout-return refresh', () => {
+// Stripe checkout full-navigates the CURRENT tab (same as the billing portal),
+// so the flow stays in one tab; the success_url returns to a fresh app load
+// that re-fetches billing state on init.
+describe('Subscription checkout navigation', () => {
+  let _origLocation;
   beforeEach(() => {
     globalThis.Notify = { send: vi.fn() };
-    globalThis.open = vi.fn();
     delete globalThis.window.NICE_CONFIG; // paywall on
-    Subscription.consumeCheckoutPending(); // clear any leftover module flag
+    _origLocation = window.location;
+    Object.defineProperty(window, 'location', { configurable: true, value: { href: '' } });
   });
   afterEach(() => {
+    Object.defineProperty(window, 'location', { configurable: true, value: _origLocation });
     delete globalThis.SB;
     delete globalThis.StripeConfig;
-    delete globalThis.open;
   });
 
-  it('consumeCheckoutPending is false until a checkout tab opens, then true exactly once', () => {
-    expect(Subscription.consumeCheckoutPending()).toBe(false);
-
+  it('navigates the current tab to a valid Stripe checkout URL', () => {
     State.set('user', { id: 'u1', email: 'a@b.c' });
     globalThis.StripeConfig = { getTopUp: () => ({ paymentLinkUrl: 'https://buy.stripe.com/test_123' }) };
     Subscription.buyTopUp('standard-boost');
-    expect(globalThis.open).toHaveBeenCalledTimes(1);
-
-    // Read-and-clear: armed once, then back to false.
-    expect(Subscription.consumeCheckoutPending()).toBe(true);
-    expect(Subscription.consumeCheckoutPending()).toBe(false);
+    expect(window.location.href).toContain('buy.stripe.com/test_123');
   });
 
-  it('does not arm the refresh when the checkout URL is rejected', () => {
+  it('does not navigate when the checkout URL is on an unexpected domain', () => {
     State.set('user', { id: 'u1', email: 'a@b.c' });
     globalThis.StripeConfig = { getTopUp: () => ({ paymentLinkUrl: 'https://evil.example.com/x' }) };
     Subscription.buyTopUp('standard-boost');
-    expect(globalThis.open).not.toHaveBeenCalled();
-    expect(Subscription.consumeCheckoutPending()).toBe(false);
+    expect(window.location.href).toBe('');
+    expect(globalThis.Notify.send).toHaveBeenCalled();
   });
 
   it('refresh() re-fetches the subscription so a just-purchased Pro reflects', async () => {
@@ -461,7 +456,7 @@ describe('Subscription checkout-return refresh', () => {
     await Subscription.refresh();
     expect(Subscription.isPro()).toBe(false);
 
-    // Webhook has since written a live Pro row — refresh() must pick it up.
+    // Webhook has since written a live Pro row; refresh() must pick it up.
     globalThis.SB.client.from = () => ({ select: () => ({ eq: async () => ({ data: [{ plan: 'pro', status: 'active', addons: [] }] }) }) });
     await Subscription.refresh();
     expect(Subscription.isPro()).toBe(true);
