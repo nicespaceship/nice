@@ -1575,9 +1575,6 @@ const NICE = (() => {
     // self-guarding against stacking on the first-run setup wizard.
     if (typeof ConsentPrompt !== 'undefined') ConsentPrompt.init();
 
-    // Refresh billing state when the SPA tab returns from a new-tab checkout.
-    _initBillingRefreshOnReturn();
-
     // Check initial session
     SB.auth.getUser().then(user => {
       State.set('user', user);
@@ -1673,34 +1670,6 @@ const NICE = (() => {
         })
         .subscribe();
     }
-  }
-
-  /* ── Refresh billing state on return from a new-tab Stripe checkout ──
-     subscribe() / buyTopUp() / setAddon() open Stripe in a NEW tab, so the
-     opener SPA tab keeps a stale isPro() / balance until a manual reload.
-     When the tab regains visibility or focus AND a checkout was opened,
-     re-fetch the subscription + balance and repaint the current view so the
-     purchase reflects immediately. Gated on Subscription's checkout-pending
-     flag so ordinary tab switches don't trigger a refetch. Registered once;
-     the consume-flag makes the dual listeners idempotent. */
-  let _billingReturnWired = false;
-  function _initBillingRefreshOnReturn() {
-    if (_billingReturnWired) return;
-    _billingReturnWired = true;
-    const onReturn = async () => {
-      if (document.visibilityState === 'hidden') return;
-      if (typeof Subscription === 'undefined' || typeof Subscription.consumeCheckoutPending !== 'function') return;
-      if (!Subscription.consumeCheckoutPending()) return;
-      try {
-        if (Subscription.refresh) await Subscription.refresh();
-        await _loadTokenBalance(State.get('user'));
-        if (typeof Router !== 'undefined' && Router.refresh) Router.refresh();
-      } catch (e) {
-        console.warn('[NICE] Billing refresh on checkout return failed:', e && e.message);
-      }
-    };
-    document.addEventListener('visibilitychange', onReturn);
-    window.addEventListener('focus', onReturn);
   }
 
   /* ── First-run onboarding: show setup wizard for new users ── */
