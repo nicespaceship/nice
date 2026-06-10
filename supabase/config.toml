@@ -390,6 +390,9 @@ verify_jwt = false
 [functions.stripe-portal]
 verify_jwt = false
 
+[functions.stripe-subscribe]
+verify_jwt = false
+
 [functions.browser-proxy]
 verify_jwt = false
 
