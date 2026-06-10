@@ -725,26 +725,35 @@ const AnalyticsView = (() => {
 
     try {
       if (typeof SB !== 'undefined' && SB.isReady()) {
-        const purchases = await SB.db('fuel_purchases').list({ userId: user.id });
-        if (Array.isArray(purchases) && purchases.length) {
+        // Token-credit ledger: top-ups, subscription grants, refunds. Per-call
+        // debits live in fuel_usage (the spend tables above), not here.
+        const { data, error } = await SB.client
+          .from('token_transactions')
+          .select('type, pool, amount, created_at')
+          .in('type', ['topup', 'subscription_grant', 'refund'])
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (!error && Array.isArray(data) && data.length) {
+          const typeLabel = { topup: 'Top-up', subscription_grant: 'Subscription grant', refund: 'Refund' };
+          const poolLabel = { standard: 'Standard', claude: 'Claude', premium: 'Premium' };
           wrap.innerHTML = `
             <h4 class="ana-sub-title">Purchase History</h4>
             <table class="ana-table">
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Amount</th>
+                  <th>Type</th>
                   <th>Tokens</th>
-                  <th>Method</th>
+                  <th>Pool</th>
                 </tr>
               </thead>
               <tbody>
-                ${purchases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(p => `
+                ${data.map(tx => `
                   <tr>
-                    <td>${new Date(p.created_at).toLocaleDateString()}</td>
-                    <td class="hl">$${(p.amount || 0).toFixed(2)}</td>
-                    <td>${(p.fuel_amount || 0).toLocaleString()}</td>
-                    <td class="mono" style="font-size:.68rem">${_esc(p.payment_method || 'card')}</td>
+                    <td>${new Date(tx.created_at).toLocaleDateString()}</td>
+                    <td>${typeLabel[tx.type] || _esc(tx.type)}</td>
+                    <td class="hl">${(tx.amount || 0).toLocaleString()}</td>
+                    <td>${poolLabel[tx.pool] || _esc(tx.pool || '—')}</td>
                   </tr>
                 `).join('')}
               </tbody>
