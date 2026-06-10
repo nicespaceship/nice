@@ -359,6 +359,12 @@ const SettingsView = (() => {
         const key = { 'set-notif': 'notifications', 'set-sound': 'sound', 'set-refresh': 'autoRefresh', 'set-compact': 'compactMode' }[id];
         s[key] = e.target.checked;
         _saveSettings(s);
+        // Turning Push Notifications on is a user gesture, the only moment we
+        // may prompt for browser permission (auto-subscribe on auth never
+        // prompts). If the user denies, the toggle stays on but unsubscribed.
+        if (id === 'set-notif' && e.target.checked && typeof Notify !== 'undefined' && Notify.subscribePush) {
+          Notify.subscribePush({ interactive: true }).catch(() => {});
+        }
       });
     });
 

@@ -327,3 +327,41 @@ describe('Notify — realtime sync', () => {
     expect(unsubArg).toEqual({ __chan: 'notifications' });
   });
 });
+
+// Browsers block Notification.requestPermission() unless it's called from a
+// user gesture. The auto-subscribe on auth must therefore NOT prompt; it may
+// only (re)subscribe when permission is already granted. The interactive path
+// (Settings toggle) is the one place we prompt.
+describe('Notify — push permission gating (only prompt on a user gesture)', () => {
+  let origNotification, hadSW, origPM;
+  beforeEach(() => {
+    origNotification = globalThis.Notification;
+    origPM = globalThis.PushManager;
+    hadSW = Object.prototype.hasOwnProperty.call(navigator, 'serviceWorker');
+    globalThis.PushManager = function PushManager() {};
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { ready: Promise.resolve({ pushManager: { getSubscription: async () => null } }) },
+    });
+  });
+  afterEach(() => {
+    globalThis.Notification = origNotification;
+    globalThis.PushManager = origPM;
+    if (!hadSW) delete navigator.serviceWorker;
+  });
+
+  it('non-interactive subscribePush does NOT prompt when permission is "default"', async () => {
+    const requestPermission = vi.fn(async () => 'granted');
+    globalThis.Notification = { permission: 'default', requestPermission };
+    const res = await Notify.subscribePush();
+    expect(requestPermission).not.toHaveBeenCalled();
+    expect(res).toBeNull();
+  });
+
+  it('interactive subscribePush prompts when permission is "default"', async () => {
+    const requestPermission = vi.fn(async () => 'denied');
+    globalThis.Notification = { permission: 'default', requestPermission };
+    await Notify.subscribePush({ interactive: true });
+    expect(requestPermission).toHaveBeenCalledTimes(1);
+  });
+});

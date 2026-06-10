@@ -291,10 +291,17 @@ const Notify = (() => {
    * Stores the subscription endpoint in the user's profile.
    * @returns {Promise<PushSubscription|null>}
    */
-  async function subscribePush() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
-    const granted = await requestPermission();
-    if (!granted) return null;
+  async function subscribePush({ interactive = false } = {}) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return null;
+    // Only prompt for permission in response to a user gesture (interactive).
+    // On auto-calls (e.g. auth refresh) just (re)subscribe when permission is
+    // already granted, so we never trip the browser's "permission requested
+    // without a user gesture" rule, which silently blocks the prompt anyway.
+    if (Notification.permission !== 'granted') {
+      if (!interactive) return null;
+      const granted = await requestPermission();
+      if (!granted) return null;
+    }
 
     try {
       const reg = await navigator.serviceWorker.ready;
