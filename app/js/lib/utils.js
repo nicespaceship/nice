@@ -149,6 +149,7 @@ const Utils = (() => {
     onboarded: 'nice-onboarded',
     consentPrompted: 'nice-consent-prompted',
     plan: 'nice-plan',
+    stripeMode: 'nice-stripe-mode',
     settings: 'nice-settings',
     streak: 'nice-streak',
     lastActive: 'nice-last-active',
