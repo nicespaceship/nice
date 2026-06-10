@@ -403,16 +403,24 @@ const Subscription = (() => {
       return;
     }
 
-    // Prefer the edge function (one subscription with items); fall back to the
-    // per-product Payment Link if it errors or isn't deployed yet.
+    // stripe-subscribe (one Customer + one Subscription with items) is the only
+    // checkout path. The old per-product Payment-Link fallback is retired: it
+    // minted a separate customer + subscription per link (the multi-row past_due
+    // bug class #715/#797 set out to kill) AND silently masked a broken edge
+    // function. When #797's CORS regression dropped the function for a day, the
+    // fallback quietly fragmented billing instead of surfacing the failure. A
+    // visible, retryable error is the correct failure mode.
     const url = await _tryStripeSubscribe({ planId, userId: user.id, email: user.email });
     if (url) { _openPaymentLink(url); return; }
 
-    const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(planId) : null;
-    if (cfg?.paymentLinkUrl) {
-      _openPaymentLink(_withUserRef(cfg.paymentLinkUrl, user));
-    } else if (typeof Notify !== 'undefined') {
-      Notify.send({ title: 'Subscription Error', message: 'No Stripe product for ' + planId, type: 'error' });
+    if (typeof Notify !== 'undefined') {
+      Notify.send({
+        title: 'Checkout unavailable',
+        message: 'We could not start checkout. Please try again in a moment.',
+        type: 'error',
+        actionLabel: 'Retry',
+        undo: () => subscribe(planId),
+      });
     }
   }
 
@@ -441,16 +449,21 @@ const Subscription = (() => {
       return;
     }
 
-    // Add: prefer the edge function (adds an item to the existing
-    // subscription), same 6s-timeout-then-Payment-Link fallback as subscribe().
+    // Add: stripe-subscribe adds an item to the existing subscription. As with
+    // subscribe(), the Payment-Link fallback is retired: a standalone add-on
+    // Payment Link would orphan the add-on on its own customer + subscription,
+    // re-fragmenting exactly what the consolidated path fixed. Fail visibly.
     const url = await _tryStripeSubscribe({ action: 'addon_add', addonId, userId: user.id, email: user.email });
     if (url) { _openPaymentLink(url); return; }
 
-    const cfg = typeof StripeConfig !== 'undefined' ? StripeConfig.getSubscription(addonId) : null;
-    if (cfg?.paymentLinkUrl) {
-      _openPaymentLink(_withUserRef(cfg.paymentLinkUrl, user));
-    } else if (typeof Notify !== 'undefined') {
-      Notify.send({ title: 'Add-on Error', message: 'No Stripe product for ' + addonId, type: 'error' });
+    if (typeof Notify !== 'undefined') {
+      Notify.send({
+        title: 'Checkout unavailable',
+        message: 'We could not add the ' + addonId + ' add-on. Please try again in a moment.',
+        type: 'error',
+        actionLabel: 'Retry',
+        undo: () => setAddon(addonId, true),
+      });
     }
   }
 

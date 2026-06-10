@@ -400,15 +400,37 @@ describe('Subscription.subscribe (legacy plan-alias resolution)', () => {
   beforeEach(() => { globalThis.Notify = { send: vi.fn() }; });
   afterEach(() => { delete globalThis.SB; delete globalThis.StripeConfig; });
 
-  it('maps a legacy plan name down to its modern plan before the Stripe lookup', async () => {
+  it('maps a legacy plan name down to its modern plan before the Stripe call', async () => {
     State.set('user', { id: 'u1', email: 'a@b.c' });
-    // SB not ready -> _tryStripeSubscribe returns null -> Payment Link fallback,
-    // which calls StripeConfig.getSubscription(planId). Spy on that planId.
-    globalThis.SB = { isReady: () => false, client: {} };
-    globalThis.StripeConfig = { getSubscription: vi.fn(() => null) };
+    // subscribe() resolves the alias, then hands the resolved planId to the
+    // stripe-subscribe edge function. Return no url so we skip navigation and
+    // only assert the planId ('pro', not 'cruiser') that reached the function.
+    const invoke = vi.fn(async () => ({ data: { url: null }, error: null }));
+    globalThis.SB = { isReady: () => true, client: { functions: { invoke } } };
     await Subscription.subscribe('cruiser'); // legacy alias for 'pro'
-    expect(StripeConfig.getSubscription).toHaveBeenCalledWith('pro');
-    expect(StripeConfig.getSubscription).not.toHaveBeenCalledWith('cruiser');
+    expect(invoke).toHaveBeenCalledWith('stripe-subscribe', expect.objectContaining({
+      body: expect.objectContaining({ planId: 'pro' }),
+    }));
+  });
+});
+
+describe('Subscription.subscribe (Payment-Link fallback retired)', () => {
+  beforeEach(() => { globalThis.Notify = { send: vi.fn() }; });
+  afterEach(() => { delete globalThis.SB; delete globalThis.StripeConfig; });
+
+  it('surfaces a retryable error instead of fragmenting via a Payment Link', async () => {
+    State.set('user', { id: 'u1', email: 'a@b.c' });
+    // SB not ready -> _tryStripeSubscribe resolves null (no checkout url).
+    globalThis.SB = { isReady: () => false, client: {} };
+    // A Payment Link is available, but the retired fallback must NOT open it —
+    // doing so would mint a separate customer + subscription (the #715/#797 bug).
+    globalThis.StripeConfig = { getSubscription: vi.fn(() => ({ paymentLinkUrl: 'https://buy.stripe.com/x' })) };
+    await Subscription.subscribe('pro');
+    expect(StripeConfig.getSubscription).not.toHaveBeenCalled();
+    expect(Notify.send).toHaveBeenCalledTimes(1);
+    const arg = Notify.send.mock.calls[0][0];
+    expect(arg.title).toMatch(/unavailable/i);
+    expect(typeof arg.undo).toBe('function'); // retry CTA
   });
 });
 
