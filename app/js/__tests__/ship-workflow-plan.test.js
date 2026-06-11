@@ -86,6 +86,39 @@ describe('SpaceshipDetailView.buildPlanFromShipWorkflow', () => {
     const plan = build({ title: 'T', steps: [{ step: 'a', agent_slot: 1 }] }, {});
     expect(plan.nodes[0].config.agentId).toBeNull();
   });
+
+  it('inserts an approval_gate before a step flagged approval:true', () => {
+    const wf = { title: 'T', steps: [
+      { step: 'Draft', agent_slot: 1 },
+      { step: 'Send', agent_slot: 2, approval: true },
+    ] };
+    const plan = build(wf, { 0: 'cap', 1: 'sender' });
+
+    expect(plan.nodes).toEqual([
+      { id: 'step-0', type: 'agent', label: 'Draft', config: { agentId: 'cap', prompt: 'Draft' } },
+      { id: 'gate-1', type: 'approval_gate', label: 'Approve: Send', config: { reason: 'Approve before "Send"' } },
+      { id: 'step-1', type: 'agent', label: 'Send', config: { agentId: 'sender', prompt: 'Send' } },
+    ]);
+    // …prev → gate → step, so the run pauses before the gated step executes.
+    expect(plan.edges).toEqual([
+      { from: 'step-0', to: 'gate-1' },
+      { from: 'gate-1', to: 'step-1' },
+    ]);
+  });
+
+  it('lets the gate be the entry node when the first step is gated', () => {
+    const plan = build({ title: 'T', steps: [{ step: 'Risky', agent_slot: 1, approval: true }] }, { 0: 'cap' });
+    expect(plan.nodes.map(n => n.id)).toEqual(['gate-0', 'step-0']);
+    expect(plan.edges).toEqual([{ from: 'gate-0', to: 'step-0' }]);
+  });
+
+  it('does not gate a step whose approval flag is falsy', () => {
+    const plan = build({ title: 'T', steps: [{ step: 'a', agent_slot: 1, approval: false }] }, { 0: 'cap' });
+    expect(plan.nodes).toEqual([
+      { id: 'step-0', type: 'agent', label: 'a', config: { agentId: 'cap', prompt: 'a' } },
+    ]);
+    expect(plan.edges).toEqual([]);
+  });
 });
 
 describe('SpaceshipDetailView.effectiveWorkflows', () => {

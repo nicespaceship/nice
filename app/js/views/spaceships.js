@@ -1367,7 +1367,10 @@ const SpaceshipDetailView = (() => {
       const slotIdx = (s && typeof s === 'object' && s.agent_slot) ? s.agent_slot - 1 : null;
       const agent = (slotIdx != null && agentMap) ? agentMap[slots[slotIdx]] : null;
       const who = agent && agent.name ? ` <span class="ship-wf-step-agent">&mdash; ${_esc(agent.name)}</span>` : '';
-      return `<li class="ship-wf-step">${_esc(text)}${who}</li>`;
+      const gated = !!(s && typeof s === 'object' && s.approval)
+        ? ' <svg class="icon icon-xs ship-wf-step-gate" fill="none" stroke="currentColor" stroke-width="1.5" aria-label="Requires approval"><use href="#icon-lock"/></svg>'
+        : '';
+      return `<li class="ship-wf-step${(s && s.approval) ? ' gated' : ''}">${_esc(text)}${who}${gated}</li>`;
     };
     const cards = workflows.map((wf, i) => {
       const steps = Array.isArray(wf.steps) ? wf.steps : [];
@@ -1424,30 +1427,51 @@ const SpaceshipDetailView = (() => {
       </div>`;
   }
 
-  /* Translate a branded ship workflow ({ title, steps:[{ step, agent_slot }] })
-     into an executable mission plan. Pure (no DOM/State) so it's unit-tested in
-     isolation. Each step becomes a linear `agent` node; `agent_slot` (1-indexed)
-     resolves against the ship's slot_assignments (0-indexed) to the docked
-     agent, falling back to the captain (lowest filled slot) when a referenced
-     slot is empty or locked. Emits `edges` (the stored plan shape MissionRunner
-     maps to WorkflowEngine `connections`). */
+  /* Translate a branded ship workflow ({ title, steps:[{ step, agent_slot,
+     approval }] }) into an executable mission plan. Pure (no DOM/State) so it's
+     unit-tested in isolation. Each step becomes a linear `agent` node;
+     `agent_slot` (1-indexed) resolves against the ship's slot_assignments
+     (0-indexed) to the docked agent, falling back to the captain (lowest filled
+     slot) when a referenced slot is empty or locked. A step with `approval:true`
+     gets an `approval_gate` node wired in before it, so the WorkflowEngine
+     pauses the run for captain approval before that step executes (the run
+     enters `review`; approving resumes via MissionRunner.resumeDag). Emits
+     `edges` (the stored plan shape MissionRunner maps to WorkflowEngine
+     `connections`). */
   function buildPlanFromShipWorkflow(workflow, slotAssignments) {
     const steps = (workflow && Array.isArray(workflow.steps)) ? workflow.steps : [];
     const slots = slotAssignments || {};
     const filled = Object.keys(slots).map(Number).filter((k) => slots[k]).sort((a, b) => a - b);
     const captainId = filled.length ? slots[filled[0]] : null;
-    const nodes = steps.map((s, i) => {
+    const nodes = [];
+    const edges = [];
+    let prevId = null;
+    steps.forEach((s, i) => {
       const text = (typeof s === 'string') ? s : (s && s.step ? s.step : '');
       const slotIdx = (s && typeof s === 'object' && s.agent_slot) ? s.agent_slot - 1 : null;
       const slotAgent = (slotIdx != null) ? slots[slotIdx] : null;
-      return {
-        id: `step-${i}`,
+      const stepId = `step-${i}`;
+      let entry = prevId;
+      if (s && typeof s === 'object' && s.approval) {
+        const gateId = `gate-${i}`;
+        nodes.push({
+          id: gateId,
+          type: 'approval_gate',
+          label: text ? `Approve: ${text}` : 'Approval gate',
+          config: { reason: text ? `Approve before "${text}"` : 'Approve before continuing.' },
+        });
+        if (prevId) edges.push({ from: prevId, to: gateId });
+        entry = gateId;
+      }
+      nodes.push({
+        id: stepId,
         type: 'agent',
         label: text,
         config: { agentId: slotAgent || captainId || null, prompt: text },
-      };
+      });
+      if (entry) edges.push({ from: entry, to: stepId });
+      prevId = stepId;
     });
-    const edges = nodes.slice(1).map((n, i) => ({ from: `step-${i}`, to: `step-${i + 1}` }));
     return { shape: 'dag', nodes, edges };
   }
 
@@ -1650,8 +1674,8 @@ const SpaceshipDetailView = (() => {
     document.getElementById('modal-wf-editor')?.remove();
 
     const toStep = (s) => (typeof s === 'string')
-      ? { step: s, agent_slot: 0 }
-      : { step: (s && s.step) || '', agent_slot: (s && s.agent_slot) || 0 };
+      ? { step: s, agent_slot: 0, approval: false }
+      : { step: (s && s.step) || '', agent_slot: (s && s.agent_slot) || 0, approval: !!(s && s.approval) };
 
     const source = (wfIdx != null && wfIdx >= 0) ? effectiveWorkflows(fleet, bp)[wfIdx] : null;
     let steps = (source && Array.isArray(source.steps) && source.steps.length)
@@ -1709,6 +1733,9 @@ const SpaceshipDetailView = (() => {
         <input type="text" class="wfe-step-text" value="${_esc(step.step)}" placeholder="Describe what happens in this step…" />
         ${CSelect.html('wfe-slot-' + i, 'Assign crew slot', slotOptions, String(step.agent_slot || 0))}
         <div class="wfe-step-ctrls">
+          <button type="button" class="wfe-ctrl wfe-gate${step.approval ? ' is-on' : ''}" aria-pressed="${!!step.approval}" aria-label="Require approval before this step" title="Require approval before this step">
+            <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
+          </button>
           <button type="button" class="wfe-ctrl wfe-up" aria-label="Move step up"${i === 0 ? ' disabled' : ''}>↑</button>
           <button type="button" class="wfe-ctrl wfe-down" aria-label="Move step down"${i === steps.length - 1 ? ' disabled' : ''}>↓</button>
           <button type="button" class="wfe-ctrl wfe-del" aria-label="Remove step">
@@ -1724,7 +1751,8 @@ const SpaceshipDetailView = (() => {
         const text = row.querySelector('.wfe-step-text').value;
         const sel = row.querySelector('.bp-cselect');
         const slot = sel ? parseInt(sel.dataset.value, 10) : 0;
-        return { step: text, agent_slot: Number.isFinite(slot) ? slot : 0 };
+        const approval = !!row.querySelector('.wfe-gate.is-on');
+        return { step: text, agent_slot: Number.isFinite(slot) ? slot : 0, approval };
       });
     };
     const paint = () => {
@@ -1735,6 +1763,13 @@ const SpaceshipDetailView = (() => {
     stepsWrap.addEventListener('click', (e) => {
       const btn = e.target.closest('.wfe-ctrl');
       if (!btn) return;
+      // Approval toggle flips in place — no reorder, so no re-paint (which
+      // would lose focus). syncFromDOM reads the class at the next change/save.
+      if (btn.classList.contains('wfe-gate')) {
+        const on = btn.classList.toggle('is-on');
+        btn.setAttribute('aria-pressed', String(on));
+        return;
+      }
       const rows = [...stepsWrap.querySelectorAll('.wfe-step')];
       const i = rows.indexOf(btn.closest('.wfe-step'));
       if (i < 0) return;
@@ -1742,13 +1777,13 @@ const SpaceshipDetailView = (() => {
       if (btn.classList.contains('wfe-del')) steps.splice(i, 1);
       else if (btn.classList.contains('wfe-up') && i > 0) { const t = steps[i - 1]; steps[i - 1] = steps[i]; steps[i] = t; }
       else if (btn.classList.contains('wfe-down') && i < steps.length - 1) { const t = steps[i + 1]; steps[i + 1] = steps[i]; steps[i] = t; }
-      if (!steps.length) steps = [{ step: '', agent_slot: 0 }];
+      if (!steps.length) steps = [{ step: '', agent_slot: 0, approval: false }];
       paint();
     });
 
     overlay.querySelector('#wfe-add').addEventListener('click', () => {
       syncFromDOM();
-      steps.push({ step: '', agent_slot: 0 });
+      steps.push({ step: '', agent_slot: 0, approval: false });
       paint();
       const rows = stepsWrap.querySelectorAll('.wfe-step');
       rows[rows.length - 1]?.querySelector('.wfe-step-text')?.focus();
@@ -1763,7 +1798,11 @@ const SpaceshipDetailView = (() => {
       syncFromDOM();
       const title = titleInput.value.trim();
       const cleanSteps = steps
-        .map(s => ({ step: (s.step || '').trim(), agent_slot: s.agent_slot || 0 }))
+        .map(s => {
+          const o = { step: (s.step || '').trim(), agent_slot: s.agent_slot || 0 };
+          if (s.approval) o.approval = true;
+          return o;
+        })
         .filter(s => s.step);
       if (!title) { errEl.textContent = 'Give the workflow a name.'; return; }
       if (!cleanSteps.length) { errEl.textContent = 'Add at least one step with a description.'; return; }
