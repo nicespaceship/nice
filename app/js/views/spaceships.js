@@ -1332,16 +1332,35 @@ const SpaceshipDetailView = (() => {
     }).join('')}</div>`;
   }
 
-  /* The ship's branded workflows live on the blueprint (card.workflows, mapped
-     to bp.workflows) — NOT on the user ship — so source them from the blueprint
-     by id. Each step's `agent_slot` (1-indexed) resolves to the agent docked in
-     that slot for an inline attribution. The Run button (wired in
-     _bindDetailEvents) turns the sequence into a live Mission Run. */
+  /* Effective workflows for an owned spaceship. A persisted user override
+     (user_spaceships.config.workflows) wins over the catalog blueprint's
+     card.workflows; any override array — including [] — is authoritative, so
+     "Reset to defaults" deletes the key to fall back to the catalog again.
+     Pure: unit-tested in ship-workflow-plan.test.js. */
+  function effectiveWorkflows(fleet, bp) {
+    const override = fleet && fleet.config && fleet.config.workflows;
+    if (Array.isArray(override)) return override;
+    return (bp && Array.isArray(bp.workflows)) ? bp.workflows : [];
+  }
+
+  /* True once the user has forked this ship's workflows (an override array is
+     present), so the section can badge it and offer a reset. */
+  function isWorkflowsCustomized(fleet) {
+    return !!(fleet && fleet.config && Array.isArray(fleet.config.workflows));
+  }
+
+  /* The ship's workflows source from the user override if present, else the
+     branded catalog sequences (card.workflows → bp.workflows). Each step's
+     `agent_slot` (1-indexed; 0/absent = captain) resolves to the agent docked
+     in that slot for an inline attribution. Owned ships always render the
+     section so an empty ship can author from scratch; New / Edit / Delete /
+     Reset / Run are wired in _bindDetailEvents. */
   function _renderShipWorkflows(fleet, agentMap) {
     const bp = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship)
       ? Blueprints.getSpaceship(fleet.blueprint_id || fleet.class_id) : null;
-    const workflows = (bp && Array.isArray(bp.workflows)) ? bp.workflows : [];
-    if (!workflows.length) return '';
+    const workflows = effectiveWorkflows(fleet, bp);
+    const customized = isWorkflowsCustomized(fleet);
+    const hasCatalog = !!(bp && Array.isArray(bp.workflows) && bp.workflows.length);
     const slots = fleet.slot_assignments || {};
     const stepLi = (s) => {
       const text = (typeof s === 'string') ? s : (s && s.step ? s.step : '');
@@ -1350,27 +1369,46 @@ const SpaceshipDetailView = (() => {
       const who = agent && agent.name ? ` <span class="ship-wf-step-agent">&mdash; ${_esc(agent.name)}</span>` : '';
       return `<li class="ship-wf-step">${_esc(text)}${who}</li>`;
     };
+    const cards = workflows.map((wf, i) => {
+      const steps = Array.isArray(wf.steps) ? wf.steps : [];
+      return `
+        <div class="ship-wf-card" data-wf-idx="${i}">
+          <div class="ship-wf-header">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
+            <span class="ship-wf-name">${_esc(wf.title || 'Untitled workflow')}</span>
+            <div class="ship-wf-card-actions">
+              <button class="ship-wf-icon ship-wf-edit" data-wf-idx="${i}" title="Edit workflow" aria-label="Edit workflow">
+                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-edit"/></svg>
+              </button>
+              <button class="ship-wf-icon ship-wf-delete" data-wf-idx="${i}" title="Delete workflow" aria-label="Delete workflow">
+                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+              </button>
+            </div>
+          </div>
+          <ol class="ship-wf-steps">${steps.map(stepLi).join('')}</ol>
+          <div class="ship-wf-footer">
+            <span class="ship-wf-meta">${steps.length} step${steps.length !== 1 ? 's' : ''}</span>
+            <button class="btn btn-xs btn-primary ship-wf-run" data-wf-idx="${i}">
+              <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-play"/></svg>
+              Run
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+    const empty = `<div class="ship-wf-empty">No workflows yet. Build a sequence your crew runs on demand.</div>`;
     return `
       <div class="detail-section ship-workflows">
-        <h3 class="detail-section-title">Workflows</h3>
-        <div class="ship-wf-grid">${workflows.map((wf, i) => {
-          const steps = Array.isArray(wf.steps) ? wf.steps : [];
-          return `
-            <div class="ship-wf-card" data-wf-idx="${i}">
-              <div class="ship-wf-header">
-                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
-                <span class="ship-wf-name">${_esc(wf.title || '')}</span>
-              </div>
-              <ol class="ship-wf-steps">${steps.map(stepLi).join('')}</ol>
-              <div class="ship-wf-footer">
-                <span class="ship-wf-meta">${steps.length} step${steps.length !== 1 ? 's' : ''}</span>
-                <button class="btn btn-xs btn-primary ship-wf-run" data-wf-idx="${i}">
-                  <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-play"/></svg>
-                  Run
-                </button>
-              </div>
-            </div>`;
-        }).join('')}</div>
+        <div class="ship-wf-titlerow">
+          <h3 class="detail-section-title">Workflows${customized ? ' <span class="ship-wf-badge">Customized</span>' : ''}</h3>
+          <div class="ship-wf-toolbar">
+            ${(customized && hasCatalog) ? '<button class="btn btn-xs ship-wf-reset">Reset to defaults</button>' : ''}
+            <button class="btn btn-xs ship-wf-new">
+              <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
+              New workflow
+            </button>
+          </div>
+        </div>
+        <div class="ship-wf-grid">${workflows.length ? cards : empty}</div>
       </div>`;
   }
 
@@ -1403,6 +1441,11 @@ const SpaceshipDetailView = (() => {
 
   function _bindDetailEvents(el, id, fleet, allAgents, agentMap, spaceshipClass) {
     // Launch/Dock is now automatic — deploys when all slots filled, docks when a slot is emptied
+
+    // Resolve the blueprint once — the workflow handlers below all need it to
+    // fall back to the catalog when the ship has no user override.
+    const bp = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship)
+      ? Blueprints.getSpaceship(fleet.blueprint_id || fleet.class_id) : null;
 
     // Undock from slot
     el.querySelectorAll('.slot-undock-btn').forEach(btn => {
@@ -1447,16 +1490,15 @@ const SpaceshipDetailView = (() => {
       });
     });
 
-    // Run a branded ship workflow: resolve crew → translate to a mission plan →
-    // enqueue + dispatch a Run → jump to the run detail.
+    // Run a ship workflow: resolve crew → translate to a mission plan →
+    // enqueue + dispatch a Run → jump to the run detail. Sources the effective
+    // workflow (user override if present, else the branded catalog sequence).
     el.querySelectorAll('.ship-wf-run').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
         const wfIdx = parseInt(btn.dataset.wfIdx, 10);
-        const bp = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship)
-          ? Blueprints.getSpaceship(fleet.blueprint_id || fleet.class_id) : null;
-        const workflow = (bp && Array.isArray(bp.workflows)) ? bp.workflows[wfIdx] : null;
+        const workflow = effectiveWorkflows(fleet, bp)[wfIdx] || null;
         if (!workflow) return;
         const slots = fleet.slot_assignments || {};
         if (!Object.values(slots).some(Boolean)) {
@@ -1482,6 +1524,217 @@ const SpaceshipDetailView = (() => {
         }
       });
     });
+
+    // New workflow → open the editor with a blank sequence (append on save).
+    el.querySelector('.ship-wf-new')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      _openWorkflowEditor(el, id, fleet, spaceshipClass, agentMap, bp, -1);
+    });
+
+    // Edit a workflow → open the editor prefilled from the effective sequence.
+    el.querySelectorAll('.ship-wf-edit').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        _openWorkflowEditor(el, id, fleet, spaceshipClass, agentMap, bp, parseInt(btn.dataset.wfIdx, 10));
+      });
+    });
+
+    // Delete a workflow → fork the effective list minus this entry, persist.
+    el.querySelectorAll('.ship-wf-delete').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const wfIdx = parseInt(btn.dataset.wfIdx, 10);
+        const list = effectiveWorkflows(fleet, bp);
+        const wf = list[wfIdx];
+        if (!wf) return;
+        if (!window.confirm(`Delete the "${wf.title || 'untitled'}" workflow from this spaceship?`)) return;
+        const next = JSON.parse(JSON.stringify(list));
+        next.splice(wfIdx, 1);
+        await _persistWorkflows(el, id, fleet, next);
+      });
+    });
+
+    // Reset → drop the override so the catalog defaults show again.
+    el.querySelector('.ship-wf-reset')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!window.confirm("Reset this spaceship's workflows to the catalog defaults? Your customizations will be removed.")) return;
+      await _persistWorkflows(el, id, fleet, null);
+    });
+  }
+
+  /* Open the workflow editor modal. `wfIdx` < 0 (or null) authors a new
+     workflow appended on save; otherwise it edits the effective workflow at
+     that index. Built fresh each open (prior instance removed) so handlers
+     never stack. Persists to user_spaceships.config.workflows via
+     _persistWorkflows. Each step carries `agent_slot` (0 = Auto/Captain, else
+     1-indexed crew slot) chosen through the macOS-safe CSelect dropdown. */
+  function _openWorkflowEditor(el, id, fleet, spaceshipClass, agentMap, bp, wfIdx) {
+    document.getElementById('modal-wf-editor')?.remove();
+
+    const toStep = (s) => (typeof s === 'string')
+      ? { step: s, agent_slot: 0 }
+      : { step: (s && s.step) || '', agent_slot: (s && s.agent_slot) || 0 };
+
+    const source = (wfIdx != null && wfIdx >= 0) ? effectiveWorkflows(fleet, bp)[wfIdx] : null;
+    let steps = (source && Array.isArray(source.steps) && source.steps.length)
+      ? source.steps.map(toStep) : [{ step: '', agent_slot: 0 }];
+
+    const slotDefs = (spaceshipClass && Array.isArray(spaceshipClass.slots)) ? spaceshipClass.slots : [];
+    const slotOptions = [{ value: '0', label: 'Auto · Captain' }].concat(
+      slotDefs.map(s => {
+        const aid = (fleet.slot_assignments || {})[s.id];
+        const agent = aid && agentMap ? agentMap[aid] : null;
+        const who = agent && agent.name ? agent.name : 'empty';
+        return { value: String(s.id + 1), label: `Slot ${s.id + 1} · ${_esc(s.label || ('Agent ' + (s.id + 1)))} — ${who}` };
+      })
+    );
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'modal-wf-editor';
+    overlay.innerHTML = `
+      <div class="modal-box wfe-box">
+        <div class="modal-hdr">
+          <h3 class="modal-title">${source ? 'Edit workflow' : 'New workflow'}</h3>
+          <button class="modal-close" id="wfe-close" aria-label="Close">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="auth-field">
+            <label for="wfe-title">Name</label>
+            <input type="text" id="wfe-title" maxlength="80" placeholder="e.g. New-patient onboarding" />
+          </div>
+          <label class="wfe-steps-label">Steps</label>
+          <div id="wfe-steps" class="wfe-steps"></div>
+          <button type="button" class="btn btn-xs wfe-add" id="wfe-add">
+            <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
+            Add step
+          </button>
+          <div class="auth-error" id="wfe-error"></div>
+          <div class="wfe-actions">
+            <button type="button" class="btn btn-xs" id="wfe-cancel">Cancel</button>
+            <button type="button" class="btn btn-xs btn-primary" id="wfe-save">Save workflow</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const titleInput = overlay.querySelector('#wfe-title');
+    const stepsWrap = overlay.querySelector('#wfe-steps');
+    const errEl = overlay.querySelector('#wfe-error');
+    titleInput.value = source ? (source.title || '') : '';
+
+    const rowHTML = (step, i) => `
+      <div class="wfe-step" data-i="${i}">
+        <span class="wfe-step-num">${i + 1}</span>
+        <input type="text" class="wfe-step-text" value="${_esc(step.step)}" placeholder="Describe what happens in this step…" />
+        ${CSelect.html('wfe-slot-' + i, 'Assign crew slot', slotOptions, String(step.agent_slot || 0))}
+        <div class="wfe-step-ctrls">
+          <button type="button" class="wfe-ctrl wfe-up" aria-label="Move step up"${i === 0 ? ' disabled' : ''}>↑</button>
+          <button type="button" class="wfe-ctrl wfe-down" aria-label="Move step down"${i === steps.length - 1 ? ' disabled' : ''}>↓</button>
+          <button type="button" class="wfe-ctrl wfe-del" aria-label="Remove step">
+            <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+          </button>
+        </div>
+      </div>`;
+
+    // Snapshot live inputs back into `steps` before any structural change so
+    // in-progress text + slot picks survive a reorder/add/remove re-render.
+    const syncFromDOM = () => {
+      steps = [...stepsWrap.querySelectorAll('.wfe-step')].map(row => {
+        const text = row.querySelector('.wfe-step-text').value;
+        const sel = row.querySelector('.bp-cselect');
+        const slot = sel ? parseInt(sel.dataset.value, 10) : 0;
+        return { step: text, agent_slot: Number.isFinite(slot) ? slot : 0 };
+      });
+    };
+    const paint = () => {
+      stepsWrap.innerHTML = steps.map((s, i) => rowHTML(s, i)).join('');
+      steps.forEach((_, i) => CSelect.mount('wfe-slot-' + i, () => {}));
+    };
+
+    stepsWrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('.wfe-ctrl');
+      if (!btn) return;
+      const rows = [...stepsWrap.querySelectorAll('.wfe-step')];
+      const i = rows.indexOf(btn.closest('.wfe-step'));
+      if (i < 0) return;
+      syncFromDOM();
+      if (btn.classList.contains('wfe-del')) steps.splice(i, 1);
+      else if (btn.classList.contains('wfe-up') && i > 0) { const t = steps[i - 1]; steps[i - 1] = steps[i]; steps[i] = t; }
+      else if (btn.classList.contains('wfe-down') && i < steps.length - 1) { const t = steps[i + 1]; steps[i + 1] = steps[i]; steps[i] = t; }
+      if (!steps.length) steps = [{ step: '', agent_slot: 0 }];
+      paint();
+    });
+
+    overlay.querySelector('#wfe-add').addEventListener('click', () => {
+      syncFromDOM();
+      steps.push({ step: '', agent_slot: 0 });
+      paint();
+      const rows = stepsWrap.querySelectorAll('.wfe-step');
+      rows[rows.length - 1]?.querySelector('.wfe-step-text')?.focus();
+    });
+
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#wfe-close').addEventListener('click', close);
+    overlay.querySelector('#wfe-cancel').addEventListener('click', close);
+
+    overlay.querySelector('#wfe-save').addEventListener('click', async () => {
+      syncFromDOM();
+      const title = titleInput.value.trim();
+      const cleanSteps = steps
+        .map(s => ({ step: (s.step || '').trim(), agent_slot: s.agent_slot || 0 }))
+        .filter(s => s.step);
+      if (!title) { errEl.textContent = 'Give the workflow a name.'; return; }
+      if (!cleanSteps.length) { errEl.textContent = 'Add at least one step with a description.'; return; }
+      errEl.textContent = '';
+      const saveBtn = overlay.querySelector('#wfe-save');
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      // Deep-clone the effective list so untouched entries detach from the
+      // catalog refs; replace at index or append the edited workflow.
+      const next = JSON.parse(JSON.stringify(effectiveWorkflows(fleet, bp)));
+      const wf = { title, steps: cleanSteps };
+      if (wfIdx != null && wfIdx >= 0 && wfIdx < next.length) next[wfIdx] = wf;
+      else next.push(wf);
+      const ok = await _persistWorkflows(el, id, fleet, next);
+      if (ok) {
+        close();
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Workflow saved', message: title, type: 'success' });
+      } else {
+        saveBtn.disabled = false; saveBtn.textContent = 'Save workflow';
+      }
+    });
+
+    paint();
+    setTimeout(() => titleInput.focus(), 50);
+  }
+
+  /* Persist the ship's workflow override to user_spaceships.config.workflows.
+     `workflows == null` deletes the key (reset to catalog defaults). Mirrors
+     into State.spaceships so other surfaces stay in sync, then re-renders the
+     detail view from the fresh row. Returns false on a write failure. */
+  async function _persistWorkflows(el, id, fleet, workflows) {
+    const config = Object.assign({}, fleet.config || {});
+    if (workflows == null) delete config.workflows;
+    else config.workflows = workflows;
+    fleet.config = config;
+    try {
+      const ships = State.get('spaceships') || [];
+      const local = ships.find(s => s && s.id === id);
+      if (local) { local.config = config; State.set('spaceships', ships); }
+    } catch (e) { /* state mirror is best-effort */ }
+    try {
+      await SB.db('user_spaceships').update(id, { config });
+    } catch (e) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Could not save workflow', message: e.message || 'Save failed.', type: 'system' });
+      return false;
+    }
+    _loadSpaceship(el, id);
+    return true;
   }
 
   function _initSlotDnD(el, id, fleet, allAgents, agentMap, spaceshipClass) {
@@ -1666,5 +1919,5 @@ const SpaceshipDetailView = (() => {
     _draggedAgentRarity = null;
   }
 
-  return { title, render, destroy, buildPlanFromShipWorkflow };
+  return { title, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized };
 })();
