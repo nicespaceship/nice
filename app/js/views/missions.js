@@ -644,6 +644,7 @@ const MissionDetailView = (() => {
   const _Np  = () => Terminology.label('mission', { plural: true });
   const _Nl  = () => Terminology.label('mission', { lowercase: true });
   const _esc = Utils.esc;
+  const _timeAgo = Utils.timeAgo;
   let _detailChannel = null;
 
   /* Mirrors MissionsView._isRunnable — delegates to the MissionRunner SSOT
