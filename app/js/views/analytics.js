@@ -526,7 +526,11 @@ const AnalyticsView = (() => {
     }
 
     const max = Math.max(...buckets, 0.01);
-    const pad = { top: 10, right: 10, bottom: 30, left: 42 };
+    // Axis ticks: enough decimals that the four steps stay distinct for
+    // sub-dollar COGS — a flat 2-decimal axis collapses to "$0.01, $0.01,
+    // $0.00, $0.00". Wider left pad fits the longer small-value labels.
+    const tickDecimals = max >= 1 ? 2 : max >= 0.1 ? 3 : 4;
+    const pad = { top: 10, right: 10, bottom: 30, left: 48 };
     const chartW = W - pad.left - pad.right;
     const chartH = H - pad.top - pad.bottom;
 
@@ -548,7 +552,7 @@ const AnalyticsView = (() => {
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
     for (let i = 0; i <= 4; i++) {
-      const val = (max * (4 - i) / 4).toFixed(2);
+      const val = (max * (4 - i) / 4).toFixed(tickDecimals);
       ctx.fillText('$' + val, pad.left - 6, pad.top + (chartH / 4) * i + 3);
     }
 
