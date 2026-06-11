@@ -470,18 +470,18 @@ const AnalyticsView = (() => {
 
     el.innerHTML = `
       <div class="ana-stat-card">
-        <span class="ana-stat-num hl">$${totalSpend.toFixed(2)}</span>
+        <span class="ana-stat-num hl">${CostUtils.formatCost(totalSpend)}</span>
         <span class="ana-stat-label">Monthly Spend</span>
       </div>
       <div class="ana-stat-card">
-        <span class="ana-stat-num">$${remaining.toFixed(2)}</span>
+        <span class="ana-stat-num">${CostUtils.formatCost(remaining)}</span>
         <span class="ana-stat-label">Budget Remaining</span>
         <div class="cost-budget-bar" style="margin-top:6px">
           <div class="cost-budget-fill${barClass}" style="width:${pct}%"></div>
         </div>
       </div>
       <div class="ana-stat-card">
-        <span class="ana-stat-num${overBudget ? ' rate-bad' : ''}">$${avgDaily.toFixed(2)}</span>
+        <span class="ana-stat-num${overBudget ? ' rate-bad' : ''}">${CostUtils.formatCost(avgDaily)}</span>
         <span class="ana-stat-label">Avg / Day</span>
       </div>
       <div class="ana-stat-card">
@@ -627,7 +627,7 @@ const AnalyticsView = (() => {
               <td class="mono" style="font-size:.68rem">${_esc(r.model)}</td>
               <td>${r.count}</td>
               <td>${CostUtils.formatTokens(r.tokens)}</td>
-              <td class="hl">$${r.total.toFixed(2)}</td>
+              <td class="hl">${CostUtils.formatCost(r.total)}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -675,7 +675,7 @@ const AnalyticsView = (() => {
               <td>${_esc(r.title)}</td>
               <td>${_esc(r.agentName)}</td>
               <td>${CostUtils.formatTokens(r.tokens)}</td>
-              <td class="hl">$${r.cost.toFixed(4)}</td>
+              <td class="hl">${CostUtils.formatCost(r.cost)}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -707,7 +707,7 @@ const AnalyticsView = (() => {
               <span class="cost-log-agent">${_esc(agent?.name || 'Unknown')}</span>
               <span class="cost-log-model mono">${_esc(l.model)}</span>
               <span class="cost-log-tokens">${CostUtils.formatTokens(l.tokens_used)} tokens</span>
-              <span class="cost-log-amount">$${(l.amount || 0).toFixed(4)}</span>
+              <span class="cost-log-amount">${CostUtils.formatCost(l.amount)}</span>
               <span class="cost-log-time">${_timeAgo(l.created_at)}</span>
             </div>
           `;

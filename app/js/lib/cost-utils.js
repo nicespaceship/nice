@@ -59,6 +59,20 @@ const CostUtils = (() => {
     return String(n);
   }
 
+  /** Compact USD spend. fuel_usage amounts are provider COGS — frequently a
+      fraction of a cent — so a flat 2-decimal format renders real usage as
+      "$0.00" and the tracker reads as dead. Adaptive: exact zero shows
+      "$0.00"; a non-zero amount below a cent shows "<$0.01" (honest "you've
+      spent something, just under a cent"); a cent or more shows two decimals.
+      The shared money formatter for both cost views, alongside formatTokens. */
+  function formatCost(amount) {
+    const n = Number(amount) || 0;
+    if (n === 0) return '$0.00';
+    const abs = Math.abs(n);
+    const body = abs < 0.01 ? '<$0.01' : '$' + abs.toFixed(2);
+    return n < 0 ? '-' + body : body;
+  }
+
   /** Month-to-date spend summary shared by both cost views. Filters logs to
       the current calendar month, totals spend, and derives budget
       remaining/percentage plus a smoothed month-end projection. Returns the
@@ -184,7 +198,7 @@ const CostUtils = (() => {
     return { agents, tasks, costLogs };
   }
 
-  return { attributeLogsToMissions, getBudget, formatTokens, computeSpendSummary, computeRunway, loadCostData };
+  return { attributeLogsToMissions, getBudget, formatTokens, formatCost, computeSpendSummary, computeRunway, loadCostData };
 })();
 
 // Expose for tests / Node consumers

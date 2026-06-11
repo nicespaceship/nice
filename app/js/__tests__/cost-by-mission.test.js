@@ -49,8 +49,9 @@ describe('CostView._renderCostByMission', () => {
     expect(html).toContain('Solo: $5.00');
     expect(html).not.toContain('$15.00');
     // Each log lands on its nearest mission ($3 + $2), nothing on the third.
-    expect(html).toContain('$3.0000');
-    expect(html).toContain('$2.0000');
+    // Amounts render through CostUtils.formatCost (two decimals at/above a cent).
+    expect(html).toContain('$3.00');
+    expect(html).toContain('$2.00');
   });
 
   it('renders an empty state when there are no missions', () => {

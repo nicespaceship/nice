@@ -88,6 +88,39 @@ describe('CostUtils.formatTokens', () => {
   });
 });
 
+describe('CostUtils.formatCost', () => {
+  it('shows two decimals for a cent or more', () => {
+    expect(CostUtils.formatCost(0.01)).toBe('$0.01');
+    expect(CostUtils.formatCost(0.0234)).toBe('$0.02');
+    expect(CostUtils.formatCost(1.5)).toBe('$1.50');
+    expect(CostUtils.formatCost(50)).toBe('$50.00');
+    expect(CostUtils.formatCost(1234.5)).toBe('$1234.50');
+  });
+
+  it('floors non-zero sub-cent COGS to <$0.01 instead of $0.00', () => {
+    // A single Gemini Flash call is fractions of a cent; the old toFixed(2)
+    // collapsed real usage to "$0.00" and the tracker looked dead.
+    expect(CostUtils.formatCost(0.000005)).toBe('<$0.01');
+    expect(CostUtils.formatCost(0.009)).toBe('<$0.01');
+  });
+
+  it('returns $0.00 for zero, null, undefined, and non-numeric input', () => {
+    expect(CostUtils.formatCost(0)).toBe('$0.00');
+    expect(CostUtils.formatCost(null)).toBe('$0.00');
+    expect(CostUtils.formatCost(undefined)).toBe('$0.00');
+    expect(CostUtils.formatCost('nope')).toBe('$0.00');
+  });
+
+  it('coerces numeric strings (fuel_cost arrives as a numeric string)', () => {
+    expect(CostUtils.formatCost('0.5')).toBe('$0.50');
+    expect(CostUtils.formatCost('0.000005')).toBe('<$0.01');
+  });
+
+  it('keeps a leading minus for negative amounts', () => {
+    expect(CostUtils.formatCost(-0.05)).toBe('-$0.05');
+  });
+});
+
 describe('CostUtils.getBudget', () => {
   // Uses the shared Utils + localStorage mocks from setup.js (cleared each beforeEach).
   it('returns the saved budget when present', () => {
