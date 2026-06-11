@@ -941,6 +941,16 @@ const SpaceshipDetailView = (() => {
 
   async function _loadSpaceship(el, id) {
     try {
+      // Ensure the blueprint catalog is loaded before we render. The detail
+      // resolves the ship's blueprint via Blueprints.getSpaceship() (and crew
+      // via getAgent()), both bare `_spaceships`/`_agents` lookups that do NOT
+      // trigger the lazy catalog load. On a hard-reload / direct-nav straight
+      // onto a ship detail — before the Bridge has primed the catalog — they'd
+      // return null, rendering empty Workflows + blueprint-derived crew. This
+      // dedupes against in-flight loads and is a no-op once loaded.
+      if (typeof Blueprints !== 'undefined' && Blueprints.ensureCatalogLoaded) {
+        try { await Blueprints.ensureCatalogLoaded(); } catch (e) { /* render with whatever resolves */ }
+      }
       let fleet;
       // Prefer local state (has latest slot edits) over Supabase fetch
       const _localFleet = (State.get('spaceships') || []).find(f => f.id === id);
