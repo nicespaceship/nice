@@ -23,6 +23,8 @@ globalThis.Utils = { esc: (s) => String(s == null ? '' : s), KEYS: { shipProfile
 })();
 
 const build = SpaceshipDetailView.buildPlanFromShipWorkflow;
+const eff = SpaceshipDetailView.effectiveWorkflows;
+const isCustom = SpaceshipDetailView.isWorkflowsCustomized;
 
 describe('SpaceshipDetailView.buildPlanFromShipWorkflow', () => {
   it('maps steps to a linear DAG of agent nodes, resolving 1-indexed slots', () => {
@@ -81,5 +83,44 @@ describe('SpaceshipDetailView.buildPlanFromShipWorkflow', () => {
   it('leaves agentId null when the ship has no crew at all (handler guards the run)', () => {
     const plan = build({ title: 'T', steps: [{ step: 'a', agent_slot: 1 }] }, {});
     expect(plan.nodes[0].config.agentId).toBeNull();
+  });
+});
+
+describe('SpaceshipDetailView.effectiveWorkflows', () => {
+  const bp = { workflows: [{ title: 'Catalog A', steps: [] }] };
+
+  it('returns the catalog blueprint workflows when no override exists', () => {
+    expect(eff({ config: {} }, bp)).toBe(bp.workflows);
+    expect(eff({}, bp)).toBe(bp.workflows);
+    expect(eff(null, bp)).toBe(bp.workflows);
+  });
+
+  it('prefers a persisted override array on the user ship', () => {
+    const override = [{ title: 'Mine', steps: [] }];
+    expect(eff({ config: { workflows: override } }, bp)).toBe(override);
+  });
+
+  it('treats an empty override array as authoritative (user deleted all)', () => {
+    expect(eff({ config: { workflows: [] } }, bp)).toEqual([]);
+  });
+
+  it('returns [] when neither override nor catalog has a workflows array', () => {
+    expect(eff({ config: {} }, null)).toEqual([]);
+    expect(eff({ config: {} }, { workflows: 'nope' })).toEqual([]);
+    expect(eff({ config: { workflows: 'nope' } }, bp)).toBe(bp.workflows);
+  });
+});
+
+describe('SpaceshipDetailView.isWorkflowsCustomized', () => {
+  it('is true only when an override array is present', () => {
+    expect(isCustom({ config: { workflows: [] } })).toBe(true);
+    expect(isCustom({ config: { workflows: [{ title: 'x' }] } })).toBe(true);
+  });
+
+  it('is false without an override array', () => {
+    expect(isCustom({ config: {} })).toBe(false);
+    expect(isCustom({})).toBe(false);
+    expect(isCustom(null)).toBe(false);
+    expect(isCustom({ config: { workflows: 'x' } })).toBe(false);
   });
 });
