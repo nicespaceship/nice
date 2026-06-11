@@ -1358,9 +1358,53 @@ const MissionRunner = (() => {
     return { missionId: missionRow.id, runId: taskRow?.id || null };
   }
 
+  /* Create or update a PERSISTENT scheduled Mission, with NO immediate Run.
+     The pg_cron `tick_mission_schedules` job fires queued Runs from it
+     server-side on the cron — see CLAUDE.md → Mission Ontology → Schedule.
+     Distinct from createRun, which enqueues one Run now. `spec`:
+       { missionId?, title, plan, spaceshipId,
+         schedule: { cron, tz, enabled }, description? }
+     With `missionId` it updates that row; without, it inserts one. The plan
+     embeds shape:'dag' so the cron-created run routes through WorkflowEngine.
+     Returns the mission id. */
+  async function upsertScheduledMission(spec) {
+    spec = spec || {};
+    const user = State.get('user');
+    if (!user?.id) throw new Error('Sign in to schedule a mission.');
+    if (!spec.spaceshipId) throw new Error('Missions always run on a Spaceship.');
+    if (!spec.schedule || !spec.schedule.cron) throw new Error('A schedule needs a cron expression.');
+    const row = {
+      title: spec.title,
+      description: spec.description || null,
+      shape: 'dag',
+      spaceship_id: spec.spaceshipId,
+      plan: spec.plan || {},
+      schedule: spec.schedule,
+      state: 'active',
+    };
+    if (spec.missionId) {
+      await SB.db('missions').update(spec.missionId, row);
+      return spec.missionId;
+    }
+    const created = await SB.db('missions').create(Object.assign({ user_id: user.id }, row));
+    if (!created?.id) throw new Error('Failed to persist scheduled mission.');
+    return created.id;
+  }
+
+  /* Stop a scheduled Mission from firing without deleting its Run history
+     (mission_runs FK-restricts deletes). Nulls the schedule so the cron's
+     `schedule IS NOT NULL` filter skips it. Best-effort. */
+  async function unscheduleMission(missionId) {
+    if (!missionId) return;
+    try { await SB.db('missions').update(missionId, { schedule: null }); }
+    catch (e) { /* caller has already cleared the workflow-side link */ }
+  }
+
   return {
     run,
     createRun,
+    upsertScheduledMission,
+    unscheduleMission,
     resumeDag,
     runWithDispatch,
     awardAgentXP,

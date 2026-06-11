@@ -8653,6 +8653,47 @@ html[data-theme] .nice-ai-input:focus-visible {
   .wfe-step .bp-cselect-trigger { width: 100%; }
 }
 
+/* Workflow schedule — card chip + active button state */
+.ship-wf-icon.is-active { color: var(--accent); border-color: var(--accent); }
+.ship-wf-footer-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ship-wf-sched-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  max-width: 100%; padding: 2px 8px;
+  border: 1px solid var(--border); border-radius: 999px;
+  color: var(--accent); font-size: var(--text-2xs); font-weight: var(--fw-medium);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ship-wf-sched-chip svg { flex-shrink: 0; }
+.ship-wf-sched-chip.paused { color: var(--text-muted); border-color: var(--border); }
+
+/* Schedule editor modal */
+.wfs-box { max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; }
+.wfs-box .modal-body { overflow-y: auto; }
+.wfs-intro { font-size: var(--text-sm); color: var(--text-muted); margin: 0 0 16px; line-height: var(--lh-base); }
+.wfs-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.wfs-row[hidden] { display: none; }
+.wfs-row > label {
+  font-size: var(--text-xs); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: var(--tracking-caps);
+}
+.wfs-row input {
+  padding: 8px 10px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: var(--font-b); font-size: var(--text-sm);
+}
+.wfs-row input:focus { outline: none; border-color: var(--accent); }
+.wfs-row .bp-cselect, .wfs-row .bp-cselect-trigger { width: 100%; }
+.wfs-preview {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 12px; margin-bottom: 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.wfs-preview-label { font-size: var(--text-sm); color: var(--text); font-weight: var(--fw-medium); }
+.wfs-preview-cron { font-family: var(--font-m); font-size: var(--text-2xs); color: var(--text-muted); }
+.wfs-actions { display: flex; align-items: center; gap: 8px; margin-top: 18px; }
+.wfs-actions-spacer { flex: 1; }
+.wfs-danger:hover { color: var(--color-error, #ef4444); border-color: var(--color-error, #ef4444); }
+
 /* ─────────────────────────────────────────────────────────────────
    WALLET VIEW
 ───────────────────────────────────────────────────────────────── */

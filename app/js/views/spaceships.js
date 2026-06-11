@@ -1371,12 +1371,18 @@ const SpaceshipDetailView = (() => {
     };
     const cards = workflows.map((wf, i) => {
       const steps = Array.isArray(wf.steps) ? wf.steps : [];
+      const sched = (wf && wf.schedule && wf.schedule.cron) ? wf.schedule : null;
+      const schedPaused = !!(sched && sched.enabled === false);
+      const schedLabel = sched ? (sched.label || describeSchedule(sched.spec, sched.tz)) : '';
       return `
         <div class="ship-wf-card" data-wf-idx="${i}">
           <div class="ship-wf-header">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
             <span class="ship-wf-name">${_esc(wf.title || 'Untitled workflow')}</span>
             <div class="ship-wf-card-actions">
+              <button class="ship-wf-icon ship-wf-schedule${sched ? ' is-active' : ''}" data-wf-idx="${i}" title="${sched ? 'Edit schedule' : 'Schedule'}" aria-label="${sched ? 'Edit schedule' : 'Schedule workflow'}">
+                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-clock"/></svg>
+              </button>
               <button class="ship-wf-icon ship-wf-edit" data-wf-idx="${i}" title="Edit workflow" aria-label="Edit workflow">
                 <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-edit"/></svg>
               </button>
@@ -1387,7 +1393,13 @@ const SpaceshipDetailView = (() => {
           </div>
           <ol class="ship-wf-steps">${steps.map(stepLi).join('')}</ol>
           <div class="ship-wf-footer">
-            <span class="ship-wf-meta">${steps.length} step${steps.length !== 1 ? 's' : ''}</span>
+            <div class="ship-wf-footer-l">
+              <span class="ship-wf-meta">${steps.length} step${steps.length !== 1 ? 's' : ''}</span>
+              ${sched ? `<span class="ship-wf-sched-chip${schedPaused ? ' paused' : ''}" title="${_esc(schedLabel)}">
+                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-clock"/></svg>
+                ${schedPaused ? 'Paused' : _esc(schedLabel)}
+              </span>` : ''}
+            </div>
             <button class="btn btn-xs btn-primary ship-wf-run" data-wf-idx="${i}">
               <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-play"/></svg>
               Run
@@ -1437,6 +1449,49 @@ const SpaceshipDetailView = (() => {
     });
     const edges = nodes.slice(1).map((n, i) => ({ from: `step-${i}`, to: `step-${i + 1}` }));
     return { shape: 'dag', nodes, edges };
+  }
+
+  /* ── Scheduling helpers (pure) ──────────────────────────────────────
+     buildCron turns the scheduler form spec into the 5-field cron string
+     the pg_cron tick job reads; describeSchedule renders the human cadence
+     label stored on the workflow for the card chip. Both pure, unit-tested
+     in ship-workflow-plan.test.js. */
+  const _DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const _clampInt = (v, lo, hi, dflt) => {
+    const n = parseInt(v, 10);
+    if (!Number.isFinite(n)) return dflt;
+    return Math.min(hi, Math.max(lo, n));
+  };
+  const _pad2 = (n) => String(_clampInt(n, 0, 59, 0)).padStart(2, '0');
+
+  function buildCron(spec) {
+    const s = spec || {};
+    const m = _clampInt(s.minute, 0, 59, 0);
+    const h = _clampInt(s.hour, 0, 23, 9);
+    const dow = _clampInt(s.dow, 0, 6, 1);
+    const dom = _clampInt(s.dom, 1, 28, 1);
+    switch (s.freq) {
+      case 'hourly':  return `${m} * * * *`;
+      case 'weekly':  return `${m} ${h} * * ${dow}`;
+      case 'monthly': return `${m} ${h} ${dom} * *`;
+      case 'custom':  return String(s.cron || '').trim();
+      case 'daily':
+      default:        return `${m} ${h} * * *`;
+    }
+  }
+
+  function describeSchedule(spec, tz) {
+    const s = spec || {};
+    const hhmm = `${_pad2(s.hour == null ? 9 : s.hour)}:${_pad2(s.minute || 0)}`;
+    const tzL = tz ? ` ${tz}` : '';
+    switch (s.freq) {
+      case 'hourly':  return `Hourly at :${_pad2(s.minute || 0)}`;
+      case 'weekly':  return `Weekly on ${_DOW_NAMES[_clampInt(s.dow, 0, 6, 1)]} at ${hhmm}${tzL}`;
+      case 'monthly': return `Monthly on day ${_clampInt(s.dom, 1, 28, 1)} at ${hhmm}${tzL}`;
+      case 'custom':  return `Custom (${String(s.cron || '').trim()})`;
+      case 'daily':
+      default:        return `Daily at ${hhmm}${tzL}`;
+    }
   }
 
   function _bindDetailEvents(el, id, fleet, allAgents, agentMap, spaceshipClass) {
@@ -1540,7 +1595,18 @@ const SpaceshipDetailView = (() => {
       });
     });
 
+    // Schedule a workflow → open the cron builder. Scheduling forks the
+    // workflow onto the user ship (it needs somewhere to store the link).
+    el.querySelectorAll('.ship-wf-schedule').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        _openScheduleEditor(el, id, fleet, bp, parseInt(btn.dataset.wfIdx, 10));
+      });
+    });
+
     // Delete a workflow → fork the effective list minus this entry, persist.
+    // If the entry carried a schedule, stop its mission from firing first.
     el.querySelectorAll('.ship-wf-delete').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -1550,16 +1616,26 @@ const SpaceshipDetailView = (() => {
         const wf = list[wfIdx];
         if (!wf) return;
         if (!window.confirm(`Delete the "${wf.title || 'untitled'}" workflow from this spaceship?`)) return;
+        if (wf.schedule && wf.schedule.missionId && typeof MissionRunner !== 'undefined' && MissionRunner.unscheduleMission) {
+          await MissionRunner.unscheduleMission(wf.schedule.missionId);
+        }
         const next = JSON.parse(JSON.stringify(list));
         next.splice(wfIdx, 1);
         await _persistWorkflows(el, id, fleet, next);
       });
     });
 
-    // Reset → drop the override so the catalog defaults show again.
+    // Reset → drop the override so the catalog defaults show again. Unschedule
+    // every forked workflow first so no orphaned mission keeps firing.
     el.querySelector('.ship-wf-reset')?.addEventListener('click', async (e) => {
       e.preventDefault();
       if (!window.confirm("Reset this spaceship's workflows to the catalog defaults? Your customizations will be removed.")) return;
+      const list = effectiveWorkflows(fleet, bp);
+      if (typeof MissionRunner !== 'undefined' && MissionRunner.unscheduleMission) {
+        for (const wf of list) {
+          if (wf && wf.schedule && wf.schedule.missionId) await MissionRunner.unscheduleMission(wf.schedule.missionId);
+        }
+      }
       await _persistWorkflows(el, id, fleet, null);
     });
   }
@@ -1695,10 +1771,14 @@ const SpaceshipDetailView = (() => {
       const saveBtn = overlay.querySelector('#wfe-save');
       saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
       // Deep-clone the effective list so untouched entries detach from the
-      // catalog refs; replace at index or append the edited workflow.
+      // catalog refs; replace at index or append the edited workflow. Carry
+      // forward any existing schedule so editing steps keeps the cron link
+      // (_persistWorkflows re-syncs the scheduled mission's plan).
       const next = JSON.parse(JSON.stringify(effectiveWorkflows(fleet, bp)));
+      const editing = wfIdx != null && wfIdx >= 0 && wfIdx < next.length;
       const wf = { title, steps: cleanSteps };
-      if (wfIdx != null && wfIdx >= 0 && wfIdx < next.length) next[wfIdx] = wf;
+      if (editing && next[wfIdx] && next[wfIdx].schedule) wf.schedule = next[wfIdx].schedule;
+      if (editing) next[wfIdx] = wf;
       else next.push(wf);
       const ok = await _persistWorkflows(el, id, fleet, next);
       if (ok) {
@@ -1733,8 +1813,239 @@ const SpaceshipDetailView = (() => {
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Could not save workflow', message: e.message || 'Save failed.', type: 'system' });
       return false;
     }
+    // Keep each scheduled workflow's mission in step with its current
+    // definition: rebuild the plan + title so cron-fired runs use the latest
+    // steps and crew. Best-effort per workflow so one failure can't block.
+    if (Array.isArray(workflows) && typeof MissionRunner !== 'undefined' && MissionRunner.upsertScheduledMission) {
+      const slots = fleet.slot_assignments || {};
+      for (const wf of workflows) {
+        if (!wf || !wf.schedule || !wf.schedule.missionId || !wf.schedule.cron) continue;
+        try {
+          await MissionRunner.upsertScheduledMission({
+            missionId: wf.schedule.missionId,
+            title: `${fleet.name}: ${wf.title}`,
+            plan: buildPlanFromShipWorkflow(wf, slots),
+            spaceshipId: id,
+            schedule: { cron: wf.schedule.cron, tz: wf.schedule.tz || 'UTC', enabled: wf.schedule.enabled !== false },
+          });
+        } catch (e) { /* leave the stored link; surfaced on next explicit save */ }
+      }
+    }
     _loadSpaceship(el, id);
     return true;
+  }
+
+  /* Open the schedule (cron builder) modal for the effective workflow at
+     `wfIdx`. Scheduling forks the workflow onto the user ship and creates a
+     persistent `missions` row that the pg_cron tick job fires on the cadence;
+     editing/pausing/removing manage that same mission. Built fresh per open.
+     Friendly Hourly/Daily/Weekly/Monthly presets plus a custom-cron escape;
+     the form spec is stored alongside the cron so editing prefills cleanly. */
+  function _openScheduleEditor(el, id, fleet, bp, wfIdx) {
+    document.getElementById('modal-wf-schedule')?.remove();
+    const list = effectiveWorkflows(fleet, bp);
+    const wf = list[wfIdx];
+    if (!wf) return;
+
+    const browserTz = (() => {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; }
+    })();
+    const existing = (wf.schedule && wf.schedule.cron) ? wf.schedule : null;
+    const spec = Object.assign({ freq: 'daily', minute: 0, hour: 9, dow: 1, dom: 1, cron: '' }, (existing && existing.spec) || {});
+    const tz0 = (existing && existing.tz) || browserTz;
+
+    const freqOptions = [
+      { value: 'hourly', label: 'Hourly' },
+      { value: 'daily', label: 'Daily' },
+      { value: 'weekly', label: 'Weekly' },
+      { value: 'monthly', label: 'Monthly' },
+      { value: 'custom', label: 'Custom cron' },
+    ];
+    const dowOptions = _DOW_NAMES.map((n, i) => ({ value: String(i), label: n }));
+    const domOptions = Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: 'Day ' + (i + 1) }));
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'modal-wf-schedule';
+    overlay.innerHTML = `
+      <div class="modal-box wfs-box">
+        <div class="modal-hdr">
+          <h3 class="modal-title">${existing ? 'Edit schedule' : 'Schedule workflow'}</h3>
+          <button class="modal-close" id="wfs-close" aria-label="Close">
+            <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="wfs-intro">NICE queues a run of <strong>${_esc(wf.title || 'this workflow')}</strong> automatically on this cadence. Queued runs execute when your bridge is open.</p>
+          <div class="wfs-row">
+            <label>Frequency</label>
+            ${CSelect.html('wfs-freq', 'Frequency', freqOptions, spec.freq)}
+          </div>
+          <div class="wfs-row" id="wfs-row-time">
+            <label for="wfs-time">Time</label>
+            <input type="time" id="wfs-time" value="${_pad2(spec.hour)}:${_pad2(spec.minute)}" />
+          </div>
+          <div class="wfs-row" id="wfs-row-minute">
+            <label for="wfs-minute">At minute</label>
+            <input type="number" id="wfs-minute" min="0" max="59" value="${_clampInt(spec.minute, 0, 59, 0)}" />
+          </div>
+          <div class="wfs-row" id="wfs-row-dow">
+            <label>Day of week</label>
+            ${CSelect.html('wfs-dow', 'Day of week', dowOptions, String(_clampInt(spec.dow, 0, 6, 1)))}
+          </div>
+          <div class="wfs-row" id="wfs-row-dom">
+            <label>Day of month</label>
+            ${CSelect.html('wfs-dom', 'Day of month', domOptions, String(_clampInt(spec.dom, 1, 28, 1)))}
+          </div>
+          <div class="wfs-row" id="wfs-row-cron">
+            <label for="wfs-cron">Cron (minute hour dom month dow)</label>
+            <input type="text" id="wfs-cron" placeholder="0 9 * * 1-5" value="${_esc(spec.cron || '')}" />
+          </div>
+          <div class="wfs-row">
+            <label for="wfs-tz">Timezone</label>
+            <input type="text" id="wfs-tz" placeholder="America/Los_Angeles" value="${_esc(tz0)}" />
+          </div>
+          <div class="wfs-preview" id="wfs-preview"></div>
+          <div class="auth-error" id="wfs-error"></div>
+          <div class="wfs-actions">
+            ${existing ? '<button type="button" class="btn btn-xs wfs-danger" id="wfs-remove">Remove</button>' : ''}
+            ${existing ? `<button type="button" class="btn btn-xs" id="wfs-pause">${existing.enabled === false ? 'Resume' : 'Pause'}</button>` : ''}
+            <span class="wfs-actions-spacer"></span>
+            <button type="button" class="btn btn-xs" id="wfs-cancel">Cancel</button>
+            <button type="button" class="btn btn-xs btn-primary" id="wfs-save">${existing ? 'Save schedule' : 'Schedule'}</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const errEl = overlay.querySelector('#wfs-error');
+    const previewEl = overlay.querySelector('#wfs-preview');
+    const close = () => overlay.remove();
+
+    const readSpec = () => {
+      const freq = document.getElementById('wfs-freq').dataset.value;
+      const t = (overlay.querySelector('#wfs-time').value || '09:00').split(':');
+      const hour = _clampInt(t[0], 0, 23, 9);
+      const timeMin = _clampInt(t[1], 0, 59, 0);
+      const minute = (freq === 'hourly') ? _clampInt(overlay.querySelector('#wfs-minute').value, 0, 59, 0) : timeMin;
+      return {
+        freq,
+        minute, hour,
+        dow: _clampInt(document.getElementById('wfs-dow').dataset.value, 0, 6, 1),
+        dom: _clampInt(document.getElementById('wfs-dom').dataset.value, 1, 28, 1),
+        cron: overlay.querySelector('#wfs-cron').value,
+      };
+    };
+
+    const syncRows = (freq) => {
+      const show = (sel, on) => { const r = overlay.querySelector(sel); if (r) r.hidden = !on; };
+      show('#wfs-row-time', freq === 'daily' || freq === 'weekly' || freq === 'monthly');
+      show('#wfs-row-minute', freq === 'hourly');
+      show('#wfs-row-dow', freq === 'weekly');
+      show('#wfs-row-dom', freq === 'monthly');
+      show('#wfs-row-cron', freq === 'custom');
+    };
+
+    const refresh = () => {
+      const s = readSpec();
+      syncRows(s.freq);
+      const cron = buildCron(s);
+      const tz = overlay.querySelector('#wfs-tz').value.trim() || 'UTC';
+      previewEl.innerHTML = `<span class="wfs-preview-label">${_esc(describeSchedule(s, tz))}</span><span class="wfs-preview-cron">cron: ${_esc(cron || '—')}</span>`;
+    };
+
+    CSelect.mount('wfs-freq', refresh);
+    CSelect.mount('wfs-dow', refresh);
+    CSelect.mount('wfs-dom', refresh);
+    overlay.querySelectorAll('#wfs-time, #wfs-minute, #wfs-cron, #wfs-tz').forEach(inp => inp.addEventListener('input', refresh));
+    refresh();
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#wfs-close').addEventListener('click', close);
+    overlay.querySelector('#wfs-cancel').addEventListener('click', close);
+
+    // Build the override list with `wf`'s schedule field set to `nextSchedule`
+    // (or removed when null), forking from the catalog on first schedule.
+    const persistSchedule = async (nextSchedule, missionId) => {
+      const next = JSON.parse(JSON.stringify(list));
+      if (next[wfIdx]) {
+        if (nextSchedule) next[wfIdx].schedule = nextSchedule;
+        else delete next[wfIdx].schedule;
+      }
+      return _persistWorkflows(el, id, fleet, next);
+    };
+
+    overlay.querySelector('#wfs-save').addEventListener('click', async () => {
+      const s = readSpec();
+      const cron = buildCron(s);
+      const tz = overlay.querySelector('#wfs-tz').value.trim() || 'UTC';
+      if (cron.split(/\s+/).filter(Boolean).length !== 5) {
+        errEl.textContent = 'Enter a valid 5-field cron expression.';
+        return;
+      }
+      const slots = fleet.slot_assignments || {};
+      if (!Object.values(slots).some(Boolean)) {
+        errEl.textContent = 'Dock at least one crew member before scheduling.';
+        return;
+      }
+      if (typeof MissionRunner === 'undefined' || !MissionRunner.upsertScheduledMission) {
+        errEl.textContent = 'Scheduling is unavailable right now.';
+        return;
+      }
+      errEl.textContent = '';
+      const saveBtn = overlay.querySelector('#wfs-save');
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      try {
+        const enabled = existing ? (existing.enabled !== false) : true;
+        const missionId = await MissionRunner.upsertScheduledMission({
+          missionId: existing && existing.missionId,
+          title: `${fleet.name}: ${wf.title}`,
+          plan: buildPlanFromShipWorkflow(wf, slots),
+          spaceshipId: id,
+          schedule: { cron, tz, enabled },
+        });
+        const nextSchedule = { cron, tz, enabled, missionId, spec: s, label: describeSchedule(s, tz) };
+        const ok = await persistSchedule(nextSchedule);
+        if (ok) {
+          close();
+          if (typeof Notify !== 'undefined') Notify.send({ title: existing ? 'Schedule updated' : 'Workflow scheduled', message: describeSchedule(s, tz), type: 'success' });
+        } else { saveBtn.disabled = false; saveBtn.textContent = existing ? 'Save schedule' : 'Schedule'; }
+      } catch (err) {
+        errEl.textContent = err.message || 'Could not save the schedule.';
+        saveBtn.disabled = false; saveBtn.textContent = existing ? 'Save schedule' : 'Schedule';
+      }
+    });
+
+    if (existing) {
+      overlay.querySelector('#wfs-pause')?.addEventListener('click', async () => {
+        const enabled = existing.enabled === false; // paused → resume (true); active → pause (false)
+        try {
+          await MissionRunner.upsertScheduledMission({
+            missionId: existing.missionId,
+            title: `${fleet.name}: ${wf.title}`,
+            plan: buildPlanFromShipWorkflow(wf, fleet.slot_assignments || {}),
+            spaceshipId: id,
+            schedule: { cron: existing.cron, tz: existing.tz || 'UTC', enabled },
+          });
+          await persistSchedule(Object.assign({}, existing, { enabled }));
+          close();
+          if (typeof Notify !== 'undefined') Notify.send({ title: enabled ? 'Schedule resumed' : 'Schedule paused', message: wf.title, type: 'success' });
+        } catch (err) {
+          errEl.textContent = err.message || 'Could not update the schedule.';
+        }
+      });
+      overlay.querySelector('#wfs-remove')?.addEventListener('click', async () => {
+        if (!window.confirm('Remove this schedule? The workflow stays; it just stops running automatically.')) return;
+        try {
+          if (MissionRunner.unscheduleMission) await MissionRunner.unscheduleMission(existing.missionId);
+          await persistSchedule(null);
+          close();
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Schedule removed', message: wf.title, type: 'success' });
+        } catch (err) {
+          errEl.textContent = err.message || 'Could not remove the schedule.';
+        }
+      });
+    }
   }
 
   function _initSlotDnD(el, id, fleet, allAgents, agentMap, spaceshipClass) {
@@ -1919,5 +2230,5 @@ const SpaceshipDetailView = (() => {
     _draggedAgentRarity = null;
   }
 
-  return { title, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized };
+  return { title, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized, buildCron, describeSchedule };
 })();

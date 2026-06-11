@@ -25,6 +25,8 @@ globalThis.Utils = { esc: (s) => String(s == null ? '' : s), KEYS: { shipProfile
 const build = SpaceshipDetailView.buildPlanFromShipWorkflow;
 const eff = SpaceshipDetailView.effectiveWorkflows;
 const isCustom = SpaceshipDetailView.isWorkflowsCustomized;
+const buildCron = SpaceshipDetailView.buildCron;
+const describeSchedule = SpaceshipDetailView.describeSchedule;
 
 describe('SpaceshipDetailView.buildPlanFromShipWorkflow', () => {
   it('maps steps to a linear DAG of agent nodes, resolving 1-indexed slots', () => {
@@ -122,5 +124,48 @@ describe('SpaceshipDetailView.isWorkflowsCustomized', () => {
     expect(isCustom({})).toBe(false);
     expect(isCustom(null)).toBe(false);
     expect(isCustom({ config: { workflows: 'x' } })).toBe(false);
+  });
+});
+
+describe('SpaceshipDetailView.buildCron', () => {
+  it('builds an hourly cron at a given minute (hour/dom/dow ignored)', () => {
+    expect(buildCron({ freq: 'hourly', minute: 15 })).toBe('15 * * * *');
+  });
+
+  it('builds a daily cron at hour:minute', () => {
+    expect(buildCron({ freq: 'daily', minute: 30, hour: 9 })).toBe('30 9 * * *');
+  });
+
+  it('builds a weekly cron on a day-of-week', () => {
+    expect(buildCron({ freq: 'weekly', minute: 0, hour: 8, dow: 1 })).toBe('0 8 * * 1');
+  });
+
+  it('builds a monthly cron on a day-of-month', () => {
+    expect(buildCron({ freq: 'monthly', minute: 0, hour: 6, dom: 15 })).toBe('0 6 15 * *');
+  });
+
+  it('passes a trimmed custom cron through verbatim', () => {
+    expect(buildCron({ freq: 'custom', cron: '  0 9 * * 1-5 ' })).toBe('0 9 * * 1-5');
+  });
+
+  it('defaults to daily and clamps out-of-range fields', () => {
+    expect(buildCron({})).toBe('0 9 * * *');
+    expect(buildCron({ freq: 'daily', minute: 99, hour: 99 })).toBe('59 23 * * *');
+    expect(buildCron({ freq: 'weekly', minute: -5, hour: -1, dow: 9 })).toBe('0 0 * * 6');
+    expect(buildCron({ freq: 'monthly', dom: 99 })).toBe('0 9 28 * *');
+  });
+});
+
+describe('SpaceshipDetailView.describeSchedule', () => {
+  it('labels each frequency with the time and timezone', () => {
+    expect(describeSchedule({ freq: 'hourly', minute: 5 })).toBe('Hourly at :05');
+    expect(describeSchedule({ freq: 'daily', minute: 0, hour: 9 }, 'America/Los_Angeles'))
+      .toBe('Daily at 09:00 America/Los_Angeles');
+    expect(describeSchedule({ freq: 'weekly', minute: 0, hour: 8, dow: 1 }, 'UTC'))
+      .toBe('Weekly on Monday at 08:00 UTC');
+    expect(describeSchedule({ freq: 'monthly', minute: 0, hour: 6, dom: 15 }))
+      .toBe('Monthly on day 15 at 06:00');
+    expect(describeSchedule({ freq: 'custom', cron: '0 9 * * 1-5' }))
+      .toBe('Custom (0 9 * * 1-5)');
   });
 });
