@@ -151,10 +151,10 @@ const CostView = (() => {
     const { budget, totalSpend, remaining, pct, avgDaily, projectedMonth } = CostUtils.computeSpendSummary(logs);
 
     const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    el('co-spend', '$' + totalSpend.toFixed(2));
-    el('co-budget', '$' + budget.limit.toFixed(2));
-    el('co-remaining', '$' + remaining.toFixed(2));
-    el('co-daily', '$' + avgDaily.toFixed(2));
+    el('co-spend', CostUtils.formatCost(totalSpend));
+    el('co-budget', CostUtils.formatCost(budget.limit));
+    el('co-remaining', CostUtils.formatCost(remaining));
+    el('co-daily', CostUtils.formatCost(avgDaily));
     el('co-daily-trend', projectedMonth > budget.limit ? 'Over budget pace' : 'On track');
 
     // Budget bar
@@ -311,7 +311,7 @@ const CostView = (() => {
               <td class="mono" style="font-size:.68rem">${_esc(r.model)}</td>
               <td>${r.count}</td>
               <td>${CostUtils.formatTokens(r.tokens)}</td>
-              <td class="hl">$${r.total.toFixed(2)}</td>
+              <td class="hl">${CostUtils.formatCost(r.total)}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -367,12 +367,12 @@ const CostView = (() => {
               <td>${_esc(r.title)}</td>
               <td>${_esc(r.agentName)}</td>
               <td>${CostUtils.formatTokens(r.tokens)}</td>
-              <td class="hl">$${r.cost.toFixed(4)}</td>
+              <td class="hl">${CostUtils.formatCost(r.cost)}</td>
             </tr>
           `).join('')}
           <tr style="border-top:2px solid var(--border);font-weight:600">
             <td colspan="3">Total by Agent</td>
-            <td>${Object.entries(agentTotals).map(([n, c]) => _esc(n) + ': $' + c.toFixed(2)).join(', ')}</td>
+            <td>${Object.entries(agentTotals).map(([n, c]) => _esc(n) + ': ' + CostUtils.formatCost(c)).join(', ')}</td>
           </tr>
         </tbody>
       </table>
@@ -400,7 +400,7 @@ const CostView = (() => {
           <span class="cost-log-agent">${_esc(agent?.name || 'Unknown')}</span>
           <span class="cost-log-model mono">${_esc(l.model)}</span>
           <span class="cost-log-tokens">${CostUtils.formatTokens(l.tokens_used)} tokens</span>
-          <span class="cost-log-amount">$${(l.amount || 0).toFixed(4)}</span>
+          <span class="cost-log-amount">${CostUtils.formatCost(l.amount)}</span>
           <span class="cost-log-time">${_timeAgo(l.created_at)}</span>
         </div>
       `;
