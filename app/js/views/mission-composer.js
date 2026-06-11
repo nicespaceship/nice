@@ -553,45 +553,18 @@ const MissionComposerView = (() => {
       throw new Error('Activate a Spaceship before creating a Mission. Missions always run on a Ship.');
     }
 
-    // Write the template.
-    const missionRow = await SB.db('missions').create({
-      user_id: user.id,
+    // Create the template + enqueue the run via the shared SSOT (MissionRunner).
+    // The caller fires MissionRunner.run(runId) to start it.
+    return await MissionRunner.createRun({
       title: plan.title,
-      description: plan.description || null,
+      description: plan.description,
       shape: plan.shape,
-      spaceship_id: spaceshipId,
+      spaceshipId,
       plan: plan.plan,
-      schedule: plan.schedule || null,
-      outcome_spec: plan.outcome_spec || null,
-      tools_required: plan.tools_required || [],
-      state: 'active',
+      schedule: plan.schedule,
+      outcomeSpec: plan.outcome_spec,
+      toolsRequired: plan.tools_required,
     });
-    if (!missionRow?.id) throw new Error('Failed to persist mission template.');
-
-    // Enqueue an immediate run. `mission_id` threads the template through
-    // so the run knows which plan it came from. `plan_snapshot` freezes
-    // the plan so edits to the template don't mutate this run mid-flight.
-    // Embed `shape` inside plan_snapshot too so MissionRunner._isDagMission
-    // can route via WorkflowEngine without re-reading the `missions` row.
-    const snapshot = Object.assign({ shape: plan.shape || 'simple' }, plan.plan || {});
-
-    const taskRow = await SB.db('mission_runs').create({
-      user_id: user.id,
-      spaceship_id: spaceshipId,
-      title: plan.title,
-      status: 'queued',
-      priority: 'medium',
-      progress: 0,
-      mission_id: missionRow.id,
-      plan_snapshot: snapshot,
-    });
-
-    // Mirror into State so Missions tab sees the new row without a refetch.
-    const missions = State.get('missions') || [];
-    missions.unshift(taskRow);
-    State.set('missions', missions);
-
-    return { missionId: missionRow.id, runId: taskRow?.id || null };
   }
 
   // Exported for tests. Keep in sync with the return-value shape the

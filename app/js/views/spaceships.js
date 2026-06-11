@@ -1153,7 +1153,7 @@ const SpaceshipDetailView = (() => {
           </div>
 
           <!-- Workflows -->
-          ${_renderShipWorkflows(fleet)}
+          ${_renderShipWorkflows(fleet, agentMap)}
         </div>
       `;
 
@@ -1332,29 +1332,73 @@ const SpaceshipDetailView = (() => {
     }).join('')}</div>`;
   }
 
-  function _renderShipWorkflows(fleet) {
-    const workflows = fleet.config?.workflows;
-    if (!workflows || !workflows.length) return '';
+  /* The ship's branded workflows live on the blueprint (card.workflows, mapped
+     to bp.workflows) — NOT on the user ship — so source them from the blueprint
+     by id. Each step's `agent_slot` (1-indexed) resolves to the agent docked in
+     that slot for an inline attribution. The Run button (wired in
+     _bindDetailEvents) turns the sequence into a live Mission Run. */
+  function _renderShipWorkflows(fleet, agentMap) {
+    const bp = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship)
+      ? Blueprints.getSpaceship(fleet.blueprint_id || fleet.class_id) : null;
+    const workflows = (bp && Array.isArray(bp.workflows)) ? bp.workflows : [];
+    if (!workflows.length) return '';
+    const slots = fleet.slot_assignments || {};
+    const stepLi = (s) => {
+      const text = (typeof s === 'string') ? s : (s && s.step ? s.step : '');
+      const slotIdx = (s && typeof s === 'object' && s.agent_slot) ? s.agent_slot - 1 : null;
+      const agent = (slotIdx != null && agentMap) ? agentMap[slots[slotIdx]] : null;
+      const who = agent && agent.name ? ` <span class="ship-wf-step-agent">&mdash; ${_esc(agent.name)}</span>` : '';
+      return `<li class="ship-wf-step">${_esc(text)}${who}</li>`;
+    };
     return `
       <div class="detail-section ship-workflows">
         <h3 class="detail-section-title">Workflows</h3>
         <div class="ship-wf-grid">${workflows.map((wf, i) => {
-          const nodeCount = (wf.nodes || []).length;
-          const connCount = (wf.connections || []).length;
+          const steps = Array.isArray(wf.steps) ? wf.steps : [];
           return `
             <div class="ship-wf-card" data-wf-idx="${i}">
               <div class="ship-wf-header">
                 <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
-                <span class="ship-wf-name">${_esc(wf.name)}</span>
+                <span class="ship-wf-name">${_esc(wf.title || '')}</span>
               </div>
-              <div class="ship-wf-meta">${nodeCount} node${nodeCount !== 1 ? 's' : ''} &middot; ${connCount} connection${connCount !== 1 ? 's' : ''}</div>
-              <button class="btn btn-xs btn-primary ship-wf-run" data-wf-idx="${i}">
-                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-play"/></svg>
-                Run
-              </button>
+              <ol class="ship-wf-steps">${steps.map(stepLi).join('')}</ol>
+              <div class="ship-wf-footer">
+                <span class="ship-wf-meta">${steps.length} step${steps.length !== 1 ? 's' : ''}</span>
+                <button class="btn btn-xs btn-primary ship-wf-run" data-wf-idx="${i}">
+                  <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-play"/></svg>
+                  Run
+                </button>
+              </div>
             </div>`;
         }).join('')}</div>
       </div>`;
+  }
+
+  /* Translate a branded ship workflow ({ title, steps:[{ step, agent_slot }] })
+     into an executable mission plan. Pure (no DOM/State) so it's unit-tested in
+     isolation. Each step becomes a linear `agent` node; `agent_slot` (1-indexed)
+     resolves against the ship's slot_assignments (0-indexed) to the docked
+     agent, falling back to the captain (lowest filled slot) when a referenced
+     slot is empty or locked. Emits `edges` (the stored plan shape MissionRunner
+     maps to WorkflowEngine `connections`). */
+  function buildPlanFromShipWorkflow(workflow, slotAssignments) {
+    const steps = (workflow && Array.isArray(workflow.steps)) ? workflow.steps : [];
+    const slots = slotAssignments || {};
+    const filled = Object.keys(slots).map(Number).filter((k) => slots[k]).sort((a, b) => a - b);
+    const captainId = filled.length ? slots[filled[0]] : null;
+    const nodes = steps.map((s, i) => {
+      const text = (typeof s === 'string') ? s : (s && s.step ? s.step : '');
+      const slotIdx = (s && typeof s === 'object' && s.agent_slot) ? s.agent_slot - 1 : null;
+      const slotAgent = (slotIdx != null) ? slots[slotIdx] : null;
+      return {
+        id: `step-${i}`,
+        type: 'agent',
+        label: text,
+        config: { agentId: slotAgent || captainId || null, prompt: text },
+      };
+    });
+    const edges = nodes.slice(1).map((n, i) => ({ from: `step-${i}`, to: `step-${i + 1}` }));
+    return { shape: 'dag', nodes, edges };
   }
 
   function _bindDetailEvents(el, id, fleet, allAgents, agentMap, spaceshipClass) {
@@ -1400,6 +1444,42 @@ const SpaceshipDetailView = (() => {
       el.querySelectorAll('.computing-inv-card').forEach(card => {
         if (rarity === 'All' || card.dataset.rarity === rarity) card.style.display = '';
         else card.style.display = 'none';
+      });
+    });
+
+    // Run a branded ship workflow: resolve crew → translate to a mission plan →
+    // enqueue + dispatch a Run → jump to the run detail.
+    el.querySelectorAll('.ship-wf-run').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const wfIdx = parseInt(btn.dataset.wfIdx, 10);
+        const bp = (typeof Blueprints !== 'undefined' && Blueprints.getSpaceship)
+          ? Blueprints.getSpaceship(fleet.blueprint_id || fleet.class_id) : null;
+        const workflow = (bp && Array.isArray(bp.workflows)) ? bp.workflows[wfIdx] : null;
+        if (!workflow) return;
+        const slots = fleet.slot_assignments || {};
+        if (!Object.values(slots).some(Boolean)) {
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'No crew aboard', message: 'Dock at least one crew member before running a workflow.', type: 'system' });
+          return;
+        }
+        if (typeof MissionRunner === 'undefined' || !MissionRunner.createRun) return;
+        btn.disabled = true;
+        try {
+          const plan = buildPlanFromShipWorkflow(workflow, slots);
+          const { runId } = await MissionRunner.createRun({
+            title: `${fleet.name}: ${workflow.title}`,
+            shape: 'dag',
+            spaceshipId: fleet.id,
+            plan,
+          });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Workflow launched', message: workflow.title, type: 'success' });
+          if (runId) MissionRunner.run(runId);
+          location.hash = runId ? `#/missions/${runId}` : '#/missions';
+        } catch (err) {
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Could not start workflow', message: err.message || 'Unknown error', type: 'system' });
+          btn.disabled = false;
+        }
       });
     });
   }
@@ -1586,5 +1666,5 @@ const SpaceshipDetailView = (() => {
     _draggedAgentRarity = null;
   }
 
-  return { title, render, destroy };
+  return { title, render, destroy, buildPlanFromShipWorkflow };
 })();

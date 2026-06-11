@@ -1306,8 +1306,61 @@ const MissionRunner = (() => {
     } catch { return { xp: 0, missions: 0, approved: 0, rejected: 0 }; }
   }
 
+  /* Persist a Mission template + enqueue a Run from a ready-made plan. The SSOT
+     for "turn a plan into a runnable Run" — the Mission Composer and the ship
+     Workflow runner both call this so the create/enqueue/State-mirror logic
+     lives in one place. Does NOT dispatch; callers fire MissionRunner.run(runId)
+     so they control when execution starts. `spec`:
+       { title, plan, spaceshipId, shape?, description?, schedule?,
+         outcomeSpec?, toolsRequired?, priority? }
+     Returns { missionId, runId }. */
+  async function createRun(spec) {
+    spec = spec || {};
+    const user = State.get('user');
+    if (!user?.id) throw new Error('Sign in to start a mission.');
+    if (!spec.spaceshipId) throw new Error('Missions always run on a Spaceship.');
+    const shape = spec.shape || 'simple';
+    const plan = spec.plan || {};
+
+    const missionRow = await SB.db('missions').create({
+      user_id: user.id,
+      title: spec.title,
+      description: spec.description || null,
+      shape,
+      spaceship_id: spec.spaceshipId,
+      plan,
+      schedule: spec.schedule || null,
+      outcome_spec: spec.outcomeSpec || null,
+      tools_required: spec.toolsRequired || [],
+      state: 'active',
+    });
+    if (!missionRow?.id) throw new Error('Failed to persist mission template.');
+
+    // Freeze the plan on the run; embed `shape` so _isDagMission can route
+    // through WorkflowEngine without re-reading the missions row.
+    const snapshot = Object.assign({ shape }, plan);
+    const taskRow = await SB.db('mission_runs').create({
+      user_id: user.id,
+      spaceship_id: spec.spaceshipId,
+      title: spec.title,
+      status: 'queued',
+      priority: spec.priority || 'medium',
+      progress: 0,
+      mission_id: missionRow.id,
+      plan_snapshot: snapshot,
+    });
+
+    // Mirror into State so the Missions tab sees the new row without a refetch.
+    const missions = State.get('missions') || [];
+    missions.unshift(taskRow);
+    State.set('missions', missions);
+
+    return { missionId: missionRow.id, runId: taskRow?.id || null };
+  }
+
   return {
     run,
+    createRun,
     resumeDag,
     runWithDispatch,
     awardAgentXP,
