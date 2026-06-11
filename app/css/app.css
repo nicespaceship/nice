@@ -8644,6 +8644,9 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .wfe-ctrl:hover:not(:disabled) { color: var(--accent); border-color: var(--border-hi); }
 .wfe-ctrl:disabled { opacity: .4; cursor: not-allowed; }
+.wfe-gate.is-on { color: var(--accent); border-color: var(--accent); }
+.ship-wf-step.gated { color: var(--text); }
+.ship-wf-step-gate { width: 12px; height: 12px; color: var(--accent); vertical-align: -1px; }
 .wfe-add { margin-top: 10px; }
 .wfe-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
