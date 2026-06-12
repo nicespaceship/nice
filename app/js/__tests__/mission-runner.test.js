@@ -136,6 +136,46 @@ describe('MissionRunner', () => {
     expect(Gamification.addXP).not.toHaveBeenCalled();
   });
 
+  describe('upsertScheduledMission — Pro gate', () => {
+    const activeSpec = () => ({
+      title: 'Daily report', plan: {}, spaceshipId: 's1',
+      schedule: { cron: '0 9 * * *', tz: 'UTC', enabled: true },
+    });
+
+    afterEach(() => { delete globalThis.Subscription; });
+
+    it('rejects a new active schedule for a free user', async () => {
+      globalThis.Subscription = { isPro: () => false };
+      await expect(MissionRunner.upsertScheduledMission(activeSpec()))
+        .rejects.toThrow(/Pro/);
+      // Nothing persisted.
+      expect(Object.keys(_db.missions || {})).toHaveLength(0);
+    });
+
+    it('persists an active schedule for a Pro user', async () => {
+      globalThis.Subscription = { isPro: () => true };
+      const id = await MissionRunner.upsertScheduledMission(activeSpec());
+      expect(id).toBeTruthy();
+      const row = _db.missions[id];
+      expect(row.schedule.cron).toBe('0 9 * * *');
+      expect(row.state).toBe('active');
+    });
+
+    it('allows a free user to pause (enabled:false) an existing schedule', async () => {
+      // A downgraded user must still be able to turn a schedule off; the gate
+      // only blocks schedules that would stay ACTIVE.
+      globalThis.Subscription = { isPro: () => false };
+      const spec = activeSpec();
+      spec.schedule.enabled = false;
+      await expect(MissionRunner.upsertScheduledMission(spec)).resolves.toBeTruthy();
+    });
+
+    it('fails open when Subscription is unavailable (server gate is authority)', async () => {
+      delete globalThis.Subscription;
+      await expect(MissionRunner.upsertScheduledMission(activeSpec())).resolves.toBeTruthy();
+    });
+  });
+
   it('should create a notification on completion', async () => {
     State.set('agents', [{ id: 'a3', name: 'NotifyBot', config: {} }]);
     await SB.db('mission_runs').create({
