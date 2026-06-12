@@ -1373,6 +1373,17 @@ const MissionRunner = (() => {
     if (!user?.id) throw new Error('Sign in to schedule a mission.');
     if (!spec.spaceshipId) throw new Error('Missions always run on a Spaceship.');
     if (!spec.schedule || !spec.schedule.cron) throw new Error('A schedule needs a cron expression.');
+    // Pro-only: unattended scheduled execution is a NICE Pro perk. Block
+    // creating or enabling an ACTIVE schedule for non-Pro users; allow
+    // enabled:false through so a downgraded user can still pause or clean up an
+    // existing one. The pg_cron tick (tick_mission_schedules) is the
+    // server-side authority — this is the client backstop, mirroring the
+    // active-spaceship cap in blueprints.activateShip. UI entry points
+    // pre-check and show the upgrade prompt; this enforces it.
+    const willBeActive = spec.schedule.enabled !== false;
+    if (willBeActive && typeof Subscription !== 'undefined' && Subscription.isPro && !Subscription.isPro()) {
+      throw new Error('NICE Pro is required to run missions on a schedule. Upgrade to automate your fleet.');
+    }
     const row = {
       title: spec.title,
       description: spec.description || null,

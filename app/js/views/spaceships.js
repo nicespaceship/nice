@@ -1900,6 +1900,18 @@ const SpaceshipDetailView = (() => {
       try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; }
     })();
     const existing = (wf.schedule && wf.schedule.cron) ? wf.schedule : null;
+
+    // Pro-only scheduling: opening the cron builder to author a NEW schedule
+    // shows the upgrade prompt for free users instead. Existing schedules stay
+    // openable so a downgraded user can pause or remove them.
+    // MissionRunner.upsertScheduledMission is the backstop; the pg_cron
+    // tick_mission_schedules job is the server-side authority.
+    if (!existing && typeof Subscription !== 'undefined' && Subscription.isPro && !Subscription.isPro()) {
+      if (typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
+      else if (typeof Notify !== 'undefined') Notify.send({ title: 'NICE Pro required', message: 'Upgrade to run missions automatically on a schedule.', type: 'warning' });
+      return;
+    }
+
     const spec = Object.assign({ freq: 'daily', minute: 0, hour: 9, dow: 1, dom: 1, cron: '' }, (existing && existing.spec) || {});
     const tz0 = (existing && existing.tz) || browserTz;
 
@@ -1925,7 +1937,7 @@ const SpaceshipDetailView = (() => {
           </button>
         </div>
         <div class="modal-body">
-          <p class="wfs-intro">NICE queues a run of <strong>${_esc(wf.title || 'this workflow')}</strong> automatically on this cadence. Queued runs execute when your bridge is open.</p>
+          <p class="wfs-intro">NICE runs <strong>${_esc(wf.title || 'this workflow')}</strong> automatically on this cadence, even while you're offline. Scheduled runs are a NICE Pro perk.</p>
           <div class="wfs-row">
             <label>Frequency</label>
             ${CSelect.html('wfs-freq', 'Frequency', freqOptions, spec.freq)}
