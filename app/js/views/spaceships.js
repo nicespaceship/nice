@@ -1382,9 +1382,14 @@ const SpaceshipDetailView = (() => {
         : '';
       return `<li class="ship-wf-step${(s && s.approval) ? ' gated' : ''}">${_esc(text)}${who}${gated}</li>`;
     };
+    const schedIsPro = typeof Subscription !== 'undefined' && Subscription.isPro ? Subscription.isPro() : true;
     const cards = workflows.map((wf, i) => {
       const steps = Array.isArray(wf.steps) ? wf.steps : [];
       const sched = (wf && wf.schedule && wf.schedule.cron) ? wf.schedule : null;
+      // Free users get a visible Pro lock on the NEW-schedule action. An
+      // existing schedule (sched) stays editable so a downgraded user can
+      // still pause/remove it — matches the gate in _openScheduleEditor.
+      const schedLocked = !schedIsPro && !sched;
       const schedPaused = !!(sched && sched.enabled === false);
       const schedLabel = sched ? (sched.label || describeSchedule(sched.spec, sched.tz)) : '';
       return `
@@ -1393,8 +1398,8 @@ const SpaceshipDetailView = (() => {
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-workflow"/></svg>
             <span class="ship-wf-name">${_esc(wf.title || 'Untitled workflow')}</span>
             <div class="ship-wf-card-actions">
-              <button class="ship-wf-icon ship-wf-schedule${sched ? ' is-active' : ''}" data-wf-idx="${i}" title="${sched ? 'Edit schedule' : 'Schedule'}" aria-label="${sched ? 'Edit schedule' : 'Schedule workflow'}">
-                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-clock"/></svg>
+              <button class="ship-wf-icon ship-wf-schedule${sched ? ' is-active' : ''}${schedLocked ? ' ship-wf-schedule-locked' : ''}" data-wf-idx="${i}" title="${sched ? 'Edit schedule' : (schedLocked ? 'Scheduling is a NICE Pro feature' : 'Schedule')}" aria-label="${sched ? 'Edit schedule' : (schedLocked ? 'Schedule workflow, NICE Pro feature' : 'Schedule workflow')}">
+                <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-clock"/></svg>${schedLocked ? '<svg class="ship-wf-pro-lock" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-lock"/></svg>' : ''}
               </button>
               <button class="ship-wf-icon ship-wf-edit" data-wf-idx="${i}" title="Edit workflow" aria-label="Edit workflow">
                 <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-edit"/></svg>
