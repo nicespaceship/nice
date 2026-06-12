@@ -404,6 +404,14 @@ verify_jwt = false
 [functions.stripe-webhook]
 verify_jwt = false
 
+# Headless mission executor. Invoked server-to-server by the drain_mission_runs
+# pg_cron job (via pg_net) with the EXECUTOR_DRAIN_SECRET shared secret in the
+# Authorization header — never a user JWT — so the gateway must not demand one.
+# The function checks the drain secret itself and uses its injected service key
+# for the on_behalf_of calls to nice-ai / mcp-gateway.
+[functions.mission-executor]
+verify_jwt = false
+
 # OAuth flows: each /authorize is a top-level browser navigation (no
 # Authorization header) that validates user_id/state itself, so it works
 # regardless of this flag. Pin it false anyway so a plain `functions deploy`
