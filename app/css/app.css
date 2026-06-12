@@ -8658,6 +8658,15 @@ html[data-theme] .nice-ai-input:focus-visible {
 
 /* Workflow schedule — card chip + active button state */
 .ship-wf-icon.is-active { color: var(--accent); border-color: var(--accent); }
+/* Free-tier Pro lock on the new-schedule action — accent badge knocked out
+   over the clock icon. Existing schedules stay unlocked (editable). */
+.ship-wf-schedule-locked { position: relative; }
+.ship-wf-pro-lock {
+  position: absolute; right: -3px; bottom: -3px;
+  width: 12px; height: 12px; padding: 2px;
+  color: var(--bg); background: var(--accent);
+  border-radius: 50%; box-sizing: border-box;
+}
 .ship-wf-footer-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .ship-wf-sched-chip {
   display: inline-flex; align-items: center; gap: 5px;
