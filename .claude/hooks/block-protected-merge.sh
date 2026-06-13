@@ -7,7 +7,7 @@
 # Protected areas (the locked auto-merge carve-out):
 #   - supabase/migrations/**          (schema changes)
 #   - billing: stripe-config.js, token-config.js, subscription.js, wallet.js
-#   - auth/security: security.js, auth-modal.js, any path containing "oauth"
+#   - auth/security: security.js, auth-modal.js, any "-oauth" / "/oauth" segment
 #
 # Decisions (set by Benjamin):
 #   - Posture on a protected match: `ask` (surface to the human; in an
@@ -50,7 +50,7 @@ fi
 [ -n "$files" ] || exit 0
 
 # Match changed paths against the protected areas.
-protected=$(printf '%s\n' "$files" | grep -iE '(^|/)supabase/migrations/|(^|/)(stripe-config|token-config|subscription|wallet|security|auth-modal)\.js$|oauth' || true)
+protected=$(printf '%s\n' "$files" | grep -iE '(^|/)supabase/migrations/|(^|/)(stripe-config|token-config|subscription|wallet|security|auth-modal)\.js$|(^|[-/])oauth' || true)
 
 if [ -n "$protected" ]; then
   reason="This PR touches protected files, which are human-merged under the locked auto-merge policy (migrations / billing / auth-security):
