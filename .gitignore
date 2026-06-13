@@ -6,8 +6,12 @@ supabase/.branches/
 supabase/.temp/
 supabase/.env.local
 
-# Claude Code local state (plans, skills, worktrees, launch config)
-.claude/
+# Claude Code state. Most of .claude/ is local (plans, worktrees, launch config,
+# settings.local.json), but the git-tracked safety hooks + their config ship with
+# the repo so the automation posture travels with every checkout.
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 
 # Logs
 *.log
