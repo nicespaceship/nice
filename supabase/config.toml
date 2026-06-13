@@ -412,6 +412,15 @@ verify_jwt = false
 [functions.mission-executor]
 verify_jwt = false
 
+# Community blueprint auto-reviewer. Invoked server-to-server by the
+# _community_review_dispatch() trigger (via pg_net) with the vault-held
+# community_review_service_key as the bearer — never a user JWT, and the
+# rotated key is an sb_secret_ string the gateway can't parse as a JWT — so
+# the gateway must not demand one. The function matches the bearer against
+# that same vault secret to authenticate the caller.
+[functions.community-review]
+verify_jwt = false
+
 # OAuth flows: each /authorize is a top-level browser navigation (no
 # Authorization header) that validates user_id/state itself, so it works
 # regardless of this flag. Pin it false anyway so a plain `functions deploy`
