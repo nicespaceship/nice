@@ -13,7 +13,7 @@
   <main class="legal-content">
     <div class="container-narrow">
       <h1>Privacy Policy</h1>
-      <p class="last-updated">Last updated: April 2026</p>
+      <p class="last-updated">Last updated: June 2026</p>
 
       <h2>What We Collect</h2>
       <p>When you create an account on nicespaceship.ai, we collect:</p>
@@ -22,15 +22,33 @@
         <li>Display name (optional, for your profile)</li>
         <li>Usage data (blueprints activated, missions run, XP earned)</li>
       </ul>
-      <p>If you connect Google Workspace (Gmail, Calendar, Drive), we access your data only through read-only OAuth scopes. NICE never stores your emails, calendar events, or files — agents process them in real-time and discard the data.</p>
+      <p>If you connect a Google or Microsoft account, NICE requests the OAuth permissions described in <a href="#connected-accounts">Connected Accounts</a> below so your agents can act on your behalf.</p>
 
       <h2>What We Don't Collect</h2>
       <ul>
         <li>We don't sell your data to third parties</li>
         <li>We don't use your data for advertising</li>
-        <li>We don't store your Google Workspace content</li>
+        <li>We don't bulk-store your Gmail, Calendar, Drive, or Outlook content</li>
         <li>We don't track you across other websites</li>
       </ul>
+
+      <h2 id="connected-accounts">Connected Accounts</h2>
+      <p>NICE connects an account only after you complete its OAuth consent screen, and you can disconnect at any time from the Integrations page. Because your agents act on your behalf, these permissions are write-capable, not read-only. The scopes we request:</p>
+      <p><strong>Google</strong></p>
+      <ul>
+        <li><strong>Gmail</strong> (<code>gmail.modify</code>): read, organize, draft, and send email on your behalf. Does not allow permanent deletion.</li>
+        <li><strong>Calendar</strong> (<code>calendar</code>): view and manage your calendars, including creating, editing, and deleting events.</li>
+        <li><strong>Drive</strong> (<code>drive.file</code>): create, open, and manage only the files you create or open with NICE, not the rest of your Drive.</li>
+      </ul>
+      <p><strong>Microsoft 365</strong></p>
+      <ul>
+        <li><strong>Profile</strong> (<code>User.Read</code>): read your basic account profile.</li>
+        <li><strong>Outlook mail</strong> (<code>Mail.ReadWrite</code>, <code>Mail.Send</code>): read, organize, draft, and send your email.</li>
+        <li><strong>Outlook calendar</strong> (<code>Calendars.ReadWrite</code>): view and manage your calendar and events.</li>
+        <li><strong>Files</strong> (<code>Files.ReadWrite</code>): read and manage your OneDrive and SharePoint files.</li>
+      </ul>
+      <p>NICE accesses this content only to perform the actions you invoke. We do not bulk-store your mailbox, calendar, or files; agent conversations are retained as part of your mission history, which you can have deleted on request. We never use this data for advertising, and we never sell it.</p>
+      <p><strong>Google Limited Use.</strong> NICE's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements. We use Google user data only to provide the features you explicitly invoke; do not transfer it except to provide those features or as required for security or law; do not use it for advertising; and allow no human to read it except with your consent, for security or legal reasons, or when it has been aggregated and anonymized.</p>
 
       <h2>LLM Provider Data</h2>
       <p>When you run missions, your prompts are sent to the selected LLM provider (Google, Anthropic, OpenAI, Meta via Groq, or xAI) through our server-side proxy. We do not store your prompts or responses beyond the current session. Each provider has their own data handling policies.</p>
@@ -45,7 +63,7 @@
       <p>Your account data is stored in Supabase (PostgreSQL database) hosted in the US West region. All data is encrypted in transit (TLS) and at rest.</p>
 
       <h2>Data Deletion</h2>
-      <p>You can delete your account and all associated data at any time from Settings in the app. Email hello@nicespaceship.com if you need assistance.</p>
+      <p>You can request deletion of your account and all associated data at any time by emailing <a href="mailto:hello@nicespaceship.com">hello@nicespaceship.com</a>. We delete your account and the records tied to it from our systems on request. Self-service deletion from the app is on our roadmap.</p>
 
       <h2>Open Source</h2>
       <p>NICE is open source (MIT License). You can audit exactly what data we collect and how we handle it by reviewing the code at <a href="https://github.com/nicespaceship/nice">github.com/nicespaceship/nice</a>.</p>
