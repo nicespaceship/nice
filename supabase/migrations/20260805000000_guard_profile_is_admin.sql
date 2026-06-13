@@ -45,24 +45,32 @@ CREATE TRIGGER guard_profile_is_admin
   FOR EACH ROW EXECUTE FUNCTION public.guard_profile_is_admin();
 
 -- Apply-time gate: a simulated authenticated self-update must NOT set is_admin.
--- Impersonate the row owner (set_config role + jwt claim), attempt the exact
--- escalation, and assert the guard rejected it. On the expected path the caught
--- exception's subtransaction rollback reverts the role, the claim, and the write.
+-- Impersonate a NON-admin profile owner (set role + jwt claims) and attempt the
+-- exact false->true escalation, then assert the guard rejected it. The guard
+-- fires only on an actual change, so the test row must start non-admin. On the
+-- expected path the caught exception's subtransaction rollback reverts the role,
+-- the claims, and the write.
 DO $smoke$
 DECLARE
-  v_uid    uuid;
+  v_uid     uuid;
   v_blocked boolean := false;
 BEGIN
-  SELECT id INTO v_uid FROM public.profiles LIMIT 1;
+  SELECT id INTO v_uid FROM public.profiles WHERE is_admin = false LIMIT 1;
   IF v_uid IS NULL THEN
-    RAISE NOTICE 'guard_profile_is_admin smoke skipped: no profiles present';
+    RAISE NOTICE 'guard_profile_is_admin smoke skipped: no non-admin profile to test';
     RETURN;
   END IF;
 
   BEGIN
+    PERFORM set_config('request.jwt.claim.sub', v_uid::text, true);
     PERFORM set_config('request.jwt.claims', json_build_object('sub', v_uid, 'role', 'authenticated')::text, true);
     PERFORM set_config('role', 'authenticated', true);
-    UPDATE public.profiles SET is_admin = true WHERE id = v_uid;  -- must raise
+    -- If the impersonation did not take, the guard is correctly silent and the
+    -- test would prove nothing; fail loudly with the actual context instead.
+    IF current_user <> 'authenticated' OR auth.uid() IS DISTINCT FROM v_uid THEN
+      RAISE EXCEPTION 'smoke setup failed: current_user=%, auth.uid()=% (expected authenticated / %)', current_user, auth.uid(), v_uid;
+    END IF;
+    UPDATE public.profiles SET is_admin = true WHERE id = v_uid;  -- must be blocked
   EXCEPTION
     WHEN insufficient_privilege THEN
       v_blocked := true;
