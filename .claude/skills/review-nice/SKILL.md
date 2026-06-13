@@ -1,7 +1,6 @@
 ---
 name: review-nice
-description: Review NICE app code for consistency with project conventions, theme system, and module patterns. Use after making changes to verify quality.
-disable-model-invocation: true
+description: Audit changed NICE app code against project conventions — IIFE module pattern, theme CSS variables, localStorage namespacing, script load order, feature-detection guards, no console pollution. Use proactively after editing any file under app/js/ or app/css/, before committing or opening a PR, to flag violations with file:line.
 allowed-tools: Read, Grep, Glob, Agent
 ---
 

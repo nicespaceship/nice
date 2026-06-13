@@ -1,6 +1,6 @@
 ---
 name: run-tests
-description: Run unit tests (Vitest) and E2E tests (Playwright) for the NICE app. Quick access to test commands and debugging.
+description: Run the NICE test suites — Vitest unit (app/js/__tests__) and Playwright E2E (e2e/smoke.spec.js). Use after editing app JS, before pushing, or when a test fails; includes the loadScriptGlobal harness for testing IIFE modules in jsdom.
 user-invocable: true
 ---
 

@@ -98,5 +98,22 @@ SB.db('table').get(id);                            // Single row
 SB.auth().user;                                    // Current user
 ```
 
+## Coding patterns
+- **No build step.** ES6 only (no bundler, TypeScript, or JSX); `<script defer>` in dependency order. The Service Worker caches aggressively, so hard-reload (Cmd+Shift+R) to pull fresh code in dev.
+- **Event delegation** for dynamic content: bind once on a container, resolve the target with `closest()`.
+  ```javascript
+  container.addEventListener('click', (e) => {
+    const card = e.target.closest('.card');
+    if (card) handleCard(card.dataset.id);
+  });
+  ```
+- **Async is always `try/catch`** — warn, don't throw, on non-fatal failures.
+  ```javascript
+  try { const rows = await SB.db('table').list({ userId }); State.set('rows', rows); }
+  catch (err) { console.warn('[Module] load failed:', err.message); }
+  ```
+- **Escape user content** before it enters the DOM with `Utils.esc(str)`; never interpolate raw user data into `innerHTML`.
+- **Pair every listener with cleanup** — each `State.on(...)` in `render()` gets a matching `State.off(...)` in `destroy()`.
+
 ## localStorage
 All keys live in **`Utils.KEYS`** (the SSOT — never use raw string keys). Prefixes are `ns-` and `nice-`.
