@@ -32,6 +32,23 @@ const ContentQueue = (() => {
   function getPlatforms() { return PLATFORMS.slice(); }
   function getPlatform(id) { return PLATFORMS.find(p => p.id === id) || null; }
 
+  // Direct publish/schedule runs server-side via the social-mcp edge function,
+  // which is not deployed yet. Until it ships (with the per-platform OAuth),
+  // gate these paths so users get a clear "coming soon" instead of a live 404.
+  // Flip to true when social-mcp lands. Approve / Edit / Copy / Export still work.
+  const PUBLISHING_ENABLED = false;
+
+  function _publishingComingSoon() {
+    if (typeof Notify !== 'undefined') {
+      Notify.send({
+        title: 'Coming soon',
+        message: 'Direct publishing and scheduling arrive with the social integrations. For now, use Export to download your approved content.',
+        type: 'system',
+      });
+    }
+    return { success: false, error: 'Publishing coming soon', comingSoon: true };
+  }
+
   /* ══════════════════════════════════════════════════════════════ */
   /*  CRUD Operations                                               */
   /* ══════════════════════════════════════════════════════════════ */
@@ -189,6 +206,7 @@ const ContentQueue = (() => {
   }
 
   async function publish(id, platform = 'buffer') {
+    if (!PUBLISHING_ENABLED) return _publishingComingSoon();
     // Publish an approved item via social-mcp
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
     const item = items.find(i => i.id === id);
@@ -248,6 +266,7 @@ const ContentQueue = (() => {
   }
 
   async function schedule(id, platform, scheduledAt) {
+    if (!PUBLISHING_ENABLED) return _publishingComingSoon();
     // Schedule an approved item for future publishing
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
     const item = items.find(i => i.id === id);
@@ -486,6 +505,7 @@ const ContentQueue = (() => {
      a mixed success/failure summary.
   ══════════════════════════════════════════════════════════════ */
   async function publishTo(id, platforms) {
+    if (!PUBLISHING_ENABLED) return [_publishingComingSoon()];
     const list = Array.isArray(platforms) && platforms.length ? platforms : [];
     if (!list.length) return [];
     const results = [];
@@ -499,6 +519,7 @@ const ContentQueue = (() => {
   }
 
   async function scheduleTo(id, platforms, scheduledAt) {
+    if (!PUBLISHING_ENABLED) return [_publishingComingSoon()];
     const list = Array.isArray(platforms) && platforms.length ? platforms : [];
     if (!list.length) return [];
     if (!scheduledAt) return [{ success: false, error: 'Missing scheduled time' }];
