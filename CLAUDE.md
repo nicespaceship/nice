@@ -28,6 +28,25 @@ At the start of each session, run `git worktree prune` and delete any stale `cla
 - Body (optional): explain *why*, not *what*. The diff shows what changed.
 - Never force-add files that are in `.gitignore`.
 
+## Automation
+Claude Code config under `.claude/` is git-tracked (`settings.json`, `hooks/`, `skills/`) so the automation posture ships with the repo; local-only state (`settings.local.json`, `launch.json`, `worktrees/`) stays gitignored.
+
+### Auto-merge boundary
+- **Auto-merge allowed** for low-risk PRs with green CI that fall outside the carve-out.
+- **Human-merge only** (Claude must not merge) for any PR whose diff touches:
+  - `supabase/migrations/**`
+  - billing: `stripe-config.js`, `token-config.js`, `subscription.js`, `wallet.js`
+  - auth/security: `security.js`, `auth-modal.js`, any `*-oauth*` path
+- Enforced by the `block-protected-merge` hook below, not just documented.
+
+### Hooks (`.claude/settings.json` → `.claude/hooks/`, PreToolUse on `Bash`)
+- **`block-coauthor-commit.sh`** — hard `deny` on any `git commit` carrying a `Co-Authored-By:` trailer (matches the trailer form, so prose that merely mentions the policy is not blocked). Backstops the Git Commit Standards above.
+- **`block-protected-merge.sh`** — on `gh pr merge`, inspects the PR's changed files; if they hit the carve-out, returns `ask` (escalates to a human; an unattended routine has no approver, so it holds). Fails **open** if the diff cannot be inspected, so a transient `gh` error never blocks a clean merge.
+
+### Routines (`~/.claude/scheduled-tasks/`)
+Fire while the desktop app is open, or on next launch if it was closed; they are not cloud-unattended. New routines start report-only and graduate to auto-merge only after one clean cycle.
+- **`nightly-launch-audit`** (`17 3 * * *`) — a fresh session re-runs the read-only launch-readiness security checks, diffs the set of anon-executable privileged DB functions against a known baseline, reports drift, and drafts a single REVOKE-migration PR for any clear low-risk regression. Report + draft only; never merges.
+
 ## Project Overview
 **NICE™** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Cloudflare Pages via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
 
