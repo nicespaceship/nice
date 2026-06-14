@@ -72,26 +72,28 @@ describe('ContentQueue.getCounts', () => {
   });
 });
 
-describe('ContentQueue.publishTo / scheduleTo', () => {
-  it('publishTo returns [] when given no platforms', async () => {
-    const result = await ContentQueue.publishTo('id1', []);
-    expect(result).toEqual([]);
-  });
-
-  it('publishTo returns [] when platforms arg is missing', async () => {
-    const result = await ContentQueue.publishTo('id1');
-    expect(result).toEqual([]);
-  });
-
-  it('scheduleTo returns an error when scheduledAt is missing', async () => {
-    const result = await ContentQueue.scheduleTo('id1', ['buffer']);
+describe('ContentQueue.publish / schedule (gated until social-mcp ships)', () => {
+  // Direct publish/schedule is gated behind PUBLISHING_ENABLED (false) because the
+  // social-mcp edge function is not deployed. Both paths short-circuit to a single
+  // "coming soon" result instead of calling the (404ing) function.
+  it('publishTo returns one coming-soon result, not a per-platform fan-out', async () => {
+    const result = await ContentQueue.publishTo('id1', ['buffer', 'x', 'linkedin']);
     expect(result).toHaveLength(1);
     expect(result[0].success).toBe(false);
-    expect(result[0].error).toContain('Missing');
+    expect(result[0].comingSoon).toBe(true);
   });
 
-  it('scheduleTo returns [] when platforms list is empty', async () => {
-    const result = await ContentQueue.scheduleTo('id1', [], new Date().toISOString());
-    expect(result).toEqual([]);
+  it('scheduleTo returns one coming-soon result', async () => {
+    const result = await ContentQueue.scheduleTo('id1', ['buffer'], new Date().toISOString());
+    expect(result).toHaveLength(1);
+    expect(result[0].comingSoon).toBe(true);
+  });
+
+  it('publish and schedule report coming soon without hitting the network', async () => {
+    const p = await ContentQueue.publish('id1', 'buffer');
+    expect(p.success).toBe(false);
+    expect(p.comingSoon).toBe(true);
+    const s = await ContentQueue.schedule('id1', 'buffer', new Date().toISOString());
+    expect(s.comingSoon).toBe(true);
   });
 });

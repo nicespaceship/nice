@@ -2037,6 +2037,14 @@ const BlueprintsView = (() => {
         results = selected.map(p => ({ platform: p, success: false, error: err && err.message || 'unknown error' }));
       }
 
+      // Publishing is gated until social-mcp ships; ContentQueue already fired a
+      // "coming soon" toast and returned a comingSoon marker. Skip the per-platform
+      // summary (it has no platform to report) and just close cleanly.
+      if (results.some(r => r && r.comingSoon)) {
+        closeOverlay();
+        return;
+      }
+
       const ok = results.filter(r => r.success).map(r => r.platform);
       const fail = results.filter(r => !r.success);
 
