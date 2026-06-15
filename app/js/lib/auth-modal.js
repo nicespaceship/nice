@@ -71,6 +71,10 @@ const AuthModal = (() => {
             <label for="am-su-pass">Password</label>
             <input type="password" id="am-su-pass" required minlength="6" autocomplete="new-password" placeholder="Min 6 characters" />
           </div>
+          <label class="auth-accept">
+            <input type="checkbox" id="am-su-accept" required />
+            <span>I agree to the <a href="https://nicespaceship.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="https://nicespaceship.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
+          </label>
           <div class="auth-error" id="am-su-error"></div>
           <button type="submit" class="auth-submit" id="am-su-btn">Create Account</button>
           <div class="auth-divider"><span>or</span></div>

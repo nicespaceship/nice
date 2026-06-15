@@ -2777,6 +2777,15 @@ html:not([data-theme]) .app-main,
 .auth-remember input[type="checkbox"] {
   width:14px; height:14px; accent-color:var(--accent); cursor:pointer;
 }
+.auth-accept {
+  display:flex; align-items:flex-start; gap:8px; cursor:pointer;
+  font-family:var(--font-b); font-size:.78rem; line-height:var(--lh-snug); color:var(--text-muted);
+}
+.auth-accept input[type="checkbox"] {
+  width:14px; height:14px; margin-top:2px; flex:none; accent-color:var(--accent); cursor:pointer;
+}
+.auth-accept a { color:var(--accent); text-decoration:none; }
+.auth-accept a:hover { text-decoration:underline; }
 .auth-error { font-family:var(--font-b); font-size:.68rem; color:var(--color-error); min-height:18px; }
 .auth-submit {
   padding:10px 16px; background:var(--accent); color:var(--bg); border:none;
