@@ -295,7 +295,78 @@ const AuthModal = (() => {
     }
   }
 
+  function openPasswordReset() {
+    // Tear down any existing sign-in overlay first.
+    close();
+    _overlay = document.createElement('div');
+    _overlay.className = 'auth-modal-overlay open';
+    _overlay.innerHTML = `
+      <div class="auth-modal">
+        <button class="auth-modal-close" aria-label="Close">&times;</button>
+        <h2>Set a new password</h2>
+        <p class="auth-sub">Enter a new password for your account.</p>
+        <form class="auth-form" id="am-form-reset">
+          <div class="auth-field">
+            <label for="am-rs-pass">New password</label>
+            <input type="password" id="am-rs-pass" required minlength="6" autocomplete="new-password" placeholder="Min 6 characters" />
+          </div>
+          <div class="auth-field">
+            <label for="am-rs-pass2">Confirm password</label>
+            <input type="password" id="am-rs-pass2" required minlength="6" autocomplete="new-password" placeholder="Re-enter password" />
+          </div>
+          <div class="auth-error" id="am-rs-error"></div>
+          <button type="submit" class="auth-submit" id="am-rs-btn">Update password</button>
+        </form>
+        <div class="auth-footer">TRANSMISSION ENCRYPTED &mdash; TLS 1.3</div>
+      </div>
+    `;
+    document.body.appendChild(_overlay);
+    _overlay.querySelector('.auth-modal-close').addEventListener('click', close);
+    _overlay.addEventListener('click', e => { if (e.target === _overlay) close(); });
+    document.getElementById('am-form-reset').addEventListener('submit', _handlePasswordUpdate);
+  }
+
+  async function _handlePasswordUpdate(e) {
+    e.preventDefault();
+    const pass  = document.getElementById('am-rs-pass').value;
+    const pass2 = document.getElementById('am-rs-pass2').value;
+    const errEl = document.getElementById('am-rs-error');
+    const btn   = document.getElementById('am-rs-btn');
+
+    errEl.style.color = '';
+    errEl.textContent = '';
+    if (pass !== pass2) {
+      errEl.textContent = 'Passwords do not match.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    try {
+      const c = SB.client;
+      if (!c) throw new Error('Service unavailable');
+      const { error } = await c.auth.updateUser({ password: pass });
+      if (error) throw error;
+      errEl.style.color = 'var(--accent)';
+      errEl.textContent = 'Password updated. You are now signed in.';
+      setTimeout(() => {
+        close();
+        // Re-render the current view now that the recovery session is live.
+        if (typeof Router !== 'undefined') {
+          const h = location.hash || '#/';
+          location.hash = '';
+          setTimeout(() => { location.hash = h; }, 0);
+        }
+      }, 1200);
+    } catch (err) {
+      errEl.textContent = err.message || 'Failed to update password';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Update password';
+    }
+  }
+
   const _esc = Utils.esc;
 
-  return { open, close };
+  return { open, close, openPasswordReset };
 })();
