@@ -396,6 +396,24 @@ verify_jwt = false
 [functions.browser-proxy]
 verify_jwt = false
 
+# Google / Microsoft MCP servers. Not called directly from the client: invoked
+# server-to-server by mcp-gateway, which forwards the caller's Authorization
+# header (the user's ES256 JWT), so the platform gateway would reject the token
+# unless verify_jwt is false. Each validates the user internally. Already
+# deployed false; pinned here so a plain `functions deploy` can't flip it true
+# and 401 every tool call.
+[functions.gmail-mcp]
+verify_jwt = false
+
+[functions.calendar-mcp]
+verify_jwt = false
+
+[functions.drive-mcp]
+verify_jwt = false
+
+[functions.microsoft-graph-mcp]
+verify_jwt = false
+
 # Stripe sends webhook POSTs with a `stripe-signature` HMAC header and NO
 # Authorization JWT, so the gateway must not demand one (it would reject every
 # event). The function authenticates the payload itself via the HMAC secret.

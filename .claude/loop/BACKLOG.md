@@ -28,7 +28,6 @@
 - `[BEN]` Google OAuth verification (CASA, long pole — start now, runs parallel) + Microsoft Entra publisher verification.
 
 ## P1 — Launch should-fixes (code)
-- `[READY]` **config.toml verify_jwt entries** — add `[functions.<name>] verify_jwt = false` for `gmail-mcp`, `calendar-mcp`, `drive-mcp`, `microsoft-graph-mcp`. Verified 2026-06-16: all four are already live with `verify_jwt=false`, so this only codifies the running state (prevents a plain redeploy flipping them to `true` and breaking the gateway forward of the user's ES256 JWT). Not carve-out.
 - `[QUEUE]` **search_path hardening migration** — `ALTER FUNCTION public.<fn>() SET search_path = ''` for `personas_set_updated_at`, `set_updated_at`, `clear_mcp_last_error_on_connect` (3 advisor WARNs). All are trivial `SECURITY INVOKER` trigger helpers (only `now()` + NEW), so `''` is safe (pg_catalog implicit). Migration → app-open session for the dry-run + `DO $smoke$` gate. Next timestamp after `20260807000000`.
 
 ## P2 — Post-launch backlog (from the roadmaps)
@@ -50,6 +49,7 @@
 
 ## In review (open PRs from the loop)
 _(the loop appends here when it opens a PR, and Ben removes the line when merged)_
+- config.toml verify_jwt for the 4 Google/MS MCP fns (`gmail-mcp`/`calendar-mcp`/`drive-mcp`/`microsoft-graph-mcp`) — opened by the build loop 2026-06-17, awaiting merge.
 
 ## Done log (most recent first, trimmed periodically)
 - 2026-06-16 — Build-loop infrastructure stood up (this file, QUESTIONS.md, `build-cycle` skill, `build-checker` agent).
