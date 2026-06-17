@@ -74,15 +74,32 @@ const SB = (() => {
     return _online;
   }
 
+  /** First-touch referral code (8-hex id prefix) persisted by nice.js
+   *  _captureUTM. Read at signup so every signup surface attaches it as
+   *  metadata for the handle_new_user_referral trigger. */
+  function _capturedRef() {
+    try {
+      if (typeof Utils === 'undefined' || typeof localStorage === 'undefined') return null;
+      const first = JSON.parse(localStorage.getItem(Utils.KEYS.utmFirst) || '{}');
+      const ref = first && first.ref;
+      return (typeof ref === 'string' && /^[0-9a-f]{8}$/.test(ref)) ? ref : null;
+    } catch { return null; }
+  }
+
   /* ── Auth ── */
   const auth = {
     async signUp(email, password, displayName) {
       const c = client();
       if (!c) throw new Error('Supabase not available');
+      const meta = { display_name: displayName || email.split('@')[0] };
+      // Attach the captured referral code so the handle_new_user_referral
+      // trigger can resolve it. Reading it here covers every signup surface.
+      const ref = _capturedRef();
+      if (ref) meta.ref = ref;
       const { data, error } = await c.auth.signUp({
         email,
         password,
-        options: { data: { display_name: displayName || email.split('@')[0] } }
+        options: { data: meta }
       });
       if (error) throw error;
       return data;
