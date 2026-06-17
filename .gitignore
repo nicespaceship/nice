@@ -7,13 +7,15 @@ supabase/.temp/
 supabase/.env.local
 
 # Claude Code state. Most of .claude/ is local (plans, worktrees, launch config,
-# settings.local.json), but the git-tracked safety hooks, their config, and the
-# project skills ship with the repo so the automation posture travels with every
-# checkout.
+# settings.local.json), but the git-tracked safety hooks, their config, the
+# project skills, the build-loop state (loop/) and subagents (agents/) ship with
+# the repo so the automation posture travels with every checkout.
 .claude/*
 !.claude/settings.json
 !.claude/hooks/
 !.claude/skills/
+!.claude/agents/
+!.claude/loop/
 
 # Logs
 *.log
