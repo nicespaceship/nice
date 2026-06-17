@@ -115,65 +115,6 @@ const PromptPanel = (() => {
      chat becomes worth the consolidation. */
   let _activeConversation = null; // { controller, agentBp, agentLabel }
 
-  /* ── Generic NICE responses (no blueprint selected) ── */
-  const _NS_RESPONSES = [
-    'I\'ve analyzed the data. Your fleet efficiency is trending upward — 12% improvement this quarter.',
-    'Based on current agent utilization, I recommend scaling your Web Researcher agent to handle the increased workload.',
-    'Mission "Scrape competitor pricing" is 87% complete. Estimated finish: 14 minutes.',
-    'I\'ve detected a potential cost optimization: consolidating two idle agents could save approximately $23/month.',
-    'Your top-performing agent this week is Alpha Strike with 142 tasks completed and a 98.2% success rate.',
-    'Fleet status: 6 agents online, 2 in standby, 0 errors. All systems nominal, Commander.',
-    'I recommend scheduling a maintenance window for your Data Pipeline agent — it\'s been running continuously for 72 hours.',
-    'Analysis complete: Your most cost-effective agent is the Content Writer at $0.003 per task.',
-  ];
-
-  /* ── Agent-specific response pools ── */
-  const _AGENT_RESPONSES = {
-    Research: [
-      'I\'ve compiled a comprehensive analysis from 47 sources. Key findings suggest a 23% market shift toward AI-first solutions.',
-      'Research complete. I found 12 relevant papers and 3 industry reports that match your query.',
-      'Scanning databases now… Found 156 entries matching your criteria. Filtering for relevance.',
-    ],
-    Code: [
-      'I\'ve reviewed the codebase and identified 3 optimization opportunities. Shall I implement them?',
-      'Code analysis complete. 2 potential bugs found in the authentication module.',
-      'I\'ve generated the boilerplate code and added comprehensive tests. Ready for review.',
-    ],
-    Data: [
-      'Dataset processed: 1.2M rows analyzed. 3 anomalies detected in the Q3 revenue data.',
-      'I\'ve built the ETL pipeline. Processing throughput: ~50K records/minute.',
-      'Data visualization ready. The trend line shows a clear correlation between deployment frequency and revenue.',
-    ],
-    Content: [
-      'Draft complete. I\'ve written 1,200 words optimized for SEO with 3 suggested header variations.',
-      'Content analysis: readability score 72 (good), sentiment: positive, keyword density: optimal.',
-      'I\'ve generated 5 variations of the marketing copy. Option 3 tests highest for engagement.',
-    ],
-    Ops: [
-      'Infrastructure scan complete. All services healthy. CPU utilization across the fleet: 34%.',
-      'Deployment pipeline executed successfully. Zero-downtime deploy confirmed.',
-      'Alert: Memory usage on the staging server hit 87%. I\'ve auto-scaled to prevent issues.',
-    ],
-    Analytics: [
-      'Dashboard updated with latest metrics. Revenue up 8%, user retention steady at 94%.',
-      'I\'ve identified a funnel drop-off at step 3. Conversion could improve 15% with UX changes.',
-      'Predictive model suggests next month\'s growth rate will be 12% based on current trends.',
-    ],
-    Security: [
-      'Security scan complete. No critical vulnerabilities detected. 2 minor advisories to review.',
-      'Compliance check passed. All endpoints meet security standards.',
-      'Threat assessment complete. Risk level: Low.',
-    ],
-    Custom: [
-      'Task received. Processing your request now.',
-      'Working on it — should have results shortly.',
-      'Done. Let me know if you need anything else.',
-      'I\'ve completed the analysis. Here\'s what I found...',
-      'Understood. I\'ll get right on that.',
-      'Request processed. Everything looks good on my end.',
-    ],
-  };
-
   const _esc = Utils.esc;
   const _escAttr = Utils.escAttr;
 
@@ -1582,33 +1523,9 @@ const PromptPanel = (() => {
       if (result) return result;
     }
 
-    const mentioned = _parseMention(userText);
-    const contextAgent = mentioned || (_routeAgent ? { id: _routeAgent.id, name: _routeAgent.name, role: _routeAgent.role || _routeAgent.category || 'Custom' } : null);
-    if (contextAgent) {
-      const pool = _AGENT_RESPONSES[contextAgent.role] || _AGENT_RESPONSES.Custom;
-      const text = pool[Math.floor(Math.random() * pool.length)];
-      return { text, agent: contextAgent.name };
-    }
-
-    const text = _NS_RESPONSES[Math.floor(Math.random() * _NS_RESPONSES.length)];
-    // Inject live context into generic mock responses
-    const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
-    const ships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
-    const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
-    let contextual = text;
-    if (agents.length > 0) {
-      const randomAgent = agents[Math.floor(Math.random() * agents.length)];
-      contextual = contextual
-        .replace(/Alpha Strike/g, randomAgent.name || 'your lead agent')
-        .replace(/Web Researcher/g, randomAgent.name || 'your agent')
-        .replace(/Data Pipeline/g, randomAgent.name || 'your agent')
-        .replace(/Content Writer/g, randomAgent.name || 'your agent')
-        .replace(/6 agents online/g, `${agents.length} agent${agents.length !== 1 ? 's' : ''} online`);
-    }
-    if (ships.length > 0) {
-      contextual = contextual.replace(/\$23\/month/g, `$${Math.round(ships.length * 8)}/month`);
-    }
-    return { text: contextual, agent: null };
+    // No recognised intent — return empty so the caller falls through to
+    // the real LLM. preCheck only reads .autoMission / .isNav.
+    return {};
   }
 
   /* ── Contextual suggestion chips ── */
@@ -2590,21 +2507,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         if (sendBtn) sendBtn.disabled = false;
       });
     } else {
-      // Try direct LLM with streaming, fall back to local mock
-      const _finishMock = () => {
-        const delay = 800 + Math.random() * 1200;
-        setTimeout(() => {
-          _removeMonitorThinking();
-          const { text: responseText, agent } = _getResponse(text);
-          _messages.push({ role: 'assistant', text: responseText, agent, ts: Date.now() });
-          _saveMessages();
-          _renderMonitor();
-          _setSending(false);
-          if (sendBtn) sendBtn.disabled = false;
-        }, delay);
-      };
-
-      // Check for auto-mission intent (imperative tasks like "write me a tagline")
+      // Direct LLM with streaming. Pre-check intent first so imperative
+      // tasks ("write me a tagline") and navigation short-circuit the model.
       const preCheck = _getResponse(text);
       if (preCheck.autoMission) {
         _executeAutoMission(preCheck.title, sendBtn);
