@@ -49,7 +49,7 @@ Set these in your Supabase project (Dashboard → Edge Functions → Secrets):
 
 ### 3. Seed Blueprints
 
-The 308 blueprints are seeded automatically on first load from `BlueprintStore`. If you want to customize:
+The blueprint catalog is seeded automatically on first load from `BlueprintStore`. If you want to customize:
 
 ```bash
 npx supabase db seed

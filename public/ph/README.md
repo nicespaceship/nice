@@ -13,7 +13,7 @@
 
 ## Copy
 - **Tagline** (60 chars max): "Mission control for your AI agent fleet"
-- **Description** (260 chars max): "NICE lets you build, deploy, and manage AI agents from one dashboard. Choose from 241 blueprints, group agents into spaceships, run missions, and track costs. Free to start — no API keys needed."
+- **Description** (260 chars max): "NICE lets you build, deploy, and manage AI agents from one dashboard. Choose from hundreds of blueprints, group agents into spaceships, run missions, and track costs. Free to start — no API keys needed."
 - **First comment**: Prepared by team, introduce the product and invite questions.
 
 ## Links

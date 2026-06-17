@@ -1,7 +1,7 @@
 {
   "name": "NICE™ — Mission Control for AI Agents",
   "short_name": "NICE",
-  "description": "Build, deploy, and manage AI agent fleets. 800+ blueprints, multi-agent orchestration, real-time missions. By NICE SPACESHIP.",
+  "description": "Build, deploy, and manage AI agent fleets. Hundreds of blueprints, multi-agent orchestration, real-time missions. By NICE SPACESHIP.",
   "start_url": "/app/",
   "scope": "/app/",
   "id": "/app/",

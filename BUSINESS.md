@@ -1,6 +1,6 @@
 # NICE™ — Open Source & Hosted
 
-NICE is MIT-licensed. The frontend, database schema, 924 blueprints, and
+NICE is MIT-licensed. The frontend, database schema, hundreds of blueprints, and
 self-hosting docs are all in this repo. Anyone can fork, run, modify, and
 redistribute the app under the terms of the [LICENSE](./LICENSE).
 
@@ -16,7 +16,7 @@ Everything you need to run a working NICE SPA on your own infrastructure:
 
 - **Frontend SPA** — `app/` (54 lib modules, 28 views, skin system, gamification, tests)
 - **Database schema** — `migrations/` (Postgres / Supabase migrations)
-- **Blueprints catalog** — 924 pre-built agents + spaceships seeded via migrations
+- **Blueprints catalog** — hundreds of pre-built agents + spaceships seeded via migrations
 - **Self-hosting guide** — [`SELF_HOSTING.md`](./SELF_HOSTING.md) + `docker-compose.yml`
 - **Landing site** — `www/`
 - **Tests** — 652 unit tests (Vitest) + 14 E2E tests (Playwright)
@@ -73,7 +73,7 @@ the bills:
 | **Top-up packs** | $29.99 / $49.99 | Extra tokens that never expire (Pro subscribers only) |
 
 Hosted users don't manage infrastructure, don't need LLM provider accounts,
-and get automatic blueprint updates (924 and growing). Everything the
+and get automatic blueprint updates (hundreds and growing). Everything the
 self-hosted version offers, plus the proprietary backend.
 
 ## Contributing
@@ -89,7 +89,7 @@ and NICE SPACESHIP will investigate.
 
 Because the value of NICE is the frontend, the blueprint catalog, and the
 architecture — not the LLM proxy code. Anyone can write a multi-provider
-proxy; only NICE has the 924 agent blueprints, the spaceship system, the
+proxy; only NICE has the agent blueprint catalog, the spaceship system, the
 gamified XP ladder, and the integrated toolchain around them. Open-sourcing
 the SPA lets developers self-host, fork, and build on top of NICE without
 forcing anyone into a SaaS contract.
