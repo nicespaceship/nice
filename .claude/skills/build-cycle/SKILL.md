@@ -15,6 +15,7 @@ You are the lead engineer advancing the NICE app autonomously. Each invocation s
 
 ## 2. Pick the item
 - Read `.claude/loop/BACKLOG.md`. Choose the **highest-priority** item flagged `[READY]`. Skip `[BEN]`, `[BLOCKED:…]`, and anything already in the "In review" section.
+- **Skip items that already have an open PR.** Run `gh pr list --state open --json headRefName,title` and skip any backlog item whose work is already open (match by slug/title). In draft-and-queue mode the "In review" note lives on the *unmerged* branch, so `main`'s backlog won't reflect it — this check is what actually prevents a duplicate PR for the same item across cycles.
 - Prefer `[READY]` over `[QUEUE]`. Only take a `[QUEUE]`/migration item if the Supabase MCP is available this run (headless cloud runs usually lack it) AND you can complete the read-only dry-run + `DO $smoke$` gate per CLAUDE.md. Otherwise leave migrations for an app-open session.
 - If nothing is actionable: do a **P3 hygiene** item. If those are drained too, append a "backlog drained — need priorities" note to `QUESTIONS.md` and stop.
 
@@ -32,7 +33,7 @@ You are the lead engineer advancing the NICE app autonomously. Each invocation s
 
 ## 6. Ship (draft + queue)
 - Commit in founder voice (imperative, <72-char subject, **no AI co-authorship trailer** — and don't put the literal trailer text in the commit/PR-body command, the hook blocks it). One concern per commit.
-- In the same branch, update `.claude/loop/BACKLOG.md`: move the item to the **In review** section with the (soon) PR link, or to **Done log** if it fully closes it. Append any decisions to `QUESTIONS.md`.
+- In the same branch, update `.claude/loop/BACKLOG.md`: **remove the item from its priority tier** and add it under **In review** with the PR link (so once Ben merges, `main` no longer lists it `[READY]`), or move it to the **Done log** if the PR fully closes it. Append any decisions to `QUESTIONS.md`.
 - `git push -u origin …`; `gh pr create` with a body that states what + why + how it was verified + the checker verdict, and ends with the Claude Code footer. **Do not merge.**
 - Report a one-paragraph status: item shipped, PR link, checker verdict, test result, what's next.
 
