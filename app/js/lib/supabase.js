@@ -38,6 +38,14 @@ const SB = (() => {
           detectSessionInUrl: true,
         },
       });
+      // A password-reset link lands the user back in the app with a recovery
+      // token in the URL; Supabase parses it and emits PASSWORD_RECOVERY. Surface
+      // the update-password form so they can set a new password.
+      _client.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY' && typeof AuthModal !== 'undefined' && AuthModal.openPasswordReset) {
+          AuthModal.openPasswordReset();
+        }
+      });
     }
     return _client;
   }
