@@ -1556,7 +1556,7 @@ const NICE = (() => {
         if (typeof Notify !== 'undefined') {
           Notify.send({ title: 'Session Expired', message: 'Please sign in again to continue.', type: 'warning' });
         }
-        if (typeof AuthModal !== 'undefined') AuthModal.show();
+        if (typeof AuthModal !== 'undefined') AuthModal.open('Your session expired. Please sign in again.');
       }
       if (typeof AuditLog !== 'undefined') {
         AuditLog.log('auth', { description: user ? 'Signed in as ' + (user.email || 'user') : 'Signed out' });

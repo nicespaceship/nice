@@ -2788,7 +2788,7 @@ html:not([data-theme]) .app-main,
 
 
 /* Social sign-in buttons */
-.auth-google-btn, .auth-github-btn, .auth-microsoft-btn, .auth-x-btn, .auth-apple-btn {
+.auth-google-btn, .auth-github-btn {
   display:flex; align-items:center; justify-content:center; gap:10px;
   width:100%; padding:10px; border:1px solid var(--border); border-radius:var(--radius);
   background:var(--bg-alt); color:var(--text); font-family:var(--font-b); font-size:.78rem;
@@ -2796,9 +2796,6 @@ html:not([data-theme]) .app-main,
 }
 .auth-google-btn:hover { border-color:var(--accent); background:rgba(255,255,255,.04); }
 .auth-github-btn:hover { border-color:#6e40c9; background:rgba(110,64,201,.08); }
-.auth-microsoft-btn:hover { border-color:#00A4EF; background:rgba(0,164,239,.08); }
-.auth-x-btn:hover { border-color:var(--text); background:rgba(255,255,255,.04); }
-.auth-apple-btn:hover { border-color:#a2aaad; background:rgba(255,255,255,.04); }
 .auth-divider {
   display:flex; align-items:center; gap:12px; color:var(--text-muted); font-size:var(--text-2xs);
  letter-spacing:var(--tracking-caps);
