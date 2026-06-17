@@ -28,10 +28,8 @@
 - `[BEN]` Google OAuth verification (CASA, long pole — start now, runs parallel) + Microsoft Entra publisher verification.
 
 ## P1 — Launch should-fixes (code)  ·  Phase 0, see [PLAN.md](PLAN.md)
-- `[READY]` **Marketing-honesty: catalog counts** — site claims 500+/800+/924 vs ~219 live. Default (per [[QUESTIONS]] Q1) = soften to "growing library / hundreds." **Scope first: counts are build-generated (NOT in `scripts/build.js`) — locate the www-count source before editing, so we change the source not a generated file.**
-- `[READY]` **Marketing-honesty: "schedule posts"** — site says agents "schedule posts" but the Outbox is gated (no `social-mcp`). Soften the claim until `social-mcp` ships (that build is P2).
-- `[READY]` **Remove dead mock-LLM scaffolding** in `prompt-panel.js` — `_finishMock` (defined, never called) + the canned `_NS_RESPONSES`/`_AGENT_RESPONSES` banks (~150 dead lines from the pre-real-LLM era). Confirm each is truly unreferenced before removing.
-- `[READY]` **Smoke-test Grok / Llama (Groq) / Codex** end-to-end through `nice-ai` (CLAUDE.md "awaiting smoke-test"); confirm working or document the failure.
+> Three Phase 0 honesty/cleanup items shipped 2026-06-17 (in review — see below): catalog counts, "schedule posts", dead mock-LLM. Remaining:
+- `[BEN]` **Smoke-test Grok / Llama (Groq) / Codex** through `nice-ai` — needs an authenticated Pro call (the loop can't sign in or spend tokens). `fuel_usage` confirms these have NEVER run in prod (only `gemini-2.5-flash` has). See [[QUESTIONS]] Q2: run the smoke-test or hide the 3 untested models from the catalog before launch.
 - `[QUEUE]` **Relabel Security "Access Policies"** — the 6 toggles enforce nothing and don't persist (`security.js:63-70,418-427`). Relabel as a posture checklist so the UI stops implying protections that don't exist. Carve-out (`security.js`) → draft for Ben.
 - `[QUEUE]` **Referral `?ref=` write-path** — link + count display exist (`profile.js:287,301`) but nothing consumes `?ref=` at signup to write the `referrals` row. Touches the auth/signup flow → likely carve-out, draft for Ben.
 
@@ -54,8 +52,12 @@
 
 ## In review (open PRs from the loop)
 _(the loop appends here when it opens a PR, and Ben removes the line when merged)_
+- [#842](https://github.com/nicespaceship/nice/pull/842) — Marketing-honesty: catalog counts → "hundreds" (all public surfaces + idempotent docs-favicon fix). build-checker PASS, 1791 tests.
+- [#843](https://github.com/nicespaceship/nice/pull/843) — Marketing-honesty: "schedule posts" → "schedule meetings" on the explore page. build-checker PASS.
+- [#844](https://github.com/nicespaceship/nice/pull/844) — Remove dead mock-LLM scaffolding from `prompt-panel.js` (~96 lines, behavior-preserving). build-checker PASS.
 
 ## Done log (most recent first, trimmed periodically)
+- 2026-06-17 — **Phase 0 honesty/cleanup (in review):** catalog-count softening ([#842](https://github.com/nicespaceship/nice/pull/842)), "schedule posts" claim ([#843](https://github.com/nicespaceship/nice/pull/843)), dead mock-LLM removal ([#844](https://github.com/nicespaceship/nice/pull/844)) — all build-checker PASS, awaiting Ben's merge. Smoke-test item reclassified `[BEN]` (needs auth — [[QUESTIONS]] Q2).
 - 2026-06-17 — **P1 cleared.** `search_path` pinned on 3 trigger helpers ([#840](https://github.com/nicespaceship/nice/pull/840), applied + verified live `search_path=""`); config.toml verify_jwt for the 4 MCP fns ([#838](https://github.com/nicespaceship/nice/pull/838), first loop output).
 - 2026-06-17 — Phased build plan + daily ritual ([#839](https://github.com/nicespaceship/nice/pull/839)); build-cycle dedup hardening ([#837](https://github.com/nicespaceship/nice/pull/837)).
 - 2026-06-16 — Build-loop infrastructure stood up (this file, QUESTIONS.md, `build-cycle` skill, `build-checker` agent).
