@@ -27,8 +27,13 @@
 - `[BEN]` Fix-3 storage policies via Dashboard → Storage → Policies (not migratable — [[project_storage_rls_dashboard_only]]).
 - `[BEN]` Google OAuth verification (CASA, long pole — start now, runs parallel) + Microsoft Entra publisher verification.
 
-## P1 — Launch should-fixes (code)
-- `[QUEUE]` **search_path hardening migration** — `ALTER FUNCTION public.<fn>() SET search_path = ''` for `personas_set_updated_at`, `set_updated_at`, `clear_mcp_last_error_on_connect` (3 advisor WARNs). All are trivial `SECURITY INVOKER` trigger helpers (only `now()` + NEW), so `''` is safe (pg_catalog implicit). Migration → app-open session for the dry-run + `DO $smoke$` gate. Next timestamp after `20260807000000`.
+## P1 — Launch should-fixes (code)  ·  Phase 0, see [PLAN.md](PLAN.md)
+- `[READY]` **Marketing-honesty: catalog counts** — site claims 500+/800+/924 vs ~219 live. Default (per [[QUESTIONS]] Q1) = soften to "growing library / hundreds." **Scope first: counts are build-generated (NOT in `scripts/build.js`) — locate the www-count source before editing, so we change the source not a generated file.**
+- `[READY]` **Marketing-honesty: "schedule posts"** — site says agents "schedule posts" but the Outbox is gated (no `social-mcp`). Soften the claim until `social-mcp` ships (that build is P2).
+- `[READY]` **Remove dead mock-LLM scaffolding** in `prompt-panel.js` — `_finishMock` (defined, never called) + the canned `_NS_RESPONSES`/`_AGENT_RESPONSES` banks (~150 dead lines from the pre-real-LLM era). Confirm each is truly unreferenced before removing.
+- `[READY]` **Smoke-test Grok / Llama (Groq) / Codex** end-to-end through `nice-ai` (CLAUDE.md "awaiting smoke-test"); confirm working or document the failure.
+- `[QUEUE]` **Relabel Security "Access Policies"** — the 6 toggles enforce nothing and don't persist (`security.js:63-70,418-427`). Relabel as a posture checklist so the UI stops implying protections that don't exist. Carve-out (`security.js`) → draft for Ben.
+- `[QUEUE]` **Referral `?ref=` write-path** — link + count display exist (`profile.js:287,301`) but nothing consumes `?ref=` at signup to write the `referrals` row. Touches the auth/signup flow → likely carve-out, draft for Ben.
 
 ## P2 — Post-launch backlog (from the roadmaps)
 - `[READY]` Self-service account-deletion UI (DB layer is `ON DELETE CASCADE`; mind the 6 NO-ACTION FKs — verify before wiring).
@@ -49,7 +54,8 @@
 
 ## In review (open PRs from the loop)
 _(the loop appends here when it opens a PR, and Ben removes the line when merged)_
-- config.toml verify_jwt for the 4 Google/MS MCP fns (`gmail-mcp`/`calendar-mcp`/`drive-mcp`/`microsoft-graph-mcp`) — opened by the build loop 2026-06-17, awaiting merge.
 
 ## Done log (most recent first, trimmed periodically)
+- 2026-06-17 — **P1 cleared.** `search_path` pinned on 3 trigger helpers ([#840](https://github.com/nicespaceship/nice/pull/840), applied + verified live `search_path=""`); config.toml verify_jwt for the 4 MCP fns ([#838](https://github.com/nicespaceship/nice/pull/838), first loop output).
+- 2026-06-17 — Phased build plan + daily ritual ([#839](https://github.com/nicespaceship/nice/pull/839)); build-cycle dedup hardening ([#837](https://github.com/nicespaceship/nice/pull/837)).
 - 2026-06-16 — Build-loop infrastructure stood up (this file, QUESTIONS.md, `build-cycle` skill, `build-checker` agent).
