@@ -365,7 +365,6 @@
           <tr><td>Claude 4.6 Sonnet</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Best balance of speed, cost, and reasoning</td></tr>
           <tr><td>Claude 4.7 Opus</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Expert writing and nuanced synthesis</td></tr>
           <tr><td>GPT-5.4 Pro</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>1M context multimodal flagship</td></tr>
-          <tr><td>GPT-5.3 Codex</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Specialized for agentic coding</td></tr>
           <tr><td>OpenAI o3</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Frontier reasoning and STEM</td></tr>
           <tr><td>Gemini 2.5 Pro</td><td>Google</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Native multimodal, 1M+ context</td></tr>
         </tbody>
@@ -395,7 +394,7 @@
           <tr><td>Free</td><td>$0</td><td>6 slots, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
           <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month — covers GPT-5 mini, Llama 4 Scout, Grok 4.1 Fast</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
-          <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, GPT-5.3 Codex, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
+          <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
       </table>
 

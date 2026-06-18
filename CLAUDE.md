@@ -472,9 +472,8 @@ Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each 
 | GPT-5 Mini | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Fast + cheap |
 | GPT-5.4 Pro | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Flagship |
 | o3 | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Reasoning |
-| Grok | xAI | Premium | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
+| Grok | xAI | Standard | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
 | Llama (Groq) | Meta | Standard | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
-| Codex | OpenAI | Premium | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 
@@ -483,7 +482,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 - Gemini 2.5 Flash is free and unlimited for everyone (no pool)
 - NICE Pro ($9.99/mo) → 1,000 Standard tokens/month + non-flagship models
 - Claude Add-on (+$9.99/mo) → 500 Claude tokens/month + Sonnet 4.6 / Opus 4.6
-- Premium Add-on (+$9.99/mo) → 500 Premium tokens/month + GPT-5.4 Pro / Codex / o3 / Gemini 3.1 Pro
+- Premium Add-on (+$9.99/mo) → 500 Premium tokens/month + GPT-5.4 Pro / o3 / Gemini 3.1 Pro
 - Top-ups (Pro only): Boost ($29.99) and Max ($49.99) packs per pool, never expire
 - `StripeConfig` ([app/js/lib/stripe-config.js](app/js/lib/stripe-config.js)) is SSOT for all product/price/payment-link IDs
 - `nice-ai` checks the matching pool before premium calls (402 if insufficient)

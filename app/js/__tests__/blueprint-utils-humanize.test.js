@@ -34,7 +34,6 @@ describe('BlueprintUtils.humanizeModel', () => {
       expect(h('claude-4-6-sonnet')).toBe('Claude Sonnet 4.6');
       expect(h('claude-4-7-opus')).toBe('Claude Opus 4.7');
       expect(h('gpt-5-4-pro')).toBe('GPT-5.4 Pro');
-      expect(h('gpt-5-3-codex')).toBe('GPT-5.3 Codex');
       expect(h('openai-o3')).toBe('OpenAI o3');
       expect(h('gemini-2-5-pro')).toBe('Gemini 2.5 Pro');
     });
