@@ -82,7 +82,12 @@ const QualityGate = (() => {
    */
   async function gatedRun(executeFn, task, opts) {
     opts = opts || {};
-    var maxRetries = opts.maxRetries || MAX_RETRIES;
+    // Honor an explicit maxRetries: 0 ("no retries"). The prior `|| MAX_RETRIES`
+    // read 0 as falsy and silently forced the default cap of 2. Guard the type
+    // so a negative or non-numeric value falls back to the default instead of
+    // collapsing the loop to zero attempts.
+    var maxRetries = (typeof opts.maxRetries === 'number' && opts.maxRetries >= 0)
+      ? opts.maxRetries : MAX_RETRIES;
     var attempts = 0;
     var lastOutput = '';
     var lastReview = null;

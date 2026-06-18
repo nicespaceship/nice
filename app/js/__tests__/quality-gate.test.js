@@ -304,19 +304,29 @@ describe('QualityGate.gatedRun', () => {
     expect(res.attempts).toBe(3);
   });
 
-  it('treats maxRetries: 0 as the default cap — a known || footgun', async () => {
-    // `var maxRetries = opts.maxRetries || MAX_RETRIES` reads 0 as falsy, so a
-    // caller asking for "no retries" silently gets the default 2. Pinned so the
-    // behavior can't drift unnoticed; a real fix (`!= null ? … : …`) would be a
-    // separate, intentional change.
+  it('treats maxRetries: 0 as zero retries — a single attempt', async () => {
+    // The type-guarded cap honors an explicit 0, so a caller asking for "no
+    // retries" gets exactly one attempt. Fixes the prior `|| MAX_RETRIES`
+    // footgun that read 0 as falsy and silently forced the default cap of 2.
+    setLLM(
+      llmReview({ overall: 2, pass: false }),
+    );
+    const execute = vi.fn(async () => LONG_OUT);
+    const res = await QualityGate.gatedRun(execute, 'task', { maxRetries: 0 });
+    expect(res.attempts).toBe(1);
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the default cap for a negative maxRetries', async () => {
+    // A negative (or non-numeric) cap is invalid input; default to MAX_RETRIES
+    // rather than collapse the loop to zero attempts.
     setLLM(
       llmReview({ overall: 2, pass: false }),
       llmReview({ overall: 2, pass: false }),
       llmReview({ overall: 2, pass: false }),
     );
     const execute = vi.fn(async () => LONG_OUT);
-    const res = await QualityGate.gatedRun(execute, 'task', { maxRetries: 0 });
+    const res = await QualityGate.gatedRun(execute, 'task', { maxRetries: -1 });
     expect(res.attempts).toBe(3);
-    expect(execute).toHaveBeenCalledTimes(3);
   });
 });
