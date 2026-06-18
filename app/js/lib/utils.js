@@ -170,7 +170,6 @@ const Utils = (() => {
     bpRatings: 'nice-bp-ratings',
     agentTemplates: 'nice-agent-templates',
     agentsView: 'nice-agents-view',
-    shipsView: 'nice-ships-view',
     tokens: 'nice-tokens',
     avatarUrl: 'nice-avatar-url',
     bpFavorites: 'nice-bp-favorites',

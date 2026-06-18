@@ -2762,14 +2762,6 @@ html:not([data-theme]) .app-main,
 .auth-field input:focus, .auth-field textarea:focus { outline:none; border-color:var(--accent); }
 .auth-field input::placeholder, .auth-field textarea::placeholder { color:var(--text-dim); }
 
-/* Read-only key-display inputs in the agent/spaceship share modals.
-   Was a triple-duplicated inline style blob across agents.js + spaceships.js. */
-.share-key-input {
-  flex:1; padding:8px; background:var(--bg-alt); border:1px solid var(--border);
-  border-radius:var(--radius); color:var(--text); font-family:var(--font-m);
-  font-size:.7rem; cursor:text;
-}
-
 .auth-remember {
   display:flex; align-items:center; gap:8px; cursor:pointer;
   font-family:var(--font-b); font-size:.78rem; color:var(--text-muted);
