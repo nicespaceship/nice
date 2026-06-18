@@ -127,6 +127,7 @@ const BlueprintsView = (() => {
   let _drawerBpList = [];
   let _drawerBpIndex = -1;
   let _drawerKeyHandler = null;
+  let _filterSheetEscHandler = null;
   let _compareIds = [];
   let _hangarItems = [];
 
@@ -2294,12 +2295,17 @@ const BlueprintsView = (() => {
       _applyFilters();
       _updateFilterCount();
     });
-    // Close on ESC
-    document.addEventListener('keydown', (e) => {
+    // Close on ESC. _bindEvents() re-runs on every render() (every visit to the
+    // Bridge), so remove any prior binding before re-adding — otherwise each
+    // visit leaks another document-level keydown listener. Look the sheets up
+    // fresh on each press so the handler never captures a stale element.
+    if (_filterSheetEscHandler) document.removeEventListener('keydown', _filterSheetEscHandler);
+    _filterSheetEscHandler = (e) => {
       if (e.key !== 'Escape') return;
-      if (filterSheet?.classList.contains('open')) _closeFilterSheet();
+      if (document.getElementById('bp-filter-sheet')?.classList.contains('open')) _closeFilterSheet();
       if (document.getElementById('bp-tab-sheet')?.classList.contains('open')) _closeTabSheet();
-    });
+    };
+    document.addEventListener('keydown', _filterSheetEscHandler);
 
     // View toggle is handled by the #bridge-subnav click delegation above.
 
