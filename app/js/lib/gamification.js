@@ -108,7 +108,7 @@ const Gamification = (() => {
   // as mid-tier.
   const MODEL_TIERS = {
     'claude-4-7-opus':   4, 'claude-4-6-sonnet': 4, 'gpt-5-4-pro': 4, 'openai-o3': 4,
-    'gpt-5-3-codex':     3, 'gemini-2-5-pro': 3, 'grok-4-1-fast': 3,
+    'gemini-2-5-pro':    3, 'grok-4-1-fast': 3,
     'gpt-5-mini':        2, 'llama-4-scout': 2,
     'gemini-2-5-flash':  1,
     'nice-auto':         3,

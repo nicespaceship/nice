@@ -358,9 +358,8 @@ describe('LLMConfig', () => {
       const catalogIds = Object.keys(TokenConfig.MODELS);
       const missing = catalogIds.filter(id => !chainIds.includes(id));
       expect(missing).toEqual([]);
-      // openai-o3 and gpt-5-3-codex were the two that were missing.
+      // openai-o3 was the one that had been missing.
       expect(chainIds).toContain('openai-o3');
-      expect(chainIds).toContain('gpt-5-3-codex');
       // No duplicates.
       expect(new Set(chainIds).size).toBe(chainIds.length);
     });

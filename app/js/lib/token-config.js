@@ -17,8 +17,8 @@
      claude    — Claude add-on. Covers Claude 4.6 Sonnet and 4.7 Opus.
                  Expensive models have higher weights so Opus can't
                  drain a month's allowance in a dozen messages.
-     premium   — Premium add-on. Covers GPT-5.4 Pro, GPT-5.3 Codex,
-                 OpenAI o3, and Gemini 2.5 Pro.
+     premium   — Premium add-on. Covers GPT-5.4 Pro, OpenAI o3,
+                 and Gemini 2.5 Pro.
 
    Adding a new flagship family later is a config change: add a pool,
    add the models with weights, and ship an add-on in subscription.js.
@@ -47,7 +47,7 @@ const TokenConfig = (() => {
     premium: {
       id: 'premium',
       label: 'Premium',
-      description: 'Premium add-on — GPT-5.4 Pro, GPT-5.3 Codex, OpenAI o3, Gemini 2.5 Pro.',
+      description: 'Premium add-on — GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro.',
       monthlyAllowance: 500,        // Premium add-on grants this every billing cycle
       requiresAddon: 'premium',
     },
@@ -67,7 +67,7 @@ const TokenConfig = (() => {
      2026 — refresh on a quarterly cadence (or whenever a provider
      announces a price change) to keep cost analytics accurate.
 
-     The 10 entries below correspond to the current LLM lineup; any
+     The 9 entries below correspond to the current LLM lineup; any
      model not listed is treated as `free` by isFreeModel(). */
   const MODELS = {
     // ── Free tier (no pool, always free)
@@ -86,7 +86,6 @@ const TokenConfig = (() => {
     // Priciest model in the catalog (~$142/MTok blended) — weight reflects that
     // so the 500 premium allowance can't be drained at a loss. Must stay >= o3.
     'gpt-5-4-pro':        { pool: 'premium',  weight: 20, tier: 'premium',  pricing: { input: 30.00, output: 180.00 } },
-    'gpt-5-3-codex':      { pool: 'premium',  weight: 5,  tier: 'premium',  pricing: { input: 1.25,  output: 10.00  } },
     'openai-o3':          { pool: 'premium',  weight: 15, tier: 'premium',  pricing: { input: 2.00,  output: 8.00   } },
     'gemini-2-5-pro':     { pool: 'premium',  weight: 3,  tier: 'premium',  pricing: { input: 1.25,  output: 10.00  } },
   };

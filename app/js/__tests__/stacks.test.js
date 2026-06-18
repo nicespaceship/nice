@@ -197,7 +197,7 @@ describe('Stacks — applyStack', () => {
     Stacks.applyStack('writer');
     Stacks.applyStack('builder');
     const enabled = JSON.parse(localStorage.getItem('nice-enabled-models'));
-    expect(enabled['gpt-5-3-codex']).toBe(true);
+    expect(enabled['gpt-5-4-pro']).toBe(true);
     expect(enabled['claude-4-7-opus']).toBe(false);  // writer-specific, should be off now
     expect(enabled['claude-4-6-sonnet']).toBe(false);
   });
@@ -208,9 +208,9 @@ describe('Stacks — routeFor', () => {
     localStorage.clear();
   });
 
-  it('routes Builder code tasks to GPT-5.3 Codex', () => {
+  it('routes Builder code tasks to GPT-5.4 Pro', () => {
     Stacks.applyStack('builder');
-    expect(Stacks.routeFor('code')).toBe('gpt-5-3-codex');
+    expect(Stacks.routeFor('code')).toBe('gpt-5-4-pro');
   });
 
   it('routes Writer polish tasks to Claude Opus', () => {

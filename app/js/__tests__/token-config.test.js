@@ -87,11 +87,6 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('gpt-5-4-pro')).toBeGreaterThanOrEqual(TokenConfig.weightFor('openai-o3'));
   });
 
-  it('GPT-5.3 Codex is premium pool weight 5', () => {
-    expect(TokenConfig.poolFor('gpt-5-3-codex')).toBe('premium');
-    expect(TokenConfig.weightFor('gpt-5-3-codex')).toBe(5);
-  });
-
   it('OpenAI o3 consumes 15 premium tokens (most expensive reasoning)', () => {
     expect(TokenConfig.poolFor('openai-o3')).toBe('premium');
     expect(TokenConfig.weightFor('openai-o3')).toBe(15);
@@ -119,7 +114,7 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(claude).not.toContain('gpt-5-mini');
 
     const premium = TokenConfig.modelsInPool('premium');
-    expect(premium).toEqual(expect.arrayContaining(['gpt-5-4-pro', 'gpt-5-3-codex', 'openai-o3', 'gemini-2-5-pro']));
+    expect(premium).toEqual(expect.arrayContaining(['gpt-5-4-pro', 'openai-o3', 'gemini-2-5-pro']));
     expect(premium).not.toContain('claude-4-6-sonnet');
   });
 });

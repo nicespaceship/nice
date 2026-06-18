@@ -699,7 +699,7 @@ const AgentExecutor = (() => {
 
   function _providerForModel(modelId) {
     if (!modelId || typeof modelId !== 'string') return null;
-    if (modelId.startsWith('gpt-') || modelId === 'o3' || modelId === 'codex') return 'openai';
+    if (modelId.startsWith('gpt-') || modelId === 'o3') return 'openai';
     if (modelId.startsWith('claude-')) return 'anthropic';
     if (modelId.startsWith('gemini-')) return 'google';
     if (modelId.startsWith('grok-')) return 'xai';
