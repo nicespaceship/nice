@@ -2,7 +2,7 @@
 
 **Neural Intelligence Command Engine** — AI agents that run your business.
 
-NICE is an open-source platform for building, deploying, and managing AI agent workflows. Browse 800+ pre-built blueprints, activate a team of AI agents, and let them handle your marketing, content, analytics, scheduling, and operations. One platform replaces the 5-15 SaaS tools you're paying for today.
+NICE is an open-source platform for building, deploying, and managing AI agent workflows. Browse hundreds of pre-built blueprints, activate a team of AI agents, and let them handle your marketing, content, analytics, scheduling, and operations. One platform replaces the 5-15 SaaS tools you're paying for today.
 
 **[Try it free](https://nicespaceship.ai)** | **[Docs](https://nicespaceship.com/docs)** | **[Community (Reddit)](https://reddit.com/r/nicespaceship)**
 
@@ -10,14 +10,14 @@ NICE is an open-source platform for building, deploying, and managing AI agent w
 
 ## How It Works
 
-1. **Browse** — Find a blueprint for your business (Restaurant, Real Estate, Marketing Agency, YouTube Creator, and 800+ more)
+1. **Browse** — Find a blueprint for your business (Restaurant, Real Estate, Marketing Agency, YouTube Creator, and hundreds more)
 2. **Activate** — Deploy it as your Spaceship. A team of AI agents is auto-created with the right skills and tools.
 3. **Customize** — Drag and drop agents into slots. Connect Gmail, Calendar, Drive. Adjust settings.
 4. **Run** — Your agents execute real work. NICE routes each task to the best LLM automatically.
 
 ## Features
 
-- **800+ Blueprints** — Pre-built AI workflow templates for every type of business
+- **Hundreds of Blueprints** — Pre-built AI workflow templates for every type of business
 - **Multi-LLM Routing** — 12 models from 5 active providers (Gemini, Claude, GPT-5, Grok, Llama via Groq). NICE picks the best model for each task.
 - **Multi-Agent Orchestration** — Pipeline, Parallel, Hierarchical, and Quality Loop patterns
 - **Drag-and-Drop Slots** — Visual agent assignment, no coding required
