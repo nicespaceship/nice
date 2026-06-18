@@ -20,7 +20,7 @@ Velocity: ~4–6 loop-landed PRs/day; one focused human day = 3–5 small PRs.
 ### Phase 0 — Ship (now → ~2026-06-28)
 Credible, honest, secure soft-launch on email auth.
 - **BEN (critical path):** Google OAuth verification (the long pole — start now); console sweep (redirect allowlist, `community_review_service_key` rotation, storage policies, disable anon sign-ins, HIBP, confirm edge-fn secrets).
-- **Code:** finish P1 (`search_path` migration); marketing-honesty (catalog counts → "growing library", soften "schedule posts" until `social-mcp` ships); relabel Security Access Policies as a posture checklist; remove dead mock-LLM scaffolding; referral `?ref=` write-path; smoke-test Grok/Llama/Codex.
+- **Code:** finish P1 (`search_path` migration); marketing-honesty (catalog counts → "growing library", soften "schedule posts" until `social-mcp` ships); relabel Security Access Policies as a posture checklist; remove dead mock-LLM scaffolding; referral `?ref=` write-path; smoke-test Grok/Llama.
 
 ### Phase 1 — Stabilize (Jun 28 → ~Jul 12)
 Production-grade under real traffic.
