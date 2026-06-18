@@ -15,11 +15,12 @@
 ```
 
 ## Open
-### Q1 — Catalog-count gap: soften the numbers, or run a catalog sprint?   ·   raised 2026-06-17 · item: marketing-honesty (catalog counts)
-**Question:** The marketing site claims 500+/800+/924 blueprints but ~219 are live (53 ships + 166 agents). Do we (a) soften the public numbers to "growing library / hundreds," or (b) commit to a catalog sprint to actually reach ~500 before launch (the business-vertical ships are already seeding toward this)?
-**Default taken:** (a) soften — reversible, and matches the standing "future-proof the numbers" preference ([[feedback_brand_voice_future_proof_numbers]]). The loop will scope the www-count source before editing (counts are build-generated, not in `scripts/build.js`).
-**Why it needs you:** (b) is a real product/marketing call about whether launch waits on catalog scale. Flip it anytime and I'll redirect the week.
+### Q2 — Untested models (Grok / Llama / Codex): smoke-test before launch, or hide until verified?   ·   raised 2026-06-17 · item: smoke-test Grok/Llama/Codex
+**Question:** Grok 4.1 Fast, Llama 4 Scout, and GPT-5.3 Codex are live + user-selectable in `MODEL_CATALOG` (`model-catalog.js:48-61`), but `fuel_usage` telemetry shows they have **never** been called in prod (only `gemini-2.5-flash` has). A real end-to-end smoke-test needs an authenticated Pro session calling `nice-ai` (the headless loop can't sign in or spend tokens), so it can't ship as a code PR. Do we (a) run the smoke-test manually before launch (sign in Pro, enable each, send a prompt, confirm it streams), or (b) hide these 3 from the catalog until verified (ship fewer working models over exposing possibly-broken ones)?
+**Default taken:** none — parked. Needs an authenticated prod call (money/credentials) or a product call about catalog exposure; both are yours per the "never guess on money/security forks" rule.
+**Why it needs you:** If they error for a paying user at launch, that's a bad first impression. Multimodal is already conservatively gated off for all three (`model-catalog.js` comments); this is about whether text generation works at all. Safest is to verify or hide before launch.
 
 ## Answered
+- 2026-06-17 — *Q1 Catalog-count gap:* default (a) soften taken + shipped ([#842](https://github.com/nicespaceship/nice/pull/842)) — all public 500+/800+/924 claims → "hundreds of blueprints" across marketing, app shell, docs SSOT, README, BUSINESS.md. Reversible; flip to a catalog sprint anytime.
 - 2026-06-16 — *Autonomy envelope & cadence:* draft-and-queue (Ben merges all; nothing auto-deploys pre-launch) at a ~3-hour cycle. Revisit after launch to enable auto-merge for the safe class.
 - 2026-06-16 — *config.toml verify_jwt for the 4 MCP fns:* confirmed safe to add (all four already live as `verify_jwt=false`); it's codification, not a behavior change.
