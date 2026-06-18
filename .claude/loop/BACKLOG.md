@@ -28,10 +28,7 @@
 - `[BEN]` Google OAuth verification (CASA, long pole — start now, runs parallel) + Microsoft Entra publisher verification.
 
 ## P1 — Launch should-fixes (code)  ·  Phase 0, see [PLAN.md](PLAN.md)
-> Three Phase 0 honesty/cleanup items shipped 2026-06-17 (in review — see below): catalog counts, "schedule posts", dead mock-LLM. Remaining:
-- `[BEN]` **Smoke-test Grok + Llama (Groq)** through `nice-ai` — needs an authenticated Pro call (the loop can't sign in or spend tokens). `fuel_usage` confirms they've NEVER run in prod (only `gemini-2.5-flash` has). Q2 decided ([[QUESTIONS]]): Codex dropped ([#848](https://github.com/nicespaceship/nice/pull/848)), Grok + Llama kept — verify them before launch.
-- `[QUEUE]` **Relabel Security "Access Policies"** — the 6 toggles enforce nothing and don't persist (`security.js:63-70,418-427`). Relabel as a posture checklist so the UI stops implying protections that don't exist. Carve-out (`security.js`) → draft for Ben.
-- `[QUEUE]` **Referral `?ref=` write-path** — link + count display exist (`profile.js:287,301`) but nothing consumes `?ref=` at signup to write the `referrals` row. Touches the auth/signup flow → likely carve-out, draft for Ben.
+> **Cleared 2026-06-18.** Every Phase 0 code item shipped + merged (#842-849), and the Grok + Llama smoke-test passed (verified live — `fuel_usage` logged the real models). Next code work is **Phase 1** (see [PLAN.md](PLAN.md)); detail in the done log below.
 
 ## P2 — Post-launch backlog (from the roadmaps)
 - `[READY]` Self-service account-deletion UI (DB layer is `ON DELETE CASCADE`; mind the 6 NO-ACTION FKs — verify before wiring).
@@ -52,12 +49,12 @@
 
 ## In review (open PRs from the loop)
 _(the loop appends here when it opens a PR, and Ben removes the line when merged)_
-- [#842](https://github.com/nicespaceship/nice/pull/842) — Marketing-honesty: catalog counts → "hundreds" (all public surfaces + idempotent docs-favicon fix). build-checker PASS, 1791 tests.
-- [#843](https://github.com/nicespaceship/nice/pull/843) — Marketing-honesty: "schedule posts" → "schedule meetings" on the explore page. build-checker PASS.
-- [#844](https://github.com/nicespaceship/nice/pull/844) — Remove dead mock-LLM scaffolding from `prompt-panel.js` (~96 lines, behavior-preserving). build-checker PASS.
+_(none — all Phase 0 PRs merged)_
 
 ## Done log (most recent first, trimmed periodically)
-- 2026-06-17 — **Phase 0 honesty/cleanup (in review):** catalog-count softening ([#842](https://github.com/nicespaceship/nice/pull/842)), "schedule posts" claim ([#843](https://github.com/nicespaceship/nice/pull/843)), dead mock-LLM removal ([#844](https://github.com/nicespaceship/nice/pull/844)) — all build-checker PASS, awaiting Ben's merge. Smoke-test item reclassified `[BEN]` (needs auth — [[QUESTIONS]] Q2).
+- 2026-06-18 — **Grok + Llama smoke-test PASSED** — verified live via an authenticated Pro call; `fuel_usage` logged `grok-4-1-fast` + `llama-4-scout` with real token counts, no Gemini downgrade. Q2 fully closed; CLAUDE.md model table updated.
+- 2026-06-18 — **Phase 0 carve-outs + Codex (all merged):** Security "Access Policies" → "Recommended Controls" ([#846](https://github.com/nicespaceship/nice/pull/846)); referral `?ref=` write-path + auth-trigger migration ([#847](https://github.com/nicespaceship/nice/pull/847), verified live in prod); drop GPT-5.3 Codex from the catalog ([#848](https://github.com/nicespaceship/nice/pull/848)); Q2 loop-doc resolution ([#849](https://github.com/nicespaceship/nice/pull/849)).
+- 2026-06-17 — **Phase 0 honesty/cleanup (merged):** catalog-count softening ([#842](https://github.com/nicespaceship/nice/pull/842)), "schedule posts" claim ([#843](https://github.com/nicespaceship/nice/pull/843)), dead mock-LLM removal ([#844](https://github.com/nicespaceship/nice/pull/844)) — all build-checker PASS.
 - 2026-06-17 — **P1 cleared.** `search_path` pinned on 3 trigger helpers ([#840](https://github.com/nicespaceship/nice/pull/840), applied + verified live `search_path=""`); config.toml verify_jwt for the 4 MCP fns ([#838](https://github.com/nicespaceship/nice/pull/838), first loop output).
 - 2026-06-17 — Phased build plan + daily ritual ([#839](https://github.com/nicespaceship/nice/pull/839)); build-cycle dedup hardening ([#837](https://github.com/nicespaceship/nice/pull/837)).
 - 2026-06-16 — Build-loop infrastructure stood up (this file, QUESTIONS.md, `build-cycle` skill, `build-checker` agent).

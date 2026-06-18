@@ -472,8 +472,8 @@ Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each 
 | GPT-5 Mini | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Fast + cheap |
 | GPT-5.4 Pro | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Flagship |
 | o3 | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Reasoning |
-| Grok | xAI | Standard | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
-| Llama (Groq) | Meta | Standard | ✗ | ✗ | ✗ | ✗ | Awaiting smoke-test |
+| Grok | xAI | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-06-18; vision untested |
+| Llama (Groq) | Meta | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-06-18; vision untested |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 
