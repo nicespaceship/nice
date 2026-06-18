@@ -396,6 +396,12 @@ verify_jwt = false
 [functions.browser-proxy]
 verify_jwt = false
 
+# Self-service account deletion. Called directly from the client with the user's
+# ES256 JWT; validates the caller internally via auth.getUser and deletes only
+# that uid. Deploy with --no-verify-jwt.
+[functions.delete-account]
+verify_jwt = false
+
 # Google / Microsoft MCP servers. Not called directly from the client: invoked
 # server-to-server by mcp-gateway, which forwards the caller's Authorization
 # header (the user's ES256 JWT), so the platform gateway would reject the token

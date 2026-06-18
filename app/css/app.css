@@ -4388,6 +4388,7 @@ html:not([data-theme]) .app-main,
 }
 .settings-danger { border-color:var(--color-error); }
 .settings-danger .settings-section-title { color:var(--color-error); }
+.settings-danger-actions { display:flex; gap:.6rem; justify-content:flex-end; margin-top:.4rem; }
 .settings-collapse-toggle {
   display: flex; align-items: center; justify-content: space-between;
   cursor: pointer; user-select: none;
