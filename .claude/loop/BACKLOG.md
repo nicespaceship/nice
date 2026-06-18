@@ -12,7 +12,7 @@
 
 ## Loop rules (enforced by the `build-cycle` skill)
 1. **One PR-sized item per cycle.** Bounded scope, reviewable.
-2. **Never merge. Never auto-deploy.** Draft-and-queue: every change is a PR Ben merges (decided 2026-06-16, pre-launch posture).
+2. **Self-merge the safe class only; carve-outs queue for Ben.** Non-carve-out PRs may be self-merged once **CI is green AND the `build-checker` PASSes** (Q3, 2026-06-18 — Ben spot-checks after the fact). Carve-outs (migrations / billing / auth) stay draft-and-queue for Ben. Merging a non-carve-out PR triggers Cloudflare auto-deploy of main; that is accepted for the safe class. (Supersedes the blanket "Ben merges all" from the 2026-06-16 envelope.)
 3. **Maker ≠ checker.** Run the `build-checker` agent on the diff before opening the PR.
 4. **CI is the compiler gate.** `npm test` must pass; a red suite means fix-or-abandon, never ship.
 5. **No console / deploy / secret / money actions, ever** — those are `[BEN]`.
@@ -29,6 +29,14 @@
 
 ## P1 — Launch should-fixes (code)  ·  Phase 0, see [PLAN.md](PLAN.md)
 > **Cleared 2026-06-18.** Every Phase 0 code item shipped + merged (#842-849), and the Grok + Llama smoke-test passed (verified live — `fuel_usage` logged the real models). Next code work is **Phase 1** (see [PLAN.md](PLAN.md)); detail in the done log below.
+
+## Phase 1 — Stabilize (code)  ·  in progress, see [PLAN.md](PLAN.md)
+> Test coverage for untested load-bearing logic + defensive hardening on the recurring defect classes. Started 2026-06-17; first 3 PRs merged (#851-853, see Done log).
+- **Day 1 (merged):** ShipSlots tests ([#851](https://github.com/nicespaceship/nice/pull/851)), QualityGate tests ([#852](https://github.com/nicespaceship/nice/pull/852)), Bridge keydown-leak fix ([#853](https://github.com/nicespaceship/nice/pull/853)). **Escaping/XSS audit: CLEAN** (Utils.esc/escAttr/safeUrl holds throughout — no PR). **Realtime/listener audit: done** — 1 genuine leak fixed (#853), 7 findings were false-positive once-at-boot singletons (don't re-audit those: `_subscribeCountUpdates` guard, `PromptPanel.init` single call, mission-composer cleanup).
+- `[READY]` Test coverage: `wallet` and `prompt-panel`. **Blocked on a `views/*` render-test harness** — the existing `blueprints.test.js` stubs the view; there's no harness to mount+render a view in jsdom. Build that harness first (it also unlocks a regression test for the #853 leak), then the wallet/prompt-panel view tests.
+- `[READY]` Realtime-audit follow-ups (low severity): `blueprints.js:2009` (outbox picker) + `:3188` (compare panel) keydown handlers self-remove **only on Escape** — remove them in the close functions too. Small, same defect class as #853.
+- `[READY]` Optional: QualityGate `maxRetries: 0 → default 2` footgun (`opts.maxRetries || MAX_RETRIES`) — pinned by a test in #852; fixing to `!= null ? … : …` is an intentional behavior change.
+- `[QUEUE]` Billing-race hardening (3rd defect class) — touches carve-out billing files; lower marginal value (the v66 webhook status-race was already fixed). Prefer [READY] pre-launch.
 
 ## P2 — Post-launch backlog (from the roadmaps)
 - `[READY]` Self-service account-deletion UI (DB layer is `ON DELETE CASCADE`; mind the 6 NO-ACTION FKs — verify before wiring).
@@ -49,9 +57,10 @@
 
 ## In review (open PRs from the loop)
 _(the loop appends here when it opens a PR, and Ben removes the line when merged)_
-_(none — all Phase 0 PRs merged)_
+_(none — Phase 1 day-1 PRs merged)_
 
 ## Done log (most recent first, trimmed periodically)
+- 2026-06-18 — **Phase 1 day-1 (merged, self-merged per Q3):** ShipSlots unit tests (48; pins the +1/−1 slot-index translation, [#851](https://github.com/nicespaceship/nice/pull/851)); QualityGate unit tests (29; pins the `maxRetries: 0 → default 2` footgun, [#852](https://github.com/nicespaceship/nice/pull/852)); Bridge `document.keydown` leak fix (preview-verified 5 navs → 1 listener, [#853](https://github.com/nicespaceship/nice/pull/853)). All CI green + build-checker PASS.
 - 2026-06-18 — **Grok + Llama smoke-test PASSED** — verified live via an authenticated Pro call; `fuel_usage` logged `grok-4-1-fast` + `llama-4-scout` with real token counts, no Gemini downgrade. Q2 fully closed; CLAUDE.md model table updated.
 - 2026-06-18 — **Phase 0 carve-outs + Codex (all merged):** Security "Access Policies" → "Recommended Controls" ([#846](https://github.com/nicespaceship/nice/pull/846)); referral `?ref=` write-path + auth-trigger migration ([#847](https://github.com/nicespaceship/nice/pull/847), verified live in prod); drop GPT-5.3 Codex from the catalog ([#848](https://github.com/nicespaceship/nice/pull/848)); Q2 loop-doc resolution ([#849](https://github.com/nicespaceship/nice/pull/849)).
 - 2026-06-17 — **Phase 0 honesty/cleanup (merged):** catalog-count softening ([#842](https://github.com/nicespaceship/nice/pull/842)), "schedule posts" claim ([#843](https://github.com/nicespaceship/nice/pull/843)), dead mock-LLM removal ([#844](https://github.com/nicespaceship/nice/pull/844)) — all build-checker PASS.
