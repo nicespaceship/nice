@@ -128,6 +128,7 @@ const BlueprintsView = (() => {
   let _drawerBpIndex = -1;
   let _drawerKeyHandler = null;
   let _filterSheetEscHandler = null;
+  let _compareEscHandler = null;
   let _compareIds = [];
   let _hangarItems = [];
 
@@ -1990,6 +1991,7 @@ const BlueprintsView = (() => {
     const closeOverlay = () => {
       overlay.remove();
       document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKey);
     };
 
     const submitBtn = overlay.querySelector('.outbox-picker-submit');
@@ -2007,9 +2009,11 @@ const BlueprintsView = (() => {
     overlay.querySelector('.outbox-picker-close')?.addEventListener('click', closeOverlay);
     overlay.querySelector('.outbox-picker-cancel')?.addEventListener('click', closeOverlay);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
-    document.addEventListener('keydown', function onKey(e) {
-      if (e.key === 'Escape') { closeOverlay(); document.removeEventListener('keydown', onKey); }
-    });
+    // Close on Escape. The listener is removed inside closeOverlay so every
+    // close path (close button, cancel, backdrop, Escape) unbinds it; closing
+    // via anything but Escape used to leak a document-level keydown listener.
+    const onKey = (e) => { if (e.key === 'Escape') closeOverlay(); };
+    document.addEventListener('keydown', onKey);
 
     submitBtn.addEventListener('click', async () => {
       const selected = Array.from(overlay.querySelectorAll('.outbox-picker-check:checked')).map(c => c.value);
@@ -3187,11 +3191,13 @@ const BlueprintsView = (() => {
     panel.querySelector('.bp-compare-panel-close')?.addEventListener('click', _closeComparePanel);
     panel.addEventListener('click', (e) => { if (e.target === panel) _closeComparePanel(); });
 
-    // ESC to close compare panel
-    const _escHandler = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); _closeComparePanel(); document.removeEventListener('keydown', _escHandler); }
-    };
-    document.addEventListener('keydown', _escHandler);
+    // ESC to close. Store the handler on the module so _closeComparePanel()
+    // removes it on every close path (button, backdrop, Escape); closing via
+    // anything but Escape used to leak a document keydown listener. Drop any
+    // prior binding first in case the panel is re-opened without a close.
+    if (_compareEscHandler) document.removeEventListener('keydown', _compareEscHandler);
+    _compareEscHandler = (e) => { if (e.key === 'Escape') { e.preventDefault(); _closeComparePanel(); } };
+    document.addEventListener('keydown', _compareEscHandler);
   }
 
   function _highlightCompareDiffs(panel) {
@@ -3229,6 +3235,10 @@ const BlueprintsView = (() => {
   function _closeComparePanel() {
     const panel = document.getElementById('bp-compare-panel');
     if (panel) panel.remove();
+    if (_compareEscHandler) {
+      document.removeEventListener('keydown', _compareEscHandler);
+      _compareEscHandler = null;
+    }
   }
 
   /* ═══════════════════════════════════════════
