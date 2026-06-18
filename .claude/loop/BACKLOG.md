@@ -29,7 +29,7 @@
 
 ## P1 — Launch should-fixes (code)  ·  Phase 0, see [PLAN.md](PLAN.md)
 > Three Phase 0 honesty/cleanup items shipped 2026-06-17 (in review — see below): catalog counts, "schedule posts", dead mock-LLM. Remaining:
-- `[BEN]` **Smoke-test Grok / Llama (Groq) / Codex** through `nice-ai` — needs an authenticated Pro call (the loop can't sign in or spend tokens). `fuel_usage` confirms these have NEVER run in prod (only `gemini-2.5-flash` has). See [[QUESTIONS]] Q2: run the smoke-test or hide the 3 untested models from the catalog before launch.
+- `[BEN]` **Smoke-test Grok + Llama (Groq)** through `nice-ai` — needs an authenticated Pro call (the loop can't sign in or spend tokens). `fuel_usage` confirms they've NEVER run in prod (only `gemini-2.5-flash` has). Q2 decided ([[QUESTIONS]]): Codex dropped ([#848](https://github.com/nicespaceship/nice/pull/848)), Grok + Llama kept — verify them before launch.
 - `[QUEUE]` **Relabel Security "Access Policies"** — the 6 toggles enforce nothing and don't persist (`security.js:63-70,418-427`). Relabel as a posture checklist so the UI stops implying protections that don't exist. Carve-out (`security.js`) → draft for Ben.
 - `[QUEUE]` **Referral `?ref=` write-path** — link + count display exist (`profile.js:287,301`) but nothing consumes `?ref=` at signup to write the `referrals` row. Touches the auth/signup flow → likely carve-out, draft for Ben.
 
