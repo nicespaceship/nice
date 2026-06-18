@@ -59,14 +59,14 @@ const SecurityView = (() => {
     { id:'backup-verified',   label:'Backups verified within 30 days',     category:'Data' },
   ];
 
-  /* ── Access policy presets ──────────────────────────────────── */
+  /* ── Recommended controls (guidance, not platform-enforced) ──── */
   const POLICIES = [
-    { id:'ip-allowlist',   label:'IP Allowlisting',           icon:'lock',    desc:'Restrict agent access to approved IP ranges.',      enabled:true },
-    { id:'mfa-enforce',    label:'MFA for Sensitive Ops',     icon:'lock',    desc:'Require multi-factor auth for destructive actions.', enabled:true },
-    { id:'token-rotation', label:'Token Rotation (90 days)',  icon:'key',     desc:'Auto-rotate API keys and tokens on schedule.',      enabled:false },
-    { id:'sandbox-mode',   label:'Agent Sandboxing',          icon:'lock',    desc:'Run agents in isolated environments by default.',    enabled:true },
-    { id:'max-sessions',   label:'Max Concurrent Sessions',   icon:'profile', desc:'Limit agents to 3 concurrent sessions each.',       enabled:false },
-    { id:'data-export',    label:'Data Export Approval',      icon:'analytics',desc:'Require approval before agents export bulk data.', enabled:true },
+    { id:'ip-allowlist',   label:'IP Allowlisting',           icon:'lock',    desc:'Restrict agent access to approved IP ranges.' },
+    { id:'mfa-enforce',    label:'MFA for Sensitive Ops',     icon:'lock',    desc:'Require multi-factor auth for destructive actions.' },
+    { id:'token-rotation', label:'Token Rotation (90 days)',  icon:'key',     desc:'Auto-rotate API keys and tokens on schedule.' },
+    { id:'sandbox-mode',   label:'Agent Sandboxing',          icon:'lock',    desc:'Run agents in isolated environments by default.' },
+    { id:'max-sessions',   label:'Max Concurrent Sessions',   icon:'profile', desc:'Limit agents to 3 concurrent sessions each.' },
+    { id:'data-export',    label:'Data Export Approval',      icon:'analytics',desc:'Require approval before agents export bulk data.' },
   ];
 
   /* ── Helpers ────────────────────────────────────────────────── */
@@ -216,8 +216,8 @@ const SecurityView = (() => {
           <div class="security-stats">
             <div class="security-stat">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
-              <span class="security-stat-num">${POLICIES.filter(p => p.enabled).length}/${POLICIES.length}</span>
-              <span class="security-stat-label">Policies Active</span>
+              <span class="security-stat-num">${CHECKLIST_ITEMS.filter(c => checklist[c.id]).length}/${CHECKLIST_ITEMS.length}</span>
+              <span class="security-stat-label">Checklist Complete</span>
             </div>
             <div class="security-stat">
               <span class="status-dot dot-g"></span>
@@ -298,13 +298,13 @@ const SecurityView = (() => {
           </div>
         </div>
 
-        <!-- Access Policies -->
+        <!-- Recommended Controls -->
         <div class="security-section">
           <h3 class="security-section-title">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
-            Access Policies
+            Recommended Controls
           </h3>
-          <p class="text-muted" style="margin:0 0 12px">Enforce security rules across your agent fleet.</p>
+          <p class="text-muted" style="margin:0 0 12px">Hardening practices we recommend for production. These are guidance, not controls NICE enforces.</p>
           <div class="security-grid" id="sec-policy-grid">
             ${POLICIES.map(p => `
               <div class="security-card">
@@ -313,10 +313,6 @@ const SecurityView = (() => {
                     <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-${p.icon}"/></svg>
                     <strong>${p.label}</strong>
                   </span>
-                  <label class="toggle-switch" aria-label="Toggle ${p.label}">
-                    <input type="checkbox" class="policy-toggle" data-policy="${p.id}" ${p.enabled ? 'checked' : ''}/>
-                    <span class="toggle-slider"></span>
-                  </label>
                 </div>
                 <p class="text-muted" style="margin:6px 0 0;font-size:.82rem">${p.desc}</p>
               </div>
@@ -412,17 +408,6 @@ const SecurityView = (() => {
         checklist[cb.dataset.check] = cb.checked;
         _saveChecklist(checklist);
         _updateScore(el, checklist);
-      });
-    });
-
-    // Policy toggles (optimistic UI)
-    el.querySelectorAll('.policy-toggle').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const p = POLICIES.find(x => x.id === cb.dataset.policy);
-        if (p) p.enabled = cb.checked;
-        // Update stats
-        const statNum = el.querySelector('.security-stats .security-stat:first-child .security-stat-num');
-        if (statNum) statNum.textContent = `${POLICIES.filter(x=>x.enabled).length}/${POLICIES.length}`;
       });
     });
 
