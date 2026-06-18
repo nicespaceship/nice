@@ -209,4 +209,10 @@ describe('Router hashQuery parsing', () => {
   it('should decode + as a space (form-encoded query)', () => {
     expect(parseHashQuery('#/bridge?q=front+desk')).toEqual({ q: 'front desk' });
   });
+
+  it('should parse a referral code from the hash query (#/?ref=)', () => {
+    // The referral link profile.js emits is nicespaceship.ai/#/?ref=<8hex>,
+    // so the ref lives in the hash query, not the search string.
+    expect(parseHashQuery('#/?ref=abcd1234')).toEqual({ ref: 'abcd1234' });
+  });
 });

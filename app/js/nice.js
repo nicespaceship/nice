@@ -2225,7 +2225,9 @@ const NICE = (() => {
   /* ── UTM / referral capture ── */
   function _captureUTM() {
     const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'];
-    const params = Router.query();
+    // The referral link puts ?ref= after the hash (#/?ref=...), so merge the
+    // hash query with the search string; hash wins on conflict.
+    const params = Object.assign({}, Router.query(), Router.hashQuery());
     const captured = {};
     keys.forEach(k => { if (params[k]) captured[k] = params[k]; });
     if (!Object.keys(captured).length) return;

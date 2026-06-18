@@ -157,6 +157,26 @@ describe('SB.auth', () => {
     });
   });
 
+  it('signUp forwards a captured 8-hex referral code as metadata', async () => {
+    _mockAuth.signUp.mockResolvedValue({ data: { user: { id: '1' } }, error: null });
+    localStorage.setItem(Utils.KEYS.utmFirst, JSON.stringify({ ref: 'abcd1234' }));
+    await SB.auth.signUp('ref@test.com', 'pass123', 'Referred');
+    expect(_mockAuth.signUp).toHaveBeenCalledWith({
+      email: 'ref@test.com',
+      password: 'pass123',
+      options: { data: { display_name: 'Referred', ref: 'abcd1234' } },
+    });
+    localStorage.removeItem(Utils.KEYS.utmFirst);
+  });
+
+  it('signUp ignores a malformed referral code', async () => {
+    _mockAuth.signUp.mockResolvedValue({ data: { user: { id: '1' } }, error: null });
+    localStorage.setItem(Utils.KEYS.utmFirst, JSON.stringify({ ref: 'XYZ' }));
+    await SB.auth.signUp('ref2@test.com', 'pass123', 'Referred2');
+    expect(_mockAuth.signUp.mock.calls.at(-1)[0].options.data.ref).toBeUndefined();
+    localStorage.removeItem(Utils.KEYS.utmFirst);
+  });
+
   it('signIn calls signInWithPassword', async () => {
     _mockAuth.signInWithPassword.mockResolvedValue({ data: { user: { id: '1' } }, error: null });
     await SB.auth.signIn('test@test.com', 'pass123');
