@@ -55,14 +55,17 @@ DO $smoke$
 DECLARE
   v_bad text;
 BEGIN
-  SELECT string_agg(c.conname || '=' || c.confdeltype, ', ') INTO v_bad
+  -- confdeltype is Postgres's internal "char" type; cast to text so the ||
+  -- concatenation and the comparison below resolve unambiguously (a bare
+  -- `text || "char"` raises "operator is not unique", SQLSTATE 42725).
+  SELECT string_agg(c.conname || '=' || c.confdeltype::text, ', ') INTO v_bad
   FROM pg_constraint c
   WHERE c.conname IN (
     'marketplace_listings_author_id_fkey', 'marketplace_listings_reviewed_by_fkey', 'plugins_author_id_fkey',
     'marketplace_reviews_user_id_fkey', 'plugin_installs_user_id_fkey', 'shared_blueprints_creator_id_fkey',
     'team_invites_invited_by_fkey'
   )
-  AND c.confdeltype <> CASE c.conname
+  AND c.confdeltype::text <> CASE c.conname
     WHEN 'marketplace_listings_author_id_fkey'   THEN 'n'
     WHEN 'marketplace_listings_reviewed_by_fkey' THEN 'n'
     WHEN 'plugins_author_id_fkey'                THEN 'n'
