@@ -302,11 +302,47 @@ const SettingsView = (() => {
             </div>
             <button class="btn btn-sm btn-danger" id="btn-clear-cache">Clear</button>
           </div>
+          ${user ? `
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <span class="settings-row-name">Delete Account</span>
+              <span class="settings-row-desc">Permanently delete your account and all your data. This cannot be undone. Export your data first if you want a copy.</span>
+            </div>
+            <button class="btn btn-sm btn-danger" id="btn-delete-account">Delete</button>
+          </div>
+          ` : ''}
         </div>
 
         <div class="settings-actions">
           <button class="btn btn-primary" id="btn-settings-done">Done</button>
         </div>
+
+        ${user ? `
+        <div class="modal-overlay" id="modal-delete-account">
+          <div class="modal-box">
+            <div class="modal-hdr">
+              <h3 class="modal-title">Delete account</h3>
+              <button class="modal-close" id="close-delete-account" aria-label="Close">
+                <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p class="settings-row-desc">This permanently deletes your account, agents, spaceships, missions, integrations, and billing records. <strong>This cannot be undone.</strong> Blueprints you published to the community stay available but are no longer linked to you.</p>
+              <form id="delete-account-form" class="auth-form">
+                <div class="auth-field">
+                  <label for="delete-account-confirm">Type <strong>DELETE</strong> to confirm</label>
+                  <input type="text" id="delete-account-confirm" autocomplete="off" placeholder="DELETE" />
+                </div>
+                <div class="auth-error" id="delete-account-error"></div>
+                <div class="settings-danger-actions">
+                  <button type="button" class="btn btn-sm" id="cancel-delete-account">Cancel</button>
+                  <button type="submit" class="btn btn-sm btn-danger" id="confirm-delete-account" disabled>Delete my account</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        ` : ''}
       </div>
     `;
 
@@ -479,6 +515,49 @@ const SettingsView = (() => {
       State.set('missions', []);
       State.set('spaceships', []);
       render(el);
+    });
+
+    // Delete account — irreversible. Gated by a type-to-confirm dialog; the
+    // delete-account edge function re-verifies the caller's JWT and deletes
+    // only their own uid (DB FKs cascade personal rows / anonymize community
+    // content). On success we wipe local state, sign out, and leave the app.
+    const delModal = document.getElementById('modal-delete-account');
+    const delInput = document.getElementById('delete-account-confirm');
+    const delBtn = document.getElementById('confirm-delete-account');
+    const delError = document.getElementById('delete-account-error');
+    const closeDelModal = () => {
+      delModal?.classList.remove('open');
+      if (delInput) delInput.value = '';
+      if (delBtn) delBtn.disabled = true;
+      if (delError) delError.textContent = '';
+    };
+
+    document.getElementById('btn-delete-account')?.addEventListener('click', () => delModal?.classList.add('open'));
+    document.getElementById('close-delete-account')?.addEventListener('click', closeDelModal);
+    document.getElementById('cancel-delete-account')?.addEventListener('click', closeDelModal);
+    delModal?.addEventListener('click', (e) => { if (e.target === delModal) closeDelModal(); });
+    delInput?.addEventListener('input', () => { if (delBtn) delBtn.disabled = delInput.value.trim() !== 'DELETE'; });
+
+    document.getElementById('delete-account-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (delInput?.value.trim() !== 'DELETE') return;
+      delBtn.disabled = true;
+      delBtn.textContent = 'Deleting…';
+      if (delError) delError.textContent = '';
+      try {
+        if (typeof SB === 'undefined' || !SB.isReady()) throw new Error('Not connected. Try again.');
+        const { error } = await SB.functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
+        if (error) throw new Error(typeof error === 'string' ? error : (error.message || 'Deletion failed'));
+        try { await SB.auth.signOut(); } catch { /* already gone */ }
+        try { localStorage.clear(); } catch { /* ignore */ }
+        State.set('user', null);
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Account deleted', message: 'Your account and data have been permanently removed.', type: 'system' });
+        location.href = '/';
+      } catch (err) {
+        if (delError) delError.textContent = err.message || 'Could not delete your account. Try again.';
+        delBtn.disabled = false;
+        delBtn.textContent = 'Delete my account';
+      }
     });
   }
 
