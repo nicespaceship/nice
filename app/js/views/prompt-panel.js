@@ -3449,6 +3449,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _appMain = null;
     _mentionPopup = null;
     _messages = [];
+    _pendingAttachments = []; // drop ephemeral staged files on teardown
   }
 
   function toggle() {
@@ -3685,5 +3686,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     else _hideMonitor();
   }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies };
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange };
 })();
