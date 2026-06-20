@@ -20,6 +20,7 @@ const code = readFileSync(resolve(__dir, '../lib/favorites.js'), 'utf-8')
 eval(code);
 
 const KEY = Utils.KEYS.favorites;
+const BP_KEY = Utils.KEYS.bpFavorites;
 const stored = () => JSON.parse(localStorage.getItem(KEY) || '[]');
 
 describe('Favorites.getAll', () => {
@@ -34,6 +35,11 @@ describe('Favorites.getAll', () => {
 
   it('falls back to an empty array on corrupt JSON', () => {
     localStorage.setItem(KEY, '{not valid');
+    expect(Favorites.getAll()).toEqual([]);
+  });
+
+  it('falls back to an empty array when the stored value parses to null', () => {
+    localStorage.setItem(KEY, 'null');
     expect(Favorites.getAll()).toEqual([]);
   });
 });
@@ -104,5 +110,46 @@ describe('Favorites.toggleCurrent', () => {
     Favorites.toggleCurrent(); // add
     Favorites.toggleCurrent(); // remove
     expect(Favorites.isFavorite('/')).toBe(false);
+  });
+});
+
+describe('Favorites blueprint bookmarks', () => {
+  const bpStored = () => JSON.parse(localStorage.getItem(BP_KEY) || '[]');
+
+  it('adds a blueprint id and returns true', () => {
+    expect(Favorites.addBlueprint('bp-1')).toBe(true);
+    expect(Favorites.getBlueprintFavorites()).toEqual(['bp-1']);
+    expect(bpStored()).toEqual(['bp-1']);
+  });
+
+  it('dedupes: re-adding an existing id returns false and does not duplicate', () => {
+    Favorites.addBlueprint('bp-1');
+    expect(Favorites.addBlueprint('bp-1')).toBe(false);
+    expect(Favorites.getBlueprintFavorites()).toEqual(['bp-1']);
+  });
+
+  it('does not impose the sidebar 8-cap (blueprint bookmarks are uncapped)', () => {
+    for (let i = 0; i < 10; i++) expect(Favorites.addBlueprint('bp-' + i)).toBe(true);
+    expect(Favorites.getBlueprintFavorites()).toHaveLength(10);
+  });
+
+  it('removes a blueprint id, leaving the others intact', () => {
+    Favorites.addBlueprint('bp-1');
+    Favorites.addBlueprint('bp-2');
+    Favorites.removeBlueprint('bp-1');
+    expect(Favorites.getBlueprintFavorites()).toEqual(['bp-2']);
+  });
+
+  it('reflects membership via isBlueprintFavorite', () => {
+    Favorites.addBlueprint('bp-1');
+    expect(Favorites.isBlueprintFavorite('bp-1')).toBe(true);
+    expect(Favorites.isBlueprintFavorite('bp-2')).toBe(false);
+  });
+
+  it('keeps blueprint bookmarks in a separate store from sidebar favorites', () => {
+    Favorites.addBlueprint('bp-1');
+    expect(Favorites.getAll()).toEqual([]);          // sidebar store untouched
+    Favorites.add('/missions', 'Missions');
+    expect(Favorites.getBlueprintFavorites()).toEqual(['bp-1']); // bp store untouched
   });
 });
