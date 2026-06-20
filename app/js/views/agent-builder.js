@@ -1122,7 +1122,9 @@ const AgentBuilderView = (() => {
     }
   }
 
-  return { title, render };
+  return { title, render,
+    // Test seams: pure helpers for the agent_blueprints serialization path.
+    _buildBlueprintRow, _kebab, _resolveRoleSlug, _roleLabel };
 })();
 
 /* ── LLM Provider / Model Registry (backwards-compatible aliases from MODEL_CATALOG) ── */
