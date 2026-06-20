@@ -818,5 +818,7 @@ const SpaceshipBuilderView = (() => {
     }
   }
 
-  return { title, render };
+  return { title, render,
+    // Test seams: pure helpers for the spaceship_blueprints serialization path.
+    _buildShipBlueprintRow, _kebab };
 })();
