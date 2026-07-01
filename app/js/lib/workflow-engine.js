@@ -687,7 +687,7 @@ const WorkflowEngine = (() => {
         },
       });
       if (error) throw new Error(error?.message || String(error));
-      const parsed = _parseJSON(data?.content || '', 'agent_id');
+      const parsed = _parseJSON(_contentToString(data?.content), 'agent_id');
       if (parsed && parsed.agent_id) {
         const matched = candidateIds.indexOf(parsed.agent_id) !== -1 ? parsed.agent_id : candidateIds[0];
         return { agentId: matched, reasoning: parsed.reasoning || 'Selected by router' };
@@ -695,6 +695,18 @@ const WorkflowEngine = (() => {
     } catch { /* fall through */ }
 
     return { agentId: candidateIds[0], reasoning: 'Routing failed — defaulting to first candidate' };
+  }
+
+  /* Normalize an nice-ai response `content` (a plain string, or an array of
+     { type, text } parts) to a string before parsing. Direct engine LLM calls
+     read the raw field; the parts-array shape otherwise stringifies to
+     "[object Object]" and silently defeats _parseJSON (crew routing then always
+     fell back to the first candidate). AgentExecutor/ShipLog already flatten,
+     so only the engine's own LLM helpers need this. */
+  function _contentToString(content) {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) return content.map(p => (p && p.text) || '').join('');
+    return content == null ? '' : String(content);
   }
 
   function _parseJSON(text, requiredKey) {
@@ -1042,6 +1054,7 @@ const WorkflowEngine = (() => {
     _runAgent,
     _parseJSON,
     _parseReviewJSON,
+    _contentToString,
   };
 })();
 
