@@ -633,6 +633,37 @@ describe('WorkflowEngine — triage', () => {
     expect(routingEntry?.metadata?.reasoning).toBe('task is code-flavored');
   });
 
+  // Regression: real nice-ai returns `content` as an array of { type, text }
+  // parts, and Gemini wraps the JSON in a ```json fence. The engine passed the
+  // raw array to _parseJSON, which stringified it to "[object Object]" so every
+  // route silently fell back to the first candidate — crew routing was dead in
+  // production while the string-shaped mocks above stayed green.
+  it('routes via LLM when content is a parts-array with fenced JSON', async () => {
+    const llmCalls = [];
+    globalThis.SB = {
+      isReady: () => true,
+      functions: {
+        invoke: async (name, opts) => {
+          llmCalls.push({ name, body: opts?.body });
+          return { data: { content: [{ type: 'text', text: '```json\n{"agent_id": "coder", "reasoning": "task is code-flavored"}\n```' }] }, error: null };
+        },
+      },
+    };
+    const node = { id: 'n', type: 'triage', config: { candidates: ['researcher', 'coder', 'analyst'], prompt: 'write a parser' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Coder/); // the LLM-chosen agent, NOT first candidate (Researcher)
+    const routingEntry = _shipLogAppends.find(e => e.metadata?.type === 'routing');
+    expect(routingEntry?.metadata?.reasoning).toBe('task is code-flavored');
+  });
+
+  it('_contentToString normalizes string, parts-array, and empty shapes', () => {
+    expect(WorkflowEngine._contentToString('hi')).toBe('hi');
+    expect(WorkflowEngine._contentToString([{ type: 'text', text: 'a' }, { type: 'text', text: 'b' }])).toBe('ab');
+    expect(WorkflowEngine._contentToString([{ type: 'text', text: 'x' }, { type: 'image' }])).toBe('x');
+    expect(WorkflowEngine._contentToString(null)).toBe('');
+    expect(WorkflowEngine._contentToString(undefined)).toBe('');
+  });
+
   it('falls back to first candidate when routing LLM errors', async () => {
     globalThis.SB = {
       isReady: () => true,
