@@ -380,6 +380,31 @@ const SetupWizard = (() => {
   /*  AI GENERATION (via CrewDesigner pattern)                      */
   /* ══════════════════════════════════════════════════════════════ */
 
+  // nice-ai returns `content` as an array of {type,text} parts, not a bare
+  // string. Normalize before parsing so the wizard doesn't silently fall back
+  // to a canned template (matches WorkflowEngine._contentToString).
+  function _contentToString(content) {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) return content.map(p => (p && p.text) || '').join('');
+    return content == null ? '' : String(content);
+  }
+
+  // Permissive parse: raw string, then de-fenced, then first {...} block.
+  // Returns null if nothing parses (caller falls back to a template).
+  function _parseCrewJSON(text) {
+    const raw = (text || '').trim();
+    if (!raw) return null;
+    const candidates = [raw];
+    const fenced = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    if (fenced !== raw) candidates.push(fenced);
+    const block = raw.match(/\{[\s\S]*\}/);
+    if (block) candidates.push(block[0]);
+    for (const c of candidates) {
+      try { return JSON.parse(c); } catch { /* try next */ }
+    }
+    return null;
+  }
+
   async function _generateCrew() {
     if (typeof SB === 'undefined' || !SB.isReady()) return _fallbackCrew();
 
@@ -421,8 +446,14 @@ Rules:
 - Creative, role-specific agent names relevant to the business
 - Test mission should be immediately runnable`;
 
+    // The JSON-only demand must live in the user turn, not just the system
+    // prompt: the models reliably ignore a system-only "return JSON"
+    // instruction and answer conversationally, which fails the parse and drops
+    // to the canned fallback.
     const userPrompt = `Business: ${_data.businessDesc}
-Needs help with: ${needLabels.join(', ')}`;
+Needs help with: ${needLabels.join(', ')}
+
+Output ONLY the JSON object, starting with { and ending with }. No prose, no markdown.`;
 
     const { data, error } = await SB.functions.invoke('nice-ai', {
       body: {
@@ -433,14 +464,9 @@ Needs help with: ${needLabels.join(', ')}`;
     });
 
     if (error) throw new Error(typeof error === 'string' ? error : 'AI service error');
-    if (!data?.content) throw new Error('Empty response');
 
-    let content = data.content.trim();
-    if (content.startsWith('```')) {
-      content = content.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-    }
-    const rec = JSON.parse(content);
-    if (!rec.agents || !Array.isArray(rec.agents) || rec.agents.length === 0) {
+    const rec = _parseCrewJSON(_contentToString(data?.content));
+    if (!rec || !rec.agents || !Array.isArray(rec.agents) || rec.agents.length === 0) {
       throw new Error('Invalid recommendation structure');
     }
     return rec;
@@ -677,5 +703,5 @@ Needs help with: ${needLabels.join(', ')}`;
     setTimeout(() => el.classList.remove('wizard-shake'), 500);
   }
 
-  return { open, close, skip, shouldShow };
+  return { open, close, skip, shouldShow, _contentToString, _parseCrewJSON };
 })();
