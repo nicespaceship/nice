@@ -195,6 +195,33 @@ const CrewDesigner = (() => {
     }
   }
 
+  // nice-ai returns `content` as an array of {type,text} parts, not a bare
+  // string. Normalize before parsing so the design call doesn't silently fall
+  // back to a canned template (matches WorkflowEngine._contentToString).
+  function _contentToString(content) {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) return content.map(p => (p && p.text) || '').join('');
+    return content == null ? '' : String(content);
+  }
+
+  // Permissive parse: models sometimes wrap the JSON in ```fences``` or a
+  // stray preamble line despite the instruction. Try the raw string, then a
+  // de-fenced version, then the first {...} block. Returns null if nothing
+  // parses (caller falls back to a template).
+  function _parseCrewJSON(text) {
+    const raw = (text || '').trim();
+    if (!raw) return null;
+    const candidates = [raw];
+    const fenced = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    if (fenced !== raw) candidates.push(fenced);
+    const block = raw.match(/\{[\s\S]*\}/);
+    if (block) candidates.push(block[0]);
+    for (const c of candidates) {
+      try { return JSON.parse(c); } catch { /* try next */ }
+    }
+    return null;
+  }
+
   async function _callAI(prompt) {
     if (typeof SB === 'undefined' || !SB.isReady()) throw new Error('Supabase not ready');
 
@@ -234,21 +261,20 @@ Rules:
 
     const { data, error } = await SB.functions.invoke('nice-ai', {
       body: {
-        messages: [{ role: 'user', content: `Design an AI crew for this goal:\n${prompt}` }],
+        // The JSON-only demand must live in the user turn, not just the system
+        // prompt: the models (Gemini + Claude) reliably ignore a system-only
+        // "return JSON" instruction and answer conversationally ("Okay, let's
+        // design..."), which fails the parse and drops to the canned fallback.
+        messages: [{ role: 'user', content: `Design an AI crew (2-6 agents) for this goal:\n${prompt}\n\nOutput ONLY the JSON object, starting with { and ending with }. No prose, no markdown.` }],
         systemPrompt,
         config: { model: 'claude-haiku-4-5-20251001', max_tokens: 2048, temperature: 0.5 },
       },
     });
 
     if (error) throw new Error(typeof error === 'string' ? error : 'AI service error');
-    if (!data?.content) throw new Error('Empty response');
 
-    let content = data.content.trim();
-    if (content.startsWith('```')) {
-      content = content.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-    }
-    const rec = JSON.parse(content);
-    if (!rec.agents || !Array.isArray(rec.agents) || rec.agents.length === 0) {
+    const rec = _parseCrewJSON(_contentToString(data?.content));
+    if (!rec || !rec.agents || !Array.isArray(rec.agents) || rec.agents.length === 0) {
       throw new Error('Invalid crew structure');
     }
     return rec;
@@ -822,5 +848,5 @@ Rules:
   /*  PUBLIC API                                                    */
   /* ══════════════════════════════════════════════════════════════ */
 
-  return { open, close, isOpen };
+  return { open, close, isOpen, _contentToString, _parseCrewJSON };
 })();

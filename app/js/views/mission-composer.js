@@ -478,7 +478,11 @@ const MissionComposerView = (() => {
       },
     });
     if (error) throw new Error(typeof error === 'string' ? error : error.message || 'Composer LLM error');
-    const content = data?.content || '';
+    // nice-ai returns `content` as an array of {type,text} parts. Flatten to a
+    // string so parsePlanResponse doesn't String()-coerce it to "[object
+    // Object]" and throw. Same defect class as the CrewDesigner fix.
+    const raw = data?.content;
+    const content = Array.isArray(raw) ? raw.map(p => (p && p.text) || '').join('') : (raw || '');
     const parsed = parsePlanResponse(content);
     return normalizePlan(parsed, intent);
   }
