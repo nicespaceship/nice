@@ -675,7 +675,7 @@ const WorkflowEngine = (() => {
     const sys =
       'You are a routing agent. Pick the single best agent for the task.\n\n' +
       '## Candidates\n' + lines + '\n\n' +
-      'Respond ONLY with JSON: {"agent_id":"<id>","reasoning":"one sentence"}';
+      'Respond ONLY with JSON: {"agent_id":"<id>","reasoning":"under 10 words"}';
 
     try {
       const { data, error } = await SB.functions.invoke('nice-ai', {
@@ -683,14 +683,19 @@ const WorkflowEngine = (() => {
           model: model || 'gemini-2.5-flash',
           messages: [{ role: 'system', content: sys }, { role: 'user', content: prompt }],
           temperature: 0.2,
-          max_tokens: 256,
+          max_tokens: 512,
         },
       });
       if (error) throw new Error(error?.message || String(error));
-      const parsed = _parseJSON(_contentToString(data?.content), 'agent_id');
-      if (parsed && parsed.agent_id) {
-        const matched = candidateIds.indexOf(parsed.agent_id) !== -1 ? parsed.agent_id : candidateIds[0];
-        return { agentId: matched, reasoning: parsed.reasoning || 'Selected by router' };
+      const text = _contentToString(data?.content);
+      const parsed = _parseJSON(text, 'agent_id');
+      // Full-object parse fails when a verbose "reasoning" overruns max_tokens
+      // and truncates the closing brace. agent_id is emitted first, so recover
+      // it with a field-level match before giving up to the first candidate.
+      const agentId = (parsed && parsed.agent_id) || _extractField(text, 'agent_id');
+      if (agentId) {
+        const matched = candidateIds.indexOf(agentId) !== -1 ? agentId : candidateIds[0];
+        return { agentId: matched, reasoning: (parsed && parsed.reasoning) || 'Selected by router' };
       }
     } catch { /* fall through */ }
 
@@ -707,6 +712,14 @@ const WorkflowEngine = (() => {
     if (typeof content === 'string') return content;
     if (Array.isArray(content)) return content.map(p => (p && p.text) || '').join('');
     return content == null ? '' : String(content);
+  }
+
+  // Pull a top-level string field's value directly, tolerant of truncated or
+  // fence-wrapped JSON that a full JSON.parse would reject.
+  function _extractField(text, key) {
+    if (!text) return null;
+    const m = String(text).match(new RegExp('"' + key + '"\\s*:\\s*"([^"]+)"'));
+    return m ? m[1] : null;
   }
 
   function _parseJSON(text, requiredKey) {
@@ -1055,6 +1068,7 @@ const WorkflowEngine = (() => {
     _parseJSON,
     _parseReviewJSON,
     _contentToString,
+    _extractField,
   };
 })();
 
