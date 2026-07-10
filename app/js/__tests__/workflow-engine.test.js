@@ -656,12 +656,39 @@ describe('WorkflowEngine — triage', () => {
     expect(routingEntry?.metadata?.reasoning).toBe('task is code-flavored');
   });
 
+  // Regression: the router asks for {"agent_id","reasoning"} but a verbose
+  // reasoning overruns max_tokens and truncates the closing brace, so the full
+  // JSON.parse (and the brace-matching regex, which needs a "}") both fail and
+  // routing fell back to the first candidate. agent_id is emitted first, so a
+  // field-level match must still recover the LLM's choice.
+  it('routes via LLM when the reasoning is truncated mid-string (no closing brace)', async () => {
+    globalThis.SB = {
+      isReady: () => true,
+      functions: {
+        invoke: async () => ({
+          data: { content: [{ type: 'text', text: '{"agent_id": "coder", "reasoning": "the task asks for a parser which is squarely a code-writing job best handled by the' }] },
+          error: null,
+        }),
+      },
+    };
+    const node = { id: 'n', type: 'triage', config: { candidates: ['researcher', 'coder', 'analyst'], prompt: 'write a parser' } };
+    const out = await WorkflowEngine._executeTriage(node, '', {});
+    expect(out).toMatch(/ran:Coder/); // recovered from truncated JSON, NOT first candidate
+  });
+
   it('_contentToString normalizes string, parts-array, and empty shapes', () => {
     expect(WorkflowEngine._contentToString('hi')).toBe('hi');
     expect(WorkflowEngine._contentToString([{ type: 'text', text: 'a' }, { type: 'text', text: 'b' }])).toBe('ab');
     expect(WorkflowEngine._contentToString([{ type: 'text', text: 'x' }, { type: 'image' }])).toBe('x');
     expect(WorkflowEngine._contentToString(null)).toBe('');
     expect(WorkflowEngine._contentToString(undefined)).toBe('');
+  });
+
+  it('_extractField recovers a field from truncated or fenced JSON', () => {
+    expect(WorkflowEngine._extractField('{"agent_id":"coder","reasoning":"x"}', 'agent_id')).toBe('coder');
+    expect(WorkflowEngine._extractField('```json\n{"agent_id": "coder", "reasoning": "unclosed', 'agent_id')).toBe('coder');
+    expect(WorkflowEngine._extractField('no json here', 'agent_id')).toBeNull();
+    expect(WorkflowEngine._extractField('', 'agent_id')).toBeNull();
   });
 
   it('falls back to first candidate when routing LLM errors', async () => {
