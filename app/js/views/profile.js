@@ -98,6 +98,10 @@ const ProfileView = (() => {
               <label for="su-pass">Password</label>
               <input type="password" id="su-pass" required minlength="6" autocomplete="new-password" placeholder="Min 6 characters" />
             </div>
+            <label class="auth-accept">
+              <input type="checkbox" id="su-accept" required />
+              <span>I agree to the <a href="https://nicespaceship.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="https://nicespaceship.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
+            </label>
             <div class="auth-error" id="su-error"></div>
             <button type="submit" class="auth-submit" id="su-btn">Create Account</button>
             <div class="auth-divider"><span>or</span></div>
