@@ -2778,6 +2778,12 @@ html:not([data-theme]) .app-main,
 }
 .auth-accept a { color:var(--accent); text-decoration:none; }
 .auth-accept a:hover { text-decoration:underline; }
+.auth-consent-note {
+  font-family:var(--font-b); font-size:var(--text-xs); line-height:var(--lh-snug);
+  color:var(--text-muted); text-align:center; margin:0;
+}
+.auth-consent-note a { color:var(--accent); text-decoration:none; }
+.auth-consent-note a:hover { text-decoration:underline; }
 .auth-error { font-family:var(--font-b); font-size:.68rem; color:var(--color-error); min-height:18px; }
 .auth-submit {
   padding:10px 16px; background:var(--accent); color:var(--bg); border:none;
