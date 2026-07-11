@@ -111,10 +111,10 @@ const AuthModal = (() => {
     document.getElementById('am-form-signin').addEventListener('submit', _handleSignIn);
     document.getElementById('am-form-signup').addEventListener('submit', _handleSignUp);
     document.getElementById('am-forgot-btn').addEventListener('click', _handleForgotPassword);
-    document.getElementById('am-google-btn')?.addEventListener('click', _handleGoogleSignIn);
-    document.getElementById('am-google-btn-su')?.addEventListener('click', _handleGoogleSignIn);
-    document.getElementById('am-github-btn')?.addEventListener('click', _handleGitHubSignIn);
-    document.getElementById('am-github-btn-su')?.addEventListener('click', _handleGitHubSignIn);
+    document.getElementById('am-google-btn')?.addEventListener('click', () => _handleGoogleSignIn(false));
+    document.getElementById('am-google-btn-su')?.addEventListener('click', () => _handleGoogleSignIn(true));
+    document.getElementById('am-github-btn')?.addEventListener('click', () => _handleGitHubSignIn(false));
+    document.getElementById('am-github-btn-su')?.addEventListener('click', () => _handleGitHubSignIn(true));
   }
 
   async function _handleSignIn(e) {
@@ -181,7 +181,20 @@ const AuthModal = (() => {
     }
   }
 
-  async function _handleGoogleSignIn() {
+  // OAuth buttons are type="button", so the signup form's required terms
+  // checkbox never fires on its own — gate the redirect here instead.
+  function _termsAccepted(errEl) {
+    const accept = document.getElementById('am-su-accept');
+    if (accept?.checked) return true;
+    accept?.reportValidity();
+    if (errEl) errEl.textContent = 'Please accept the Terms of Service and Privacy Policy to continue.';
+    return false;
+  }
+
+  async function _handleGoogleSignIn(fromSignup) {
+    const errEl = document.getElementById(fromSignup ? 'am-su-error' : 'am-si-error');
+    if (fromSignup && !_termsAccepted(errEl)) return;
+    if (errEl) errEl.textContent = '';
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
@@ -197,12 +210,14 @@ const AuthModal = (() => {
       if (error) throw error;
       close();
     } catch (err) {
-      const errEl = document.getElementById('am-si-error') || document.getElementById('am-su-error');
       if (errEl) errEl.textContent = err.message || 'Google sign-in failed';
     }
   }
 
-  async function _handleGitHubSignIn() {
+  async function _handleGitHubSignIn(fromSignup) {
+    const errEl = document.getElementById(fromSignup ? 'am-su-error' : 'am-si-error');
+    if (fromSignup && !_termsAccepted(errEl)) return;
+    if (errEl) errEl.textContent = '';
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
@@ -214,7 +229,6 @@ const AuthModal = (() => {
       if (error) throw error;
       close();
     } catch (err) {
-      const errEl = document.getElementById('am-si-error') || document.getElementById('am-su-error');
       if (errEl) errEl.textContent = err.message || 'GitHub sign-in failed';
     }
   }
