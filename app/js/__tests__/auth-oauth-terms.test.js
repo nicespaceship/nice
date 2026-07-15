@@ -21,7 +21,7 @@ globalThis.Utils = {
   timeAgo: () => 'just now',
   KEYS: { voiceSample: 'nice-voice-sample', avatarUrl: 'nice-avatar-url', ephemeralSession: 'nice-ephem' },
 };
-globalThis.State = { get: () => null, set: () => {}, on: () => {}, off: () => {}, _reset: () => {} };
+globalThis.State = { get: () => null, set: () => {}, on: () => {}, off: () => {}, onScoped: () => {}, _reset: () => {} };
 globalThis.SB = {
   client: { auth: { signInWithOAuth, resetPasswordForEmail: vi.fn(), updateUser: vi.fn() } },
   isReady: () => true,
@@ -124,5 +124,29 @@ describe('AuthModal — signup terms gate', () => {
   it('sign-in tab OAuth needs no checkbox', async () => {
     document.getElementById('am-google-btn').click();
     await vi.waitFor(() => expect(signInWithOAuth).toHaveBeenCalled());
+  });
+});
+
+describe('sign-in tab implied-consent note', () => {
+  it('AuthModal renders the note in the sign-in form only', () => {
+    document.body.innerHTML = '';
+    AuthModal.close();
+    AuthModal.open();
+    const signin = document.getElementById('am-form-signin');
+    const signup = document.getElementById('am-form-signup');
+    expect(signin.querySelector('.auth-consent-note')?.textContent).toMatch(/By continuing, you agree/);
+    expect(signin.querySelectorAll('.auth-consent-note a')).toHaveLength(2);
+    expect(signup.querySelector('.auth-consent-note')).toBeNull();
+    AuthModal.close();
+  });
+
+  it('ProfileView auth surface renders the note in the sign-in form only', () => {
+    const el = document.createElement('div');
+    ProfileView.render(el);
+    const signin = el.querySelector('#form-signin');
+    const signup = el.querySelector('#form-signup');
+    expect(signin.querySelector('.auth-consent-note')?.textContent).toMatch(/By continuing, you agree/);
+    expect(signin.querySelectorAll('.auth-consent-note a')).toHaveLength(2);
+    expect(signup.querySelector('.auth-consent-note')).toBeNull();
   });
 });

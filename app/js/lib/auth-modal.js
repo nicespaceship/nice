@@ -48,6 +48,7 @@ const AuthModal = (() => {
             Sign in with GitHub
           </button>
           <button type="button" class="auth-link" id="am-forgot-btn">Forgot password?</button>
+          <p class="auth-consent-note">By continuing, you agree to the <a href="https://nicespaceship.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="https://nicespaceship.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>
         </form>
 
         <form class="auth-form" id="am-form-signup" style="display:none">
