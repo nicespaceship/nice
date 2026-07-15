@@ -2795,13 +2795,14 @@ html:not([data-theme]) .app-main,
 
 
 /* Social sign-in buttons */
-.auth-google-btn, .auth-github-btn {
+.auth-google-btn, .auth-microsoft-btn, .auth-github-btn {
   display:flex; align-items:center; justify-content:center; gap:10px;
   width:100%; padding:10px; border:1px solid var(--border); border-radius:var(--radius);
   background:var(--bg-alt); color:var(--text); font-family:var(--font-b); font-size:.78rem;
   cursor:pointer; transition:border-color .15s, background .15s;
 }
 .auth-google-btn:hover { border-color:var(--accent); background:rgba(255,255,255,.04); }
+.auth-microsoft-btn:hover { border-color:#0078d4; background:rgba(0,120,212,.08); }
 .auth-github-btn:hover { border-color:#6e40c9; background:rgba(110,64,201,.08); }
 .auth-divider {
   display:flex; align-items:center; gap:12px; color:var(--text-muted); font-size:var(--text-2xs);
