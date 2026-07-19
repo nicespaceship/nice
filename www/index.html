@@ -499,7 +499,19 @@
     </div>
   </aside>
 
-  <footer id="site-footer" class="footer"></footer>
+  <!-- Static fallback content: Google OAuth brand verification checks the
+       served homepage HTML for a privacy policy link, without executing JS.
+       Nav.renderFooter() replaces this with the full footer on load. -->
+  <footer id="site-footer" class="footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/accessibility">Accessibility</a>
+      </div>
+    </div>
+  </footer>
 
   <script src="/js/theme-lite.js"></script>
   <script src="/js/nav.js"></script>
