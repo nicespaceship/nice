@@ -474,6 +474,9 @@ Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each 
 | o3 | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Reasoning |
 | Grok | xAI | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-06-18; vision untested |
 | Llama (Groq) | Meta | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-06-18; vision untested |
+| DeepSeek V4 Flash | DeepSeek | Standard | ✗ | ✗ | ✗ | ✗ | Wired 2026-07-25; needs DEEPSEEK_API_KEY + live smoke |
+| Kimi K2.6 | Moonshot AI | Standard | ✗ | ✗ | ✗ | ✗ | Wired 2026-07-25; needs MOONSHOT_API_KEY + live smoke; vision upstream, untested |
+| Nemotron 3 Super | NVIDIA | Standard | ✗ | ✗ | ✗ | ✗ | Wired 2026-07-25 via hosted NIM; needs NVIDIA_API_KEY + live smoke |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 

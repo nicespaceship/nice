@@ -33,7 +33,7 @@ const TokenConfig = (() => {
     standard: {
       id: 'standard',
       label: 'Standard',
-      description: 'Pro plan models — GPT-5 mini, Llama 4 Scout, Grok 4.1 Fast.',
+      description: 'Pro plan models: GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron.',
       monthlyAllowance: 1000,       // Pro plan grants this every billing cycle
       requiresAddon: null,          // no add-on needed; included in Pro
     },
@@ -67,7 +67,7 @@ const TokenConfig = (() => {
      2026 — refresh on a quarterly cadence (or whenever a provider
      announces a price change) to keep cost analytics accurate.
 
-     The 9 entries below correspond to the current LLM lineup; any
+     The 12 entries below correspond to the current LLM lineup; any
      model not listed is treated as `free` by isFreeModel(). */
   const MODELS = {
     // ── Free tier (no pool, always free)
@@ -77,6 +77,11 @@ const TokenConfig = (() => {
     'gpt-5-mini':         { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.25,  output: 2.00   } },
     'llama-4-scout':      { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.11,  output: 0.34   } },
     'grok-4-1-fast':      { pool: 'standard', weight: 2,  tier: 'standard', pricing: { input: 0.20,  output: 0.50   } },
+    // Rates below fetched from provider pricing pages 2026-07-25 (DeepSeek +
+    // Moonshot first-party APIs, Nemotron via NVIDIA's hosted NIM endpoint).
+    'deepseek-v4-flash':  { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.14,  output: 0.28   } },
+    'kimi-k2-6':          { pool: 'standard', weight: 3,  tier: 'standard', pricing: { input: 0.95,  output: 4.00   } },
+    'nemotron-3-super':   { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.09,  output: 0.45   } },
 
     // ── Claude pool (Claude add-on)
     'claude-4-6-sonnet':  { pool: 'claude',   weight: 3,  tier: 'claude',   pricing: { input: 3.00,  output: 15.00  } },

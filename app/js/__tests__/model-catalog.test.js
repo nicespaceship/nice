@@ -94,7 +94,7 @@ describe('ModelCatalog.listProviders', () => {
   });
 
   it('matches the current provider roster', () => {
-    expect([...listProviders()].sort()).toEqual(['Anthropic', 'Google', 'Meta', 'OpenAI', 'xAI']);
+    expect([...listProviders()].sort()).toEqual(['Anthropic', 'DeepSeek', 'Google', 'Meta', 'Moonshot AI', 'NVIDIA', 'OpenAI', 'xAI']);
   });
 });
 
