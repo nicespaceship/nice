@@ -572,11 +572,27 @@ const AgentExecutor = (() => {
      — verified on live 2026-04-23 that Claude 4.6 + Gemini 2.5 Flash
      ignore it when tools are available via the native API. */
   function _buildSystemPrompt(blueprint, toolDescriptions) {
+    var hasTools = !!(toolDescriptions && String(toolDescriptions).trim());
+
+    // Nothing resolved (integration not connected yet): a prompt advertising
+    // tools that cannot be called confuses the model and the user. Suppress
+    // config.tools on a clone so PromptBuilder's informational "Tools
+    // available:" line stays out too, and skip the ReAct section entirely.
+    var bp = blueprint;
+    if (!hasTools && blueprint && blueprint.config
+        && Array.isArray(blueprint.config.tools) && blueprint.config.tools.length) {
+      bp = Object.assign({}, blueprint, {
+        config: Object.assign({}, blueprint.config, { tools: [] }),
+      });
+    }
+
     var identity = typeof PromptBuilder !== 'undefined'
-      ? PromptBuilder.build(blueprint)
-      : 'You are ' + (blueprint ? blueprint.name : 'NICE AI') + ', a ' +
-        ((blueprint && blueprint.config && blueprint.config.role) || 'General') + ' agent. ' +
-        ((blueprint && blueprint.flavor) || '');
+      ? PromptBuilder.build(bp)
+      : 'You are ' + (bp ? bp.name : 'NICE AI') + ', a ' +
+        ((bp && bp.config && bp.config.role) || 'General') + ' agent. ' +
+        ((bp && bp.flavor) || '');
+
+    if (!hasTools) return identity;
 
     return identity + '\n\n' +
       'You have access to the following tools:\n\n' + toolDescriptions + '\n\n' +
@@ -704,6 +720,9 @@ const AgentExecutor = (() => {
     if (modelId.startsWith('gemini-')) return 'google';
     if (modelId.startsWith('grok-')) return 'xai';
     if (modelId.startsWith('llama-')) return 'meta';
+    if (modelId.startsWith('deepseek-')) return 'deepseek';
+    if (modelId.startsWith('kimi-')) return 'moonshot';
+    if (modelId.startsWith('nemotron-')) return 'nvidia';
     return null;
   }
 
@@ -749,7 +768,16 @@ const AgentExecutor = (() => {
       auto_downgrade: true,
     };
     if (Array.isArray(toolsSchema) && toolsSchema.length > 0) {
-      requestBody.tools = _capToolsForModel(requestBody.model, toolsSchema);
+      // noTools models (tool passthrough unverified through nice-ai's
+      // translator) get no native schema on the PRIMARY call either — the
+      // system prompt's ReAct fallback still lets them call tools as text.
+      // Previously only fallback calls honored the flag.
+      const chainEntry = (typeof LLMConfig !== 'undefined' && LLMConfig.CAPABILITY_CHAIN)
+        ? LLMConfig.CAPABILITY_CHAIN.find(m => m.id === requestBody.model)
+        : null;
+      if (!chainEntry || !chainEntry.noTools) {
+        requestBody.tools = _capToolsForModel(requestBody.model, toolsSchema);
+      }
     }
 
     const _activity = (typeof LLMActivity !== 'undefined')

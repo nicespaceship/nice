@@ -62,7 +62,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 Verify the live list with `npx supabase functions list` — it drifts as integrations land.
 | Function | Purpose |
 |----------|---------|
-| `nice-ai` | Multi-provider LLM proxy (Gemini, Anthropic, OpenAI, xAI, Groq/Llama) |
+| `nice-ai` | Multi-provider LLM proxy (Gemini, Anthropic, OpenAI, xAI, Groq/Llama, DeepSeek, Moonshot/Kimi, NVIDIA/Nemotron) |
 | `nice-media` | Image/video generation proxy (Imagen 3, Veo 2, DALL-E 3, Flux) |
 | `nice-tts` | ElevenLabs-backed text-to-speech; resolves per-theme voice config |
 | `gmail-mcp` | Gmail MCP server (search, read, labels) — OAuth + service account dual auth |
@@ -641,6 +641,9 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | `OPENAI_API_KEY` | nice-ai, nice-media | Premium models |
 | `XAI_API_KEY` | nice-ai | Grok models (standard pool) |
 | `GROQ_API_KEY` | nice-ai | Llama models (standard pool, hosted on Groq) |
+| `DEEPSEEK_API_KEY` | nice-ai | DeepSeek models (standard pool) |
+| `MOONSHOT_API_KEY` | nice-ai | Kimi models (standard pool) |
+| `NVIDIA_API_KEY` | nice-ai | Nemotron via hosted NIM (standard pool, trial tier) |
 | `GOOGLE_CLIENT_ID` | google-oauth, mcp-gateway | For OAuth |
 | `GOOGLE_CLIENT_SECRET` | google-oauth, mcp-gateway | For OAuth |
 | `GOOGLE_SERVICE_ACCOUNT` | gmail-mcp | Domain-wide delegation |

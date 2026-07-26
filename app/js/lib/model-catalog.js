@@ -52,7 +52,7 @@
     { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', provider: 'DeepSeek',  speed: 'fast',    quality: 'excellent', desc: 'Frontier open-source intelligence at commodity prices. 1M context.', icon: 'circle', vision: false, pdf: false, audio: false, video: false },
     // Kimi K2.6 supports visual input upstream, but the image passthrough is
     // not smoke-tested through nice-ai yet. Flip vision once verified.
-    { id: 'kimi-k2-6',        name: 'Kimi K2.6',         provider: 'Moonshot AI', speed: 'medium', quality: 'excellent', desc: 'Agentic open-source model built for long-horizon tool work.',        icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    { id: 'kimi-k2-6',        name: 'Kimi K2.6',         provider: 'Moonshot AI', speed: 'slow',   quality: 'excellent', desc: 'Agentic open-source model built for long-horizon tool work.',        icon: 'circle', vision: false, pdf: false, audio: false, video: false },
     { id: 'nemotron-3-super', name: 'Nemotron 3 Super',  provider: 'NVIDIA',    speed: 'fast',    quality: 'good',      desc: 'Efficient open reasoning. 120B parameters, 12B active per pass.',    icon: 'circle', vision: false, pdf: false, audio: false, video: false },
 
     // ── Claude pool (Claude add-on)

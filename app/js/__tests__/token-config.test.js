@@ -59,11 +59,27 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('llama-4-scout')).toBe(1);
   });
 
-  it('Mistral Large 3, Command R+, DeepSeek R1, and Kimi K2.5 are not in the catalog (removed for cost/provider-unreachable)', () => {
+  it('legacy open-model ids are not in the catalog (superseded by the 2026-07-25 lineup)', () => {
     for (const id of ['mistral-large-3', 'command-r-plus', 'deepseek-r1', 'kimi-k2-5']) {
       expect(TokenConfig.poolFor(id)).toBeNull();
       expect(TokenConfig.isFreeModel(id)).toBe(true);
     }
+  });
+
+  it('DeepSeek V4 Flash and Nemotron 3 Super are standard pool weight 1', () => {
+    for (const id of ['deepseek-v4-flash', 'nemotron-3-super']) {
+      expect(TokenConfig.poolFor(id)).toBe('standard');
+      expect(TokenConfig.weightFor(id)).toBe(1);
+    }
+  });
+
+  it('Kimi K2.6 consumes 3 standard tokens (heaviest standard-pool weight)', () => {
+    expect(TokenConfig.poolFor('kimi-k2-6')).toBe('standard');
+    expect(TokenConfig.weightFor('kimi-k2-6')).toBe(3);
+    const weights = Object.entries(TokenConfig.MODELS)
+      .filter(([, m]) => m.pool === 'standard')
+      .map(([, m]) => m.weight);
+    expect(Math.max(...weights)).toBe(3);
   });
 
   it('Grok 4.1 Fast consumes 2 standard tokens (heavier weight, 2M context)', () => {
