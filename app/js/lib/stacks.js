@@ -36,7 +36,7 @@ const Stacks = (() => {
       tagline: 'Best of Pro alone. No add-ons.',
       icon: '💰',
       description: 'The full standard pool: coding, reasoning, long context, and budget compute across six models. Perfect for users who don\'t need flagship Claude or GPT.',
-      models: ['gpt-5-mini', 'llama-4-scout', 'grok-4-1-fast', 'deepseek-v4-flash', 'kimi-k2-6', 'nemotron-3-super', 'gemini-2-5-flash'],
+      models: ['gpt-5-mini', 'gpt-oss-120b', 'grok-4-3', 'deepseek-v4-flash', 'kimi-k2-6', 'nemotron-3-super', 'gemini-2-5-flash'],
       requires: { pro: true, addons: [] },
       niceAutoRouting: {
         reasoning:    'nemotron-3-super',
@@ -44,7 +44,7 @@ const Stacks = (() => {
         cheap:        'gemini-2-5-flash',
         code:         'deepseek-v4-flash',
         multilingual: 'gemini-2-5-flash',
-        longcontext:  'grok-4-1-fast',
+        longcontext:  'grok-4-3',
       },
     },
     builder: {
@@ -67,11 +67,11 @@ const Stacks = (() => {
       name: 'Researcher',
       tagline: 'Long context. Multimodal synthesis.',
       icon: '🔭',
-      description: 'Long documents, citation-heavy work, multi-source synthesis. 2M-token Grok for raw reach, Gemini 2.5 Pro for multimodal reasoning, Flash for cheap parallel runs.',
-      models: ['grok-4-1-fast', 'gemini-2-5-pro', 'gemini-2-5-flash'],
+      description: 'Long documents, citation-heavy work, multi-source synthesis. Grok 4.3 for reasoning-heavy research, Gemini 2.5 Pro for multimodal reasoning, Flash for cheap parallel runs.',
+      models: ['grok-4-3', 'gemini-2-5-pro', 'gemini-2-5-flash'],
       requires: { pro: true, addons: ['premium'] },
       niceAutoRouting: {
-        longcontext: 'grok-4-1-fast',
+        longcontext: 'grok-4-3',
         multimodal:  'gemini-2-5-pro',
         reasoning:   'gemini-2-5-pro',
         cheap:       'gemini-2-5-flash',
@@ -97,14 +97,16 @@ const Stacks = (() => {
       name: 'Operator',
       tagline: 'Multi-step automation. Tool use.',
       icon: '🤖',
-      description: 'Agentic workflows, tool calls, RAG retrieval. Claude Sonnet drives plans and tool calls, Llama 4 Scout handles long-context agentic work, Flash handles cheap bulk.',
-      models: ['claude-4-6-sonnet', 'llama-4-scout', 'gemini-2-5-flash'],
+      description: 'Agentic workflows, tool calls, RAG retrieval. Claude Sonnet drives plans and tool calls, GPT-OSS 120B handles fast open-model bulk work, Flash handles cheap chatter.',
+      models: ['claude-4-6-sonnet', 'gpt-oss-120b', 'gemini-2-5-flash'],
       requires: { pro: true, addons: ['claude'] },
       niceAutoRouting: {
+        // No longcontext route: gpt-oss-120b's 128K window is below free
+        // Flash's 1M, so undeclared-category routing (which lands on Flash)
+        // serves big pastes better than any model in this stack.
         agent:       'claude-4-6-sonnet',
         toolcall:    'claude-4-6-sonnet',
         retrieval:   'claude-4-6-sonnet',
-        longcontext: 'llama-4-scout',
         cheap:       'gemini-2-5-flash',
       },
     },

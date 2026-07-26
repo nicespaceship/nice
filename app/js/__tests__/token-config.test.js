@@ -54,9 +54,9 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(TokenConfig.weightFor('gpt-5-mini')).toBe(1);
   });
 
-  it('Llama 4 Scout is standard pool weight 1', () => {
-    expect(TokenConfig.poolFor('llama-4-scout')).toBe('standard');
-    expect(TokenConfig.weightFor('llama-4-scout')).toBe(1);
+  it('GPT-OSS 120B is standard pool weight 1', () => {
+    expect(TokenConfig.poolFor('gpt-oss-120b')).toBe('standard');
+    expect(TokenConfig.weightFor('gpt-oss-120b')).toBe(1);
   });
 
   it('legacy open-model ids are not in the catalog (superseded by the 2026-07-25 lineup)', () => {
@@ -82,9 +82,9 @@ describe('TokenConfig — model → pool mapping', () => {
     expect(Math.max(...weights)).toBe(3);
   });
 
-  it('Grok 4.1 Fast consumes 2 standard tokens (heavier weight, 2M context)', () => {
-    expect(TokenConfig.poolFor('grok-4-1-fast')).toBe('standard');
-    expect(TokenConfig.weightFor('grok-4-1-fast')).toBe(2);
+  it('Grok 4.3 consumes 3 standard tokens (frontier pricing, 1M context)', () => {
+    expect(TokenConfig.poolFor('grok-4-3')).toBe('standard');
+    expect(TokenConfig.weightFor('grok-4-3')).toBe(3);
   });
 
   it('Claude 4.6 Sonnet consumes 3 claude tokens', () => {
@@ -121,8 +121,8 @@ describe('TokenConfig — model → pool mapping', () => {
   it('modelsInPool returns every model bound to a pool', () => {
     const standard = TokenConfig.modelsInPool('standard');
     expect(standard).toContain('gpt-5-mini');
-    expect(standard).toContain('grok-4-1-fast');
-    expect(standard).toContain('llama-4-scout');
+    expect(standard).toContain('grok-4-3');
+    expect(standard).toContain('gpt-oss-120b');
     expect(standard).not.toContain('claude-4-6-sonnet');
 
     const claude = TokenConfig.modelsInPool('claude');
@@ -348,8 +348,8 @@ describe('TokenConfig — defaultEnabledModels (SSOT for boot + Vault default)',
   it('Pro without add-ons enables standard-pool models, not claude/premium', () => {
     const d = TokenConfig.defaultEnabledModels({ pro: true, addons: [] });
     expect(d['gpt-5-mini']).toBe(true);
-    expect(d['llama-4-scout']).toBe(true);
-    expect(d['grok-4-1-fast']).toBe(true);
+    expect(d['gpt-oss-120b']).toBe(true);
+    expect(d['grok-4-3']).toBe(true);
     expect(d['claude-4-6-sonnet']).toBe(false);
     expect(d['gpt-5-4-pro']).toBe(false);
   });

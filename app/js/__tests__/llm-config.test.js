@@ -224,9 +224,11 @@ describe('LLMConfig', () => {
 
   describe('buildFallbackChain', () => {
     it('returns models below the primary in the chain', () => {
+      // Enabled key uses the retired llama id on purpose: the alias must
+      // still unlock its replacement's chain entry.
       const chain = LLMConfig.buildFallbackChain('claude-sonnet-4-6', { 'llama-4-scout': true, 'gemini-2-5-flash': true });
       const ids = chain.map(m => m.id);
-      expect(ids).toContain('llama-4-scout');
+      expect(ids).toContain('gpt-oss-120b');
       expect(ids).toContain('gemini-2-5-flash');
       expect(ids).not.toContain('claude-sonnet-4-6');
       expect(ids).not.toContain('claude-opus-4-7'); // above primary
@@ -240,16 +242,17 @@ describe('LLMConfig', () => {
     it('excludes models not enabled by the user (except free Flash)', () => {
       const chain = LLMConfig.buildFallbackChain('claude-sonnet-4-6', { 'gemini-2-5-flash': true });
       const ids = chain.map(m => m.id);
-      expect(ids).not.toContain('llama-4-scout');
+      expect(ids).not.toContain('gpt-oss-120b');
       expect(ids).not.toContain('gpt-5-mini');
       expect(ids).toContain('gemini-2-5-flash');
     });
 
-    it('marks noTools correctly for Llama and Grok', () => {
+    it('marks noTools correctly for GPT-OSS and Grok', () => {
+      // Retired ids as enabled keys: aliases must resolve to the replacements.
       const chain = LLMConfig.buildFallbackChain('claude-4-6-sonnet', { 'llama-4-scout': true, 'grok-4-1-fast': true });
-      const llama = chain.find(m => m.id === 'llama-4-scout');
-      const grok  = chain.find(m => m.id === 'grok-4-1-fast');
-      expect(llama?.noTools).toBe(true);
+      const oss  = chain.find(m => m.id === 'gpt-oss-120b');
+      const grok = chain.find(m => m.id === 'grok-4-3');
+      expect(oss?.noTools).toBe(true);
       expect(grok?.noTools).toBe(true);
     });
 
@@ -300,8 +303,13 @@ describe('LLMConfig', () => {
       expect(LLMConfig.canonicalize('claude-4-opus')).toBe('claude-4-7-opus');
     });
 
-    it('resolves bare "grok" to "grok-4-1-fast" (catalog id)', () => {
-      expect(LLMConfig.canonicalize('grok')).toBe('grok-4-1-fast');
+    it('resolves bare "grok" to "grok-4-3" (catalog id)', () => {
+      expect(LLMConfig.canonicalize('grok')).toBe('grok-4-3');
+    });
+
+    it('resolves the retired 2026 ids to their replacements', () => {
+      expect(LLMConfig.canonicalize('grok-4-1-fast')).toBe('grok-4-3');
+      expect(LLMConfig.canonicalize('llama-4-scout')).toBe('gpt-oss-120b');
     });
 
     it('normalizes legacy claude id form to the catalog form', () => {
@@ -356,10 +364,12 @@ describe('LLMConfig', () => {
       // Spot-check the entries that previously drifted from MODEL_CATALOG
       expect(ids).toContain('claude-4-6-sonnet');
       expect(ids).toContain('claude-4-7-opus');
-      expect(ids).toContain('grok-4-1-fast');
+      expect(ids).toContain('grok-4-3');
       expect(ids).not.toContain('claude-sonnet-4-6');
       expect(ids).not.toContain('claude-opus-4-7');
       expect(ids).not.toContain('grok');
+      expect(ids).not.toContain('grok-4-1-fast');
+      expect(ids).not.toContain('llama-4-scout');
     });
 
     it('CAPABILITY_CHAIN covers every model in the TokenConfig cost SSOT', () => {
@@ -402,8 +412,8 @@ describe('LLMConfig', () => {
 
   describe('NICE Auto routing (classifyPrompt + routeAuto)', () => {
     const ALL_ON = {
-      'gemini-2-5-flash': true, 'gpt-5-mini': true, 'llama-4-scout': true,
-      'grok-4-1-fast': true, 'deepseek-v4-flash': true, 'kimi-k2-6': true,
+      'gemini-2-5-flash': true, 'gpt-5-mini': true, 'gpt-oss-120b': true,
+      'grok-4-3': true, 'deepseek-v4-flash': true, 'kimi-k2-6': true,
       'nemotron-3-super': true, 'claude-4-6-sonnet': true, 'claude-4-7-opus': true,
       'gpt-5-4-pro': true, 'openai-o3': true, 'gemini-2-5-pro': true,
     };
@@ -453,7 +463,7 @@ describe('LLMConfig', () => {
 
     it('routes each kind to the top enabled ladder preference', () => {
       expect(LLMConfig.routeAuto('refactor this function please', ALL_ON).id).toBe('deepseek-v4-flash');
-      expect(LLMConfig.routeAuto('x'.repeat(250000), ALL_ON).id).toBe('grok-4-1-fast');
+      expect(LLMConfig.routeAuto('x'.repeat(250000), ALL_ON).id).toBe('grok-4-3');
       expect(LLMConfig.routeAuto('draft an email to the team', ALL_ON).id).toBe('gpt-5-mini');
       expect(LLMConfig.routeAuto('hello there', ALL_ON).id).toBe('gemini-2-5-flash');
     });
