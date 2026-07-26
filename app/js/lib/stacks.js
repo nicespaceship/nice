@@ -245,15 +245,19 @@ const Stacks = (() => {
   /* ── NICE Auto routing ───────────────────────────────────── */
 
   /** Resolve the model NICE Auto should use for a given task category
-      under the currently-active stack. If the task isn't routed, falls
-      back to the active stack's first model, or to gemini-2-5-flash. */
+      under the currently-active stack. An undeclared category falls back
+      to the stack's declared `default` route or free Flash, NEVER to
+      models[0]: stack model lists lead with the priciest model, and an
+      undeclared category is not a mandate to spend premium tokens.
+      (LLMConfig.routeAuto reads the declared routes directly and sends
+      undeclared categories to its own standard-pool ladder.) */
   function routeFor(category) {
     const stack = activeStackObject();
     if (!stack) return 'gemini-2-5-flash';
     const routed = stack.niceAutoRouting && stack.niceAutoRouting[category];
     if (routed) return routed;
     if (stack.niceAutoRouting && stack.niceAutoRouting.default) return stack.niceAutoRouting.default;
-    return stack.models[0] || 'gemini-2-5-flash';
+    return 'gemini-2-5-flash';
   }
 
   return {

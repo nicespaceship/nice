@@ -50,8 +50,9 @@ const LLMConfig = (() => {
     { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
     { id: 'grok-4-1-fast',     tier: 'standard', noTools: true  },
     { id: 'llama-4-scout',     tier: 'standard', noTools: true  },
-    // The three OpenAI-compatible open providers advertise tool calling, but
-    // none is smoke-tested through nice-ai's translator yet; flip once verified.
+    // The three open providers passed a live TEXT smoke through nice-ai on
+    // 2026-07-25; tool calling is still unverified through the translator,
+    // so noTools stays true until a tool-call smoke passes.
     { id: 'kimi-k2-6',         tier: 'standard', noTools: true  },
     { id: 'deepseek-v4-flash', tier: 'standard', noTools: true  },
     { id: 'nemotron-3-super',  tier: 'standard', noTools: true  },
@@ -186,5 +187,115 @@ const LLMConfig = (() => {
     return isNaN(n) ? 50 : Math.max(0, Math.min(100, n));
   }
 
-  return { fromStats, forBlueprint, buildFallbackChain, canonicalize: _canonicalize, CAPABILITY_CHAIN, MODEL_ALIASES };
+  /* ── NICE Auto: per-message prompt router ─────────────────────
+     Routes each direct-chat message to a concrete model. Two-layer
+     resolution: the ACTIVE STACK's niceAutoRouting is the SSOT and
+     wins when the user runs a stack (that is the routing the Vault
+     stack cards advertise); the AUTO_PREFS ladder covers users
+     without a stack, or a stack pick that is disabled or cannot
+     read a staged attachment. Client-side on purpose: the request
+     reaches nice-ai with a concrete model id, so billing, pool
+     gating, and capability checks stay per-real-model. The
+     server-side `nice-auto` seam in nice-ai stays reserved for
+     NICE-1.
+
+     Cost posture, the load-bearing rule: the LADDERS never leave
+     the free + standard pools, so a classifier misfire costs at
+     most a weight-1-to-3 standard token from the 1000/mo Pro
+     allowance, never a Claude or Premium token. Claude and Premium
+     models are reachable through Auto ONLY via a stack-declared
+     category route; the stack card advertises exactly those routes
+     (note the Vault auto-applies the tier default stack on first
+     render, so this is tier-scoped consent, not always a click).
+     Casual chat always lands on free Flash.
+     This is a different resolver from forBlueprint() above: that
+     one answers "which model does this AGENT run on"
+     (per-blueprint, ModelIntel-informed); this one answers "which
+     model should THIS chat message use".
+
+     Ladder order favors task fit, then lower token weight. Kimi
+     ranks late everywhere: its thinking mode runs the better part
+     of a minute, which is wrong for chat latency. */
+  const AUTO_ID = 'nice-auto';
+  const AUTO_PREFS = {
+    longcontext: ['grok-4-1-fast', 'llama-4-scout', 'gemini-2-5-flash'],
+    code:        ['deepseek-v4-flash', 'gpt-5-mini', 'nemotron-3-super', 'gemini-2-5-flash'],
+    reasoning:   ['nemotron-3-super', 'gpt-5-mini', 'deepseek-v4-flash', 'kimi-k2-6', 'gemini-2-5-flash'],
+    writing:     ['gpt-5-mini', 'kimi-k2-6', 'deepseek-v4-flash', 'gemini-2-5-flash'],
+    casual:      ['gemini-2-5-flash'],
+  };
+
+  // Classifier kind → the stack routing category it maps to.
+  const AUTO_STACK_CATEGORY = {
+    longcontext: 'longcontext',
+    code:        'code',
+    reasoning:   'reasoning',
+    writing:     'draft',
+    casual:      'cheap',
+  };
+
+  function _distinct(t, re) {
+    const m = t.match(re) || [];
+    return new Set(m.map(s => s.toLowerCase())).size;
+  }
+
+  function classifyPrompt(text) {
+    const t = String(text || '');
+    // Free Flash carries a 1M-token window; only genuinely large pastes
+    // need the long-context specialists (and their standard-pool spend).
+    if (t.length > 200000) return 'longcontext';
+    // Code needs one strong signal, two distinct hard tokens, or a hard
+    // token paired with a soft one. Soft tokens are polysemous English
+    // words (class, script, query, bug), so alone they never trip the
+    // arm: "a bug in my garden and a bug in my kitchen" stays casual.
+    const strongCode = /```|\bstack trace\b|\btraceback\b|\bunit test\b|\bsyntax error\b|\brefactor\b/i.test(t);
+    const hard = _distinct(t, /\b(debug|regex|typescript|javascript|python|sql|json|endpoint|compiler)\b/gi);
+    const soft = _distinct(t, /\b(function|class|script|query|bug|exception|compiled?)\b/gi);
+    if (strongCode || hard >= 2 || (hard >= 1 && soft >= 1)) return 'code';
+    // Reasoning needs a reasoning phrase AND an analytical-domain word:
+    // "the root cause of the squeak in my dryer" stays casual.
+    if (/\b(prove|derive|theorem|step[- ]by[- ]step|trade-?offs?|root cause|pros and cons)\b/i.test(t)
+        && /\b(design|architecture|system|algorithm|equation|dataset|model|analysis|proof|math|codebase|experiment|hypothesis)\b/i.test(t)) return 'reasoning';
+    // Writing requires a creation verb aimed at a document-shaped object:
+    // "write down the milk, eggs, bread" stays casual.
+    if (/\b(write|draft|compose|rewrite|proofread)\b[^.!?\n]*\b(email|post|blog|letter|article|essay|copy|caption|newsletter|announcement|bio|description|proposal|report|memo|speech|script|presentation|press release)\b/i.test(t)) return 'writing';
+    return 'casual';
+  }
+
+  function routeAuto(text, enabledModels) {
+    const raw = enabledModels
+      || (typeof State !== 'undefined' && State.get('enabled_models'))
+      || {};
+    // Canonicalize keys (legacy maps carry dotted ids) like
+    // buildFallbackChain does, so ladder lookups never silently miss.
+    const enabled = {};
+    for (const k of Object.keys(raw)) enabled[_canonicalize(k)] = raw[k];
+    const kind = classifyPrompt(text);
+
+    // Layer 1: the active stack's routing, but only for a category the
+    // stack EXPLICITLY declares. Stacks.routeFor() falls through to the
+    // stack's first (priciest) model for undeclared categories, which
+    // would burn premium tokens on casual prose; undeclared categories
+    // belong to the ladder. Mirrors the free-first posture forBlueprint
+    // enforces for agents.
+    if (typeof Stacks !== 'undefined' && typeof Stacks.activeStackObject === 'function') {
+      const stackObj = Stacks.activeStackObject();
+      const stackPick = stackObj?.niceAutoRouting?.[AUTO_STACK_CATEGORY[kind] || 'cheap'];
+      if (stackPick && enabled[stackPick]) return { id: stackPick, kind, via: 'stack' };
+    }
+
+    // Layer 2: the preference ladder.
+    const prefs = AUTO_PREFS[kind] || AUTO_PREFS.casual;
+    for (const id of prefs) {
+      if (enabled[id]) return { id, kind, via: 'ladder' };
+    }
+
+    // Layer 3: the CHEAPEST enabled chain model (the chain is ordered
+    // priciest-first; walking it forward would re-open the very trap the
+    // stack layer closed), then the free default.
+    const any = [...CAPABILITY_CHAIN].reverse().find(m => enabled[m.id]);
+    return { id: any ? any.id : 'gemini-2-5-flash', kind, via: 'fallback' };
+  }
+
+  return { fromStats, forBlueprint, buildFallbackChain, canonicalize: _canonicalize, CAPABILITY_CHAIN, MODEL_ALIASES, AUTO_ID, AUTO_PREFS, AUTO_STACK_CATEGORY, classifyPrompt, routeAuto };
 })();
