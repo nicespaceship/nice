@@ -436,6 +436,14 @@ verify_jwt = false
 [functions.mission-executor]
 verify_jwt = false
 
+# Provider model-freshness checker. Invoked server-to-server by the
+# model_watch_tick() pg_cron job (via pg_net) with the vault-held
+# model_watch_secret as the bearer — never a user JWT — so the gateway must
+# not demand one. The function matches the bearer against the same vault
+# secret (MODEL_WATCH_SECRET env fallback) to authenticate the caller.
+[functions.model-watch]
+verify_jwt = false
+
 # Community blueprint auto-reviewer. Invoked server-to-server by the
 # _community_review_dispatch() trigger (via pg_net) with the vault-held
 # community_review_service_key as the bearer — never a user JWT, and the
