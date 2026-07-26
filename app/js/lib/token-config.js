@@ -106,7 +106,10 @@ const TokenConfig = (() => {
      defaultEnabledModels, modelsInPool, or the Vault lineup. */
   const LEGACY_MODELS = {
     // Replaced 2026-07-26: Groq deprecated Scout; xAI retires 4.1 Fast 2026-08-15.
-    // Pricing is the last-published rate the rows were recorded under.
+    // Pricing is the provider's last published rate for the id. Rows written
+    // in the transition window are billed at the REPLACEMENT's rate server
+    // side (nice-ai maps the retired ids upstream), so per-row USD estimates
+    // over that window run low; the stored fuel_cost on each row is exact.
     'llama-4-scout':  { pool: 'standard', weight: 1, pricing: { input: 0.11, output: 0.34 } },
     'grok-4-1-fast':  { pool: 'standard', weight: 2, pricing: { input: 0.20, output: 0.50 } },
   };

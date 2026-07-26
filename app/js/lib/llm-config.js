@@ -42,6 +42,24 @@ const LLMConfig = (() => {
     return MODEL_ALIASES[id] || id;
   }
 
+  // Rewrites an enabled-models map's keys to canonical ids. Used by the
+  // boot-time localStorage migration in nice.js so every consumer of
+  // enabled_models sees current ids. When both a retired key and its
+  // replacement are present, access wins (true beats false) on purpose:
+  // the server still gates every pool, so the merge can only re-show a
+  // toggle, never grant paid access.
+  function canonicalizeEnabledMap(map) {
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return { changed: false, map };
+    let changed = false;
+    const out = {};
+    for (const [id, on] of Object.entries(map)) {
+      const canonical = _canonicalize(id);
+      if (canonical !== id) changed = true;
+      out[canonical] = out[canonical] || !!on;
+    }
+    return { changed, map: out };
+  }
+
   // Ordered capability ladder — most to least capable.
   // IDs match MODEL_CATALOG so the buildFallbackChain filter matches the
   // user's enabledModels keys (which come from MODEL_CATALOG too).
@@ -311,5 +329,5 @@ const LLMConfig = (() => {
     return { id: any ? any.id : 'gemini-2-5-flash', kind, via: 'fallback' };
   }
 
-  return { fromStats, forBlueprint, buildFallbackChain, canonicalize: _canonicalize, CAPABILITY_CHAIN, MODEL_ALIASES, AUTO_ID, AUTO_PREFS, AUTO_STACK_CATEGORY, classifyPrompt, routeAuto };
+  return { fromStats, forBlueprint, buildFallbackChain, canonicalize: _canonicalize, canonicalizeEnabledMap, CAPABILITY_CHAIN, MODEL_ALIASES, AUTO_ID, AUTO_PREFS, AUTO_STACK_CATEGORY, classifyPrompt, routeAuto };
 })();

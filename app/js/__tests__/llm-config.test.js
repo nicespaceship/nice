@@ -231,6 +231,38 @@ describe('LLMConfig', () => {
     });
   });
 
+  describe('canonicalizeEnabledMap', () => {
+    it('rewrites retired keys, preserves values, reports changed', () => {
+      const { changed, map } = LLMConfig.canonicalizeEnabledMap({
+        'grok-4-1-fast': true, 'llama-4-scout': true,
+        'gpt-5-mini': false, 'gemini-2-5-flash': true,
+      });
+      expect(changed).toBe(true);
+      expect(map).toEqual({
+        'grok-4-3': true, 'gpt-oss-120b': true,
+        'gpt-5-mini': false, 'gemini-2-5-flash': true,
+      });
+    });
+
+    it('reports unchanged for an all-canonical map', () => {
+      const input = { 'gpt-5-mini': true, 'gemini-2-5-flash': true };
+      const { changed, map } = LLMConfig.canonicalizeEnabledMap(input);
+      expect(changed).toBe(false);
+      expect(map).toEqual(input);
+    });
+
+    it('lets access win when both key generations are present', () => {
+      const { map } = LLMConfig.canonicalizeEnabledMap({ 'grok-4-3': false, 'grok-4-1-fast': true });
+      expect(map['grok-4-3']).toBe(true);
+    });
+
+    it('passes through non-object input untouched', () => {
+      expect(LLMConfig.canonicalizeEnabledMap(null).changed).toBe(false);
+      expect(LLMConfig.canonicalizeEnabledMap([1, 2]).changed).toBe(false);
+      expect(LLMConfig.canonicalizeEnabledMap('hi').changed).toBe(false);
+    });
+  });
+
   describe('buildFallbackChain', () => {
     it('returns models below the primary in the chain', () => {
       // Enabled key uses the retired llama id on purpose: the alias must
