@@ -58,7 +58,7 @@ NICE IS the LLM provider — users never deal with API keys. NICE holds all prov
 - **Catalog is the three-layer schema** (the legacy single `blueprints` table was dropped in the #604 rebuild — do NOT reference it): `capabilities` (capability layer) → `agent_blueprints` (role + capability) → `spaceship_blueprints` (+ `ship_slots` for crew). Each blueprint table is partitioned via the `scope` column: `catalog` (seed library), `community` (user-published), `system` (internal/reviewer). Counts drift — verify with `SELECT scope, COUNT(*) FROM spaceship_blueprints GROUP BY scope;` (and the same on `agent_blueprints`). As of 2026-06-10: spaceships 53 catalog / 2 community / 1 system; agents 166 catalog / 65 community / 5 system.
 - **Migrations flow through CI only.** Write `supabase/migrations/<timestamp>_name.sql`, commit, push. The `supabase-migrate` GitHub Action applies it on push to main. Do NOT use the Supabase MCP `apply_migration` for committed migrations — it stamps `schema_migrations.version` with wall-clock time instead of the filename's timestamp, which desyncs local vs remote and the CI fails on the next push with "Remote migration versions not found in local migrations directory". MCP `execute_sql` is fine for ad-hoc reads and one-off non-migration writes; reserve `apply_migration` for emergency only, and always edit the schema_migrations row to use the local filename's timestamp afterwards.
 
-### Edge Functions (34)
+### Edge Functions (35)
 Verify the live list with `npx supabase functions list` — it drifts as integrations land.
 | Function | Purpose |
 |----------|---------|
@@ -77,6 +77,7 @@ Verify the live list with `npx supabase functions list` — it drifts as integra
 | `community-submit` | Community blueprint submission — runs the full gate stack server-side before inserting the `marketplace_listings` row |
 | `community-review` | 5-agent auto-reviewer that processes the submission queue; service-role-only, HS256, unaffected by ES256 sweep |
 | `browser-proxy` | Fetches web pages for agent browser tools; returns clean text |
+| `model-watch` | Daily provider model-list poller — diffs against `provider_models`, alerts admins on new/removed/EOL'd models; detect-only, adoption stays human-gated. Fired by the `model_watch_daily` pg_cron job (06:30 UTC) with the vault `model_watch_secret` |
 | `*-oauth` (19) | OAuth 2.0 authorize/callback/disconnect flows, one per remote-MCP integration: `microsoft-oauth`, `hubspot-oauth`, `github-oauth`, `slack-oauth`, `linear-oauth`, `notion-oauth`, `stripe-oauth`, `atlassian-oauth`, `cloudflare-oauth`, `cf-browser-oauth`, `cf-builds-oauth`, `cf-observability-oauth`, `sentry-oauth`, `zapier-oauth`, `airtable-oauth`, `monday-oauth`, `klaviyo-oauth`, `miro-oauth`, `replicate-oauth` |
 
 ### Edge Function JWT Verification
@@ -91,7 +92,7 @@ The function still validates the user internally via `supabase.auth.getUser()` �
 **Applied to:** `nice-ai`, `nice-media`, `nice-tts`, `mcp-gateway`, `blueprint-search`, `community-submit`, `stripe-portal`, `browser-proxy` (2026-04-20 sweep). `nice-media` and `nice-tts` were also patched to require strict internal `auth.getUser()` so `verify_jwt=false` doesn't open them to anonymous provider-credit abuse. `blueprint-search` is public by design (anon key + RLS). `browser-proxy` was rebuilt in the same sweep after being found undeployed. Not applicable: `stripe-webhook` (HMAC-signed, not JWT), the `*-oauth` functions (own flow), `community-review` (service-role only, HS256 unaffected), `gmail-mcp`/`calendar-mcp`/`drive-mcp`/`microsoft-graph-mcp` (invoked via `mcp-gateway`, not directly from client). Check the response body, not just the status code — the gateway only surfaces the `UNSUPPORTED_TOKEN_ALGORITHM` code in the body.
 
 ### Database Tables
-36 tables (`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`). The list drifts — verify before assuming a table does or doesn't exist.
+37 tables (`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`). The list drifts — verify before assuming a table does or doesn't exist.
 | Table | Purpose |
 |-------|---------|
 | `spaceship_blueprints` | Spaceship blueprints (catalog/community/system via `scope`). `config` (ship_system_prompt + reserved keys) + `card` (presentation JSONB: workflows, specialties, caps, art) |
@@ -117,6 +118,7 @@ The function still validates the user internally via `supabase.auth.getUser()` �
 | `notifications` | System notifications |
 | `error_log` | Client-side error reporting |
 | `vault_secrets` | Encrypted credential storage |
+| `provider_models` | model-watch baseline of every LLM provider's model list (service-role only; `status` active/removed, per-model `metadata`) |
 | `fuel_usage` | Per-LLM-call usage **telemetry** (free + paid), NOT a credit system: `model`, `input_tokens`/`output_tokens`, `fuel_cost` (provider COGS in USD, `numeric`), `agent_id`, `spaceship_id`. Written by `nice-ai` per call; read by the Cost Tracker + Operations analytics |
 | `subscriptions` | Stripe subscription state: `plan`, `status`, period, `addons[]` |
 | `stripe_events` | Stripe webhook event log (idempotency / replay guard) |
