@@ -12,8 +12,8 @@
    maps cleanly to mission count. See fuelToMessages() below.
 
    POOLS:
-     standard  — included in Pro. Covers GPT-5 mini, Llama 4 Scout,
-                 Grok 4.1 Fast.
+     standard  — included in Pro. Covers GPT-5 mini, GPT-OSS 120B,
+                 Grok 4.3, DeepSeek, Kimi, and Nemotron.
      claude    — Claude add-on. Covers Claude 4.6 Sonnet and 4.7 Opus.
                  Expensive models have higher weights so Opus can't
                  drain a month's allowance in a dozen messages.
@@ -33,7 +33,7 @@ const TokenConfig = (() => {
     standard: {
       id: 'standard',
       label: 'Standard',
-      description: 'Pro plan models: GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron.',
+      description: 'Pro plan models: GPT-5 mini, GPT-OSS, Grok, DeepSeek, Kimi, and Nemotron.',
       monthlyAllowance: 1000,       // Pro plan grants this every billing cycle
       requiresAddon: null,          // no add-on needed; included in Pro
     },
@@ -75,8 +75,12 @@ const TokenConfig = (() => {
 
     // ── Standard pool (Pro plan, no add-on)
     'gpt-5-mini':         { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.25,  output: 2.00   } },
-    'llama-4-scout':      { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.11,  output: 0.34   } },
-    'grok-4-1-fast':      { pool: 'standard', weight: 2,  tier: 'standard', pricing: { input: 0.20,  output: 0.50   } },
+    // gpt-oss-120b and grok-4-3 replaced llama-4-scout and grok-4-1-fast
+    // 2026-07-26 (Groq deprecated Scout 2026-06-17; xAI retires 4.1 Fast
+    // 2026-08-15). Rates from Groq and xAI pricing pages 2026-07-26; Grok
+    // 4.3 costs 6x the old Grok input rate, hence weight 3.
+    'gpt-oss-120b':       { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.15,  output: 0.60   } },
+    'grok-4-3':           { pool: 'standard', weight: 3,  tier: 'standard', pricing: { input: 1.25,  output: 2.50   } },
     // Rates below fetched from provider pricing pages 2026-07-25 (DeepSeek +
     // Moonshot first-party APIs, Nemotron via NVIDIA's hosted NIM endpoint).
     'deepseek-v4-flash':  { pool: 'standard', weight: 1,  tier: 'standard', pricing: { input: 0.14,  output: 0.28   } },
@@ -95,6 +99,21 @@ const TokenConfig = (() => {
     'gemini-2-5-pro':     { pool: 'premium',  weight: 3,  tier: 'premium',  pricing: { input: 1.25,  output: 10.00  } },
   };
 
+  /* Retired ids that still appear in usage history (fuel_usage rows,
+     token_transactions, trailing-window burn math). poolFor/weightFor keep
+     pricing them at their as-billed weight so analytics over the transition
+     window stay honest. NOT part of MODELS: they must not surface in
+     defaultEnabledModels, modelsInPool, or the Vault lineup. */
+  const LEGACY_MODELS = {
+    // Replaced 2026-07-26: Groq deprecated Scout; xAI retires 4.1 Fast 2026-08-15.
+    // Pricing is the provider's last published rate for the id. Rows written
+    // in the transition window are billed at the REPLACEMENT's rate server
+    // side (nice-ai maps the retired ids upstream), so per-row USD estimates
+    // over that window run low; the stored fuel_cost on each row is exact.
+    'llama-4-scout':  { pool: 'standard', weight: 1, pricing: { input: 0.11, output: 0.34 } },
+    'grok-4-1-fast':  { pool: 'standard', weight: 2, pricing: { input: 0.20, output: 0.50 } },
+  };
+
   /* ── Lookups ──────────────────────────────────────────────── */
 
   /** Returns { pool, weight, tier } for a model, or null if unknown. */
@@ -104,17 +123,17 @@ const TokenConfig = (() => {
 
   /** Returns the pool id a model belongs to, or null (free model). */
   function poolFor(modelId) {
-    return MODELS[modelId]?.pool || null;
+    return (MODELS[modelId] || LEGACY_MODELS[modelId])?.pool || null;
   }
 
   /** Returns the message weight for a model, or 0 if free/unknown. */
   function weightFor(modelId) {
-    return MODELS[modelId]?.weight || 0;
+    return (MODELS[modelId] || LEGACY_MODELS[modelId])?.weight || 0;
   }
 
   /** Returns true if this model never debits any pool. */
   function isFreeModel(modelId) {
-    const m = MODELS[modelId];
+    const m = MODELS[modelId] || LEGACY_MODELS[modelId];
     return !m || m.pool === null || m.weight === 0;
   }
 
@@ -122,7 +141,7 @@ const TokenConfig = (() => {
       or null if unknown. Callers should canonicalize stale aliases
       (via LLMConfig.canonicalize) before lookup. */
   function pricingFor(modelId) {
-    return MODELS[modelId]?.pricing || null;
+    return (MODELS[modelId] || LEGACY_MODELS[modelId])?.pricing || null;
   }
 
   /** Returns the list of model ids that consume from a given pool. */

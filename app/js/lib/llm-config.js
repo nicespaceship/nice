@@ -20,7 +20,14 @@ const LLMConfig = (() => {
     // Hardcoded UI defaults / broken legacy aliases (404 from nice-ai)
     'claude-4':           'claude-4-6-sonnet',
     'claude-4-opus':      'claude-4-7-opus',
-    'grok':               'grok-4-1-fast',
+    'grok':               'grok-4-3',
+
+    // Retired upstream 2026: xAI retires grok-4-1-fast 2026-08-15 (the slug
+    // already serves 4.3); Groq deprecated llama-4-scout 2026-06-17. Old
+    // enabled_models keys and stored agent configs resolve to the
+    // replacements.
+    'grok-4-1-fast':      'grok-4-3',
+    'llama-4-scout':      'gpt-oss-120b',
 
     // Naming-convention drift — both forms accepted by nice-ai today, but
     // MODEL_CATALOG (the SSOT) uses the year-family-tier form.
@@ -33,6 +40,24 @@ const LLMConfig = (() => {
   function _canonicalize(id) {
     if (!id || typeof id !== 'string') return id;
     return MODEL_ALIASES[id] || id;
+  }
+
+  // Rewrites an enabled-models map's keys to canonical ids. Used by the
+  // boot-time localStorage migration in nice.js so every consumer of
+  // enabled_models sees current ids. When both a retired key and its
+  // replacement are present, access wins (true beats false) on purpose:
+  // the server still gates every pool, so the merge can only re-show a
+  // toggle, never grant paid access.
+  function canonicalizeEnabledMap(map) {
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return { changed: false, map };
+    let changed = false;
+    const out = {};
+    for (const [id, on] of Object.entries(map)) {
+      const canonical = _canonicalize(id);
+      if (canonical !== id) changed = true;
+      out[canonical] = out[canonical] || !!on;
+    }
+    return { changed, map: out };
   }
 
   // Ordered capability ladder — most to least capable.
@@ -48,8 +73,8 @@ const LLMConfig = (() => {
     { id: 'gemini-2-5-pro',    tier: 'premium',  noTools: false },
     { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
     { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
-    { id: 'grok-4-1-fast',     tier: 'standard', noTools: true  },
-    { id: 'llama-4-scout',     tier: 'standard', noTools: true  },
+    { id: 'grok-4-3',          tier: 'standard', noTools: true  },
+    { id: 'gpt-oss-120b',      tier: 'standard', noTools: true  },
     // The three open providers passed a live TEXT smoke through nice-ai on
     // 2026-07-25; tool calling is still unverified through the translator,
     // so noTools stays true until a tool-call smoke passes.
@@ -137,7 +162,12 @@ const LLMConfig = (() => {
     // Guard: skip the check when enabled_models is unset/empty (test
     // env, pre-bootstrap state) so the existing free-default behavior
     // is preserved when we can't determine access.
-    const enabledModels = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    // Canonicalize keys like routeAuto does: saved toggles may still carry
+    // retired ids (grok-4-1-fast, llama-4-scout) that alias to the current
+    // lineup, and a raw-key lookup would wrongly deny access.
+    const rawEnabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    const enabledModels = {};
+    for (const k of Object.keys(rawEnabled)) enabledModels[_canonicalize(k)] = rawEnabled[k];
     const knowsAccess = Object.keys(enabledModels).length > 0;
     const isAccessible = (id) => id === 'gemini-2-5-flash' || !!enabledModels[id];
     if (knowsAccess && !isAccessible(model)) {
@@ -218,9 +248,11 @@ const LLMConfig = (() => {
      of a minute, which is wrong for chat latency. */
   const AUTO_ID = 'nice-auto';
   const AUTO_PREFS = {
-    longcontext: ['grok-4-1-fast', 'llama-4-scout', 'gemini-2-5-flash'],
-    code:        ['deepseek-v4-flash', 'gpt-5-mini', 'nemotron-3-super', 'gemini-2-5-flash'],
-    reasoning:   ['nemotron-3-super', 'gpt-5-mini', 'deepseek-v4-flash', 'kimi-k2-6', 'gemini-2-5-flash'],
+    // gpt-oss-120b is NOT in this ladder: its 128K window is below free
+    // Flash's 1M, so it adds nothing for genuinely large pastes.
+    longcontext: ['grok-4-3', 'gemini-2-5-flash'],
+    code:        ['deepseek-v4-flash', 'gpt-5-mini', 'nemotron-3-super', 'gpt-oss-120b', 'gemini-2-5-flash'],
+    reasoning:   ['nemotron-3-super', 'gpt-5-mini', 'deepseek-v4-flash', 'gpt-oss-120b', 'kimi-k2-6', 'gemini-2-5-flash'],
     writing:     ['gpt-5-mini', 'kimi-k2-6', 'deepseek-v4-flash', 'gemini-2-5-flash'],
     casual:      ['gemini-2-5-flash'],
   };
@@ -297,5 +329,5 @@ const LLMConfig = (() => {
     return { id: any ? any.id : 'gemini-2-5-flash', kind, via: 'fallback' };
   }
 
-  return { fromStats, forBlueprint, buildFallbackChain, canonicalize: _canonicalize, CAPABILITY_CHAIN, MODEL_ALIASES, AUTO_ID, AUTO_PREFS, AUTO_STACK_CATEGORY, classifyPrompt, routeAuto };
+  return { fromStats, forBlueprint, buildFallbackChain, canonicalize: _canonicalize, canonicalizeEnabledMap, CAPABILITY_CHAIN, MODEL_ALIASES, AUTO_ID, AUTO_PREFS, AUTO_STACK_CATEGORY, classifyPrompt, routeAuto };
 })();

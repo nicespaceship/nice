@@ -1921,6 +1921,19 @@ const NICE = (() => {
         localStorage.removeItem(oldKey);
       }
     });
+
+    // Retired model ids: rewrite enabled-model keys to their canonical
+    // replacements so every consumer of enabled_models sees current ids
+    // without per-consumer aliasing. First shipped for grok-4-1-fast ->
+    // grok-4-3 and llama-4-scout -> gpt-oss-120b (both retired upstream
+    // 2026). The rewrite itself lives in LLMConfig.canonicalizeEnabledMap.
+    try {
+      const raw = localStorage.getItem(Utils.KEYS.enabledModels);
+      if (raw && typeof LLMConfig !== 'undefined') {
+        const { changed, map } = LLMConfig.canonicalizeEnabledMap(JSON.parse(raw));
+        if (changed) localStorage.setItem(Utils.KEYS.enabledModels, JSON.stringify(map));
+      }
+    } catch (_) { /* malformed JSON: leave it, boot proceeds on defaults */ }
   }
 
   /* ── Realtime Presence ── */

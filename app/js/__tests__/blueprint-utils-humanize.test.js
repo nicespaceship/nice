@@ -27,6 +27,8 @@ describe('BlueprintUtils.humanizeModel', () => {
       expect(h('grok-4')).toBe('Grok 4');
       expect(h('grok-4-1-fast')).toBe('Grok 4.1 Fast');
       expect(h('llama-4-scout')).toBe('Llama 4 Scout');
+      expect(h('grok-4-3')).toBe('Grok 4.3');
+      expect(h('gpt-oss-120b')).toBe('GPT-OSS 120B');
     });
 
     it('humanizes the full 10-model catalog ids', () => {

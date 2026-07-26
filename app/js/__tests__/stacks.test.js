@@ -190,7 +190,7 @@ describe('Stacks — applyStack', () => {
     expect(enabled['gemini-2-5-flash']).toBe(true);
     // Models not in the Writer stack should be off
     expect(enabled['openai-o3']).toBe(false);
-    expect(enabled['grok-4-1-fast']).toBe(false);
+    expect(enabled['grok-4-3']).toBe(false);
   });
 
   it('switching stacks is a clean swap, not an additive merge', () => {
@@ -218,9 +218,9 @@ describe('Stacks — routeFor', () => {
     expect(Stacks.routeFor('polish')).toBe('claude-4-7-opus');
   });
 
-  it('routes Researcher long-context tasks to Grok 4.1 Fast', () => {
+  it('routes Researcher long-context tasks to Grok 4.3', () => {
     Stacks.applyStack('researcher');
-    expect(Stacks.routeFor('longcontext')).toBe('grok-4-1-fast');
+    expect(Stacks.routeFor('longcontext')).toBe('grok-4-3');
   });
 
   it('routes Analyst reasoning to OpenAI o3', () => {

@@ -43,12 +43,16 @@
 
     // ── Standard pool (Pro)
     { id: 'gpt-5-mini',       name: 'GPT-5 mini',        provider: 'OpenAI',    speed: 'fast',    quality: 'good',      desc: 'Low-cost, reliable general intelligence. Default workhorse.',        icon: 'circle', vision: true,  pdf: false, audio: false, video: false },
-    // Llama 4 Scout via Groq: multimodal in the model card, but Groq's passthrough
-    // of OpenAI-style image_url parts hasn't been verified end-to-end here yet.
-    { id: 'llama-4-scout',    name: 'Llama 4 Scout',     provider: 'Meta',      speed: 'medium',  quality: 'good',      desc: '10M context window for local and air-gapped environments.',          icon: 'circle', vision: false, pdf: false, audio: false, video: false },
-    // Grok 4.1 Fast: xAI supports vision, but not smoke-tested through nice-ai's
-    // OpenAI-compat translator yet. Flip to true once verified.
-    { id: 'grok-4-1-fast',    name: 'Grok 4.1 Fast',     provider: 'xAI',       speed: 'fast',    quality: 'excellent', desc: 'Industry-leading 2M token context window. Real-time research.',     icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    // GPT-OSS 120B replaced Llama 4 Scout 2026-07-26: Groq deprecated
+    // llama-4-scout on 2026-06-17 and recommends this as the migration
+    // target. Open-weights OpenAI model served on Groq hardware with the
+    // GROQ_API_KEY; vision stays false (no image support on this host).
+    { id: 'gpt-oss-120b',     name: 'GPT-OSS 120B',      provider: 'OpenAI',    speed: 'fastest', quality: 'good',      desc: 'Open-weights frontier reasoning on Groq silicon. 128K context.',     icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    // Grok 4.3 replaced Grok 4.1 Fast 2026-07-26: xAI deprecated the old
+    // model 2026-05-15 and retires it 2026-08-15 (the slug already serves
+    // 4.3). xAI supports vision upstream, but it is not smoke-tested
+    // through nice-ai's OpenAI-compat translator yet; flip once verified.
+    { id: 'grok-4-3',         name: 'Grok 4.3',          provider: 'xAI',       speed: 'fast',    quality: 'excellent', desc: '1M token context and always-on reasoning. Real-time research.',      icon: 'circle', vision: false, pdf: false, audio: false, video: false },
     { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', provider: 'DeepSeek',  speed: 'fast',    quality: 'excellent', desc: 'Frontier open-source intelligence at commodity prices. 1M context.', icon: 'circle', vision: false, pdf: false, audio: false, video: false },
     // Kimi K2.6 supports visual input upstream, but the image passthrough is
     // not smoke-tested through nice-ai yet. Flip vision once verified.
