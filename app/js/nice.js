@@ -1921,6 +1921,28 @@ const NICE = (() => {
         localStorage.removeItem(oldKey);
       }
     });
+
+    // Retired model ids: rewrite enabled-model keys to their canonical
+    // replacements (LLMConfig.MODEL_ALIASES is the SSOT) so every consumer
+    // of enabled_models sees current ids without per-consumer aliasing.
+    // First shipped for grok-4-1-fast -> grok-4-3 and llama-4-scout ->
+    // gpt-oss-120b (both retired upstream 2026).
+    try {
+      const raw = localStorage.getItem(Utils.KEYS.enabledModels);
+      if (raw && typeof LLMConfig !== 'undefined') {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          let changed = false;
+          const migrated = {};
+          for (const [id, on] of Object.entries(parsed)) {
+            const canonical = LLMConfig.canonicalize(id);
+            if (canonical !== id) changed = true;
+            migrated[canonical] = migrated[canonical] || !!on;
+          }
+          if (changed) localStorage.setItem(Utils.KEYS.enabledModels, JSON.stringify(migrated));
+        }
+      }
+    } catch (_) { /* malformed JSON: leave it, boot proceeds on defaults */ }
   }
 
   /* ── Realtime Presence ── */

@@ -12,8 +12,8 @@
    maps cleanly to mission count. See fuelToMessages() below.
 
    POOLS:
-     standard  — included in Pro. Covers GPT-5 mini, Llama 4 Scout,
-                 Grok 4.1 Fast.
+     standard  — included in Pro. Covers GPT-5 mini, GPT-OSS 120B,
+                 Grok 4.3, DeepSeek, Kimi, and Nemotron.
      claude    — Claude add-on. Covers Claude 4.6 Sonnet and 4.7 Opus.
                  Expensive models have higher weights so Opus can't
                  drain a month's allowance in a dozen messages.
@@ -33,7 +33,7 @@ const TokenConfig = (() => {
     standard: {
       id: 'standard',
       label: 'Standard',
-      description: 'Pro plan models: GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron.',
+      description: 'Pro plan models: GPT-5 mini, GPT-OSS, Grok, DeepSeek, Kimi, and Nemotron.',
       monthlyAllowance: 1000,       // Pro plan grants this every billing cycle
       requiresAddon: null,          // no add-on needed; included in Pro
     },
@@ -106,8 +106,9 @@ const TokenConfig = (() => {
      defaultEnabledModels, modelsInPool, or the Vault lineup. */
   const LEGACY_MODELS = {
     // Replaced 2026-07-26: Groq deprecated Scout; xAI retires 4.1 Fast 2026-08-15.
-    'llama-4-scout':  { pool: 'standard', weight: 1 },
-    'grok-4-1-fast':  { pool: 'standard', weight: 2 },
+    // Pricing is the last-published rate the rows were recorded under.
+    'llama-4-scout':  { pool: 'standard', weight: 1, pricing: { input: 0.11, output: 0.34 } },
+    'grok-4-1-fast':  { pool: 'standard', weight: 2, pricing: { input: 0.20, output: 0.50 } },
   };
 
   /* ── Lookups ──────────────────────────────────────────────── */
@@ -137,7 +138,7 @@ const TokenConfig = (() => {
       or null if unknown. Callers should canonicalize stale aliases
       (via LLMConfig.canonicalize) before lookup. */
   function pricingFor(modelId) {
-    return MODELS[modelId]?.pricing || null;
+    return (MODELS[modelId] || LEGACY_MODELS[modelId])?.pricing || null;
   }
 
   /** Returns the list of model ids that consume from a given pool. */

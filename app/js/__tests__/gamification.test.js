@@ -282,6 +282,18 @@ describe('Gamification', () => {
 
     it('should handle null/undefined agent gracefully', () => {
       expect(Gamification.calcAgentRarity(null).name).toBe('Common');
+    });
+
+    it('scores retired model ids identically to their replacements', () => {
+      const mk = (llm) => Gamification.calcAgentRarity({
+        type: 'General',
+        config: { llm_engine: llm, tools: ['a', 'b', 'c', 'd'], memory: false },
+      });
+      // The 2026 swap must not demote stored agents: legacy ids alias to
+      // the replacements before the MODEL_TIERS lookup.
+      expect(mk('grok-4-1-fast').score).toBe(mk('grok-4-3').score);
+      expect(mk('llama-4-scout').score).toBe(mk('gpt-oss-120b').score);
+      expect(mk('grok-4-3').score).toBeGreaterThan(mk('gemini-2-5-flash').score);
       expect(Gamification.calcAgentRarity(undefined).name).toBe('Common');
     });
 

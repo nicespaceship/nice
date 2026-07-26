@@ -345,6 +345,22 @@ describe('TokenConfig — defaultEnabledModels (SSOT for boot + Vault default)',
     }
   });
 
+  it('prices retired ids for history rows but keeps them out of the lineup', () => {
+    // LEGACY_MODELS: usage history still carries these ids; analytics must
+    // price them as-billed, while the live lineup must not surface them.
+    expect(TokenConfig.poolFor('grok-4-1-fast')).toBe('standard');
+    expect(TokenConfig.weightFor('grok-4-1-fast')).toBe(2);
+    expect(TokenConfig.poolFor('llama-4-scout')).toBe('standard');
+    expect(TokenConfig.weightFor('llama-4-scout')).toBe(1);
+    expect(TokenConfig.isFreeModel('grok-4-1-fast')).toBe(false);
+    expect(TokenConfig.pricingFor('llama-4-scout')).toEqual({ input: 0.11, output: 0.34 });
+    expect(TokenConfig.modelsInPool('standard')).not.toContain('grok-4-1-fast');
+    expect(TokenConfig.modelsInPool('standard')).not.toContain('llama-4-scout');
+    const d = TokenConfig.defaultEnabledModels({ pro: true, addons: [] });
+    expect(d['grok-4-1-fast']).toBeUndefined();
+    expect(d['llama-4-scout']).toBeUndefined();
+  });
+
   it('Pro without add-ons enables standard-pool models, not claude/premium', () => {
     const d = TokenConfig.defaultEnabledModels({ pro: true, addons: [] });
     expect(d['gpt-5-mini']).toBe(true);

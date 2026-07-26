@@ -204,6 +204,15 @@ describe('LLMConfig', () => {
       });
     });
 
+    it('grants access when enabled_models still carries a retired id', () => {
+      // A returning user whose saved toggles predate the 2026 swap: the
+      // legacy key must unlock its replacement.
+      withState({ 'grok-4-1-fast': true, 'gemini-2-5-flash': true }, () => {
+        const bp = { config: { llm_engine: 'grok-4-3' } };
+        expect(LLMConfig.forBlueprint(bp).model).toBe('grok-4-3');
+      });
+    });
+
     it('keeps the resolved model when the user has it enabled', () => {
       withState({ 'claude-4-6-sonnet': true, 'gemini-2-5-flash': true }, () => {
         const bp = { config: { llm_engine: 'claude-sonnet-4-6' } };
