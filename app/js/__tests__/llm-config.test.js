@@ -13,6 +13,18 @@ function loadModule(rel) {
 
 loadModule('lib/blueprint-utils.js');
 loadModule('lib/llm-config.js');
+loadModule('lib/stacks.js');
+// Snapshot the real module: the routeAuto tests install throwaway Stacks
+// mocks and delete the global in finally.
+const REAL_STACKS = globalThis.Stacks;
+// model-catalog.js is UMD; take the CommonJS branch (same shim as
+// model-catalog.test.js) and promote it for the reachability test.
+{
+  const code = readFileSync(resolve(__dir, '..', 'lib/model-catalog.js'), 'utf-8');
+  const mod = { exports: {} };
+  new Function('module', 'exports', code)(mod, mod.exports);
+  globalThis.ModelCatalog = mod.exports;
+}
 
 describe('LLMConfig', () => {
   describe('fromStats', () => {
@@ -385,6 +397,151 @@ describe('LLMConfig', () => {
     it('should default NaN to 50', () => {
       const cfg = LLMConfig.fromStats({ spd: 'fast' });
       expect(cfg.stream).toBe(false); // 50 < 60
+    });
+  });
+
+  describe('NICE Auto routing (classifyPrompt + routeAuto)', () => {
+    const ALL_ON = {
+      'gemini-2-5-flash': true, 'gpt-5-mini': true, 'llama-4-scout': true,
+      'grok-4-1-fast': true, 'deepseek-v4-flash': true, 'kimi-k2-6': true,
+      'nemotron-3-super': true, 'claude-4-6-sonnet': true, 'claude-4-7-opus': true,
+      'gpt-5-4-pro': true, 'openai-o3': true, 'gemini-2-5-pro': true,
+    };
+
+    it('classifies code prompts on strong signals or paired weak signals', () => {
+      expect(LLMConfig.classifyPrompt('Can you refactor this function?')).toBe('code');
+      expect(LLMConfig.classifyPrompt('here is a ```js\nblock\n```')).toBe('code');
+      expect(LLMConfig.classifyPrompt('the python script throws an exception')).toBe('code');
+    });
+
+    it('keeps ordinary prose with tech-adjacent words casual', () => {
+      expect(LLMConfig.classifyPrompt('Please select a date from the calendar')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('Should I debug my sleep schedule?')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('thanks => appreciated')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('Can you check my email and tell me if the landlord replied?')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('What is our strategy for dinner tonight?')).toBe('casual');
+    });
+
+    it('never counts repeated or soft-only tokens as code', () => {
+      expect(LLMConfig.classifyPrompt('I have a bug in my garden and a bug in my kitchen')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('Write the script for my class presentation')).toBe('writing');
+      expect(LLMConfig.classifyPrompt('I compiled a list of my yoga class attendees')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('Can you write a query letter to a literary agent about my class?')).toBe('writing');
+    });
+
+    it('does not escalate mere length into paid reasoning', () => {
+      expect(LLMConfig.classifyPrompt('word '.repeat(1200))).toBe('casual');
+    });
+
+    it('classifies very long prompts as longcontext', () => {
+      expect(LLMConfig.classifyPrompt('x'.repeat(250000))).toBe('longcontext');
+      expect(LLMConfig.classifyPrompt('x'.repeat(50000))).toBe('casual');
+    });
+
+    it('classifies reasoning and writing prompts', () => {
+      expect(LLMConfig.classifyPrompt('Walk me through the trade-offs of this system design')).toBe('reasoning');
+      expect(LLMConfig.classifyPrompt('Please draft an email to the landlord')).toBe('writing');
+    });
+
+    it('keeps everyday reasoning-phrase prose casual (needs a domain word)', () => {
+      expect(LLMConfig.classifyPrompt('How do I derive the most value from my gym membership?')).toBe('casual');
+      expect(LLMConfig.classifyPrompt("What's the root cause of the squeak in my dryer?")).toBe('casual');
+      expect(LLMConfig.classifyPrompt('Prove to me that this diet actually works')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('Explain step by step how to make sourdough starter')).toBe('casual');
+      expect(LLMConfig.classifyPrompt('Write down the milk, eggs, bread')).toBe('casual');
+    });
+
+    it('routes each kind to the top enabled ladder preference', () => {
+      expect(LLMConfig.routeAuto('refactor this function please', ALL_ON).id).toBe('deepseek-v4-flash');
+      expect(LLMConfig.routeAuto('x'.repeat(250000), ALL_ON).id).toBe('grok-4-1-fast');
+      expect(LLMConfig.routeAuto('draft an email to the team', ALL_ON).id).toBe('gpt-5-mini');
+      expect(LLMConfig.routeAuto('hello there', ALL_ON).id).toBe('gemini-2-5-flash');
+    });
+
+    it('caps ladders at the standard pool; paid pools need a stack route', () => {
+      const paidPools = new Set(['claude', 'premium']);
+      for (const id of Object.values(LLMConfig.AUTO_PREFS).flat()) {
+        const pool = TokenConfig.poolFor(id);
+        expect(paidPools.has(pool), `${id} (${pool} pool) must not sit in a ladder`).toBe(false);
+      }
+    });
+
+    it('makes every catalog model reachable via ladders or stack routes', () => {
+      const reachable = new Set(Object.values(LLMConfig.AUTO_PREFS).flat());
+      for (const stack of Object.values(REAL_STACKS.STACKS)) {
+        for (const id of Object.values(stack.niceAutoRouting || {})) reachable.add(id);
+      }
+      for (const m of ModelCatalog.MODEL_CATALOG) {
+        expect(reachable.has(m.id), `${m.id} unreachable by NICE Auto`).toBe(true);
+      }
+    });
+
+    it('skips disabled models and walks down the ladder', () => {
+      const noDeepseek = { ...ALL_ON, 'deepseek-v4-flash': false };
+      expect(LLMConfig.routeAuto('debug this stack trace', noDeepseek).id).toBe('gpt-5-mini');
+    });
+
+    it('falls back to the free default when nothing preferred is enabled', () => {
+      expect(LLMConfig.routeAuto('refactor this code', {}).id).toBe('gemini-2-5-flash');
+    });
+
+    it('prefers a stack-DECLARED category route over the ladder', () => {
+      globalThis.Stacks = {
+        activeStackObject: () => ({ niceAutoRouting: { code: 'gpt-5-4-pro', cheap: 'gemini-2-5-flash' } }),
+      };
+      try {
+        const r = LLMConfig.routeAuto('refactor this function', ALL_ON);
+        expect(r.id).toBe('gpt-5-4-pro');
+        expect(r.via).toBe('stack');
+      } finally {
+        delete globalThis.Stacks;
+      }
+    });
+
+    it('sends UNDECLARED stack categories to the ladder, never models[0]', () => {
+      globalThis.Stacks = {
+        // Builder-like stack: declares code, not draft. routeFor's models[0]
+        // fallthrough must not be consulted for writing prompts.
+        activeStackObject: () => ({ niceAutoRouting: { code: 'gpt-5-4-pro', cheap: 'gemini-2-5-flash' }, models: ['gpt-5-4-pro'] }),
+        routeFor: () => { throw new Error('routeFor must not be called'); },
+      };
+      try {
+        const r = LLMConfig.routeAuto('draft an email to the landlord', ALL_ON);
+        expect(r.id).toBe('gpt-5-mini');
+        expect(r.via).toBe('ladder');
+      } finally {
+        delete globalThis.Stacks;
+      }
+    });
+
+    it('canonicalizes legacy dotted ids in the enabled map', () => {
+      expect(LLMConfig.routeAuto('hello there', { 'gemini-2.5-flash': true }).id).toBe('gemini-2-5-flash');
+    });
+
+    it('falls past a stack pick the user disabled', () => {
+      globalThis.Stacks = {
+        activeStackObject: () => ({ niceAutoRouting: { code: 'gpt-5-4-pro' } }),
+      };
+      try {
+        const r = LLMConfig.routeAuto('refactor this function', { ...ALL_ON, 'gpt-5-4-pro': false });
+        expect(r.id).toBe('deepseek-v4-flash');
+        expect(r.via).toBe('ladder');
+      } finally {
+        delete globalThis.Stacks;
+      }
+    });
+
+    it('ignores stacks when none is active', () => {
+      globalThis.Stacks = { activeStackObject: () => null };
+      try {
+        expect(LLMConfig.routeAuto('hello', ALL_ON).id).toBe('gemini-2-5-flash');
+      } finally {
+        delete globalThis.Stacks;
+      }
+    });
+
+    it('exposes AUTO_ID for the panel dropdown', () => {
+      expect(LLMConfig.AUTO_ID).toBe('nice-auto');
     });
   });
 

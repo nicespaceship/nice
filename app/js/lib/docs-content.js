@@ -374,7 +374,7 @@
       <ul>
         <li><strong>Default:</strong> Gemini 2.5 Flash (free for everyone)</li>
         <li><strong>Per-agent:</strong> Set a preferred model in the Agent Builder</li>
-        <li><strong>NICE Auto:</strong> Automatically picks the best available model based on task complexity</li>
+        <li><strong>NICE Auto:</strong> Routes each chat message to the best enabled model. Your active stack's routing wins when you run one; otherwise code goes to a coding model, long documents to a long-context model, and casual chat stays on free Gemini Flash</li>
         <li><strong>Model Intel:</strong> Over time, NICE learns which models perform best for each agent and optimizes automatically</li>
       </ul>
 

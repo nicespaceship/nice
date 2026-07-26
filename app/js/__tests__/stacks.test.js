@@ -228,10 +228,11 @@ describe('Stacks — routeFor', () => {
     expect(Stacks.routeFor('reasoning')).toBe('openai-o3');
   });
 
-  it('falls back to default routing when category is unknown', () => {
+  it('falls back to free Flash when category is unknown, never models[0]', () => {
     Stacks.applyStack('writer');
-    // 'unknown_category' isn't in writer's routing map → falls back to first model
-    expect(Stacks.routeFor('unknown_category')).toBe('claude-4-7-opus');
+    // 'unknown_category' isn't in writer's routing map; the stack's first
+    // model is Opus, and an undeclared category must not spend it.
+    expect(Stacks.routeFor('unknown_category')).toBe('gemini-2-5-flash');
   });
 
   it('falls back to gemini-2-5-flash when no stack is active', () => {

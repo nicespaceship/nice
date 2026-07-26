@@ -87,6 +87,7 @@ const PromptPanel = (() => {
   // Previous model-select value — used to revert when a user tries to switch
   // to a model that doesn't support a currently-staged attachment type.
   let _lastModelValue = null;
+  let _userPickedModel = false;
   // Classification rules + size caps live in AttachmentUtils (lib/attachment-utils.js)
   // so they can be unit-tested without booting the panel.
 
@@ -1785,6 +1786,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       return;
     }
     _lastModelValue = newVal;
+    _userPickedModel = true;
   }
 
   /**
@@ -1923,6 +1925,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _getSelectedModel() {
     const modelSelect = _panel?.querySelector('#nice-ai-model');
     const val = modelSelect?.value || 'gemini-2.5-flash';
+    // NICE Auto is a routing pseudo-model, resolved per message at send time.
+    if (typeof LLMConfig !== 'undefined' && val === LLMConfig.AUTO_ID) {
+      return { id: LLMConfig.AUTO_ID, label: 'NICE Auto', auto: true };
+    }
     // Check LLM_MODELS registry first (supports all providers)
     if (typeof LLM_MODELS !== 'undefined') {
       const entry = LLM_MODELS.find(m => m.id === val);
@@ -1990,6 +1996,28 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     history.push({ role: 'user', content: buildUserContent(userText, currentAttachments) });
 
     const sel = _getSelectedModel();
+    // NICE Auto resolves here, per message, so the request carries a concrete
+    // model id and billing/gating stay per-real-model. Candidates are the
+    // enabled models that can also read every staged attachment; the router's
+    // final fallback is Gemini Flash, the multimodal catch-all.
+    if (sel.auto && typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
+      const caps = new Set();
+      for (const a of currentAttachments) {
+        const c = AttachmentUtils.requiredCapability(a.kind);
+        if (c) caps.add(c);
+      }
+      const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+      const candidates = {};
+      for (const id of Object.keys(enabled)) {
+        candidates[id] = !!enabled[id] && _modelSatisfies(id, caps);
+      }
+      const routed = LLMConfig.routeAuto(userText, candidates);
+      const routedLabel = (typeof LLM_MODELS !== 'undefined'
+        ? LLM_MODELS.find(m => m.id === routed.id)?.label
+        : null) || routed.id;
+      sel.id = routed.id;
+      sel.label = `NICE Auto → ${routedLabel}`;
+    }
     const model = opts.modelOverride || sel.id;
     const modelLabel = opts.modelOverride
       ? (typeof LLM_MODELS !== 'undefined'
@@ -2650,7 +2678,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Only show enabled models (free models default to on)
     const enabledModels = LLM_MODELS.filter(m => enabled[m.id]);
     if (!enabledModels.length) return; // keep default Gemini option
+    const prev = select.value;
     select.innerHTML = '';
+    // NICE Auto heads the list: routes each message to the best enabled model.
+    if (typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
+      const auto = document.createElement('option');
+      auto.value = LLMConfig.AUTO_ID;
+      auto.textContent = 'NICE Auto';
+      auto.title = 'Routes each message to the best enabled model. Casual chat stays on the free model.';
+      select.appendChild(auto);
+    }
     // Group by provider, only show providers with enabled models
     LLM_PROVIDERS.forEach(p => {
       const models = enabledModels.filter(m => m.provider === p.id);
@@ -2665,10 +2702,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       });
       select.appendChild(grp);
     });
-    // Default to Gemini 2.5 Flash if available, otherwise first option
-    const gemini = select.querySelector('option[value="gemini-2.5-flash"]');
-    if (gemini) gemini.selected = true;
-    else if (select.options.length) select.selectedIndex = 0;
+    // Keep a pick the user made themselves when it survived the repopulate
+    // (the pre-populate placeholder is not a user choice; ids normalize
+    // dotted/dashed). Otherwise default to NICE Auto, then Gemini Flash.
+    const prevNorm = String(prev || '').replace(/\./g, '-');
+    const survivor = prevNorm && Array.from(select.options).find(o => o.value.replace(/\./g, '-') === prevNorm);
+    if (_userPickedModel && survivor) {
+      survivor.selected = true;
+    } else {
+      const auto = select.querySelector(`option[value="${typeof LLMConfig !== 'undefined' ? LLMConfig.AUTO_ID : 'nice-auto'}"]`);
+      const gemini = select.querySelector('option[value="gemini-2.5-flash"], option[value="gemini-2-5-flash"]');
+      if (auto) auto.selected = true;
+      else if (gemini) gemini.selected = true;
+      else if (select.options.length) select.selectedIndex = 0;
+    }
     _syncAttachVisibility();
   }
 
@@ -3422,6 +3469,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function destroy() {
     // Abort in-flight LLM requests
     if (_abortCtrl) { _abortCtrl.abort(); _abortCtrl = null; }
+    _userPickedModel = false;
+    _lastModelValue = null;
     // Stop speech recognition & mic
     if (_recognition) { try { _recognition.stop(); } catch (_) {} _recognition = null; }
     if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
@@ -3686,5 +3735,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     else _hideMonitor();
   }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange };
+  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel };
 })();

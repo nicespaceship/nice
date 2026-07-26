@@ -474,11 +474,13 @@ Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each 
 | o3 | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Reasoning |
 | Grok | xAI | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-06-18; vision untested |
 | Llama (Groq) | Meta | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-06-18; vision untested |
-| DeepSeek V4 Flash | DeepSeek | Standard | ✗ | ✗ | ✗ | ✗ | Wired 2026-07-25; needs DEEPSEEK_API_KEY + live smoke |
-| Kimi K2.6 | Moonshot AI | Standard | ✗ | ✗ | ✗ | ✗ | Wired 2026-07-25; needs MOONSHOT_API_KEY + live smoke; vision upstream, untested |
-| Nemotron 3 Super | NVIDIA | Standard | ✗ | ✗ | ✗ | ✗ | Wired 2026-07-25 via hosted NIM; needs NVIDIA_API_KEY + live smoke |
+| DeepSeek V4 Flash | DeepSeek | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25; tools untested |
+| Kimi K2.6 | Moonshot AI | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 (thinking mode ~80s); tools + vision untested |
+| Nemotron 3 Super | NVIDIA | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 via hosted NIM (trial tier); tools untested |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
+
+**NICE Auto (per-message chat routing).** The prompt panel's model dropdown defaults to `nice-auto`, resolved client-side per message by `LLMConfig.routeAuto`: the active stack's `niceAutoRouting` wins for categories it explicitly declares; otherwise a preference ladder routes by prompt kind (code / longcontext / reasoning / writing / casual). **Ladders never leave the free + standard pools** — Claude/Premium models are reachable through Auto only via a stack-declared route. Casual chat always lands on free Gemini Flash. This is a separate resolver from per-agent LLMs (`LLMConfig.forBlueprint` + ModelIntel): agents keep their assigned models, and the server-side `nice-auto` alias in `nice-ai` stays reserved for NICE-1.
 
 ### Token Credit System
 - Three independent pools: **Standard**, **Claude**, **Premium** — each tied to its own subscription
