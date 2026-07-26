@@ -362,6 +362,9 @@
           <tr><td>GPT-5 mini</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Low-cost reliable workhorse</td></tr>
           <tr><td>Llama 4 Scout</td><td>Meta</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>10M context for local and air-gapped environments</td></tr>
           <tr><td>Grok 4.1 Fast</td><td>xAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>2M context, real-time research</td></tr>
+          <tr><td>DeepSeek V4 Flash</td><td>DeepSeek</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Frontier open-source intelligence, 1M context</td></tr>
+          <tr><td>Kimi K2.6</td><td>Moonshot AI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Agentic open-source model for long-horizon work</td></tr>
+          <tr><td>Nemotron 3 Super</td><td>NVIDIA</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Efficient open reasoning, 12B active parameters</td></tr>
           <tr><td>Claude 4.6 Sonnet</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Best balance of speed, cost, and reasoning</td></tr>
           <tr><td>Claude 4.7 Opus</td><td>Anthropic</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>Expert writing and nuanced synthesis</td></tr>
           <tr><td>GPT-5.4 Pro</td><td>OpenAI</td><td><span class="docs-badge docs-badge-pro">Premium</span></td><td>1M context multimodal flagship</td></tr>
@@ -392,7 +395,7 @@
         <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
           <tr><td>Free</td><td>$0</td><td>6 slots, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
-          <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month — covers GPT-5 mini, Llama 4 Scout, Grok 4.1 Fast</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
           <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>

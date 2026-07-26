@@ -543,33 +543,50 @@ const ShipLog = (() => {
     // params.model reflects the actually-used model (may differ from config.model after fallback)
     let model = params.model || 'gemini-2.5-flash';
 
+    // nice-ai normalizes every provider's stream to Anthropic-shaped
+    // `content_block_delta` events (delta.text); the raw OpenAI and bare
+    // `content` shapes are kept as fallbacks. A carry buffer joins SSE
+    // lines that straddle network chunks — dropping the partial tail lost
+    // words mid-reply and the final usage event.
+    let carry = '';
+    const parseLine = (line) => {
+      if (!line.startsWith('data: ')) return;
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === '[DONE]' || !jsonStr) return;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const delta = (parsed.type === 'content_block_delta' && typeof parsed.delta?.text === 'string')
+          ? parsed.delta.text
+          : (parsed.choices?.[0]?.delta?.content
+            || (typeof parsed.content === 'string' ? parsed.content : '')
+            // Canonical parts array (the recurring nice-ai shape): join texts.
+            || (Array.isArray(parsed.content)
+              ? parsed.content.filter(p => p && typeof p.text === 'string').map(p => p.text).join('')
+              : '')
+            || '');
+        if (delta) {
+          fullContent += delta;
+          if (onChunk) onChunk(delta);
+        }
+        if (parsed.model) model = parsed.model;
+        if (parsed.usage) {
+          const inT  = parsed.usage.input_tokens  || 0;
+          const outT = parsed.usage.output_tokens || 0;
+          if (inT + outT > 0) _activityTokens = inT + outT;
+        }
+      } catch { /* skip unparseable lines */ }
+    };
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      // Parse SSE lines: "data: {...}\n\n"
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
-          if (delta) {
-            fullContent += delta;
-            if (onChunk) onChunk(delta);
-          }
-          if (parsed.model) model = parsed.model;
-          if (parsed.usage) {
-            const inT  = parsed.usage.input_tokens  || 0;
-            const outT = parsed.usage.output_tokens || 0;
-            if (inT + outT > 0) _activityTokens = inT + outT;
-          }
-        } catch { /* skip unparseable lines */ }
-      }
+      const text = carry + decoder.decode(value, { stream: true });
+      const lines = text.split('\n');
+      carry = lines.pop() ?? '';
+      for (const line of lines) parseLine(line);
     }
+    carry += decoder.decode();
+    if (carry) parseLine(carry);
 
     // No end-of-stream usage event: fall back to a rough char-based estimate so
     // the chip shows *some* number rather than 0.

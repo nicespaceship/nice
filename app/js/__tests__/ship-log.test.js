@@ -586,6 +586,49 @@ describe('ShipLog', () => {
         await ShipLog.execute('ship-stream-anon', { id: 'a1', name: 'StreamBot', config: {} }, 'hi', { onChunk });
         expect(_capturedHeaders.Authorization).toBe('Bearer ' + _ANON_KEY);
       });
+
+      // nice-ai normalizes every provider's stream to content_block_delta
+      // events. The parser silently accumulated an empty reply for that
+      // shape (it only read the raw OpenAI delta), and dropped SSE lines
+      // straddling network chunks. These pin the fixed parser.
+      const _withSSE = (chunks) => {
+        globalThis.fetch = async (url, opts) => {
+          _capturedHeaders = opts?.headers || {};
+          const stream = new ReadableStream({
+            start(controller) {
+              for (const c of chunks) controller.enqueue(new TextEncoder().encode(c));
+              controller.close();
+            },
+          });
+          return { ok: true, status: 200, body: stream };
+        };
+      };
+
+      it('accumulates content from normalized content_block_delta events', async () => {
+        _withSSE(['data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"Hello "}}\n\n'
+          + 'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"world"}}\n\n'
+          + 'data: [DONE]\n\n']);
+        const got = [];
+        await ShipLog.execute('ship-norm', { id: 'a1', name: 'StreamBot', config: {} }, 'hi', { onChunk: (d) => got.push(d) });
+        expect(got.join('')).toBe('Hello world');
+      });
+
+      it('still reads the raw OpenAI delta shape', async () => {
+        _withSSE(['data: {"choices":[{"delta":{"content":"raw"}}]}\n\ndata: [DONE]\n\n']);
+        const got = [];
+        await ShipLog.execute('ship-raw', { id: 'a1', name: 'StreamBot', config: {} }, 'hi', { onChunk: (d) => got.push(d) });
+        expect(got.join('')).toBe('raw');
+      });
+
+      it('joins an SSE line that straddles two network chunks', async () => {
+        _withSSE([
+          'data: {"type":"content_block_delta","delta":{"type":"text_del',
+          'ta","text":"split"}}\n\ndata: [DONE]\n\n',
+        ]);
+        const got = [];
+        await ShipLog.execute('ship-split', { id: 'a1', name: 'StreamBot', config: {} }, 'hi', { onChunk: (d) => got.push(d) });
+        expect(got.join('')).toBe('split');
+      });
     });
 
     // 2026-05-16: previous session (#515) added MODEL_ALIASES to canonicalize

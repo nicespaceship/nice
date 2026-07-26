@@ -1574,3 +1574,78 @@ describe('ShipBehaviors', () => {
     expect(b.budgetUsedToday).toBe(300);
   });
 });
+
+// ── Disconnected-integration prompt + noTools primary enforcement ──
+// (a) When an agent's config.tools resolve to nothing (integration not
+// connected), the system prompt must advertise NO tools: neither the
+// executor's "You have access to..." section nor PromptBuilder's
+// informational "Tools available:" line. (b) noTools models get no
+// native tools schema on the PRIMARY call; the prompt's ReAct section
+// stays available when tools DID resolve.
+describe('tool advertising and noTools primary', () => {
+  let _origSB, _origShipLog, _origLLMConfig, _capturedRequests;
+  const RESOLVED_ID = 'mcp:test:resolved_tool';
+
+  beforeEach(() => {
+    _capturedRequests = [];
+    _origSB = globalThis.SB;
+    globalThis.SB = {
+      functions: {
+        invoke: async (_name, opts) => {
+          _capturedRequests.push(opts?.body || null);
+          return {
+            data: { content: 'Final Answer: done.', stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } },
+            error: null,
+          };
+        },
+      },
+    };
+    _origShipLog = globalThis.ShipLog;
+    globalThis.ShipLog = { append: () => Promise.resolve({ id: 'sl-1' }) };
+    _origLLMConfig = globalThis.LLMConfig;
+  });
+
+  afterEach(() => {
+    globalThis.SB = _origSB;
+    globalThis.ShipLog = _origShipLog;
+    globalThis.LLMConfig = _origLLMConfig;
+    ToolRegistry.deregister(RESOLVED_ID);
+  });
+
+  it('advertises no tools at all when none resolve (disconnected integration)', async () => {
+    const controller = AgentExecutor.converse(
+      { id: 'agent-dc-1', name: 'Store Owner', config: { role: 'Captain', tools: ['gmail_search_messages', 'calendar_list_events'] } },
+      { tools: ['gmail_search_messages', 'calendar_list_events'], spaceshipId: 'ship-dc' },
+    );
+    await controller.send('hello');
+    const sys = _capturedRequests[0].messages[0].content;
+    expect(sys).not.toContain('gmail_search_messages');
+    expect(sys).not.toContain('Tools available');
+    expect(sys).not.toContain('You have access to the following tools');
+    expect(_capturedRequests[0].tools).toBeUndefined();
+  });
+
+  it('withholds the native schema from a noTools primary while keeping the ReAct prompt', async () => {
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({ model: 'grok-4-1-fast', temperature: 0.3, max_tokens: 1024, fallbackChain: [] }),
+      CAPABILITY_CHAIN: [{ id: 'grok-4-1-fast', tier: 'standard', noTools: true }],
+    };
+    ToolRegistry.register({
+      id: RESOLVED_ID,
+      name: 'resolved_tool',
+      description: 'A live tool',
+      schema: { type: 'object', properties: {} },
+      execute: async () => 'ok',
+    });
+    const controller = AgentExecutor.converse(
+      { id: 'agent-nt-1', name: 'GrokBot', config: { role: 'Assistant', tools: ['resolved_tool'], llm_engine: 'grok-4-1-fast' } },
+      { tools: ['resolved_tool'], spaceshipId: 'ship-nt' },
+    );
+    await controller.send('hello');
+    expect(_capturedRequests[0].model).toBe('grok-4-1-fast');
+    expect(_capturedRequests[0].tools).toBeUndefined();
+    const sys = _capturedRequests[0].messages[0].content;
+    expect(sys).toContain('You have access to the following tools');
+    expect(sys).toContain('resolved_tool');
+  });
+});
