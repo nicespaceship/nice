@@ -50,6 +50,11 @@ const LLMConfig = (() => {
     { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
     { id: 'grok-4-1-fast',     tier: 'standard', noTools: true  },
     { id: 'llama-4-scout',     tier: 'standard', noTools: true  },
+    // The three OpenAI-compatible open providers advertise tool calling, but
+    // none is smoke-tested through nice-ai's translator yet; flip once verified.
+    { id: 'kimi-k2-6',         tier: 'standard', noTools: true  },
+    { id: 'deepseek-v4-flash', tier: 'standard', noTools: true  },
+    { id: 'nemotron-3-super',  tier: 'standard', noTools: true  },
     { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
   ];
 

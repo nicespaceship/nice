@@ -33,7 +33,7 @@
 }(typeof self !== 'undefined' ? self : this, function () {
 
   /* ── Catalog ──────────────────────────────────────────────────
-     The 10 entries below match TokenConfig.MODELS (which is the
+     The 12 entries below match TokenConfig.MODELS (which is the
      SSOT for pool + weight). This catalog adds presentation-only
      fields like provider, speed, quality, and description copy.
      Capability flags drive prompt-panel attachment gating. */
@@ -49,6 +49,11 @@
     // Grok 4.1 Fast: xAI supports vision, but not smoke-tested through nice-ai's
     // OpenAI-compat translator yet. Flip to true once verified.
     { id: 'grok-4-1-fast',    name: 'Grok 4.1 Fast',     provider: 'xAI',       speed: 'fast',    quality: 'excellent', desc: 'Industry-leading 2M token context window. Real-time research.',     icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', provider: 'DeepSeek',  speed: 'fast',    quality: 'excellent', desc: 'Frontier open-source intelligence at commodity prices. 1M context.', icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    // Kimi K2.6 supports visual input upstream, but the image passthrough is
+    // not smoke-tested through nice-ai yet. Flip vision once verified.
+    { id: 'kimi-k2-6',        name: 'Kimi K2.6',         provider: 'Moonshot AI', speed: 'medium', quality: 'excellent', desc: 'Agentic open-source model built for long-horizon tool work.',        icon: 'circle', vision: false, pdf: false, audio: false, video: false },
+    { id: 'nemotron-3-super', name: 'Nemotron 3 Super',  provider: 'NVIDIA',    speed: 'fast',    quality: 'good',      desc: 'Efficient open reasoning. 120B parameters, 12B active per pass.',    icon: 'circle', vision: false, pdf: false, audio: false, video: false },
 
     // ── Claude pool (Claude add-on)
     { id: 'claude-4-6-sonnet', name: 'Claude 4.6 Sonnet', provider: 'Anthropic', speed: 'fast',    quality: 'excellent', desc: 'Best balance of speed, cost, and intelligence. Production default.', icon: 'circle', vision: true,  pdf: true,  audio: false, video: false },

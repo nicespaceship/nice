@@ -218,6 +218,9 @@ const BlueprintUtils = (() => {
     'grok-4':                      'Grok 4',
     'grok-4-1-fast':               'Grok 4.1 Fast',
     'llama-4-scout':               'Llama 4 Scout',
+    'deepseek-v4-flash':           'DeepSeek V4 Flash',
+    'kimi-k2-6':                   'Kimi K2.6',
+    'nemotron-3-super':            'Nemotron 3 Super',
   };
   const _MODEL_SHORT_NAMES = {
     'nice-auto':                   'NICE Auto',
@@ -239,6 +242,9 @@ const BlueprintUtils = (() => {
     'grok-4':                      'Grok 4',
     'grok-4-1-fast':               'Grok Fast',
     'llama-4-scout':               'Llama Scout',
+    'deepseek-v4-flash':           'DeepSeek',
+    'kimi-k2-6':                   'Kimi',
+    'nemotron-3-super':            'Nemotron',
   };
   function humanizeModel(id) {
     if (!id || typeof id !== 'string') return '';
