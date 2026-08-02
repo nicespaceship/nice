@@ -700,22 +700,31 @@ const AgentExecutor = (() => {
      OpenAI rejects requests with more than 128 function declarations:
        400 Invalid 'tools': array too long. Expected an array with maximum
        length 128, but got an array with length 284 instead.
-     Anthropic and Gemini have no comparable count-based cap in current
-     documentation, so we leave their bodies untouched. Grok/Llama drop
-     tools entirely via the noTools fallback branch and never reach here.
+     Groq behaves the same: a 210-tool schema to gpt-oss-120b fast-fails
+     while 128 succeeds (probed live 2026-08-02). The other standard
+     providers accepted a 210-tool schema in the same probe and still
+     called the right tool (xAI, DeepSeek, Moonshot, NVIDIA), and
+     Anthropic and Gemini have no count-based cap in current
+     documentation, so their bodies stay untouched.
 
      When a generic agent (no capability_id, falls through to all-MCP
-     tools) lands on an OpenAI model — either as its declared primary or
-     via the runtime fallback chain — sending 200+ tools is a guaranteed
-     400. The cap is deterministic (first N from the dedup order in
-     _buildExecContext), so the same tools win across retries. */
+     tools) lands on a capped provider — either as its declared primary
+     or via the runtime fallback chain — sending 200+ tools is a
+     guaranteed 400, which _isRetryableError does not rescue. The cap is
+     deterministic (first N from the dedup order in _buildExecContext),
+     so the same tools win across retries. */
   const PROVIDER_TOOL_LIMITS = {
     openai: 128,
+    groq: 128,
   };
 
   function _providerForModel(modelId) {
     if (!modelId || typeof modelId !== 'string') return null;
-    if (modelId.startsWith('gpt-') || modelId === 'o3') return 'openai';
+    // gpt-oss is Groq-hosted; test it before the generic gpt- prefix.
+    if (modelId.startsWith('gpt-oss')) return 'groq';
+    // The catalog id for o3 is 'openai-o3'; match both forms so the one
+    // provider with a documented 128-tool cap never escapes it.
+    if (modelId.startsWith('gpt-') || modelId === 'o3' || modelId.startsWith('openai-o')) return 'openai';
     if (modelId.startsWith('claude-')) return 'anthropic';
     if (modelId.startsWith('gemini-')) return 'google';
     if (modelId.startsWith('grok-')) return 'xai';
