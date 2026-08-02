@@ -1327,6 +1327,30 @@ describe('AgentExecutor — provider tool cap', () => {
     expect(_capturedRequests[0].tools.length).toBe(128);
   });
 
+  it('truncates tools to 128 entries for the Groq-hosted gpt-oss model', async () => {
+    // Probed live 2026-08-02: Groq rejects a 210-tool schema and accepts
+    // 128. Also pins the provider mapping: gpt-oss must resolve to groq,
+    // not ride the generic gpt- prefix into the openai bucket.
+    const names = _registerMockTools(200, 'cap_groq');
+    globalThis.LLMConfig = {
+      forBlueprint: () => ({ model: 'gpt-oss-120b', temperature: 0.3, max_tokens: 2048, fallbackChain: [] }),
+      CAPABILITY_CHAIN: [{ id: 'gpt-oss-120b', tier: 'standard', noTools: false }],
+    };
+    globalThis.SB = {
+      functions: {
+        invoke: async (_n, opts) => { _capturedRequests.push(opts.body); return { data: _stubFinalAnswer(), error: null }; },
+      },
+    };
+    const controller = AgentExecutor.converse(
+      { id: 'a-cap-groq', name: 'X', config: { role: 'Assistant' } },
+      { tools: names, spaceshipId: 'ship-cap-7' },
+    );
+    await controller.send('hi');
+    expect(_capturedRequests.length).toBe(1);
+    expect(_capturedRequests[0].model).toBe('gpt-oss-120b');
+    expect(_capturedRequests[0].tools.length).toBe(128);
+  });
+
   it('does not truncate tools for Anthropic claude-* models', async () => {
     const names = _registerMockTools(200, 'cap_ant');
     globalThis.LLMConfig = {
@@ -1414,7 +1438,7 @@ describe('AgentExecutor — provider tool cap', () => {
     expect(_capturedRequests[3].tools.length).toBe(128);
   });
 
-  it('still drops tools entirely when fallback entry sets noTools (Grok/Llama path)', async () => {
+  it('still drops tools entirely when a fallback entry sets noTools', async () => {
     const names = _registerMockTools(200, 'cap_notools');
     globalThis.LLMConfig = {
       forBlueprint: () => ({
