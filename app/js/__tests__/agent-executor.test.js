@@ -1329,8 +1329,9 @@ describe('AgentExecutor — provider tool cap', () => {
 
   it('truncates tools to 128 entries for the Groq-hosted gpt-oss model', async () => {
     // Probed live 2026-08-02: Groq rejects a 210-tool schema and accepts
-    // 128. Also pins the provider mapping: gpt-oss must resolve to groq,
-    // not ride the generic gpt- prefix into the openai bucket.
+    // 128. Pins the cap; the gpt-oss->groq provider mapping itself is only
+    // observable in the truncation warn label (openai and groq share the
+    // same limit), so it is documented in _providerForModel, not asserted.
     const names = _registerMockTools(200, 'cap_groq');
     globalThis.LLMConfig = {
       forBlueprint: () => ({ model: 'gpt-oss-120b', temperature: 0.3, max_tokens: 2048, fallbackChain: [] }),

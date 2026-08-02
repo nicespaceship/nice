@@ -722,7 +722,9 @@ const AgentExecutor = (() => {
     if (!modelId || typeof modelId !== 'string') return null;
     // gpt-oss is Groq-hosted; test it before the generic gpt- prefix.
     if (modelId.startsWith('gpt-oss')) return 'groq';
-    if (modelId.startsWith('gpt-') || modelId === 'o3') return 'openai';
+    // The catalog id for o3 is 'openai-o3'; match both forms so the one
+    // provider with a documented 128-tool cap never escapes it.
+    if (modelId.startsWith('gpt-') || modelId === 'o3' || modelId.startsWith('openai-o')) return 'openai';
     if (modelId.startsWith('claude-')) return 'anthropic';
     if (modelId.startsWith('gemini-')) return 'google';
     if (modelId.startsWith('grok-')) return 'xai';
