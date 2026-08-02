@@ -288,13 +288,14 @@ describe('LLMConfig', () => {
       expect(ids).toContain('gemini-2-5-flash');
     });
 
-    it('marks noTools correctly for GPT-OSS and Grok', () => {
+    it('keeps tools enabled for the tool-smoke-verified standard models', () => {
       // Retired ids as enabled keys: aliases must resolve to the replacements.
-      const chain = LLMConfig.buildFallbackChain('claude-4-6-sonnet', { 'llama-4-scout': true, 'grok-4-1-fast': true });
-      const oss  = chain.find(m => m.id === 'gpt-oss-120b');
-      const grok = chain.find(m => m.id === 'grok-4-3');
-      expect(oss?.noTools).toBe(true);
-      expect(grok?.noTools).toBe(true);
+      // All five passed the live tool-call smoke 2026-08-02, so none may
+      // regress to noTools without a fresh failure investigation.
+      const chain = LLMConfig.buildFallbackChain('claude-4-6-sonnet', { 'llama-4-scout': true, 'grok-4-1-fast': true, 'kimi-k2-6': true, 'deepseek-v4-flash': true, 'nemotron-3-super': true });
+      for (const id of ['gpt-oss-120b', 'grok-4-3', 'kimi-k2-6', 'deepseek-v4-flash', 'nemotron-3-super']) {
+        expect(chain.find(m => m.id === id)?.noTools, `${id} should allow tools`).toBe(false);
+      }
     });
 
     it('returns empty chain when primary is gemini-2-5-flash (bottom of ladder)', () => {

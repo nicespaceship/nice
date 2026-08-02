@@ -474,11 +474,11 @@ Attachment capability flags (`vision` / `pdf` / `audio` / `video`) live on each 
 | GPT-5 Mini | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Fast + cheap |
 | GPT-5.4 Pro | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Flagship |
 | o3 | OpenAI | Premium | ✓ | ✗ | ✗ | ✗ | Reasoning |
-| Grok 4.3 | xAI | Standard | ✗ | ✗ | ✗ | ✗ | Replaced Grok 4.1 Fast 2026-07-26 (xAI retires it 2026-08-15); tools + vision untested |
-| GPT-OSS 120B (Groq) | OpenAI | Standard | ✗ | ✗ | ✗ | ✗ | Replaced Llama 4 Scout 2026-07-26 (Groq deprecated it 2026-06-17); tools untested |
-| DeepSeek V4 Flash | DeepSeek | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25; tools untested |
-| Kimi K2.6 | Moonshot AI | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 (thinking mode ~80s); tools + vision untested |
-| Nemotron 3 Super | NVIDIA | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 via hosted NIM (trial tier); tools untested |
+| Grok 4.3 | xAI | Standard | ✗ | ✗ | ✗ | ✗ | Replaced Grok 4.1 Fast 2026-07-26 (xAI retires it 2026-08-15); tools verified live 2026-08-02, vision untested |
+| GPT-OSS 120B (Groq) | OpenAI | Standard | ✗ | ✗ | ✗ | ✗ | Replaced Llama 4 Scout 2026-07-26 (Groq deprecated it 2026-06-17); tools verified live 2026-08-02 |
+| DeepSeek V4 Flash | DeepSeek | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25; tools verified live 2026-08-02 |
+| Kimi K2.6 | Moonshot AI | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 (thinking mode ~80s); tools verified live 2026-08-02, vision untested |
+| Nemotron 3 Super | NVIDIA | Standard | ✗ | ✗ | ✗ | ✗ | Text verified live 2026-07-25 via hosted NIM (trial tier); tools verified live 2026-08-02 |
 
 Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODEL_CATALOG` in `agent-builder.js`.
 

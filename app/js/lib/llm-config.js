@@ -73,14 +73,15 @@ const LLMConfig = (() => {
     { id: 'gemini-2-5-pro',    tier: 'premium',  noTools: false },
     { id: 'claude-4-6-sonnet', tier: 'standard', noTools: false },
     { id: 'gpt-5-mini',        tier: 'standard', noTools: false },
-    { id: 'grok-4-3',          tier: 'standard', noTools: true  },
-    { id: 'gpt-oss-120b',      tier: 'standard', noTools: true  },
-    // The three open providers passed a live TEXT smoke through nice-ai on
-    // 2026-07-25; tool calling is still unverified through the translator,
-    // so noTools stays true until a tool-call smoke passes.
-    { id: 'kimi-k2-6',         tier: 'standard', noTools: true  },
-    { id: 'deepseek-v4-flash', tier: 'standard', noTools: true  },
-    { id: 'nemotron-3-super',  tier: 'standard', noTools: true  },
+    // All five open/standard models passed a live TOOL-CALL smoke through
+    // nice-ai's translator on 2026-08-02 (Ben's Pro session, both legs:
+    // tool_use emission + tool_result round trip, grounded final answer),
+    // so tools flow to them natively. Vision remains unverified.
+    { id: 'grok-4-3',          tier: 'standard', noTools: false },
+    { id: 'gpt-oss-120b',      tier: 'standard', noTools: false },
+    { id: 'kimi-k2-6',         tier: 'standard', noTools: false },
+    { id: 'deepseek-v4-flash', tier: 'standard', noTools: false },
+    { id: 'nemotron-3-super',  tier: 'standard', noTools: false },
     { id: 'gemini-2-5-flash',  tier: 'free',     noTools: false },
   ];
 
