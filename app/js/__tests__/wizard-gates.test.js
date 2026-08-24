@@ -80,12 +80,17 @@ describe('ShipSetupWizard.open — rarity gate', () => {
     expect(upgradeOpened).toBe(false);
   });
 
-  it('lets an unlocked rarity through the gate', () => {
+  it('lets an unlocked rarity through the gate', async () => {
     // Rare passes the stubbed gate; the wizard proceeds to build its overlay.
+    // NOTE: open() is once-per-module while its private _overlay is set, so
+    // this test closes AND flushes the 200ms teardown timer; any test added
+    // after this one depends on that flush having run.
     ShipSetupWizard.open({ id: 'bp-z', rarity: 'Rare', name: 'Starter Ship' });
     expect(notices.length).toBe(0);
     const overlay = document.querySelector('.wizard-overlay');
     expect(overlay).toBeTruthy();
     ShipSetupWizard.close();
+    await new Promise(r => setTimeout(r, 250));
+    expect(document.querySelector('.wizard-overlay')).toBeNull();
   });
 });

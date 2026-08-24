@@ -179,8 +179,8 @@ const MissionsView = (() => {
       feed.innerHTML = `
         <div class="app-empty">
           <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
-          <h2>Couldn't load your ${Terminology.label('mission', { plural: true, lowercase: true })}</h2>
-          <p>The connection to the database failed. Your ${Terminology.label('mission', { plural: true, lowercase: true })} are safe; try again in a moment.</p>
+          <h2>Couldn't load your ${_Nlp()}</h2>
+          <p>The connection to the database failed. Your ${_Nlp()} are safe; try again in a moment.</p>
           <div class="app-empty-acts">
             <button class="btn btn-primary btn-sm" id="mc-retry-load">Retry</button>
           </div>
@@ -223,6 +223,8 @@ const MissionsView = (() => {
     feed.querySelectorAll('.mc-card').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.target.closest('.mc-card-check') || e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn') || e.target.closest('.mc-card-cancel') || e.target.closest('.mc-card-delete')) return;
+        // Sample rows go nowhere: the detail route is dead for seed ids.
+        if (card.dataset.sample === '1') return;
         Router.navigate('#/missions/' + card.dataset.id);
       });
     });
@@ -324,7 +326,7 @@ const MissionsView = (() => {
     }
 
     return `
-      <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}">
+      <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}"${m.sample ? ' data-sample="1"' : ''}>
         <div class="mc-card-top">
           ${m.sample ? '' : `<input type="checkbox" class="mc-card-check" data-id="${m.id}" ${checked} />`}
           <span class="mc-card-status" style="color:${meta.color}">${_statusIcon(meta.icon)}</span>
