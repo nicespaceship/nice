@@ -193,25 +193,30 @@ const SchematicView = (() => {
 
     if (!activeShip) {
       // If the user is authenticated, Supabase may not have finished syncing
-      // yet — show a skeleton of the schematic structure instead of the
-      // empty-state CTAs, so users don't see "No spaceships deployed" for a
-      // ship they just reset (and the 5-10s hydration window reads as
-      // "loading", not "frozen"). Once activated-ships fires again
-      // (Blueprints._fireShipState after the user_spaceships query returns),
-      // we re-render with real data.
-      if (isAuthed) {
+      // yet — show a skeleton while State 'activated-ships' is still
+      // undefined (Blueprints._fireShipState has not run). Once hydration
+      // lands with zero ships, the authed user gets the real empty state:
+      // the old branch keyed only on isAuthed and kept the skeleton forever,
+      // so a new user who skipped the wizard saw an app that never loads.
+      const hydrated = typeof State !== 'undefined' && State.get('activated-ships') !== undefined;
+      if (isAuthed && !hydrated) {
         el.innerHTML = '<div class="bridge-hero-wrap"><div class="bridge-hero-content">' + _renderSkeleton() + '</div></div>';
       } else {
+        const canWizard = isAuthed && typeof SetupWizard !== 'undefined';
         el.innerHTML = `
           <div class="schematic-empty app-empty">
             <h2>No spaceships deployed</h2>
             <p>Activate a spaceship from the catalog or build one from scratch to put a crew on the schematic.</p>
             <div class="app-empty-acts">
-              <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
+              ${canWizard ? '<button class="btn btn-primary btn-sm" id="sch-setup-crew">Set up my crew</button>' : ''}
+              <a href="#/bridge?tab=spaceship" class="btn ${canWizard ? '' : 'btn-primary '}btn-sm">Browse spaceships</a>
               <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
             </div>
           </div>
         `;
+        if (canWizard) {
+          document.getElementById('sch-setup-crew')?.addEventListener('click', () => SetupWizard.open());
+        }
       }
       return;
     }
