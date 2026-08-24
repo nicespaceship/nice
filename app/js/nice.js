@@ -2099,6 +2099,10 @@ const NICE = (() => {
   function _initErrorHandlers() {
     window.onerror = function(msg, src, line, col, err) {
       const message = err?.message || (typeof msg === 'string' ? msg : 'Unknown error');
+      // Benign browser noise, not an application error: every load fired it
+      // (our own guest-banner ResizeObserver) and users saw a red System
+      // Error toast as their first impression. Never log, never toast.
+      if (/ResizeObserver loop/i.test(message)) return true;
       const location = src ? ` at ${src}:${line}:${col}` : '';
       console.error(`[NICE] Error: ${message}${location}`);
       // Log to DB
