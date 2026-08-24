@@ -2852,6 +2852,11 @@ const BlueprintsView = (() => {
         } else {
           btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="spaceship" data-listing="${_esc(listingId || '')}">Install</button>`);
         }
+      } else if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked
+          && bp.rarity && !Gamification.isRarityUnlocked(bp.rarity)) {
+        // Mirror the card-level lock: without this, the drawer offered
+        // Setup Spaceship for any rarity and the wizard deployed it.
+        btns.push(`<button class="btn btn-sm bp-drawer-locked" disabled title="Reach ${_esc(bp.rarity)} rank to deploy">🔒 Reach ${_esc(bp.rarity)} rank to deploy</button>`);
       } else {
         btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Setup Spaceship</button>`);
       }

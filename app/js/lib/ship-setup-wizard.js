@@ -41,6 +41,26 @@ const ShipSetupWizard = (() => {
       if (typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
       return;
     }
+    // Rarity gate. The card-level lock is bypassable via the drawer, and
+    // _deploy() activates with force:true on the assumption the gate already
+    // ran, so the wizard must enforce it for NEW catalog activations too.
+    // Reconfiguring or re-opening an owned ship stays exempt.
+    if (!_isReconfigure
+        && typeof Blueprints !== 'undefined' && !Blueprints.isShipActivated(blueprint.id)
+        && typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked
+        && blueprint.rarity && !Gamification.isRarityUnlocked(blueprint.rarity)) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({
+          title: 'Rank required',
+          message: blueprint.rarity === 'Mythic'
+            ? 'Reach Admiral rank to deploy a Mythic spaceship.'
+            : `Reach ${blueprint.rarity} rank to deploy this spaceship, or upgrade to NICE Pro to unlock instantly.`,
+          type: 'warning',
+        });
+      }
+      if (blueprint.rarity !== 'Mythic' && typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
+      return;
+    }
     _blueprint = blueprint;
     _startStep = opts?.startStep || 0;
     _step = _startStep;
