@@ -80,12 +80,15 @@ describe('Gamification', () => {
     it('should return class-1 for current rank (0 XP)', () => {
       const cls = Gamification.getCurrentClass();
       expect(cls.id).toBe('class-1');
-      expect(cls.maxRarity).toBe('Common');
+      expect(cls.maxRarity).toBe('Rare');
     });
 
     it('should check rarity unlock at 0 XP', () => {
+      // Common + Rare business starters are day-one reachable per the
+      // locked ship rarity tier model; Epic starts at Commander.
       expect(Gamification.isRarityUnlocked('Common')).toBe(true);
-      expect(Gamification.isRarityUnlocked('Rare')).toBe(false);
+      expect(Gamification.isRarityUnlocked('Rare')).toBe(true);
+      expect(Gamification.isRarityUnlocked('Epic')).toBe(false);
     });
   });
 
@@ -147,7 +150,7 @@ describe('Gamification', () => {
     });
 
     it('RANKS have maxRarity progression (Common → Legendary → Mythic at Admiral)', () => {
-      expect(Gamification.RANKS[0].maxRarity).toBe('Common');
+      expect(Gamification.RANKS[0].maxRarity).toBe('Rare');
       expect(Gamification.RANKS[5].maxRarity).toBe('Legendary'); // Captain
       const admiral = Gamification.RANKS.find(r => r.name === 'Admiral');
       expect(admiral.maxRarity).toBe('Mythic');
@@ -162,12 +165,14 @@ describe('Gamification', () => {
       expect(Gamification.getMaxSlots()).toBe(12);
     });
 
-    it('getSlotTemplate generates correct slot count with Common rarity (free tier)', () => {
+    it('getSlotTemplate follows the rank activation ceiling (Rare at day one)', () => {
       const template = Gamification.getSlotTemplate(7);
       expect(template.slots).toHaveLength(7);
       expect(template.slots[0].label).toBe('Bridge');
-      expect(template.slots[0].maxRarity).toBe('Common');
-      expect(template.slots[3].maxRarity).toBe('Common');
+      // Dynamic/custom templates track the rank ceiling; catalog ships keep
+      // their own per-slot min_class authority via BlueprintUtils.
+      expect(template.slots[0].maxRarity).toBe('Rare');
+      expect(template.slots[3].maxRarity).toBe('Rare');
     });
 
     it('getSlotTemplate defaults to getMaxSlots', () => {
@@ -396,11 +401,13 @@ describe('Gamification', () => {
       expect(Gamification.SPACESHIP_CLASSES).toHaveLength(5);
     });
 
-    it('class-1: 6 slots, Common max rarity', () => {
+    it('class-1: 6 slots, Rare activation ceiling, Common slot ceiling', () => {
       const cls = Gamification.getSpaceshipClass('class-1');
       expect(cls.id).toBe('class-1');
       expect(cls.slots).toHaveLength(6);
-      expect(cls.maxRarity).toBe('Common');
+      // Activation ceiling is Rare (day-one business starters); the class
+      // slot template stays Common.
+      expect(cls.maxRarity).toBe('Rare');
       expect(cls.slots[0].maxRarity).toBe('Common');
     });
 
@@ -612,9 +619,10 @@ describe('Gamification', () => {
       expect(Gamification.isRarityUnlocked('Common')).toBe(true);
     });
 
-    it('should block Rare at Ensign rank', () => {
+    it('should block Epic at Ensign rank (Rare is day-one)', () => {
       localStorage.setItem('nice-xp', '0');
-      expect(Gamification.isRarityUnlocked('Rare')).toBe(false);
+      expect(Gamification.isRarityUnlocked('Rare')).toBe(true);
+      expect(Gamification.isRarityUnlocked('Epic')).toBe(false);
     });
 
     it('should unlock Rare at Lieutenant rank (25K XP)', () => {

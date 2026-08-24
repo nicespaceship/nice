@@ -187,7 +187,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 ## XP Progression System (SSOT: `app/js/lib/gamification.js`)
 | Class | Slots unlocked | Max Rarity | Rank | XP | Note |
 |-------|----------------|------------|------|-----|------|
-| 1 | min_class ≤ class-1 | Common    | Ensign     | 0    | default |
+| 1 | min_class ≤ class-1 | Rare      | Ensign     | 0    | default; Common + Rare starters are day-one reachable per the tier model |
 | 2 | ≤ class-2           | Rare      | Lieutenant | 25,000  | |
 | 3 | ≤ class-3           | Epic      | Commander  | 100,000 | |
 | 4 | ≤ class-4 (all)     | Legendary | Captain    | 200,000 | |

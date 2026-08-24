@@ -30,8 +30,12 @@ const Gamification = (() => {
      a Captain-rank user can still earn Mythic per-agent badges, but
      can't activate Mythic-tier ships until they reach Admiral. */
   const RANKS = [
-    { name: 'Ensign',            xp: 0,       badge: '⬡',     slots: 6, classId: 'class-1', maxRarity: 'Common' },
-    { name: 'Lieutenant JG',     xp: 10000,   badge: '⬡⬡',    slots: 6, classId: 'class-1', maxRarity: 'Common' },
+    // Common + Rare are the real-business starter tiers and must be
+    // reachable from day one (ship rarity tier model, locked 2026-05-26).
+    // maxRarity here is the ACTIVATION ceiling; crew-slot ceilings come
+    // from per-slot min_class / slot templates and are unchanged.
+    { name: 'Ensign',            xp: 0,       badge: '⬡',     slots: 6, classId: 'class-1', maxRarity: 'Rare' },
+    { name: 'Lieutenant JG',     xp: 10000,   badge: '⬡⬡',    slots: 6, classId: 'class-1', maxRarity: 'Rare' },
     { name: 'Lieutenant',        xp: 25000,   badge: '⬡⬡⬡',   slots: 6, classId: 'class-2', maxRarity: 'Rare' },
     { name: 'Lt Commander',      xp: 50000,   badge: '⬡⬡⬡⬡',  slots: 6, classId: 'class-2', maxRarity: 'Rare' },
     { name: 'Commander',         xp: 100000,  badge: '★',      slots: 6, classId: 'class-3', maxRarity: 'Epic' },
@@ -193,7 +197,7 @@ const Gamification = (() => {
      individual blueprints, not via spaceship class. */
   const SPACESHIP_CLASSES = [
     {
-      id: 'class-1', maxRarity: 'Common', xpRequired: 0,
+      id: 'class-1', maxRarity: 'Rare', xpRequired: 0,
       slots: _buildSlots(6, 'Common'),
     },
     {
