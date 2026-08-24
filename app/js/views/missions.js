@@ -123,10 +123,13 @@ const MissionsView = (() => {
       </div>
     `;
 
+    // Subscribe before loading: the signed-out load path is synchronous
+    // (no await before State.set), so a subscription registered after it
+    // misses the fire and the feed skeleton never repaints.
+    State.onScoped('missions', _onMissionsChanged);
     _loadMissions();
     _bindEvents();
     _subscribeRealtime();
-    State.onScoped('missions', _onMissionsChanged);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
