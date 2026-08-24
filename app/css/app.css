@@ -7181,6 +7181,22 @@ html[data-theme] .nice-ai-input:focus-visible {
    The 12-row single-column crew roster is taller than the text-box,
    so it scrolls within it (accent scrollbar below). Agent cards keep
    the default proportions since their flavor + caps are 2-3 lines. */
+
+/* Single-line description band between art and text box on agent and skin
+   cards. Replaces the old two-span scrolling marquee, whose animation CSS
+   never shipped: the markup printed the description twice, unstyled, on
+   every agent card. Ships use the front-tab strip instead. */
+.blueprint-card-marquee { overflow:hidden; }
+.blueprint-card-marquee-track {
+  display:block;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:var(--card-text-meta);
+  color:var(--text-muted);
+  padding:3px 12px 0;
+}
+
 .blueprint-card[data-type="spaceship"] .blueprint-card-art {
   flex:1 1 0;
   min-height:0;
