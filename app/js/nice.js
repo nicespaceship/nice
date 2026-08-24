@@ -1677,6 +1677,10 @@ const NICE = (() => {
     if (!user) return;
     // Check both the new simple flag and legacy per-user flag
     if (localStorage.getItem(Utils.KEYS.onboarded) || localStorage.getItem(Utils.KEYS.onboardedLegacy(user.id))) return;
+    // Respect a session-scoped skip (Escape / failed deploy). Auth events
+    // fire on every token refresh, so without this the dismissed wizard
+    // remounted about once an hour and stole focus.
+    if (typeof SetupWizard !== 'undefined' && SetupWizard.shouldShow && !SetupWizard.shouldShow()) return;
     // Wait a moment for the app to settle
     await new Promise(r => setTimeout(r, 1500));
     // Check if user has any spaceships — skip wizard if they do

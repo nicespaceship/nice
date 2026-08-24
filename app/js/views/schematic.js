@@ -191,6 +191,22 @@ const SchematicView = (() => {
     // of overlapping the visualization.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(!!activeShip || isAuthed);
 
+    // Re-render when Supabase ships hydrate. Registered BEFORE the no-ship
+    // early return below: on a fresh authed load the first paint happens
+    // while 'activated-ships' is still undefined, and without this
+    // subscription a zero-ship hydration would never repaint the skeleton
+    // into the real empty state. Only register once per view mount
+    // (_unsubShips already set means a prior render wired it).
+    if (!_unsubShips && typeof State !== 'undefined') {
+      _unsubShips = () => { if (_el && !_rerendering) { _rerendering = true; render(_el); _rerendering = false; } };
+      // Defer past State.on's immediate-fire behavior: activated-ships may
+      // already have data, so a synchronous State.on would recurse into
+      // render() before this call returns. Microtask lets render() finish first.
+      Promise.resolve().then(() => {
+        if (_unsubShips && typeof State !== 'undefined') State.on('activated-ships', _unsubShips);
+      });
+    }
+
     if (!activeShip) {
       // If the user is authenticated, Supabase may not have finished syncing
       // yet — show a skeleton while State 'activated-ships' is still
@@ -312,24 +328,8 @@ const SchematicView = (() => {
       });
     });
 
-    // Re-render when Supabase ships hydrate — fixes the false empty-state flash
-    // and the slot-count race after a hard reset. Blueprints._fireShipState()
-    // fires State.set('activated-ships') both at init (from localStorage) and
-    // again once the user_spaceships query returns, so we get exactly one
-    // re-render when real data arrives without polling.
-    // Re-render when Supabase ships hydrate. Only register once per view mount
-    // (_unsubShips already set means a prior render wired it). Since _el is
-    // module-level and always points to the current container, the same handler
-    // stays correct through resize / theme re-renders.
-    if (!_unsubShips && typeof State !== 'undefined') {
-      _unsubShips = () => { if (_el && !_rerendering) { _rerendering = true; render(_el); _rerendering = false; } };
-      // Defer past State.on's immediate-fire behavior: activated-ships already
-      // has data after init, so a synchronous State.on would recurse into
-      // render() before this call returns. Microtask lets render() finish first.
-      Promise.resolve().then(() => {
-        if (_unsubShips && typeof State !== 'undefined') State.on('activated-ships', _unsubShips);
-      });
-    }
+    // (Ship-hydration re-render subscription is registered earlier in this
+    // function, before the no-ship early return.)
 
     // Subscribe to live activity signals so the status node reflects
     // mission-runner / agent-executor work in real time. Replace any

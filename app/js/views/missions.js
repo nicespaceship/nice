@@ -179,8 +179,8 @@ const MissionsView = (() => {
       feed.innerHTML = `
         <div class="app-empty">
           <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
-          <h2>Couldn't load your ${_Np()}</h2>
-          <p>The connection to the database failed. Your ${_Np()} are safe; try again in a moment.</p>
+          <h2>Couldn't load your ${Terminology.label('mission', { plural: true, lowercase: true })}</h2>
+          <p>The connection to the database failed. Your ${Terminology.label('mission', { plural: true, lowercase: true })} are safe; try again in a moment.</p>
           <div class="app-empty-acts">
             <button class="btn btn-primary btn-sm" id="mc-retry-load">Retry</button>
           </div>
@@ -211,7 +211,7 @@ const MissionsView = (() => {
     const sorted = [...missions].sort((a, b) => (order[a.status] ?? 4) - (order[b.status] ?? 4) || new Date(b.created_at) - new Date(a.created_at));
 
     // Run All button for queued missions
-    const queuedCount = missions.filter(m => m.status === 'queued' && _isRunnable(m)).length;
+    const queuedCount = missions.filter(m => !m.sample && m.status === 'queued' && _isRunnable(m)).length;
     const runAllHTML = queuedCount > 1 ? `<button class="btn btn-primary btn-sm" id="run-all-btn" style="margin-bottom:12px">⚡ Run All (${queuedCount})</button>` : '';
 
     feed.innerHTML = `${runAllHTML}<div class="mc-card-grid">${sorted.map(m => _renderCard(m, agentMap)).join('')}</div>`;
@@ -326,7 +326,7 @@ const MissionsView = (() => {
     return `
       <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}">
         <div class="mc-card-top">
-          <input type="checkbox" class="mc-card-check" data-id="${m.id}" ${checked} />
+          ${m.sample ? '' : `<input type="checkbox" class="mc-card-check" data-id="${m.id}" ${checked} />`}
           <span class="mc-card-status" style="color:${meta.color}">${_statusIcon(meta.icon)}</span>
           <span class="mc-card-pri priority-${m.priority}">${m.priority}</span>
           ${m.sample ? '<span class="mc-card-sample">Sample</span>' : ''}
