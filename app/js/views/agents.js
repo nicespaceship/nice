@@ -150,7 +150,7 @@ const AgentDetailView = (() => {
 
           ${(() => {
             if (typeof AgentMemory === 'undefined') return '';
-            const mem = AgentMemory.getMemory(agentId);
+            const mem = AgentMemory.getMemory(id);
             if (!mem) return '';
             const hasFacts = mem.facts && mem.facts.length;
             const hasSuccess = mem.successPatterns && mem.successPatterns.length;
@@ -207,7 +207,7 @@ const AgentDetailView = (() => {
         if (typeof VirtualFS === 'undefined') return;
         const wsEl = document.getElementById('agent-workspace');
         if (!wsEl) return;
-        const projectId = 'agent-' + agentId;
+        const projectId = 'agent-' + id;
         const project = VirtualFS.getProject(projectId);
         if (!project) {
           wsEl.innerHTML = `
@@ -218,7 +218,7 @@ const AgentDetailView = (() => {
             </div>`;
           document.getElementById('btn-create-workspace')?.addEventListener('click', () => {
             VirtualFS.createProject(projectId, agent.name + ' Workspace');
-            render(el, params);
+            _loadAgent(el, id);
           });
         } else {
           const files = VirtualFS.listFiles(projectId);
@@ -241,9 +241,9 @@ const AgentDetailView = (() => {
       // Clear agent memory
       document.getElementById('btn-clear-memory')?.addEventListener('click', () => {
         if (typeof AgentMemory !== 'undefined') {
-          AgentMemory.clear(agentId);
+          AgentMemory.clear(id);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Memory Cleared', message: agent.name + ' memory reset.', type: 'system' });
-          render(el, params);
+          _loadAgent(el, id);
         }
       });
 
