@@ -123,10 +123,13 @@ const MissionsView = (() => {
       </div>
     `;
 
+    // Subscribe before loading: the signed-out load path is synchronous
+    // (no await before State.set), so a subscription registered after it
+    // misses the fire and the feed skeleton never repaints.
+    State.onScoped('missions', _onMissionsChanged);
     _loadMissions();
     _bindEvents();
     _subscribeRealtime();
-    State.onScoped('missions', _onMissionsChanged);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -172,6 +175,20 @@ const MissionsView = (() => {
     const feed = document.getElementById('mc-feed');
     if (!feed) return;
 
+    if (_loadError && (!missions || !missions.length)) {
+      feed.innerHTML = `
+        <div class="app-empty">
+          <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
+          <h2>Couldn't load your ${_Nlp()}</h2>
+          <p>The connection to the database failed. Your ${_Nlp()} are safe; try again in a moment.</p>
+          <div class="app-empty-acts">
+            <button class="btn btn-primary btn-sm" id="mc-retry-load">Retry</button>
+          </div>
+        </div>`;
+      document.getElementById('mc-retry-load')?.addEventListener('click', () => _loadMissions());
+      return;
+    }
+
     if (!missions || !missions.length) {
       feed.innerHTML = `
         <div class="app-empty">
@@ -194,7 +211,7 @@ const MissionsView = (() => {
     const sorted = [...missions].sort((a, b) => (order[a.status] ?? 4) - (order[b.status] ?? 4) || new Date(b.created_at) - new Date(a.created_at));
 
     // Run All button for queued missions
-    const queuedCount = missions.filter(m => m.status === 'queued' && _isRunnable(m)).length;
+    const queuedCount = missions.filter(m => !m.sample && m.status === 'queued' && _isRunnable(m)).length;
     const runAllHTML = queuedCount > 1 ? `<button class="btn btn-primary btn-sm" id="run-all-btn" style="margin-bottom:12px">⚡ Run All (${queuedCount})</button>` : '';
 
     feed.innerHTML = `${runAllHTML}<div class="mc-card-grid">${sorted.map(m => _renderCard(m, agentMap)).join('')}</div>`;
@@ -206,6 +223,8 @@ const MissionsView = (() => {
     feed.querySelectorAll('.mc-card').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.target.closest('.mc-card-check') || e.target.closest('.task-run-btn') || e.target.closest('.task-retry-btn') || e.target.closest('.mc-card-cancel') || e.target.closest('.mc-card-delete')) return;
+        // Sample rows go nowhere: the detail route is dead for seed ids.
+        if (card.dataset.sample === '1') return;
         Router.navigate('#/missions/' + card.dataset.id);
       });
     });
@@ -287,7 +306,10 @@ const MissionsView = (() => {
     const eta = isRunning ? _estimateETA(m) : '';
 
     let actionsHTML = '';
-    if (m.status === 'queued' && _isRunnable(m)) {
+    if (m.sample) {
+      // Labeled demo rows for signed-out visitors: never dispatch a runner
+      // against a seed id.
+    } else if (m.status === 'queued' && _isRunnable(m)) {
       actionsHTML = `<button class="btn btn-primary btn-xs task-run-btn" data-id="${m.id}">⚡ Run</button>`;
     } else if ((m.status === 'failed' || m.status === 'completed' || m.status === 'cancelled') && _isRunnable(m)) {
       actionsHTML = `<button class="btn btn-xs task-retry-btn" data-id="${m.id}">↻ Retry</button>`;
@@ -295,18 +317,21 @@ const MissionsView = (() => {
     // Cancel shows only for in-flight states. Soft cancel: flips status to
     // 'cancelled' in the DB; running WorkflowEngine loops re-check status
     // between nodes and bail out. Queued runs stop before they start.
-    if (m.status === 'queued' || m.status === 'running') {
+    if (!m.sample && (m.status === 'queued' || m.status === 'running')) {
       actionsHTML += `<button class="btn btn-xs mc-card-cancel" data-id="${m.id}" aria-label="Cancel ${_Nl()}" title="Cancel ${_Nl()}">✕</button>`;
     }
     // Delete is available for every status. Destructive, confirm-gated.
-    actionsHTML += `<button class="btn btn-xs mc-card-delete" data-id="${m.id}" aria-label="Delete ${_Nl()}" title="Delete ${_Nl()}">🗑</button>`;
+    if (!m.sample) {
+      actionsHTML += `<button class="btn btn-xs mc-card-delete" data-id="${m.id}" aria-label="Delete ${_Nl()}" title="Delete ${_Nl()}">🗑</button>`;
+    }
 
     return `
-      <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}">
+      <div class="mc-card ${ageClass} ${isRunning ? 'mc-card-running' : ''} mc-card-${m.status}" data-id="${m.id}" data-status="${m.status}"${m.sample ? ' data-sample="1"' : ''}>
         <div class="mc-card-top">
-          <input type="checkbox" class="mc-card-check" data-id="${m.id}" ${checked} />
+          ${m.sample ? '' : `<input type="checkbox" class="mc-card-check" data-id="${m.id}" ${checked} />`}
           <span class="mc-card-status" style="color:${meta.color}">${_statusIcon(meta.icon)}</span>
           <span class="mc-card-pri priority-${m.priority}">${m.priority}</span>
+          ${m.sample ? '<span class="mc-card-sample">Sample</span>' : ''}
         </div>
         <div class="mc-card-title">${_esc(m.title)}</div>
         <div class="mc-card-agent">
@@ -473,6 +498,8 @@ const MissionsView = (() => {
   /* ═══════════════════════════════════════════════════════════════════
      DATA LOADING / EVENTS
   ═══════════════════════════════════════════════════════════════════ */
+  let _loadError = false;
+
   function _onMissionsChanged(missions) {
     _renderPipeline(missions);
     _applyFilters();
@@ -482,11 +509,16 @@ const MissionsView = (() => {
     let missions = [];
     const user = State.get('user');
     let dbError = false;
+    _loadError = false;
     if (user) {
       try { missions = await SB.db('mission_runs').list({ userId: user.id, orderBy: 'created_at' }); }
       catch (err) { dbError = true; console.warn('Supabase mission_runs unavailable:', err.message); }
     }
-    if (!user || (dbError && !missions.length)) missions = _seedMissions();
+    // Signed-out visitors get labeled sample rows. A DB error for a signed-in
+    // user renders an explicit error state instead: substituting demo rows
+    // for real data misrepresented system state both ways.
+    if (!user) missions = _seedMissions();
+    else if (dbError && !missions.length) _loadError = true;
     // Snapshot statuses for transition detection
     missions.forEach(m => { if (!_prevStatuses[m.id]) _prevStatuses[m.id] = m.status; });
     // State.set triggers _onMissionsChanged which renders gauges/pipeline/feed
@@ -495,7 +527,7 @@ const MissionsView = (() => {
 
   function _seedMissions() {
     const now = Date.now();
-    return [
+    const rows = [
       { id:'st1', title:'Scrape competitor pricing', agent_id:'sa1', agent_name:'ResearchBot', status:'completed', priority:'high', progress:100, created_at:new Date(now - 86400000).toISOString(), completed_at:new Date(now - 82800000).toISOString() },
       { id:'st2', title:'Review PR #142', agent_id:'sa2', agent_name:'CodePilot', status:'running', priority:'medium', progress:45, created_at:new Date(now - 7200000).toISOString() },
       { id:'st3', title:'Generate weekly report', agent_id:'sa3', agent_name:'DataCrunch', status:'queued', priority:'low', progress:0, created_at:new Date(now - 3600000).toISOString() },
@@ -505,6 +537,7 @@ const MissionsView = (() => {
       { id:'st7', title:'Fix auth redirect bug', agent_id:'sa6', agent_name:'BugHunter', status:'failed', priority:'high', progress:30, created_at:new Date(now - 259200000).toISOString() },
       { id:'st8', title:'Update API documentation', agent_id:'sa4', agent_name:'ContentWriter', status:'completed', priority:'low', progress:100, created_at:new Date(now - 345600000).toISOString(), completed_at:new Date(now - 340000000).toISOString() },
     ];
+    return rows.map(r => ({ ...r, sample: true }));
   }
 
   function _applyFilters() {

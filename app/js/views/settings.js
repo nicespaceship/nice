@@ -185,8 +185,8 @@ const SettingsView = (() => {
           </div>
           <div class="settings-row">
             <div class="settings-row-info">
-              <span class="settings-row-name">Token Usage</span>
-              <span class="settings-row-desc" id="set-token-desc">Tokens consumed vs. plan limit</span>
+              <span class="settings-row-name">AI Models</span>
+              <span class="settings-row-desc" id="set-token-desc">Models enabled in the Vault</span>
             </div>
             <div style="width:180px;">
               <div class="cost-budget-bar" style="height:8px;margin-bottom:4px;">
@@ -577,24 +577,30 @@ const SettingsView = (() => {
     const user = State.get('user');
     if (!user) return;
 
-    // Plan info — use Subscription module if available
+    // Plan info from the Subscription SSOT. The old hardcoded tier map only
+    // knew 'free' and the retired 'starpass', so paying Pro subscribers saw
+    // "Free" on the one page they open to verify their plan.
     let plan = 'free';
+    let addons = [];
     if (typeof Subscription !== 'undefined') {
       await Subscription.init();
       plan = Subscription.getCurrentPlan();
+      addons = Subscription.getAddons();
     }
 
-    const tierLabels = { free:'Free', starpass:'Star Pass ($19/mo)' };
+    const tier = typeof Subscription !== 'undefined' ? Subscription.getPlanTier(plan) : { label: 'Free', price: 0, color: '#94a3b8' };
+    const addonNames = { claude: 'Claude add-on', premium: 'Premium add-on' };
+    const planLabel = tier.label
+      + (tier.price ? ` ($${tier.price}/mo)` : '')
+      + (addons.length ? ' + ' + addons.map(a => addonNames[a] || a).join(' + ') : '');
 
     const planNameEl = document.getElementById('set-plan-name');
     const planBadgeEl = document.getElementById('set-plan-badge');
-    if (planNameEl) planNameEl.textContent = tierLabels[plan] || 'Free';
+    if (planNameEl) planNameEl.textContent = planLabel;
     if (planBadgeEl) {
-      planBadgeEl.textContent = plan === 'starpass' ? 'Star Pass' : 'Free';
-      const tierColors = { free:'#94a3b8', starpass:'#f59e0b' };
-      const c = tierColors[plan] || '#94a3b8';
-      planBadgeEl.style.color = c;
-      planBadgeEl.style.borderColor = c;
+      planBadgeEl.textContent = tier.label;
+      planBadgeEl.style.color = tier.color;
+      planBadgeEl.style.borderColor = tier.color;
     }
 
     // LLM connections
@@ -610,10 +616,11 @@ const SettingsView = (() => {
       tokenBar.className = 'cost-budget-fill';
     }
 
-    // Billing history
+    // Billing history lives in the Wallet (token_transactions is the SSOT);
+    // the old hardcoded "No billing history yet." lied to paying users.
     const historyEl = document.getElementById('set-billing-history');
     if (historyEl) {
-      historyEl.textContent = 'No billing history yet.';
+      historyEl.innerHTML = '<a href="#/wallet" class="link">View transactions in the Wallet</a>';
     }
 
     // Upgrade button — navigate to Wallet for plan management

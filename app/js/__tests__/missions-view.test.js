@@ -153,20 +153,34 @@ describe('MissionsView', () => {
     expect(gauges).toBeNull();
   });
 
-  it('loads seed missions when DB is unavailable', async () => {
+  it('loads labeled sample missions for signed-out visitors', async () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'p@test.com' });
+    State.set('user', null);
     MissionsView.render(el);
     // Wait for async _loadMissions to complete
     await new Promise(r => setTimeout(r, 50));
     const missions = State.get('missions');
     expect(missions).toBeTruthy();
     expect(missions.length).toBeGreaterThan(0);
+    // Demo rows must be labeled so they can never pass as real work.
+    expect(missions.every(m => m.sample === true)).toBe(true);
+  });
+
+  it('shows a retry state, not sample data, when an authed load fails', async () => {
+    const el = document.getElementById('test-el');
+    State.set('user', { id: 'u1', email: 'p@test.com' });
+    MissionsView.render(el);
+    // Test env has no reachable Supabase, so the authed list() rejects.
+    await new Promise(r => setTimeout(r, 50));
+    const missions = State.get('missions') || [];
+    expect(missions.length).toBe(0);
+    expect(el.querySelector('#mc-retry-load')).toBeTruthy();
+    expect(el.querySelectorAll('.mc-card').length).toBe(0);
   });
 
   it('seed missions have required fields', async () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'p@test.com' });
+    State.set('user', null);
     MissionsView.render(el);
     await new Promise(r => setTimeout(r, 50));
     const missions = State.get('missions');
@@ -197,10 +211,14 @@ describe('MissionsView', () => {
 
   it('renders mission cards after data loads', async () => {
     const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'p@test.com' });
+    State.set('user', null);
     MissionsView.render(el);
     await new Promise(r => setTimeout(r, 50));
     const cards = el.querySelectorAll('.mc-card');
     expect(cards.length).toBeGreaterThan(0);
+    // Sample rows carry the chip and withhold every action button.
+    expect(el.querySelector('.mc-card-sample')).toBeTruthy();
+    expect(el.querySelector('.task-run-btn')).toBeNull();
+    expect(el.querySelector('.mc-card-delete')).toBeNull();
   });
 });

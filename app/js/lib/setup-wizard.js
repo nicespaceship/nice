@@ -31,13 +31,22 @@ const SetupWizard = (() => {
   const TOTAL_STEPS = 4;
 
   /* ── Should the wizard auto-open? ── */
+  // Completion is permanent (localStorage); a skip only silences the wizard
+  // for the current session. One Escape keypress used to end onboarding
+  // forever, stranding new users on an empty Schematic.
   function shouldShow() {
-    return !localStorage.getItem(Utils.KEYS.onboarded);
+    return !localStorage.getItem(Utils.KEYS.onboarded)
+      && !sessionStorage.getItem(Utils.KEYS.onboarded + '-skip');
   }
 
   /* ── Mark onboarding complete ── */
   function _markDone() {
     localStorage.setItem(Utils.KEYS.onboarded, '1');
+  }
+
+  /* ── Silence for this session only ── */
+  function _markSkipped() {
+    try { sessionStorage.setItem(Utils.KEYS.onboarded + '-skip', '1'); } catch (_) {}
   }
 
   /* ══════════════════════════════════════════════════════════════ */
@@ -84,7 +93,7 @@ const SetupWizard = (() => {
   }
 
   function skip() {
-    _markDone();
+    _markSkipped();
     close();
     if (typeof AuditLog !== 'undefined') {
       AuditLog.log('wizard_skipped', { step: _step });
@@ -361,7 +370,7 @@ const SetupWizard = (() => {
       });
     }).catch(err => {
       if (_step !== 3) return;
-      _markDone(); // don't re-show wizard even on error
+      _markSkipped(); // quiet for this session; a failed deploy must not end onboarding forever
       body.innerHTML = `
         <div class="wizard-success">
           <h2 class="wizard-title">Setup Error</h2>
