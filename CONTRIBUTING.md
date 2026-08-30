@@ -1,4 +1,4 @@
-# Contributing to NICE™
+# Contributing to NICE
 
 Thank you for your interest in contributing to NICE — the Neural Intelligence Command Engine!
 

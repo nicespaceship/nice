@@ -1,4 +1,4 @@
-# NICE™
+# NICE
 
 **Neural Intelligence Command Engine** — AI agents that run your business.
 
