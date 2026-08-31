@@ -1,10 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════
-   NICE — Mission Runner
+   Longeron — Mission Runner
    Executes missions by routing them through the Ship's Log LLM pipeline.
    MissionRunner.run(missionId) → queued → running → completed/failed
 ═══════════════════════════════════════════════════════════════════ */
 
 const MissionRunner = (() => {
+
+  /* Nouns follow the active theme (Workspace/Process by default,
+     Spaceship/Mission on sci-fi themes). */
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
 
   /* ── Run a mission ── */
   async function run(missionId, opts) {
@@ -148,13 +152,13 @@ const MissionRunner = (() => {
       const msg =
         'Could not resolve an agent for this mission (' + detail + '). ' +
         'Reassign the mission to an agent on the ship\'s crew, or rebuild ' +
-        'the mission template in Mission Composer.';
+        `the ${_T('mission').toLowerCase()} template in Mission Composer.`;
       const now = new Date().toISOString();
       await SB.db('mission_runs').update(missionId, {
         status: 'failed', result: 'Error: ' + msg, updated_at: now,
       }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + msg });
-      _notify(user.id, 'error', 'Mission Failed', mission.title + ' — ' + msg);
+      _notify(user.id, 'error', `${_T('mission')} Failed`, mission.title + ' — ' + msg);
       return null;
     }
 
@@ -210,8 +214,8 @@ const MissionRunner = (() => {
         // another ship's runs.
         const runningCount = missions.filter(m => m.status === 'running' && m.spaceship_id === spaceshipId).length;
         if (runningCount >= behaviors.maxConcurrent) {
-          const msg = 'Max concurrent missions reached (' + runningCount + '/' + behaviors.maxConcurrent + '). Mission queued — will run when a slot opens.';
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Mission Queued', message: msg, type: 'info' });
+          const msg = `Max concurrent ${_T('mission', true).toLowerCase()} reached (` + runningCount + '/' + behaviors.maxConcurrent + '). Mission queued — will run when a slot opens.';
+          if (typeof Notify !== 'undefined') Notify.send({ title: `${_T('mission')} Queued`, message: msg, type: 'info' });
           return null; // stays in queued status
         }
       }
@@ -326,7 +330,7 @@ const MissionRunner = (() => {
           ShipLog.append(spaceshipId, {
             agentId: agentBp.id || null,
             role: 'system',
-            content: 'Captain ' + agentBp.name + ' is coordinating your request.',
+            content: `${_T('captain')} ` + agentBp.name + ' is coordinating your request.',
             metadata: { type: 'routing', chosen_agent_id: agentBp.id, chosen_agent_name: agentBp.name, reasoning: 'Captain dispatch' },
           }).catch(() => {});
         }
@@ -450,7 +454,7 @@ const MissionRunner = (() => {
       }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure') });
 
-      _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + (err.message || 'Unknown error'));
+      _notify(user.id, 'error', `${_T('mission')} Failed`, mission.title + ': ' + (err.message || 'Unknown error'));
 
       return null;
     }
@@ -513,7 +517,7 @@ const MissionRunner = (() => {
       const msg = 'Plan snapshot missing nodes.';
       await SB.db('mission_runs').update(missionId, { status: 'failed', result: 'Error: ' + msg, updated_at: new Date().toISOString() }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + msg });
-      _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + msg);
+      _notify(user.id, 'error', `${_T('mission')} Failed`, mission.title + ': ' + msg);
       return null;
     }
 
@@ -552,7 +556,7 @@ const MissionRunner = (() => {
       const now = new Date().toISOString();
       await SB.db('mission_runs').update(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure'), updated_at: now }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure') });
-      _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + (err.message || 'Unknown error'));
+      _notify(user.id, 'error', `${_T('mission')} Failed`, mission.title + ': ' + (err.message || 'Unknown error'));
       return null;
     }
 
@@ -632,7 +636,7 @@ const MissionRunner = (() => {
         updated_at: now,
       }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: result.finalOutput || 'Error: DAG node failed.' });
-      _notify(user.id, 'error', 'Mission Failed', mission.title + ': one or more steps failed');
+      _notify(user.id, 'error', `${_T('mission')} Failed`, mission.title + ': one or more steps failed');
       return result;
     }
 
@@ -727,7 +731,7 @@ const MissionRunner = (() => {
       const now = new Date().toISOString();
       await SB.db('mission_runs').update(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure'), updated_at: now }).catch(() => {});
       _updateLocalMission(missionId, { status: 'failed', result: 'Error: ' + (err.message || 'Unknown failure') });
-      _notify(user.id, 'error', 'Mission Failed', mission.title + ': ' + (err.message || 'Unknown error'));
+      _notify(user.id, 'error', `${_T('mission')} Failed`, mission.title + ': ' + (err.message || 'Unknown error'));
       return null;
     }
 
@@ -1318,7 +1322,7 @@ const MissionRunner = (() => {
     spec = spec || {};
     const user = State.get('user');
     if (!user?.id) throw new Error('Sign in to start a mission.');
-    if (!spec.spaceshipId) throw new Error('Missions always run on a Spaceship.');
+    if (!spec.spaceshipId) throw new Error(`${_T('mission', true)} always run on a ${_T('spaceship')}.`);
     const shape = spec.shape || 'simple';
     const plan = spec.plan || {};
 
@@ -1371,7 +1375,7 @@ const MissionRunner = (() => {
     spec = spec || {};
     const user = State.get('user');
     if (!user?.id) throw new Error('Sign in to schedule a mission.');
-    if (!spec.spaceshipId) throw new Error('Missions always run on a Spaceship.');
+    if (!spec.spaceshipId) throw new Error(`${_T('mission', true)} always run on a ${_T('spaceship')}.`);
     if (!spec.schedule || !spec.schedule.cron) throw new Error('A schedule needs a cron expression.');
     // Pro-only: unattended scheduled execution is a NICE Pro perk. Block
     // creating or enabling an ACTIVE schedule for non-Pro users; allow

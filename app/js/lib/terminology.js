@@ -2,7 +2,7 @@
    MODULE: Terminology — SSOT for theme-aware noun labels
    Internal schema keeps canonical `mission` / `agent` / `spaceship` /
    `crew` / `captain` keys; the DEFAULT labels are plain business nouns
-   (Process / Agent / Workspace / Team / Owner) so the product reads the
+   (Process / Agent / Workspace / Team / Supervisor) so the product reads the
    same to an SMB owner and an enterprise evaluator. Sci-fi themes opt
    back into the spaceship vocabulary; Office keeps "Assignment".
    The Theme module owns sentence-level personality (copy.labels); this
@@ -30,7 +30,7 @@ const Terminology = (() => {
       agent:     { singular: 'Agent',     plural: 'Agents' },
       spaceship: { singular: 'Workspace', plural: 'Workspaces' },
       crew:      { singular: 'Team',      plural: 'Team' },
-      captain:   { singular: 'Owner',     plural: 'Owners' },
+      captain:   { singular: 'Supervisor', plural: 'Supervisors' },
     },
     'hal-9000': SCIFI,
     matrix:     SCIFI,

@@ -272,7 +272,7 @@ describe('MissionRunner', () => {
     const notifications = Object.values(_db.notifications || {});
     const errNotif = notifications.find(n => n.type === 'error');
     expect(errNotif).toBeTruthy();
-    expect(errNotif.title).toBe('Mission Failed');
+    expect(errNotif.title).toBe('Process Failed');
 
     globalThis.ShipLog.execute = origExecute;
   });
