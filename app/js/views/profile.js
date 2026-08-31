@@ -46,7 +46,7 @@ const ProfileView = (() => {
             </svg>
           </div>
           <h2 class="auth-title">Sign in to Longeron</h2>
-          <p class="auth-sub">Neural Intelligence Command Engine</p>
+          <p class="auth-sub">The operating system for AI agents</p>
 
           <div class="auth-tabs">
             <button class="auth-tab active" data-tab="signin" onclick="ProfileView._switchTab('signin')">Sign In</button>
