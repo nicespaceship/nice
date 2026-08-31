@@ -6,6 +6,10 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const BlueprintUtils = (() => {
+  // Guarded: this lib loads in test harnesses without the Terminology global.
+  const _T = (noun, plural) => (typeof Terminology !== 'undefined')
+    ? Terminology.label(noun, { plural: !!plural })
+    : String(noun).charAt(0).toUpperCase() + String(noun).slice(1);
 
   /** Rarity color map — single source of truth for all card/badge/slot coloring */
   const RARITY_COLORS = {
@@ -109,7 +113,7 @@ const BlueprintUtils = (() => {
     const crewDefs = getCrewDefs(bp);
     return {
       id: 'dynamic',
-      name: bp?.name || 'Ship',
+      name: bp?.name || _T('spaceship'),
       slots: Array.from({ length: count }, function(_, i) {
         const member = crewDefs[i];
         return {
@@ -176,7 +180,7 @@ const BlueprintUtils = (() => {
     'class-3': { name: 'Cruiser',     slots: _buildClassSlots(10, 'Epic') },
     'class-4': { name: 'Dreadnought', slots: _buildClassSlots(12, 'Legendary') },
     'class-5': { name: 'Flagship',    slots: _buildClassSlots(24, 'Legendary') },
-    'slot-6':  { name: 'Spaceship',   slots: _buildClassSlots(6, 'Common') },
+    'slot-6':  { get name() { return _T('spaceship'); }, slots: _buildClassSlots(6, 'Common') },
   };
 
   function _buildClassSlots(count, maxRarity) {
