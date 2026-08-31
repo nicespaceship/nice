@@ -15,6 +15,12 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const WorkflowEngine = (() => {
+  // Guarded: the engine runs in test harnesses without the Terminology
+  // global; the fallback mirrors Terminology's unknown-noun behavior.
+  const _T = (noun, plural) => (typeof Terminology !== 'undefined')
+    ? Terminology.label(noun, { plural: !!plural })
+    : noun.charAt(0).toUpperCase() + noun.slice(1);
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
 
   // Sentinel returned by approval_gate nodes. Caller-visible so tests
   // can assert the pause contract directly.
@@ -779,7 +785,7 @@ const WorkflowEngine = (() => {
    */
   async function _executeNotify(node, input) {
     const cfg = node?.config || {};
-    const title = cfg.title || 'Mission update';
+    const title = cfg.title || `${_T('mission')} update`;
     const kind = cfg.kind || 'system';
     let message = cfg.message;
     if (!message) {
@@ -863,7 +869,7 @@ const WorkflowEngine = (() => {
     const cfg = node.config || {};
     return {
       __nice_workflow_pause: true,
-      reason: cfg.reason || 'Awaiting captain approval.',
+      reason: cfg.reason || `Awaiting ${_t('captain')} approval.`,
       approveLabel: cfg.approveLabel || 'Approve',
       rejectLabel: cfg.rejectLabel || 'Reject',
       // Summary shown in the review UI. Upstream node output flows in
