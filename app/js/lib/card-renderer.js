@@ -5,6 +5,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CardRenderer = (() => {
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
   const _esc = Utils.esc;
   const _escAttr = Utils.escAttr;
 
@@ -42,7 +43,7 @@ const CardRenderer = (() => {
      (specialties, workflows, protocols). Hovering an icon surfaces
      its title as an overlay in the art zone above. */
   const SHIP_FRONT_TABS = [
-    { id: 'crew',         title: 'Crew',        icon: TAB_ICONS.crew        },
+    { id: 'crew',         get title() { return _T('crew'); }, icon: TAB_ICONS.crew },
     { id: 'specialties',  title: 'Specialties', icon: TAB_ICONS.specialties },
     { id: 'workflows',    title: 'Workflows',   icon: TAB_ICONS.workflows   },
     { id: 'protocols',    title: 'Protocols',   icon: TAB_ICONS.protocols   },
