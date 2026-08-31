@@ -1541,29 +1541,36 @@ const PromptPanel = (() => {
   }
 
   /* ── Contextual suggestion chips ── */
-  const _ROUTE_SUGGESTIONS = {
-    '#/':           ['How many agents do I have?', 'Show missions', 'What\'s my rank?', 'Switch to cyberpunk'],
-    '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
-    '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
-    '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
-    '#/bridge/spaceships': ['Guided setup', 'Deploy a ship', 'How many ships?', 'Browse blueprints'],
-    '#/bridge': ['Search blueprints for', 'Find agent named', 'Deploy a ship', 'What\'s popular?'],
-    '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
-    '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
-    '#/vault':      ['Open blueprints', 'Show security', 'Export data'],
-    '#/settings':   ['/theme', '/shortcuts', 'Switch to synthwave', 'Show profile'],
-    '#/profile':    ['What\'s my rank?', '/rank', 'Show achievements', 'Open settings'],
-    '#/agents':     ['What can you do?', 'Run a mission', 'Show recent tasks', 'What\'s your status?'],
-    '#/bridge?tab=operations&sub=log': ['Show active missions', 'How many completed today?', 'Export log'],
-  };
+  // Built per call so the noun vocabulary tracks the active theme.
+  function _routeSuggestions() {
+    const m = _T('mission').toLowerCase(), mp = _T('mission', true).toLowerCase();
+    const sp = _T('spaceship').toLowerCase(), spp = _T('spaceship', true).toLowerCase();
+    const am = Terminology.article('mission');
+    return {
+      '#/':           ['How many agents do I have?', `Show ${mp}`, 'What\'s my rank?', 'Switch to cyberpunk'],
+      '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
+      '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
+      '#/missions':   [`Run ${am} ${m}`, `How many ${mp} running?`, `Create a new ${m}`, 'Show analytics'],
+      '#/bridge/spaceships': ['Guided setup', `Deploy a ${sp}`, `How many ${spp}?`, 'Browse blueprints'],
+      '#/bridge': ['Search blueprints for', 'Find agent named', `Deploy a ${sp}`, 'What\'s popular?'],
+      '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
+      '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
+      '#/vault':      ['Open blueprints', 'Show security', 'Export data'],
+      '#/settings':   ['/theme', '/shortcuts', 'Switch to synthwave', 'Show profile'],
+      '#/profile':    ['What\'s my rank?', '/rank', 'Show achievements', 'Open settings'],
+      '#/agents':     ['What can you do?', `Run ${am} ${m}`, 'Show recent tasks', 'What\'s your status?'],
+      '#/bridge?tab=operations&sub=log': [`Show active ${mp}`, 'How many completed today?', 'Export log'],
+    };
+  }
 
   function _updateSuggestionChips() {
     const chipContainer = _panel?.querySelector('.nice-ai-chips');
     if (!chipContainer) return;
     const raw = location.hash || '#/';
     const base = raw.replace(/\/[^/]+$/, '') || '#/';
-    const hash = _ROUTE_SUGGESTIONS[raw] ? raw : (_ROUTE_SUGGESTIONS[base] ? base : '#/');
-    const chips = _ROUTE_SUGGESTIONS[hash];
+    const table = _routeSuggestions();
+    const hash = table[raw] ? raw : (table[base] ? base : '#/');
+    const chips = table[hash];
     chipContainer.innerHTML = chips.map(c =>
       `<button class="nice-ai-chip">${_esc(c)}</button>`
     ).join('');

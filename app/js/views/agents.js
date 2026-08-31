@@ -6,6 +6,8 @@
 
 const AgentDetailView = (() => {
   const title = 'Agent Detail';
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
   let _channel = null;
@@ -134,7 +136,7 @@ const AgentDetailView = (() => {
           })()}
 
           <div class="detail-section">
-            <h3 class="detail-section-title">Recent Missions</h3>
+            <h3 class="detail-section-title">Recent ${_T('mission', true)}</h3>
             ${missions.length ? `
               <div class="task-mini-list">
                 ${missions.map(t => `
@@ -145,7 +147,7 @@ const AgentDetailView = (() => {
                   </div>
                 `).join('')}
               </div>
-            ` : '<p class="text-muted" style="font-size:.82rem">No missions assigned yet.</p>'}
+            ` : `<p class="text-muted" style="font-size:.82rem">No ${_t('mission', true)} assigned yet.</p>`}
           </div>
 
           ${(() => {
@@ -160,7 +162,7 @@ const AgentDetailView = (() => {
               return `
                 <div class="detail-section">
                   <h3 class="detail-section-title">Agent Memory</h3>
-                  <p class="text-muted" style="font-size:.82rem">No learned facts yet. Memory builds as this agent completes missions.</p>
+                  <p class="text-muted" style="font-size:.82rem">No learned facts yet. Memory builds as this agent completes ${_t('mission', true)}.</p>
                 </div>`;
             }
             let memHtml = '<div class="detail-section"><h3 class="detail-section-title">Agent Memory</h3>';
@@ -213,7 +215,7 @@ const AgentDetailView = (() => {
           wsEl.innerHTML = `
             <div class="detail-section">
               <h3 class="detail-section-title">Workspace</h3>
-              <p class="text-muted" style="font-size:.82rem">No files yet. Agents create files here during missions.</p>
+              <p class="text-muted" style="font-size:.82rem">No files yet. Agents create files here during ${_t('mission', true)}.</p>
               <button class="btn btn-xs" id="btn-create-workspace">Initialize Workspace</button>
             </div>`;
           document.getElementById('btn-create-workspace')?.addEventListener('click', () => {

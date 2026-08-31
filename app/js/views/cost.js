@@ -329,7 +329,7 @@ const CostView = (() => {
     const wrap = document.getElementById('cost-by-mission');
     if (!wrap) return;
     if (!tasks.length) {
-      wrap.innerHTML = '<p class="text-muted" style="font-size:.82rem;padding:12px">No missions yet.</p>';
+      wrap.innerHTML = `<p class="text-muted" style="font-size:.82rem;padding:12px">No ${_T('mission', true).toLowerCase()} yet.</p>`;
       return;
     }
 

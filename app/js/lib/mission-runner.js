@@ -1386,7 +1386,7 @@ const MissionRunner = (() => {
     // pre-check and show the upgrade prompt; this enforces it.
     const willBeActive = spec.schedule.enabled !== false;
     if (willBeActive && typeof Subscription !== 'undefined' && Subscription.isPro && !Subscription.isPro()) {
-      throw new Error('NICE Pro is required to run missions on a schedule. Upgrade to automate your fleet.');
+      throw new Error(`NICE Pro is required to run ${_T('mission', true).toLowerCase()} on a schedule. Upgrade to automate your ${_T('spaceship', true).toLowerCase()}.`);
     }
     const row = {
       title: spec.title,

@@ -442,7 +442,7 @@ const ProfileView = (() => {
       const running = thisWeek.filter(m => m.status === 'running').length;
 
       el.innerHTML = `
-        <div class="profile-row"><span class="profile-row-label">Missions This Week</span><span class="profile-row-val">${thisWeek.length}</span></div>
+        <div class="profile-row"><span class="profile-row-label">${Terminology.label('mission', { plural: true })} This Week</span><span class="profile-row-val">${thisWeek.length}</span></div>
         <div class="profile-row"><span class="profile-row-label">Completed</span><span class="profile-row-val">${completed}</span></div>
         <div class="profile-row"><span class="profile-row-label">Running</span><span class="profile-row-val">${running}</span></div>
         <div class="profile-row"><span class="profile-row-label">Total XP</span><span class="profile-row-val">${xp}</span></div>
