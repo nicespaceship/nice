@@ -81,7 +81,7 @@ const SettingsView = (() => {
             { key:'agent_error', label:'Agent Errors', desc:'Alerts when an agent encounters an error.' },
             { key:'task_complete', label:'Task Complete', desc:'When a task or blueprint setup finishes.' },
             { key:'task_failed', label:'Task Failed', desc:'When a task fails or times out.' },
-            { key:'fleet_deployed', label:'Spaceship Launched', desc:'When a spaceship is deployed.' },
+            { key:'fleet_deployed', label:`${Terminology.label('spaceship')} Launched`, desc:`When a ${Terminology.label('spaceship', { lowercase: true })} is deployed.` },
             { key:'budget_alert', label:'Budget Alerts', desc:'Spend threshold warnings.' },
             { key:'system', label:'System', desc:'General system notifications.' },
           ].map(cat => {
