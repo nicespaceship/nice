@@ -604,7 +604,7 @@ const Gamification = (() => {
     { id: 'rank-captain',       name: "Captain's Chair",    desc: 'Reach Captain rank',                icon: '💺' },
     { id: 'rank-admiral',       name: "Admiral's Bridge",   desc: 'Reach Admiral rank',                icon: '🌟' },
     { id: 'station-founder',    name: 'Station Founder',    desc: 'Create a Space Station',            icon: '🏗️' },
-    { id: 'data-exporter',     name: 'Data Archivist',     desc: 'Export your NICE data',              icon: '💾' },
+    { id: 'data-exporter',     name: 'Data Archivist',     desc: 'Export your Longeron data',          icon: '💾' },
     { id: 'workflow-creator',  name: 'Pipeline Engineer',  desc: 'Create a workflow pipeline',         icon: '🔧' },
     { id: 'first-dock-slot',   name: 'First Dock',         desc: 'Dock an agent into a ship slot',     icon: '🔌' },
     { id: 'full-ship',         name: 'Full Squad',         desc: 'Fill all slots on a spaceship',      icon: '🛸' },
