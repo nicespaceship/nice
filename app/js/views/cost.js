@@ -5,6 +5,7 @@
 
 const CostView = (() => {
   const title = 'Cost Tracker';
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
@@ -69,7 +70,7 @@ const CostView = (() => {
 
         <!-- Cost by Mission (Step 48) -->
         <div class="cost-section">
-          <h3 class="cost-section-title">Cost by Mission</h3>
+          <h3 class="cost-section-title">Cost by ${_T('mission')}</h3>
           <div id="cost-by-mission" class="cost-table-wrap">
             <div class="loading-state"><p>Loading...</p></div>
           </div>
@@ -298,7 +299,7 @@ const CostView = (() => {
           <tr>
             <th>Agent</th>
             <th>Model</th>
-            <th>Missions</th>
+            <th>${_T('mission', true)}</th>
             <th>Tokens</th>
             <th>Cost</th>
           </tr>
@@ -363,7 +364,7 @@ const CostView = (() => {
     wrap.innerHTML = `
       <table class="ana-table">
         <thead>
-          <tr><th>Mission</th><th>Agent</th><th>LLM Tokens</th><th>Token Cost</th></tr>
+          <tr><th>${_T('mission')}</th><th>Agent</th><th>LLM Tokens</th><th>Token Cost</th></tr>
         </thead>
         <tbody>
           ${rows.map(r => `
