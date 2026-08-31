@@ -18,7 +18,7 @@ Longeron is an open-source platform for building, deploying, and managing AI age
 ## Features
 
 - **Hundreds of Blueprints** — Pre-built AI workflow templates for every type of business
-- **Multi-LLM Routing** — 12 models from 5 active providers (Gemini, Claude, GPT-5, Grok, Llama via Groq). Longeron picks the best model for each task.
+- **Multi-LLM Routing** — a dozen models across every major provider (Gemini, Claude, GPT-5, Grok, DeepSeek, Kimi, and more). Longeron picks the best model for each task.
 - **Multi-Agent Orchestration** — Pipeline, Parallel, Hierarchical, and Quality Loop patterns
 - **Drag-and-Drop Slots** — Visual agent assignment, no coding required
 - **Google Workspace Integration** — Gmail, Calendar, Drive connected via MCP protocol

@@ -178,7 +178,7 @@
 
       <h2>Activating Agents</h2>
       <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents join your ${_t('crew')} and can receive ${_t('mission', true)}.</p>
-      <p>Free users get <strong>6 ${_t('crew')} slots</strong> at every rank. Rank progression unlocks higher-rarity blueprints, not more slots:</p>
+      <p>Every ${_t('spaceship')} defines up to <strong>12 ${_t('crew')} slots</strong>; each slot unlocks as you rank up. Rank also gates which blueprint rarities you can activate:</p>
       <table>
         <thead><tr><th>Rank</th><th>XP Required</th><th>Max Rarity Unlocked</th></tr></thead>
         <tbody>
@@ -191,14 +191,14 @@
           <tr><td>Fleet Captain → Fleet Admiral</td><td>350K – 2.5M</td><td>Legendary</td></tr>
         </tbody>
       </table>
-      <p><strong>Pro subscribers</strong> get 12 Legendary slots immediately — no XP grind. <strong>Mythic</strong> rarity is milestone-only: even Pro subscribers earn it through achievements (e.g. dock a Legendary agent, deploy 3+ ${_t('spaceship', true)}), never via rank or subscription.</p>
+      <p><strong>Pro subscribers</strong> unlock every ${_t('crew')} slot and Legendary instantly — no XP grind. <strong>Mythic</strong> rarity is milestone-only: even Pro subscribers earn it through achievements (e.g. dock a Legendary agent, deploy 3+ ${_t('spaceship', true)}), never via rank or subscription.</p>
 
       <h2>Building Custom Agents</h2>
       <p>Open the Bridge → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
       <ul>
         <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
         <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
-        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, Llama). Longeron Auto picks the best available if unset.</li>
+        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, and more). Longeron Auto picks the best available if unset.</li>
         <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
         <li><strong>Category &amp; tags</strong> — for organization and search</li>
       </ul>
@@ -408,8 +408,8 @@
       <table>
         <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
-          <tr><td>Free</td><td>$0</td><td>6 slots, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
-          <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
+          <tr><td>Free</td><td>$0</td><td>1 active ${_t('spaceship')}, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>Unlimited active ${_t('spaceship', true)}, every ${_t('crew')} slot and Legendary instantly, 1,000 Standard tokens/month covering GPT-5 mini, GPT-OSS, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
           <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
