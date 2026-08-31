@@ -126,7 +126,7 @@ The function still validates the user internally via `supabase.auth.getUser()` �
 | `fuel_usage` | Per-LLM-call usage **telemetry** (free + paid), NOT a credit system: `model`, `input_tokens`/`output_tokens`, `fuel_cost` (provider COGS in USD, `numeric`), `agent_id`, `spaceship_id`. Written by `nice-ai` per call; read by the Cost Tracker + Operations analytics |
 | `subscriptions` | Stripe subscription state: `plan`, `status`, period, `addons[]` |
 | `stripe_events` | Stripe webhook event log (idempotency / replay guard) |
-| `personas` | Persona Engine — per-theme persona definitions (hard/soft rules) |
+| `personas` | Persona Engine — per-theme persona definitions (hard/soft rules). Content also updates via sanctioned ad-hoc writes, so live rows drift from seed files: read prod, never infer current content from a seed migration |
 | `persona_judgments` | Persona Engine — Tier 3 judge verdicts on agent replies |
 | `plugins` | Plugin catalog |
 | `plugin_installs` | Per-user plugin installations |
