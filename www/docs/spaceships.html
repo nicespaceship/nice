@@ -8,8 +8,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spaceships — NICE Documentation</title>
-  <meta name="description" content="Orchestrators with a crew of agents. The unit that runs every Mission." />
+  <title>Workspaces — NICE Documentation</title>
+  <meta name="description" content="Orchestrators with a team of agents. The unit that runs every Process." />
   <link rel="icon" href="/assets/nice-mark-dark.svg" type="image/svg+xml" /><link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,8 +24,8 @@
       <h4>Documentation</h4>
       <a href="/docs/getting-started">Getting Started</a>
       <a href="/docs/agents">Agents</a>
-      <a href="/docs/spaceships" class="active">Spaceships</a>
-      <a href="/docs/missions">Missions</a>
+      <a href="/docs/spaceships" class="active">Workspaces</a>
+      <a href="/docs/missions">Processes</a>
       <a href="/docs/workflows">Workflows</a>
       <a href="/docs/integrations">Integrations</a>
       <a href="/docs/ai-models">AI Models</a>
@@ -33,20 +33,20 @@
       <a href="/docs/keyboard">Keyboard</a>
     </nav>
     <main class="docs-content">
-      <h1>Spaceships</h1>
-      <p class="docs-lead">A spaceship is an orchestrator with a crew of agents. It's the unit that runs a Mission — every Run lives on a Ship, even if the crew is just one agent.</p>
+      <h1>Workspaces</h1>
+      <p class="docs-lead">A workspace is an orchestrator with a team of agents. It's the unit that runs a Process: every Run belongs to a workspace, even if the team is just one agent.</p>
 
-      <h2>How Spaceships Work</h2>
+      <h2>How Workspaces Work</h2>
       <ol>
-        <li><strong>Activate a spaceship</strong> from the catalog or build one in the Workshop</li>
-        <li><strong>Assign crew</strong> — drop agents into the spaceship's crew slots in the Schematic view</li>
-        <li><strong>Send a mission</strong> — by default the Ship runs a <em>triage</em> step: an LLM router reads your prompt + the crew manifest and dispatches to the best-fit agent</li>
-        <li><strong>Agents collaborate</strong> via the Ship's Log — a shared conversation context every crew member can read and append to</li>
+        <li><strong>Activate a workspace</strong> from the catalog or build one in the Workshop</li>
+        <li><strong>Assign your team</strong> — drop agents into the workspace's team slots in the Schematic view</li>
+        <li><strong>Send a process</strong> — by default the workspace runs a <em>triage</em> step: an LLM router reads your prompt + the team roster and dispatches to the best-fit agent</li>
+        <li><strong>Agents collaborate</strong> via the Ship's Log — a shared conversation context every team member can read and append to</li>
       </ol>
 
-      <h2>Ship Classes</h2>
+      <h2>Workspace Classes</h2>
       <table>
-        <thead><tr><th>Class</th><th>Crew Size</th><th>Best For</th></tr></thead>
+        <thead><tr><th>Class</th><th>Team Size</th><th>Best For</th></tr></thead>
         <tbody>
           <tr><td>Scout</td><td>1–2 agents</td><td>Simple focused tasks</td></tr>
           <tr><td>Cruiser</td><td>3–5 agents</td><td>Multi-domain projects</td></tr>
@@ -55,11 +55,11 @@
         </tbody>
       </table>
 
-      <h2>MCPs Mount at the Ship Level</h2>
-      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) are connected to the spaceship, not to individual agents. Every crew member on the ship inherits the connections, so a single OAuth grant covers the whole crew.</p>
+      <h2>MCPs Mount at the Workspace Level</h2>
+      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) are connected at the workspace level, not to individual agents. Every team member inherits the connections, so a single OAuth grant covers the whole team.</p>
 
       <h2>Crew Designer</h2>
-      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. Longeron proposes a spaceship configuration — picks a hull, fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
+      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. Longeron proposes a workspace configuration — picks a blueprint, fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
         </main>
   </div>
   <footer id="site-footer" class="footer"></footer>

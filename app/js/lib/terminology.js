@@ -47,7 +47,7 @@ const Terminology = (() => {
   function _activeTheme() {
     return (typeof Theme !== 'undefined' && typeof Theme.current === 'function')
       ? Theme.current()
-      : (typeof localStorage !== 'undefined' ? localStorage.getItem((typeof Utils !== 'undefined' && Utils.KEYS && Utils.KEYS.theme) || 'ns-theme') : null) || 'nice';
+      : (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function' ? localStorage.getItem((typeof Utils !== 'undefined' && Utils.KEYS && Utils.KEYS.theme) || 'ns-theme') : null) || 'nice';
   }
 
   function _resolve(noun, themeId) {
