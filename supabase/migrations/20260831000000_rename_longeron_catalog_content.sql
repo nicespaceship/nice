@@ -13,6 +13,11 @@
 --
 -- Dry-run verified 2026-08-31 against prod inside BEGIN/ROLLBACK: after
 -- these updates, zero rows match \mNICE\M outside the exclusions above.
+-- Note for reviewers reading only the seed files: the 2026-04-22 persona
+-- seed's "I'm NICE, your AI mission control" greeting no longer exists in
+-- prod — later persona updates rewrote it (the active default-theme row
+-- greets as CORE today), so the phrase set here is complete against the
+-- live rows.
 
 -- Replicate agent: description + system prompt reference the product by name.
 UPDATE agent_blueprints
