@@ -17,6 +17,10 @@ const PromptPanel = (() => {
       ? (Theme.getTheme(Theme.current())?.persona?.name || 'Ada') : 'Ada';
   }
 
+  /* Nouns follow the active theme: Workspace/Process by default, and
+     Spaceship/Mission on the sci-fi themes. */
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+
   /* ── Prompt-injection hardening ──
      User-provided text (the turn they just typed, any attached text files,
      and — once this lands on the edge function — the callsign they set)
@@ -565,7 +569,7 @@ const PromptPanel = (() => {
             const spaceships = State.get('spaceships') || [];
             const spaceshipId = spaceships[0]?.id;
             if (!spaceshipId) {
-              return { ok: false, msg: `Activate a Spaceship first — Missions always run on a Ship.` };
+              return { ok: false, msg: `Activate a ${_T('spaceship')} first — ${_T('mission', true)} always run on a ${_T('spaceship')}.` };
             }
             const created = await SB.db('mission_runs').create({
               user_id: user.id, spaceship_id: spaceshipId,
@@ -645,7 +649,7 @@ const PromptPanel = (() => {
         const missionId = input && input.missionId;
         if (typeof MissionRunner !== 'undefined' && missionId) {
           MissionRunner.run(missionId);
-          return { ok: true, msg: 'Mission execution started.' };
+          return { ok: true, msg: `${_T('mission')} execution started.` };
         }
         return { ok: false, msg: 'MissionRunner not available' };
       },
@@ -717,7 +721,7 @@ const PromptPanel = (() => {
     _removeMonitorThinking();
     _messages.push({
       role: 'assistant',
-      text: `**Mission Created:** "${title}"\n**Assigned to:** ${agentName}\n**Status:** Executing now...`,
+      text: `**${_T('mission')} Created:** "${title}"\n**Assigned to:** ${agentName}\n**Status:** Executing now...`,
       agent: 'NICE', ts: Date.now(),
     });
     _saveMessages();
@@ -736,7 +740,7 @@ const PromptPanel = (() => {
     const spaceships = State.get('spaceships') || [];
     const spaceshipId = spaceships[0]?.id;
     if (!spaceshipId) {
-      _messages[_messages.length - 1].text += `\n\n**Activate a Spaceship first.** Missions always run on a Ship.`;
+      _messages[_messages.length - 1].text += `\n\n**Activate a ${_T('spaceship')} first.** ${_T('mission', true)} always run on a ${_T('spaceship')}.`;
       _saveMessages();
       _renderMonitor();
       _setSending(false);
@@ -777,21 +781,21 @@ const PromptPanel = (() => {
         } else {
           _messages.push({
             role: 'assistant',
-            text: 'Mission completed but no output was returned. Check Missions for details.\n[ACTION: Missions | #/missions]',
+            text: `${_T('mission')} completed but no output was returned. Check ${_T('mission', true)} for details.\n[ACTION: ${_T('mission', true)} | #/missions]`,
             agent: 'NICE', ts: Date.now(),
           });
         }
       } catch (e) {
         _messages.push({
           role: 'assistant',
-          text: `**Mission failed:** ${e.message}\n[ACTION: View Missions | #/missions]`,
+          text: `**${_T('mission')} failed:** ${e.message}\n[ACTION: View ${_T('mission', true)} | #/missions]`,
           agent: 'NICE', ts: Date.now(), error: true,
         });
       }
     } else {
       _messages.push({
         role: 'assistant',
-        text: 'Mission queued. Assign an agent or visit Bridge to run it.\n[ACTION: Bridge | #/missions]',
+        text: `${_T('mission')} queued. Assign an agent or visit Bridge to run it.\n[ACTION: Bridge | #/missions]`,
         agent: 'NICE', ts: Date.now(),
       });
     }
@@ -830,7 +834,7 @@ const PromptPanel = (() => {
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
-        text: '**Activate a Spaceship first.** Chat runs always belong to a Ship.\n[ACTION: Bridge | #/bridge]',
+        text: `**Activate a ${_T('spaceship')} first.** Chat runs always belong to a ${_T('spaceship')}.\n[ACTION: Bridge | #/bridge]`,
         agent: 'NICE', ts: Date.now(),
       });
       _saveMessages();
@@ -1365,7 +1369,7 @@ const PromptPanel = (() => {
     const shipSeed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
     const matchShips = shipSeed.filter(s => (s.name || '').toLowerCase().includes(q) || (s.desc || '').toLowerCase().includes(q));
     if (matchShips.length) {
-      results.push(`Spaceships (${matchShips.length}): ${matchShips.slice(0, 5).map(s => s.name).join(', ')}${matchShips.length > 5 ? '...' : ''}`);
+      results.push(`${_T('spaceship', true)} (${matchShips.length}): ${matchShips.slice(0, 5).map(s => s.name).join(', ')}${matchShips.length > 5 ? '...' : ''}`);
     }
 
     if (!results.length) return { text: `No results found for "${query}".`, handled: true };
@@ -1412,7 +1416,7 @@ const PromptPanel = (() => {
     // resolving to the Agents roster; "show me agents" (no authoring verb)
     // still falls through to the nav resolver below.
     if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower))
-      return _cmd('open-missions', { reply: 'Opening Missions so you can create a new one.', isNav: true, navLabel: 'Missions' });
+      return _cmd('open-missions', { reply: `Opening ${_T('mission', true)} so you can create a new one.`, isNav: true, navLabel: _T('mission', true) });
     if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower))
       return _cmd('open-agent-builder', { reply: 'Opening the Agent Builder.', isNav: true, navLabel: 'Agent Builder' });
     // "build me a spaceship for my bakery" → Crew Designer (describe → design →
@@ -1428,7 +1432,7 @@ const PromptPanel = (() => {
         params: { prompt: seed },
         reply: seed
           ? `Opening the Crew Designer to design a crew for "${seed}".`
-          : 'Opening the Crew Designer. Describe your business and NICE designs the crew.',
+          : 'Opening the Crew Designer. Describe your business and Longeron designs the crew.',
         isNav: true, navLabel: 'Crew Designer',
       });
     }
@@ -1437,10 +1441,10 @@ const PromptPanel = (() => {
     if (/^(export|download)\s+(data|backup)/i.test(lower))
       return _cmd('export-data', { reply: 'Exporting your data now.', delay: 300, hideMonitor: false });
 
-    if (/^(pause|stop|disable)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: 'Spaceship paused. All agents on standby.' };
-    if (/^(resume|start|enable|activate)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: 'Spaceship resumed. Agents resuming operations.' };
+    if (/^(pause|stop|disable)\s+(spaceship|ship|workspace)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: `${_T('spaceship')} paused. All agents on standby.` };
+    if (/^(resume|start|enable|activate)\s+(spaceship|ship|workspace)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: `${_T('spaceship')} resumed. Agents resuming operations.` };
     if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower))
-      return _cmd('open-missions', { reply: 'Opening Missions to start a new run.', isNav: true, navLabel: 'Missions', delay: 300 });
+      return _cmd('open-missions', { reply: `Opening ${_T('mission', true)} to start a new run.`, isNav: true, navLabel: _T('mission', true), delay: 300 });
     if (/^(deploy|launch)\s+agent\s*/i.test(lower))
       return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to deploy.', isNav: true, navLabel: 'Agents', delay: 300 });
 
@@ -2656,7 +2660,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
     if (ships.length) {
       const grp1 = document.createElement('optgroup');
-      grp1.label = 'Spaceships';
+      grp1.label = _T('spaceship', true);
       ships.forEach(bp => { const opt = document.createElement('option'); opt.value = bp.id; opt.textContent = bp.name; grp1.appendChild(opt); });
       select.appendChild(grp1);
     }
