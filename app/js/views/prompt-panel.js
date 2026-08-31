@@ -715,14 +715,14 @@ const PromptPanel = (() => {
     const user = State.get('user');
     const agents = State.get('agents') || [];
     const agent = _pickBestAgent(title, agents);
-    const agentName = agent ? agent.name : 'NICE';
+    const agentName = agent ? agent.name : _personaName();
 
     // Show creation message
     _removeMonitorThinking();
     _messages.push({
       role: 'assistant',
       text: `**${_T('mission')} Created:** "${title}"\n**Assigned to:** ${agentName}\n**Status:** Executing now...`,
-      agent: 'NICE', ts: Date.now(),
+      agent: _personaName(), ts: Date.now(),
     });
     _saveMessages();
     _renderMonitor();
@@ -782,21 +782,21 @@ const PromptPanel = (() => {
           _messages.push({
             role: 'assistant',
             text: `${_T('mission')} completed but no output was returned. Check ${_T('mission', true)} for details.\n[ACTION: ${_T('mission', true)} | #/missions]`,
-            agent: 'NICE', ts: Date.now(),
+            agent: _personaName(), ts: Date.now(),
           });
         }
       } catch (e) {
         _messages.push({
           role: 'assistant',
           text: `**${_T('mission')} failed:** ${e.message}\n[ACTION: View ${_T('mission', true)} | #/missions]`,
-          agent: 'NICE', ts: Date.now(), error: true,
+          agent: _personaName(), ts: Date.now(), error: true,
         });
       }
     } else {
       _messages.push({
         role: 'assistant',
         text: `${_T('mission')} queued. Assign an agent or visit Bridge to run it.\n[ACTION: Bridge | #/missions]`,
-        agent: 'NICE', ts: Date.now(),
+        agent: _personaName(), ts: Date.now(),
       });
     }
 
@@ -835,7 +835,7 @@ const PromptPanel = (() => {
       _messages.push({
         role: 'assistant',
         text: `**Activate a ${_T('spaceship')} first.** Chat runs always belong to a ${_T('spaceship')}.\n[ACTION: Bridge | #/bridge]`,
-        agent: 'NICE', ts: Date.now(),
+        agent: _personaName(), ts: Date.now(),
       });
       _saveMessages();
       _renderMonitor();
@@ -940,7 +940,7 @@ const PromptPanel = (() => {
       if (routing?.metadata) routingMeta = routing.metadata;
     } catch { /* non-critical */ }
 
-    const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || 'NICE';
+    const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || _personaName();
 
     if (routingMeta?.chosen_agent_name) {
       _messages.push({
@@ -1126,7 +1126,7 @@ const PromptPanel = (() => {
     el.className = 'monitor-card monitor-card-pending';
     el.id = 'monitor-thinking';
     el.innerHTML =
-      '<div class="monitor-card-agent">' + _esc(o.agent || 'NICE') + '</div>' +
+      '<div class="monitor-card-agent">' + _esc(o.agent || _personaName()) + '</div>' +
       '<div class="monitor-card-text">' +
         '<div class="monitor-thinking-dots"><span></span><span></span><span></span></div>' +
         '<span class="monitor-thinking-label">' + _esc(label) + '</span>' +
@@ -1443,7 +1443,7 @@ const PromptPanel = (() => {
 
     if (/^(pause|stop|disable)\s+(spaceship|ship|workspace)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: `${_T('spaceship')} paused. All agents on standby.` };
     if (/^(resume|start|enable|activate)\s+(spaceship|ship|workspace)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: `${_T('spaceship')} resumed. Agents resuming operations.` };
-    if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower))
+    if (/^(run|execute|start|launch)\s+(mission|task|process|assignment)\s*/i.test(lower))
       return _cmd('open-missions', { reply: `Opening ${_T('mission', true)} to start a new run.`, isNav: true, navLabel: _T('mission', true), delay: 300 });
     if (/^(deploy|launch)\s+agent\s*/i.test(lower))
       return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to deploy.', isNav: true, navLabel: 'Agents', delay: 300 });
@@ -2228,7 +2228,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
       // Handle cancel
       if (/^(cancel|quit|exit|nevermind)/i.test(text)) {
-        _messages.push({ role: 'assistant', text: 'Configuration cancelled. Standing by.', agent: 'NICE', ts: Date.now() });
+        _messages.push({ role: 'assistant', text: 'Configuration cancelled. Standing by.', agent: _personaName(), ts: Date.now() });
         const onCancel = _activeFlow.onCancel;
         _activeFlow = null;
         _saveMessages();
@@ -2244,7 +2244,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       // More steps?
       if (_activeFlow.currentStep < _activeFlow.steps.length) {
         const next = _activeFlow.steps[_activeFlow.currentStep];
-        _messages.push({ role: 'assistant', text: next.question, agent: 'NICE', ts: Date.now(), chips: next.chips });
+        _messages.push({ role: 'assistant', text: next.question, agent: _personaName(), ts: Date.now(), chips: next.chips });
         _saveMessages();
         _renderMonitor();
         _showFlowChips(next.chips);
@@ -2253,7 +2253,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         const answers = _activeFlow.answers;
         const onComplete = _activeFlow.onComplete;
         _activeFlow = null;
-        _messages.push({ role: 'assistant', text: '⚡ Processing your configuration...', agent: 'NICE', ts: Date.now() });
+        _messages.push({ role: 'assistant', text: '⚡ Processing your configuration...', agent: _personaName(), ts: Date.now() });
         _saveMessages();
         _renderMonitor();
         // Clear flow chips and reset placeholder
@@ -2295,7 +2295,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       const guestMsg = { role: 'user', text, ts: Date.now() };
       if (sentAttachments.length) guestMsg.attachments = sentAttachments;
       _messages.push(guestMsg);
-      _messages.push({ role: 'assistant', text: '🔒 Sign in to run missions and chat with your agents. Your blueprints and configurations will be saved.\n\n<button class="btn btn-primary btn-sm" onclick="NICE.openModal(\'modal-auth\')">Sign In to Launch</button>', agent: 'NICE', ts: Date.now() });
+      _messages.push({ role: 'assistant', text: '🔒 Sign in to run missions and chat with your agents. Your blueprints and configurations will be saved.\n\n<button class="btn btn-primary btn-sm" onclick="NICE.openModal(\'modal-auth\')">Sign In to Launch</button>', agent: _personaName(), ts: Date.now() });
       _saveMessages();
       _renderMonitor();
       input.value = '';
@@ -2591,7 +2591,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           if (result) {
             _removeMonitorThinking();
             document.getElementById('monitor-stream')?.remove();
-            _messages.push({ role: 'assistant', text: result.text, agent: 'NICE', model: result.model, ts: Date.now() });
+            _messages.push({ role: 'assistant', text: result.text, agent: _personaName(), model: result.model, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
 
@@ -2606,7 +2606,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
                 _messages.push({
                   role: 'assistant',
                   text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`,
-                  agent: 'NICE', ts: Date.now(),
+                  agent: _personaName(), ts: Date.now(),
                 });
               }
               _saveMessages();
@@ -2622,7 +2622,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _messages.push({
               role: 'assistant',
               text: '⚠️ **No response from AI service.** Sign in and enable a model in Security → Integrations to get started.',
-              agent: 'NICE', ts: Date.now(), error: true,
+              agent: _personaName(), ts: Date.now(), error: true,
             });
             _saveMessages();
             _renderMonitor();
@@ -2637,7 +2637,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _messages.push({
             role: 'assistant',
             text: `**Connection Error:** ${errMsg}`,
-            agent: 'NICE',
+            agent: _personaName(),
             ts: Date.now(),
             error: true,
             retryText: text,
@@ -3548,7 +3548,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Clear previous messages and show first question
     _messages = [];
     const first = flowDef.steps[0];
-    _messages.push({ role: 'assistant', text: first.question, agent: 'NICE', ts: Date.now(), chips: first.chips });
+    _messages.push({ role: 'assistant', text: first.question, agent: _personaName(), ts: Date.now(), chips: first.chips });
     _saveMessages();
     _showMonitor();
     _renderMonitor();
@@ -3562,7 +3562,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (!_activeFlow) return;
     const onCancel = _activeFlow.onCancel;
     _activeFlow = null;
-    _messages.push({ role: 'assistant', text: 'Configuration cancelled.', agent: 'NICE', ts: Date.now() });
+    _messages.push({ role: 'assistant', text: 'Configuration cancelled.', agent: _personaName(), ts: Date.now() });
     _saveMessages();
     _renderMonitor();
     if (onCancel) onCancel();
@@ -3580,7 +3580,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function isFlowActive() { return !!_activeFlow; }
 
   function pushMessage(text, role = 'assistant') {
-    _messages.push({ role, text, agent: role === 'assistant' ? 'NICE' : undefined, ts: Date.now() });
+    _messages.push({ role, text, agent: role === 'assistant' ? _personaName() : undefined, ts: Date.now() });
     _saveMessages();
     _renderMonitor();
   }
