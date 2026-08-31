@@ -105,7 +105,6 @@
   --fw-regular: 400;
   --fw-medium:  600;
   --fw-bold:    700;
-  --fw-black:   900;  /* brand wordmark only (Orbitron Black) — not for prose/UI */
 
   /* ─── Card-scoped typography (visual artifacts, not prose) ──────
      Cards are TCG-style collectibles; the 11px prose floor does not
