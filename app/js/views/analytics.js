@@ -811,7 +811,7 @@ const AnalyticsView = (() => {
     const total = tasks.length;
     const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    let report = 'NICE Operations Report\n';
+    let report = 'Longeron Operations Report\n';
     report += '============================\n';
     report += 'Generated: ' + new Date().toLocaleString() + '\n\n';
     report += 'Overview\n--------\n';

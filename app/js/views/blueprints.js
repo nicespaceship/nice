@@ -2437,7 +2437,7 @@ const BlueprintsView = (() => {
     } catch (_) { _fallbackCopy(url); }
     // Also open native share if available
     if (navigator.share) {
-      navigator.share({ title: bp.name + ' — NICE Blueprint', text: bp.description, url }).catch(() => {});
+      navigator.share({ title: bp.name + ' — Longeron Blueprint', text: bp.description, url }).catch(() => {});
     }
   }
 

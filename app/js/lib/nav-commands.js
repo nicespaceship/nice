@@ -80,7 +80,7 @@ const NavCommands = (() => {
         if (typeof CrewDesigner !== 'undefined') CrewDesigner.open({ prompt: (p && p.prompt) || '' });
         else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
       } },
-    { id: 'export-data',       name: 'Export Data',        kind: 'action', icon: '#icon-build',     keywords: 'export download backup data json',                desc: 'Export all your NICE data as JSON.', run: () => { if (typeof DataIO !== 'undefined') DataIO.exportData(); } },
+    { id: 'export-data',       name: 'Export Data',        kind: 'action', icon: '#icon-build',     keywords: 'export download backup data json',                desc: 'Export all your Longeron data as JSON.', run: () => { if (typeof DataIO !== 'undefined') DataIO.exportData(); } },
   ];
 
   let _registered = false;

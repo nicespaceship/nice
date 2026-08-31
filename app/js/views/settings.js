@@ -255,8 +255,8 @@ const SettingsView = (() => {
           <h3 class="settings-section-title">Privacy & Data</h3>
           <div class="settings-row">
             <div class="settings-row-info">
-              <span class="settings-row-name">Help improve NICE</span>
-              <span class="settings-row-desc">Let NICE learn from your missions to build faster, cheaper models. Off by default. Turn off anytime.</span>
+              <span class="settings-row-name">Help improve Longeron</span>
+              <span class="settings-row-desc">Let Longeron learn from your ${Terminology.label('mission', { plural: true, lowercase: true })} to build faster, cheaper models. Off by default. Turn off anytime.</span>
             </div>
             <label class="settings-switch">
               <input type="checkbox" id="set-training-consent" />
@@ -271,14 +271,14 @@ const SettingsView = (() => {
           <div class="settings-row">
             <div class="settings-row-info">
               <span class="settings-row-name">Export Data</span>
-              <span class="settings-row-desc">Download all NICE settings, agents, and missions as JSON.</span>
+              <span class="settings-row-desc">Download all Longeron settings, agents, and ${Terminology.label('mission', { plural: true, lowercase: true })} as JSON.</span>
             </div>
             <button class="btn btn-sm" id="btn-export-data">Export</button>
           </div>
           <div class="settings-row">
             <div class="settings-row-info">
               <span class="settings-row-name">Import Data</span>
-              <span class="settings-row-desc">Restore NICE data from a previously exported JSON file.</span>
+              <span class="settings-row-desc">Restore Longeron data from a previously exported JSON file.</span>
             </div>
             <label class="btn btn-sm" for="btn-import-file" style="cursor:pointer">Import</label>
             <input type="file" id="btn-import-file" accept=".json" style="display:none" />
@@ -474,8 +474,8 @@ const SettingsView = (() => {
         if (!ok) throw new Error('consent-write-unavailable');
         if (typeof Notify !== 'undefined') {
           Notify.send({
-            title: on ? 'Thanks for helping improve NICE' : 'Data sharing off',
-            message: on ? 'NICE will learn from your missions.' : 'NICE will no longer learn from your missions.',
+            title: on ? 'Thanks for helping improve Longeron' : 'Data sharing off',
+            message: on ? `Longeron will learn from your ${Terminology.label('mission', { plural: true, lowercase: true })}.` : `Longeron will no longer learn from your ${Terminology.label('mission', { plural: true, lowercase: true })}.`,
             type: 'system',
           });
         }

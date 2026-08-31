@@ -666,7 +666,7 @@ const SpaceshipBuilderView = (() => {
           <button class="crew-setup-option crew-setup-recommended" id="btn-ai-setup">
             <span class="crew-setup-icon">&#9733;</span>
             <span class="crew-setup-label">AI Auto Setup</span>
-            <span class="crew-setup-desc">Let NICE design ${shipData.slotCount} agents tailored to your business</span>
+            <span class="crew-setup-desc">Let Longeron design ${shipData.slotCount} agents tailored to your business</span>
           </button>
           <button class="crew-setup-option" id="btn-manual-setup">
             <span class="crew-setup-icon">&#9881;</span>

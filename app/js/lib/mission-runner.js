@@ -1054,12 +1054,12 @@ const MissionRunner = (() => {
     if (/\b400\b|invalid.?request|invalid.?argument|function.?declarations|TYPE_STRING|only.?allowed.?for/i.test(msg)) {
       return {
         category: 'PROVIDER_BAD_REQUEST',
-        hint: 'The LLM rejected the schema or prompt. This is a NICE-side bug — surface the underlying message verbatim.',
+        hint: 'The LLM rejected the schema or prompt. This is a Longeron-side bug — surface the underlying message verbatim.',
       };
     }
     return {
       category: 'INTERNAL_ERROR',
-      hint: 'Something went wrong inside NICE. Surface the underlying message verbatim.',
+      hint: 'Something went wrong inside Longeron. Surface the underlying message verbatim.',
     };
   }
 

@@ -68,7 +68,7 @@ const SetupWizard = (() => {
     _overlay = document.createElement('div');
     _overlay.className = 'wizard-overlay';
     _overlay.setAttribute('role', 'dialog');
-    _overlay.setAttribute('aria-label', 'Welcome to NICE');
+    _overlay.setAttribute('aria-label', 'Welcome to Longeron');
     _overlay.innerHTML = `
       <div class="wizard-container">
         <div class="wizard-progress" id="wiz-progress"></div>
@@ -133,7 +133,7 @@ const SetupWizard = (() => {
   /* ── Step 1: What does your business do? ── */
   function _renderStep1(body, actions) {
     body.innerHTML = `
-      <h2 class="wizard-title">Welcome to NICE</h2>
+      <h2 class="wizard-title">Welcome to Longeron</h2>
       <p class="wizard-subtitle">Tell us about your business and we'll build you a custom AI team in seconds.</p>
       <div class="wizard-field">
         <label for="wiz-biz-desc">What does your business do?</label>
@@ -216,7 +216,7 @@ const SetupWizard = (() => {
   function _renderStep3(body, actions) {
     body.innerHTML = `
       <h2 class="wizard-title">Building your AI team...</h2>
-      <p class="wizard-subtitle">NICE is designing the perfect crew for your business.</p>
+      <p class="wizard-subtitle">Longeron is designing the perfect ${_t('crew')} for your business.</p>
       <div class="wizard-loading">
         <div class="wizard-spinner"></div>
         <p id="wiz-loading-text">Analyzing your needs...</p>

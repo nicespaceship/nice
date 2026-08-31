@@ -1016,7 +1016,7 @@ const PromptPanel = (() => {
       } else {
         const agentLabel = m.agent
           ? `<div class="monitor-card-agent">${_esc(m.agent)}</div>`
-          : `<div class="monitor-card-agent">NICE</div>`;
+          : `<div class="monitor-card-agent">${_esc(_personaName())}</div>`;
 
         let stepsHtml = '';
         if (m.steps && m.steps.length) {
@@ -1235,7 +1235,7 @@ const PromptPanel = (() => {
 
     if (/achievement|badge/i.test(lower) && /(how many|my|list|show|check)/i.test(lower)) {
       const achs = JSON.parse(localStorage.getItem(Utils.KEYS.achievements) || '[]');
-      return { text: achs.length ? `You've unlocked ${achs.length} achievement${achs.length !== 1 ? 's' : ''}: ${achs.join(', ')}.` : 'No achievements unlocked yet. Keep exploring NICE!' };
+      return { text: achs.length ? `You've unlocked ${achs.length} achievement${achs.length !== 1 ? 's' : ''}: ${achs.join(', ')}.` : 'No achievements unlocked yet. Keep exploring Longeron!' };
     }
 
     return null;
@@ -1315,7 +1315,7 @@ const PromptPanel = (() => {
 
     if (lower === '/help' || lower === '/commands') {
       return {
-        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /rank — Show your rank & XP\n• /tokens — Check token balance\n• /callsign [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
+        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /rank — Show your rank & XP\n• /tokens — Check token balance\n• /callsign [name] — Change how your assistant addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
         handled: true,
       };
     }
@@ -1499,7 +1499,7 @@ const PromptPanel = (() => {
     }
     if (intent.type === 'help') {
       return {
-        text: 'I can help you navigate NICE, manage agents, run missions, and more. Try:\n' +
+        text: 'I can help you navigate Longeron, manage agents, run missions, and more. Try:\n' +
           '• "Take me to Blueprints" — navigate anywhere\n' +
           '• "Write me a tagline" — auto-creates & runs a mission\n' +
           '• "How many agents do I have?" — status queries\n' +
@@ -2515,7 +2515,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           const agentLabel = mentioned ? mentioned.name : (agentBp ? agentBp.name : null);
           const agentHtml = agentLabel
             ? `<div class="monitor-card-agent">${_esc(agentLabel)}</div>`
-            : `<div class="monitor-card-agent">NICE</div>`;
+            : `<div class="monitor-card-agent">${_esc(_personaName())}</div>`;
           _streamEl.innerHTML = agentHtml + '<div class="monitor-card-text" id="monitor-stream-text"></div>';
           _monitorContent?.appendChild(_streamEl);
         }
@@ -2575,7 +2575,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _streamEl.className = 'monitor-card';
             _streamEl.id = 'monitor-stream';
             _streamEl.innerHTML =
-              '<div class="monitor-card-agent">NICE</div>' +
+              '<div class="monitor-card-agent">' + _esc(_personaName()) + '</div>' +
               '<div class="monitor-card-text" id="monitor-stream-text"></div>';
             _monitorContent?.appendChild(_streamEl);
             _showMonitor();

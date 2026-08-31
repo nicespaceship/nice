@@ -281,7 +281,7 @@ const ShipSetupWizard = (() => {
         <div class="ship-wizard-mode-card${_data.agentMode === 'auto' ? ' selected' : ''}" data-mode="auto">
           <div class="ship-wizard-mode-icon">&#10022;</div>
           <div class="ship-wizard-mode-label">AI Setup</div>
-          <div class="ship-wizard-mode-hint">${hasCrewDefs ? 'Use the blueprint\'s recommended agents' : 'Let NICE pick the best agents for you'}</div>
+          <div class="ship-wizard-mode-hint">${hasCrewDefs ? 'Use the blueprint\'s recommended agents' : 'Let Longeron pick the best agents for you'}</div>
         </div>
         <div class="ship-wizard-mode-card${_data.agentMode === 'manual' ? ' selected' : ''}" data-mode="manual">
           <div class="ship-wizard-mode-icon">&#9881;</div>

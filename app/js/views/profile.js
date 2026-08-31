@@ -45,7 +45,7 @@ const ProfileView = (() => {
               <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
             </svg>
           </div>
-          <h2 class="auth-title">Sign in to NICE</h2>
+          <h2 class="auth-title">Sign in to Longeron</h2>
           <p class="auth-sub">Neural Intelligence Command Engine</p>
 
           <div class="auth-tabs">

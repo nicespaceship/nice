@@ -119,7 +119,7 @@ const CrewDesigner = (() => {
     el.innerHTML = `
       <div class="cd-describe">
         <h2 class="cd-heading">What do you want your AI team to do?</h2>
-        <p class="cd-subheading">Describe your goal in plain English. NICE will design the perfect ${_t('crew')}.</p>
+        <p class="cd-subheading">Describe your goal in plain English. Longeron will design the perfect ${_t('crew')}.</p>
         <textarea class="cd-textarea" id="cd-prompt" placeholder="e.g., Monitor my Gmail for customer complaints, draft responses, and track patterns in a weekly report..." rows="4">${_esc(_data.userPrompt)}</textarea>
         <div class="cd-suggestions" id="cd-suggestions">
           ${SUGGESTIONS.map(s => `<button class="cd-chip" data-text="${_esc(s.text)}"><span class="cd-chip-icon">${s.icon}</span> ${_esc(s.text)}</button>`).join('')}
@@ -161,7 +161,7 @@ const CrewDesigner = (() => {
       <div class="cd-loading">
         <div class="wizard-spinner"></div>
         <p class="cd-loading-text">Designing your ${_t('crew')}...</p>
-        <p class="cd-loading-sub">NICE is analyzing your goal and building the optimal team.</p>
+        <p class="cd-loading-sub">Longeron is analyzing your goal and building the optimal team.</p>
       </div>
     `;
 
