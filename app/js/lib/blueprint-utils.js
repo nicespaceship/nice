@@ -196,7 +196,7 @@ const BlueprintUtils = (() => {
      cards, badges, status pills, and other tight layouts. Both fall
      back to a kebab-case → Title Case transform for ids not listed. */
   const _MODEL_NAMES = {
-    'nice-auto':                   'NICE Auto',
+    'nice-auto':                   'Longeron Auto',
     'gemini-2.5-flash':            'Gemini 2.5 Flash',
     'gemini-2-5-flash':            'Gemini 2.5 Flash',
     'gemini-2.5-pro':              'Gemini 2.5 Pro',
@@ -225,7 +225,7 @@ const BlueprintUtils = (() => {
     'nemotron-3-super':            'Nemotron 3 Super',
   };
   const _MODEL_SHORT_NAMES = {
-    'nice-auto':                   'NICE Auto',
+    'nice-auto':                   'Longeron Auto',
     'gemini-2.5-flash':            'Gemini Flash',
     'gemini-2-5-flash':            'Gemini Flash',
     'gemini-2.5-pro':              'Gemini Pro',

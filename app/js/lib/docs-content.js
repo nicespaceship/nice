@@ -121,7 +121,7 @@
         <li><strong>Sign in</strong> — Create an account or sign in with Google. Gemini 2.5 Flash is unlimited and always free — no API keys, no token meter.</li>
         <li><strong>Browse the Bridge</strong> — Explore hundreds of pre-built blueprints in the catalog. Filter by category, rarity, or search by name.</li>
         <li><strong>Activate your first agent</strong> — Click any agent card and hit <kbd>Activate</kbd>. The agent appears in your fleet.</li>
-        <li><strong>Run a mission</strong> — Type into the prompt panel ("Ask NICE…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
+        <li><strong>Run a mission</strong> — Type into the prompt panel ("Ask Ada…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
         <li><strong>Build a spaceship</strong> — Activate a spaceship blueprint to create a multi-agent team. Assign agents to crew slots and let them collaborate via the Ship's Log.</li>
       </ol>
 
@@ -152,7 +152,7 @@
         <dt>Bridge</dt>
         <dd>Your main hub — Schematic (active spaceship), Blueprints (catalog and Workshop), Missions, Outbox, Operations, Captain's Log, and Documentation.</dd>
         <dt>Prompt Panel</dt>
-        <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
+        <dd>The "Ask Ada…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
         <dt>Theme</dt>
         <dd>The Theme button at the top of the sidebar opens the switcher for your visual skin, rank badge, and notification alerts.</dd>
       </dl>
@@ -184,7 +184,7 @@
       <ul>
         <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
         <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
-        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, Llama). NICE Auto picks the best available if unset.</li>
+        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, Llama). Longeron Auto picks the best available if unset.</li>
         <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
         <li><strong>Category &amp; tags</strong> — for organization and search</li>
       </ul>
@@ -238,7 +238,7 @@
       <ul>
         <li><strong>Ship-level chat</strong> — open a spaceship's Schematic view and chat. The Ship runs your prompt as a Run with full audit, cancel, and analytics.</li>
         <li><strong>Agent chat</strong> — visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
-        <li><strong>Top-level NICE chat</strong> — the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
+        <li><strong>Top-level NICE chat</strong> — the "Ask Ada…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
         <li><strong>Scheduled Mission</strong> — save a Mission with a cron schedule and the Ship will fire Runs automatically.</li>
       </ul>
 
@@ -377,7 +377,7 @@
       <ul>
         <li><strong>Default:</strong> Gemini 2.5 Flash (free for everyone)</li>
         <li><strong>Per-agent:</strong> Set a preferred model in the Agent Builder</li>
-        <li><strong>NICE Auto:</strong> Routes each chat message to the best enabled model. Your active stack's routing wins when you run one; otherwise code goes to a coding model, long documents to a long-context model, and casual chat stays on free Gemini Flash</li>
+        <li><strong>Longeron Auto:</strong> Routes each chat message to the best enabled model. Your active stack's routing wins when you run one; otherwise code goes to a coding model, long documents to a long-context model, and casual chat stays on free Gemini Flash</li>
         <li><strong>Model Intel:</strong> Over time, NICE learns which models perform best for each agent and optimizes automatically</li>
       </ul>
 

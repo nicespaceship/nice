@@ -10,6 +10,13 @@ const PromptPanel = (() => {
 
   const STORAGE_KEY = Utils.KEYS.aiMessages;
 
+  /* Active theme's persona — the assistant the user is addressing. Themes
+     rename it (HAL, Morpheus, Dwight); Ada is the default. */
+  function _personaName() {
+    return (typeof Theme !== 'undefined' && Theme.current && Theme.getTheme)
+      ? (Theme.getTheme(Theme.current())?.persona?.name || 'Ada') : 'Ada';
+  }
+
   /* ── Prompt-injection hardening ──
      User-provided text (the turn they just typed, any attached text files,
      and — once this lands on the edge function — the callsign they set)
@@ -1925,9 +1932,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _getSelectedModel() {
     const modelSelect = _panel?.querySelector('#nice-ai-model');
     const val = modelSelect?.value || 'gemini-2.5-flash';
-    // NICE Auto is a routing pseudo-model, resolved per message at send time.
+    // Longeron Auto is a routing pseudo-model, resolved per message at send time.
     if (typeof LLMConfig !== 'undefined' && val === LLMConfig.AUTO_ID) {
-      return { id: LLMConfig.AUTO_ID, label: 'NICE Auto', auto: true };
+      return { id: LLMConfig.AUTO_ID, label: 'Longeron Auto', auto: true };
     }
     // Check LLM_MODELS registry first (supports all providers)
     if (typeof LLM_MODELS !== 'undefined') {
@@ -1996,7 +2003,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     history.push({ role: 'user', content: buildUserContent(userText, currentAttachments) });
 
     const sel = _getSelectedModel();
-    // NICE Auto resolves here, per message, so the request carries a concrete
+    // Longeron Auto resolves here, per message, so the request carries a concrete
     // model id and billing/gating stay per-real-model. Candidates are the
     // enabled models that can also read every staged attachment; the router's
     // final fallback is Gemini Flash, the multimodal catch-all.
@@ -2016,7 +2023,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         ? LLM_MODELS.find(m => m.id === routed.id)?.label
         : null) || routed.id;
       sel.id = routed.id;
-      sel.label = `NICE Auto → ${routedLabel}`;
+      sel.label = `Longeron Auto → ${routedLabel}`;
     }
     const model = opts.modelOverride || sel.id;
     const modelLabel = opts.modelOverride
@@ -2248,7 +2255,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         // Clear flow chips and reset placeholder
         _showFlowChips(null);
         const input = document.getElementById('nice-ai-input');
-        if (input) input.placeholder = 'Ask NICE\u2026';
+        if (input) input.placeholder = `Ask ${_personaName()}\u2026`;
         if (onComplete) onComplete(answers);
       }
       return;
@@ -2680,11 +2687,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (!enabledModels.length) return; // keep default Gemini option
     const prev = select.value;
     select.innerHTML = '';
-    // NICE Auto heads the list: routes each message to the best enabled model.
+    // Longeron Auto heads the list: routes each message to the best enabled model.
     if (typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
       const auto = document.createElement('option');
       auto.value = LLMConfig.AUTO_ID;
-      auto.textContent = 'NICE Auto';
+      auto.textContent = 'Longeron Auto';
       auto.title = 'Routes each message to the best enabled model. Casual chat stays on the free model.';
       select.appendChild(auto);
     }
@@ -2704,7 +2711,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     });
     // Keep a pick the user made themselves when it survived the repopulate
     // (the pre-populate placeholder is not a user choice; ids normalize
-    // dotted/dashed). Otherwise default to NICE Auto, then Gemini Flash.
+    // dotted/dashed). Otherwise default to Longeron Auto, then Gemini Flash.
     const prevNorm = String(prev || '').replace(/\./g, '-');
     const survivor = prevNorm && Array.from(select.options).find(o => o.value.replace(/\./g, '-') === prevNorm);
     if (_userPickedModel && survivor) {
@@ -2804,7 +2811,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         <div class="nice-ai-input-container">
           <div class="nice-ai-attachments" id="nice-ai-attachments" hidden></div>
           <div class="nice-ai-input-row">
-            <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
+            <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask ${_personaName()}…" rows="1"></textarea>
           </div>
           <canvas class="nice-ai-waveform" id="nice-ai-waveform" height="40"></canvas>
           <input type="file" id="nice-ai-file-input" accept="image/*,audio/*,video/*,application/pdf,text/*,application/rtf,application/json,application/xml,application/yaml,application/graphql,.txt,.md,.markdown,.mdx,.rtf,.log,.rst,.org,.adoc,.asciidoc,.tex,.bib,.csv,.tsv,.json,.ndjson,.jsonl,.geojson,.yaml,.yml,.xml,.diff,.patch,.srt,.vtt,.toml,.ini,.cfg,.conf,.env,.properties,.dockerignore,.dockerfile,.gitignore,.tf,.tfvars,.hcl,.cmake,.bazel,.bzl,.gradle,.sbt,.graphql,.gql,.proto,.thrift,.cypher,.rq,.html,.htm,.css,.scss,.sass,.less,.js,.mjs,.cjs,.jsx,.ts,.tsx,.svelte,.vue,.astro,.py,.pyi,.pyw,.c,.h,.cpp,.cxx,.cc,.hpp,.hxx,.cs,.swift,.rs,.go,.mod,.sum,.java,.kt,.kts,.scala,.sc,.groovy,.dart,.zig,.nim,.nims,.r,.rmd,.jl,.ml,.mli,.fs,.fsx,.fsi,.hs,.lhs,.sh,.bash,.zsh,.fish,.ps1,.pl,.lua,.rb,.php,.tcl,.m,.mm,.asm,.s,.sv,.svh,.vhdl,.vhd,.sol,.move,.cairo,.clj,.cljs,.cljc,.edn,.ex,.exs,.erl,.hrl,.sql,.mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.opus,.weba,.mp4,.mov,.m4v,.webm,.mkv,.mpeg,.mpg,.avi,.3gp,.3g2,.wmv,.flv" multiple hidden>
@@ -3431,6 +3438,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _populateModelDropdown();
     _updateSuggestionChips();
     _initLLMStatusChip();
+    // The assistant is named by the active theme (Ada, HAL, Morpheus…), so the
+    // prompt placeholder has to follow a theme switch, not just a fresh mount.
+    document.addEventListener('nice:theme-change', () => {
+      const input = document.getElementById('nice-ai-input');
+      if (input) input.placeholder = `Ask ${_personaName()}\u2026`;
+    });
     // Re-populate the model dropdown whenever entitlements change —
     // subscription.js auto-enables Pro/add-on models on sign-in, which
     // often lands after this panel's init() has already built the
@@ -3653,7 +3666,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Default: talking to NICE
     _routeAgent = null;
     _routeShip = null;
-    input.placeholder = 'Ask NICE…';
+    input.placeholder = `Ask ${_personaName()}…`;
   }
 
   let _lastSyncPath = null;

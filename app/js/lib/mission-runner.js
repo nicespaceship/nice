@@ -158,7 +158,7 @@ const MissionRunner = (() => {
       return null;
     }
 
-    // 2b. Resolve model — support NICE Auto
+    // 2b. Resolve model — support Longeron Auto
     const blueprintId = agent?.blueprint_id || agentBp?.id || null;
     let modelUsed = agentBp?.config?.llm_engine || agent?.llm_engine || 'gemini-2.5-flash';
     if (modelUsed === 'nice-auto' && blueprintId && typeof ModelIntel !== 'undefined') {
