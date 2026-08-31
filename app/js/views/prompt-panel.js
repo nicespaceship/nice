@@ -1415,7 +1415,7 @@ const PromptPanel = (() => {
     // the fuzzy nav resolve so "build an agent" opens the Builder rather than
     // resolving to the Agents roster; "show me agents" (no authoring verb)
     // still falls through to the nav resolver below.
-    if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower))
+    if (/^(create|new|add|build|make)\s+(an?\s+)?(mission|process|assignment)/i.test(lower))
       return _cmd('open-missions', { reply: `Opening ${_T('mission', true)} so you can create a new one.`, isNav: true, navLabel: _T('mission', true) });
     if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower))
       return _cmd('open-agent-builder', { reply: 'Opening the Agent Builder.', isNav: true, navLabel: 'Agent Builder' });
