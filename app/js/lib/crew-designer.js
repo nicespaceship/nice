@@ -161,7 +161,7 @@ const CrewDesigner = (() => {
       <div class="cd-loading">
         <div class="wizard-spinner"></div>
         <p class="cd-loading-text">Designing your ${_t('crew')}...</p>
-        <p class="cd-loading-sub">Longeron is analyzing your goal and building the optimal team.</p>
+        <p class="cd-loading-sub">Longeron is analyzing your goal and building the optimal ${_t('crew')}.</p>
       </div>
     `;
 

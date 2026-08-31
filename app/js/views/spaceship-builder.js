@@ -169,7 +169,7 @@ const SpaceshipBuilderView = (() => {
         slots: tpl.slots.map(s => ({ max: s.maxRarity || 'Common', label: s.label || _T('crew') + ' ' + s.id }))
       };
     }
-    return { name: 'Spaceship', slots: [{ max: 'Common', label: 'Bridge' }, { max: 'Common', label: 'Ops' }] };
+    return { name: _T('spaceship'), slots: [{ max: 'Common', label: 'Bridge' }, { max: 'Common', label: 'Ops' }] };
   }
 
   const SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
