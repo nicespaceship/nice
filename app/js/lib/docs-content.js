@@ -216,7 +216,7 @@
 
     get 'spaceships'() { return `
       <h1>${_T('spaceship', true)}</h1>
-      <p class="docs-lead">${_A('spaceship')} ${_t('spaceship')} is an orchestrator with a ${_t('crew')} of agents. It's the unit that runs ${_a('mission')} ${_T('mission')}: every Run belongs to a ${_t('spaceship')}, even if the ${_t('crew')} is just one agent.</p>
+      <p class="docs-lead">${_A('spaceship')} ${_t('spaceship')} is an orchestrator with a ${_t('crew')} of agents. It's the unit that runs ${_a('mission')} ${_t('mission')}: every Run belongs to a ${_t('spaceship')}, even if the ${_t('crew')} is just one agent.</p>
 
       <h2>How ${_T('spaceship', true)} Work</h2>
       <ol>
