@@ -85,7 +85,7 @@
       label: 'AI Models',
       icon: 'cpu',
       marketingIcon: 'fa-microchip',
-      description: 'NICE is your AI provider — toggle models on or off, never deal with API keys.',
+      description: 'Longeron is your AI provider: toggle models on or off, never deal with API keys.',
     },
     {
       id: 'tokens',
@@ -114,7 +114,7 @@
 
     'getting-started': `
       <h1>Getting Started</h1>
-      <p class="docs-lead">Welcome to NICE — the Neural Intelligence Command Engine. Build, deploy, and manage AI agent fleets from a single dashboard.</p>
+      <p class="docs-lead">Welcome to Longeron. Build, deploy, and manage AI agent fleets from a single dashboard.</p>
 
       <h2>Quick Start</h2>
       <ol>
@@ -227,7 +227,7 @@
       <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) are connected to the spaceship, not to individual agents. Every crew member on the ship inherits the connections, so a single OAuth grant covers the whole crew.</p>
 
       <h2>Crew Designer</h2>
-      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a spaceship configuration — picks a hull, fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
+      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. Longeron proposes a spaceship configuration — picks a hull, fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
     `,
 
     'missions': `
@@ -238,7 +238,7 @@
       <ul>
         <li><strong>Ship-level chat</strong> — open a spaceship's Schematic view and chat. The Ship runs your prompt as a Run with full audit, cancel, and analytics.</li>
         <li><strong>Agent chat</strong> — visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
-        <li><strong>Top-level NICE chat</strong> — the "Ask Ada…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
+        <li><strong>Top-level chat</strong> — the "Ask Ada…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
         <li><strong>Scheduled Mission</strong> — save a Mission with a cron schedule and the Ship will fire Runs automatically.</li>
       </ul>
 
@@ -305,7 +305,7 @@
 
       <h3>Workspace &amp; communications</h3>
       <ul>
-        <li><strong>Google Workspace</strong> — Gmail (search, read, send, draft, labels), Calendar (read, create, update, delete events), Drive (search, read, create, upload — files created or opened by NICE)</li>
+        <li><strong>Google Workspace</strong> — Gmail (search, read, send, draft, labels), Calendar (read, create, update, delete events), Drive (search, read, create, upload — files created or opened by Longeron)</li>
         <li><strong>Microsoft 365</strong> — Outlook Mail, Outlook Calendar, Contacts, OneDrive</li>
         <li><strong>Slack</strong> — messages, channels, threads, canvases, users (read-only)</li>
       </ul>
@@ -335,7 +335,7 @@
         <li><strong>Airtable</strong> — workspaces, bases, tables, records, comments (read-only)</li>
         <li><strong>Miro</strong> — boards, items, connectors, tags, search (read-only)</li>
         <li><strong>Zapier</strong> — discover and run any of 9,000+ Zapier-connected apps (actions you enable surface as tools)</li>
-        <li><strong>Replicate</strong> — search and run thousands of open-source models (Flux, Stable Diffusion, Kling, Luma, Bark) — billed to <em>your</em> Replicate account, not NICE</li>
+        <li><strong>Replicate</strong> — search and run thousands of open-source models (Flux, Stable Diffusion, Kling, Luma, Bark) — billed to <em>your</em> Replicate account, not Longeron</li>
       </ul>
 
       <h2>Coming soon</h2>
@@ -352,7 +352,7 @@
        attribute `data-models-table` is what docs.js targets. */
     'models': `
       <h1>AI Models</h1>
-      <p class="docs-lead">NICE is your AI provider — you never need API keys. Toggle models on/off in Integrations and agents use whichever you enable.</p>
+      <p class="docs-lead">Longeron is your AI provider — you never need API keys. Toggle models on/off in Integrations and agents use whichever you enable.</p>
 
       <h2>Available Models</h2>
       <table data-models-table>
@@ -378,7 +378,7 @@
         <li><strong>Default:</strong> Gemini 2.5 Flash (free for everyone)</li>
         <li><strong>Per-agent:</strong> Set a preferred model in the Agent Builder</li>
         <li><strong>Longeron Auto:</strong> Routes each chat message to the best enabled model. Your active stack's routing wins when you run one; otherwise code goes to a coding model, long documents to a long-context model, and casual chat stays on free Gemini Flash</li>
-        <li><strong>Model Intel:</strong> Over time, NICE learns which models perform best for each agent and optimizes automatically</li>
+        <li><strong>Model Intel:</strong> Over time, Longeron learns which models perform best for each agent and optimizes automatically</li>
       </ul>
 
       <h2>Premium Models</h2>
@@ -387,7 +387,7 @@
 
     'tokens': `
       <h1>Tokens &amp; XP</h1>
-      <p class="docs-lead">NICE uses two systems: tokens for AI model usage and XP for progression.</p>
+      <p class="docs-lead">Longeron uses two systems: tokens for AI model usage and XP for progression.</p>
 
       <h2>Subscriptions</h2>
       <p>Gemini 2.5 Flash is free for everyone, always. Paid plans unlock larger model pools and more slots.</p>
@@ -417,7 +417,7 @@
       <p>Each pool is independent — Claude tokens cost more per message because Claude models are more expensive. Max packs are the best value (17% discount).</p>
 
       <h2>XP &amp; Ranks</h2>
-      <p>Earn XP by using NICE. Every action contributes to your rank progression:</p>
+      <p>Earn XP by using Longeron. Every action contributes to your rank progression:</p>
       <ul>
         <li><strong>Create an agent:</strong> 20 XP</li>
         <li><strong>Complete a mission:</strong> 15 XP</li>
