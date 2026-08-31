@@ -235,7 +235,7 @@ const ProfileView = (() => {
           <h3 class="profile-section-title">Actions</h3>
           <a href="#/" class="profile-action-btn" style="text-decoration:none;">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-dashboard"/></svg>
-            Mission Dashboard
+            ${Terminology.label('mission')} Dashboard
           </a>
           <button class="profile-action-btn" onclick="ProfileView._signOut()">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-logout"/></svg>
