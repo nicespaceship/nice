@@ -5,6 +5,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const ShipSetupWizard = (() => {
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   let _overlay = null;
   let _step = 0;
   let _blueprint = null;
@@ -36,7 +38,7 @@ const ShipSetupWizard = (() => {
         && !Blueprints.isShipActivated(blueprint.id)
         && Blueprints.canActivateNewShip && !Blueprints.canActivateNewShip()) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Spaceship limit reached', message: 'Free accounts run one active spaceship at a time. Upgrade to NICE Pro to run a fleet.', type: 'warning' });
+        Notify.send({ title: `${_T('spaceship')} limit reached`, message: `Free accounts run one active ${_t('spaceship')} at a time. Upgrade to NICE Pro to run more at once.`, type: 'warning' });
       }
       if (typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
       return;
@@ -53,8 +55,8 @@ const ShipSetupWizard = (() => {
         Notify.send({
           title: 'Rank required',
           message: blueprint.rarity === 'Mythic'
-            ? 'Reach Admiral rank to deploy a Mythic spaceship.'
-            : `Reach ${blueprint.rarity} rank to deploy this spaceship, or upgrade to NICE Pro to unlock instantly.`,
+            ? `Reach Admiral rank to deploy a Mythic ${_t('spaceship')}.`
+            : `Reach ${blueprint.rarity} rank to deploy this ${_t('spaceship')}, or upgrade to NICE Pro to unlock instantly.`,
           type: 'warning',
         });
       }
@@ -137,7 +139,7 @@ const ShipSetupWizard = (() => {
   function _getShipClass() {
     const bu = _bu();
     return bu ? bu.getSlotTemplate(_blueprint) : {
-      id: 'dynamic', name: _blueprint?.name || 'Ship',
+      id: 'dynamic', name: _blueprint?.name || _T('spaceship'),
       slots: Array.from({ length: _getSlotCount() }, (_, i) => ({ id: i, maxRarity: 'Legendary', label: 'Agent ' + (i + 1) })),
     };
   }
@@ -226,7 +228,7 @@ const ShipSetupWizard = (() => {
     const sc = _getShipClass();
     const bpName = _blueprint.name || 'Orchestrator';
     body.innerHTML = `
-      <h2 class="wizard-title">Name Your Spaceship</h2>
+      <h2 class="wizard-title">Name Your ${_T('spaceship')}</h2>
       <p class="wizard-subtitle">Give your <strong>${_esc(bpName)}</strong> a name — your business or project.</p>
       <input type="text" class="wizard-input" id="ship-wiz-name" placeholder="e.g. ${_esc(bpName)}" maxlength="60" value="${_esc(_data.shipName)}" autofocus>
       <div class="ship-wizard-bp-preview">
@@ -576,7 +578,7 @@ const ShipSetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="ship-wiz-close">Close</button>
-        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View Spaceship Schematic</button>
+        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View ${_T('spaceship')} Schematic</button>
       `;
       actions.querySelector('#ship-wiz-close').addEventListener('click', close);
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {
