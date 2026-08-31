@@ -6,6 +6,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SetupWizard = (() => {
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   let _overlay = null;
   let _step = 0;
   const _esc = Utils.esc;
@@ -257,7 +259,7 @@ const SetupWizard = (() => {
           <span class="wizard-rec-flow">${_esc(flowLabel)} Flow</span>
         </div>
         <div class="wizard-rec-section">
-          <h4>Crew (${agents.length} agent${agents.length !== 1 ? 's' : ''})</h4>
+          <h4>${_T('crew')} (${agents.length} agent${agents.length !== 1 ? 's' : ''})</h4>
           ${agents.map(a => `
             <div class="wizard-agent-row">
               <strong>${_esc(a.name)}</strong>
@@ -334,8 +336,8 @@ const SetupWizard = (() => {
           <p class="wizard-subtitle"><strong>${_esc(_data.shipName)}</strong> is live with ${agentCount} agent${agentCount !== 1 ? 's' : ''}.</p>
           ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned</p>' : ''}
           <div class="wizard-first-mission" style="margin-top:1.5rem;padding:1rem;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;text-align:left">
-            <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first mission</p>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your crew${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
+            <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first ${_t('mission')}</p>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your ${_t('crew')}${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="text" id="wiz-first-mission" class="wizard-input" value="${_esc(firstMissionPrompt)}" style="flex:1" />
               <button class="btn btn-sm btn-primary" id="wiz-run-mission" style="white-space:nowrap">Run</button>
@@ -528,7 +530,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
         description: `AI team for: ${_data.businessDesc}`,
         category: 'Operations',
         flow_pattern: agents.length > 3 ? 'router' : 'sequential',
-        rationale: `Custom crew built around your ${_data.needs.length} selected focus areas.`,
+        rationale: `Custom ${_t('crew')} built around your ${_data.needs.length} selected focus areas.`,
       },
       agents,
       integrations_needed: integrations,
@@ -542,7 +544,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
 
   async function _deployCrew() {
     const proposal = _data.proposal;
-    if (!proposal?.agents?.length) throw new Error('No crew to deploy');
+    if (!proposal?.agents?.length) throw new Error(`No ${_t('crew')} to deploy`);
 
     const agents = proposal.agents;
     const userId = typeof State !== 'undefined' ? State.get('user')?.id : null;
@@ -581,7 +583,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
     }
 
     // 2. Create spaceship
-    setStatus('Deploying spaceship...');
+    setStatus(`Deploying ${_t('spaceship')}...`);
     // Numeric slot keys match the catalog convention (slot.id = position
     // index) so downstream readers find slots via positional lookup.
     const slotAssignments = {};
@@ -635,7 +637,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
     }
 
     // 3. Activate in Blueprints
-    setStatus('Activating crew...');
+    setStatus(`Activating ${_t('crew')}...`);
     if (typeof Blueprints !== 'undefined') {
       try {
         Blueprints.activateShip(shipId);
