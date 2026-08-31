@@ -424,7 +424,7 @@ const SetupWizard = (() => {
       return n ? n.label : id;
     });
 
-    const systemPrompt = `You are NICE, an AI crew designer. Given what the user's business does and what they need help with, design an optimal spaceship crew.
+    const systemPrompt = `You are Longeron, an AI crew designer. Given what the user's business does and what they need help with, design an optimal spaceship crew.
 
 Return ONLY valid JSON (no markdown, no explanation) in this exact format:
 {

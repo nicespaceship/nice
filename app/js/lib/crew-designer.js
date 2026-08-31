@@ -227,7 +227,7 @@ const CrewDesigner = (() => {
   async function _callAI(prompt) {
     if (typeof SB === 'undefined' || !SB.isReady()) throw new Error('Supabase not ready');
 
-    const systemPrompt = `You are NICE, an AI crew designer. Given what the user wants their AI team to do, design an optimal spaceship crew.
+    const systemPrompt = `You are Longeron, an AI crew designer. Given what the user wants their AI team to do, design an optimal spaceship crew.
 
 Return ONLY valid JSON (no markdown, no explanation) in this exact format:
 {

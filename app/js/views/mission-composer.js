@@ -440,7 +440,7 @@ const MissionComposerView = (() => {
   // the JSON parser + plan normalizer below run offline.
   function _systemPrompt() {
     return [
-      'You are the Mission Composer for NICE, an agentic workflow platform.',
+      'You are the Mission Composer for Longeron, an agentic workflow platform.',
       'A user describes what they want a crew to do. You emit a JSON plan.',
       '',
       'Rules:',
