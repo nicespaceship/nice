@@ -27,7 +27,10 @@
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./terminology.js'));
   } else {
-    root.DocsContent = factory(root.Terminology);
+    // terminology.js declares `const Terminology`, a global *lexical*
+    // binding — it never lands on window/self, so read the identifier,
+    // not a root property.
+    root.DocsContent = factory(typeof Terminology !== 'undefined' ? Terminology : root.Terminology);
   }
 }(typeof self !== 'undefined' ? self : this, function (Terminology) {
 
