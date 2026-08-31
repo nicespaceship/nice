@@ -13,17 +13,31 @@
    so the same fragment renders correctly in both surfaces. Each
    surface scopes typography under .docs-content via CSS.
 
+   Copy resolves theme nouns through Terminology lazily (getters), not
+   at load time, so the in-app hub re-reads the active theme on every
+   render. The UMD wrapper injects Terminology: the browser passes the
+   global, Node requires ./terminology.js and resolves the default
+   business nouns for the generated marketing pages.
+
    UMD wrapper: works as a browser <script> (assigns DocsContent global)
    and as a Node.js require() (returns the module).
 ═══════════════════════════════════════════════════════════════════ */
 
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
+    module.exports = factory(require('./terminology.js'));
   } else {
-    root.DocsContent = factory();
+    // terminology.js declares `const Terminology`, a global *lexical*
+    // binding — it never lands on window/self, so read the identifier,
+    // not a root property.
+    root.DocsContent = factory(typeof Terminology !== 'undefined' ? Terminology : root.Terminology);
   }
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (Terminology) {
+
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
+  const _a = (noun) => Terminology.article(noun);
+  const _A = (noun) => (_a(noun) === 'an' ? 'An' : 'A');
 
   /* ── Section metadata ─────────────────────────────────────────
      `icon`          — app SVG symbol id suffix (e.g. "play" → #icon-play)
@@ -37,7 +51,7 @@
       label: 'Getting Started',
       icon: 'play',
       marketingIcon: 'fa-play',
-      description: 'Sign in, browse the catalog, and run your first mission in under five minutes.',
+      get description() { return `Sign in, browse the catalog, and run your first ${_t('mission')} in under five minutes.`; },
     },
     {
       id: 'agents',
@@ -50,18 +64,18 @@
     {
       id: 'spaceships',
       slug: 'spaceships',
-      label: 'Spaceships',
+      get label() { return _T('spaceship', true); },
       icon: 'rocket',
       marketingIcon: 'fa-rocket',
-      description: 'Orchestrators with a crew of agents. The unit that runs every Mission.',
+      get description() { return `Orchestrators with a ${_t('crew')} of agents. The unit that runs every ${_T('mission')}.`; },
     },
     {
       id: 'missions',
       slug: 'missions',
-      label: 'Missions',
+      get label() { return _T('mission', true); },
       icon: 'task',
       marketingIcon: 'fa-list-check',
-      description: 'Reusable templates: which Spaceship runs what plan, on what schedule, toward what outcome.',
+      get description() { return `Reusable templates: which ${_T('spaceship')} runs what plan, on what schedule, toward what outcome.`; },
     },
     {
       id: 'workflows',
@@ -69,7 +83,7 @@
       label: 'Workflows',
       icon: 'workflow',
       marketingIcon: 'fa-diagram-project',
-      description: 'The DAG of steps a Mission executes — triage, pipeline, parallel, quality-loop, and more.',
+      get description() { return `The DAG of steps ${_a('mission')} ${_T('mission')} executes: triage, pipeline, parallel, quality-loop, and more.`; },
     },
     {
       id: 'integrations',
@@ -77,7 +91,7 @@
       label: 'Integrations',
       icon: 'integrations',
       marketingIcon: 'fa-plug',
-      description: 'Connect Google Workspace, Microsoft 365, and any custom MCP server to your spaceships.',
+      get description() { return `Connect Google Workspace, Microsoft 365, and any custom MCP server to your ${_t('spaceship', true)}.`; },
     },
     {
       id: 'models',
@@ -85,7 +99,7 @@
       label: 'AI Models',
       icon: 'cpu',
       marketingIcon: 'fa-microchip',
-      description: 'NICE is your AI provider — toggle models on or off, never deal with API keys.',
+      description: 'Longeron is your AI provider: toggle models on or off, never deal with API keys.',
     },
     {
       id: 'tokens',
@@ -112,17 +126,17 @@
   ─────────────────────────────────────────────────────────────── */
   const BODIES = {
 
-    'getting-started': `
+    get 'getting-started'() { return `
       <h1>Getting Started</h1>
-      <p class="docs-lead">Welcome to NICE — the Neural Intelligence Command Engine. Build, deploy, and manage AI agent fleets from a single dashboard.</p>
+      <p class="docs-lead">Welcome to Longeron. Build, deploy, and manage your AI agents from a single dashboard.</p>
 
       <h2>Quick Start</h2>
       <ol>
         <li><strong>Sign in</strong> — Create an account or sign in with Google. Gemini 2.5 Flash is unlimited and always free — no API keys, no token meter.</li>
         <li><strong>Browse the Bridge</strong> — Explore hundreds of pre-built blueprints in the catalog. Filter by category, rarity, or search by name.</li>
-        <li><strong>Activate your first agent</strong> — Click any agent card and hit <kbd>Activate</kbd>. The agent appears in your fleet.</li>
-        <li><strong>Run a mission</strong> — Type into the prompt panel ("Ask NICE…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
-        <li><strong>Build a spaceship</strong> — Activate a spaceship blueprint to create a multi-agent team. Assign agents to crew slots and let them collaborate via the Ship's Log.</li>
+        <li><strong>Activate your first agent</strong> — Click any agent card and hit <kbd>Activate</kbd>. The agent joins your ${_t('crew')}.</li>
+        <li><strong>Run ${_a('mission')} ${_t('mission')}</strong> — Type into the prompt panel ("Ask Ada…") at the bottom of the screen, or open an agent's detail page for a dedicated chat. Responses stream in real-time.</li>
+        <li><strong>Build ${_a('spaceship')} ${_t('spaceship')}</strong> — Activate ${_a('spaceship')} ${_t('spaceship')} blueprint to create a multi-agent ${_t('crew')}. Assign agents to its slots and let them collaborate via the Ship's Log.</li>
       </ol>
 
       <h2>Core Concepts</h2>
@@ -132,16 +146,16 @@
           <p>Individual AI workers with specific skills — writing, coding, research, design, and more. Each has a system prompt, tools, and a preferred model.</p>
         </div>
         <div class="docs-card">
-          <h3>Spaceships</h3>
-          <p>Orchestrators with a crew of agents. A spaceship is the unit that runs a mission — it routes the prompt to the right crew member via the WorkflowEngine.</p>
+          <h3>${_T('spaceship', true)}</h3>
+          <p>Orchestrators with a ${_t('crew')} of agents. ${_A('spaceship')} ${_t('spaceship')} is the unit that runs ${_a('mission')} ${_t('mission')} — it routes the prompt to the right ${_t('crew')} member via the WorkflowEngine.</p>
         </div>
         <div class="docs-card">
-          <h3>Missions</h3>
-          <p>Reusable templates: which Spaceship runs what plan, on what schedule, toward what outcome. Each execution is a Run with its own state.</p>
+          <h3>${_T('mission', true)}</h3>
+          <p>Reusable templates: which ${_T('spaceship')} runs what plan, on what schedule, toward what outcome. Each execution is a Run with its own state.</p>
         </div>
         <div class="docs-card">
           <h3>Blueprints</h3>
-          <p>Templates for agents and spaceships. The catalog has hundreds of pre-built blueprints. You can also build custom ones in the Workshop.</p>
+          <p>Templates for agents and ${_t('spaceship', true)}. The catalog has hundreds of pre-built blueprints. You can also build custom ones in the Workshop.</p>
         </div>
       </div>
 
@@ -150,21 +164,21 @@
         <dt>Sidebar</dt>
         <dd>Bridge, Code, and Chats. The Profile card at the bottom opens a popover with Settings, Integrations, Wallet, and Security.</dd>
         <dt>Bridge</dt>
-        <dd>Your main hub — Schematic (active spaceship), Blueprints (catalog and Workshop), Missions, Outbox, Operations, Captain's Log, and Documentation.</dd>
+        <dd>Your main hub — Schematic (active ${_t('spaceship')}), Blueprints (catalog and Workshop), ${_T('mission', true)}, Outbox, Operations, Captain's Log, and Documentation.</dd>
         <dt>Prompt Panel</dt>
-        <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
+        <dd>The "Ask Ada…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
         <dt>Theme</dt>
         <dd>The Theme button at the top of the sidebar opens the switcher for your visual skin, rank badge, and notification alerts.</dd>
       </dl>
-    `,
+    `; },
 
-    'agents': `
+    get 'agents'() { return `
       <h1>Agents</h1>
       <p class="docs-lead">Agents are AI workers with specialized skills. Each agent has a system prompt that defines its personality, knowledge, and capabilities.</p>
 
       <h2>Activating Agents</h2>
-      <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents appear in your fleet and can receive missions.</p>
-      <p>Free pilots get <strong>6 crew slots</strong> at every rank. Rank progression unlocks higher-rarity blueprints, not more slots:</p>
+      <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents join your ${_t('crew')} and can receive ${_t('mission', true)}.</p>
+      <p>Every ${_t('spaceship')} defines up to <strong>12 ${_t('crew')} slots</strong>; each slot unlocks as you rank up. Rank also gates which blueprint rarities you can activate:</p>
       <table>
         <thead><tr><th>Rank</th><th>XP Required</th><th>Max Rarity Unlocked</th></tr></thead>
         <tbody>
@@ -177,14 +191,14 @@
           <tr><td>Fleet Captain → Fleet Admiral</td><td>350K – 2.5M</td><td>Legendary</td></tr>
         </tbody>
       </table>
-      <p><strong>Pro subscribers</strong> get 12 Legendary slots immediately — no XP grind. <strong>Mythic</strong> rarity is milestone-only: even Pro subscribers earn it through achievements (e.g. dock a Legendary agent, ship 3+ spaceships), never via rank or subscription.</p>
+      <p><strong>Pro subscribers</strong> unlock every ${_t('crew')} slot and Legendary instantly — no XP grind. <strong>Mythic</strong> rarity is milestone-only: even Pro subscribers earn it through achievements (e.g. dock a Legendary agent, deploy 3+ ${_t('spaceship', true)}), never via rank or subscription.</p>
 
       <h2>Building Custom Agents</h2>
       <p>Open the Bridge → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
       <ul>
         <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
         <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
-        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, Llama). NICE Auto picks the best available if unset.</li>
+        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, and more). Longeron Auto picks the best available if unset.</li>
         <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
         <li><strong>Category &amp; tags</strong> — for organization and search</li>
       </ul>
@@ -198,23 +212,23 @@
         <div class="docs-card"><h3>Business</h3><p>Strategy, finance, marketing, operations</p></div>
         <div class="docs-card"><h3>Productivity</h3><p>Email, calendar, task management, automation</p></div>
       </div>
-    `,
+    `; },
 
-    'spaceships': `
-      <h1>Spaceships</h1>
-      <p class="docs-lead">A spaceship is an orchestrator with a crew of agents. It's the unit that runs a Mission — every Run lives on a Ship, even if the crew is just one agent.</p>
+    get 'spaceships'() { return `
+      <h1>${_T('spaceship', true)}</h1>
+      <p class="docs-lead">${_A('spaceship')} ${_t('spaceship')} is an orchestrator with a ${_t('crew')} of agents. It's the unit that runs ${_a('mission')} ${_t('mission')}: every Run belongs to a ${_t('spaceship')}, even if the ${_t('crew')} is just one agent.</p>
 
-      <h2>How Spaceships Work</h2>
+      <h2>How ${_T('spaceship', true)} Work</h2>
       <ol>
-        <li><strong>Activate a spaceship</strong> from the catalog or build one in the Workshop</li>
-        <li><strong>Assign crew</strong> — drop agents into the spaceship's crew slots in the Schematic view</li>
-        <li><strong>Send a mission</strong> — by default the Ship runs a <em>triage</em> step: an LLM router reads your prompt + the crew manifest and dispatches to the best-fit agent</li>
-        <li><strong>Agents collaborate</strong> via the Ship's Log — a shared conversation context every crew member can read and append to</li>
+        <li><strong>Activate ${_a('spaceship')} ${_t('spaceship')}</strong> from the catalog or build one in the Workshop</li>
+        <li><strong>Assign your ${_t('crew')}</strong> — drop agents into the ${_t('spaceship')}'s ${_t('crew')} slots in the Schematic view</li>
+        <li><strong>Send ${_a('mission')} ${_t('mission')}</strong> — by default the ${_t('spaceship')} runs a <em>triage</em> step: an LLM router reads your prompt + the ${_t('crew')} roster and dispatches to the best-fit agent</li>
+        <li><strong>Agents collaborate</strong> via the Ship's Log — a shared conversation context every ${_t('crew')} member can read and append to</li>
       </ol>
 
-      <h2>Ship Classes</h2>
+      <h2>${_T('spaceship')} Classes</h2>
       <table>
-        <thead><tr><th>Class</th><th>Crew Size</th><th>Best For</th></tr></thead>
+        <thead><tr><th>Class</th><th>${_T('crew')} Size</th><th>Best For</th></tr></thead>
         <tbody>
           <tr><td>Scout</td><td>1–2 agents</td><td>Simple focused tasks</td></tr>
           <tr><td>Cruiser</td><td>3–5 agents</td><td>Multi-domain projects</td></tr>
@@ -223,29 +237,29 @@
         </tbody>
       </table>
 
-      <h2>MCPs Mount at the Ship Level</h2>
-      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) are connected to the spaceship, not to individual agents. Every crew member on the ship inherits the connections, so a single OAuth grant covers the whole crew.</p>
+      <h2>MCPs Mount at the ${_T('spaceship')} Level</h2>
+      <p>External integrations (Google Workspace, Microsoft 365, custom MCP servers) are connected at the ${_t('spaceship')} level, not to individual agents. Every ${_t('crew')} member inherits the connections, so a single OAuth grant covers the whole ${_t('crew')}.</p>
 
       <h2>Crew Designer</h2>
-      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. NICE proposes a spaceship configuration — picks a hull, fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
-    `,
+      <p>Use the Crew Designer (<strong>Build an AI Team</strong> on the home screen) to describe your business in plain English. Longeron proposes a ${_t('spaceship')} configuration — picks a blueprint, fills the slots with agents whose roles match what you described, and lets you adjust before you deploy.</p>
+    `; },
 
-    'missions': `
-      <h1>Missions</h1>
-      <p class="docs-lead">A Mission is a reusable template: which Spaceship runs what plan, on what schedule, toward what outcome. Each execution is a <strong>Run</strong> with its own state.</p>
+    get 'missions'() { return `
+      <h1>${_T('mission', true)}</h1>
+      <p class="docs-lead">${_A('mission')} ${_T('mission')} is a reusable template: which ${_T('spaceship')} runs what plan, on what schedule, toward what outcome. Each execution is a <strong>Run</strong> with its own state.</p>
 
-      <h2>Running Missions</h2>
+      <h2>Running ${_T('mission', true)}</h2>
       <ul>
-        <li><strong>Ship-level chat</strong> — open a spaceship's Schematic view and chat. The Ship runs your prompt as a Run with full audit, cancel, and analytics.</li>
+        <li><strong>${_T('spaceship')}-level chat</strong> — open a ${_t('spaceship')}'s Schematic view and chat. The ${_t('spaceship')} runs your prompt as a Run with full audit, cancel, and analytics.</li>
         <li><strong>Agent chat</strong> — visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
-        <li><strong>Top-level NICE chat</strong> — the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
-        <li><strong>Scheduled Mission</strong> — save a Mission with a cron schedule and the Ship will fire Runs automatically.</li>
+        <li><strong>Top-level chat</strong> — the "Ask Ada…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
+        <li><strong>Scheduled ${_t('mission', true)}</strong> — save ${_a('mission')} ${_t('mission')} with a cron schedule and the ${_t('spaceship')} will fire Runs automatically.</li>
       </ul>
 
       <h2>Run States</h2>
       <dl>
         <dt>Queued</dt><dd>Waiting to be picked up by the executor</dd>
-        <dt>Running</dt><dd>The Ship is actively executing the plan</dd>
+        <dt>Running</dt><dd>The ${_t('spaceship')} is actively executing the plan</dd>
         <dt>Review</dt><dd>An <code>approval_gate</code> node is waiting for your decision (used in approval-mode workflows)</dd>
         <dt>Completed</dt><dd>Run finished successfully — results stored in <code>node_results</code></dd>
         <dt>Failed</dt><dd>Something went wrong — check the error details and retry</dd>
@@ -256,22 +270,22 @@
       <p>Run results stream in real-time via Server-Sent Events. Tokens appear as the model generates them — no waiting for the full response. Tool calls and observations from a ReAct agent stream in the same channel.</p>
 
       <h2>Plans &amp; Workflows</h2>
-      <p>Every Run executes a <em>plan</em> — a JSONB graph of nodes stored on the Mission as <code>missions.plan</code>. A single-agent ship runs a 1-node plan; a complex orchestration uses multiple nodes connected as a DAG. See the <strong>Workflows</strong> section for the full node-type catalog (triage, pipeline, parallel, quality_loop, approval_gate, condition, branch, loop, delay, webhook, notify, output).</p>
+      <p>Every Run executes a <em>plan</em> — a JSONB graph of nodes stored on the ${_T('mission')} as <code>missions.plan</code>. A single-agent ${_t('spaceship')} runs a 1-node plan; a complex orchestration uses multiple nodes connected as a DAG. See the <strong>Workflows</strong> section for the full node-type catalog (triage, pipeline, parallel, quality_loop, approval_gate, condition, branch, loop, delay, webhook, notify, output).</p>
 
       <h2>Default: Triage</h2>
-      <p>When you chat with a multi-agent spaceship, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the crew manifest and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build a Mission with that plan in the Workshop.</p>
-    `,
+      <p>When you chat with a multi-agent ${_t('spaceship')}, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the ${_t('crew')} roster and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build ${_a('mission')} ${_T('mission')} with that plan in the Workshop.</p>
+    `; },
 
-    'workflows': `
+    get 'workflows'() { return `
       <h1>Workflows</h1>
-      <p class="docs-lead">A workflow is the DAG of steps a Mission executes. Workflows are not standalone primitives — they live inside a Mission as <code>missions.plan</code> JSONB. Single-agent missions are 1-node workflows; complex orchestrations chain many nodes.</p>
+      <p class="docs-lead">A workflow is the DAG of steps ${_a('mission')} ${_T('mission')} executes. Workflows are not standalone primitives — they live inside ${_a('mission')} ${_T('mission')} as <code>missions.plan</code> JSONB. Single-agent ${_t('mission', true)} are 1-node workflows; complex orchestrations chain many nodes.</p>
 
       <h2>Node Types</h2>
       <table>
         <thead><tr><th>Node</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>agent</td><td>Run a prompt through a specific agent (full ReAct loop with tools)</td></tr>
-          <tr><td>triage</td><td>LLM router picks the single best-fit crew member from the manifest</td></tr>
+          <tr><td>triage</td><td>LLM router picks the single best-fit ${_t('crew')} member from the roster</td></tr>
           <tr><td>pipeline</td><td>Sequential assembly line: agent 1 → 2 → 3, each refining the prior output</td></tr>
           <tr><td>parallel</td><td>Run the same prompt across multiple agents simultaneously, then merge</td></tr>
           <tr><td>quality_loop</td><td>Agent runs → reviewer scores 1–10 → if below threshold, retry with feedback (up to 3 iterations)</td></tr>
@@ -291,21 +305,21 @@
 
       <h2>Triggers</h2>
       <dl>
-        <dt>Manual</dt><dd>Run on demand from the prompt panel, ship chat, or Mission detail page</dd>
+        <dt>Manual</dt><dd>Run on demand from the prompt panel, ${_t('spaceship')} chat, or ${_T('mission')} detail page</dd>
         <dt>Scheduled</dt><dd>Stored as <code>missions.schedule</code> JSONB (<code>{ cron, tz, enabled }</code>) — fired by the <code>tick_mission_schedules</code> pg_cron job every minute</dd>
       </dl>
-    `,
+    `; },
 
-    'integrations': `
+    get 'integrations'() { return `
       <h1>Integrations</h1>
-      <p class="docs-lead">Connect external services via MCP (Model Context Protocol) so your agents can read and write the tools you already use. Integrations attach to a spaceship — every crew member inherits the connection through a single OAuth grant.</p>
+      <p class="docs-lead">Connect external services via MCP (Model Context Protocol) so your agents can read and write the tools you already use. Integrations attach to ${_a('spaceship')} ${_t('spaceship')} — every ${_t('crew')} member inherits the connection through a single OAuth grant.</p>
 
       <h2>Wired integrations</h2>
-      <p>19 services are connected and ready to use today. All run through <code>mcp-gateway</code>, which auto-refreshes OAuth tokens before every tool call. Write tools are gated by the ship's approval mode — in <em>review</em> mode, side-effect tools (send, create, delete) trigger an inline approval prompt.</p>
+      <p>19 services are connected and ready to use today. All run through <code>mcp-gateway</code>, which auto-refreshes OAuth tokens before every tool call. Write tools are gated by the ${_t('spaceship')}'s approval mode — in <em>review</em> mode, side-effect tools (send, create, delete) trigger an inline approval prompt.</p>
 
       <h3>Workspace &amp; communications</h3>
       <ul>
-        <li><strong>Google Workspace</strong> — Gmail (search, read, send, draft, labels), Calendar (read, create, update, delete events), Drive (search, read, create, upload — files created or opened by NICE)</li>
+        <li><strong>Google Workspace</strong> — Gmail (search, read, send, draft, labels), Calendar (read, create, update, delete events), Drive (search, read, create, upload — files created or opened by Longeron)</li>
         <li><strong>Microsoft 365</strong> — Outlook Mail, Outlook Calendar, Contacts, OneDrive</li>
         <li><strong>Slack</strong> — messages, channels, threads, canvases, users (read-only)</li>
       </ul>
@@ -335,7 +349,7 @@
         <li><strong>Airtable</strong> — workspaces, bases, tables, records, comments (read-only)</li>
         <li><strong>Miro</strong> — boards, items, connectors, tags, search (read-only)</li>
         <li><strong>Zapier</strong> — discover and run any of 9,000+ Zapier-connected apps (actions you enable surface as tools)</li>
-        <li><strong>Replicate</strong> — search and run thousands of open-source models (Flux, Stable Diffusion, Kling, Luma, Bark) — billed to <em>your</em> Replicate account, not NICE</li>
+        <li><strong>Replicate</strong> — search and run thousands of open-source models (Flux, Stable Diffusion, Kling, Luma, Bark) — billed to <em>your</em> Replicate account, not Longeron</li>
       </ul>
 
       <h2>Coming soon</h2>
@@ -343,7 +357,7 @@
 
       <h2>Adding Custom MCPs</h2>
       <p>Any MCP-compatible server can be connected. Open <strong>Profile → Integrations</strong>, click <strong>Add Custom MCP</strong>, provide the server URL, select the transport (Streamable HTTP or SSE), and configure authentication.</p>
-    `,
+    `; },
 
     /* The 'models' section has dynamic content in-app: docs.js replaces
        the table rows below with live VaultView.MODEL_CATALOG entries
@@ -352,7 +366,7 @@
        attribute `data-models-table` is what docs.js targets. */
     'models': `
       <h1>AI Models</h1>
-      <p class="docs-lead">NICE is your AI provider — you never need API keys. Toggle models on/off in Integrations and agents use whichever you enable.</p>
+      <p class="docs-lead">Longeron is your AI provider — you never need API keys. Toggle models on/off in Integrations and agents use whichever you enable.</p>
 
       <h2>Available Models</h2>
       <table data-models-table>
@@ -377,25 +391,25 @@
       <ul>
         <li><strong>Default:</strong> Gemini 2.5 Flash (free for everyone)</li>
         <li><strong>Per-agent:</strong> Set a preferred model in the Agent Builder</li>
-        <li><strong>NICE Auto:</strong> Routes each chat message to the best enabled model. Your active stack's routing wins when you run one; otherwise code goes to a coding model, long documents to a long-context model, and casual chat stays on free Gemini Flash</li>
-        <li><strong>Model Intel:</strong> Over time, NICE learns which models perform best for each agent and optimizes automatically</li>
+        <li><strong>Longeron Auto:</strong> Routes each chat message to the best enabled model. Your active stack's routing wins when you run one; otherwise code goes to a coding model, long documents to a long-context model, and casual chat stays on free Gemini Flash</li>
+        <li><strong>Model Intel:</strong> Over time, Longeron learns which models perform best for each agent and optimizes automatically</li>
       </ul>
 
       <h2>Premium Models</h2>
       <p>Premium models (Claude, GPT, Gemini Pro) consume tokens from your balance. The free model (Gemini Flash) is unlimited. Manage your token balance in <strong>Wallet</strong>.</p>
     `,
 
-    'tokens': `
+    get 'tokens'() { return `
       <h1>Tokens &amp; XP</h1>
-      <p class="docs-lead">NICE uses two systems: tokens for AI model usage and XP for progression.</p>
+      <p class="docs-lead">Longeron uses two systems: tokens for AI model usage and XP for progression.</p>
 
       <h2>Subscriptions</h2>
       <p>Gemini 2.5 Flash is free for everyone, always. Paid plans unlock larger model pools and more slots.</p>
       <table>
         <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
-          <tr><td>Free</td><td>$0</td><td>6 slots, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
-          <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
+          <tr><td>Free</td><td>$0</td><td>1 active ${_t('spaceship')}, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>Unlimited active ${_t('spaceship', true)}, every ${_t('crew')} slot and Legendary instantly, 1,000 Standard tokens/month covering GPT-5 mini, GPT-OSS, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
           <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
@@ -417,20 +431,20 @@
       <p>Each pool is independent — Claude tokens cost more per message because Claude models are more expensive. Max packs are the best value (17% discount).</p>
 
       <h2>XP &amp; Ranks</h2>
-      <p>Earn XP by using NICE. Every action contributes to your rank progression:</p>
+      <p>Earn XP by using Longeron. Every action contributes to your rank progression:</p>
       <ul>
         <li><strong>Create an agent:</strong> 20 XP</li>
-        <li><strong>Complete a mission:</strong> 15 XP</li>
+        <li><strong>Complete ${_a('mission')} ${_t('mission')}:</strong> 15 XP</li>
         <li><strong>Chat with an agent:</strong> 5 XP</li>
         <li><strong>Create a workflow:</strong> 20 XP</li>
         <li><strong>Daily streaks</strong> multiply your XP earnings</li>
       </ul>
 
       <h2>Rank Progression</h2>
-      <p>Higher ranks unlock rarer blueprints (Common → Rare → Epic → Legendary). There are 12 ranks from Ensign to Fleet Admiral. <strong>Mythic</strong> rarity is milestone-only — earned through achievements (e.g. dock a Legendary agent, ship 3+ spaceships), never via rank or subscription. Even Pro subscribers earn Mythic the same way.</p>
-    `,
+      <p>Higher ranks unlock rarer blueprints (Common → Rare → Epic → Legendary). There are 12 ranks from Ensign to Fleet Admiral. <strong>Mythic</strong> rarity is milestone-only — earned through achievements (e.g. dock a Legendary agent, deploy 3+ ${_t('spaceship', true)}), never via rank or subscription. Even Pro subscribers earn Mythic the same way.</p>
+    `; },
 
-    'keyboard': `
+    get 'keyboard'() { return `
       <h1>Keyboard Shortcuts</h1>
       <p class="docs-lead">Power-user shortcuts for faster navigation. Press <kbd>?</kbd> any time to bring up the live overlay.</p>
 
@@ -453,7 +467,7 @@
           <tr><td><kbd>G  H</kbd></td><td>Go Bridge</td></tr>
           <tr><td><kbd>G  A</kbd></td><td>Go Agents</td></tr>
           <tr><td><kbd>G  S</kbd></td><td>Go Shipyard</td></tr>
-          <tr><td><kbd>G  M</kbd></td><td>Go Missions</td></tr>
+          <tr><td><kbd>G  M</kbd></td><td>Go ${_T('mission', true)}</td></tr>
           <tr><td><kbd>G  B</kbd></td><td>Go Blueprints</td></tr>
           <tr><td><kbd>G  N</kbd></td><td>Go Operations</td></tr>
           <tr><td><kbd>G  C</kbd></td><td>Go Comms</td></tr>
@@ -467,7 +481,7 @@
 
       <h2>Command Palette</h2>
       <p>Press <kbd>Cmd+K</kbd> to open the command palette. Type to fuzzy-search across agents, views, actions, and settings. Hit Enter to execute.</p>
-    `,
+    `; },
 
   };
 

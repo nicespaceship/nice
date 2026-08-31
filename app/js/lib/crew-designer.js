@@ -5,6 +5,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CrewDesigner = (() => {
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   let _overlay = null;
   let _step = 0;
   const _esc = Utils.esc;
@@ -117,13 +119,13 @@ const CrewDesigner = (() => {
     el.innerHTML = `
       <div class="cd-describe">
         <h2 class="cd-heading">What do you want your AI team to do?</h2>
-        <p class="cd-subheading">Describe your goal in plain English. NICE will design the perfect crew.</p>
+        <p class="cd-subheading">Describe your goal in plain English. Longeron will design the perfect ${_t('crew')}.</p>
         <textarea class="cd-textarea" id="cd-prompt" placeholder="e.g., Monitor my Gmail for customer complaints, draft responses, and track patterns in a weekly report..." rows="4">${_esc(_data.userPrompt)}</textarea>
         <div class="cd-suggestions" id="cd-suggestions">
           ${SUGGESTIONS.map(s => `<button class="cd-chip" data-text="${_esc(s.text)}"><span class="cd-chip-icon">${s.icon}</span> ${_esc(s.text)}</button>`).join('')}
         </div>
         <div class="cd-actions">
-          <button class="btn cd-btn-primary" id="cd-design-btn" ${_data.userPrompt.length < 10 ? 'disabled' : ''}>Design My Crew →</button>
+          <button class="btn cd-btn-primary" id="cd-design-btn" ${_data.userPrompt.length < 10 ? 'disabled' : ''}>Design My ${_T('crew')} →</button>
         </div>
       </div>
     `;
@@ -158,15 +160,15 @@ const CrewDesigner = (() => {
     body.innerHTML = `
       <div class="cd-loading">
         <div class="wizard-spinner"></div>
-        <p class="cd-loading-text">Designing your crew...</p>
-        <p class="cd-loading-sub">NICE is analyzing your goal and building the optimal team.</p>
+        <p class="cd-loading-text">Designing your ${_t('crew')}...</p>
+        <p class="cd-loading-sub">Longeron is analyzing your goal and building the optimal ${_t('crew')}.</p>
       </div>
     `;
 
     try {
       const proposal = await _callAI(_data.userPrompt);
       _data.proposal = proposal;
-      _data.shipName = proposal.spaceship?.name || 'Custom Spaceship';
+      _data.shipName = proposal.spaceship?.name || `Custom ${_T('spaceship')}`;
       _data.shipDescription = proposal.spaceship?.description || '';
       _data.shipCategory = proposal.spaceship?.category || 'Custom';
       _data.flowPattern = proposal.spaceship?.flow_pattern || 'sequential';
@@ -191,7 +193,7 @@ const CrewDesigner = (() => {
       _data.testMission = fallback.suggested_test_mission || '';
       _step = 1;
       _render();
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Offline Mode', message: 'Used crew templates (AI unavailable)', type: 'warning' });
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Offline Mode', message: `Used ${_t('crew')} templates (AI unavailable)`, type: 'warning' });
     }
   }
 
@@ -385,7 +387,7 @@ Rules:
         <!-- Ship Header -->
         <div class="cd-ship-header">
           <div class="cd-ship-name-row">
-            <input type="text" class="cd-ship-name-input" id="cd-ship-name" value="${_esc(_data.shipName)}" placeholder="Spaceship name">
+            <input type="text" class="cd-ship-name-input" id="cd-ship-name" value="${_esc(_data.shipName)}" placeholder="${_T('spaceship')} name">
             <span class="cd-flow-badge" title="${_esc(FLOW_LABELS[_data.flowPattern] || 'Sequential')} flow">
               ${FLOW_ICONS[_data.flowPattern] || '→'} ${_esc(FLOW_LABELS[_data.flowPattern] || 'Sequential')}
             </span>
@@ -397,7 +399,7 @@ Rules:
         ${overLimit ? `<div class="cd-warning">⚠ Your rank allows ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
 
         <!-- Crew Grid -->
-        <div class="cd-section-label">Crew <span class="cd-count">${_data.editedAgents.length} agents</span></div>
+        <div class="cd-section-label">${_T('crew')} <span class="cd-count">${_data.editedAgents.length} agents</span></div>
         <div class="cd-crew-grid" id="cd-crew-grid">
           ${_data.editedAgents.map((a, i) => _renderAgentCard(a, i)).join('')}
           <button class="cd-agent-add" id="cd-add-agent">+ Add Agent</button>
@@ -419,8 +421,8 @@ Rules:
         ` : ''}
 
         <!-- Test Mission -->
-        <div class="cd-section-label">Test Mission</div>
-        <input type="text" class="cd-test-mission" id="cd-test-mission" value="${_esc(_data.testMission)}" placeholder="First mission to test your crew...">
+        <div class="cd-section-label">Test ${_T('mission')}</div>
+        <input type="text" class="cd-test-mission" id="cd-test-mission" value="${_esc(_data.testMission)}" placeholder="First ${_t('mission')} to test your ${_t('crew')}...">
 
         <!-- Actions -->
         <div class="cd-actions cd-actions-split">
@@ -621,13 +623,13 @@ Rules:
       }
 
       // 2. Create spaceship
-      setStatus('Building spaceship...');
+      setStatus(`Building ${_t('spaceship')}...`);
       const slotAssignments = {};
       createdAgentIds.forEach((id, i) => { slotAssignments[i] = id; });
 
       // shipData for local State/localStorage (full details)
       const shipData = {
-        name: _data.shipName || 'Custom Spaceship',
+        name: _data.shipName || `Custom ${_T('spaceship')}`,
         category: _data.shipCategory || 'Custom',
         description: _data.shipDescription || '',
         status: 'deployed',
@@ -674,7 +676,7 @@ Rules:
       }
 
       // 3. Activate in Blueprints
-      setStatus('Activating crew...');
+      setStatus(`Activating ${_t('crew')}...`);
       if (typeof Blueprints !== 'undefined') {
         try {
           Blueprints.activateShip(shipId);
@@ -762,7 +764,7 @@ Rules:
           <p class="cd-rationale">${_esc(_data.rationale)}</p>
           <div class="cd-actions cd-actions-stack">
             <button class="btn cd-btn-primary" id="cd-view-schematic">View Schematic</button>
-            ${_data.testMission ? `<button class="btn cd-btn-secondary" id="cd-test-mission-btn">Run Test Mission</button>` : ''}
+            ${_data.testMission ? `<button class="btn cd-btn-secondary" id="cd-test-mission-btn">Run Test ${_T('mission')}</button>` : ''}
             <button class="btn cd-btn-secondary" id="cd-close-success">Close</button>
           </div>
         </div>
@@ -788,7 +790,7 @@ Rules:
     el.querySelector('#cd-close-success')?.addEventListener('click', close);
 
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: 'Crew Deployed', message: `${_data.shipName} with ${agentCount} agents`, type: 'success' });
+      Notify.send({ title: `${_T('crew')} Deployed`, message: `${_data.shipName} with ${agentCount} agents`, type: 'success' });
     }
   }
 

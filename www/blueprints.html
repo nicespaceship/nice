@@ -9,9 +9,12 @@
   <meta property="og:description" content="Hundreds of pre-built AI agent blueprints. Find one for your business and deploy in minutes." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://nicespaceship.com/blueprints" />
-  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.svg" />
+  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="NICE SPACESHIP" />
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://nicespaceship.ai/assets/og-image.png" />
   <meta name="twitter:title" content="Blueprint Catalog — NICE SPACESHIP" />
   <meta name="twitter:description" content="Hundreds of pre-built AI agent blueprints. Deploy a team for your business in minutes." />
   <meta name="robots" content="index, follow" />
@@ -516,7 +519,7 @@
         } else {
           statsRows.push(['Role', cfg.role || bp.category || '—']);
           statsRows.push(['Type', cfg.type || '—']);
-          statsRows.push(['Model', cfg.llm_engine === 'nice-auto' ? 'NICE Auto' : (cfg.llm_engine || '—')]);
+          statsRows.push(['Model', cfg.llm_engine === 'nice-auto' ? 'Longeron Auto' : (cfg.llm_engine || '—')]);
           statsRows.push(['Rarity', bp.rarity || 'Common']);
         }
         const statsHTML = statsRows.map(function(r) {
@@ -542,7 +545,7 @@
           capsHTML;
 
         document.getElementById('bp-drawer-actions').innerHTML =
-          '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in NICE</a>';
+          '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in Longeron</a>';
       }
 
       function render(append) {

@@ -394,7 +394,7 @@ const Auth = (() => {
 })();
 
 /* ─────────────────────────────────────────────────────────────────
-   MODULE: FleetDash — NICE SPACESHIP™ Dashboard
+   MODULE: FleetDash — NICE SPACESHIP Dashboard
 ───────────────────────────────────────────────────────────────── */
 const FleetDash = (() => {
 
@@ -467,7 +467,7 @@ const FleetDash = (() => {
     _populateBlueprints();
     velData = Array(24).fill(0);
     _startLive();
-    _log('SYS', 'NICE SPACESHIP™ v3.5 initialized');
+    _log('SYS', 'NICE SPACESHIP v3.5 initialized');
     if (llmCfg) _log('LLM', `Engine: ${llmCfg.model} (${llmCfg.prov})`);
     if (agents.length) _log('FLEET', `${agents.length} agent${agents.length > 1 ? 's' : ''} online`);
   }
@@ -1698,8 +1698,8 @@ const Logs = (() => {
     {
       slug: 'atm-v3-5-launch',
       cat: 'PRODUCT',
-      title: 'NICE SPACESHIP™ v3.5: What\'s New in the Mission Control Update',
-      excerpt: 'The biggest update to NICE SPACESHIP™ yet — multi-agent orchestration improvements, a redesigned Fleet panel, and real-time throughput telemetry now available in the dashboard.',
+      title: 'NICE SPACESHIP v3.5: What\'s New in the Mission Control Update',
+      excerpt: 'The biggest update to NICE SPACESHIP yet — multi-agent orchestration improvements, a redesigned Fleet panel, and real-time throughput telemetry now available in the dashboard.',
       date: 'March 5, 2026',
       readTime: '5 min read'
     },

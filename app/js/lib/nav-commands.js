@@ -80,7 +80,7 @@ const NavCommands = (() => {
         if (typeof CrewDesigner !== 'undefined') CrewDesigner.open({ prompt: (p && p.prompt) || '' });
         else if (typeof SetupWizard !== 'undefined') SetupWizard.open();
       } },
-    { id: 'export-data',       name: 'Export Data',        kind: 'action', icon: '#icon-build',     keywords: 'export download backup data json',                desc: 'Export all your NICE data as JSON.', run: () => { if (typeof DataIO !== 'undefined') DataIO.exportData(); } },
+    { id: 'export-data',       name: 'Export Data',        kind: 'action', icon: '#icon-build',     keywords: 'export download backup data json',                desc: 'Export all your Longeron data as JSON.', run: () => { if (typeof DataIO !== 'undefined') DataIO.exportData(); } },
   ];
 
   let _registered = false;
@@ -109,6 +109,10 @@ const NavCommands = (() => {
     };
   }
 
+  function _shipNoun() {
+    return (typeof Terminology !== 'undefined') ? Terminology.label('spaceship') : 'Spaceship';
+  }
+
   /* Project commands into display descriptors for a front-end. Resolves
      Terminology + Skin per call so theme-aware labels are never frozen.
      Returns { id, label, keywords, icon, kind } — execute via
@@ -121,6 +125,7 @@ const NavCommands = (() => {
       let keywords = c.keywords;
       if (c.id === 'open-missions') { label = m.plural; keywords = `missions tasks assignments queue jobs ${m.pluralLower}`; }
       else if (c.id === 'open-log') { keywords = `log audit captain history events ${m.pluralLower} operations`; }
+      else if (c.id === 'new-spaceship') { label = `New ${_shipNoun()}`; keywords = `new create spaceship workspace fleet ${_shipNoun().toLowerCase()}`; }
       if (skinOn && c.skinKey) label = Skin.text(c.skinKey, label);
       return { id: c.id, label, keywords, icon: c.icon, kind: c.kind };
     });

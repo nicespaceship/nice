@@ -13,26 +13,31 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const Subscription = (() => {
+  // Guarded: this lib loads in test harnesses without the Terminology global.
+  const _T = (noun, plural) => (typeof Terminology !== 'undefined')
+    ? Terminology.label(noun, { plural: !!plural })
+    : String(noun).charAt(0).toUpperCase() + String(noun).slice(1);
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
 
   /* ── Plan Definitions ── */
   const PLANS = {
     free: {
       id: 'free',
       price: 0,
-      ships: '1 spaceship',
+      get ships() { return `1 ${_t('spaceship')}`; },
       label: 'Free',
       icon: '',
       color: '#94a3b8',
-      desc: 'Gemini 2.5 Flash. One active spaceship. Crew slots and rarities unlock as you rank up to Legendary.',
+      get desc() { return `Gemini 2.5 Flash. One active ${_t('spaceship')}. ${_T('crew')} slots and rarities unlock as you rank up to Legendary.`; },
     },
     pro: {
       id: 'pro',
       price: 9.99,
-      ships: 'Unlimited spaceships',
+      get ships() { return `Unlimited ${_t('spaceship', true)}`; },
       label: 'Pro',
       icon: '',
       color: '#f59e0b',
-      desc: 'Run a fleet of spaceships. Every crew slot and Legendary unlocked instantly. 1,000 standard tokens a month. All non-flagship models.',
+      get desc() { return `Run unlimited ${_t('spaceship', true)}. Every ${_t('crew')} slot and Legendary unlocked instantly. 1,000 standard tokens a month. All non-flagship models.`; },
     },
   };
 

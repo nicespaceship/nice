@@ -376,9 +376,9 @@ describe('ShipLog', () => {
       expect(entries[1].role).toBe('agent');
     });
 
-    it('should use NICE SPACESHIP as default agent name', async () => {
+    it('should use the product name as default agent name', async () => {
       const result = await ShipLog.execute('ship-1', null, 'Hi');
-      expect(result.agent).toBe('NICE');
+      expect(result.agent).toBe('Longeron');
       expect(result.agentId).toBeNull();
     });
 

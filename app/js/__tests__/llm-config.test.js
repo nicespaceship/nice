@@ -452,7 +452,7 @@ describe('LLMConfig', () => {
     });
   });
 
-  describe('NICE Auto routing (classifyPrompt + routeAuto)', () => {
+  describe('Longeron Auto routing (classifyPrompt + routeAuto)', () => {
     const ALL_ON = {
       'gemini-2-5-flash': true, 'gpt-5-mini': true, 'gpt-oss-120b': true,
       'grok-4-3': true, 'deepseek-v4-flash': true, 'kimi-k2-6': true,
@@ -524,7 +524,7 @@ describe('LLMConfig', () => {
         for (const id of Object.values(stack.niceAutoRouting || {})) reachable.add(id);
       }
       for (const m of ModelCatalog.MODEL_CATALOG) {
-        expect(reachable.has(m.id), `${m.id} unreachable by NICE Auto`).toBe(true);
+        expect(reachable.has(m.id), `${m.id} unreachable by Longeron Auto`).toBe(true);
       }
     });
 

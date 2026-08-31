@@ -78,7 +78,7 @@ const VaultView = (() => {
             <h3 class="vault-section-title">Choose a Stack</h3>
             <span class="vault-section-badge tier-standard">Bundled model presets · Switch anytime</span>
           </div>
-          <p class="vault-stacks-intro">Pick the stack that matches what you're doing. Each stack pre-configures 4–6 models so NICE Auto can route every task to the right one. You can also fine-tune individual models below.</p>
+          <p class="vault-stacks-intro">Pick the stack that matches what you're doing. Each stack pre-configures 4–6 models so Longeron Auto can route every task to the right one. You can also fine-tune individual models below.</p>
           <div class="vault-stack-grid">
             ${typeof Stacks !== 'undefined' ? Stacks.listStacks().map(s => _renderStackCard(s, activeStackId, isPro, userAddons)).join('') : ''}
           </div>
@@ -132,7 +132,7 @@ const VaultView = (() => {
           </div>
           <div class="vault-stat">
             <span class="status-dot dot-g"></span>
-            <span class="vault-stat-num">NICE Auto</span>
+            <span class="vault-stat-num">Longeron Auto</span>
             <span class="vault-stat-label">Routes to the best model in your active stack</span>
           </div>
         </div>

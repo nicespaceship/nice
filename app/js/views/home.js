@@ -6,6 +6,11 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const HomeView = (() => {
+  /* The assistant label follows the theme persona; Ada is the default. */
+  function _personaName() {
+    return (typeof Theme !== 'undefined' && Theme.current && Theme.getTheme)
+      ? (Theme.getTheme(Theme.current())?.persona?.name || 'Ada') : 'Ada';
+  }
   const title = 'NICE SPACESHIP';
   const _esc = Utils.esc;
 
@@ -102,7 +107,7 @@ const HomeView = (() => {
       } else if (m.role === 'system') {
         return `<div class="monitor-system-msg">${_esc(m.text)}</div>`;
       } else {
-        const agentLabel = `<div class="monitor-card-agent">${_esc(m.agent || 'NICE')}</div>`;
+        const agentLabel = `<div class="monitor-card-agent">${_esc(m.agent || _personaName())}</div>`;
         let text = m.text || '';
         text = text.replace(/\[ACTION:\s*.+?\s*\|\s*.+?\s*\]/g, '').replace(/\[THEME:\s*.+?\s*\]/gi, '').replace(/\[EXEC:\s*\w+\s*(?:\|.*?)?\s*\]/g, '').trim();
         const time = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';

@@ -23,19 +23,19 @@ describe('Terminology', () => {
 
   describe('label()', () => {
     it('returns the default noun when no theme is active', () => {
-      expect(Terminology.label('mission')).toBe('Mission');
+      expect(Terminology.label('mission')).toBe('Process');
     });
 
     it('pluralizes with { plural: true }', () => {
-      expect(Terminology.label('mission', { plural: true })).toBe('Missions');
+      expect(Terminology.label('mission', { plural: true })).toBe('Processes');
     });
 
     it('lowercases with { lowercase: true }', () => {
-      expect(Terminology.label('mission', { lowercase: true })).toBe('mission');
+      expect(Terminology.label('mission', { lowercase: true })).toBe('process');
     });
 
     it('combines { plural, lowercase }', () => {
-      expect(Terminology.label('mission', { plural: true, lowercase: true })).toBe('missions');
+      expect(Terminology.label('mission', { plural: true, lowercase: true })).toBe('processes');
     });
 
     it('overrides the singular for Office theme', () => {
@@ -57,12 +57,26 @@ describe('Terminology', () => {
       stubTheme('office');
       // Office only overrides `mission` today; agent/spaceship fall through.
       expect(Terminology.label('agent')).toBe('Agent');
-      expect(Terminology.label('spaceship')).toBe('Spaceship');
+      expect(Terminology.label('spaceship')).toBe('Workspace');
     });
 
     it('accepts an explicit theme override via opts.theme', () => {
       expect(Terminology.label('mission', { theme: 'office' })).toBe('Assignment');
-      expect(Terminology.label('mission', { theme: 'nice' })).toBe('Mission');
+      expect(Terminology.label('mission', { theme: 'nice' })).toBe('Process');
+    });
+
+    it('gives sci-fi themes the spaceship vocabulary', () => {
+      for (const t of ['hal-9000', 'matrix', 'lcars', 'jarvis', 'cyberpunk', 'grid', 'rx-78-2', '16bit']) {
+        expect(Terminology.label('spaceship', { theme: t })).toBe('Spaceship');
+        expect(Terminology.label('mission',   { theme: t })).toBe('Mission');
+        expect(Terminology.label('crew',      { theme: t })).toBe('Crew');
+        expect(Terminology.label('captain',   { theme: t })).toBe('Captain');
+      }
+    });
+
+    it('falls back to business vocabulary for unknown/custom themes', () => {
+      expect(Terminology.label('spaceship', { theme: 'my-custom-theme' })).toBe('Workspace');
+      expect(Terminology.label('crew',      { theme: 'my-custom-theme' })).toBe('Team');
     });
 
     it('returns a capitalized fallback for unknown nouns', () => {
@@ -95,14 +109,14 @@ describe('Terminology', () => {
       Terminology.applyDOM();
       const singular = document.body.querySelector('[data-term="mission"]');
       const plural   = document.body.querySelector('[data-term="mission.plural"]');
-      expect(singular.textContent).toBe('Mission');
-      expect(plural.textContent).toBe('Missions');
+      expect(singular.textContent).toBe('Process');
+      expect(plural.textContent).toBe('Processes');
     });
 
     it('applies per-theme overrides on every call', () => {
       document.body.innerHTML = '<span id="t" data-term="mission.plural"></span>';
       Terminology.applyDOM();
-      expect(document.getElementById('t').textContent).toBe('Missions');
+      expect(document.getElementById('t').textContent).toBe('Processes');
       stubTheme('office');
       Terminology.applyDOM();
       expect(document.getElementById('t').textContent).toBe('Assignments');
@@ -121,7 +135,7 @@ describe('Terminology', () => {
       `;
       Terminology.applyDOM(document.getElementById('inside'));
       // inside: populated
-      expect(document.querySelector('#inside [data-term]').textContent).toBe('Missions');
+      expect(document.querySelector('#inside [data-term]').textContent).toBe('Processes');
       // outside: untouched because it was not in the scoped subtree
       expect(document.querySelector('#outside [data-term]').textContent).toBe('');
     });

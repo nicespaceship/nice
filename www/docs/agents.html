@@ -8,7 +8,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agents — NICE Documentation</title>
+  <title>Agents — Longeron Documentation</title>
   <meta name="description" content="AI workers with specialized skills. Activate from the catalog or build your own in the Workshop." />
   <link rel="icon" href="/assets/nice-mark-dark.svg" type="image/svg+xml" /><link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,8 +24,8 @@
       <h4>Documentation</h4>
       <a href="/docs/getting-started">Getting Started</a>
       <a href="/docs/agents" class="active">Agents</a>
-      <a href="/docs/spaceships">Spaceships</a>
-      <a href="/docs/missions">Missions</a>
+      <a href="/docs/spaceships">Workspaces</a>
+      <a href="/docs/missions">Processes</a>
       <a href="/docs/workflows">Workflows</a>
       <a href="/docs/integrations">Integrations</a>
       <a href="/docs/ai-models">AI Models</a>
@@ -37,8 +37,8 @@
       <p class="docs-lead">Agents are AI workers with specialized skills. Each agent has a system prompt that defines its personality, knowledge, and capabilities.</p>
 
       <h2>Activating Agents</h2>
-      <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents appear in your fleet and can receive missions.</p>
-      <p>Free pilots get <strong>6 crew slots</strong> at every rank. Rank progression unlocks higher-rarity blueprints, not more slots:</p>
+      <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents join your team and can receive processes.</p>
+      <p>Every workspace defines up to <strong>12 team slots</strong>; each slot unlocks as you rank up. Rank also gates which blueprint rarities you can activate:</p>
       <table>
         <thead><tr><th>Rank</th><th>XP Required</th><th>Max Rarity Unlocked</th></tr></thead>
         <tbody>
@@ -51,14 +51,14 @@
           <tr><td>Fleet Captain → Fleet Admiral</td><td>350K – 2.5M</td><td>Legendary</td></tr>
         </tbody>
       </table>
-      <p><strong>Pro subscribers</strong> get 12 Legendary slots immediately — no XP grind. <strong>Mythic</strong> rarity is milestone-only: even Pro subscribers earn it through achievements (e.g. dock a Legendary agent, ship 3+ spaceships), never via rank or subscription.</p>
+      <p><strong>Pro subscribers</strong> unlock every team slot and Legendary instantly — no XP grind. <strong>Mythic</strong> rarity is milestone-only: even Pro subscribers earn it through achievements (e.g. dock a Legendary agent, deploy 3+ workspaces), never via rank or subscription.</p>
 
       <h2>Building Custom Agents</h2>
       <p>Open the Bridge → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
       <ul>
         <li><strong>Name &amp; description</strong> — how the agent appears in the catalog</li>
         <li><strong>System prompt</strong> — instructions that shape the agent's behavior</li>
-        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, Llama). NICE Auto picks the best available if unset.</li>
+        <li><strong>Model</strong> — preferred LLM (Gemini, Claude, GPT, Grok, DeepSeek, and more). Longeron Auto picks the best available if unset.</li>
         <li><strong>Tools</strong> — capabilities like web browsing, image/video generation, file operations, or MCP connections</li>
         <li><strong>Category &amp; tags</strong> — for organization and search</li>
       </ul>

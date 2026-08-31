@@ -15,7 +15,7 @@ const AuthModal = (() => {
     _overlay.innerHTML = `
       <div class="auth-modal">
         <button class="auth-modal-close" aria-label="Close">&times;</button>
-        <h2>Sign in to NICE</h2>
+        <h2>Sign in to Longeron</h2>
         <p class="auth-sub">${_esc(message || 'Sign in to continue')}</p>
 
         <div class="auth-tabs">

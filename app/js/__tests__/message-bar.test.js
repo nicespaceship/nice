@@ -87,7 +87,7 @@ describe('MessageBar._collectMessages (via rendered ticker)', () => {
     mountBar();
     MessageBar.init();
     expect(track().innerHTML).toContain('All subsystems nominal');
-    expect(track().innerHTML).toContain('standing by for mission assignments');
+    expect(track().innerHTML).toContain('standing by for new ' + Terminology.label('mission', { plural: true, lowercase: true }));
   });
 
   it('collects at most 6 notifications from State', () => {
