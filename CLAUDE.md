@@ -1,8 +1,12 @@
-# NICE — Project Guide
+# Longeron — Project Guide
 
 ## Branding
-- **NICE** = Neural Intelligence Command Engine (the product)
+- **Longeron** = the product (this app). Renamed from NICE in 2026-08; the "Neural Intelligence Command Engine" backronym is retired. One app, not a suite.
 - **NICE SPACESHIP** = the company (all caps)
+- **Ada** = the default assistant persona. Personas are per-theme (HAL, Morpheus, Dwight); prompt-panel resolves them via `_personaName()` and re-applies on the `nice:theme-change` event.
+- Wordmark: `--font-brand` = IBM Plex Sans 700 at `--tracking-caps`.
+- Default vocabulary is business nouns via the `Terminology` SSOT: Workspace / Team / Process / Supervisor (Agent unchanged). The 8 sci-fi themes share a SCIFI profile that opts back into Spaceship / Crew / Mission / Captain; custom themes inherit business. `captain` means the orchestrating agent, never the account owner. Mission maps to Process, never Workflow (Workflow is already a primitive in the mission ontology).
+- Internal identifiers keep the legacy NICE name and must NOT be renamed (renaming resets live users): theme ids `nice`/`nice-dark`, the `nice-auto` model id, `nice-*` localStorage keys, CSS classes, edge function names, and DB table names.
 - Product domain: `nicespaceship.ai`
 - Company domain: `nicespaceship.com`
 
@@ -48,9 +52,9 @@ Fire while the desktop app is open, or on next launch if it was closed; they are
 - **`nightly-launch-audit`** (`17 3 * * *`) — a fresh session re-runs the read-only launch-readiness security checks, diffs the set of anon-executable privileged DB functions against a known baseline, reports drift, and drafts a single REVOKE-migration PR for any clear low-risk regression. Report + draft only; never merges.
 
 ## Project Overview
-**NICE** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Cloudflare Pages via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
+**Longeron** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Cloudflare Pages via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`. Internal code, module names, and identifiers still say NICE; that is expected (see Branding).
 
-NICE IS the LLM provider — users never deal with API keys. NICE holds all provider keys server-side. Users toggle which models they want active. Free tier = Gemini 2.5 Flash. Premium models cost tokens (purchased via Stripe).
+Longeron IS the LLM provider — users never deal with API keys. Longeron holds all provider keys server-side. Users toggle which models they want active. Free tier = Gemini 2.5 Flash. Premium models cost tokens (purchased via Stripe).
 
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
