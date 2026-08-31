@@ -21,6 +21,10 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const Onboarding = (() => {
+  // Guarded: this lib loads in test harnesses without the Terminology global.
+  const _t = (noun, plural) => (typeof Terminology !== 'undefined')
+    ? Terminology.label(noun, { plural: !!plural, lowercase: true })
+    : String(noun);
 
   /* ── Canonical event names ────────────────────────────────── */
   const EVENTS = {
@@ -38,9 +42,9 @@ const Onboarding = (() => {
     { event: EVENTS.SIGNUP_COMPLETE,        label: 'Signed up' },
     { event: EVENTS.WIZARD_START,           label: 'Opened wizard' },
     { event: EVENTS.WIZARD_COMPLETE,        label: 'Completed wizard' },
-    { event: EVENTS.FIRST_SPACESHIP,        label: 'First spaceship' },
-    { event: EVENTS.FIRST_MISSION_START,    label: 'Ran first mission' },
-    { event: EVENTS.FIRST_MISSION_COMPLETE, label: 'Finished first mission' },
+    { event: EVENTS.FIRST_SPACESHIP,        get label() { return `First ${_t('spaceship')}`; } },
+    { event: EVENTS.FIRST_MISSION_START,    get label() { return `Ran first ${_t('mission')}`; } },
+    { event: EVENTS.FIRST_MISSION_COMPLETE, get label() { return `Finished first ${_t('mission')}`; } },
   ];
 
   /* Dedupe window for signup_complete. If a user's account is older
