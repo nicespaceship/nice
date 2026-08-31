@@ -214,7 +214,7 @@ const MissionRunner = (() => {
         // another ship's runs.
         const runningCount = missions.filter(m => m.status === 'running' && m.spaceship_id === spaceshipId).length;
         if (runningCount >= behaviors.maxConcurrent) {
-          const msg = `Max concurrent ${_T('mission', true).toLowerCase()} reached (` + runningCount + '/' + behaviors.maxConcurrent + '). Mission queued — will run when a slot opens.';
+          const msg = `Max concurrent ${_T('mission', true).toLowerCase()} reached (` + runningCount + '/' + behaviors.maxConcurrent + `). ${_T('mission')} queued — will run when a slot opens.`;
           if (typeof Notify !== 'undefined') Notify.send({ title: `${_T('mission')} Queued`, message: msg, type: 'info' });
           return null; // stays in queued status
         }
