@@ -59,6 +59,12 @@ loadModule('lib/workflow-engine.js');
 loadModule('lib/roles.js');
 loadModule('lib/mission-runner.js');
 
+// A few tests stub ShipLog.execute inline and restore it on the last line of
+// the test body. A failing assertion skips that restore and leaves the stub
+// installed for every test after it — one real failure becomes several phantom
+// ones. Snapshot the real implementation so afterEach can always put it back.
+const PRISTINE_SHIPLOG_EXECUTE = globalThis.ShipLog.execute;
+
 describe('MissionRunner', () => {
   const userId = 'user-1';
 
@@ -68,6 +74,8 @@ describe('MissionRunner', () => {
     State.set('user', { id: userId });
     Gamification.addXP.mockClear();
   });
+
+  afterEach(() => { globalThis.ShipLog.execute = PRISTINE_SHIPLOG_EXECUTE; });
 
   it('should return null if no missionId', async () => {
     expect(await MissionRunner.run(null)).toBeNull();
@@ -272,7 +280,7 @@ describe('MissionRunner', () => {
     const notifications = Object.values(_db.notifications || {});
     const errNotif = notifications.find(n => n.type === 'error');
     expect(errNotif).toBeTruthy();
-    expect(errNotif.title).toBe('Mission Failed');
+    expect(errNotif.title).toBe('Process Failed');
 
     globalThis.ShipLog.execute = origExecute;
   });

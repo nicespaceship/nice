@@ -59,7 +59,7 @@ const VirtualFS = (() => {
       'app.js': '// Dashboard logic\nconsole.log(\'Dashboard loaded\');'
     },
     'edge-function': {
-      'index.ts': 'import "jsr:@supabase/functions-js/edge-runtime.d.ts";\n\nDeno.serve(async (req: Request) => {\n  const url = new URL(req.url);\n  \n  if (req.method === "OPTIONS") {\n    return new Response(null, {\n      headers: {\n        "Access-Control-Allow-Origin": "*",\n        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",\n        "Access-Control-Allow-Headers": "Content-Type, Authorization"\n      }\n    });\n  }\n\n  const data = { message: "Hello from NICE!" };\n\n  return new Response(JSON.stringify(data), {\n    headers: {\n      "Content-Type": "application/json",\n      "Connection": "keep-alive"\n    }\n  });\n});'
+      'index.ts': 'import "jsr:@supabase/functions-js/edge-runtime.d.ts";\n\nDeno.serve(async (req: Request) => {\n  const url = new URL(req.url);\n  \n  if (req.method === "OPTIONS") {\n    return new Response(null, {\n      headers: {\n        "Access-Control-Allow-Origin": "*",\n        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",\n        "Access-Control-Allow-Headers": "Content-Type, Authorization"\n      }\n    });\n  }\n\n  const data = { message: "Hello from Longeron!" };\n\n  return new Response(JSON.stringify(data), {\n    headers: {\n      "Content-Type": "application/json",\n      "Connection": "keep-alive"\n    }\n  });\n});'
     }
   };
 

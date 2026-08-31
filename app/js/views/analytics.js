@@ -6,6 +6,8 @@
 
 const AnalyticsView = (() => {
   const title = 'Operations';
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
 
@@ -47,7 +49,7 @@ const AnalyticsView = (() => {
         <div class="ana-section">
           <div class="ana-charts">
             <div class="ana-chart-panel">
-              <h3 class="ana-chart-title">Missions Per Day</h3>
+              <h3 class="ana-chart-title">${_T('mission', true)} Per Day</h3>
               <div class="ana-chart-box">
                 <canvas id="chart-tasks" width="500" height="200"></canvas>
               </div>
@@ -358,7 +360,7 @@ const AnalyticsView = (() => {
     const dimColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
     ctx.fillStyle = dimColor;
     ctx.font = '9px monospace';
-    ctx.fillText('Missions', cx, cy + 12);
+    ctx.fillText(_T('mission', true), cx, cy + 12);
 
     const legend = document.getElementById('donut-legend');
     if (legend) {
@@ -400,7 +402,7 @@ const AnalyticsView = (() => {
           <tr>
             <th>Agent</th>
             <th>Status</th>
-            <th>Missions</th>
+            <th>${_T('mission', true)}</th>
             <th>Completed</th>
             <th>Failed</th>
             <th>Success</th>
@@ -614,7 +616,7 @@ const AnalyticsView = (() => {
           <tr>
             <th>Agent</th>
             <th>Model</th>
-            <th>Missions</th>
+            <th>${_T('mission', true)}</th>
             <th>Tokens</th>
             <th>Cost</th>
           </tr>
@@ -668,10 +670,10 @@ const AnalyticsView = (() => {
     if (!rows.length) { wrap.innerHTML = ''; return; }
 
     wrap.innerHTML = `
-      <h4 class="ana-sub-title">Cost by Mission</h4>
+      <h4 class="ana-sub-title">Cost by ${_T('mission')}</h4>
       <table class="ana-table">
         <thead>
-          <tr><th>Mission</th><th>Agent</th><th>Tokens</th><th>Cost</th></tr>
+          <tr><th>${_T('mission')}</th><th>Agent</th><th>Tokens</th><th>Cost</th></tr>
         </thead>
         <tbody>
           ${rows.map(r => `
@@ -809,15 +811,15 @@ const AnalyticsView = (() => {
     const total = tasks.length;
     const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    let report = 'NICE Operations Report\n';
+    let report = 'Longeron Operations Report\n';
     report += '============================\n';
     report += 'Generated: ' + new Date().toLocaleString() + '\n\n';
     report += 'Overview\n--------\n';
     report += 'Total Agents: ' + agents.length + '\n';
     report += 'Active: ' + agents.filter(a => a.status === 'active').length + '\n';
-    report += 'Spaceships: ' + spaceships.length + '\n';
+    report += _T('spaceship', true) + ': ' + spaceships.length + '\n';
     report += 'Deployed: ' + spaceships.filter(s => s.status === 'deployed').length + '\n\n';
-    report += 'Missions\n--------\n';
+    report += _T('mission', true) + '\n--------\n';
     report += 'Total: ' + total + '\n';
     report += 'Completed: ' + completed + '\n';
     report += 'Failed: ' + failed + '\n';
@@ -826,7 +828,7 @@ const AnalyticsView = (() => {
     agents.forEach(a => {
       const at = tasks.filter(t => t.agent_id === a.id);
       const ac = at.filter(t => t.status === 'completed').length;
-      if (at.length > 0) report += a.name + ': ' + at.length + ' missions, ' + ac + ' completed\n';
+      if (at.length > 0) report += a.name + ': ' + at.length + ' ' + _t('mission', true) + ', ' + ac + ' completed\n';
     });
 
     const blob = new Blob([report], { type: 'text/plain' });

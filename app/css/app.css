@@ -98,11 +98,13 @@
   --tracking-normal:  0;
   --tracking-caps:    0.08em;  /* ALL CAPS overline only */
   --tracking-wordmark: 0.4em;  /* in-app brand wordmark lockup (e.g. sidebar SPACESHIP) */
+  /* Brand wordmark face. Neutral and technical on purpose: the theme
+     engine carries the personality, the wordmark carries credibility. */
+  --font-brand: 'IBM Plex Sans', 'Inter', -apple-system, sans-serif;
 
   --fw-regular: 400;
   --fw-medium:  600;
   --fw-bold:    700;
-  --fw-black:   900;  /* brand wordmark only (Orbitron Black) — not for prose/UI */
 
   /* ─── Card-scoped typography (visual artifacts, not prose) ──────
      Cards are TCG-style collectibles; the 11px prose floor does not
@@ -1359,8 +1361,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .side-brand:hover { color:var(--accent, var(--nav-text, var(--text))); }
 .side-brand-logo { width:26px; height:26px; display:block; flex-shrink:0; }
 .side-brand-text {
-  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-lg); font-weight:var(--fw-black);
-  letter-spacing:var(--tracking-wordmark); text-transform:uppercase; line-height:1;
+  font-family:var(--font-brand, var(--font-h)); font-size:var(--text-lg); font-weight:var(--fw-bold);
+  letter-spacing:var(--tracking-caps); text-transform:uppercase; line-height:1;
 }
 .side-theme-btn {
   display:flex; align-items:center; justify-content:center;
@@ -3073,6 +3075,8 @@ html:not([data-theme]) .app-main,
 @media(prefers-reduced-motion:reduce) { .skeleton-line::after, .skeleton-avatar::after { animation:none; } }
 
 .text-muted { color:var(--text-muted); }
+.link { color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
+.link:hover { color:var(--accent2, var(--accent)); }
 .text-muted a { color:var(--accent); text-decoration:underline; }
 .text-sm { font-size:var(--text-sm); }
 
@@ -3646,6 +3650,7 @@ html:not([data-theme]) .app-main,
 .mc-card:hover .mc-card-check { opacity:1; }
 .mc-card-status { font-size:var(--text-base); }
 .mc-card-pri { margin-left:auto; font-size:var(--text-xs); padding:1px 6px; }
+.mc-card-sample { font-size:var(--text-xs); font-weight:var(--fw-medium); text-transform:uppercase; letter-spacing:var(--tracking-caps); color:var(--text-muted); border:1px solid var(--border); border-radius:var(--radius); padding:1px 6px; }
 .mc-card-title { font-size:var(--text-sm); font-weight:var(--fw-medium); color:var(--text); line-height:var(--lh-snug); }
 .mc-card-agent { display:flex; align-items:center; gap:8px; font-size:var(--text-xs); color:var(--text-muted); }
 .mc-card-avatar {

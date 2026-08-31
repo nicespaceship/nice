@@ -1,5 +1,5 @@
 /**
- * NICE™ Flagship Setup Script
+ * NICE Flagship Setup Script
  *
  * Activates the Enterprise (NCC-1701-D) and Star Destroyer (Executor),
  * assigns their full 12-agent crews, and creates 10 real missions.

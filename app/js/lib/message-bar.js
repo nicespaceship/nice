@@ -96,7 +96,7 @@ const MessageBar = (() => {
     });
 
     msgs.push({
-      text: 'Agent fleet standing by for mission assignments.',
+      text: `Agents standing by for new ${Terminology.label('mission', { plural: true, lowercase: true })}.`,
       icon: '#icon-agent',
       route: '#/bridge/agents',
       type: 'system',

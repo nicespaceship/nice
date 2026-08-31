@@ -6,6 +6,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SetupWizard = (() => {
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   let _overlay = null;
   let _step = 0;
   const _esc = Utils.esc;
@@ -31,13 +33,22 @@ const SetupWizard = (() => {
   const TOTAL_STEPS = 4;
 
   /* ── Should the wizard auto-open? ── */
+  // Completion is permanent (localStorage); a skip only silences the wizard
+  // for the current session. One Escape keypress used to end onboarding
+  // forever, stranding new users on an empty Schematic.
   function shouldShow() {
-    return !localStorage.getItem(Utils.KEYS.onboarded);
+    return !localStorage.getItem(Utils.KEYS.onboarded)
+      && !sessionStorage.getItem(Utils.KEYS.onboarded + '-skip');
   }
 
   /* ── Mark onboarding complete ── */
   function _markDone() {
     localStorage.setItem(Utils.KEYS.onboarded, '1');
+  }
+
+  /* ── Silence for this session only ── */
+  function _markSkipped() {
+    try { sessionStorage.setItem(Utils.KEYS.onboarded + '-skip', '1'); } catch (_) {}
   }
 
   /* ══════════════════════════════════════════════════════════════ */
@@ -57,7 +68,7 @@ const SetupWizard = (() => {
     _overlay = document.createElement('div');
     _overlay.className = 'wizard-overlay';
     _overlay.setAttribute('role', 'dialog');
-    _overlay.setAttribute('aria-label', 'Welcome to NICE');
+    _overlay.setAttribute('aria-label', 'Welcome to Longeron');
     _overlay.innerHTML = `
       <div class="wizard-container">
         <div class="wizard-progress" id="wiz-progress"></div>
@@ -84,7 +95,7 @@ const SetupWizard = (() => {
   }
 
   function skip() {
-    _markDone();
+    _markSkipped();
     close();
     if (typeof AuditLog !== 'undefined') {
       AuditLog.log('wizard_skipped', { step: _step });
@@ -122,7 +133,7 @@ const SetupWizard = (() => {
   /* ── Step 1: What does your business do? ── */
   function _renderStep1(body, actions) {
     body.innerHTML = `
-      <h2 class="wizard-title">Welcome to NICE</h2>
+      <h2 class="wizard-title">Welcome to Longeron</h2>
       <p class="wizard-subtitle">Tell us about your business and we'll build you a custom AI team in seconds.</p>
       <div class="wizard-field">
         <label for="wiz-biz-desc">What does your business do?</label>
@@ -205,7 +216,7 @@ const SetupWizard = (() => {
   function _renderStep3(body, actions) {
     body.innerHTML = `
       <h2 class="wizard-title">Building your AI team...</h2>
-      <p class="wizard-subtitle">NICE is designing the perfect crew for your business.</p>
+      <p class="wizard-subtitle">Longeron is designing the perfect ${_t('crew')} for your business.</p>
       <div class="wizard-loading">
         <div class="wizard-spinner"></div>
         <p id="wiz-loading-text">Analyzing your needs...</p>
@@ -248,7 +259,7 @@ const SetupWizard = (() => {
           <span class="wizard-rec-flow">${_esc(flowLabel)} Flow</span>
         </div>
         <div class="wizard-rec-section">
-          <h4>Crew (${agents.length} agent${agents.length !== 1 ? 's' : ''})</h4>
+          <h4>${_T('crew')} (${agents.length} agent${agents.length !== 1 ? 's' : ''})</h4>
           ${agents.map(a => `
             <div class="wizard-agent-row">
               <strong>${_esc(a.name)}</strong>
@@ -325,8 +336,8 @@ const SetupWizard = (() => {
           <p class="wizard-subtitle"><strong>${_esc(_data.shipName)}</strong> is live with ${agentCount} agent${agentCount !== 1 ? 's' : ''}.</p>
           ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned</p>' : ''}
           <div class="wizard-first-mission" style="margin-top:1.5rem;padding:1rem;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;text-align:left">
-            <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first mission</p>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your crew${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
+            <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first ${_t('mission')}</p>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your ${_t('crew')}${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="text" id="wiz-first-mission" class="wizard-input" value="${_esc(firstMissionPrompt)}" style="flex:1" />
               <button class="btn btn-sm btn-primary" id="wiz-run-mission" style="white-space:nowrap">Run</button>
@@ -361,7 +372,7 @@ const SetupWizard = (() => {
       });
     }).catch(err => {
       if (_step !== 3) return;
-      _markDone(); // don't re-show wizard even on error
+      _markSkipped(); // quiet for this session; a failed deploy must not end onboarding forever
       body.innerHTML = `
         <div class="wizard-success">
           <h2 class="wizard-title">Setup Error</h2>
@@ -519,7 +530,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
         description: `AI team for: ${_data.businessDesc}`,
         category: 'Operations',
         flow_pattern: agents.length > 3 ? 'router' : 'sequential',
-        rationale: `Custom crew built around your ${_data.needs.length} selected focus areas.`,
+        rationale: `Custom ${_t('crew')} built around your ${_data.needs.length} selected focus areas.`,
       },
       agents,
       integrations_needed: integrations,
@@ -533,7 +544,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
 
   async function _deployCrew() {
     const proposal = _data.proposal;
-    if (!proposal?.agents?.length) throw new Error('No crew to deploy');
+    if (!proposal?.agents?.length) throw new Error(`No ${_t('crew')} to deploy`);
 
     const agents = proposal.agents;
     const userId = typeof State !== 'undefined' ? State.get('user')?.id : null;
@@ -572,7 +583,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
     }
 
     // 2. Create spaceship
-    setStatus('Deploying spaceship...');
+    setStatus(`Deploying ${_t('spaceship')}...`);
     // Numeric slot keys match the catalog convention (slot.id = position
     // index) so downstream readers find slots via positional lookup.
     const slotAssignments = {};
@@ -626,7 +637,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
     }
 
     // 3. Activate in Blueprints
-    setStatus('Activating crew...');
+    setStatus(`Activating ${_t('crew')}...`);
     if (typeof Blueprints !== 'undefined') {
       try {
         Blueprints.activateShip(shipId);

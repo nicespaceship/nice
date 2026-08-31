@@ -64,10 +64,18 @@ jobs:
 
       - name: Check bundle size
         run: |
-          SIZE=$(cat app/js/nice.js app/js/lib/*.js app/js/views/*.js | wc -c)
-          echo "Total JS size: $SIZE bytes"
-          if [ "$SIZE" -gt 204800 ]; then
-            echo "::warning::Bundle size exceeds 200KB budget ($SIZE bytes)"
+          # Budget on the minified bundle "Verify build" just produced
+          # (~1.2MB today; 1.5MB leaves headroom without hiding a
+          # vendored-library or asset-in-JS regression).
+          if [ ! -f app/js/nice.bundle.min.js ]; then
+            echo "::error::app/js/nice.bundle.min.js missing — run npm run build before this step"
+            exit 1
+          fi
+          SIZE=$(wc -c < app/js/nice.bundle.min.js)
+          echo "Minified bundle: $SIZE bytes (budget 1572864)"
+          if [ "$SIZE" -gt 1572864 ]; then
+            echo "::error::Minified bundle exceeds the 1.5MB budget ($SIZE bytes)"
+            exit 1
           fi
 
       - name: Upload coverage report

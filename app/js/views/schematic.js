@@ -6,6 +6,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SchematicView = (() => {
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   const _esc = Utils.esc;
 
   let _resizeTimer = null;
@@ -191,27 +193,48 @@ const SchematicView = (() => {
     // of overlapping the visualization.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(!!activeShip || isAuthed);
 
+    // Re-render when Supabase ships hydrate. Registered BEFORE the no-ship
+    // early return below: on a fresh authed load the first paint happens
+    // while 'activated-ships' is still undefined, and without this
+    // subscription a zero-ship hydration would never repaint the skeleton
+    // into the real empty state. Only register once per view mount
+    // (_unsubShips already set means a prior render wired it).
+    if (!_unsubShips && typeof State !== 'undefined') {
+      _unsubShips = () => { if (_el && !_rerendering) { _rerendering = true; render(_el); _rerendering = false; } };
+      // Defer past State.on's immediate-fire behavior: activated-ships may
+      // already have data, so a synchronous State.on would recurse into
+      // render() before this call returns. Microtask lets render() finish first.
+      Promise.resolve().then(() => {
+        if (_unsubShips && typeof State !== 'undefined') State.on('activated-ships', _unsubShips);
+      });
+    }
+
     if (!activeShip) {
       // If the user is authenticated, Supabase may not have finished syncing
-      // yet — show a skeleton of the schematic structure instead of the
-      // empty-state CTAs, so users don't see "No spaceships deployed" for a
-      // ship they just reset (and the 5-10s hydration window reads as
-      // "loading", not "frozen"). Once activated-ships fires again
-      // (Blueprints._fireShipState after the user_spaceships query returns),
-      // we re-render with real data.
-      if (isAuthed) {
+      // yet — show a skeleton while State 'activated-ships' is still
+      // undefined (Blueprints._fireShipState has not run). Once hydration
+      // lands with zero ships, the authed user gets the real empty state:
+      // the old branch keyed only on isAuthed and kept the skeleton forever,
+      // so a new user who skipped the wizard saw an app that never loads.
+      const hydrated = typeof State !== 'undefined' && State.get('activated-ships') !== undefined;
+      if (isAuthed && !hydrated) {
         el.innerHTML = '<div class="bridge-hero-wrap"><div class="bridge-hero-content">' + _renderSkeleton() + '</div></div>';
       } else {
+        const canWizard = isAuthed && typeof SetupWizard !== 'undefined';
         el.innerHTML = `
           <div class="schematic-empty app-empty">
-            <h2>No spaceships deployed</h2>
-            <p>Activate a spaceship from the catalog or build one from scratch to put a crew on the schematic.</p>
+            <h2>No ${_t('spaceship', true)} deployed</h2>
+            <p>Activate a ${_t('spaceship')} from the catalog or build one from scratch to put a ${_t('crew')} on the schematic.</p>
             <div class="app-empty-acts">
-              <a href="#/bridge?tab=spaceship" class="btn btn-primary btn-sm">Browse spaceships</a>
+              ${canWizard ? `<button class="btn btn-primary btn-sm" id="sch-setup-crew">Set up my ${_t('crew')}</button>` : ''}
+              <a href="#/bridge?tab=spaceship" class="btn ${canWizard ? '' : 'btn-primary '}btn-sm">Browse ${_t('spaceship', true)}</a>
               <a href="#/bridge/spaceships/new" class="btn btn-sm">Build your own</a>
             </div>
           </div>
         `;
+        if (canWizard) {
+          document.getElementById('sch-setup-crew')?.addEventListener('click', () => SetupWizard.open());
+        }
       }
       return;
     }
@@ -307,24 +330,8 @@ const SchematicView = (() => {
       });
     });
 
-    // Re-render when Supabase ships hydrate — fixes the false empty-state flash
-    // and the slot-count race after a hard reset. Blueprints._fireShipState()
-    // fires State.set('activated-ships') both at init (from localStorage) and
-    // again once the user_spaceships query returns, so we get exactly one
-    // re-render when real data arrives without polling.
-    // Re-render when Supabase ships hydrate. Only register once per view mount
-    // (_unsubShips already set means a prior render wired it). Since _el is
-    // module-level and always points to the current container, the same handler
-    // stays correct through resize / theme re-renders.
-    if (!_unsubShips && typeof State !== 'undefined') {
-      _unsubShips = () => { if (_el && !_rerendering) { _rerendering = true; render(_el); _rerendering = false; } };
-      // Defer past State.on's immediate-fire behavior: activated-ships already
-      // has data after init, so a synchronous State.on would recurse into
-      // render() before this call returns. Microtask lets render() finish first.
-      Promise.resolve().then(() => {
-        if (_unsubShips && typeof State !== 'undefined') State.on('activated-ships', _unsubShips);
-      });
-    }
+    // (Ship-hydration re-render subscription is registered earlier in this
+    // function, before the no-ship early return.)
 
     // Subscribe to live activity signals so the status node reflects
     // mission-runner / agent-executor work in real time. Replace any
@@ -425,7 +432,7 @@ const SchematicView = (() => {
       '</div>' +
       '<div class="schematic-col schematic-col-left">' + leftHTML + '</div>' +
       '<div class="schematic-center">' +
-        '<div class="sch-core-hit-overlay" title="Tap to speak a mission"></div>' +
+        '<div class="sch-core-hit-overlay" title="Tap to speak ' + Terminology.article('mission') + ' ' + _t('mission') + '"></div>' +
       '</div>' +
       '<div class="schematic-col schematic-col-right">' + rightHTML + '</div>' +
     '</div>';
@@ -441,7 +448,7 @@ const SchematicView = (() => {
     const tabs = document.getElementById('app-fixed-tabs');
     if (!tabs) return;
     _unmountFixedShipPicker();
-    const shipName = activeShip?.name || 'Unnamed Ship';
+    const shipName = activeShip?.name || `Unnamed ${_T('spaceship')}`;
 
     if (_isMobile()) {
       // Pill button sits next to .bp-tab-picker inside #app-fixed-tabs so
@@ -460,9 +467,9 @@ const SchematicView = (() => {
         '</button>';
       const sheetHTML =
         '<div class="bp-sheet-backdrop sch-ship-sheet-backdrop" id="sch-ship-sheet-backdrop" hidden></div>' +
-        '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ship" aria-modal="true" hidden>' +
+        '<div class="bp-sheet sch-ship-sheet" id="sch-ship-sheet" role="dialog" aria-label="Choose ' + _t('spaceship') + '" aria-modal="true" hidden>' +
           '<div class="bp-sheet-handle"></div>' +
-          '<div class="bp-sheet-header"><h3 class="bp-sheet-title">Ships</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
+          '<div class="bp-sheet-header"><h3 class="bp-sheet-title">' + _T('spaceship', true) + '</h3><button class="bp-sheet-close" id="sch-ship-sheet-close" aria-label="Close">&times;</button></div>' +
           '<div class="bp-sheet-body">' + optionsHTML + '</div>' +
         '</div>';
       tabs.insertAdjacentHTML('beforeend', pickerHTML);
@@ -520,7 +527,7 @@ const SchematicView = (() => {
           '<span class="sch-fixed-ship-label">' + _esc(shipName) + '</span>' +
           '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>' +
         '</button>' +
-        '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ship" hidden>' + optionsHTML + '</div>' +
+        '<div class="sch-fixed-ship-menu" id="sch-fixed-ship-menu" role="listbox" aria-label="Active ' + _t('spaceship') + '" hidden>' + optionsHTML + '</div>' +
       '</div>';
     // Mount into the shared sub-toolbar so the ship picker lines up with the
     // other pages' controls (centered). Falls back to a sibling of the tabs
@@ -793,7 +800,7 @@ const SchematicView = (() => {
       '</div>' +
       '<ol class="schematic-stack-rows">' + rowsHTML + '</ol>' +
       '<div class="schematic-stack-reactor">' +
-        '<div class="sch-core-hit-overlay" title="Tap to speak a mission"></div>' +
+        '<div class="sch-core-hit-overlay" title="Tap to speak ' + Terminology.article('mission') + ' ' + _t('mission') + '"></div>' +
       '</div>' +
     '</div>';
   }
@@ -817,7 +824,7 @@ const SchematicView = (() => {
           '</div>' +
         '</li>';
       }
-      return '<div class="schematic-stack schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
+      return '<div class="schematic-stack schematic-skeleton" aria-busy="true" aria-label="Loading ' + _t('crew') + '">' +
         '<ol class="schematic-stack-rows">' + rows + '</ol>' +
       '</div>';
     }
@@ -830,7 +837,7 @@ const SchematicView = (() => {
     '</div>';
     let col = '';
     for (let i = 0; i < SLOTS / 2; i++) col += card;
-    return '<div class="schematic-wired schematic-skeleton" aria-busy="true" aria-label="Loading crew">' +
+    return '<div class="schematic-wired schematic-skeleton" aria-busy="true" aria-label="Loading ' + _t('crew') + '">' +
       '<div class="schematic-col schematic-col-left">' + col + '</div>' +
       '<div class="schematic-center"></div>' +
       '<div class="schematic-col schematic-col-right">' + col + '</div>' +

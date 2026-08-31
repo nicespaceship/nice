@@ -56,6 +56,7 @@ describe('CostView._renderCostByMission', () => {
 
   it('renders an empty state when there are no missions', () => {
     CostView._renderCostByMission([], [], []);
-    expect(document.getElementById('cost-by-mission').innerHTML).toMatch(/No missions yet/);
+    const noun = Terminology.label('mission', { plural: true, lowercase: true });
+    expect(document.getElementById('cost-by-mission').innerHTML).toContain(`No ${noun} yet`);
   });
 });

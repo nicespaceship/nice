@@ -5,6 +5,8 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const ShipSetupWizard = (() => {
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   let _overlay = null;
   let _step = 0;
   let _blueprint = null;
@@ -36,9 +38,29 @@ const ShipSetupWizard = (() => {
         && !Blueprints.isShipActivated(blueprint.id)
         && Blueprints.canActivateNewShip && !Blueprints.canActivateNewShip()) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Spaceship limit reached', message: 'Free accounts run one active spaceship at a time. Upgrade to NICE Pro to run a fleet.', type: 'warning' });
+        Notify.send({ title: `${_T('spaceship')} limit reached`, message: `Free accounts run one active ${_t('spaceship')} at a time. Upgrade to NICE Pro to run more at once.`, type: 'warning' });
       }
       if (typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
+      return;
+    }
+    // Rarity gate. The card-level lock is bypassable via the drawer, and
+    // _deploy() activates with force:true on the assumption the gate already
+    // ran, so the wizard must enforce it for NEW catalog activations too.
+    // Reconfiguring or re-opening an owned ship stays exempt.
+    if (!_isReconfigure
+        && typeof Blueprints !== 'undefined' && !Blueprints.isShipActivated(blueprint.id)
+        && typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked
+        && blueprint.rarity && !Gamification.isRarityUnlocked(blueprint.rarity)) {
+      if (typeof Notify !== 'undefined') {
+        Notify.send({
+          title: 'Rank required',
+          message: blueprint.rarity === 'Mythic'
+            ? `Reach Admiral rank to deploy a Mythic ${_t('spaceship')}.`
+            : `Reach ${blueprint.rarity} rank to deploy this ${_t('spaceship')}, or upgrade to NICE Pro to unlock instantly.`,
+          type: 'warning',
+        });
+      }
+      if (blueprint.rarity !== 'Mythic' && typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
       return;
     }
     _blueprint = blueprint;
@@ -117,7 +139,7 @@ const ShipSetupWizard = (() => {
   function _getShipClass() {
     const bu = _bu();
     return bu ? bu.getSlotTemplate(_blueprint) : {
-      id: 'dynamic', name: _blueprint?.name || 'Ship',
+      id: 'dynamic', name: _blueprint?.name || _T('spaceship'),
       slots: Array.from({ length: _getSlotCount() }, (_, i) => ({ id: i, maxRarity: 'Legendary', label: 'Agent ' + (i + 1) })),
     };
   }
@@ -206,7 +228,7 @@ const ShipSetupWizard = (() => {
     const sc = _getShipClass();
     const bpName = _blueprint.name || 'Orchestrator';
     body.innerHTML = `
-      <h2 class="wizard-title">Name Your Spaceship</h2>
+      <h2 class="wizard-title">Name Your ${_T('spaceship')}</h2>
       <p class="wizard-subtitle">Give your <strong>${_esc(bpName)}</strong> a name — your business or project.</p>
       <input type="text" class="wizard-input" id="ship-wiz-name" placeholder="e.g. ${_esc(bpName)}" maxlength="60" value="${_esc(_data.shipName)}" autofocus>
       <div class="ship-wizard-bp-preview">
@@ -259,7 +281,7 @@ const ShipSetupWizard = (() => {
         <div class="ship-wizard-mode-card${_data.agentMode === 'auto' ? ' selected' : ''}" data-mode="auto">
           <div class="ship-wizard-mode-icon">&#10022;</div>
           <div class="ship-wizard-mode-label">AI Setup</div>
-          <div class="ship-wizard-mode-hint">${hasCrewDefs ? 'Use the blueprint\'s recommended agents' : 'Let NICE pick the best agents for you'}</div>
+          <div class="ship-wizard-mode-hint">${hasCrewDefs ? 'Use the blueprint\'s recommended agents' : 'Let Longeron pick the best agents for you'}</div>
         </div>
         <div class="ship-wizard-mode-card${_data.agentMode === 'manual' ? ' selected' : ''}" data-mode="manual">
           <div class="ship-wizard-mode-icon">&#9881;</div>
@@ -556,7 +578,7 @@ const ShipSetupWizard = (() => {
       `;
       actions.innerHTML = `
         <button class="btn btn-sm" id="ship-wiz-close">Close</button>
-        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View Spaceship Schematic</button>
+        <button class="btn btn-sm btn-primary" id="ship-wiz-view">View ${_T('spaceship')} Schematic</button>
       `;
       actions.querySelector('#ship-wiz-close').addEventListener('click', close);
       actions.querySelector('#ship-wiz-view').addEventListener('click', () => {

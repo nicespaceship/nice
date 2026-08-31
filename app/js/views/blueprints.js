@@ -5,6 +5,8 @@
 
 const BlueprintsView = (() => {
   const title = 'Bridge';
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   const _esc = Utils.esc;
 
   const RARITY_COLORS = BlueprintUtils.RARITY_COLORS;
@@ -41,12 +43,12 @@ const BlueprintsView = (() => {
     const bp = _findShipBp(id) || _findShipBp(id.replace(/^bp-/, ''));
     if (!bp) return;
     const chips = _capChips(bp.caps || bp.metadata?.caps || []);
-    if (!chips.length) chips.push(`Run ${Terminology.article('mission', { lowercase: true })} ${Terminology.label('mission', { lowercase: true })}`, 'Check status', 'Generate report');
+    if (!chips.length) chips.push(`Run ${Terminology.article('mission')} ${_t('mission')}`, 'Check status', 'Generate report');
     PromptPanel.show();
     PromptPanel.prefill('');
     PromptPanel.setSuggestions(chips);
     const input = document.getElementById('nice-ai-input');
-    if (input) { input.placeholder = 'Mission for ' + (bp.name || 'Ship') + '…'; input.focus(); }
+    if (input) { input.placeholder = `${_T('mission')} for ${bp.name || _T('spaceship')}…`; input.focus(); }
   }
 
   function _promptAgentMission(id) {
@@ -339,7 +341,7 @@ const BlueprintsView = (() => {
       const tabDefs = [
         { id: 'schematic', label: 'Schematic' },
         { id: 'blueprints', label: 'Blueprints' },
-        { id: 'missions', label: Terminology.label('mission', { plural: true }) },
+        { id: 'missions', label: _T('mission', true) },
         { id: 'outbox', label: 'Outbox' },
         { id: 'operations', label: 'Operations' },
         { id: 'log', label: 'Log' },
@@ -722,9 +724,9 @@ const BlueprintsView = (() => {
         const id = btn.dataset.id;
         if (Blueprints.isShipActivated(id)) {
           const bp = _findShipBp(id);
-          confirmDeactivate(bp?.name || 'this spaceship', async () => {
+          confirmDeactivate(bp?.name || `this ${_t('spaceship')}`, async () => {
             await Blueprints.deactivateShip(id);
-            if (typeof Notify !== 'undefined' && bp) Notify.send({ title: 'Spaceship Removed', message: `${bp.name} has been removed.`, type: 'info' });
+            if (typeof Notify !== 'undefined' && bp) Notify.send({ title: `${_T('spaceship')} Removed`, message: `${bp.name} has been removed.`, type: 'info' });
             _applyFilters();
           });
         } else {
@@ -805,9 +807,9 @@ const BlueprintsView = (() => {
         if (type === 'spaceship') {
           if (Blueprints.isShipActivated(id)) {
             const bp = Blueprints.getSpaceship(id);
-            confirmDeactivate(bp?.name || 'this spaceship', async () => {
+            confirmDeactivate(bp?.name || `this ${_t('spaceship')}`, async () => {
               await Blueprints.deactivateShip(id);
-              if (typeof Notify !== 'undefined' && bp) Notify.send({ title: 'Spaceship Removed', message: `${bp.name} has been removed.`, type: 'info' });
+              if (typeof Notify !== 'undefined' && bp) Notify.send({ title: `${_T('spaceship')} Removed`, message: `${bp.name} has been removed.`, type: 'info' });
               _applyFilters();
             });
           } else {
@@ -1078,7 +1080,7 @@ const BlueprintsView = (() => {
       </div>`;
     };
 
-    wrap.innerHTML = renderSection('Spaceships', ships, 'spaceship') + renderSection('Agents', agents, 'agent');
+    wrap.innerHTML = renderSection(_T('spaceship', true), ships, 'spaceship') + renderSection('Agents', agents, 'agent');
     wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
   }
 
@@ -1140,7 +1142,7 @@ const BlueprintsView = (() => {
 
     if (!ships.length && !agents.length) {
       const empty = totalRaw === 0
-        ? `<p class="bp-activated-empty">Nothing deployed yet. Browse the <strong>Spaceships</strong> or <strong>Agents</strong> tab to deploy your first blueprint.</p>`
+        ? `<p class="bp-activated-empty">Nothing deployed yet. Browse the <strong>${_T('spaceship', true)}</strong> or <strong>Agents</strong> tab to deploy your first blueprint.</p>`
         : `<p class="bp-activated-empty">No active blueprints match the current filter.</p>`;
       wrap.innerHTML = `<div class="bp-activated-section">${empty}</div>`;
       return;
@@ -1167,7 +1169,7 @@ const BlueprintsView = (() => {
       </div>`;
     };
 
-    wrap.innerHTML = renderSection('Spaceships', ships, 'spaceship') + renderSection('Agents', agents, 'agent');
+    wrap.innerHTML = renderSection(_T('spaceship', true), ships, 'spaceship') + renderSection('Agents', agents, 'agent');
     wrap.querySelectorAll('.bp-activated-grid').forEach(section => _bindCardEvents(section));
   }
 
@@ -1474,7 +1476,7 @@ const BlueprintsView = (() => {
     // so the subnav carries just the sub-tabs.
     return `
       <div class="bp-sub-tabs" id="bp-sub-tabs">
-        <button class="bp-sub-tab${a('spaceship')}" data-sub="spaceship">Spaceships <span class="bp-tab-count">${shipN}</span></button>
+        <button class="bp-sub-tab${a('spaceship')}" data-sub="spaceship">${_T('spaceship', true)} <span class="bp-tab-count">${shipN}</span></button>
         <button class="bp-sub-tab${a('agent')}" data-sub="agent">Agents <span class="bp-tab-count">${agentN}</span></button>
         <button class="bp-sub-tab${a('active')}" data-sub="active">Active <span class="bp-tab-count">${_activeCount()}</span></button>
         <button class="bp-sub-tab${a('workshop')}" data-sub="workshop">Workshop <span class="bp-tab-count">${_workshopCount()}</span></button>
@@ -2435,7 +2437,7 @@ const BlueprintsView = (() => {
     } catch (_) { _fallbackCopy(url); }
     // Also open native share if available
     if (navigator.share) {
-      navigator.share({ title: bp.name + ' — NICE Blueprint', text: bp.description, url }).catch(() => {});
+      navigator.share({ title: bp.name + ' — Longeron Blueprint', text: bp.description, url }).catch(() => {});
     }
   }
 
@@ -2698,7 +2700,7 @@ const BlueprintsView = (() => {
 
     const flavorBlock = (flavor && flavor !== description) ? `
       <div class="bp-drawer-section bp-drawer-flavor">
-        <div class="bp-drawer-section-label">A moment on board</div>
+        <div class="bp-drawer-section-label">A moment with the ${_t('crew')}</div>
         <p>${_esc(flavor)}</p>
       </div>` : '';
 
@@ -2733,7 +2735,7 @@ const BlueprintsView = (() => {
       }).join('');
       crewBlock = `
         <div class="bp-drawer-section bp-drawer-crew">
-          <div class="bp-drawer-section-label">Crew of ${crew.length}</div>
+          <div class="bp-drawer-section-label">${_T('crew')} of ${crew.length}</div>
           <div class="bp-drawer-crew-list">${rows}</div>
           <div class="bp-drawer-crew-legend">
             <span><i class="bp-drawer-crew-swatch bp-drawer-crew-class-1"></i>C1 starter</span>
@@ -2852,6 +2854,11 @@ const BlueprintsView = (() => {
         } else {
           btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="spaceship" data-listing="${_esc(listingId || '')}">Install</button>`);
         }
+      } else if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked
+          && bp.rarity && !Gamification.isRarityUnlocked(bp.rarity)) {
+        // Mirror the card-level lock: without this, the drawer offered
+        // Setup Spaceship for any rarity and the wizard deployed it.
+        btns.push(`<button class="btn btn-sm bp-drawer-locked" disabled title="Reach ${_esc(bp.rarity)} rank to deploy">🔒 Reach ${_esc(bp.rarity)} rank to deploy</button>`);
       } else {
         btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Setup Spaceship</button>`);
       }

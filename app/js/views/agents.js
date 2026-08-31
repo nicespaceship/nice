@@ -6,6 +6,8 @@
 
 const AgentDetailView = (() => {
   const title = 'Agent Detail';
+  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
+  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
   let _channel = null;
@@ -83,7 +85,7 @@ const AgentDetailView = (() => {
                 <span class="status-dot ${dotClass}"></span>
                 <span class="detail-status">${_esc(Utils.titleCase(agent.status))}</span>
                 <span class="agent-tag">${_esc(agent.role || 'Agent')}</span>
-                <span class="agent-tag">${agent.llm_engine === 'nice-auto' ? 'NICE Auto' : _esc(agent.llm_engine || 'gemini-2-5-flash')}</span>
+                <span class="agent-tag">${agent.llm_engine === 'nice-auto' ? 'Longeron Auto' : _esc(agent.llm_engine || 'gemini-2-5-flash')}</span>
               </div>
             </div>
           </div>
@@ -93,7 +95,7 @@ const AgentDetailView = (() => {
               <h3 class="detail-section-title">Configuration</h3>
               <div class="detail-kv">
                 <div class="detail-kv-row"><span class="kv-label">Type</span><span class="kv-val">${_esc(agent.type || 'Specialist')}</span></div>
-                <div class="detail-kv-row"><span class="kv-label">Model</span><span class="kv-val mono">${agent.llm_engine === 'nice-auto' ? 'NICE Auto' + _resolveAutoHint(agent) : _esc(agent.llm_engine || 'gemini-2-5-flash')}</span></div>
+                <div class="detail-kv-row"><span class="kv-label">Model</span><span class="kv-val mono">${agent.llm_engine === 'nice-auto' ? 'Longeron Auto' + _resolveAutoHint(agent) : _esc(agent.llm_engine || 'gemini-2-5-flash')}</span></div>
                 <div class="detail-kv-row"><span class="kv-label">Temperature</span><span class="kv-val">${config.temperature ?? 0.7}</span></div>
                 <div class="detail-kv-row"><span class="kv-label">Memory</span><span class="kv-val">${config.memory ? 'Enabled' : 'Disabled'}</span></div>
               </div>
@@ -134,7 +136,7 @@ const AgentDetailView = (() => {
           })()}
 
           <div class="detail-section">
-            <h3 class="detail-section-title">Recent Missions</h3>
+            <h3 class="detail-section-title">Recent ${_T('mission', true)}</h3>
             ${missions.length ? `
               <div class="task-mini-list">
                 ${missions.map(t => `
@@ -145,12 +147,12 @@ const AgentDetailView = (() => {
                   </div>
                 `).join('')}
               </div>
-            ` : '<p class="text-muted" style="font-size:.82rem">No missions assigned yet.</p>'}
+            ` : `<p class="text-muted" style="font-size:.82rem">No ${_t('mission', true)} assigned yet.</p>`}
           </div>
 
           ${(() => {
             if (typeof AgentMemory === 'undefined') return '';
-            const mem = AgentMemory.getMemory(agentId);
+            const mem = AgentMemory.getMemory(id);
             if (!mem) return '';
             const hasFacts = mem.facts && mem.facts.length;
             const hasSuccess = mem.successPatterns && mem.successPatterns.length;
@@ -160,7 +162,7 @@ const AgentDetailView = (() => {
               return `
                 <div class="detail-section">
                   <h3 class="detail-section-title">Agent Memory</h3>
-                  <p class="text-muted" style="font-size:.82rem">No learned facts yet. Memory builds as this agent completes missions.</p>
+                  <p class="text-muted" style="font-size:.82rem">No learned facts yet. Memory builds as this agent completes ${_t('mission', true)}.</p>
                 </div>`;
             }
             let memHtml = '<div class="detail-section"><h3 class="detail-section-title">Agent Memory</h3>';
@@ -207,18 +209,18 @@ const AgentDetailView = (() => {
         if (typeof VirtualFS === 'undefined') return;
         const wsEl = document.getElementById('agent-workspace');
         if (!wsEl) return;
-        const projectId = 'agent-' + agentId;
+        const projectId = 'agent-' + id;
         const project = VirtualFS.getProject(projectId);
         if (!project) {
           wsEl.innerHTML = `
             <div class="detail-section">
               <h3 class="detail-section-title">Workspace</h3>
-              <p class="text-muted" style="font-size:.82rem">No files yet. Agents create files here during missions.</p>
+              <p class="text-muted" style="font-size:.82rem">No files yet. Agents create files here during ${_t('mission', true)}.</p>
               <button class="btn btn-xs" id="btn-create-workspace">Initialize Workspace</button>
             </div>`;
           document.getElementById('btn-create-workspace')?.addEventListener('click', () => {
             VirtualFS.createProject(projectId, agent.name + ' Workspace');
-            render(el, params);
+            _loadAgent(el, id);
           });
         } else {
           const files = VirtualFS.listFiles(projectId);
@@ -241,9 +243,9 @@ const AgentDetailView = (() => {
       // Clear agent memory
       document.getElementById('btn-clear-memory')?.addEventListener('click', () => {
         if (typeof AgentMemory !== 'undefined') {
-          AgentMemory.clear(agentId);
+          AgentMemory.clear(id);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Memory Cleared', message: agent.name + ' memory reset.', type: 'system' });
-          render(el, params);
+          _loadAgent(el, id);
         }
       });
 

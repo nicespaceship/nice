@@ -45,8 +45,8 @@ const ProfileView = (() => {
               <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
             </svg>
           </div>
-          <h2 class="auth-title">Sign in to NICE</h2>
-          <p class="auth-sub">Neural Intelligence Command Engine</p>
+          <h2 class="auth-title">Sign in to Longeron</h2>
+          <p class="auth-sub">The operating system for AI agents</p>
 
           <div class="auth-tabs">
             <button class="auth-tab active" data-tab="signin" onclick="ProfileView._switchTab('signin')">Sign In</button>
@@ -235,7 +235,7 @@ const ProfileView = (() => {
           <h3 class="profile-section-title">Actions</h3>
           <a href="#/" class="profile-action-btn" style="text-decoration:none;">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-dashboard"/></svg>
-            Mission Dashboard
+            ${Terminology.label('mission')} Dashboard
           </a>
           <button class="profile-action-btn" onclick="ProfileView._signOut()">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-logout"/></svg>
@@ -442,7 +442,7 @@ const ProfileView = (() => {
       const running = thisWeek.filter(m => m.status === 'running').length;
 
       el.innerHTML = `
-        <div class="profile-row"><span class="profile-row-label">Missions This Week</span><span class="profile-row-val">${thisWeek.length}</span></div>
+        <div class="profile-row"><span class="profile-row-label">${Terminology.label('mission', { plural: true })} This Week</span><span class="profile-row-val">${thisWeek.length}</span></div>
         <div class="profile-row"><span class="profile-row-label">Completed</span><span class="profile-row-val">${completed}</span></div>
         <div class="profile-row"><span class="profile-row-label">Running</span><span class="profile-row-val">${running}</span></div>
         <div class="profile-row"><span class="profile-row-label">Total XP</span><span class="profile-row-val">${xp}</span></div>
