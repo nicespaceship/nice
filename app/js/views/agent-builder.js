@@ -425,8 +425,8 @@ const AgentBuilderView = (() => {
                   <option value="nice-auto" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? 'selected' : ''}>Longeron Auto (recommended)</option>
                   ${_getAvailableModels().map(m => `<option value="${m.id}" ${!m.available ? 'disabled' : ''} ${agent?.llm_engine === m.id ? 'selected' : ''}>${m.label}${!m.available ? ' (not connected)' : ''}</option>`).join('')}
                 </select>
-                <p class="builder-hint" id="auto-model-hint" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? '' : 'style="display:none"'}>Longeron Auto selects the best model based on mission history.</p>
-                ${_getAvailableModels().filter(m => m.enabled).length === 0 ? '<p class="builder-hint"><a href="#/security?tab=models">Enable a model</a> to run missions.</p>' : ''}
+                <p class="builder-hint" id="auto-model-hint" ${(!agent?.llm_engine || agent?.llm_engine === 'nice-auto') ? '' : 'style="display:none"'}>Longeron Auto selects the best model based on ${Terminology.label('mission', { lowercase: true })} history.</p>
+                ${_getAvailableModels().filter(m => m.enabled).length === 0 ? `<p class="builder-hint"><a href="#/security?tab=models">Enable a model</a> to run ${Terminology.label('mission', { plural: true, lowercase: true })}.</p>` : ''}
               </div>
               <div class="auth-field">
                 <label for="b-temp">Temperature</label>
