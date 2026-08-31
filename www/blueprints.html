@@ -516,7 +516,7 @@
         } else {
           statsRows.push(['Role', cfg.role || bp.category || '—']);
           statsRows.push(['Type', cfg.type || '—']);
-          statsRows.push(['Model', cfg.llm_engine === 'nice-auto' ? 'NICE Auto' : (cfg.llm_engine || '—')]);
+          statsRows.push(['Model', cfg.llm_engine === 'nice-auto' ? 'Longeron Auto' : (cfg.llm_engine || '—')]);
           statsRows.push(['Rarity', bp.rarity || 'Common']);
         }
         const statsHTML = statsRows.map(function(r) {
@@ -542,7 +542,7 @@
           capsHTML;
 
         document.getElementById('bp-drawer-actions').innerHTML =
-          '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in NICE</a>';
+          '<a href="' + appUrl + '" target="_blank" rel="noopener" class="btn-primary">Open in Longeron</a>';
       }
 
       function render(append) {
