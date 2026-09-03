@@ -26,7 +26,7 @@ describe('PromptBuilder', () => {
 
   it('returns default prompt for null blueprint', () => {
     const result = PromptBuilder.build(null);
-    expect(result).toContain('Longeron');
+    expect(result).toContain('NICE AI');
     expect(result).toContain('general-purpose');
   });
 
@@ -252,7 +252,7 @@ describe('PromptBuilder', () => {
     it('still anchors today even on the null-blueprint default path', () => {
       const result = PromptBuilder.build(null);
       expect(result).toMatch(/Today is \d{4}-\d{2}-\d{2}/);
-      expect(result).toContain('Longeron');
+      expect(result).toContain('NICE AI');
     });
   });
 

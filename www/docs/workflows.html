@@ -8,8 +8,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workflows — Longeron Documentation</title>
-  <meta name="description" content="The DAG of steps a Process executes: triage, pipeline, parallel, quality-loop, and more." />
+  <title>Workflows — NICE Documentation</title>
+  <meta name="description" content="The DAG of steps a Mission executes — triage, pipeline, parallel, quality-loop, and more." />
   <link rel="icon" href="/assets/nice-mark-dark.svg" type="image/svg+xml" /><link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,8 +24,8 @@
       <h4>Documentation</h4>
       <a href="/docs/getting-started">Getting Started</a>
       <a href="/docs/agents">Agents</a>
-      <a href="/docs/spaceships">Workspaces</a>
-      <a href="/docs/missions">Processes</a>
+      <a href="/docs/spaceships">Spaceships</a>
+      <a href="/docs/missions">Missions</a>
       <a href="/docs/workflows" class="active">Workflows</a>
       <a href="/docs/integrations">Integrations</a>
       <a href="/docs/ai-models">AI Models</a>
@@ -34,14 +34,14 @@
     </nav>
     <main class="docs-content">
       <h1>Workflows</h1>
-      <p class="docs-lead">A workflow is the DAG of steps a Process executes. Workflows are not standalone primitives — they live inside a Process as <code>missions.plan</code> JSONB. Single-agent processes are 1-node workflows; complex orchestrations chain many nodes.</p>
+      <p class="docs-lead">A workflow is the DAG of steps a Mission executes. Workflows are not standalone primitives — they live inside a Mission as <code>missions.plan</code> JSONB. Single-agent missions are 1-node workflows; complex orchestrations chain many nodes.</p>
 
       <h2>Node Types</h2>
       <table>
         <thead><tr><th>Node</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>agent</td><td>Run a prompt through a specific agent (full ReAct loop with tools)</td></tr>
-          <tr><td>triage</td><td>LLM router picks the single best-fit team member from the roster</td></tr>
+          <tr><td>triage</td><td>LLM router picks the single best-fit crew member from the manifest</td></tr>
           <tr><td>pipeline</td><td>Sequential assembly line: agent 1 → 2 → 3, each refining the prior output</td></tr>
           <tr><td>parallel</td><td>Run the same prompt across multiple agents simultaneously, then merge</td></tr>
           <tr><td>quality_loop</td><td>Agent runs → reviewer scores 1–10 → if below threshold, retry with feedback (up to 3 iterations)</td></tr>
@@ -61,7 +61,7 @@
 
       <h2>Triggers</h2>
       <dl>
-        <dt>Manual</dt><dd>Run on demand from the prompt panel, workspace chat, or Process detail page</dd>
+        <dt>Manual</dt><dd>Run on demand from the prompt panel, ship chat, or Mission detail page</dd>
         <dt>Scheduled</dt><dd>Stored as <code>missions.schedule</code> JSONB (<code>{ cron, tz, enabled }</code>) — fired by the <code>tick_mission_schedules</code> pg_cron job every minute</dd>
       </dl>
         </main>

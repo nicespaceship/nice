@@ -1,4 +1,4 @@
-# Self-Hosting NICE
+# Self-Hosting NICE™
 
 NICE is a static SPA — no build step, no Node.js runtime needed. Just serve the files.
 

@@ -1,6 +1,6 @@
-# Contributing to Longeron
+# Contributing to NICE™
 
-Thank you for your interest in contributing to Longeron!
+Thank you for your interest in contributing to NICE — the Neural Intelligence Command Engine!
 
 ## Getting Started
 
@@ -68,7 +68,7 @@ npm run test:e2e  # E2E tests (Playwright, 14 tests)
 
 ### Code Style
 
-Longeron uses vanilla JavaScript with IIFE modules — no build step, no bundler, no framework.
+NICE uses vanilla JavaScript with IIFE modules — no build step, no bundler, no framework.
 
 ```javascript
 const MyModule = (() => {

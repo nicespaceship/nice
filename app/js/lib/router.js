@@ -111,10 +111,10 @@ const Router = (() => {
     _currentView = match.view;
 
     // Update page title in header
-    const title = match.view.title || 'Longeron';
+    const title = match.view.title || 'NICE';
     const titleEl = document.getElementById('app-page-title');
     if (titleEl) titleEl.textContent = title;
-    document.title = `${title} — Longeron`;
+    document.title = `${title} — NICE`;
 
     // Announce route change to screen readers
     const announcer = document.getElementById('sr-announcer');

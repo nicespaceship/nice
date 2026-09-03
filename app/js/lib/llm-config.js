@@ -218,7 +218,7 @@ const LLMConfig = (() => {
     return isNaN(n) ? 50 : Math.max(0, Math.min(100, n));
   }
 
-  /* ── Longeron Auto: per-message prompt router ─────────────────────
+  /* ── NICE Auto: per-message prompt router ─────────────────────
      Routes each direct-chat message to a concrete model. Two-layer
      resolution: the ACTIVE STACK's niceAutoRouting is the SSOT and
      wins when the user runs a stack (that is the routing the Vault

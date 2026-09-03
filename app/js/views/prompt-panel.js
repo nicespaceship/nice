@@ -10,17 +10,6 @@ const PromptPanel = (() => {
 
   const STORAGE_KEY = Utils.KEYS.aiMessages;
 
-  /* Active theme's persona — the assistant the user is addressing. Themes
-     rename it (HAL, Morpheus, Dwight); Ada is the default. */
-  function _personaName() {
-    return (typeof Theme !== 'undefined' && Theme.current && Theme.getTheme)
-      ? (Theme.getTheme(Theme.current())?.persona?.name || 'Ada') : 'Ada';
-  }
-
-  /* Nouns follow the active theme: Workspace/Process by default, and
-     Spaceship/Mission on the sci-fi themes. */
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-
   /* ── Prompt-injection hardening ──
      User-provided text (the turn they just typed, any attached text files,
      and — once this lands on the edge function — the callsign they set)
@@ -569,7 +558,7 @@ const PromptPanel = (() => {
             const spaceships = State.get('spaceships') || [];
             const spaceshipId = spaceships[0]?.id;
             if (!spaceshipId) {
-              return { ok: false, msg: `Activate a ${_T('spaceship')} first — ${_T('mission', true)} always run on a ${_T('spaceship')}.` };
+              return { ok: false, msg: `Activate a Spaceship first — Missions always run on a Ship.` };
             }
             const created = await SB.db('mission_runs').create({
               user_id: user.id, spaceship_id: spaceshipId,
@@ -649,7 +638,7 @@ const PromptPanel = (() => {
         const missionId = input && input.missionId;
         if (typeof MissionRunner !== 'undefined' && missionId) {
           MissionRunner.run(missionId);
-          return { ok: true, msg: `${_T('mission')} execution started.` };
+          return { ok: true, msg: 'Mission execution started.' };
         }
         return { ok: false, msg: 'MissionRunner not available' };
       },
@@ -715,14 +704,14 @@ const PromptPanel = (() => {
     const user = State.get('user');
     const agents = State.get('agents') || [];
     const agent = _pickBestAgent(title, agents);
-    const agentName = agent ? agent.name : _personaName();
+    const agentName = agent ? agent.name : 'NICE';
 
     // Show creation message
     _removeMonitorThinking();
     _messages.push({
       role: 'assistant',
-      text: `**${_T('mission')} Created:** "${title}"\n**Assigned to:** ${agentName}\n**Status:** Executing now...`,
-      agent: _personaName(), ts: Date.now(),
+      text: `**Mission Created:** "${title}"\n**Assigned to:** ${agentName}\n**Status:** Executing now...`,
+      agent: 'NICE', ts: Date.now(),
     });
     _saveMessages();
     _renderMonitor();
@@ -740,7 +729,7 @@ const PromptPanel = (() => {
     const spaceships = State.get('spaceships') || [];
     const spaceshipId = spaceships[0]?.id;
     if (!spaceshipId) {
-      _messages[_messages.length - 1].text += `\n\n**Activate a ${_T('spaceship')} first.** ${_T('mission', true)} always run on a ${_T('spaceship')}.`;
+      _messages[_messages.length - 1].text += `\n\n**Activate a Spaceship first.** Missions always run on a Ship.`;
       _saveMessages();
       _renderMonitor();
       _setSending(false);
@@ -781,22 +770,22 @@ const PromptPanel = (() => {
         } else {
           _messages.push({
             role: 'assistant',
-            text: `${_T('mission')} completed but no output was returned. Check ${_T('mission', true)} for details.\n[ACTION: ${_T('mission', true)} | #/missions]`,
-            agent: _personaName(), ts: Date.now(),
+            text: 'Mission completed but no output was returned. Check Missions for details.\n[ACTION: Missions | #/missions]',
+            agent: 'NICE', ts: Date.now(),
           });
         }
       } catch (e) {
         _messages.push({
           role: 'assistant',
-          text: `**${_T('mission')} failed:** ${e.message}\n[ACTION: View ${_T('mission', true)} | #/missions]`,
-          agent: _personaName(), ts: Date.now(), error: true,
+          text: `**Mission failed:** ${e.message}\n[ACTION: View Missions | #/missions]`,
+          agent: 'NICE', ts: Date.now(), error: true,
         });
       }
     } else {
       _messages.push({
         role: 'assistant',
-        text: `${_T('mission')} queued. Assign an agent or visit Bridge to run it.\n[ACTION: Bridge | #/missions]`,
-        agent: _personaName(), ts: Date.now(),
+        text: 'Mission queued. Assign an agent or visit Bridge to run it.\n[ACTION: Bridge | #/missions]',
+        agent: 'NICE', ts: Date.now(),
       });
     }
 
@@ -834,8 +823,8 @@ const PromptPanel = (() => {
       _removeMonitorThinking();
       _messages.push({
         role: 'assistant',
-        text: `**Activate a ${_T('spaceship')} first.** Chat runs always belong to a ${_T('spaceship')}.\n[ACTION: Bridge | #/bridge]`,
-        agent: _personaName(), ts: Date.now(),
+        text: '**Activate a Spaceship first.** Chat runs always belong to a Ship.\n[ACTION: Bridge | #/bridge]',
+        agent: 'NICE', ts: Date.now(),
       });
       _saveMessages();
       _renderMonitor();
@@ -940,7 +929,7 @@ const PromptPanel = (() => {
       if (routing?.metadata) routingMeta = routing.metadata;
     } catch { /* non-critical */ }
 
-    const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || _personaName();
+    const displayAgent = routingMeta?.chosen_agent_name || run?.agent_name || 'NICE';
 
     if (routingMeta?.chosen_agent_name) {
       _messages.push({
@@ -1016,7 +1005,7 @@ const PromptPanel = (() => {
       } else {
         const agentLabel = m.agent
           ? `<div class="monitor-card-agent">${_esc(m.agent)}</div>`
-          : `<div class="monitor-card-agent">${_esc(_personaName())}</div>`;
+          : `<div class="monitor-card-agent">NICE</div>`;
 
         let stepsHtml = '';
         if (m.steps && m.steps.length) {
@@ -1126,7 +1115,7 @@ const PromptPanel = (() => {
     el.className = 'monitor-card monitor-card-pending';
     el.id = 'monitor-thinking';
     el.innerHTML =
-      '<div class="monitor-card-agent">' + _esc(o.agent || _personaName()) + '</div>' +
+      '<div class="monitor-card-agent">' + _esc(o.agent || 'NICE') + '</div>' +
       '<div class="monitor-card-text">' +
         '<div class="monitor-thinking-dots"><span></span><span></span><span></span></div>' +
         '<span class="monitor-thinking-label">' + _esc(label) + '</span>' +
@@ -1235,7 +1224,7 @@ const PromptPanel = (() => {
 
     if (/achievement|badge/i.test(lower) && /(how many|my|list|show|check)/i.test(lower)) {
       const achs = JSON.parse(localStorage.getItem(Utils.KEYS.achievements) || '[]');
-      return { text: achs.length ? `You've unlocked ${achs.length} achievement${achs.length !== 1 ? 's' : ''}: ${achs.join(', ')}.` : 'No achievements unlocked yet. Keep exploring Longeron!' };
+      return { text: achs.length ? `You've unlocked ${achs.length} achievement${achs.length !== 1 ? 's' : ''}: ${achs.join(', ')}.` : 'No achievements unlocked yet. Keep exploring NICE!' };
     }
 
     return null;
@@ -1315,7 +1304,7 @@ const PromptPanel = (() => {
 
     if (lower === '/help' || lower === '/commands') {
       return {
-        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /rank — Show your rank & XP\n• /tokens — Check token balance\n• /callsign [name] — Change how your assistant addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
+        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /rank — Show your rank & XP\n• /tokens — Check token balance\n• /callsign [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
         handled: true,
       };
     }
@@ -1369,7 +1358,7 @@ const PromptPanel = (() => {
     const shipSeed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
     const matchShips = shipSeed.filter(s => (s.name || '').toLowerCase().includes(q) || (s.desc || '').toLowerCase().includes(q));
     if (matchShips.length) {
-      results.push(`${_T('spaceship', true)} (${matchShips.length}): ${matchShips.slice(0, 5).map(s => s.name).join(', ')}${matchShips.length > 5 ? '...' : ''}`);
+      results.push(`Spaceships (${matchShips.length}): ${matchShips.slice(0, 5).map(s => s.name).join(', ')}${matchShips.length > 5 ? '...' : ''}`);
     }
 
     if (!results.length) return { text: `No results found for "${query}".`, handled: true };
@@ -1415,8 +1404,8 @@ const PromptPanel = (() => {
     // the fuzzy nav resolve so "build an agent" opens the Builder rather than
     // resolving to the Agents roster; "show me agents" (no authoring verb)
     // still falls through to the nav resolver below.
-    if (/^(create|new|add|build|make)\s+(an?\s+)?(new\s+)?(mission|process|assignment)/i.test(lower))
-      return _cmd('open-missions', { reply: `Opening ${_T('mission', true)} so you can create a new one.`, isNav: true, navLabel: _T('mission', true) });
+    if (/^(create|new|add|build|make)\s+(a\s+)?mission/i.test(lower))
+      return _cmd('open-missions', { reply: 'Opening Missions so you can create a new one.', isNav: true, navLabel: 'Missions' });
     if (/^(create|new|add|build|make)\s+(a\s+)?agent/i.test(lower))
       return _cmd('open-agent-builder', { reply: 'Opening the Agent Builder.', isNav: true, navLabel: 'Agent Builder' });
     // "build me a spaceship for my bakery" → Crew Designer (describe → design →
@@ -1432,7 +1421,7 @@ const PromptPanel = (() => {
         params: { prompt: seed },
         reply: seed
           ? `Opening the Crew Designer to design a crew for "${seed}".`
-          : 'Opening the Crew Designer. Describe your business and Longeron designs the crew.',
+          : 'Opening the Crew Designer. Describe your business and NICE designs the crew.',
         isNav: true, navLabel: 'Crew Designer',
       });
     }
@@ -1441,10 +1430,10 @@ const PromptPanel = (() => {
     if (/^(export|download)\s+(data|backup)/i.test(lower))
       return _cmd('export-data', { reply: 'Exporting your data now.', delay: 300, hideMonitor: false });
 
-    if (/^(pause|stop|disable)\s+(spaceship|ship|workspace)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: `${_T('spaceship')} paused. All agents on standby.` };
-    if (/^(resume|start|enable|activate)\s+(spaceship|ship|workspace)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: `${_T('spaceship')} resumed. Agents resuming operations.` };
-    if (/^(run|execute|start|launch)\s+(an?\s+)?(mission|task|process|assignment)\s*/i.test(lower))
-      return _cmd('open-missions', { reply: `Opening ${_T('mission', true)} to start a new run.`, isNav: true, navLabel: _T('mission', true), delay: 300 });
+    if (/^(pause|stop|disable)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'pause-ship', text: 'Spaceship paused. All agents on standby.' };
+    if (/^(resume|start|enable|activate)\s+(spaceship|ship)\s*/i.test(lower)) return { type: 'agent-op', op: 'resume-ship', text: 'Spaceship resumed. Agents resuming operations.' };
+    if (/^(run|execute|start|launch)\s+(mission|task)\s*/i.test(lower))
+      return _cmd('open-missions', { reply: 'Opening Missions to start a new run.', isNav: true, navLabel: 'Missions', delay: 300 });
     if (/^(deploy|launch)\s+agent\s*/i.test(lower))
       return _cmd('open-agents', { reply: 'Opening Agents. Select an agent to deploy.', isNav: true, navLabel: 'Agents', delay: 300 });
 
@@ -1499,7 +1488,7 @@ const PromptPanel = (() => {
     }
     if (intent.type === 'help') {
       return {
-        text: 'I can help you navigate Longeron, manage agents, run missions, and more. Try:\n' +
+        text: 'I can help you navigate NICE, manage agents, run missions, and more. Try:\n' +
           '• "Take me to Blueprints" — navigate anywhere\n' +
           '• "Write me a tagline" — auto-creates & runs a mission\n' +
           '• "How many agents do I have?" — status queries\n' +
@@ -1541,36 +1530,29 @@ const PromptPanel = (() => {
   }
 
   /* ── Contextual suggestion chips ── */
-  // Built per call so the noun vocabulary tracks the active theme.
-  function _routeSuggestions() {
-    const m = _T('mission').toLowerCase(), mp = _T('mission', true).toLowerCase();
-    const sp = _T('spaceship').toLowerCase(), spp = _T('spaceship', true).toLowerCase();
-    const am = Terminology.article('mission');
-    return {
-      '#/':           ['How many agents do I have?', `Show ${mp}`, 'What\'s my rank?', 'Switch to cyberpunk'],
-      '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
-      '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
-      '#/missions':   [`Run ${am} ${m}`, `How many ${mp} running?`, `Create a new ${m}`, 'Show analytics'],
-      '#/bridge/spaceships': ['Guided setup', `Deploy a ${sp}`, `How many ${spp}?`, 'Browse blueprints'],
-      '#/bridge': ['Search blueprints for', 'Find agent named', `Deploy a ${sp}`, 'What\'s popular?'],
-      '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
-      '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
-      '#/vault':      ['Open blueprints', 'Show security', 'Export data'],
-      '#/settings':   ['/theme', '/shortcuts', 'Switch to synthwave', 'Show profile'],
-      '#/profile':    ['What\'s my rank?', '/rank', 'Show achievements', 'Open settings'],
-      '#/agents':     ['What can you do?', `Run ${am} ${m}`, 'Show recent tasks', 'What\'s your status?'],
-      '#/bridge?tab=operations&sub=log': [`Show active ${mp}`, 'How many completed today?', 'Export log'],
-    };
-  }
+  const _ROUTE_SUGGESTIONS = {
+    '#/':           ['How many agents do I have?', 'Show missions', 'What\'s my rank?', 'Switch to cyberpunk'],
+    '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
+    '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
+    '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
+    '#/bridge/spaceships': ['Guided setup', 'Deploy a ship', 'How many ships?', 'Browse blueprints'],
+    '#/bridge': ['Search blueprints for', 'Find agent named', 'Deploy a ship', 'What\'s popular?'],
+    '#/analytics':  ['What\'s my token balance?', 'Show cost tracker', '/tokens', 'Export data'],
+    '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
+    '#/vault':      ['Open blueprints', 'Show security', 'Export data'],
+    '#/settings':   ['/theme', '/shortcuts', 'Switch to synthwave', 'Show profile'],
+    '#/profile':    ['What\'s my rank?', '/rank', 'Show achievements', 'Open settings'],
+    '#/agents':     ['What can you do?', 'Run a mission', 'Show recent tasks', 'What\'s your status?'],
+    '#/bridge?tab=operations&sub=log': ['Show active missions', 'How many completed today?', 'Export log'],
+  };
 
   function _updateSuggestionChips() {
     const chipContainer = _panel?.querySelector('.nice-ai-chips');
     if (!chipContainer) return;
     const raw = location.hash || '#/';
     const base = raw.replace(/\/[^/]+$/, '') || '#/';
-    const table = _routeSuggestions();
-    const hash = table[raw] ? raw : (table[base] ? base : '#/');
-    const chips = table[hash];
+    const hash = _ROUTE_SUGGESTIONS[raw] ? raw : (_ROUTE_SUGGESTIONS[base] ? base : '#/');
+    const chips = _ROUTE_SUGGESTIONS[hash];
     chipContainer.innerHTML = chips.map(c =>
       `<button class="nice-ai-chip">${_esc(c)}</button>`
     ).join('');
@@ -1666,7 +1648,7 @@ const PromptPanel = (() => {
     const activeContent = _ideContext.activeContent || '';
     return `${SECURITY_HEADER}
 
-You are Longeron Code — an AI coding assistant inside the Longeron IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
+You are NICE Code — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
 
 RULES:
 - When the user asks you to build, create, or modify something, respond with code.
@@ -1943,9 +1925,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function _getSelectedModel() {
     const modelSelect = _panel?.querySelector('#nice-ai-model');
     const val = modelSelect?.value || 'gemini-2.5-flash';
-    // Longeron Auto is a routing pseudo-model, resolved per message at send time.
+    // NICE Auto is a routing pseudo-model, resolved per message at send time.
     if (typeof LLMConfig !== 'undefined' && val === LLMConfig.AUTO_ID) {
-      return { id: LLMConfig.AUTO_ID, label: 'Longeron Auto', auto: true };
+      return { id: LLMConfig.AUTO_ID, label: 'NICE Auto', auto: true };
     }
     // Check LLM_MODELS registry first (supports all providers)
     if (typeof LLM_MODELS !== 'undefined') {
@@ -2014,7 +1996,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     history.push({ role: 'user', content: buildUserContent(userText, currentAttachments) });
 
     const sel = _getSelectedModel();
-    // Longeron Auto resolves here, per message, so the request carries a concrete
+    // NICE Auto resolves here, per message, so the request carries a concrete
     // model id and billing/gating stay per-real-model. Candidates are the
     // enabled models that can also read every staged attachment; the router's
     // final fallback is Gemini Flash, the multimodal catch-all.
@@ -2034,7 +2016,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         ? LLM_MODELS.find(m => m.id === routed.id)?.label
         : null) || routed.id;
       sel.id = routed.id;
-      sel.label = `Longeron Auto → ${routedLabel}`;
+      sel.label = `NICE Auto → ${routedLabel}`;
     }
     const model = opts.modelOverride || sel.id;
     const modelLabel = opts.modelOverride
@@ -2235,7 +2217,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
       // Handle cancel
       if (/^(cancel|quit|exit|nevermind)/i.test(text)) {
-        _messages.push({ role: 'assistant', text: 'Configuration cancelled. Standing by.', agent: _personaName(), ts: Date.now() });
+        _messages.push({ role: 'assistant', text: 'Configuration cancelled. Standing by.', agent: 'NICE', ts: Date.now() });
         const onCancel = _activeFlow.onCancel;
         _activeFlow = null;
         _saveMessages();
@@ -2251,7 +2233,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       // More steps?
       if (_activeFlow.currentStep < _activeFlow.steps.length) {
         const next = _activeFlow.steps[_activeFlow.currentStep];
-        _messages.push({ role: 'assistant', text: next.question, agent: _personaName(), ts: Date.now(), chips: next.chips });
+        _messages.push({ role: 'assistant', text: next.question, agent: 'NICE', ts: Date.now(), chips: next.chips });
         _saveMessages();
         _renderMonitor();
         _showFlowChips(next.chips);
@@ -2260,13 +2242,13 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         const answers = _activeFlow.answers;
         const onComplete = _activeFlow.onComplete;
         _activeFlow = null;
-        _messages.push({ role: 'assistant', text: '⚡ Processing your configuration...', agent: _personaName(), ts: Date.now() });
+        _messages.push({ role: 'assistant', text: '⚡ Processing your configuration...', agent: 'NICE', ts: Date.now() });
         _saveMessages();
         _renderMonitor();
         // Clear flow chips and reset placeholder
         _showFlowChips(null);
         const input = document.getElementById('nice-ai-input');
-        if (input) input.placeholder = `Ask ${_personaName()}\u2026`;
+        if (input) input.placeholder = 'Ask NICE\u2026';
         if (onComplete) onComplete(answers);
       }
       return;
@@ -2302,7 +2284,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       const guestMsg = { role: 'user', text, ts: Date.now() };
       if (sentAttachments.length) guestMsg.attachments = sentAttachments;
       _messages.push(guestMsg);
-      _messages.push({ role: 'assistant', text: '🔒 Sign in to run missions and chat with your agents. Your blueprints and configurations will be saved.\n\n<button class="btn btn-primary btn-sm" onclick="NICE.openModal(\'modal-auth\')">Sign In to Launch</button>', agent: _personaName(), ts: Date.now() });
+      _messages.push({ role: 'assistant', text: '🔒 Sign in to run missions and chat with your agents. Your blueprints and configurations will be saved.\n\n<button class="btn btn-primary btn-sm" onclick="NICE.openModal(\'modal-auth\')">Sign In to Launch</button>', agent: 'NICE', ts: Date.now() });
       _saveMessages();
       _renderMonitor();
       input.value = '';
@@ -2522,7 +2504,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           const agentLabel = mentioned ? mentioned.name : (agentBp ? agentBp.name : null);
           const agentHtml = agentLabel
             ? `<div class="monitor-card-agent">${_esc(agentLabel)}</div>`
-            : `<div class="monitor-card-agent">${_esc(_personaName())}</div>`;
+            : `<div class="monitor-card-agent">NICE</div>`;
           _streamEl.innerHTML = agentHtml + '<div class="monitor-card-text" id="monitor-stream-text"></div>';
           _monitorContent?.appendChild(_streamEl);
         }
@@ -2582,7 +2564,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _streamEl.className = 'monitor-card';
             _streamEl.id = 'monitor-stream';
             _streamEl.innerHTML =
-              '<div class="monitor-card-agent">' + _esc(_personaName()) + '</div>' +
+              '<div class="monitor-card-agent">NICE</div>' +
               '<div class="monitor-card-text" id="monitor-stream-text"></div>';
             _monitorContent?.appendChild(_streamEl);
             _showMonitor();
@@ -2598,7 +2580,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           if (result) {
             _removeMonitorThinking();
             document.getElementById('monitor-stream')?.remove();
-            _messages.push({ role: 'assistant', text: result.text, agent: _personaName(), model: result.model, ts: Date.now() });
+            _messages.push({ role: 'assistant', text: result.text, agent: 'NICE', model: result.model, ts: Date.now() });
             _saveMessages();
             _renderMonitor();
 
@@ -2613,7 +2595,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
                 _messages.push({
                   role: 'assistant',
                   text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`,
-                  agent: _personaName(), ts: Date.now(),
+                  agent: 'NICE', ts: Date.now(),
                 });
               }
               _saveMessages();
@@ -2629,7 +2611,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
             _messages.push({
               role: 'assistant',
               text: '⚠️ **No response from AI service.** Sign in and enable a model in Security → Integrations to get started.',
-              agent: _personaName(), ts: Date.now(), error: true,
+              agent: 'NICE', ts: Date.now(), error: true,
             });
             _saveMessages();
             _renderMonitor();
@@ -2644,7 +2626,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _messages.push({
             role: 'assistant',
             text: `**Connection Error:** ${errMsg}`,
-            agent: _personaName(),
+            agent: 'NICE',
             ts: Date.now(),
             error: true,
             retryText: text,
@@ -2667,7 +2649,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SPACESHIP_SEED) ? BlueprintsView.SPACESHIP_SEED : [];
     if (ships.length) {
       const grp1 = document.createElement('optgroup');
-      grp1.label = _T('spaceship', true);
+      grp1.label = 'Spaceships';
       ships.forEach(bp => { const opt = document.createElement('option'); opt.value = bp.id; opt.textContent = bp.name; grp1.appendChild(opt); });
       select.appendChild(grp1);
     }
@@ -2698,11 +2680,11 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (!enabledModels.length) return; // keep default Gemini option
     const prev = select.value;
     select.innerHTML = '';
-    // Longeron Auto heads the list: routes each message to the best enabled model.
+    // NICE Auto heads the list: routes each message to the best enabled model.
     if (typeof LLMConfig !== 'undefined' && LLMConfig.routeAuto) {
       const auto = document.createElement('option');
       auto.value = LLMConfig.AUTO_ID;
-      auto.textContent = 'Longeron Auto';
+      auto.textContent = 'NICE Auto';
       auto.title = 'Routes each message to the best enabled model. Casual chat stays on the free model.';
       select.appendChild(auto);
     }
@@ -2722,7 +2704,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     });
     // Keep a pick the user made themselves when it survived the repopulate
     // (the pre-populate placeholder is not a user choice; ids normalize
-    // dotted/dashed). Otherwise default to Longeron Auto, then Gemini Flash.
+    // dotted/dashed). Otherwise default to NICE Auto, then Gemini Flash.
     const prevNorm = String(prev || '').replace(/\./g, '-');
     const survivor = prevNorm && Array.from(select.options).find(o => o.value.replace(/\./g, '-') === prevNorm);
     if (_userPickedModel && survivor) {
@@ -2822,7 +2804,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         <div class="nice-ai-input-container">
           <div class="nice-ai-attachments" id="nice-ai-attachments" hidden></div>
           <div class="nice-ai-input-row">
-            <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask ${_personaName()}…" rows="1"></textarea>
+            <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
           <canvas class="nice-ai-waveform" id="nice-ai-waveform" height="40"></canvas>
           <input type="file" id="nice-ai-file-input" accept="image/*,audio/*,video/*,application/pdf,text/*,application/rtf,application/json,application/xml,application/yaml,application/graphql,.txt,.md,.markdown,.mdx,.rtf,.log,.rst,.org,.adoc,.asciidoc,.tex,.bib,.csv,.tsv,.json,.ndjson,.jsonl,.geojson,.yaml,.yml,.xml,.diff,.patch,.srt,.vtt,.toml,.ini,.cfg,.conf,.env,.properties,.dockerignore,.dockerfile,.gitignore,.tf,.tfvars,.hcl,.cmake,.bazel,.bzl,.gradle,.sbt,.graphql,.gql,.proto,.thrift,.cypher,.rq,.html,.htm,.css,.scss,.sass,.less,.js,.mjs,.cjs,.jsx,.ts,.tsx,.svelte,.vue,.astro,.py,.pyi,.pyw,.c,.h,.cpp,.cxx,.cc,.hpp,.hxx,.cs,.swift,.rs,.go,.mod,.sum,.java,.kt,.kts,.scala,.sc,.groovy,.dart,.zig,.nim,.nims,.r,.rmd,.jl,.ml,.mli,.fs,.fsx,.fsi,.hs,.lhs,.sh,.bash,.zsh,.fish,.ps1,.pl,.lua,.rb,.php,.tcl,.m,.mm,.asm,.s,.sv,.svh,.vhdl,.vhd,.sol,.move,.cairo,.clj,.cljs,.cljc,.edn,.ex,.exs,.erl,.hrl,.sql,.mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.opus,.weba,.mp4,.mov,.m4v,.webm,.mkv,.mpeg,.mpg,.avi,.3gp,.3g2,.wmv,.flv" multiple hidden>
@@ -3449,12 +3431,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _populateModelDropdown();
     _updateSuggestionChips();
     _initLLMStatusChip();
-    // The assistant is named by the active theme (Ada, HAL, Morpheus…), so the
-    // prompt placeholder has to follow a theme switch, not just a fresh mount.
-    document.addEventListener('nice:theme-change', () => {
-      const input = document.getElementById('nice-ai-input');
-      if (input) input.placeholder = `Ask ${_personaName()}\u2026`;
-    });
     // Re-populate the model dropdown whenever entitlements change —
     // subscription.js auto-enables Pro/add-on models on sign-in, which
     // often lands after this panel's init() has already built the
@@ -3555,7 +3531,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Clear previous messages and show first question
     _messages = [];
     const first = flowDef.steps[0];
-    _messages.push({ role: 'assistant', text: first.question, agent: _personaName(), ts: Date.now(), chips: first.chips });
+    _messages.push({ role: 'assistant', text: first.question, agent: 'NICE', ts: Date.now(), chips: first.chips });
     _saveMessages();
     _showMonitor();
     _renderMonitor();
@@ -3569,7 +3545,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (!_activeFlow) return;
     const onCancel = _activeFlow.onCancel;
     _activeFlow = null;
-    _messages.push({ role: 'assistant', text: 'Configuration cancelled.', agent: _personaName(), ts: Date.now() });
+    _messages.push({ role: 'assistant', text: 'Configuration cancelled.', agent: 'NICE', ts: Date.now() });
     _saveMessages();
     _renderMonitor();
     if (onCancel) onCancel();
@@ -3587,7 +3563,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   function isFlowActive() { return !!_activeFlow; }
 
   function pushMessage(text, role = 'assistant') {
-    _messages.push({ role, text, agent: role === 'assistant' ? _personaName() : undefined, ts: Date.now() });
+    _messages.push({ role, text, agent: role === 'assistant' ? 'NICE' : undefined, ts: Date.now() });
     _saveMessages();
     _renderMonitor();
   }
@@ -3677,7 +3653,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Default: talking to NICE
     _routeAgent = null;
     _routeShip = null;
-    input.placeholder = `Ask ${_personaName()}…`;
+    input.placeholder = 'Ask NICE…';
   }
 
   let _lastSyncPath = null;

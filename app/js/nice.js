@@ -19,26 +19,32 @@ const Theme = (() => {
 
   // All available themes — directly accessible from HUD dock and GUI editor
   const THEMES = [
-    { id:'nice', name:'Longeron', persona:{ name:'Ada', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me an AI team for my business','Recommend agents for marketing','What can Longeron do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
+    { id:'nice', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:true, accent:'#1862ce', preview:['#ffffff','#1862ce','#0F52BA'],
       data:{ colors:{ '--bg':'#ffffff','--bg2':'#fafafa','--bg-alt':'#fafafa','--surface':'#ffffff','--surface2':'#f5f5f5','--border':'transparent','--border-hi':'#d4d4d4','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#0a0a0a','--fg':'#0a0a0a','--text-muted':'#525252','--text-dim':'#a3a3a3','--glow':'0 0 0 1px rgba(15,82,186,0.06)','--glow-hi':'0 0 12px rgba(15,82,186,0.08)','--panel-bg':'rgba(255,255,255,0.92)','--panel-border':'transparent' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
       // Voice — default voice every new user hears. Refined mid-baritone,
       // calm and articulate. Resolves to ELEVENLABS_NICE_VOICE_ID server-side.
-      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'Ada',
+      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
-    // Dark variant of Longeron. Same persona, same voice, same Sapphire CTA;
+    // Dark variant of NICE. Same persona, same voice, same Sapphire CTA;
     // surfaces flip to near-black. Pairs with the moon/sun toggle in the HUD
     // dock — `Theme.toggleDarkLight` swaps nice ↔ nice-dark, same pattern as
     // office ↔ office-dark. builtin:false keeps it out of the main dock row.
-    { id:'nice-dark', name:'Longeron', persona:{ name:'Ada', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me an AI team for my business','Recommend agents for marketing','What can Longeron do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
+    { id:'nice-dark', name:'NICE', persona:{ name:'NICE', callsign:'Commander' }, chatsLabel:'Chats', chips:['Build me a spaceship for my business','Recommend agents for marketing','What can NICE do for me?'], builtin:false, accent:'#1862ce', preview:['#0a0a0a','#1862ce','#0F52BA'],
       data:{ colors:{ '--bg':'#0a0a0a','--bg2':'#141414','--bg-alt':'#141414','--surface':'#141414','--surface2':'#1f1f1f','--border':'rgba(255,255,255,0.08)','--border-hi':'#404040','--accent':'#1862ce','--accent2':'#0F52BA','--text':'#fafafa','--fg':'#fafafa','--text-muted':'#a3a3a3','--text-dim':'#737373','--glow':'0 0 0 1px rgba(15,82,186,0.12)','--glow-hi':'0 0 12px rgba(15,82,186,0.18)','--panel-bg':'rgba(20,20,20,0.92)','--panel-border':'rgba(255,255,255,0.08)','--nav-bg':'rgba(10,10,10,0.92)' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'10px' },
       reactor:{ html:() => DefaultCore.html() + NiceCore.html() },
-      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'Ada',
+      voice:{ provider:'elevenlabs', voice:'nice', speed:1.0, model:'eleven_turbo_v2_5', label:'NICE',
         settings:{ stability:0.7, similarity_boost:0.9, style:0, use_speaker_boost:true } },
     },
     { id:'hal-9000', name:'HAL-9000', persona:{ name:'HAL', callsign:'Dave' }, chatsLabel:'Mission Logs', chips:['Run a full system diagnostic',"What's our mission status?",'Open the pod bay doors'], builtin:true, accent:'#ef4444', preview:['#000000','#ef4444','#8a8a90'],
       data:{ colors:{ '--bg':'#000000','--bg2':'#0a0a0a','--bg-alt':'#121212','--surface':'#121212','--surface2':'#1a1a1a','--border':'#2a2a2a','--border-hi':'#8a8a90','--accent':'#ef4444','--accent2':'#b0b0b6','--text':'#f5f5f5','--text-muted':'#8a8a90','--text-dim':'#555555','--glow':'0 0 12px rgba(239,68,68,0.25)','--panel-bg':'#121212','--panel-border':'#2a2a2a' }, fonts:{ '--font-h':"'Inter', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'4px' },
+      copy:{
+        placeholders:{
+          'Ask NICE\u2026': 'Ask HAL\u2026',
+          'Ask NICE...': 'Ask HAL...',
+        },
+      },
       // HAL's camera eye — chrome bezel + red lens + lens flare. Rendered
       // on every view CoreReactor opts into (Home / Bridge / Spaceship-
       // detail), not just the Schematic's `.sch-core-hit-overlay`.
@@ -83,12 +89,18 @@ const Theme = (() => {
         ranks:['Mark I','Mark II','Mark III','Mark IV','Mark V','Mark VI','Mark VII','Mark VIII','Mark IX','Mark XLII','Mark L','Iron Man'],
         labels:{
           // Empty states
+          'No agents deployed yet. Browse below.': 'No protocols engaged, sir. Browse below.',
+          'No spaceships deployed yet. Browse below.': 'No systems engaged, sir. Browse below.',
+          'No agents deployed yet.': 'No protocols engaged, sir.',
+          'No spaceships deployed.': 'No systems engaged, sir.',
           'No agents yet.': 'No protocols active, sir.',
           'No missions yet.': 'No directives active, sir.',
           'No missions assigned yet.': 'No directives assigned, sir.',
           'No agents found': 'No protocols match, sir',
           'No results found': 'No results, sir',
           'No results': 'Nothing to report, sir',
+          'Deploy a ship to start one.': 'Awaiting ship deployment, sir.',
+          'No eligible blueprints': 'Nothing eligible, sir',
           'Try adjusting your filters or search terms.': 'Might I suggest adjusting your filters, sir.',
           'No Blueprints Found': 'Nothing in the archive, sir',
           'Standing by.': 'Standing by, sir.',
@@ -96,7 +108,14 @@ const Theme = (() => {
           // `Object.fromEntries` which silently collapses duplicate values,
           // corrupting the revert pass when JARVIS deactivates.
           'Installed': 'Protocol installed, sir.',
+          'Activated!': 'Protocol engaged, sir.',
+          'Published!': 'Protocol filed, sir.',
+          'Rated!': 'Rating logged, sir.',
           'Copied to clipboard': 'Logged to clipboard, sir.',
+        },
+        placeholders:{
+          'Ask NICE\u2026': 'Ask J.A.R.V.I.S.\u2026',
+          'Ask NICE...': 'Ask J.A.R.V.I.S....',
         },
       },
       // Reactor — arc reactor + HUD ring stack. CoreReactor reads this and
@@ -1146,9 +1165,7 @@ const NICE = (() => {
     const convs = _getConversations();
     const conv = convs.find(c => c.id === id);
     if (!conv || !conv.messages.length) return;
-    const who = (typeof Theme !== 'undefined' && Theme.current && Theme.getTheme)
-      ? (Theme.getTheme(Theme.current())?.persona?.name || 'Ada') : 'Ada';
-    const text = conv.messages.map(m => (m.role === 'user' ? 'You' : who) + ': ' + m.text).join('\n\n');
+    const text = conv.messages.map(m => (m.role === 'user' ? 'You' : 'NICE') + ': ' + m.text).join('\n\n');
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => {
         if (typeof Notify !== 'undefined') Notify.send({ title: 'Copied', message: 'Conversation copied to clipboard', type: 'success' });

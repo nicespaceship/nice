@@ -23,8 +23,8 @@
    `/missions/:id` route or `new` will be swallowed as an id.
 ═══════════════════════════════════════════════════════════════════ */
 const MissionComposerView = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
+  const _N   = () => Terminology.label('mission');
+  const _Nl  = () => Terminology.label('mission', { lowercase: true });
   const _esc = Utils.esc;
 
   // Component state — lives for the duration of one composer session.
@@ -59,12 +59,12 @@ const MissionComposerView = (() => {
         <div class="mc-composer-back">
           <a href="#/missions" class="btn btn-sm">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
-            Back to ${_T('mission', true)}
+            Back to ${Terminology.label('mission', { plural: true })}
           </a>
         </div>
         <div class="mc-composer-hero">
-          <h1 class="mc-composer-title">New ${_T('mission')}</h1>
-          <p class="mc-composer-sub">Describe what you want in plain English. Your ${_t('captain')} figures out the rest.</p>
+          <h1 class="mc-composer-title">New ${_N()}</h1>
+          <p class="mc-composer-sub">Describe what you want in plain English. Your captain figures out the rest.</p>
         </div>
         <div class="mc-composer-body" id="mc-composer-body">${_bodyHTML()}</div>
       </div>
@@ -82,7 +82,7 @@ const MissionComposerView = (() => {
       const chipHTML = _inboxCaptainChipHTML();
       return `
         <form id="mc-composer-form" class="mc-composer-form">
-          <label for="mc-intent" class="mc-composer-label">What should this ${_t('mission')} do?</label>
+          <label for="mc-intent" class="mc-composer-label">What should this ${_Nl()} do?</label>
           <textarea id="mc-intent" class="mc-composer-intent"
             placeholder="e.g. Draft an email reply in my voice for every unread thread from a customer."
             rows="5" ${disabled} required>${_esc(_intent)}</textarea>
@@ -124,13 +124,13 @@ const MissionComposerView = (() => {
         </div>
         <div class="mc-composer-actions">
           <button type="button" class="btn btn-sm" id="mc-composer-back-edit">← Edit intent</button>
-          <button type="button" class="btn btn-primary" id="mc-composer-activate">Activate ${_T('mission')}</button>
+          <button type="button" class="btn btn-primary" id="mc-composer-activate">Activate ${_N()}</button>
         </div>
       `;
     }
 
     if (_state === 'saving') {
-      return `<div class="mc-composer-saving">Activating ${_t('mission')}…</div>`;
+      return `<div class="mc-composer-saving">Activating ${_Nl()}…</div>`;
     }
 
     if (_state === 'template-gate') {
@@ -158,7 +158,7 @@ const MissionComposerView = (() => {
     const errBanner = _error ? `<div class="mc-composer-error">${_esc(_error)}</div>` : '';
     return `
       <div class="mc-template-gate">
-        <div class="mc-template-gate-title">One step before this ${_t('mission')} can run</div>
+        <div class="mc-template-gate-title">One step before this ${_Nl()} can fly</div>
         <ol class="mc-gate-steps">${steps.join('')}</ol>
         ${errBanner}
         <div class="mc-composer-actions">
@@ -233,7 +233,7 @@ const MissionComposerView = (() => {
         try {
           const { missionId, runId } = await activateMission(_plan);
           if (typeof Notify !== 'undefined') {
-            Notify.send({ title: `${_T('mission')} Activated`, message: _plan.title, type: 'success' });
+            Notify.send({ title: `${_N()} Activated`, message: _plan.title, type: 'success' });
           }
           // Kick off the run (fire and forget — MissionRunner manages state).
           if (runId && typeof MissionRunner !== 'undefined') MissionRunner.run(runId);
@@ -440,7 +440,7 @@ const MissionComposerView = (() => {
   // the JSON parser + plan normalizer below run offline.
   function _systemPrompt() {
     return [
-      'You are the Mission Composer for Longeron, an agentic workflow platform.',
+      'You are the Mission Composer for NICE, an agentic workflow platform.',
       'A user describes what they want a crew to do. You emit a JSON plan.',
       '',
       'Rules:',
@@ -545,7 +545,7 @@ const MissionComposerView = (() => {
   /* ─── Persist the mission + enqueue a run ─── */
   async function activateMission(plan) {
     const user = State.get('user');
-    if (!user?.id) throw new Error(`Sign in to activate ${Terminology.article('mission')} ${_t('mission')}.`);
+    if (!user?.id) throw new Error('Sign in to activate a mission.');
 
     // Every Mission runs on a Spaceship — no solo-agent execution.
     // Resolve from the plan if the caller picked one, else default to the
@@ -554,7 +554,7 @@ const MissionComposerView = (() => {
     const spaceships = State.get('spaceships') || [];
     const spaceshipId = plan.spaceship_id || spaceships[0]?.id;
     if (!spaceshipId) {
-      throw new Error(`Activate a ${_T('spaceship')} before creating ${Terminology.article('mission')} ${_T('mission')}. ${_T('mission', true)} always run on a ${_T('spaceship')}.`);
+      throw new Error('Activate a Spaceship before creating a Mission. Missions always run on a Ship.');
     }
 
     // Create the template + enqueue the run via the shared SSOT (MissionRunner).
@@ -574,7 +574,7 @@ const MissionComposerView = (() => {
   // Exported for tests. Keep in sync with the return-value shape the
   // render loop expects.
   return {
-    get title() { return `New ${_T('mission')}`; },
+    get title() { return `New ${_N()}`; },
     render,
     // Test surface:
     _systemPrompt,

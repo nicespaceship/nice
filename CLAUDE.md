@@ -1,12 +1,8 @@
-# Longeron — Project Guide
+# NICE™ — Project Guide
 
 ## Branding
-- **Longeron** = the product (this app). Renamed from NICE in 2026-08; the "Neural Intelligence Command Engine" backronym is retired. One app, not a suite.
+- **NICE** = Neural Intelligence Command Engine (the product)
 - **NICE SPACESHIP** = the company (all caps)
-- **Ada** = the default assistant persona. Personas are per-theme (HAL, Morpheus, Dwight); prompt-panel resolves them via `_personaName()` and re-applies on the `nice:theme-change` event.
-- Wordmark: `--font-brand` = IBM Plex Sans 700 at `--tracking-caps`.
-- Default vocabulary is business nouns via the `Terminology` SSOT: Workspace / Team / Process / Supervisor (Agent unchanged). The 8 sci-fi themes share a SCIFI profile that opts back into Spaceship / Crew / Mission / Captain; custom themes inherit business. `captain` means the orchestrating agent, never the account owner. Mission maps to Process, never Workflow (Workflow is already a primitive in the mission ontology).
-- Internal identifiers keep the legacy NICE name and must NOT be renamed (renaming resets live users): theme ids `nice`/`nice-dark`, the `nice-auto` model id, `nice-*` localStorage keys, CSS classes, edge function names, and DB table names.
 - Product domain: `nicespaceship.ai`
 - Company domain: `nicespaceship.com`
 
@@ -52,9 +48,9 @@ Fire while the desktop app is open, or on next launch if it was closed; they are
 - **`nightly-launch-audit`** (`17 3 * * *`) — a fresh session re-runs the read-only launch-readiness security checks, diffs the set of anon-executable privileged DB functions against a known baseline, reports drift, and drafts a single REVOKE-migration PR for any clear low-risk regression. Report + draft only; never merges.
 
 ## Project Overview
-**Longeron** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Cloudflare Pages via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`. Internal code, module names, and identifiers still say NICE; that is expected (see Branding).
+**NICE™** is an Agentic Intelligence platform by NICE SPACESHIP. SPA dashboard for building, deploying, and managing AI agent fleets. Static HTML deployed on Cloudflare Pages via GitHub (`nicespaceship/nice`). Domain: `nicespaceship.ai`.
 
-Longeron IS the LLM provider — users never deal with API keys. Longeron holds all provider keys server-side. Users toggle which models they want active. Free tier = Gemini 2.5 Flash. Premium models cost tokens (purchased via Stripe).
+NICE IS the LLM provider — users never deal with API keys. NICE holds all provider keys server-side. Users toggle which models they want active. Free tier = Gemini 2.5 Flash. Premium models cost tokens (purchased via Stripe).
 
 ## Supabase
 - Project: `nice` (ID: `zacllshbgmnwsmliteqx`)
@@ -126,7 +122,7 @@ The function still validates the user internally via `supabase.auth.getUser()` �
 | `fuel_usage` | Per-LLM-call usage **telemetry** (free + paid), NOT a credit system: `model`, `input_tokens`/`output_tokens`, `fuel_cost` (provider COGS in USD, `numeric`), `agent_id`, `spaceship_id`. Written by `nice-ai` per call; read by the Cost Tracker + Operations analytics |
 | `subscriptions` | Stripe subscription state: `plan`, `status`, period, `addons[]` |
 | `stripe_events` | Stripe webhook event log (idempotency / replay guard) |
-| `personas` | Persona Engine — per-theme persona definitions (hard/soft rules). Content also updates via sanctioned ad-hoc writes, so live rows drift from seed files: read prod, never infer current content from a seed migration |
+| `personas` | Persona Engine — per-theme persona definitions (hard/soft rules) |
 | `persona_judgments` | Persona Engine — Tier 3 judge verdicts on agent replies |
 | `plugins` | Plugin catalog |
 | `plugin_installs` | Per-user plugin installations |
@@ -226,7 +222,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 │   │   └── theme.css       # Marketing site styles + skin engine
 │   └── js/
 │       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD
-├── app/                    # NICE SPA Dashboard
+├── app/                    # NICE™ SPA Dashboard
 │   ├── index.html          # SPA shell (script tags in dependency order)
 │   ├── manifest.json       # PWA manifest
 │   ├── sw.js               # Service Worker (version CI-auto-stamped; offline, periodic sync, push)
@@ -347,7 +343,7 @@ Skins are applied via the `Skin` module. Base theme uses CSS custom properties o
 - Themes may change `font-family`, `color`, `border`, `background`, `glow/shadow` on cards. Themes must **not** change `font-size`, `font-weight`, `letter-spacing`, or `text-transform`.
 - `text-transform: capitalize` is banned on cards same as prose — fix source strings.
 
-## NICE SPA Architecture
+## NICE™ SPA Architecture
 
 ### Module Pattern
 All NICE JS modules use the IIFE pattern for browser compatibility (no build step):

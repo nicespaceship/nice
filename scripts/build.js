@@ -6,28 +6,82 @@
  *
  * Usage: node scripts/build.js
  */
-const { readFileSync, writeFileSync, mkdirSync, existsSync } = require('fs');
+const { readFileSync, writeFileSync, mkdirSync } = require('fs');
 const { resolve } = require('path');
 const esbuild = require('esbuild');
 
 const ROOT = resolve(__dirname, '..');
 
-// Load order is derived from app/index.html, which is the single source of
-// truth for it. This used to be a hand-maintained copy and drifted: 30
-// modules — terminology, stripe-config, roles, core-voice among them — had
-// fallen out of the bundle without anything failing, because the bundle is
-// only exercised by CI's size gate, not served.
-const INDEX = readFileSync(resolve(ROOT, 'app/index.html'), 'utf-8');
-const SCRIPTS = [...INDEX.matchAll(/<script[^>]+src="\.\/(js\/[^"?]+)/g)]
-  .map(m => 'app/' + m[1]);
-
-if (SCRIPTS.length < 50) {
-  throw new Error(`Only ${SCRIPTS.length} scripts parsed from app/index.html — the ` +
-    'selector likely broke. Refusing to build a silently truncated bundle.');
-}
-for (const f of SCRIPTS) {
-  if (!existsSync(resolve(ROOT, f))) throw new Error(`Listed in index.html but missing: ${f}`);
-}
+// Script load order (matches app/index.html <script> tags)
+const SCRIPTS = [
+  'app/js/lib/state.js',
+  'app/js/lib/utils.js',
+  'app/js/lib/cost-utils.js',
+  'app/js/lib/skin.js',
+  'app/js/lib/rate-limiter.js',
+  'app/js/lib/supabase.js',
+  'app/js/lib/offline-queue.js',
+  'app/js/lib/router.js',
+  'app/js/lib/blueprint-utils.js',
+  'app/js/lib/card-renderer.js',
+  'app/js/views/home.js',
+  'app/js/views/profile.js',
+  'app/js/views/alerts.js',
+  'app/js/views/agents.js',
+  'app/js/views/agent-builder.js',
+  'app/js/views/spaceship-builder.js',
+  'app/js/views/missions.js',
+  'app/js/views/spaceships.js',
+  'app/js/views/schematic.js',
+  'app/js/views/blueprints.js',
+  'app/js/views/analytics.js',
+  'app/js/views/cost.js',
+  'app/js/views/vault.js',
+  'app/js/views/integrations.js',
+  'app/js/views/security.js',
+  'app/js/views/settings.js',
+  'app/js/views/wallet.js',
+  'app/js/views/audit-log.js',
+  'app/js/views/theme-creator.js',
+  'app/js/lib/preview-panel.js',
+  'app/js/views/prompt-panel.js',
+  'app/js/views/ship-log-view.js',
+  'app/js/lib/audit-log.js',
+  'app/js/lib/data-io.js',
+  'app/js/lib/activity-feed.js',
+  'app/js/lib/quick-notes.js',
+  'app/js/lib/favorites.js',
+  'app/js/lib/notify.js',
+  'app/js/lib/message-bar.js',
+  'app/js/lib/gamification.js',
+  'app/js/lib/command-palette.js',
+  'app/js/lib/keyboard.js',
+  'app/js/lib/blueprints.js',
+  'app/js/lib/llm-config.js',
+  'app/js/lib/model-intel.js',
+  'app/js/lib/prompt-builder.js',
+  'app/js/lib/agent-memory.js',
+  'app/js/lib/quality-gate.js',
+  'app/js/lib/ship-templates.js',
+  'app/js/lib/tool-registry.js',
+  'app/js/lib/browser-tools.js',
+  'app/js/lib/mcp-bridge.js',
+  'app/js/lib/agent-executor.js',
+  'app/js/lib/ship-log.js',
+  'app/js/lib/ship-behaviors.js',
+  'app/js/lib/mission-runner.js',
+  'app/js/lib/workflow-engine.js',
+  'app/js/lib/subscription.js',
+  'app/js/lib/upgrade-modal.js',
+  'app/js/lib/setup-wizard.js',
+  'app/js/lib/ship-setup-wizard.js',
+  'app/js/lib/crew-designer.js',
+  'app/js/lib/content-queue.js',
+  'app/js/lib/media-tools.js',
+  'app/js/lib/virtual-fs.js',
+  'app/js/lib/auth-modal.js',
+  'app/js/nice.js',
+];
 
 // Concatenate
 const combined = SCRIPTS.map(f => {

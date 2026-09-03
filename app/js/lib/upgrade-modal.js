@@ -48,12 +48,12 @@ const UpgradeModal = (() => {
           </thead>
           <tbody>
             <tr>
-              <th>Active ${Terminology.label('spaceship', { plural: true, lowercase: true })}</th>
+              <th>Active spaceships</th>
               <td>1</td>
-              <td><strong>Unlimited</strong></td>
+              <td><strong>Run a fleet</strong></td>
             </tr>
             <tr>
-              <th>${Terminology.label('crew')} slots</th>
+              <th>Crew slots</th>
               <td>Unlock by rank</td>
               <td><strong>All unlocked instantly</strong></td>
             </tr>
