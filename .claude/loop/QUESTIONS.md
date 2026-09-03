@@ -15,7 +15,16 @@
 ```
 
 ## Open
-_(none)_
+
+### Q4 — Community groundwork is no longer one `[READY]` unit   ·   raised 2026-09-03 · item: P2 community features groundwork
+**Question:** Two separate steers needed. (a) The badge was specced as "Powered by NICE", but NICE is now the *company* and Longeron is the *product* — should it read "Powered by Longeron", "Powered by NICE SPACESHIP", or drop the badge? (b) The public profile view needs a public-read policy on `profiles`, which is a carve-out migration, not `[READY]` code.
+**Default taken (if any):** none — reflagged `[BEN]` and left unbuilt. Guessing the badge wording would put the wrong brand on other people's sites, and guessing the `profiles` read policy would expose user rows.
+**Why it needs you:** (a) is brand, (b) is a security/RLS fork. Split into two items once you call it: the badge is then `[READY]`, the profile view is `[QUEUE]`.
+
+### Q5 — The loop backlog went stale for ~2.5 months   ·   raised 2026-09-03 · item: loop integrity
+**Question:** `BACKLOG.md` was last written 2026-06-19 (#878), but #885–#906 shipped outside the loop (Longeron rename, model lineup swaps, NICE Auto routing, model-watch, the audit quick-win tier). Its top `[READY]` item was already built. Do you want the loop to keep running against this file as SSOT, and if so should a cycle be spent reconciling it against `git log` first?
+**Default taken (if any):** corrected only what this cycle proved cold — removed the shipped account-deletion line, rescoped the typography sweep, reflagged community groundwork. Reversible; the rest of the file is untouched. Loop rule 6's "pre-launch until ~2026-06-28" window has also expired and needs a call.
+**Why it needs you:** a stale SSOT makes every future cycle risk duplicating merged work. Reconciling it is cheap but it's your prioritization, not mine to invent.
 
 ## Answered
 - 2026-06-18 — *Q3 Self-merge non-carve-out green PRs:* **YES** — Ben (session opener): self-merge non-carve-out PRs once **CI is green AND the build-checker PASSes**; he spot-checks after the fact. Carve-outs (migrations / billing / auth) still wait for him. Standing rule now; supersedes the blanket "Ben merges all" reading of BACKLOG rule 2 for the non-carve-out class. Applied: #851-853 self-merged this session.

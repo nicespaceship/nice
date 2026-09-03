@@ -40,8 +40,8 @@
 - ✅ **Listener-leak class closed** (swept the other views): `prompt-panel.js` binds once via `init` + removes in `destroy`; `schematic.js` uses `menu._cleanup`; the `spaceships.js:555` "leak" was inside the orphaned `SpaceshipsView`, removed as dead code ([#860](https://github.com/nicespaceship/nice/pull/860)). No live leak remains beyond #853/#856.
 
 ## P2 — Post-launch backlog (from the roadmaps)
-- `[READY]` Self-service account-deletion UI (DB layer is `ON DELETE CASCADE`; mind the 6 NO-ACTION FKs — verify before wiring).
-- `[READY]` Community features groundwork: public profile view, "Powered by NICE" badge (see [[project_community_features]]).
+- ✅ **Self-service account-deletion UI — already shipped** (verified 2026-09-03: [settings.js:309-341](../../app/js/views/settings.js) renders the danger row, type-to-confirm modal, and submit path; `delete-account` edge fn re-verifies the JWT). Stale `[READY]` line removed so cycles stop re-picking it.
+- `[BEN]` Community features groundwork: public profile view + a "Powered by …" badge (see [[project_community_features]]). **Needs a steer, see Q4:** the badge wording predates the Longeron rename, and the public profile half needs a `profiles` public-read policy (carve-out migration), so this is no longer a single `[READY]` unit.
 - `[QUEUE]` Persona Engine PR3 (regen decision) — `[BLOCKED: needs n≥30/theme live traffic]`.
 - NICE-1 Phase 1 thin-client — `[BLOCKED: legal sign-off on consent default]` ([[project_nice1]]).
 - Business-vertical ships — `[BLOCKED: more MCPs + schema refactor]` ([[project_business_vertical_ships]]).
@@ -49,7 +49,7 @@
 - `[BEN]` Public contact email migration `ben@` → `hello@nicespaceship.com` (6-step sweep) + the 6 OAuth-portal redirect-URI updates for `api.nicespaceship.ai`.
 
 ## P3 — Hygiene / always-available filler (when P1–P2 are blocked)
-- `[READY]` Typography SSOT sweep: hunt raw `font-size`/`letter-spacing`/`font-weight` literals, replace with tokens (CLAUDE.md Typography rules).
+- `[READY]` Typography SSOT sweep: hunt raw `font-size`/`letter-spacing`/`font-weight` literals, replace with tokens (CLAUDE.md Typography rules). **Scoped 2026-09-03:** `app/css/app.css` holds ~110 raw `font-size` literals, 2 raw `letter-spacing`, 0 raw `font-weight`. Too big for one cycle and it needs preview verification across all 11 themes — split it into per-section batches (one view prefix per PR), not one sweep.
 - `[READY]` CSS orphan audit (playbook: [[feedback_css_orphan_audit]]) — verify each claim cold before removing.
 - `[READY]` Test-coverage gaps for recently shipped modules; doc freshness vs current code.
 - `[QUEUE]` RLS advisor WARNs: review `error_log` / `newsletter_subscribers` always-true INSERT + `shared_blueprints` always-true UPDATE; decide intended access for the 3 `rls_enabled_no_policy` tables (`persona_judgments`, `personas`, `team_invites`); move `pg_trgm` out of `public`. Each is a small migration — batch thoughtfully, one concern per PR.
@@ -58,7 +58,7 @@
 
 ## In review (open PRs from the loop)
 _(the loop appends here when it opens a PR, and Ben removes the line when merged)_
-_(none — Phase 1 day-1 PRs merged)_
+- 2026-09-03 — Remove the dead `vercel-www.json` deploy config ([#907](https://github.com/nicespaceship/nice/pull/907)).
 
 ## Done log (most recent first, trimmed periodically)
 - 2026-06-19 — **Phase 1 coverage batch #2 (5 PRs, all merged, self-merged per Q3):** drained the remaining named filler + the two highest-value god-view write-paths. RateLimiter sliding-window guard ([#873](https://github.com/nicespaceship/nice/pull/873)); ModelCatalog SSOT + the catalog↔TokenConfig.MODELS join invariant ([#874](https://github.com/nicespaceship/nice/pull/874)); **AgentBuilderView `_buildBlueprintRow`** serialization — INSERT/UPDATE/FORK identity, role validation, config/card overlay, + the load-time LLM_PROVIDERS/LLM_MODELS derivation, via a 3-line test seam ([#875](https://github.com/nicespaceship/nice/pull/875)); **SpaceshipBuilderView `_buildShipBlueprintRow`** serialization — same identity branching + the inverted caps-precedence (existing themed caps win over form caps), via seam ([#876](https://github.com/nicespaceship/nice/pull/876)); Favorites lib — both sidebar (dedup + 8-cap) and blueprint (uncapped, separate key) bookmark APIs ([#877](https://github.com/nicespaceship/nice/pull/877)). All build-checker PASS; suite 2001→2096 (+95). The no-steer coverage vein is now drained to genuine low-value filler (message-bar / quick-notes) or DOM-heavy view-render tests; next real value needs Ben's steer (catalog growth) or a riskier hygiene item (typography/CSS sweep, needs preview verification).
