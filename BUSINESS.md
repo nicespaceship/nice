@@ -1,4 +1,4 @@
-# NICE — Open Source & Hosted
+# NICE™ — Open Source & Hosted
 
 NICE is MIT-licensed. The frontend, database schema, hundreds of blueprints, and
 self-hosting docs are all in this repo. Anyone can fork, run, modify, and

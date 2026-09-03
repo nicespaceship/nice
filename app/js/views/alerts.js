@@ -7,10 +7,10 @@ const AlertsView = (() => {
   const title = 'Alerts';
 
   const TYPES = {
-    'mission_complete': { icon: '#icon-check',     color: '#22c55e', get label() { return Terminology.label('mission'); } },
-    'mission_failed':   { icon: '#icon-alert',     color: '#ef4444', get label() { return Terminology.label('mission'); } },
+    'mission_complete': { icon: '#icon-check',     color: '#22c55e', label: 'Mission' },
+    'mission_failed':   { icon: '#icon-alert',     color: '#ef4444', label: 'Mission' },
     'agent_ready':      { icon: '#icon-agent',     color: '#3b82f6', label: 'Agent' },
-    'fleet_deployed':   { icon: '#icon-spaceship', color: '#6366f1', get label() { return Terminology.label('spaceship'); } },
+    'fleet_deployed':   { icon: '#icon-spaceship', color: '#6366f1', label: 'Fleet' },
     'budget_alert':     { icon: '#icon-alert',     color: '#f59e0b', label: 'Budget' },
     'system':           { icon: '#icon-settings',  color: 'var(--accent)', label: 'System' },
     'broadcast':        { icon: '#icon-comms',     color: '#06b6d4', label: 'Broadcast' },
@@ -26,7 +26,7 @@ const AlertsView = (() => {
           ${notifs.some(n => !n.read) ? '<button class="btn btn-sm" id="alerts-mark-all">Mark all read</button>' : ''}
         </div>
         <div class="alerts-list" id="alerts-list">
-          ${notifs.length ? notifs.map(n => _renderItem(n)).join('') : `<div class="alerts-empty"><p>No alerts yet.</p><p class="text-muted">Notifications from ${Terminology.label('mission', { plural: true, lowercase: true })}, agents, and system events will appear here.</p></div>`}
+          ${notifs.length ? notifs.map(n => _renderItem(n)).join('') : '<div class="alerts-empty"><p>No alerts yet.</p><p class="text-muted">Notifications from missions, agents, and system events will appear here.</p></div>'}
         </div>
       </div>
     `;

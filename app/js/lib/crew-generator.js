@@ -6,8 +6,6 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const CrewGenerator = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
 
   const VALID_TOOLS = [
     'Web Search','Email','Calendar','Spreadsheet','Database','API Call',
@@ -80,7 +78,7 @@ Rules:
         lastErr = e.message || 'Network error';
       }
     }
-    return { agents: [], error: lastErr || `Failed to generate ${_t('crew')}` };
+    return { agents: [], error: lastErr || 'Failed to generate crew' };
   }
 
   /**
@@ -204,7 +202,7 @@ Rules:
     if (!bp) return { error: 'Blueprint not found: ' + blueprintId };
 
     var catalogCrew = bp.metadata?.crew || bp.crew || [];
-    if (!catalogCrew.length) return { error: `No ${_t('crew')} defined in blueprint` };
+    if (!catalogCrew.length) return { error: 'No crew defined in blueprint' };
 
     var slotAssignments = {};
     var savedAgents = [];
@@ -293,7 +291,7 @@ Rules:
     try {
       var foaResult = await Blueprints.findOrCreateActiveShip(blueprintId, function() { return shipRow; });
       var shipCreated = foaResult.ship;
-      if (!shipCreated || !shipCreated.id) return { error: `Failed to create ${_t('spaceship')}` };
+      if (!shipCreated || !shipCreated.id) return { error: 'Failed to create ship' };
       if (typeof ShipSlots !== 'undefined' && Object.keys(slotAssignments).length) {
         await ShipSlots.setForShip(shipCreated.id, slotAssignments);
       }

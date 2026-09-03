@@ -176,7 +176,7 @@ const ShipLog = (() => {
     opts = opts || {};
 
     const agentId = agentBlueprint ? agentBlueprint.id : null;
-    const agentName = agentBlueprint ? agentBlueprint.name : 'Longeron';
+    const agentName = agentBlueprint ? agentBlueprint.name : 'NICE';
 
     // 1. Read prior context BEFORE logging the new user message. The
     //    current prompt is appended as the final turn by _buildLLMParams,

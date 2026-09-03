@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
- * NICE E2E Smoke Tests
+ * NICE™ E2E Smoke Tests
  *
  * Routes:
  *   #/           → HomeView ('Bridge') — chat interface

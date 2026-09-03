@@ -5,11 +5,13 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const MissionsView = (() => {
-  // Noun helpers — theme-aware. `Terminology` is the SSOT; `_t` is the
-  // lowercase form. Called inside render() so Router.refresh() picks up
-  // the new theme's vocabulary.
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
+  // Noun helpers — theme-aware. `Terminology` is SSOT; `{plural}` /
+  // `{lowercase}` select the rendered form. Called inside render() so
+  // Router.refresh() picks up the new theme's vocabulary.
+  const _N   = () => Terminology.label('mission');
+  const _Np  = () => Terminology.label('mission', { plural: true });
+  const _Nl  = () => Terminology.label('mission', { lowercase: true });
+  const _Nlp = () => Terminology.label('mission', { plural: true, lowercase: true });
 
   const STATUSES   = ['queued','running','completed','failed','cancelled'];
   const PRIORITIES = ['low','medium','high','critical'];
@@ -61,11 +63,11 @@ const MissionsView = (() => {
       <div class="mc-pipeline" id="mc-pipeline"></div>
       <div class="search-box">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-search"/></svg>
-        <input type="text" id="task-search" class="search-input" placeholder="Search ${_t('mission', true)}..." data-allow-zoom />
+        <input type="text" id="task-search" class="search-input" placeholder="Search ${_Nlp()}..." data-allow-zoom />
       </div>
-      <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New ${_T('mission')}" title="New ${_T('mission')}">
+      <button class="btn btn-primary btn-sm" id="btn-new-task" aria-label="New ${_N()}" title="New ${_N()}">
         <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg>
-        <span class="mc-toolbar-label">New ${_t('mission')}</span>
+        <span class="mc-toolbar-label">New ${_Nl()}</span>
       </button>`;
   }
 
@@ -92,7 +94,7 @@ const MissionsView = (() => {
       <div class="modal-overlay" id="modal-new-task">
         <div class="modal-box">
           <div class="modal-hdr">
-            <h3 class="modal-title">Create ${_T('mission')}</h3>
+            <h3 class="modal-title">Create ${_N()}</h3>
             <button class="modal-close" id="close-task-modal" aria-label="Close">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-x"/></svg>
             </button>
@@ -100,7 +102,7 @@ const MissionsView = (() => {
           <div class="modal-body">
             <form id="task-form" class="auth-form">
               <div class="auth-field">
-                <label for="t-title">${_T('mission')} Title</label>
+                <label for="t-title">${_N()} Title</label>
                 <input type="text" id="t-title" required placeholder="e.g. Analyze Q4 sales data" />
               </div>
               <div class="auth-field">
@@ -114,7 +116,7 @@ const MissionsView = (() => {
                 </select>
               </div>
               <div class="auth-error" id="task-error"></div>
-              <button type="submit" class="auth-submit" id="task-submit-btn">Create ${_T('mission')}</button>
+              <button type="submit" class="auth-submit" id="task-submit-btn">Create ${_N()}</button>
             </form>
           </div>
         </div>
@@ -177,8 +179,8 @@ const MissionsView = (() => {
       feed.innerHTML = `
         <div class="app-empty">
           <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
-          <h2>Couldn't load your ${_t('mission', true)}</h2>
-          <p>The connection to the database failed. Your ${_t('mission', true)} are safe; try again in a moment.</p>
+          <h2>Couldn't load your ${_Nlp()}</h2>
+          <p>The connection to the database failed. Your ${_Nlp()} are safe; try again in a moment.</p>
           <div class="app-empty-acts">
             <button class="btn btn-primary btn-sm" id="mc-retry-load">Retry</button>
           </div>
@@ -191,11 +193,11 @@ const MissionsView = (() => {
       feed.innerHTML = `
         <div class="app-empty">
           <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-task"/></svg>
-          <h2>No ${_T('mission', true)} Yet</h2>
-          <p>Create ${Terminology.article('mission')} ${_t('mission')} and assign it to an agent.</p>
+          <h2>No ${_Np()} Yet</h2>
+          <p>Create ${Terminology.article('mission', { lowercase: true })} ${_Nl()} and assign it to an agent.</p>
           <div class="app-empty-acts">
             <button class="btn btn-primary btn-sm" onclick="location.hash='#/missions/new'">
-              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg> Create ${_T('mission')}
+              <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-plus"/></svg> Create ${_N()}
             </button>
           </div>
         </div>`;
@@ -261,7 +263,7 @@ const MissionsView = (() => {
         const delBtn = e.target.closest('.mc-card-delete');
         if (!delBtn) return;
         const missionId = delBtn.dataset.id;
-        if (!confirm(`Delete this ${_t('mission')}? This also removes all associated log entries and cannot be undone.`)) return;
+        if (!confirm(`Delete this ${_Nl()}? This also removes all associated ship-log entries and cannot be undone.`)) return;
         delBtn.disabled = true;
         _selected.delete(missionId);
         _renderBatchBar();
@@ -316,11 +318,11 @@ const MissionsView = (() => {
     // 'cancelled' in the DB; running WorkflowEngine loops re-check status
     // between nodes and bail out. Queued runs stop before they start.
     if (!m.sample && (m.status === 'queued' || m.status === 'running')) {
-      actionsHTML += `<button class="btn btn-xs mc-card-cancel" data-id="${m.id}" aria-label="Cancel ${_t('mission')}" title="Cancel ${_t('mission')}">✕</button>`;
+      actionsHTML += `<button class="btn btn-xs mc-card-cancel" data-id="${m.id}" aria-label="Cancel ${_Nl()}" title="Cancel ${_Nl()}">✕</button>`;
     }
     // Delete is available for every status. Destructive, confirm-gated.
     if (!m.sample) {
-      actionsHTML += `<button class="btn btn-xs mc-card-delete" data-id="${m.id}" aria-label="Delete ${_t('mission')}" title="Delete ${_t('mission')}">🗑</button>`;
+      actionsHTML += `<button class="btn btn-xs mc-card-delete" data-id="${m.id}" aria-label="Delete ${_Nl()}" title="Delete ${_Nl()}">🗑</button>`;
     }
 
     return `
@@ -438,7 +440,7 @@ const MissionsView = (() => {
     `;
     bar.querySelector('.mc-batch-delete')?.addEventListener('click', async () => {
       const n = _selected.size;
-      if (!confirm(`Delete ${n} ${n === 1 ? _t('mission') : _t('mission', true)}? This also removes all associated log entries and cannot be undone.`)) return;
+      if (!confirm(`Delete ${n} ${_Nl()}${n === 1 ? '' : 's'}? This also removes all associated ship-log entries and cannot be undone.`)) return;
       const ids = Array.from(_selected);
       _selected.clear();
       _renderBatchBar();
@@ -457,7 +459,7 @@ const MissionsView = (() => {
     const next = missions.filter(m => m.id !== missionId);
     State.set('missions', next);
     if (typeof AuditLog !== 'undefined' && mission) {
-      AuditLog.log('mission', { description: `${_T('mission')} "${mission.title}" deleted`, missionId, status: mission.status });
+      AuditLog.log('mission', { description: `Mission "${mission.title}" deleted`, missionId, status: mission.status });
     }
     if (typeof SB !== 'undefined') {
       try { await SB.db('mission_runs').remove(missionId); } catch (err) { console.error('[Missions] Delete failed', err); }
@@ -479,7 +481,7 @@ const MissionsView = (() => {
     State.set('missions', next);
 
     if (typeof AuditLog !== 'undefined' && mission) {
-      AuditLog.log('mission', { description: `${_T('mission')} "${mission.title}" cancelled`, missionId, previousStatus: mission.status });
+      AuditLog.log('mission', { description: `Mission "${mission.title}" cancelled`, missionId, previousStatus: mission.status });
     }
     if (typeof SB !== 'undefined') {
       try {
@@ -489,7 +491,7 @@ const MissionsView = (() => {
       }
     }
     if (typeof Notify !== 'undefined' && mission) {
-      Notify.send({ title: `${_T('mission')} Cancelled`, message: mission.title, type: 'system' });
+      Notify.send({ title: `${_N()} Cancelled`, message: mission.title, type: 'system' });
     }
   }
 
@@ -592,7 +594,7 @@ const MissionsView = (() => {
     const agentVal = document.getElementById('t-agent').value || null;
     const priority = document.getElementById('t-priority').value;
 
-    if (!mTitle) { errEl.textContent = `${_T('mission')} title is required.`; btn.disabled = false; btn.textContent = `Create ${_T('mission')}`; return; }
+    if (!mTitle) { errEl.textContent = `${_N()} title is required.`; btn.disabled = false; btn.textContent = `Create ${_N()}`; return; }
 
     const isUUID = agentVal && /^[0-9a-f]{8}-/i.test(agentVal);
     const agentId = isUUID ? agentVal : null;
@@ -604,8 +606,8 @@ const MissionsView = (() => {
       const spaceships = State.get('spaceships') || [];
       const spaceshipId = spaceships[0]?.id;
       if (isReal && !spaceshipId) {
-        errEl.textContent = `Activate a ${_T('spaceship')} first — ${_T('mission', true)} always run on a ${_T('spaceship')}.`;
-        btn.disabled = false; btn.textContent = `Create ${_T('mission')}`;
+        errEl.textContent = 'Activate a Spaceship first — Missions always run on a Ship.';
+        btn.disabled = false; btn.textContent = `Create ${_N()}`;
         return;
       }
       let created = null;
@@ -619,9 +621,9 @@ const MissionsView = (() => {
       document.getElementById('modal-new-task')?.classList.remove('open');
       document.getElementById('task-form')?.reset();
       if (agentVal && created?.id && typeof MissionRunner !== 'undefined') MissionRunner.run(created.id);
-      if (typeof Notify !== 'undefined') Notify.send({ title: `${_T('mission')} Created`, message: mTitle, type: 'system' });
-    } catch (err) { errEl.textContent = err.message || `Failed to create ${_t('mission')}.`; }
-    finally { btn.disabled = false; btn.textContent = `Create ${_T('mission')}`; }
+      if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Created`, message: mTitle, type: 'system' });
+    } catch (err) { errEl.textContent = err.message || `Failed to create ${_Nl()}.`; }
+    finally { btn.disabled = false; btn.textContent = `Create ${_N()}`; }
   }
 
   function _subscribeRealtime() {
@@ -641,10 +643,10 @@ const MissionsView = (() => {
         const old = missions[idx];
         if (old.status !== updated.status) {
           if (updated.status === 'review' && typeof Notify !== 'undefined') {
-            Notify.send({ title: `${_T('mission')} Ready`, message: updated.title, type: 'success' });
+            Notify.send({ title: `${_N()} Ready`, message: updated.title, type: 'success' });
           }
           if (updated.status === 'failed' && typeof Notify !== 'undefined') {
-            Notify.send({ title: `${_T('mission')} Failed`, message: updated.title, type: 'error' });
+            Notify.send({ title: `${_N()} Failed`, message: updated.title, type: 'error' });
           }
         }
         missions[idx] = { ...missions[idx], ...updated };
@@ -666,13 +668,14 @@ const MissionsView = (() => {
     _prevStatuses = {};
   }
 
-  return { get title() { return _T('mission', true); }, render, getToolbarActions, destroy };
+  return { get title() { return _Np(); }, render, getToolbarActions, destroy };
 })();
 
 /* ── Mission Detail View ── */
 const MissionDetailView = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
+  const _N   = () => Terminology.label('mission');
+  const _Np  = () => Terminology.label('mission', { plural: true });
+  const _Nl  = () => Terminology.label('mission', { lowercase: true });
   const _esc = Utils.esc;
   const _timeAgo = Utils.timeAgo;
   let _detailChannel = null;
@@ -687,7 +690,7 @@ const MissionDetailView = (() => {
 
   function render(el, params) {
     const user = State.get('user');
-    el.innerHTML = `<div class="loading-state"><p>Loading ${_t('mission')}...</p></div>`;
+    el.innerHTML = `<div class="loading-state"><p>Loading ${_Nl()}...</p></div>`;
     _loadMission(el, params.id);
   }
 
@@ -714,7 +717,7 @@ const MissionDetailView = (() => {
       } catch(e) {
         mission = (State.get('missions') || []).find(m => m.id === id);
       }
-      if (!mission) throw new Error(`${_T('mission')} not found`);
+      if (!mission) throw new Error(`${_N()} not found`);
 
       // Resolve agent
       // Look up agent from user_agents, then blueprints, then use stored name
@@ -761,17 +764,17 @@ const MissionDetailView = (() => {
           <div class="detail-back">
             <a href="#/missions" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
-              Back to ${_T('mission', true)}
+              Back to ${_Np()}
             </a>
             ${mission.status === 'queued' && _isRunnable(mission) ? `
-              <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run ${_T('mission')}</button>
+              <button class="btn btn-sm btn-primary" id="md-run" data-id="${id}">Run ${_N()}</button>
             ` : ''}
             ${mission.status === 'review' ? `
               <button class="btn btn-sm btn-primary" id="md-approve" data-id="${id}" style="background:#22c55e;border-color:#22c55e">✓ Approve</button>
               <button class="btn btn-sm" id="md-reject" data-id="${id}" style="color:#f87171">✕ Reject</button>
             ` : ''}
             ${mission.status === 'failed' && _isRunnable(mission) ? `
-              <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry ${_T('mission')}</button>
+              <button class="btn btn-sm btn-primary" id="md-retry" data-id="${id}">Retry ${_N()}</button>
             ` : ''}
             ${mission.status === 'completed' ? `
               <button class="btn btn-sm" id="md-share-report" data-id="${id}">Share Report</button>
@@ -796,7 +799,7 @@ const MissionDetailView = (() => {
               <h3 class="detail-section-title">Progress</h3>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                 <span class="mission-running-pulse"></span>
-                <span style="font-size:.78rem;color:#6366f1;font-weight:500">${_T('mission')} in progress...</span>
+                <span style="font-size:.78rem;color:#6366f1;font-weight:500">Mission in progress...</span>
               </div>
               <div class="task-progress" style="height:8px;border-radius:4px">
                 <div class="task-progress-bar" style="width:${progress}%;transition:width .3s"></div>
@@ -891,9 +894,9 @@ const MissionDetailView = (() => {
     } catch (err) {
       el.innerHTML = `
         <div class="app-empty">
-          <h2>${_T('mission')} Not Found</h2>
+          <h2>${_N()} Not Found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/missions" class="btn btn-sm">Back to ${_T('mission', true)}</a></div>
+          <div class="app-empty-acts"><a href="#/missions" class="btn btn-sm">Back to ${_Np()}</a></div>
         </div>
       `;
     }
@@ -923,7 +926,7 @@ const MissionDetailView = (() => {
       const url = window.location.origin + '/app/' + shareHash;
       navigator.clipboard.writeText(url).then(() => {
         if (typeof Notify !== 'undefined') {
-          Notify.send({ title: 'Report Link Copied', message: `Shareable ${_t('mission')} report URL copied to clipboard.`, type: 'system' });
+          Notify.send({ title: 'Report Link Copied', message: `Shareable ${_Nl()} report URL copied to clipboard.`, type: 'system' });
         }
       }).catch(() => {});
     });
@@ -937,7 +940,7 @@ const MissionDetailView = (() => {
         const btn = e.currentTarget;
         if (btn) btn.disabled = true;
         try { await MissionRunner.resumeDag(id); }
-        catch (err) { if (typeof Notify !== 'undefined') Notify.send({ title: 'Resume failed', message: err?.message || `Could not continue the ${_t('mission')}.`, type: 'error' }); }
+        catch (err) { if (typeof Notify !== 'undefined') Notify.send({ title: 'Resume failed', message: err?.message || 'Could not continue the mission.', type: 'error' }); }
         finally { if (btn) btn.disabled = false; }
         _loadMission(el, id);
         return;
@@ -985,7 +988,7 @@ const MissionDetailView = (() => {
           AgentMemory.addSuccess(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200) });
         }
       }
-      if (typeof Notify !== 'undefined') Notify.send({ title: `${_T('mission')} Approved`, message: `Content approved and ${_t('mission')} completed!`, type: 'success' });
+      if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Approved`, message: `Content approved and ${_Nl()} completed!`, type: 'success' });
       _loadMission(el, id);
     });
 
@@ -1003,7 +1006,7 @@ const MissionDetailView = (() => {
         AgentMemory.learn(agentKey, mission.result, 'rejected');
         AgentMemory.addFailure(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200), reason: 'Rejected by user' });
       }
-      if (typeof Notify !== 'undefined') Notify.send({ title: `${_T('mission')} Rejected`, message: `Content rejected. You can retry the ${_t('mission')}.`, type: 'system' });
+      if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Rejected`, message: `Content rejected. You can retry the ${_Nl()}.`, type: 'system' });
       _loadMission(el, id);
     });
 
@@ -1415,7 +1418,7 @@ const MissionDetailView = (() => {
   }
 
   return {
-    get title() { return `${_T('mission')} Detail`; },
+    get title() { return `${_N()} Detail`; },
     render,
     destroy,
     // Exposed for unit tests only — DAG inspector pure functions.
@@ -1428,8 +1431,8 @@ const MissionDetailView = (() => {
 
 /* ── Shared Mission Report View ── */
 const SharedReportView = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
+  const _N  = () => Terminology.label('mission');
+  const _Nl = () => Terminology.label('mission', { lowercase: true });
   const _esc = Utils.esc;
 
   function render(el, params) {
@@ -1440,7 +1443,7 @@ const SharedReportView = (() => {
       _loadSharedBlueprint(el, id);
       return;
     }
-    el.innerHTML = `<div class="loading-state"><p>Loading ${_t('mission')} report...</p></div>`;
+    el.innerHTML = `<div class="loading-state"><p>Loading ${_Nl()} report...</p></div>`;
     _loadReport(el, id);
   }
 
@@ -1455,7 +1458,7 @@ const SharedReportView = (() => {
               <h2 class="detail-name">${_esc(bp.name || 'Shared Blueprint')}</h2>
               <div class="detail-meta-row">
                 <span class="badge-rarity badge-${(bp.rarity || 'common').toLowerCase()}">${_esc(bp.rarity || 'Common')}</span>
-                <span style="color:var(--text-muted);font-size:.8rem">${_esc(Terminology.label(shared.type, { lowercase: true }))} blueprint</span>
+                <span style="color:var(--text-muted);font-size:.8rem">${_esc(shared.type)} blueprint</span>
               </div>
             </div>
           </div>
@@ -1504,7 +1507,7 @@ const SharedReportView = (() => {
     }
 
     if (!mission) {
-      el.innerHTML = `<div class="app-empty"><h2>Report Not Found</h2><p>This ${_t('mission')} report could not be found.</p><div class="app-empty-acts"><a href="#/" class="btn btn-sm">Home</a></div></div>`;
+      el.innerHTML = `<div class="app-empty"><h2>Report Not Found</h2><p>This ${_Nl()} report could not be found.</p><div class="app-empty-acts"><a href="#/" class="btn btn-sm">Home</a></div></div>`;
       return;
     }
 
@@ -1553,5 +1556,5 @@ const SharedReportView = (() => {
     `;
   }
 
-  return { get title() { return `${_T('mission')} Report`; }, render };
+  return { get title() { return `${_N()} Report`; }, render };
 })();

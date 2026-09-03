@@ -4,8 +4,6 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const ActivityFeed = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   const MAX_EVENTS = 50;
   let _events = [];
   let _subscriptions = [];
@@ -62,14 +60,14 @@ const ActivityFeed = (() => {
       else if (eventType === 'DELETE') description = `Agent removed: ${record.name || 'Unnamed'}`;
     } else if (type === 'mission') {
       icon = 'target';
-      if (eventType === 'INSERT') description = `New ${_t('mission')}: ${record.title || 'Untitled'}`;
-      else if (eventType === 'UPDATE') description = `${_T('mission')} status: ${record.status || 'updated'}`;
-      else if (eventType === 'DELETE') description = `${_T('mission')} removed: ${record.title || 'Untitled'}`;
+      if (eventType === 'INSERT') description = `New mission: ${record.title || 'Untitled'}`;
+      else if (eventType === 'UPDATE') description = `Mission status: ${record.status || 'updated'}`;
+      else if (eventType === 'DELETE') description = `Mission removed: ${record.title || 'Untitled'}`;
     } else if (type === 'spaceship') {
       icon = 'rocket';
-      if (eventType === 'INSERT') description = `New ${_t('spaceship')} deployed: ${record.name || 'Unnamed'}`;
-      else if (eventType === 'UPDATE') description = `${_T('spaceship')} updated: ${record.name || 'Unnamed'}`;
-      else if (eventType === 'DELETE') description = `${_T('spaceship')} removed: ${record.name || 'Unnamed'}`;
+      if (eventType === 'INSERT') description = `New ship launched: ${record.name || 'Unnamed'}`;
+      else if (eventType === 'UPDATE') description = `Ship updated: ${record.name || 'Unnamed'}`;
+      else if (eventType === 'DELETE') description = `Ship decommissioned: ${record.name || 'Unnamed'}`;
     }
 
     return {

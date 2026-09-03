@@ -4,8 +4,7 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const SpaceshipBuilderView = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
+  const title = 'Spaceship Builder';
   const _esc = Utils.esc;
 
   const CATEGORIES = ['Research','Analytics','Content','Engineering','Ops','Sales','Support','Legal','Marketing','Automation','Custom'];
@@ -165,11 +164,11 @@ const SpaceshipBuilderView = (() => {
     if (typeof Gamification !== 'undefined' && Gamification.getSlotTemplate) {
       const tpl = Gamification.getSlotTemplate();
       return {
-        name: tpl.name || _T('spaceship'),
-        slots: tpl.slots.map(s => ({ max: s.maxRarity || 'Common', label: s.label || _T('crew') + ' ' + s.id }))
+        name: tpl.name || 'Spaceship',
+        slots: tpl.slots.map(s => ({ max: s.maxRarity || 'Common', label: s.label || 'Crew ' + s.id }))
       };
     }
-    return { name: _T('spaceship'), slots: [{ max: 'Common', label: 'Bridge' }, { max: 'Common', label: 'Ops' }] };
+    return { name: 'Spaceship', slots: [{ max: 'Common', label: 'Bridge' }, { max: 'Common', label: 'Ops' }] };
   }
 
   const SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
@@ -179,7 +178,7 @@ const SpaceshipBuilderView = (() => {
 
     const editId = new URLSearchParams(window.location.hash.split('?')[1] || '').get('edit');
     if (editId) {
-      el.innerHTML = `<div class="loading-state"><p>Loading ${_t('spaceship')}...</p></div>`;
+      el.innerHTML = '<div class="loading-state"><p>Loading spaceship...</p></div>';
       _loadForEdit(el, editId);
     } else {
       _renderForm(el, null);
@@ -204,7 +203,7 @@ const SpaceshipBuilderView = (() => {
     } catch (err) {
       el.innerHTML = `
         <div class="app-empty">
-          <h2>${_T('spaceship')} Not Found</h2>
+          <h2>Spaceship Not Found</h2>
           <p>${_esc(err.message)}</p>
           <div class="app-empty-acts"><a href="#/bridge?tab=spaceship" class="btn btn-sm">Back to Blueprints</a></div>
         </div>`;
@@ -258,8 +257,8 @@ const SpaceshipBuilderView = (() => {
         <div class="builder-header">
           <svg class="builder-header-icon" fill="currentColor" stroke="none" style="width:28px;height:28px"><use href="#icon-spaceship"/></svg>
           <div>
-            <h2 class="builder-title">${isEdit ? `Edit ${_T('spaceship')}` : `Create New ${_T('spaceship')}`}</h2>
-            <p class="builder-sub">Configure your ${_t('spaceship')}'s identity and ${_t('crew')} assignments. Slots are determined by your rank (${slotConfig.slots.length} available).</p>
+            <h2 class="builder-title">${isEdit ? 'Edit Spaceship' : 'Create New Spaceship'}</h2>
+            <p class="builder-sub">Configure your spaceship's identity and crew assignments. Slots are determined by your rank (${slotConfig.slots.length} available).</p>
           </div>
           <div class="builder-header-actions">
             <button type="button" class="btn btn-sm" id="btn-view-md" title="View as text">View as Text</button>
@@ -291,7 +290,7 @@ const SpaceshipBuilderView = (() => {
             <div class="builder-row">
               <div class="auth-field" style="grid-column:1/-1">
                 <label for="sb-desc">Description</label>
-                <textarea id="sb-desc" rows="2" placeholder="What does this ${_t('spaceship')} do?">${_esc(ship?.description || ship?.desc || '')}</textarea>
+                <textarea id="sb-desc" rows="2" placeholder="What does this spaceship do?">${_esc(ship?.description || ship?.desc || '')}</textarea>
               </div>
               <div class="auth-field">
                 <label for="sb-flavor">Tagline</label>
@@ -317,7 +316,7 @@ const SpaceshipBuilderView = (() => {
             <div class="auth-error" id="builder-error"></div>
             <button type="submit" class="btn btn-primary" id="builder-submit">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-check"/></svg>
-              ${isEdit ? 'Save Changes' : `Create ${_T('spaceship')}`}
+              ${isEdit ? 'Save Changes' : 'Create Spaceship'}
             </button>
           </div>
         </form>
@@ -336,7 +335,7 @@ const SpaceshipBuilderView = (() => {
         <!-- Import Modal -->
         <div id="builder-import-modal" class="builder-import-modal" style="display:none">
           <div class="builder-import-content">
-            <h3>Import ${_T('spaceship')} Blueprint</h3>
+            <h3>Import Spaceship Blueprint</h3>
             <textarea id="import-md-textarea" class="builder-md-textarea" spellcheck="false" placeholder="Paste blueprint text here..."></textarea>
             <div id="import-md-status" class="builder-md-status"></div>
             <div class="builder-actions-row">
@@ -515,9 +514,9 @@ const SpaceshipBuilderView = (() => {
     const slots    = _getSlotAssignments();
 
     if (!name) {
-      errEl.textContent = `${_T('spaceship')} name is required.`;
+      errEl.textContent = 'Ship name is required.';
       btn.disabled = false;
-      btn.textContent = existingShip ? 'Save Changes' : `Create ${_T('spaceship')}`;
+      btn.textContent = existingShip ? 'Save Changes' : 'Create Spaceship';
       return;
     }
 
@@ -643,9 +642,9 @@ const SpaceshipBuilderView = (() => {
       }
       Router.navigate('#/bridge?tab=schematic');
     } catch (err) {
-      errEl.textContent = err.message || `Failed to save ${_t('spaceship')}.`;
+      errEl.textContent = err.message || 'Failed to save spaceship.';
       btn.disabled = false;
-      btn.textContent = existingShip ? 'Save Changes' : `Create ${_T('spaceship')}`;
+      btn.textContent = existingShip ? 'Save Changes' : 'Create Spaceship';
     }
   }
 
@@ -660,13 +659,13 @@ const SpaceshipBuilderView = (() => {
     modal.innerHTML = `
       <div class="crew-setup-content">
         <h2 class="crew-setup-title">${Utils.esc(shipData.name)} Created</h2>
-        <p class="crew-setup-sub">How would you like to set up your ${_t('crew')}?</p>
+        <p class="crew-setup-sub">How would you like to set up your crew?</p>
 
         <div class="crew-setup-options">
           <button class="crew-setup-option crew-setup-recommended" id="btn-ai-setup">
             <span class="crew-setup-icon">&#9733;</span>
             <span class="crew-setup-label">AI Auto Setup</span>
-            <span class="crew-setup-desc">Let Longeron design ${shipData.slotCount} agents tailored to your business</span>
+            <span class="crew-setup-desc">Let NICE design ${shipData.slotCount} agents tailored to your business</span>
           </button>
           <button class="crew-setup-option" id="btn-manual-setup">
             <span class="crew-setup-icon">&#9881;</span>
@@ -676,13 +675,13 @@ const SpaceshipBuilderView = (() => {
           <button class="crew-setup-option" id="btn-skip-setup">
             <span class="crew-setup-icon">&#8594;</span>
             <span class="crew-setup-label">Skip for Now</span>
-            <span class="crew-setup-desc">Set up your ${_t('crew')} later from the Schematic view</span>
+            <span class="crew-setup-desc">Set up crew later from the Schematic view</span>
           </button>
         </div>
 
         <div id="crew-setup-status" class="crew-setup-status" style="display:none">
           <div class="crew-setup-spinner"></div>
-          <p id="crew-setup-msg">Generating your ${_t('crew')}...</p>
+          <p id="crew-setup-msg">Generating your crew...</p>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -701,7 +700,7 @@ const SpaceshipBuilderView = (() => {
         const result = await CrewGenerator.generate(shipData);
         if (result.error || !result.agents.length) {
           console.warn('[CrewSetup] generation failed:', result.error);
-          msgEl.textContent = `${_T('crew')} generation failed. Your ${_t('spaceship')} is saved, so use Manual Setup or Skip.`;
+          msgEl.textContent = 'Crew generation failed. Your spaceship is saved, so use Manual Setup or Skip.';
           setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
           return;
         }
@@ -718,7 +717,7 @@ const SpaceshipBuilderView = (() => {
         });
         if (!saved.savedAgents.length) {
           console.warn('[CrewSetup] save failed:', saved.error);
-          msgEl.textContent = `Saving the ${_t('crew')} failed. Your ${_t('spaceship')} is saved, so use Manual Setup or Skip.`;
+          msgEl.textContent = 'Saving the crew failed. Your spaceship is saved, so use Manual Setup or Skip.';
           setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
           return;
         }
@@ -734,7 +733,7 @@ const SpaceshipBuilderView = (() => {
         }, 1200);
       } catch (e) {
         console.warn('[CrewSetup] error:', e);
-        msgEl.textContent = `${_T('crew')} setup hit an error. Your ${_t('spaceship')} is saved, so use Manual Setup or Skip.`;
+        msgEl.textContent = 'Crew setup hit an error. Your spaceship is saved, so use Manual Setup or Skip.';
         setTimeout(() => { optionsEl.style.display = ''; statusEl.style.display = 'none'; }, 2500);
       }
     });
@@ -819,7 +818,7 @@ const SpaceshipBuilderView = (() => {
     }
   }
 
-  return { get title() { return `${_T('spaceship')} Builder`; }, render,
+  return { title, render,
     // Test seams: pure helpers for the spaceship_blueprints serialization path.
     _buildShipBlueprintRow, _kebab };
 })();

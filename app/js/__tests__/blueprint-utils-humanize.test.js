@@ -41,7 +41,7 @@ describe('BlueprintUtils.humanizeModel', () => {
     });
 
     it('humanizes the nice-auto magic id', () => {
-      expect(h('nice-auto')).toBe('Longeron Auto');
+      expect(h('nice-auto')).toBe('NICE Auto');
     });
   });
 
