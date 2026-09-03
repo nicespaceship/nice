@@ -21,6 +21,11 @@
 **Default taken (if any):** none — reflagged `[BEN]` and left unbuilt. Guessing the badge wording would put the wrong brand on other people's sites, and guessing the `profiles` read policy would expose user rows.
 **Why it needs you:** (a) is brand, (b) is a security/RLS fork. Split into two items once you call it: the badge is then `[READY]`, the profile view is `[QUEUE]`.
 
+### Q6 — Which subreddit is canonical?   ·   raised 2026-09-03 · item: `/community` soft-404
+**Question:** `www/js/nav.js` links `reddit.com/r/nicespaceship`; `www/brand.html` links `reddit.com/r/nicespaceship_ai` (twice). The dead `vercel-www.json` pointed `/community` at the former. Which is real?
+**Default taken (if any):** none — logged only. Picking wrong sends users to an empty or squatted subreddit, and I can't tell from the repo which one you actually created.
+**Why it needs you:** it's an external fact about accounts you own (memory rule 7). Once you answer, fixing the odd link out and adding the `/community` redirect is a single `[READY]` cycle.
+
 ### Q5 — The loop backlog went stale for ~2.5 months   ·   raised 2026-09-03 · item: loop integrity
 **Question:** `BACKLOG.md` was last written 2026-06-19 (#878), but #885–#906 shipped outside the loop (Longeron rename, model lineup swaps, NICE Auto routing, model-watch, the audit quick-win tier). Its top `[READY]` item was already built. Do you want the loop to keep running against this file as SSOT, and if so should a cycle be spent reconciling it against `git log` first?
 **Default taken (if any):** corrected only what this cycle proved cold — removed the shipped account-deletion line, rescoped the typography sweep, reflagged community groundwork. Reversible; the rest of the file is untouched. Loop rule 6's "pre-launch until ~2026-06-28" window has also expired and needs a call.
