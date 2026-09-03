@@ -412,7 +412,7 @@ const WorkflowEngine = (() => {
       // a persona is expected. Callers wiring this via the Composer
       // should set personaHint explicitly on the node config.
       const themeId = (typeof State !== 'undefined' && State.get?.('theme')) || 'nice';
-      return `Stay in the active theme persona (theme_id=${themeId}). Match the voice already established in this run's conversation.`;
+      return `Stay in the active NICE theme persona (theme_id=${themeId}). Match the voice already established in this run's conversation.`;
     }
     if (typeof hint === 'string' && hint.length > 40) {
       // Inline persona hints — treat the hint itself as the voice brief.

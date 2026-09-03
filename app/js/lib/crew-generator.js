@@ -17,7 +17,7 @@ const CrewGenerator = (() => {
 
   const VALID_ROLES = ['Research','Code','Data','Content','Ops','Sales','Support','Custom'];
 
-  const SYSTEM_PROMPT = `You are Longeron, an AI crew architect. Your job is to design a team of AI agents that will run a business autonomously.
+  const SYSTEM_PROMPT = `You are NICE, an AI crew architect. Your job is to design a team of AI agents that will run a business autonomously.
 
 Rules:
 - Return ONLY a valid JSON array. No markdown, no explanation, no code fences.

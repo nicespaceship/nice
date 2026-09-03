@@ -1666,7 +1666,7 @@ const PromptPanel = (() => {
     const activeContent = _ideContext.activeContent || '';
     return `${SECURITY_HEADER}
 
-You are Longeron Code — an AI coding assistant inside the Longeron IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
+You are NICE Code — an AI coding assistant inside the NICE IDE. You help users build web applications by writing HTML, CSS, and JavaScript.
 
 RULES:
 - When the user asks you to build, create, or modify something, respond with code.
