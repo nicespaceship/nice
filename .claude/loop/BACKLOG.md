@@ -51,6 +51,7 @@
 ## P3 — Hygiene / always-available filler (when P1–P2 are blocked)
 - `[READY]` Typography SSOT sweep: hunt raw `font-size`/`letter-spacing`/`font-weight` literals, replace with tokens (CLAUDE.md Typography rules). **Scoped 2026-09-03:** `app/css/app.css` holds ~110 raw `font-size` literals, 2 raw `letter-spacing`, 0 raw `font-weight`. Too big for one cycle and it needs preview verification across all 11 themes — split it into per-section batches (one view prefix per PR), not one sweep.
 - `[READY]` CSS orphan audit (playbook: [[feedback_css_orphan_audit]]) — verify each claim cold before removing.
+- `[READY]` `nicespaceship.com/community` soft-404 — it returns **200** serving the marketing home page instead of redirecting. Found 2026-09-03 while removing the dead `vercel-www.json`, which had specced `/community` → `https://reddit.com/r/nicespaceship` (302); that rule never went live because Vercel never served the site. Same silent-fallthrough class the `/app/*` rules in `www/_redirects` were added to fix. Confirm the Reddit destination is still right, then add the rule to `www/_redirects`.
 - `[READY]` Test-coverage gaps for recently shipped modules; doc freshness vs current code.
 - `[QUEUE]` RLS advisor WARNs: review `error_log` / `newsletter_subscribers` always-true INSERT + `shared_blueprints` always-true UPDATE; decide intended access for the 3 `rls_enabled_no_policy` tables (`persona_judgments`, `personas`, `team_invites`); move `pg_trgm` out of `public`. Each is a small migration — batch thoughtfully, one concern per PR.
 
