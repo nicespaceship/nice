@@ -2,7 +2,7 @@
   "name": "nice-spaceship",
   "version": "3.5.0",
   "private": true,
-  "description": "NICE — Mission Control for AI Agent Fleets",
+  "description": "NICE \u2014 Mission Control for AI Agent Fleets",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -11,6 +11,7 @@
     "build": "node scripts/build.js",
     "build:docs": "node scripts/build-docs.mjs",
     "build:pricing": "node scripts/build-pricing.mjs",
+    "build:og": "node scripts/render-og-image.mjs",
     "build:marketing": "npm run build:docs && npm run build:pricing"
   },
   "devDependencies": {
