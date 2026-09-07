@@ -1,9 +1,9 @@
 /**
- * PromptPanel model-dropdown tests — Longeron Auto default + selection survival.
+ * PromptPanel model-dropdown tests — NICE Auto default + selection survival.
  *
  * _populateModelDropdown rebuilds the select from LLM_MODELS × enabled_models
  * whenever enabled models change. Three behaviors are pinned here:
- *   - a fresh populate defaults to Longeron Auto (the pre-populate placeholder is
+ *   - a fresh populate defaults to NICE Auto (the pre-populate placeholder is
  *     not a user choice),
  *   - a pick the user made through the change handler survives a repopulate,
  *   - dotted and dashed ids normalize when checking survival.
@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 describe('PromptPanel._populateModelDropdown', () => {
-  it('defaults a fresh populate to Longeron Auto', () => {
+  it('defaults a fresh populate to NICE Auto', () => {
     PromptPanel._populateModelDropdown();
     expect(select().value).toBe('nice-auto');
     expect(Array.from(select().options)[0].value).toBe('nice-auto');
@@ -69,7 +69,7 @@ describe('PromptPanel._populateModelDropdown', () => {
     expect(select().value).toBe('deepseek-v4-flash');
   });
 
-  it('falls back to Longeron Auto when the user pick no longer survives', () => {
+  it('falls back to NICE Auto when the user pick no longer survives', () => {
     PromptPanel._populateModelDropdown();
     select().value = 'deepseek-v4-flash';
     PromptPanel._onModelSelectChange();
@@ -79,8 +79,8 @@ describe('PromptPanel._populateModelDropdown', () => {
     expect(select().value).toBe('nice-auto');
   });
 
-  it('_getSelectedModel marks Longeron Auto with the auto flag', () => {
+  it('_getSelectedModel marks NICE Auto with the auto flag', () => {
     PromptPanel._populateModelDropdown();
-    expect(PromptPanel._getSelectedModel()).toEqual({ id: 'nice-auto', label: 'Longeron Auto', auto: true });
+    expect(PromptPanel._getSelectedModel()).toEqual({ id: 'nice-auto', label: 'NICE Auto', auto: true });
   });
 });

@@ -588,7 +588,7 @@ const AgentExecutor = (() => {
 
     var identity = typeof PromptBuilder !== 'undefined'
       ? PromptBuilder.build(bp)
-      : 'You are ' + (bp ? bp.name : 'Longeron') + ', a ' +
+      : 'You are ' + (bp ? bp.name : 'NICE AI') + ', a ' +
         ((bp && bp.config && bp.config.role) || 'General') + ' agent. ' +
         ((bp && bp.flavor) || '');
 

@@ -10,8 +10,6 @@
 ═══════════════════════════════════════════════════════════════════ */
 
 const Blueprints = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
   /* ── Catalog data ── */
   let _agents = [];
   let _spaceships = [];
@@ -2072,7 +2070,7 @@ const Blueprints = (() => {
     // ships hydrated from user_spaceships never call this, so they always load.
     if (!canActivateNewShip()) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: `${_T('spaceship')} limit reached`, message: `Free accounts run one active ${_t('spaceship')} at a time. Upgrade to NICE Pro to run more at once.`, type: 'warning' });
+        Notify.send({ title: 'Spaceship limit reached', message: 'Free accounts run one active spaceship at a time. Upgrade to NICE Pro to run a fleet.', type: 'warning' });
       }
       return false;
     }
@@ -2221,7 +2219,7 @@ const Blueprints = (() => {
         catch (e) {
           console.warn('[Blueprints] user_spaceships delete failed:', e.message);
           if (typeof Notify !== 'undefined') {
-            Notify.send({ title: `${_T('spaceship')} removal didn’t fully sync — reload to reconcile.`, type: 'warning' });
+            Notify.send({ title: 'Ship removal didn’t fully sync — reload to reconcile.', type: 'warning' });
           }
         }
       }

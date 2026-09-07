@@ -83,7 +83,7 @@ loadScriptGlobal('views/missions.js');
 
 describe('MissionsView', () => {
   it('has a title property', () => {
-    expect(MissionsView.title).toBe('Processes');
+    expect(MissionsView.title).toBe('Missions');
   });
 
   it('renders without crashing for authenticated user', () => {

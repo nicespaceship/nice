@@ -48,7 +48,7 @@ const DataIO = (() => {
 
     if (typeof Gamification !== 'undefined') Gamification.addXP('export_data');
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: 'Data Exported', message: 'Your Longeron data has been downloaded.', type: 'system' });
+      Notify.send({ title: 'Data Exported', message: 'Your NICE data has been downloaded.', type: 'system' });
     }
   }
 
@@ -65,13 +65,13 @@ const DataIO = (() => {
         const envelope = JSON.parse(e.target.result);
 
         if (!envelope.version || !envelope.localStorage) {
-          alert('Invalid Longeron export file. Missing required fields.');
+          alert('Invalid NICE export file. Missing required fields.');
           return;
         }
 
         const count = Object.keys(envelope.localStorage).length;
         const date = envelope.exportDate ? new Date(envelope.exportDate).toLocaleDateString() : 'unknown';
-        if (!confirm(`Import Longeron data from ${date}?\n\n${count} settings will be restored.\nThe page will reload after import.`)) return;
+        if (!confirm(`Import NICE data from ${date}?\n\n${count} settings will be restored.\nThe page will reload after import.`)) return;
 
         // Restore localStorage
         Object.entries(envelope.localStorage).forEach(([key, val]) => {

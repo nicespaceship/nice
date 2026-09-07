@@ -15,7 +15,7 @@ const PromptBuilder = (() => {
    * @returns {string} System prompt (identity + capabilities, no ReAct/tool instructions)
    */
   function build(blueprint, opts) {
-    if (!blueprint) return _todayLine() + '\n\nYou are Longeron, a general-purpose assistant. Provide helpful, concise responses.';
+    if (!blueprint) return _todayLine() + '\n\nYou are NICE AI, a general-purpose assistant. Provide helpful, concise responses.';
     opts = opts || {};
 
     const parts = [];
@@ -28,7 +28,7 @@ const PromptBuilder = (() => {
     parts.push(_todayLine());
 
     // ── Identity ──
-    const name = blueprint.name || 'Longeron';
+    const name = blueprint.name || 'NICE AI';
     const type = _agentType(blueprint);
     const article = /^[aeiou]/i.test(type) ? 'an' : 'a';
     parts.push('You are ' + name + ', ' + article + ' ' + type + '.');

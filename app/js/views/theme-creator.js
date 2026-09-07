@@ -533,7 +533,7 @@ const ThemeCreatorView = (() => {
   }
 
   function _exportCSS() {
-    const lines = ['/* Custom Longeron Theme */'];
+    const lines = ['/* Custom NICE Theme */'];
     lines.push('[data-theme="custom"] {');
     Object.entries(_liveValues).forEach(([key, val]) => {
       if (val) lines.push(`  ${key}: ${val};`);

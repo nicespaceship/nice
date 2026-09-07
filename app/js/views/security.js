@@ -304,7 +304,7 @@ const SecurityView = (() => {
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
             Recommended Controls
           </h3>
-          <p class="text-muted" style="margin:0 0 12px">Hardening practices we recommend for production. These are guidance, not controls Longeron enforces.</p>
+          <p class="text-muted" style="margin:0 0 12px">Hardening practices we recommend for production. These are guidance, not controls NICE enforces.</p>
           <div class="security-grid" id="sec-policy-grid">
             ${POLICIES.map(p => `
               <div class="security-card">
@@ -389,7 +389,7 @@ const SecurityView = (() => {
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export Data
           </h3>
-          <p class="text-muted" style="margin:0 0 12px">Download all your Longeron data as a JSON backup file.</p>
+          <p class="text-muted" style="margin:0 0 12px">Download all your NICE data as a JSON backup file.</p>
           <button class="btn btn-sm" id="sec-export-data">
             <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export All Data

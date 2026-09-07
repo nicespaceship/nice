@@ -3,7 +3,7 @@
    A Stack is a pre-configured set of 4-6 models tuned for a specific
    scenario (Builder, Researcher, Writer, Operator, etc.). Activating
    a stack toggles those models on in `enabled_models` state, so
-   agents using Longeron Auto can route to the right model for each task
+   agents using NICE Auto can route to the right model for each task
    without the user manually picking from 15 individual toggles.
 
    Stacks are gated by plan + add-ons. A user activates the highest
@@ -244,9 +244,9 @@ const Stacks = (() => {
     return true;
   }
 
-  /* ── Longeron Auto routing ───────────────────────────────────── */
+  /* ── NICE Auto routing ───────────────────────────────────── */
 
-  /** Resolve the model Longeron Auto should use for a given task category
+  /** Resolve the model NICE Auto should use for a given task category
       under the currently-active stack. An undeclared category falls back
       to the stack's declared `default` route or free Flash, NEVER to
       models[0]: stack model lists lead with the priciest model, and an

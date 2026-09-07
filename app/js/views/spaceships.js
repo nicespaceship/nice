@@ -7,8 +7,7 @@
 
 /* ── Spaceship Detail — Computing Panel with Slot Formation ── */
 const SpaceshipDetailView = (() => {
-  const _T = (noun, plural) => Terminology.label(noun, { plural: !!plural });
-  const _t = (noun, plural) => _T(noun, plural).toLowerCase();
+  const title = 'Spaceship Detail';
   const _esc = Utils.esc;
   let _channel = null;
   let _draggedAgentId = null;
@@ -37,7 +36,7 @@ const SpaceshipDetailView = (() => {
 
     return `
       <div class="detail-section ship-behaviors-panel" data-ship-id="${Utils.esc(shipId)}">
-        <h3 class="detail-section-title">⚙️ ${_T('spaceship')} Behaviors</h3>
+        <h3 class="detail-section-title">⚙️ Ship Behaviors</h3>
 
         <div class="behavior-group">
           <div class="behavior-group-label">Approval Mode</div>
@@ -46,17 +45,17 @@ const SpaceshipDetailView = (() => {
 
         <div class="behavior-group behavior-toggles">
           <label class="behavior-toggle">
-            <span class="behavior-toggle-text">Auto-run ${_t('mission', true)} on schedule</span>
+            <span class="behavior-toggle-text">Auto-run missions on schedule</span>
             <input type="checkbox" class="behavior-cb" data-key="autoRun" ${b.autoRun ? 'checked' : ''}>
             <span class="behavior-toggle-track"></span>
           </label>
           <label class="behavior-toggle">
-            <span class="behavior-toggle-text">Notify on ${_t('mission')} complete</span>
+            <span class="behavior-toggle-text">Notify on mission complete</span>
             <input type="checkbox" class="behavior-cb" data-key="notifyOnComplete" ${b.notifyOnComplete ? 'checked' : ''}>
             <span class="behavior-toggle-track"></span>
           </label>
           <label class="behavior-toggle">
-            <span class="behavior-toggle-text">Notify on ${_t('mission')} failure</span>
+            <span class="behavior-toggle-text">Notify on mission failure</span>
             <input type="checkbox" class="behavior-cb" data-key="notifyOnFail" ${b.notifyOnFail ? 'checked' : ''}>
             <span class="behavior-toggle-track"></span>
           </label>
@@ -80,7 +79,7 @@ const SpaceshipDetailView = (() => {
         </div>
 
         <div class="behavior-group">
-          <div class="behavior-group-label">Max Concurrent ${_T('mission', true)}</div>
+          <div class="behavior-group-label">Max Concurrent Missions</div>
           <div class="behavior-budget-row">
             <input type="number" class="behavior-input" id="sb-concurrent-${Utils.esc(shipId)}"
               placeholder="3" min="1" max="10" value="${b.maxConcurrent || 3}">
@@ -136,7 +135,7 @@ const SpaceshipDetailView = (() => {
         <div class="ship-dash-stats">
           <div class="ship-dash-stat">
             <div class="ship-dash-stat-value">${activeMissions}</div>
-            <div class="ship-dash-stat-label">Active ${_T('mission', true)}</div>
+            <div class="ship-dash-stat-label">Active Missions</div>
           </div>
           <div class="ship-dash-stat">
             <div class="ship-dash-stat-value">${completedMissions}</div>
@@ -179,7 +178,7 @@ const SpaceshipDetailView = (() => {
   function _getShipIcon(id) {
     const profile = _getShipProfile(id);
     if (profile.icon) {
-      return `<img src="${profile.icon}" class="ship-profile-img" alt="${_T('spaceship')} icon" />`;
+      return `<img src="${profile.icon}" class="ship-profile-img" alt="Ship icon" />`;
     }
     return `<svg class="detail-header-icon-lg" fill="currentColor" stroke="none"><use href="#icon-spaceship"/></svg>`;
   }
@@ -197,7 +196,7 @@ const SpaceshipDetailView = (() => {
         const file = e.target.files[0];
         if (!file) return;
         if (file.size > 512000) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'File Too Large', message: `Max 500KB for ${_t('spaceship')} icons.`, type: 'error' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'File Too Large', message: 'Max 500KB for ship icons.', type: 'error' });
           return;
         }
         const reader = new FileReader();
@@ -209,9 +208,9 @@ const SpaceshipDetailView = (() => {
             img.src = dataUrl;
           } else {
             const svg = iconWrap.querySelector('.detail-header-icon-lg');
-            if (svg) svg.outerHTML = `<img src="${dataUrl}" class="ship-profile-img" alt="${_T('spaceship')} icon" />`;
+            if (svg) svg.outerHTML = `<img src="${dataUrl}" class="ship-profile-img" alt="Ship icon" />`;
           }
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Icon Updated', message: `${_T('spaceship')} icon saved.`, type: 'success' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'Icon Updated', message: 'Ship icon saved.', type: 'success' });
         };
         reader.readAsDataURL(file);
       });
@@ -295,7 +294,7 @@ const SpaceshipDetailView = (() => {
     // the core reactor as its centerpiece.
     if (typeof CoreReactor !== 'undefined') CoreReactor.setVisible(true);
     const user = State.get('user');
-    el.innerHTML = `<div class="loading-state"><p>Loading ${_t('spaceship')}...</p></div>`;
+    el.innerHTML = `<div class="loading-state"><p>Loading spaceship...</p></div>`;
     _loadSpaceship(el, params.id);
   }
 
@@ -322,7 +321,7 @@ const SpaceshipDetailView = (() => {
       } catch(e) {
         fleet = _localFleet;
       }
-      if (!fleet) throw new Error(`${_T('spaceship')} not found`);
+      if (!fleet) throw new Error('Spaceship not found');
       // Merge local state (may be ahead of DB)
       if (_localFleet) {
         if (_localFleet.slot_assignments) {
@@ -451,7 +450,7 @@ const SpaceshipDetailView = (() => {
           <div class="detail-back">
             <a href="#/bridge/spaceships" class="btn btn-sm">
               <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-arrow-left"/></svg>
-              Back to ${_T('spaceship', true)}
+              Back to Spaceships
             </a>
             ${_canPublish ? '<span id="community-publish-slot"></span>' : ''}
           </div>
@@ -511,14 +510,14 @@ const SpaceshipDetailView = (() => {
             </div>
           </div>
 
-          ${health ? `<div class="detail-section" style="margin-top:20px"><h3 class="detail-section-title">${_T('spaceship')} Health</h3>${Gamification.renderHealthBars(health)}</div>` : ''}
+          ${health ? `<div class="detail-section" style="margin-top:20px"><h3 class="detail-section-title">Ship Health</h3>${Gamification.renderHealthBars(health)}</div>` : ''}
 
           <!-- Ship Behaviors -->
           ${_renderBehaviorsPanel(fleet.id)}
 
           <!-- Agent Missions -->
           <div class="detail-section">
-            <h3 class="detail-section-title">Agent ${_T('mission', true)}</h3>
+            <h3 class="detail-section-title">Agent Missions</h3>
             ${_renderCrewMissions(allMissions, memberIds, agentMap)}
           </div>
 
@@ -583,9 +582,9 @@ const SpaceshipDetailView = (() => {
     } catch (err) {
       el.innerHTML = `
         <div class="app-empty">
-          <h2>${_T('spaceship')} Not Found</h2>
+          <h2>Spaceship Not Found</h2>
           <p>${_esc(err.message)}</p>
-          <div class="app-empty-acts"><a href="#/bridge/spaceships" class="btn btn-sm">Back to ${_T('spaceship', true)}</a></div>
+          <div class="app-empty-acts"><a href="#/bridge/spaceships" class="btn btn-sm">Back to Spaceships</a></div>
         </div>
       `;
     }
@@ -695,7 +694,7 @@ const SpaceshipDetailView = (() => {
 
   function _renderCrewMissions(allMissions, memberIds, agentMap) {
     const crewMissions = allMissions.filter(m => memberIds.includes(m.agent_id));
-    if (!crewMissions.length) return `<p class="text-muted" style="font-size:.82rem">No agent ${_t('mission', true)} yet.</p>`;
+    if (!crewMissions.length) return '<p class="text-muted" style="font-size:.82rem">No agent missions yet.</p>';
     return `<div class="task-mini-list">${crewMissions.slice(0, 10).map(m => {
       const agentName = (agentMap[m.agent_id] || {}).name || 'Agent';
       return `<div class="task-mini-row"><span class="task-status-badge badge-${m.status}">${m.status}</span><span class="task-mini-title">${_esc(m.title)}</span><span class="task-mini-time">${_esc(agentName)}</span></div>`;
@@ -956,7 +955,7 @@ const SpaceshipDetailView = (() => {
         if (!workflow) return;
         const slots = fleet.slot_assignments || {};
         if (!Object.values(slots).some(Boolean)) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: `No ${_t('crew')} assigned`, message: `Add at least one ${_t('crew')} member before running a workflow.`, type: 'system' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'No crew aboard', message: 'Dock at least one crew member before running a workflow.', type: 'system' });
           return;
         }
         if (typeof MissionRunner === 'undefined' || !MissionRunner.createRun) return;
@@ -1014,7 +1013,7 @@ const SpaceshipDetailView = (() => {
         const list = effectiveWorkflows(fleet, bp);
         const wf = list[wfIdx];
         if (!wf) return;
-        if (!window.confirm(`Delete the "${wf.title || 'untitled'}" workflow from this ${_t('spaceship')}?`)) return;
+        if (!window.confirm(`Delete the "${wf.title || 'untitled'}" workflow from this spaceship?`)) return;
         if (wf.schedule && wf.schedule.missionId && typeof MissionRunner !== 'undefined' && MissionRunner.unscheduleMission) {
           await MissionRunner.unscheduleMission(wf.schedule.missionId);
         }
@@ -1028,7 +1027,7 @@ const SpaceshipDetailView = (() => {
     // every forked workflow first so no orphaned mission keeps firing.
     el.querySelector('.ship-wf-reset')?.addEventListener('click', async (e) => {
       e.preventDefault();
-      if (!window.confirm(`Reset this ${_t('spaceship')}'s workflows to the catalog defaults? Your customizations will be removed.`)) return;
+      if (!window.confirm("Reset this spaceship's workflows to the catalog defaults? Your customizations will be removed.")) return;
       const list = effectiveWorkflows(fleet, bp);
       if (typeof MissionRunner !== 'undefined' && MissionRunner.unscheduleMission) {
         for (const wf of list) {
@@ -1057,7 +1056,7 @@ const SpaceshipDetailView = (() => {
       ? source.steps.map(toStep) : [{ step: '', agent_slot: 0 }];
 
     const slotDefs = (spaceshipClass && Array.isArray(spaceshipClass.slots)) ? spaceshipClass.slots : [];
-    const slotOptions = [{ value: '0', label: `Auto · ${_T('captain')}` }].concat(
+    const slotOptions = [{ value: '0', label: 'Auto · Captain' }].concat(
       slotDefs.map(s => {
         const aid = (fleet.slot_assignments || {})[s.id];
         const agent = aid && agentMap ? agentMap[aid] : null;
@@ -1106,7 +1105,7 @@ const SpaceshipDetailView = (() => {
       <div class="wfe-step" data-i="${i}">
         <span class="wfe-step-num">${i + 1}</span>
         <input type="text" class="wfe-step-text" value="${_esc(step.step)}" placeholder="Describe what happens in this step…" />
-        ${CSelect.html('wfe-slot-' + i, `Assign ${_t('crew')} slot`, slotOptions, String(step.agent_slot || 0))}
+        ${CSelect.html('wfe-slot-' + i, 'Assign crew slot', slotOptions, String(step.agent_slot || 0))}
         <div class="wfe-step-ctrls">
           <button type="button" class="wfe-ctrl wfe-gate${step.approval ? ' is-on' : ''}" aria-pressed="${!!step.approval}" aria-label="Require approval before this step" title="Require approval before this step">
             <svg class="icon icon-xs" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#icon-lock"/></svg>
@@ -1273,7 +1272,7 @@ const SpaceshipDetailView = (() => {
     // tick_mission_schedules job is the server-side authority.
     if (!existing && typeof Subscription !== 'undefined' && Subscription.isPro && !Subscription.isPro()) {
       if (typeof UpgradeModal !== 'undefined' && UpgradeModal.open) UpgradeModal.open();
-      else if (typeof Notify !== 'undefined') Notify.send({ title: 'NICE Pro required', message: `Upgrade to run ${_t('mission', true)} automatically on a schedule.`, type: 'warning' });
+      else if (typeof Notify !== 'undefined') Notify.send({ title: 'NICE Pro required', message: 'Upgrade to run missions automatically on a schedule.', type: 'warning' });
       return;
     }
 
@@ -1411,7 +1410,7 @@ const SpaceshipDetailView = (() => {
       }
       const slots = fleet.slot_assignments || {};
       if (!Object.values(slots).some(Boolean)) {
-        errEl.textContent = `Add at least one ${_t('crew')} member before scheduling.`;
+        errEl.textContent = 'Dock at least one crew member before scheduling.';
         return;
       }
       if (typeof MissionRunner === 'undefined' || !MissionRunner.upsertScheduledMission) {
@@ -1598,7 +1597,7 @@ const SpaceshipDetailView = (() => {
       Blueprints.saveShipState(id, fleet);
       try { await SB.db('user_spaceships').update(id, { status: 'deployed' }); } catch(e) {}
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: `${_T('spaceship')} Launched`, message: `${fleet.name || _T('spaceship')} is fully staffed and deployed!`, type: 'fleet_deployed' });
+        Notify.send({ title: 'Spaceship Launched', message: `${fleet.name || 'Spaceship'} is fully staffed and deployed!`, type: 'fleet_deployed' });
       }
       if (typeof Gamification !== 'undefined') Gamification.addXP('launch_spaceship');
     }
@@ -1639,7 +1638,7 @@ const SpaceshipDetailView = (() => {
 
     if (typeof Gamification !== 'undefined') Gamification.addXP('undock_agent');
     if (typeof Notify !== 'undefined') {
-      Notify.send({ title: `${_T('spaceship')} Docked`, message: `${fleet.name || _T('spaceship')} has been docked — slot emptied.`, type: 'system' });
+      Notify.send({ title: 'Spaceship Docked', message: `${fleet.name || 'Spaceship'} has been docked — slot emptied.`, type: 'system' });
     }
     _loadSpaceship(el, id);
   }
@@ -1656,5 +1655,5 @@ const SpaceshipDetailView = (() => {
     _draggedAgentRarity = null;
   }
 
-  return { get title() { return `${_T('spaceship')} Detail`; }, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized, buildCron, describeSchedule };
+  return { title, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized, buildCron, describeSchedule };
 })();

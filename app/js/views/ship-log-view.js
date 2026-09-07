@@ -117,10 +117,10 @@ const ShipLogView = (() => {
         <div class="app-empty">
           <svg class="app-empty-icon" fill="none" stroke="currentColor" stroke-width="1.2"><use href="#icon-comms"/></svg>
           <h2>No Log Entries</h2>
-          <p>Send a command from the prompt panel to start building your Log.</p>
+          <p>Send a command via NICE AI to start building your Log.</p>
           <div class="app-empty-acts">
             <button class="btn btn-primary btn-sm" onclick="if(typeof PromptPanel!=='undefined')PromptPanel.toggle()">
-              Open prompt panel
+              Open NICE AI
             </button>
           </div>
         </div>

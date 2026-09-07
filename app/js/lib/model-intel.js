@@ -57,7 +57,7 @@ const ModelIntel = (() => {
      passes ids like 'claude-4-6-sonnet', while LLM_MODELS[].provider is a
      provider name ('anthropic'). Matching against `m.provider` never hit,
      so `available` was always empty and bestModel always returned null —
-     Longeron Auto silently fell back to Gemini Flash on every call. */
+     NICE Auto silently fell back to Gemini Flash on every call. */
   function bestModel(bpId, enabledModelIds) {
     if (!bpId) return null;
     const profile = _data[bpId];

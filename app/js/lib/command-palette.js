@@ -110,8 +110,8 @@ const CommandPalette = (() => {
       (State.get('spaceships') || []).forEach(s => {
         const score = _fuzzyScore(q, s.name || '');
         if (score > 0) items.push({
-          label: s.name || `Unnamed ${Terminology.label('spaceship')}`, path: '/bridge/spaceships/' + s.id,
-          icon: '#icon-spaceship', score: score - 1, type: 'data', meta: Terminology.label('spaceship')
+          label: s.name || 'Unnamed Ship', path: '/bridge/spaceships/' + s.id,
+          icon: '#icon-spaceship', score: score - 1, type: 'data', meta: 'Spaceship'
         });
       });
     }

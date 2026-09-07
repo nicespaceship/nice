@@ -176,7 +176,7 @@ const ShipLog = (() => {
     opts = opts || {};
 
     const agentId = agentBlueprint ? agentBlueprint.id : null;
-    const agentName = agentBlueprint ? agentBlueprint.name : 'Longeron';
+    const agentName = agentBlueprint ? agentBlueprint.name : 'NICE';
 
     // 1. Read prior context BEFORE logging the new user message. The
     //    current prompt is appended as the final turn by _buildLLMParams,
@@ -311,7 +311,7 @@ const ShipLog = (() => {
     const role = (blueprint && blueprint.config && blueprint.config.role) || 'General';
     const systemPrompt = typeof PromptBuilder !== 'undefined'
       ? PromptBuilder.build(blueprint)
-      : `You are ${blueprint ? blueprint.name : 'Longeron'}, a ${role} agent. ${blueprint && blueprint.flavor ? blueprint.flavor : 'Provide helpful, concise responses.'}`;
+      : `You are ${blueprint ? blueprint.name : 'NICE AI'}, a ${role} agent. ${blueprint && blueprint.flavor ? blueprint.flavor : 'Provide helpful, concise responses.'}`;
 
     // System prompt goes as top-level param (nice-ai handles per-provider)
     const messages = [];

@@ -86,7 +86,7 @@ const ConsentPrompt = (() => {
     _overlay.className = 'consent-modal-overlay';
     _overlay.setAttribute('role', 'dialog');
     _overlay.setAttribute('aria-modal', 'true');
-    _overlay.setAttribute('aria-label', 'Help improve Longeron');
+    _overlay.setAttribute('aria-label', 'Help improve NICE');
     _overlay.innerHTML = `
       <div class="consent-modal">
         <div class="consent-modal-glyph" aria-hidden="true">
@@ -95,11 +95,11 @@ const ConsentPrompt = (() => {
             <circle cx="12" cy="12" r="3.2"/>
           </svg>
         </div>
-        <h2 class="consent-modal-title">Help build a faster, cheaper Longeron</h2>
-        <p class="consent-modal-body">Longeron can learn from how your ${Terminology.label('spaceship', { plural: true, lowercase: true })} run ${Terminology.label('mission', { plural: true, lowercase: true })} to train its own models. The AI you use gets faster and costs you fewer tokens over time. Your data is never sold, and you can turn this off anytime in Settings.</p>
+        <h2 class="consent-modal-title">Help build a faster, cheaper NICE</h2>
+        <p class="consent-modal-body">NICE can learn from how your spaceships run missions to train its own models. The AI you use gets faster and costs you fewer tokens over time. Your data is never sold, and you can turn this off anytime in Settings.</p>
         <div class="consent-modal-actions">
           <button class="btn btn-sm" id="consent-decline" type="button">Not now</button>
-          <button class="btn btn-sm btn-primary" id="consent-accept" type="button">Yes, help improve Longeron</button>
+          <button class="btn btn-sm btn-primary" id="consent-accept" type="button">Yes, help improve NICE</button>
         </div>
         <p class="consent-modal-footer">Off by default. You stay in control.</p>
       </div>
@@ -141,7 +141,7 @@ const ConsentPrompt = (() => {
         return;
       }
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Thanks for helping improve Longeron', message: `Longeron will learn from your ${Terminology.label('mission', { plural: true, lowercase: true })}. Turn it off anytime in Settings.`, type: 'system' });
+        Notify.send({ title: 'Thanks for helping improve NICE', message: 'NICE will learn from your missions. Turn it off anytime in Settings.', type: 'system' });
       }
       if (typeof AuditLog !== 'undefined') AuditLog.log('training_consent_granted', { source: 'onboarding' });
     } catch {

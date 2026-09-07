@@ -1,6 +1,6 @@
 {
-  "name": "Longeron — Mission Control for AI Agents",
-  "short_name": "Longeron",
+  "name": "NICE™ — Mission Control for AI Agents",
+  "short_name": "NICE",
   "description": "Build, deploy, and manage AI agent fleets. Hundreds of blueprints, multi-agent orchestration, real-time missions. By NICE SPACESHIP.",
   "start_url": "/app/",
   "scope": "/app/",

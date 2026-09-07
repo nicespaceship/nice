@@ -1,10 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    MODULE: Terminology — SSOT for theme-aware noun labels
    Internal schema keeps canonical `mission` / `agent` / `spaceship` /
-   `crew` / `captain` keys; the DEFAULT labels are plain business nouns
-   (Process / Agent / Workspace / Team / Supervisor) so the product reads the
-   same to an SMB owner and an enterprise evaluator. Sci-fi themes opt
-   back into the spaceship vocabulary; Office keeps "Assignment".
+   `crew` / `captain` nouns. Per-theme overrides surface user-visible
+   strings — sci-fi themes render "Mission" / "Assignment" for Office.
    The Theme module owns sentence-level personality (copy.labels); this
    module owns the noun SSOT, called at render time by views and once
    per theme change by applyDOM() against static `data-term` elements.
@@ -12,42 +10,30 @@
 const Terminology = (() => {
   /*
    * Per-theme noun dictionary. Every noun defines `{ singular, plural }`.
-   * `default` is plain business vocabulary and applies to every theme that
-   * declares no override — including custom user themes. The sci-fi themes
-   * share SCIFI, so the spaceship metaphor is opt-in personality rather
-   * than the vocabulary every buyer has to decode.
+   * The `default` entry is the fallback used by every theme that does not
+   * declare an override. Real-world themes (office, office-dark) replace
+   * sci-fi vocabulary with workplace vocabulary.
    */
-  const SCIFI = {
-    mission:   { singular: 'Mission',   plural: 'Missions' },
-    spaceship: { singular: 'Spaceship', plural: 'Spaceships' },
-    crew:      { singular: 'Crew',      plural: 'Crew' },
-    captain:   { singular: 'Captain',   plural: 'Captains' },
-  };
-
   const NOUNS = {
     default: {
-      mission:   { singular: 'Process',   plural: 'Processes' },
+      mission:   { singular: 'Mission',   plural: 'Missions' },
       agent:     { singular: 'Agent',     plural: 'Agents' },
-      spaceship: { singular: 'Workspace', plural: 'Workspaces' },
-      crew:      { singular: 'Team',      plural: 'Team' },
-      captain:   { singular: 'Supervisor', plural: 'Supervisors' },
+      spaceship: { singular: 'Spaceship', plural: 'Spaceships' },
+      crew:      { singular: 'Crew',      plural: 'Crew' },
+      captain:   { singular: 'Captain',   plural: 'Captains' },
     },
-    'hal-9000': SCIFI,
-    matrix:     SCIFI,
-    lcars:      SCIFI,
-    jarvis:     SCIFI,
-    cyberpunk:  SCIFI,
-    grid:       SCIFI,
-    'rx-78-2':  SCIFI,
-    '16bit':    SCIFI,
-    office:      { mission: { singular: 'Assignment', plural: 'Assignments' } },
-    'office-dark': { mission: { singular: 'Assignment', plural: 'Assignments' } },
+    office: {
+      mission:   { singular: 'Assignment', plural: 'Assignments' },
+    },
+    'office-dark': {
+      mission:   { singular: 'Assignment', plural: 'Assignments' },
+    },
   };
 
   function _activeTheme() {
     return (typeof Theme !== 'undefined' && typeof Theme.current === 'function')
       ? Theme.current()
-      : (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function' ? localStorage.getItem((typeof Utils !== 'undefined' && Utils.KEYS && Utils.KEYS.theme) || 'ns-theme') : null) || 'nice';
+      : (typeof localStorage !== 'undefined' ? localStorage.getItem((typeof Utils !== 'undefined' && Utils.KEYS && Utils.KEYS.theme) || 'ns-theme') : null) || 'nice';
   }
 
   function _resolve(noun, themeId) {

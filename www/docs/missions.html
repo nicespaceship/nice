@@ -8,8 +8,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Processes — Longeron Documentation</title>
-  <meta name="description" content="Reusable templates: which Workspace runs what plan, on what schedule, toward what outcome." />
+  <title>Missions — NICE Documentation</title>
+  <meta name="description" content="Reusable templates: which Spaceship runs what plan, on what schedule, toward what outcome." />
   <link rel="icon" href="/assets/nice-mark-dark.svg" type="image/svg+xml" /><link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,8 +24,8 @@
       <h4>Documentation</h4>
       <a href="/docs/getting-started">Getting Started</a>
       <a href="/docs/agents">Agents</a>
-      <a href="/docs/spaceships">Workspaces</a>
-      <a href="/docs/missions" class="active">Processes</a>
+      <a href="/docs/spaceships">Spaceships</a>
+      <a href="/docs/missions" class="active">Missions</a>
       <a href="/docs/workflows">Workflows</a>
       <a href="/docs/integrations">Integrations</a>
       <a href="/docs/ai-models">AI Models</a>
@@ -33,21 +33,21 @@
       <a href="/docs/keyboard">Keyboard</a>
     </nav>
     <main class="docs-content">
-      <h1>Processes</h1>
-      <p class="docs-lead">A Process is a reusable template: which Workspace runs what plan, on what schedule, toward what outcome. Each execution is a <strong>Run</strong> with its own state.</p>
+      <h1>Missions</h1>
+      <p class="docs-lead">A Mission is a reusable template: which Spaceship runs what plan, on what schedule, toward what outcome. Each execution is a <strong>Run</strong> with its own state.</p>
 
-      <h2>Running Processes</h2>
+      <h2>Running Missions</h2>
       <ul>
-        <li><strong>Workspace-level chat</strong> — open a workspace's Schematic view and chat. The workspace runs your prompt as a Run with full audit, cancel, and analytics.</li>
+        <li><strong>Ship-level chat</strong> — open a spaceship's Schematic view and chat. The Ship runs your prompt as a Run with full audit, cancel, and analytics.</li>
         <li><strong>Agent chat</strong> — visit an agent's detail page for a request-response conversation (no Run lifecycle, lighter for casual use).</li>
-        <li><strong>Top-level chat</strong> — the "Ask Ada…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
-        <li><strong>Scheduled processes</strong> — save a process with a cron schedule and the workspace will fire Runs automatically.</li>
+        <li><strong>Top-level NICE chat</strong> — the "Ask NICE…" prompt at <kbd>#/</kbd>. Ephemeral, no persistence beyond your local message history.</li>
+        <li><strong>Scheduled Mission</strong> — save a Mission with a cron schedule and the Ship will fire Runs automatically.</li>
       </ul>
 
       <h2>Run States</h2>
       <dl>
         <dt>Queued</dt><dd>Waiting to be picked up by the executor</dd>
-        <dt>Running</dt><dd>The workspace is actively executing the plan</dd>
+        <dt>Running</dt><dd>The Ship is actively executing the plan</dd>
         <dt>Review</dt><dd>An <code>approval_gate</code> node is waiting for your decision (used in approval-mode workflows)</dd>
         <dt>Completed</dt><dd>Run finished successfully — results stored in <code>node_results</code></dd>
         <dt>Failed</dt><dd>Something went wrong — check the error details and retry</dd>
@@ -58,10 +58,10 @@
       <p>Run results stream in real-time via Server-Sent Events. Tokens appear as the model generates them — no waiting for the full response. Tool calls and observations from a ReAct agent stream in the same channel.</p>
 
       <h2>Plans &amp; Workflows</h2>
-      <p>Every Run executes a <em>plan</em> — a JSONB graph of nodes stored on the Process as <code>missions.plan</code>. A single-agent workspace runs a 1-node plan; a complex orchestration uses multiple nodes connected as a DAG. See the <strong>Workflows</strong> section for the full node-type catalog (triage, pipeline, parallel, quality_loop, approval_gate, condition, branch, loop, delay, webhook, notify, output).</p>
+      <p>Every Run executes a <em>plan</em> — a JSONB graph of nodes stored on the Mission as <code>missions.plan</code>. A single-agent ship runs a 1-node plan; a complex orchestration uses multiple nodes connected as a DAG. See the <strong>Workflows</strong> section for the full node-type catalog (triage, pipeline, parallel, quality_loop, approval_gate, condition, branch, loop, delay, webhook, notify, output).</p>
 
       <h2>Default: Triage</h2>
-      <p>When you chat with a multi-agent workspace, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the team roster and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build a Process with that plan in the Workshop.</p>
+      <p>When you chat with a multi-agent spaceship, the default plan is a single <strong>triage</strong> node: an LLM router reads your prompt + the crew manifest and picks the single best-fit agent to handle the task. To use a different orchestration pattern (pipeline, parallel, quality-loop, etc.), build a Mission with that plan in the Workshop.</p>
         </main>
   </div>
   <footer id="site-footer" class="footer"></footer>

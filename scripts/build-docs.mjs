@@ -81,7 +81,7 @@ function renderSectionPage(section) {
   if (!body) {
     throw new Error(`No body for section "${section.id}"`);
   }
-  const title = `${section.label} — Longeron Documentation`;
+  const title = `${section.label} — NICE Documentation`;
   return `${commonHead(title, section.description)}
 <body>
   <header id="site-header"></header>
@@ -100,13 +100,13 @@ function renderIndexPage() {
           <p>${escapeAttr(s.description)}</p>
         </a>`).join('\n');
 
-  return `${commonHead('Documentation — NICE SPACESHIP', 'Longeron documentation: get started, concepts, AI models, integrations, and more.')}
+  return `${commonHead('Documentation — NICE SPACESHIP', 'NICE documentation: get started, concepts, AI models, integrations, and more.')}
 <body>
   <header id="site-header"></header>
   <div class="docs-layout">
 ${sidebar(null)}
     <main class="docs-content">
-      <h1>Longeron Documentation</h1>
+      <h1>NICE Documentation</h1>
       <p class="docs-lead">Everything you need to build, deploy, and manage AI agent fleets.</p>
 
       <div class="docs-cards">
