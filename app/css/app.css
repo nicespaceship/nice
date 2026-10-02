@@ -2776,13 +2776,13 @@ html:not([data-theme]) .app-main,
 .auth-accept input[type="checkbox"] {
   width:14px; height:14px; margin-top:2px; flex:none; accent-color:var(--accent); cursor:pointer;
 }
-.auth-accept a { color:var(--accent); text-decoration:none; }
+.auth-accept a { color:var(--accent); text-decoration:none; white-space:nowrap; }
 .auth-accept a:hover { text-decoration:underline; }
 .auth-consent-note {
   font-family:var(--font-b); font-size:var(--text-xs); line-height:var(--lh-snug);
   color:var(--text-muted); text-align:center; margin:0;
 }
-.auth-consent-note a { color:var(--accent); text-decoration:none; }
+.auth-consent-note a { color:var(--accent); text-decoration:none; white-space:nowrap; }
 .auth-consent-note a:hover { text-decoration:underline; }
 .auth-error { font-family:var(--font-b); font-size:.68rem; color:var(--color-error); min-height:18px; }
 .auth-submit {

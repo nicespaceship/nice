@@ -595,6 +595,7 @@
    right contrast pick. The base rules set color: var(--bg) which works
    for light CORE (white) but resolves to near-black on nice-dark. */
 [data-theme="nice-dark"] .btn-primary,
+[data-theme="nice-dark"] .auth-submit,
 [data-theme="nice-dark"] .btn-solid,
 [data-theme="nice-dark"] .btn-solid:hover,
 [data-theme="nice-dark"] .mc-pipe-active,
