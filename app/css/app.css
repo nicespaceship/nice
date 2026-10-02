@@ -2738,7 +2738,7 @@ html:not([data-theme]) .app-main,
   display:flex; flex-direction:column; align-items:center; gap:16px;
 }
 .auth-logo { display:flex; align-items:center; justify-content:center; }
-.auth-logo-svg { width:56px; height:56px; color:var(--accent); }
+.auth-logo-svg { width:56px; height:56px; color:var(--text); }
 .auth-title { font-family:var(--font-b); font-size:1.1rem; font-weight:var(--fw-bold); margin:0; }
 .auth-sub { font-family:var(--font-b); font-size:var(--text-2xs); letter-spacing:var(--tracking-normal); color:var(--text-muted); margin:0; }
 
