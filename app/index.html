@@ -204,6 +204,13 @@
 <!-- Skip to content (a11y) -->
 <a href="#app-view" class="skip-to-content">Skip to main content</a>
 
+<!-- Google's OAuth verification reads the served homepage, without running JS,
+     for a privacy policy link. With JS, signed-out visitors get the same links
+     in the guest banner. -->
+<noscript>
+  <p class="noscript-legal">NICE runs in your browser and needs JavaScript. <a href="https://nicespaceship.com/privacy">Privacy Policy</a> · <a href="https://nicespaceship.com/terms">Terms of Service</a></p>
+</noscript>
+
 <!-- MATRIX RAIN CANVAS -->
 <canvas id="matrix-canvas"></canvas>
 <!-- TRON GRID FLOOR -->

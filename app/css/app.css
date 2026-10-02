@@ -10564,6 +10564,14 @@ body.preview-active .nice-ai {
   color:var(--accent); font-weight:var(--fw-medium); text-decoration:underline;
   white-space:nowrap;
 }
+.guest-banner-legal { margin-left:8px; color:var(--text-muted); white-space:nowrap; }
+.guest-banner-legal a { color:inherit; text-decoration:underline; }
+.noscript-legal {
+  margin:0; padding:12px 16px; text-align:center;
+  font-size:var(--text-sm); font-family:var(--font-b); color:var(--text);
+  background:var(--bg-alt); border-bottom:1px solid var(--border);
+}
+.noscript-legal a { color:var(--accent); }
 @media (max-width:640px) {
   .guest-banner { font-size:var(--text-xs); padding:5px 10px; }
 }
