@@ -41,6 +41,11 @@
      See project_nice_brand_kit_142849.md. */
   --brand-navy: #142849;
 
+  /* Brand wordmark font (mirrors www/css/site.css --font-brand) — fixed
+     across all themes, unlike --font-h which is theme-driven. Consumed by
+     .app-brand-text / .side-brand-text via var(--font-brand, var(--font-h)). */
+  --font-brand: 'Outfit', sans-serif;
+
   --bg-alt: #fafafa;
   --panel-border: #e5e5e5;
   --space-xs: 4px;
