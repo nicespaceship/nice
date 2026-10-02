@@ -7,6 +7,12 @@
 const AuthModal = (() => {
   let _overlay = null;
 
+  // Where OAuth and password-reset links land. No '#': Supabase appends its
+  // tokens as a '#access_token=…' fragment, and a second '#' hides them from
+  // the client, so the sign-in silently fails. _authStashReturn() restores the
+  // user's route after sign-in instead.
+  const RETURN_URL = location.origin + '/app/';
+
   function open(message) {
     if (_overlay) { _overlay.classList.add('open'); return; }
 
@@ -203,7 +209,7 @@ const AuthModal = (() => {
       const { error } = await c.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: location.origin + '/app/#/',
+          redirectTo: RETURN_URL,
           scopes: 'email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.file',
           queryParams: { access_type: 'offline', prompt: 'consent' },
         }
@@ -225,7 +231,7 @@ const AuthModal = (() => {
       if (typeof window._authStashReturn === 'function') window._authStashReturn();
       const { error } = await c.auth.signInWithOAuth({
         provider: 'github',
-        options: { redirectTo: location.origin + '/app/#/' },
+        options: { redirectTo: RETURN_URL },
       });
       if (error) throw error;
       close();
@@ -247,9 +253,9 @@ const AuthModal = (() => {
     try {
       const c = SB.client;
       if (!c) throw new Error('Service unavailable');
-      await c.auth.resetPasswordForEmail(email, {
-        redirectTo: location.origin + '/app/#/profile'
-      });
+      // The recovery link signs the user in and emits PASSWORD_RECOVERY, which
+      // opens the new-password dialog wherever they land.
+      await c.auth.resetPasswordForEmail(email, { redirectTo: RETURN_URL });
       errEl.style.color = 'var(--accent)';
       errEl.textContent = 'Password reset email sent. Check your inbox.';
     } catch (err) {
