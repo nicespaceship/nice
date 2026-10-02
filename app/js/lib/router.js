@@ -38,6 +38,10 @@ const Router = (() => {
   /* Get current path (strip leading # and any query params after hash path) */
   function path() {
     const raw = window.location.hash.replace(/^#/, '') || '/';
+    // A sign-in callback (#access_token=…, or #error_description=… when the
+    // provider refuses) isn't a route: Supabase reads the fragment and clears
+    // it. Show home meanwhile, so no Page Not Found prints the tokens.
+    if (/(?:^|[#&/])(?:access_token|error_description)=/.test(raw)) return '/';
     return raw.split('?')[0] || '/';
   }
 
@@ -95,7 +99,7 @@ const Router = (() => {
     const match = _match(p);
 
     if (!match) {
-      _el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${p}</code></p></div>`;
+      _el.innerHTML = `<div class="app-empty"><h2>Page Not Found</h2><p>No view for <code>${Utils.esc(p)}</code></p></div>`;
       return;
     }
 

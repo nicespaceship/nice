@@ -125,6 +125,14 @@ describe('AuthModal — signup terms gate', () => {
     document.getElementById('am-google-btn').click();
     await vi.waitFor(() => expect(signInWithOAuth).toHaveBeenCalled());
   });
+
+  // Supabase appends '#access_token=…' to the return address. A '#' already in
+  // it (the old '/app/#/') hid the tokens from the client and sign-in failed.
+  it.each(['am-google-btn', 'am-github-btn'])('%s returns to an address without a #', async (id) => {
+    document.getElementById(id).click();
+    await vi.waitFor(() => expect(signInWithOAuth).toHaveBeenCalled());
+    expect(signInWithOAuth.mock.calls.at(-1)[0].options.redirectTo).toBe(`${location.origin}/app/`);
+  });
 });
 
 describe('sign-in tab implied-consent note', () => {

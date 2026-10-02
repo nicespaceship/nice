@@ -407,7 +407,9 @@ const ProfileView = (() => {
       // can restore on the way back. Skipped if the user is already at
       // home/profile (handled inside the helper).
       if (typeof window._authStashReturn === 'function') window._authStashReturn();
-      const opts = { redirectTo: location.origin + '/app/#/' };
+      // No '#' in the return address: Supabase appends '#access_token=…', and a
+      // second '#' hides the tokens from the client (see AuthModal's RETURN_URL).
+      const opts = { redirectTo: location.origin + '/app/' };
       if (provider === 'google') {
         opts.scopes = 'email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.file';
         opts.queryParams = { access_type: 'offline', prompt: 'consent' };
