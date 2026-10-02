@@ -548,7 +548,7 @@ const SettingsView = (() => {
         if (typeof SB === 'undefined' || !SB.isReady()) throw new Error('Not connected. Try again.');
         const { error } = await SB.functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
         if (error) throw new Error(typeof error === 'string' ? error : (error.message || 'Deletion failed'));
-        try { await SB.auth.signOut(); } catch { /* already gone */ }
+        try { await SB.auth.signOut({ scope: 'global' }); } catch { /* already gone */ }
         try { localStorage.clear(); } catch { /* ignore */ }
         State.set('user', null);
         if (typeof Notify !== 'undefined') Notify.send({ title: 'Account deleted', message: 'Your account and data have been permanently removed.', type: 'system' });

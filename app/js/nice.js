@@ -953,17 +953,7 @@ const NICE = (() => {
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
           popover.classList.remove('open');
-          if (typeof SB !== 'undefined') await SB.auth.signOut();
-          // Clear per-user chat state so the next visitor on this browser
-          // doesn't see the previous account's prompts. The prompt panel
-          // also gates load/save on auth-session presence, but wiping on
-          // explicit logout closes the door before the gate runs.
-          try {
-            localStorage.removeItem(Utils.KEYS.aiMessages);
-            localStorage.removeItem(Utils.KEYS.conversations);
-            localStorage.removeItem(Utils.KEYS.activeConv);
-          } catch { /* storage blocked */ }
-          window.location.reload();
+          await signOut();
         });
       }
     }
@@ -1483,6 +1473,25 @@ const NICE = (() => {
     // Auth modal close (replaces inline onclick)
     const authClose = document.getElementById('auth-modal-close-btn');
     if (authClose) authClose.addEventListener('click', () => NICE.closeModal('modal-auth'));
+  }
+
+  /**
+   * Signs out, clears this browser's per-user chat state, and reloads. Only
+   * this device signs out unless { scope: 'global' } asks to end every session
+   * on the account (Settings → Sign out of all devices).
+   */
+  async function signOut({ scope = 'local' } = {}) {
+    if (typeof SB !== 'undefined') await SB.auth.signOut({ scope });
+    // Clear per-user chat state so the next visitor on this browser
+    // doesn't see the previous account's prompts. The prompt panel
+    // also gates load/save on auth-session presence, but wiping on
+    // explicit logout closes the door before the gate runs.
+    try {
+      localStorage.removeItem(Utils.KEYS.aiMessages);
+      localStorage.removeItem(Utils.KEYS.conversations);
+      localStorage.removeItem(Utils.KEYS.activeConv);
+    } catch { /* storage blocked */ }
+    window.location.reload();
   }
 
   /* ── Auth state listener ── */
@@ -2647,7 +2656,7 @@ const NICE = (() => {
     if (el) el.hidden = !(count > 0);
   }
 
-  return { init, openModal, closeModal, guardWrite, _trapFocus };
+  return { init, openModal, closeModal, guardWrite, signOut, _trapFocus };
 })();
 
 /* ── Boot ── */

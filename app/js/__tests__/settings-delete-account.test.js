@@ -126,7 +126,8 @@ describe('SettingsView — account-deletion submit', () => {
     await submit(form);
 
     expect(mocks.SB.functions.invoke).toHaveBeenCalledWith('delete-account', { body: { confirm: 'DELETE' } });
-    expect(mocks.SB.auth.signOut).toHaveBeenCalled();
+    // The account is gone, so every session on it ends, not just this one.
+    expect(mocks.SB.auth.signOut).toHaveBeenCalledWith({ scope: 'global' });
     expect(mocks.State.get('user')).toBeNull();
     expect(mocks.Notify.send).toHaveBeenCalled();
     expect(location.href).toBe('/');
