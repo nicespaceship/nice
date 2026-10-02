@@ -2371,7 +2371,10 @@ const NICE = (() => {
 
   function _guestBannerHTML() {
     const missionsLower = Terminology.label('mission', { plural: true, lowercase: true });
-    return `Browse freely &mdash; <a href="#/profile" class="guest-banner-link">Sign in</a> to deploy agents and run ${missionsLower}.`;
+    // The legal links keep a privacy link visible on the homepage for signed-out
+    // visitors, which Google's OAuth verification requires.
+    return `Browse freely &mdash; <a href="#/profile" class="guest-banner-link">Sign in</a> to deploy agents and run ${missionsLower}.`
+      + ` <span class="guest-banner-legal"><a href="https://nicespaceship.com/privacy" target="_blank" rel="noopener">Privacy</a> · <a href="https://nicespaceship.com/terms" target="_blank" rel="noopener">Terms</a></span>`;
   }
 
   function _showGuestBanner() {
