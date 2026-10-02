@@ -8,16 +8,13 @@
        Google OAuth verification checks the homepage for them without
        running JS. -->
   <title>NICE SPACESHIP | Shipyard</title>
-  <meta name="description" content="NICE SPACESHIP is building a shipyard where anyone can design a spaceship, trade parts, and share builds. NICE, mission control for AI agent fleets, is live at nicespaceship.ai." />
+  <meta name="description" content="NICE SPACESHIP is building a shipyard where anyone can design a spaceship, trade parts, and share builds." />
   <meta property="og:title" content="NICE SPACESHIP | Shipyard" />
   <meta property="og:description" content="Build a spaceship, part by part." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://nicespaceship.com" />
-  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="NICE SPACESHIP" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="NICE SPACESHIP | Shipyard" />
   <meta name="twitter:description" content="Build a spaceship, part by part." />
   <meta name="theme-color" content="#000000" />
@@ -33,8 +30,6 @@
       --text-muted: rgba(255, 255, 255, 0.72);
       --text-dim: rgba(255, 255, 255, 0.56);
       --line: rgba(255, 255, 255, 0.08);
-      --accent: #0F52BA;
-      --accent-hover: #1862ce;
       --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-m: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
       --font-brand: 'Orbitron', sans-serif;
@@ -123,8 +118,6 @@
     main > :nth-child(3) { animation-delay: 0.16s; }
     main > :nth-child(4) { animation-delay: 0.24s; }
     main > :nth-child(5) { animation-delay: 0.32s; }
-    main > :nth-child(6) { animation-delay: 0.4s; }
-    main > :nth-child(7) { animation-delay: 0.48s; }
 
     /* NICE SPACESHIP runs ~15.3em wide at 0.4em tracking, so it scales with
        the viewport and never wraps. The negative margin drops the trailing
@@ -198,29 +191,6 @@
       line-height: var(--lh-base);
       color: var(--text-muted);
     }
-    .note {
-      text-wrap: pretty;
-      margin: 12px 0 0;
-      max-width: 36em;
-      font-size: var(--text-sm);
-      line-height: var(--lh-base);
-      color: var(--text-dim);
-    }
-    .cta-row { margin: 28px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 11px 20px;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      font: var(--fw-medium) var(--text-sm)/1 var(--font);
-      text-decoration: none;
-      transition: background-color 0.15s, border-color 0.15s;
-    }
-    .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--text); }
-    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-    .btn:focus-visible,
     .bar a:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
 
     @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -374,10 +344,6 @@
       </figure>
       <h2 class="headline">Build a spaceship, part by part.</h2>
       <p class="lede">We&rsquo;re building a shipyard where anyone can design a spaceship, trade parts, and share builds with other builders.</p>
-      <p class="note">NICE, our mission control for AI agent fleets, is live now.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="https://nicespaceship.ai">Launch NICE</a>
-      </div>
     </main>
 
     <footer class="bar bar-bottom">
