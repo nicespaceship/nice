@@ -13,10 +13,10 @@
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="NICE SPACESHIP — Brand Kit" />
 <meta name="twitter:description" content="The single source of truth for how NICE SPACESHIP looks, reads, and behaves." />
-<link rel="icon" href="/assets/nice-icon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/nice-mark-dark.svg" type="image/svg+xml" /><link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <style>
   :root {
     /* Pure monochrome — black, white, gray only */
@@ -145,9 +145,9 @@
   }
   .nav-brand {
     display: flex; align-items: center; gap: 12px;
-    font-family: 'Outfit', sans-serif; font-weight: 900;
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
     letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm);
-    color: var(--text-strong);
+    color: var(--text-strong); white-space: nowrap;
   }
   /* Inline NICE mark — colored by parent's `color:` value via fill:currentColor */
   .nice-mark { display: block; fill: currentColor; }
@@ -167,8 +167,9 @@
   }
   .footer-lockup .glyph { width: 32px; height: 32px; color: #fff; }
   .footer-lockup .word {
-    font-family: 'Outfit', sans-serif; font-weight: 900;
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
     letter-spacing: var(--tracking-wordmark); font-size: var(--text-md); color: #fff;
+    white-space: nowrap;
   }
   .footer-tagline {
     font-size: var(--text-sm); color: rgba(255,255,255,0.6);
@@ -305,18 +306,28 @@
     padding: 96px 48px;
     display: flex; align-items: center; justify-content: center;
     gap: 8px;
+    container-type: inline-size;
   }
   .lockup-stage.on-white { background: #ffffff; border-bottom: 1px solid var(--border); }
   .lockup-stage.on-black { background: #000000; }
   .lockup-glyph { width: 88px; height: 88px; }
   .lockup-glyph.is-black { color: #000; }
   .lockup-glyph.is-white { color: #fff; }
+  /* NICE SPACESHIP runs ~15.3em wide at 0.4em tracking, wider than a tile
+     at --text-xl, so it scales to the tile (cqi) and never wraps. The
+     negative margin drops the trailing letter-space so it centers true. */
   .lockup-wordmark {
-    font-family: 'Outfit', sans-serif; font-weight: 900;
-    letter-spacing: var(--tracking-wordmark); font-size: var(--text-xl);
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    letter-spacing: var(--tracking-wordmark);
+    font-size: clamp(var(--text-xs), 6cqi, var(--text-xl));
+    white-space: nowrap; margin-right: calc(-1 * var(--tracking-wordmark));
   }
   .lockup-wordmark.is-black { color: #000; }
   .lockup-wordmark.is-white { color: #fff; }
+  @media (max-width: 720px) {
+    .lockup-pair { grid-template-columns: 1fr; }
+    .lockup-stage { padding: 64px 24px; }
+  }
   .lockup-tile .meta {
     padding: 14px 18px;
     background: var(--bg);
@@ -384,8 +395,9 @@
   .type-sample-small { font-size: var(--text-sm); color: var(--text-muted); }
   .type-sample-mono { font-family: 'JetBrains Mono', monospace; font-size: var(--text-sm); }
   .type-sample-wordmark {
-    font-family: 'Outfit', sans-serif; font-weight: 900;
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
     letter-spacing: var(--tracking-wordmark); font-size: var(--text-lg);
+    white-space: nowrap;
   }
 
   /* ── BUTTONS GALLERY ──────────────────────────── */
@@ -553,7 +565,7 @@
   .mkt-band.is-black .mkt-feature-dot { background: #fff; }
   .mkt-band-lockup { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
   .mkt-band-lockup .glyph { width: 36px; height: 36px; }
-  .mkt-band-lockup .word { font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); }
+  .mkt-band-lockup .word { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); white-space: nowrap; }
   .mkt-band.is-black .mkt-band-lockup .glyph { color: #fff; }
   .mkt-band.is-black .mkt-band-lockup .word { color: #fff; }
   .mkt-band h3 {
@@ -610,7 +622,7 @@
     margin-bottom: 24px;
   }
   .dash-brand .dot { width: 26px; height: 26px; color: var(--text-strong); }
-  .dash-brand .name { font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); }
+  .dash-brand .name { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); }
   .dash-nav { display: flex; flex-direction: column; gap: 2px; }
   .dash-nav-item {
     padding: 8px 12px; border-radius: 6px;
@@ -688,12 +700,21 @@
 <!-- ── SVG SYMBOL DEFS — NICE mark ── -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <symbol id="nice-mark" viewBox="0 0 32 30" fill="currentColor">
-      <g transform="translate(0,1)">
-        <polygon points="16,0 23.5,13 8.5,13" fill="#00C897"/>
-        <polygon points="7.5,14.5 15,27.5 0,27.5" fill="currentColor"/>
-        <polygon points="24.5,14.5 32,27.5 17,27.5" fill="currentColor"/>
-      </g>
+    <symbol id="nice-mark" viewBox="0 0 5000 5000" fill="currentColor">
+      <path d="M2463.17,3633.17c348.87-33.89,529.56,395.76,262.71,618.71-179.73,150.16-459.24,78.58-546.6-137.16-85.98-212.33,54.43-459.26,283.89-481.55Z"/>
+      <path d="M3763.2,2905.2c246.91-17.2,431.6,227.75,353.89,461.89-87.4,263.37-443.86,323.54-610.74,100.57-168.07-224.56-21.82-543.04,256.85-562.46Z"/>
+      <path d="M2467.2,673.2c345.58-32.47,524.02,397,258.68,618.68-180.13,150.49-459.08,78.97-546.6-137.16-87.17-215.28,55.93-459.73,287.92-481.52Z"/>
+      <path d="M1203.18,2905.19c275.09-15.44,457.71,280.84,322.9,522.88-119.67,214.87-425.07,238.14-577.97,45.82-177.41-223.16-28.22-552.8,255.07-568.7Z"/>
+      <path d="M3537.4,2014.6c-177.73-177.72-114.08-485.01,120.51-574.69,274.93-105.11,544.87,148.19,461.85,429.85-73.68,249.96-398.06,329.14-582.35,144.85Z"/>
+      <path d="M1187.2,1409.2c279.69-26.25,476.07,269.48,341.49,517.49-117.32,216.2-419.09,243.76-576.57,55.2-178.93-214.25-41.59-546.72,235.08-572.68Z"/>
+      <path d="M2447.2,1853.2c550.99-42.77,908.61,573.22,585.69,1025.69-276.72,387.72-866.37,355.58-1097.57-60.2-228.12-410.24,44.43-929.2,511.88-965.49ZM2455.2,1953.2c-427.55,33.48-653.11,541.85-388.78,882.39,257.89,332.24,777.21,269.58,942.28-116.89,164.38-384.87-139.97-797.88-553.5-765.5Z"/>
+      <path d="M1272,2204v604c-33.72-4.09-66.28-4.09-100,0v-604c31.79,6.4,68.34,6.38,100,0Z"/>
+      <path d="M3836,2808c-34.42-3.47-65.53-5.37-100,0v-596c2.93-1.06,4.78,4,6,4h84c1.4,0,4.44-7.1,10,2v590Z"/>
+      <polygon points="3375.95 1580 2868.23 1291.66 2912.04 1203.99 3418.07 1491.98 3423.59 1497.98 3375.95 1580"/>
+      <polygon points="2139.99 1291.94 1637.96 1579.88 1588.37 1497.36 2086.75 1204.5 2095.49 1210.49 2139.99 1291.94"/>
+      <path d="M2139.98,3712.08c2.15,3.03-33.45,55.51-38.18,63.72-4.14,7.19-5.9,25.29-15.33,23.83l-494.1-289.2,43.94-82.16,11.78,1.54,491.88,282.27Z"/>
+      <path d="M3366,3424.08l45.38,82.85-3.37,11.08-492.12,280.28c-7.13-25.22-36.8-54.55-44.83-75.52-1.4-3.67-4.89-6.66-1.38-10.87l496.32-287.83Z"/>
+      <path d="M2483.19,2101.18c280.93-16.74,488.07,258.72,401.96,525.96-85.83,266.35-424.89,363.36-639.04,180.75-276.2-235.52-124.03-685.19,237.08-706.71Z"/>
     </symbol>
   </defs>
 </svg>
@@ -702,8 +723,7 @@
 <header class="nav">
   <div class="nav-inner">
     <a class="nav-brand" href="/">
-      <svg class="nice-mark nav-glyph" viewBox="0 0 32 30"><use href="#nice-mark"/></svg>
-      <span>SPACESHIP</span>
+      <span>NICE SPACESHIP</span>
     </a>
     <nav class="nav-links">
       <a href="/explore">Explore</a>
@@ -725,7 +745,7 @@
     <p>The single source of truth for how NICE looks, reads, and behaves across nicespaceship.com, the app, partner materials, and everywhere else the brand appears.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary btn-lg" href="#brand-standards">Brand standards</a>
-      <a class="btn btn-secondary btn-lg" href="/assets/nice-mark.svg" download>Download the mark</a>
+      <a class="btn btn-secondary btn-lg" href="/assets/nice-mark.svg" download>Download the NICE mark</a>
     </div>
   </section>
 
@@ -733,20 +753,18 @@
   <section>
     <div class="eyebrow">Lockup · two contrasts only</div>
     <h2 class="section-title">Monochrome by rule.</h2>
-    <p class="section-sub">The SPACESHIP lockup carries the brand at full strength. Render it in one of two forms: black on white, or white on black. Glyph and wordmark always share a single color. Any other treatment dilutes the mark.</p>
+    <p class="section-sub">The NICE SPACESHIP wordmark carries the brand at full strength. Render it in one of two forms: black on white, or white on black. Any other treatment dilutes it.</p>
 
     <div class="lockup-pair">
       <div class="lockup-tile">
         <div class="lockup-stage on-white">
-          <svg class="nice-mark lockup-glyph is-black" viewBox="0 0 32 30"><use href="#nice-mark"/></svg>
-          <div class="lockup-wordmark is-black">SPACESHIP</div>
+          <div class="lockup-wordmark is-black">NICE SPACESHIP</div>
         </div>
         <div class="meta"><strong>Black on white</strong><span>#000 on #fff</span></div>
       </div>
       <div class="lockup-tile">
         <div class="lockup-stage on-black">
-          <svg class="nice-mark lockup-glyph is-white" viewBox="0 0 32 30"><use href="#nice-mark"/></svg>
-          <div class="lockup-wordmark is-white">SPACESHIP</div>
+          <div class="lockup-wordmark is-white">NICE SPACESHIP</div>
         </div>
         <div class="meta"><strong>White on black</strong><span>#fff on #000</span></div>
       </div>
@@ -786,12 +804,12 @@
   <section>
     <div class="eyebrow">Typography</div>
     <h2 class="section-title">Two families. Editorial energy.</h2>
-    <p class="section-sub">Inter does everything: display, body, UI. Outfit belongs to the SPACESHIP lockup. JetBrains Mono runs telemetry, hex values, and code.</p>
+    <p class="section-sub">Inter does everything: display, body, UI. Orbitron belongs to the NICE SPACESHIP wordmark. JetBrains Mono runs telemetry, hex values, and code.</p>
 
     <div class="type-stack">
       <div class="type-row">
-        <div class="type-meta"><strong>Wordmark</strong>Outfit Black<br/>0.4em tracking<br/>Used only for SPACESHIP lockup</div>
-        <div class="type-sample-wordmark">SPACESHIP</div>
+        <div class="type-meta"><strong>Wordmark</strong>Orbitron Black<br/>0.4em tracking<br/>Used only for the NICE SPACESHIP wordmark</div>
+        <div class="type-sample-wordmark">NICE SPACESHIP</div>
       </div>
       <div class="type-row">
         <div class="type-meta"><strong>Display / hero</strong>Inter 700<br/>-0.01em tracking<br/>clamp(2.25rem, 4vw, 3rem)</div>
@@ -944,8 +962,7 @@
         </div>
         <div class="mkt-band is-black">
           <div class="mkt-band-lockup">
-            <svg class="nice-mark glyph" viewBox="0 0 32 30"><use href="#nice-mark"/></svg>
-            <div class="word">SPACESHIP</div>
+            <div class="word">NICE SPACESHIP</div>
           </div>
           <h3>Hundreds of blueprints. Every major model.</h3>
           <p>Toggle every major AI model like TV channels.</p>
@@ -999,7 +1016,7 @@
     <div class="dash">
       <aside class="dash-side">
         <div class="dash-brand">
-          <svg class="nice-mark dot" viewBox="0 0 32 30"><use href="#nice-mark"/></svg>
+          <svg class="nice-mark dot" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
           <div class="name">NICE</div>
         </div>
         <nav class="dash-nav">
@@ -1066,7 +1083,7 @@
     <div class="info-box">
       <ul>
         <li><strong>Color discipline.</strong> Surfaces, text, badges, and borders use pure monochrome: black, white, and gray only. Sapphire <code>#0F52BA</code> owns the single place the brand color appears.</li>
-        <li><strong>The lockup.</strong> Black-on-white or white-on-black. Glyph and wordmark always share a single color. These are the only valid forms.</li>
+        <li><strong>The wordmark.</strong> NICE SPACESHIP, black-on-white or white-on-black. These are the only valid forms.</li>
         <li><strong>Surfaces (light).</strong> <code>#ffffff</code> primary · <code>#fafafa</code> section alt · <code>#f5f5f5</code> hover and input.</li>
         <li><strong>Surfaces (dark).</strong> <code>#0a0a0a</code> primary · <code>#141414</code> section alt · <code>#1f1f1f</code> hover and input.</li>
         <li><strong>Borders.</strong> Hairline only. Light: <code>#e5e5e5</code> / <code>#d4d4d4</code>. Dark: <code>#262626</code> / <code>#404040</code>.</li>
@@ -1074,7 +1091,7 @@
         <li><strong>CTA.</strong> Sapphire <code>#0F52BA</code>. Hover <code>#1862ce</code>. Ink <code>#ffffff</code>. Same value in both themes.</li>
         <li><strong>Buttons.</strong> Flat. No shadow, no glow, no gradient. Solid Sapphire (primary), white with hairline border (secondary), bg-on-hover only (ghost).</li>
         <li><strong>Radius scale.</strong> Badges / chips <code>4px</code> · Buttons <code>6px</code> · Content cards <code>12px</code> · Blueprint cards <code>14px</code> · Marketing frames + lockup tiles <code>12px</code>. No pill shapes anywhere.</li>
-        <li><strong>Typography.</strong> Inter for all UI and prose. Outfit Black for the SPACESHIP wordmark only. JetBrains Mono for telemetry, hex values, and code.</li>
+        <li><strong>Typography.</strong> Inter for all UI and prose. Orbitron Black for the NICE SPACESHIP wordmark only. JetBrains Mono for telemetry, hex values, and code.</li>
         <li><strong>Page rhythm.</strong> Pattern B sets the default for every page on nicespaceship.com. Pattern A's black interlude marks moments where the lockup carries full presence: About page, footer band, brand page.</li>
         <li><strong>Blueprint cards.</strong> Cards run their own visual system: pure black <code>#000</code> stock plus the rarity and category palette in both themes. This applies only to card surfaces. Buttons and CTAs inside a card follow the brand rules.</li>
       </ul>
@@ -1119,7 +1136,7 @@
         <li>Page background, section alt, card surface, hover surface</li>
         <li>Text (body, muted, dim)</li>
         <li>Borders (default and prominent)</li>
-        <li>Nav glyph and dashboard sidebar glyph (via <code>currentColor</code>, inheriting from <code>--text-strong</code>)</li>
+        <li>Dashboard sidebar NICE glyph (via <code>currentColor</code>, inheriting from <code>--text-strong</code>)</li>
       </ul>
       <p style="color:var(--text);margin: 16px 0"><strong>Constant across both modes:</strong></p>
       <ul>
@@ -1136,8 +1153,7 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-lockup">
-      <svg class="nice-mark glyph" viewBox="0 0 32 30"><use href="#nice-mark"/></svg>
-      <div class="word">SPACESHIP</div>
+      <div class="word">NICE SPACESHIP</div>
     </div>
     <p class="footer-tagline">Neural Intelligence Command Engine. Open source, MIT licensed.</p>
 

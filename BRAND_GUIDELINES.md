@@ -1,51 +1,33 @@
 # NICE SPACESHIP — Brand Guidelines
 
-Canonical brand reference, set 2026-10-01. Source SVGs live at [assets/](assets/) (app/root deploy) and [www/assets/](www/assets/) (marketing deploy) — both directories carry identical copies; there is no third `public/assets/brand/` location.
+Working reference as of 2026-10-02. The NICE SPACESHIP company icon is being redesigned, so this documents the interim state.
 
 ## Platform architecture
 
-| Property | Role |
-|---|---|
-| `nicespaceship.com` | Marketplace — community site, deployed from `www/` |
-| `nicespaceship.ai` | NICE App / Studio — the product SPA, deployed from `app/` + root |
-| `longeron.app` | ServiceNow CMS Engine Core — separate product under the NICE SPACESHIP umbrella, separate repo |
-
-## Identity
-
-Three-triangle equilateral pyramid mark: one apex triangle (Emerald) sitting above two base triangles, separated by uniform micro-gap negative-space channels (1–1.5px at a 32px rendering). Source files:
-
-- [`assets/nice-icon.svg`](assets/nice-icon.svg) — favicon / app icon, self-contained dark square background.
-- [`assets/nice-mark.svg`](assets/nice-mark.svg) / `nice-mark-dark.svg` / `nice-mark-light.svg` — icon only, transparent background, for inline use. `-dark` = black base triangles (light surfaces), `-light` = white base triangles (dark surfaces), unsuffixed = auto via `prefers-color-scheme`. Apex triangle is always Emerald regardless of variant.
-- [`assets/nice-wordmark-primary.svg`](assets/nice-wordmark-primary.svg) — full "nice spaceship" lockup, black text, light surfaces.
-- [`assets/nice-wordmark-dark.svg`](assets/nice-wordmark-dark.svg) — full "nice spaceship" lockup, white text, dark surfaces.
-- [`assets/nice-wordmark-app.svg`](assets/nice-wordmark-app.svg) — "nice" only (no "spaceship"), white text, for in-app contexts.
-
-In the app, the mark and the wordmark render as separate elements (icon SVG + a `NICE` text span), not a single flattened image — this keeps brand color fixed (Emerald apex, theme-appropriate base) while surrounding chrome still themes per the Skin system.
-
-## Color tokens
-
-| Token | Hex | Use |
+| Property | Role | Deploys from |
 |---|---|---|
-| Space Black | `#080A12` | App icon background, dark-base-triangle variant, primary-lockup text |
-| Pure White | `#FFFFFF` | Light-base-triangle variant, dark-lockup text |
-| Emerald Apex | `#00C897` | The mark's apex triangle — fixed, never theme-adaptive. Confirmed live on longeron.app as `--b-logo-flange`. |
-| Deep Cobalt | `#0A2540` | Not in the 3 logo SVGs, but confirmed real: it's longeron.app's live `--b-accent` token (its primary solid-fill action color). Adopted here as the NICE app's `--accent` (app/js/nice.js `nice`/`nice-dark` themes + public/css/theme.css) — Deep Cobalt needs white text for contrast, so it takes the solid-fill button role; Emerald takes `--accent2` (hover text, tint washes, glows — foreground/translucent uses, not white-on-color fills). |
+| `nicespaceship.com` | NICE SPACESHIP, the company site and marketplace | `www/` |
+| `nicespaceship.ai` | NICE, the product (app / studio) | `app/` + repo root |
+| `longeron.app` | Longeron, the ServiceNow CMS engine | separate repo |
 
-**Known tradeoff:** Deep Cobalt is a near-black navy, so on `nice-dark` (bg `#0a0a0a`) a solid-fill button's edge reads subtly against the page — button text stays fully legible (white, confirmed), but the fill-vs-background distinction is soft. Didn't attempt a per-mode color-role swap (e.g. Emerald-fill in dark mode) without a design call — flagging rather than guessing further.
+## Logos
+
+- **NICE SPACESHIP (company): wordmark only, for now.** "NICE SPACESHIP" in Orbitron Black, uppercase, 0.4em tracking (`--tracking-wordmark`), black on white or white on black. A new company icon is in design; until it lands, nothing sits beside the wordmark. Don't pair it with the NICE ring mark.
+- **NICE (product): the ring mark.** Six orbit dots, two pillars, four chevrons, and a central ring. Files: `assets/nice-mark.svg` (auto light/dark), `assets/nice-mark-dark.svg` (black, for light surfaces), `assets/nice-mark-light.svg` (white, for dark surfaces); `www/assets/` carries the same set for nicespaceship.com. In the app it renders from the `#icon-nice` symbol in `app/index.html`, next to "NICE" in Orbitron.
+- A three-triangle mark was tried for the company on 2026-10-01 and dropped. Don't reintroduce it.
 
 ## Typography
 
-- **Outfit**, weight 900 — display and headings, and the sole wordmark typeface (`-0.5px` letter-spacing at the 28px size baked into the wordmark SVGs). Loaded via Google Fonts (`family=Outfit:wght@900`).
-- **JetBrains Mono** — technical telemetry, hex values, code. Already the established mono face per `www/brand.html`'s own type scale; unchanged by this update.
-- Everything else (body/UI prose) stays on the app's existing per-theme `--font-h`/`--font-b` system — Outfit is scoped to the brand wordmark only, not a site-wide body font swap.
+- **Orbitron Black**: wordmarks only (NICE SPACESHIP, NICE).
+- **Inter**: all UI and prose.
+- **Mono**: Fira Code in the app and site tokens (`--font-m`). `www/brand.html` copy says JetBrains Mono; that mismatch predates this doc.
 
-## UI aesthetics
+## Color
 
-- Dark-mode-first chrome; `www/brand.html` and the app's default theme already follow this.
-- 1px translucent borders (`rgba(255,255,255,0.08)`-class) on dark surfaces — consistent with the app's existing flat, no-shadow posture (`* { box-shadow: none !important }` is already universal; depth comes from border/background, not shadow).
-- Spatial coordinate-grid backgrounds and monospaced telemetry headers — descriptive of the existing Schematic / HUD treatment already in the app; not a new system to build.
+- **Accent (app NICE theme + nicespaceship.com):** Deep Cobalt `#0A2540` as `--accent` (solid fills, white text) and Emerald `#00C897` as `--accent2` (hover text, tints, glows). Both come from longeron.app's live palette. The app's runtime source of truth is `app/js/nice.js` `THEMES`, which is injected as inline styles; `public/css/theme.css` mirrors it.
+- **Surfaces:** monochrome (black, white, gray). Blueprint cards keep their own rarity palette.
 
-## Open questions for a human
+## Open
 
-- **`nice-dark` button fill vs. background contrast** (above) — acceptable as-is, or worth a per-mode accent swap?
-- No Tailwind config exists in this repo (vanilla CSS custom properties only) and there is no `public/assets/brand/` path — if a Tailwind-based project needs these tokens (e.g. Longeron), that's a separate repo and a separate task.
+- `www/brand.html` still documents and uses the previous Sapphire `#0F52BA` accent, while the app and the rest of nicespaceship.com run Cobalt/Emerald. Pick one as canonical, then align the brand kit.
+- On `nice-dark`, Cobalt used as text (links, active tab, the sign-in mark) has too little contrast against the near-black surface.

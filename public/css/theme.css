@@ -51,14 +51,13 @@
    MODULE: THEME TOKENS
 ───────────────────────────────────────────────────────────────── */
 
-/* CORE — light + the 2026-10 triangle-mark brand (mirrors www/css/site.css)
-   Action color: Deep Cobalt #0A2540 for solid fills (--accent) — needs
-   white button text to pass contrast, so it takes the fill role. Emerald
-   #00C897 (the mark's apex color) takes --accent2: hover text, color-mix
-   tint washes, and glows, where it's used as foreground/translucent, not
-   as a white-on-color fill. Both hexes verified against longeron.app's
-   live --b-accent / --b-logo-flange tokens, same brand, see
-   BRAND_GUIDELINES.md. Sapphire (#00C897/#0A2540) retired. */
+/* CORE — light + Deep Cobalt / Emerald (mirrors www/css/site.css)
+   Deep Cobalt #0A2540 takes --accent (solid fills) because it needs white
+   button text to pass contrast. Emerald #00C897 takes --accent2 (hover
+   text, color-mix tint washes, glows), where it's used as foreground or
+   translucent, never as a white-on-color fill. Both are longeron.app's live
+   --b-accent / --b-logo-flange tokens. The runtime source of truth is
+   nice.js THEMES (injected as inline styles); keep the two in step. */
 :root, :is([data-theme="nice"],[data-theme="nice-dark"]) {
   --bg:           #ffffff;
   --bg2:          #fafafa;
@@ -79,7 +78,7 @@
   --font-h:       'Inter', sans-serif;
   --font-b:       'Inter', sans-serif;
   --font-m:       'Fira Code', monospace;
-  --font-brand:   'Outfit', sans-serif;
+  --font-brand:   'Orbitron', sans-serif;
   --radius:       10px;
   --scan:         0;
   --border-width: 1px;

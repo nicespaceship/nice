@@ -36,15 +36,10 @@
 
 /* Spacing scale (4px base) */
 :root {
-  /* Historical brand reference — navy is no longer used on surfaces.
-     Action color is Sapphire #00C897 (see --accent2 in theme.css CORE block).
-     See project_nice_brand_kit_142849.md. */
+  /* Historical brand reference only (pre-2026 navy), not used on surfaces.
+     Live action colors are Deep Cobalt #0A2540 (--accent) and Emerald
+     #00C897 (--accent2), set per theme in nice.js THEMES. */
   --brand-navy: #142849;
-
-  /* Brand wordmark font (mirrors www/css/site.css --font-brand) — fixed
-     across all themes, unlike --font-h which is theme-driven. Consumed by
-     .app-brand-text / .side-brand-text via var(--font-brand, var(--font-h)). */
-  --font-brand: 'Outfit', sans-serif;
 
   --bg-alt: #fafafa;
   --panel-border: #e5e5e5;
@@ -1644,7 +1639,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    surface via contrast alone. Modern borderless look. Supersedes the
    multi-orb stack declared in theme.css so the chrome stays still. */
 /* The CORE theme pair (`nice` light + `nice-dark`) share the same chrome
-   language — borderless surfaces, sapphire CTAs, fills over hairlines.
+   language — borderless surfaces, accent CTAs, fills over hairlines.
    Every rule below targets both via `:is(...)` so the dark variant inherits
    the polish that landed in light mode without per-rule duplication. Rules
    that are genuinely light-only (the lavender `.app-main` canvas) keep the
@@ -2738,7 +2733,7 @@ html:not([data-theme]) .app-main,
   display:flex; flex-direction:column; align-items:center; gap:16px;
 }
 .auth-logo { display:flex; align-items:center; justify-content:center; }
-.auth-logo-svg { width:56px; height:56px; color:var(--text); }
+.auth-logo-svg { width:56px; height:56px; color:var(--accent); }
 .auth-title { font-family:var(--font-b); font-size:1.1rem; font-weight:var(--fw-bold); margin:0; }
 .auth-sub { font-family:var(--font-b); font-size:var(--text-2xs); letter-spacing:var(--tracking-normal); color:var(--text-muted); margin:0; }
 
@@ -9870,7 +9865,7 @@ body.preview-active .nice-ai {
   .bpl-desc { display:none; }
   .bpl-header .bpl-desc { display:none; }
   /* The default `--panel-bg` is 0.75-0.97 alpha so the body's
-     Sapphire dot-grid (radial-gradient on body) bleeds through and
+     Accent dot-grid (radial-gradient on body) bleeds through and
      reads as a subtle right/bottom shadow. Use the opaque surface
      token instead — same look as desktop, no dot bleed.
      Same pattern on the list container: `gap:1px` between rows lets
@@ -11023,7 +11018,7 @@ body.preview-active .nice-ai {
    Brand-mark fill uses `var(--text)` so it reads as black-on-white
    on the `nice` theme and white-on-black on `nice-dark`. HUD frame
    uses `--border` / `--border-hi`, animated arcs use `--accent`
-   (Sapphire). No box-shadows — the universal kill rule below wipes
+   (the accent). No box-shadows — the universal kill rule below wipes
    them anyway, and the brand kit is flat.
 ───────────────────────────────────────────────────────────────── */
 .nice-core-mark {
@@ -11056,7 +11051,7 @@ body.preview-active .nice-ai {
   stroke:var(--border-hi);
   stroke-width:3;
 }
-/* Four animated arc segments — Sapphire accent, slow clockwise spin.
+/* Four animated arc segments — accent color, slow clockwise spin.
    Dasharray ratio mirrors the marketing site exactly (2π × 2300 ÷ 360
    × 70° = 2810, × 20° = 803), so each cycle covers 90° (70° stroke +
    20° gap × 4). Geometry is identical to .home-hud-arcs. */
