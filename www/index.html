@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Temporary teaser while nicespaceship.com is rebuilt for Spatial OS.
+       The previous homepage lives at /nice (www/nice.html). /privacy and
+       /terms must stay linked from this page in static HTML: Google OAuth
+       verification checks the homepage for them without running JS. -->
+  <title>NICE SPACESHIP | Spatial OS</title>
+  <meta name="description" content="NICE SPACESHIP is building Spatial OS: the tools your company runs on, as modules on one spaceship you can see, fly, and fix. NICE, mission control for AI agent fleets, is live at nicespaceship.ai." />
+  <meta property="og:title" content="NICE SPACESHIP | Spatial OS" />
+  <meta property="og:description" content="Run your business from the bridge. NICE SPACESHIP is building Spatial OS." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nicespaceship.com" />
+  <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="NICE SPACESHIP" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="NICE SPACESHIP | Spatial OS" />
+  <meta name="twitter:description" content="Run your business from the bridge. NICE SPACESHIP is building Spatial OS." />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="/assets/nice-mark-dark.svg" type="image/svg+xml" /><link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400&family=Orbitron:wght@900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #000;
+      --text: #fff;
+      --text-muted: rgba(255, 255, 255, 0.72);
+      --text-dim: rgba(255, 255, 255, 0.56);
+      --line: rgba(255, 255, 255, 0.08);
+      --accent: #0F52BA;
+      --accent-hover: #1862ce;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-m: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --font-brand: 'Orbitron', sans-serif;
+      --text-xs: 0.6875rem;
+      --text-sm: 0.8125rem;
+      --text-md: 1.0625rem;
+      --text-xl: 1.5rem;
+      --text-2xl: 2rem;
+      --text-3xl: clamp(2.25rem, 4vw, 3rem);
+      --fw-regular: 400;
+      --fw-medium: 600;
+      --fw-bold: 700;
+      --lh-tight: 1.15;
+      --lh-base: 1.55;
+      --tracking-display: -0.01em;
+      --tracking-caps-wide: 0.12em;
+      --tracking-caps-wider: 0.2em;
+      --tracking-wordmark: 0.4em;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow-x: clip;
+    }
+    /* Spatial coordinate grid, faded toward the edges. Abstract only: no labels. */
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+      background-position: center top;
+      -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 42%, #000 25%, transparent 78%);
+      mask-image: radial-gradient(ellipse 75% 65% at 50% 42%, #000 25%, transparent 78%);
+    }
+
+    .bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 24px;
+      padding: 16px clamp(16px, 4vw, 40px);
+      font: var(--fw-regular) var(--text-xs)/1.4 var(--font-m);
+      letter-spacing: var(--tracking-caps-wide);
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .bar-top { border-bottom: 1px solid var(--line); }
+    .bar-bottom { border-top: 1px solid var(--line); }
+    .bar a { color: inherit; text-decoration: none; }
+    .bar a:hover { color: var(--text); }
+    .status { display: inline-flex; align-items: center; gap: 10px; }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    .legal { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: clamp(40px, 7vh, 88px) clamp(16px, 4vw, 40px) clamp(40px, 6vh, 72px);
+    }
+    main > * { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+    main > :nth-child(2) { animation-delay: 0.08s; }
+    main > :nth-child(3) { animation-delay: 0.16s; }
+    main > :nth-child(4) { animation-delay: 0.24s; }
+    main > :nth-child(5) { animation-delay: 0.32s; }
+    main > :nth-child(6) { animation-delay: 0.4s; }
+    main > :nth-child(7) { animation-delay: 0.48s; }
+
+    /* NICE SPACESHIP runs ~15.3em wide at 0.4em tracking, so it scales with
+       the viewport and never wraps. The negative margin drops the trailing
+       letter-space so the wordmark centers true. */
+    .wordmark {
+      margin: 0;
+      margin-right: calc(-1 * var(--tracking-wordmark));
+      font-family: var(--font-brand);
+      font-weight: 900;
+      font-size: min(5vw, var(--text-3xl));
+      line-height: 1;
+      letter-spacing: var(--tracking-wordmark);
+      white-space: nowrap;
+    }
+    .tagline {
+      margin: 18px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font: var(--fw-medium) var(--text-sm)/1 var(--font);
+      letter-spacing: var(--tracking-caps-wider);
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .tagline span { margin-right: calc(-1 * var(--tracking-caps-wider)); }
+    .tagline::before,
+    .tagline::after {
+      content: "";
+      width: 36px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .ship { margin: clamp(32px, 6vh, 64px) 0 0; width: min(100%, 880px); }
+    .ship-svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .ship-svg .centerline { stroke: rgba(255, 255, 255, 0.16); stroke-width: 1; stroke-dasharray: 6 5; vector-effect: non-scaling-stroke; }
+    .ship-svg .hull { fill: var(--bg); stroke: rgba(255, 255, 255, 0.88); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    .ship-svg .hull.top { stroke: var(--text); stroke-width: 1.25; }
+    .ship-svg .detail { fill: none; stroke: rgba(255, 255, 255, 0.34); stroke-width: 0.75; vector-effect: non-scaling-stroke; }
+    .ship-svg .glass { stroke: var(--text); stroke-width: 1.5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .ship-svg .strut { stroke: rgba(255, 255, 255, 0.5); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .ship-svg .dim { stroke: rgba(255, 255, 255, 0.28); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .ship-svg .plume { fill: url(#plume); }
+    .ship-svg .plumes { animation: flicker 1.8s ease-in-out infinite alternate; }
+    .ship-svg .scan { fill: url(#scan); opacity: 0.55; animation: scan 7s linear infinite; }
+    .ship-meta {
+      margin: 14px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px 18px;
+      font: var(--fw-regular) var(--text-xs)/1.4 var(--font-m);
+      letter-spacing: var(--tracking-caps-wide);
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .headline {
+      margin: clamp(36px, 6vh, 64px) 0 0;
+      font-size: clamp(var(--text-xl), 3.4vw, var(--text-2xl));
+      font-weight: var(--fw-bold);
+      line-height: var(--lh-tight);
+      letter-spacing: var(--tracking-display);
+      text-wrap: balance;
+    }
+    .lede {
+      text-wrap: pretty;
+      margin: 16px 0 0;
+      max-width: 36em;
+      font-size: var(--text-md);
+      line-height: var(--lh-base);
+      color: var(--text-muted);
+    }
+    .note {
+      text-wrap: pretty;
+      margin: 12px 0 0;
+      max-width: 36em;
+      font-size: var(--text-sm);
+      line-height: var(--lh-base);
+      color: var(--text-dim);
+    }
+    .cta-row { margin: 28px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 20px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      font: var(--fw-medium) var(--text-sm)/1 var(--font);
+      text-decoration: none;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--text); }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-secondary { background: transparent; border-color: rgba(255, 255, 255, 0.28); color: var(--text); }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.45); }
+    .btn:focus-visible,
+    .bar a:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+    @keyframes flicker { from { opacity: 0.65; } to { opacity: 1; } }
+    /* SVG transform lengths are user units, so this sweeps the viewBox width. */
+    @keyframes scan { from { transform: translateX(-36px); } to { transform: translateX(31px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      main > *,
+      .status-dot,
+      .ship-svg .plumes { animation: none; }
+      .ship-svg .scan { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="grid-bg" aria-hidden="true"></div>
+
+    <header class="bar bar-top">
+      <span>nicespaceship.com</span>
+      <span class="status"><span class="status-dot" aria-hidden="true"></span>Status · In drydock</span>
+    </header>
+
+    <main>
+      <h1 class="wordmark">NICE SPACESHIP</h1>
+      <p class="tagline"><span>Spatial OS</span></p>
+      <figure class="ship">
+        <svg class="ship-svg" viewBox="-36 -10.6 67 21.2" role="img" aria-labelledby="ship-title">
+    <title id="ship-title">Plan view of the AURELION S-062, a 22-module surveyor: bridge, science pods, antenna dish, and four fusion engines.</title>
+    <defs>
+      <linearGradient id="plume" x1="1" y1="0" x2="0" y2="0">
+        <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+        <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="scan" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+        <stop offset=".5" stop-color="#fff" stop-opacity=".5"/>
+        <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <line x1="-36" y1="0" x2="31" y2="0" class="centerline"/>
+    <line x1="11" y1="-2.1" x2="11" y2="-3.7" class="strut"/>
+    <line x1="15" y1="-2.1" x2="15" y2="-3.7" class="strut"/>
+    <line x1="11" y1="2.1" x2="11" y2="3.7" class="strut"/>
+    <line x1="15" y1="2.1" x2="15" y2="3.7" class="strut"/>
+    <line x1="1" y1="-2.1" x2="1" y2="-3.7" class="strut"/>
+    <line x1="5" y1="-2.1" x2="5" y2="-3.7" class="strut"/>
+    <line x1="1" y1="2.1" x2="1" y2="3.7" class="strut"/>
+    <line x1="5" y1="2.1" x2="5" y2="3.7" class="strut"/>
+    <line x1="-9" y1="-2.1" x2="-9" y2="-3.7" class="strut"/>
+    <line x1="-5" y1="-2.1" x2="-5" y2="-3.7" class="strut"/>
+    <line x1="-9" y1="2.1" x2="-9" y2="3.7" class="strut"/>
+    <line x1="-5" y1="2.1" x2="-5" y2="3.7" class="strut"/>
+    <line x1="-18.9" y1="-3.3" x2="-18.9" y2="-4.9" class="strut"/>
+    <line x1="-18.9" y1="3.3" x2="-18.9" y2="4.9" class="strut"/>
+    <line x1="-21" y1="-1.68" x2="-23.6" y2="-1.68" class="strut"/>
+    <line x1="-21" y1="1.68" x2="-23.6" y2="1.68" class="strut"/>
+    <line x1="23" y1="-2.1" x2="23" y2="-3.3" class="strut"/>
+    <line x1="23" y1="2.1" x2="23" y2="3.6" class="strut"/>
+    <line x1="-17" y1="-3.3" x2="-17" y2="-3.8" class="strut"/>
+    <g class="plumes">
+    <polygon points="-21.2,-8.05 -28.1,-6.95 -28.1,-6.25 -21.2,-5.15" class="plume"/>
+    <polygon points="-21.2,5.15 -28.1,6.25 -28.1,6.95 -21.2,8.05" class="plume"/>
+    <polygon points="-27.2,-3.13 -34.1,-2.03 -34.1,-1.33 -27.2,-0.23" class="plume"/>
+    <polygon points="-27.2,0.23 -34.1,1.33 -34.1,2.03 -27.2,3.13" class="plume"/>
+    </g>
+    <rect x="-20.5" y="-0.8" width="41.5" height="1.6" rx="0.3" class="hull"/>
+    <polygon points="-13.5,-4.4 -12.4,-2.6 -12.4,2.6 -13.5,4.4 -14.6,2.6 -14.6,-2.6" class="hull"/>
+    <line x1="-13.5" y1="-3.5" x2="-13.5" y2="3.5" class="detail"/>
+    <rect x="8.8" y="-2.1" width="8.4" height="4.2" rx="0.9" class="hull"/>
+    <line x1="10.9" y1="-2.1" x2="10.9" y2="2.1" class="detail"/>
+    <line x1="15.1" y1="-2.1" x2="15.1" y2="2.1" class="detail"/>
+    <rect x="-1.2" y="-2.1" width="8.4" height="4.2" rx="0.9" class="hull"/>
+    <line x1="0.9" y1="-2.1" x2="0.9" y2="2.1" class="detail"/>
+    <line x1="5.1" y1="-2.1" x2="5.1" y2="2.1" class="detail"/>
+    <rect x="-11.2" y="-2.1" width="8.4" height="4.2" rx="0.9" class="hull"/>
+    <line x1="-9.1" y1="-2.1" x2="-9.1" y2="2.1" class="detail"/>
+    <line x1="-4.9" y1="-2.1" x2="-4.9" y2="2.1" class="detail"/>
+    <polygon points="-15.4,-2.2 -15.4,2.2 -19.2,3.3 -21,3.3 -21,0.9 -19.6,0 -21,-0.9 -21,-3.3 -19.2,-3.3" class="hull"/>
+    <polygon points="20.6,-2.1 24.8,-2.1 27.8,0 24.8,2.1 20.6,2.1" class="hull"/>
+    <circle cx="25" cy="0" r="0.75" class="detail"/>
+    <line x1="20.6" y1="0" x2="24.25" y2="0" class="detail"/>
+    <rect x="9.7" y="-6.3" width="6.6" height="2.6" rx="1.3" class="hull"/>
+    <line x1="11.7" y1="-6.3" x2="11.7" y2="-3.7" class="detail"/>
+    <line x1="14.3" y1="-6.3" x2="14.3" y2="-3.7" class="detail"/>
+    <rect x="9.7" y="3.7" width="6.6" height="2.6" rx="1.3" class="hull"/>
+    <line x1="11.7" y1="3.7" x2="11.7" y2="6.3" class="detail"/>
+    <line x1="14.3" y1="3.7" x2="14.3" y2="6.3" class="detail"/>
+    <rect x="-0.3" y="-6.3" width="6.6" height="2.6" rx="1.3" class="hull"/>
+    <line x1="1.7" y1="-6.3" x2="1.7" y2="-3.7" class="detail"/>
+    <line x1="4.3" y1="-6.3" x2="4.3" y2="-3.7" class="detail"/>
+    <rect x="-0.3" y="3.7" width="6.6" height="2.6" rx="1.3" class="hull"/>
+    <line x1="1.7" y1="3.7" x2="1.7" y2="6.3" class="detail"/>
+    <line x1="4.3" y1="3.7" x2="4.3" y2="6.3" class="detail"/>
+    <rect x="-10.3" y="-6.3" width="6.6" height="2.6" rx="1.3" class="hull"/>
+    <line x1="-8.3" y1="-6.3" x2="-8.3" y2="-3.7" class="detail"/>
+    <line x1="-5.7" y1="-6.3" x2="-5.7" y2="-3.7" class="detail"/>
+    <rect x="-10.3" y="3.7" width="6.6" height="2.6" rx="1.3" class="hull"/>
+    <line x1="-8.3" y1="3.7" x2="-8.3" y2="6.3" class="detail"/>
+    <line x1="-5.7" y1="3.7" x2="-5.7" y2="6.3" class="detail"/>
+    <polygon points="-17.6,-7.75 -17.6,-5.45 -21.2,-4.9 -21.2,-8.3" class="hull"/>
+    <line x1="-19.2" y1="-8" x2="-19.2" y2="-5.2" class="detail"/>
+    <polygon points="-17.6,5.45 -17.6,7.75 -21.2,8.3 -21.2,4.9" class="hull"/>
+    <line x1="-19.2" y1="5.2" x2="-19.2" y2="8" class="detail"/>
+    <polygon points="-23.6,-2.83 -23.6,-0.53 -27.2,0.02 -27.2,-3.38" class="hull"/>
+    <line x1="-25.2" y1="-3.08" x2="-25.2" y2="-0.28" class="detail"/>
+    <polygon points="-23.6,0.53 -23.6,2.83 -27.2,3.38 -27.2,-0.02" class="hull"/>
+    <line x1="-25.2" y1="0.28" x2="-25.2" y2="3.08" class="detail"/>
+    <polygon points="22.4,-5.5 24.6,-5.5 26.6,-4.4 24.6,-3.3 22.4,-3.3" class="hull"/>
+    <line x1="23.4" y1="-5.5" x2="23.4" y2="-3.3" class="detail"/>
+    <rect x="22.1" y="3.6" width="3.8" height="2.8" rx="0.5" class="hull"/>
+    <rect x="23.7" y="4.1" width="1.6" height="1.8" rx="0.2" class="detail"/>
+    <rect x="-20.1" y="-6.2" width="4.2" height="2.4" rx="0.3" class="hull"/>
+    <line x1="-19.75" y1="-6.2" x2="-19.75" y2="-3.8" class="detail"/>
+    <line x1="-19.05" y1="-6.2" x2="-19.05" y2="-3.8" class="detail"/>
+    <line x1="-18.35" y1="-6.2" x2="-18.35" y2="-3.8" class="detail"/>
+    <line x1="-17.65" y1="-6.2" x2="-17.65" y2="-3.8" class="detail"/>
+    <line x1="-16.95" y1="-6.2" x2="-16.95" y2="-3.8" class="detail"/>
+    <line x1="-16.25" y1="-6.2" x2="-16.25" y2="-3.8" class="detail"/>
+    <rect x="-6" y="-0.45" width="18" height="0.9" rx="0.45" class="hull top"/>
+    <rect x="10.7" y="-1.5" width="4.6" height="3" rx="0.7" class="hull top"/>
+    <line x1="14.5" y1="-1" x2="14.5" y2="1" class="glass"/>
+    <circle cx="-7" cy="0" r="2" class="hull top"/>
+    <circle cx="-7" cy="0" r="0.8" class="detail"/>
+    <line x1="-7" y1="0" x2="-5.6" y2="-1.4" class="detail"/>
+    <line x1="-27.2" y1="9.6" x2="27.8" y2="9.6" class="dim"/>
+    <line x1="-27.2" y1="9" x2="-27.2" y2="10.2" class="dim"/>
+    <line x1="27.8" y1="9" x2="27.8" y2="10.2" class="dim"/>
+    <line x1="-25" y1="9.6" x2="-25" y2="9.95" class="dim"/>
+    <line x1="-20" y1="9.6" x2="-20" y2="9.95" class="dim"/>
+    <line x1="-15" y1="9.6" x2="-15" y2="9.95" class="dim"/>
+    <line x1="-10" y1="9.6" x2="-10" y2="9.95" class="dim"/>
+    <line x1="-5" y1="9.6" x2="-5" y2="9.95" class="dim"/>
+    <line x1="0" y1="9.6" x2="0" y2="9.95" class="dim"/>
+    <line x1="5" y1="9.6" x2="5" y2="9.95" class="dim"/>
+    <line x1="10" y1="9.6" x2="10" y2="9.95" class="dim"/>
+    <line x1="15" y1="9.6" x2="15" y2="9.95" class="dim"/>
+    <line x1="20" y1="9.6" x2="20" y2="9.95" class="dim"/>
+    <line x1="25" y1="9.6" x2="25" y2="9.95" class="dim"/>
+    <rect class="scan" x="-.15" y="-10.6" width=".3" height="21.2"/>
+  </svg>
+        <figcaption class="ship-meta">
+          <span>Aurelion S-062 · Afterlight</span>
+          <span>Surveyor</span>
+          <span>60 m</span>
+          <span>22 modules</span>
+          <span>Thrust 3,000</span>
+        </figcaption>
+      </figure>
+      <h2 class="headline">Run your business from the bridge.</h2>
+      <p class="lede">We&rsquo;re building Spatial OS: the tools your company runs on, from support and deploys to CRM and automation, as modules on one spaceship you can see, fly, and fix.</p>
+      <p class="note">NICE, our mission control for AI agent fleets, is live now.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://nicespaceship.ai">Launch NICE</a>
+        <a class="btn btn-secondary" href="/nice">Meet NICE</a>
+      </div>
+    </main>
+
+    <footer class="bar bar-bottom">
+      <span>&copy; 2026 NICE SPACESHIP</span>
+      <nav class="legal" aria-label="Legal">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/accessibility">Accessibility</a>
+      </nav>
+    </footer>
+  </div>
+</body>
+</html>
