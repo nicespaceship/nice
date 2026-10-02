@@ -235,7 +235,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 │       └── __tests__/      # Vitest test files
 ├── supabase/
 │   └── migrations/         # DB migrations (edge function source is proprietary, not in repo)
-├── www/                    # Marketing site (nicespaceship.com)
+├── www/                    # Retired marketing site; not deployed anywhere
 ├── e2e/
 │   └── smoke.spec.js       # Playwright E2E smoke suite
 ├── desktop/                # Electron desktop wrapper
@@ -620,7 +620,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 
 ## Deployment
 - **Platform**: Cloudflare Pages (auto-deploy from `main` branch)
-- **Domains**: `nicespaceship.ai` (app), `nicespaceship.com` (community site, deployed from `www/`)
+- **Domains**: `nicespaceship.ai` (app), `nicespaceship.com` (community site, built and deployed from the private `NiceSpaceship/nicespaceship.com` repo)
 - **Repo**: `github.com/nicespaceship/nice`
 - **Supabase**: edge functions deployed via `npx supabase functions deploy` (count drifts — see the Edge Functions table above; source is proprietary, not in repo)
 - **Stripe**: 9 live products — NICE Pro + Claude Add-on + Premium Add-on + 6 top-up packs (Standard/Claude/Premium × Boost/Max), all wired via `StripeConfig` SSOT
@@ -629,7 +629,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 
 ### Cloudflare Pages Routing
 - `nicespaceship.ai`: app served at root via `_redirects` and `_headers`
-- `nicespaceship.com`: community site deployed from `www/` directory
+- `nicespaceship.com`: served by the `nicespaceship-com` Pages project, which the `NiceSpaceship/nicespaceship.com` repo deploys. Nothing in this repo deploys there; `www/` is the retired site it replaced.
 - Security headers: HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy
 
 ## Environment Variables (Supabase Secrets)

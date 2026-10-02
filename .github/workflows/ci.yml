@@ -31,18 +31,15 @@ jobs:
           sed -i "s/const CACHE_VERSION = [0-9]*/const CACHE_VERSION = ${STAMP}/" app/sw.js
           echo "SW cache version stamped: ${STAMP} (${SHA})"
 
-      - name: Stamp app + www script/css version params
+      - name: Stamp app script/css version params
         run: |
           # The ?v= query params on <script> and <link> tags are the browser's
           # HTTP cache key. Without bumping them per-deploy, users with a
           # cached copy of blueprint-store.js?v=40 never re-fetch — even after
           # the service worker updates. Stamping them forces a fresh download.
-          # www/ needed this too: nav.js changed under a stale cache and
-          # visitors kept rendering the old CTA until a manual hard reload.
           STAMP=$(date +%s)
           sed -i -E "s/\?v=[a-zA-Z0-9_.-]+/?v=${STAMP}/g" app/index.html
-          find www -name '*.html' -exec sed -i -E "s/\?v=[a-zA-Z0-9_.-]+/?v=${STAMP}/g" {} +
-          COUNT=$(grep -rc "?v=${STAMP}" app/index.html www --include='*.html' | awk -F: '{s+=$2} END {print s+0}')
+          COUNT=$(grep -c "?v=${STAMP}" app/index.html)
           echo "Stamped ${COUNT} asset version params → ?v=${STAMP}"
 
       - name: Verify build
@@ -146,18 +143,15 @@ jobs:
           STAMP=$(date +%s)
           sed -i "s/const CACHE_VERSION = [0-9]*/const CACHE_VERSION = ${STAMP}/" app/sw.js
 
-      - name: Stamp app + www script/css version params
+      - name: Stamp app script/css version params
         run: |
           # The ?v= query params on <script> and <link> tags are the browser's
           # HTTP cache key. Without bumping them per-deploy, users with a
           # cached copy of blueprint-store.js?v=40 never re-fetch — even after
           # the service worker updates. Stamping them forces a fresh download.
-          # www/ needed this too: nav.js changed under a stale cache and
-          # visitors kept rendering the old CTA until a manual hard reload.
           STAMP=$(date +%s)
           sed -i -E "s/\?v=[a-zA-Z0-9_.-]+/?v=${STAMP}/g" app/index.html
-          find www -name '*.html' -exec sed -i -E "s/\?v=[a-zA-Z0-9_.-]+/?v=${STAMP}/g" {} +
-          COUNT=$(grep -rc "?v=${STAMP}" app/index.html www --include='*.html' | awk -F: '{s+=$2} END {print s+0}')
+          COUNT=$(grep -c "?v=${STAMP}" app/index.html)
           echo "Stamped ${COUNT} asset version params → ?v=${STAMP}"
 
       - name: Generate root index from app
@@ -174,14 +168,6 @@ jobs:
         run: |
           MSG=$(git log -1 --format=%s)
           npx wrangler pages deploy . --project-name nicespaceship-ai --branch main --commit-dirty=true --commit-message="$MSG"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Deploy nicespaceship.com (website)
-        run: |
-          MSG=$(git log -1 --format=%s)
-          npx wrangler pages deploy www/ --project-name nicespaceship-com --branch main --commit-message="$MSG"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
