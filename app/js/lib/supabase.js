@@ -113,10 +113,15 @@ const SB = (() => {
       return data;
     },
 
-    async signOut() {
+    /**
+     * Ends this browser's session only, so the account's other devices and
+     * nicespaceship.com stay signed in. Pass { scope: 'global' } to end every
+     * session on the account (supabase-js signs out globally by default).
+     */
+    async signOut({ scope = 'local' } = {}) {
       const c = client();
       if (!c) throw new Error('Supabase not available');
-      const { error } = await c.auth.signOut();
+      const { error } = await c.auth.signOut({ scope });
       if (error) throw error;
     },
 

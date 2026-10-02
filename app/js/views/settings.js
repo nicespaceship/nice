@@ -305,6 +305,13 @@ const SettingsView = (() => {
           ${user ? `
           <div class="settings-row">
             <div class="settings-row-info">
+              <span class="settings-row-name">Sign out of all devices</span>
+              <span class="settings-row-desc">End every session on your account, on every device and browser, including nicespaceship.com. Use it if you lose a device or forget to sign out somewhere.</span>
+            </div>
+            <button class="btn btn-sm btn-danger" id="btn-signout-everywhere">Sign out</button>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
               <span class="settings-row-name">Delete Account</span>
               <span class="settings-row-desc">Permanently delete your account and all your data. This cannot be undone. Export your data first if you want a copy.</span>
             </div>
@@ -517,6 +524,20 @@ const SettingsView = (() => {
       render(el);
     });
 
+    // Every other sign-out ends only this device's session. This one ends them
+    // all, for a lost device or a shared computer left signed in.
+    document.getElementById('btn-signout-everywhere')?.addEventListener('click', async (e) => {
+      if (!confirm('Sign out of all devices? Every session on your account ends, including this one.')) return;
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        await NICE.signOut({ scope: 'global' });
+      } catch (err) {
+        btn.disabled = false;
+        if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign out failed', message: err?.message || 'Could not sign out of all devices. Try again.', type: 'error' });
+      }
+    });
+
     // Delete account — irreversible. Gated by a type-to-confirm dialog; the
     // delete-account edge function re-verifies the caller's JWT and deletes
     // only their own uid (DB FKs cascade personal rows / anonymize community
@@ -548,7 +569,7 @@ const SettingsView = (() => {
         if (typeof SB === 'undefined' || !SB.isReady()) throw new Error('Not connected. Try again.');
         const { error } = await SB.functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
         if (error) throw new Error(typeof error === 'string' ? error : (error.message || 'Deletion failed'));
-        try { await SB.auth.signOut(); } catch { /* already gone */ }
+        try { await SB.auth.signOut({ scope: 'global' }); } catch { /* already gone */ }
         try { localStorage.clear(); } catch { /* ignore */ }
         State.set('user', null);
         if (typeof Notify !== 'undefined') Notify.send({ title: 'Account deleted', message: 'Your account and data have been permanently removed.', type: 'system' });

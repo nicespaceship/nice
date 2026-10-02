@@ -183,6 +183,23 @@ describe('SB.auth', () => {
     expect(_mockAuth.signInWithPassword).toHaveBeenCalledWith({ email: 'test@test.com', password: 'pass123' });
   });
 
+  it('signOut ends only this session by default', async () => {
+    _mockAuth.signOut.mockResolvedValue({ error: null });
+    await SB.auth.signOut();
+    expect(_mockAuth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it('signOut ends every session when asked for global scope', async () => {
+    _mockAuth.signOut.mockResolvedValue({ error: null });
+    await SB.auth.signOut({ scope: 'global' });
+    expect(_mockAuth.signOut).toHaveBeenCalledWith({ scope: 'global' });
+  });
+
+  it('signOut throws on error', async () => {
+    _mockAuth.signOut.mockResolvedValue({ error: new Error('Network down') });
+    await expect(SB.auth.signOut()).rejects.toThrow('Network down');
+  });
+
   it('signUp throws on error', async () => {
     _mockAuth.signUp.mockResolvedValue({ data: null, error: new Error('Email taken') });
     await expect(SB.auth.signUp('test@test.com', 'pass')).rejects.toThrow('Email taken');
