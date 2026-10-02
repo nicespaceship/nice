@@ -24,10 +24,5 @@ Working reference as of 2026-10-02. The NICE SPACESHIP company icon is being red
 
 ## Color
 
-- **Accent (app NICE theme + nicespaceship.com):** Deep Cobalt `#0A2540` as `--accent` (solid fills, white text) and Emerald `#00C897` as `--accent2` (hover text, tints, glows). Both come from longeron.app's live palette. The app's runtime source of truth is `app/js/nice.js` `THEMES`, which is injected as inline styles; `public/css/theme.css` mirrors it.
+- **Accent:** Sapphire, the only brand color, used on CTAs. The brand kit (`www/brand.html`) states the rule as `#0F52BA` with `#1862ce` on hover; the theme tokens are `--accent: #1862ce` and `--accent2: #0F52BA`. The app's runtime source of truth is `app/js/nice.js` `THEMES`, which is injected as inline styles; `public/css/theme.css` mirrors it.
 - **Surfaces:** monochrome (black, white, gray). Blueprint cards keep their own rarity palette.
-
-## Open
-
-- `www/brand.html` still documents and uses the previous Sapphire `#0F52BA` accent, while the app and the rest of nicespaceship.com run Cobalt/Emerald. Pick one as canonical, then align the brand kit.
-- On `nice-dark`, Cobalt used as text (links, active tab, the sign-in mark) has too little contrast against the near-black surface.

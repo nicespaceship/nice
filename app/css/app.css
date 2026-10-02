@@ -36,9 +36,9 @@
 
 /* Spacing scale (4px base) */
 :root {
-  /* Historical brand reference only (pre-2026 navy), not used on surfaces.
-     Live action colors are Deep Cobalt #0A2540 (--accent) and Emerald
-     #00C897 (--accent2), set per theme in nice.js THEMES. */
+  /* Historical brand reference — navy is no longer used on surfaces.
+     Action color is Sapphire #0F52BA (see --accent2 in theme.css CORE block).
+     See project_nice_brand_kit_142849.md. */
   --brand-navy: #142849;
 
   --bg-alt: #fafafa;
@@ -1639,7 +1639,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    surface via contrast alone. Modern borderless look. Supersedes the
    multi-orb stack declared in theme.css so the chrome stays still. */
 /* The CORE theme pair (`nice` light + `nice-dark`) share the same chrome
-   language — borderless surfaces, accent CTAs, fills over hairlines.
+   language — borderless surfaces, sapphire CTAs, fills over hairlines.
    Every rule below targets both via `:is(...)` so the dark variant inherits
    the polish that landed in light mode without per-rule duplication. Rules
    that are genuinely light-only (the lavender `.app-main` canvas) keep the
@@ -1678,7 +1678,7 @@ html:not([data-theme]) .app-main,
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .btn:not(.btn-primary):hover,
 :is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn:not(.bp-activated):hover {
-  background:rgba(0,200,151,0.08);
+  background:rgba(15, 82, 186, 0.08);
   color:var(--accent);
   border-color:transparent;
   box-shadow:none;
@@ -1732,7 +1732,7 @@ html:not([data-theme]) .app-main,
   .bp-view-btn:hover,
   .side-link:hover
 ) {
-  background:rgba(0,200,151,0.08);
+  background:rgba(15, 82, 186, 0.08);
   color:var(--accent);
   border-color:transparent;
   box-shadow:none;
@@ -3022,7 +3022,7 @@ html:not([data-theme]) .app-main,
   text-align:left; white-space:nowrap; cursor:pointer;
 }
 .bp-cselect-option:hover,
-.bp-cselect-option:focus-visible { background:rgba(0,200,151,0.08); color:var(--accent); outline:none; }
+.bp-cselect-option:focus-visible { background:rgba(15,82,186,0.08); color:var(--accent); outline:none; }
 .bp-cselect-option[aria-selected="true"] { color:var(--accent); font-weight:var(--fw-medium); }
 
 /* Loading / Error */
@@ -9865,7 +9865,7 @@ body.preview-active .nice-ai {
   .bpl-desc { display:none; }
   .bpl-header .bpl-desc { display:none; }
   /* The default `--panel-bg` is 0.75-0.97 alpha so the body's
-     Accent dot-grid (radial-gradient on body) bleeds through and
+     Sapphire dot-grid (radial-gradient on body) bleeds through and
      reads as a subtle right/bottom shadow. Use the opaque surface
      token instead — same look as desktop, no dot bleed.
      Same pattern on the list container: `gap:1px` between rows lets
@@ -11018,7 +11018,7 @@ body.preview-active .nice-ai {
    Brand-mark fill uses `var(--text)` so it reads as black-on-white
    on the `nice` theme and white-on-black on `nice-dark`. HUD frame
    uses `--border` / `--border-hi`, animated arcs use `--accent`
-   (the accent). No box-shadows — the universal kill rule below wipes
+   (Sapphire). No box-shadows — the universal kill rule below wipes
    them anyway, and the brand kit is flat.
 ───────────────────────────────────────────────────────────────── */
 .nice-core-mark {
@@ -11051,7 +11051,7 @@ body.preview-active .nice-ai {
   stroke:var(--border-hi);
   stroke-width:3;
 }
-/* Four animated arc segments — accent color, slow clockwise spin.
+/* Four animated arc segments — Sapphire accent, slow clockwise spin.
    Dasharray ratio mirrors the marketing site exactly (2π × 2300 ÷ 360
    × 70° = 2810, × 20° = 803), so each cycle covers 90° (70° stroke +
    20° gap × 4). Geometry is identical to .home-hud-arcs. */
