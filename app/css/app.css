@@ -37,7 +37,7 @@
 /* Spacing scale (4px base) */
 :root {
   /* Historical brand reference — navy is no longer used on surfaces.
-     Action color is Sapphire #0F52BA (see --accent2 in theme.css CORE block).
+     Action color is Sapphire #00C897 (see --accent2 in theme.css CORE block).
      See project_nice_brand_kit_142849.md. */
   --brand-navy: #142849;
 
@@ -1683,7 +1683,7 @@ html:not([data-theme]) .app-main,
 }
 :is([data-theme="nice"],[data-theme="nice-dark"]) .btn:not(.btn-primary):hover,
 :is([data-theme="nice"],[data-theme="nice-dark"]) .c-btn:not(.bp-activated):hover {
-  background:rgba(15, 82, 186, 0.08);
+  background:rgba(0,200,151,0.08);
   color:var(--accent);
   border-color:transparent;
   box-shadow:none;
@@ -1737,7 +1737,7 @@ html:not([data-theme]) .app-main,
   .bp-view-btn:hover,
   .side-link:hover
 ) {
-  background:rgba(15, 82, 186, 0.08);
+  background:rgba(0,200,151,0.08);
   color:var(--accent);
   border-color:transparent;
   box-shadow:none;
@@ -2781,13 +2781,13 @@ html:not([data-theme]) .app-main,
 .auth-accept input[type="checkbox"] {
   width:14px; height:14px; margin-top:2px; flex:none; accent-color:var(--accent); cursor:pointer;
 }
-.auth-accept a { color:var(--accent); text-decoration:none; }
+.auth-accept a { color:var(--accent); text-decoration:none; white-space:nowrap; }
 .auth-accept a:hover { text-decoration:underline; }
 .auth-consent-note {
   font-family:var(--font-b); font-size:var(--text-xs); line-height:var(--lh-snug);
   color:var(--text-muted); text-align:center; margin:0;
 }
-.auth-consent-note a { color:var(--accent); text-decoration:none; }
+.auth-consent-note a { color:var(--accent); text-decoration:none; white-space:nowrap; }
 .auth-consent-note a:hover { text-decoration:underline; }
 .auth-error { font-family:var(--font-b); font-size:.68rem; color:var(--color-error); min-height:18px; }
 .auth-submit {
@@ -3027,7 +3027,7 @@ html:not([data-theme]) .app-main,
   text-align:left; white-space:nowrap; cursor:pointer;
 }
 .bp-cselect-option:hover,
-.bp-cselect-option:focus-visible { background:rgba(15,82,186,0.08); color:var(--accent); outline:none; }
+.bp-cselect-option:focus-visible { background:rgba(0,200,151,0.08); color:var(--accent); outline:none; }
 .bp-cselect-option[aria-selected="true"] { color:var(--accent); font-weight:var(--fw-medium); }
 
 /* Loading / Error */

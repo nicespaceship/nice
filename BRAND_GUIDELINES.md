@@ -28,8 +28,10 @@ In the app, the mark and the wordmark render as separate elements (icon SVG + a 
 |---|---|---|
 | Space Black | `#080A12` | App icon background, dark-base-triangle variant, primary-lockup text |
 | Pure White | `#FFFFFF` | Light-base-triangle variant, dark-lockup text |
-| Emerald Apex | `#00C897` | The mark's apex triangle — fixed, never theme-adaptive |
-| Deep Cobalt | `#0A2540` | **Not present in the current source SVGs** — proposed secondary, unconfirmed. Don't use until it's verified against an actual asset or added to one. |
+| Emerald Apex | `#00C897` | The mark's apex triangle — fixed, never theme-adaptive. Confirmed live on longeron.app as `--b-logo-flange`. |
+| Deep Cobalt | `#0A2540` | Not in the 3 logo SVGs, but confirmed real: it's longeron.app's live `--b-accent` token (its primary solid-fill action color). Adopted here as the NICE app's `--accent` (app/js/nice.js `nice`/`nice-dark` themes + public/css/theme.css) — Deep Cobalt needs white text for contrast, so it takes the solid-fill button role; Emerald takes `--accent2` (hover text, tint washes, glows — foreground/translucent uses, not white-on-color fills). |
+
+**Known tradeoff:** Deep Cobalt is a near-black navy, so on `nice-dark` (bg `#0a0a0a`) a solid-fill button's edge reads subtly against the page — button text stays fully legible (white, confirmed), but the fill-vs-background distinction is soft. Didn't attempt a per-mode color-role swap (e.g. Emerald-fill in dark mode) without a design call — flagging rather than guessing further.
 
 ## Typography
 
@@ -45,5 +47,5 @@ In the app, the mark and the wordmark render as separate elements (icon SVG + a 
 
 ## Open questions for a human
 
-- **Deep Cobalt (`#0A2540`)** has no source asset yet — confirm before wiring it anywhere.
+- **`nice-dark` button fill vs. background contrast** (above) — acceptable as-is, or worth a per-mode accent swap?
 - No Tailwind config exists in this repo (vanilla CSS custom properties only) and there is no `public/assets/brand/` path — if a Tailwind-based project needs these tokens (e.g. Longeron), that's a separate repo and a separate task.
