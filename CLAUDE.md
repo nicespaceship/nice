@@ -5,6 +5,7 @@
 - **NICE SPACESHIP** = the company (all caps)
 - Product domain: `nicespaceship.ai`
 - Company domain: `nicespaceship.com`
+- Logos: NICE uses the ring mark (`assets/nice-mark*.svg`, `#icon-nice` in `app/index.html`). NICE SPACESHIP is wordmark-only (Orbitron Black, uppercase, `--tracking-wordmark`) while its new icon is designed; don't pair it with the ring mark. A three-triangle mark was tried 2026-10-01 and dropped. See `BRAND_GUIDELINES.md`.
 
 ## Blueprint Copy Standards
 Applies to ALL catalog content — blueprint `name`, `description`, `flavor`, `subtitle`, `caps`, ship `config.ship_system_prompt`, agent `config.system_prompt`, slot `label`, and any other user-facing string sourced from a seed migration.

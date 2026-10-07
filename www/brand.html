@@ -147,7 +147,7 @@
     display: flex; align-items: center; gap: 12px;
     font-family: 'Orbitron', sans-serif; font-weight: 900;
     letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm);
-    color: var(--text-strong);
+    color: var(--text-strong); white-space: nowrap;
   }
   /* Inline NICE mark — colored by parent's `color:` value via fill:currentColor */
   .nice-mark { display: block; fill: currentColor; }
@@ -169,6 +169,7 @@
   .footer-lockup .word {
     font-family: 'Orbitron', sans-serif; font-weight: 900;
     letter-spacing: var(--tracking-wordmark); font-size: var(--text-md); color: #fff;
+    white-space: nowrap;
   }
   .footer-tagline {
     font-size: var(--text-sm); color: rgba(255,255,255,0.6);
@@ -305,18 +306,28 @@
     padding: 96px 48px;
     display: flex; align-items: center; justify-content: center;
     gap: 8px;
+    container-type: inline-size;
   }
   .lockup-stage.on-white { background: #ffffff; border-bottom: 1px solid var(--border); }
   .lockup-stage.on-black { background: #000000; }
   .lockup-glyph { width: 88px; height: 88px; }
   .lockup-glyph.is-black { color: #000; }
   .lockup-glyph.is-white { color: #fff; }
+  /* NICE SPACESHIP runs ~15.3em wide at 0.4em tracking, wider than a tile
+     at --text-xl, so it scales to the tile (cqi) and never wraps. The
+     negative margin drops the trailing letter-space so it centers true. */
   .lockup-wordmark {
     font-family: 'Orbitron', sans-serif; font-weight: 900;
-    letter-spacing: var(--tracking-wordmark); font-size: var(--text-xl);
+    letter-spacing: var(--tracking-wordmark);
+    font-size: clamp(var(--text-xs), 6cqi, var(--text-xl));
+    white-space: nowrap; margin-right: calc(-1 * var(--tracking-wordmark));
   }
   .lockup-wordmark.is-black { color: #000; }
   .lockup-wordmark.is-white { color: #fff; }
+  @media (max-width: 720px) {
+    .lockup-pair { grid-template-columns: 1fr; }
+    .lockup-stage { padding: 64px 24px; }
+  }
   .lockup-tile .meta {
     padding: 14px 18px;
     background: var(--bg);
@@ -386,6 +397,7 @@
   .type-sample-wordmark {
     font-family: 'Orbitron', sans-serif; font-weight: 900;
     letter-spacing: var(--tracking-wordmark); font-size: var(--text-lg);
+    white-space: nowrap;
   }
 
   /* ── BUTTONS GALLERY ──────────────────────────── */
@@ -553,7 +565,7 @@
   .mkt-band.is-black .mkt-feature-dot { background: #fff; }
   .mkt-band-lockup { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
   .mkt-band-lockup .glyph { width: 36px; height: 36px; }
-  .mkt-band-lockup .word { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); }
+  .mkt-band-lockup .word { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: var(--tracking-wordmark); font-size: var(--text-sm); white-space: nowrap; }
   .mkt-band.is-black .mkt-band-lockup .glyph { color: #fff; }
   .mkt-band.is-black .mkt-band-lockup .word { color: #fff; }
   .mkt-band h3 {
@@ -711,8 +723,7 @@
 <header class="nav">
   <div class="nav-inner">
     <a class="nav-brand" href="/">
-      <svg class="nice-mark nav-glyph" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
-      <span>SPACESHIP</span>
+      <span>NICE SPACESHIP</span>
     </a>
     <nav class="nav-links">
       <a href="/explore">Explore</a>
@@ -734,7 +745,7 @@
     <p>The single source of truth for how NICE looks, reads, and behaves across nicespaceship.com, the app, partner materials, and everywhere else the brand appears.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary btn-lg" href="#brand-standards">Brand standards</a>
-      <a class="btn btn-secondary btn-lg" href="/assets/nice-mark.svg" download>Download the mark</a>
+      <a class="btn btn-secondary btn-lg" href="/assets/nice-mark.svg" download>Download the NICE mark</a>
     </div>
   </section>
 
@@ -742,20 +753,18 @@
   <section>
     <div class="eyebrow">Lockup · two contrasts only</div>
     <h2 class="section-title">Monochrome by rule.</h2>
-    <p class="section-sub">The SPACESHIP lockup carries the brand at full strength. Render it in one of two forms: black on white, or white on black. Glyph and wordmark always share a single color. Any other treatment dilutes the mark.</p>
+    <p class="section-sub">The NICE SPACESHIP wordmark carries the brand at full strength. Render it in one of two forms: black on white, or white on black. Any other treatment dilutes it.</p>
 
     <div class="lockup-pair">
       <div class="lockup-tile">
         <div class="lockup-stage on-white">
-          <svg class="nice-mark lockup-glyph is-black" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
-          <div class="lockup-wordmark is-black">SPACESHIP</div>
+          <div class="lockup-wordmark is-black">NICE SPACESHIP</div>
         </div>
         <div class="meta"><strong>Black on white</strong><span>#000 on #fff</span></div>
       </div>
       <div class="lockup-tile">
         <div class="lockup-stage on-black">
-          <svg class="nice-mark lockup-glyph is-white" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
-          <div class="lockup-wordmark is-white">SPACESHIP</div>
+          <div class="lockup-wordmark is-white">NICE SPACESHIP</div>
         </div>
         <div class="meta"><strong>White on black</strong><span>#fff on #000</span></div>
       </div>
@@ -795,12 +804,12 @@
   <section>
     <div class="eyebrow">Typography</div>
     <h2 class="section-title">Two families. Editorial energy.</h2>
-    <p class="section-sub">Inter does everything: display, body, UI. Orbitron belongs to the SPACESHIP lockup. JetBrains Mono runs telemetry, hex values, and code.</p>
+    <p class="section-sub">Inter does everything: display, body, UI. Orbitron belongs to the NICE SPACESHIP wordmark. JetBrains Mono runs telemetry, hex values, and code.</p>
 
     <div class="type-stack">
       <div class="type-row">
-        <div class="type-meta"><strong>Wordmark</strong>Orbitron Black<br/>0.4em tracking<br/>Used only for SPACESHIP lockup</div>
-        <div class="type-sample-wordmark">SPACESHIP</div>
+        <div class="type-meta"><strong>Wordmark</strong>Orbitron Black<br/>0.4em tracking<br/>Used only for the NICE SPACESHIP wordmark</div>
+        <div class="type-sample-wordmark">NICE SPACESHIP</div>
       </div>
       <div class="type-row">
         <div class="type-meta"><strong>Display / hero</strong>Inter 700<br/>-0.01em tracking<br/>clamp(2.25rem, 4vw, 3rem)</div>
@@ -953,8 +962,7 @@
         </div>
         <div class="mkt-band is-black">
           <div class="mkt-band-lockup">
-            <svg class="nice-mark glyph" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
-            <div class="word">SPACESHIP</div>
+            <div class="word">NICE SPACESHIP</div>
           </div>
           <h3>Hundreds of blueprints. Every major model.</h3>
           <p>Toggle every major AI model like TV channels.</p>
@@ -1075,7 +1083,7 @@
     <div class="info-box">
       <ul>
         <li><strong>Color discipline.</strong> Surfaces, text, badges, and borders use pure monochrome: black, white, and gray only. Sapphire <code>#0F52BA</code> owns the single place the brand color appears.</li>
-        <li><strong>The lockup.</strong> Black-on-white or white-on-black. Glyph and wordmark always share a single color. These are the only valid forms.</li>
+        <li><strong>The wordmark.</strong> NICE SPACESHIP, black-on-white or white-on-black. These are the only valid forms.</li>
         <li><strong>Surfaces (light).</strong> <code>#ffffff</code> primary · <code>#fafafa</code> section alt · <code>#f5f5f5</code> hover and input.</li>
         <li><strong>Surfaces (dark).</strong> <code>#0a0a0a</code> primary · <code>#141414</code> section alt · <code>#1f1f1f</code> hover and input.</li>
         <li><strong>Borders.</strong> Hairline only. Light: <code>#e5e5e5</code> / <code>#d4d4d4</code>. Dark: <code>#262626</code> / <code>#404040</code>.</li>
@@ -1083,7 +1091,7 @@
         <li><strong>CTA.</strong> Sapphire <code>#0F52BA</code>. Hover <code>#1862ce</code>. Ink <code>#ffffff</code>. Same value in both themes.</li>
         <li><strong>Buttons.</strong> Flat. No shadow, no glow, no gradient. Solid Sapphire (primary), white with hairline border (secondary), bg-on-hover only (ghost).</li>
         <li><strong>Radius scale.</strong> Badges / chips <code>4px</code> · Buttons <code>6px</code> · Content cards <code>12px</code> · Blueprint cards <code>14px</code> · Marketing frames + lockup tiles <code>12px</code>. No pill shapes anywhere.</li>
-        <li><strong>Typography.</strong> Inter for all UI and prose. Orbitron Black for the SPACESHIP wordmark only. JetBrains Mono for telemetry, hex values, and code.</li>
+        <li><strong>Typography.</strong> Inter for all UI and prose. Orbitron Black for the NICE SPACESHIP wordmark only. JetBrains Mono for telemetry, hex values, and code.</li>
         <li><strong>Page rhythm.</strong> Pattern B sets the default for every page on nicespaceship.com. Pattern A's black interlude marks moments where the lockup carries full presence: About page, footer band, brand page.</li>
         <li><strong>Blueprint cards.</strong> Cards run their own visual system: pure black <code>#000</code> stock plus the rarity and category palette in both themes. This applies only to card surfaces. Buttons and CTAs inside a card follow the brand rules.</li>
       </ul>
@@ -1128,7 +1136,7 @@
         <li>Page background, section alt, card surface, hover surface</li>
         <li>Text (body, muted, dim)</li>
         <li>Borders (default and prominent)</li>
-        <li>Nav glyph and dashboard sidebar glyph (via <code>currentColor</code>, inheriting from <code>--text-strong</code>)</li>
+        <li>Dashboard sidebar NICE glyph (via <code>currentColor</code>, inheriting from <code>--text-strong</code>)</li>
       </ul>
       <p style="color:var(--text);margin: 16px 0"><strong>Constant across both modes:</strong></p>
       <ul>
@@ -1145,8 +1153,7 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-lockup">
-      <svg class="nice-mark glyph" viewBox="0 0 5000 5000"><use href="#nice-mark"/></svg>
-      <div class="word">SPACESHIP</div>
+      <div class="word">NICE SPACESHIP</div>
     </div>
     <p class="footer-tagline">Neural Intelligence Command Engine. Open source, MIT licensed.</p>
 
