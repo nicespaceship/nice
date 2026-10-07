@@ -6,14 +6,16 @@ Working reference as of 2026-10-02. The NICE SPACESHIP company icon is being red
 
 | Property | Role | Deploys from |
 |---|---|---|
-| `nicespaceship.com` | NICE SPACESHIP, the company site and marketplace | `www/` |
+| `nicespaceship.com` | NICE SPACESHIP, the company site and marketplace | the private `NiceSpaceship/nicespaceship.com` repo |
 | `nicespaceship.ai` | NICE, the product (app / studio) | `app/` + repo root |
 | `longeron.app` | Longeron, the ServiceNow CMS engine | separate repo |
+
+`www/` is the retired company site. Nothing deploys from it, but `www/brand.html` still holds the brand kit.
 
 ## Logos
 
 - **NICE SPACESHIP (company): wordmark only, for now.** "NICE SPACESHIP" in Orbitron Black, uppercase, 0.4em tracking (`--tracking-wordmark`), black on white or white on black. A new company icon is in design; until it lands, nothing sits beside the wordmark. Don't pair it with the NICE ring mark.
-- **NICE (product): the ring mark.** Six orbit dots, two pillars, four chevrons, and a central ring. Files: `assets/nice-mark.svg` (auto light/dark), `assets/nice-mark-dark.svg` (black, for light surfaces), `assets/nice-mark-light.svg` (white, for dark surfaces); `www/assets/` carries the same set for nicespaceship.com. In the app it renders from the `#icon-nice` symbol in `app/index.html`, next to "NICE" in Orbitron.
+- **NICE (product): the ring mark.** Six orbit dots, two pillars, four chevrons, and a central ring. Files: `assets/nice-mark.svg` (auto light/dark), `assets/nice-mark-dark.svg` (black, for light surfaces), `assets/nice-mark-light.svg` (white, for dark surfaces). In the app it renders from the `#icon-nice` symbol in `app/index.html`, next to "NICE" in Orbitron.
 - A three-triangle mark was tried for the company on 2026-10-01 and dropped. Don't reintroduce it.
 
 ## Typography
