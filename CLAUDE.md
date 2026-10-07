@@ -236,7 +236,6 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 │       └── __tests__/      # Vitest test files
 ├── supabase/
 │   └── migrations/         # DB migrations (edge function source is proprietary, not in repo)
-├── www/                    # Retired marketing site; not deployed anywhere
 ├── e2e/
 │   └── smoke.spec.js       # Playwright E2E smoke suite
 ├── desktop/                # Electron desktop wrapper
@@ -630,7 +629,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 
 ### Cloudflare Pages Routing
 - `nicespaceship.ai`: app served at root via `_redirects` and `_headers`
-- `nicespaceship.com`: served by the `nicespaceship-com` Pages project, which the `NiceSpaceship/nicespaceship.com` repo deploys. Nothing in this repo deploys there; `www/` is the retired site it replaced.
+- `nicespaceship.com`: served by the `nicespaceship-com` Pages project, which the `NiceSpaceship/nicespaceship.com` repo deploys. Nothing in this repo deploys there.
 - Security headers: HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy
 
 ## Environment Variables (Supabase Secrets)
