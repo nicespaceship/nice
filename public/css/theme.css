@@ -4479,7 +4479,7 @@ body {
   background-size: 40px 40px;
   color: var(--text);
   font-family: var(--font-b);
-  /* `overflow:hidden` blocks page-level scrolling so the guest-banner
+  /* `overflow:hidden` blocks page-level scrolling so the top-banner
      margin-top on `.app-main` can't create a 33px overflow that would
      scroll the whole page. Each view scrolls internally via
      `.app-view-content`. */

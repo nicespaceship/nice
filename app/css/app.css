@@ -1285,7 +1285,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    SIDEBAR (Desktop always visible, mobile drawer)
 ───────────────────────────────────────────────────────────────── */
 .app-sidebar {
-  position:fixed; top:var(--guest-banner-height, 0px); left:0; bottom:0; width:56px;
+  position:fixed; top:var(--app-banner-height, 0px); left:0; bottom:0; width:56px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
   color:var(--nav-text, var(--text));
   display:flex; flex-direction:column;
@@ -1619,7 +1619,7 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
    MAIN CONTENT
 ───────────────────────────────────────────────────────────────── */
 .app-main {
-  margin-top:var(--guest-banner-height, 0px); margin-left:56px;
+  margin-top:var(--app-banner-height, 0px); margin-left:56px;
   position:relative; z-index:1;
   transition:margin-left .3s ease;
   /* dvh tracks the visible viewport on iOS/iPadOS Safari, where the URL bar
@@ -1627,8 +1627,8 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
      area in landscape, pushing the tab row up under the toolbar with no way
      to scroll it back (overflow is hidden). 100vh stays as the fallback for
      browsers without dvh support. */
-  height:calc(100vh - var(--guest-banner-height, 0px));
-  height:calc(100dvh - var(--guest-banner-height, 0px));
+  height:calc(100vh - var(--app-banner-height, 0px));
+  height:calc(100dvh - var(--app-banner-height, 0px));
   overflow:hidden; overflow-x:hidden;
   display:flex; flex-direction:column;
 }
@@ -1847,7 +1847,7 @@ html:not([data-theme]) .app-main,
 /* ── Mobile top bar (hidden by default, shown on mobile) ── */
 .app-mobile-bar {
   display:none;
-  position:fixed; top:var(--guest-banner-height, 0px); left:0; right:0; height:48px;
+  position:fixed; top:var(--app-banner-height, 0px); left:0; right:0; height:48px;
   background:var(--nav-bg); backdrop-filter:blur(18px);
   align-items:center; justify-content:space-between; padding:0 12px; z-index:301;
 }
@@ -1893,13 +1893,13 @@ html:not([data-theme]) .app-main,
 
 @media (max-width:768px) {
   .app-mobile-bar { display:flex; }
-  .app-sidebar { width:280px; transform:translateX(-100%); transition:transform .3s ease; top:var(--guest-banner-height, 0px); z-index:302; }
+  .app-sidebar { width:280px; transform:translateX(-100%); transition:transform .3s ease; top:var(--app-banner-height, 0px); z-index:302; }
   .app-sidebar.open { width:280px; transform:translateX(0); }
   .app-mobile-bar { transition:transform .3s ease; }
   .app-sidebar.open ~ .app-mobile-bar { transform:translateX(280px); }
   .app-sidebar.open ~ .app-mobile-bar #mobile-sidebar-toggle { visibility:hidden; }
   .app-sidebar.open ~ .app-main { margin-left:0; transform:translateX(280px); transition:transform .3s ease; }
-  .app-main { margin-left:0; margin-top:calc(48px + var(--guest-banner-height, 0px)); }
+  .app-main { margin-left:0; margin-top:calc(48px + var(--app-banner-height, 0px)); }
   .app-sidebar.open ~ .nice-ai { left:50%; width:calc(100% - 48px); }
   .app-sidebar:not(.open) .side-link span,
   .app-sidebar:not(.open) .app-brand-text,
@@ -5190,7 +5190,7 @@ html[data-theme] .nice-ai-input:focus-visible {
    NOTIFICATION TOASTS
 ───────────────────────────────────────────────────────────────── */
 .notify-container {
-  position:fixed; top:60px; right:12px; z-index:500;
+  position:fixed; top:calc(60px + var(--app-banner-height, 0px)); right:12px; z-index:500;
   display:flex; flex-direction:column; gap:8px; pointer-events:none;
 }
 .notify-toast {
@@ -10547,25 +10547,33 @@ body.preview-active .nice-ai {
   .sch-slot-label { font-size:var(--text-xs); }
 }
 
-/* ── Guest banner ──
-   Plain block text (not flex) so the "Sign in" link wraps as a unit and
-   reflows naturally on narrow viewports. Height is measured in JS and
-   exposed as --guest-banner-height on <html>; the sidebar, mobile bar,
-   and app-main all offset from it, with a 0px fallback when absent. */
-.guest-banner {
-  position:fixed; top:0; left:0; right:0; z-index:9999;
+/* ── Top banners ──
+   #app-banners is one fixed strip holding the sign-in and update banners,
+   stacked as plain blocks. Its height is measured in JS and exposed as
+   --app-banner-height on <html>; the sidebar, mobile bar, app-main, and
+   toasts all offset from it, with a 0px fallback when no banner shows. */
+.app-banners { position:fixed; top:0; left:0; right:0; z-index:9999; }
+.app-banner {
   background:var(--bg-alt); color:var(--text);
   padding:6px 16px; text-align:center;
   font-size:var(--text-sm); font-family:var(--font-b);
   line-height:var(--lh-base);
   border-bottom:1px solid var(--border);
 }
+/* Plain block text (not flex) so the "Sign in" link wraps as a unit and
+   reflows naturally on narrow viewports. */
 .guest-banner-link {
   color:var(--accent); font-weight:var(--fw-medium); text-decoration:underline;
   white-space:nowrap;
 }
 .guest-banner-legal { margin-left:8px; color:var(--text-muted); white-space:nowrap; }
 .guest-banner-legal a { color:inherit; text-decoration:underline; }
+.update-banner { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px 12px; }
+.update-banner-dismiss {
+  background:none; border:0; padding:0 4px; cursor:pointer;
+  color:var(--text-muted); font-size:var(--text-base); line-height:var(--lh-tight);
+}
+.update-banner-dismiss:hover { color:var(--text); }
 .noscript-legal {
   margin:0; padding:12px 16px; text-align:center;
   font-size:var(--text-sm); font-family:var(--font-b); color:var(--text);
@@ -10573,7 +10581,7 @@ body.preview-active .nice-ai {
 }
 .noscript-legal a { color:var(--accent); }
 @media (max-width:640px) {
-  .guest-banner { font-size:var(--text-xs); padding:5px 10px; }
+  .app-banner { font-size:var(--text-xs); padding:5px 10px; }
 }
 
 /* ── Wallet cards: stack on mobile ── */

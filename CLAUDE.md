@@ -583,7 +583,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
 | Attachment gating | `MODEL_CATALOG.vision` / `pdf` / `audio` / `video` | Per-model capability flags consumed by prompt-panel soft-fallback and model-change guard |
 | Rarity colors | `BlueprintUtils.RARITY_COLORS` | Used by card-renderer and all views |
-| Guest-banner height | `--guest-banner-height` CSS var on `<html>` | `nice.js` measures the banner on mount via `ResizeObserver` and writes the var; sidebar / mobile-bar / hud-panel / app-main consume via `var(--guest-banner-height, 0px)`. No magic pixel numbers |
+| Top-banner height | `--app-banner-height` CSS var on `<html>` | `nice.js` stacks the sign-in and update banners in one fixed strip (`#app-banners`), measures it via `ResizeObserver`, and writes the var; sidebar / mobile-bar / hud-panel / app-main / toasts consume via `var(--app-banner-height, 0px)`. No magic pixel numbers |
 
 ## Tool Preferences
 - **CLI first.** Always prefer CLI tools over browser/GUI for GitHub (`gh`), Supabase (`npx supabase`), npm, and git operations. CLI is faster, scriptable, and doesn't depend on browser rendering.
