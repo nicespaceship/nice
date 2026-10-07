@@ -623,7 +623,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **Platform**: Cloudflare Pages (auto-deploy from `main` branch)
 - **Domains**: `nicespaceship.ai` (app), `nicespaceship.com` (community site, built and deployed from the private `NiceSpaceship/nicespaceship.com` repo)
 - **Repo**: `github.com/nicespaceship/nice`
-- **Supabase**: edge functions deployed via `npx supabase functions deploy` (count drifts — see the Edge Functions table above; source is proprietary, not in repo)
+- **Supabase**: merging a change in the private edge-function repo deploys the functions it touched, through that repo's GitHub Actions workflow, so merging a functions PR ships it. Billing (`stripe-*`), sign-in (`*-oauth`) and `delete-account` deploy only when that workflow is run by hand. By hand from a laptop: `npx supabase functions deploy <name> --no-verify-jwt` (needs `npx supabase login`). The function count drifts (see the Edge Functions table above); the source is proprietary and not in this repo.
 - **Stripe**: 9 live products — NICE Pro + Claude Add-on + Premium Add-on + 6 top-up packs (Standard/Claude/Premium × Boost/Max), all wired via `StripeConfig` SSOT
 - **PWA**: Service Worker with offline fallback, periodic sync (12h), push notifications. Version is CI-auto-stamped on every push to main.
 - **Build**: `node scripts/build.js` produces a minified bundle (size drifts with each feature)
