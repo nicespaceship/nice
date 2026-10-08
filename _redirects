@@ -1,5 +1,4 @@
-# SPA fallback — root serves the app
-/ /app/index.html 200
+# SPA fallback. The root is the front page (index.html), the app lives at /app/
 /app/* /app/index.html 200
 
 # Legacy redirects

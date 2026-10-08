@@ -154,9 +154,6 @@ jobs:
           COUNT=$(grep -c "?v=${STAMP}" app/index.html)
           echo "Stamped ${COUNT} asset version params → ?v=${STAMP}"
 
-      - name: Generate root index from app
-        run: cp app/index.html index.html
-
       - name: Deploy nicespaceship.ai (app)
         # Pass the commit subject explicitly. Wrangler's default reads the
         # full commit body and forwards it to Cloudflare's deployments API,

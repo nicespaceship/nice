@@ -215,12 +215,13 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 
 ## File Architecture
 ```
-├── index.html              # Landing page (redirects to /app/)
+├── index.html              # Front page (static; forwards signed-in users, #/ links and auth callbacks to /app/)
 ├── assets/
 │   └── logo.svg            # Vector logo
 ├── public/
 │   ├── css/
-│   │   └── theme.css       # Marketing site styles + skin engine
+│   │   ├── theme.css       # Skin engine + shared tokens (loaded by the app)
+│   │   └── landing.css     # Front page styles (mirrors theme.css tokens)
 │   └── js/
 │       └── app.js          # Marketing site JS — theme switcher, telemetry, HUD
 ├── app/                    # NICE™ SPA Dashboard
@@ -628,7 +629,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 - **Build**: `node scripts/build.js` produces a minified bundle (size drifts with each feature)
 
 ### Cloudflare Pages Routing
-- `nicespaceship.ai`: app served at root via `_redirects` and `_headers`
+- `nicespaceship.ai`: the front page (`index.html`) at `/`, the app at `/app/` via `_redirects` and `_headers`
 - `nicespaceship.com`: served by the `nicespaceship-com` Pages project, which the `NiceSpaceship/nicespaceship.com` repo deploys. Nothing in this repo deploys there.
 - Security headers: HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy
 
