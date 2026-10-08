@@ -3621,7 +3621,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (ship) {
         _routeAgent = null;
         _routeShip = ship;
-        input.placeholder = `Message ${ship.name || 'your spaceship'}…`;
+        input.placeholder = _shipPlaceholder(ship);
         return;
       }
     }
@@ -3644,7 +3644,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         if (ship) {
           _routeAgent = null;
           _routeShip = ship;
-          input.placeholder = `Message ${ship.name || 'your spaceship'}…`;
+          input.placeholder = _shipPlaceholder(ship);
           return;
         }
       }
@@ -3654,6 +3654,15 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _routeAgent = null;
     _routeShip = null;
     input.placeholder = 'Ask NICE…';
+  }
+
+  // Ship context messages the whole crew, not a single agent named after the
+  // spaceship ("Message NVIDIA…" read as messaging the company).
+  function _shipPlaceholder(ship) {
+    const crew = typeof Terminology !== 'undefined'
+      ? Terminology.label('crew', { lowercase: true }) : 'crew';
+    const name = (ship && ship.name ? String(ship.name) : '').replace(/^the\s+/i, '').trim();
+    return name ? `Message the ${name} ${crew}…` : `Message your ${crew}…`;
   }
 
   let _lastSyncPath = null;
