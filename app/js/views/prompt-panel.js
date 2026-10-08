@@ -2833,7 +2833,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     document.body.appendChild(_panel);
     _mentionPopup = _panel.querySelector('#nice-ai-mention-popup');
 
-    // Publish the chat bottom inset as a CSS var (mirrors --guest-banner-height).
+    // Publish the chat bottom inset as a CSS var (mirrors --app-banner-height).
     // Observe the panel (grows when attachments stack / controls wrap) and
     // app-main (shifts with the guest banner / viewport), plus window resize.
     _updateChatBottomInset();

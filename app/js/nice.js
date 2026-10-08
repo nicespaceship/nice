@@ -1860,20 +1860,25 @@ const NICE = (() => {
   let _updatePrompted = false;
   let _updateAccepted = false;
 
+  // A top banner rather than a toast: the prompt stays up until answered, and
+  // a floating toast covered the newest chat message for that whole time.
   function _promptSWUpdate(worker) {
-    if (!worker || _updatePrompted || typeof Notify === 'undefined') return;
+    if (!worker || _updatePrompted) return;
     _updatePrompted = true;
-    Notify.send({
-      title: 'Update available',
-      message: 'A new version of NICE is ready.',
-      type: 'system',
-      persistent: true,
-      actionLabel: 'Reload',
-      undo: () => {
-        _updateAccepted = true;
-        worker.postMessage({ type: 'SKIP_WAITING' });
-      },
+    const banner = document.createElement('div');
+    banner.id = 'update-banner';
+    banner.className = 'app-banner update-banner';
+    banner.setAttribute('role', 'status');
+    banner.innerHTML = '<span>A new version of NICE is ready.</span>'
+      + '<button type="button" class="btn btn-xs btn-primary update-banner-reload">Reload</button>'
+      + '<button type="button" class="update-banner-dismiss" aria-label="Dismiss">&times;</button>';
+    banner.querySelector('.update-banner-reload').addEventListener('click', () => {
+      _updateAccepted = true;
+      worker.postMessage({ type: 'SKIP_WAITING' });
     });
+    banner.querySelector('.update-banner-dismiss').addEventListener('click', () => _removeBanner('update-banner'));
+    _bannerStack().append(banner);
+    _updateBannerHeight();
   }
 
   function _registerSW() {
@@ -2363,10 +2368,46 @@ const NICE = (() => {
     });
   }
 
-  function _updateGuestBannerHeight() {
-    const banner = document.getElementById('guest-banner');
-    if (!banner) return;
-    document.documentElement.style.setProperty('--guest-banner-height', banner.offsetHeight + 'px');
+  /* ── Top banners ──
+     The sign-in and update banners stack in one fixed strip (#app-banners)
+     above the app. Its height is measured and exposed as --app-banner-height
+     on <html>; the sidebar, mobile bar, and app-main all offset from it, so a
+     banner never covers the page. */
+  function _updateBannerHeight() {
+    const stack = document.getElementById('app-banners');
+    if (!stack) return;
+    document.documentElement.style.setProperty('--app-banner-height', stack.offsetHeight + 'px');
+  }
+
+  function _bannerStack() {
+    let stack = document.getElementById('app-banners');
+    if (stack) return stack;
+    stack = document.createElement('div');
+    stack.id = 'app-banners';
+    stack.className = 'app-banners';
+    document.body.prepend(stack);
+    if (window.ResizeObserver) {
+      stack._resizeObserver = new ResizeObserver(_updateBannerHeight);
+      stack._resizeObserver.observe(stack);
+    } else {
+      window.addEventListener('resize', _updateBannerHeight);
+    }
+    return stack;
+  }
+
+  function _removeBanner(id) {
+    const banner = document.getElementById(id);
+    if (banner) banner.remove();
+    const stack = document.getElementById('app-banners');
+    if (!stack) return;
+    if (stack.children.length) {
+      _updateBannerHeight();
+      return;
+    }
+    if (stack._resizeObserver) stack._resizeObserver.disconnect();
+    else window.removeEventListener('resize', _updateBannerHeight);
+    stack.remove();
+    document.documentElement.style.removeProperty('--app-banner-height');
   }
 
   function _guestBannerHTML() {
@@ -2387,22 +2428,17 @@ const NICE = (() => {
     }
     const banner = document.createElement('div');
     banner.id = 'guest-banner';
-    banner.className = 'guest-banner';
+    banner.className = 'app-banner guest-banner';
     banner.innerHTML = _guestBannerHTML();
-    document.body.prepend(banner);
+    // The sign-in banner always sits first, above an update banner.
+    _bannerStack().prepend(banner);
     // Capture the user's current route before navigating to #/profile so the
     // post-sign-in flow can drop them back where they were. Stashes in
     // sessionStorage so the value survives the OAuth round-trip too.
     banner.addEventListener('click', (e) => {
       if (e.target.closest('.guest-banner-link')) _authStashReturn();
     });
-    _updateGuestBannerHeight();
-    if (window.ResizeObserver) {
-      banner._resizeObserver = new ResizeObserver(_updateGuestBannerHeight);
-      banner._resizeObserver.observe(banner);
-    } else {
-      window.addEventListener('resize', _updateGuestBannerHeight);
-    }
+    _updateBannerHeight();
   }
 
   /* ── Auth return-path stash ──
@@ -2436,12 +2472,7 @@ const NICE = (() => {
   window._authPopReturn = _authPopReturn;
 
   function _hideGuestBanner() {
-    const banner = document.getElementById('guest-banner');
-    if (!banner) return;
-    if (banner._resizeObserver) banner._resizeObserver.disconnect();
-    else window.removeEventListener('resize', _updateGuestBannerHeight);
-    banner.remove();
-    document.documentElement.style.removeProperty('--guest-banner-height');
+    _removeBanner('guest-banner');
   }
 
   /** Check if a write operation is allowed (blocks in guest mode) */
