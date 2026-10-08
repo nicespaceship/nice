@@ -293,3 +293,40 @@ test.describe('Performance', () => {
     expect(errors.length).toBe(0);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// Front page — the static index.html at the site root
+// ═══════════════════════════════════════════════════════════════════
+
+test.describe('Front Page', () => {
+  test('renders for signed-out visitors and links into the app', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('h1')).toHaveText('Every AI model, working as one team.');
+    await expect(page.locator('a[href="/app/"]').first()).toBeVisible();
+    await expect(page.locator('a[href="https://nicespaceship.com/privacy"]')).toBeAttached();
+  });
+
+  test('passes critical a11y checks', async ({ page }) => {
+    await page.goto('/');
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    const serious = results.violations.filter(v => v.impact === 'critical' || v.impact === 'serious');
+    expect(serious).toEqual([]);
+  });
+
+  test('forwards app deep links to /app/', async ({ page }) => {
+    await page.goto('/#/bridge?tab=missions');
+    await page.waitForURL('**/app/#/bridge?tab=missions');
+  });
+
+  test('keeps its own anchors and campaign links', async ({ page }) => {
+    await page.goto('/?utm_source=test#how');
+    await expect(page.locator('h1')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe('/');
+  });
+
+  test('forwards signed-in visitors to /app/', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('nice-auth', '{}'));
+    await page.goto('/');
+    await page.waitForURL('**/app/**');
+  });
+});
