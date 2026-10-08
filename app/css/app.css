@@ -6611,7 +6611,7 @@ html[data-theme] .nice-ai-input:focus-visible {
     display:flex; flex-direction:column;
   }
   .cmd-palette-box .cmd-results { flex:1; overflow-y:auto; }
-  #cmd-input { font-size:16px; min-height:48px; } /* Prevent iOS zoom */
+  #cmd-input { min-height:48px; }
   .cmd-result { min-height:48px; padding:12px 16px; }
 }
 
@@ -11110,4 +11110,20 @@ body.preview-active .nice-ai {
    so it overrides every per-theme + per-component shadow rule. */
 *, *::before, *::after {
   box-shadow:none !important;
+}
+
+/* iOS text-field floor. iOS zooms the page when a focused field's text is
+   under 16px and never zooms back out; the app's fields sit at --text-base
+   (15px) or smaller. 16px is a fixed browser threshold, not a type-scale
+   step, so it stays a raw value. `-webkit-touch-callout` exists only in iOS
+   WebKit (every iOS browser), so desktop and Android keep the type scale.
+   `!important` is justified like the shadow rule above: a platform floor
+   that must win over every per-component and per-theme font-size. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"], [type="hidden"]),
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable="false"]) {
+    font-size:16px !important;
+  }
 }
