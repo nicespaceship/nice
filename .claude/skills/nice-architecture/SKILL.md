@@ -1,6 +1,6 @@
 ---
 name: nice-architecture
-description: NICE SPA architecture reference — IIFE modules, State pub/sub, routing, Blueprints, Gamification. Auto-triggers when working on NICE features or understanding codebase structure.
+description: NICE SPA architecture reference — IIFE modules, State pub/sub, routing, Blueprints, BlueprintUtils. Auto-triggers when working on NICE features or understanding codebase structure.
 user-invocable: true
 ---
 
@@ -55,14 +55,14 @@ Blueprints.saveShipState(id, state); // Persist a ship's slot state
 ```
 Catalog data lives in the normalized Supabase tables (`spaceship_blueprints` / `agent_blueprints` / `ship_slots` / `roles` / `capabilities`). Schema SSOT: `docs/three-layer-schema.md`.
 
-### Gamification
+### BlueprintUtils
 ```javascript
-Gamification.addXP('action_name');      // Award XP (streak multiplied)
-Gamification.addMissionXP(mission);     // XP with priority scaling
-Gamification.getRank();                 // Current rank object
-Gamification.getXP();                   // Total XP
-Gamification.checkAchievements();       // Evaluate unlock criteria
+BlueprintUtils.getRarity(bp);           // Stored rarity, else computed (calcAgentRarity)
+BlueprintUtils.getSlotTemplate(bp);     // Per-ship crew slots (the slot authority)
+BlueprintUtils.MAX_SHIP_SLOTS;          // 12-slot ceiling
+BlueprintUtils.RARITY_COLORS;           // Rarity color SSOT
 ```
+No ranks, XP or achievements: every slot and blueprint is open to every user.
 
 ## Routes & structure
 

@@ -223,7 +223,7 @@ const Subscription = (() => {
     return getCurrentPlan() === 'pro' && (_subscription?.status || 'active') === 'active';
   }
 
-  /** Backward-compat alias used by gamification.js and several views. */
+  /** Backward-compat alias for isPro(). */
   function isActive() { return isPro(); }
 
   /** True when the user has a specific add-on enabled. */

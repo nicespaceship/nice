@@ -13,7 +13,7 @@ npm run test:watch          # Watch mode
 npx vitest run path/to/file # Single file
 ```
 
-Test files: `app/js/__tests__/**/*.test.js` (+ `tools/**/*.test.js`). Coverage spans core infra (state, router, supabase, keyboard, notify, command-palette), blueprints + community, agents + missions (agent-executor, mission-runner, workflow-engine), models + billing, views, and gamification + onboarding. File/test counts drift with every feature — see the Testing section in CLAUDE.md, or just run the suite.
+Test files: `app/js/__tests__/**/*.test.js` (+ `tools/**/*.test.js`). Coverage spans core infra (state, router, supabase, keyboard, notify, command-palette), blueprints + community, agents + missions (agent-executor, mission-runner, workflow-engine), models + billing, views, and onboarding. File/test counts drift with every feature — see the Testing section in CLAUDE.md, or just run the suite.
 
 ## E2E Tests (Playwright)
 ```bash
