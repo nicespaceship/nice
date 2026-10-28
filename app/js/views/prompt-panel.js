@@ -277,7 +277,7 @@ const PromptPanel = (() => {
   /* ── Load/save messages (localStorage for persistence across refreshes) ──
      Both gate on Utils.hasAuthSession — anonymous visits keep chat in
      memory only, so a shared browser doesn't leak the prior account's
-     history. HomeView's cockpit feed reads the same key and uses the same
+     history. ChatView's feed reads the same key and uses the same
      gate; if you add another reader, gate it too. */
   function _loadMessages() {
     if (!Utils.hasAuthSession()) { _messages = []; return; }
@@ -1492,6 +1492,7 @@ const PromptPanel = (() => {
   /* ── Contextual suggestion chips ── */
   const _ROUTE_SUGGESTIONS = {
     '#/':           ['How many agents do I have?', 'Show missions', 'Switch to cyberpunk'],
+    '#/chat':       ['What can NICE do for me?', 'Help me write an email', 'Switch to cyberpunk'],
     '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
     '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
     '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
@@ -3581,7 +3582,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const tabParam = bridgeMatch
       ? new URLSearchParams(bridgeMatch[1] || '').get('tab')
       : null;
-    const onSchematic = !!bridgeMatch && (!tabParam || tabParam === 'schematic');
+    const onSchematic = /^\/crew(\?|$)/.test(path) ||
+      (!!bridgeMatch && (!tabParam || tabParam === 'schematic'));
     if (onSchematic) {
       const activeShipId = (typeof Utils !== 'undefined' && typeof localStorage !== 'undefined')
         ? localStorage.getItem(Utils.KEYS.mcShip) : null;
@@ -3624,15 +3626,17 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
     // If explicitly shown on this route (e.g. reactor/card click), keep it visible
     if (_manualShow) return;
-    // Default-visible routes: Home (Chat mode), the Schematic tab of the
-    // Bridge (Spaceship mode), and the Code tab of the Code view (Code mode).
+    // Default-visible routes: Chat (standalone mode), the crew view and the
+    // Schematic tab of the Bridge (Spaceship mode), and the Code tab of the
+    // Code view (Code mode).
     // The three side-mode landings each expose the prompt surface; other
     // sub-tabs of those views suppress it.
     const onSchematic = path.startsWith('/bridge') &&
       (/tab=schematic/.test(location.hash) || !/tab=/.test(location.hash));
     const onCodeMode = path.startsWith('/code') &&
       (/tab=code/.test(location.hash) || !/tab=/.test(location.hash));
-    const showByDefault = path === '/' || onSchematic || onCodeMode;
+    const onCrew = /^\/crew(\?|$)/.test(path);
+    const showByDefault = path === '/chat' || onCrew || onSchematic || onCodeMode;
     if (showByDefault) { if (_panel) _panel.style.display = ''; }
     else { if (_panel) { _panel.style.display = 'none'; _hideMonitor(); } }
     _maybeAutoExpandSchematicChat();
@@ -3663,10 +3667,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   function _reload() {
     _loadMessages();
-    // Re-render the home view if we're on it
-    if (window.location.hash === '#/' || window.location.hash === '') {
+    // Re-render the chat view if we're on it
+    if (window.location.hash === '#/chat') {
       const el = document.getElementById('app-view');
-      if (el && typeof HomeView !== 'undefined') HomeView.render(el);
+      if (el && typeof ChatView !== 'undefined') ChatView.render(el);
     }
   }
 

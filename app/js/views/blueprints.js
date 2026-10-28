@@ -16,6 +16,23 @@ const BlueprintsView = (() => {
 
   const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
+  /* ── Tab ↔ route ──
+     Three Bridge tabs have their own main-nav route; the rest live under
+     #/bridge?tab=…. A tab switch rewrites the URL in place (no Router
+     re-render) and re-highlights the main nav. */
+  const _TAB_ROUTES = { schematic: '/crew', blueprints: '/library', outbox: '/outbox' };
+  function _syncTabRoute(tabId) {
+    const params = new URLSearchParams((location.hash || '').split('?')[1] || '');
+    params.delete('tab');
+    params.delete('sub');
+    if (tabId !== 'schematic') params.delete('ship');
+    let base = _TAB_ROUTES[tabId];
+    if (!base) { base = '/bridge'; params.set('tab', tabId); }
+    const qs = params.toString();
+    history.replaceState(null, '', '#' + base + (qs ? '?' + qs : ''));
+    if (typeof Router !== 'undefined' && Router.syncNav) Router.syncNav();
+  }
+
   /* ── Ship blueprint lookup (via Blueprints catalog) ── */
   function _findShipBp(id) {
     // SPACESHIP_SEED is defined later but this function is only called at runtime
@@ -286,7 +303,23 @@ const BlueprintsView = (() => {
       // sub-tab deep links rewrite onto the flat tabs below so they keep
       // resolving.
       const subParam = _hashParams.get('sub');
-      if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
+      // Main-nav routes that open a Bridge tab directly (see _TAB_ROUTES).
+      if (_hash === '#/outbox') _activeTab = 'outbox';
+      else if (_hash === '#/library') {
+        _activeTab = 'blueprints';
+        if (['spaceship', 'agent', 'active', 'workshop'].includes(_tabParam)) _subTab = _tabParam;
+      }
+      else if (_hash === '#/crew') {
+        _activeTab = 'schematic';
+        // #/crew?ship=<id> opens that spaceship; SchematicView reads mcShip
+        // and ignores an id that isn't one of the user's ships.
+        const shipParam = _hashParams.get('ship');
+        if (shipParam) {
+          localStorage.setItem(Utils.KEYS.mcShip, shipParam);
+          window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: shipParam }));
+        }
+      }
+      else if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
       else if (_tabParam === 'documentation') { _activeTab = 'schematic'; }
       else if (_tabParam === 'spaceship' || _tabParam === 'agent' || _tabParam === 'active' || _tabParam === 'workshop') { _activeTab = 'blueprints'; _subTab = _tabParam; }
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
@@ -2140,10 +2173,11 @@ const BlueprintsView = (() => {
       const pickerLabel = document.querySelector('#bp-tab-picker .bp-tab-picker-label');
       if (pickerLabel && tabLabel) pickerLabel.textContent = tabLabel;
       _toggleSchematicView();
-      // Sub-tab switches don't update the URL hash (a Router _render would
-      // tear down the whole view), so PromptPanel.syncRoute can't see the
-      // change. Notify it directly — Schematic shows the prompt surface,
-      // every other Bridge sub-tab hides it.
+      _syncTabRoute(tabId);
+      // Sub-tab switches rewrite the URL with replaceState (a hashchange would
+      // make the Router tear down the whole view), so PromptPanel.syncRoute
+      // can't see the change. Notify it directly — Schematic shows the prompt
+      // surface, every other Bridge sub-tab hides it.
       if (typeof PromptPanel !== 'undefined') {
         if (tabId === 'schematic') PromptPanel.show();
         else PromptPanel.hide();

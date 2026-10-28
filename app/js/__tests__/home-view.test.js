@@ -1,33 +1,17 @@
 /**
- * HomeView integration tests
- * Tests Claude-style chat home page rendering.
+ * HomeView tests
+ * Home (#/) leads with what needs the user, then their spaceships, then the
+ * two ways to start. Counts come from AlertCounts; ships from
+ * Blueprints.getUserShips.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname_local = dirname(fileURLToPath(import.meta.url));
 
-// ── Mock environment ──
-const _store = {};
-const mockLocalStorage = {
-  getItem: (key) => _store[key] ?? null,
-  setItem: (key, val) => { _store[key] = String(val); },
-  removeItem: (key) => { delete _store[key]; },
-  clear: () => { Object.keys(_store).forEach(k => delete _store[k]); },
-  get length() { return Object.keys(_store).length; },
-  key: (i) => Object.keys(_store)[i] ?? null,
-};
-Object.defineProperty(globalThis, 'localStorage', { value: mockLocalStorage, writable: true });
-
-if (!globalThis.crypto) globalThis.crypto = {};
-if (!globalThis.crypto.randomUUID) {
-  globalThis.crypto.randomUUID = () => 'test-' + Math.random().toString(36).slice(2, 10);
-}
-
-// Mock State
 globalThis.State = (() => {
   const _data = {};
   const _listeners = {};
@@ -36,169 +20,125 @@ globalThis.State = (() => {
     set: (key, val) => { _data[key] = val; (_listeners[key] || []).forEach(fn => fn(val)); },
     on: (key, fn) => { _listeners[key] = _listeners[key] || []; _listeners[key].push(fn); },
     off: (key, fn) => { _listeners[key] = (_listeners[key] || []).filter(f => f !== fn); },
+    _count: (key) => (_listeners[key] || []).length,
     _reset: () => { Object.keys(_data).forEach(k => delete _data[k]); Object.keys(_listeners).forEach(k => delete _listeners[k]); },
   };
 })();
 
-// Mock SB
-globalThis.SB = {
-  client: null, isReady: () => false, isOnline: () => true,
-  db: () => ({ list: async () => [], create: async () => ({}), update: async () => ({}), get: async () => null }),
-  realtime: { subscribe: () => null, unsubscribe: () => {} },
-};
-
-// Mock Router
-globalThis.Router = { navigate: vi.fn(), path: () => '/', on: () => {}, init: () => {} };
-
-// Mock Utils
 globalThis.Utils = {
-  esc: (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
-  timeAgo: () => 'just now',
-  // HomeView gates chat-history reads on this. Tests want the gate to PASS
-  // by default (so the existing assertions about message rendering still
-  // hold); the leak case is covered by an explicit "no auth" test below.
-  hasAuthSession: () => true,
-  KEYS: {
-    aiMessages: 'nice-ai-messages',
-    conversations: 'nice-conversations',
-    activeConv: 'nice-active-conv',
+  esc: (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
+  initials: (name) => {
+    const words = String(name || '').replace(/^the\s+/i, '').trim().split(/\s+/).filter(Boolean);
+    return words.length ? (words[0][0] + (words[1] ? words[1][0] : '')).toUpperCase() : '?';
   },
 };
 
-// Mock PromptPanel
-globalThis.PromptPanel = {
-  init: () => {}, show: () => {}, hide: () => {}, syncRoute: () => {},
-  prefill: () => {}, toggle: () => {}, destroy: () => {},
+globalThis.Terminology = {
+  label: (noun, opts = {}) => {
+    const word = opts.plural ? 'Missions' : 'Mission';
+    return opts.lowercase ? word.toLowerCase() : word;
+  },
 };
 
-globalThis.Notify = { send: () => {}, init: () => {} };
+let counts = {};
+globalThis.AlertCounts = { count: (k) => counts[k] || 0 };
 
-// Load HomeView
+let ships = [];
+globalThis.Blueprints = { getUserShips: () => ships };
+
+globalThis.Theme = { current: () => 'hal-9000', getTheme: () => ({ persona: { callsign: 'Dave' } }) };
+
 function loadScriptGlobal(relativePath) {
-  const absPath = resolve(__dirname_local, '..', relativePath);
-  let code = readFileSync(absPath, 'utf-8');
+  let code = readFileSync(resolve(__dirname_local, '..', relativePath), 'utf-8');
   code = code.replace(/^const (\w+)\s*=/gm, 'globalThis.$1 =');
   eval(code);
 }
-
-beforeEach(() => {
-  mockLocalStorage.clear();
-  globalThis.State._reset();
-  document.body.innerHTML = '<div id="test-el"></div>';
-});
-
-// Load after mocks are in place
 loadScriptGlobal('views/home.js');
 
+let el;
+beforeEach(() => {
+  HomeView.destroy();
+  State._reset();
+  counts = {};
+  ships = [];
+  document.body.innerHTML = '<div id="app-view"></div>';
+  el = document.getElementById('app-view');
+});
+
 describe('HomeView', () => {
-  it('has title "NICE"', () => {
-    expect(HomeView.title).toBe('NICE SPACESHIP');
+  it('is titled Home', () => {
+    expect(HomeView.title).toBe('Home');
   });
 
-  it('renders without crashing when State is empty', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'pilot@test.com' });
-    expect(() => HomeView.render(el)).not.toThrow();
-    expect(el.innerHTML.length).toBeGreaterThan(0);
-  });
-
-  it('renders greeting with display name', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'pilot@test.com', user_metadata: { display_name: 'TestPilot' } });
+  it('greets the signed-in user by display name, else the theme callsign', () => {
     HomeView.render(el);
-    expect(el.innerHTML).toContain('TestPilot');
-  });
+    expect(el.querySelector('.home-title').textContent).toMatch(/, Dave\.$/);
 
-  it('handles missing user gracefully', () => {
-    const el = document.getElementById('test-el');
-    expect(() => HomeView.render(el)).not.toThrow();
-  });
-
-  it('renders the chat-home container', () => {
-    const el = document.getElementById('test-el');
+    State.set('user', { user_metadata: { display_name: 'Ben' } });
     HomeView.render(el);
-    const wrap = el.querySelector('.chat-home');
-    expect(wrap).toBeTruthy();
+    expect(el.querySelector('.home-title').textContent).toMatch(/, Ben\.$/);
   });
 
-  it('shows greeting in empty state', () => {
-    const el = document.getElementById('test-el');
+  it('lists what needs the user, each linking to where they act on it', () => {
+    counts = { outbox: 3, missions: 1, schematic: 2 };
     HomeView.render(el);
-    const greeting = el.querySelector('.chat-home-greeting');
-    expect(greeting).toBeTruthy();
-    expect(greeting.textContent).toMatch(/Good (morning|afternoon|evening)/);
+    const needs = [...el.querySelectorAll('.home-need')];
+    expect(needs.map(n => n.querySelector('.home-need-text').textContent)).toEqual([
+      '3 drafts waiting for your review',
+      '1 mission run needs you',
+      '2 crew problems to check',
+    ]);
+    expect(needs.map(n => n.getAttribute('href'))).toEqual(['#/outbox', '#/bridge?tab=missions', '#/crew']);
+    expect(el.querySelector('.home-sub').textContent).toBe('Here is what needs you.');
   });
 
-  it('does not render action pills', () => {
-    const el = document.getElementById('test-el');
+  it('shows no needs section when nothing is waiting', () => {
     HomeView.render(el);
-    const pills = el.querySelectorAll('.chat-pill');
-    expect(pills.length).toBe(0);
+    expect(el.querySelector('.home-needs')).toBeNull();
   });
 
-  it('renders conversation when messages exist', () => {
-    mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
-      { role: 'user', text: 'hello', ts: Date.now() },
-      { role: 'assistant', text: 'Hi there', agent: 'NICE', ts: Date.now() },
-    ]));
-    const el = document.getElementById('test-el');
+  it('links each spaceship to its crew view', () => {
+    ships = [{ id: 'ship 1', name: 'Sunrise Bakery', category: 'Bakery' }];
     HomeView.render(el);
-    const feed = el.querySelector('.chat-home-feed');
-    expect(feed).toBeTruthy();
-    expect(feed.innerHTML).toContain('hello');
+    const card = el.querySelector('.home-ship');
+    expect(card.getAttribute('href')).toBe('#/crew?ship=ship%201');
+    expect(card.querySelector('.home-ship-mark').textContent).toBe('SB');
+    expect(card.querySelector('.home-ship-meta').textContent).toBe('Bakery');
+    expect(el.querySelector('.home-sub').textContent).toBe('Nothing needs you right now.');
   });
 
-  it('renders for user without display_name', () => {
-    const el = document.getElementById('test-el');
-    State.set('user', { id: 'u1', email: 'someone@example.com' });
-    expect(() => HomeView.render(el)).not.toThrow();
-    expect(el.innerHTML).toContain('someone');
-  });
-
-  it('has a destroy method that does not throw', () => {
-    expect(() => HomeView.destroy()).not.toThrow();
-  });
-
-  it('renders greeting without buttons when no messages', () => {
-    const el = document.getElementById('test-el');
+  it('does not repeat the name when the category matches it', () => {
+    ships = [{ id: 'b', name: 'Bakery', category: 'Bakery' }];
     HomeView.render(el);
-    // No messages = empty greeting, no buttons in HomeView itself
-    const greeting = el.querySelector('.chat-home-greeting');
-    expect(greeting).toBeTruthy();
+    expect(el.querySelector('.home-ship-meta').textContent).toBe('Spaceship');
   });
 
-  it('shows new chat button when messages exist', () => {
-    mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
-      { role: 'user', text: 'test', ts: Date.now() },
-    ]));
-    const el = document.getElementById('test-el');
+  it('offers the Library when the user has no spaceship', () => {
     HomeView.render(el);
-    const newBtn = el.querySelector('#chat-home-new');
-    expect(newBtn).toBeTruthy();
+    expect(el.querySelector('.home-ship')).toBeNull();
+    expect(el.querySelector('.home-empty a').getAttribute('href')).toBe('#/library?tab=spaceship');
   });
 
-  // Regression: signed-out cockpit on a shared browser was rendering the
-  // previous account's chat history straight from localStorage (observed on
-  // prod 2026-05-05). HomeView now gates the read on Utils.hasAuthSession.
-  describe('signed-out cache leak gate', () => {
-    it('suppresses chat history when Utils.hasAuthSession returns false', () => {
-      const original = Utils.hasAuthSession;
-      Utils.hasAuthSession = () => false;
-      try {
-        mockLocalStorage.setItem('nice-ai-messages', JSON.stringify([
-          { role: 'user', text: 'leaked from prior account', ts: Date.now() },
-          { role: 'assistant', text: 'leaked reply', agent: 'NICE', ts: Date.now() },
-        ]));
-        const el = document.getElementById('test-el');
-        HomeView.render(el);
-        // Empty-state greeting renders, the leaked content does not.
-        expect(el.innerHTML).not.toContain('leaked from prior account');
-        expect(el.innerHTML).not.toContain('leaked reply');
-        expect(el.querySelector('#chat-home-new')).toBeNull();
-        expect(el.querySelector('.chat-home-greeting')).toBeTruthy();
-      } finally {
-        Utils.hasAuthSession = original;
-      }
-    });
+  it('escapes spaceship names', () => {
+    ships = [{ id: 'x', name: '<img src=x onerror=alert(1)>' }];
+    HomeView.render(el);
+    expect(el.querySelector('.home-ship img')).toBeNull();
+  });
+
+  it('re-renders once when watched state changes, and stops after destroy', () => {
+    HomeView.render(el);
+    expect(el.querySelectorAll('.home-need').length).toBe(0);
+    counts = { outbox: 1 };
+    State.set('content-queue', [{}]);
+    expect(el.querySelectorAll('.home-need').length).toBe(1);
+
+    HomeView.destroy();
+    expect(State._count('content-queue')).toBe(0);
+  });
+
+  it('subscribes once across repeated renders', () => {
+    HomeView.render(el);
+    HomeView.render(el);
+    expect(State._count('spaceships')).toBe(1);
   });
 });

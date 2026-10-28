@@ -206,20 +206,37 @@ const Router = (() => {
     '</div>';
   }
 
-  /* Update active link in sidebar and tab bar */
+  /* Update active link in sidebar and tab bar. The single owner of nav
+     highlighting: .active for styling, aria-current for screen readers.
+     Links whose href carries a query (spaceship links: #/crew?ship=…)
+     never match a bare path here; their owner highlights them on the
+     nice:navsync event. */
+  function _setCurrent(a, on) {
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  }
+
   function _updateNav(p) {
-    // Sidebar links
     document.querySelectorAll('.side-link').forEach(a => {
       const href = (a.getAttribute('href') || '').replace('#', '');
-      a.classList.toggle('active', href === p || (p.startsWith(href + '/') && href !== '/'));
+      _setCurrent(a, href === p || (p.startsWith(href + '/') && href !== '/'));
     });
 
     // Tab bar tabs — match by first path segment
     const seg = '/' + (p.split('/')[1] || '');
     document.querySelectorAll('.app-tabbar .tab').forEach(a => {
       const href = (a.getAttribute('href') || '').replace('#', '');
-      a.classList.toggle('active', href === p || href === seg);
+      _setCurrent(a, href === p || href === seg);
     });
+
+    window.dispatchEvent(new CustomEvent('nice:navsync', { detail: { path: p } }));
+  }
+
+  /* Re-highlight the nav for the current URL without re-rendering, for
+     views that rewrite the URL with history.replaceState. */
+  function syncNav() {
+    _updateNav(path());
   }
 
   /* Re-render the current view (e.g. after a theme change so any
@@ -237,5 +254,5 @@ const Router = (() => {
     _render();
   }
 
-  return { on, navigate, path, query, hashQuery, init, refresh };
+  return { on, navigate, path, query, hashQuery, init, refresh, syncNav };
 })();

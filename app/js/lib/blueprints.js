@@ -2434,6 +2434,18 @@ const Blueprints = (() => {
     return [..._activatedShipIds];
   }
 
+  /** Every spaceship the user runs: catalog activations plus Crew Designer
+      ships held in State, deduped by id. The sidebar and Home list these. */
+  function getUserShips() {
+    const custom = (typeof State !== 'undefined' && State.get('spaceships')) || [];
+    const seen = new Set();
+    const ships = [];
+    getActivatedShips().concat(custom).forEach(s => {
+      if (s && s.id && !seen.has(s.id)) { seen.add(s.id); ships.push(s); }
+    });
+    return ships;
+  }
+
   /** Returns fully constructed spaceship objects from activated blueprint IDs */
   function getActivatedShips() {
     const result = [];
@@ -3210,7 +3222,7 @@ const Blueprints = (() => {
     // Ship activation
     activateShip, deactivateShip, isShipActivated, cleanupOrphans,
     canActivateNewShip,
-    getActivatedShipIds, getActivatedShips, findOrCreateActiveShip,
+    getActivatedShipIds, getActivatedShips, getUserShips, findOrCreateActiveShip,
 
     // Ship state persistence
     getShipState, saveShipState, reassignAgentToShip, handoffShipId,
