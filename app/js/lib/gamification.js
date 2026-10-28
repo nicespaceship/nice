@@ -76,7 +76,6 @@ const Gamification = (() => {
     connect_provider:      10,
     model_intel_milestone: 10,
     approve_content:        5,
-    play_tron:              5,
     install_pwa:           25,
   };
 

@@ -286,14 +286,7 @@ const BlueprintsView = (() => {
       const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
       const _tabParam = _hashParams.get('tab');
       const _sourceParam = _hashParams.get('source');
-      // TRON is a Grid-theme easter-egg — drop it from the valid tab list
-      // under every other theme so stale `?tab=tron` links coerce to the
-      // default schematic view instead of loading a tab that isn't in the
-      // current theme's nav.
-      const _themeId = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : 'nice';
-      const _tronAvailable = _themeId === 'grid';
       const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log'];
-      if (_tronAvailable) validTabs.push('tron');
       // Outbox and Log are top-level tabs (after Operations). Documentation
       // moved to the marketing site (linked from the global ? icon). Old
       // sub-tab deep links rewrite onto the flat tabs below so they keep
@@ -311,10 +304,6 @@ const BlueprintsView = (() => {
       if (_sourceParam === 'official' || _sourceParam === 'community' || _sourceParam === 'all') {
         _sourceFilter = _sourceParam;
       }
-      // Kick off the TRON tab if the user left Grid while on it — the tab
-      // won't re-render below, so in-memory _activeTab would otherwise
-      // point at a view no longer in the nav.
-      if (!_tronAvailable && _activeTab === 'tron') _activeTab = 'schematic';
     }
 
     // Render tabs into fixed container (outside scroll area)
@@ -330,10 +319,6 @@ const BlueprintsView = (() => {
       // Full tab row is desktop; mobile shows a single picker pill instead
       // (see .bp-tab-picker in CSS). Both trigger the same _switchTab()
       // logic so the underlying tab state stays unified.
-      // TRON is only surfaced on the Grid theme — skip the nav entry under
-      // every other theme so the tab list doesn't expose a view that
-      // doesn't fit the current visual language.
-      const _themeForTabs = (typeof Theme !== 'undefined' && Theme.current) ? Theme.current() : 'nice';
       // Outbox carries the draft-count badge so pending content waiting for
       // review surfaces in the primary nav.
       const tabDefs = [
@@ -343,12 +328,11 @@ const BlueprintsView = (() => {
         { id: 'outbox', label: 'Outbox' },
         { id: 'operations', label: 'Operations' },
         { id: 'log', label: 'Log' },
-        ...(_themeForTabs === 'grid' ? [{ id: 'tron', label: 'TRON', cls: 'bp-tab-tron' }] : []),
       ];
       const activeLabel = (tabDefs.find(t => t.id === _activeTab) || tabDefs[1]).label.replace(/<[^>]*>/g, '').trim();
       fixedTabs.innerHTML = `
         <div class="bp-type-tabs" id="bp-type-tabs">
-          ${tabDefs.map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}${t.cls ? ' ' + t.cls : ''}" data-tab="${t.id}">${t.label}${alertFor(t.id)}</button>`).join('')}
+          ${tabDefs.map(t => `<button class="bp-type-tab${t.id === _activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}${alertFor(t.id)}</button>`).join('')}
         </div>
         <!-- Mobile view picker renders before the subnav so the higher-level
              "Blueprints ▾" picker sits ABOVE the sub-tabs. Hidden on desktop
@@ -1492,7 +1476,7 @@ const BlueprintsView = (() => {
     const loadMore = document.getElementById('bp-load-more');
 
     const subTabs = document.getElementById('bp-sub-tabs');
-    const isLogTab = ['missions', 'operations', 'outbox', 'log', 'tron'].includes(_activeTab);
+    const isLogTab = ['missions', 'operations', 'outbox', 'log'].includes(_activeTab);
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
@@ -1528,13 +1512,12 @@ const BlueprintsView = (() => {
       if (!isSchematic && typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
     }
 
-    // Log tabs (Missions, Operations, Log, Tron)
+    // Log tabs (Missions, Operations, Outbox, Log)
     if (logEl) {
       logEl.style.display = isLogTab ? '' : 'none';
       if (isLogTab) {
         _renderLogTab(logEl);
       }
-      if (_activeTab !== 'tron' && typeof TronView !== 'undefined' && TronView.destroy) TronView.destroy();
     }
 
   }
@@ -1554,8 +1537,6 @@ const BlueprintsView = (() => {
     } else if (_activeTab === 'log') {
       if (typeof AuditLogView !== 'undefined') AuditLogView.render(el);
       else el.innerHTML = _missing;
-    } else if (_activeTab === 'tron' && typeof TronView !== 'undefined') {
-      TronView.render(el);
     } else {
       el.innerHTML = _missing;
     }
@@ -3590,7 +3571,6 @@ const BlueprintsView = (() => {
   function destroy() {
     _closeDrawer();
     if (typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
-    if (typeof TronView !== 'undefined' && TronView.destroy) TronView.destroy();
     _detachBreakpointListeners();
     _clearPortals();
   }
