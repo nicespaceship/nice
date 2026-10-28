@@ -558,7 +558,7 @@ GitHub Actions (`.github/workflows/ci.yml`): Node 20 → `npm ci` → security a
 
 ## Google Workspace Integration
 - OAuth flow for any Google account (Gmail, Workspace, any domain)
-- `google-oauth` edge function: `/authorize` → Google consent → `/callback` → stores tokens
+- `google-oauth` edge function (same flow as every `*-oauth`): the app POSTs `/start` with the user's JWT → the function returns the consent URL and sets a browser-binding cookie → Google consent → `/callback` stores tokens only for the JWT's user, and only in the browser that started (shared in `_shared/oauth-session.ts`). `GET /authorize?user_id=` is retired (410): it trusted a user id from the URL.
 - MCP servers: gmail-mcp (read + send/draft/reply), calendar-mcp (read + create/update/delete events), drive-mcp (read + create/update/upload files)
 - `mcp-gateway` auto-refreshes expired OAuth tokens before tool calls
 - **Requested scopes** (hardcoded in [auth-modal.js](app/js/lib/auth-modal.js:208)):
