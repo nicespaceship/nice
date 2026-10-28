@@ -2255,45 +2255,6 @@ html:not([data-theme]) .app-main,
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(5) .sch-slot-card { animation-delay:-0.5s; }
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(6) .sch-slot-card { animation-delay:-2.5s; }
 
-/* ── Locked slots — rank-gated, visible but not actionable ──
-   Surfaces the growth ladder: the user sees every slot the ship will
-   ever have, with the rank gate inline on the card itself. */
-.schematic-card-locked { opacity:.45; cursor:default; }
-.schematic-card-locked .sch-slot-card { animation:none; pointer-events:none; }
-.schematic-wired .schematic-card-slot.schematic-card-locked:hover .sch-slot-card { box-shadow:none; }
-.sch-slot-card-locked {
-  border-color:var(--text-muted);
-  border-style:dashed;
-  background:transparent;
-}
-.sch-slot-card-locked .sch-slot-role { color:var(--text-muted); opacity:.7; }
-.sch-slot-name-locked {
-  color:var(--text-muted);
-  font-weight:var(--fw-medium);
-  font-style:italic;
-  display:flex; align-items:center; justify-content:center; gap:3px;
-}
-.sch-slot-lock-glyph { display:inline-flex; align-items:center; color:var(--text-muted); }
-.sch-slot-card-locked .sch-slot-cap {
-  font-style:italic;
-  opacity:.7;
-}
-
-/* Mobile stack row — locked variant */
-.schematic-stack-row-locked {
-  opacity:.5;
-  cursor:default;
-  pointer-events:none;
-}
-.schematic-stack-row-locked .schematic-row-name {
-  font-style:italic;
-  color:var(--text-muted);
-}
-.schematic-stack-row-locked .schematic-row-cap {
-  font-style:italic;
-  opacity:.85;
-}
-
 /* ── Schematic skeleton — post-reset hydration placeholder ── */
 .schematic-skeleton { pointer-events:none; }
 /* Skeleton slot card keeps the .sch-slot-card footprint + border but
@@ -3364,10 +3325,6 @@ html:not([data-theme]) .app-main,
 }
 @keyframes spin { to { transform:rotate(360deg); } }
 .crew-setup-status p { font-family:var(--font-b); font-size:var(--text-sm); color:var(--text-muted); }
-
-/* Locked blueprint card */
-.bp-locked { opacity:.6; cursor:not-allowed !important; }
-.bp-locked:hover { opacity:.6; }
 
 /* Spaceship Builder — Crew Slots */
 .builder-slot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
@@ -7724,14 +7681,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   box-shadow:0 0 14px rgba(34,197,94,.25);
   background:rgba(34,197,94,.04);
 }
-.ship-slot.drag-invalid {
-  border-color:var(--color-error); animation:slot-shake .35s;
-}
-@keyframes slot-shake {
-  0%,100% { transform:translateX(0); }
-  25%     { transform:translateX(-5px); }
-  75%     { transform:translateX(5px); }
-}
 
 /* Filled slot — bright rarity border */
 .ship-slot-filled {
@@ -7764,18 +7713,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .ship-slot:hover .slot-undock-btn { opacity:1; }
 .slot-undock-btn:hover { background:rgba(239,68,68,.25); }
-
-/* Locked slot */
-.ship-slot-locked {
-  opacity:.4; pointer-events:none; position:relative;
-}
-.ship-slot-locked::after {
-  content:attr(data-lock-label); position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--font-b); font-size:var(--text-3xs); letter-spacing:var(--tracking-normal);
-  color:var(--text-muted); background:rgba(0,0,0,.3);
-  border-radius:var(--radius);
-}
 
 /* Class selector in modal */
 .class-selector { display:flex; gap:10px; margin:12px 0; }
@@ -8525,21 +8462,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .ship-wizard-agent-name { font-weight:var(--fw-medium); color:var(--text); }
 .ship-wizard-agent-role { font-size:var(--text-xs); color:var(--text-muted); }
 .ship-wizard-slot-empty { color:var(--text-muted); font-style:italic; }
-.ship-wizard-slot-locked {
-  border-style:dashed;
-  opacity:.65;
-  background:transparent;
-}
-.ship-wizard-slot-locked .ship-wizard-slot-label { color:var(--text-muted); }
-.ship-wizard-slot-lock {
-  display:inline-block;
-  padding:6px 10px;
-  font-size:var(--text-sm);
-  color:var(--text-muted);
-  font-style:italic;
-  width:100%;
-  text-align:right;
-}
 @media (max-width: 600px) {
   .ship-wizard-mode-cards { grid-template-columns: 1fr; }
   .ship-wizard-slot { flex-direction: column; align-items: stretch; }

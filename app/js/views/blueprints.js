@@ -526,20 +526,9 @@ const BlueprintsView = (() => {
     if (type === 'spaceship') {
       const serial = _sh(bp.id || bp.name, 12);
       const isShipActivated = bp._forceActive || Blueprints.isShipActivated(bp.id);
-      const shipRarity = bp.rarity || 'Common';
-      const isLocked = typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(shipRarity);
-      let deployBtn;
-      // Order matters: owned ships ALWAYS show Remove regardless of current
-      // rank. A user can lose rank (or subscription) after deploying a high-
-      // rarity ship — the card must keep showing Remove so they can still
-      // uninstall, even if they couldn't re-deploy it from scratch.
-      if (isShipActivated) {
-        deployBtn = `<button class="c-btn bp-deploy-ship-btn bp-activated" data-id="${bp.id}" aria-label="Remove"><span class="bp-act-rest">Active</span><span class="bp-act-hover">Remove</span></button>`;
-      } else if (isLocked) {
-        deployBtn = `<button class="c-btn bp-deploy-ship-btn bp-locked" data-id="${bp.id}" disabled title="Reach ${shipRarity} rank to deploy">🔒 ${shipRarity}</button>`;
-      } else {
-        deployBtn = `<button class="c-btn bp-deploy-ship-btn" data-id="${bp.id}">Deploy</button>`;
-      }
+      const deployBtn = isShipActivated
+        ? `<button class="c-btn bp-deploy-ship-btn bp-activated" data-id="${bp.id}" aria-label="Remove"><span class="bp-act-rest">Active</span><span class="bp-act-hover">Remove</span></button>`
+        : `<button class="c-btn bp-deploy-ship-btn" data-id="${bp.id}">Deploy</button>`;
       const rendered = CR.render('spaceship', 'full', bp, { clickClass: 'blueprint-clickable' });
       const scopeBadge = bp.scope === 'community' ? '<span class="bp-scope-badge">Community</span>' : '';
       return `<div class="blueprint-card-wrap">${scopeBadge}${rendered}<div class="blueprint-card-buttons">${deployBtn}</div></div>`;
@@ -2833,11 +2822,6 @@ const BlueprintsView = (() => {
         } else {
           btns.push(`<button class="btn btn-primary btn-sm bp-drawer-community-install" data-id="${bp.id}" data-type="spaceship" data-listing="${_esc(listingId || '')}">Install</button>`);
         }
-      } else if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked
-          && bp.rarity && !Gamification.isRarityUnlocked(bp.rarity)) {
-        // Mirror the card-level lock: without this, the drawer offered
-        // Setup Spaceship for any rarity and the wizard deployed it.
-        btns.push(`<button class="btn btn-sm bp-drawer-locked" disabled title="Reach ${_esc(bp.rarity)} rank to deploy">🔒 Reach ${_esc(bp.rarity)} rank to deploy</button>`);
       } else {
         btns.push(`<button class="btn btn-primary btn-sm bp-drawer-ship-wizard" data-id="${bp.id}">Setup Spaceship</button>`);
       }

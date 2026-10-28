@@ -53,16 +53,6 @@ const UpgradeModal = (() => {
               <td><strong>Run a fleet</strong></td>
             </tr>
             <tr>
-              <th>Crew slots</th>
-              <td>Unlock by rank</td>
-              <td><strong>All unlocked instantly</strong></td>
-            </tr>
-            <tr>
-              <th>Max rarity</th>
-              <td>Up to Legendary <small>(via XP)</small></td>
-              <td><strong>Legendary instantly</strong></td>
-            </tr>
-            <tr>
               <th>Free models</th>
               <td>Gemini 2.5 Flash</td>
               <td>Gemini 2.5 Flash</td>
@@ -166,7 +156,7 @@ const UpgradeModal = (() => {
     const hash = location.hash || '';
     if (hash.includes('upgrade=success')) {
       if (typeof Notify !== 'undefined') {
-        Notify.send({ title: 'Welcome to Pro!', message: 'Your subscription is active. Run a fleet of spaceships, with every crew slot and Legendary unlocked instantly.', type: 'success' });
+        Notify.send({ title: 'Welcome to Pro!', message: 'Your subscription is active. You can now run a fleet of spaceships.', type: 'success' });
       }
       if (typeof Gamification !== 'undefined') Gamification.addXP('upgrade_spaceship');
       const cleanHash = hash.replace(/[?&]upgrade=success/, '').replace(/\?$/, '');

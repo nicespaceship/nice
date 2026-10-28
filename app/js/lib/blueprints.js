@@ -1617,22 +1617,6 @@ const Blueprints = (() => {
 
   function activateAgent(bpId) {
     if (_activatedAgentIds.includes(bpId)) return;
-
-    // Rarity gate: check if user's rank allows this rarity
-    var bp = getAgent(bpId);
-    if (!bp) {
-      var stateAgents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
-      bp = stateAgents.find(function(a) { return a.id === bpId; });
-    }
-    var rarity = bp ? (bp.rarity || 'Common') : 'Common';
-    if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
-      if (typeof Notify !== 'undefined') {
-        var rank = Gamification.getRank();
-        Notify.send({ title: 'Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), type: 'warning' });
-      }
-      return false;
-    }
-
     _activatedAgentIds.push(bpId);
     _persistAgents();
     _fireAgentState();
@@ -2002,21 +1986,9 @@ const Blueprints = (() => {
    *   - A DB row UUID — assumes State.spaceships already has the entry
    *     (loaded from user_spaceships); only updates `_activatedShipIds`.
    *
-   * Rarity gate: only applied when `options.force` is falsy. The gate is
-   * a UX safety check for generic entry points (command palette, console),
-   * redundant with the UI-level `🔒 Rarity` lock on the blueprint card,
-   * and NOT a security boundary — Supabase RLS is the real gate.
-   *
-   * The ShipSetupWizard passes `force: true` because by the time the
-   * wizard reaches its deploy step the user has already cleared the UI
-   * lock AND committed three steps of choices. Silently rejecting the
-   * final push here was the root cause of Mythic ships showing "Deploy"
-   * after being fully deployed.
-   *
    * @param {string} bpId
-   * @param {{force?: boolean}} [options]
    * @returns {boolean} true if the ship is now activated (or was already),
-   *                    false only when the rarity gate rejects a non-force push.
+   *                    false only when the active-spaceship cap rejects it.
    */
   /** True when the user may activate ANOTHER spaceship. Free accounts run one
       active spaceship; Pro is unlimited (Subscription.getActiveShipLimit).
@@ -2029,7 +2001,7 @@ const Blueprints = (() => {
     return getActivatedShipIds().length < limit;
   }
 
-  function activateShip(bpId, options) {
+  function activateShip(bpId) {
     if (!bpId) return false;
     // Fast path: already activated under any id form the resolver recognizes.
     // This prevents duplicate State.spaceships entries on re-activation.
@@ -2041,9 +2013,7 @@ const Blueprints = (() => {
       return true;
     }
 
-    const force = !!(options && options.force);
-
-    // Resolve blueprint metadata (for rarity gate + State synthesis)
+    // Resolve blueprint metadata for State synthesis
     let catalogBp = getSpaceship(bpId);
     if (!catalogBp) {
       const variants = _bpIdVariants(bpId);
@@ -2052,22 +2022,11 @@ const Blueprints = (() => {
         if (catalogBp) break;
       }
     }
-    const rarity = catalogBp ? (catalogBp.rarity || 'Common') : 'Common';
 
-    if (!force) {
-      if (typeof Gamification !== 'undefined' && Gamification.isRarityUnlocked && !Gamification.isRarityUnlocked(rarity)) {
-        if (typeof Notify !== 'undefined') {
-          const rank = Gamification.getRank();
-          Notify.send({ title: 'Requires ' + rarity + ' rank. Current max: ' + (rank.maxRarity || 'Common'), type: 'warning' });
-        }
-        return false;
-      }
-    }
-
-    // Active-spaceship cap (Free = 1, Pro = unlimited). Independent of `force` —
-    // that flag only bypasses the rarity gate. The fast path above already
-    // returned for re-activations, so reaching here means a NEW ship. Owned
-    // ships hydrated from user_spaceships never call this, so they always load.
+    // Active-spaceship cap (Free = 1, Pro = unlimited). The fast path above
+    // already returned for re-activations, so reaching here means a NEW ship.
+    // Owned ships hydrated from user_spaceships never call this, so they
+    // always load.
     if (!canActivateNewShip()) {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Spaceship limit reached', message: 'Free accounts run one active spaceship at a time. Upgrade to NICE Pro to run a fleet.', type: 'warning' });

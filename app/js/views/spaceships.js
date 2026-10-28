@@ -11,7 +11,6 @@ const SpaceshipDetailView = (() => {
   const _esc = Utils.esc;
   let _channel = null;
   let _draggedAgentId = null;
-  let _draggedAgentRarity = null;
 
   /* ── Behaviors settings panel ── */
   function _renderBehaviorsPanel(shipId) {
@@ -630,24 +629,6 @@ const SpaceshipDetailView = (() => {
     }).join('');
   }
 
-  // Whether a crew slot is gated behind a class the viewer hasn't reached.
-  // Mirrors ShipSetupWizard._isSlotLocked so the dock honors the same gate
-  // the wizard and schematic already enforce.
-  function _isSlotLocked(slot) {
-    if (!slot || !slot.min_class) return false;
-    if (typeof Gamification === 'undefined' || !Gamification.isClassUnlocked) return false;
-    return !Gamification.isClassUnlocked(slot.min_class);
-  }
-
-  function _slotUnlockLabel(minClass) {
-    if (minClass === 'class-5') return 'NICE Pro';
-    if (typeof Gamification !== 'undefined' && Gamification.getFirstRankForClass) {
-      const r = Gamification.getFirstRankForClass(minClass);
-      if (r && r.name) return r.name;
-    }
-    return minClass || '';
-  }
-
   function _renderSlot(slot, agentId, agentMap, spaceshipClass) {
     const maxRarity = slot.maxRarity || 'Rare';
     const agent = agentId ? agentMap[agentId] : null;
@@ -664,20 +645,6 @@ const SpaceshipDetailView = (() => {
             <div class="slot-agent-name">${_esc(agent.name)}</div>
             <span class="rarity-badge rarity-${rarity.name.toLowerCase()}">${rarity.name}</span>
           </div>
-          <div class="ship-slot-label">${_esc(slot.label)}</div>
-        </div>
-      `;
-    }
-
-    // Empty + class-gated beyond the viewer's rank: render locked. The
-    // .ship-slot-locked CSS dims it, sets pointer-events:none (so it can't
-    // receive a drop), and overlays the unlock label. Already-filled locked
-    // slots fall through above, so existing crew stay visible ("owned loads").
-    if (_isSlotLocked(slot)) {
-      const lockLabel = 'Unlocks at ' + _slotUnlockLabel(slot.min_class);
-      return `
-        <div class="ship-slot ${rarityClass} ship-slot-locked" data-slot-id="${slot.id}" data-lock-label="${Utils.escAttr(lockLabel)}">
-          <div class="ship-slot-empty-icon">+</div>
           <div class="ship-slot-label">${_esc(slot.label)}</div>
         </div>
       `;
@@ -915,15 +882,10 @@ const SpaceshipDetailView = (() => {
         e.preventDefault();
         if (card.classList.contains('assigned')) return;
         const agentId = card.dataset.agentId;
-        const agentRarity = card.dataset.rarity;
         const assignments = fleet.slots || fleet.slot_assignments || {};
-        // Find first empty slot that can accept this agent's rarity
-        const targetSlot = spaceshipClass.slots.find(slot => {
-          if (assignments[slot.id]) return false;
-          return typeof Gamification !== 'undefined' ? Gamification.canSlotAccept(slot.maxRarity, agentRarity) : true;
-        });
+        const targetSlot = spaceshipClass.slots.find(slot => !assignments[slot.id]);
         if (!targetSlot) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'No Compatible Slot', message: 'No empty slot can accept this agent rarity.', type: 'system' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'No empty slot', message: 'Every crew slot on this spaceship is filled.', type: 'system' });
           return;
         }
         _assignAgentToSlot(el, id, fleet, String(targetSlot.id), agentId, allAgents, agentMap, spaceshipClass);
@@ -1478,16 +1440,14 @@ const SpaceshipDetailView = (() => {
     el.querySelectorAll('.computing-inv-card[draggable="true"]').forEach(card => {
       card.addEventListener('dragstart', (e) => {
         _draggedAgentId = card.dataset.agentId;
-        _draggedAgentRarity = card.dataset.rarity;
         card.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', _draggedAgentId);
       });
       card.addEventListener('dragend', () => {
         card.classList.remove('dragging');
-        el.querySelectorAll('.ship-slot').forEach(s => s.classList.remove('drag-valid', 'drag-invalid'));
+        el.querySelectorAll('.ship-slot').forEach(s => s.classList.remove('drag-valid'));
         _draggedAgentId = null;
-        _draggedAgentRarity = null;
       });
     });
 
@@ -1495,35 +1455,19 @@ const SpaceshipDetailView = (() => {
     el.querySelectorAll('.ship-slot').forEach(slot => {
       slot.addEventListener('dragover', (e) => {
         e.preventDefault();
-        if (!_draggedAgentRarity) return;
-        const maxRarity = slot.dataset.maxRarity;
-        const valid = typeof Gamification !== 'undefined' ? Gamification.canSlotAccept(maxRarity, _draggedAgentRarity) : true;
-        slot.classList.toggle('drag-valid', valid);
-        slot.classList.toggle('drag-invalid', !valid);
-        e.dataTransfer.dropEffect = valid ? 'move' : 'none';
+        if (!_draggedAgentId) return;
+        slot.classList.add('drag-valid');
+        e.dataTransfer.dropEffect = 'move';
       });
 
       slot.addEventListener('dragleave', () => {
-        slot.classList.remove('drag-valid', 'drag-invalid');
+        slot.classList.remove('drag-valid');
       });
 
       slot.addEventListener('drop', (e) => {
         e.preventDefault();
-        slot.classList.remove('drag-valid', 'drag-invalid');
-        if (!_draggedAgentId || !_draggedAgentRarity) return;
-
-        const maxRarity = slot.dataset.maxRarity;
-        const valid = typeof Gamification !== 'undefined' ? Gamification.canSlotAccept(maxRarity, _draggedAgentRarity) : true;
-
-        if (!valid) {
-          slot.classList.add('drag-invalid');
-          setTimeout(() => slot.classList.remove('drag-invalid'), 400);
-          if (typeof Notify !== 'undefined') {
-            Notify.send({ title: 'Incompatible Slot', message: `This slot accepts ${maxRarity} or lower rarity agents.`, type: 'system' });
-          }
-          return;
-        }
-
+        slot.classList.remove('drag-valid');
+        if (!_draggedAgentId) return;
         _assignAgentToSlot(el, id, fleet, slot.dataset.slotId, _draggedAgentId, allAgents, agentMap, spaceshipClass);
       });
     });
@@ -1566,29 +1510,8 @@ const SpaceshipDetailView = (() => {
       } catch(e) { /* local state already updated */ }
     }
 
-    // Gamification
-    if (typeof Gamification !== 'undefined') {
-      Gamification.addXP('dock_agent');
-      Gamification.unlockAchievement('first-dock-slot');
-      const agent = agentMap[agentId];
-      if (agent) {
-        const rarity = Gamification.calcAgentRarity(agent);
-        if (rarity.name === 'Legendary') Gamification.unlockAchievement('legendary-captain');
-      }
-      // Only unlocked slots count — a class-gated empty slot can never be
-      // filled at this rank, so it must not block the "all filled" reward.
-      const _unlockedForFill = spaceshipClass.slots.filter(s => !_isSlotLocked(s));
-      const allFilled = _unlockedForFill.length > 0 && _unlockedForFill.every(s => assignments[s.id]);
-      if (allFilled) {
-        Gamification.addXP('fill_all_slots');
-        Gamification.unlockAchievement('full-ship');
-      }
-    }
-
-    // Auto-deploy when all UNLOCKED slots are filled (locked slots can't be
-    // filled at this rank, so they must not gate auto-deploy).
-    const _unlockedForDeploy = spaceshipClass.slots.filter(s => !_isSlotLocked(s));
-    const allSlotsFilled = _unlockedForDeploy.length > 0 && _unlockedForDeploy.every(s => assignments[s.id]);
+    // Auto-deploy when every slot is filled.
+    const allSlotsFilled = spaceshipClass.slots.length > 0 && spaceshipClass.slots.every(s => assignments[s.id]);
     if (allSlotsFilled && fleet.status !== 'deployed') {
       fleet.status = 'deployed';
       const spaceships2 = State.get('spaceships') || [];
@@ -1652,7 +1575,6 @@ const SpaceshipDetailView = (() => {
   function destroy() {
     if (_channel) { SB.realtime.unsubscribe(_channel); _channel = null; }
     _draggedAgentId = null;
-    _draggedAgentRarity = null;
   }
 
   return { title, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized, buildCron, describeSchedule };

@@ -482,12 +482,6 @@ describe('Blueprints', () => {
       expect(Blueprints.activateShip('ship-01')).toBe(true);
     });
 
-    it('force:true bypasses the rarity gate but NOT the ship cap', () => {
-      globalThis.Subscription = { getActiveShipLimit: () => 1 };
-      expect(Blueprints.activateShip('ship-01', { force: true })).toBe(true);
-      expect(Blueprints.activateShip('ship-02', { force: true })).toBe(false);
-    });
-
     it('lets a Pro user activate multiple ships (unlimited)', () => {
       globalThis.Subscription = { getActiveShipLimit: () => Infinity };
       expect(Blueprints.activateShip('ship-01')).toBe(true);

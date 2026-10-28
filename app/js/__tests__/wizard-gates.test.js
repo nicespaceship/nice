@@ -44,53 +44,32 @@ describe('SetupWizard.shouldShow — session-scoped skip', () => {
   });
 });
 
-describe('ShipSetupWizard.open — rarity gate', () => {
+describe('ShipSetupWizard.open — no rank gate', () => {
   let notices;
-  let upgradeOpened;
 
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     notices = [];
-    upgradeOpened = false;
     globalThis.Blueprints = {
       isShipActivated: () => false,
       canActivateNewShip: () => true,
     };
-    globalThis.Gamification = {
-      isRarityUnlocked: (r) => r === 'Common' || r === 'Rare',
-    };
     globalThis.Notify = { send: (n) => notices.push(n) };
-    globalThis.UpgradeModal = { open: () => { upgradeOpened = true; } };
+    globalThis.UpgradeModal = { open: () => {} };
     document.querySelectorAll('.wizard-overlay').forEach(el => el.remove());
   });
 
-  it('blocks a locked-rarity catalog ship and offers the upgrade path', () => {
-    ShipSetupWizard.open({ id: 'bp-x', rarity: 'Legendary', name: 'Test Ship' });
-    expect(document.querySelector('.wizard-overlay')).toBeNull();
-    expect(notices.length).toBe(1);
-    expect(notices[0].title).toBe('Rank required');
-    expect(upgradeOpened).toBe(true);
-  });
-
-  it('blocks Mythic with rank-only copy and no upgrade modal', () => {
-    ShipSetupWizard.open({ id: 'bp-y', rarity: 'Mythic', name: 'Apex Ship' });
-    expect(document.querySelector('.wizard-overlay')).toBeNull();
-    expect(notices[0].message).toContain('Admiral');
-    expect(upgradeOpened).toBe(false);
-  });
-
-  it('lets an unlocked rarity through the gate', async () => {
-    // Rare passes the stubbed gate; the wizard proceeds to build its overlay.
-    // NOTE: open() is once-per-module while its private _overlay is set, so
-    // this test closes AND flushes the 200ms teardown timer; any test added
-    // after this one depends on that flush having run.
-    ShipSetupWizard.open({ id: 'bp-z', rarity: 'Rare', name: 'Starter Ship' });
-    expect(notices.length).toBe(0);
-    const overlay = document.querySelector('.wizard-overlay');
-    expect(overlay).toBeTruthy();
-    ShipSetupWizard.close();
-    await new Promise(r => setTimeout(r, 250));
-    expect(document.querySelector('.wizard-overlay')).toBeNull();
-  });
+  // open() is once-per-module while its private _overlay is set, so each
+  // case closes AND flushes the 200ms teardown timer before the next runs.
+  for (const rarity of ['Rare', 'Legendary', 'Mythic']) {
+    it(`opens the wizard for a ${rarity} catalog ship`, async () => {
+      ShipSetupWizard.open({ id: 'bp-' + rarity, rarity, name: rarity + ' Ship' });
+      expect(notices.length).toBe(0);
+      expect(document.querySelector('.wizard-overlay')).toBeTruthy();
+      ShipSetupWizard.close();
+      await new Promise(r => setTimeout(r, 250));
+      expect(document.querySelector('.wizard-overlay')).toBeNull();
+    });
+  }
 });
