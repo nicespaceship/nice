@@ -696,177 +696,47 @@ const IntegrationsView = (() => {
     announce(row);
   }
 
-  /** Initiate Google OAuth flow — redirects to Google consent screen */
-  function _initiateGoogleOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Google services.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${GOOGLE_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    // Redirect to Google OAuth
-    window.location.href = authUrl;
-  }
-
-  /** Initiate Microsoft OAuth flow — redirects to Microsoft consent screen */
-  function _initiateMicrosoftOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Microsoft 365.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${MICROSOFT_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate HubSpot OAuth flow — redirects to HubSpot consent screen */
-  function _initiateHubspotOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect HubSpot.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${HUBSPOT_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate GitHub OAuth flow — redirects to GitHub consent screen */
-  function _initiateGithubOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect GitHub.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${GITHUB_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate Slack OAuth flow — redirects to Slack consent screen */
-  function _initiateSlackOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Slack.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${SLACK_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate Linear OAuth flow — redirects to Linear consent screen */
-  function _initiateLinearOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Linear.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${LINEAR_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate Notion OAuth flow — redirects to Notion consent screen */
-  function _initiateNotionOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Notion.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${NOTION_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate Stripe OAuth flow — redirects to Stripe consent screen */
-  function _initiateStripeOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Stripe.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${STRIPE_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate Atlassian OAuth flow — redirects to Atlassian consent screen */
-  function _initiateAtlassianOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Atlassian.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${ATLASSIAN_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  /** Initiate Cloudflare OAuth flow — redirects to Cloudflare consent screen */
-  function _initiateCloudflareOAuth() {
-    const user = State.get('user');
-    if (!user) {
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: 'Please sign in to connect Cloudflare.', type: 'error' });
-      return;
-    }
-
-    const redirectUrl = window.location.origin + '/app/#/security';
-    const authUrl = `${CLOUDFLARE_OAUTH_URL}/authorize`
-      + `?user_id=${encodeURIComponent(user.id)}`
-      + `&redirect_url=${encodeURIComponent(redirectUrl)}`;
-
-    window.location.href = authUrl;
-  }
-
-  function _initiateOAuthGeneric(name, baseUrl) {
+  /** Start an OAuth connection. POST /start binds the flow to this signed-in
+   *  user and this browser, then returns the provider's consent URL. */
+  async function _initiateOAuthGeneric(name, baseUrl) {
     const user = State.get('user');
     if (!user) {
       if (typeof Notify !== 'undefined') Notify.send({ title: 'Sign In Required', message: `Please sign in to connect ${name}.`, type: 'error' });
       return;
     }
-    const redirectUrl = window.location.origin + '/app/#/security';
-    window.location.href = `${baseUrl}/authorize?user_id=${encodeURIComponent(user.id)}&redirect_url=${encodeURIComponent(redirectUrl)}`;
+    let consentUrl = null;
+    try {
+      const session = await SB.auth.getSession();
+      if (session?.access_token) {
+        const res = await fetch(`${baseUrl}/start`, {
+          method: 'POST',
+          // The response sets the cookie the callback checks to prove this
+          // browser started the flow, so it must be stored.
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({ redirect_url: window.location.origin + '/app/#/security' }),
+        });
+        const body = res.ok ? await res.json() : null;
+        if (typeof body?.url === 'string' && body.url.startsWith('https://')) consentUrl = body.url;
+      }
+    } catch (_) { /* reported below */ }
+    if (!consentUrl) {
+      if (typeof Notify !== 'undefined') Notify.send({ title: 'Connection failed', message: `Could not start connecting ${name}, please try again.`, type: 'error' });
+      return;
+    }
+    window.location.href = consentUrl;
   }
 
+  function _initiateGoogleOAuth()     { _initiateOAuthGeneric('Google services', GOOGLE_OAUTH_URL); }
+  function _initiateMicrosoftOAuth()  { _initiateOAuthGeneric('Microsoft 365', MICROSOFT_OAUTH_URL); }
+  function _initiateHubspotOAuth()    { _initiateOAuthGeneric('HubSpot', HUBSPOT_OAUTH_URL); }
+  function _initiateGithubOAuth()     { _initiateOAuthGeneric('GitHub', GITHUB_OAUTH_URL); }
+  function _initiateSlackOAuth()      { _initiateOAuthGeneric('Slack', SLACK_OAUTH_URL); }
+  function _initiateLinearOAuth()     { _initiateOAuthGeneric('Linear', LINEAR_OAUTH_URL); }
+  function _initiateNotionOAuth()     { _initiateOAuthGeneric('Notion', NOTION_OAUTH_URL); }
+  function _initiateStripeOAuth()     { _initiateOAuthGeneric('Stripe', STRIPE_OAUTH_URL); }
+  function _initiateAtlassianOAuth()  { _initiateOAuthGeneric('Atlassian', ATLASSIAN_OAUTH_URL); }
+  function _initiateCloudflareOAuth() { _initiateOAuthGeneric('Cloudflare', CLOUDFLARE_OAUTH_URL); }
   function _initiateSentryOAuth()   { _initiateOAuthGeneric('Sentry',     SENTRY_OAUTH_URL); }
   function _initiateAirtableOAuth() { _initiateOAuthGeneric('Airtable',   AIRTABLE_OAUTH_URL); }
   function _initiateMondayOAuth()   { _initiateOAuthGeneric('monday.com', MONDAY_OAUTH_URL); }
@@ -1041,5 +911,5 @@ const IntegrationsView = (() => {
     commit(saved);
   }
 
-  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp, _connectMcp, _addCustomMcp, _connectZapier };
+  return { title, render, MCP_CATALOG, _isPersistedId, _disconnectMcp, _connectMcp, _addCustomMcp, _connectZapier, _initiateOAuthGeneric };
 })();
