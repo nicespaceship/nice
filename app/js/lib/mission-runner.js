@@ -254,8 +254,6 @@ const MissionRunner = (() => {
             '**Aspect Ratio:** ' + (videoResult.size || '9:16');
           _updateLocalMission(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' });
           SB.db('mission_runs').update(missionId, { status: 'review', progress: 100, result: resultText, completed_at: new Date().toISOString(), approval_status: 'draft' }).catch(() => {});
-          // No XP here — the run goes to 'review' and XP is awarded once on
-          // approval (see missions.js). Awarding here double-counted the video.
           // Return the result so the chat surface renders the video link.
           // A bare return left callers with `undefined` → "no output" message.
           return { content: resultText, agent: agentBp.name, agentId: agentBp.id, metadata: { type: 'video', model: videoResult.model || 'veo-2', url: videoResult.url } };
@@ -422,9 +420,6 @@ const MissionRunner = (() => {
       if (typeof AgentMemory !== 'undefined' && agentBp && agentBp.id) {
         AgentMemory.learn(agentBp.id, { task: mission.title, content: result.content, metadata: result.metadata }, 'approved');
       }
-
-      // XP awarded on approval, not on generation
-      // (Gamification.addXP('complete_mission') moved to approve action)
 
       if (!isChatRun) {
         _notify(user.id, 'mission', 'Ready for Review', mission.title + ' — review and approve the results.');
@@ -1263,49 +1258,6 @@ const MissionRunner = (() => {
     return lastResult;
   }
 
-  /* ── Per-agent XP tracking ── */
-  function awardAgentXP(agentId, xp) {
-    if (!agentId) return;
-    try {
-      const stats = JSON.parse(localStorage.getItem(Utils.KEYS.agentStats) || '{}');
-      if (!stats[agentId]) stats[agentId] = { xp: 0, missions: 0, approved: 0, rejected: 0 };
-      stats[agentId].xp = (stats[agentId].xp || 0) + xp;
-      stats[agentId].missions = (stats[agentId].missions || 0) + 1;
-      localStorage.setItem(Utils.KEYS.agentStats, JSON.stringify(stats));
-
-      // Check for rarity evolution
-      const totalXP = stats[agentId].xp;
-      let newRarity = 'Common';
-      if (totalXP >= 5000) newRarity = 'Mythic';
-      else if (totalXP >= 2000) newRarity = 'Legendary';
-      else if (totalXP >= 800) newRarity = 'Epic';
-      else if (totalXP >= 200) newRarity = 'Rare';
-
-      // Update agent rarity in State
-      const agents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
-      const agent = agents.find(a => a.id === agentId);
-      if (agent && agent.rarity !== newRarity) {
-        const oldRarity = agent.rarity || 'Common';
-        agent.rarity = newRarity;
-        State.set('agents', [...agents]);
-        // Persist rarity evolution to Supabase
-        if (typeof SB !== 'undefined' && SB.isReady() && agent.supabase_id) {
-          SB.db('user_agents').update(agent.supabase_id, { rarity: newRarity }).catch(() => {});
-        }
-        if (typeof Notify !== 'undefined' && oldRarity !== newRarity) {
-          Notify.send({ title: 'Agent Evolved!', message: `${agent.name} evolved to ${newRarity}!`, type: 'success' });
-        }
-      }
-    } catch {}
-  }
-
-  function getAgentStats(agentId) {
-    try {
-      const stats = JSON.parse(localStorage.getItem(Utils.KEYS.agentStats) || '{}');
-      return stats[agentId] || { xp: 0, missions: 0, approved: 0, rejected: 0 };
-    } catch { return { xp: 0, missions: 0, approved: 0, rejected: 0 }; }
-  }
-
   /* Persist a Mission template + enqueue a Run from a ready-made plan. The SSOT
      for "turn a plan into a runnable Run" — the Mission Composer and the ship
      Workflow runner both call this so the create/enqueue/State-mirror logic
@@ -1418,8 +1370,6 @@ const MissionRunner = (() => {
     unscheduleMission,
     resumeDag,
     runWithDispatch,
-    awardAgentXP,
-    getAgentStats,
     isRunnable,
     _isDagMission,
     _finishDagRun,

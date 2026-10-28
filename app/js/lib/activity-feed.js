@@ -140,9 +140,7 @@ const ActivityFeed = (() => {
     }
 
     el.innerHTML = events.map(evt => {
-      const time = typeof Gamification !== 'undefined'
-        ? Gamification._toStardate(evt.timestamp)
-        : _timeAgo(evt.timestamp);
+      const time = Utils.toStardate(evt.timestamp);
       return `
         <div class="af-item">
           <span class="af-icon">${evt.icon}</span>
@@ -155,7 +153,6 @@ const ActivityFeed = (() => {
     el.scrollTop = 0;
   }
 
-  const _timeAgo = Utils.timeAgo;
   const _esc = Utils.esc;
 
   function destroy() {

@@ -112,9 +112,8 @@ const SpaceshipBuilderView = (() => {
      reinsert (the old _replaceShipSlots behavior) would silently
      destroy themed slot identity — catastrophic for forked catalog
      ships whose themed labels (Founder, Engineering Lead, …) we
-     deliberately copied via _copyShipSlots. Rank-up still works: when
-     a user gains a class, this adds the new generic slots on top of
-     the themed ones. */
+     deliberately copied via _copyShipSlots. A larger roster adds the new
+     generic slots on top of the themed ones. */
   async function _topUpShipSlots(blueprintId, targetSlotCount) {
     if (!blueprintId || !targetSlotCount || typeof SB === 'undefined' || !SB.client) return;
     const { data: existing } = await SB.client
@@ -159,19 +158,14 @@ const SpaceshipBuilderView = (() => {
     return !insertErr;
   }
 
-  /** Slots are determined by XP rank via Gamification.getSlotTemplate() */
+  /** Every custom spaceship gets the full crew roster. */
   function _getSlotConfig() {
-    if (typeof Gamification !== 'undefined' && Gamification.getSlotTemplate) {
-      const tpl = Gamification.getSlotTemplate();
-      return {
-        name: tpl.name || 'Spaceship',
-        slots: tpl.slots.map(s => ({ max: s.maxRarity || 'Common', label: s.label || 'Crew ' + s.id }))
-      };
-    }
-    return { name: 'Spaceship', slots: [{ max: 'Common', label: 'Bridge' }, { max: 'Common', label: 'Ops' }] };
+    const labels = BlueprintUtils.SLOT_LABELS;
+    return {
+      name: 'Spaceship',
+      slots: Array.from({ length: BlueprintUtils.MAX_SHIP_SLOTS }, (_, i) => ({ label: labels[i] || 'Crew ' + (i + 1) })),
+    };
   }
-
-  const SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   function render(el) {
     // Guest mode: allow building ships without sign-in (saves to localStorage)
@@ -258,7 +252,7 @@ const SpaceshipBuilderView = (() => {
           <svg class="builder-header-icon" fill="currentColor" stroke="none" style="width:28px;height:28px"><use href="#icon-spaceship"/></svg>
           <div>
             <h2 class="builder-title">${isEdit ? 'Edit Spaceship' : 'Create New Spaceship'}</h2>
-            <p class="builder-sub">Configure your spaceship's identity and crew assignments. Slots are determined by your rank (${slotConfig.slots.length} available).</p>
+            <p class="builder-sub">Configure your spaceship's identity and crew assignments (${slotConfig.slots.length} slots).</p>
           </div>
           <div class="builder-header-actions">
             <button type="button" class="btn btn-sm" id="btn-view-md" title="View as text">View as Text</button>
@@ -361,31 +355,18 @@ const SpaceshipBuilderView = (() => {
     const agents = (typeof Blueprints !== 'undefined' && Blueprints.getActivatedAgents)
       ? Blueprints.getActivatedAgents() : [];
 
-    // Use the Gamification SSOT so Mythic agents are ranked (4), not treated
-    // as Common (0) and made eligible for every slot.
-    const rarityOrder = (typeof Gamification !== 'undefined' && Gamification.RARITY_ORDER) || { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
-
     let assigned = 0;
     grid.innerHTML = cls.slots.map((slot, i) => {
       const agentId = assignments[i] || '';
       if (agentId) assigned++;
-      const color = SLOT_COLORS[slot.max] || '#94a3b8';
-
-      // Filter agents by rarity constraint
-      const eligible = agents.filter(a => {
-        const r = a.rarity || 'Common';
-        return (rarityOrder[r] || 0) <= (rarityOrder[slot.max] || 0);
-      });
-
       return `
         <div class="builder-slot-card ${agentId ? 'builder-slot-assigned' : ''}">
           <div class="builder-slot-header">
             <span class="builder-slot-label">${slot.label}</span>
-            <span class="builder-slot-rarity" style="color:${color};border-color:${color}">${slot.max}</span>
           </div>
           <select class="filter-select builder-select builder-slot-select" data-slot="${i}">
             <option value="">— Empty —</option>
-            ${eligible.map(a => `<option value="${a.id}" ${agentId === a.id ? 'selected' : ''}>${_esc(a.name)} (${a.rarity || 'Common'})</option>`).join('')}
+            ${agents.map(a => `<option value="${a.id}" ${agentId === a.id ? 'selected' : ''}>${_esc(a.name)} (${a.rarity || 'Common'})</option>`).join('')}
           </select>
         </div>`;
     }).join('');
@@ -521,10 +502,7 @@ const SpaceshipBuilderView = (() => {
     }
 
     const cls = _getSlotConfig();
-    // Custom ships start Common and evolve through usage milestones (XP rule).
-    // Editing preserves the ship's current rarity. The per-slot `max` from the
-    // class template gates which crew can be assigned, not the ship's own rarity,
-    // so a Pro user's class-5 slot ceiling no longer forces every build Legendary.
+    // Custom ships start Common; editing preserves the ship's current rarity.
     const rarity = existingShip?.rarity || 'Common';
     const stats = { crew: String(Object.keys(slots).length), slots: String(cls.slots.length) };
     const caps  = [category + ' operations', cls.slots.length + ' agent slots'];
@@ -612,10 +590,6 @@ const SpaceshipBuilderView = (() => {
       }
 
       if (shipId && !existingShip) {
-        if (typeof Gamification !== 'undefined') {
-          Gamification.addXP('launch_spaceship');
-          Gamification.checkAchievements();
-        }
         const shipObj = {
           id: shipId, name, category, description: desc, flavor, tags, type: 'spaceship',
           rarity, status: 'standby', _guest: !user,

@@ -62,7 +62,6 @@ globalThis.Router = { navigate: vi.fn(), path: () => '/missions', on: () => {}, 
 // Mock Notify
 globalThis.Notify = { send: vi.fn(), init: () => {} };
 globalThis.AuditLog = { log: () => {} };
-globalThis.Gamification = { awardXP: () => {} };
 globalThis.MissionRunner = { run: vi.fn(async () => {}) };
 
 // Load MissionsView

@@ -158,7 +158,6 @@ const UpgradeModal = (() => {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Welcome to Pro!', message: 'Your subscription is active. You can now run a fleet of spaceships.', type: 'success' });
       }
-      if (typeof Gamification !== 'undefined') Gamification.addXP('upgrade_spaceship');
       const cleanHash = hash.replace(/[?&]upgrade=success/, '').replace(/\?$/, '');
       history.replaceState(null, '', location.pathname + cleanHash);
     } else if (hash.includes('upgrade=cancel')) {

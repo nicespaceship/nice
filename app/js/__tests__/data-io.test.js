@@ -14,7 +14,7 @@ describe('DataIO', () => {
   });
 
   it('should export data creating a download blob', () => {
-    localStorage.setItem('nice-xp', '100');
+    localStorage.setItem('nice-quick-notes', '100');
     State.set('agents', [{ id: '1', name: 'Nova' }]);
 
     // Mock URL.createObjectURL to capture the Blob
@@ -62,7 +62,7 @@ describe('DataIO', () => {
   });
 
   it('should have localStorage keys collected during export', () => {
-    localStorage.setItem('nice-xp', '50');
+    localStorage.setItem('nice-quick-notes', '50');
     localStorage.setItem('nice-budget', '{}');
     localStorage.setItem('ns-theme', 'matrix');
     localStorage.setItem('unrelated-key', 'ignored');
@@ -75,7 +75,7 @@ describe('DataIO', () => {
         keys.push(key);
       }
     }
-    expect(keys).toContain('nice-xp');
+    expect(keys).toContain('nice-quick-notes');
     expect(keys).toContain('nice-budget');
     expect(keys).toContain('ns-theme');
     expect(keys).not.toContain('unrelated-key');

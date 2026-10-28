@@ -115,10 +115,9 @@ loadScriptGlobal('lib/audit-log.js');
 loadScriptGlobal('lib/onboarding.js');  // Depends on AuditLog + State (both already available)
 loadScriptGlobal('lib/content-queue.js'); // Depends on Utils + State
 loadScriptGlobal('lib/alert-counts.js');  // Depends on State + ContentQueue
-loadScriptGlobal('lib/notify.js');      // Before Gamification (Gamification calls Notify.send)
-loadScriptGlobal('lib/llm-config.js');  // Before Gamification (Gamification.calcAgentRarity calls LLMConfig.canonicalize)
-loadScriptGlobal('lib/token-config.js'); // SSOT for token pools (Gamification reads it for the ship fuel gauge)
-loadScriptGlobal('lib/gamification.js');
+loadScriptGlobal('lib/notify.js');
+loadScriptGlobal('lib/llm-config.js');  // BlueprintUtils.calcAgentRarity calls LLMConfig.canonicalize
+loadScriptGlobal('lib/token-config.js'); // SSOT for token pools
 loadScriptGlobal('lib/data-io.js');
 loadScriptGlobal('lib/command-palette.js');
 loadScriptGlobal('lib/blueprint-markdown.js');

@@ -5,7 +5,7 @@
  * assigns their full 12-agent crews, and creates 10 real missions.
  *
  * Usage: paste into browser console on the NICE app, or load via <script>.
- *   - Requires: Blueprints, State, SB, Gamification globals
+ *   - Requires: Blueprints, State, SB globals
  *   - Safe to run multiple times (idempotent activations)
  */
 (async function setupFlagships() {
@@ -182,14 +182,6 @@
   }
   if (Blueprints.getActivatedShips) {
     State.set('spaceships', Blueprints.getActivatedShips());
-  }
-
-  // Award XP
-  if (typeof Gamification !== 'undefined') {
-    Gamification.addXP('launch_spaceship');
-    Gamification.addXP('launch_spaceship');
-    for (let i = 0; i < 24; i++) Gamification.addXP('create_agent');
-    log(`XP awarded: 2× launch_spaceship + 24× create_agent`);
   }
 
   log('═══════════════════════════════════════════════');

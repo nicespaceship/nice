@@ -119,20 +119,11 @@ describe('PromptPanel._getSlottedAgents', () => {
 });
 
 describe('PromptPanel._buildAppContext', () => {
-  it('derives rank from the XP thresholds', () => {
-    const rankAt = (xp) => { localStorage.setItem(Utils.KEYS.xp, String(xp)); return PromptPanel._buildAppContext().rank; };
-    expect(rankAt(0)).toBe('Ensign');
-    expect(rankAt(25000)).toBe('Lieutenant');
-    expect(rankAt(99999)).toBe('Lt Commander'); // 50k..100k band
-    expect(rankAt(200000)).toBe('Captain');
-    expect(rankAt(2500000)).toBe('Fleet Admiral');
-  });
-
-  it('gates show_rarity at 300 XP', () => {
-    localStorage.setItem(Utils.KEYS.xp, '299');
-    expect(PromptPanel._buildAppContext().show_rarity).toBe(false);
-    localStorage.setItem(Utils.KEYS.xp, '300');
-    expect(PromptPanel._buildAppContext().show_rarity).toBe(true);
+  it('sends no rank or XP and always sends show_rarity: false', () => {
+    const ctx = PromptPanel._buildAppContext();
+    expect(ctx).not.toHaveProperty('rank');
+    expect(ctx).not.toHaveProperty('xp');
+    expect(ctx.show_rarity).toBe(false);
   });
 
   it('reports agent and ship counts from State', () => {
@@ -155,15 +146,11 @@ describe('PromptPanel._buildAppContext', () => {
     expect(PromptPanel._buildAppContext().active_crew).toEqual([{ name: 'Web Researcher', role: 'Research' }]);
   });
 
-  it('groups the catalog by role, hiding rarity below the 300-XP gate', () => {
-    localStorage.setItem(Utils.KEYS.xp, '0');
-    let ctx = PromptPanel._buildAppContext();
+  it('groups the catalog by role without rarity tags', () => {
+    const ctx = PromptPanel._buildAppContext();
     expect(ctx.catalog_lines).toContain('Research: Web Researcher, Data Analyst');
     expect(ctx.catalog_lines).toContain('Code: Code Reviewer');
     expect(ctx.catalog_lines).not.toContain('(Common)');
-    localStorage.setItem(Utils.KEYS.xp, '500');
-    ctx = PromptPanel._buildAppContext();
-    expect(ctx.catalog_lines).toContain('(Common)');
   });
 
   it('lists the seed ships', () => {

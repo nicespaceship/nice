@@ -14,12 +14,6 @@ const BlueprintsView = (() => {
   function _serialHash(str, len) { return CardRenderer.serialHash(str, len); }
   function _avatarArt(name, category, serial) { return CardRenderer.avatarArt(name, category, serial); }
 
-  /* ── Spaceship Slot Template (XP-based progression, no fixed classes) ── */
-  function _getShipSlots(classId) {
-    if (typeof Gamification !== 'undefined') return Gamification.getSlotTemplate();
-    return { name: 'Ship', slots: [{max:'Epic',label:'Bridge'},{max:'Rare',label:'Ops'},{max:'Rare',label:'Tactical'},{max:'Rare',label:'Science'},{max:'Rare',label:'Engineering'}] };
-  }
-
   const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   /* ── Ship blueprint lookup (via Blueprints catalog) ── */
@@ -517,7 +511,7 @@ const BlueprintsView = (() => {
         <div class="blueprint-card-art"><div class="blueprint-card-art-serial" title="Serial: ${serial.code}"><span class="blueprint-card-serial-code">${serial.code}</span></div><div class="blueprint-card-art-class"><span class="blueprint-card-serial-code" style="color:#f59e0b;border:1px solid #f59e0b">Skin</span></div>${_pa(bp.name, bp.preview_colors || ['#080808','#ffffff','#888'], serial)}</div>
         <div class="blueprint-card-marquee"><div class="blueprint-card-marquee-track"><span>${marqueeText}</span><span>${marqueeText}</span></div></div>
         <div class="blueprint-card-text-box"><p class="blueprint-card-flavor">"${_esc(bp.flavor)}"</p>${copyPreview}</div>
-        <div class="blueprint-card-stats"><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${Object.keys(bp.copy?.nav || {}).length}</span><span class="blueprint-card-stat-lbl">Labels</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${(bp.copy?.ranks || []).length}</span><span class="blueprint-card-stat-lbl">Ranks</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${bp.effect ? '1' : '0'}</span><span class="blueprint-card-stat-lbl">FX</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${priceFmt}</span><span class="blueprint-card-stat-lbl">Cost</span></div></div>
+        <div class="blueprint-card-stats"><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${Object.keys(bp.copy?.nav || {}).length}</span><span class="blueprint-card-stat-lbl">Labels</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${bp.effect ? '1' : '0'}</span><span class="blueprint-card-stat-lbl">FX</span></div><div class="blueprint-card-stat"><span class="blueprint-card-stat-val">${priceFmt}</span><span class="blueprint-card-stat-lbl">Cost</span></div></div>
         <div class="blueprint-card-actions">${previewBtn}${actionBtn}</div>
       </div>`;
     }
@@ -706,7 +700,6 @@ const BlueprintsView = (() => {
             ShipSetupWizard.open(bp, { onComplete: () => _applyFilters() });
           } else {
             Blueprints.activateShip(id);
-            if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint');
             _applyFilters();
           }
         }
@@ -744,13 +737,11 @@ const BlueprintsView = (() => {
           // Activate owned skin
           Skin.activate(id);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Skin On', message: Skin.getPack(id)?.name + ' applied!', type: 'task_complete' });
-          if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
         } else {
           // Purchase
           Skin.purchaseSkin(id);
           Skin.activate(id);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Skin Purchased', message: Skin.getPack(id)?.name + ' is now yours!', type: 'task_complete' });
-          if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
         }
         _applyFilters();
       });
@@ -800,7 +791,6 @@ const BlueprintsView = (() => {
             }
             Skin.activate(id);
             if (typeof Notify !== 'undefined') Notify.send({ title: 'Skin On', message: (Skin.getPack(id)?.name || id) + ' applied!', type: 'task_complete' });
-            if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
           }
           _applyFilters();
         }
@@ -2769,7 +2759,7 @@ const BlueprintsView = (() => {
       }
     } else if (type === 'spaceship') {
       const s = bp.stats || {};
-      rows.push(['Rank', bp.rarity || 'Common']);
+      rows.push(['Rarity', bp.rarity || 'Common']);
       rows.push(['Agents', s.crew || '—']);
       rows.push(['Deploys', String(bp.activation_count || 0)]);
       rows.push(['Category', bp.category || '—']);
@@ -2907,7 +2897,6 @@ const BlueprintsView = (() => {
             const label = t === 'spaceship' ? 'your fleet' : 'your agents';
             Notify.send({ title: 'Installed', message: `${bp.name} added to ${label}.`, type: 'task_complete' });
           }
-          if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
           _applyFilters();
           _openDrawer(id);
           // For ships, nudge the user toward setup so they can populate
@@ -2970,7 +2959,6 @@ const BlueprintsView = (() => {
           if (!Skin.ownsSkin(id) && Skin.getPack(id)?.price) Skin.purchaseSkin(id);
           Skin.activate(id);
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Skin On', message: (Skin.getPack(id)?.name || id) + ' applied!', type: 'task_complete' });
-          if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
         }
         _applyFilters();
         _openDrawer(id);
@@ -3278,7 +3266,7 @@ const BlueprintsView = (() => {
 
   function _activateAllHangar() {
     _hangarItems.forEach(h => {
-      if (h.type === 'spaceship') { Blueprints.activateShip(h.id); if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint'); }
+      if (h.type === 'spaceship') Blueprints.activateShip(h.id);
     });
     const count = _hangarItems.length;
     _hangarItems = [];

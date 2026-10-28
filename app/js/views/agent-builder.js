@@ -965,10 +965,6 @@ const AgentBuilderView = (() => {
         State.set('agents', agents);
         if (typeof Blueprints !== 'undefined') Blueprints.activateAgent(row.id);
       }
-      if (typeof Gamification !== 'undefined' && !existingAgent) {
-        Gamification.addXP('create_agent');
-        Gamification.checkAchievements();
-      }
       Router.navigate('#/bridge/agents');
     } catch (err) {
       // Three-channel error surface so silent failures are impossible:

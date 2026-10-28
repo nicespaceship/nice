@@ -169,25 +169,8 @@ const ProfileView = (() => {
         </div>
 
         <div class="profile-section">
-          <h3 class="profile-section-title">Rank &amp; Resources</h3>
-          <div id="profile-rank">
-            ${typeof Gamification !== 'undefined' ? Gamification.renderRankBadge(false) : ''}
-          </div>
-          <div id="profile-resources" style="margin-top:12px">
-            ${typeof Gamification !== 'undefined' && Gamification.renderResourceBar ? Gamification.renderResourceBar() : ''}
-          </div>
-        </div>
-
-        <div class="profile-section">
           <h3 class="profile-section-title">Weekly Summary</h3>
           <div id="profile-weekly-summary" class="home-weekly-summary"></div>
-        </div>
-
-        <div class="profile-section">
-          <h3 class="profile-section-title">Achievements</h3>
-          <div class="ach-gallery">
-            ${typeof Gamification !== 'undefined' ? Gamification.renderAchievementGallery() : ''}
-          </div>
         </div>
 
         <div class="profile-section">
@@ -216,7 +199,7 @@ const ProfileView = (() => {
 
         <div class="profile-section">
           <h3 class="profile-section-title">Referral Program</h3>
-          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">Invite a friend — you both earn 500 XP when they sign up.</p>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">Share your referral link to invite a friend to NICE.</p>
           <div class="profile-row">
             <span class="profile-row-label">Referral Code</span>
             <span class="profile-row-val mono" style="color:var(--accent);letter-spacing:.1em;">${user.id.slice(0, 8).toUpperCase()}</span>
@@ -436,7 +419,6 @@ const ProfileView = (() => {
     const el = document.getElementById('profile-weekly-summary');
     if (!el) return;
     try {
-      const xp = typeof Gamification !== 'undefined' ? Gamification.getXP?.() || 0 : 0;
       const missions = (State.get('missions') || []);
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const thisWeek = missions.filter(m => new Date(m.created_at) > weekAgo);
@@ -447,7 +429,6 @@ const ProfileView = (() => {
         <div class="profile-row"><span class="profile-row-label">Missions This Week</span><span class="profile-row-val">${thisWeek.length}</span></div>
         <div class="profile-row"><span class="profile-row-label">Completed</span><span class="profile-row-val">${completed}</span></div>
         <div class="profile-row"><span class="profile-row-label">Running</span><span class="profile-row-val">${running}</span></div>
-        <div class="profile-row"><span class="profile-row-label">Total XP</span><span class="profile-row-val">${xp}</span></div>
       `;
     } catch (e) {
       el.innerHTML = '<p class="text-muted" style="font-size:.82rem">Summary unavailable.</p>';

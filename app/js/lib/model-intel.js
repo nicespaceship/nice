@@ -40,12 +40,6 @@ const ModelIntel = (() => {
     m.lastUsed = new Date().toISOString();
     _save();
 
-    // Check milestones
-    const totalRuns = Object.values(profile.models).reduce((sum, d) => sum + d.runs, 0);
-    if (totalRuns === 10 && typeof Gamification !== 'undefined') {
-      Gamification.addXP('model_intel_milestone');
-    }
-
     // Debounced sync to server (every 10th log call)
     if (m.runs % 10 === 0) syncToServer();
   }

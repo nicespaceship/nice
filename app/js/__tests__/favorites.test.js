@@ -4,7 +4,7 @@
  * the toggle. render() safely no-ops without the sidebar DOM (favorites.js:74),
  * so add/remove are testable headlessly.
  *
- * Utils (KEYS), State, Router (path() → '/'), and Gamification all come from
+ * Utils (KEYS), State and Router (path() → '/') all come from
  * setup.js, which also clears localStorage before each test for isolation.
  */
 

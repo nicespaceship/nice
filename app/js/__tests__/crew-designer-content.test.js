@@ -17,7 +17,6 @@ function loadModule(rel) {
 beforeEach(() => {
   globalThis.SB = { isReady: () => true };
   globalThis.Notify = { send() {} };
-  globalThis.Gamification = { getMaxSlots: () => 12 };
 });
 
 // Regression for the marquee "describe your business → AI designs your crew"

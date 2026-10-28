@@ -47,7 +47,6 @@ globalThis.State = (() => {
   };
 })();
 
-globalThis.Gamification = { addXP: vi.fn() };
 
 // crew-generator delegates activation tracking to Blueprints.activateAgent.
 // Stub the surface needed for deployFromCatalog: getSpaceship + activateAgent +

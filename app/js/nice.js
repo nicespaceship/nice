@@ -81,12 +81,11 @@ const Theme = (() => {
         settings:{ stability:0.85, similarity_boost:0.85, style:0, use_speaker_boost:true } } },
     { id:'jarvis', name:'J.A.R.V.I.S.', persona:{ name:'JARVIS', callsign:'Sir' }, chatsLabel:'Sessions', chips:['Status report, please','Bring up the schematics',"What's on the agenda, sir?"], builtin:true, accent:'#00e5ff', preview:['#070d1a','#00e5ff','#18ffff'],
       data:{ colors:{ '--bg':'#070d1a','--bg2':'#0c1829','--surface':'rgba(0,229,255,0.04)','--surface2':'rgba(0,229,255,0.08)','--border':'rgba(0,229,255,0.18)','--border-hi':'rgba(0,229,255,0.5)','--accent':'#00e5ff','--accent2':'#18ffff','--text':'#b2ebf2','--text-muted':'rgba(0,229,255,0.55)','--glow':'0 0 16px rgba(0,229,255,0.2)','--panel-bg':'rgba(7,13,26,0.95)' }, fonts:{ '--font-h':"'Exo 2', sans-serif", '--font-b':"'Inter', sans-serif" }, radius:'3px' },
-      // Personality bundle. `ranks` overlays Gamification._skinnedRanks();
-      // `labels` and `placeholders` feed Theme.rewrite + the in-DOM swap.
+      // Personality bundle. `labels` and `placeholders` feed Theme.rewrite
+      // + the in-DOM swap.
       // Keys must be full sentences — short fragments would catch chat
       // content. Per the #99 rule, nav/tab/sidebar labels stay constant.
       copy:{
-        ranks:['Mark I','Mark II','Mark III','Mark IV','Mark V','Mark VI','Mark VII','Mark VIII','Mark IX','Mark XLII','Mark L','Iron Man'],
         labels:{
           // Empty states
           'No agents deployed yet. Browse below.': 'No protocols engaged, sir. Browse below.',
@@ -270,7 +269,7 @@ const Theme = (() => {
       meta.setAttribute('content', bg || '#ffffff');
     }
 
-    // Theme-specific personality (body copy / toasts / placeholders / ranks)
+    // Theme-specific personality (body copy / toasts / placeholders)
     // — tab, button, sidebar, and brand labels stay constant across themes
     // for docs and onboarding consistency. Reads `copy.labels` and
     // `copy.placeholders` off the active theme entry; no-op for themes
@@ -295,15 +294,6 @@ const Theme = (() => {
     // experiment to see whether voiced UI moments land before generalising.
     if (typeof CoreVoice !== 'undefined' && CoreVoice.maybePlayThemeIntro) CoreVoice.maybePlayThemeIntro();
     _updateDarkLightIcon();
-    // Refresh the sidebar rank badge so theme-scoped rank overlays (e.g.
-    // JARVIS → Mark I…Iron Man) land immediately instead of on next login.
-    try {
-      const badgeEl = document.getElementById('hdr-user-badge');
-      if (badgeEl && typeof Gamification !== 'undefined' && Gamification.getRank) {
-        const rank = Gamification.getRank();
-        if (rank && rank.name) badgeEl.textContent = rank.name.toUpperCase();
-      }
-    } catch { /* pre-init — rank will render on next update */ }
 
     // Re-render the current view so any theme-specific DOM (Schematic's arc
     // reactor, JARVIS HUD rings, etc.) gets rebuilt against the new theme
@@ -1396,17 +1386,13 @@ const NICE = (() => {
     }, { passive: true });
   }
 
-  /* ── Header user info (Name + Rank Badge) ── */
+  /* ── Header user info (Name) ── */
   function _updateHeaderUser() {
     const user = State.get('user');
-    const nameEl  = document.getElementById('hdr-username');
-    const badgeEl = document.getElementById('hdr-user-badge');
-    if (!nameEl || !badgeEl) return;
+    const nameEl = document.getElementById('hdr-username');
+    if (!nameEl) return;
     const meta = user?.user_metadata || {};
-    const name = meta.display_name || user?.email?.split('@')[0] || 'Pilot';
-    nameEl.textContent = name;
-    const rank = (typeof Gamification !== 'undefined') ? Gamification.getRank() : { name: 'Ensign' };
-    badgeEl.textContent = rank.name.toUpperCase();
+    nameEl.textContent = meta.display_name || user?.email?.split('@')[0] || 'Pilot';
   }
 
   /* ── Scroll to top on navigation ── */
@@ -1840,7 +1826,6 @@ const NICE = (() => {
     window.addEventListener('appinstalled', () => {
       _deferredInstallPrompt = null;
       if (typeof Notify !== 'undefined') Notify.send({ title: 'NICE Installed', message: 'App installed successfully!', type: 'success' });
-      if (typeof Gamification !== 'undefined') Gamification.addXP('install_pwa');
     });
   }
 
@@ -2551,9 +2536,6 @@ const NICE = (() => {
     // Ship-themed auto-switching
     _initShipThemeWatcher();
 
-    // Gamification DB sync (merge localStorage with Supabase)
-    if (typeof Gamification !== 'undefined' && Gamification.initFromDB) Gamification.initFromDB();
-
     // Floating prompt panel (route-aware)
     if (typeof PromptPanel !== 'undefined') {
       PromptPanel.init();
@@ -2585,8 +2567,6 @@ const NICE = (() => {
     // Start router
     const appView = document.getElementById('app-view');
     Router.init(appView);
-
-    // Sidebar gamification removed — rank & resources shown in Home view widgets
 
     // Activity feed
     if (typeof ActivityFeed !== 'undefined') ActivityFeed.init();

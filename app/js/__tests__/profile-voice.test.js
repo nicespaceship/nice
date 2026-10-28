@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 const __dirname_local = dirname(fileURLToPath(import.meta.url));
 
 // Minimal globals — ProfileView references Utils, State, SB, Router,
-// Notify, Subscription, Gamification. We don't render the full profile
+// Notify, Subscription. We don't render the full profile
 // here, just call the exposed _readVoiceSample / _saveVoiceSample
 // helpers, so only Utils + a blank Notify are needed.
 globalThis.Utils = {
@@ -33,7 +33,6 @@ globalThis.SB = {
 globalThis.Router = { navigate: vi.fn(), on: () => {}, path: () => '/' };
 globalThis.Notify = { send: vi.fn(), show: vi.fn() };
 globalThis.Subscription = { getCurrentPlan: () => 'free', getPlanTier: () => ({ label: 'Free' }) };
-globalThis.Gamification = { renderRankBadge: () => '', renderResourceBar: () => '', renderAchievementGallery: () => '' };
 globalThis.AuditLog = { log: () => {} };
 
 function loadViewGlobal(rel) {

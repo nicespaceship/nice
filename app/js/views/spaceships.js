@@ -422,20 +422,13 @@ const SpaceshipDetailView = (() => {
       const memberIds = fleet.agent_ids || [];
       const members = memberIds.map(mid => agentMap[mid]).filter(Boolean);
       const dotClass = fleet.status === 'deployed' ? 'dot-g dot-pulse' : fleet.status === 'paused' ? 'dot-a' : 'dot-g';
-      const shipClass = typeof Gamification !== 'undefined' ? Gamification.renderShipClassBadge(members.length) : '';
       const allMissions = State.get('missions') || [];
-      const health = typeof Gamification !== 'undefined' ? Gamification.getSpaceshipHealth(fleet, allAgents, allMissions) : null;
 
       // Build dashboard HTML (async for ShipLog)
       const dashboardHtml = await _renderDashboard(fleet.id, memberIds, allMissions);
       // Slots come from the ship's OWN crew defs (real labels, per-slot
-      // rarity, min_class), not the rank-based generic template — matches
-      // schematic.js and the activation wizard. Gamification.getSlotTemplate()
-      // would render 12 generic "Bridge/Ops" slots capped at the viewer's
-      // rank rarity, ignoring what the ship actually defines.
-      const _bu = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
-      const spaceshipClass = _bu ? _bu.getSlotTemplate(fleet)
-        : (typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate() : { id:'dynamic', name:'Ship', slots:[{id:0,maxRarity:'Mythic',label:'Bridge'},{id:1,maxRarity:'Legendary',label:'Ops'}] });
+      // rarity), matching schematic.js and the activation wizard.
+      const spaceshipClass = BlueprintUtils.getSlotTemplate(fleet);
       const assignedIds = new Set(Object.values(fleet.slot_assignments || {}).filter(Boolean));
 
       // Community publish is only offered for user-built ships owned by
@@ -463,7 +456,7 @@ const SpaceshipDetailView = (() => {
               </div>
             </div>
             <div class="detail-header-info">
-              <h2 class="detail-name" contenteditable="true" spellcheck="false" data-field="name" id="ship-profile-name">${_esc(fleet.name)} ${shipClass}</h2>
+              <h2 class="detail-name" contenteditable="true" spellcheck="false" data-field="name" id="ship-profile-name">${_esc(fleet.name)}</h2>
               <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add a ship description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
@@ -475,12 +468,6 @@ const SpaceshipDetailView = (() => {
           </div>
 
           ${dashboardHtml}
-
-          <div class="fleet-detail-actions">
-            <div class="bridge-launch-wrap">
-              <span class="agent-tag">${spaceshipClass.slots.length} slots (${typeof Gamification !== 'undefined' ? Gamification.getRank().name : 'Ensign'} rank)</span>
-            </div>
-          </div>
 
           <!-- Ship Formation (card row above inventory) -->
           <div class="computing-formation">
@@ -505,11 +492,9 @@ const SpaceshipDetailView = (() => {
               </div>
             </div>
             <div id="computing-inv-list">
-              ${_renderInventory(allAgents, assignedIds, spaceshipClass)}
+              ${_renderInventory(allAgents, assignedIds)}
             </div>
           </div>
-
-          ${health ? `<div class="detail-section" style="margin-top:20px"><h3 class="detail-section-title">Ship Health</h3>${Gamification.renderHealthBars(health)}</div>` : ''}
 
           <!-- Ship Behaviors -->
           ${_renderBehaviorsPanel(fleet.id)}
@@ -589,29 +574,12 @@ const SpaceshipDetailView = (() => {
     }
   }
 
-  function _renderInventory(allAgents, assignedIds, spaceshipClass) {
+  function _renderInventory(allAgents, assignedIds) {
     // Only show terminal-activated agents and custom-built agents
     const activatedBpIds = typeof Blueprints !== 'undefined' ? new Set(Blueprints.getActivatedAgentIds()) : new Set();
-    // Ordered low→high from the Gamification SSOT so Mythic crew (and
-    // Mythic-capped slots) are represented — a local list that stopped at
-    // Legendary filtered every Mythic agent out of the dock, and made an
-    // all-Mythic ship's inventory empty.
-    const _ro = (typeof Gamification !== 'undefined' && Gamification.RARITY_ORDER) || { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
-    const rarityOrder = Object.keys(_ro).sort((a, b) => _ro[a] - _ro[b]);
-    // Determine max allowed rarity from ship slots
-    const maxSlotRarityIdx = spaceshipClass
-      ? Math.max(...spaceshipClass.slots.map(s => rarityOrder.indexOf(s.maxRarity)))
-      : rarityOrder.length - 1;
-    const allowedRarities = new Set(rarityOrder.slice(0, maxSlotRarityIdx + 1));
-
     const activated = allAgents.filter(a => {
-      // Must be genuinely activated — check Blueprints activation list
       const bpId = a.blueprint_id || a.id.replace(/^bp-/, '');
-      const isActivated = activatedBpIds.has(a.id) || activatedBpIds.has(bpId) || a.imported_via || a._custom;
-      if (!isActivated) return false;
-      // Filter by rarity that fits in the ship's slots
-      const agentRarity = BlueprintUtils.getRarity(a);
-      return allowedRarities.has(agentRarity);
+      return activatedBpIds.has(a.id) || activatedBpIds.has(bpId) || a.imported_via || a._custom;
     });
     if (!activated.length) return '<p class="text-muted" style="font-size:.78rem">No agents added. <a href="#/bridge" style="color:var(--accent)">Browse the Blueprint Catalog.</a></p>';
     return activated.map(a => {
@@ -1522,7 +1490,6 @@ const SpaceshipDetailView = (() => {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Spaceship Launched', message: `${fleet.name || 'Spaceship'} is fully staffed and deployed!`, type: 'fleet_deployed' });
       }
-      if (typeof Gamification !== 'undefined') Gamification.addXP('launch_spaceship');
     }
 
     _loadSpaceship(el, id);
@@ -1559,7 +1526,6 @@ const SpaceshipDetailView = (() => {
       await SB.db('user_spaceships').update(id, { status: fleet.status });
     } catch(e) { /* local state already updated */ }
 
-    if (typeof Gamification !== 'undefined') Gamification.addXP('undock_agent');
     if (typeof Notify !== 'undefined') {
       Notify.send({ title: 'Spaceship Docked', message: `${fleet.name || 'Spaceship'} has been docked — slot emptied.`, type: 'system' });
     }

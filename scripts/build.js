@@ -53,7 +53,6 @@ const SCRIPTS = [
   'app/js/lib/favorites.js',
   'app/js/lib/notify.js',
   'app/js/lib/message-bar.js',
-  'app/js/lib/gamification.js',
   'app/js/lib/command-palette.js',
   'app/js/lib/keyboard.js',
   'app/js/lib/blueprints.js',

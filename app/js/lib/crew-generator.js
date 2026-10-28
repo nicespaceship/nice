@@ -177,11 +177,6 @@ Rules:
       }
     }
 
-    // XP for creating agents
-    if (typeof Gamification !== 'undefined') {
-      savedAgents.forEach(function() { Gamification.addXP('create_agent'); });
-    }
-
     return { savedAgents, slotAssignments };
   }
 
@@ -318,11 +313,6 @@ Rules:
           status: 'deployed',
           agent_ids: savedAgents.map(function(a) { return a.id; }),
         });
-      }
-
-      if (typeof Gamification !== 'undefined') {
-        Gamification.addXP('launch_spaceship');
-        savedAgents.forEach(function() { Gamification.addXP('create_agent'); });
       }
 
       return { shipId: shipCreated.id, agents: savedAgents };

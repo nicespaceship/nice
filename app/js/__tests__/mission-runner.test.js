@@ -47,7 +47,6 @@ globalThis.State = (() => {
 })();
 
 globalThis.Notify = { send: () => {}, show: () => {} };
-globalThis.Gamification = { addXP: vi.fn(), checkAchievements: () => {}, recordAgentMission: vi.fn() };
 globalThis.Blueprints = { isReady: () => false, getAgent: () => null };
 globalThis.LLMConfig = { forBlueprint: () => ({ model: 'mock', temperature: 0.7 }) };
 
@@ -73,7 +72,6 @@ describe('MissionRunner', () => {
     Object.keys(_db).forEach(k => delete _db[k]);
     State._reset();
     State.set('user', { id: userId });
-    Gamification.addXP.mockClear();
   });
 
   afterEach(() => { globalThis.ShipLog.execute = PRISTINE_SHIPLOG_EXECUTE; });
@@ -127,23 +125,7 @@ describe('MissionRunner', () => {
     expect(result).not.toBeNull();
     expect(result.content).toContain('Watch Video');
     expect(result.metadata.url).toBe('https://x/v.mp4');
-    // XP is approval-only — the video path must NOT award complete_mission on
-    // generation, or it double-counts when the review is later approved.
-    expect(Gamification.addXP).not.toHaveBeenCalledWith('complete_mission');
     delete globalThis.MediaTools;
-  });
-
-  it('should not award XP until approval (Draft & Approve flow)', async () => {
-    State.set('agents', [{ id: 'a2', name: 'XPBot', config: {} }]);
-    await SB.db('mission_runs').create({
-      id: 'm2', user_id: userId, title: 'XP test',
-      agent_id: 'a2', status: 'queued', progress: 0,
-    });
-
-    await MissionRunner.run('m2');
-
-    // XP is awarded on user approval, not on generation
-    expect(Gamification.addXP).not.toHaveBeenCalled();
   });
 
   describe('upsertScheduledMission — Pro gate', () => {

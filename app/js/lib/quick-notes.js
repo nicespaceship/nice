@@ -80,10 +80,6 @@ const QuickNotes = (() => {
         if (editor) setTimeout(() => editor.focus(), 100);
       }
     }
-    // Award XP for using notes
-    if (_open && typeof Gamification !== 'undefined') {
-      Gamification.addXP('use_notes', 2);
-    }
   }
 
   function isOpen() { return _open; }

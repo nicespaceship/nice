@@ -134,9 +134,85 @@ const BlueprintUtils = (() => {
     return bp.class_id || bp.classId || 'class-1';
   }
 
+  /* ── Computed agent rarity ──
+     Agents without a stored rarity get one scored from their config.
+     MODEL_TIERS keys mirror MODEL_CATALOG ids; calcAgentRarity
+     canonicalizes llm_engine via LLMConfig first, so legacy aliases like
+     'claude-4' resolve to 'claude-4-6-sonnet' (tier 4). Stale ids
+     ('gpt-4o', 'claude-3.5') miss the table and score as tier 1.
+     `nice-auto` is a sentinel LLMConfig does not canonicalize away, so it
+     gets its own mid tier. */
+  const MODEL_TIERS = {
+    'claude-4-7-opus':   4, 'claude-4-6-sonnet': 4, 'gpt-5-4-pro': 4, 'openai-o3': 4,
+    'gemini-2-5-pro':    3, 'grok-4-3': 3, 'kimi-k2-6': 3,
+    'gpt-5-mini':        2, 'gpt-oss-120b': 2, 'deepseek-v4-flash': 2, 'nemotron-3-super': 2,
+    'gemini-2-5-flash':  1,
+    'nice-auto':         3,
+  };
+
+  const TYPE_SCORES = {
+    // Broad / general-purpose agents
+    General: 3, Generalist: 3, 'Intelligence Agent': 3, 'Knowledge Agent': 3,
+    'Analytics Agent': 3, 'BI Agent': 3, 'Data Science Agent': 3, 'Architecture Agent': 3,
+    // Hybrid / multi-capability agents
+    Hybrid: 2, 'Operations Agent': 2, 'DevOps Agent': 2, 'Data Engineer': 2,
+    'Brand Agent': 2, 'CRM Agent': 2, 'Content Agent': 2,
+    // Specialist agents
+    Specialist: 1, 'Automation Agent': 1, 'Social Agent': 1, 'Copywriter': 1,
+    'Refund Agent': 1, 'CS Agent': 1, 'Lead Agent': 1, 'Outbound Agent': 1,
+    'Scheduler': 1, 'Proposal Agent': 1, 'QA Agent': 1, 'Docs Agent': 1,
+    'Expense Agent': 1, 'Pricing Agent': 1,
+  };
+
+  /* Score floors, highest first. The max reachable score is 13, so a
+     computed rarity never lands on Mythic; Mythic only comes from a
+     stored rarity. */
+  const RARITY_THRESHOLDS = [
+    { name: 'Mythic',    min: 14 },
+    { name: 'Legendary', min: 10 },
+    { name: 'Epic',      min: 7 },
+    { name: 'Rare',      min: 4 },
+    { name: 'Common',    min: 0 },
+  ];
+
+  /**
+   * Score an agent's rarity from its tools, model tier, type, memory and
+   * temperature tuning.
+   * @param {object} agent
+   * @returns {{ name: string, color: string, score: number }}
+   */
+  function calcAgentRarity(agent) {
+    if (!agent) return { name: 'Common', color: RARITY_COLORS.Common, score: 0 };
+    const config = agent.config || {};
+    let score = 0;
+
+    // Tool count (0-4 pts)
+    const toolCount = (config.tools || []).length;
+    score += toolCount === 0 ? 0 : Math.min(4, Math.ceil(toolCount / 2));
+
+    // Model tier (1-4 pts)
+    const rawLlm = agent.llm_engine || config.llm_engine || '';
+    const llm = (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize)
+      ? LLMConfig.canonicalize(rawLlm)
+      : rawLlm;
+    score += MODEL_TIERS[llm] || 1;
+
+    // Agent type (1-3 pts), top-level or config
+    score += TYPE_SCORES[agent.type || config.type || ''] || 1;
+
+    // Memory (+1)
+    if (config.memory) score += 1;
+
+    // Temperature tuning (+1 if non-default)
+    if (config.temperature !== undefined && config.temperature !== 0.7) score += 1;
+
+    const tier = RARITY_THRESHOLDS.find(t => score >= t.min) || RARITY_THRESHOLDS[RARITY_THRESHOLDS.length - 1];
+    return { name: tier.name, color: RARITY_COLORS[tier.name], score };
+  }
+
   /**
    * Get the rarity of a blueprint (normalized to title case).
-   * Priority: bp.rarity → Gamification.calcAgentRarity() → 'Common'
+   * Priority: bp.rarity → calcAgentRarity() → 'Common'
    * This is the single source of truth — all views should call this
    * instead of implementing their own rarity fallback chain.
    * @param {object} bp
@@ -148,11 +224,7 @@ const BlueprintUtils = (() => {
       const r = bp.rarity;
       return r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
     }
-    if (typeof Gamification !== 'undefined') {
-      const calc = Gamification.calcAgentRarity(bp);
-      return calc?.name || 'Common';
-    }
-    return 'Common';
+    return calcAgentRarity(bp).name;
   }
 
   /**
@@ -166,10 +238,13 @@ const BlueprintUtils = (() => {
     return { name, color: RARITY_COLORS[name] || RARITY_COLORS.Common };
   }
 
-  /** Slot labels — used by gamification and card-renderer for dynamic slot generation */
+  /** Slot labels — used by the spaceship builder and card-renderer for dynamic slot generation */
   const SLOT_LABELS = ['Bridge', 'Command', 'Tactical', 'Intel', 'Analytics', 'Operations', 'Comms', 'Science', 'Engineering', 'Support', 'Logistics', 'Creative'];
 
-  /** Ship class definitions — single source of truth for both card art and gamification */
+  /** Most crew slots a spaceship holds (crew designer cap, builder roster size). */
+  const MAX_SHIP_SLOTS = 12;
+
+  /** Ship class definitions — card art layouts keyed by class_id */
   const SHIP_CLASSES = {
     'class-1': { name: 'Scout',       slots: _buildClassSlots(6, 'Common') },
     'class-2': { name: 'Frigate',     slots: _buildClassSlots(8, 'Rare') },
@@ -184,9 +259,6 @@ const BlueprintUtils = (() => {
       return { id: i, max: maxRarity, maxRarity: maxRarity, label: SLOT_LABELS[i] || 'Agent ' + (i + 1) };
     });
   }
-
-  /** Build slot array for a specific count (used by gamification for XP-gated classes) */
-  function buildSlots(count, maxRarity) { return _buildClassSlots(count, maxRarity); }
 
   /* ── Model id humanizer ──
      Turns LLM ids into display-ready names. `humanizeModel` returns the
@@ -264,5 +336,5 @@ const BlueprintUtils = (() => {
     return _MODEL_SHORT_NAMES[id] || humanizeModel(id);
   }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, contrastText, buildSlots, humanizeModel, humanizeModelShort, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, SHIP_CLASSES };
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, calcAgentRarity, contrastText, humanizeModel, humanizeModelShort, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, MAX_SHIP_SLOTS, SHIP_CLASSES };
 })();
