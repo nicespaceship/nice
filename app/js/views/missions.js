@@ -1001,14 +1001,18 @@ const MissionDetailView = (() => {
         const mid = btn.dataset.mid;
         if (!mid) return;
 
-        if (action === 'approve' && typeof ContentQueue !== 'undefined') {
-          await ContentQueue.approve(mid);
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Approved', message: 'Content approved', type: 'success' });
-          _loadMission(el, id);
-        }
-        if (action === 'reject' && typeof ContentQueue !== 'undefined') {
-          await ContentQueue.reject(mid);
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'Rejected', message: 'Content rejected', type: 'system' });
+        if ((action === 'approve' || action === 'reject') && typeof ContentQueue !== 'undefined') {
+          try {
+            if (action === 'approve') await ContentQueue.approve(mid);
+            else await ContentQueue.reject(mid);
+            if (typeof Notify !== 'undefined') {
+              Notify.send(action === 'approve'
+                ? { title: 'Approved', message: 'Content approved', type: 'success' }
+                : { title: 'Rejected', message: 'Content rejected', type: 'system' });
+            }
+          } catch (err) {
+            if (typeof Notify !== 'undefined') Notify.send({ title: 'Could not save', message: err?.message || 'Try again.', type: 'error' });
+          }
           _loadMission(el, id);
         }
         if (action === 'copy') {

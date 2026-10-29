@@ -56,22 +56,36 @@ const ContentQueue = (() => {
   /*  CRUD Operations                                               */
   /* ══════════════════════════════════════════════════════════════ */
 
+  // Everything MissionRunner.approveRun needs, plus what the Outbox shows.
+  const RUN_COLUMNS = 'id, title, agent_id, agent_name, result, content_type, approval_status, edited_content, reviewed_at, created_at, updated_at, metadata, status, spaceship_id, mission_id, plan_snapshot';
+  const LOAD_LIMIT = 200;
+
+  // A run belongs in the queue while it waits in review or once it has been
+  // decided. A run the crew is working on (resumed after a gate, or re-run),
+  // or one that failed or was cancelled, keeps its old approval_status but
+  // has nothing to approve. Local drafts have no run status.
+  function _inQueue(item) {
+    const s = item.status;
+    return !s || s === 'review' || s === 'completed' || (s === 'failed' && item.approval_status === 'rejected');
+  }
+
   async function load(filter = {}) {
     const items = [];
+    const user = typeof State !== 'undefined' ? State.get('user') : null;
 
-    // Try Supabase first — direct query to get approval_status column
-    if (typeof SB !== 'undefined' && SB.isReady() && SB.client) {
+    if (user?.id && typeof SB !== 'undefined' && SB.isReady() && SB.client) {
       try {
-        const user = typeof State !== 'undefined' ? State.get('user') : null;
-        if (user?.id) {
-          const { data } = await SB.client
-            .from('mission_runs')
-            .select('id, title, agent_id, agent_name, result, content_type, approval_status, edited_content, reviewed_at, created_at, metadata, status, spaceship_id, mission_id, plan_snapshot')
-            .eq('user_id', user.id)
-            .not('approval_status', 'is', null);
-          if (data) items.push(...data);
-        }
+        const { data } = await SB.client
+          .from('mission_runs')
+          .select(RUN_COLUMNS)
+          .eq('user_id', user.id)
+          .not('approval_status', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(LOAD_LIMIT);
+        if (data) items.push(...data);
       } catch (e) { console.warn('[ContentQueue] Supabase load error:', e); }
+      // Signed out or switched accounts while this was in flight.
+      if (State.get('user')?.id !== user.id) return [];
     }
 
     // Merge with localStorage fallback
@@ -82,9 +96,7 @@ const ContentQueue = (() => {
       });
     } catch {}
 
-    // A run the crew is still working on (resumed after a gate, or re-run)
-    // keeps its old approval_status until it lands in review again.
-    let filtered = items.filter(i => i.status !== 'running' && i.status !== 'queued');
+    let filtered = items.filter(_inQueue);
     if (filter.type && filter.type !== 'all') {
       filtered = filtered.filter(i => i.content_type === filter.type);
     }
@@ -154,38 +166,46 @@ const ContentQueue = (() => {
     return draft;
   }
 
-  // The queue item for a run paused in review, which MissionRunner owns.
-  function _reviewRun(id) {
-    if (typeof MissionRunner === 'undefined' || typeof State === 'undefined') return null;
-    const item = (State.get('content-queue') || []).find(i => i.id === id);
-    return item && item.status === 'review' ? item : null;
+  // The run as it stands now. The cached queue can trail the database (a
+  // run that just entered review, a missed realtime event), so a run row is
+  // re-read before deciding who owns the approval. Local drafts are only
+  // in the cache.
+  async function _currentRun(id) {
+    const cached = (typeof State !== 'undefined' ? (State.get('content-queue') || []) : []).find(i => i.id === id) || null;
+    if (String(id).startsWith('draft-') || typeof SB === 'undefined' || !SB.isReady() || !SB.client) return cached;
+    try {
+      const { data } = await SB.client.from('mission_runs').select(RUN_COLUMNS).eq('id', id).maybeSingle();
+      return data || cached;
+    } catch { return cached; }
+  }
+
+  function _ownedByRunner(run) {
+    return !!run && run.status === 'review' && typeof MissionRunner !== 'undefined';
   }
 
   /** Approve an item. A run in review is approved through MissionRunner:
-      a paused gate resumes the crew (the item leaves the queue until the run
-      lands in review again) and anything else completes. Resolves
-      { resumed }; throws if the approval could not be saved. */
+      a paused gate resumes the crew (the item leaves the queue right away,
+      until the run lands in review again) and anything else completes.
+      Resolves { resumed }; throws if the approval could not be saved. */
   async function approve(id) {
-    const run = _reviewRun(id);
-    if (!run) {
+    const run = await _currentRun(id);
+    if (!_ownedByRunner(run)) {
       await _updateStatus(id, 'approved');
       return { resumed: false };
     }
+    if (MissionRunner.isResumableGate && MissionRunner.isResumableGate(run)) _removeFromState(id);
     const out = await MissionRunner.approveRun(run);
-    if (out.resumed) {
-      _removeFromState(id);
-    } else {
-      if (!out.persisted) throw new Error('Could not save the approval. Try again.');
-      _applyToState(id, { status: 'completed', approval_status: 'approved', reviewed_at: new Date().toISOString() });
-    }
-    return { resumed: !!out.resumed };
+    if (out.resumed) { _removeFromState(id); return { resumed: true }; }
+    if (!out.persisted) throw new Error('Could not save the approval. Try again.');
+    _applyToState(id, { status: 'completed', approval_status: 'approved', reviewed_at: new Date().toISOString() });
+    return { resumed: false };
   }
 
   /** Reject an item. A run in review is rejected through MissionRunner so
       the agent learns from it. Throws if the rejection could not be saved. */
   async function reject(id) {
-    const run = _reviewRun(id);
-    if (!run) return _updateStatus(id, 'rejected');
+    const run = await _currentRun(id);
+    if (!_ownedByRunner(run)) return _updateStatus(id, 'rejected');
     const out = await MissionRunner.rejectRun(run);
     if (!out.persisted) throw new Error('Could not save the rejection. Try again.');
     _applyToState(id, { status: 'failed', approval_status: 'rejected', reviewed_at: new Date().toISOString() });
@@ -470,19 +490,25 @@ const ContentQueue = (() => {
   /* ══════════════════════════════════════════════════════════════ */
 
   function _inline(s) {
+    // Links come out first so marks inside a url (* or `) stay in the url.
+    // The text is already esc()'d, so the url only needs its quotes
+    // escaped; safeUrl() gates the scheme (blocks javascript: etc.).
+    const links = [];
     return s
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
+        links.push(`<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${label}</a>`);
+        return '\u0000' + (links.length - 1) + '\u0000';
+      })
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/(?<![\w*])\*([^*]+?)\*(?![\w*])/g, '<em>$1</em>')
-      // The text is already esc()'d, so the url only needs its quotes
-      // escaped; safeUrl() gates the scheme (blocks javascript: etc.).
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) =>
-        `<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${label}</a>`);
+      .replace(/\u0000(\d+)\u0000/g, (_m, i) => links[i]);
   }
 
   function renderMarkdown(text) {
     if (!text) return '';
-    const lines = _esc(text).split('\n');
+    // NUL marks link placeholders in _inline; it never belongs in text.
+    const lines = _esc(String(text).replace(/\u0000/g, '')).split(/\r?\n/);
     const out = [];
     let para = [];
     let list = null;
@@ -597,6 +623,8 @@ const ContentQueue = (() => {
   function _touchesQueue(payload) {
     if (!payload || payload.eventType === 'DELETE') return true;
     const row = payload.new || {};
+    // Progress writes while the crew works; the run returns once it settles.
+    if (row.status === 'running' || row.status === 'queued') return false;
     if (row.approval_status) return true;
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
     return items.some(i => i.id === row.id);

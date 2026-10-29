@@ -201,6 +201,93 @@ describe('OutboxView', () => {
     expect(reschedule).toHaveBeenCalledWith('run-1', new Date(y, m - 1, d, 9).toISOString());
   });
 
+  it('keeps quotes in a title inside its attribute', async () => {
+    const title = 'x" onmouseover="window.__pwned=1" data-x="';
+    State.set('content-queue', [{ id: 'evil', status: 'review', approval_status: 'draft', title, result: 'Hi' }]);
+    OutboxView.render(el);
+    await flush();
+    const detail = el.querySelector('.ob-detail');
+    expect(detail.hasAttribute('onmouseover')).toBe(false);
+    expect(detail.getAttribute('aria-label')).toBe(title);
+  });
+
+  it('only treats a run still in review as a paused crew', async () => {
+    State.set('content-queue', [{ id: 'run-x', status: 'completed', approval_status: 'draft', gate: true, title: 'Stale gate', result: 'x' }]);
+    OutboxView.render(el);
+    await flush();
+    expect(el.querySelector('[data-ob="approve"]').textContent).toBe('Approve');
+    expect(el.querySelector('.ob-note')).toBeNull();
+  });
+
+  it('moves on as soon as a paused crew is approved, without offering Edit', async () => {
+    let finish;
+    MissionRunner.isResumableGate = (run) => !!run.gate;
+    MissionRunner.approveRun.mockImplementationOnce(() => new Promise(r => { finish = r; }));
+    history.replaceState(null, '', '#/outbox?item=run-2');
+    OutboxView.render(el);
+    await flush();
+    expect(el.querySelector('[data-ob="edit"]')).toBeNull();
+    click('[data-ob="approve"]');
+    await flush();
+    expect(rows()).toEqual(['Thursday pick-up emails']);
+    expect(el.querySelector('.ob-detail').dataset.id).toBe('run-1');
+    finish({ resumed: true, persisted: true });
+  });
+
+  it('leaves the address alone if the user moved on before an approval finished', async () => {
+    let finish;
+    MissionRunner.approveRun.mockImplementationOnce(() => new Promise(r => { finish = r; }));
+    OutboxView.render(el);
+    await flush();
+    click('[data-ob="approve"]');
+    await flush();
+    OutboxView.destroy();
+    history.replaceState(null, '', '#/chat');
+    finish({ resumed: false, persisted: true });
+    await flush();
+    expect(location.hash).toBe('#/chat');
+  });
+
+  it('moves an item to another day from its date field', async () => {
+    const reschedule = vi.spyOn(ContentQueue, 'reschedule').mockResolvedValue();
+    OutboxView.render(el);
+    await flush();
+    const field = el.querySelector('#ob-day');
+    field.value = '2026-11-03';
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(reschedule).toHaveBeenCalledWith('run-1', new Date(2026, 10, 3, 9).toISOString());
+  });
+
+  it('labels weeks inside one month, across months and across years', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    const label = async (when) => {
+      vi.setSystemTime(when);
+      history.replaceState(null, '', '#/outbox?view=week');
+      OutboxView.render(el);
+      await flush();
+      return el.querySelector('.ob-week-nav h2').textContent;
+    };
+    expect(await label(new Date(2026, 10, 4, 12))).toBe('Nov 2 – 8, 2026');
+    expect(await label(new Date(2026, 9, 28, 12))).toBe('Oct 26 – Nov 1, 2026');
+    expect(await label(new Date(2026, 11, 30, 12))).toBe('Dec 28, 2026 – Jan 3, 2027');
+    vi.useRealTimers();
+  });
+
+  it('gives an opened item its own history entry on a phone', async () => {
+    window.matchMedia = () => ({ matches: false });
+    const push = vi.spyOn(history, 'pushState');
+    const back = vi.spyOn(history, 'back').mockImplementation(() => {});
+    OutboxView.render(el);
+    await flush();
+    expect(el.querySelector('.ob-detail')).toBeNull();
+    el.querySelectorAll('.ob-row')[1].click();
+    expect(push).toHaveBeenCalledWith(null, '', '#/outbox?item=run-2');
+    expect(el.querySelector('.ob-layout').classList.contains('has-sel')).toBe(true);
+    click('[data-ob="back"]');
+    expect(back).toHaveBeenCalled();
+    delete window.matchMedia;
+  });
+
   it('opens an item from the week in the list', async () => {
     history.replaceState(null, '', '#/outbox?view=week');
     OutboxView.render(el);

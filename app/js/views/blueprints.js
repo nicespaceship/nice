@@ -17,8 +17,8 @@ const BlueprintsView = (() => {
   const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   /* ── Tab ↔ route ──
-     Two Bridge tabs have their own main-nav route; the rest live under
-     #/bridge?tab=…. A tab switch rewrites the URL in place (no Router
+     The Blueprints tab has its own main-nav route (#/library); the rest
+     live under #/bridge?tab=…. A tab switch rewrites the URL in place (no Router
      re-render) and re-highlights the main nav. */
   const _TAB_ROUTES = { blueprints: '/library' };
   function _syncTabRoute(tabId) {

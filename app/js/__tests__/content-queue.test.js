@@ -145,6 +145,27 @@ describe('ContentQueue approvals', () => {
     expect(find('run-1')).toMatchObject({ status: 'failed', approval_status: 'rejected' });
   });
 
+  it('takes a paused gate off the queue before the crew finishes the rest', async () => {
+    let finish;
+    MissionRunner.isResumableGate = () => true;
+    MissionRunner.approveRun.mockImplementationOnce(() => new Promise(r => { finish = r; }));
+    const pending = ContentQueue.approve('run-1');
+    await Promise.resolve();
+    expect(find('run-1')).toBeUndefined();
+    finish({ resumed: true, persisted: true });
+    expect(await pending).toEqual({ resumed: true });
+  });
+
+  it('reads the run itself before deciding, not the cached queue', async () => {
+    // The cache still says completed; the run has since landed in review.
+    State.set('content-queue', [{ id: 'run-9', status: 'completed', approval_status: 'draft' }]);
+    const row = { id: 'run-9', status: 'review', approval_status: 'draft', metadata: {} };
+    const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: row }) };
+    globalThis.SB = { isReady: () => true, client: { from: () => q } };
+    await ContentQueue.approve('run-9');
+    expect(MissionRunner.approveRun).toHaveBeenCalledWith(row);
+  });
+
   it('approves and rejects local drafts without MissionRunner', async () => {
     await ContentQueue.approve('draft-1');
     expect(find('draft-1').approval_status).toBe('approved');
@@ -159,18 +180,35 @@ describe('ContentQueue.load', () => {
   const realSB = globalThis.SB;
   afterEach(() => { globalThis.SB = realSB; });
 
-  it('leaves out runs the crew is still working on', async () => {
+  it('keeps runs in review or decided, and leaves out runs with nothing to approve', async () => {
     const rows = [
       { id: 'a', status: 'review', approval_status: 'draft', created_at: '2026-10-28T10:00:00Z' },
       { id: 'b', status: 'running', approval_status: 'draft', created_at: '2026-10-28T11:00:00Z' },
       { id: 'c', status: 'completed', approval_status: 'approved', created_at: '2026-10-28T12:00:00Z' },
+      // A resumed gate that failed keeps its old approval_status.
+      { id: 'd', status: 'failed', approval_status: 'draft', created_at: '2026-10-28T13:00:00Z' },
+      { id: 'e', status: 'cancelled', approval_status: 'draft', created_at: '2026-10-28T14:00:00Z' },
+      { id: 'f', status: 'failed', approval_status: 'rejected', created_at: '2026-10-28T09:00:00Z' },
     ];
-    const q = { select: () => q, eq: () => q, not: async () => ({ data: rows }) };
+    const q = { select: () => q, eq: () => q, not: () => q, order: () => q, limit: async () => ({ data: rows }) };
     globalThis.SB = { isReady: () => true, client: { from: () => q } };
     State.set('user', { id: 'u1' });
     const out = await ContentQueue.load();
-    expect(out.map(i => i.id)).toEqual(['a', 'c']);
+    expect(out.map(i => i.id)).toEqual(['a', 'c', 'f']);
     expect(State.get('content-queue')).toBe(out);
+  });
+
+  it('drops a load that finishes after the user signed out', async () => {
+    let finish;
+    const q = { select: () => q, eq: () => q, not: () => q, order: () => q, limit: () => new Promise(r => { finish = r; }) };
+    globalThis.SB = { isReady: () => true, client: { from: () => q } };
+    State.set('user', { id: 'u1' });
+    State.set('content-queue', []);
+    const pending = ContentQueue.load();
+    State.set('user', null);
+    finish({ data: [{ id: 'a', status: 'review', approval_status: 'draft' }] });
+    expect(await pending).toEqual([]);
+    expect(State.get('content-queue')).toEqual([]);
   });
 });
 
@@ -186,7 +224,7 @@ describe('ContentQueue.watch', () => {
     vi.useFakeTimers();
     let onChange;
     const realtime = { subscribe: vi.fn((table, fn) => { onChange = fn; return 'chan'; }), unsubscribe: vi.fn() };
-    const q = { select: () => q, eq: () => q, not: async () => ({ data: [] }) };
+    const q = { select: () => q, eq: () => q, not: () => q, order: () => q, limit: async () => ({ data: [] }) };
     const from = vi.fn(() => q);
     globalThis.SB = { isReady: () => true, client: { from }, realtime };
     State.set('user', { id: 'u1' });
@@ -194,6 +232,8 @@ describe('ContentQueue.watch', () => {
     ContentQueue.watch();
     expect(realtime.subscribe).toHaveBeenCalledWith('mission_runs', expect.any(Function));
     onChange({ eventType: 'UPDATE', new: { id: 'x', approval_status: null, progress: 40 } });
+    // A resumed gate keeps its approval_status while the crew works.
+    onChange({ eventType: 'UPDATE', new: { id: 'y', status: 'running', approval_status: 'draft', progress: 60 } });
     vi.advanceTimersByTime(1000);
     expect(from).not.toHaveBeenCalled();
 
@@ -242,6 +282,11 @@ describe('ContentQueue.renderMarkdown', () => {
   it('formats inline marks and leaves code blocks as written', () => {
     expect(md('**Bold**, *soft* and `code`')).toBe('<p><strong>Bold</strong>, <em>soft</em> and <code>code</code></p>');
     expect(md('```\n- not a list\n**raw**\n```')).toBe('<pre><code>- not a list\n**raw**</code></pre>');
+  });
+
+  it('reads Windows line endings and keeps marks inside link urls', () => {
+    expect(md('## Title\r\n- one\r\n- two')).toBe('<h3>Title</h3><ul><li>one</li><li>two</li></ul>');
+    expect(md('[docs](https://example.com/a*b*c)')).toBe('<p><a href="https://example.com/a*b*c" target="_blank" rel="noopener">docs</a></p>');
   });
 
   it('escapes HTML and refuses script links', () => {

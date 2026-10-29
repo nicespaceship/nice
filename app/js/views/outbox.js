@@ -13,6 +13,9 @@
 const OutboxView = (() => {
   const title = 'Outbox';
   const _esc = Utils.esc;
+  // Titles and ids can come from model output: anything inside a quoted
+  // attribute goes through escAttr, which also escapes quotes.
+  const _attr = Utils.escAttr;
   const _WATCH = ['content-queue', 'user', 'spaceships'];
   const _TABS = [
     { id: 'needs',    label: 'Needs you', statuses: ['draft'] },
@@ -39,6 +42,8 @@ const OutboxView = (() => {
   let _loading = false;
   let _loadedFor = null;
   let _deciding = false;
+  let _gen = 0;
+  let _pushed = false;
   let _bound = false;
   let _binding = false;
 
@@ -75,7 +80,8 @@ const OutboxView = (() => {
   // Local drafts carry a draft- id; everything else is a mission_runs row.
   function _isRun(item) { return !String(item.id).startsWith('draft-'); }
   function _isGate(item) {
-    return typeof MissionRunner !== 'undefined' && MissionRunner.isResumableGate && MissionRunner.isResumableGate(item);
+    return item.status === 'review' && typeof MissionRunner !== 'undefined' &&
+      !!MissionRunner.isResumableGate && MissionRunner.isResumableGate(item);
   }
 
   function _wide() {
@@ -96,30 +102,37 @@ const OutboxView = (() => {
   /* ── URL state ── */
 
   function _fromHash() {
-    _tab = 'needs'; _sel = null; _mode = 'list'; _type = 'all'; _editing = false;
+    _tab = 'needs'; _sel = null; _mode = 'list'; _type = 'all'; _editing = false; _weekOffset = 0; _pushed = false;
     const qs = new URLSearchParams((location.hash || '').split('?')[1] || '');
     if (_TABS.some(t => t.id === qs.get('tab'))) _tab = qs.get('tab');
     if (qs.get('view') === 'week') _mode = 'week';
     if (qs.get('item')) _sel = qs.get('item');
   }
 
-  function _syncHash() {
+  function _hashFor() {
     const qs = new URLSearchParams();
     if (_tab !== 'needs') qs.set('tab', _tab);
     if (_mode === 'week') qs.set('view', 'week');
     if (_sel && _mode === 'list') qs.set('item', _sel);
     const q = qs.toString();
-    history.replaceState(null, '', '#/outbox' + (q ? '?' + q : ''));
+    return '#/outbox' + (q ? '?' + q : '');
+  }
+
+  function _syncHash() {
+    history.replaceState(null, '', _hashFor());
   }
 
   /* ── Render ── */
 
   function render(el) {
     _el = el;
+    _gen++;
     _fromHash();
     _bind();
     el.removeEventListener('click', _onClick);
     el.addEventListener('click', _onClick);
+    el.removeEventListener('change', _onChange);
+    el.addEventListener('change', _onChange);
     ['dragstart', 'dragover', 'dragleave', 'drop'].forEach(t => {
       el.removeEventListener(t, _onDrag);
       el.addEventListener(t, _onDrag);
@@ -187,7 +200,7 @@ const OutboxView = (() => {
       <div class="ob-wrap">
         <div class="widget-card ob-signin">
           <h1>Outbox</h1>
-          <p>When your crew finishes something that needs your OK, it waits here. Sign in to see yours.</p>
+          <p>When your ${_esc(Terminology.label('crew', { lowercase: true }))} finishes something that needs your OK, it waits here. Sign in to see yours.</p>
           <button type="button" class="btn btn-primary btn-sm" data-ob="signin">Sign in</button>
         </div>
       </div>`;
@@ -201,18 +214,18 @@ const OutboxView = (() => {
     return `
       <div class="ob-empty">
         <b>Nothing needs you right now</b>
-        <p>When your crew finishes something that needs your OK, it shows up here and on Home.</p>
+        <p>When your ${_esc(Terminology.label('crew', { lowercase: true }))} finishes something that needs your OK, it shows up here and on Home.</p>
         ${hasShip ? '' : '<a class="btn btn-sm btn-primary" href="#/library?tab=spaceship">Find a spaceship</a>'}
       </div>`;
   }
 
   function _listHTML(list, item) {
     if (!list.length) {
-      return `<section class="widget-card ob-list ob-list-empty" aria-label="${_esc(_tabLabel(_tab))}">${_emptyHTML()}</section>`;
+      return `<section class="widget-card ob-list ob-list-empty" aria-label="${_attr(_tabLabel(_tab))}">${_emptyHTML()}</section>`;
     }
     return `
       <div class="ob-layout${_sel ? ' has-sel' : ''}">
-        <section class="widget-card ob-list" aria-label="${_esc(_tabLabel(_tab))}">
+        <section class="widget-card ob-list" aria-label="${_attr(_tabLabel(_tab))}">
           <ul>${list.map(_rowHTML).join('')}</ul>
         </section>
         <div class="ob-detail-wrap">${item ? _detailHTML(item) : ''}</div>
@@ -225,7 +238,7 @@ const OutboxView = (() => {
     const chip = (st === 'scheduled' || st === 'published') ? `<span class="ob-chip">${_esc(_STATUS[st])}</span>` : '';
     return `
       <li>
-        <button type="button" class="ob-row" data-ob="open" data-id="${_esc(item.id)}" aria-current="${item.id === _sel}">
+        <button type="button" class="ob-row" data-ob="open" data-id="${_attr(item.id)}" aria-current="${item.id === _sel}">
           <span class="ob-row-ico"><svg ${_ICON_ATTRS}><use href="#${type.icon}"/></svg></span>
           <span class="ob-row-main"><b>${_esc(_titleOf(item))}</b><span>${_esc(_byline(item))}</span></span>
           <span class="ob-row-side">${chip}<time>${_esc(ContentQueue.timeAgo(item.created_at))}</time></span>
@@ -244,7 +257,7 @@ const OutboxView = (() => {
     if (st === 'draft') {
       acts = `
         <button type="button" class="btn btn-primary btn-sm" data-ob="approve">${gate ? 'Approve and continue' : 'Approve'}</button>
-        <button type="button" class="btn btn-sm" data-ob="edit">Edit</button>
+        ${gate ? '' : '<button type="button" class="btn btn-sm" data-ob="edit">Edit</button>'}
         <button type="button" class="btn btn-sm" data-ob="reject">Reject</button>
         <button type="button" class="btn btn-sm" data-ob="copy">Copy</button>`;
     } else if (st === 'approved') {
@@ -268,12 +281,15 @@ const OutboxView = (() => {
         <div class="ob-acts">${acts}</div>
         ${st === 'approved' && social && !ContentQueue.canPublish() ? '<p class="ob-hint">Copy it or export it for now. Posting straight to your channels arrives with the social integrations.</p>' : ''}`;
     return `
-      <article class="widget-card ob-detail" data-id="${_esc(item.id)}" aria-label="${_esc(_titleOf(item))}">
+      <article class="widget-card ob-detail" data-id="${_attr(item.id)}" aria-label="${_attr(_titleOf(item))}">
         <button type="button" class="ob-back" data-ob="back"><svg ${_ICON_ATTRS}><use href="#icon-arrow-left"/></svg>${_esc(_tabLabel(_tab))}</button>
         <p class="ob-byline">${_esc(_byline(item))}</p>
         <h2>${_esc(_titleOf(item))}</h2>
         <p class="ob-meta">${_esc(meta)}</p>
-        ${gate ? '<p class="ob-note">The crew paused here for your OK. Approving lets them finish the rest.</p>' : ''}
+        <label class="ob-day-field">Date on the week view
+          <input type="date" id="ob-day" value="${_attr(_itemDay(item))}">
+        </label>
+        ${gate ? `<p class="ob-note">The ${_esc(Terminology.label('crew', { lowercase: true }))} paused here for your OK. Approving lets them finish the rest; to change this text, reject it and run it again.</p>` : ''}
         ${body}
         ${_isRun(item) ? `<a class="ob-run-link" href="#/missions/${encodeURIComponent(item.id)}">Open the ${_esc(Terminology.label('mission', { lowercase: true }))} run</a>` : ''}
       </article>`;
@@ -296,15 +312,21 @@ const OutboxView = (() => {
     return iso ? _dayKey(new Date(iso)) : '';
   }
 
+  // "Nov 2 – 8, 2026", "Oct 26 – Nov 1, 2026", "Dec 28, 2026 – Jan 3, 2027"
+  function _weekLabel(first, last) {
+    const md = { month: 'short', day: 'numeric' };
+    const mdy = { month: 'short', day: 'numeric', year: 'numeric' };
+    if (first.getFullYear() !== last.getFullYear()) return first.toLocaleDateString('en', mdy) + ' – ' + last.toLocaleDateString('en', mdy);
+    if (first.getMonth() === last.getMonth()) return first.toLocaleDateString('en', md) + ' – ' + last.getDate() + ', ' + last.getFullYear();
+    return first.toLocaleDateString('en', md) + ' – ' + last.toLocaleDateString('en', mdy);
+  }
+
   function _weekHTML(list) {
     const days = _weekDays();
     const today = _dayKey(new Date());
-    const first = days[0];
-    const last = days[6];
-    const label = first.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' – ' +
-      last.toLocaleDateString('en', { month: first.getMonth() === last.getMonth() ? undefined : 'short', day: 'numeric', year: 'numeric' });
+    const label = _weekLabel(days[0], days[6]);
     return `
-      <section class="ob-week" aria-label="Week of ${_esc(label)}">
+      <section class="ob-week" aria-label="Week of ${_attr(label)}">
         <div class="ob-week-nav">
           <button type="button" class="btn btn-sm ob-week-step" data-ob="week" data-step="-1" aria-label="Previous week"><svg ${_ICON_ATTRS}><use href="#icon-arrow-left"/></svg></button>
           <h2>${_esc(label)}</h2>
@@ -319,13 +341,13 @@ const OutboxView = (() => {
               <li class="ob-day${key === today ? ' is-today' : ''}" data-day="${key}">
                 <h3><span>${_DAY_NAMES[i]}</span> ${d.getDate()}</h3>
                 ${its.length ? its.map(it => `
-                  <button type="button" class="ob-pill" draggable="true" data-ob="open" data-id="${_esc(it.id)}" data-s="${_esc(_status(it))}">
+                  <button type="button" class="ob-pill" draggable="true" data-ob="open" data-id="${_attr(it.id)}" data-s="${_attr(_status(it))}">
                     <span class="ob-dot" aria-hidden="true"></span><span class="ob-pill-text">${_esc(_titleOf(it))}</span>
                   </button>`).join('') : '<p class="ob-day-empty">Nothing</p>'}
               </li>`;
           }).join('')}
         </ol>
-        ${list.length ? '<p class="ob-hint">Drag an item to another day to move it.</p>' : ''}
+        ${list.length ? '<p class="ob-hint ob-drag-hint">Drag an item to another day to move it, or change its date when you open it.</p>' : ''}
       </section>`;
   }
 
@@ -355,11 +377,18 @@ const OutboxView = (() => {
         const it = _items().find(i => i.id === b.dataset.id);
         if (!it) return;
         _sel = it.id; _tab = _tabOf(it); _mode = 'list'; _editing = false;
-        _syncHash(); _draw();
-        if (!_wide()) _el.querySelector('.ob-detail')?.scrollIntoView?.({ block: 'start' });
+        // On narrow screens the item replaces the list, so it gets a history
+        // entry and the browser's Back returns to the list (the Router
+        // re-renders on that hashchange).
+        if (!_wide() && !_pushed) { _pushed = true; history.pushState(null, '', _hashFor()); }
+        else _syncHash();
+        _draw();
+        const detail = _el.querySelector('.ob-detail');
+        if (detail && detail.getBoundingClientRect().top < 0) detail.scrollIntoView?.({ block: 'start' });
         return;
       }
       case 'back':
+        if (_pushed) { history.back(); return; }
         _sel = null; _editing = false; break;
       case 'export':
         ContentQueue.exportApproved();
@@ -405,32 +434,53 @@ const OutboxView = (() => {
     const queue = _inTab('needs');
     const at = queue.findIndex(i => i.id === item.id);
     const next = queue[at + 1] || queue[at - 1] || null;
+    const gen = _gen;
+    const title = _titleOf(item);
+    const notify = (msg) => { if (typeof Notify !== 'undefined') Notify.send(msg); };
+    const failed = (err) => notify({ title: 'Could not save', message: err?.message || 'Try again.', type: 'error' });
+    const advance = () => {
+      // Nothing left to open on a phone: return to the list the way Back would.
+      if (!next && _pushed) { history.back(); return; }
+      _sel = next ? next.id : null;
+      _tab = 'needs';
+      _syncHash();
+      _draw();
+    };
     btn.closest('.ob-acts')?.querySelectorAll('button').forEach(b => { b.disabled = true; });
-    const mission = Terminology.label('mission');
+
+    // Approving a paused gate runs the rest of the crew's plan, which can
+    // take minutes. The item leaves the queue at once; move on rather than
+    // hold the page until the crew finishes.
+    if (act === 'approve' && _isGate(item)) {
+      notify({ title: `${Terminology.label('mission')} continues`, message: 'The crew picked up after your approval.', type: 'success' });
+      ContentQueue.approve(item.id).catch(failed);
+      advance();
+      return;
+    }
+
     _deciding = true;
     try {
-      if (act === 'approve') {
-        const out = await ContentQueue.approve(item.id);
-        if (typeof Notify !== 'undefined') {
-          Notify.send(out && out.resumed
-            ? { title: `${mission} continues`, message: 'The crew picked up after your approval.', type: 'success' }
-            : { title: 'Approved', message: _titleOf(item), type: 'success' });
-        }
-      } else {
-        await ContentQueue.reject(item.id);
-        if (typeof Notify !== 'undefined') Notify.send({ title: 'Rejected', message: _titleOf(item), type: 'system' });
-      }
+      if (act === 'approve') await ContentQueue.approve(item.id);
+      else await ContentQueue.reject(item.id);
     } catch (err) {
+      if (gen !== _gen) return;
       _deciding = false;
-      if (typeof Notify !== 'undefined') Notify.send({ title: 'Could not save', message: err?.message || 'Try again.', type: 'error' });
+      failed(err);
       _draw();
       return;
     }
+    if (gen !== _gen) return;
     _deciding = false;
-    _sel = next ? next.id : null;
-    _tab = 'needs';
-    _syncHash();
-    _draw();
+    notify(act === 'approve'
+      ? { title: 'Approved', message: title, type: 'success' }
+      : { title: 'Rejected', message: title, type: 'system' });
+    advance();
+  }
+
+  function _onChange(e) {
+    if (e.target.id !== 'ob-day' || !_sel || !e.target.value) return;
+    const [y, m, d] = e.target.value.split('-').map(Number);
+    ContentQueue.reschedule(_sel, new Date(y, m - 1, d, 9).toISOString());
   }
 
   function _onDrag(e) {
@@ -481,7 +531,7 @@ const OutboxView = (() => {
           <div class="outbox-picker-list">
             ${platforms.map(p => `
               <label class="outbox-picker-row">
-                <input type="checkbox" class="outbox-picker-check" value="${_esc(p.id)}" />
+                <input type="checkbox" class="outbox-picker-check" value="${_attr(p.id)}" />
                 <span class="outbox-picker-icon">${_esc(p.icon)}</span>
                 <span class="outbox-picker-info">
                   <span class="outbox-picker-name">${_esc(p.label)}</span>
@@ -492,7 +542,7 @@ const OutboxView = (() => {
           ${isSchedule ? `
             <label class="outbox-picker-label">
               Schedule for
-              <input type="datetime-local" class="outbox-picker-when" value="${_esc(defaultWhen)}" />
+              <input type="datetime-local" class="outbox-picker-when" value="${_attr(defaultWhen)}" />
             </label>` : ''}
           <div class="outbox-picker-status"></div>
         </div>
@@ -562,10 +612,13 @@ const OutboxView = (() => {
     _WATCH.forEach(k => State.off(k, _rerender));
     if (_el) {
       _el.removeEventListener('click', _onClick);
+      _el.removeEventListener('change', _onChange);
       ['dragstart', 'dragover', 'dragleave', 'drop'].forEach(t => _el.removeEventListener(t, _onDrag));
     }
+    _gen++;
     _bound = false;
     _editing = false;
+    _deciding = false;
     _loadedFor = null;
     _el = null;
   }
