@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // ContentQueue, State, and Utils are loaded globally by setup.js.
 // setup.js also resets State + localStorage in its own beforeEach.
@@ -95,5 +95,157 @@ describe('ContentQueue.publish / schedule (gated until social-mcp ships)', () =>
     expect(p.comingSoon).toBe(true);
     const s = await ContentQueue.schedule('id1', 'buffer', new Date().toISOString());
     expect(s.comingSoon).toBe(true);
+  });
+});
+
+describe('ContentQueue approvals', () => {
+  // Runs waiting in review belong to MissionRunner; local drafts don't.
+  const realSB = globalThis.SB;
+  beforeEach(() => {
+    globalThis.SB = { ...realSB, isReady: () => false };
+    globalThis.MissionRunner = {
+      approveRun: vi.fn(async () => ({ resumed: false, persisted: true })),
+      rejectRun: vi.fn(async () => ({ persisted: true })),
+    };
+    State.set('content-queue', [
+      { id: 'run-1', status: 'review', approval_status: 'draft', title: 'Weekly report' },
+      { id: 'draft-1', approval_status: 'draft', title: 'Local draft' },
+    ]);
+  });
+  afterEach(() => {
+    globalThis.SB = realSB;
+    delete globalThis.MissionRunner;
+  });
+  const find = (id) => State.get('content-queue').find(i => i.id === id);
+
+  it('approves a run in review through MissionRunner and completes it', async () => {
+    const out = await ContentQueue.approve('run-1');
+    expect(MissionRunner.approveRun).toHaveBeenCalledWith(expect.objectContaining({ id: 'run-1', status: 'review' }));
+    expect(out).toEqual({ resumed: false });
+    expect(find('run-1')).toMatchObject({ status: 'completed', approval_status: 'approved' });
+    expect(ContentQueue.getCounts().draft).toBe(1);
+  });
+
+  it('drops a run that resumed after its gate until it lands in review again', async () => {
+    MissionRunner.approveRun.mockResolvedValueOnce({ resumed: true, persisted: true });
+    const out = await ContentQueue.approve('run-1');
+    expect(out).toEqual({ resumed: true });
+    expect(find('run-1')).toBeUndefined();
+  });
+
+  it('throws and leaves the run waiting when the approval did not save', async () => {
+    MissionRunner.approveRun.mockResolvedValueOnce({ resumed: false, persisted: false });
+    await expect(ContentQueue.approve('run-1')).rejects.toThrow('Could not save the approval');
+    expect(find('run-1').approval_status).toBe('draft');
+  });
+
+  it('rejects a run in review through MissionRunner', async () => {
+    await ContentQueue.reject('run-1');
+    expect(MissionRunner.rejectRun).toHaveBeenCalledWith(expect.objectContaining({ id: 'run-1' }));
+    expect(find('run-1')).toMatchObject({ status: 'failed', approval_status: 'rejected' });
+  });
+
+  it('approves and rejects local drafts without MissionRunner', async () => {
+    await ContentQueue.approve('draft-1');
+    expect(find('draft-1').approval_status).toBe('approved');
+    await ContentQueue.reject('draft-1');
+    expect(find('draft-1').approval_status).toBe('rejected');
+    expect(MissionRunner.approveRun).not.toHaveBeenCalled();
+    expect(MissionRunner.rejectRun).not.toHaveBeenCalled();
+  });
+});
+
+describe('ContentQueue.load', () => {
+  const realSB = globalThis.SB;
+  afterEach(() => { globalThis.SB = realSB; });
+
+  it('leaves out runs the crew is still working on', async () => {
+    const rows = [
+      { id: 'a', status: 'review', approval_status: 'draft', created_at: '2026-10-28T10:00:00Z' },
+      { id: 'b', status: 'running', approval_status: 'draft', created_at: '2026-10-28T11:00:00Z' },
+      { id: 'c', status: 'completed', approval_status: 'approved', created_at: '2026-10-28T12:00:00Z' },
+    ];
+    const q = { select: () => q, eq: () => q, not: async () => ({ data: rows }) };
+    globalThis.SB = { isReady: () => true, client: { from: () => q } };
+    State.set('user', { id: 'u1' });
+    const out = await ContentQueue.load();
+    expect(out.map(i => i.id)).toEqual(['a', 'c']);
+    expect(State.get('content-queue')).toBe(out);
+  });
+});
+
+describe('ContentQueue.watch', () => {
+  const realSB = globalThis.SB;
+  afterEach(() => {
+    ContentQueue.unwatch();
+    globalThis.SB = realSB;
+    vi.useRealTimers();
+  });
+
+  it('reloads when a run with an approval state changes, not on progress ticks', () => {
+    vi.useFakeTimers();
+    let onChange;
+    const realtime = { subscribe: vi.fn((table, fn) => { onChange = fn; return 'chan'; }), unsubscribe: vi.fn() };
+    const q = { select: () => q, eq: () => q, not: async () => ({ data: [] }) };
+    const from = vi.fn(() => q);
+    globalThis.SB = { isReady: () => true, client: { from }, realtime };
+    State.set('user', { id: 'u1' });
+
+    ContentQueue.watch();
+    expect(realtime.subscribe).toHaveBeenCalledWith('mission_runs', expect.any(Function));
+    onChange({ eventType: 'UPDATE', new: { id: 'x', approval_status: null, progress: 40 } });
+    vi.advanceTimersByTime(1000);
+    expect(from).not.toHaveBeenCalled();
+
+    onChange({ eventType: 'UPDATE', new: { id: 'x', approval_status: 'draft' } });
+    onChange({ eventType: 'UPDATE', new: { id: 'x', approval_status: 'draft' } });
+    vi.advanceTimersByTime(1000);
+    expect(from).toHaveBeenCalledTimes(1);
+
+    ContentQueue.unwatch();
+    expect(realtime.unsubscribe).toHaveBeenCalledWith('chan');
+  });
+});
+
+describe('ContentQueue.reschedule', () => {
+  const realSB = globalThis.SB;
+  afterEach(() => { globalThis.SB = realSB; });
+
+  it('saves the new day on the run and in the queue', async () => {
+    const update = vi.fn(async () => ({}));
+    globalThis.SB = { isReady: () => true, db: () => ({ update }) };
+    State.set('content-queue', [{ id: 'run-1', metadata: { model_used: 'grok-4-3' } }]);
+    await ContentQueue.reschedule('run-1', '2026-10-30T16:00:00.000Z');
+    const metadata = { model_used: 'grok-4-3', scheduled_for: '2026-10-30T16:00:00.000Z' };
+    expect(update).toHaveBeenCalledWith('run-1', { metadata });
+    expect(State.get('content-queue')[0].metadata).toEqual(metadata);
+  });
+});
+
+describe('ContentQueue.renderMarkdown', () => {
+  const md = ContentQueue.renderMarkdown;
+
+  it('keeps list items together and paragraphs apart', () => {
+    expect(md('## This week\n- Sales up 4%\n- Croissants sold out\n\nSee you Monday.'))
+      .toBe('<h3>This week</h3><ul><li>Sales up 4%</li><li>Croissants sold out</li></ul><p>See you Monday.</p>');
+  });
+
+  it('keeps line breaks inside a paragraph and numbers ordered lists', () => {
+    expect(md('Hi Priya,\nYour order is ready.\n\n1. Buns\n2. Tart'))
+      .toBe('<p>Hi Priya,<br>Your order is ready.</p><ol><li>Buns</li><li>Tart</li></ol>');
+  });
+
+  it('does not join separate lists into one', () => {
+    expect(md('- a\n\nMiddle\n\n- b')).toBe('<ul><li>a</li></ul><p>Middle</p><ul><li>b</li></ul>');
+  });
+
+  it('formats inline marks and leaves code blocks as written', () => {
+    expect(md('**Bold**, *soft* and `code`')).toBe('<p><strong>Bold</strong>, <em>soft</em> and <code>code</code></p>');
+    expect(md('```\n- not a list\n**raw**\n```')).toBe('<pre><code>- not a list\n**raw**</code></pre>');
+  });
+
+  it('escapes HTML and refuses script links', () => {
+    expect(md('<img src=x onerror=alert(1)>')).not.toContain('<img');
+    expect(md('[click](javascript:alert(1))')).not.toContain('javascript:');
   });
 });

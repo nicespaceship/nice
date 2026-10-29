@@ -11,7 +11,7 @@ describe('AlertCounts', () => {
     expect(typeof AlertCounts.get).toBe('function');
     expect(typeof AlertCounts.count).toBe('function');
     expect(typeof AlertCounts.sum).toBe('function');
-    expect(AlertCounts.GROUPS.bridge).toEqual(['schematic', 'missions', 'outbox']);
+    expect(AlertCounts.GROUPS.bridge).toEqual(['schematic', 'missions']);
     expect(AlertCounts.GROUPS.settings).toEqual(['integrations', 'moderation', 'wallet', 'security']);
   });
 
@@ -46,14 +46,22 @@ describe('AlertCounts', () => {
   });
 
   describe('missions', () => {
-    it('counts failed and review missions, ignores others', () => {
+    it('counts failed runs, ignores others', () => {
       State.set('missions', [
         { status: 'failed' },
         { status: 'review' },
         { status: 'completed' },
         { status: 'running' },
       ]);
-      expect(AlertCounts.count('missions')).toBe(2);
+      expect(AlertCounts.count('missions')).toBe(1);
+    });
+
+    it('leaves out runs the user rejected (they are marked failed)', () => {
+      State.set('missions', [
+        { status: 'failed', approval_status: 'rejected' },
+        { status: 'failed', approval_status: null },
+      ]);
+      expect(AlertCounts.count('missions')).toBe(1);
     });
   });
 
@@ -119,8 +127,8 @@ describe('AlertCounts', () => {
   describe('sum', () => {
     it('aggregates the bridge group', () => {
       State.set('agents', [{ id: 'a1', status: 'error' }]);
-      State.set('missions', [{ status: 'failed' }, { status: 'review' }]);
-      // schematic 1 + missions 2 + outbox 0
+      State.set('missions', [{ status: 'failed' }, { status: 'failed' }, { status: 'review' }]);
+      // schematic 1 + missions 2
       expect(AlertCounts.sum('bridge')).toBe(3);
     });
 

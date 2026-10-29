@@ -20,7 +20,7 @@ const BlueprintsView = (() => {
      Two Bridge tabs have their own main-nav route; the rest live under
      #/bridge?tab=…. A tab switch rewrites the URL in place (no Router
      re-render) and re-highlights the main nav. */
-  const _TAB_ROUTES = { blueprints: '/library', outbox: '/outbox' };
+  const _TAB_ROUTES = { blueprints: '/library' };
   function _syncTabRoute(tabId) {
     const params = new URLSearchParams((location.hash || '').split('?')[1] || '');
     params.delete('tab');
@@ -297,15 +297,18 @@ const BlueprintsView = (() => {
       const _hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
       const _tabParam = _hashParams.get('tab');
       const _sourceParam = _hashParams.get('source');
-      const validTabs = ['schematic', 'blueprints', 'missions', 'outbox', 'operations', 'log'];
-      // Outbox and Log are top-level tabs (after Operations). Documentation
-      // moved to the marketing site (linked from the global ? icon). Old
-      // sub-tab deep links rewrite onto the flat tabs below so they keep
-      // resolving.
+      const validTabs = ['schematic', 'blueprints', 'missions', 'operations', 'log'];
+      // Log is a top-level tab (after Operations). Documentation moved to
+      // the marketing site (linked from the global ? icon). Old sub-tab deep
+      // links rewrite onto the flat tabs below so they keep resolving.
       const subParam = _hashParams.get('sub');
+      // The Outbox has its own page now; old Bridge links land there.
+      if (_tabParam === 'outbox' || (_tabParam === 'missions' && subParam === 'outbox')) {
+        location.replace('#/outbox');
+        return;
+      }
       // Main-nav routes that open a Bridge tab directly (see _TAB_ROUTES).
-      if (_hash === '#/outbox') _activeTab = 'outbox';
-      else if (_hash === '#/library') {
+      if (_hash === '#/library') {
         _activeTab = 'blueprints';
         if (['spaceship', 'agent', 'active', 'workshop'].includes(_tabParam)) _subTab = _tabParam;
       }
@@ -315,8 +318,7 @@ const BlueprintsView = (() => {
       else if (_hash === '#/agents' || _hash === '#/bridge/agents') { _activeTab = 'blueprints'; _subTab = 'agent'; }
       else if (_hash === '#/spaceships' || _hash === '#/bridge/spaceships') { _activeTab = 'blueprints'; _subTab = 'spaceship'; }
       else _activeTab = 'schematic';
-      // Legacy sub-tab deep links → the now top-level Outbox / Log tabs.
-      if (_activeTab === 'missions' && subParam === 'outbox') _activeTab = 'outbox';
+      // Legacy sub-tab deep link → the now top-level Log tab.
       if (_activeTab === 'operations' && subParam === 'log') _activeTab = 'log';
       if (_sourceParam === 'official' || _sourceParam === 'community' || _sourceParam === 'all') {
         _sourceFilter = _sourceParam;
@@ -327,22 +329,18 @@ const BlueprintsView = (() => {
     const fixedTabs = document.getElementById('app-fixed-tabs');
     if (fixedTabs) {
       // Per-tab alert dot (top-right) when a tab needs attention — driven by
-      // the AlertCounts SSOT (schematic / missions / outbox). The aggregate
-      // shows on the mobile picker pill, plus the Bridge sidebar link + rail
-      // icon (wired in nice.js).
+      // the AlertCounts SSOT (schematic / missions). The aggregate shows on
+      // the mobile picker pill.
       const alertFor = (id) => (typeof AlertCounts !== 'undefined' && AlertCounts.count(id) > 0)
         ? '<span class="bp-tab-alert" aria-hidden="true"></span>' : '';
       const bridgeAlert = (typeof AlertCounts !== 'undefined' && AlertCounts.sum('bridge') > 0);
       // Full tab row is desktop; mobile shows a single picker pill instead
       // (see .bp-tab-picker in CSS). Both trigger the same _switchTab()
       // logic so the underlying tab state stays unified.
-      // Outbox carries the draft-count badge so pending content waiting for
-      // review surfaces in the primary nav.
       const tabDefs = [
         { id: 'schematic', label: 'Schematic' },
         { id: 'blueprints', label: 'Blueprints' },
         { id: 'missions', label: Terminology.label('mission', { plural: true }) },
-        { id: 'outbox', label: 'Outbox' },
         { id: 'operations', label: 'Operations' },
         { id: 'log', label: 'Log' },
       ];
@@ -418,7 +416,7 @@ const BlueprintsView = (() => {
               </div>
             </div>
             <!-- Search sits at the end of the filter row to match the
-                 Missions / Log / Outbox subnav pattern (filters first,
+                 Missions / Log subnav pattern (filters first,
                  search second, action last). Rarity quick-filter pills
                  wrap to their own row below. -->
             <div class="search-box bp-filter-search">
@@ -1438,8 +1436,6 @@ const BlueprintsView = (() => {
       html = _blueprintsSubnavHTML();
     } else if (_activeTab === 'missions' && typeof MissionsView !== 'undefined' && MissionsView.getToolbarActions) {
       html = MissionsView.getToolbarActions();
-    } else if (_activeTab === 'outbox') {
-      html = _outboxSubnavHTML();
     } else if (_activeTab === 'operations' && typeof AnalyticsView !== 'undefined' && AnalyticsView.getToolbarActions) {
       html = AnalyticsView.getToolbarActions();
     } else if (_activeTab === 'log' && typeof AuditLogView !== 'undefined' && AuditLogView.getToolbarActions) {
@@ -1478,7 +1474,7 @@ const BlueprintsView = (() => {
     const loadMore = document.getElementById('bp-load-more');
 
     const subTabs = document.getElementById('bp-sub-tabs');
-    const isLogTab = ['missions', 'operations', 'outbox', 'log'].includes(_activeTab);
+    const isLogTab = ['missions', 'operations', 'log'].includes(_activeTab);
     const isBlueprintsTab = _activeTab === 'blueprints';
     const isSchematic = _activeTab === 'schematic';
 
@@ -1499,7 +1495,7 @@ const BlueprintsView = (() => {
     if (loadMore) loadMore.style.display = catalogDisplay;
     // Filter toolbar (Sort / Categories / Tiers / Source / Rarity) is
     // part of the Blueprints catalog UI — hide on every other tab so it
-    // doesn't leak over the Missions / Outbox / Log / etc. page content.
+    // doesn't leak over the Missions / Log / etc. page content.
     const filterSheet = document.getElementById('bp-filter-sheet');
     if (filterSheet) filterSheet.style.display = catalogDisplay;
     // "+ Create" / "Import Blueprint" only belong where user-authored
@@ -1514,7 +1510,7 @@ const BlueprintsView = (() => {
       if (!isSchematic && typeof SchematicView !== 'undefined' && SchematicView.destroy) SchematicView.destroy();
     }
 
-    // Log tabs (Missions, Operations, Outbox, Log)
+    // Log tabs (Missions, Operations, Log)
     if (logEl) {
       logEl.style.display = isLogTab ? '' : 'none';
       if (isLogTab) {
@@ -1534,589 +1530,12 @@ const BlueprintsView = (() => {
     } else if (_activeTab === 'operations') {
       if (typeof AnalyticsView !== 'undefined') AnalyticsView.render(el);
       else el.innerHTML = _missing;
-    } else if (_activeTab === 'outbox') {
-      _renderOutbox(el);
     } else if (_activeTab === 'log') {
       if (typeof AuditLogView !== 'undefined') AuditLogView.render(el);
       else el.innerHTML = _missing;
     } else {
       el.innerHTML = _missing;
     }
-  }
-
-  /* ── Outbox (Content Calendar + Queue) ── */
-  let _outboxViewMode = 'calendar';   // 'calendar' | 'list'
-  let _outboxTypeFilter = 'all';      // 'all' | 'social' | 'email' | 'report'
-  let _outboxStatusFilter = 'all';    // 'all' | 'draft' | 'approved' | 'rejected'
-  let _outboxWeekOffset = 0;          // 0 = current week, -1 = prev, +1 = next
-
-  function _getOutboxWeekDays(offset) {
-    const now = new Date();
-    const day = now.getDay();
-    const mondayDiff = day === 0 ? -6 : 1 - day;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + mondayDiff + (offset * 7));
-    monday.setHours(0, 0, 0, 0);
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      days.push(d);
-    }
-    return days;
-  }
-
-  function _outboxDateKey(date) {
-    return date.toISOString().slice(0, 10);
-  }
-
-  function _outboxItemDate(item) {
-    const meta = item.metadata || {};
-    return meta.scheduled_for || item.created_at || '';
-  }
-
-  function _outboxFilterItems(items) {
-    let filtered = items;
-    if (_outboxTypeFilter !== 'all') {
-      filtered = filtered.filter(i => i.content_type === _outboxTypeFilter);
-    }
-    if (_outboxStatusFilter !== 'all') {
-      filtered = filtered.filter(i => (i.approval_status || 'draft') === _outboxStatusFilter);
-    }
-    return filtered;
-  }
-
-  // Outbox toolbar (status + type filters + view toggle + export) for the
-  // shared #bridge-subnav. Clicks are delegated off #bridge-subnav (see the
-  // bind section), which re-renders both this bar and the Outbox body.
-  function _outboxSubnavHTML() {
-    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
-    const pending = items.filter(i => i.approval_status === 'draft');
-    const approved = items.filter(i => i.approval_status === 'approved');
-    const rejected = items.filter(i => i.approval_status === 'rejected');
-    return `
-      <div class="outbox-toolbar">
-        <div class="outbox-filters">
-          <button class="outbox-filter${_outboxStatusFilter === 'all' ? ' active' : ''}" data-status="all">All <span class="outbox-badge">${items.length}</span></button>
-          <button class="outbox-filter${_outboxStatusFilter === 'draft' ? ' active' : ''}" data-status="draft">Pending <span class="outbox-badge">${pending.length}</span></button>
-          <button class="outbox-filter${_outboxStatusFilter === 'approved' ? ' active' : ''}" data-status="approved">Approved <span class="outbox-badge">${approved.length}</span></button>
-          <button class="outbox-filter${_outboxStatusFilter === 'rejected' ? ' active' : ''}" data-status="rejected">Rejected <span class="outbox-badge">${rejected.length}</span></button>
-        </div>
-        <div class="outbox-type-filters">
-          <button class="outbox-type-btn${_outboxTypeFilter === 'all' ? ' active' : ''}" data-type="all">All Types</button>
-          <button class="outbox-type-btn${_outboxTypeFilter === 'social' ? ' active' : ''}" data-type="social" style="--type-color:#c084fc">Social</button>
-          <button class="outbox-type-btn${_outboxTypeFilter === 'email' ? ' active' : ''}" data-type="email" style="--type-color:#60a5fa">Email</button>
-          <button class="outbox-type-btn${_outboxTypeFilter === 'report' ? ' active' : ''}" data-type="report" style="--type-color:#34d399">Report</button>
-        </div>
-        <div class="outbox-view-toggle">
-          ${approved.length ? `<button class="btn btn-primary btn-sm" id="outbox-export">Export approved</button>` : ''}
-        </div>
-      </div>`;
-  }
-
-  // Calendar / list view-mode toggle. Lives next to the date selector in
-  // calendar mode and at the top of the feed in list mode (not in the
-  // subnav) so it sits beside view-specific chrome rather than the filters.
-  function _outboxViewSegHTML() {
-    return `<div class="outbox-view-seg">
-      <button class="outbox-view-btn${_outboxViewMode === 'calendar' ? ' active' : ''}" data-view="calendar" title="Calendar view" aria-label="Calendar view"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2.5" width="12" height="10.5" rx="1"/><path d="M1 5.5h12M4 1v3M10 1v3"/></svg></button>
-      <button class="outbox-view-btn${_outboxViewMode === 'list' ? ' active' : ''}" data-view="list" title="List view" aria-label="List view"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg></button>
-    </div>`;
-  }
-
-  function _renderOutbox(el) {
-    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
-    const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
-
-    // Load from ContentQueue if empty
-    if (!items.length && typeof ContentQueue !== 'undefined') {
-      ContentQueue.load().then(() => {
-        const loaded = State.get('content-queue') || [];
-        if (loaded.length) _renderOutbox(el);
-      });
-    }
-
-    const filtered = _outboxFilterItems(items);
-    const pending = items.filter(i => i.approval_status === 'draft');
-    const approved = items.filter(i => i.approval_status === 'approved');
-    const rejected = items.filter(i => i.approval_status === 'rejected');
-
-    const weekDays = _getOutboxWeekDays(_outboxWeekOffset);
-    const weekLabel = _outboxFormatWeekLabel(weekDays);
-
-    // Group filtered items by date key
-    const byDate = {};
-    filtered.forEach(item => {
-      const dateStr = _outboxItemDate(item);
-      if (!dateStr) return;
-      const key = dateStr.slice(0, 10);
-      if (!byDate[key]) byDate[key] = [];
-      byDate[key].push(item);
-    });
-    const unscheduled = filtered.filter(item => !_outboxItemDate(item));
-
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const todayKey = _outboxDateKey(new Date());
-
-    el.innerHTML = `
-      <div class="outbox-container">
-        <!-- Status/type filters + view toggle render in the shared
-             #bridge-subnav (see _outboxSubnavHTML / _renderSubnav). -->
-        ${_outboxViewMode === 'calendar' ? `
-        <div class="outbox-calendar">
-          <div class="outbox-cal-nav">
-            ${_outboxViewSegHTML()}
-            <div class="outbox-cal-period">
-              <button class="btn outbox-week-btn" id="outbox-prev-week">&larr;</button>
-              <span class="outbox-week-label">${_e(weekLabel)}</span>
-              <button class="btn outbox-week-btn" id="outbox-next-week">&rarr;</button>
-            </div>
-            <button class="btn outbox-today-btn" id="outbox-today">Today</button>
-          </div>
-          <div class="outbox-cal-grid">
-            <div class="outbox-cal-header">
-              ${weekDays.map((d, i) => {
-                const key = _outboxDateKey(d);
-                const isToday = key === todayKey;
-                const dayNum = d.getDate();
-                const monthShort = d.toLocaleString('en', { month: 'short' });
-                return `<div class="outbox-cal-col-head${isToday ? ' today' : ''}">
-                  <span class="outbox-cal-day-name">${dayNames[i]}</span>
-                  <span class="outbox-cal-day-num">${dayNum} ${monthShort}</span>
-                </div>`;
-              }).join('')}
-            </div>
-            <div class="outbox-cal-body">
-              ${weekDays.map(d => {
-                const key = _outboxDateKey(d);
-                const isToday = key === todayKey;
-                const dayItems = byDate[key] || [];
-                return `<div class="outbox-cal-col${isToday ? ' today' : ''}" data-date="${key}">
-                  ${dayItems.length === 0
-                    ? '<div class="outbox-cal-empty-day"></div>'
-                    : dayItems.map(item => _renderOutboxCalCard(item, _e)).join('')
-                  }
-                </div>`;
-              }).join('')}
-            </div>
-          </div>
-          ${unscheduled.length ? `
-          <div class="outbox-unscheduled">
-            <div class="outbox-unscheduled-label">Unscheduled (${unscheduled.length})</div>
-            <div class="outbox-unscheduled-items">
-              ${unscheduled.map(item => _renderOutboxCalCard(item, _e)).join('')}
-            </div>
-          </div>` : ''}
-        </div>
-        ` : `
-        <div class="outbox-list-nav">${_outboxViewSegHTML()}</div>
-        <div class="outbox-feed" id="outbox-feed">
-          ${filtered.length === 0 ? `
-            <div class="outbox-empty">
-              <p class="outbox-empty-icon">📬</p>
-              <p class="outbox-empty-title">No drafts yet</p>
-              <p class="outbox-empty-sub">Run ${Terminology.article('mission', { lowercase: true })} ${Terminology.label('mission', { lowercase: true })} to generate content. Agent output will appear here for review.</p>
-            </div>
-          ` : filtered.map(item => _renderOutboxListCard(item)).join('')}
-        </div>
-        `}
-      </div>
-    `;
-
-    _bindOutboxEvents(el);
-  }
-
-  function _outboxFormatWeekLabel(days) {
-    if (!days.length) return '';
-    const s = days[0];
-    const e = days[days.length - 1];
-    const opts = { month: 'short', day: 'numeric' };
-    const sStr = s.toLocaleDateString('en', opts);
-    const eStr = e.toLocaleDateString('en', { ...opts, year: 'numeric' });
-    return `${sStr} \u2014 ${eStr}`;
-  }
-
-  function _renderOutboxCalCard(item, _e) {
-    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
-    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '\uD83D\uDCDD', label: 'Content', color: '#94a3b8' };
-    const status = item.approval_status || 'draft';
-    const content = CQ ? CQ.getContent(item) : (item.result || '');
-    const snippet = (content || '').replace(/<[^>]+>/g, '').slice(0, 50);
-    const statusColors = { draft: '#eab308', approved: '#22c55e', rejected: '#ef4444' };
-    const statusLabels = { draft: 'Draft', approved: 'Approved', rejected: 'Rejected' };
-
-    return `
-      <div class="outbox-cal-card" data-id="${_e(item.id)}" data-status="${status}" draggable="true"
-           style="--status-color:${statusColors[status] || '#94a3b8'}">
-        <div class="outbox-cal-card-head">
-          <span class="outbox-cal-card-icon" style="color:${type.color}">${type.icon}</span>
-          <span class="outbox-cal-card-badge" style="background:${statusColors[status] || '#94a3b8'}">${statusLabels[status] || status}</span>
-        </div>
-        <div class="outbox-cal-card-title">${_e(snippet || type.label)}</div>
-      </div>
-    `;
-  }
-
-  function _renderOutboxListCard(item) {
-    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
-    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
-    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '\uD83D\uDCDD', label: 'Content', color: '#94a3b8' };
-    const content = CQ ? CQ.getContent(item) : (item.result || '');
-    const time = CQ ? CQ.timeAgo(item.created_at) : '';
-    const rendered = CQ ? CQ.renderMarkdown(content) : _e(content);
-    const status = item.approval_status || 'draft';
-
-    return `
-      <div class="outbox-card ${status}" data-id="${_e(item.id)}" data-status="${status}">
-        <div class="outbox-card-header">
-          <span class="outbox-card-type" style="color:${type.color}">${type.icon} ${_e(type.label)}</span>
-          <span class="outbox-card-agent">${_e(item.agent_name || 'Agent')}</span>
-          <span class="outbox-card-time">${_e(time)}</span>
-          ${status === 'approved' ? '<span class="outbox-status-badge approved">&#10003; Approved</span>' : ''}
-          ${status === 'rejected' ? '<span class="outbox-status-badge rejected">&#10005; Rejected</span>' : ''}
-        </div>
-        <div class="outbox-card-preview">${rendered}</div>
-        <div class="outbox-card-actions" data-id="${_e(item.id)}">
-          ${status === 'draft' ? `
-            <button class="btn outbox-approve-btn">&#10003; Approve</button>
-            <button class="btn outbox-edit-btn">&#9998; Edit</button>
-            <button class="btn outbox-reject-btn">&#10005; Reject</button>
-          ` : ''}
-          ${status === 'approved' && (item.content_type === 'social') ? `
-            <button class="btn btn-primary outbox-publish-btn">&#x21AA; Publish</button>
-            <button class="btn outbox-schedule-btn">&#x23F1; Schedule</button>
-          ` : ''}
-          ${status === 'approved' ? `<button class="btn outbox-edit-btn">&#9998; Edit</button>` : ''}
-          <button class="btn outbox-copy-btn">Copy</button>
-        </div>
-      </div>
-    `;
-  }
-
-  function _bindOutboxEvents(el) {
-    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
-
-    // Status/type filters, view toggle, and export live in #bridge-subnav now
-    // and are handled by its click delegation (see the bind section).
-
-    // Week navigation
-    el.querySelector('#outbox-prev-week')?.addEventListener('click', () => {
-      _outboxWeekOffset--;
-      _renderOutbox(el);
-    });
-    el.querySelector('#outbox-next-week')?.addEventListener('click', () => {
-      _outboxWeekOffset++;
-      _renderOutbox(el);
-    });
-    el.querySelector('#outbox-today')?.addEventListener('click', () => {
-      _outboxWeekOffset = 0;
-      _renderOutbox(el);
-    });
-
-    // Drag-and-drop on calendar cards
-    el.querySelectorAll('.outbox-cal-card[draggable]').forEach(card => {
-      card.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', card.dataset.id);
-        card.classList.add('dragging');
-      });
-      card.addEventListener('dragend', () => card.classList.remove('dragging'));
-    });
-
-    el.querySelectorAll('.outbox-cal-col').forEach(col => {
-      col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('drag-over'); });
-      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
-      col.addEventListener('drop', (e) => {
-        e.preventDefault();
-        col.classList.remove('drag-over');
-        const itemId = e.dataTransfer.getData('text/plain');
-        const newDate = col.dataset.date;
-        if (!itemId || !newDate) return;
-        const allItems = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
-        const item = allItems.find(i => i.id === itemId);
-        if (item) {
-          if (!item.metadata) item.metadata = {};
-          item.metadata.scheduled_for = newDate + 'T09:00:00Z';
-          if (typeof State !== 'undefined') State.set('content-queue', [...allItems]);
-          _renderOutbox(el);
-        }
-      });
-    });
-
-    // Calendar card click -> detail overlay
-    el.querySelectorAll('.outbox-cal-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.defaultPrevented) return;
-        const id = card.dataset.id;
-        const allItems = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
-        const item = allItems.find(i => i.id === id);
-        if (!item) return;
-        _showOutboxCardDetail(el, item);
-      });
-    });
-
-    // List card actions (delegated)
-    const feed = el.querySelector('#outbox-feed');
-    if (feed) feed.addEventListener('click', async (e) => {
-      const id = e.target.closest('[data-id]')?.dataset.id;
-      if (!id) return;
-
-      if (e.target.closest('.outbox-approve-btn')) {
-        if (typeof ContentQueue !== 'undefined') await ContentQueue.approve(id);
-        _renderOutbox(el);
-      }
-      if (e.target.closest('.outbox-reject-btn')) {
-        if (typeof ContentQueue !== 'undefined') await ContentQueue.reject(id);
-        _renderOutbox(el);
-      }
-      if (e.target.closest('.outbox-copy-btn')) {
-        if (typeof ContentQueue !== 'undefined') await ContentQueue.copy(id);
-      }
-      if (e.target.closest('.outbox-edit-btn')) {
-        const card = e.target.closest('.outbox-card');
-        const preview = card?.querySelector('.outbox-card-preview');
-        const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
-        const item = items.find(i => i.id === id);
-        if (!preview || !item) return;
-
-        const content = typeof ContentQueue !== 'undefined' ? ContentQueue.getContent(item) : '';
-        preview.innerHTML = `
-          <textarea class="outbox-edit-area" id="outbox-edit-${_e(id)}">${_e(content)}</textarea>
-          <div class="outbox-edit-actions">
-            <button class="btn outbox-save-btn" data-id="${_e(id)}">Save</button>
-            <button class="btn outbox-cancel-btn" data-id="${_e(id)}">Cancel</button>
-          </div>
-        `;
-      }
-      if (e.target.closest('.outbox-save-btn')) {
-        const textarea = el.querySelector(`#outbox-edit-${CSS.escape(id)}`);
-        if (textarea && typeof ContentQueue !== 'undefined') {
-          await ContentQueue.edit(id, textarea.value);
-          _renderOutbox(el);
-        }
-      }
-      if (e.target.closest('.outbox-cancel-btn')) {
-        _renderOutbox(el);
-      }
-      if (e.target.closest('.outbox-publish-btn')) {
-        _showPlatformPicker(el, id, 'publish');
-      }
-      if (e.target.closest('.outbox-schedule-btn')) {
-        _showPlatformPicker(el, id, 'schedule');
-      }
-    });
-  }
-
-  /* ── Platform picker modal for Publish / Schedule ──
-     Opens a small dialog with a checkbox list of supported platforms
-     and, when mode === 'schedule', a datetime input. On submit it
-     calls ContentQueue.publishTo / scheduleTo which fan out to each
-     selected platform in turn and return per-platform results. */
-  function _showPlatformPicker(parentEl, itemId, mode) {
-    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
-    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
-    if (!CQ) return;
-
-    const platforms = CQ.getPlatforms();
-    const isSchedule = mode === 'schedule';
-    const title = isSchedule ? 'Schedule Post' : 'Publish Post';
-    const submitLabel = isSchedule ? 'Schedule' : 'Publish now';
-
-    // Default the schedule input to "one hour from now" in the user's
-    // local timezone, formatted for <input type="datetime-local">.
-    const defaultWhen = (() => {
-      const d = new Date(Date.now() + 60 * 60 * 1000);
-      const tz = d.getTimezoneOffset() * 60000;
-      return new Date(d - tz).toISOString().slice(0, 16);
-    })();
-
-    const overlay = document.createElement('div');
-    overlay.className = 'outbox-picker-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-label', title);
-    overlay.innerHTML = `
-      <div class="outbox-picker-panel">
-        <div class="outbox-picker-head">
-          <h3 class="outbox-picker-title">${_e(title)}</h3>
-          <button class="btn btn-xs outbox-picker-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="outbox-picker-body">
-          <p class="outbox-picker-intro">Pick one or more platforms. Each selected destination gets its own publish call to the Social MCP.</p>
-          <div class="outbox-picker-list">
-            ${platforms.map(p => `
-              <label class="outbox-picker-row">
-                <input type="checkbox" class="outbox-picker-check" value="${_e(p.id)}" />
-                <span class="outbox-picker-icon">${_e(p.icon)}</span>
-                <span class="outbox-picker-info">
-                  <span class="outbox-picker-name">${_e(p.label)}</span>
-                  <span class="outbox-picker-desc">${_e(p.desc)}</span>
-                </span>
-              </label>
-            `).join('')}
-          </div>
-          ${isSchedule ? `
-            <label class="outbox-picker-label">
-              Schedule for
-              <input type="datetime-local" class="outbox-picker-when" value="${_e(defaultWhen)}" />
-            </label>
-          ` : ''}
-          <div class="outbox-picker-status" id="outbox-picker-status"></div>
-        </div>
-        <div class="outbox-picker-actions">
-          <button class="btn btn-sm outbox-picker-cancel">Cancel</button>
-          <button class="btn btn-sm btn-primary outbox-picker-submit" disabled>${_e(submitLabel)}</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-    document.body.style.overflow = 'hidden';
-
-    const closeOverlay = () => {
-      overlay.remove();
-      document.body.style.overflow = '';
-      document.removeEventListener('keydown', onKey);
-    };
-
-    const submitBtn = overlay.querySelector('.outbox-picker-submit');
-    const statusEl  = overlay.querySelector('#outbox-picker-status');
-
-    const refreshSubmit = () => {
-      const any = overlay.querySelectorAll('.outbox-picker-check:checked').length > 0;
-      submitBtn.disabled = !any;
-    };
-
-    overlay.querySelectorAll('.outbox-picker-check').forEach(cb => {
-      cb.addEventListener('change', refreshSubmit);
-    });
-
-    overlay.querySelector('.outbox-picker-close')?.addEventListener('click', closeOverlay);
-    overlay.querySelector('.outbox-picker-cancel')?.addEventListener('click', closeOverlay);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
-    // Close on Escape. The listener is removed inside closeOverlay so every
-    // close path (close button, cancel, backdrop, Escape) unbinds it; closing
-    // via anything but Escape used to leak a document-level keydown listener.
-    const onKey = (e) => { if (e.key === 'Escape') closeOverlay(); };
-    document.addEventListener('keydown', onKey);
-
-    submitBtn.addEventListener('click', async () => {
-      const selected = Array.from(overlay.querySelectorAll('.outbox-picker-check:checked')).map(c => c.value);
-      if (!selected.length) return;
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = isSchedule ? 'Scheduling…' : 'Publishing…';
-      statusEl.innerHTML = '';
-
-      let results = [];
-      try {
-        if (isSchedule) {
-          const whenEl = overlay.querySelector('.outbox-picker-when');
-          const whenIso = whenEl && whenEl.value ? new Date(whenEl.value).toISOString() : null;
-          if (!whenIso) {
-            statusEl.innerHTML = '<span class="outbox-picker-err">Pick a schedule time.</span>';
-            submitBtn.disabled = false;
-            submitBtn.textContent = submitLabel;
-            return;
-          }
-          results = await CQ.scheduleTo(itemId, selected, whenIso);
-        } else {
-          results = await CQ.publishTo(itemId, selected);
-        }
-      } catch (err) {
-        results = selected.map(p => ({ platform: p, success: false, error: err && err.message || 'unknown error' }));
-      }
-
-      // Publishing is gated until social-mcp ships; ContentQueue already fired a
-      // "coming soon" toast and returned a comingSoon marker. Skip the per-platform
-      // summary (it has no platform to report) and just close cleanly.
-      if (results.some(r => r && r.comingSoon)) {
-        closeOverlay();
-        return;
-      }
-
-      const ok = results.filter(r => r.success).map(r => r.platform);
-      const fail = results.filter(r => !r.success);
-
-      if (!fail.length) {
-        closeOverlay();
-        _renderOutbox(parentEl);
-      } else {
-        statusEl.innerHTML = `
-          ${ok.length ? `<div class="outbox-picker-ok">Succeeded on: ${ok.map(_e).join(', ')}</div>` : ''}
-          <div class="outbox-picker-err">Failed on: ${fail.map(f => _e(f.platform) + ' (' + _e(f.error || 'error') + ')').join('; ')}</div>
-        `;
-        submitBtn.disabled = false;
-        submitBtn.textContent = submitLabel;
-        // Still refresh the outbox so any partial successes reflect
-        _renderOutbox(parentEl);
-      }
-    });
-  }
-
-  function _showOutboxCardDetail(parentEl, item) {
-    const _e = typeof Utils !== 'undefined' ? Utils.esc : (s) => String(s || '');
-    const CQ = typeof ContentQueue !== 'undefined' ? ContentQueue : null;
-    const type = CQ ? CQ.getTypeMeta(item.content_type) : { icon: '\uD83D\uDCDD', label: 'Content', color: '#94a3b8' };
-    const content = CQ ? CQ.getContent(item) : (item.result || '');
-    const rendered = CQ ? CQ.renderMarkdown(content) : _e(content);
-    const status = item.approval_status || 'draft';
-    const time = CQ ? CQ.timeAgo(item.created_at) : '';
-    const statusColors = { draft: '#eab308', approved: '#22c55e', rejected: '#ef4444' };
-
-    const overlay = document.createElement('div');
-    overlay.className = 'outbox-detail-overlay';
-    overlay.innerHTML = `
-      <div class="outbox-detail-panel">
-        <div class="outbox-detail-head">
-          <span class="outbox-card-type" style="color:${type.color}">${type.icon} ${_e(type.label)}</span>
-          <span class="outbox-card-agent">${_e(item.agent_name || 'Agent')}</span>
-          <span class="outbox-cal-card-badge" style="background:${statusColors[status] || '#94a3b8'}">${_e(status)}</span>
-          <span class="outbox-card-time">${_e(time)}</span>
-          <button class="btn outbox-detail-close">&times;</button>
-        </div>
-        <div class="outbox-detail-body">${rendered}</div>
-        <div class="outbox-detail-actions" data-id="${_e(item.id)}">
-          ${status === 'draft' ? `
-            <button class="btn outbox-approve-btn">&#10003; Approve</button>
-            <button class="btn outbox-reject-btn">&#10005; Reject</button>
-          ` : ''}
-          ${status === 'approved' && item.content_type === 'social' ? `
-            <button class="btn btn-primary outbox-publish-btn">&#x21AA; Publish</button>
-            <button class="btn outbox-schedule-btn">&#x23F1; Schedule</button>
-          ` : ''}
-          <button class="btn outbox-copy-btn">Copy</button>
-        </div>
-      </div>
-    `;
-
-    overlay.addEventListener('click', async (e) => {
-      if (e.target === overlay || e.target.closest('.outbox-detail-close')) {
-        overlay.remove();
-        return;
-      }
-      if (e.target.closest('.outbox-approve-btn')) {
-        if (typeof ContentQueue !== 'undefined') await ContentQueue.approve(item.id);
-        overlay.remove();
-        _renderOutbox(parentEl);
-      }
-      if (e.target.closest('.outbox-reject-btn')) {
-        if (typeof ContentQueue !== 'undefined') await ContentQueue.reject(item.id);
-        overlay.remove();
-        _renderOutbox(parentEl);
-      }
-      if (e.target.closest('.outbox-copy-btn')) {
-        if (typeof ContentQueue !== 'undefined') await ContentQueue.copy(item.id);
-      }
-      if (e.target.closest('.outbox-publish-btn')) {
-        overlay.remove();
-        _showPlatformPicker(parentEl, item.id, 'publish');
-      }
-      if (e.target.closest('.outbox-schedule-btn')) {
-        overlay.remove();
-        _showPlatformPicker(parentEl, item.id, 'schedule');
-      }
-    });
-
-    parentEl.appendChild(overlay);
   }
 
   /** Toolbar actions (Create + Import) only show on the Workshop sub-tab. */
@@ -2226,16 +1645,6 @@ const BlueprintsView = (() => {
         _applyFilters();
         return;
       }
-      // Outbox toolbar (status / type / view / export). Re-render the subnav
-      // (active state + counts) and the Outbox body in #bp-log-content.
-      const _outboxBody = () => document.getElementById('bp-log-content');
-      const ofBtn = e.target.closest('.outbox-filter');
-      if (ofBtn) { _outboxStatusFilter = ofBtn.dataset.status || 'all'; _renderSubnav(); _renderOutbox(_outboxBody()); return; }
-      const otBtn = e.target.closest('.outbox-type-btn');
-      if (otBtn) { _outboxTypeFilter = otBtn.dataset.type || 'all'; _renderSubnav(); _renderOutbox(_outboxBody()); return; }
-      const ovBtn = e.target.closest('.outbox-view-btn');
-      if (ovBtn) { _outboxViewMode = ovBtn.dataset.view || 'calendar'; _renderSubnav(); _renderOutbox(_outboxBody()); return; }
-      if (e.target.closest('#outbox-export') && typeof ContentQueue !== 'undefined') { ContentQueue.exportApproved(); return; }
     });
     // Search + view toggle now live in the filter row (#bp-filter-sheet, which
     // is persistent in the content) — delegate their events off it.

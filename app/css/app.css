@@ -7,7 +7,6 @@
 .view-no-scroll { overflow:hidden !important; }
 .hidden { display:none !important; }
 
-
 /* Spacing scale (4px base) */
 :root {
   /* Historical brand reference — navy is no longer used on surfaces.
@@ -45,8 +44,8 @@
   /* Semantic status colors — themes can override */
   --color-success: #22c55e;
   --color-error:   #ef4444;
-  --color-warning-ink: #1c1917; /* text on a --color-warning fill; clears 4.5:1 */
   --color-warning: #f59e0b;
+  --color-warning-ink: #1c1917; /* text on a --color-warning fill; clears 4.5:1 */
   --color-info:    #6366f1;
   --color-epic:    #a855f7;
 
@@ -1560,7 +1559,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .msg-bar-toggle:hover { color:var(--accent); border-color:var(--accent); }
 .msg-bar.expanded .msg-bar-toggle { top:8px; transform:none; }
 
-
 /* ─────────────────────────────────────────────────────────────────
    MAIN CONTENT
 ───────────────────────────────────────────────────────────────── */
@@ -1765,7 +1763,6 @@ html:not([data-theme]) .app-main,
 [data-theme="nice-dark"] .app-sidebar,
 [data-theme="nice-dark"] .nice-ai-input-area { background:#28282B; }
 
-
 /* ── Sidebar collapsed state ── */
 .app-sidebar:not(.open) .side-link span,
 .app-sidebar:not(.open) .app-brand-text,
@@ -1857,7 +1854,6 @@ html:not([data-theme]) .app-main,
      them instead of scrolling behind. */
   .app-view-content { padding:8px; padding-bottom:204px; scroll-padding-bottom:204px; }
 }
-
 
 /* ─────────────────────────────────────────────────────────────────
    BOTTOM TAB BAR (Mobile only)
@@ -2100,6 +2096,175 @@ html:not([data-theme]) .app-main,
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   OUTBOX (#/outbox) — results waiting for review and approved work.
+   Phones and tablets show the list or the open item; at 1024px and up
+   they sit side by side.
+───────────────────────────────────────────────────────────────── */
+.ob-wrap { max-width:1180px; margin:0 auto; padding:28px 24px 48px; display:flex; flex-direction:column; gap:16px; }
+.ob-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 16px; }
+.ob-head-text { flex:1 1 280px; min-width:0; }
+.ob-head-text h1,
+.ob-signin h1 {
+  margin:0; font-family:var(--font-h); font-size:var(--text-xl); font-weight:var(--fw-bold);
+  line-height:var(--lh-snug); color:var(--text);
+}
+.ob-head-text p { margin:4px 0 0; font-size:var(--text-sm); line-height:var(--lh-base); color:var(--text-muted); }
+.ob-head-acts { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.ob-seg {
+  display:inline-flex; gap:2px; padding:2px;
+  border:1px solid var(--border); border-radius:var(--radius); background:var(--surface);
+}
+.ob-seg button {
+  padding:4px 12px; border:0; border-radius:max(0px, calc(var(--radius) - 2px));
+  background:transparent; color:var(--text-muted); cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium);
+}
+.ob-seg button:hover { color:var(--text); }
+.ob-seg button[aria-pressed="true"] { background:var(--accent); color:var(--bg); }
+
+.ob-tabs { display:flex; gap:4px; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
+.ob-tab {
+  display:inline-flex; align-items:center; gap:6px; padding:8px 12px; margin-bottom:-1px;
+  border:0; border-bottom:2px solid transparent; background:transparent; cursor:pointer; white-space:nowrap;
+  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium); color:var(--text-muted);
+}
+.ob-tab:hover { color:var(--text); }
+.ob-tab[aria-selected="true"] { color:var(--text); border-bottom-color:var(--accent); }
+.ob-count {
+  min-width:18px; padding:0 6px; border-radius:999px; background:var(--surface2);
+  font-size:var(--text-2xs); font-weight:var(--fw-bold); line-height:18px; text-align:center; color:var(--text);
+}
+.ob-tab[aria-selected="true"] .ob-count { background:var(--accent); color:var(--bg); }
+
+.ob-types { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+.ob-type {
+  padding:3px 12px; border:1px solid var(--border); border-radius:999px; background:var(--surface);
+  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-medium); color:var(--text-muted);
+  white-space:nowrap; cursor:pointer;
+}
+.ob-type[aria-pressed="true"] { background:var(--text); border-color:var(--text); color:var(--bg); }
+
+.ob-layout { display:grid; gap:16px; grid-template-columns:minmax(0, 1fr); align-items:start; }
+.ob-layout.has-sel .ob-list,
+.ob-layout:not(.has-sel) .ob-detail-wrap { display:none; }
+
+.ob-list { padding:6px; }
+.ob-list ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.ob-row {
+  display:flex; align-items:center; gap:12px; width:100%; padding:10px; text-align:left;
+  border:0; border-radius:var(--radius); background:transparent; color:var(--text); cursor:pointer; font-family:var(--font-b);
+}
+.ob-row:hover { background:var(--surface2); }
+.ob-row[aria-current="true"] { background:color-mix(in srgb, var(--accent) 14%, transparent); }
+.ob-row-ico {
+  display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:34px; height:34px; border-radius:var(--radius); background:var(--surface2); color:var(--accent);
+}
+.ob-row-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.ob-row-main b,
+.ob-row-main span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ob-row-main b { font-size:var(--text-sm); font-weight:var(--fw-bold); }
+.ob-row-main span { font-size:var(--text-xs); color:var(--text-muted); }
+.ob-row-side { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; font-size:var(--text-xs); color:var(--text-muted); }
+.ob-chip {
+  padding:1px 8px; border-radius:999px; border:1px solid var(--border);
+  font-size:var(--text-2xs); font-weight:var(--fw-bold); color:var(--text);
+}
+
+.ob-empty { display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin:0; padding:22px 14px; font-size:var(--text-sm); color:var(--text-muted); }
+.ob-empty b { font-family:var(--font-h); font-size:var(--text-md); color:var(--text); }
+.ob-empty p { margin:0; max-width:56ch; line-height:var(--lh-base); }
+
+.ob-detail { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.ob-detail h2 {
+  margin:0; font-family:var(--font-h); font-size:var(--text-lg); font-weight:var(--fw-bold);
+  line-height:var(--lh-snug); color:var(--text); text-wrap:balance;
+}
+.ob-back {
+  display:inline-flex; align-items:center; gap:6px; align-self:flex-start; padding:2px 0;
+  border:0; background:none; color:var(--accent); cursor:pointer;
+  font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-bold);
+}
+.ob-byline,
+.ob-meta { margin:0; font-size:var(--text-xs); color:var(--text-muted); }
+.ob-note {
+  margin:0; padding:10px 12px; border:1px solid var(--color-warning); border-radius:var(--radius);
+  background:color-mix(in srgb, var(--color-warning) 10%, var(--surface)); font-size:var(--text-sm); color:var(--text);
+}
+.ob-doc {
+  padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg);
+  font-size:var(--text-base); line-height:var(--lh-base); color:var(--text); overflow-wrap:anywhere;
+}
+.ob-doc > :first-child { margin-top:0; }
+.ob-doc p { margin:0 0 10px; }
+.ob-doc p:last-child { margin-bottom:0; }
+.ob-doc h2, .ob-doc h3, .ob-doc h4 { margin:14px 0 6px; font-family:var(--font-h); font-size:var(--text-md); color:var(--text); }
+.ob-doc ul,
+.ob-doc ol { margin:4px 0 10px; padding-left:20px; }
+.ob-doc li + li { margin-top:2px; }
+.ob-doc code { font-family:var(--font-m); font-size:var(--text-sm); }
+.ob-doc pre { margin:0 0 10px; padding:10px; overflow-x:auto; border-radius:var(--radius); background:var(--surface2); }
+.ob-acts { display:flex; flex-wrap:wrap; gap:8px; }
+.ob-edit {
+  width:100%; min-height:260px; padding:12px; box-sizing:border-box; resize:vertical;
+  border:1px solid var(--accent); border-radius:var(--radius); background:var(--bg); color:var(--text);
+  font-family:var(--font-b); font-size:var(--text-base); line-height:var(--lh-base);
+}
+.ob-edit:focus { outline:none; }
+.ob-hint { margin:0; font-size:var(--text-xs); line-height:var(--lh-base); color:var(--text-muted); }
+.ob-run-link { align-self:flex-start; font-size:var(--text-sm); font-weight:var(--fw-medium); color:var(--accent); }
+
+.ob-signin { display:flex; flex-direction:column; align-items:flex-start; gap:10px; max-width:640px; }
+.ob-signin p { margin:0; font-size:var(--text-base); line-height:var(--lh-base); color:var(--text-muted); }
+
+/* Week view */
+.ob-week { display:flex; flex-direction:column; gap:12px; }
+.ob-week-nav { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.ob-week-nav h2 { margin:0 4px; font-family:var(--font-h); font-size:var(--text-md); font-weight:var(--fw-bold); color:var(--text); }
+.ob-week-step { display:inline-flex; align-items:center; justify-content:center; }
+.ob-flip { transform:scaleX(-1); }
+.ob-days { list-style:none; margin:0; padding:0; display:grid; gap:8px; grid-template-columns:minmax(0, 1fr); }
+.ob-day {
+  display:flex; flex-direction:column; gap:6px; min-width:0; padding:8px;
+  border:1px solid var(--border); border-radius:var(--radius); background:var(--panel-bg, var(--surface));
+}
+.ob-day.is-today { border-color:var(--accent); }
+.ob-day.is-over { border-style:dashed; border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.ob-day h3 { margin:0; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--text-muted); }
+.ob-day.is-today h3 { color:var(--accent); }
+.ob-day-empty { margin:0; font-size:var(--text-xs); color:var(--text-muted); opacity:.7; }
+.ob-pill {
+  display:flex; align-items:center; gap:6px; width:100%; min-width:0; padding:6px 8px; text-align:left;
+  border:1px solid var(--border); border-radius:var(--radius); background:var(--bg); color:var(--text);
+  font-family:var(--font-b); font-size:var(--text-xs); cursor:grab;
+}
+.ob-pill:hover { border-color:var(--accent); }
+.ob-pill-text { overflow:hidden; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.ob-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--text-muted); }
+.ob-pill[data-s="draft"] .ob-dot { background:var(--color-warning); }
+.ob-pill[data-s="approved"] .ob-dot,
+.ob-pill[data-s="published"] .ob-dot { background:var(--color-success); }
+.ob-pill[data-s="rejected"] .ob-dot { background:var(--color-error); }
+
+@media (min-width:900px) {
+  .ob-days { grid-template-columns:repeat(7, minmax(0, 1fr)); }
+  .ob-day { min-height:160px; }
+}
+@media (min-width:1024px) {
+  .ob-layout { grid-template-columns:minmax(280px, 380px) minmax(0, 1fr); }
+  .ob-layout.has-sel .ob-list,
+  .ob-layout:not(.has-sel) .ob-detail-wrap { display:block; }
+  .ob-back { display:none; }
+}
+@media (max-width:640px) {
+  .ob-wrap { padding:18px 6px 32px; gap:14px; }
+  .ob-head-text h1 { font-size:var(--text-lg); }
+  .ob-detail { padding:14px; }
+  .ob-doc { padding:12px; }
+  .ob-edit { font-size:16px; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
    EMPTY STATE
 ───────────────────────────────────────────────────────────────── */
 .app-empty {
@@ -2140,7 +2305,6 @@ html:not([data-theme]) .app-main,
 .dot-g { background:var(--color-success); }
 .dot-r { background:var(--color-error); }
 .dot-a { background:var(--color-warning); }
-
 
 /* ─────────────────────────────────────────────────────────────────
    BRIDGE VIEW
@@ -2187,7 +2351,7 @@ html:not([data-theme]) .app-main,
 /* The always-visible search row + Filters button is a Blueprints catalog
    control (filters the catalog grid), but it lives inside .bp-wrap which
    also wraps every other Bridge tab's content -- so it bled into Missions /
-   Operations / Outbox / Log / Documentation / Schematic with no useful
+   Operations / Log / Documentation / Schematic with no useful
    target to filter. Show only on Blueprints; Missions and Log render
    their own purpose-specific search in #bridge-subnav, the rest have none. */
 .app-main:has(.bp-type-tab.active:not([data-tab="blueprints"])) .bp-mobile-search-row { display:none; }
@@ -2813,7 +2977,6 @@ html:not([data-theme]) .app-main,
   }
 }
 
-
 @media (max-width:768px) {
   .bridge-hero-content { min-height:150px; }
 }
@@ -2917,7 +3080,6 @@ html:not([data-theme]) .app-main,
 }
 .auth-submit:hover { opacity:.9; }
 .auth-submit:disabled { opacity:.5; cursor:not-allowed; }
-
 
 /* Social sign-in buttons */
 .auth-google-btn, .auth-microsoft-btn, .auth-github-btn {
@@ -4271,7 +4433,7 @@ html:not([data-theme]) .app-main,
 .ana-wrap { max-width:var(--width-large); margin:0 auto; display:flex; flex-direction:column; gap:20px; }
 
 /* Inline KPI chips that live in #bridge-subnav for Operations. Same
-   pill chrome as .outbox-filter / .log-filter-pill — white surface,
+   pill chrome as .bp-sub-tab / .log-filter-pill — white surface,
    bordered, 26px height, --radius — so the row reads as one continuous
    sub-toolbar rhythm. Internal layout stays label + value (data readout,
    not a clickable filter), with the value bold and the label muted-caps. */
@@ -4290,8 +4452,8 @@ html:not([data-theme]) .app-main,
 .ana-kpi-val--bad { color:var(--color-error,#ef4444); }
 .ana-kpi-fail { color:var(--color-error,#ef4444); font-weight:var(--fw-regular); font-size:var(--text-xs); }
 
-/* Export Report and Outbox Export Approved use the standard .btn .btn-primary
-   .btn-sm trio, no per-button rule needed. */
+/* Export Report uses the standard .btn .btn-primary .btn-sm trio, no
+   per-button rule needed. */
 
 .ana-charts { display:grid; grid-template-columns:1.4fr 1fr; gap:14px; }
 .ana-chart-panel {
@@ -4596,9 +4758,6 @@ html:not([data-theme]) .app-main,
 .bp-confirm-cancel:hover { border-color:var(--text-muted); }
 .bp-confirm-submit { background:var(--color-error)20; color:var(--color-error); border-color:var(--color-error)60; font-weight:var(--fw-medium); }
 .bp-confirm-submit:hover { background:var(--color-error)40; }
-
-
-
 
 /* ─────────────────────────────────────────────────────────────────
    NICE AI — Prompt Interface
@@ -5650,7 +5809,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 ═══════════════════════════════════════════════════════════════════ */
 .log-wrap { max-width:var(--width-large); margin:0 auto; }
 
-/* ── Category Filter Pills (live in #bridge-subnav, mirror .outbox-filter) ── */
+/* ── Category Filter Pills (live in #bridge-subnav, mirror .bp-sub-tab) ── */
 .log-filters { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
 .log-filter-pill {
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
@@ -5808,12 +5967,10 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .widget-card:hover { border-color:var(--border-hi,var(--accent)); }
 
-
 /* ── Collapsible Widget ── */
 
 /* Hero schematic — full-width */
 .mc-hero-schematic { width:100%; }
-
 
 /* Dashboard stats strip */
 .mc-stats-strip { display:flex; gap:12px; width:100%; }
@@ -5956,36 +6113,16 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-grid-stats { display:flex; gap:6px; justify-content:center; font-size:var(--card-text-micro); color:var(--text-muted); font-family:var(--font-b); }
 .blueprint-card-grid-stats b { color:var(--text); }
 
-/* ═══════════════════════════════════════════════════════════════════
-   OUTBOX — Content Calendar + Queue
-   -------------------------------------------------------------------
-   Uses the same token vocabulary as Missions (.mc-card) and Blueprints
-   (.bp-*) so the Bridge has one visual language across every tab.
-   All colors resolve through --bg / --panel-bg / --border / --accent;
-   all font-sizes come from --text-* tokens; all radii from --radius.
-   No hardcoded fallbacks — if a theme leaves a token undefined, we
-   want the failure to be visible and fixed in the theme, not hidden
-   behind #18181b or #a5b4fc which only look right on NICE-family dark
-   themes and break completely on Office (light).
-═══════════════════════════════════════════════════════════════════ */
-.outbox-container { max-width:1100px; margin:0 auto; padding:0 16px; }
-.outbox-header { margin-bottom:16px; }
-.outbox-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.outbox-filters { display:flex; gap:6px; flex-wrap:wrap; }
-.outbox-type-filters { display:flex; gap:6px; flex-wrap:wrap; }
-
 /* ─────────────────────────────────────────────────────────────────
    Universal Bridge sub-toolbar pill height
    ─────────────────────────────────────────────────────────────────
    Every pill-like interactive control rendered into #bridge-subnav reads
-   at a uniform 26px height so the row sits at one rhythm across all six
+   at a uniform 26px height so the row sits at one rhythm across the
    Bridge tabs: Schematic (ship picker), Blueprints (sub-tabs), Missions
-   (search + New Mission), Operations (range select + Export), Outbox
-   (filters + Export), and Log (search). Inline badges/counts and the
+   (search + New Mission), Operations (range select + Export), and Log
+   (search). Inline badges/counts and the
    .mc-pipeline visualization are not pills and stay untouched. */
 #bridge-subnav .bp-sub-tab,
-#bridge-subnav .outbox-filter,
-#bridge-subnav .outbox-type-btn,
 #bridge-subnav .log-filter-pill,
 #bridge-subnav .ana-kpi,
 #bridge-subnav .sch-fixed-ship-trigger,
@@ -5999,14 +6136,10 @@ html[data-theme] .nice-ai-input:focus-visible {
   height: 26px;
   box-sizing: border-box;
 }
-/* Bridge sub-toolbar pills — ONE chrome rule for every filter/segment
-   button that lives in #bridge-subnav (or an equivalent hub header).
-   Blueprints sub-tabs (Spaceships/Agents/Active/Workshop), Outbox status
-   + type filters, and any future tab's pill controls all share this.
-   Active + hover states are added below per-class so each can opt into
-   the category-color treatment (Outbox type buttons use --type-color,
-   Log pills use --log-cat-color). */
-.bp-sub-tab, .outbox-filter, .outbox-type-btn {
+/* Bridge sub-toolbar pills: the chrome for the Blueprints sub-tabs
+   (Spaceships/Agents/Active/Workshop) in #bridge-subnav. The Log pills
+   (.log-filter-pill) mirror it with their own --log-cat-color states. */
+.bp-sub-tab {
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
   height:26px; box-sizing:border-box;
   padding:0 12px; border:var(--border-width,1px) solid var(--border);
@@ -6016,216 +6149,22 @@ html[data-theme] .nice-ai-input:focus-visible {
   cursor:pointer; transition:color .15s, border-color .15s, background-color .15s;
 }
 .bp-sub-tab.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
-.outbox-filter.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
-.outbox-type-btn.active { background:var(--type-color,var(--accent)); color:var(--bg); border-color:var(--type-color,var(--accent)); }
-.bp-sub-tab:hover:not(.active),
-.outbox-filter:hover:not(.active),
-.outbox-type-btn:hover:not(.active) { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-/* Count chip shared across every Bridge sub-toolbar pill (Outbox,
-   Blueprints sub-tabs, Log). Squared 3px to stay distinct from the
+.bp-sub-tab:hover:not(.active) { border-color:var(--border-hi,var(--accent)); color:var(--text); }
+/* Count chip on Bridge sub-toolbar pills (Blueprints sub-tabs, Log). Squared 3px to stay distinct from the
    main Bridge tab badge (`.bp-type-tab .bp-tab-count`, fully rounded
    pill at 9999px — that lives in the top tab row, different layer). */
-.outbox-badge,
 .bp-sub-tab .bp-tab-count { font-size:var(--text-xs); padding:1px 5px; border:1px solid currentColor; border-radius:3px; color:currentColor; opacity:0.75; font-weight:var(--fw-regular); }
-.outbox-filter.active .outbox-badge,
 .bp-sub-tab.active .bp-tab-count { color:currentColor; border-color:currentColor; opacity:1; }
 
-/* Tablet: shrink Bridge sub-toolbar pills + count chips so each tab's
-   filter row stays single-line at 641-1024px. Shared SSOT across Log,
-   Outbox status, and Outbox type families. Page-specific container gap
-   tightening (`.log-filters`, `.outbox-toolbar`, `.outbox-filters`,
-   `.outbox-type-filters`) lives in each page's section. */
+/* Tablet: shrink the Log pills + count chips so the filter row stays
+   single-line at 641-1024px. Container gap tightening (`.log-filters`)
+   lives in the Log section. */
 @media (min-width:641px) and (max-width:1024px) {
-  #bridge-subnav .outbox-filter,
-  #bridge-subnav .outbox-type-btn,
   #bridge-subnav .log-filter-pill { padding:0 8px; font-size:var(--text-xs); height:24px; }
-  #bridge-subnav .outbox-badge,
   #bridge-subnav .log-pill-count { font-size:var(--text-3xs); padding:0 4px; }
 }
 
-/* View toggle + export */
-.outbox-view-toggle { display:flex; gap:8px; margin-left:auto; align-items:center; }
-/* View segment matches the Blueprints .bp-view-toggle: segmented --bg-alt
-   container with 28x28 borderless icon buttons, solid-blue active. */
-.outbox-view-seg { display:flex; align-items:center; gap:2px; height:26px; box-sizing:border-box; background:var(--surface); border:var(--border-width, 1px) solid var(--border); border-radius:var(--radius); padding:2px; }
-.outbox-view-btn {
-  display:flex; align-items:center; justify-content:center; width:22px; height:22px;
-  border:none; background:transparent; color:var(--text-muted);
-  border-radius:calc(var(--radius) - 2px); cursor:pointer; transition:all .15s;
-}
-.outbox-view-btn:hover:not(.active) { color:var(--text); background:var(--panel-bg); }
-.outbox-view-btn.active { background:var(--accent); color:var(--bg); }
-/* Calendar view */
-.outbox-calendar { margin-top:0; }
-.outbox-cal-nav {
-  display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:12px;
-  font-family:var(--font-b);
-}
-/* The arrows + week label group inside a single white pill (matching the
-   filter-pill chrome above); the view-seg toggle and Today button stay
-   separate on the canvas to keep their own affordance. All pills in this
-   row share the same 28px height as the filter pills above. */
-.outbox-cal-period {
-  display:flex; align-items:center; gap:10px;
-  height:26px; box-sizing:border-box;
-  background:var(--surface, #fff);
-  padding:0 10px;
-  border-radius:var(--radius, 10px);
-}
-/* List-mode counterpart of .outbox-cal-nav: a centered top row that only
-   carries the calendar/list toggle (list mode has no date selector). */
-.outbox-list-nav {
-  display:flex; justify-content:center; margin-bottom:12px;
-}
-.outbox-week-btn {
-  width:22px; height:22px; border-radius:var(--radius);
-  border:var(--border-width,1px) solid var(--border);
-  background:transparent; color:var(--text-muted);
-  font-size:var(--text-sm); cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:color .15s, border-color .15s;
-}
-.outbox-week-btn:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-.outbox-week-label {
-  font-size:var(--text-sm); font-weight:var(--fw-medium);
-  color:var(--text); min-width:180px; text-align:center;
-}
-.outbox-today-btn {
-  display:inline-flex; align-items:center; justify-content:center;
-  height:26px; box-sizing:border-box;
-  padding:0 12px; border-radius:var(--radius);
-  border:var(--border-width,1px) solid var(--border); background:transparent;
-  color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-xs);
-  cursor:pointer; transition:color .15s, border-color .15s;
-}
-.outbox-today-btn:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-
-.outbox-cal-grid {
-  border:var(--border-width,1px) solid var(--border);
-  border-radius:var(--radius); overflow:hidden;
-  background:var(--panel-bg);
-}
-.outbox-cal-header {
-  display:grid; grid-template-columns:repeat(7, 1fr);
-  border-bottom:var(--border-width,1px) solid var(--border);
-}
-.outbox-cal-col-head {
-  padding:10px 6px; text-align:center; font-family:var(--font-b);
-  border-right:var(--border-width,1px) solid var(--border);
-}
-.outbox-cal-col-head:last-child { border-right:none; }
-.outbox-cal-col-head.today { background:color-mix(in srgb, var(--accent) 8%, transparent); }
-.outbox-cal-day-name {
-  display:block; font-size:var(--text-xs); font-weight:var(--fw-bold);
-  color:var(--text-muted);
-  letter-spacing:var(--tracking-caps);
-}
-.outbox-cal-day-num {
-  display:block; font-size:var(--text-xs); color:var(--text); margin-top:2px;
-}
-.outbox-cal-col-head.today .outbox-cal-day-num {
-  color:var(--accent); font-weight:var(--fw-bold);
-}
-
-.outbox-cal-body { display:grid; grid-template-columns:repeat(7, 1fr); min-height:260px; }
-.outbox-cal-col {
-  padding:6px; border-right:var(--border-width,1px) solid var(--border);
-  display:flex; flex-direction:column; gap:6px; min-height:180px;
-  transition:background .15s;
-}
-.outbox-cal-col:last-child { border-right:none; }
-.outbox-cal-col.today { background:color-mix(in srgb, var(--accent) 4%, transparent); }
-.outbox-cal-col.drag-over {
-  background:color-mix(in srgb, var(--accent) 12%, transparent);
-  outline:2px dashed var(--accent); outline-offset:-2px;
-}
-.outbox-cal-empty-day { flex:1; }
-
-/* Calendar mini cards — mirror Missions .mc-card but compact */
-.outbox-cal-card {
-  padding:8px; border-radius:var(--radius);
-  background:var(--surface2,var(--panel-bg));
-  border:var(--border-width,1px) solid var(--border);
-  border-left:3px solid var(--status-color,var(--text-muted));
-  cursor:pointer; transition:border-color .15s, transform .15s, box-shadow .15s;
-  font-family:var(--font-b);
-}
-.outbox-cal-card:hover {
-  border-color:var(--border-hi,var(--accent));
-  transform:translateY(-1px);
-  box-shadow:0 4px 12px color-mix(in srgb, var(--bg) 60%, transparent);
-}
-.outbox-cal-card.dragging { opacity:.4; }
-.outbox-cal-card-head { display:flex; align-items:center; justify-content:space-between; gap:4px; margin-bottom:4px; }
-.outbox-cal-card-icon { font-size:var(--text-xs); }
-.outbox-cal-card-badge {
-  font-size:var(--text-xs); font-weight:var(--fw-bold);
-  padding:1px 6px; border-radius:var(--radius);
-  color:var(--bg);
-  letter-spacing:var(--tracking-caps); line-height:var(--lh-snug);
-}
-.outbox-cal-card-title {
-  font-size:var(--text-xs); color:var(--text-muted); line-height:var(--lh-snug);
-  overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-}
-
-/* Unscheduled tray */
-.outbox-unscheduled { margin-top:14px; }
-.outbox-unscheduled-label {
-  font-family:var(--font-b); font-size:var(--text-xs);
-  font-weight:var(--fw-bold); color:var(--text-muted);
-  margin-bottom:8px;
-  letter-spacing:var(--tracking-caps);
-}
-.outbox-unscheduled-items { display:flex; gap:8px; flex-wrap:wrap; }
-.outbox-unscheduled-items .outbox-cal-card { min-width:140px; max-width:200px; }
-
-/* Detail overlay */
-.outbox-detail-overlay {
-  position:fixed; inset:0; z-index:9000;
-  background:color-mix(in srgb, var(--bg) 60%, transparent);
-  display:flex; align-items:center; justify-content:center;
-  backdrop-filter:blur(4px);
-}
-.outbox-detail-panel {
-  background:var(--panel-bg); border:var(--border-width,1px) solid var(--border);
-  border-radius:var(--radius); max-width:560px; width:90%;
-  max-height:80vh; max-height:80dvh;
-  overflow-y:auto;
-  box-shadow:0 20px 60px color-mix(in srgb, var(--bg) 50%, transparent);
-}
-.outbox-detail-head {
-  display:flex; align-items:center; gap:10px;
-  padding:14px 18px;
-  border-bottom:var(--border-width,1px) solid var(--border);
-  font-family:var(--font-b); font-size:var(--text-sm); flex-wrap:wrap;
-}
-.outbox-detail-close {
-  width:28px; height:28px; border-radius:50%;
-  border:var(--border-width,1px) solid var(--border); background:transparent;
-  color:var(--text-muted); font-size:var(--text-md); cursor:pointer;
-  margin-left:auto;
-  display:flex; align-items:center; justify-content:center;
-}
-.outbox-detail-close:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-.outbox-detail-body {
-  padding:18px; font-family:var(--font-b);
-  font-size:var(--text-base); color:var(--text); line-height:var(--lh-base);
-}
-.outbox-detail-body p { margin:0 0 8px; }
-.outbox-detail-actions {
-  display:flex; gap:8px; padding:12px 18px;
-  border-top:var(--border-width,1px) solid var(--border);
-}
-.outbox-detail-actions .btn {
-  padding:6px 14px; border-radius:var(--radius);
-  border:var(--border-width,1px) solid var(--border); background:transparent;
-  color:var(--text-muted); font-family:var(--font-b); font-size:var(--text-xs);
-  cursor:pointer; transition:color .15s, border-color .15s;
-}
-.outbox-detail-actions .btn:hover { border-color:var(--border-hi,var(--accent)); color:var(--text); }
-
-/* ── Platform picker (Publish / Schedule) ─────────────────────── */
+/* ── Outbox publish / schedule picker (OutboxView) ───────────── */
 .outbox-picker-overlay {
   position:fixed; inset:0; z-index:9100;
   background:rgba(0,0,0,.65);
@@ -6315,7 +6254,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 
 /* Main Bridge tab count badge — subtle pill used inline next to a tab
-   label (e.g. "Outbox 5" for pending drafts). Scoped to .bp-type-tab so
+   label. Scoped to .bp-type-tab so
    the Blueprints sub-tab counts (Spaceships 237 / Agents 695 / ...)
    keep their compact inline-number styling. */
 .bp-type-tab .bp-tab-count {
@@ -6327,11 +6266,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   background:var(--surface2, rgba(255,255,255,.08));
   color:var(--text-muted);
   line-height:1;
-}
-/* Alert variant — used by the Outbox tab for pending drafts. */
-.bp-type-tab .bp-tab-count--alert {
-  background:#f97316;
-  color:#09090b;
 }
 
 /* Alert indicators — one dot marking "needs attention", shared across the
@@ -6355,26 +6289,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   }
 }
 
-/* List view — mirrors Missions .mc-card shape/spacing */
-.outbox-feed { display:flex; flex-direction:column; gap:12px; }
-.outbox-card {
-  border-radius:var(--radius);
-  border:var(--border-width,1px) solid var(--border);
-  background:var(--panel-bg);
-  overflow:hidden; transition:border-color .15s;
-}
-.outbox-card:hover { border-color:var(--border-hi,var(--accent)); }
-.outbox-card.approved { border-left:3px solid var(--color-success,#22c55e); }
-.outbox-card.rejected { border-left:3px solid var(--color-error,#ef4444); opacity:.6; }
-.outbox-card-header {
-  display:flex; align-items:center; gap:10px;
-  padding:12px 16px;
-  border-bottom:var(--border-width,1px) solid var(--border);
-  font-family:var(--font-b); font-size:var(--text-xs);
-}
-.outbox-card-type { font-weight:var(--fw-medium); white-space:nowrap; }
-.outbox-card-agent { color:var(--text-muted); }
-.outbox-card-time { color:var(--text-muted); margin-left:auto; font-size:var(--text-xs); }
+/* Content review controls on the mission detail page (missions.js). */
 .outbox-status-badge {
   font-size:var(--text-xs); padding:2px 8px;
   border-radius:var(--radius); font-weight:var(--fw-medium);
@@ -6387,22 +6302,7 @@ html[data-theme] .nice-ai-input:focus-visible {
   background:color-mix(in srgb, var(--color-error,#ef4444) 14%, transparent);
   color:var(--color-error,#ef4444);
 }
-.outbox-card-preview {
-  padding:16px; font-family:var(--font-b);
-  font-size:var(--text-base); color:var(--text); line-height:var(--lh-base);
-}
-.outbox-card-preview p { margin:0 0 8px; }
-.outbox-card-preview h2, .outbox-card-preview h3, .outbox-card-preview h4 { margin:12px 0 6px; color:var(--text); }
-.outbox-card-preview code {
-  background:color-mix(in srgb, var(--text) 6%, transparent);
-  padding:1px 4px; border-radius:3px;
-  font-family:var(--font-m); font-size:var(--text-sm);
-}
-.outbox-card-preview pre {
-  background:color-mix(in srgb, var(--bg) 85%, transparent);
-  padding:12px; border-radius:var(--radius); overflow-x:auto; margin:8px 0;
-}
-.outbox-card-preview ul { margin:4px 0; padding-left:20px; }
+
 .outbox-card-actions {
   display:flex; gap:8px; padding:10px 16px;
   border-top:var(--border-width,1px) solid var(--border);
@@ -6429,52 +6329,8 @@ html[data-theme] .nice-ai-input:focus-visible {
 .outbox-edit-actions .btn { padding:5px 14px; }
 .outbox-save-btn { background:var(--accent) !important; color:var(--bg) !important; border:none !important; }
 
-/* Empty state */
-.outbox-empty { text-align:center; padding:60px 20px; }
-.outbox-empty-icon { font-size:2.5rem; margin-bottom:12px; }
-.outbox-empty-title {
-  font-family:var(--font-b); font-size:var(--text-md);
-  font-weight:var(--fw-bold); color:var(--text); margin:0 0 6px;
-}
-.outbox-empty-sub {
-  font-family:var(--font-b); font-size:var(--text-sm);
-  color:var(--text-muted); margin:0;
-}
-
-/* Tablet: tighter container gaps so all 8 status + type pills fit a
-   single row inside .outbox-toolbar. Pill + badge chrome lives in the
-   shared #bridge-subnav SSOT tablet rule. */
-@media (min-width:641px) and (max-width:1024px) {
-  .outbox-toolbar { gap:8px; }
-  .outbox-filters,
-  .outbox-type-filters { gap:4px; }
-}
-
-/* Mobile */
 @media (max-width:640px) {
-  .outbox-container { padding:0 8px; }
-  /* Tighter cluster: pills get equal-width within their row, tighter
-     padding + gap so all four status filters fit one row, no more
-     "Rejected" wrapping to its own line. Toolbar width matches the
-     calendar container below (12px inset each side) so the pill rows
-     read as one cohesive band with the date nav. */
-  .outbox-toolbar { flex-direction:column; align-items:stretch; gap:6px; width:100%; padding:0 12px; box-sizing:border-box; }
-  .outbox-filters,
-  .outbox-type-filters { gap:4px; flex-wrap:nowrap; }
-  .outbox-filters .outbox-filter,
-  .outbox-type-filters .outbox-type-btn { flex:1 1 0; min-width:0; padding:0 4px; height:26px; font-size:var(--text-xs); gap:4px; }
-  /* Tighter badge so the chip border doesn't touch the pill edge once
-     pills are equal-width and labels (Pending/Approved/Rejected) fill
-     most of the cell. */
-  .outbox-filter .outbox-badge,
-  .outbox-type-btn .outbox-badge { font-size:var(--text-3xs); padding:0 3px; flex-shrink:0; }
-  .outbox-card-header { flex-wrap:wrap; gap:6px; }
   .outbox-card-actions { flex-wrap:wrap; }
-  .outbox-cal-grid { overflow-x:auto; }
-  .outbox-cal-header { min-width:600px; }
-  .outbox-cal-body { min-width:600px; }
-  .outbox-cal-col { min-height:120px; }
-  .outbox-view-toggle { margin-left:0; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -6737,7 +6593,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .cmd-result { min-height:48px; padding:12px 16px; }
 }
 
-
 /* Landscape-specific adjustments */
 @media (max-height:500px) and (orientation:landscape) {
   .side-header { padding:8px 12px; }
@@ -6746,7 +6601,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .tab { font-size:var(--text-xs); gap:2px; }
   .widget-card { padding:10px; }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════
    MOBILE RESPONSIVE — Tabs, Cards, Panels
@@ -7027,9 +6881,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-grid[data-tier="flagship"],
 .blueprint-card-compact[data-tier="flagship"]          { border-color:var(--color-warning)40; box-shadow:0 0 16px rgba(245,158,11,.2); }
 
-
 /* ── Card enhancements — glass, shimmer, glow, hover lift ── */
-
 
 /* Hover elevation + glow */
 .blueprint-card { transition:transform .25s ease, box-shadow .25s ease; min-width:0; perspective:800px; }
@@ -7050,7 +6902,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .blueprint-card-grid[data-rarity="epic"]:hover       { box-shadow:0 0 24px rgba(168,85,247,.3), 0 12px 40px rgba(0,0,0,.3); }
 .blueprint-card[data-rarity="legendary"]:hover,
 .blueprint-card-grid[data-rarity="legendary"]:hover  { box-shadow:0 0 30px rgba(245,158,11,.4), 0 12px 40px rgba(0,0,0,.3); }
-
 
 /* Foil overlay — static gold sheen for legendary, animated gradient for mythic */
 .blueprint-card[data-rarity="legendary"]::before,
@@ -9649,7 +9500,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .bp-hangar-add-btn:hover { border-color:var(--accent); color:var(--accent); }
 
-
 /* ── Related Mini Cards (drawer) ── */
 .bp-drawer-related-card {
   flex-shrink:0; width:120px; padding:10px 8px;
@@ -9899,7 +9749,6 @@ body.preview-active .nice-ai {
 .bp-loading { display:flex; align-items:center; justify-content:center; gap:.75rem; padding:4rem; color:var(--text-muted); font-size:.85rem; }
 .bp-spinner { width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:bpSpin .6s linear infinite; display:inline-block; }
 @keyframes bpSpin { to { transform:rotate(360deg); } }
-
 
 /* ── Mobile: default compact, better list view ── */
 @media (max-width:768px) {
@@ -10401,21 +10250,6 @@ body.preview-active .nice-ai {
   .auth-modal-box { width:100%; max-width:none; }
 }
 
-/* ── Outbox calendar: allow horizontal scroll ── */
-@media (max-width:640px) {
-  .outbox-cal-header, .outbox-cal-body { min-width:auto; }
-  .outbox-cal-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-}
-
-/* Period (←  May 18 — May 24, 2026  →) takes row 1; the calendar/list
-   view-seg toggle and Today button share row 2. Otherwise Today clips
-   off the right edge at 375px. */
-@media (max-width:480px) {
-  .outbox-cal-nav { flex-wrap:wrap; row-gap:8px; }
-  .outbox-cal-period { order:-1; flex-basis:100%; justify-content:center; }
-  .outbox-week-label { min-width:0; }
-}
-
 /* ── Detail views: reduce padding on mobile ── */
 @media (max-width:480px) {
   .detail-wrap { padding:0 12px; }
@@ -10446,7 +10280,6 @@ body.preview-active .nice-ai {
   .mc-toolbar-label { display:none; }
   .mc-toolbar-actions .btn .icon { margin:0; }
 }
-
 
 /* ── Blueprint type tabs: scrollable on mobile ── */
 @media (max-width:640px) {
@@ -10691,7 +10524,7 @@ body.preview-active .nice-ai {
   display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
   margin-bottom:12px;
   /* Pin the filter + rarity row under the Bridge sub-tabs so it stays in
-     the header while the catalog grid scrolls (the Missions / Outbox /
+     the header while the catalog grid scrolls (the Missions /
      Log toolbars get this for free by living in the fixed #app-fixed-tabs;
      the catalog filters sit inside the scroller, so they need sticky). At
      ≤640px this element becomes a fixed bottom-sheet (rule below) which
