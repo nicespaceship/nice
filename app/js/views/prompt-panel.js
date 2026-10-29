@@ -2249,7 +2249,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       const guestMsg = { role: 'user', text, ts: Date.now() };
       if (sentAttachments.length) guestMsg.attachments = sentAttachments;
       _messages.push(guestMsg);
-      _messages.push({ role: 'assistant', text: '🔒 Sign in to run missions and chat with your agents. Your blueprints and configurations will be saved.\n\n<button class="btn btn-primary btn-sm" onclick="NICE.openModal(\'modal-auth\')">Sign In to Launch</button>', agent: 'NICE', ts: Date.now() });
+      // [ACTION: …] renders as a monitor button (raw HTML here was escaped
+      // and showed as text). #/profile prompts sign-in, like the guest banner.
+      _messages.push({ role: 'assistant', text: `🔒 Sign in to run ${Terminology.label('mission', { plural: true, lowercase: true })} and chat with your agents. Your blueprints and settings are saved to your account.\n\n[ACTION: Sign in | /profile]`, agent: 'NICE', ts: Date.now() });
       _saveMessages();
       _renderMonitor();
       input.value = '';
