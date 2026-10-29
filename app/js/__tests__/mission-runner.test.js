@@ -574,6 +574,16 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     }
   });
 
+  it('resumeDag refuses a gate that already resumed', async () => {
+    await SB.db('mission_runs').create({
+      id: 'm-dag-twice', user_id: userId, title: 'Twice', status: 'running',
+      plan_snapshot: { shape: 'dag', nodes: [{ id: 'g', type: 'approval_gate' }, { id: 'b', type: 'notify' }], edges: [{ from: 'g', to: 'b' }] },
+      metadata: { dag_status: 'paused', paused_at: 'g' },
+    });
+    expect(await MissionRunner.resumeDag('m-dag-twice')).toBeNull();
+    expect(_db.mission_runs['m-dag-twice'].status).toBe('running');
+  });
+
   it('resumeDag is a no-op on a run that is not paused at a gate', async () => {
     await SB.db('mission_runs').create({
       id: 'm-dag-done', user_id: userId, title: 'Done', status: 'completed',

@@ -676,9 +676,10 @@ const MissionRunner = (() => {
     let mission;
     try { mission = await SB.db('mission_runs').get(missionId); } catch { return null; }
     if (!mission) return null;
-    if (mission.status === 'cancelled') return null;
-    // Only a paused gate is resumable; anything else is a no-op so a stray
-    // call can't re-run a completed or failed mission.
+    // Only a gate still waiting in review is resumable. Anything else is a
+    // no-op, so a stray or second approval can't re-run a cancelled,
+    // completed or failed mission, or one that already resumed.
+    if (mission.status !== 'review') return null;
     if (!mission.metadata || mission.metadata.dag_status !== 'paused') return null;
 
     const snap = mission.plan_snapshot || {};
