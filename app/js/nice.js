@@ -305,16 +305,6 @@ const Theme = (() => {
       }
     } catch { /* pre-init — rank will render on next update */ }
 
-    // If leaving The Grid, destroy TRON game and reset to default tab
-    if (name !== 'grid' && typeof TronView !== 'undefined' && TronView.destroy) {
-      TronView.destroy();
-      const tronTab = document.querySelector('.bp-type-tab[data-tab="tron"]');
-      if (tronTab && tronTab.classList.contains('active')) {
-        const schTab = document.querySelector('.bp-type-tab[data-tab="schematic"]');
-        if (schTab) schTab.click();
-      }
-    }
-
     // Re-render the current view so any theme-specific DOM (Schematic's arc
     // reactor, JARVIS HUD rings, etc.) gets rebuilt against the new theme
     // instead of carrying stale markup from the previous one.

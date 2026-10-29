@@ -68,7 +68,7 @@ Gamification.checkAchievements();       // Evaluate unlock criteria
 
 **Bridge (`#/bridge`) is the hub.** Its tabs: Schematic, Blueprints, Missions, Outbox, Operations, Log, Documentation, TRON. The Blueprints tab has Spaceships / Agents / Active / Workshop sub-tabs. Home is `#/`.
 
-Detail and builder routes hang off Bridge: `#/bridge/agents/:id`, `#/bridge/spaceships/:id`, `#/bridge/agents/new`, `#/bridge/spaceships/new`. Standalone routes: `#/missions/new`, `#/security`, `#/settings`, `#/profile`, `#/theme-editor`, `#/moderation`, `#/tron`.
+Detail and builder routes hang off Bridge: `#/bridge/agents/:id`, `#/bridge/spaceships/:id`, `#/bridge/agents/new`, `#/bridge/spaceships/new`. Standalone routes: `#/missions/new`, `#/security`, `#/settings`, `#/profile`, `#/theme-editor`, `#/moderation`.
 
 > The authoritative view → route table is in CLAUDE.md. Don't hardcode view counts or blueprint counts here — they drift.
 

@@ -187,7 +187,6 @@ const Utils = (() => {
     generatedImages: 'nice-generated-images',
     securityChecklist: 'nice-security-checklist',
     shipProfiles: 'nice-ship-profiles',
-    tronHighScore: 'nice-tron-hi',
     voiceOff: 'nice-voice-off',
     voiceSample: 'nice-voice-sample',
     vaultAdvanced: 'nice-vault-advanced',
