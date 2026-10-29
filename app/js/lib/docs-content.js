@@ -90,10 +90,10 @@
     {
       id: 'tokens',
       slug: 'tokens',
-      label: 'Tokens & XP',
+      label: 'Tokens',
       icon: 'zap',
       marketingIcon: 'fa-bolt',
-      description: 'Subscription tiers, token pools, top-up packs, and the rank progression system.',
+      description: 'Subscription tiers, token pools, and top-up packs.',
     },
     {
       id: 'keyboard',
@@ -154,7 +154,7 @@
         <dt>Prompt Panel</dt>
         <dd>The "Ask NICE…" input pinned at the bottom of every screen. Talk to your agents from anywhere. Press <kbd>Cmd+K</kbd> for the command palette.</dd>
         <dt>Theme</dt>
-        <dd>The Theme button at the top of the sidebar opens the switcher for your visual skin, rank badge, and notification alerts.</dd>
+        <dd>The Theme button at the top of the sidebar opens the switcher for your visual skin and notification alerts.</dd>
       </dl>
     `,
 
@@ -164,20 +164,7 @@
 
       <h2>Activating Agents</h2>
       <p>Browse the catalog on the Bridge (Blueprints → Agents) and click <kbd>Activate</kbd> on any card. Activated agents appear in your fleet and can receive missions.</p>
-      <p>Free pilots get <strong>6 crew slots</strong> at every rank. Rank progression unlocks higher-rarity blueprints, not more slots:</p>
-      <table>
-        <thead><tr><th>Rank</th><th>XP Required</th><th>Max Rarity Unlocked</th></tr></thead>
-        <tbody>
-          <tr><td>Ensign</td><td>0</td><td>Common</td></tr>
-          <tr><td>Lieutenant JG</td><td>10,000</td><td>Common</td></tr>
-          <tr><td>Lieutenant</td><td>25,000</td><td>Rare</td></tr>
-          <tr><td>Lt Commander</td><td>50,000</td><td>Rare</td></tr>
-          <tr><td>Commander</td><td>100,000</td><td>Epic</td></tr>
-          <tr><td>Captain</td><td>200,000</td><td>Legendary</td></tr>
-          <tr><td>Fleet Captain → Fleet Admiral</td><td>350K – 2.5M</td><td>Legendary</td></tr>
-        </tbody>
-      </table>
-      <p><strong>Pro subscribers</strong> get 12 Legendary slots immediately — no XP grind. <strong>Mythic</strong> rarity is milestone-only: even Pro subscribers earn it through achievements (e.g. dock a Legendary agent, ship 3+ spaceships), never via rank or subscription.</p>
+      <p>Every blueprint and every crew slot is open from day one. Free accounts run one active spaceship at a time; <strong>NICE Pro</strong> runs a fleet.</p>
 
       <h2>Building Custom Agents</h2>
       <p>Open the Bridge → Blueprints → Workshop and click <strong>+ Create</strong> to launch the Agent Builder. Configure:</p>
@@ -386,16 +373,16 @@
     `,
 
     'tokens': `
-      <h1>Tokens &amp; XP</h1>
-      <p class="docs-lead">NICE uses two systems: tokens for AI model usage and XP for progression.</p>
+      <h1>Tokens</h1>
+      <p class="docs-lead">Tokens pay for AI model usage.</p>
 
       <h2>Subscriptions</h2>
-      <p>Gemini 2.5 Flash is free for everyone, always. Paid plans unlock larger model pools and more slots.</p>
+      <p>Gemini 2.5 Flash is free for everyone, always. Paid plans unlock larger model pools and more active spaceships.</p>
       <table>
         <thead><tr><th>Plan</th><th>Price</th><th>What you get</th></tr></thead>
         <tbody>
-          <tr><td>Free</td><td>$0</td><td>6 slots, Common blueprints, Gemini 2.5 Flash unlimited</td></tr>
-          <tr><td>Pro</td><td>$9.99/mo</td><td>12 slots, Legendary instantly, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
+          <tr><td>Free</td><td>$0</td><td>One active spaceship, Gemini 2.5 Flash unlimited</td></tr>
+          <tr><td>Pro</td><td>$9.99/mo</td><td>Run a fleet of spaceships, 1,000 Standard tokens/month covering GPT-5 mini, Llama, Grok, DeepSeek, Kimi, and Nemotron</td></tr>
           <tr><td>Pro + Claude</td><td>+$9.99/mo</td><td>Claude 4.6 Sonnet &amp; 4.7 Opus, 500 Claude tokens/month</td></tr>
           <tr><td>Pro + Premium</td><td>+$9.99/mo</td><td>GPT-5.4 Pro, OpenAI o3, Gemini 2.5 Pro, 500 Premium tokens/month</td></tr>
         </tbody>
@@ -415,19 +402,6 @@
         </tbody>
       </table>
       <p>Each pool is independent — Claude tokens cost more per message because Claude models are more expensive. Max packs are the best value (17% discount).</p>
-
-      <h2>XP &amp; Ranks</h2>
-      <p>Earn XP by using NICE. Every action contributes to your rank progression:</p>
-      <ul>
-        <li><strong>Create an agent:</strong> 20 XP</li>
-        <li><strong>Complete a mission:</strong> 15 XP</li>
-        <li><strong>Chat with an agent:</strong> 5 XP</li>
-        <li><strong>Create a workflow:</strong> 20 XP</li>
-        <li><strong>Daily streaks</strong> multiply your XP earnings</li>
-      </ul>
-
-      <h2>Rank Progression</h2>
-      <p>Higher ranks unlock rarer blueprints (Common → Rare → Epic → Legendary). There are 12 ranks from Ensign to Fleet Admiral. <strong>Mythic</strong> rarity is milestone-only — earned through achievements (e.g. dock a Legendary agent, ship 3+ spaceships), never via rank or subscription. Even Pro subscribers earn Mythic the same way.</p>
     `,
 
     'keyboard': `

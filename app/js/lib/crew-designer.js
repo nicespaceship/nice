@@ -377,7 +377,7 @@ Rules:
   /* ══════════════════════════════════════════════════════════════ */
 
   function _renderDesign(el) {
-    const maxSlots = typeof Gamification !== 'undefined' ? Gamification.getMaxSlots() : 12;
+    const maxSlots = BlueprintUtils.MAX_SHIP_SLOTS;
     const overLimit = _data.editedAgents.length > maxSlots;
 
     el.innerHTML = `
@@ -394,7 +394,7 @@ Rules:
           <button class="btn cd-btn-secondary cd-regenerate" id="cd-regenerate">↻ Regenerate</button>
         </div>
 
-        ${overLimit ? `<div class="cd-warning">⚠ Your rank allows ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
+        ${overLimit ? `<div class="cd-warning">⚠ A spaceship holds up to ${maxSlots} agents. Remove ${_data.editedAgents.length - maxSlots} to deploy.</div>` : ''}
 
         <!-- Crew Grid -->
         <div class="cd-section-label">Crew <span class="cd-count">${_data.editedAgents.length} agents</span></div>
@@ -617,7 +617,6 @@ Rules:
           createdAgentIds.push(`local-${Date.now()}-${i}`);
         }
 
-        if (typeof Gamification !== 'undefined') Gamification.addXP('create_agent');
       }
 
       // 2. Create spaceship
@@ -719,8 +718,7 @@ Rules:
         }
       }
 
-      // 5. XP + Audit
-      if (typeof Gamification !== 'undefined') Gamification.addXP('launch_spaceship');
+      // 5. Audit
       if (typeof AuditLog !== 'undefined') {
         AuditLog.log('crew_designer_deploy', {
           shipId, shipName: _data.shipName,

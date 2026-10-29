@@ -11,7 +11,6 @@ const SpaceshipDetailView = (() => {
   const _esc = Utils.esc;
   let _channel = null;
   let _draggedAgentId = null;
-  let _draggedAgentRarity = null;
 
   /* ── Behaviors settings panel ── */
   function _renderBehaviorsPanel(shipId) {
@@ -423,20 +422,13 @@ const SpaceshipDetailView = (() => {
       const memberIds = fleet.agent_ids || [];
       const members = memberIds.map(mid => agentMap[mid]).filter(Boolean);
       const dotClass = fleet.status === 'deployed' ? 'dot-g dot-pulse' : fleet.status === 'paused' ? 'dot-a' : 'dot-g';
-      const shipClass = typeof Gamification !== 'undefined' ? Gamification.renderShipClassBadge(members.length) : '';
       const allMissions = State.get('missions') || [];
-      const health = typeof Gamification !== 'undefined' ? Gamification.getSpaceshipHealth(fleet, allAgents, allMissions) : null;
 
       // Build dashboard HTML (async for ShipLog)
       const dashboardHtml = await _renderDashboard(fleet.id, memberIds, allMissions);
       // Slots come from the ship's OWN crew defs (real labels, per-slot
-      // rarity, min_class), not the rank-based generic template — matches
-      // schematic.js and the activation wizard. Gamification.getSlotTemplate()
-      // would render 12 generic "Bridge/Ops" slots capped at the viewer's
-      // rank rarity, ignoring what the ship actually defines.
-      const _bu = typeof BlueprintUtils !== 'undefined' ? BlueprintUtils : null;
-      const spaceshipClass = _bu ? _bu.getSlotTemplate(fleet)
-        : (typeof Gamification !== 'undefined' ? Gamification.getSlotTemplate() : { id:'dynamic', name:'Ship', slots:[{id:0,maxRarity:'Mythic',label:'Bridge'},{id:1,maxRarity:'Legendary',label:'Ops'}] });
+      // rarity), matching schematic.js and the activation wizard.
+      const spaceshipClass = BlueprintUtils.getSlotTemplate(fleet);
       const assignedIds = new Set(Object.values(fleet.slot_assignments || {}).filter(Boolean));
 
       // Community publish is only offered for user-built ships owned by
@@ -464,7 +456,7 @@ const SpaceshipDetailView = (() => {
               </div>
             </div>
             <div class="detail-header-info">
-              <h2 class="detail-name" contenteditable="true" spellcheck="false" data-field="name" id="ship-profile-name">${_esc(fleet.name)} ${shipClass}</h2>
+              <h2 class="detail-name" contenteditable="true" spellcheck="false" data-field="name" id="ship-profile-name">${_esc(fleet.name)}</h2>
               <div class="ship-profile-desc" contenteditable="true" spellcheck="false" id="ship-profile-desc" data-placeholder="Add a ship description...">${_esc(_getShipProfile(fleet.id).desc || '')}</div>
               <div class="detail-meta-row">
                 <span class="status-dot ${dotClass}"></span>
@@ -476,12 +468,6 @@ const SpaceshipDetailView = (() => {
           </div>
 
           ${dashboardHtml}
-
-          <div class="fleet-detail-actions">
-            <div class="bridge-launch-wrap">
-              <span class="agent-tag">${spaceshipClass.slots.length} slots (${typeof Gamification !== 'undefined' ? Gamification.getRank().name : 'Ensign'} rank)</span>
-            </div>
-          </div>
 
           <!-- Ship Formation (card row above inventory) -->
           <div class="computing-formation">
@@ -506,11 +492,9 @@ const SpaceshipDetailView = (() => {
               </div>
             </div>
             <div id="computing-inv-list">
-              ${_renderInventory(allAgents, assignedIds, spaceshipClass)}
+              ${_renderInventory(allAgents, assignedIds)}
             </div>
           </div>
-
-          ${health ? `<div class="detail-section" style="margin-top:20px"><h3 class="detail-section-title">Ship Health</h3>${Gamification.renderHealthBars(health)}</div>` : ''}
 
           <!-- Ship Behaviors -->
           ${_renderBehaviorsPanel(fleet.id)}
@@ -590,29 +574,12 @@ const SpaceshipDetailView = (() => {
     }
   }
 
-  function _renderInventory(allAgents, assignedIds, spaceshipClass) {
+  function _renderInventory(allAgents, assignedIds) {
     // Only show terminal-activated agents and custom-built agents
     const activatedBpIds = typeof Blueprints !== 'undefined' ? new Set(Blueprints.getActivatedAgentIds()) : new Set();
-    // Ordered low→high from the Gamification SSOT so Mythic crew (and
-    // Mythic-capped slots) are represented — a local list that stopped at
-    // Legendary filtered every Mythic agent out of the dock, and made an
-    // all-Mythic ship's inventory empty.
-    const _ro = (typeof Gamification !== 'undefined' && Gamification.RARITY_ORDER) || { Common: 0, Rare: 1, Epic: 2, Legendary: 3, Mythic: 4 };
-    const rarityOrder = Object.keys(_ro).sort((a, b) => _ro[a] - _ro[b]);
-    // Determine max allowed rarity from ship slots
-    const maxSlotRarityIdx = spaceshipClass
-      ? Math.max(...spaceshipClass.slots.map(s => rarityOrder.indexOf(s.maxRarity)))
-      : rarityOrder.length - 1;
-    const allowedRarities = new Set(rarityOrder.slice(0, maxSlotRarityIdx + 1));
-
     const activated = allAgents.filter(a => {
-      // Must be genuinely activated — check Blueprints activation list
       const bpId = a.blueprint_id || a.id.replace(/^bp-/, '');
-      const isActivated = activatedBpIds.has(a.id) || activatedBpIds.has(bpId) || a.imported_via || a._custom;
-      if (!isActivated) return false;
-      // Filter by rarity that fits in the ship's slots
-      const agentRarity = BlueprintUtils.getRarity(a);
-      return allowedRarities.has(agentRarity);
+      return activatedBpIds.has(a.id) || activatedBpIds.has(bpId) || a.imported_via || a._custom;
     });
     if (!activated.length) return '<p class="text-muted" style="font-size:.78rem">No agents added. <a href="#/bridge" style="color:var(--accent)">Browse the Blueprint Catalog.</a></p>';
     return activated.map(a => {
@@ -628,24 +595,6 @@ const SpaceshipDetailView = (() => {
         </div>
       `;
     }).join('');
-  }
-
-  // Whether a crew slot is gated behind a class the viewer hasn't reached.
-  // Mirrors ShipSetupWizard._isSlotLocked so the dock honors the same gate
-  // the wizard and schematic already enforce.
-  function _isSlotLocked(slot) {
-    if (!slot || !slot.min_class) return false;
-    if (typeof Gamification === 'undefined' || !Gamification.isClassUnlocked) return false;
-    return !Gamification.isClassUnlocked(slot.min_class);
-  }
-
-  function _slotUnlockLabel(minClass) {
-    if (minClass === 'class-5') return 'NICE Pro';
-    if (typeof Gamification !== 'undefined' && Gamification.getFirstRankForClass) {
-      const r = Gamification.getFirstRankForClass(minClass);
-      if (r && r.name) return r.name;
-    }
-    return minClass || '';
   }
 
   function _renderSlot(slot, agentId, agentMap, spaceshipClass) {
@@ -664,20 +613,6 @@ const SpaceshipDetailView = (() => {
             <div class="slot-agent-name">${_esc(agent.name)}</div>
             <span class="rarity-badge rarity-${rarity.name.toLowerCase()}">${rarity.name}</span>
           </div>
-          <div class="ship-slot-label">${_esc(slot.label)}</div>
-        </div>
-      `;
-    }
-
-    // Empty + class-gated beyond the viewer's rank: render locked. The
-    // .ship-slot-locked CSS dims it, sets pointer-events:none (so it can't
-    // receive a drop), and overlays the unlock label. Already-filled locked
-    // slots fall through above, so existing crew stay visible ("owned loads").
-    if (_isSlotLocked(slot)) {
-      const lockLabel = 'Unlocks at ' + _slotUnlockLabel(slot.min_class);
-      return `
-        <div class="ship-slot ${rarityClass} ship-slot-locked" data-slot-id="${slot.id}" data-lock-label="${Utils.escAttr(lockLabel)}">
-          <div class="ship-slot-empty-icon">+</div>
           <div class="ship-slot-label">${_esc(slot.label)}</div>
         </div>
       `;
@@ -915,15 +850,10 @@ const SpaceshipDetailView = (() => {
         e.preventDefault();
         if (card.classList.contains('assigned')) return;
         const agentId = card.dataset.agentId;
-        const agentRarity = card.dataset.rarity;
         const assignments = fleet.slots || fleet.slot_assignments || {};
-        // Find first empty slot that can accept this agent's rarity
-        const targetSlot = spaceshipClass.slots.find(slot => {
-          if (assignments[slot.id]) return false;
-          return typeof Gamification !== 'undefined' ? Gamification.canSlotAccept(slot.maxRarity, agentRarity) : true;
-        });
+        const targetSlot = spaceshipClass.slots.find(slot => !assignments[slot.id]);
         if (!targetSlot) {
-          if (typeof Notify !== 'undefined') Notify.send({ title: 'No Compatible Slot', message: 'No empty slot can accept this agent rarity.', type: 'system' });
+          if (typeof Notify !== 'undefined') Notify.send({ title: 'No empty slot', message: 'Every crew slot on this spaceship is filled.', type: 'system' });
           return;
         }
         _assignAgentToSlot(el, id, fleet, String(targetSlot.id), agentId, allAgents, agentMap, spaceshipClass);
@@ -1478,16 +1408,14 @@ const SpaceshipDetailView = (() => {
     el.querySelectorAll('.computing-inv-card[draggable="true"]').forEach(card => {
       card.addEventListener('dragstart', (e) => {
         _draggedAgentId = card.dataset.agentId;
-        _draggedAgentRarity = card.dataset.rarity;
         card.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', _draggedAgentId);
       });
       card.addEventListener('dragend', () => {
         card.classList.remove('dragging');
-        el.querySelectorAll('.ship-slot').forEach(s => s.classList.remove('drag-valid', 'drag-invalid'));
+        el.querySelectorAll('.ship-slot').forEach(s => s.classList.remove('drag-valid'));
         _draggedAgentId = null;
-        _draggedAgentRarity = null;
       });
     });
 
@@ -1495,35 +1423,19 @@ const SpaceshipDetailView = (() => {
     el.querySelectorAll('.ship-slot').forEach(slot => {
       slot.addEventListener('dragover', (e) => {
         e.preventDefault();
-        if (!_draggedAgentRarity) return;
-        const maxRarity = slot.dataset.maxRarity;
-        const valid = typeof Gamification !== 'undefined' ? Gamification.canSlotAccept(maxRarity, _draggedAgentRarity) : true;
-        slot.classList.toggle('drag-valid', valid);
-        slot.classList.toggle('drag-invalid', !valid);
-        e.dataTransfer.dropEffect = valid ? 'move' : 'none';
+        if (!_draggedAgentId) return;
+        slot.classList.add('drag-valid');
+        e.dataTransfer.dropEffect = 'move';
       });
 
       slot.addEventListener('dragleave', () => {
-        slot.classList.remove('drag-valid', 'drag-invalid');
+        slot.classList.remove('drag-valid');
       });
 
       slot.addEventListener('drop', (e) => {
         e.preventDefault();
-        slot.classList.remove('drag-valid', 'drag-invalid');
-        if (!_draggedAgentId || !_draggedAgentRarity) return;
-
-        const maxRarity = slot.dataset.maxRarity;
-        const valid = typeof Gamification !== 'undefined' ? Gamification.canSlotAccept(maxRarity, _draggedAgentRarity) : true;
-
-        if (!valid) {
-          slot.classList.add('drag-invalid');
-          setTimeout(() => slot.classList.remove('drag-invalid'), 400);
-          if (typeof Notify !== 'undefined') {
-            Notify.send({ title: 'Incompatible Slot', message: `This slot accepts ${maxRarity} or lower rarity agents.`, type: 'system' });
-          }
-          return;
-        }
-
+        slot.classList.remove('drag-valid');
+        if (!_draggedAgentId) return;
         _assignAgentToSlot(el, id, fleet, slot.dataset.slotId, _draggedAgentId, allAgents, agentMap, spaceshipClass);
       });
     });
@@ -1566,29 +1478,8 @@ const SpaceshipDetailView = (() => {
       } catch(e) { /* local state already updated */ }
     }
 
-    // Gamification
-    if (typeof Gamification !== 'undefined') {
-      Gamification.addXP('dock_agent');
-      Gamification.unlockAchievement('first-dock-slot');
-      const agent = agentMap[agentId];
-      if (agent) {
-        const rarity = Gamification.calcAgentRarity(agent);
-        if (rarity.name === 'Legendary') Gamification.unlockAchievement('legendary-captain');
-      }
-      // Only unlocked slots count — a class-gated empty slot can never be
-      // filled at this rank, so it must not block the "all filled" reward.
-      const _unlockedForFill = spaceshipClass.slots.filter(s => !_isSlotLocked(s));
-      const allFilled = _unlockedForFill.length > 0 && _unlockedForFill.every(s => assignments[s.id]);
-      if (allFilled) {
-        Gamification.addXP('fill_all_slots');
-        Gamification.unlockAchievement('full-ship');
-      }
-    }
-
-    // Auto-deploy when all UNLOCKED slots are filled (locked slots can't be
-    // filled at this rank, so they must not gate auto-deploy).
-    const _unlockedForDeploy = spaceshipClass.slots.filter(s => !_isSlotLocked(s));
-    const allSlotsFilled = _unlockedForDeploy.length > 0 && _unlockedForDeploy.every(s => assignments[s.id]);
+    // Auto-deploy when every slot is filled.
+    const allSlotsFilled = spaceshipClass.slots.length > 0 && spaceshipClass.slots.every(s => assignments[s.id]);
     if (allSlotsFilled && fleet.status !== 'deployed') {
       fleet.status = 'deployed';
       const spaceships2 = State.get('spaceships') || [];
@@ -1599,7 +1490,6 @@ const SpaceshipDetailView = (() => {
       if (typeof Notify !== 'undefined') {
         Notify.send({ title: 'Spaceship Launched', message: `${fleet.name || 'Spaceship'} is fully staffed and deployed!`, type: 'fleet_deployed' });
       }
-      if (typeof Gamification !== 'undefined') Gamification.addXP('launch_spaceship');
     }
 
     _loadSpaceship(el, id);
@@ -1636,7 +1526,6 @@ const SpaceshipDetailView = (() => {
       await SB.db('user_spaceships').update(id, { status: fleet.status });
     } catch(e) { /* local state already updated */ }
 
-    if (typeof Gamification !== 'undefined') Gamification.addXP('undock_agent');
     if (typeof Notify !== 'undefined') {
       Notify.send({ title: 'Spaceship Docked', message: `${fleet.name || 'Spaceship'} has been docked — slot emptied.`, type: 'system' });
     }
@@ -1652,7 +1541,6 @@ const SpaceshipDetailView = (() => {
   function destroy() {
     if (_channel) { SB.realtime.unsubscribe(_channel); _channel = null; }
     _draggedAgentId = null;
-    _draggedAgentRarity = null;
   }
 
   return { title, render, destroy, buildPlanFromShipWorkflow, effectiveWorkflows, isWorkflowsCustomized, buildCron, describeSchedule };

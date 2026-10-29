@@ -185,33 +185,25 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 
 **Don't add a fifth chat surface without revising this table.** If a new path needs Run-level features, route it through `MissionRunner`. If it doesn't, document it here as a casual surface with rationale.
 
-## XP Progression System (SSOT: `app/js/lib/gamification.js`)
-| Class | Slots unlocked | Max Rarity | Rank | XP | Note |
-|-------|----------------|------------|------|-----|------|
-| 1 | min_class ≤ class-1 | Rare      | Ensign     | 0    | default; Common + Rare starters are day-one reachable per the tier model |
-| 2 | ≤ class-2           | Rare      | Lieutenant | 25,000  | |
-| 3 | ≤ class-3           | Epic      | Commander  | 100,000 | |
-| 4 | ≤ class-4 (all)     | Legendary | Captain    | 200,000 | |
-| 5 | all (instant)       | Legendary | Pro        | —    | subscription-granted |
+## Rarity Tiers & Access
+Ranks, XP and achievements were removed 2026-10-28. Rarity stays as catalog data and display for now; a later pass removes it too.
 
-- **Crew capacity is rank/min_class-gated, not subscription-capped.** A spaceship's `crew_roles` define up to 12 slots; each slot carries a `min_class` and unlocks when the user reaches that class, enforced at activation by `ShipSetupWizard` via `BlueprintUtils.getSlotTemplate` (the real per-ship authority). `Gamification.getMaxSlots()` returns the 12-slot ceiling, NOT a per-tier cap; the old "Free 6 / Pro 12" slot cap is dropped. Pro (class-5) unlocks every slot regardless of rank.
-
-- **Mythic is milestone-only**, never directly granted by class or subscription. Even subscribers earn it. The primary unlock milestone is reaching Admiral rank (1.5M XP); Fleet Admiral inherits Mythic access.
+- **No rank or rarity gates.** Every crew slot and every catalog blueprint is open to every user from day one. `ship_slots.min_class` is still stored and tints the card art, but gates nothing.
+- **Crew capacity**: a spaceship's `crew_roles` define up to 12 slots (`BlueprintUtils.MAX_SHIP_SLOTS`); `BlueprintUtils.getSlotTemplate` is the per-ship authority.
+- **Pro's capacity perk is running more than one active spaceship at once (Free = 1 active spaceship)**, enforced by `Subscription.getActiveShipLimit` via `Blueprints.canActivateNewShip`.
+- **Computed rarity**: an agent without a stored rarity gets one from `BlueprintUtils.calcAgentRarity` (tools, model tier, type, memory, temperature). It never computes Mythic.
 - **Ship rarity tier model** (locked 2026-05-26): Each tier has a distinct *voice* and *purpose*. Apply this gate before assigning a rarity to any new ship.
-  - **Common + Rare**: real-business starters. Reachable from day one so users can immediately run actual businesses. Single-operator (Common) and small-team (Rare) verticals. Examples: Galley, Salon, Studio, Gym (Common); Loft, Practice, Brokerage, Chambers (Rare).
-  - **Epic**: real-world company examples (NVIDIA, SpaceX, Apple, Amazon, etc.) plus the multi-line **Founder's Office** archetype. The "learn from the best" tier. Reached at Commander rank (100K XP).
-  - **Legendary**: sci-fi IP for marketing and aspiration (Enterprise, Serenity, Galactica, etc.). Not a real-business utility tier. Reached at Captain rank (200K XP) or instantly via Pro subscription. Crew can be bespoke or umbrella reskins; characters are NOT required to be ship-exclusive.
-  - **Mythic**: apex sci-fi IP. Qualifies only if it (a) is apex-tier — meant to feel earned through real XP grind to Admiral rank (1.5M XP), (b) ships **bespoke crew** with their own `agent_blueprints` rows, voices, LLMs, and rarities — no umbrella reskins, and (c) tags crew with `<slug>-exclusive` so each member is filtered out of every other ship's slot dropdown. Reference implementations: The Matrix, The Heart of Gold.
+  - **Common + Rare**: real-business starters, so users can immediately run actual businesses. Single-operator (Common) and small-team (Rare) verticals. Examples: Galley, Salon, Studio, Gym (Common); Loft, Practice, Brokerage, Chambers (Rare).
+  - **Epic**: real-world company examples (NVIDIA, SpaceX, Apple, Amazon, etc.) plus the multi-line **Founder's Office** archetype. The "learn from the best" tier.
+  - **Legendary**: sci-fi IP for marketing and aspiration (Enterprise, Serenity, Galactica, etc.). Not a real-business utility tier. Crew can be bespoke or umbrella reskins; characters are NOT required to be ship-exclusive.
+  - **Mythic**: apex sci-fi IP. Qualifies only if it (a) is apex-tier, the top of the catalog, (b) ships **bespoke crew** with their own `agent_blueprints` rows, voices, LLMs, and rarities (no umbrella reskins), and (c) tags crew with `<slug>-exclusive` so each member is filtered out of every other ship's slot dropdown. Reference implementations: The Matrix, The Heart of Gold.
 - **Crew rarity rules** (locked 2026-06-01): apply to the catalog crew of every **Legendary** and **Epic** ship.
   - **Floor**: no Common crew. Rare is the lowest crew rarity on both tiers. Common/Rare business ships are exempt; their umbrella crew stay Common.
   - **Legendary marquee**: every Legendary ship has at least 3 Legendary crew, the captain plus two marquee mains (e.g. Enterprise-A: Kirk / Spock / Scotty; Enterprise-D: Picard / Riker / Data). Remaining crew span Epic and Rare: Epic covers the bespoke secondary mains plus two standout supporting characters per ship; the rest of the umbrella supporting cast is Rare. Target shape ≈ 3 Legendary / 4–5 Epic / 4–5 Rare.
   - **Epic spread**: each Epic company ship is one Epic lead plus its senior operating circle at Epic (COO / CFO / CSO, or the Founder's Office equivalents), the rest of the C-suite Rare. Shape ≈ 4 Epic / 8 Rare.
   - **Mechanism**: a per-slot `ship_slots.rarity` override; the client reads `slot.rarity ?? agent.rarity`. Needed because most Common crew are backed by **shared umbrella agents** reused across the business ships, so their rarity can't be raised on the agent itself. Bespoke crew carry rarity on their own `agent_blueprints` row, so marquee promotions edit the agent directly.
-- **Fleet Admiral (2.5M XP)** unlocks Mythic + 1 year of NICE Pro free.
-- Pro subscription grants Class 5: every crew slot unlocked regardless of rank, Legendary cap, instant. **Pro's tangible capacity perk is running more than one active spaceship at once (Free = 1 active spaceship).**
-- All cards visible to browse; activation gated by XP rank
-- Custom blueprints start Common, evolve through usage milestones
-- Owned ships always load regardless of current rank; rarity gate only blocks NEW catalog activations
+- Custom blueprints start Common.
+- Owned ships always load: they hydrate from `user_spaceships` and bypass `activateShip`, so only the active-spaceship cap applies to NEW activations.
 
 ## File Architecture
 ```
@@ -356,19 +348,18 @@ const ModuleName = (() => {
 ```
 Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 
-### Lib Modules (`app/js/lib/`) — 64 modules
+### Lib Modules (`app/js/lib/`) — 70 modules
 | Module | File | Purpose |
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
 | `SB` | `supabase.js` | Supabase client wrapper: `db()`, `auth()`, `client` |
 | `Router` | `router.js` | Hash router with param extraction & page transitions |
-| `Utils` | `utils.js` | Shared utilities (esc, debounce, format) + `KEYS` constants |
-| `BlueprintUtils` | `blueprint-utils.js` | SSOT: rarity colors, slot labels, ship classes, categories |
+| `Utils` | `utils.js` | Shared utilities (esc, debounce, format, Captain's Log stardate) + `KEYS` constants |
+| `BlueprintUtils` | `blueprint-utils.js` | SSOT: rarity colors + computed agent rarity, slot labels + max slots, card-art ship classes, categories |
 | `AuditLog` | `audit-log.js` | Persistent event logging (max 500 FIFO) |
 | `DataIO` | `data-io.js` | Export/import all NICE data as JSON |
 | `ActivityFeed` | `activity-feed.js` | Live event stream from Supabase realtime |
 | `Notify` | `notify.js` | Toast notifications, badge API |
-| `Gamification` | `gamification.js` | XP system, ranks, ship classes, achievements |
 | `CommandPalette` | `command-palette.js` | Cmd+K fuzzy search overlay |
 | `Keyboard` | `keyboard.js` | Global keyboard shortcuts & chord system |
 | `McpBridge` | `mcp-bridge.js` | Bridges MCP connections to ToolRegistry |
@@ -500,22 +491,13 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 |-----|---------|
 | `ns-theme` | Current skin name |
 | `nice-enabled-models` | Toggled AI models (object keyed by model ID) |
-| `nice-xp` | Gamification XP points |
-| `nice-achievements` | Unlocked achievement IDs |
 | `nice-audit-log` | Audit log entries (max 500) |
 | `nice-workflows` | Saved workflow definitions |
 | `nice-mcp-connections` | MCP connection cache |
 | `nice-budget` | Cost tracker budget data |
 | `nice-bp-activated` | Activated blueprint IDs |
-| `nice-agent-stats` | Per-agent usage statistics |
 | `nice-favorites` | Sidebar favorites |
 | `nice-ai-messages` | Prompt panel conversation history |
-
-## Gamification System
-- **XP Actions**: `create_robot: 20`, `complete_mission: 15`, `chat_agent: 5`, `create_workflow: 20`, etc.
-- **Ranks** (12 Starfleet ranks): Ensign (0) → Lieutenant JG (10K) → Lieutenant (25K) → Lt Commander (50K) → Commander (100K) → Captain (200K) → Fleet Captain (350K) → Commodore (500K) → Rear Admiral (750K) → Vice Admiral (1M) → Admiral (1.5M) → Fleet Admiral (2.5M)
-- **Ship Classes**: Scout (1-2 agents) → Cruiser (3-5) → Dreadnought (6-10) → Flagship (11+)
-- **Achievements**: `first-agent`, `agent-army`, `mission-streak`, `workflow-creator`, `data-exporter`, etc.
 
 ## Testing
 
@@ -524,7 +506,7 @@ Backwards-compatible `LLM_PROVIDERS` and `LLM_MODELS` globals derived from `MODE
 npm test          # Run all tests
 npm run test:watch  # Watch mode
 ```
-Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 49 files, ~1241 tests. Counts drift with each feature — verify with `npm test`.
+Test files: `app/js/__tests__/**/*.test.js` + `tools/**/*.test.js` — 91 files, ~2127 tests. Counts drift with each feature — verify with `npm test`.
 
 Coverage areas:
 - **Core infra**: `state`, `router`, `supabase`, `keyboard`, `notify`, `command-palette`, `audit-log`, `data-io`
@@ -532,7 +514,7 @@ Coverage areas:
 - **Agents + missions**: `agent-executor`, `mission-runner`, `ship-log`, `tool-registry`, `virtual-fs`, `prompt-builder`, `workflow-engine` (triage / pipeline / parallel / quality_loop replace the deleted MissionRouter)
 - **Models + billing**: `llm-config`, `stacks`, `stripe-config`, `subscription`, `token-config`
 - **Views**: `home-view`, `missions-view`
-- **Gamification + onboarding**: `gamification`, `onboarding`
+- **Onboarding**: `onboarding`
 - **Prompt panel**: `attachment-utils`
 - **Other**: `content-queue`
 
@@ -574,10 +556,9 @@ Before adding constants, arrays, or configuration, check if a source already exi
 |------|--------------|-------|
 | Blueprint data | `Blueprints` + Supabase `spaceship_blueprints` / `agent_blueprints` / `capabilities` | Never hardcode blueprint lists |
 | Crew slots, rarity, ship classes | `BlueprintUtils` (`blueprint-utils.js`) | Loaded before card-renderer |
-| localStorage keys | `Utils.KEYS` (64 constants) | Never use raw string keys |
+| localStorage keys | `Utils.KEYS` (61 constants) | Never use raw string keys |
 | State keys | `State.KEYS` (10 constants) | Never use raw string keys |
 | Theme definitions | `THEMES` array in `nice.js` → `Theme.BUILTIN` | No separate theme list |
-| Ranks & XP | `Gamification.RANKS` / `XP_ACTIONS` | Never duplicate rank data |
 | Card rendering | `CardRenderer.render()` | ONE renderer for all card types |
 | Model catalog | `VaultView.MODEL_CATALOG` | `LLM_PROVIDERS`/`LLM_MODELS` derived from it |
 | Attachment gating | `MODEL_CATALOG.vision` / `pdf` / `audio` / `video` | Per-model capability flags consumed by prompt-panel soft-fallback and model-change guard |

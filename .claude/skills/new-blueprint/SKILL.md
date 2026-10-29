@@ -41,24 +41,24 @@ All user-facing strings follow the **Blueprint Copy Standards** in [`CLAUDE.md`]
 
 ## Rarity gate (apply before assigning a tier)
 
-Each tier has a distinct purpose, locked in [`CLAUDE.md`](../../../CLAUDE.md) (XP Progression System):
+Each tier has a distinct purpose, locked in [`CLAUDE.md`](../../../CLAUDE.md) (Rarity Tiers & Access). Every tier is open to every user; ranks are gone.
 
-- **Common** — real-business **single-operator** starter (The Galley, The Salon). Day-one reachable.
-- **Rare** — real-business **small-team** vertical (The Loft, The Brokerage). Day-one reachable.
-- **Epic** — real-world company examples (NVIDIA, Stripe) + the Founder's Office. Commander rank (100K XP).
-- **Legendary** — sci-fi IP for aspiration (Enterprise, Serenity). Captain rank (200K XP) or Pro.
-- **Mythic** — apex sci-fi IP. Bespoke crew with their own `agent_blueprints` rows + `<slug>-exclusive` tags. Admiral milestone only.
+- **Common** — real-business **single-operator** starter (The Galley, The Salon).
+- **Rare** — real-business **small-team** vertical (The Loft, The Brokerage).
+- **Epic** — real-world company examples (NVIDIA, Stripe) + the Founder's Office.
+- **Legendary** — sci-fi IP for aspiration (Enterprise, Serenity).
+- **Mythic** — apex sci-fi IP. Bespoke crew with their own `agent_blueprints` rows + `<slug>-exclusive` tags.
 
 ## Slot model
 
-Every ship defines **12 `ship_slots`**; slot 1 is the captain. `min_class` gates when each slot unlocks as the operator ranks up, and must follow the slot-count ladder:
+Every ship defines **12 `ship_slots`**; slot 1 is the captain. All 12 are open to every user. `min_class` no longer gates anything, but it still tints the card art, so keep the slot-count ladder:
 
-| Slots | `min_class` | Unlocks at |
-|-------|-------------|------------|
-| 1–6   | `class-1`   | Ensign (day one) |
-| 7–8   | `class-2`   | Lieutenant |
-| 9–10  | `class-3`   | Commander |
-| 11–12 | `class-4`   | Captain |
+| Slots | `min_class` |
+|-------|-------------|
+| 1–6   | `class-1`   |
+| 7–8   | `class-2`   |
+| 9–10  | `class-3`   |
+| 11–12 | `class-4`   |
 
 `role_type` on each slot (and on the captain) is a FK to `roles.slug`. Valid values:
 `captain`, `sales`, `marketing`, `communications`, `engineering`, `product`, `operations`,
@@ -117,7 +117,7 @@ BEGIN
     slug, name, description, flavor, category, rarity, scope, visibility, serial_key, tags, config, card
   ) VALUES (
     '<slug>', '<Name>',
-    E'<description: what the business is and that it grows as you rank up>',
+    E'<description: what the business is and what the crew covers>',
     E'<flavor: one short line>',
     E'<Category>', '<Common|Rare|Epic|Legendary|Mythic>', 'catalog', 'public',
     'SHIP-XXXX-0001',
@@ -170,7 +170,7 @@ END $$;
 - **Serial keys** — ship: `SHIP-<4LETTER>-0001`; captain: `CR-<4LETTER>-SPEC-0001-NICE`. Mirror the ship key in `card.serial_key`.
 - **card_num** — ship: next sequential **integer** (`SELECT max((card->>'card_num')::int) FROM public.spaceship_blueprints WHERE card ? 'card_num';`). Agent: string `NS-XXX`.
 - **`E'…'` strings** — use the `E''` form so apostrophes escape as `''` and copy reads naturally. No em-dashes.
-- **`recommended_class`** — matches the rarity's unlock rank (`class-1` Common/Rare, `class-3` Epic, `class-4` Legendary).
+- **`recommended_class`** — matches the rarity's card-art class (`class-1` Common/Rare, `class-3` Epic, `class-4` Legendary).
 
 ## Named-crew ships (Epic real CEOs, sci-fi, Mythic)
 

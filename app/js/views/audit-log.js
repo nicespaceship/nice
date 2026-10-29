@@ -108,7 +108,6 @@ const AuditLogView = (() => {
   function render(el) {
     const user = State.get('user');
     if (!user) return _authPrompt(el, "the captain's log");
-    if (typeof Gamification !== 'undefined') Gamification.addXP('view_log');
 
     el.innerHTML = `
       <div class="log-wrap">
@@ -213,9 +212,7 @@ const AuditLogView = (() => {
     const icon = ICONS[entry.action] || '#icon-settings';
     const meta = _getCatMeta(entry.action);
     const color = meta.color;
-    const stardate = typeof Gamification !== 'undefined'
-      ? Gamification._toStardate(entry.timestamp)
-      : new Date(entry.timestamp).toLocaleTimeString();
+    const stardate = Utils.toStardate(entry.timestamp);
     const desc = _esc(entry.details?.description || entry.details?.name || entry.details?.path || '—');
 
     return `

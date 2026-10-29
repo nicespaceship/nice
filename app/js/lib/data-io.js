@@ -46,7 +46,6 @@ const DataIO = (() => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    if (typeof Gamification !== 'undefined') Gamification.addXP('export_data');
     if (typeof Notify !== 'undefined') {
       Notify.send({ title: 'Data Exported', message: 'Your NICE data has been downloaded.', type: 'system' });
     }

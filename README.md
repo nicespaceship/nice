@@ -23,7 +23,6 @@ NICE is an open-source platform for building, deploying, and managing AI agent w
 - **Drag-and-Drop Slots** — Visual agent assignment, no coding required
 - **Google Workspace Integration** — Gmail, Calendar, Drive connected via MCP protocol
 - **Real-Time Streaming** — Watch agent responses as they generate (SSE)
-- **XP Progression** — 12 ranks, 22 achievements, streak multipliers. Gamified but functional.
 - **Blueprint Sharing** — Share agent configs via Soul Keys or links
 - **11 Themes** — Including The Office (corporate), Navigator (TRON), and more
 - **PWA** — Install on any device, works offline

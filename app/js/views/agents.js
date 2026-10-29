@@ -118,21 +118,6 @@ const AgentDetailView = (() => {
             </div>
           </div>
 
-          ${(() => {
-            if (typeof Gamification === 'undefined') return '';
-            const prog = Gamification.getAgentProgression(agent.id);
-            if (!prog || !prog.reqs) return '';
-            const reqEntries = Object.entries(prog.reqs);
-            return `
-          <div class="detail-section">
-            <h3 class="detail-section-title">Progression ${prog.nextMilestone ? '&mdash; ' + prog.progress + '% to ' + prog.nextMilestone : '&mdash; Max Reached'}</h3>
-            <div class="agent-prog-bar"><div class="agent-prog-fill" style="width:${prog.progress}%"></div></div>
-            <div class="agent-milestone-grid">
-              ${reqEntries.map(function(pair) { var key = pair[0]; var r = pair[1]; return '<div class="agent-milestone-item' + (r.met ? ' met' : '') + '"><span class="agent-milestone-label">' + key.replace(/_/g, ' ') + '</span><span class="agent-milestone-val">' + r.current + ' / ' + r.target + '</span></div>'; }).join('')}
-            </div>
-          </div>`;
-          })()}
-
           <div class="detail-section">
             <h3 class="detail-section-title">Recent Missions</h3>
             ${missions.length ? `

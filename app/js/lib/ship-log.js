@@ -289,15 +289,6 @@ const ShipLog = (() => {
       metadata: metadata,
     });
 
-    // 6. Record agent progression stats
-    if (typeof Gamification !== 'undefined' && agentId) {
-      Gamification.recordAgentMission(agentId, {
-        success: true,
-        tokens: metadata.tokens_used || 0,
-        tools: agentBlueprint?.config?.tools || [],
-      });
-    }
-
     return {
       agent:    agentName,
       agentId:  agentId,

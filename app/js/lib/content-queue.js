@@ -361,10 +361,6 @@ const ContentQueue = (() => {
         State.set('content-queue', [...items]);
       }
     }
-
-    if (typeof Gamification !== 'undefined' && status === 'approved') {
-      Gamification.addXP('approve_content');
-    }
   }
 
   function _persistLocal(draft) {

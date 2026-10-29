@@ -45,7 +45,6 @@ const Favorites = (() => {
     favs.push({ path, label, added: Date.now() });
     _save(favs);
     render();
-    if (typeof Gamification !== 'undefined') Gamification.addXP('add_favorite', 3);
     return true;
   }
 
@@ -153,7 +152,6 @@ const Favorites = (() => {
     if (favs.includes(bpId)) return false;
     favs.push(bpId);
     localStorage.setItem(BP_KEY, JSON.stringify(favs));
-    if (typeof Gamification !== 'undefined') Gamification.addXP('add_favorite', 3);
     return true;
   }
 

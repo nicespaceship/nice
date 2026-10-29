@@ -31,7 +31,6 @@ globalThis.SB = {
 globalThis.Router = { navigate: vi.fn(), on: () => {}, path: () => '/', hashQuery: () => ({}) };
 globalThis.Notify = { send: vi.fn(), show: vi.fn() };
 globalThis.Subscription = { getCurrentPlan: () => 'free', getPlanTier: () => ({ label: 'Free' }) };
-globalThis.Gamification = { renderRankBadge: () => '', renderResourceBar: () => '', renderAchievementGallery: () => '' };
 globalThis.AuditLog = { log: () => {} };
 
 function loadScriptGlobal(rel) {

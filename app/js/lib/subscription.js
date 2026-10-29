@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Subscription Management
    Two-plan model: Free → Pro ($9.99/mo) with optional add-ons.
-     - Pro = run a fleet (Free is one active spaceship), instant
-       Legendary + every crew slot, 1,000 standard tokens/month
+     - Pro = run a fleet (Free is one active spaceship), 1,000 standard
+       tokens/month
      - Claude add-on = +500 claude tokens/mo, unlocks Sonnet 4.6 / Opus 4.7
      - Premium add-on = +500 premium tokens/mo, unlocks GPT-5.4 Pro,
        OpenAI o3, Gemini 2.5 Pro
@@ -23,7 +23,7 @@ const Subscription = (() => {
       label: 'Free',
       icon: '',
       color: '#94a3b8',
-      desc: 'Gemini 2.5 Flash. One active spaceship. Crew slots and rarities unlock as you rank up to Legendary.',
+      desc: 'Gemini 2.5 Flash. One active spaceship with every crew slot.',
     },
     pro: {
       id: 'pro',
@@ -32,7 +32,7 @@ const Subscription = (() => {
       label: 'Pro',
       icon: '',
       color: '#f59e0b',
-      desc: 'Run a fleet of spaceships. Every crew slot and Legendary unlocked instantly. 1,000 standard tokens a month. All non-flagship models.',
+      desc: 'Run a fleet of spaceships. 1,000 standard tokens a month. All non-flagship models.',
     },
   };
 
@@ -223,7 +223,7 @@ const Subscription = (() => {
     return getCurrentPlan() === 'pro' && (_subscription?.status || 'active') === 'active';
   }
 
-  /** Backward-compat alias used by gamification.js and several views. */
+  /** Backward-compat alias for isPro(). */
   function isActive() { return isPro(); }
 
   /** True when the user has a specific add-on enabled. */

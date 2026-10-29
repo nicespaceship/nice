@@ -39,7 +39,6 @@ globalThis.SB = {
 globalThis.Router = { navigate: vi.fn(), on: () => {}, path: () => '/' };
 globalThis.Notify = { send: vi.fn() };
 globalThis.AuditLog = { log: () => {} };
-globalThis.Gamification = { addXP: vi.fn() };
 globalThis.MissionRunner = { run: vi.fn() };
 
 function loadViewGlobal(rel) {

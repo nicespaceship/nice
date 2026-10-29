@@ -24,7 +24,6 @@ const PRECACHE_ASSETS = [
   '/app/js/lib/supabase.js',
   '/app/js/lib/router.js',
   '/app/js/lib/notify.js',
-  '/app/js/lib/gamification.js',
   '/app/js/lib/command-palette.js',
   '/app/js/lib/keyboard.js',
   '/app/js/lib/audit-log.js',

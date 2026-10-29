@@ -81,6 +81,15 @@ const Utils = (() => {
       d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   }
 
+  /** Captain's Log stardate: "SD <year>.<day-of-year>", e.g. "SD 2026.301". */
+  function toStardate(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const year = d.getFullYear();
+    const dayOfYear = Math.floor((d - new Date(year, 0, 0)) / 86400000);
+    return `SD ${year}.${String(dayOfYear).padStart(3, '0')}`;
+  }
+
   /**
    * Sanitize a user-provided callsign before it's interpolated into the
    * system prompt. The callsign is user-controlled (stored in localStorage,
@@ -131,8 +140,6 @@ const Utils = (() => {
     font: 'ns-font',
     enabledModels: 'nice-enabled-models',
     activeStack: 'nice-active-stack',
-    xp: 'nice-xp',
-    achievements: 'nice-achievements',
     auditLog: 'nice-audit-log',
     workflows: 'nice-workflows',
     mcpConnections: 'nice-mcp-connections',
@@ -140,7 +147,6 @@ const Utils = (() => {
     bpActivated: 'nice-bp-activated',
     bpActivatedShips: 'nice-bp-activated-ships',
     shipState: 'nice-ship-state',
-    agentStats: 'nice-agent-stats',
     favorites: 'nice-favorites',
     aiMessages: 'nice-ai-messages',
     customAgents: 'nice-custom-agents',
@@ -151,8 +157,6 @@ const Utils = (() => {
     plan: 'nice-plan',
     stripeMode: 'nice-stripe-mode',
     settings: 'nice-settings',
-    streak: 'nice-streak',
-    lastActive: 'nice-last-active',
     hudDockThemes: 'nice-hud-dock-themes',
     guiSettings: 'nice-gui-settings',
     customThemes: 'nice-custom-themes',
@@ -199,5 +203,5 @@ const Utils = (() => {
     onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
-  return { esc, escAttr, safeUrl, timeAgo, formatDate, formatDateTime, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
+  return { esc, escAttr, safeUrl, timeAgo, formatDate, formatDateTime, toStardate, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
 })();

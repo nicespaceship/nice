@@ -56,21 +56,12 @@ const ShipLogView = (() => {
     const el = document.getElementById('slog-stats');
     if (!el) return;
 
-    const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
-    const ranks = ['Ensign','Lieutenant JG','Lieutenant','Lt Commander','Commander','Captain','Fleet Captain','Commodore','Rear Admiral','Vice Admiral','Admiral','Fleet Admiral'];
-    const thresholds = [0, 10000, 25000, 50000, 100000, 200000, 350000, 500000, 750000, 1000000, 1500000, 2500000];
-    let rankIdx = 0;
-    for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= thresholds[i]) { rankIdx = i; break; } }
-    const rank = ranks[rankIdx];
-
     const agents = (State.get('agents') || []).length;
     const ships = (State.get('spaceships') || []).length;
     const enabledMdls = State.get('enabled_models') || {};
     const connections = Object.keys(enabledMdls).filter(k => enabledMdls[k]).length;
 
     el.innerHTML = `
-      <div class="task-stat"><span class="task-stat-num">${rank}</span><span class="task-stat-label">Rank</span></div>
-      <div class="task-stat"><span class="task-stat-num hl">${xp.toLocaleString()}</span><span class="task-stat-label">XP</span></div>
       <div class="task-stat"><span class="task-stat-num">${agents}</span><span class="task-stat-label">Agents</span></div>
       <div class="task-stat"><span class="task-stat-num">${ships}</span><span class="task-stat-label">Ships</span></div>
       <div class="task-stat"><span class="task-stat-num">${connections}</span><span class="task-stat-label">LLMs</span></div>

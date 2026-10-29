@@ -305,7 +305,6 @@ const SetupWizard = (() => {
       _data.shipId = shipId;
       _data.agentCount = agentCount;
       _markDone();
-      if (typeof Gamification !== 'undefined') Gamification.unlockAchievement('first-deployment');
 
       // Funnel: wizard successfully deployed a crew. The first_spaceship
       // event is emitted automatically by Onboarding once user_spaceships
@@ -332,7 +331,6 @@ const SetupWizard = (() => {
           </div>
           <h2 class="wizard-title">Your team is ready!</h2>
           <p class="wizard-subtitle"><strong>${_esc(_data.shipName)}</strong> is live with ${agentCount} agent${agentCount !== 1 ? 's' : ''}.</p>
-          ${typeof Gamification !== 'undefined' ? '<p class="wizard-xp">+25 XP earned</p>' : ''}
           <div class="wizard-first-mission" style="margin-top:1.5rem;padding:1rem;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;text-align:left">
             <p style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:0.5rem">Try your first mission</p>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:0.75rem">Send a message to test your crew${crewRoles ? ' (' + _esc(crewRoles) + ')' : ''}:</p>
@@ -682,11 +680,7 @@ Output ONLY the JSON object, starting with { and ending with }. No prose, no mar
       }
     }
 
-    // 5. XP + Audit
-    if (typeof Gamification !== 'undefined') {
-      Gamification.addXP('complete_wizard');
-      agents.forEach(() => Gamification.addXP('create_agent'));
-    }
+    // 5. Audit
     if (typeof AuditLog !== 'undefined') {
       AuditLog.log('wizard_complete', {
         shipId,

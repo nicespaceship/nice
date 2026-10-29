@@ -13,7 +13,7 @@
  * harness is the missing piece.
  *
  * The global `setup.js` already provides the real `Utils` plus most leaf libs
- * (TokenConfig, BlueprintUtils, CardRenderer, Gamification, …) and a minimal
+ * (TokenConfig, BlueprintUtils, CardRenderer, …) and a minimal
  * State/SB/Router. This harness installs *richer* State/SB/Router/Notify stubs
  * (matching the surface real views actually call — onScoped/destroyScoped,
  * SB.realtime, Router.navigate spies) without disturbing the real libs.

@@ -935,7 +935,8 @@ const MissionDetailView = (() => {
     document.getElementById('md-approve')?.addEventListener('click', async (e) => {
       // Non-terminal gate: approving advances the DAG instead of completing
       // it. Resume runs the post-gate nodes (and may pause again at a later
-      // gate). XP waits for the final approval, when no gate remains.
+      // gate). Approval side effects wait for the final approval, when no
+      // gate remains.
       if (_isResumableGate(mission) && typeof MissionRunner !== 'undefined' && MissionRunner.resumeDag) {
         const btn = e.currentTarget;
         if (btn) btn.disabled = true;
@@ -946,11 +947,13 @@ const MissionDetailView = (() => {
         return;
       }
       const now = new Date().toISOString();
-      // Award XP at most once per mission, and only if the approval actually
-      // persisted. The runner resets approval_status to 'draft' on every
-      // re-run, so a metadata flag (which the runner merges forward, never
-      // clears) is what makes approve→retry→approve idempotent rather than
-      // an XP farm; the persist gate stops XP on a transient write failure.
+      // Apply approval side effects at most once per mission, and only if
+      // the approval actually persisted. The runner resets approval_status to
+      // 'draft' on every re-run, so a metadata flag (which the runner merges
+      // forward, never clears) is what makes approve→retry→approve
+      // idempotent; the persist gate skips them on a transient write failure.
+      // The flag keeps its legacy `xp_awarded` name so runs approved before
+      // XP was removed stay idempotent.
       const alreadyAwarded = !!(mission.metadata && mission.metadata.xp_awarded);
       let persisted = false;
       try {
@@ -963,24 +966,6 @@ const MissionDetailView = (() => {
         }
       } catch {}
       if (!alreadyAwarded && persisted) {
-        // Award user XP on approval
-        if (typeof Gamification !== 'undefined') {
-          Gamification.addXP('complete_mission');
-          Gamification.addXP('approve_content');
-        }
-        // Award per-agent XP (agent levels up)
-        if (typeof MissionRunner !== 'undefined' && MissionRunner.awardAgentXP) {
-          const agentId = mission.agent_id;
-          const agentName = mission.agent_name;
-          // Find agent ID from name if not set
-          let resolvedId = agentId;
-          if (!resolvedId && agentName) {
-            const agents = (typeof State !== 'undefined' ? State.get('agents') : null) || [];
-            const found = agents.find(a => a.name === agentName);
-            if (found) resolvedId = found.id;
-          }
-          if (resolvedId) MissionRunner.awardAgentXP(resolvedId, 50);
-        }
         // Feedback loop — agent learns from approval
         if (typeof AgentMemory !== 'undefined') {
           const agentKey = mission.agent_id || mission.agent_name || 'unknown';
@@ -1011,7 +996,7 @@ const MissionDetailView = (() => {
     });
 
     // DAG gate inline Approve/Reject — proxies to the top-level buttons
-    // so all approval side-effects (XP, AgentMemory, realtime re-render)
+    // so all approval side-effects (AgentMemory, realtime re-render)
     // stay in one place. If the top bar isn't rendered (shouldn't happen
     // at status='review' but guarded anyway), fall back to a direct DB
     // write matching the md-approve/md-reject contract.
@@ -1486,7 +1471,6 @@ const SharedReportView = (() => {
           } else {
             await Blueprints.activateShip(bp.id || 'shared-' + code);
           }
-          if (typeof Gamification !== 'undefined') Gamification.addXP('install_blueprint');
           if (typeof Notify !== 'undefined') Notify.send({ title: 'Imported!', message: bp.name + ' added to your collection.', type: 'system' });
           location.hash = '#/bridge';
         } catch (err) {

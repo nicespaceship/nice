@@ -607,7 +607,6 @@ const PromptPanel = (() => {
         if (typeof Blueprints !== 'undefined' && typeof BlueprintsView !== 'undefined') {
           if (!Blueprints.isAgentActivated(bpId)) {
             Blueprints.activateAgent(bpId);
-            if (typeof Gamification !== 'undefined') Gamification.addXP('activate_blueprint');
             // Add to local State
             const bp = Blueprints.getAgent(bpId);
             if (bp) {
@@ -1198,33 +1197,9 @@ const PromptPanel = (() => {
       return { text: tokens !== 'unknown' ? `Your current token balance is ${tokens} credits.` : 'Token balance unavailable — check Operations for details.' };
     }
 
-    if (/\b(rank|xp|level|experience)\b/i.test(lower) && /(what|my|current|check|show)/i.test(lower)) {
-      const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
-      const ranks = [
-        { name: 'Ensign', min: 0 }, { name: 'Lieutenant JG', min: 10000 },
-        { name: 'Lieutenant', min: 25000 }, { name: 'Lt Commander', min: 50000 },
-        { name: 'Commander', min: 100000 }, { name: 'Captain', min: 200000 },
-        { name: 'Fleet Captain', min: 350000 }, { name: 'Commodore', min: 500000 },
-        { name: 'Rear Admiral', min: 750000 }, { name: 'Vice Admiral', min: 1000000 },
-        { name: 'Admiral', min: 1500000 }, { name: 'Fleet Admiral', min: 2500000 },
-      ];
-      let rank = ranks[0].name;
-      let nextRank = ranks[1];
-      for (let i = ranks.length - 1; i >= 0; i--) {
-        if (xp >= ranks[i].min) { rank = ranks[i].name; nextRank = ranks[i + 1] || null; break; }
-      }
-      const nextStr = nextRank ? ` Next rank: ${nextRank.name} at ${nextRank.min} XP.` : ' Max rank achieved!';
-      return { text: `You are a ${rank} with ${xp} XP.${nextStr}` };
-    }
-
     if (/how many workflow/i.test(lower) || /workflow count/i.test(lower)) {
       const wf = JSON.parse(localStorage.getItem(Utils.KEYS.workflows) || '[]');
       return { text: `You have ${wf.length} workflow${wf.length !== 1 ? 's' : ''} saved.` };
-    }
-
-    if (/achievement|badge/i.test(lower) && /(how many|my|list|show|check)/i.test(lower)) {
-      const achs = JSON.parse(localStorage.getItem(Utils.KEYS.achievements) || '[]');
-      return { text: achs.length ? `You've unlocked ${achs.length} achievement${achs.length !== 1 ? 's' : ''}: ${achs.join(', ')}.` : 'No achievements unlocked yet. Keep exploring NICE!' };
     }
 
     return null;
@@ -1258,21 +1233,6 @@ const PromptPanel = (() => {
       return { text: `Unknown theme "${arg}". Available: ${_THEME_NAMES.join(', ')}.`, handled: true };
     }
 
-    if (lower === '/rank') {
-      const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
-      const ranks = [
-        { name: 'Ensign', min: 0 }, { name: 'Lieutenant JG', min: 10000 },
-        { name: 'Lieutenant', min: 25000 }, { name: 'Lt Commander', min: 50000 },
-        { name: 'Commander', min: 100000 }, { name: 'Captain', min: 200000 },
-        { name: 'Fleet Captain', min: 350000 }, { name: 'Commodore', min: 500000 },
-        { name: 'Rear Admiral', min: 750000 }, { name: 'Vice Admiral', min: 1000000 },
-        { name: 'Admiral', min: 1500000 }, { name: 'Fleet Admiral', min: 2500000 },
-      ];
-      let rank = ranks[0].name;
-      for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= ranks[i].min) { rank = ranks[i].name; break; } }
-      return { text: `${rank} — ${xp} XP`, handled: true };
-    }
-
     if (lower === '/tokens') {
       const tokens = (typeof State !== 'undefined' && State.get('tokens')) || localStorage.getItem(Utils.KEYS.tokens) || 'N/A';
       return { text: `Token balance: ${tokens}`, handled: true };
@@ -1304,7 +1264,7 @@ const PromptPanel = (() => {
 
     if (lower === '/help' || lower === '/commands') {
       return {
-        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /rank — Show your rank & XP\n• /tokens — Check token balance\n• /callsign [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
+        text: 'Slash commands:\n• /clear — Clear conversation\n• /theme [name] — View or switch theme\n• /tokens — Check token balance\n• /callsign [name] — Change how NICE addresses you\n• /shortcuts — Keyboard shortcuts\n• /search [query] — Search agents & blueprints',
         handled: true,
       };
     }
@@ -1531,7 +1491,7 @@ const PromptPanel = (() => {
 
   /* ── Contextual suggestion chips ── */
   const _ROUTE_SUGGESTIONS = {
-    '#/':           ['How many agents do I have?', 'Show missions', 'What\'s my rank?', 'Switch to cyberpunk'],
+    '#/':           ['How many agents do I have?', 'Show missions', 'Switch to cyberpunk'],
     '#/bridge/agents':     ['Create a new agent', 'Find agent named', 'How many agents?', '/search researcher'],
     '#/bridge/agents/new': ['Show blueprints', 'What roles are available?', 'Open shipyard'],
     '#/missions':   ['Run a mission', 'How many missions running?', 'Create a new mission', 'Show analytics'],
@@ -1541,7 +1501,7 @@ const PromptPanel = (() => {
     '#/cost':       ['/tokens', 'What\'s my balance?', 'Show analytics', 'Open settings'],
     '#/vault':      ['Open blueprints', 'Show security', 'Export data'],
     '#/settings':   ['/theme', '/shortcuts', 'Switch to synthwave', 'Show profile'],
-    '#/profile':    ['What\'s my rank?', '/rank', 'Show achievements', 'Open settings'],
+    '#/profile':    ['/callsign', '/theme', 'Open settings'],
     '#/agents':     ['What can you do?', 'Run a mission', 'Show recent tasks', 'What\'s your status?'],
     '#/bridge?tab=operations&sub=log': ['Show active missions', 'How many completed today?', 'Export log'],
   };
@@ -1669,30 +1629,20 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   /**
    * Build the `app_context` bundle the edge function's persona compiler
    * renders into the system prompt. Live state the server can't derive:
-   * rank / XP (localStorage), deployed agents + ships (State store),
-   * pre-rendered catalog + ship lines (BlueprintsView.SEED, still JS),
-   * current route, show_rarity gate, active crew roster.
+   * deployed agents + ships (State store), pre-rendered catalog + ship
+   * lines (BlueprintsView.SEED, still JS), current route, active crew
+   * roster. `show_rarity` stays in the contract and is always false.
    *
    * Returned verbatim as the request body's `app_context` field — see
    * `tools/persona-compiler-ref/compile.js` `buildAppContextBlock` for
    * how each field is rendered.
    */
   function _buildAppContext() {
-    const xp = parseInt(localStorage.getItem(Utils.KEYS.xp) || '0', 10);
-    const ranks = ['Ensign','Lieutenant JG','Lieutenant','Lt Commander','Commander','Captain','Fleet Captain','Commodore','Rear Admiral','Vice Admiral','Admiral','Fleet Admiral'];
-    const rankThresholds = [0,10000,25000,50000,100000,200000,350000,500000,750000,1000000,1500000,2500000];
-    let rank = ranks[0];
-    for (let i = ranks.length - 1; i >= 0; i--) { if (xp >= rankThresholds[i]) { rank = ranks[i]; break; } }
-
     const agents = (typeof State !== 'undefined' && State.get('agents')) || [];
     const spaceships = (typeof State !== 'undefined' && State.get('spaceships')) || [];
     const agent_count = agents.length;
     const ship_count = spaceships.length;
     const current_view = location.hash || '#/';
-    // Match prior client behavior — gate rarity mention for anyone past
-    // the tutorial hump (300 XP = trivial). Raise later if we want it
-    // strictly Commander+ as the old comment claimed.
-    const show_rarity = xp >= 300;
 
     const active_crew = _getSlottedAgents().map(a => ({ name: a.name, role: a.role }));
 
@@ -1701,7 +1651,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     agentSeed.forEach(bp => {
       const role = (bp.config && bp.config.role) || 'General';
       if (!roleMap[role]) roleMap[role] = [];
-      roleMap[role].push(show_rarity ? bp.name + ' (' + (bp.rarity || 'Common') + ')' : bp.name);
+      roleMap[role].push(bp.name);
     });
     const catalog_lines = Object.entries(roleMap).map(([role, names]) =>
       '  ' + role + ': ' + names.slice(0, 8).join(', ') + (names.length > 8 ? ' +' + (names.length - 8) + ' more' : '')
@@ -1711,15 +1661,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const ship_lines = shipSeed.map(s => {
       const desc = s.flavor || s.description || '';
       const descPart = desc ? ' — "' + desc + '"' : '';
-      return show_rarity
-        ? '  ' + s.name + ' (Class ' + (s.class || '1') + ', ' + (s.slots || 2) + ' slots, ' + (s.tier || 'lite').toUpperCase() + ')' + descPart
-        : '  ' + s.name + ' (' + (s.slots || 2) + ' agent slots)' + descPart;
+      return '  ' + s.name + ' (' + (s.slots || 2) + ' agent slots)' + descPart;
     }).join('\n');
 
     return {
-      rank, xp,
       agent_count, ship_count,
-      current_view, show_rarity,
+      current_view, show_rarity: false,
       active_crew,
       catalog_lines, ship_lines,
     };

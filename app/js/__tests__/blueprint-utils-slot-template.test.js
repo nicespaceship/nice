@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-// BlueprintUtils + Gamification are loaded globally by setup.js.
+// BlueprintUtils is loaded globally by setup.js.
 
 describe('BlueprintUtils.getSlotTemplate — min_class propagation', () => {
   it('lifts min_class from crew defs onto the slot template entries', () => {

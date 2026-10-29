@@ -163,12 +163,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
 .hdr-user { display:flex; align-items:center; gap:8px; }
 .side-user-top { display:flex; align-items:center; gap:8px; min-width:0; }
 .hdr-username { font-size:var(--text-sm); font-family:var(--font-b); color:var(--nav-text-muted, var(--text-muted)); white-space:nowrap; }
-.hdr-user-badge {
-  font-size:var(--text-xs); font-family:var(--font-b); letter-spacing:var(--tracking-caps);
-  padding:2px 8px; border:1px solid var(--nav-border, var(--accent)); color:var(--nav-text, var(--accent));
-  background:var(--nav-surface2, color-mix(in srgb, var(--accent) 8%, transparent));
-  border-radius:4px; white-space:nowrap;
-}
 
 /* ─────────────────────────────────────────────────────────────────
    HUD PANEL (inline sidebar, slides open pushing nav down)
@@ -648,25 +642,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     linear-gradient(rgba(43,78,140,0.15), rgba(43,78,140,0.15)) no-repeat 97% 97% / 1px 30px;
 }
 
-/* ── Health/XP bars — mecha power gauges ── */
-[data-theme="rx-78-2"] .health-bar,
-[data-theme="rx-78-2"] .xp-bar {
-  border: 1px solid #3a3f55;
-  background: #12131a;
-}
-[data-theme="rx-78-2"] .health-fill {
-  background: linear-gradient(90deg, #27ae60, #2ecc71);
-  box-shadow: 0 0 6px rgba(46,204,113,0.3);
-}
-[data-theme="rx-78-2"] .health-fill.shield {
-  background: linear-gradient(90deg, #2b4e8c, #4a7abb);
-  box-shadow: 0 0 6px rgba(43,78,140,0.3);
-}
-[data-theme="rx-78-2"] .xp-bar-fill {
-  background: linear-gradient(90deg, #d4a017, #f1c40f);
-  box-shadow: 0 0 6px rgba(212,160,23,0.3);
-}
-
 /* ── Rarity badges ── */
 [data-theme="rx-78-2"] .blueprint-card-mini-badge {
   font-family: 'Rajdhani', sans-serif;
@@ -1042,45 +1017,6 @@ h4 { font-size: var(--text-base); font-weight: var(--fw-medium); line-height: va
     rgba(0,0,0,0.06) 2px,
     rgba(0,0,0,0.06) 3px
   );
-}
-
-/* ── Segmented HP bars — pixel blocks instead of smooth fill ── */
-[data-theme="16bit"] .health-bar,
-[data-theme="16bit"] .xp-bar {
-  border: 3px solid #e2b714;
-  background: #0d1526;
-  box-shadow: inset 2px 2px 0 rgba(0,0,0,0.5);
-  height: 18px;
-}
-[data-theme="16bit"] .health-fill {
-  background: repeating-linear-gradient(
-    90deg,
-    #27ae60 0px, #27ae60 6px,
-    #1e8449 6px, #1e8449 7px,
-    #2ecc71 7px, #2ecc71 13px,
-    #1e8449 13px, #1e8449 14px
-  );
-  box-shadow: inset 0 2px 0 rgba(255,255,200,0.2), inset 0 -2px 0 rgba(0,0,0,0.3);
-  image-rendering: pixelated;
-}
-[data-theme="16bit"] .health-fill.shield {
-  background: repeating-linear-gradient(
-    90deg,
-    #2980b9 0px, #2980b9 6px,
-    #1f6da0 6px, #1f6da0 7px,
-    #3498db 7px, #3498db 13px,
-    #1f6da0 13px, #1f6da0 14px
-  );
-}
-[data-theme="16bit"] .xp-bar-fill {
-  background: repeating-linear-gradient(
-    90deg,
-    #e2b714 0px, #e2b714 6px,
-    #c8a050 6px, #c8a050 7px,
-    #f1c40f 7px, #f1c40f 13px,
-    #c8a050 13px, #c8a050 14px
-  );
-  box-shadow: inset 0 2px 0 rgba(255,255,200,0.3), inset 0 -2px 0 rgba(0,0,0,0.3);
 }
 
 /* ── Rarity badges — chunky pixel labels ── */
@@ -1798,7 +1734,6 @@ html:not([data-theme]) .app-main,
 .app-sidebar:not(.open) .side-link span,
 .app-sidebar:not(.open) .app-brand-text,
 .app-sidebar:not(.open) .side-footer .hdr-username,
-.app-sidebar:not(.open) .side-footer .hdr-user-badge,
 .app-sidebar:not(.open) .side-footer .side-popover,
 .app-sidebar:not(.open) .side-footer #sidebar-presence,
 .app-sidebar:not(.open) .sidebar-favorites,
@@ -2254,45 +2189,6 @@ html:not([data-theme]) .app-main,
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(4) .sch-slot-card { animation-delay:-3s; }
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(5) .sch-slot-card { animation-delay:-0.5s; }
 .schematic-wired .schematic-card-slot:not(.schematic-card-empty):nth-child(6) .sch-slot-card { animation-delay:-2.5s; }
-
-/* ── Locked slots — rank-gated, visible but not actionable ──
-   Surfaces the growth ladder: the user sees every slot the ship will
-   ever have, with the rank gate inline on the card itself. */
-.schematic-card-locked { opacity:.45; cursor:default; }
-.schematic-card-locked .sch-slot-card { animation:none; pointer-events:none; }
-.schematic-wired .schematic-card-slot.schematic-card-locked:hover .sch-slot-card { box-shadow:none; }
-.sch-slot-card-locked {
-  border-color:var(--text-muted);
-  border-style:dashed;
-  background:transparent;
-}
-.sch-slot-card-locked .sch-slot-role { color:var(--text-muted); opacity:.7; }
-.sch-slot-name-locked {
-  color:var(--text-muted);
-  font-weight:var(--fw-medium);
-  font-style:italic;
-  display:flex; align-items:center; justify-content:center; gap:3px;
-}
-.sch-slot-lock-glyph { display:inline-flex; align-items:center; color:var(--text-muted); }
-.sch-slot-card-locked .sch-slot-cap {
-  font-style:italic;
-  opacity:.7;
-}
-
-/* Mobile stack row — locked variant */
-.schematic-stack-row-locked {
-  opacity:.5;
-  cursor:default;
-  pointer-events:none;
-}
-.schematic-stack-row-locked .schematic-row-name {
-  font-style:italic;
-  color:var(--text-muted);
-}
-.schematic-stack-row-locked .schematic-row-cap {
-  font-style:italic;
-  opacity:.85;
-}
 
 /* ── Schematic skeleton — post-reset hydration placeholder ── */
 .schematic-skeleton { pointer-events:none; }
@@ -3365,17 +3261,12 @@ html:not([data-theme]) .app-main,
 @keyframes spin { to { transform:rotate(360deg); } }
 .crew-setup-status p { font-family:var(--font-b); font-size:var(--text-sm); color:var(--text-muted); }
 
-/* Locked blueprint card */
-.bp-locked { opacity:.6; cursor:not-allowed !important; }
-.bp-locked:hover { opacity:.6; }
-
 /* Spaceship Builder — Crew Slots */
 .builder-slot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
 .builder-slot-card { border:1px solid var(--border); padding:12px; background:var(--bg-alt); transition:border-color .2s; }
 .builder-slot-card.builder-slot-assigned { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 5%, var(--bg-alt)); }
 .builder-slot-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
 .builder-slot-label { font-family:var(--font-b); font-size:var(--text-xs); letter-spacing:var(--tracking-caps); color:var(--text); }
-.builder-slot-rarity { font-family:var(--font-b); font-size:var(--text-xs); letter-spacing:var(--tracking-caps); padding:1px 5px; border:1px solid; }
 .builder-slot-select { width:100%; font-size:var(--text-sm); }
 
 /* Memory toggle */
@@ -3885,9 +3776,6 @@ html:not([data-theme]) .app-main,
 .fleet-member-name { font-family:var(--font-b); font-size:.78rem; color:var(--text); }
 .fleet-member-role { font-family:var(--font-b); font-size:var(--text-3xs); color:var(--text-dim); }
 .spaceship-card-actions { display:flex; gap:6px; padding-top:6px; border-top:1px solid var(--border); }
-
-/* Fleet Detail */
-.fleet-detail-actions { display:flex; gap:10px; }
 
 /* Fleet agent picker (modal) */
 .fleet-agent-picker { display:flex; flex-wrap:wrap; gap:8px; }
@@ -5224,64 +5112,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   .app-sidebar { padding-top:env(safe-area-inset-top); }
   .app-tabbar { padding-bottom:env(safe-area-inset-bottom); height:calc(64px + env(safe-area-inset-bottom)); }
 }
-
-/* ─────────────────────────────────────────────────────────────────
-   GAMIFICATION — Ranks, XP, Health, Ship Classes
-───────────────────────────────────────────────────────────────── */
-
-/* Rank Badge (sidebar compact) */
-.rank-badge-compact { display:flex; align-items:center; gap:6px; padding:6px 10px; font-size:var(--text-xs); color:var(--text-muted); border-top:1px solid var(--border); margin-top:auto; }
-.rank-icon { font-size:.9rem; }
-.rank-name { font-family:var(--font-b); letter-spacing:var(--tracking-caps); }
-
-/* Rank Card (home dashboard) */
-.rank-card { background:var(--panel-bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
-.rank-card-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.rank-icon-lg { font-size:1.6rem; }
-.rank-card-info { display:flex; flex-direction:column; }
-.rank-card-name { font-family:var(--font-b); font-weight:var(--fw-bold); font-size:.95rem; color:var(--text); }
-.rank-card-xp { font-size:.72rem; color:var(--accent); font-family:var(--font-b); }
-.rank-progress { height:6px; background:var(--bg-alt); border-radius:3px; overflow:hidden; }
-.rank-progress-bar { height:100%; background:var(--accent); border-radius:3px; transition:width .4s ease; }
-.rank-progress-label { display:block; margin-top:6px; font-size:.68rem; color:var(--text-muted); font-family:var(--font-b); }
-
-/* Health Bars (spaceship cards) */
-.health-bars { display:flex; flex-direction:column; gap:4px; margin-top:8px; }
-.health-bar-row { display:flex; align-items:center; gap:6px; }
-.health-label { font-size:var(--text-2xs); font-family:var(--font-b); letter-spacing:var(--tracking-caps); color:var(--text-muted); width:36px; }
-.health-bar { flex:1; height:5px; background:var(--bg-alt); border-radius:3px; overflow:hidden; }
-.health-fill { height:100%; border-radius:3px; transition:width .4s ease; }
-.health-fill.hull { background:var(--color-success); }
-.health-fill.tokens { background:#f59e0b; }
-.health-fill.shield { background:#6366f1; }
-.health-val { font-size:var(--text-2xs); font-family:var(--font-b); color:var(--text-muted); width:28px; text-align:right; }
-
-/* Ship Class Badge */
-.ship-class-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; font-size:var(--text-xs); font-family:var(--font-b); letter-spacing:var(--tracking-caps); border-radius:var(--radius); border:1px solid var(--border); color:var(--text-muted); }
-.ship-class-badge.class-scout { border-color:var(--color-success)40; color:var(--color-success); }
-.ship-class-badge.class-cruiser { border-color:var(--color-info)40; color:var(--color-info); }
-.ship-class-badge.class-dreadnought { border-color:var(--color-warning)40; color:var(--color-warning); }
-.ship-class-badge.class-flagship { border-color:#a855f740; color:#a855f7; }
-
-/* ── Achievement Gallery ── */
-.ach-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:.75rem; }
-.ach-card { display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; border-radius:var(--radius, 8px); border:1px solid var(--border, #222); background:var(--panel-bg, #111); transition:opacity .2s, border-color .2s; }
-.ach-card.unlocked { border-color:var(--accent, #fff); }
-.ach-card.locked { opacity:.4; filter:grayscale(1); }
-.ach-icon { font-size:1.5rem; flex-shrink:0; }
-.ach-info { display:flex; flex-direction:column; gap:.15rem; min-width:0; }
-.ach-name { font-weight:var(--fw-medium); font-size:.85rem; color:var(--text, #fff); }
-.ach-desc { font-size:.72rem; color:var(--text-muted, #888); }
-.ach-date { font-size:var(--text-2xs); color:var(--accent, #fff); font-family:var(--font-m, monospace); }
-
-/* ── Resource Bar ── */
-.res-bar { display:flex; gap:1rem; padding:.5rem .75rem; border-radius:var(--radius, 8px); background:var(--panel-bg, #111); border:1px solid var(--border, #222); }
-.res-item { display:flex; align-items:center; gap:.3rem; font-size:.78rem; font-weight:var(--fw-medium); color:var(--text, #fff); }
-.res-icon { font-size:.9rem; }
-.res-val { font-family:var(--font-m, monospace); }
-.res-item.res-warning { color:var(--color-error); }
-.res-item.res-warning .res-icon { }
-
 
 /* ── PRO Gate ── */
 .pro-gate { text-align:center; padding:2.5rem 1.5rem; margin:1rem 0; border-radius:var(--radius, 8px); border:1px dashed var(--border, #333); background:var(--panel-bg, #111); }
@@ -7724,14 +7554,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   box-shadow:0 0 14px rgba(34,197,94,.25);
   background:rgba(34,197,94,.04);
 }
-.ship-slot.drag-invalid {
-  border-color:var(--color-error); animation:slot-shake .35s;
-}
-@keyframes slot-shake {
-  0%,100% { transform:translateX(0); }
-  25%     { transform:translateX(-5px); }
-  75%     { transform:translateX(5px); }
-}
 
 /* Filled slot — bright rarity border */
 .ship-slot-filled {
@@ -7764,18 +7586,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 }
 .ship-slot:hover .slot-undock-btn { opacity:1; }
 .slot-undock-btn:hover { background:rgba(239,68,68,.25); }
-
-/* Locked slot */
-.ship-slot-locked {
-  opacity:.4; pointer-events:none; position:relative;
-}
-.ship-slot-locked::after {
-  content:attr(data-lock-label); position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--font-b); font-size:var(--text-3xs); letter-spacing:var(--tracking-normal);
-  color:var(--text-muted); background:rgba(0,0,0,.3);
-  border-radius:var(--radius);
-}
 
 /* Class selector in modal */
 .class-selector { display:flex; gap:10px; margin:12px 0; }
@@ -8381,10 +8191,6 @@ html[data-theme] .nice-ai-input:focus-visible {
   text-align: center; padding: 30px 0;
 }
 .wizard-success-icon { font-size: 3rem; margin-bottom: 12px; }
-.wizard-xp {
-  color: var(--accent, #6366f1);
-  font-weight:var(--fw-bold); font-size: var(--text-base);
-}
 /* ── Setup Wizard: agent rows, flow badge, integration badges ── */
 .wizard-rec-flow {
   font-size: var(--text-xs); font-weight:var(--fw-medium);
@@ -8525,21 +8331,6 @@ html[data-theme] .nice-ai-input:focus-visible {
 .ship-wizard-agent-name { font-weight:var(--fw-medium); color:var(--text); }
 .ship-wizard-agent-role { font-size:var(--text-xs); color:var(--text-muted); }
 .ship-wizard-slot-empty { color:var(--text-muted); font-style:italic; }
-.ship-wizard-slot-locked {
-  border-style:dashed;
-  opacity:.65;
-  background:transparent;
-}
-.ship-wizard-slot-locked .ship-wizard-slot-label { color:var(--text-muted); }
-.ship-wizard-slot-lock {
-  display:inline-block;
-  padding:6px 10px;
-  font-size:var(--text-sm);
-  color:var(--text-muted);
-  font-style:italic;
-  width:100%;
-  text-align:right;
-}
 @media (max-width: 600px) {
   .ship-wizard-mode-cards { grid-template-columns: 1fr; }
   .ship-wizard-slot { flex-direction: column; align-items: stretch; }
@@ -9760,17 +9551,6 @@ body.preview-active .nice-ai {
   .bp-compare-panel { padding:12px; }
   .bp-compare-grid { grid-template-columns:1fr 1fr; gap:10px; }
 }
-
-/* ─────────────────────────────────────────────────────────────────
-   AGENT PROGRESSION
-───────────────────────────────────────────────────────────────── */
-.agent-prog-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 8px 0; }
-.agent-prog-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
-.agent-milestone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
-.agent-milestone-item { font-size: .78rem; padding: 8px 10px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius); }
-.agent-milestone-item.met { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel-bg)); }
-.agent-milestone-label { color: var(--text-muted); font-size: .7rem; display: block; margin-bottom: 2px; }
-.agent-milestone-val { font-weight: var(--fw-medium); font-family: var(--font-m); }
 
 /* ─────────────────────────────────────────────────────────────────
    BLUEPRINT UX IMPROVEMENTS

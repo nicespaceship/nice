@@ -111,29 +111,14 @@ const CardRenderer = (() => {
   /* ── Slot Diagram Art (spaceship cards) ──
      Renders the ship's slot constellation. When `opts.slots` is supplied
      (each slot { min_class, max?, maxRarity? }), the diagram shows every
-     slot the ship defines and dims/locks the ones above the viewer's
-     current class so the growth ladder is visible from rank 1. Without
-     `opts.slots` the function falls back to the synthetic class layout
-     (used for catalog-card art before crew data has loaded). */
+     slot the ship defines. Without `opts.slots` the function falls back to
+     the synthetic class layout (used for catalog-card art before crew data
+     has loaded). */
   function slotDiagramArt(classId, serial, opts) {
     opts = opts || {};
     const cls = SHIP_CLASSES[classId] || SHIP_CLASSES['class-1'];
-
-    // Tests + early-boot renders (before Gamification has loaded) treat
-    // every slot as unlocked so the visual is never broken in those
-    // environments. Live UI hits the real comparator.
-    const _gam = typeof Gamification !== 'undefined' ? Gamification : null;
-    const userRank = _gam && _gam.getCurrentClass ? _gam.getClassRank(_gam.getCurrentClass().id || 'class-1') : 99;
-    const slotRank = (s) => _gam && _gam.getClassRank ? _gam.getClassRank(s && s.min_class) : 0;
-    const isLocked = (s) => slotRank(s) > userRank;
-
-    // Front-of-card art now shows only the slots the viewer has
-    // unlocked. Locked slots are surfaced elsewhere (drawer crew
-    // roster, class progression display) — keeping the screen as a
-    // clean canvas for the active crew.
     const liveSlots = Array.isArray(opts.slots) && opts.slots.length ? opts.slots : null;
-    const allSlots = liveSlots || cls.slots;
-    const slots = allSlots.filter(s => !isLocked(s));
+    const slots = liveSlots || cls.slots;
     const n = slots.length;
     if (!serial) serial = serialHash(classId, 12);
 
@@ -160,7 +145,6 @@ const CardRenderer = (() => {
     const dotColors = ['#f43f5e','#f97316','#eab308','#22c55e','#14b8a6','#06b6d4',
                        '#3b82f6','#6366f1','#a855f7','#ec4899','#84cc16','#fb923c'];
     const localOrbitR = 18;
-    const LOCKED_COLOR = '#475569';
 
     let svg = `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
       <line x1="10" y1="20" x2="190" y2="20" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
@@ -180,16 +164,11 @@ const CardRenderer = (() => {
     conns.forEach(pair => {
       const a = positions[pair[0]], b = positions[pair[1]];
       if (!a || !b) return;
-      // Connections fade when either endpoint is locked, so the unlocked
-      // half of the ship reads as the "alive" graph and the locked half
-      // as the future expansion.
-      const dimmed = isLocked(slots[pair[0]]) || isLocked(slots[pair[1]]);
-      svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#3b82f6" stroke-width="0.6" opacity="${dimmed ? 0.04 : 0.1}"/>`;
+      svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#3b82f6" stroke-width="0.6" opacity="0.1"/>`;
     });
 
-    positions.forEach((p, i) => {
-      const dimmed = isLocked(slots[i]);
-      svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#3b82f6" stroke-width="0.8" opacity="${dimmed ? 0.05 : 0.12}"/>`;
+    positions.forEach((p) => {
+      svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#3b82f6" stroke-width="0.8" opacity="0.12"/>`;
     });
 
     // Cap slot rendering to the number of available positions (class-3 has
@@ -198,27 +177,15 @@ const CardRenderer = (() => {
 
     renderSlots.forEach((slot, i) => {
       const p = positions[i];
-      const locked = isLocked(slot);
-      const color = locked ? LOCKED_COLOR : (SLOT_COLORS[slot.max || slot.maxRarity] || '#6366f1');
+      const color = SLOT_COLORS[slot.max || slot.maxRarity] || '#6366f1';
       const r = 14;
-      const ringOpacity = locked ? 0.35 : 0.7;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r + 3}" fill="${color}" opacity="${locked ? 0.05 : 0.12}"/>`;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="none" stroke="${color}" stroke-width="${locked ? 1 : 1.5}" stroke-dasharray="${locked ? '2,3' : '5,3'}" opacity="${ringOpacity}"/>`;
-      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${color}" opacity="${locked ? 0.03 : 0.06}"/>`;
-      if (locked) {
-        // Lock glyph — small padlock centered on the slot.
-        const lx = p.x - 4, ly = p.y - 4;
-        svg += `<g transform="translate(${lx},${ly})" fill="${color}" stroke="${color}" stroke-width="0.6" opacity="0.85">` +
-                 `<rect x="0" y="3.5" width="8" height="5" rx="0.8"/>` +
-                 `<path d="M2,3.5 L2,2 a2,2 0 0,1 4,0 L6,3.5" fill="none"/>` +
-               `</g>`;
-      } else {
-        svg += `<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="12" font-weight="300" opacity="0.6">+</text>`;
-      }
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r + 3}" fill="${color}" opacity="0.12"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${color}" opacity="0.06"/>`;
+      svg += `<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="12" font-weight="300" opacity="0.6">+</text>`;
     });
 
     renderSlots.forEach((slot, i) => {
-      if (isLocked(slot)) return; // No orbital motion on locked slots.
       const p = positions[i];
       const spd = serial.speeds[i] || 0;
       const dur = 20 - (spd * 1.5);
@@ -232,9 +199,6 @@ const CardRenderer = (() => {
     conns.forEach((pair, ci) => {
       const a = positions[pair[0]], b = positions[pair[1]];
       if (!a || !b) return;
-      // Skip travel particles for edges that touch a locked slot — the
-      // path is "asleep" until that side wakes up.
-      if (isLocked(slots[pair[0]]) || isLocked(slots[pair[1]])) return;
       const spd = travelSpeeds[ci % travelSpeeds.length] || 3;
       const dur = 6 + (9 - spd) * 1.2;
       const dotR = 1.2 + (spd * 0.08);
@@ -254,19 +218,12 @@ const CardRenderer = (() => {
      connect core ↔ each node; particles travel core → node on a stagger.
      Each node is colored by its slot's class (C1 slate / C2 light blue /
      C3 purple / C4 amber) so the animation stays tied to the user's
-     specific ship. Only unlocked slots render; locked ones live in the
-     drawer + Crew tab. */
+     specific ship. The first six slots render; the full roster lives in
+     the drawer + Crew tab. */
   function nodeHexArt(slots, serial) {
     if (!serial) serial = serialHash('nodeHex', 12);
 
-    // Locked-slot filter — same logic as slotDiagramArt's gating.
-    const _gam = typeof Gamification !== 'undefined' ? Gamification : null;
-    const userRank = _gam && _gam.getCurrentClass ? _gam.getClassRank(_gam.getCurrentClass().id || 'class-1') : 99;
-    const slotRank = (s) => _gam && _gam.getClassRank ? _gam.getClassRank(s && s.min_class) : 0;
-    const isLocked = (s) => slotRank(s) > userRank;
-
-    const allSlots = (slots || []).filter(Boolean);
-    const unlocked = allSlots.filter(s => !isLocked(s)).slice(0, 6);
+    const nodes = (slots || []).filter(Boolean).slice(0, 6);
 
     // Vertically-compressed hex: top + bottom pulled in (y closer to center),
     // sides at full horizontal reach. Fits the 200×120 rectangle cleanly.
@@ -277,7 +234,7 @@ const CardRenderer = (() => {
       { x: 100, y: 98 },   // bottom
       { x:  38, y: 82 },   // bottom-left
       { x:  38, y: 38 },   // top-left
-    ].slice(0, unlocked.length);
+    ].slice(0, nodes.length);
 
     const cx = 100, cy = 60;
     const slotColor = (s) => SLOT_COLORS[s && (s.max || s.maxRarity || ({
@@ -298,7 +255,7 @@ const CardRenderer = (() => {
 
     // Data lines core → node. Drawn first so nodes and core sit on top.
     positions.forEach((p, i) => {
-      const color = slotColor(unlocked[i]);
+      const color = slotColor(nodes[i]);
       svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="${color}" stroke-width="0.7" opacity="0.32"/>`;
     });
 
@@ -308,7 +265,7 @@ const CardRenderer = (() => {
     positions.forEach((p, i) => {
       const dur = 2.4;
       const delay = 0.18 * i;
-      const color = slotColor(unlocked[i]);
+      const color = slotColor(nodes[i]);
       svg += `<circle r="1.6" fill="${color}" opacity="0">
         <animate attributeName="opacity" values="0;0.95;0.95;0" dur="${dur}s" begin="${delay}s" repeatCount="indefinite" keyTimes="0;0.12;0.88;1"/>
         <animate attributeName="cx" values="${cx};${p.x}" dur="${dur}s" begin="${delay}s" repeatCount="indefinite"/>
@@ -330,7 +287,7 @@ const CardRenderer = (() => {
 
     // Nodes — halo + ring + filled dot at each hex position.
     positions.forEach((p, i) => {
-      const color = slotColor(unlocked[i]);
+      const color = slotColor(nodes[i]);
       svg += `<circle cx="${p.x}" cy="${p.y}" r="8" fill="${color}" opacity="0.12"/>`;
       svg += `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="none" stroke="${color}" stroke-width="1" opacity="0.7"/>`;
       svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}" opacity="0.9"/>`;
@@ -701,7 +658,7 @@ const CardRenderer = (() => {
 
     // ── Art ──
     // Ship cards on the front use the ported marketing inside-stage
-    // animation (nodeHexArt): pulsing core + 6 unlocked nodes in
+    // animation (nodeHexArt): pulsing core + 6 nodes in
     // compressed hex + flowing particles. Agent cards keep avatarArt.
     const shipSlots = isShip ? BlueprintUtils.getCrewDefs(bp) : null;
     const artContent = isShip
