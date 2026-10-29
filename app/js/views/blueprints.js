@@ -17,15 +17,15 @@ const BlueprintsView = (() => {
   const _SLOT_COLORS = BlueprintUtils.RARITY_COLORS;
 
   /* ── Tab ↔ route ──
-     Three Bridge tabs have their own main-nav route; the rest live under
+     Two Bridge tabs have their own main-nav route; the rest live under
      #/bridge?tab=…. A tab switch rewrites the URL in place (no Router
      re-render) and re-highlights the main nav. */
-  const _TAB_ROUTES = { schematic: '/crew', blueprints: '/library', outbox: '/outbox' };
+  const _TAB_ROUTES = { blueprints: '/library', outbox: '/outbox' };
   function _syncTabRoute(tabId) {
     const params = new URLSearchParams((location.hash || '').split('?')[1] || '');
     params.delete('tab');
     params.delete('sub');
-    if (tabId !== 'schematic') params.delete('ship');
+    params.delete('ship');
     let base = _TAB_ROUTES[tabId];
     if (!base) { base = '/bridge'; params.set('tab', tabId); }
     const qs = params.toString();
@@ -308,16 +308,6 @@ const BlueprintsView = (() => {
       else if (_hash === '#/library') {
         _activeTab = 'blueprints';
         if (['spaceship', 'agent', 'active', 'workshop'].includes(_tabParam)) _subTab = _tabParam;
-      }
-      else if (_hash === '#/crew') {
-        _activeTab = 'schematic';
-        // #/crew?ship=<id> opens that spaceship; SchematicView reads mcShip
-        // and ignores an id that isn't one of the user's ships.
-        const shipParam = _hashParams.get('ship');
-        if (shipParam) {
-          localStorage.setItem(Utils.KEYS.mcShip, shipParam);
-          window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: shipParam }));
-        }
       }
       else if (_tabParam && validTabs.includes(_tabParam)) _activeTab = _tabParam;
       else if (_tabParam === 'documentation') { _activeTab = 'schematic'; }

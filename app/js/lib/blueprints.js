@@ -2446,6 +2446,99 @@ const Blueprints = (() => {
     return ships;
   }
 
+  /** The spaceship the crew view and the Schematic show: the stored choice
+      (Utils.KEYS.mcShip) when it is still one of the user's ships, else the
+      first ship. A stale or missing choice is overwritten with the fallback
+      and announced with a same-tab storage event, so the prompt panel's
+      ship context follows. Returns null when the user runs no spaceship. */
+  function getCurrentShipId() {
+    const ships = getUserShips();
+    if (!ships.length) return null;
+    const stored = localStorage.getItem(Utils.KEYS.mcShip);
+    if (stored && ships.some(s => String(s.id) === stored)) return stored;
+    const fallback = String(ships[0].id);
+    if (stored !== fallback) {
+      try {
+        localStorage.setItem(Utils.KEYS.mcShip, fallback);
+        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: fallback }));
+      } catch {}
+    }
+    return fallback;
+  }
+
+  /** A ship's slot assignments as { "0": agentId, ... } (0-indexed). Saved
+      assignments win, then a Crew Designer ship's own map, then the catalog
+      crew as "__new__<label>" placeholders for agents not yet created. */
+  function getShipSlotMap(shipId) {
+    if (!shipId) return {};
+    const saved = getShipState(shipId);
+    if (saved && saved.slot_assignments && Object.keys(saved.slot_assignments).length) {
+      return { ...saved.slot_assignments };
+    }
+    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
+    const customShip = customShips.find(s => s.id === shipId);
+    if (customShip && customShip.slot_assignments && Object.keys(customShip.slot_assignments).length) {
+      return { ...customShip.slot_assignments };
+    }
+    const rawId = String(shipId).replace(/^bp-/, '');
+    const bp = getSpaceship(rawId) || getSpaceship(shipId);
+    if (bp && bp.crew && bp.crew.length) {
+      const map = {};
+      bp.crew.forEach((c, i) => { map[String(i)] = '__new__' + (c.label || c.name || 'Agent ' + (i + 1)); });
+      return map;
+    }
+    return {};
+  }
+
+  /** The agent behind a slot assignment: a catalog or user agent, or a stub
+      for a "__new__<label>" placeholder (rarity taken from the ship's crew
+      def). Guests also see their locally built agents. */
+  function resolveCrewAgent(agentId, shipId) {
+    if (!agentId) return null;
+    let bp = null;
+    if (agentId.startsWith('__new__')) {
+      const agentName = agentId.replace('__new__', '');
+      let crewRarity = 'Common';
+      if (shipId) {
+        const rawId = String(shipId).replace(/^bp-/, '');
+        const ship = getSpaceship(rawId) || getSpaceship(shipId);
+        const crewMember = ship ? (ship.crew || []).find(c => c.label === agentName) : null;
+        if (crewMember && crewMember.rarity) crewRarity = crewMember.rarity;
+      }
+      return { id: agentId, name: agentName, category: 'Agent', rarity: crewRarity };
+    }
+    bp = getAgent(agentId);
+    if (!bp) {
+      const agent = ((typeof State !== 'undefined' && State.get('agents')) || []).find(r => r.id === agentId);
+      if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || agent.category, rarity: agent.rarity || 'Common' };
+    }
+    // Guest-only localStorage fallback. Signed-in users' agents are all in
+    // State.agents (mirrored from user_agents); the cache would be stale.
+    if (!bp && !(typeof State !== 'undefined' && State.get('user') && State.get('user').id)) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
+        const agent = stored.find(a => a.id === agentId);
+        if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || 'Agent', rarity: 'Common' };
+      } catch {}
+    }
+    return bp;
+  }
+
+  /** A ship's crew in slot order: [{ index, slot, agentId, agent }] where
+      slot comes from BlueprintUtils.getSlotTemplate and agent is null for an
+      open station. */
+  function getShipCrew(shipId) {
+    const ship = getUserShips().find(s => String(s.id) === String(shipId))
+      || getSpaceship(String(shipId || '').replace(/^bp-/, ''));
+    if (!ship) return [];
+    const slots = BlueprintUtils.getSlotTemplate(ship).slots;
+    const map = getShipSlotMap(shipId);
+    return slots.map((slot, i) => {
+      const agentId = map[String(i)] || null;
+      return { index: i, slot, agentId, agent: agentId ? resolveCrewAgent(agentId, shipId) : null };
+    });
+  }
+
   /** Returns fully constructed spaceship objects from activated blueprint IDs */
   function getActivatedShips() {
     const result = [];
@@ -3223,6 +3316,7 @@ const Blueprints = (() => {
     activateShip, deactivateShip, isShipActivated, cleanupOrphans,
     canActivateNewShip,
     getActivatedShipIds, getActivatedShips, getUserShips, findOrCreateActiveShip,
+    getCurrentShipId, getShipSlotMap, resolveCrewAgent, getShipCrew,
 
     // Ship state persistence
     getShipState, saveShipState, reassignAgentToShip, handoffShipId,

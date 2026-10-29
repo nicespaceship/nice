@@ -176,7 +176,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 | Surface | Code path | Creates Run? | Lifecycle |
 |---|---|---|---|
 | **Mission-grade chat** (ship-level) | [prompt-panel.js:725](app/js/views/prompt-panel.js:725) → `MissionRunner.run` | ✅ | Full Run state machine, audit, cancel, analytics |
-| **Agent-with-tools chat** | [prompt-panel.js:2119](app/js/views/prompt-panel.js:2119) → `AgentExecutor.converse` | ❌ | Request-response, `ship_log` persistence only |
+| **Agent-with-tools chat** | `@mention` in the prompt panel, or a crew card's message box via `PromptPanel.sendToAgent` → `AgentExecutor.converse` | ❌ | Request-response, `ship_log` persistence only |
 | **Top-level NICE chat** | [prompt-panel.js:1909](app/js/views/prompt-panel.js:1909) → `_callDirectLLM` | ❌ | Request-response, no persistence beyond message history |
 
 **Rationale for the split:** casual chat surfaces are latency-sensitive and ephemeral. Forcing a `mission_runs` INSERT before each LLM call adds round-trip latency and bloats the table with throwaway rows. Audit, cancel, and analytics features that depend on Runs apply only to mission-grade chat today, and that's currently fine — there's no user demand for cancel/audit/analytics on casual chat.
@@ -355,7 +355,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `SB` | `supabase.js` | Supabase client wrapper: `db()`, `auth()`, `client` |
 | `Router` | `router.js` | Hash router with param extraction & page transitions; sole owner of main-nav highlighting (`.active` + `aria-current`), `syncNav()` after a `replaceState` |
 | `Utils` | `utils.js` | Shared utilities (esc, debounce, format, Captain's Log stardate) + `KEYS` constants |
-| `BlueprintUtils` | `blueprint-utils.js` | SSOT: rarity colors + computed agent rarity, slot labels + max slots, card-art ship classes, categories |
+| `BlueprintUtils` | `blueprint-utils.js` | SSOT: rarity colors + computed agent rarity, slot labels + max slots, card-art ship classes, categories; crew labels shared by CrewView and the Schematic (`crewIdentity`, `crewRoleLabel`, `capabilityLabel`) |
 | `AuditLog` | `audit-log.js` | Persistent event logging (max 500 FIFO) |
 | `DataIO` | `data-io.js` | Export/import all NICE data as JSON |
 | `ActivityFeed` | `activity-feed.js` | Live event stream from Supabase realtime |
@@ -367,13 +367,13 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `AgentExecutor` | `agent-executor.js` | ReAct loop: LLM → tool calls → observations |
 | `AgentMemory` | `agent-memory.js` | Agent memory and context management |
 | `AttachmentUtils` | `attachment-utils.js` | SSOT for prompt-panel attachment classification + size caps + fallback rules (unit-testable without the full panel) |
-| `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management |
+| `MissionRunner` | `mission-runner.js` | Long-running mission lifecycle management; review decisions (`approveRun`, `rejectRun`, `isResumableGate`) shared by the mission detail page and the crew view |
 | `ShipLog` | `ship-log.js` | Agent conversation persistence to Supabase |
 | `ShipBehaviors` | `ship-behaviors.js` | Spaceship behavior definitions |
 | `ShipTemplates` | `ship-templates.js` | Pre-built spaceship templates |
 | `LLMConfig` | `llm-config.js` | Model selection from enabled_models state |
 | `ModelIntel` | `model-intel.js` | Learns optimal models from mission history |
-| `Blueprints` | `blueprints.js` | Blueprint catalog with Supabase sync + sharing |
+| `Blueprints` | `blueprints.js` | Blueprint catalog with Supabase sync + sharing; the user's ships (`getUserShips`, `getCurrentShipId`) and a ship's crew in slot order (`getShipCrew`) |
 | `BlueprintMarkdown` | `blueprint-markdown.js` | Markdown rendering for blueprint descriptions |
 | `CardRenderer` | `card-renderer.js` | Unified blueprint card template renderer |
 | `CrewDesigner` | `crew-designer.js` | Describe → Design → Deploy crew builder |
@@ -411,23 +411,24 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `LLMActivity` | `llm-activity.js` | In-memory pub/sub for "an LLM call is in flight" signals. Handle-pairing only (no polled flag) — drives the elapsed-seconds chip above the prompt panel |
 | `CrewMatcher` | `crew-matcher.js` | Resolves a spaceship's `crew_roles` + `crew_overrides` spec into a `slot_assignments` map at activation |
 | `ShipSlots` | `ship-slots.js` | SSOT for slot assignments via `public.user_ship_slots` after Phase C.1 (`fetchForShips` / `setForShip` replace-all / `setSlot` upsert / `clearSlot` / `deleteForShip`) |
-| `ModelCatalog` | `model-catalog.js` | SSOT for the AI-model presentation layer — display name, provider, speed/quality bars, marketing copy |
+| `ModelCatalog` | `model-catalog.js` | SSOT for the AI-model presentation layer — display name, provider, provider colors (`providerColor`, frames crew cards), speed/quality bars, marketing copy |
 | `Terminology` | `terminology.js` | SSOT for theme-aware noun labels — per-theme overrides for `mission`/`agent`/`spaceship`/`crew`/`captain` |
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 
-### View Modules (`app/js/views/`) — 25 views
+### View Modules (`app/js/views/`) — 26 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | Home (the landing: what needs you from AlertCounts, your spaceships from `Blueprints.getUserShips`, and two ways to start) |
 | `ChatView` | `chat.js` | `#/chat` | Chat (standalone chat with any model, no crew; greeting + conversation feed under the global prompt panel) |
-| `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/crew` (Schematic; `?ship=<id>` picks the spaceship), `#/library` (Blueprints) and `#/outbox` (Outbox) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
+| `CrewView` | `crew.js` | `#/crew` (`?ship=<id>` picks the spaceship) | Crew (one card per crew member framed in its model's provider color: role, model, tools, live status from AgentActivity, latest exchange from ShipLog, a message box; plus recent runs and an approval bar for runs in review) |
+| `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/library` (Blueprints) and `#/outbox` (Outbox) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
 | `DocsView` | `docs.js` | `#/bridge?tab=documentation` (legacy `#/docs` redirects) | Documentation |
 | `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
 | `AgentBuilderView` | `agent-builder.js` | `#/bridge/agents/new` | Agent Builder |
 | `SpaceshipDetailView` | `spaceships.js` | `#/bridge/spaceships/:id` | Ship Detail |
 | `SpaceshipBuilderView` | `spaceship-builder.js` | `#/bridge/spaceships/new` | Ship Builder |
-| `SchematicView` | `schematic.js` | (embedded in BlueprintsView) | Schematic |
+| `SchematicView` | `schematic.js` | (embedded in BlueprintsView; linked as the crew view's Diagram, `#/bridge?tab=schematic`) | Schematic |
 | `MissionsView` | `missions.js` | (embedded in BlueprintsView) | Missions |
 | `MissionComposerView` | `mission-composer.js` | `#/missions/new` | Mission Composer (prompt-driven authoring; emits to `missions` table + enqueues a `mission_runs` row) |
 | `AnalyticsView` | `analytics.js` | (embedded in BlueprintsView) | Operations |

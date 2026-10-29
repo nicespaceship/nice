@@ -26,6 +26,7 @@ const SCRIPTS = [
   'app/js/lib/card-renderer.js',
   'app/js/views/home.js',
   'app/js/views/chat.js',
+  'app/js/views/crew.js',
   'app/js/views/profile.js',
   'app/js/views/alerts.js',
   'app/js/views/agents.js',

@@ -1780,13 +1780,13 @@ const NICE = (() => {
 
   /* ── Register routes ── */
   function _initRoutes() {
-    // Primary destinations (sidebar + mobile tab bar). Outbox, Library and
-    // Crew open the matching Bridge tab until each gets its own view.
+    // Primary destinations (sidebar + mobile tab bar). Outbox and Library
+    // open the matching Bridge tab until each gets its own view.
     Router.on('/', HomeView);                        // Home: what needs you, your spaceships
     Router.on('/chat', ChatView);                    // Standalone chat, no crew
     Router.on('/outbox', BlueprintsView);
     Router.on('/library', BlueprintsView);
-    Router.on('/crew', BlueprintsView);
+    Router.on('/crew', CrewView);                    // One spaceship's crew as cards
     Router.on('/bridge', BlueprintsView);            // Bridge
     Router.on('/dock', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=schematic'; } });
 

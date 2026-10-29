@@ -77,5 +77,25 @@
     return [...new Set(MODEL_CATALOG.map(m => m.provider))];
   }
 
-  return { MODEL_CATALOG, getById, listProviders };
+  /* ── Provider colors ──────────────────────────────────────────
+     Agent cards on the crew view are framed in their model's provider
+     color, so a glance shows which model does which job. Fixed across
+     themes, like card colors always were. */
+  const PROVIDER_COLORS = {
+    'Google':      '#4f8df5',
+    'Anthropic':   '#d97757',
+    'OpenAI':      '#19a37f',
+    'xAI':         '#9aa0a6',
+    'DeepSeek':    '#6d7cfe',
+    'Moonshot AI': '#8b6cff',
+    'NVIDIA':      '#76b900',
+  };
+  const FALLBACK_COLOR = '#94a3b8';
+
+  function providerColor(modelId) {
+    const m = getById(modelId);
+    return (m && PROVIDER_COLORS[m.provider]) || FALLBACK_COLOR;
+  }
+
+  return { MODEL_CATALOG, PROVIDER_COLORS, getById, listProviders, providerColor };
 }));

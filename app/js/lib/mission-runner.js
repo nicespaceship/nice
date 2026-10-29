@@ -1363,12 +1363,85 @@ const MissionRunner = (() => {
     catch (e) { /* caller has already cleared the workflow-side link */ }
   }
 
+  /* ── Review decisions ──
+     Approving or rejecting a run that waits in review. Shared by the
+     mission detail page and the crew view's approval bar; callers own
+     their notices and re-render. */
+
+  /** True when the run is paused at an approval gate that has nodes after
+      it, so approving resumes the DAG instead of completing the run. */
+  function isResumableGate(run) {
+    if (!run || !run.metadata || run.metadata.dag_status !== 'paused') return false;
+    const pausedAt = run.metadata.paused_at;
+    const edges = (run.plan_snapshot && run.plan_snapshot.edges) || [];
+    return !!pausedAt && edges.some(e => e.from === pausedAt);
+  }
+
+  /** Approve a run in review. A paused gate resumes the DAG (it may pause
+      again at a later gate) and resolves { resumed: true }; resumeDag errors
+      propagate. Otherwise the run is marked completed and approved, and
+      resolves { resumed: false, persisted }. */
+  async function approveRun(run) {
+    if (isResumableGate(run)) {
+      await resumeDag(run.id);
+      return { resumed: true, persisted: true };
+    }
+    const now = new Date().toISOString();
+    // Apply approval side effects at most once per run, and only if the
+    // approval actually persisted. The runner resets approval_status to
+    // 'draft' on every re-run, so a metadata flag (which the runner merges
+    // forward, never clears) is what makes approve→retry→approve
+    // idempotent; the persist gate skips them on a transient write failure.
+    // The flag keeps its legacy `xp_awarded` name so runs approved before
+    // XP was removed stay idempotent.
+    const alreadyApplied = !!(run.metadata && run.metadata.xp_awarded);
+    let persisted = false;
+    try {
+      if (typeof SB !== 'undefined' && SB.client) {
+        await SB.client.from('mission_runs').update({
+          status: 'completed', approval_status: 'approved', reviewed_at: now,
+          metadata: Object.assign({}, run.metadata || {}, { xp_awarded: true }),
+        }).eq('id', run.id);
+        persisted = true;
+      }
+    } catch {}
+    if (!alreadyApplied && persisted && typeof AgentMemory !== 'undefined') {
+      // Feedback loop — the agent learns from the approval
+      const agentKey = run.agent_id || run.agent_name || 'unknown';
+      AgentMemory.learn(agentKey, run.result, 'approved');
+      AgentMemory.addSuccess(agentKey, { task: run.title, approach: (run.result || '').substring(0, 200) });
+    }
+    return { resumed: false, persisted };
+  }
+
+  /** Reject a run in review: marks it failed and rejected, and the agent
+      learns from the rejection. Resolves { persisted }. */
+  async function rejectRun(run) {
+    const now = new Date().toISOString();
+    let persisted = false;
+    try {
+      if (typeof SB !== 'undefined' && SB.client) {
+        await SB.client.from('mission_runs').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', run.id);
+        persisted = true;
+      }
+    } catch {}
+    if (typeof AgentMemory !== 'undefined') {
+      const agentKey = run.agent_id || run.agent_name || 'unknown';
+      AgentMemory.learn(agentKey, run.result, 'rejected');
+      AgentMemory.addFailure(agentKey, { task: run.title, approach: (run.result || '').substring(0, 200), reason: 'Rejected by user' });
+    }
+    return { persisted };
+  }
+
   return {
     run,
     createRun,
     upsertScheduledMission,
     unscheduleMission,
     resumeDag,
+    isResumableGate,
+    approveRun,
+    rejectRun,
     runWithDispatch,
     isRunnable,
     _isDagMission,
