@@ -974,7 +974,7 @@ const PromptPanel = (() => {
 
     // Render all messages as a conversation on the monitor
     let html = '';
-    for (const m of _messages) {
+    for (const [msgIndex, m] of _messages.entries()) {
       if (m.role === 'user') {
         let attachHtml = '';
         const monitorIconFor = k => k === 'pdf' ? '📄' : k === 'audio' ? '🎵' : k === 'video' ? '🎬' : k === 'text' ? '📝' : '📎';
@@ -1001,6 +1001,8 @@ const PromptPanel = (() => {
         html += `<div class="monitor-user-msg">${attachHtml}${bubble}</div>`;
       } else if (m.role === 'system') {
         html += `<div class="monitor-system-msg">${_esc(m.text)}</div>`;
+      } else if (m.type === 'compare') {
+        html += _compareCardHTML(m, msgIndex);
       } else {
         const agentLabel = m.agent
           ? `<div class="monitor-card-agent">${_esc(m.agent)}</div>`
@@ -1896,6 +1898,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
    * Call Claude via Supabase Edge Function (authenticated users).
    * Falls back to null if not authenticated or SB unavailable.
    */
+  // nice-ai's non-stream `content` is an array of { type, text } parts (a
+  // string from older paths); join the text parts.
+  function _contentText(content) {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content.map(p => (typeof p === 'string' ? p : (p && p.type === 'text' ? p.text : '') || '')).join('');
+    }
+    return '';
+  }
+
   async function _callEdgeLLM(userText, opts = {}) {
     if (typeof SB === 'undefined' || !SB.client) return null;
     const supabaseUrl = SB.client.supabaseUrl || SB.client._supabaseUrl || '';
@@ -1919,7 +1931,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     const past = _messages.slice(-20);
     const lastPast = past[past.length - 1];
     const lastIsCurrent = !!lastPast && lastPast.role === 'user' && lastPast.text === userText;
-    const historyMsgs = lastIsCurrent ? past.slice(0, -1) : past;
+    // A comparison joins the history as the answer the user kept; an
+    // undecided one is left out.
+    const historyMsgs = (lastIsCurrent ? past.slice(0, -1) : past)
+      .filter(m => m.type !== 'compare' || m.picked != null);
 
     // Canonical user-turn content (text + media parts) for the edge function.
     // Delegates to the AttachmentUtils SSOT now shared with the agent/ship
@@ -2047,8 +2062,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
       if (data.usage) {
         _activityTokens.total = (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0);
       }
-      if (opts.onChunk && data.content) opts.onChunk(data.content);
-      return { text: data.content || '', model: modelLabel };
+      const text = _contentText(data.content);
+      if (opts.onChunk && text) opts.onChunk(text);
+      return { text, model: modelLabel };
     } finally {
       if (_activity) _activity.end({ totalTokens: _activityTokens.total });
     }
@@ -2157,6 +2173,191 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     _forcedAgent = agentBp;
     _send();
     return true;
+  }
+
+  /* ── Compare (standalone chat) ──
+     One question to two or three models at once. The answers land side by
+     side in one monitor card and the user keeps one, which becomes the
+     reply the conversation continues from. Each model goes through the same
+     nice-ai call as a normal message (_callEdgeLLM), so billing, persona and
+     errors behave the same; each call gets its own abort signal so the
+     calls don't cancel each other. */
+  const COMPARE_MAX = 3;
+  // Default picks favour different providers, cheapest first.
+  const COMPARE_PREFS = ['gemini-2-5-flash', 'claude-4-6-sonnet', 'grok-4-3', 'gpt-5-mini', 'deepseek-v4-flash',
+    'kimi-k2-6', 'nemotron-3-super', 'gpt-oss-120b', 'gemini-2-5-pro', 'claude-4-7-opus', 'gpt-5-4-pro', 'openai-o3'];
+  let _compareOn = false;
+  let _compareModels = [];
+
+  function _canonicalModel(id) {
+    return (typeof LLMConfig !== 'undefined' && LLMConfig.canonicalize) ? LLMConfig.canonicalize(id) : id;
+  }
+
+  function _isStandaloneChat() {
+    const path = (location.hash || '#/').replace('#', '').split('?')[0] || '/';
+    return path === '/chat' && !_routeAgent && !_routeShip;
+  }
+
+  // Enabled models the user can send a message on right now, in default order.
+  function _compareCandidates() {
+    const enabled = (typeof State !== 'undefined' && State.get('enabled_models')) || {};
+    const pools = ((typeof State !== 'undefined' && State.get('token_balance')) || {}).pools || {};
+    const addons = (typeof Subscription !== 'undefined' && Subscription.getAddons) ? Subscription.getAddons() : [];
+    const rank = (id) => { const i = COMPARE_PREFS.indexOf(id); return i < 0 ? COMPARE_PREFS.length : i; };
+    const ids = [...new Set(Object.keys(enabled).filter(id => enabled[id]).map(_canonicalModel))];
+    return ids
+      .filter(id => typeof TokenConfig === 'undefined' || TokenConfig.canRunModel(pools, id, addons))
+      .sort((a, b) => rank(a) - rank(b));
+  }
+
+  function _compareLabel(id) {
+    const m = (typeof ModelCatalog !== 'undefined') ? ModelCatalog.getById(id) : null;
+    return m ? m.name : id;
+  }
+
+  function _comparePool(id) {
+    if (typeof TokenConfig === 'undefined' || TokenConfig.isFreeModel(id)) return 'Free';
+    const pool = TokenConfig.poolFor(id);
+    return (pool && TokenConfig.POOLS[pool] && TokenConfig.POOLS[pool].label) || 'Paid';
+  }
+
+  function _compareActive() {
+    return _compareOn && _isStandaloneChat() && _compareModels.length >= 2;
+  }
+
+  // The model already chosen in the dropdown leads, then the default order.
+  function _defaultCompareModels(candidates) {
+    const sel = _getSelectedModel();
+    const picks = [];
+    const selected = sel && !sel.auto ? _canonicalModel(sel.id) : null;
+    if (selected && candidates.includes(selected)) picks.push(selected);
+    for (const id of candidates) {
+      if (picks.length >= COMPARE_MAX) break;
+      if (!picks.includes(id)) picks.push(id);
+    }
+    return picks;
+  }
+
+  function _setCompare(on) {
+    _compareOn = on;
+    if (on) {
+      const candidates = _compareCandidates();
+      _compareModels = _compareModels.filter(id => candidates.includes(id));
+      if (_compareModels.length < 2) _compareModels = _defaultCompareModels(candidates);
+    }
+    _renderCompareBar();
+  }
+
+  function _renderCompareBar() {
+    const btn = _panel?.querySelector('#nice-ai-compare');
+    const bar = _panel?.querySelector('#nice-ai-compare-bar');
+    const modelSelect = _panel?.querySelector('#nice-ai-model');
+    const available = _isStandaloneChat();
+    if (btn) {
+      btn.hidden = !available;
+      btn.setAttribute('aria-pressed', String(_compareOn));
+    }
+    const on = available && _compareOn;
+    if (modelSelect) modelSelect.hidden = on;
+    if (!bar) return;
+    bar.hidden = !on;
+    if (!on) { bar.innerHTML = ''; return; }
+    const candidates = _compareCandidates();
+    if (candidates.length < 2) {
+      bar.innerHTML = '<p class="nice-ai-compare-note">Compare needs two models you can run. Gemini 2.5 Flash is free; NICE Pro adds more, such as Grok, DeepSeek and Kimi. <a href="#/wallet">See plans</a></p>';
+      return;
+    }
+    const chips = _compareModels.map(id => `
+      <span class="nice-ai-compare-chip">
+        <span>${_esc(_compareLabel(id))}</span><small>${_esc(_comparePool(id))}</small>
+        <button type="button" class="nice-ai-compare-remove" data-model="${_escAttr(id)}" aria-label="Remove ${_escAttr(_compareLabel(id))}"${_compareModels.length <= 2 ? ' disabled' : ''}>×</button>
+      </span>`).join('');
+    const rest = candidates.filter(id => !_compareModels.includes(id));
+    const add = (_compareModels.length < COMPARE_MAX && rest.length)
+      ? `<select class="nice-ai-compare-add" id="nice-ai-compare-add" aria-label="Add a model to compare" data-allow-zoom>
+          <option value="">+ Add model</option>
+          ${rest.map(id => `<option value="${_escAttr(id)}">${_esc(_compareLabel(id))} · ${_esc(_comparePool(id))}</option>`).join('')}
+        </select>`
+      : '';
+    bar.innerHTML = `<span class="nice-ai-compare-label">Compare</span>${chips}${add}`;
+  }
+
+  function _sendCompare(text, sendBtn) {
+    const models = _compareModels.slice(0, COMPARE_MAX);
+    // Start every call before the comparison joins _messages, so each call's
+    // history still ends with this user turn (see _callEdgeLLM).
+    const calls = models.map(id => _callEdgeLLM(text, { modelOverride: id, abortSignal: new AbortController().signal }));
+    const msg = {
+      role: 'assistant', type: 'compare', agent: 'NICE', text: '', picked: null, ts: Date.now(),
+      answers: models.map(id => ({ model: id, label: _compareLabel(id), pool: _comparePool(id), text: '', pending: true })),
+    };
+    _removeMonitorThinking();
+    _messages.push(msg);
+    _saveMessages();
+    _renderMonitor();
+    _showMonitor();
+    let left = calls.length;
+    calls.forEach((call, i) => {
+      Promise.resolve(call)
+        .then(res => {
+          msg.answers[i].text = (res && res.text) || '';
+          if (!msg.answers[i].text) msg.answers[i].error = 'No answer came back.';
+        })
+        .catch(err => { msg.answers[i].error = (err && err.message) || 'This model could not answer.'; })
+        .finally(() => {
+          msg.answers[i].pending = false;
+          _saveMessages();
+          _renderMonitor();
+          if (--left === 0) {
+            _setSending(false);
+            if (sendBtn) sendBtn.disabled = false;
+          }
+        });
+    });
+  }
+
+  // Keeping an answer makes it the reply the conversation continues from.
+  function _pickCompareAnswer(msgIndex, answerIndex) {
+    const msg = _messages[msgIndex];
+    const ans = msg && msg.type === 'compare' ? msg.answers[answerIndex] : null;
+    if (!ans || ans.pending || ans.error) return;
+    msg.picked = answerIndex;
+    msg.text = ans.text;
+    msg.model = ans.label;
+    _saveMessages();
+    _renderMonitor();
+  }
+
+  function _compareCardHTML(m, msgIndex) {
+    // An answer still pending well after the send was cut off by a reload.
+    const stale = Date.now() - (m.ts || 0) > 120000;
+    const cards = (m.answers || []).map((a, j) => {
+      const picked = m.picked === j;
+      const dim = m.picked != null && !picked;
+      const pending = a.pending && !stale;
+      let body;
+      if (pending) body = '<p class="monitor-compare-pending">Writing…</p>';
+      else if (a.pending || a.error) body = `<p class="monitor-compare-error">${_esc(a.pending ? 'Interrupted before it finished.' : a.error)}</p>`;
+      else body = `<div class="monitor-card-text">${_md(_parseActions(a.text).clean)}</div>`;
+      // Once an answer is kept the conversation builds on it, so the
+      // others become read-only rather than swappable.
+      const foot = picked
+        ? '<span class="monitor-compare-kept">Kept</span>'
+        : (m.picked == null && !pending && !a.pending && !a.error
+            ? `<button type="button" class="monitor-compare-pick" data-msg="${msgIndex}" data-answer="${j}">Use this answer</button>`
+            : '');
+      return `
+        <div class="monitor-compare-card${picked ? ' picked' : ''}${dim ? ' dim' : ''}">
+          <div class="monitor-compare-model"><span>${_esc(a.label)}</span><small>${_esc(a.pool)}</small></div>
+          ${body}
+          ${foot}
+        </div>`;
+    }).join('');
+    return `
+      <div class="monitor-compare">
+        <div class="monitor-compare-head">Compared ${(m.answers || []).length} models${m.picked == null ? ' · keep the answer you like' : ''}</div>
+        <div class="monitor-compare-grid">${cards}</div>
+      </div>`;
   }
 
   /* ── Send message ── */
@@ -2522,6 +2723,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           _setSending(false);
           if (sendBtn) sendBtn.disabled = false;
         }, delay);
+      } else if (_compareActive()) {
+        _sendCompare(text, sendBtn);
       } else {
         // Streaming LLM call
         let _streamEl = null;
@@ -2773,6 +2976,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
         </div>
         <div class="nice-ai-input-container">
           <div class="nice-ai-attachments" id="nice-ai-attachments" hidden></div>
+          <div class="nice-ai-compare-bar" id="nice-ai-compare-bar" hidden></div>
           <div class="nice-ai-input-row">
             <textarea class="nice-ai-input" id="nice-ai-input" placeholder="Ask NICE…" rows="1"></textarea>
           </div>
@@ -2781,6 +2985,10 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           <div class="nice-ai-toolbar">
             <button class="nice-ai-tool-btn" id="nice-ai-attach" title="Attach image, PDF, or text file" aria-label="Attach file">+</button>
             <div class="nice-ai-toolbar-right">
+              <button type="button" class="nice-ai-compare-btn" id="nice-ai-compare" aria-pressed="false" title="Compare models: send one question to several models" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="9.5" y="5" width="5" height="14" rx="1"/><rect x="16" y="5" width="5" height="14" rx="1"/></svg>
+                <span>Compare</span>
+              </button>
               <select class="nice-ai-model-select" id="nice-ai-model" title="Select model" data-allow-zoom>
                 <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
               </select>
@@ -2829,6 +3037,12 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Event delegation for action buttons + retry (survives re-renders)
     if (_monitorContent) {
       _monitorContent.addEventListener('click', (e) => {
+        // Compare → keep this answer
+        const pickBtn = e.target.closest('.monitor-compare-pick');
+        if (pickBtn) {
+          _pickCompareAnswer(Number(pickBtn.dataset.msg), Number(pickBtn.dataset.answer));
+          return;
+        }
         // Action buttons → navigate
         const actionBtn = e.target.closest('.monitor-action-btn');
         if (actionBtn && actionBtn.dataset.route) {
@@ -2908,6 +3122,18 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Model select change → guard against switching to a non-vision model
     // while images are staged.
     _panel.querySelector('#nice-ai-model')?.addEventListener('change', _onModelSelectChange);
+    _panel.querySelector('#nice-ai-compare')?.addEventListener('click', () => _setCompare(!_compareOn));
+    _panel.querySelector('#nice-ai-compare-bar')?.addEventListener('click', (e) => {
+      const rm = e.target.closest('.nice-ai-compare-remove');
+      if (!rm || _compareModels.length <= 2) return;
+      _compareModels = _compareModels.filter(id => id !== rm.dataset.model);
+      _renderCompareBar();
+    });
+    _panel.querySelector('#nice-ai-compare-bar')?.addEventListener('change', (e) => {
+      if (e.target.id !== 'nice-ai-compare-add' || !e.target.value) return;
+      if (_compareModels.length < COMPARE_MAX) _compareModels.push(e.target.value);
+      _renderCompareBar();
+    });
 
     // Textarea auto-resize + keyboard + @mention
     const textarea = _panel.querySelector('#nice-ai-input');
@@ -3406,7 +3632,8 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // often lands after this panel's init() has already built the
     // dropdown from the initial (free-only) enabled_models state.
     if (typeof State !== 'undefined' && State.on) {
-      State.on('enabled_models', () => _populateModelDropdown());
+      State.on('enabled_models', () => { _populateModelDropdown(); _renderCompareBar(); });
+      State.on('token_balance', () => _renderCompareBar());
     }
     // Theme voice: stop playback on theme change, sync mute button + reactor.
     // Skip the stop for themes that ship a `voice.intro` — Theme.set fires
@@ -3643,6 +3870,7 @@ The user's code runs in a browser preview. Generate production-quality code.`;
 
   function syncRoute() {
     _updateRouteContext();
+    _renderCompareBar();
     const path = (location.hash || '#/').replace('#', '') || '/';
     // Reset manual flag when navigating to a different route
     if (path !== _lastSyncPath) { _manualShow = false; _lastSyncPath = path; }
@@ -3717,5 +3945,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     else _hideMonitor();
   }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel };
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCandidates, _compareCardHTML, _setCompare };
 })();

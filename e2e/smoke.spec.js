@@ -237,6 +237,20 @@ test.describe('Dashboard', () => {
     expect(errors.length).toBe(0);
   });
 
+  test('chat offers Compare and explains what it needs', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/chat', 'Chat');
+    const toggle = page.locator('#nice-ai-compare');
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    // A new visitor runs only the free model, so the strip says what Compare needs.
+    await expect(page.locator('#nice-ai-compare-bar')).toBeVisible();
+    await expect(page.locator('.nice-ai-compare-note')).toContainText('Compare needs two models');
+    await navigateTo(page, '#/crew', 'Crew');
+    await expect(toggle).toBeHidden();
+  });
+
   test('chat view renders greeting', async ({ page }) => {
     await waitForApp(page);
     await navigateTo(page, '#/chat', 'Chat');
