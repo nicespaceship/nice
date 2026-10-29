@@ -931,66 +931,25 @@ const MissionDetailView = (() => {
       }).catch(() => {});
     });
 
-    // Approve mission (review → completed)
+    // Approve mission (review → completed, or past a non-terminal gate).
+    // The decision itself lives in MissionRunner.approveRun, shared with
+    // the crew view's approval bar.
     document.getElementById('md-approve')?.addEventListener('click', async (e) => {
-      // Non-terminal gate: approving advances the DAG instead of completing
-      // it. Resume runs the post-gate nodes (and may pause again at a later
-      // gate). Approval side effects wait for the final approval, when no
-      // gate remains.
-      if (_isResumableGate(mission) && typeof MissionRunner !== 'undefined' && MissionRunner.resumeDag) {
-        const btn = e.currentTarget;
-        if (btn) btn.disabled = true;
-        try { await MissionRunner.resumeDag(id); }
-        catch (err) { if (typeof Notify !== 'undefined') Notify.send({ title: 'Resume failed', message: err?.message || 'Could not continue the mission.', type: 'error' }); }
-        finally { if (btn) btn.disabled = false; }
-        _loadMission(el, id);
-        return;
+      const btn = e.currentTarget;
+      if (btn) btn.disabled = true;
+      let result = null;
+      try { result = await MissionRunner.approveRun({ ...mission, id }); }
+      catch (err) { if (typeof Notify !== 'undefined') Notify.send({ title: 'Resume failed', message: err?.message || 'Could not continue the mission.', type: 'error' }); }
+      finally { if (btn) btn.disabled = false; }
+      if (result && !result.resumed && typeof Notify !== 'undefined') {
+        Notify.send({ title: `${_N()} Approved`, message: `Content approved and ${_Nl()} completed!`, type: 'success' });
       }
-      const now = new Date().toISOString();
-      // Apply approval side effects at most once per mission, and only if
-      // the approval actually persisted. The runner resets approval_status to
-      // 'draft' on every re-run, so a metadata flag (which the runner merges
-      // forward, never clears) is what makes approve→retry→approve
-      // idempotent; the persist gate skips them on a transient write failure.
-      // The flag keeps its legacy `xp_awarded` name so runs approved before
-      // XP was removed stay idempotent.
-      const alreadyAwarded = !!(mission.metadata && mission.metadata.xp_awarded);
-      let persisted = false;
-      try {
-        if (typeof SB !== 'undefined' && SB.client) {
-          await SB.client.from('mission_runs').update({
-            status: 'completed', approval_status: 'approved', reviewed_at: now,
-            metadata: Object.assign({}, mission.metadata || {}, { xp_awarded: true }),
-          }).eq('id', id);
-          persisted = true;
-        }
-      } catch {}
-      if (!alreadyAwarded && persisted) {
-        // Feedback loop — agent learns from approval
-        if (typeof AgentMemory !== 'undefined') {
-          const agentKey = mission.agent_id || mission.agent_name || 'unknown';
-          AgentMemory.learn(agentKey, mission.result, 'approved');
-          AgentMemory.addSuccess(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200) });
-        }
-      }
-      if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Approved`, message: `Content approved and ${_Nl()} completed!`, type: 'success' });
       _loadMission(el, id);
     });
 
     // Reject mission (review → failed)
     document.getElementById('md-reject')?.addEventListener('click', async () => {
-      const now = new Date().toISOString();
-      try {
-        if (typeof SB !== 'undefined' && SB.client) {
-          await SB.client.from('mission_runs').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', id);
-        }
-      } catch {}
-      // Feedback loop — agent learns from rejection
-      if (typeof AgentMemory !== 'undefined') {
-        const agentKey = mission.agent_id || mission.agent_name || 'unknown';
-        AgentMemory.learn(agentKey, mission.result, 'rejected');
-        AgentMemory.addFailure(agentKey, { task: mission.title, approach: (mission.result || '').substring(0, 200), reason: 'Rejected by user' });
-      }
+      await MissionRunner.rejectRun({ ...mission, id });
       if (typeof Notify !== 'undefined') Notify.send({ title: `${_N()} Rejected`, message: `Content rejected. You can retry the ${_Nl()}.`, type: 'system' });
       _loadMission(el, id);
     });
@@ -1185,16 +1144,6 @@ const MissionDetailView = (() => {
     const nodes = Array.isArray(plan.nodes) ? plan.nodes : [];
     if (nodes.length > 1) return true;
     return nodes.some(n => n && (n.type === 'approval_gate' || n.type === 'persona_dispatch'));
-  }
-
-  // A mission paused at a NON-terminal gate: approving it should resume the
-  // DAG (run the post-gate nodes) rather than complete the run. A terminal
-  // gate (no downstream edge) returns false, so approval completes as before.
-  function _isResumableGate(m) {
-    if (!m || !m.metadata || m.metadata.dag_status !== 'paused') return false;
-    const pausedAt = m.metadata.paused_at;
-    const edges = (m.plan_snapshot && m.plan_snapshot.edges) || [];
-    return !!pausedAt && edges.some(e => e.from === pausedAt);
   }
 
   function _nodeStatus(node, nodeResults, missionStatus) {
@@ -1408,7 +1357,6 @@ const MissionDetailView = (() => {
     destroy,
     // Exposed for unit tests only — DAG inspector pure functions.
     _isDagPlan,
-    _isResumableGate,
     _nodeStatus,
     _renderDagPanel,
   };

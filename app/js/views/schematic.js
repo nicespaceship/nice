@@ -964,101 +964,16 @@ const SchematicView = (() => {
     svgEl.innerHTML = paths + dots;
   }
 
-  // Derive a short capability label from the blueprint's tool list.
-  // Maps MCP tool IDs to human-readable provider names. Slot agents
-  // auto-created by the wizard (#512) carry config.capability_id instead
-  // of an explicit config.tools array — resolve through the umbrella
-  // blueprint so the schematic reflects what AgentExecutor._buildExecContext
-  // actually loads at runtime. Without this, every #512 slot agent
-  // rendered as "No live tools" even though the chat had full tool access.
-  function _capabilityLabel(bp) {
-    if (!bp) return null;
-    let tools = (bp.config && bp.config.tools) || [];
-    let umbrellaName = null;
-    if (bp.config && bp.config.capability_id && typeof Blueprints !== 'undefined') {
-      const capId = bp.config.capability_id;
-      // getCapability is strict (returns null for kind='character'); fall
-      // through to getAgent for the character-kind umbrellas that hold the
-      // real catalog (HubSpot Agent, GitHub Agent, etc.).
-      const cap = (Blueprints.getCapability && Blueprints.getCapability(capId))
-               || (Blueprints.getAgent && Blueprints.getAgent(capId))
-               || null;
-      if (cap) {
-        if (!tools.length && cap.config && Array.isArray(cap.config.tools)) {
-          tools = cap.config.tools;
-        }
-        if (cap.name) umbrellaName = String(cap.name).replace(/\s+agent$/i, '').trim() || null;
-      }
-    }
-    const t = tools[0] || '';
-    if (t.includes('hubspot'))                               return 'HubSpot';
-    if (t.includes('gmail') || t.includes('calendar') || t.includes('drive')) return 'Google Workspace';
-    if (t.includes('outlook') || t.includes('microsoft') || t.includes('sharepoint')) return 'Microsoft 365';
-    if (t.includes('slack'))                                 return 'Slack';
-    if (t.includes('linear'))                                return 'Linear';
-    if (t.includes('github'))                                return 'GitHub';
-    if (t.includes('notion'))                                return 'Notion';
-    if (t.includes('stripe'))                                return 'Stripe';
-    if (t.includes('generate-image') || t.includes('generate-video')) return 'Media';
-    if (t.includes('browser') || t.includes('web-search'))  return 'Web';
-    // Prefer the umbrella's brand name ("GitHub Agent" → "GitHub") over a
-    // generic type/role fallback — only reached when the prefix-matcher
-    // above doesn't recognise the first tool name.
-    if (umbrellaName) return umbrellaName;
-    if (!tools.length) return null;
-    return (bp.config && (bp.config.type || bp.config.role)) || null;
-  }
+  // Tool-family label for a crew member (SSOT in BlueprintUtils).
+  function _capabilityLabel(bp) { return BlueprintUtils.capabilityLabel(bp); }
 
-  // Map a raw slot label to the 15-role vocabulary.
-  // Strips naval/org-chart suffixes and normalises to the SaaS function name.
-  function _roleLabel(raw) {
-    if (!raw) return '';
-    const s = String(raw).trim()
-      .replace(/\s+(officer|specialist|lead|manager|director|chief|head|senior|junior)$/i, '')
-      .trim();
-    const lc = s.toLowerCase();
-    if (lc === 'captain' || lc === 'commander' || lc === 'admiral' || lc === 'co') return 'Captain';
-    if (lc.includes('comm') || lc.includes('message') || lc.includes('contact')) return 'Communications';
-    if (lc.includes('sales') || lc.includes('deal') || lc.includes('revenue') || lc.includes('tactical')) return 'Sales';
-    if (lc.includes('market') || lc.includes('brand') || lc.includes('content') || lc.includes('growth')) return 'Marketing';
-    if (lc.includes('engineer') || lc.includes('dev') || lc.includes('tech') || lc.includes('code')) return 'Engineering';
-    if (lc.includes('ops') || lc.includes('operat') || lc.includes('project')) return 'Operations';
-    if (lc.includes('product') || lc.includes('roadmap')) return 'Product';
-    if (lc.includes('success') || lc.includes('support') || lc.includes('customer')) return 'Customer Success';
-    if (lc.includes('finance') || lc.includes('billing') || lc.includes('account')) return 'Finance';
-    if (lc.includes('analyt') || lc.includes('data') || lc.includes('insight') || lc.includes('intel')) return 'Analytics';
-    if (lc.includes('design') || lc.includes('ux') || lc.includes('creative')) return 'Design';
-    if (lc.includes('legal') || lc.includes('compliance') || lc.includes('contract')) return 'Legal';
-    if (lc.includes('security') || lc.includes('infosec') || lc.includes('audit')) return 'Security';
-    if (lc.includes('people') || lc.includes('hr') || lc.includes('hiri') || lc.includes('recruit')) return 'People';
-    if (lc.includes('research') || lc.includes('intel') || lc.includes('recon')) return 'Research';
-    // Preserve the original label if it doesn't map cleanly
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }
+  function _roleLabel(raw) { return BlueprintUtils.roleLabel(raw); }
 
-  // Executive title → position. "Navigator · USS Enterprise" → "Navigator".
-  // The ship name is redundant in the schematic (you're viewing that ship),
-  // so the overline shows just the position; the full title rides along as a
-  // hover tooltip. Passthrough when there's no separator.
-  function _positionLabel(title) {
-    if (!title) return '';
-    return String(title).split('·')[0].trim();
-  }
+  function _positionLabel(title) { return BlueprintUtils.positionLabel(title); }
 
-  // True for the synthetic "Agent N" / "Slot N" labels getSlotTemplate emits
-  // for dynamic ships with no crew defs. Themed + business ships always carry
-  // a real crew label (a persona or job title) and must win over the assigned
-  // umbrella agent's name; generic ships fall back to the assignee.
-  function _isGenericSlotLabel(l) {
-    return !l || /^(agent|slot)\s*\d+$/i.test(String(l).trim());
-  }
+  function _isGenericSlotLabel(l) { return BlueprintUtils.isGenericSlotLabel(l); }
 
-  // The crew identity a slot displays: its designated label (persona / job
-  // title) when meaningful, else the assigned agent's name.
-  function _slotIdentity(slot, bp) {
-    if (slot && !_isGenericSlotLabel(slot.label)) return slot.label;
-    return bp ? (bp.name || 'Agent') : null;
-  }
+  function _slotIdentity(slot, bp) { return BlueprintUtils.crewIdentity(slot, bp); }
 
   // Renders the three-layer slot card used on the desktop schematic.
   // Character / Role / Capability — one panel per slot, replacing the TCG mini-card.
@@ -1113,100 +1028,15 @@ const SchematicView = (() => {
 
   /* ── Helpers ── */
 
-  function _normalizeShipId(id) {
-    return id ? String(id) : null;
-  }
+  // The ship on screen (SSOT: Blueprints.getCurrentShipId).
+  function _getShipId() { return (typeof Blueprints !== 'undefined') ? Blueprints.getCurrentShipId() : null; }
 
-  function _getShipId() {
-    // Collect every ship the user could legitimately be pointing at: activated
-    // ships from Blueprints plus custom ships from State (Crew Designer).
-    const activated = (typeof Blueprints !== 'undefined') ? Blueprints.getActivatedShips() : [];
-    const custom = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
-    const seen = new Set();
-    const available = [];
-    activated.forEach(s => { if (s && s.id && !seen.has(s.id)) { seen.add(s.id); available.push(s); } });
-    custom.forEach(s => { if (s && s.id && !seen.has(s.id)) { seen.add(s.id); available.push(s); } });
-
-    // Honour localStorage ONLY if the stored ID still matches a real ship —
-    // otherwise it's stale (old session, deleted ship, ID-scheme migration)
-    // and silently falls through. Self-heal by overwriting with the
-    // first-available ship so subsequent reads are consistent.
-    const stored = localStorage.getItem(Utils.KEYS.mcShip);
-    if (stored && seen.has(stored)) return _normalizeShipId(stored);
-
-    if (!available.length) return null;
-    const fallbackId = _normalizeShipId(available[0].id);
-    if (stored !== fallbackId) {
-      try {
-        localStorage.setItem(Utils.KEYS.mcShip, fallbackId);
-        // Same-tab listeners (prompt-panel route resync) only fire if we
-        // dispatch the event manually — setItem doesn't trigger 'storage'
-        // for the originating tab.
-        window.dispatchEvent(new StorageEvent('storage', { key: Utils.KEYS.mcShip, newValue: fallbackId }));
-      } catch {}
-    }
-    return fallbackId;
-  }
-
-  function _getSlotMap() {
-    const shipId = _getShipId();
-    if (!shipId) return {};
-    if (typeof Blueprints !== 'undefined' && Blueprints.getShipState) {
-      const saved = Blueprints.getShipState(shipId);
-      if (saved && saved.slot_assignments && Object.keys(saved.slot_assignments).length) {
-        return { ...saved.slot_assignments };
-      }
-    }
-    // Check custom ships from State (Crew Designer)
-    const customShips = (typeof State !== 'undefined' ? State.get('spaceships') : null) || [];
-    const customShip = customShips.find(s => s.id === shipId);
-    if (customShip && customShip.slot_assignments && Object.keys(customShip.slot_assignments).length) {
-      return { ...customShip.slot_assignments };
-    }
-    const rawId = shipId.replace(/^bp-/, '');
-    const bp = (typeof Blueprints !== 'undefined') ? (Blueprints.getSpaceship(rawId) || Blueprints.getSpaceship(shipId)) : null;
-    if (bp && bp.crew && bp.crew.length) {
-      const map = {};
-      bp.crew.forEach((c, i) => { map[String(i)] = '__new__' + (c.label || c.name || 'Agent ' + (i + 1)); });
-      return map;
-    }
-    return {};
-  }
+  function _getSlotMap() { return Blueprints.getShipSlotMap(_getShipId()); }
 
   function _resolveBp(bpId) {
     if (!bpId) return null;
-    let bp = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === bpId) : null;
-    if (!bp && bpId.startsWith('__new__')) {
-      const agentName = bpId.replace('__new__', '');
-      // Look up rarity from the ship's crew data
-      let crewRarity = 'Common';
-      const shipId = _getShipId();
-      if (shipId && typeof Blueprints !== 'undefined') {
-        const rawId = shipId.replace(/^bp-/, '');
-        const ship = Blueprints.getSpaceship(rawId) || Blueprints.getSpaceship(shipId);
-        if (ship) {
-          const crewMember = (ship.crew || []).find(c => c.label === agentName);
-          if (crewMember?.rarity) crewRarity = crewMember.rarity;
-        }
-      }
-      bp = { id: bpId, name: agentName, category: 'Agent', rarity: crewRarity };
-    }
-    if (!bp && typeof Blueprints !== 'undefined') bp = Blueprints.getAgent(bpId);
-    if (!bp) {
-      const agent = (typeof State !== 'undefined' && State.get('agents') || []).find(r => r.id === bpId);
-      if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || agent.category, rarity: agent.rarity || 'Common' };
-    }
-    // Guest-only localStorage fallback. Signed-in users' agents are all
-    // in State.agents (mirrored from user_agents); reading the cache
-    // would just return stale ghosts.
-    if (!bp && !(typeof State !== 'undefined' && State.get('user') && State.get('user').id)) {
-      try {
-        const stored = JSON.parse(localStorage.getItem(Utils.KEYS.customAgents) || '[]');
-        const agent = stored.find(a => a.id === bpId);
-        if (agent) bp = { id: agent.id, name: agent.name, category: agent.role || 'Agent', rarity: 'Common' };
-      } catch {}
-    }
-    return bp;
+    const seed = (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === bpId) : null;
+    return seed || Blueprints.resolveCrewAgent(bpId, _getShipId());
   }
 
   function _getBpRarity(bp) {

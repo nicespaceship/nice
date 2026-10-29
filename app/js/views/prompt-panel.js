@@ -2144,8 +2144,25 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     }
   }
 
+  /* ── Send straight to one agent ──
+     The crew view's cards send through here. Same agent-with-tools path as
+     an @mention (AgentExecutor.converse, ShipLog persistence, the approval
+     monitor); the chosen agent wins over any @mention or route agent for
+     this one send. */
+  let _forcedAgent = null;
+  function sendToAgent(agentBp, text) {
+    if (!agentBp || !text || _sending) return false;
+    show();
+    prefill(text);
+    _forcedAgent = agentBp;
+    _send();
+    return true;
+  }
+
   /* ── Send message ── */
   function _send() {
+    const forcedAgent = _forcedAgent;
+    _forcedAgent = null;
     const input = _panel?.querySelector('#nice-ai-input');
     if (!input || _sending) return;
     const text = input.value.trim();
@@ -2258,13 +2275,16 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     // Show thinking on monitor
     _addMonitorThinking();
 
-    // Agent context — @mention takes priority, then route-scoped agent
+    // Agent context — a card's direct send wins, then an @mention, then the
+    // route-scoped agent
     const bpSelect = _panel?.querySelector('#nice-ai-bp-select');
     const bpId = bpSelect?.value;
-    const mentioned = _parseMention(text);
+    const mentioned = forcedAgent ? null : _parseMention(text);
 
     let agentBp = null;
-    if (mentioned) {
+    if (forcedAgent) {
+      agentBp = forcedAgent;
+    } else if (mentioned) {
       agentBp = (typeof Blueprints !== 'undefined') ? Blueprints.getAgent(mentioned.id)
         : (typeof BlueprintsView !== 'undefined' && BlueprintsView.SEED) ? BlueprintsView.SEED.find(b => b.id === mentioned.id) : null;
     } else if (_routeAgent) {
@@ -3695,5 +3715,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     else _hideMonitor();
   }
 
-  return { init, destroy, toggle, prefill, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel };
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel };
 })();

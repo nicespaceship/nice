@@ -7,7 +7,8 @@ import AxeBuilder from '@axe-core/playwright';
  * Routes:
  *   #/           → HomeView ('Home') — what needs you, your spaceships
  *   #/chat       → ChatView ('Chat') — standalone chat, no crew
- *   #/outbox, #/library, #/crew → BlueprintsView on its Outbox / Blueprints / Schematic tab
+ *   #/crew       → CrewView ('Crew') — one spaceship's crew as cards, recent runs, approvals
+ *   #/outbox, #/library → BlueprintsView on its Outbox / Blueprints tab
  *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Outbox | Operations | Log
  *   #/security   → SecurityView ('Security') — Security | Integrations | Wallet
  *   #/settings   → SettingsView ('Settings')
@@ -212,6 +213,28 @@ test.describe('Dashboard', () => {
     // No spaceship yet: Home offers the Library and both ways to start.
     await expect(page.locator('.home-empty a[href="#/library?tab=spaceship"]')).toBeVisible();
     await expect(page.locator('.home-start[href="#/chat"]')).toBeVisible();
+  });
+
+  test('crew view points a new visitor to a spaceship', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/crew', 'Crew');
+    await expect(page.locator('.crew-empty a[href="#/library?tab=spaceship"]')).toBeVisible();
+  });
+
+  test('crew view shows a card per crew member once a spaceship is active', async ({ page }) => {
+    await waitForApp(page);
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.waitForFunction(() => (Blueprints.listSpaceships() || []).some(s => s.name === 'Bakery'), null, { timeout: 15000 });
+    await page.evaluate(() => {
+      const bakery = Blueprints.listSpaceships().find(s => s.name === 'Bakery');
+      Blueprints.activateShip(bakery.id);
+    });
+    await navigateTo(page, '#/crew', 'Crew');
+    await expect(page.locator('.crew-card:not(.crew-card-open)').first()).toBeVisible();
+    expect(await page.locator('.crew-card:not(.crew-card-open)').count()).toBeGreaterThan(1);
+    await expect(page.locator('.crew-runs')).toBeVisible();
+    expect(errors.length).toBe(0);
   });
 
   test('chat view renders greeting', async ({ page }) => {

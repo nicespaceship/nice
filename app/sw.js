@@ -40,6 +40,7 @@ const PRECACHE_ASSETS = [
   // View modules
   '/app/js/views/home.js',
   '/app/js/views/chat.js',
+  '/app/js/views/crew.js',
   '/app/js/views/profile.js',
   '/app/js/views/agents.js',
   '/app/js/views/agent-builder.js',

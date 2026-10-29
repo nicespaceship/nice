@@ -8,6 +8,12 @@ describe('Utils.initials', () => {
     expect(Utils.initials('battlestar galactica crew')).toBe('BG');
   });
 
+  it('skips words that start with a symbol', () => {
+    expect(Utils.initials('Orders & Payments')).toBe('OP');
+    expect(Utils.initials('R&D Lab')).toBe('RL');
+    expect(Utils.initials('— Draft')).toBe('D');
+  });
+
   it('uses one letter for a one-word name', () => {
     expect(Utils.initials('Galley')).toBe('G');
   });

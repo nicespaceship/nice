@@ -69,9 +69,11 @@ const Utils = (() => {
   }
 
   /** One or two capital letters for a name mark. "Sunrise Bakery" → "SB",
-      "The Matrix" → "M" (a leading "The" is skipped), "" → "?". */
+      "Orders & Payments" → "OP" (words without a leading letter or digit are
+      skipped), "The Matrix" → "M" (a leading "The" is skipped), "" → "?". */
   function initials(name) {
-    const words = String(name || '').replace(/^the\s+/i, '').trim().split(/\s+/).filter(Boolean);
+    const words = String(name || '').replace(/^the\s+/i, '').trim().split(/\s+/)
+      .filter(w => /^[\p{L}\p{N}]/u.test(w));
     if (!words.length) return '?';
     return (words[0][0] + (words[1] ? words[1][0] : '')).toUpperCase();
   }

@@ -336,5 +336,105 @@ const BlueprintUtils = (() => {
     return _MODEL_SHORT_NAMES[id] || humanizeModel(id);
   }
 
-  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, calcAgentRarity, contrastText, humanizeModel, humanizeModelShort, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, MAX_SHIP_SLOTS, SHIP_CLASSES };
+  /* ── Crew labels (shared by the crew view and the Schematic) ── */
+
+  // True for the synthetic "Agent N" / "Slot N" labels getSlotTemplate emits
+  // for dynamic ships with no crew defs. Themed + business ships always carry
+  // a real crew label (a persona or job title) and must win over the assigned
+  // umbrella agent's name; generic ships fall back to the assignee.
+  function isGenericSlotLabel(l) {
+    return !l || /^(agent|slot)\s*\d+$/i.test(String(l).trim());
+  }
+
+  // The crew identity a slot displays: its designated label (persona / job
+  // title) when meaningful, else the assigned agent's name.
+  function crewIdentity(slot, agent) {
+    if (slot && !isGenericSlotLabel(slot.label)) return slot.label;
+    return agent ? (agent.name || 'Agent') : null;
+  }
+
+  // Executive title → position. "Navigator · USS Enterprise" → "Navigator".
+  // The ship name is redundant when you're viewing that ship.
+  function positionLabel(title) {
+    if (!title) return '';
+    return String(title).split('·')[0].trim();
+  }
+
+  // Map a raw slot label to the role vocabulary. Strips naval/org-chart
+  // suffixes and normalises to the business-function name.
+  function roleLabel(raw) {
+    if (!raw) return '';
+    const s = String(raw).trim()
+      .replace(/\s+(officer|specialist|lead|manager|director|chief|head|senior|junior)$/i, '')
+      .trim();
+    const lc = s.toLowerCase();
+    if (lc === 'captain' || lc === 'commander' || lc === 'admiral' || lc === 'co') return 'Captain';
+    if (lc.includes('comm') || lc.includes('message') || lc.includes('contact')) return 'Communications';
+    if (lc.includes('sales') || lc.includes('deal') || lc.includes('revenue') || lc.includes('tactical')) return 'Sales';
+    if (lc.includes('market') || lc.includes('brand') || lc.includes('content') || lc.includes('growth')) return 'Marketing';
+    if (lc.includes('engineer') || lc.includes('dev') || lc.includes('tech') || lc.includes('code')) return 'Engineering';
+    if (lc.includes('ops') || lc.includes('operat') || lc.includes('project')) return 'Operations';
+    if (lc.includes('product') || lc.includes('roadmap')) return 'Product';
+    if (lc.includes('success') || lc.includes('support') || lc.includes('customer')) return 'Customer Success';
+    if (lc.includes('finance') || lc.includes('billing') || lc.includes('account')) return 'Finance';
+    if (lc.includes('analyt') || lc.includes('data') || lc.includes('insight') || lc.includes('intel')) return 'Analytics';
+    if (lc.includes('design') || lc.includes('ux') || lc.includes('creative')) return 'Design';
+    if (lc.includes('legal') || lc.includes('compliance') || lc.includes('contract')) return 'Legal';
+    if (lc.includes('security') || lc.includes('infosec') || lc.includes('audit')) return 'Security';
+    if (lc.includes('people') || lc.includes('hr') || lc.includes('hiri') || lc.includes('recruit')) return 'People';
+    if (lc.includes('research') || lc.includes('intel') || lc.includes('recon')) return 'Research';
+    // Preserve the original label if it doesn't map cleanly
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // The line a crew member shows under its name: the position from the
+  // slot title when there is one, else the role.
+  function crewRoleLabel(slot) {
+    if (!slot) return '';
+    return positionLabel(slot.title) || roleLabel(slot.role || slot.label || '');
+  }
+
+  // Friendly name for the tool family an agent works through ("Google
+  // Workspace", "HubSpot", ...). Agents bound to a capability have no
+  // config.tools of their own, so resolve through the umbrella blueprint to
+  // match what AgentExecutor loads at runtime.
+  function capabilityLabel(bp) {
+    if (!bp) return null;
+    let tools = (bp.config && bp.config.tools) || [];
+    let umbrellaName = null;
+    if (bp.config && bp.config.capability_id && typeof Blueprints !== 'undefined') {
+      const capId = bp.config.capability_id;
+      // getCapability is strict (returns null for kind='character'); fall
+      // through to getAgent for the character-kind umbrellas that hold the
+      // real catalog (HubSpot Agent, GitHub Agent, etc.).
+      const cap = (Blueprints.getCapability && Blueprints.getCapability(capId))
+               || (Blueprints.getAgent && Blueprints.getAgent(capId))
+               || null;
+      if (cap) {
+        if (!tools.length && cap.config && Array.isArray(cap.config.tools)) {
+          tools = cap.config.tools;
+        }
+        if (cap.name) umbrellaName = String(cap.name).replace(/\s+agent$/i, '').trim() || null;
+      }
+    }
+    const t = tools[0] || '';
+    if (t.includes('hubspot'))                               return 'HubSpot';
+    if (t.includes('gmail') || t.includes('calendar') || t.includes('drive')) return 'Google Workspace';
+    if (t.includes('outlook') || t.includes('microsoft') || t.includes('sharepoint')) return 'Microsoft 365';
+    if (t.includes('slack'))                                 return 'Slack';
+    if (t.includes('linear'))                                return 'Linear';
+    if (t.includes('github'))                                return 'GitHub';
+    if (t.includes('notion'))                                return 'Notion';
+    if (t.includes('stripe'))                                return 'Stripe';
+    if (t.includes('generate-image') || t.includes('generate-video')) return 'Media';
+    if (t.includes('browser') || t.includes('web-search'))  return 'Web';
+    // Prefer the umbrella's brand name ("GitHub Agent" → "GitHub") over a
+    // generic type/role fallback — only reached when the prefix-matcher
+    // above doesn't recognise the first tool name.
+    if (umbrellaName) return umbrellaName;
+    if (!tools.length) return null;
+    return (bp.config && (bp.config.type || bp.config.role)) || null;
+  }
+
+  return { getCrewDefs, getSlotCount, getFilledCount, getSlotTemplate, getClassId, getRarity, getRarityInfo, getRarityColor, calcAgentRarity, contrastText, humanizeModel, humanizeModelShort, isGenericSlotLabel, crewIdentity, positionLabel, roleLabel, crewRoleLabel, capabilityLabel, RARITY_COLORS, CATEGORY_COLORS, STATUS_COLORS, SLOT_LABELS, MAX_SHIP_SLOTS, SHIP_CLASSES };
 })();

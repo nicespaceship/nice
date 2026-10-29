@@ -1386,3 +1386,73 @@ describe('MissionRunner — DAG dispatch (Sprint 3)', () => {
     expect(row.approval_status).toBe('draft');
   });
 });
+
+describe('MissionRunner — review decisions', () => {
+  const updates = [];
+  let savedClient, savedMemory;
+  beforeEach(() => {
+    updates.length = 0;
+    savedClient = globalThis.SB.client;
+    savedMemory = globalThis.AgentMemory;
+    globalThis.SB.client = {
+      from: (table) => ({ update: (data) => ({ eq: async (col, val) => { updates.push({ table, data, col, val }); } }) }),
+    };
+    globalThis.AgentMemory = { learn: vi.fn(), addSuccess: vi.fn(), addFailure: vi.fn() };
+  });
+  afterEach(() => {
+    globalThis.SB.client = savedClient;
+    globalThis.AgentMemory = savedMemory;
+  });
+
+  describe('isResumableGate', () => {
+    it('true for a paused gate that has a downstream edge', () => {
+      const m = { metadata: { dag_status: 'paused', paused_at: 'g' }, plan_snapshot: { edges: [{ from: 'g', to: 'send' }] } };
+      expect(MissionRunner.isResumableGate(m)).toBe(true);
+    });
+    it('false for a terminal gate (no downstream edge)', () => {
+      const m = { metadata: { dag_status: 'paused', paused_at: 'g' }, plan_snapshot: { edges: [{ from: 'a', to: 'g' }] } };
+      expect(MissionRunner.isResumableGate(m)).toBe(false);
+    });
+    it('false when the run is not paused', () => {
+      const m = { metadata: { dag_status: 'completed', paused_at: 'g' }, plan_snapshot: { edges: [{ from: 'g', to: 'x' }] } };
+      expect(MissionRunner.isResumableGate(m)).toBe(false);
+    });
+    it('false when metadata or plan_snapshot is missing', () => {
+      expect(MissionRunner.isResumableGate({})).toBe(false);
+      expect(MissionRunner.isResumableGate(null)).toBe(false);
+      expect(MissionRunner.isResumableGate({ metadata: { dag_status: 'paused', paused_at: 'g' } })).toBe(false);
+    });
+  });
+
+  it('approveRun completes and approves the run, and the agent learns once', async () => {
+    const run = { id: 'r1', agent_id: 'a1', title: 'Roundup', result: 'Drafted 14 emails', metadata: { source: 'x' } };
+    const out = await MissionRunner.approveRun(run);
+    expect(out).toEqual({ resumed: false, persisted: true });
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toMatchObject({ table: 'mission_runs', col: 'id', val: 'r1' });
+    expect(updates[0].data).toMatchObject({ status: 'completed', approval_status: 'approved', metadata: { source: 'x', xp_awarded: true } });
+    expect(AgentMemory.learn).toHaveBeenCalledWith('a1', 'Drafted 14 emails', 'approved');
+    expect(AgentMemory.addSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('approveRun skips the learning side effects on a re-approval', async () => {
+    await MissionRunner.approveRun({ id: 'r2', agent_id: 'a1', metadata: { xp_awarded: true } });
+    expect(updates).toHaveLength(1);
+    expect(AgentMemory.learn).not.toHaveBeenCalled();
+  });
+
+  it('approveRun skips the learning side effects when the write fails', async () => {
+    globalThis.SB.client = { from: () => ({ update: () => ({ eq: async () => { throw new Error('offline'); } }) }) };
+    const out = await MissionRunner.approveRun({ id: 'r3', agent_id: 'a1' });
+    expect(out).toEqual({ resumed: false, persisted: false });
+    expect(AgentMemory.learn).not.toHaveBeenCalled();
+  });
+
+  it('rejectRun fails and rejects the run, and the agent learns from it', async () => {
+    const out = await MissionRunner.rejectRun({ id: 'r4', agent_name: 'Head Baker', title: 'Roundup', result: 'x' });
+    expect(out).toEqual({ persisted: true });
+    expect(updates[0].data).toMatchObject({ status: 'failed', approval_status: 'rejected' });
+    expect(AgentMemory.learn).toHaveBeenCalledWith('Head Baker', 'x', 'rejected');
+    expect(AgentMemory.addFailure).toHaveBeenCalledTimes(1);
+  });
+});

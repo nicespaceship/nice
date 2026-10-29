@@ -1950,6 +1950,155 @@ html:not([data-theme]) .app-main,
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   CREW (#/crew) — one spaceship's crew as cards, framed in the color
+   of each agent's model provider (--crew-c, set per card)
+───────────────────────────────────────────────────────────────── */
+.crew-wrap { max-width:1280px; margin:0 auto; padding:28px 24px 48px; display:flex; flex-direction:column; gap:20px; }
+.crew-head { display:flex; flex-wrap:wrap; align-items:center; gap:12px 16px; }
+.crew-ship-mark {
+  display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:52px; height:52px; border-radius:50%; background:var(--accent); color:var(--bg);
+  font-family:var(--font-b); font-size:var(--text-md); font-weight:var(--fw-bold);
+}
+.crew-head-text { flex:1 1 240px; min-width:0; }
+.crew-head-text h1 {
+  margin:0; font-family:var(--font-h); font-size:var(--text-xl); font-weight:var(--fw-bold);
+  line-height:var(--lh-snug); color:var(--text); text-wrap:balance;
+}
+.crew-head-text p { margin:2px 0 0; font-size:var(--text-sm); color:var(--text-muted); }
+.crew-head-text .crew-eyebrow {
+  margin:0 0 2px; font-size:var(--text-xs); font-weight:var(--fw-bold);
+  letter-spacing:var(--tracking-caps); text-transform:uppercase;
+}
+.crew-head-acts { display:flex; flex-wrap:wrap; gap:8px; }
+
+/* Approval bar: one row per run waiting for review */
+#crew-review:empty { display:none; }
+#crew-review { display:flex; flex-direction:column; gap:8px; }
+.crew-review {
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:12px 14px;
+  border:1px solid var(--color-warning); border-radius:var(--radius);
+  background:color-mix(in srgb, var(--color-warning) 10%, var(--surface));
+}
+.crew-review-dot { width:10px; height:10px; border-radius:50%; background:var(--color-warning); flex-shrink:0; }
+.crew-review p { margin:0; flex:1 1 220px; min-width:0; font-size:var(--text-sm); color:var(--text); }
+.crew-review-acts { display:flex; flex-wrap:wrap; gap:8px; }
+
+.crew-layout { display:grid; gap:18px; grid-template-columns:minmax(0, 1fr) 300px; align-items:start; }
+.crew-cards { display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); }
+
+.crew-card {
+  --crew-c:var(--border);
+  display:flex; flex-direction:column; min-width:0;
+  border:3px solid var(--crew-c); border-radius:calc(var(--radius) + 4px);
+  background:var(--panel-bg, var(--surface)); overflow:hidden;
+}
+.crew-card-top {
+  display:flex; align-items:center; gap:10px; padding:12px 12px 10px;
+  background:color-mix(in srgb, var(--crew-c) 14%, transparent);
+}
+.crew-avatar {
+  display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  /* Provider colors are mid-tones; dark ink clears 4.5:1 on all of them. */
+  width:36px; height:36px; border-radius:50%; background:var(--crew-c); color:#0b1220;
+  font-family:var(--font-b); font-size:var(--text-xs); font-weight:var(--fw-bold);
+}
+.crew-card-names { display:flex; flex-direction:column; min-width:0; }
+.crew-card-names h3 {
+  margin:0; font-family:var(--font-h); font-size:var(--text-base); font-weight:var(--fw-bold);
+  line-height:var(--lh-snug); color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.crew-card-names span { font-size:var(--text-xs); color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.crew-card-meta { display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px 0; }
+.crew-model,
+.crew-tools {
+  display:inline-flex; align-items:center; gap:6px; max-width:100%;
+  padding:2px 9px; border-radius:999px; border:1px solid var(--border);
+  font-size:var(--text-xs); color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.crew-model i { width:8px; height:8px; border-radius:50%; background:var(--crew-c); flex-shrink:0; }
+.crew-status { display:flex; align-items:center; gap:7px; padding:10px 12px 0; font-size:var(--text-xs); font-weight:var(--fw-medium); color:var(--text-muted); }
+.crew-status-dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim, var(--text-muted)); flex-shrink:0; }
+.crew-status[data-s="active"] { color:var(--accent); }
+.crew-status[data-s="active"] .crew-status-dot { background:var(--accent); animation:crew-pulse 1s ease-in-out infinite; }
+.crew-status[data-s="recent"] .crew-status-dot { background:var(--color-success); }
+.crew-status[data-s="error"] { color:var(--color-error); }
+.crew-status[data-s="error"] .crew-status-dot { background:var(--color-error); }
+@keyframes crew-pulse { 50% { opacity:.3; } }
+.crew-log {
+  display:flex; flex-direction:column; gap:6px; margin:10px 12px 0; padding:8px 10px;
+  min-height:64px; border-radius:var(--radius); background:var(--surface2);
+  font-size:var(--text-xs); line-height:var(--lh-base); color:var(--text);
+}
+.crew-msg { margin:0; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.crew-msg b { display:block; font-size:var(--text-2xs); font-weight:var(--fw-bold); color:var(--text-muted); }
+.crew-msg-you b { color:var(--accent); }
+.crew-log-empty { margin:auto 0; color:var(--text-muted); }
+.crew-compose {
+  display:flex; align-items:center; gap:4px; margin:10px 12px 12px; padding-left:10px;
+  border:1px solid var(--border); border-radius:var(--radius); background:var(--bg);
+}
+.crew-compose:focus-within { border-color:var(--accent); }
+.crew-compose input {
+  flex:1; min-width:0; padding:8px 0; border:0; background:transparent; outline:none;
+  font-family:var(--font-b); font-size:var(--text-sm); color:var(--text);
+}
+.crew-send {
+  display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px;
+  border:0; background:transparent; color:var(--text-muted); cursor:pointer; border-radius:var(--radius);
+}
+.crew-send:hover { color:var(--accent); }
+.crew-card-open {
+  align-items:center; justify-content:center; gap:4px; min-height:180px; padding:16px;
+  border-style:dashed; border-color:var(--border); background:transparent; text-align:center; color:var(--text-muted);
+}
+.crew-card-open b { font-size:var(--text-sm); color:var(--text); }
+.crew-card-open span { font-size:var(--text-xs); }
+.crew-open-mark { font-size:var(--text-xl); line-height:1; }
+
+/* Recent runs */
+.crew-runs { display:flex; flex-direction:column; gap:10px; position:sticky; top:12px; }
+.crew-runs h2 { margin:0; font-family:var(--font-h); font-size:var(--text-md); font-weight:var(--fw-bold); color:var(--text); }
+.crew-runs-empty { margin:0; font-size:var(--text-sm); color:var(--text-muted); line-height:var(--lh-base); }
+.crew-runlist { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
+.crew-run {
+  display:flex; flex-direction:column; gap:2px; padding:9px 0; border-top:1px solid var(--border);
+  color:var(--text); text-decoration:none;
+}
+.crew-runlist li:first-child .crew-run { border-top:0; }
+.crew-run:hover .crew-run-title { color:var(--accent); }
+.crew-run-title { font-size:var(--text-sm); font-weight:var(--fw-medium); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.crew-run-meta { display:flex; justify-content:space-between; gap:8px; font-size:var(--text-xs); color:var(--text-muted); }
+.crew-run-state[data-s="review"] { color:var(--color-warning); font-weight:var(--fw-bold); }
+.crew-run-state[data-s="failed"] { color:var(--color-error); }
+.crew-run-state[data-s="running"] { color:var(--accent); }
+
+.crew-empty { display:flex; flex-direction:column; align-items:flex-start; gap:10px; max-width:640px; }
+.crew-empty h1 { margin:0; font-family:var(--font-h); font-size:var(--text-xl); color:var(--text); }
+.crew-empty p { margin:0; font-size:var(--text-base); line-height:var(--lh-base); color:var(--text-muted); }
+.crew-empty-acts { display:flex; flex-wrap:wrap; gap:8px; }
+
+@media (max-width:1100px) {
+  .crew-layout { grid-template-columns:minmax(0, 1fr); }
+  .crew-runs { position:static; }
+}
+@media (max-width:640px) {
+  .crew-wrap { padding:18px 6px 32px; gap:16px; }
+  .crew-head-text h1 { font-size:var(--text-lg); }
+  .crew-ship-mark { width:42px; height:42px; font-size:var(--text-sm); }
+  /* A hand of cards: swipe sideways through the crew */
+  .crew-cards {
+    grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:84%;
+    overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px;
+  }
+  .crew-cards > * { scroll-snap-align:start; }
+  .crew-compose input { font-size:16px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .crew-status[data-s="active"] .crew-status-dot { animation:none; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
    EMPTY STATE
 ───────────────────────────────────────────────────────────────── */
 .app-empty {
