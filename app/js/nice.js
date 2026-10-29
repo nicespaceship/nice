@@ -808,45 +808,41 @@ const StarField16 = (() => {
 ───────────────────────────────────────────────────────────────── */
 const NICE = (() => {
 
-  /* ── Sidebar toggle ── */
+  /* ── Sidebar ──
+     Desktop: a docked sidebar, open by default, that the user can collapse
+     to an icon rail (remembered). Phones: a drawer over the page, opened
+     from the mobile bar, with the bottom tab bar as the main nav. */
+  const _mobileMQ = window.matchMedia('(max-width:768px)');
+  function _isMobile() { return _mobileMQ.matches; }
+
+  function _applySidebarDefault(sidebar) {
+    if (_isMobile()) { sidebar.classList.remove('open'); return; }
+    sidebar.classList.toggle('open', localStorage.getItem(Utils.KEYS.sidebarCollapsed) !== '1');
+  }
+
   function _initSidebar() {
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    // Collapsed rail — the NICE icon is the opener: a single click expands
-    // the menu, a double-click jumps straight to the Bridge. A short timer
-    // disambiguates the two: the open is deferred so a double-click can
-    // cancel it before the rail icon is hidden by the expand.
-    const railNice = document.getElementById('side-rail-nice');
-    if (railNice) {
-      let niceClickTimer = null;
-      railNice.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (niceClickTimer) return; // second click of a double — dblclick handles it
-        niceClickTimer = setTimeout(() => {
-          niceClickTimer = null;
-          sidebar.classList.add('open');
-        }, 250);
-      });
-      railNice.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (niceClickTimer) { clearTimeout(niceClickTimer); niceClickTimer = null; }
-        window.location.hash = '#/bridge';
-      });
-    }
+    _applySidebarDefault(sidebar);
+    _mobileMQ.addEventListener('change', () => _applySidebarDefault(sidebar));
 
-    // Collapsed rail — the Chat icon starts a new chat (mirrors the in-menu
-    // "+" on the Chats folder).
-    const railChat = document.getElementById('side-rail-chat');
-    if (railChat) {
-      railChat.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        _newConversation();
-      });
-    }
+    // Collapsed rail — the NICE mark expands the sidebar again.
+    document.getElementById('side-rail-nice')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      sidebar.classList.add('open');
+      if (!_isMobile()) localStorage.removeItem(Utils.KEYS.sidebarCollapsed);
+    });
+
+    // Header collapse button: collapses to the rail on desktop, closes the
+    // drawer on phones.
+    document.getElementById('side-collapse')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      sidebar.classList.remove('open');
+      if (!_isMobile()) localStorage.setItem(Utils.KEYS.sidebarCollapsed, '1');
+    });
 
     const mobileToggle = document.getElementById('mobile-sidebar-toggle');
     if (mobileToggle) {
@@ -861,19 +857,20 @@ const NICE = (() => {
       });
     }
 
+    // The phone drawer closes on an outside tap and after navigating. The
+    // docked desktop sidebar stays put.
     document.addEventListener('click', (e) => {
-      if (!sidebar.classList.contains('open')) return;
+      if (!_isMobile() || !sidebar.classList.contains('open')) return;
       if (sidebar.contains(e.target)) return;
       if (e.target.closest('#mobile-sidebar-toggle, .preview-panel, .nice-monitor, .app-hud-panel')) return;
       sidebar.classList.remove('open');
     });
-
-    // Close sidebar on nav
-    document.querySelectorAll('.side-link, .side-brand, .side-user-card, .side-popover-item, .mobile-bar-btn[href]').forEach(link => {
-      link.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-      });
+    sidebar.addEventListener('click', (e) => {
+      if (!_isMobile()) return;
+      if (e.target.closest('.side-link, .side-brand, .side-user-card, .side-popover-item')) sidebar.classList.remove('open');
     });
+
+    _initSidebarShips();
 
     // Swipe gesture to open/close sidebar on mobile
     _initSwipeGesture(sidebar, overlay);
@@ -942,6 +939,52 @@ const NICE = (() => {
     _initChatsFolder();
   }
 
+  /* ── Sidebar: your spaceships ──
+     One link per spaceship the user runs (catalog activations plus Crew
+     Designer ships, the same set the crew view's picker offers), each
+     opening that ship's crew view. Router skips these links (their href
+     carries ?ship=), so this module highlights the one on screen. */
+  function _renderSidebarShips() {
+    const el = document.getElementById('side-ships');
+    if (!el) return;
+    const esc = Utils.esc;
+    const ships = (typeof Blueprints !== 'undefined' && Blueprints.getUserShips) ? Blueprints.getUserShips() : [];
+    el.innerHTML = `
+      <div class="sidebar-section-label">Spaceships<span class="nav-alert-dot" id="side-ships-alert-dot" hidden></span></div>
+      ${ships.map(s => {
+        const name = s.name || 'Spaceship';
+        return `<a href="#/crew?ship=${encodeURIComponent(s.id)}" class="side-link side-ship" data-ship="${esc(s.id)}" title="${esc(name)}">
+          <b class="side-ship-mark" aria-hidden="true">${esc(Utils.initials(name))}</b>
+          <span>${esc(name)}</span>
+        </a>`;
+      }).join('')}
+      <a href="#/library?tab=spaceship" class="side-link side-ship-new" title="${ships.length ? 'New spaceship' : 'Get a spaceship'}">
+        <svg class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><use href="#icon-plus"/></svg>
+        <span>${ships.length ? 'New spaceship' : 'Get a spaceship'}</span>
+      </a>`;
+    _highlightSidebarShip();
+    _updateAlertIndicators();
+  }
+
+  function _highlightSidebarShip() {
+    const onCrew = Router.path() === '/crew';
+    const current = localStorage.getItem(Utils.KEYS.mcShip);
+    document.querySelectorAll('#side-ships .side-ship').forEach(a => {
+      const on = onCrew && a.dataset.ship === current;
+      a.classList.toggle('active', on);
+      if (on) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+
+  function _initSidebarShips() {
+    _renderSidebarShips();
+    State.on('spaceships', _renderSidebarShips);
+    State.on('user', _renderSidebarShips);
+    window.addEventListener('nice:navsync', _highlightSidebarShip);
+    window.addEventListener('storage', (e) => { if (e.key === Utils.KEYS.mcShip) _highlightSidebarShip(); });
+  }
+
   /* ── Chats folder (collapsible, conversation history) ── */
   const CONVS_KEY = Utils.KEYS.conversations;
   const ACTIVE_CONV_KEY = Utils.KEYS.activeConv;
@@ -990,7 +1033,7 @@ const NICE = (() => {
     // Idempotency: if the active chat is already empty, just focus it
     // instead of piling up duplicate "New Chat" entries.
     if (active && (active.messages || []).length === 0) {
-      window.location.hash = '#/';
+      window.location.hash = '#/chat';
       if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
       _renderChatsList();
       return;
@@ -1010,7 +1053,7 @@ const NICE = (() => {
     localStorage.setItem(Utils.KEYS.aiMessages, '[]');
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
     _renderChatsList();
-    window.location.hash = '#/';
+    window.location.hash = '#/chat';
   }
 
   function _loadConversation(id, openMonitor) {
@@ -1029,7 +1072,7 @@ const NICE = (() => {
       return;
     }
     if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
-    window.location.hash = '#/';
+    window.location.hash = '#/chat';
   }
 
   function _saveActiveConversation() {
@@ -1090,7 +1133,7 @@ const NICE = (() => {
         _setActiveConvId('');
         localStorage.setItem(Utils.KEYS.aiMessages, '[]');
         if (typeof PromptPanel !== 'undefined' && PromptPanel._reload) PromptPanel._reload();
-        window.location.hash = '#/';
+        window.location.hash = '#/chat';
       }
     }
     _renderChatsList();
@@ -1212,8 +1255,8 @@ const NICE = (() => {
     if (chatsToggle) {
       chatsToggle.addEventListener('click', (e) => {
         if (e.target.closest('#side-chat-new')) return;
-        if (window.location.hash !== '#/' && window.location.hash !== '') {
-          window.location.hash = '#/';
+        if (window.location.hash !== '#/chat') {
+          window.location.hash = '#/chat';
         }
       });
     }
@@ -1494,11 +1537,11 @@ const NICE = (() => {
           // linking back to (a shared blueprint, a ship). Utility pages
           // (Settings / Security / Profile / Wallet / Moderation / Theme editor)
           // are a poor place to land right after signing in, so they fall back
-          // to the schematic. (This branch only fires on an actual sign-in
-          // event; INITIAL_SESSION on refresh leaves the current route alone.)
+          // to Home. (This branch only fires on an actual sign-in event;
+          // INITIAL_SESSION on refresh leaves the current route alone.)
           const ret = _authPopReturn();
           const utility = /^#\/(settings|security|profile|wallet|moderation|theme-editor)\b/;
-          const dest = (ret && !utility.test(ret)) ? ret : '#/bridge?tab=schematic';
+          const dest = (ret && !utility.test(ret)) ? ret : '#/';
           if (location.hash !== dest) location.hash = dest;
         }
         _migrateLocalSpaceships(user);
@@ -1737,8 +1780,13 @@ const NICE = (() => {
 
   /* ── Register routes ── */
   function _initRoutes() {
-    // 4 primary zones
-    Router.on('/', HomeView);                       // NICE (chat home)
+    // Primary destinations (sidebar + mobile tab bar). Outbox, Library and
+    // Crew open the matching Bridge tab until each gets its own view.
+    Router.on('/', HomeView);                        // Home: what needs you, your spaceships
+    Router.on('/chat', ChatView);                    // Standalone chat, no crew
+    Router.on('/outbox', BlueprintsView);
+    Router.on('/library', BlueprintsView);
+    Router.on('/crew', BlueprintsView);
     Router.on('/bridge', BlueprintsView);            // Bridge
     Router.on('/dock', { title: 'Bridge', render: () => { location.hash = '#/bridge?tab=schematic'; } });
 
@@ -2299,21 +2347,6 @@ const NICE = (() => {
     }, { passive: true });
   }
 
-  /* ── Step 53: Active sidebar link aria-current ── */
-  function _updateActiveSidebarLink() {
-    const path = location.hash.replace(/^#/, '') || '/';
-    document.querySelectorAll('.side-link').forEach(link => {
-      const href = (link.getAttribute('href') || '').replace(/^#/, '');
-      if (href === path || (path.startsWith(href) && href !== '/' && href.length > 1)) {
-        link.setAttribute('aria-current', 'page');
-        link.classList.add('active');
-      } else {
-        link.removeAttribute('aria-current');
-        link.classList.remove('active');
-      }
-    });
-  }
-
   /* ── Step 56: Screen reader announcements ── */
   function _announce(message) {
     const el = document.getElementById('sr-announcer');
@@ -2532,6 +2565,9 @@ const NICE = (() => {
 
     // Blueprint store (loads seeds immediately, fetches DB in background)
     if (typeof Blueprints !== 'undefined') Blueprints.init();
+    // The sidebar's spaceship list resolves catalog activations through the
+    // store, so draw it again once the seeds are in.
+    _renderSidebarShips();
 
     // Ship-themed auto-switching
     _initShipThemeWatcher();
@@ -2546,25 +2582,8 @@ const NICE = (() => {
     }
     if (typeof PreviewPanel !== 'undefined') PreviewPanel.init();
 
-    // Default landing: open on the Bridge Schematic. A fresh launch lands
-    // here; a browser reload or back/forward preserves wherever the user was
-    // (so a refresh on #/bridge stays put, not yanked to schematic), and an
-    // explicit deep link (any non-root hash) is honored so shared links keep
-    // working. First-login landing is handled separately in onAuthChange.
-    try {
-      const navEntry = (typeof performance !== 'undefined' && performance.getEntriesByType)
-        ? performance.getEntriesByType('navigation')[0] : null;
-      const navType = navEntry ? navEntry.type
-        : ((typeof performance !== 'undefined' && performance.navigation) ? performance.navigation.type : 0);
-      const isReplay = navType === 'reload' || navType === 'back_forward' || navType === 1 || navType === 2;
-      const rawHash = (location.hash || '').replace(/^#/, '');
-      if (!isReplay && (rawHash === '' || rawHash === '/')) {
-        // replaceState avoids a redundant hashchange render + keeps history clean
-        history.replaceState(null, '', '#/bridge?tab=schematic');
-      }
-    } catch { /* non-fatal — fall back to the default route */ }
-
-    // Start router
+    // Start router. A fresh launch lands on Home (#/), which shows what
+    // needs the user and their spaceships.
     const appView = document.getElementById('app-view');
     Router.init(appView);
 
@@ -2588,7 +2607,7 @@ const NICE = (() => {
 
     // Sidebar alert indicators — live aggregate of the Bridge + Settings dots
     _updateAlertIndicators();
-    ['agents', 'missions', 'spaceships', 'mcp_connections',
+    ['agents', 'missions', 'spaceships', 'content-queue', 'mcp_connections',
      'token_balance', 'moderation_pending', 'compliance_open']
       .forEach(k => State.on(k, _updateAlertIndicators));
 
@@ -2604,10 +2623,8 @@ const NICE = (() => {
     // Pull-to-refresh (Step 50)
     _initPullToRefresh();
 
-    // Active sidebar link + aria-current (Step 53)
-    _updateActiveSidebarLink();
+    // Nav highlighting (.active + aria-current) is owned by Router._updateNav.
     window.addEventListener('hashchange', () => {
-      _updateActiveSidebarLink();
       // Screen reader announce view change (Step 56)
       const title = document.getElementById('app-page-title');
       if (title) _announce('Navigated to ' + title.textContent);
@@ -2643,9 +2660,14 @@ const NICE = (() => {
   //     gear dot would be redundant.
   function _updateAlertIndicators() {
     if (typeof AlertCounts === 'undefined') return;
-    const bridge = AlertCounts.sum('bridge');
-    _setDot('brand-alert-dot', bridge);
-    _setDot('rail-bridge-alert-dot', bridge);
+    // Outbox shows how many drafts wait for review; the spaceships section
+    // and the Crew tab show a dot for crew trouble or runs that need you.
+    const outbox = AlertCounts.count('outbox');
+    _setBadge('side-outbox-badge', outbox);
+    _setBadge('tab-outbox-badge', outbox);
+    const crew = AlertCounts.count('schematic') + AlertCounts.count('missions');
+    _setDot('side-ships-alert-dot', crew);
+    _setDot('tab-crew-alert-dot', crew);
 
     _setDot('alert-dot-integrations', AlertCounts.count('integrations'));
     _setDot('alert-dot-wallet',       AlertCounts.count('wallet'));
@@ -2658,6 +2680,13 @@ const NICE = (() => {
   function _setDot(id, count) {
     const el = document.getElementById(id);
     if (el) el.hidden = !(count > 0);
+  }
+
+  function _setBadge(id, count) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = !(count > 0);
+    el.textContent = count > 99 ? '99+' : String(count);
   }
 
   return { init, openModal, closeModal, guardWrite, signOut, _trapFocus };

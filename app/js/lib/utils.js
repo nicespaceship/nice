@@ -68,6 +68,14 @@ const Utils = (() => {
       .join(' ');
   }
 
+  /** One or two capital letters for a name mark. "Sunrise Bakery" → "SB",
+      "The Matrix" → "M" (a leading "The" is skipped), "" → "?". */
+  function initials(name) {
+    const words = String(name || '').replace(/^the\s+/i, '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return '?';
+    return (words[0][0] + (words[1] ? words[1][0] : '')).toUpperCase();
+  }
+
   /** Format a date for display — consistent across all views */
   function formatDate(ts) {
     if (!ts) return '';
@@ -118,7 +126,7 @@ const Utils = (() => {
    * history, conversations, agent memory) so that an anonymous visit on a
    * shared browser doesn't render the previous account's data. Surfaced here
    * (instead of a private fn inside one view) because the leak has bitten in
-   * two surfaces already — PromptPanel (#390) and HomeView's cockpit feed.
+   * two surfaces already — PromptPanel (#390) and ChatView's feed.
    */
   function hasAuthSession() {
     try {
@@ -180,6 +188,7 @@ const Utils = (() => {
     callsign: 'nice-callsign',
     highContrast: 'nice-high-contrast',
     sidebarOrder: 'nice-sidebar-order',
+    sidebarCollapsed: 'nice-sidebar-collapsed',
     mcShip: 'nice-mc-ship',
     mcSlots: 'nice-mc-slots',
     conversations: 'nice-conversations',
@@ -203,5 +212,5 @@ const Utils = (() => {
     onboardedLegacy: (userId) => 'nice-onboarded-' + userId,
   };
 
-  return { esc, escAttr, safeUrl, timeAgo, formatDate, formatDateTime, toStardate, icon, titleCase, sanitizeCallsign, hasAuthSession, KEYS };
+  return { esc, escAttr, safeUrl, timeAgo, formatDate, formatDateTime, toStardate, icon, titleCase, initials, sanitizeCallsign, hasAuthSession, KEYS };
 })();

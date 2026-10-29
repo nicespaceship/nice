@@ -66,7 +66,7 @@ No ranks, XP or achievements: every slot and blueprint is open to every user.
 
 ## Routes & structure
 
-**Bridge (`#/bridge`) is the hub.** Its tabs: Schematic, Blueprints, Missions, Outbox, Operations, Log, Documentation, TRON. The Blueprints tab has Spaceships / Agents / Active / Workshop sub-tabs. Home is `#/`.
+**Main nav (sidebar on desktop, bottom tab bar on phones):** Home `#/`, Chat `#/chat`, Outbox `#/outbox`, Library `#/library`, and one link per spaceship (`#/crew?ship=<id>`). Outbox, Library and Crew open the matching Bridge tab until each gets its own view. **Bridge (`#/bridge`)** tabs: Schematic, Blueprints, Missions, Outbox, Operations, Log. The Blueprints tab has Spaceships / Agents / Active / Workshop sub-tabs.
 
 Detail and builder routes hang off Bridge: `#/bridge/agents/:id`, `#/bridge/spaceships/:id`, `#/bridge/agents/new`, `#/bridge/spaceships/new`. Standalone routes: `#/missions/new`, `#/security`, `#/settings`, `#/profile`, `#/theme-editor`, `#/moderation`.
 

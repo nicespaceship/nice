@@ -5,8 +5,10 @@ import AxeBuilder from '@axe-core/playwright';
  * NICE™ E2E Smoke Tests
  *
  * Routes:
- *   #/           → HomeView ('Bridge') — chat interface
- *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Operations | Log
+ *   #/           → HomeView ('Home') — what needs you, your spaceships
+ *   #/chat       → ChatView ('Chat') — standalone chat, no crew
+ *   #/outbox, #/library, #/crew → BlueprintsView on its Outbox / Blueprints / Schematic tab
+ *   #/bridge     → BlueprintsView ('Bridge') — Schematic | Blueprints | Missions | Outbox | Operations | Log
  *   #/security   → SecurityView ('Security') — Security | Integrations | Wallet
  *   #/settings   → SettingsView ('Settings')
  *   #/theme-editor → ThemeCreatorView ('Theme Editor')
@@ -59,14 +61,22 @@ test.describe('Smoke Tests', () => {
     await waitForApp(page);
     const sidebar = page.locator('#app-sidebar');
     await expect(sidebar).toBeVisible();
-    // Collapsed rail exposes the NICE opener + new-chat icons as the primary
-    // nav surface; the NICE brand (Bridge CTA) becomes the header when the
-    // sidebar is expanded.
-    const railButtons = page.locator('.side-rail-btn');
-    expect(await railButtons.count()).toBeGreaterThan(0);
-    await page.evaluate(() => document.getElementById('app-sidebar')?.classList.add('open'));
-    await page.waitForTimeout(150);
+    // Desktop opens with the sidebar docked and the four destinations labeled.
+    await expect(sidebar).toHaveClass(/\bopen\b/);
     await expect(page.locator('.side-brand')).toBeVisible();
+    for (const label of ['Home', 'Chat', 'Outbox', 'Library']) {
+      await expect(page.locator('.side-primary .side-link', { hasText: label })).toBeVisible();
+    }
+    // A destination navigates and becomes the highlighted link.
+    await page.locator('.side-primary .side-link[data-nav="outbox"]').click();
+    await page.waitForFunction(() => location.hash === '#/outbox');
+    await expect(page.locator('.side-primary .side-link[data-nav="outbox"]')).toHaveAttribute('aria-current', 'page');
+    // Collapsing keeps the destinations on the rail as icons.
+    await page.locator('#side-collapse').click();
+    await expect(sidebar).not.toHaveClass(/\bopen\b/);
+    await expect(page.locator('.side-primary .side-link[data-nav="home"]')).toBeVisible();
+    await page.locator('#side-rail-nice').click();
+    await expect(sidebar).toHaveClass(/\bopen\b/);
   });
 
   test('main views render without error', async ({ page }) => {
@@ -74,7 +84,7 @@ test.describe('Smoke Tests', () => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    for (const hash of ['#/', '#/bridge', '#/security', '#/settings', '#/theme-editor']) {
+    for (const hash of ['#/', '#/chat', '#/outbox', '#/library', '#/crew', '#/bridge', '#/security', '#/settings', '#/theme-editor']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
       await page.waitForTimeout(2000); // Let router + view render complete
       await expect(page.locator('#app-view')).toBeVisible();
@@ -110,6 +120,13 @@ test.describe('Smoke Tests', () => {
     await waitForApp(page);
     await expect(page.locator('#app-view')).toBeVisible();
     await expect(page.locator('#app-mobile-bar')).toBeVisible();
+    // Phones navigate with the bottom tab bar; the sidebar is a closed drawer.
+    const tabbar = page.locator('#app-tabbar');
+    await expect(tabbar).toBeVisible();
+    for (const label of ['Home', 'Chat', 'Crew', 'Outbox', 'Library']) {
+      await expect(tabbar.locator('.tab', { hasText: label })).toBeVisible();
+    }
+    await expect(page.locator('#app-sidebar')).not.toHaveClass(/\bopen\b/);
   });
 });
 
@@ -122,7 +139,8 @@ test.describe('Route Tests', () => {
     await waitForApp(page);
     await navigateTo(page, '#/security', 'Security');
     await navigateTo(page, '#/settings', 'Settings');
-    await navigateTo(page, '#/', 'NICE');  // Home title is "NICE SPACESHIP — NICE"
+    await navigateTo(page, '#/', 'Home');
+    await navigateTo(page, '#/chat', 'Chat');
   });
 });
 
@@ -153,10 +171,7 @@ test.describe('Accessibility', () => {
 
   test('sidebar links are keyboard navigable', async ({ page }) => {
     await waitForApp(page);
-    // The sidebar is collapsed by default, so the header (brand + nav) is
-    // display:none — open it first so the NICE brand (Bridge CTA) is focusable.
-    await page.evaluate(() => document.getElementById('app-sidebar')?.classList.add('open'));
-    await page.waitForTimeout(150);
+    // The sidebar opens docked on desktop, so the NICE brand (Home) is focusable.
     const brand = page.locator('.side-brand').first();
     await brand.focus();
     await page.keyboard.press('Tab');
@@ -188,16 +203,23 @@ test.describe('Auth Flow', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 test.describe('Dashboard', () => {
-  test('home view renders greeting for new users', async ({ page }) => {
+  test('home view greets new users and points them to a spaceship', async ({ page }) => {
     await waitForApp(page);
-    // Default landing is now the Bridge schematic; the greeting is a chat-home
-    // artifact, so navigate there explicitly before asserting it.
-    await navigateTo(page, '#/', 'NICE');
-    // New user (no spaceships) should see greeting
+    await navigateTo(page, '#/', 'Home');
+    const title = page.locator('.home-title');
+    await expect(title).toBeVisible();
+    expect(await title.textContent()).toMatch(/Good (morning|afternoon|evening)/);
+    // No spaceship yet: Home offers the Library and both ways to start.
+    await expect(page.locator('.home-empty a[href="#/library?tab=spaceship"]')).toBeVisible();
+    await expect(page.locator('.home-start[href="#/chat"]')).toBeVisible();
+  });
+
+  test('chat view renders greeting', async ({ page }) => {
+    await waitForApp(page);
+    await navigateTo(page, '#/chat', 'Chat');
     const greeting = page.locator('.chat-home-greeting');
     await expect(greeting).toBeVisible();
-    const text = await greeting.textContent();
-    expect(text).toMatch(/Good (morning|afternoon|evening)/);
+    expect(await greeting.textContent()).toMatch(/Good (morning|afternoon|evening)/);
   });
 
   test('home view has no JS errors', async ({ page }) => {
@@ -285,7 +307,7 @@ test.describe('Performance', () => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    for (const hash of ['#/bridge', '#/security', '#/settings', '#/theme-editor', '#/']) {
+    for (const hash of ['#/bridge', '#/chat', '#/outbox', '#/security', '#/library', '#/settings', '#/crew', '#/theme-editor', '#/']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
       await page.waitForTimeout(500);
     }

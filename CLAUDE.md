@@ -353,7 +353,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 |--------|------|---------|
 | `State` | `state.js` | Pub/sub state store: `get/set/setBatched/on/off` |
 | `SB` | `supabase.js` | Supabase client wrapper: `db()`, `auth()`, `client` |
-| `Router` | `router.js` | Hash router with param extraction & page transitions |
+| `Router` | `router.js` | Hash router with param extraction & page transitions; sole owner of main-nav highlighting (`.active` + `aria-current`), `syncNav()` after a `replaceState` |
 | `Utils` | `utils.js` | Shared utilities (esc, debounce, format, Captain's Log stardate) + `KEYS` constants |
 | `BlueprintUtils` | `blueprint-utils.js` | SSOT: rarity colors + computed agent rarity, slot labels + max slots, card-art ship classes, categories |
 | `AuditLog` | `audit-log.js` | Persistent event logging (max 500 FIFO) |
@@ -416,11 +416,12 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | `DocsContent` | `docs-content.js` | SSOT for in-app Documentation hub content (consumed by `docs.js`) |
 | `Roles` | `roles.js` | SSOT for the role vocabulary backed by `public.roles` (17 rows). `Roles.getRequiredTags(slug)` drives mission dispatch's role→capability-tags match; SEED constant mirrors the seed migration for offline/test/early-boot |
 
-### View Modules (`app/js/views/`) — 24 views
+### View Modules (`app/js/views/`) — 25 views
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
-| `HomeView` | `home.js` | `#/` | NICE SPACESHIP |
-| `BlueprintsView` | `blueprints.js` | `#/bridge` | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
+| `HomeView` | `home.js` | `#/` | Home (the landing: what needs you from AlertCounts, your spaceships from `Blueprints.getUserShips`, and two ways to start) |
+| `ChatView` | `chat.js` | `#/chat` | Chat (standalone chat with any model, no crew; greeting + conversation feed under the global prompt panel) |
+| `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/crew` (Schematic; `?ship=<id>` picks the spaceship), `#/library` (Blueprints) and `#/outbox` (Outbox) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
 | `DocsView` | `docs.js` | `#/bridge?tab=documentation` (legacy `#/docs` redirects) | Documentation |
 | `AgentDetailView` | `agents.js` | `#/bridge/agents/:id` | Agent Detail |
 | `AgentBuilderView` | `agent-builder.js` | `#/bridge/agents/new` | Agent Builder |
@@ -556,7 +557,7 @@ Before adding constants, arrays, or configuration, check if a source already exi
 |------|--------------|-------|
 | Blueprint data | `Blueprints` + Supabase `spaceship_blueprints` / `agent_blueprints` / `capabilities` | Never hardcode blueprint lists |
 | Crew slots, rarity, ship classes | `BlueprintUtils` (`blueprint-utils.js`) | Loaded before card-renderer |
-| localStorage keys | `Utils.KEYS` (61 constants) | Never use raw string keys |
+| localStorage keys | `Utils.KEYS` (62 constants) | Never use raw string keys |
 | State keys | `State.KEYS` (10 constants) | Never use raw string keys |
 | Theme definitions | `THEMES` array in `nice.js` → `Theme.BUILTIN` | No separate theme list |
 | Card rendering | `CardRenderer.render()` | ONE renderer for all card types |
