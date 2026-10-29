@@ -74,15 +74,15 @@ const ContentQueue = (() => {
     const user = typeof State !== 'undefined' ? State.get('user') : null;
 
     if (user?.id && typeof SB !== 'undefined' && SB.isReady() && SB.client) {
+      // Everything waiting is always fetched; decided history is capped.
+      const runs = () => SB.client.from('mission_runs').select(RUN_COLUMNS).eq('user_id', user.id);
       try {
-        const { data } = await SB.client
-          .from('mission_runs')
-          .select(RUN_COLUMNS)
-          .eq('user_id', user.id)
-          .not('approval_status', 'is', null)
-          .order('created_at', { ascending: false })
-          .limit(LOAD_LIMIT);
-        if (data) items.push(...data);
+        const [waiting, decided] = await Promise.all([
+          runs().eq('approval_status', 'draft'),
+          runs().not('approval_status', 'is', null).neq('approval_status', 'draft')
+            .order('created_at', { ascending: false }).limit(LOAD_LIMIT),
+        ]);
+        items.push(...(waiting.data || []), ...(decided.data || []));
       } catch (e) { console.warn('[ContentQueue] Supabase load error:', e); }
       // Signed out or switched accounts while this was in flight.
       if (State.get('user')?.id !== user.id) return [];
@@ -179,22 +179,46 @@ const ContentQueue = (() => {
     } catch { return cached; }
   }
 
-  function _ownedByRunner(run) {
-    return !!run && run.status === 'review' && typeof MissionRunner !== 'undefined';
+  // Who decides this item: MissionRunner for a run in review, the queue
+  // itself for a local draft or a finished run's content. A run that is
+  // working, failed or cancelled has nothing to decide right now.
+  function _owner(run) {
+    if (run && run.status === 'review' && typeof MissionRunner !== 'undefined') return 'runner';
+    if (!run || !run.status || run.status === 'completed') return 'queue';
+    return null;
+  }
+
+  function _movedOn(id) {
+    _removeFromState(id);
+    return new Error('This run has moved on. It comes back here if it needs you again.');
   }
 
   /** Approve an item. A run in review is approved through MissionRunner:
-      a paused gate resumes the crew (the item leaves the queue right away,
-      until the run lands in review again) and anything else completes.
-      Resolves { resumed }; throws if the approval could not be saved. */
-  async function approve(id) {
+      a paused gate resumes the crew (the item leaves the queue right away
+      and opts.onResume fires, since the rest of the plan can take minutes)
+      and anything else completes. Resolves { resumed }; throws if the
+      approval could not be saved or the run is no longer waiting. */
+  async function approve(id, opts = {}) {
     const run = await _currentRun(id);
-    if (!_ownedByRunner(run)) {
+    const owner = _owner(run);
+    if (owner === 'queue') {
       await _updateStatus(id, 'approved');
       return { resumed: false };
     }
-    if (MissionRunner.isResumableGate && MissionRunner.isResumableGate(run)) _removeFromState(id);
-    const out = await MissionRunner.approveRun(run);
+    if (!owner) throw _movedOn(id);
+    const gate = !!(MissionRunner.isResumableGate && MissionRunner.isResumableGate(run));
+    if (gate) {
+      _removeFromState(id);
+      if (opts.onResume) opts.onResume();
+    }
+    let out;
+    try {
+      out = await MissionRunner.approveRun(run);
+    } catch (err) {
+      // Put the run back as the database has it.
+      if (gate) load();
+      throw err;
+    }
     if (out.resumed) { _removeFromState(id); return { resumed: true }; }
     if (!out.persisted) throw new Error('Could not save the approval. Try again.');
     _applyToState(id, { status: 'completed', approval_status: 'approved', reviewed_at: new Date().toISOString() });
@@ -202,10 +226,13 @@ const ContentQueue = (() => {
   }
 
   /** Reject an item. A run in review is rejected through MissionRunner so
-      the agent learns from it. Throws if the rejection could not be saved. */
+      the agent learns from it. Throws if the rejection could not be saved
+      or the run is no longer waiting. */
   async function reject(id) {
     const run = await _currentRun(id);
-    if (!_ownedByRunner(run)) return _updateStatus(id, 'rejected');
+    const owner = _owner(run);
+    if (owner === 'queue') return _updateStatus(id, 'rejected');
+    if (!owner) throw _movedOn(id);
     const out = await MissionRunner.rejectRun(run);
     if (!out.persisted) throw new Error('Could not save the rejection. Try again.');
     _applyToState(id, { status: 'failed', approval_status: 'rejected', reviewed_at: new Date().toISOString() });
@@ -489,25 +516,32 @@ const ContentQueue = (() => {
   /*  blocks, so list items sit together and nothing nests in a <p>. */
   /* ══════════════════════════════════════════════════════════════ */
 
-  function _inline(s) {
-    // Links come out first so marks inside a url (* or `) stay in the url.
-    // The text is already esc()'d, so the url only needs its quotes
-    // escaped; safeUrl() gates the scheme (blocks javascript: etc.).
-    const links = [];
+  function _marks(s) {
     return s
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
-        links.push(`<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${label}</a>`);
-        return '\u0000' + (links.length - 1) + '\u0000';
-      })
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/(?<![\w*])\*([^*]+?)\*(?![\w*])/g, '<em>$1</em>')
-      .replace(/\u0000(\d+)\u0000/g, (_m, i) => links[i]);
+      .replace(/(?<![\w*])\*([^*]+?)\*(?![\w*])/g, '<em>$1</em>');
+  }
+
+  // Code spans and links come out first (as NUL-marked placeholders) so
+  // nothing inside a code span or a url gets formatted. The text is already
+  // esc()'d, so a url only needs its quotes escaped; safeUrl() gates the
+  // scheme (blocks javascript: etc.).
+  function _inline(s) {
+    const held = [];
+    const hold = (html) => { held.push(html); return '\u0000' + (held.length - 1) + '\u0000'; };
+    let out = _marks(s
+      .replace(/`([^`]+)`/g, (_m, code) => hold('<code>' + code + '</code>'))
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) =>
+        hold(`<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${_marks(label)}</a>`)));
+    // A link label can hold a code span, so restore until none are left;
+    // each placeholder only refers to an earlier one.
+    for (let n = 0; n < 2 && out.includes('\u0000'); n++) out = out.replace(/\u0000(\d+)\u0000/g, (_m, i) => held[i]);
+    return out;
   }
 
   function renderMarkdown(text) {
     if (!text) return '';
-    // NUL marks link placeholders in _inline; it never belongs in text.
+    // NUL marks placeholders in _inline; it never belongs in text.
     const lines = _esc(String(text).replace(/\u0000/g, '')).split(/\r?\n/);
     const out = [];
     let para = [];
@@ -623,11 +657,12 @@ const ContentQueue = (() => {
   function _touchesQueue(payload) {
     if (!payload || payload.eventType === 'DELETE') return true;
     const row = payload.new || {};
-    // Progress writes while the crew works; the run returns once it settles.
-    if (row.status === 'running' || row.status === 'queued') return false;
-    if (row.approval_status) return true;
     const items = (typeof State !== 'undefined' ? State.get('content-queue') : null) || [];
-    return items.some(i => i.id === row.id);
+    const cached = items.find(i => i.id === row.id);
+    // Progress writes while the crew works are noise, except the one that
+    // takes a waiting run off the queue (approved elsewhere, re-run).
+    if (row.status === 'running' || row.status === 'queued') return !!cached && cached.status !== row.status;
+    return !!row.approval_status || !!cached;
   }
 
   function watch() {

@@ -248,6 +248,19 @@ describe('OutboxView', () => {
     expect(location.hash).toBe('#/chat');
   });
 
+  it('still reports a failed approval after the user moved on', async () => {
+    let fail;
+    MissionRunner.approveRun.mockImplementationOnce(() => new Promise((_r, rej) => { fail = rej; }));
+    OutboxView.render(el);
+    await flush();
+    click('[data-ob="approve"]');
+    await flush();
+    OutboxView.destroy();
+    fail(new Error('network down'));
+    await flush();
+    expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Could not save', message: 'network down' }));
+  });
+
   it('moves an item to another day from its date field', async () => {
     const reschedule = vi.spyOn(ContentQueue, 'reschedule').mockResolvedValue();
     OutboxView.render(el);

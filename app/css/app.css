@@ -2273,10 +2273,13 @@ html:not([data-theme]) .app-main,
   .ob-detail { padding:14px; }
   .ob-doc { padding:12px; }
 }
-/* Touch screens: iOS zooms into fields under 16px, and there is no drag. */
-@media (hover:none) and (pointer:coarse) {
+/* iOS (iPad with a trackpad included) zooms into fields under 16px. */
+@supports (-webkit-touch-callout:none) {
   .ob-edit,
   .ob-day-field input { font-size:16px; }
+}
+/* No drag on touch screens; the item's date field moves it instead. */
+@media (hover:none) and (pointer:coarse) {
   .ob-drag-hint { display:none; }
 }
 

@@ -29,6 +29,7 @@ const OutboxView = (() => {
     { id: 'report',  label: 'Reports',      icon: 'icon-bar-chart' },
     { id: 'general', label: 'Other',        icon: 'icon-file-text' },
   ];
+  const _STALE_MS = 60 * 1000;
   const _DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const _ICON_ATTRS = 'class="icon icon-sm" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
 
@@ -41,6 +42,7 @@ const OutboxView = (() => {
   let _editing = false;
   let _loading = false;
   let _loadedFor = null;
+  let _loadedAt = 0;
   let _deciding = false;
   let _gen = 0;
   let _pushed = false;
@@ -93,6 +95,7 @@ const OutboxView = (() => {
     if (!user || typeof ContentQueue === 'undefined') return;
     _loading = true;
     _loadedFor = user.id;
+    _loadedAt = Date.now();
     _draw();
     try { await ContentQueue.load(); } catch { /* the list shows what State already has */ }
     _loading = false;
@@ -137,7 +140,6 @@ const OutboxView = (() => {
       el.removeEventListener(t, _onDrag);
       el.addEventListener(t, _onDrag);
     });
-    _loadedFor = null;
     _draw();
   }
 
@@ -145,10 +147,12 @@ const OutboxView = (() => {
     if (!_el) return;
     const user = State.get('user');
     // undefined: sign-in hasn't resolved yet (app start); null: signed out.
+    if (!user) _loadedFor = null;
     if (user === undefined) { _el.innerHTML = '<div class="ob-wrap"><p class="ob-empty">Loading…</p></div>'; return; }
     if (!user) { _el.innerHTML = _signedOutHTML(); return; }
-    // Each signed-in user's queue is fetched fresh once per visit.
-    if (_loadedFor !== user.id) { _refresh(); return; }
+    // The queue is kept live from sign-in (ContentQueue.watch); refetch on
+    // a new user or a stale copy, not on every render (Back re-renders).
+    if (_loadedFor !== user.id || (!_loading && Date.now() - _loadedAt > _STALE_MS)) { _refresh(); return; }
 
     const all = _items();
     const types = new Set(all.map(_typeOf));
@@ -436,9 +440,15 @@ const OutboxView = (() => {
     const next = queue[at + 1] || queue[at - 1] || null;
     const gen = _gen;
     const title = _titleOf(item);
+    const crew = Terminology.label('crew', { lowercase: true });
     const notify = (msg) => { if (typeof Notify !== 'undefined') Notify.send(msg); };
-    const failed = (err) => notify({ title: 'Could not save', message: err?.message || 'Try again.', type: 'error' });
-    const advance = () => {
+    let moved = false;
+    const moveOn = (msg) => {
+      if (moved) return;
+      moved = true;
+      notify(msg);
+      if (gen !== _gen) return;
+      _deciding = false;
       // Nothing left to open on a phone: return to the list the way Back would.
       if (!next && _pushed) { history.back(); return; }
       _sel = next ? next.id : null;
@@ -447,34 +457,26 @@ const OutboxView = (() => {
       _draw();
     };
     btn.closest('.ob-acts')?.querySelectorAll('button').forEach(b => { b.disabled = true; });
-
-    // Approving a paused gate runs the rest of the crew's plan, which can
-    // take minutes. The item leaves the queue at once; move on rather than
-    // hold the page until the crew finishes.
-    if (act === 'approve' && _isGate(item)) {
-      notify({ title: `${Terminology.label('mission')} continues`, message: 'The crew picked up after your approval.', type: 'success' });
-      ContentQueue.approve(item.id).catch(failed);
-      advance();
-      return;
-    }
-
     _deciding = true;
     try {
-      if (act === 'approve') await ContentQueue.approve(item.id);
-      else await ContentQueue.reject(item.id);
+      if (act === 'approve') {
+        await ContentQueue.approve(item.id, {
+          // A paused crew runs the rest of its plan, which can take
+          // minutes; move on as soon as it starts.
+          onResume: () => moveOn({ title: `${Terminology.label('mission')} continues`, message: `The ${crew} picked up after your approval.`, type: 'success' }),
+        });
+        moveOn({ title: 'Approved', message: title, type: 'success' });
+      } else {
+        await ContentQueue.reject(item.id);
+        moveOn({ title: 'Rejected', message: title, type: 'system' });
+      }
     } catch (err) {
-      if (gen !== _gen) return;
+      // Toasts are app-wide, so the user hears about it even after leaving.
+      notify({ title: 'Could not save', message: err?.message || 'Try again.', type: 'error' });
+      if (moved || gen !== _gen) return;
       _deciding = false;
-      failed(err);
       _draw();
-      return;
     }
-    if (gen !== _gen) return;
-    _deciding = false;
-    notify(act === 'approve'
-      ? { title: 'Approved', message: title, type: 'success' }
-      : { title: 'Rejected', message: title, type: 'system' });
-    advance();
   }
 
   function _onChange(e) {
@@ -619,7 +621,6 @@ const OutboxView = (() => {
     _bound = false;
     _editing = false;
     _deciding = false;
-    _loadedFor = null;
     _el = null;
   }
 

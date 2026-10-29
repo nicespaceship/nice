@@ -166,6 +166,24 @@ describe('ContentQueue approvals', () => {
     expect(MissionRunner.approveRun).toHaveBeenCalledWith(row);
   });
 
+  it('refuses to decide a run that has moved on, and drops it from the queue', async () => {
+    const moved = [{ id: 'run-5', status: 'running', approval_status: 'draft' }];
+    State.set('content-queue', moved);
+    await expect(ContentQueue.approve('run-5')).rejects.toThrow('moved on');
+    State.set('content-queue', moved);
+    await expect(ContentQueue.reject('run-5')).rejects.toThrow('moved on');
+    expect(MissionRunner.approveRun).not.toHaveBeenCalled();
+    expect(find('run-5')).toBeUndefined();
+  });
+
+  it('tells the caller when a gate resumes and reloads the queue if it fails', async () => {
+    MissionRunner.isResumableGate = () => true;
+    MissionRunner.approveRun.mockRejectedValueOnce(new Error('resume failed'));
+    const onResume = vi.fn();
+    await expect(ContentQueue.approve('run-1', { onResume })).rejects.toThrow('resume failed');
+    expect(onResume).toHaveBeenCalledTimes(1);
+  });
+
   it('approves and rejects local drafts without MissionRunner', async () => {
     await ContentQueue.approve('draft-1');
     expect(find('draft-1').approval_status).toBe('approved');
@@ -176,22 +194,35 @@ describe('ContentQueue approvals', () => {
   });
 });
 
+// mission_runs stub for load(): the waiting query ends at .eq(), the
+// decided query goes through .neq(); each resolves with its own rows.
+function runsQuery({ waiting = [], decided = [], hold } = {}) {
+  return () => {
+    const q = { decided: false };
+    q.select = () => q; q.eq = () => q; q.not = () => q; q.order = () => q; q.limit = () => q;
+    q.neq = () => { q.decided = true; return q; };
+    q.then = (res, rej) => (hold || Promise.resolve()).then(() => ({ data: q.decided ? decided : waiting })).then(res, rej);
+    return q;
+  };
+}
+
 describe('ContentQueue.load', () => {
   const realSB = globalThis.SB;
   afterEach(() => { globalThis.SB = realSB; });
 
   it('keeps runs in review or decided, and leaves out runs with nothing to approve', async () => {
-    const rows = [
+    const waiting = [
       { id: 'a', status: 'review', approval_status: 'draft', created_at: '2026-10-28T10:00:00Z' },
       { id: 'b', status: 'running', approval_status: 'draft', created_at: '2026-10-28T11:00:00Z' },
-      { id: 'c', status: 'completed', approval_status: 'approved', created_at: '2026-10-28T12:00:00Z' },
       // A resumed gate that failed keeps its old approval_status.
       { id: 'd', status: 'failed', approval_status: 'draft', created_at: '2026-10-28T13:00:00Z' },
       { id: 'e', status: 'cancelled', approval_status: 'draft', created_at: '2026-10-28T14:00:00Z' },
+    ];
+    const decided = [
+      { id: 'c', status: 'completed', approval_status: 'approved', created_at: '2026-10-28T12:00:00Z' },
       { id: 'f', status: 'failed', approval_status: 'rejected', created_at: '2026-10-28T09:00:00Z' },
     ];
-    const q = { select: () => q, eq: () => q, not: () => q, order: () => q, limit: async () => ({ data: rows }) };
-    globalThis.SB = { isReady: () => true, client: { from: () => q } };
+    globalThis.SB = { isReady: () => true, client: { from: runsQuery({ waiting, decided }) } };
     State.set('user', { id: 'u1' });
     const out = await ContentQueue.load();
     expect(out.map(i => i.id)).toEqual(['a', 'c', 'f']);
@@ -200,13 +231,13 @@ describe('ContentQueue.load', () => {
 
   it('drops a load that finishes after the user signed out', async () => {
     let finish;
-    const q = { select: () => q, eq: () => q, not: () => q, order: () => q, limit: () => new Promise(r => { finish = r; }) };
-    globalThis.SB = { isReady: () => true, client: { from: () => q } };
+    const hold = new Promise(r => { finish = r; });
+    globalThis.SB = { isReady: () => true, client: { from: runsQuery({ waiting: [{ id: 'a', status: 'review', approval_status: 'draft' }], hold }) } };
     State.set('user', { id: 'u1' });
     State.set('content-queue', []);
     const pending = ContentQueue.load();
     State.set('user', null);
-    finish({ data: [{ id: 'a', status: 'review', approval_status: 'draft' }] });
+    finish();
     expect(await pending).toEqual([]);
     expect(State.get('content-queue')).toEqual([]);
   });
@@ -224,8 +255,7 @@ describe('ContentQueue.watch', () => {
     vi.useFakeTimers();
     let onChange;
     const realtime = { subscribe: vi.fn((table, fn) => { onChange = fn; return 'chan'; }), unsubscribe: vi.fn() };
-    const q = { select: () => q, eq: () => q, not: () => q, order: () => q, limit: async () => ({ data: [] }) };
-    const from = vi.fn(() => q);
+    const from = vi.fn(runsQuery());
     globalThis.SB = { isReady: () => true, client: { from }, realtime };
     State.set('user', { id: 'u1' });
 
@@ -240,10 +270,25 @@ describe('ContentQueue.watch', () => {
     onChange({ eventType: 'UPDATE', new: { id: 'x', approval_status: 'draft' } });
     onChange({ eventType: 'UPDATE', new: { id: 'x', approval_status: 'draft' } });
     vi.advanceTimersByTime(1000);
-    expect(from).toHaveBeenCalledTimes(1);
+    // One debounced reload: the waiting and the decided query.
+    expect(from).toHaveBeenCalledTimes(2);
 
     ContentQueue.unwatch();
     expect(realtime.unsubscribe).toHaveBeenCalledWith('chan');
+  });
+
+  it('reloads when a waiting run starts running because it was approved elsewhere', () => {
+    vi.useFakeTimers();
+    let onChange;
+    const realtime = { subscribe: vi.fn((table, fn) => { onChange = fn; return 'chan'; }), unsubscribe: vi.fn() };
+    const from = vi.fn(runsQuery());
+    globalThis.SB = { isReady: () => true, client: { from }, realtime };
+    State.set('user', { id: 'u1' });
+    State.set('content-queue', [{ id: 'r1', status: 'review', approval_status: 'draft' }]);
+    ContentQueue.watch();
+    onChange({ eventType: 'UPDATE', new: { id: 'r1', status: 'running', approval_status: 'draft' } });
+    vi.advanceTimersByTime(1000);
+    expect(from).toHaveBeenCalled();
   });
 });
 
@@ -282,6 +327,11 @@ describe('ContentQueue.renderMarkdown', () => {
   it('formats inline marks and leaves code blocks as written', () => {
     expect(md('**Bold**, *soft* and `code`')).toBe('<p><strong>Bold</strong>, <em>soft</em> and <code>code</code></p>');
     expect(md('```\n- not a list\n**raw**\n```')).toBe('<pre><code>- not a list\n**raw**</code></pre>');
+  });
+
+  it('leaves code spans alone and formats link labels', () => {
+    expect(md('`[x](https://a.co)` and **b**')).toBe('<p><code>[x](https://a.co)</code> and <strong>b</strong></p>');
+    expect(md('[**Go** `now`](https://a.co)')).toBe('<p><a href="https://a.co" target="_blank" rel="noopener"><strong>Go</strong> <code>now</code></a></p>');
   });
 
   it('reads Windows line endings and keeps marks inside link urls', () => {
