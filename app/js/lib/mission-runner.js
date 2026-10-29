@@ -1396,13 +1396,15 @@ const MissionRunner = (() => {
     // XP was removed stay idempotent.
     const alreadyApplied = !!(run.metadata && run.metadata.xp_awarded);
     let persisted = false;
+    // supabase-js reports a failed write (RLS, network) as { error }
+    // rather than throwing, so both count as not persisted.
     try {
       if (typeof SB !== 'undefined' && SB.client) {
-        await SB.client.from('mission_runs').update({
+        const res = await SB.client.from('mission_runs').update({
           status: 'completed', approval_status: 'approved', reviewed_at: now,
           metadata: Object.assign({}, run.metadata || {}, { xp_awarded: true }),
         }).eq('id', run.id);
-        persisted = true;
+        persisted = !(res && res.error);
       }
     } catch {}
     if (!alreadyApplied && persisted && typeof AgentMemory !== 'undefined') {
@@ -1421,11 +1423,11 @@ const MissionRunner = (() => {
     let persisted = false;
     try {
       if (typeof SB !== 'undefined' && SB.client) {
-        await SB.client.from('mission_runs').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', run.id);
-        persisted = true;
+        const res = await SB.client.from('mission_runs').update({ status: 'failed', approval_status: 'rejected', reviewed_at: now }).eq('id', run.id);
+        persisted = !(res && res.error);
       }
     } catch {}
-    if (typeof AgentMemory !== 'undefined') {
+    if (persisted && typeof AgentMemory !== 'undefined') {
       const agentKey = run.agent_id || run.agent_name || 'unknown';
       AgentMemory.learn(agentKey, run.result, 'rejected');
       AgentMemory.addFailure(agentKey, { task: run.title, approach: (run.result || '').substring(0, 200), reason: 'Rejected by user' });

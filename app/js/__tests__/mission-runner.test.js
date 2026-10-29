@@ -1448,6 +1448,14 @@ describe('MissionRunner — review decisions', () => {
     expect(AgentMemory.learn).not.toHaveBeenCalled();
   });
 
+  it('approveRun and rejectRun count a returned { error } as not saved', async () => {
+    globalThis.SB.client = { from: () => ({ update: () => ({ eq: async () => ({ error: { message: 'permission denied' } }) }) }) };
+    expect(await MissionRunner.approveRun({ id: 'r5', agent_id: 'a1' })).toEqual({ resumed: false, persisted: false });
+    expect(await MissionRunner.rejectRun({ id: 'r6', agent_id: 'a1' })).toEqual({ persisted: false });
+    expect(AgentMemory.learn).not.toHaveBeenCalled();
+    expect(AgentMemory.addFailure).not.toHaveBeenCalled();
+  });
+
   it('rejectRun fails and rejects the run, and the agent learns from it', async () => {
     const out = await MissionRunner.rejectRun({ id: 'r4', agent_name: 'Head Baker', title: 'Roundup', result: 'x' });
     expect(out).toEqual({ persisted: true });
