@@ -78,7 +78,7 @@ const ContentQueue = (() => {
       const runs = () => SB.client.from('mission_runs').select(RUN_COLUMNS).eq('user_id', user.id);
       try {
         const [waiting, decided] = await Promise.all([
-          runs().eq('approval_status', 'draft'),
+          runs().eq('approval_status', 'draft').in('status', ['review', 'completed']),
           runs().not('approval_status', 'is', null).neq('approval_status', 'draft')
             .order('created_at', { ascending: false }).limit(LOAD_LIMIT),
         ]);
@@ -190,7 +190,7 @@ const ContentQueue = (() => {
 
   function _movedOn(id) {
     _removeFromState(id);
-    return new Error('This run has moved on. It comes back here if it needs you again.');
+    return new Error('This run is no longer waiting for a decision.');
   }
 
   /** Approve an item. A run in review is approved through MissionRunner:
@@ -525,13 +525,14 @@ const ContentQueue = (() => {
   // Code spans and links come out first (as NUL-marked placeholders) so
   // nothing inside a code span or a url gets formatted. The text is already
   // esc()'d, so a url only needs its quotes escaped; safeUrl() gates the
-  // scheme (blocks javascript: etc.).
+  // scheme (blocks javascript: etc.). A url may not hold a placeholder: a
+  // code span restored into href would put its raw quotes in the attribute.
   function _inline(s) {
     const held = [];
     const hold = (html) => { held.push(html); return '\u0000' + (held.length - 1) + '\u0000'; };
     let out = _marks(s
       .replace(/`([^`]+)`/g, (_m, code) => hold('<code>' + code + '</code>'))
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) =>
+      .replace(/\[([^\]]+)\]\(([^)\u0000]+)\)/g, (_m, label, url) =>
         hold(`<a href="${Utils.safeUrl(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${_marks(label)}</a>`)));
     // A link label can hold a code span, so restore until none are left;
     // each placeholder only refers to an earlier one.

@@ -99,7 +99,8 @@ const OutboxView = (() => {
     _draw();
     try { await ContentQueue.load(); } catch { /* the list shows what State already has */ }
     _loading = false;
-    _draw();
+    // Through the same guards as a live update, so text being edited survives.
+    _rerender();
   }
 
   /* ── URL state ── */
@@ -152,7 +153,7 @@ const OutboxView = (() => {
     if (!user) { _el.innerHTML = _signedOutHTML(); return; }
     // The queue is kept live from sign-in (ContentQueue.watch); refetch on
     // a new user or a stale copy, not on every render (Back re-renders).
-    if (_loadedFor !== user.id || (!_loading && Date.now() - _loadedAt > _STALE_MS)) { _refresh(); return; }
+    if (_loadedFor !== user.id || (!_loading && !_editing && Date.now() - _loadedAt > _STALE_MS)) { _refresh(); return; }
 
     const all = _items();
     const types = new Set(all.map(_typeOf));

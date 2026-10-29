@@ -166,12 +166,12 @@ describe('ContentQueue approvals', () => {
     expect(MissionRunner.approveRun).toHaveBeenCalledWith(row);
   });
 
-  it('refuses to decide a run that has moved on, and drops it from the queue', async () => {
+  it('refuses to decide a run that is no longer waiting, and drops it from the queue', async () => {
     const moved = [{ id: 'run-5', status: 'running', approval_status: 'draft' }];
     State.set('content-queue', moved);
-    await expect(ContentQueue.approve('run-5')).rejects.toThrow('moved on');
+    await expect(ContentQueue.approve('run-5')).rejects.toThrow('no longer waiting');
     State.set('content-queue', moved);
-    await expect(ContentQueue.reject('run-5')).rejects.toThrow('moved on');
+    await expect(ContentQueue.reject('run-5')).rejects.toThrow('no longer waiting');
     expect(MissionRunner.approveRun).not.toHaveBeenCalled();
     expect(find('run-5')).toBeUndefined();
   });
@@ -199,7 +199,7 @@ describe('ContentQueue approvals', () => {
 function runsQuery({ waiting = [], decided = [], hold } = {}) {
   return () => {
     const q = { decided: false };
-    q.select = () => q; q.eq = () => q; q.not = () => q; q.order = () => q; q.limit = () => q;
+    q.select = () => q; q.eq = () => q; q.in = () => q; q.not = () => q; q.order = () => q; q.limit = () => q;
     q.neq = () => { q.decided = true; return q; };
     q.then = (res, rej) => (hold || Promise.resolve()).then(() => ({ data: q.decided ? decided : waiting })).then(res, rej);
     return q;
@@ -337,6 +337,14 @@ describe('ContentQueue.renderMarkdown', () => {
   it('reads Windows line endings and keeps marks inside link urls', () => {
     expect(md('## Title\r\n- one\r\n- two')).toBe('<h3>Title</h3><ul><li>one</li><li>two</li></ul>');
     expect(md('[docs](https://example.com/a*b*c)')).toBe('<p><a href="https://example.com/a*b*c" target="_blank" rel="noopener">docs</a></p>');
+  });
+
+  it('keeps a code span in a link url from breaking out of href', () => {
+    const html = md('[the report](https://example.com/`x" onmouseover="window.__p=1//`)');
+    const el = document.createElement('div');
+    el.innerHTML = html;
+    expect(el.querySelector('[onmouseover]')).toBeNull();
+    el.querySelectorAll('a').forEach(a => expect(a.getAttribute('href')).not.toContain('"'));
   });
 
   it('escapes HTML and refuses script links', () => {

@@ -261,6 +261,27 @@ describe('OutboxView', () => {
     expect(Notify.send).toHaveBeenCalledWith(expect.objectContaining({ title: 'Could not save', message: 'network down' }));
   });
 
+  it('keeps text being edited when a background refresh lands', async () => {
+    let finish;
+    OutboxView.render(el);
+    await flush();
+    // The cached copy goes stale and the next redraw starts a refresh.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 5 * 60 * 1000);
+    ContentQueue.load.mockImplementationOnce(() => new Promise(r => { finish = r; }));
+    click('.ob-tab[data-tab="needs"]');
+    expect(finish).toBeTypeOf('function');
+    // Meanwhile the user starts editing.
+    click('[data-ob="edit"]');
+    const box = el.querySelector('#ob-edit');
+    box.value = 'typed by user';
+    finish(State.get('content-queue'));
+    await flush();
+    vi.useRealTimers();
+    expect(el.querySelector('#ob-edit')).toBe(box);
+    expect(box.value).toBe('typed by user');
+  });
+
   it('moves an item to another day from its date field', async () => {
     const reschedule = vi.spyOn(ContentQueue, 'reschedule').mockResolvedValue();
     OutboxView.render(el);
