@@ -177,7 +177,7 @@ NICE has three chat surfaces. Two intentionally bypass the Run primitive; one is
 |---|---|---|---|
 | **Mission-grade chat** (ship-level) | [prompt-panel.js:725](app/js/views/prompt-panel.js:725) → `MissionRunner.run` | ✅ | Full Run state machine, audit, cancel, analytics |
 | **Agent-with-tools chat** | `@mention` in the prompt panel, or a crew card's message box via `PromptPanel.sendToAgent` → `AgentExecutor.converse` | ❌ | Request-response, `ship_log` persistence only |
-| **Top-level NICE chat** | [prompt-panel.js:1909](app/js/views/prompt-panel.js:1909) → `_callDirectLLM` | ❌ | Request-response, no persistence beyond message history |
+| **Top-level NICE chat** | `#/chat` → `_callDirectLLM` (Compare: `_sendCompare` runs the same `_callEdgeLLM` once per chosen model) | ❌ | Request-response, no persistence beyond message history |
 
 **Rationale for the split:** casual chat surfaces are latency-sensitive and ephemeral. Forcing a `mission_runs` INSERT before each LLM call adds round-trip latency and bloats the table with throwaway rows. Audit, cancel, and analytics features that depend on Runs apply only to mission-grade chat today, and that's currently fine — there's no user demand for cancel/audit/analytics on casual chat.
 
@@ -420,7 +420,7 @@ Modules are loaded via `<script>` tags in `app/index.html` in dependency order.
 | View | File | Route(s) | Title |
 |------|------|----------|-------|
 | `HomeView` | `home.js` | `#/` | Home (the landing: what needs you from AlertCounts, your spaceships from `Blueprints.getUserShips`, and two ways to start) |
-| `ChatView` | `chat.js` | `#/chat` | Chat (standalone chat with any model, no crew; greeting + conversation feed under the global prompt panel) |
+| `ChatView` | `chat.js` | `#/chat` | Chat (standalone chat with any model, no crew; greeting + conversation feed under the global prompt panel. The panel's Compare toggle, shown only here, sends one question to 2 or 3 enabled models the user can run and shows the answers side by side; the kept answer becomes the reply the conversation continues from) |
 | `CrewView` | `crew.js` | `#/crew` (`?ship=<id>` picks the spaceship) | Crew (one card per crew member framed in its model's provider color: role, model, tools, live status from AgentActivity, latest exchange from ShipLog, a message box; plus recent runs and an approval bar for runs in review) |
 | `BlueprintsView` | `blueprints.js` | `#/bridge`, plus `#/library` (Blueprints) and `#/outbox` (Outbox) from the main nav | Bridge (tabs: Schematic / Blueprints / Missions / Outbox / Operations / Log; Blueprints sub-tabs: Spaceships / Agents / Active / Workshop. Spaceships + Agents are pure catalogs; community blueprints mix into the same browse, discriminated by a COMMUNITY badge and a Source filter pill All/Official/Community. Active shows user's deployed ships + agents in two labeled sections. Workshop is custom builds + imports — only surface where "+ Create" / "Import Blueprint" buttons appear.) |
 | `DocsView` | `docs.js` | `#/bridge?tab=documentation` (legacy `#/docs` redirects) | Documentation |

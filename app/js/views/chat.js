@@ -101,8 +101,12 @@ const ChatView = (() => {
         return `<div class="monitor-user-msg"><div class="monitor-user-bubble">${_esc(m.text)}</div></div>`;
       } else if (m.role === 'system') {
         return `<div class="monitor-system-msg">${_esc(m.text)}</div>`;
+      } else if (m.type === 'compare' && m.picked == null) {
+        // Undecided comparison: the side-by-side cards live in the monitor.
+        return `<div class="monitor-system-msg">Compared ${(m.answers || []).length} models. Open the conversation to keep one.</div>`;
       } else {
-        const agentLabel = `<div class="monitor-card-agent">${_esc(m.agent || 'NICE')}</div>`;
+        // A kept comparison reads as that model's reply.
+        const agentLabel = `<div class="monitor-card-agent">${_esc(m.type === 'compare' && m.model ? m.model : (m.agent || 'NICE'))}</div>`;
         let text = m.text || '';
         text = text.replace(/\[ACTION:\s*.+?\s*\|\s*.+?\s*\]/g, '').replace(/\[THEME:\s*.+?\s*\]/gi, '').replace(/\[EXEC:\s*\w+\s*(?:\|.*?)?\s*\]/g, '').trim();
         const time = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
