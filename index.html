@@ -18,13 +18,13 @@
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>NICE | Every AI model, working as one team</title>
-  <meta name="description" content="NICE is a multi-model agent orchestration platform. Put Claude, GPT, Gemini, Grok and more on one crew, give them a mission, and they split the work, hand off results and check each other." />
+  <title>NICE | Mission control for your AI crew</title>
+  <meta name="description" content="NICE is mission control for AI agents. Crew a spaceship with Claude, GPT, Gemini, Grok and more, hand them a mission, and approve what they make before it goes out." />
   <link rel="canonical" href="https://nicespaceship.ai/" />
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
-  <meta property="og:title" content="NICE | Every AI model, working as one team" />
-  <meta property="og:description" content="Put Claude, GPT, Gemini, Grok and more on one crew. Give them a mission and watch them work together." />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="NICE | Mission control for your AI crew" />
+  <meta property="og:description" content="Crew a spaceship with Claude, GPT, Gemini, Grok and more. Hand them a mission, and approve what they make before it goes out." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://nicespaceship.ai/" />
   <meta property="og:image" content="https://nicespaceship.ai/assets/og-image.png" />
@@ -33,22 +33,23 @@
   <meta property="og:site_name" content="NICE" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@nicespaceship" />
-  <link rel="icon" href="/assets/nice-mark-dark.svg" type="image/svg+xml" />
-  <link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="/assets/nice-mark-light.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/public/css/landing.css?v=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/public/css/landing.css?v=2" />
+  <script src="/public/js/landing.js?v=2" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "NICE",
+    "alternateName": "Neural Intelligence Command Engine",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
     "url": "https://nicespaceship.ai/",
-    "description": "Multi-model agent orchestration: Claude, GPT, Gemini, Grok and more working as one team.",
+    "description": "Mission control for AI agents: crews of Claude, GPT, Gemini, Grok and more working as one team, with your approval before anything goes out.",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "publisher": { "@type": "Organization", "name": "NICE SPACESHIP", "url": "https://nicespaceship.com" }
   }
@@ -57,14 +58,19 @@
 <body>
   <a class="lp-skip" href="#main">Skip to content</a>
 
+  <canvas class="lp-stars" id="lp-stars" aria-hidden="true"></canvas>
+  <div class="lp-nebula" aria-hidden="true"></div>
+
   <header class="lp-header">
     <div class="lp-wrap lp-header-inner">
       <a class="lp-brand" href="/" aria-label="NICE home">
-        <img class="lp-mark" src="/assets/nice-mark.svg" alt="" width="28" height="28" />
+        <img class="lp-mark" src="/assets/nice-mark-light.svg" alt="" width="26" height="26" />
         <span class="lp-brand-text">NICE</span>
       </a>
       <nav class="lp-nav" aria-label="Primary">
-        <a class="lp-nav-link lp-nav-hide-sm" href="#how">How it works</a>
+        <a class="lp-nav-link lp-nav-hide-sm" href="#flight">How it works</a>
+        <a class="lp-nav-link lp-nav-hide-sm" href="#inside">Inside NICE</a>
+        <a class="lp-nav-link lp-nav-hide-sm" href="#codex">Codex</a>
         <a class="lp-nav-link" href="/app/#/profile">Sign in</a>
         <a class="lp-btn lp-btn-primary lp-btn-sm" href="/app/">Start free</a>
       </nav>
@@ -72,166 +78,505 @@
   </header>
 
   <main id="main">
-    <section class="lp-hero">
+
+    <!-- ── Hero ─────────────────────────────────────────────────── -->
+    <section class="lp-hero" aria-labelledby="hero-title">
       <div class="lp-wrap lp-hero-grid">
         <div class="lp-hero-copy">
-          <p class="lp-overline">Multi-model agent orchestration</p>
-          <h1 class="lp-display">Every AI model, working as one team.</h1>
-          <p class="lp-lead">NICE puts Claude, GPT, Gemini, Grok and more on a single crew. Give them a mission and they split the work, hand results to each other, and check each other's output before anything reaches you.</p>
+          <p class="lp-badge">Neural Intelligence Command Engine</p>
+          <h1 class="lp-display" id="hero-title">Mission control for your AI crew.</h1>
+          <p class="lp-lead">NICE puts Claude, GPT, Gemini, Grok and more on one team. Crew a spaceship for your business, hand it a mission, and the agents split the work, pass results to each other and check each other. Anything that leaves your business waits for your OK.</p>
           <div class="lp-actions">
             <a class="lp-btn lp-btn-primary" href="/app/">Start free</a>
-            <a class="lp-btn lp-btn-ghost" href="#how">How it works</a>
+            <a class="lp-btn lp-btn-ghost" href="#codex">Read the Codex</a>
           </div>
           <p class="lp-fineprint">Free to start. No API keys, no card.</p>
         </div>
 
-        <figure class="lp-mission" aria-label="Example mission: four AI models working through one plan">
-          <div class="lp-mission-hdr">
-            <div>
-              <p class="lp-overline">Mission</p>
-              <p class="lp-mission-name">Weekly competitor brief</p>
-            </div>
-            <span class="lp-status lp-status-live">Running</span>
+        <div class="lp-orbit" role="img" aria-label="The NICE core with Claude, GPT, Gemini, Grok, DeepSeek, Kimi and Nemotron in orbit around it">
+          <div class="lp-orbit-glow"></div>
+          <div class="lp-ring lp-ring-1">
+            <span class="lp-planet" style="--a:20deg;--p:#d97757"><span>Claude</span></span>
+            <span class="lp-planet" style="--a:200deg;--p:#4f8df5"><span>Gemini</span></span>
           </div>
-          <ol class="lp-steps">
-            <li class="lp-step lp-step-pair">
-              <div class="lp-node">
-                <span class="lp-node-role">Research</span>
-                <span class="lp-chip">Gemini</span>
-                <span class="lp-state lp-state-done">Done</span>
-              </div>
-              <div class="lp-node">
-                <span class="lp-node-role">Market signals</span>
-                <span class="lp-chip">Grok</span>
-                <span class="lp-state lp-state-done">Done</span>
-              </div>
-            </li>
-            <li class="lp-step">
-              <div class="lp-node">
-                <span class="lp-node-role">Draft</span>
-                <span class="lp-chip">Claude</span>
-                <span class="lp-state lp-state-done">Done</span>
-              </div>
-            </li>
-            <li class="lp-step">
-              <div class="lp-node lp-node-active">
-                <span class="lp-node-role">Review</span>
-                <span class="lp-chip">GPT</span>
-                <span class="lp-state lp-state-working">Working</span>
-              </div>
-            </li>
-            <li class="lp-step">
-              <div class="lp-node">
-                <span class="lp-node-role">Approve and send</span>
-                <span class="lp-chip lp-chip-you">You</span>
-                <span class="lp-state">Next</span>
-              </div>
-            </li>
-          </ol>
-          <figcaption class="lp-mission-note">Research runs in parallel. The reviewer sends the draft back until it passes, then the mission waits for your approval.</figcaption>
-        </figure>
+          <div class="lp-ring lp-ring-2">
+            <span class="lp-planet" style="--a:110deg;--p:#19a37f"><span>GPT</span></span>
+            <span class="lp-planet" style="--a:250deg;--p:#9aa0a6"><span>Grok</span></span>
+            <span class="lp-planet" style="--a:345deg;--p:#76b900"><span>Nemotron</span></span>
+          </div>
+          <div class="lp-ring lp-ring-3">
+            <span class="lp-planet" style="--a:60deg;--p:#6d7cfe"><span>DeepSeek</span></span>
+            <span class="lp-planet" style="--a:215deg;--p:#8b6cff"><span>Kimi</span></span>
+          </div>
+          <img class="lp-orbit-core" src="/assets/nice-mark-light.svg" alt="" width="84" height="84" />
+        </div>
+      </div>
+
+      <div class="lp-wrap">
+        <dl class="lp-stats">
+          <div><dt>Models</dt><dd>Every major lab</dd></div>
+          <div><dt>Crew</dt><dd>Up to 12 per spaceship</dd></div>
+          <div><dt>Tools</dt><dd>Gmail to GitHub</dd></div>
+          <div><dt>Your say</dt><dd>Nothing ships without it</dd></div>
+        </dl>
       </div>
     </section>
 
-    <section class="lp-models" aria-label="Models on NICE">
+    <!-- ── How a mission flies ──────────────────────────────────── -->
+    <section class="lp-section" id="flight" aria-labelledby="flight-title">
       <div class="lp-wrap">
-        <p class="lp-overline lp-center">Models from every major lab, in one account</p>
-        <ul class="lp-model-list">
-          <li>Claude</li>
-          <li>GPT</li>
-          <li>Gemini</li>
-          <li>Grok</li>
-          <li>DeepSeek</li>
-          <li>Kimi</li>
-          <li>Nemotron</li>
+        <header class="lp-section-head">
+          <p class="lp-badge">How it works</p>
+          <h2 class="lp-h2" id="flight-title">How a mission flies</h2>
+          <p class="lp-muted">Four steps from an idea to work you can send. You pick the crew and give the order; the crew does the work; you have the last word.</p>
+        </header>
+
+        <div class="lp-flight">
+          <ol class="lp-flight-steps">
+            <li>
+              <span class="lp-flight-num" aria-hidden="true">01</span>
+              <div>
+                <h3 class="lp-h3">Crew a spaceship</h3>
+                <p>A spaceship is your team: a lead agent and up to eleven specialists. Start from one built for a business like yours, then give each crew member the model that suits its job.</p>
+              </div>
+            </li>
+            <li>
+              <span class="lp-flight-num" aria-hidden="true">02</span>
+              <div>
+                <h3 class="lp-h3">Give it a mission</h3>
+                <p>Say what you need in plain words. NICE turns it into a plan: who does what, what runs side by side, and where it stops for you. Run it once or every morning.</p>
+              </div>
+            </li>
+            <li>
+              <span class="lp-flight-num" aria-hidden="true">03</span>
+              <div>
+                <h3 class="lp-h3">The crew works it</h3>
+                <p>Agents work through your real tools, share one log, and hand results down the line. A reviewer sends a draft back until it passes.</p>
+              </div>
+            </li>
+            <li>
+              <span class="lp-flight-num" aria-hidden="true">04</span>
+              <div>
+                <h3 class="lp-h3">You give the OK</h3>
+                <p>The result waits in your Outbox. Read it, edit it, approve or reject it. Approving a paused mission lets the crew finish the rest.</p>
+              </div>
+            </li>
+          </ol>
+
+          <figure class="lp-panel lp-mission" id="lp-mission" aria-label="Example mission: four AI models working through one plan">
+            <div class="lp-mission-hdr">
+              <div>
+                <p class="lp-overline">Mission</p>
+                <p class="lp-mission-name">Weekly competitor brief</p>
+              </div>
+              <span class="lp-status is-waiting" data-mission-status>Waiting for you</span>
+            </div>
+            <ol class="lp-steps">
+              <li class="lp-step lp-step-pair">
+                <div class="lp-node" data-step="0" style="--p:#4f8df5">
+                  <span class="lp-node-role">Research</span>
+                  <span class="lp-chip"><i></i>Gemini 2.5 Pro</span>
+                  <span class="lp-state" data-state>Done</span>
+                </div>
+                <div class="lp-node" data-step="0" style="--p:#9aa0a6">
+                  <span class="lp-node-role">Market signals</span>
+                  <span class="lp-chip"><i></i>Grok 4.3</span>
+                  <span class="lp-state" data-state>Done</span>
+                </div>
+              </li>
+              <li class="lp-step">
+                <div class="lp-node" data-step="1" style="--p:#d97757">
+                  <span class="lp-node-role">Draft</span>
+                  <span class="lp-chip"><i></i>Claude 4.6 Sonnet</span>
+                  <span class="lp-state" data-state>Done</span>
+                </div>
+              </li>
+              <li class="lp-step">
+                <div class="lp-node" data-step="2" style="--p:#19a37f">
+                  <span class="lp-node-role">Review</span>
+                  <span class="lp-chip"><i></i>GPT-5.4 Pro</span>
+                  <span class="lp-state" data-state>Done</span>
+                </div>
+              </li>
+              <li class="lp-step">
+                <div class="lp-node lp-node-you" data-step="3">
+                  <span class="lp-node-role">Approve and send</span>
+                  <span class="lp-chip lp-chip-you">You</span>
+                  <span class="lp-state" data-state>Waiting for you</span>
+                </div>
+              </li>
+            </ol>
+            <figcaption class="lp-mission-note">Research runs side by side. The reviewer sends the draft back until it passes, then the mission waits in your Outbox.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Inside NICE ──────────────────────────────────────────── -->
+    <section class="lp-section" id="inside" aria-labelledby="inside-title">
+      <div class="lp-wrap">
+        <header class="lp-section-head lp-center">
+          <p class="lp-badge">Inside NICE</p>
+          <h2 class="lp-h2" id="inside-title">Your command center</h2>
+          <p class="lp-muted">Home shows what needs you. Each spaceship shows its crew as cards. Chat talks to any model. The Outbox holds everything the crew made.</p>
+        </header>
+
+        <div class="lp-tabs" role="tablist" aria-label="Inside NICE">
+          <button type="button" role="tab" id="tab-crew" aria-controls="panel-crew" aria-selected="true">The crew</button>
+          <button type="button" role="tab" id="tab-chat" aria-controls="panel-chat" aria-selected="false" tabindex="-1">Chat and Compare</button>
+          <button type="button" role="tab" id="tab-outbox" aria-controls="panel-outbox" aria-selected="false" tabindex="-1">The Outbox</button>
+        </div>
+
+        <div class="lp-window">
+          <div class="lp-window-bar" aria-hidden="true">
+            <span></span><span></span><span></span>
+            <p>nicespaceship.ai/app</p>
+          </div>
+          <div class="lp-window-body">
+            <nav class="lp-mock-side" aria-label="The app's sidebar (example)">
+              <p class="lp-mock-brand"><img src="/assets/nice-mark-light.svg" alt="" width="16" height="16" />NICE</p>
+              <ul>
+                <li>Home</li>
+                <li>Chat</li>
+                <li>Outbox <b>3</b></li>
+                <li>Library</li>
+              </ul>
+              <p class="lp-mock-label">Spaceships</p>
+              <ul>
+                <li class="is-on"><i>TG</i>The Galley</li>
+                <li><i>TL</i>The Loft</li>
+              </ul>
+            </nav>
+
+            <!-- Crew -->
+            <div class="lp-mock-panel" role="tabpanel" id="panel-crew" aria-labelledby="tab-crew">
+              <div class="lp-mock-head">
+                <span class="lp-mock-ship">TG</span>
+                <div>
+                  <p class="lp-overline">Spaceship</p>
+                  <p class="lp-mock-title">The Galley</p>
+                  <p class="lp-mock-sub">A restaurant crew, 6 agents on 6 models</p>
+                </div>
+              </div>
+              <div class="lp-crew">
+                <article class="lp-crew-card" style="--p:#d97757">
+                  <header><span class="lp-av">HC</span><div><h3>Head Chef</h3><p>Lead agent</p></div></header>
+                  <p class="lp-crew-model"><i></i>Claude 4.6 Sonnet</p>
+                  <p class="lp-crew-state is-active">Working…</p>
+                  <p class="lp-crew-msg"><b>You</b>Plan Friday's specials around the fish delivery.</p>
+                </article>
+                <article class="lp-crew-card" style="--p:#4f8df5">
+                  <header><span class="lp-av">RM</span><div><h3>Reservations Manager</h3><p>Google Workspace</p></div></header>
+                  <p class="lp-crew-model"><i></i>Gemini 2.5 Flash</p>
+                  <p class="lp-crew-state is-recent">Just finished</p>
+                  <p class="lp-crew-msg"><b>Reservations Manager</b>Confirmed the 12-top for Friday at 7:30.</p>
+                </article>
+                <article class="lp-crew-card" style="--p:#19a37f">
+                  <header><span class="lp-av">BK</span><div><h3>Bookkeeper</h3><p>Stripe</p></div></header>
+                  <p class="lp-crew-model"><i></i>GPT-5 mini</p>
+                  <p class="lp-crew-state">Ready</p>
+                  <p class="lp-crew-msg"><b>Bookkeeper</b>Last night's tips are reconciled.</p>
+                </article>
+                <article class="lp-crew-card" style="--p:#9aa0a6">
+                  <header><span class="lp-av">MM</span><div><h3>Menu Manager</h3><p>Notion</p></div></header>
+                  <p class="lp-crew-model"><i></i>Grok 4.3</p>
+                  <p class="lp-crew-state">Ready</p>
+                  <p class="lp-crew-msg"><b>Menu Manager</b>Wine list updated for the new vintage.</p>
+                </article>
+                <article class="lp-crew-card" style="--p:#6d7cfe">
+                  <header><span class="lp-av">FL</span><div><h3>FOH Lead</h3><p>Slack</p></div></header>
+                  <p class="lp-crew-model"><i></i>DeepSeek V4 Flash</p>
+                  <p class="lp-crew-state is-active">Working…</p>
+                  <p class="lp-crew-msg"><b>You</b>Post tonight's 86 list to the floor channel.</p>
+                </article>
+                <article class="lp-crew-card" style="--p:#8b6cff">
+                  <header><span class="lp-av">ML</span><div><h3>Marketing Lead</h3><p>Klaviyo</p></div></header>
+                  <p class="lp-crew-model"><i></i>Kimi K2.6</p>
+                  <p class="lp-crew-state">Ready</p>
+                  <p class="lp-crew-msg"><b>Marketing Lead</b>Drafted the weekend newsletter for your review.</p>
+                </article>
+              </div>
+              <p class="lp-mock-caption">Each card's frame takes the color of the lab behind its model. Message any agent from its card.</p>
+            </div>
+
+            <!-- Chat and Compare -->
+            <div class="lp-mock-panel" role="tabpanel" id="panel-chat" aria-labelledby="tab-chat" hidden>
+              <div class="lp-chat">
+                <p class="lp-chat-you">Write a two-line caption for our lemon tarts.</p>
+                <p class="lp-overline">Compared 3 models</p>
+                <div class="lp-compare">
+                  <article class="lp-compare-card" style="--p:#4f8df5">
+                    <header><span><i></i>Gemini 2.5 Flash</span><em>Free</em></header>
+                    <p>Bright, tart and gone by noon. Our lemon tarts are back this weekend.</p>
+                    <span class="lp-keep">Keep this one</span>
+                  </article>
+                  <article class="lp-compare-card is-kept" style="--p:#9aa0a6">
+                    <header><span><i></i>Grok 4.3</span><em>Kept</em></header>
+                    <p>Sunshine in a butter crust. Lemon tarts, this Saturday only, while they last.</p>
+                    <span class="lp-keep">Your conversation continues from this one</span>
+                  </article>
+                  <article class="lp-compare-card" style="--p:#6d7cfe">
+                    <header><span><i></i>DeepSeek V4 Flash</span><em>Standard</em></header>
+                    <p>Zest, curd, crumble. Come early: the lemon tarts never last the afternoon.</p>
+                    <span class="lp-keep">Keep this one</span>
+                  </article>
+                </div>
+              </div>
+              <p class="lp-mock-caption">Chat with any model, or let NICE Auto pick one per message. Compare asks two or three at once and shows the answers side by side.</p>
+            </div>
+
+            <!-- Outbox -->
+            <div class="lp-mock-panel" role="tabpanel" id="panel-outbox" aria-labelledby="tab-outbox" hidden>
+              <div class="lp-outbox">
+                <ul class="lp-outbox-list">
+                  <li class="is-on"><b>Thursday pick-up reminders</b><span>Email · Reservations Manager</span></li>
+                  <li><b>Weekly sales roundup</b><span>Report · Bookkeeper</span></li>
+                  <li><b>Weekend newsletter</b><span>Email · Marketing Lead</span></li>
+                </ul>
+                <article class="lp-outbox-item">
+                  <p class="lp-overline">Waiting for you</p>
+                  <h3>Thursday pick-up reminders</h3>
+                  <div class="lp-outbox-doc">
+                    <p>Hi Priya, your order of 6 morning buns and 1 lemon tart is ready Thursday from 7:00 am.</p>
+                    <p>See you then,<br />The Galley</p>
+                  </div>
+                  <div class="lp-outbox-acts"><span class="is-primary">Approve</span><span>Edit</span><span>Reject</span></div>
+                </article>
+              </div>
+              <p class="lp-mock-caption">Emails, posts and reports wait here for your OK. A week view shows what goes out each day.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Models ───────────────────────────────────────────────── -->
+    <section class="lp-section" id="models" aria-labelledby="models-title">
+      <div class="lp-wrap">
+        <header class="lp-section-head">
+          <p class="lp-badge">One account, every model</p>
+          <h2 class="lp-h2" id="models-title">Every lab on one crew</h2>
+          <p class="lp-muted">NICE holds the keys for every provider, so you never paste one in. Turn models on and off like channels, and put each agent on the one that suits its job.</p>
+        </header>
+        <ul class="lp-models">
+          <li style="--p:#4f8df5"><i></i><b>Gemini 2.5 Flash</b><span>Google</span><em>Free</em></li>
+          <li style="--p:#4f8df5"><i></i><b>Gemini 2.5 Pro</b><span>Google</span></li>
+          <li style="--p:#d97757"><i></i><b>Claude 4.6 Sonnet</b><span>Anthropic</span></li>
+          <li style="--p:#d97757"><i></i><b>Claude 4.7 Opus</b><span>Anthropic</span></li>
+          <li style="--p:#19a37f"><i></i><b>GPT-5.4 Pro</b><span>OpenAI</span></li>
+          <li style="--p:#19a37f"><i></i><b>GPT-5 mini</b><span>OpenAI</span></li>
+          <li style="--p:#19a37f"><i></i><b>OpenAI o3</b><span>OpenAI</span></li>
+          <li style="--p:#19a37f"><i></i><b>GPT-OSS 120B</b><span>OpenAI, on Groq</span></li>
+          <li style="--p:#9aa0a6"><i></i><b>Grok 4.3</b><span>xAI</span></li>
+          <li style="--p:#6d7cfe"><i></i><b>DeepSeek V4 Flash</b><span>DeepSeek</span></li>
+          <li style="--p:#8b6cff"><i></i><b>Kimi K2.6</b><span>Moonshot AI</span></li>
+          <li style="--p:#76b900"><i></i><b>Nemotron 3 Super</b><span>NVIDIA</span></li>
+        </ul>
+        <div class="lp-callouts">
+          <article class="lp-panel">
+            <h3 class="lp-h3">NICE Auto</h3>
+            <p>In chat, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning.</p>
+          </article>
+          <article class="lp-panel">
+            <h3 class="lp-h3">Compare</h3>
+            <p>Ask two or three models the same question and read their answers side by side. The one you keep becomes the reply your conversation continues from.</p>
+          </article>
+          <article class="lp-panel">
+            <h3 class="lp-h3">Free model, always on</h3>
+            <p>Gemini 2.5 Flash is free for everyone with no card. Add the paid models when your crew needs them.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Library ──────────────────────────────────────────────── -->
+    <section class="lp-section" id="library" aria-labelledby="library-title">
+      <div class="lp-wrap">
+        <header class="lp-section-head">
+          <p class="lp-badge">The Library</p>
+          <h2 class="lp-h2" id="library-title">Ready-made crews for real businesses</h2>
+          <p class="lp-muted">Each spaceship comes staffed for one kind of business, every agent wired to the tools that business already uses. Pick one, change anyone, or build your own.</p>
+        </header>
+        <ul class="lp-library">
+          <li class="lp-ship"><p class="lp-overline">Restaurant</p><h3>The Galley</h3><p>Head Chef, Reservations Manager, Bookkeeper, Menu Manager, FOH Lead</p></li>
+          <li class="lp-ship"><p class="lp-overline">Beauty salon</p><h3>The Salon</h3><p>Salon Owner, Front Desk Coordinator, Stylist Notes Lead, Bookkeeper</p></li>
+          <li class="lp-ship"><p class="lp-overline">Law firm</p><h3>The Chambers</h3><p>Managing Partner, Intake Coordinator, Paralegal, Case Manager, Billing Lead</p></li>
+          <li class="lp-ship"><p class="lp-overline">Software startup</p><h3>The Loft</h3><p>Founder, Engineering Lead, Designer, Product Manager, Operations</p></li>
+          <li class="lp-ship"><p class="lp-overline">Healthcare practice</p><h3>The Practice</h3><p>Practice Owner, Front Desk Coordinator, Medical Assistant, Billing Coordinator</p></li>
+          <li class="lp-ship"><p class="lp-overline">E-commerce</p><h3>The Storefront</h3><p>Founder, Bookkeeper, Support Lead, Email Marketer, Catalog Manager</p></li>
+          <li class="lp-ship"><p class="lp-overline">Real estate</p><h3>The Brokerage</h3><p>Broker-Owner, Lead Manager, Showings Coordinator, Transaction Coordinator</p></li>
+          <li class="lp-ship"><p class="lp-overline">Boutique hotel</p><h3>The Lobby</h3><p>Innkeeper, Front Desk Lead, Guest Profile Lead, Group Sales Coordinator</p></li>
+        </ul>
+        <p class="lp-tools"><span>Works with</span> Gmail · Google Calendar · Google Drive · Microsoft 365 · Slack · GitHub · Notion · HubSpot · Linear · Jira and Confluence · Airtable · Klaviyo · Miro · Sentry · Stripe · Cloudflare</p>
+      </div>
+    </section>
+
+    <!-- ── Codex ────────────────────────────────────────────────── -->
+    <section class="lp-section" id="codex" aria-labelledby="codex-title">
+      <div class="lp-wrap">
+        <header class="lp-section-head">
+          <p class="lp-badge">The NICE Codex</p>
+          <h2 class="lp-h2" id="codex-title">NICE, explained</h2>
+          <p class="lp-muted">Every part of NICE, one entry at a time. Start at the top, or search for what you want to know.</p>
+        </header>
+
+        <div class="lp-codex" data-codex>
+          <div class="lp-codex-index">
+            <label class="lp-search" for="codex-search">
+              <span class="lp-sr">Search the Codex</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input type="search" id="codex-search" placeholder="Search the Codex" autocomplete="off" />
+            </label>
+            <nav class="lp-codex-nav" aria-label="Codex entries"></nav>
+          </div>
+
+          <div class="lp-codex-pages">
+            <article class="lp-entry" id="codex-what-is-nice" data-group="Getting started">
+              <h3>What NICE is</h3>
+              <p>NICE is mission control for AI agents. You put a crew of agents on a spaceship, give each one the AI model that suits its job, and hand the crew a mission. The agents split the work, pass results to each other and check each other's output.</p>
+              <p>By default, anything that leaves your business, like an email, a post or a changed file, waits for your OK. NICE stands for Neural Intelligence Command Engine, and NICE SPACESHIP makes it.</p>
+            </article>
+            <article class="lp-entry" id="codex-first-spaceship" data-group="Getting started">
+              <h3>Your first spaceship</h3>
+              <p>Open the Library and pick a spaceship built for a business like yours: a restaurant, a salon, a law firm, a software startup. Its crew comes staffed, each agent with a role, a model and the tools it works through.</p>
+              <p>Change anyone you like, connect the tools your crew needs, then send your first message from any crew card. Home lists your spaceships and anything that needs you.</p>
+            </article>
+            <article class="lp-entry" id="codex-free" data-group="Getting started">
+              <h3>Free to start</h3>
+              <p>Sign up with Google or email. Gemini 2.5 Flash is free and always on, with no card and no API keys: NICE holds the keys for every provider, so you never paste one in.</p>
+              <p>The free plan runs one spaceship at a time. Pro brings in more models and lets you run several spaceships at once, and add-ons bring in Claude and the premium models.</p>
+            </article>
+
+            <article class="lp-entry" id="codex-spaceship" data-group="Your crew">
+              <h3>Spaceships</h3>
+              <p>A spaceship is a team of agents built around one business or one line of work. It has a lead agent and up to eleven stations for specialists, twelve crew in all.</p>
+              <p>Each spaceship keeps its own log, its own missions and its own run history, so a restaurant crew and a marketing crew never mix up their work.</p>
+            </article>
+            <article class="lp-entry" id="codex-agent" data-group="Your crew">
+              <h3>Agents</h3>
+              <p>An agent is one crew member: a role, its instructions, the AI model it thinks with, and the tools it may use. A bookkeeper might run on one model and read Stripe; a writer might run on another and save drafts to Google Drive.</p>
+              <p>Agents can have memory, so they learn from what you approve and what you turn down.</p>
+            </article>
+            <article class="lp-entry" id="codex-crew-cards" data-group="Your crew">
+              <h3>Crew cards</h3>
+              <p>Each spaceship shows its crew as a table of cards. A card's frame takes the color of the lab behind its model, so you see at a glance who is thinking with what.</p>
+              <p>A card shows the agent's role, model and tools, whether it is working right now, its latest exchange, and a box to message it directly. A diagram view shows the same crew as a schematic.</p>
+            </article>
+            <article class="lp-entry" id="codex-library" data-group="Your crew">
+              <h3>The Library</h3>
+              <p>The Library holds ready-made spaceships and agents, and the tools they connect to. Spaceships are built for real businesses: The Galley for a restaurant, The Chambers for a law firm, The Loft for a software startup, The Practice for a healthcare office, The Lobby for a boutique hotel, and more.</p>
+              <p>Build your own when nothing fits: describe your business and NICE drafts a crew, or start from an empty spaceship.</p>
+            </article>
+
+            <article class="lp-entry" id="codex-mission" data-group="Missions">
+              <h3>Missions</h3>
+              <p>A mission is a job you hand a spaceship: what to do, which crew members do it, and in what order. Write it in plain words and NICE drafts the plan.</p>
+              <p>Run a mission once, or put it on a schedule, like every weekday at 7 a.m. in your time zone. Schedules run on NICE's servers, so your computer can stay off.</p>
+            </article>
+            <article class="lp-entry" id="codex-steps" data-group="Missions">
+              <h3>Steps and handoffs</h3>
+              <p>Behind every mission is a plan of steps. Steps run one after another, or side by side and merge. A quality loop sends a draft back to the writer until a reviewer passes it. A triage step sends work to the right specialist, a condition takes one branch or another, and an approval step stops and waits for you.</p>
+              <p>A step can also wait, call a webhook, send a notice, or run one of NICE's own commands.</p>
+            </article>
+            <article class="lp-entry" id="codex-runs" data-group="Missions">
+              <h3>Runs</h3>
+              <p>Each time a mission runs, NICE records the run: what each agent did, on which model, and what it made. A run moves from queued to running, then to review or done.</p>
+              <p>Cancel a run that's going the wrong way, retry one that failed, and look back at every run in the spaceship's history.</p>
+            </article>
+            <article class="lp-entry" id="codex-log" data-group="Missions">
+              <h3>The spaceship's log</h3>
+              <p>Agents on a spaceship share one log. The writer sees what the researcher found, and the reviewer sees both, so the work builds on itself instead of starting over.</p>
+            </article>
+
+            <article class="lp-entry" id="codex-outbox" data-group="Your OK">
+              <h3>The Outbox</h3>
+              <p>Everything your crew makes lands in the Outbox. Results that need you wait under Needs you: read them, edit them, approve or reject them. Approving a paused mission lets the crew finish the rest.</p>
+              <p>Approved work is ready to copy or export, and a week view shows what goes out each day. The Outbox's count follows you in the sidebar and on Home.</p>
+            </article>
+            <article class="lp-entry" id="codex-review" data-group="Your OK">
+              <h3>Review mode</h3>
+              <p>Review mode stops an agent before anything with side effects, like sending an email, booking a meeting or changing a file, and asks you first. You decide how much each spaceship may do on its own.</p>
+            </article>
+
+            <article class="lp-entry" id="codex-models" data-group="Models">
+              <h3>The model lineup</h3>
+              <p>Claude Sonnet and Opus from Anthropic; GPT-5.4 Pro, GPT-5 mini and o3 from OpenAI; Gemini 2.5 Flash and Pro from Google; Grok from xAI; DeepSeek; Kimi from Moonshot AI; Nemotron from NVIDIA; and GPT-OSS on Groq.</p>
+              <p>Turn models on and off like channels, and give every agent the one that suits its job.</p>
+            </article>
+            <article class="lp-entry" id="codex-auto" data-group="Models">
+              <h3>NICE Auto</h3>
+              <p>In chat, NICE Auto picks a model for each message: a quick one for small talk, a stronger one for code, long documents or careful reasoning. It stays on the models your plan includes, so it never spends what you didn't choose to.</p>
+            </article>
+            <article class="lp-entry" id="codex-compare" data-group="Models">
+              <h3>Compare</h3>
+              <p>Not sure which model is best for a question? Turn on Compare in Chat and ask two or three at once. Their answers appear side by side, and the one you keep becomes the reply your conversation continues from.</p>
+            </article>
+
+            <article class="lp-entry" id="codex-tools" data-group="Tools">
+              <h3>Integrations</h3>
+              <p>Agents work where your work lives: Gmail, Google Calendar and Drive, Microsoft 365, Slack, GitHub, Notion, HubSpot, Linear, Jira and Confluence, Airtable, Klaviyo, Miro, Sentry, Stripe and Cloudflare.</p>
+              <p>Each connects with its own sign-in, so NICE never sees your password, and you can disconnect any of them at any time. They connect over MCP, the open standard for agent tools.</p>
+            </article>
+            <article class="lp-entry" id="codex-media" data-group="Tools">
+              <h3>The web and files</h3>
+              <p>Agents can read web pages and keep working files of their own. In chat you can attach images, PDFs, audio, video and text, and NICE moves you to a model that can read them when the one you picked can't.</p>
+            </article>
+
+            <article class="lp-entry" id="codex-themes" data-group="Make it yours">
+              <h3>Themes</h3>
+              <p>Pick a look for your bridge: the clean NICE default, a red-eyed HAL-9000, The Grid, The Matrix, LCARS, J.A.R.V.I.S., Cyberpunk, RX-78-2 or 16-BIT. The Office trades the space words for office ones, so missions become assignments.</p>
+              <p>Build your own in the Theme Editor.</p>
+            </article>
+            <article class="lp-entry" id="codex-engineers" data-group="Make it yours">
+              <h3>For agent engineers</h3>
+              <p>NICE builds on the patterns agent engineers already use, under plain names:</p>
+              <table class="lp-terms">
+                <thead>
+                  <tr><th scope="col">Industry term</th><th scope="col">In NICE</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Orchestrator and workers</td><td>A spaceship: a lead agent and its crew</td></tr>
+                  <tr><td>Agent workflow</td><td>A mission and its steps</td></tr>
+                  <tr><td>Parallel, chain, evaluator loop</td><td>Side-by-side steps, pipelines, quality loops</td></tr>
+                  <tr><td>Human in the loop</td><td>Approval steps, review mode, the Outbox</td></tr>
+                  <tr><td>Shared memory</td><td>The spaceship's log</td></tr>
+                  <tr><td>Model router</td><td>NICE Auto</td></tr>
+                  <tr><td>Tool use</td><td>Integrations over MCP</td></tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Themes ───────────────────────────────────────────────── -->
+    <section class="lp-section" id="themes" aria-labelledby="themes-title">
+      <div class="lp-wrap">
+        <header class="lp-section-head lp-center">
+          <p class="lp-badge">Visual identity</p>
+          <h2 class="lp-h2" id="themes-title">Fly it your way</h2>
+          <p class="lp-muted">From a clean office to a starship console, NICE changes its whole look in one tap.</p>
+        </header>
+        <ul class="lp-themes">
+          <li style="--t-bg:#0a0a0a;--t-ac:#1862ce"><span aria-hidden="true"></span>NICE</li>
+          <li style="--t-bg:#000000;--t-ac:#ef4444"><span aria-hidden="true"></span>HAL-9000</li>
+          <li style="--t-bg:#02090f;--t-ac:#18a0fb"><span aria-hidden="true"></span>The Grid</li>
+          <li style="--t-bg:#000800;--t-ac:#00ff41"><span aria-hidden="true"></span>The Matrix</li>
+          <li style="--t-bg:#000000;--t-ac:#ff9966"><span aria-hidden="true"></span>LCARS</li>
+          <li style="--t-bg:#070d1a;--t-ac:#00e5ff"><span aria-hidden="true"></span>J.A.R.V.I.S.</li>
+          <li style="--t-bg:#0a0a0f;--t-ac:#ff2d6f"><span aria-hidden="true"></span>Cyberpunk</li>
+          <li style="--t-bg:#12131a;--t-ac:#2b4e8c"><span aria-hidden="true"></span>RX-78-2</li>
+          <li style="--t-bg:#1a1a2e;--t-ac:#e2b714"><span aria-hidden="true"></span>16-BIT</li>
+          <li style="--t-bg:#e8e8ec;--t-ac:#0F52BA"><span aria-hidden="true"></span>The Office</li>
         </ul>
       </div>
     </section>
 
-    <section class="lp-section" id="how" aria-labelledby="how-title">
-      <div class="lp-wrap">
-        <p class="lp-overline">How it works</p>
-        <h2 class="lp-h2" id="how-title">Crew it, plan it, run it.</h2>
-        <ol class="lp-how">
-          <li class="lp-how-step">
-            <span class="lp-how-num" aria-hidden="true">1</span>
-            <h3 class="lp-h3">Crew a spaceship</h3>
-            <p>A spaceship is your team: a lead agent plus specialists. Give each crew member the model that suits the job, say Gemini for research, Claude for writing and GPT for review.</p>
-          </li>
-          <li class="lp-how-step">
-            <span class="lp-how-num" aria-hidden="true">2</span>
-            <h3 class="lp-h3">Plan the mission</h3>
-            <p>A mission is the plan your crew follows. Steps run in order or side by side, loop until a reviewer signs off, and pause for your approval where it matters.</p>
-          </li>
-          <li class="lp-how-step">
-            <span class="lp-how-num" aria-hidden="true">3</span>
-            <h3 class="lp-h3">Run it now or on a schedule</h3>
-            <p>Every step lands in the spaceship's log, so each agent builds on what the others already found. Run a mission once, or set it to run every morning.</p>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <section class="lp-section lp-section-alt" aria-labelledby="features-title">
-      <div class="lp-wrap">
-        <p class="lp-overline">Built for real work</p>
-        <h2 class="lp-h2" id="features-title">Agents that act where your work lives.</h2>
-        <div class="lp-features">
-          <article class="lp-feature">
-            <h3 class="lp-h3">One account, every model</h3>
-            <p>NICE holds the provider keys, so you never manage one. Switch models on and off, or let NICE Auto pick the right one for each message.</p>
-          </article>
-          <article class="lp-feature">
-            <h3 class="lp-h3">Your tools, connected</h3>
-            <p>Gmail, Google Calendar and Drive, Microsoft 365, Slack, GitHub, Notion, HubSpot, Linear and more connect over MCP, the open standard for agent tools.</p>
-          </article>
-          <article class="lp-feature">
-            <h3 class="lp-h3">You stay in charge</h3>
-            <p>Review mode stops an agent before it sends an email, books a meeting or changes a file, and waits for your yes.</p>
-          </article>
-          <article class="lp-feature">
-            <h3 class="lp-h3">Ready-made crews</h3>
-            <p>Start from a blueprint built for a real business, from a salon to a law office, then change the crew to fit yours.</p>
-          </article>
-          <article class="lp-feature">
-            <h3 class="lp-h3">Shared memory</h3>
-            <p>Agents on a spaceship share one log. The writer sees what the researcher found, and the reviewer sees both.</p>
-          </article>
-          <article class="lp-feature">
-            <h3 class="lp-h3">Free to start</h3>
-            <p>A free model is always on with no card required. Add premium models from Anthropic, OpenAI and Google when your crew needs them.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="lp-section" aria-labelledby="terms-title">
-      <div class="lp-wrap lp-terms-wrap">
-        <div>
-          <p class="lp-overline">In NICE terms</p>
-          <h2 class="lp-h2" id="terms-title">Standard patterns, plain names.</h2>
-          <p class="lp-muted">NICE builds on the patterns agent engineers already use. If you know the industry terms, here is where each one lives.</p>
-        </div>
-        <table class="lp-terms">
-          <thead>
-            <tr><th scope="col">Industry term</th><th scope="col">In NICE</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Orchestrator and workers</td><td>A spaceship: a lead agent and its crew</td></tr>
-            <tr><td>Agent workflow</td><td>A mission and its steps</td></tr>
-            <tr><td>Parallel, chain, evaluator loop</td><td>Mission steps: parallel, pipeline, quality loop</td></tr>
-            <tr><td>Human in the loop</td><td>Approval steps and review mode</td></tr>
-            <tr><td>Shared memory</td><td>The spaceship's log</td></tr>
-            <tr><td>Model router</td><td>NICE Auto</td></tr>
-            <tr><td>Tool use</td><td>Integrations over MCP</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="lp-cta">
+    <!-- ── Call to action ───────────────────────────────────────── -->
+    <section class="lp-cta" aria-labelledby="cta-title">
       <div class="lp-wrap lp-center">
-        <h2 class="lp-h2">Put your first crew to work.</h2>
+        <h2 class="lp-h2" id="cta-title">Put your first crew to work.</h2>
         <p class="lp-muted">Pick a ready-made spaceship or build your own in minutes.</p>
         <div class="lp-actions lp-actions-center">
           <a class="lp-btn lp-btn-primary" href="/app/">Start free</a>
@@ -244,7 +589,8 @@
   <footer class="lp-footer">
     <div class="lp-wrap lp-footer-inner">
       <a class="lp-wordmark" href="https://nicespaceship.com">NICE SPACESHIP</a>
-      <nav class="lp-footer-links" aria-label="Legal">
+      <nav class="lp-footer-links" aria-label="Footer">
+        <a href="#codex">Codex</a>
         <a href="https://nicespaceship.com/privacy">Privacy</a>
         <a href="https://nicespaceship.com/terms">Terms</a>
         <span>&copy; 2026 NICE SPACESHIP</span>

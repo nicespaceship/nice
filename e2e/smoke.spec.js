@@ -360,7 +360,7 @@ test.describe('Performance', () => {
 test.describe('Front Page', () => {
   test('renders for signed-out visitors and links into the app', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('h1')).toHaveText('Every AI model, working as one team.');
+    await expect(page.locator('h1')).toHaveText('Mission control for your AI crew.');
     await expect(page.locator('a[href="/app/"]').first()).toBeVisible();
     await expect(page.locator('a[href="https://nicespaceship.com/privacy"]')).toBeAttached();
   });
@@ -370,6 +370,16 @@ test.describe('Front Page', () => {
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     const serious = results.violations.filter(v => v.impact === 'critical' || v.impact === 'serious');
     expect(serious).toEqual([]);
+  });
+
+  test('opens a Codex entry from its link and searches the Codex', async ({ page }) => {
+    await page.goto('/#codex/compare');
+    const entry = page.locator('#codex-compare');
+    await expect(entry).toBeVisible();
+    await expect(page.locator('#codex-what-is-nice')).toBeHidden();
+    await page.locator('#codex-search').fill('approve');
+    await expect(page.locator('.lp-codex-nav button[data-entry="outbox"]')).toBeVisible();
+    await expect(page.locator('.lp-codex-nav button[data-entry="themes"]')).toHaveCount(0);
   });
 
   test('forwards app deep links to /app/', async ({ page }) => {
