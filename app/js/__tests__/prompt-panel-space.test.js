@@ -369,6 +369,25 @@ describe('Sending from the panel on Space', () => {
       expect(SpaceCards.approval(id)).toBeTruthy();
     });
 
+    it('runs nothing when several cards answer at once, and says so on each card', async () => {
+      globalThis.fetch = vi.fn(async (url, init) => {
+        calls.push(JSON.parse(init.body));
+        return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Done, I created the mission for you. [EXEC: create_mission | Multi]' }] }) };
+      });
+      SpaceCards.toggle('grok-4-3');
+      send('Plan my launch');
+      await settled();
+      await new Promise(r => setTimeout(r, 0));
+      expect(run).not.toHaveBeenCalled();
+      expect(SpaceCards.approval(id)).toBeNull();
+      const notes = PromptPanel.messages().filter(m => m.note);
+      expect(notes.map(m => m.modelId).sort()).toEqual(['gemini-2-5-flash', 'grok-4-3']);
+      expect(notes[0].text).toBe('This model asked to run Create Mission. Send to this card alone to run it.');
+      // Each note sits in its own card's exchange.
+      const t = SpaceCards.threads(PromptPanel.messages());
+      expect(t['grok-4-3'][0].replies.map(r => !!r.note)).toEqual([false, true]);
+    });
+
     it('drops the question when the chat is cleared', async () => {
       send('Plan my launch');
       await vi.waitFor(() => expect(SpaceCards.approval(id)).toBeTruthy());

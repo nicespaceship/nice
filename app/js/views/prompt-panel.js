@@ -2381,7 +2381,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           if (!res.text) return finish(_cardError(id, 'No answer came back. Try again.'));
           const reply = _cardReply(id, { text: res.text });
           finish(reply);
-          if (single && epoch === _cardEpoch) _afterSingleReply(id, reply);
+          if (epoch !== _cardEpoch) return;
+          if (single) _afterSingleReply(id, reply);
+          else _noteUnrunCommands(id, reply);
         })
         .catch(err => {
           // Only our own abort (the conversation changed) is silent. A server
@@ -2409,12 +2411,44 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     for (const ex of execs) {
       const res = await _executeExec(ex.action, ex.params, askOnCard);
       if (epoch !== _cardEpoch) return;
-      const note = _cardReply(id, { text: res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`, note: true });
-      _messages.push(note);
-      _lastSpokenTs = note.ts;
+      _noteOnCard(id, reply, res.ok ? `**Done:** ${res.msg}` : `**Failed:** ${res.msg}`);
     }
+  }
+
+  // Several cards answered at once, so no command ran (see above). A reply
+  // that asked for one says so on its card rather than leave its "Done, I
+  // created it" standing. (The persona prompt that teaches EXEC is built in
+  // nice-ai, so the client can't tell these calls not to ask.)
+  function _noteUnrunCommands(id, reply) {
+    const names = [];
+    const re = /\[EXEC:\s*(\w+)/g;
+    let m;
+    while ((m = re.exec(reply.text || '')) !== null) {
+      const spec = _EXEC_COMMANDS[m[1]];
+      const tool = spec && typeof ToolRegistry !== 'undefined' && ToolRegistry.get ? ToolRegistry.get(spec.id) : null;
+      const name = (tool && tool.name) || m[1].replace(/_/g, ' ');
+      if (!names.includes(name)) names.push(name);
+    }
+    if (!names.length) return;
+    const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+    _noteOnCard(id, reply, `This model asked to run ${list}. Send to this card alone to run it.`);
+  }
+
+  // A note from NICE on one card's exchange: a command's result, or a
+  // command it didn't run. It goes right after the reply it belongs to (and
+  // that reply's earlier notes), so a newer prompt to the card never adopts it.
+  function _noteOnCard(id, reply, text) {
+    let at = _messages.indexOf(reply);
+    if (at === -1) return null;
+    at++;
+    while (at < _messages.length && _messages[at] && _messages[at].note && _messages[at].modelId === id) at++;
+    const note = _cardReply(id, { text, note: true });
+    _messages.splice(at, 0, note);
+    // The monitor reads out an unread last message; notes are not for reading out.
+    if (at === _messages.length - 1) _lastSpokenTs = note.ts;
     _saveMessages();
     SpaceCards.changed(id);
+    return note;
   }
 
   function _abortCards() {
