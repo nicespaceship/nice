@@ -2449,10 +2449,12 @@ html:not([data-theme]) .app-main,
    pulls each wire's endpoint back from the reactor center by that
    distance, so wires terminate at the reactor's outer edge regardless
    of theme. Tune per-theme below where the visible reactor body
-   diverges from the default radius. */
+   diverges from the default radius. NICE has no reactor, so its wires
+   run all the way to the center. */
 :root { --schematic-wire-clearance: 140px; }
 [data-theme="jarvis"] { --schematic-wire-clearance: 150px; }
 [data-theme="hal-9000"] { --schematic-wire-clearance: 115px; }
+:is([data-theme="nice"],[data-theme="nice-dark"]) { --schematic-wire-clearance: 0px; }
 .schematic-svg { position:absolute; inset:0; z-index:-1; }
 .schematic-svg path, .schematic-svg line, .schematic-svg circle { pointer-events:none; }
 /* HTML overlay for reactor core click (sits above SVG + slots) */
