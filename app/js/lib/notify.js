@@ -99,13 +99,15 @@ const Notify = (() => {
   }
 
   function _showToast(title, message, type, duration = 5000, undoCallback, actionLabel, persistent) {
-    // The bar's color says what kind of news this is, using the indicator
-    // meanings: stop (failed), go (done), busy (needs attention), info.
-    // CSS paints the kind (app.css → NOTIFICATION TOASTS); the monochrome
-    // NICE theme draws it as a dot. Other types keep the plain accent bar.
+    // Each type maps to an indicator meaning: stop (failed), go (done),
+    // busy (needs attention), info. The monochrome NICE theme draws it as a
+    // dot beside the title; the other themes color the side bar by type
+    // instead (app.css → NOTIFICATION TOASTS). Plain notices get neither.
     const kinds = {
-      agent_error: 'stop', task_failed: 'stop', task_complete: 'go',
-      budget_alert: 'busy', fleet_deployed: 'info',
+      error: 'stop', agent_error: 'stop', task_failed: 'stop',
+      success: 'go', task_complete: 'go',
+      warning: 'busy', budget_alert: 'busy',
+      info: 'info', fleet_deployed: 'info',
     };
     const kind = kinds[type];
 
@@ -120,8 +122,10 @@ const Notify = (() => {
 
     const toast = document.createElement('div');
     toast.className = 'notify-toast';
+    if (type) toast.dataset.type = type;
+    if (kind) toast.dataset.kind = kind;
     toast.innerHTML = `
-      <div class="notify-toast-bar"${kind ? ` data-kind="${kind}"` : ''}></div>
+      <div class="notify-toast-bar"></div>
       <div class="notify-toast-body">
         <strong class="notify-toast-title">${_esc(title)}</strong>
         <span class="notify-toast-msg">${_esc(message)}</span>

@@ -56,12 +56,11 @@ describe('Notify', () => {
   });
 
   it('should tag each type with its indicator kind', () => {
-    Notify.send({ title: 'OK', message: 'done', type: 'task_complete' });
-    Notify.send({ title: 'Fail', message: 'broke', type: 'task_failed' });
-    Notify.send({ title: 'Budget', message: 'low', type: 'budget_alert' });
-    Notify.send({ title: 'Hi', message: 'fyi', type: 'system' });
-    const kinds = [...document.querySelectorAll('.notify-toast-bar')].map(b => b.dataset.kind);
-    expect(kinds).toEqual(['go', 'stop', 'busy', undefined]);
+    const types = ['task_complete', 'success', 'task_failed', 'error', 'budget_alert', 'warning', 'fleet_deployed', 'info', 'system'];
+    types.forEach(type => Notify.send({ title: type, message: 'm', type }));
+    const toasts = [...document.querySelectorAll('.notify-toast')];
+    expect(toasts.map(t => t.dataset.type)).toEqual(types);
+    expect(toasts.map(t => t.dataset.kind)).toEqual(['go', 'go', 'stop', 'stop', 'busy', 'busy', 'info', 'info', undefined]);
   });
 
   it('should XSS-escape title and message', () => {
