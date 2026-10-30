@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    NICE — Front page script (nicespaceship.ai/)
-   The starfield, the example mission playing out, the Inside NICE tabs
-   and the Codex. The page reads fine without it: the Codex shows every
-   entry in one column.
+   The starfield, the header and its section marks, the example mission
+   playing out, the Inside NICE tabs and theme picker, and the Codex. The
+   page reads fine without it: the Codex shows every entry in one column.
 ═══════════════════════════════════════════════════════════════════ */
 (() => {
   'use strict';
@@ -180,6 +180,55 @@
     });
   }
 
+  /* ── Header: solid once scrolled; marks the section in view ─────── */
+  function header() {
+    const bar = document.querySelector('.lp-header');
+    if (!bar) return;
+    const onScroll = () => bar.classList.toggle('is-scrolled', window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    if (!('IntersectionObserver' in window)) return;
+    const links = new Map([...bar.querySelectorAll('.lp-nav-link[href^="#"]')].map(a => [a.getAttribute('href').slice(1), a]));
+    const visible = new Set();
+    // A section counts as current while it crosses a band just above the
+    // middle of the screen; the first of the nav's sections in it wins.
+    const io = new IntersectionObserver(items => {
+      items.forEach(i => (i.isIntersecting ? visible.add(i.target.id) : visible.delete(i.target.id)));
+      const id = [...links.keys()].find(k => visible.has(k));
+      links.forEach((a, k) => (k === id ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')));
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    links.forEach((_a, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+  }
+
+  /* ── Theme picker: repaints the Inside NICE window ─────────────── */
+  function skins() {
+    const win = document.querySelector('.lp-window');
+    const group = document.querySelector('.lp-skins-list');
+    if (!win || !group) return;
+    // Text on an accent fill is black or white, whichever reads better.
+    const luminance = hex => {
+      const [r, g, b] = hex.replace('#', '').match(/../g).map(h => {
+        const c = parseInt(h, 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const onAccent = hex => {
+      const l = luminance(hex);
+      return (l + 0.05) / 0.05 > 1.05 / (l + 0.05) ? '#000000' : '#ffffff';
+    };
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-skin-bg]');
+      if (!btn) return;
+      win.style.setProperty('--w-bg', btn.dataset.skinBg);
+      win.style.setProperty('--w-ac', btn.dataset.skinAc);
+      win.style.setProperty('--w-on-ac', onAccent(btn.dataset.skinAc));
+      win.classList.toggle('is-light', btn.hasAttribute('data-skin-light'));
+      group.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    });
+  }
+
   /* ── The Codex ─────────────────────────────────────────────────── */
   // Entries are plain articles in the page (readable without this
   // script and by search engines). Here they become an index by group,
@@ -192,14 +241,20 @@
     const pages = root.querySelector('.lp-codex-pages');
     const search = root.querySelector('#codex-search');
     const wide = window.matchMedia('(min-width: 960px)');
-    const entries = [...root.querySelectorAll('.lp-entry')].map(el => {
+    const all = [...root.querySelectorAll('.lp-entry')];
+    const pad = n => String(n).padStart(2, '0');
+    const entries = all.map((el, i) => {
       const title = el.querySelector('h3');
       title.tabIndex = -1;
-      const tag = document.createElement('span');
+      const words = el.textContent.toLowerCase();
+      // "05 / 20  Your crew" above each title.
+      const tag = document.createElement('p');
       tag.className = 'lp-entry-group';
-      tag.textContent = el.dataset.group;
+      const num = document.createElement('b');
+      num.textContent = `${pad(i + 1)} / ${pad(all.length)}`;
+      tag.append(num, document.createTextNode(el.dataset.group));
       el.insertBefore(tag, title);
-      return { el, id: el.id.replace(/^codex-/, ''), group: el.dataset.group, title: title.textContent, words: el.textContent.toLowerCase() };
+      return { el, num: pad(i + 1), id: el.id.replace(/^codex-/, ''), group: el.dataset.group, title: title.textContent, words };
     });
     const groups = [...new Set(entries.map(e => e.group))];
     let current = entries[0];
@@ -242,7 +297,10 @@
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.dataset.entry = e.id;
-          btn.textContent = e.title;
+          const num = document.createElement('span');
+          num.className = 'lp-codex-num';
+          num.textContent = e.num;
+          btn.append(num, document.createTextNode(e.title));
           if (e === current) btn.setAttribute('aria-current', 'true');
           li.append(btn);
           ul.append(li);
@@ -257,7 +315,9 @@
       btn.type = 'button';
       btn.className = cls;
       btn.dataset.entry = entry.id;
-      btn.textContent = label;
+      const small = document.createElement('small');
+      small.textContent = label;
+      btn.append(small, document.createTextNode(entry.title));
       return btn;
     }
 
@@ -269,8 +329,8 @@
       const steps = document.createElement('nav');
       steps.className = 'lp-entry-steps';
       steps.setAttribute('aria-label', 'Previous and next entries');
-      if (entries[at - 1]) steps.append(stepButton(entries[at - 1], `← ${entries[at - 1].title}`, 'is-prev'));
-      if (entries[at + 1]) steps.append(stepButton(entries[at + 1], `${entries[at + 1].title} →`, 'is-next'));
+      if (entries[at - 1]) steps.append(stepButton(entries[at - 1], '← Previous', 'is-prev'));
+      if (entries[at + 1]) steps.append(stepButton(entries[at + 1], 'Next →', 'is-next'));
       entry.el.append(steps);
       nav.querySelectorAll('button').forEach(b => {
         if (b.dataset.entry === entry.id) b.setAttribute('aria-current', 'true');
@@ -293,6 +353,16 @@
       if (btn) open(btn.dataset.entry, { focus: true, remember: true });
     });
     search.addEventListener('input', renderNav);
+    // "/" jumps to the search from anywhere on the page, as on most docs sites.
+    document.addEventListener('keydown', e => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      if (t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      e.preventDefault();
+      root.classList.remove('is-reading');
+      root.scrollIntoView({ block: 'start' });
+      search.focus({ preventScroll: true });
+    });
     search.addEventListener('keydown', e => {
       if (e.key === 'Escape' && search.value) { search.value = ''; renderNav(); }
     });
@@ -312,7 +382,9 @@
   }
 
   starfield();
+  header();
   mission();
   tabs();
+  skins();
   codex();
 })();

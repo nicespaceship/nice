@@ -372,6 +372,15 @@ test.describe('Front Page', () => {
     expect(serious).toEqual([]);
   });
 
+  test('jumps to the Codex search with / and repaints the app window per theme', async ({ page }) => {
+    await page.goto('/');
+    await page.keyboard.press('/');
+    await expect(page.locator('#codex-search')).toBeFocused();
+    await page.locator('.lp-skins-list button', { hasText: 'The Office' }).click();
+    await expect(page.locator('.lp-window')).toHaveClass(/\bis-light\b/);
+    await expect(page.locator('.lp-skins-list button', { hasText: 'The Office' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   test('opens a Codex entry from its link and searches the Codex', async ({ page }) => {
     await page.goto('/#codex/compare');
     const entry = page.locator('#codex-compare');
