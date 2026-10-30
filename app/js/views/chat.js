@@ -23,6 +23,7 @@ const ChatView = (() => {
   let _said = [];                // screen-reader lines waiting for the next frame
   const _drawn = new Map();      // card id → the markup it shows now ('bar' too)
   let _status = null;            // the screen-reader status line (on <body>)
+  let _statusFrame = 0;
 
   /* ── Data ── */
   function _messages() {
@@ -359,8 +360,16 @@ const ChatView = (() => {
      announces it a second time. */
   function _speak() {
     if (!_status || !_said.length) return;
-    _status.textContent = _said.join(' ');
+    const line = _said.join(' ');
     _said = [];
+    // Clear, then write on the next frame: a line identical to the last
+    // one ("Gemini 2.5 Flash answered." twice) still counts as news.
+    _status.textContent = '';
+    if (_statusFrame) cancelAnimationFrame(_statusFrame);
+    _statusFrame = requestAnimationFrame(() => {
+      _statusFrame = 0;
+      if (_status) _status.textContent = line;
+    });
   }
 
   function _onScroll() {
@@ -458,6 +467,7 @@ const ChatView = (() => {
     _cleanup = [];
     if (_frame) { cancelAnimationFrame(_frame); _frame = 0; }
     if (_anchorFrame) { cancelAnimationFrame(_anchorFrame); _anchorFrame = 0; }
+    if (_statusFrame) { cancelAnimationFrame(_statusFrame); _statusFrame = 0; }
     _queued = new Set();
   }
 

@@ -260,6 +260,15 @@ describe('ChatView', () => {
     SpaceCards.endLive('gemini-2-5-flash', 'answered');
     await frame();
     expect(card(el, 'gemini-2-5-flash').hasAttribute('aria-busy')).toBe(false);
+    expect(status.textContent).toBe('');
+    await frame();
+    expect(status.textContent).toBe('Gemini 2.5 Flash answered.');
+    // The same line again is cleared first, so it is announced again.
+    SpaceCards.setLive('gemini-2-5-flash', { text: '' });
+    SpaceCards.endLive('gemini-2-5-flash', 'answered');
+    await frame();
+    expect(status.textContent).toBe('');
+    await frame();
     expect(status.textContent).toBe('Gemini 2.5 Flash answered.');
   });
 
