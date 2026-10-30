@@ -55,11 +55,13 @@ describe('Notify', () => {
     expect(container2).toBeTruthy();
   });
 
-  it('should use correct color for different types', () => {
+  it('should tag each type with its indicator kind', () => {
     Notify.send({ title: 'OK', message: 'done', type: 'task_complete' });
-    const bar = document.querySelector('.notify-toast-bar');
-    // jsdom normalizes hex colors to rgb format
-    expect(bar.style.background).toBe('rgb(34, 197, 94)');
+    Notify.send({ title: 'Fail', message: 'broke', type: 'task_failed' });
+    Notify.send({ title: 'Budget', message: 'low', type: 'budget_alert' });
+    Notify.send({ title: 'Hi', message: 'fyi', type: 'system' });
+    const kinds = [...document.querySelectorAll('.notify-toast-bar')].map(b => b.dataset.kind);
+    expect(kinds).toEqual(['go', 'stop', 'busy', undefined]);
   });
 
   it('should XSS-escape title and message', () => {

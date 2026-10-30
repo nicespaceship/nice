@@ -45,6 +45,18 @@
   --card-text-body:    0.75rem;   /* flavor, description, chip */
   --card-text-meta:    0.625rem;  /* subtitle, type line, rarity, role */
   --card-text-micro:   0.5rem;    /* marquee, stat label, serial, mini badge (FLOOR) */
+
+  /* Indicator dots — the only place NICE allows color. Small circles that
+     carry a meaning, shared by every theme (themes may override). Each
+     value keeps at least 3:1 against both white and black.
+       stop  red     no, stop, cancel, error, rejected
+       go    green   go, ready, done, approved, connected
+       busy  orange  working, waiting, needs attention
+       info  blue    info, neutral highlight */
+  --dot-stop: #ef4444;
+  --dot-go:   #16a34a;
+  --dot-busy: #ea580c;
+  --dot-info: #3b82f6;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -5516,9 +5528,6 @@ footer {
 
 /* Status Dots */
 .dot { display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text-dim);flex-shrink:0; }
-.dot-g { background:#22c55e; }
-.dot-r { background:#ef4444; }
-.dot-a { background:#f59e0b; }
 .dot-pulse { animation:dpulse 2s ease-in-out infinite; }
 @keyframes dpulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 

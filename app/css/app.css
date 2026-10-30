@@ -1917,7 +1917,7 @@ html:not([data-theme]) .app-main,
 .home-need:hover,
 .home-ship:hover,
 .home-start:hover { border-color:var(--accent); }
-.home-need-dot { width:10px; height:10px; border-radius:50%; background:var(--color-warning); flex-shrink:0; }
+.home-need-dot { width:10px; height:10px; border-radius:50%; background:var(--dot-busy); flex-shrink:0; }
 .home-need-text { flex:1; min-width:0; font-size:var(--text-base); font-weight:var(--fw-medium); }
 .home-need-cta,
 .home-ship-cta { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--accent); white-space:nowrap; }
@@ -1983,7 +1983,7 @@ html:not([data-theme]) .app-main,
   border:1px solid var(--color-warning); border-radius:var(--radius);
   background:color-mix(in srgb, var(--color-warning) 10%, var(--surface));
 }
-.crew-review-dot { width:10px; height:10px; border-radius:50%; background:var(--color-warning); flex-shrink:0; }
+.crew-review-dot { width:10px; height:10px; border-radius:50%; background:var(--dot-busy); flex-shrink:0; }
 .crew-review p { margin:0; flex:1 1 220px; min-width:0; font-size:var(--text-sm); color:var(--text); }
 .crew-review-acts { display:flex; flex-wrap:wrap; gap:8px; }
 
@@ -2024,9 +2024,9 @@ html:not([data-theme]) .app-main,
 .crew-status-dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim, var(--text-muted)); flex-shrink:0; }
 .crew-status[data-s="active"] { color:var(--accent); }
 .crew-status[data-s="active"] .crew-status-dot { background:var(--accent); animation:crew-pulse 1s ease-in-out infinite; }
-.crew-status[data-s="recent"] .crew-status-dot { background:var(--color-success); }
+.crew-status[data-s="recent"] .crew-status-dot { background:var(--dot-go); }
 .crew-status[data-s="error"] { color:var(--color-error); }
-.crew-status[data-s="error"] .crew-status-dot { background:var(--color-error); }
+.crew-status[data-s="error"] .crew-status-dot { background:var(--dot-stop); }
 @keyframes crew-pulse { 50% { opacity:.3; } }
 .crew-log {
   display:flex; flex-direction:column; gap:6px; margin:10px 12px 0; padding:8px 10px;
@@ -2254,10 +2254,10 @@ html:not([data-theme]) .app-main,
 .ob-pill:hover { border-color:var(--accent); }
 .ob-pill-text { overflow:hidden; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .ob-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--text-muted); }
-.ob-pill[data-s="draft"] .ob-dot { background:var(--color-warning); }
+.ob-pill[data-s="draft"] .ob-dot { background:var(--dot-busy); }
 .ob-pill[data-s="approved"] .ob-dot,
-.ob-pill[data-s="published"] .ob-dot { background:var(--color-success); }
-.ob-pill[data-s="rejected"] .ob-dot { background:var(--color-error); }
+.ob-pill[data-s="published"] .ob-dot { background:var(--dot-go); }
+.ob-pill[data-s="rejected"] .ob-dot { background:var(--dot-stop); }
 
 @media (min-width:900px) {
   .ob-days { grid-template-columns:repeat(7, minmax(0, 1fr)); }
@@ -2320,12 +2320,15 @@ html:not([data-theme]) .app-main,
 .mono { font-family:var(--font-b); }
 
 /* ─────────────────────────────────────────────────────────────────
-   STATUS DOTS (reused from main site)
+   STATUS DOTS — the shared indicator. Colors come from the --dot-*
+   tokens (theme.css), the one place color survives in the NICE theme:
+   go (green), stop (red), busy (orange), info (blue).
 ───────────────────────────────────────────────────────────────── */
 .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.dot-g { background:var(--color-success); }
-.dot-r { background:var(--color-error); }
-.dot-a { background:var(--color-warning); }
+.dot-g { background:var(--dot-go); }
+.dot-r { background:var(--dot-stop); }
+.dot-a { background:var(--dot-busy); }
+.dot-i { background:var(--dot-info); }
 
 
 /* ─────────────────────────────────────────────────────────────────
@@ -5568,7 +5571,18 @@ html[data-theme] .nice-ai-input:focus-visible {
 .notify-toast.dismiss { animation:notifyOut .3s ease forwards; }
 @keyframes notifyIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
 @keyframes notifyOut { to { opacity:0; transform:translateX(20px); } }
-.notify-toast-bar { width:4px; flex-shrink:0; }
+.notify-toast-bar { width:4px; flex-shrink:0; background:var(--accent); }
+.notify-toast-bar[data-kind="go"]   { --dot:var(--dot-go);   background:var(--color-success); }
+.notify-toast-bar[data-kind="stop"] { --dot:var(--dot-stop); background:var(--color-error); }
+.notify-toast-bar[data-kind="busy"] { --dot:var(--dot-busy); background:var(--color-warning); }
+.notify-toast-bar[data-kind="info"] { --dot:var(--dot-info); background:var(--color-info); }
+/* NICE is monochrome: the kind shows as an indicator dot beside the title,
+   and plain notices show none. */
+:is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast-bar {
+  width:8px; height:8px; border-radius:50%; align-self:flex-start;
+  margin:15px 0 0 12px; background:var(--dot);
+}
+:is([data-theme="nice"],[data-theme="nice-dark"]) .notify-toast-bar:not([data-kind]) { display:none; }
 .notify-toast-body { flex:1; padding:10px 12px; }
 .notify-toast-title { font-family:var(--font-b); font-size:var(--text-sm); font-weight:var(--fw-medium); display:block; color:var(--text); }
 .notify-toast-msg { font-family:var(--font-b); font-size:var(--text-xs); color:var(--text-muted); display:block; margin-top:2px; }
@@ -6302,7 +6316,7 @@ html[data-theme] .nice-ai-input:focus-visible {
    tab corners (absolute), and the settings menu. One look everywhere; the
    counts come from AlertCounts. */
 .nav-alert-dot, .bp-tab-alert {
-  width:7px; height:7px; border-radius:50%; background:#f97316; flex-shrink:0;
+  width:7px; height:7px; border-radius:50%; background:var(--dot-busy); flex-shrink:0;
 }
 .nav-alert-dot { margin-left:auto; }
 .nav-alert-dot[hidden], .bp-tab-alert[hidden] { display:none; }
@@ -6526,7 +6540,7 @@ html[data-theme] .nice-ai-input:focus-visible {
 ═══════════════════════════════════════════════════════════════════ */
 .presence-indicator { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; font-size:0.75rem; color:var(--text-muted); }
 .presence-dot {
-  width:8px; height:8px; border-radius:50%; background:var(--color-success);
+  width:8px; height:8px; border-radius:50%; background:var(--dot-go);
   box-shadow:0 0 4px #22c55e; animation:presencePulse 2s ease-in-out infinite;
 }
 .presence-count { font-family:var(--font-b); font-size:0.7rem; color:var(--text-muted); }
