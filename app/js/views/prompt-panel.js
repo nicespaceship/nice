@@ -2258,10 +2258,6 @@ The user's code runs in a browser preview. Generate production-quality code.`;
     return _cardReply(id, billing ? { text, error: true, billing: true } : { text, error: true });
   }
 
-  function _isAbort(err) {
-    return !!err && (err.name === 'AbortError' || /abort/i.test(err.message || ''));
-  }
-
   function _sendToCards(text, attachments = []) {
     if (typeof SpaceCards === 'undefined') return false;
     const cards = SpaceCards.available();
@@ -2319,7 +2315,9 @@ The user's code runs in a browser preview. Generate production-quality code.`;
           if (single && epoch === _cardEpoch) _afterSingleReply(id, res.text);
         })
         .catch(err => {
-          if (_isAbort(err)) return;
+          // Only our own abort (the conversation changed) is silent. A server
+          // error that happens to say "aborted" is a failure like any other.
+          if (ctrl.signal.aborted || epoch !== _cardEpoch) return;
           finish(_cardError(id, err));
         });
     });
@@ -4000,5 +3998,5 @@ The user's code runs in a browser preview. Generate production-quality code.`;
   // The current conversation, for Space's cards. Same auth gate as the store.
   function messages() { return _messages; }
 
-  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _sendToCards, _renderTargets, _isStandaloneChat, messages, _detectIntent };
+  return { init, destroy, toggle, prefill, sendToAgent, setSuggestions, startFlow, cancelFlow, isFlowActive, pushMessage, show, hide, syncRoute, setContext, getContext, startDictation, _reload, _showConversation, _md: typeof _md !== 'undefined' ? _md : null, _getSlottedAgents, _buildAppContext, _modelHasCapability, _modelSatisfies, _buildDOM, _stageAttachment, _onModelSelectChange, _populateModelDropdown, _getSelectedModel, _contentText, _compareCardHTML, _send, _sendToCards, _renderTargets, _isStandaloneChat, messages, _detectIntent };
 })();

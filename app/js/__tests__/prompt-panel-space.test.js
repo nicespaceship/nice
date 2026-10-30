@@ -62,8 +62,19 @@ function mockNiceAi() {
 
 const settled = () => vi.waitFor(() => { if (SpaceCards.busy()) throw new Error('still answering'); });
 
+// What the user does: type into the panel and press Enter.
+function send(text) {
+  const input = document.getElementById('nice-ai-input');
+  input.value = text;
+  PromptPanel._send();
+}
+const monitorOpen = () => document.querySelector('.app-main').classList.contains('monitor-active');
+
 beforeEach(() => {
   PromptPanel.destroy();
+  // The shell the panel mounts into: the view and the monitor overlay.
+  document.body.innerHTML = '<div class="app-main"><div class="app-view-content" id="app-view"></div>'
+    + '<div class="nice-monitor" id="nice-monitor"><button id="nice-monitor-back"></button><div id="nice-monitor-content"></div></div></div>';
   localStorage.setItem('sb-test-auth-token', '{"access_token":"tok"}');
   globalThis.LLM_MODELS = [];
   globalThis.LLM_PROVIDERS = [];
@@ -159,6 +170,27 @@ describe('Sending to the selected cards', () => {
     release({ ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'late' }] }) });
     await new Promise(r => setTimeout(r, 0));
     expect(PromptPanel.messages().some(m => m.text === 'late')).toBe(false);
+  });
+});
+
+describe('Sending from the panel on Space', () => {
+  beforeEach(() => { State.set('user', { id: 'u1', email: 'pilot@test.com' }); });
+
+  it('frees the cards when the server error merely mentions an abort', async () => {
+    globalThis.fetch = vi.fn(async (url, init) => {
+      calls.push(JSON.parse(init.body));
+      return calls.length === 1
+        ? { ok: false, status: 502, text: async () => JSON.stringify({ error: 'Upstream request aborted after 60s' }) }
+        : { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ content: [{ type: 'text', text: 'Four.' }] }) };
+    });
+    send('what is two plus two');
+    await settled();
+    expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: 'gemini-2-5-flash', error: true, text: 'Upstream request aborted after 60s' });
+    expect(document.getElementById('nice-ai-send').disabled).toBe(false);
+    send('try again');
+    await settled();
+    expect(calls).toHaveLength(2);
+    expect(PromptPanel.messages().slice(-1)[0]).toMatchObject({ modelId: 'gemini-2-5-flash', text: 'Four.' });
   });
 });
 
